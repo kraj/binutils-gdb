@@ -233,7 +233,7 @@ ppc_finish (void)
     lang_for_each_statement (no_zero_padding);
   if (!ppc_finish_symbols (&link_info))
     einfo (_("%X%P: ppc_finish_symbols problem %E\n"));
-  finish_default ();
+  gld${EMULATION_NAME}_finish ();
 }
 
 EOF

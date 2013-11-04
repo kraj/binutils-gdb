@@ -277,7 +277,7 @@ gld${EMULATION_NAME}_after_allocation (void)
 }
 
 static void
-gld${EMULATION_NAME}_finish (void)
+aarch64_finish (void)
 {
   if (!bfd_link_relocatable (&link_info))
     {
@@ -289,7 +289,7 @@ gld${EMULATION_NAME}_finish (void)
 	}
     }
 
-  finish_default ();
+  gld${EMULATION_NAME}_finish ();
 }
 
 /* This is a convenient point to tell BFD about target specific flags.
@@ -450,4 +450,4 @@ LDEMUL_CREATE_OUTPUT_SECTION_STATEMENTS=aarch64_elf_create_output_section_statem
 LDEMUL_BEFORE_PARSE=gld"${EMULATION_NAME}"_before_parse
 
 # Call the extra arm-elf function
-LDEMUL_FINISH=gld${EMULATION_NAME}_finish
+LDEMUL_FINISH=aarch64_finish

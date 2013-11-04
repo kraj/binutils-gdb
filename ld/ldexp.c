@@ -1641,14 +1641,15 @@ align_n (bfd_vma value, bfd_vma align)
 }
 
 void
-ldexp_init (void)
+ldexp_init (bfd_boolean object_only)
 {
   /* The value "13" is ad-hoc, somewhat related to the expected number of
      assignments in a linker script.  */
-  if (!bfd_hash_table_init_n (&definedness_table,
-			      definedness_newfunc,
-			      sizeof (struct definedness_hash_entry),
-			      13))
+  if (!object_only
+      && !bfd_hash_table_init_n (&definedness_table,
+				 definedness_newfunc,
+				 sizeof (struct definedness_hash_entry),
+				 13))
     einfo (_("%F%P: can not create hash table: %E\n"));
 }
 
@@ -1683,7 +1684,8 @@ ldexp_finalize_syms (void)
 }
 
 void
-ldexp_finish (void)
+ldexp_finish (bfd_boolean object_only)
 {
-  bfd_hash_table_free (&definedness_table);
+  if (!object_only)
+    bfd_hash_table_free (&definedness_table);
 }

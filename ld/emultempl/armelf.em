@@ -417,7 +417,7 @@ gld${EMULATION_NAME}_after_allocation (void)
 }
 
 static void
-gld${EMULATION_NAME}_finish (void)
+arm_finish (void)
 {
   struct bfd_link_hash_entry * h;
 
@@ -444,7 +444,7 @@ gld${EMULATION_NAME}_finish (void)
 	}
     }
 
-  finish_default ();
+  gld${EMULATION_NAME}_finish ();
 
   if (params.thumb_entry_symbol)
     {
@@ -794,4 +794,4 @@ LDEMUL_BEFORE_PARSE=gld"${EMULATION_NAME}"_before_parse
 LDEMUL_SET_SYMBOLS=gld"${EMULATION_NAME}"_set_symbols
 
 # Call the extra arm-elf function
-LDEMUL_FINISH=gld${EMULATION_NAME}_finish
+LDEMUL_FINISH=arm_finish
