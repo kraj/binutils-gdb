@@ -2735,6 +2735,8 @@ fragment <<EOF
 	link_info.error_textrel = FALSE;
       else if (strcmp (optarg, "textoff") == 0)
 	link_info.error_textrel = FALSE;
+      else if (strcmp (optarg, "nosecondary") == 0)
+	link_info.emit_secondary = FALSE;
 EOF
 fi
 

@@ -1792,6 +1792,8 @@ elf_shlib_list_options (FILE *file)
   fprintf (file, _("\
   -z nocommon                 Generate common symbols with STT_OBJECT type\n"));
   fprintf (file, _("\
+  -z nosecondary              Convert secondary symbols to weak symbols\n"));
+  fprintf (file, _("\
   -z stack-size=SIZE          Set size of stack segment\n"));
   fprintf (file, _("\
   -z text                     Treat DT_TEXTREL in shared object as error\n"));

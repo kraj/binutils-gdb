@@ -275,6 +275,7 @@ main (int argc, char **argv)
   link_info.strip_discarded = TRUE;
   link_info.emit_hash = DEFAULT_EMIT_SYSV_HASH;
   link_info.emit_gnu_hash = DEFAULT_EMIT_GNU_HASH;
+  link_info.emit_secondary = TRUE;
   link_info.callbacks = &link_callbacks;
   link_info.input_bfds_tail = &link_info.input_bfds;
   /* SVR4 linkers seem to set DT_INIT and DT_FINI based on magic _init
