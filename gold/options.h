@@ -1970,7 +1970,8 @@ class Input_arguments
   typedef Input_argument_list::const_iterator const_iterator;
 
   Input_arguments()
-    : input_argument_list_(), in_group_(false), in_lib_(false), file_count_(0)
+    : input_argument_list_(), in_group_(false), in_lib_(false),
+      file_count_(0), has_crtbeginT_(false), last_is_crti_(false)
   { }
 
   // Add a file.
@@ -2030,11 +2031,20 @@ class Input_arguments
   number_of_input_files() const
   { return this->file_count_; }
 
+  // Return whether there is a crtbeginT file.
+  bool
+  has_crtbeginT() const
+  { return this->has_crtbeginT_; }
+
  private:
   Input_argument_list input_argument_list_;
   bool in_group_;
   bool in_lib_;
   unsigned int file_count_;
+  // Whether there is a crtbeginT file.
+  bool has_crtbeginT_;
+  // Whether the last one is a crti file.
+  bool last_is_crti_;
 };
 
 
@@ -2102,6 +2112,11 @@ class Command_line
   const_iterator
   end() const
   { return this->inputs_.end(); }
+
+  // Whether there is a crtbeginT file.
+  bool
+  has_crtbeginT() const
+  { return this->inputs_.has_crtbeginT(); }
 
  private:
   Command_line(const Command_line&);

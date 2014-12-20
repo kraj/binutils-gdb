@@ -488,7 +488,7 @@ enum Output_section_order
 class Layout
 {
  public:
-  Layout(int number_of_input_files, Script_options*);
+  Layout(int number_of_input_files, Script_options*, bool has_crtbeginT);
 
   ~Layout()
   {
@@ -756,6 +756,12 @@ class Layout
 	    || strncmp(name, ".line", sizeof(".line") - 1) == 0
 	    || strncmp(name, ".stab", sizeof(".stab") - 1) == 0);
   }
+
+  // Return true if FILE is an input file whose base name matches
+  // FILE_NAME.  The base name must have an extension of ".o", and
+  // must be exactly FILE_NAME.o or FILE_NAME, one character, ".o".
+  static bool
+  match_file_name(const char* file, const char* file_name);
 
   // Return true if RELOBJ is an input file whose base name matches
   // FILE_NAME.  The base name must have an extension of ".o", and
@@ -1420,6 +1426,8 @@ class Layout
   Incremental_inputs* incremental_inputs_;
   // Whether we record output section data created in script
   bool record_output_section_data_from_script_;
+  // Whether to optimize the exception frame section.
+  bool optimize_ehframe_;
   // List of output data that needs to be removed at relaxation clean up.
   Output_section_data_list script_output_section_data_list_;
   // Structure to save segment states before entering the relaxation loop.

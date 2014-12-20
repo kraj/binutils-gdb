@@ -418,7 +418,8 @@ Layout_task_runner::run(Workqueue* workqueue, const Task* task)
 
 // Layout methods.
 
-Layout::Layout(int number_of_input_files, Script_options* script_options)
+Layout::Layout(int number_of_input_files, Script_options* script_options,
+	       bool has_crtbeginT)
   : number_of_input_files_(number_of_input_files),
     script_options_(script_options),
     namepool_(),
@@ -469,6 +470,7 @@ Layout::Layout(int number_of_input_files, Script_options* script_options)
     unique_segment_for_sections_specified_(false),
     incremental_inputs_(NULL),
     record_output_section_data_from_script_(false),
+    optimize_ehframe_(!has_crtbeginT),
     script_output_section_data_list_(),
     segment_states_(NULL),
     relaxation_debug_check_(NULL),
@@ -1428,7 +1430,8 @@ Layout::layout_eh_frame(Sized_relobj_file<size, big_endian>* object,
 							 symbol_names_size,
 							 shndx,
 							 reloc_shndx,
-							 reloc_type))
+							 reloc_type,
+							 this->optimize_ehframe_))
     {
       os->update_flags_for_input_section(shdr.get_sh_flags());
 
@@ -1484,6 +1487,14 @@ Layout::make_eh_frame_section(const Relobj* object)
 						   ORDER_EHFRAME, false);
   if (os == NULL)
     return NULL;
+
+  // optimize_ehframe_ is false only if there is a crtbeginT file on
+  // command line.  We can't optimize the exception frame section
+  // until we have seen the crtbeginT file.
+  if (!this->optimize_ehframe_
+      && object != NULL
+      && Layout::match_file_name(object, "crtbeginT"))
+    this->optimize_ehframe_ = true;
 
   if (this->eh_frame_section_ == NULL)
     {
@@ -5092,19 +5103,18 @@ Layout::output_section_name(const Relobj* relobj, const char* name,
   return name;
 }
 
-// Return true if RELOBJ is an input file whose base name matches
-// FILE_NAME.  The base name must have an extension of ".o", and must
-// be exactly FILE_NAME.o or FILE_NAME, one character, ".o".  This is
+// Return true if FILE is an input file whose base name matches
+// MATCH.  The base name must have an extension of ".o", and must
+// be exactly MATCH.o or MATCH, one character, ".o".  This is
 // to match crtbegin.o as well as crtbeginS.o without getting confused
 // by other possibilities.  Overall matching the file name this way is
 // a dreadful hack, but the GNU linker does it in order to better
 // support gcc, and we need to be compatible.
 
 bool
-Layout::match_file_name(const Relobj* relobj, const char* match)
+Layout::match_file_name(const char* file, const char* match)
 {
-  const std::string& file_name(relobj->name());
-  const char* base_name = lbasename(file_name.c_str());
+  const char* base_name = lbasename(file);
   size_t match_len = strlen(match);
   if (strncmp(base_name, match, match_len) != 0)
     return false;
@@ -5112,6 +5122,17 @@ Layout::match_file_name(const Relobj* relobj, const char* match)
   if (base_len != match_len + 2 && base_len != match_len + 3)
     return false;
   return memcmp(base_name + base_len - 2, ".o", 2) == 0;
+}
+
+// Return true if FILE is an input file whose base name matches
+// MATCH.  The base name must have an extension of ".o", and must
+// be exactly MATCH.o or MATCH, one character, ".o".
+
+bool
+Layout::match_file_name(const Relobj* relobj, const char* match)
+{
+  const std::string& file_name(relobj->name());
+  return Layout::match_file_name(file_name.c_str(), match);
 }
 
 // Check if a comdat group or .gnu.linkonce section with the given

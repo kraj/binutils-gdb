@@ -1,3 +1,39 @@
+2015-01-07  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR gold/14675
+	* ehframe.cc (Eh_frame::add_ehframe_input_section): Force the
+	exception frame section from input files if it can't be
+	optimized.
+	(Eh_frame::add_ehframe_input_section<32, false>): Updated.
+	(Eh_frame::add_ehframe_input_section<32, true>): Likewise.
+	(Eh_frame::add_ehframe_input_section<64, false>): Likewise.
+	(Eh_frame::add_ehframe_input_section<64, true>): Likewise.
+	* ehframe.h (Eh_frame::add_ehframe_input_section): Add a
+	bool parameter to indicate if the exception frame section
+	can be optimized.
+	* layout.cc (Layout::Layout): Initialize optimize_ehframe_ to
+	!has_crtbeginT.
+	(Layout::layout_eh_frame): Pass this->optimize_ehframe_ to
+	Eh_frame::add_ehframe_input_section.
+	(Layout::make_eh_frame_section): Set this->optimize_ehframe_
+	to true when processing the crtbeginT file if it is on command
+	line.
+	(Layout::match_file_name (const char*, const char*)): New.
+	(Layout::match_file_name(const Relobj*, const char*): Use it.
+	* layout.h (Layout::Layout): Add has_crtbeginT.
+	(Layout::match_file_name (const char*, const char*)): New.
+	(Layout): Add an optimize_ehframe_ member.
+	* main.cc (main): Pass command_line.has_crtbeginT() to layout.
+	* options.cc: Include "layout.h".
+	(Input_arguments::add_file): Set this->has_crtbeginT_ to true
+	if there is a crtbeginT file and the last one is a crti file.
+	* options.h (Input_arguments::Input_arguments): Initialize
+	has_crtbeginT_ and last_is_crti_ to false.
+	(Input_arguments::has_crtbeginT): New function.
+	(Input_arguments::has_crtbeginT_): New bool member.
+	(Input_arguments::last_is_crti_): Likewise.
+	(Command_line::has_crtbeginT): New function.
+
 2015-01-06  H.J. Lu  <hongjiu.lu@intel.com>
 	    Cary Coutant  <ccoutant@google.com>
 
