@@ -35,7 +35,7 @@ tooldir = $(libdir)/$(target_alias)
 datarootdir = @datarootdir@
 datadir = @datadir@
 mandir = @mandir@
-man1dir = $(mandir)/man1
+man1dir = $(DESTDIR)$(mandir)/man1
 infodir = @infodir@
 includedir = @includedir@
 
