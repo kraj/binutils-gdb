@@ -21,6 +21,12 @@
 
 /* Contributed by Steve Chamberlain sac@cygnus.com.  */
 
+struct frame_info;
+struct gdbarch;
+struct reggroup;
+struct regset;
+struct regcache;
+
 /* Registers for all SH variants.  Used also by sh3-rom.c.  */
 enum
   {
@@ -29,6 +35,7 @@ enum
     ARG0_REGNUM = 4,
     ARGLAST_REGNUM = 7,
     FP_REGNUM = 14,
+    SP_REGNUM = 15,
     PC_REGNUM = 16,
     PR_REGNUM = 17,
     GBR_REGNUM = 18,
@@ -81,6 +88,24 @@ enum
     FV0_REGNUM = 76,
     FV_LAST_REGNUM = 79
   };
+#define SH_NUM_REGS 67
+
+struct sh_frame_cache
+{
+  /* Base address.  */
+  CORE_ADDR base;
+  LONGEST sp_offset;
+  CORE_ADDR pc;
+
+  /* Flag showing that a frame has been created in the prologue code. */
+  int uses_fp;
+
+  /* Saved registers.  */
+  CORE_ADDR saved_regs[SH_NUM_REGS];
+  CORE_ADDR saved_sp;
+};
+
+extern struct sh_frame_cache *sh_frame_cache (struct frame_info *next_frame, void **this_cache);
 
 /* This structure describes a register in a core-file.  */
 struct sh_corefile_regmap
@@ -89,8 +114,32 @@ struct sh_corefile_regmap
   unsigned int offset;
 };
 
+/* sh architecture specific information.  */
 struct gdbarch_tdep
 {
+  /* General-purpose registers.  */
+  struct regset *gregset;
+  int *gregset_reg_offset;
+  int gregset_num_regs;
+  size_t sizeof_gregset;
+
+  /* Floating-point registers.  */
+  struct regset *fpregset;
+  size_t sizeof_fpregset;
+
+  /* Offset of saved PC in jmp_buf.  */
+  int jb_pc_offset;
+
+  /* Detect sigtramp.  */
+  int (*sigtramp_p) (struct frame_info *);
+
+  /* Get address of sigcontext for sigtramp.  */
+  CORE_ADDR (*sigcontext_addr) (struct frame_info *);
+
+  /* Offset of registers in `struct sigcontext'.  */
+  int *sc_reg_offset;
+  int sc_num_regs;
+
   /* Non-NULL when debugging from a core file.  Provides the offset
      where each general-purpose register is stored inside the associated
      core file section.  */

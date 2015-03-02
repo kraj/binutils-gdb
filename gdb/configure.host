@@ -148,6 +148,7 @@ riscv*-*-linux*)	gdb_host=linux ;;
 
 s390*-*-linux*)		gdb_host=linux ;;
 
+sh*-*-linux*)		gdb_host=linux ;;
 sh*-*-netbsdelf* | sh*-*-knetbsd*-gnu)
 			gdb_host=nbsd ;;
 sh*-*-openbsd*)		gdb_host=nbsd ;;
