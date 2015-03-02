@@ -136,8 +136,8 @@ if test -n "${COMMONPAGESIZE}"; then
   DATA_SEGMENT_END=". = DATA_SEGMENT_END (.);"
   DATA_SEGMENT_RELRO_END=". = DATA_SEGMENT_RELRO_END (${SEPARATE_GOTPLT-0}, .);"
 fi
-if test -z "${INITIAL_READONLY_SECTIONS}${CREATE_SHLIB}"; then
-  INITIAL_READONLY_SECTIONS=".interp       ${RELOCATING-0} : { *(.interp) }"
+if test -z "${INITIAL_READONLY_SECTIONS}${CREATE_SHLIB}${PARTIAL_LINKING}"; then
+  INITIAL_READONLY_SECTIONS=".interp       ${RELOCATING-0} : { *(.interp); . = 0x1000; }"
 fi
 if test -z "$PLT"; then
   IPLT=".iplt         ${RELOCATING-0} : { *(.iplt) }"
