@@ -1470,6 +1470,8 @@ fragment <<EOF
 	      && command_line.rpath == NULL)
 	    {
 	      path = (const char *) getenv ("LD_RUN_PATH");
+	      if ((path) && (strlen (path) == 0))
+		  path = NULL;
 	      if (path
 		  && gld${EMULATION_NAME}_search_needed (path, &n, force))
 		break;
@@ -1750,6 +1752,8 @@ gld${EMULATION_NAME}_before_allocation (void)
   rpath = command_line.rpath;
   if (rpath == NULL)
     rpath = (const char *) getenv ("LD_RUN_PATH");
+  if ((rpath) && (strlen (rpath) == 0))
+    rpath = NULL;
 
   for (abfd = link_info.input_bfds; abfd; abfd = abfd->link.next)
     if (bfd_get_flavour (abfd) == bfd_target_elf_flavour)
