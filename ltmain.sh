@@ -8056,9 +8056,11 @@ EOF
 	  test "$opt_mode" != relink && rpath="$compile_rpath$rpath"
 	  for libdir in $rpath; do
 	    if test -n "$hardcode_libdir_flag_spec"; then
+		  func_replace_sysroot "$libdir"
+		  libdir=$func_replace_sysroot_result
+		  func_stripname '=' '' "$libdir"
+		  libdir=$func_stripname_result
 	      if test -n "$hardcode_libdir_separator"; then
-		func_replace_sysroot "$libdir"
-		libdir=$func_replace_sysroot_result
 		if test -z "$hardcode_libdirs"; then
 		  hardcode_libdirs="$libdir"
 		else
@@ -8791,6 +8793,10 @@ EOF
       hardcode_libdirs=
       for libdir in $compile_rpath $finalize_rpath; do
 	if test -n "$hardcode_libdir_flag_spec"; then
+	  func_replace_sysroot "$libdir"
+	  libdir=$func_replace_sysroot_result
+	  func_stripname '=' '' "$libdir"
+	  libdir=$func_stripname_result
 	  if test -n "$hardcode_libdir_separator"; then
 	    if test -z "$hardcode_libdirs"; then
 	      hardcode_libdirs="$libdir"
