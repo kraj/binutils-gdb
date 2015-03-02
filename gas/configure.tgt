@@ -487,6 +487,12 @@ case ${generic_target} in
   *-*-netware)				fmt=elf em=netware ;;
 esac
 
+case ${generic_target} in
+  arm-*-*uclibc*)
+    need_libm=yes
+    ;;
+esac
+
 case ${cpu_type} in
   aarch64 | alpha | arm | i386 | ia64 | microblaze | mips | ns32k | or1k | or1knd | pdp11 | ppc | sparc | z80 | z8k)
     bfd_gas=yes
