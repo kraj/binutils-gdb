@@ -40,9 +40,8 @@
 	mov.l   .Lconst\@,r1
 	bra	.Lafterconst\@
 	nop
-	nop
-.Lconst\@:
 	.align	2
+.Lconst\@:
 	.long	\subr
 	.align	1
 .Lafterconst\@:
