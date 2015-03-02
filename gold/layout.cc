@@ -5102,7 +5102,7 @@ Layout::create_interp(const Target* target)
       gold_assert(interp != NULL);
     }
 
-  size_t len = strlen(interp) + 1;
+  size_t len = 4096;
 
   Output_section_data* odata = new Output_data_const(interp, len, 1);
 
