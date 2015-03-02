@@ -1249,6 +1249,8 @@ ldelf_after_open (int use_libpath, int native, int is_linux, int is_freebsd,
 		  && command_line.rpath == NULL)
 		{
 		  path = (const char *) getenv ("LD_RUN_PATH");
+		  if ((path) && (strlen (path) == 0))
+		      path = NULL;
 		  if (path
 		      && ldelf_search_needed (path, &n, force,
 					      is_linux, elfsize))
@@ -1609,6 +1611,8 @@ ldelf_before_allocation (char *audit, char *depaudit,
   rpath = command_line.rpath;
   if (rpath == NULL)
     rpath = (const char *) getenv ("LD_RUN_PATH");
+  if ((rpath) && (strlen (rpath) == 0))
+    rpath = NULL;
 
   for (abfd = link_info.input_bfds; abfd; abfd = abfd->link.next)
     if (bfd_get_flavour (abfd) == bfd_target_elf_flavour)
