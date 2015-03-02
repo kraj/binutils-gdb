@@ -1750,6 +1750,7 @@ ALLDEPFILES = \
 	score-tdep.c \
 	ser-go32.c ser-pipe.c ser-tcp.c ser-mingw.c \
 	sh-tdep.c sh64-tdep.c shnbsd-tdep.c shnbsd-nat.c \
+	sh-linux-tdep.c sh-linux-nat.c \
 	sol2-tdep.c \
 	solib-svr4.c \
 	sparc-linux-nat.c sparc-linux-tdep.c \
