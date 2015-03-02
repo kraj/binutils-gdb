@@ -316,6 +316,7 @@ DATA_ALIGNMENT_u="${DATA_ALIGNMENT_u-${DATA_ALIGNMENT_r}}"
 LD_FLAG=r
 DATA_ALIGNMENT=${DATA_ALIGNMENT_r}
 DEFAULT_DATA_ALIGNMENT="ALIGN(${SEGMENT_SIZE})"
+PARTIAL_LINKING=" "
 ( echo "/* Script for -r */"
   source_sh ${CUSTOMIZER_SCRIPT}
   source_sh ${srcdir}/scripttempl/${SCRIPT_NAME}.sc
@@ -324,10 +325,12 @@ DEFAULT_DATA_ALIGNMENT="ALIGN(${SEGMENT_SIZE})"
 LD_FLAG=u
 DATA_ALIGNMENT=${DATA_ALIGNMENT_u}
 CONSTRUCTING=" "
+PARTIAL_LINKING=" "
 ( echo "/* Script for -Ur */"
   source_sh ${CUSTOMIZER_SCRIPT}
   source_sh ${srcdir}/scripttempl/${SCRIPT_NAME}.sc
 ) | sed -e '/^ *$/d;s/[	 ]*$//' > ldscripts/${EMULATION_NAME}.xu
+unset PARTIAL_LINKING
 
 DATA_ALIGNMENT=${DATA_ALIGNMENT_}
 RELOCATING=" "
