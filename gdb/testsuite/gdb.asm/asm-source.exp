@@ -116,6 +116,11 @@ switch -glob -- [istarget] {
             append link-flags " -m elf32ppc"
         }
     }
+    "sh*-linux*" {
+        set asm-arch sh-linux
+        set asm-flags "-I${srcdir}/${subdir} -I${objdir}/${subdir}"
+	set debug-flags "-gdwarf-2"
+    }
     "sh*-*-*" {
         set asm-arch sh
 	set debug-flags "-gdwarf-2"

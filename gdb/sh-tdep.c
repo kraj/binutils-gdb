@@ -21,6 +21,9 @@
    sac@cygnus.com.  */
 
 #include "defs.h"
+#include "arch-utils.h"
+#include "command.h"
+#include "dummy-frame.h"
 #include "frame.h"
 #include "frame-base.h"
 #include "frame-unwind.h"
@@ -65,23 +68,6 @@ static const char *const sh_cc_enum[] = {
 };
 
 static const char *sh_active_calling_convention = sh_cc_gcc;
-
-#define SH_NUM_REGS 67
-
-struct sh_frame_cache
-{
-  /* Base address.  */
-  CORE_ADDR base;
-  LONGEST sp_offset;
-  CORE_ADDR pc;
-
-  /* Flag showing that a frame has been created in the prologue code.  */
-  int uses_fp;
-
-  /* Saved registers.  */
-  CORE_ADDR saved_regs[SH_NUM_REGS];
-  CORE_ADDR saved_sp;
-};
 
 static int
 sh_is_renesas_calling_convention (struct type *func_type)
@@ -1050,6 +1036,7 @@ sh_treat_as_flt_p (struct type *type)
     return 0;
   /* Otherwise if the type of that member is float, the whole type is
      treated as float.  */
+  type = check_typedef (type);
   if (type->field (0).type ()->code () == TYPE_CODE_FLT)
     return 1;
   /* Otherwise it's not treated as float.  */
@@ -1100,7 +1087,7 @@ sh_push_dummy_call_fpu (struct gdbarch *gdbarch,
      in four registers available.  Loop thru args from first to last.  */
   for (argnum = 0; argnum < nargs; argnum++)
     {
-      type = value_type (args[argnum]);
+      type = check_typedef (value_type (args[argnum]));
       len = TYPE_LENGTH (type);
       val = sh_justify_value_in_reg (gdbarch, args[argnum], len);
 
@@ -1835,7 +1822,7 @@ sh_dwarf2_frame_init_reg (struct gdbarch *gdbarch, int regnum,
     reg->how = DWARF2_FRAME_REG_UNDEFINED;
 }
 
-static struct sh_frame_cache *
+struct sh_frame_cache *
 sh_alloc_frame_cache (void)
 {
   struct sh_frame_cache *cache;
@@ -1862,7 +1849,7 @@ sh_alloc_frame_cache (void)
   return cache;
 }
 
-static struct sh_frame_cache *
+struct sh_frame_cache *
 sh_frame_cache (struct frame_info *this_frame, void **this_cache)
 {
   struct gdbarch *gdbarch = get_frame_arch (this_frame);
@@ -1929,9 +1916,9 @@ sh_frame_cache (struct frame_info *this_frame, void **this_cache)
   return cache;
 }
 
-static struct value *
-sh_frame_prev_register (struct frame_info *this_frame,
-			void **this_cache, int regnum)
+struct value *
+sh_frame_prev_register (struct frame_info *this_frame, void **this_cache,
+			int regnum)
 {
   struct gdbarch *gdbarch = get_frame_arch (this_frame);
   struct sh_frame_cache *cache = sh_frame_cache (this_frame, this_cache);
@@ -1945,7 +1932,7 @@ sh_frame_prev_register (struct frame_info *this_frame,
      the current frame.  Frob regnum so that we pull the value from
      the correct place.  */
   if (regnum == gdbarch_pc_regnum (gdbarch))
-    regnum = PR_REGNUM;
+    regnum = PR_REGNUM; /* XXX: really? */
 
   if (regnum < SH_NUM_REGS && cache->saved_regs[regnum] != -1)
     return frame_unwind_got_memory (this_frame, regnum,
@@ -2234,8 +2221,8 @@ sh_return_in_first_hidden_param_p (struct gdbarch *gdbarch,
 static struct gdbarch *
 sh_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
 {
-  struct gdbarch *gdbarch;
   struct gdbarch_tdep *tdep;
+  struct gdbarch *gdbarch;
 
   /* If there is already a candidate, use it.  */
   arches = gdbarch_list_lookup_by_info (arches, &info);
@@ -2246,6 +2233,18 @@ sh_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
      provided.  */
   tdep = XCNEW (struct gdbarch_tdep);
   gdbarch = gdbarch_alloc (&info, tdep);
+
+  /* General-purpose registers.  */
+  tdep->gregset = NULL;
+  tdep->gregset_reg_offset = NULL;
+  tdep->gregset_num_regs = 23;
+  tdep->sizeof_gregset = 0;
+
+  /* Floating-point registers.  */
+  tdep->fpregset = NULL;
+  tdep->sizeof_fpregset = 34*4;
+
+  tdep->jb_pc_offset = -1;
 
   set_gdbarch_short_bit (gdbarch, 2 * TARGET_CHAR_BIT);
   set_gdbarch_int_bit (gdbarch, 4 * TARGET_CHAR_BIT);
@@ -2398,10 +2397,11 @@ sh_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
       break;
     }
 
+  dwarf2_append_unwinders (gdbarch);
+
   /* Hook in ABI-specific overrides, if they have been registered.  */
   gdbarch_init_osabi (info, gdbarch);
 
-  dwarf2_append_unwinders (gdbarch);
   frame_unwind_append_unwinder (gdbarch, &sh_stub_unwind);
   frame_unwind_append_unwinder (gdbarch, &sh_frame_unwind);
 
