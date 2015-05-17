@@ -176,12 +176,15 @@ static reloc_howto_type x86_64_elf_howto_table[] =
   HOWTO(R_X86_64_PLT32_BND, 0, 2, 32, TRUE, 0, complain_overflow_signed,
 	bfd_elf_generic_reloc, "R_X86_64_PLT32_BND", FALSE, 0xffffffff, 0xffffffff,
 	TRUE),
+  HOWTO(R_X86_64_RELAX_GOTPCREL, 0, 2, 32, TRUE, 0, complain_overflow_signed,
+	bfd_elf_generic_reloc, "R_X86_64_RELAX_GOTPCREL", FALSE, 0xffffffff,
+	0xffffffff, TRUE),
 
   /* We have a gap in the reloc numbers here.
      R_X86_64_standard counts the number up to this point, and
      R_X86_64_vt_offset is the value to subtract from a reloc type of
      R_X86_64_GNU_VT* to form an index into this table.  */
-#define R_X86_64_standard (R_X86_64_PLT32_BND + 1)
+#define R_X86_64_standard (R_X86_64_RELAX_GOTPCREL + 1)
 #define R_X86_64_vt_offset (R_X86_64_GNU_VTINHERIT - R_X86_64_standard)
 
 /* GNU extension to record C++ vtable hierarchy.  */
@@ -253,8 +256,9 @@ static const struct elf_reloc_map x86_64_reloc_map[] =
   { BFD_RELOC_X86_64_TLSDESC_CALL, R_X86_64_TLSDESC_CALL, },
   { BFD_RELOC_X86_64_TLSDESC,	R_X86_64_TLSDESC, },
   { BFD_RELOC_X86_64_IRELATIVE,	R_X86_64_IRELATIVE, },
-  { BFD_RELOC_X86_64_PC32_BND,	R_X86_64_PC32_BND,},
-  { BFD_RELOC_X86_64_PLT32_BND,	R_X86_64_PLT32_BND,},
+  { BFD_RELOC_X86_64_PC32_BND,  R_X86_64_PC32_BND, },
+  { BFD_RELOC_X86_64_PLT32_BND,	R_X86_64_PLT32_BND, },
+  { BFD_RELOC_X86_64_RELAX_GOTPCREL, R_X86_64_RELAX_GOTPCREL, },
   { BFD_RELOC_VTABLE_INHERIT,	R_X86_64_GNU_VTINHERIT, },
   { BFD_RELOC_VTABLE_ENTRY,	R_X86_64_GNU_VTENTRY, },
 };
@@ -1712,6 +1716,7 @@ elf_x86_64_check_relocs (bfd *abfd, struct bfd_link_info *info,
 	    case R_X86_64_32S:
 	    case R_X86_64_PC64:
 	    case R_X86_64_GOTPCREL:
+	    case R_X86_64_RELAX_GOTPCREL:
 	    case R_X86_64_GOTPCREL64:
 	      if (htab->elf.dynobj == NULL)
 		htab->elf.dynobj = abfd;
@@ -1761,6 +1766,7 @@ elf_x86_64_check_relocs (bfd *abfd, struct bfd_link_info *info,
 
 	case R_X86_64_GOT32:
 	case R_X86_64_GOTPCREL:
+	case R_X86_64_RELAX_GOTPCREL:
 	case R_X86_64_TLSGD:
 	case R_X86_64_GOT64:
 	case R_X86_64_GOTPCREL64:
@@ -3910,6 +3916,7 @@ elf_x86_64_relocate_section (bfd *output_bfd,
 	      goto do_relocation;
 
 	    case R_X86_64_GOTPCREL:
+	    case R_X86_64_RELAX_GOTPCREL:
 	    case R_X86_64_GOTPCREL64:
 	      base_got = htab->elf.sgot;
 	      off = h->got.offset;
@@ -3978,6 +3985,7 @@ elf_x86_64_relocate_section (bfd *output_bfd,
 	  /* Relocation is to the entry for this symbol in the global
 	     offset table.  */
 	case R_X86_64_GOTPCREL:
+	case R_X86_64_RELAX_GOTPCREL:
 	case R_X86_64_GOTPCREL64:
 	  /* Use global offset table entry as symbol value.  */
 	case R_X86_64_GOTPLT64:
@@ -4083,7 +4091,9 @@ elf_x86_64_relocate_section (bfd *output_bfd,
 
 	  relocation = base_got->output_section->vma
 		       + base_got->output_offset + off;
-	  if (r_type != R_X86_64_GOTPCREL && r_type != R_X86_64_GOTPCREL64)
+	  if (r_type != R_X86_64_GOTPCREL
+	      && r_type != R_X86_64_RELAX_GOTPCREL
+	      && r_type != R_X86_64_GOTPCREL64)
 	    relocation -= htab->elf.sgotplt->output_section->vma
 			  - htab->elf.sgotplt->output_offset;
 

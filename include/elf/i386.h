@@ -66,6 +66,7 @@ START_RELOC_NUMBERS (elf_i386_reloc_type)
      RELOC_NUMBER (R_386_TLS_DESC_CALL,40)
      RELOC_NUMBER (R_386_TLS_DESC,     41)
      RELOC_NUMBER (R_386_IRELATIVE,    42) /* Adjust indirectly by program base */
+     RELOC_NUMBER (R_386_RELAX_GOT32,  43) /* Relaxable 32 bit GOT entry */
 
      /* Used by Intel.  */
      RELOC_NUMBER (R_386_USED_BY_INTEL_200, 200)
