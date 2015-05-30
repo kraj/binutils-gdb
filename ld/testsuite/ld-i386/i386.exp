@@ -461,6 +461,22 @@ if { [isnative]
 	    {{readelf {-Wr} pr17827.rd}} \
 	    "pr17827" \
 	] \
+	[list \
+	    "Build got1d.so" \
+	    "-shared" \
+	    "" \
+	    { got1d.S } \
+	    "" \
+	    "got1d.so" \
+	] \
+	[list \
+	    "Build gotpc1" \
+	    "tmpdir/got1d.so" \
+	    "" \
+	    { got1a.S got1b.c got1c.c } \
+	    {{objdump {-dw} got1.dd}} \
+	    "got1" \
+	] \
     ]
 
     run_ld_link_exec_tests [] [list \
@@ -514,6 +530,14 @@ if { [isnative]
 	    { dummy.c } \
 	    "pr17689ver" \
 	    "pr17689.out" \
+	] \
+	[list \
+	    "Run got1" \
+	    "tmpdir/got1d.so" \
+	    "" \
+	    { got1a.S got1b.c got1c.c } \
+	    "got1" \
+	    "got1.out" \
 	] \
     ]
 }
