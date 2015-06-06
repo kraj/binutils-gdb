@@ -5227,10 +5227,10 @@ lin_thread_get_thread_signals (sigset_t *set)
      fortunately they don't change!  */
 
   if (restart == 0)
-    restart = __SIGRTMIN;
+    restart = SIGRTMIN;
 
   if (cancel == 0)
-    cancel = __SIGRTMIN + 1;
+    cancel = SIGRTMIN + 1;
 
   sigaddset (set, restart);
   sigaddset (set, cancel);
