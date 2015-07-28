@@ -178,6 +178,12 @@ struct elf_link_hash_entry
   unsigned int needs_plt : 1;
   /* Symbol appears in a non-ELF input file.  */
   unsigned int non_elf : 1;
+  /* Symbol version information:
+     0: unknown
+     1: unversioned
+     2: versioned
+   */
+  unsigned int versioned : 2;
   /* Symbol should be marked as hidden in the version information.  */
   unsigned int hidden : 1;
   /* Symbol was forced to local scope due to a version script file.  */

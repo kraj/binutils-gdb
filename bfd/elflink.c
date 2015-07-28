@@ -971,15 +971,27 @@ _bfd_elf_merge_symbol (bfd *abfd,
   bed = get_elf_backend_data (abfd);
 
   /* NEW_VERSION is the symbol version of the new symbol.  */
-  new_version = strrchr (name, ELF_VER_CHR);
-  if (new_version)
+  if (h->versioned != 1)
     {
-      if (new_version > name && new_version[-1] != ELF_VER_CHR)
-	h->hidden = 1;
-      new_version += 1;
-      if (new_version[0] == '\0')
-	new_version = NULL;
+      /* Symbol version is unknown or versioned.  */
+      new_version = strrchr (name, ELF_VER_CHR);
+      if (new_version)
+	{
+	  if (h->versioned == 0)
+	    {
+	      h->versioned = 2;
+	      if (new_version > name && new_version[-1] != ELF_VER_CHR)
+		h->hidden = 1;
+	    }
+	  new_version += 1;
+	  if (new_version[0] == '\0')
+	    new_version = NULL;
+	}
+      else
+	h->versioned = 1;
     }
+  else
+    new_version = NULL;
 
   /* For merging, we only care about real symbols.  But we need to make
      sure that indirect symbol dynamic flags are updated.  */
@@ -1008,14 +1020,13 @@ _bfd_elf_merge_symbol (bfd *abfd,
 	    {
 	      /* OLD_VERSION is the symbol version of the existing
 		 symbol. */
-	      char *old_version = strrchr (h->root.root.string,
-					   ELF_VER_CHR);
-	      if (old_version)
-		{
-		  old_version += 1;
-		  if (old_version[0] == '\0')
-		    old_version = NULL;
-		}
+	      char *old_version;
+
+	      if (h->versioned == 2)
+		old_version = strrchr (h->root.root.string,
+				       ELF_VER_CHR) + 1;
+	      else
+		 old_version = NULL;
 
 	      /* The new symbol matches the existing symbol if they
 		 have the same symbol version.  */
@@ -1674,13 +1685,31 @@ _bfd_elf_add_default_symbol (bfd *abfd,
   asection *tmp_sec;
   bfd_boolean matched;
 
+  if (h->versioned == 1 || h->hidden)
+    return TRUE;
+
   /* If this symbol has a version, and it is the default version, we
      create an indirect symbol from the default name to the fully
      decorated name.  This will cause external references which do not
      specify a version to be bound to this version of the symbol.  */
   p = strchr (name, ELF_VER_CHR);
-  if (p == NULL || p[1] != ELF_VER_CHR)
-    return TRUE;
+  if (h->versioned == 0)
+    {
+      if (p == NULL)
+	{
+	  h->versioned = 1;
+	  return TRUE;
+	}
+      else
+	{
+	  h->versioned = 2;
+	  if (p[1] != ELF_VER_CHR)
+	    {
+	      h->hidden = 1;
+	      return TRUE;
+	    }
+	}
+    }
 
   bed = get_elf_backend_data (abfd);
   collect = bed->collect;
@@ -5230,7 +5259,6 @@ elf_collect_hash_codes (struct elf_link_hash_entry *h, void *data)
 {
   struct hash_codes_info *inf = (struct hash_codes_info *) data;
   const char *name;
-  char *p;
   unsigned long ha;
   char *alc = NULL;
 
@@ -5239,18 +5267,21 @@ elf_collect_hash_codes (struct elf_link_hash_entry *h, void *data)
     return TRUE;
 
   name = h->root.root.string;
-  p = strchr (name, ELF_VER_CHR);
-  if (p != NULL)
+  if (h->versioned == 2)
     {
-      alc = (char *) bfd_malloc (p - name + 1);
-      if (alc == NULL)
+      char *p = strchr (name, ELF_VER_CHR);
+      if (p != NULL)
 	{
-	  inf->error = TRUE;
-	  return FALSE;
+	  alc = (char *) bfd_malloc (p - name + 1);
+	  if (alc == NULL)
+	    {
+	      inf->error = TRUE;
+	      return FALSE;
+	    }
+	  memcpy (alc, name, p - name);
+	  alc[p - name] = '\0';
+	  name = alc;
 	}
-      memcpy (alc, name, p - name);
-      alc[p - name] = '\0';
-      name = alc;
     }
 
   /* Compute the hash value.  */
@@ -5298,7 +5329,6 @@ elf_collect_gnu_hash_codes (struct elf_link_hash_entry *h, void *data)
 {
   struct collect_gnu_hash_codes *s = (struct collect_gnu_hash_codes *) data;
   const char *name;
-  char *p;
   unsigned long ha;
   char *alc = NULL;
 
@@ -5311,18 +5341,21 @@ elf_collect_gnu_hash_codes (struct elf_link_hash_entry *h, void *data)
     return TRUE;
 
   name = h->root.root.string;
-  p = strchr (name, ELF_VER_CHR);
-  if (p != NULL)
+  if (h->versioned == 2)
     {
-      alc = (char *) bfd_malloc (p - name + 1);
-      if (alc == NULL)
+      char *p = strchr (name, ELF_VER_CHR);
+      if (p != NULL)
 	{
-	  s->error = TRUE;
-	  return FALSE;
+	  alc = (char *) bfd_malloc (p - name + 1);
+	  if (alc == NULL)
+	    {
+	      s->error = TRUE;
+	      return FALSE;
+	    }
+	  memcpy (alc, name, p - name);
+	  alc[p - name] = '\0';
+	  name = alc;
 	}
-      memcpy (alc, name, p - name);
-      alc[p - name] = '\0';
-      name = alc;
     }
 
   /* Compute the hash value.  */
@@ -12541,7 +12574,7 @@ bfd_elf_gc_mark_dynamic_ref_symbol (struct elf_link_hash_entry *h, void *inf)
 		  || (h->dynamic
 		      && d != NULL
 		      && (*d->match) (&d->head, NULL, h->root.root.string)))
-	      && (strchr (h->root.root.string, ELF_VER_CHR) != NULL
+	      && (h->versioned == 2
 		  || !bfd_hide_sym_by_version (info->version_info,
 					       h->root.root.string)))))
     h->root.u.def.section->flags |= SEC_KEEP;
