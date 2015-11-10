@@ -15,45 +15,41 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#include "trace-common.h"
-
-int globvar;
-
-static void
-begin (void)
-{}
-
-static void
-marker (int anarg)
-{
-  TRACEPOINT_ASM(set_point);
-
-  ++anarg;
-
-  /* Set up a known 4-byte instruction so we can try to set a shorter
-     fast tracepoint at it.  */
-  asm ("    .global " SYMBOL(four_byter) "\n"
-       SYMBOL(four_byter) ":\n"
-#if (defined __i386__)
-       "    cmpl $0x1,0x8(%ebp) \n"
+#ifdef SYMBOL_PREFIX
+#define SYMBOL(str)     SYMBOL_PREFIX #str
+#else
+#define SYMBOL(str)     #str
 #endif
-       );
-}
+
+/* TRACEPOINT_ASM expands to an assembly instruction large enough to fit
+   a fast tracepoint jump.  The parameter is the label where we'll set
+   tracepoints and breakpoints.  */
+
+#if (defined __x86_64__ || defined __i386__)
 
 static void
-end (void)
-{}
-
-int
-main ()
+x86_trace_dummy ()
 {
-  begin ();
-
-  for (globvar = 1; globvar < 11; ++globvar)
-    {
-      marker (globvar * 100);
-    }
-
-  end ();
-  return 0;
+  int x = 0;
+  int y = x + 4;
 }
+
+#define TRACEPOINT_ASM(name) \
+  asm ("    .global " SYMBOL(name) "\n" \
+       SYMBOL(name) ":\n" \
+       "    call " SYMBOL(x86_trace_dummy) "\n" \
+       )
+
+#elif (defined __aarch64__)
+
+#define TRACEPOINT_ASM(name) \
+  asm ("    .global " SYMBOL(name) "\n" \
+       SYMBOL(name) ":\n" \
+       "    nop\n" \
+       )
+
+#else
+
+#error "unsupported architecture for trace tests"
+
+#endif
