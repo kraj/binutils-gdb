@@ -322,6 +322,8 @@ main (int argc, char **argv)
   command_line.warn_mismatch = true;
   command_line.warn_search_mismatch = true;
   command_line.check_section_addresses = -1;
+  command_line.poison_system_directories = true;
+  command_line.error_poison_system_directories = false;
 
   /* We initialize DEMANGLING based on the environment variable
      COLLECT_NO_DEMANGLE.  The gcc collect2 program will demangle the
@@ -1454,7 +1456,7 @@ undefined_symbol (struct bfd_link_info *info,
       argv[1] = "undefined-symbol";
       argv[2] = (char *) name;
       argv[3] = NULL;
-      
+
       if (verbose)
 	einfo (_("%P: About to run error handling script '%s' with arguments: '%s' '%s'\n"),
 	       argv[0], argv[1], argv[2]);
@@ -1475,7 +1477,7 @@ undefined_symbol (struct bfd_link_info *info,
 	 carry on to issue the normal error message.  */
     }
 #endif /* SUPPORT_ERROR_HANDLING_SCRIPT */
-  
+
   if (section != NULL)
     {
       if (error_count < MAX_ERRORS_IN_A_ROW)

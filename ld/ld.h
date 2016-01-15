@@ -163,6 +163,14 @@ typedef struct
      in the linker script.  */
   bool force_group_allocation;
 
+  /* If TRUE (the default) warn for uses of system directories when
+     cross linking.  */
+  bool poison_system_directories;
+
+  /* If TRUE (default FALSE) give an error for uses of system
+     directories when cross linking instead of a warning.  */
+  bool error_poison_system_directories;
+
   /* Big or little endian as set on command line.  */
   enum endian_enum endian;
 
