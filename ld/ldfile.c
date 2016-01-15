@@ -344,6 +344,22 @@ ldfile_add_library_path (const char *name, enum search_dir_source source)
       search_tail_ptr = &new_dirs->next;
     }
 
+#ifdef ENABLE_POISON_SYSTEM_DIRECTORIES
+  if (command_line.poison_system_directories
+  && ((!strncmp (name, "/lib", 4))
+      || (!strncmp (name, "/usr/lib", 8))
+      || (!strncmp (name, "/usr/local/lib", 14))
+      || (!strncmp (name, "/usr/X11R6/lib", 14))))
+   {
+     if (command_line.error_poison_system_directories)
+       einfo (_("%X%P: error: library search path \"%s\" is unsafe for "
+            "cross-compilation\n"), name);
+     else
+       einfo (_("%P: warning: library search path \"%s\" is unsafe for "
+            "cross-compilation\n"), name);
+   }
+#endif
+
   return new_dirs;
 }
 
