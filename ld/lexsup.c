@@ -572,6 +572,26 @@ static const struct ld_option ld_options[] =
   { {"no-print-map-discarded", no_argument, NULL, OPTION_NO_PRINT_MAP_DISCARDED},
     '\0', NULL, N_("Do not show discarded sections in map file output"),
     TWO_DASHES },
+  { {"ctf-variables", no_argument, NULL, OPTION_CTF_VARIABLES},
+    '\0', NULL, N_("Emit names and types of static variables in CTF"),
+    TWO_DASHES },
+  { {"no-ctf-variables", no_argument, NULL, OPTION_NO_CTF_VARIABLES},
+    '\0', NULL, N_("Do not emit names and types of static variables in CTF"),
+    TWO_DASHES },
+  { {"ctf-share-types=<method>", required_argument, NULL,
+     OPTION_CTF_SHARE_TYPES},
+    '\0', NULL, N_("How to share CTF types between translation units.\n"
+		   "                                <method> is: share-unconflicted (default),\n"
+		   "                                             share-duplicated"),
+    TWO_DASHES },
+  { {"no-poison-system-directories", no_argument, NULL,
+     OPTION_NO_POISON_SYSTEM_DIRECTORIES},
+    '\0', NULL, N_("Do not warn for -L options using system directories"),
+    TWO_DASHES },
+  { {"error-poison-system-directories", no_argument, NULL,
+    +     OPTION_ERROR_POISON_SYSTEM_DIRECTORIES},
+    '\0', NULL, N_("Give an error for -L options using system directories"),
+    TWO_DASHES },
 };
 
 #define OPTION_COUNT ARRAY_SIZE (ld_options)
@@ -1632,6 +1652,13 @@ parse_args (unsigned argc, char **argv)
 
 	case OPTION_PRINT_MAP_DISCARDED:
 	  config.print_map_discarded = TRUE;
+
+	case OPTION_NO_POISON_SYSTEM_DIRECTORIES:
+	  command_line.poison_system_directories = FALSE;
+	  break;
+
+	case OPTION_ERROR_POISON_SYSTEM_DIRECTORIES:
+	  command_line.error_poison_system_directories = TRUE;
 	  break;
 
 	case OPTION_DEPENDENCY_FILE:
