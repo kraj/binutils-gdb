@@ -2052,8 +2052,11 @@ elf32_arm_nabi_grok_psinfo (bfd *abfd, Elf_Internal_Note *note)
 
 static char *
 elf32_arm_nabi_write_core_note (bfd *abfd, char *buf, int *bufsiz,
-				int note_type, ...)
+				enum elf_os os, int note_type, ...)
 {
+  if (os != os_linux)
+    abort ();
+
   switch (note_type)
     {
     default:

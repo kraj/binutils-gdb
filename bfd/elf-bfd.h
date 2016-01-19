@@ -749,6 +749,15 @@ enum action_discarded
     PRETEND = 2
   };
 
+enum elf_os
+  {
+    os_unknown = 0,
+    os_linux,
+    os_freebsd,
+    os_netbsd,
+    os_openbsd
+  };
+
 typedef asection * (*elf_gc_mark_hook_fn)
   (asection *, struct bfd_link_info *, Elf_Internal_Rela *,
    struct elf_link_hash_entry *, Elf_Internal_Sym *);
@@ -1192,7 +1201,7 @@ struct elf_backend_data
 
   /* This function, if defined, is called to write a note to a corefile.  */
   char *(*elf_backend_write_core_note)
-    (bfd *abfd, char *buf, int *bufsiz, int note_type, ...);
+    (bfd *abfd, char *buf, int *bufsiz, enum elf_os, int note_type, ...);
 
   /* This function, if defined, is called to convert target-specific
      section flag names into hex values.  */
@@ -2351,9 +2360,9 @@ extern Elf_Internal_Phdr * _bfd_elf_find_segment_containing_section
 extern char *elfcore_write_note
   (bfd *, char *, int *, const char *, int, const void *, int);
 extern char *elfcore_write_prpsinfo
-  (bfd *, char *, int *, const char *, const char *);
+  (bfd *, enum elf_os, char *, int *, const char *, const char *);
 extern char *elfcore_write_prstatus
-  (bfd *, char *, int *, long, int, const void *);
+  (bfd *, enum elf_os, char *, int *, long, int, const void *);
 extern char * elfcore_write_pstatus
   (bfd *, char *, int *, long, int, const void *);
 extern char *elfcore_write_prfpreg

@@ -2310,8 +2310,12 @@ elfcore_write_ppc_linux_prpsinfo32 (bfd *abfd, char *buf, int *bufsiz,
 }
 
 static char *
-ppc_elf_write_core_note (bfd *abfd, char *buf, int *bufsiz, int note_type, ...)
+ppc_elf_write_core_note (bfd *abfd, char *buf, int *bufsiz,
+			 enum elf_os os, int note_type, ...)
 {
+  if (os != os_linux)
+    abort ();
+
   switch (note_type)
     {
     default:

@@ -440,7 +440,7 @@ elf_x86_64_grok_psinfo (bfd *abfd, Elf_Internal_Note *note)
 #ifdef CORE_HEADER
 static char *
 elf_x86_64_write_core_note (bfd *abfd, char *buf, int *bufsiz,
-			    int note_type, ...)
+			    enum elf_os os, int note_type, ...)
 {
   const struct elf_backend_data *bed = get_elf_backend_data (abfd);
   va_list ap;
@@ -448,6 +448,9 @@ elf_x86_64_write_core_note (bfd *abfd, char *buf, int *bufsiz,
   long pid;
   int cursig;
   const void *gregs;
+
+  if (os != os_linux)
+    abort ();
 
   switch (note_type)
     {

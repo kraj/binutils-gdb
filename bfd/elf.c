@@ -9727,6 +9727,7 @@ elfcore_write_note (bfd *abfd,
 
 char *
 elfcore_write_prpsinfo (bfd  *abfd,
+			enum elf_os os,
 			char *buf,
 			int  *bufsiz,
 			const char *fname,
@@ -9738,7 +9739,8 @@ elfcore_write_prpsinfo (bfd  *abfd,
     {
       char *ret;
       ret = (*bed->elf_backend_write_core_note) (abfd, buf, bufsiz,
-						 NT_PRPSINFO, fname, psargs);
+						 os, NT_PRPSINFO,
+						 fname, psargs);
       if (ret != NULL)
 	return ret;
     }
@@ -9814,6 +9816,7 @@ elfcore_write_linux_prpsinfo64
 
 char *
 elfcore_write_prstatus (bfd *abfd,
+			enum elf_os os,
 			char *buf,
 			int *bufsiz,
 			long pid,
@@ -9826,7 +9829,7 @@ elfcore_write_prstatus (bfd *abfd,
     {
       char *ret;
       ret = (*bed->elf_backend_write_core_note) (abfd, buf, bufsiz,
-						 NT_PRSTATUS,
+						 os, NT_PRSTATUS,
 						 pid, cursig, gregs);
       if (ret != NULL)
 	return ret;

@@ -137,7 +137,7 @@ fbsd_collect_regset_section_cb (const char *sect_name, int size,
   /* PRSTATUS still needs to be treated specially.  */
   if (strcmp (sect_name, ".reg") == 0)
     data->note_data = (char *) elfcore_write_prstatus
-      (data->obfd, data->note_data, data->note_size, data->lwp,
+      (data->obfd, os_freebsd, data->note_data, data->note_size, data->lwp,
        gdb_signal_to_host (data->stop_signal), buf);
   else
     data->note_data = (char *) elfcore_write_register_note
@@ -232,8 +232,8 @@ fbsd_make_corefile_notes (struct gdbarch *gdbarch, bfd *obfd, int *note_size)
 	psargs = reconcat (psargs, psargs, " ", get_inferior_args (),
 			   (char *) NULL);
 
-      note_data = elfcore_write_prpsinfo (obfd, note_data, note_size,
-					  fname, psargs);
+      note_data = elfcore_write_prpsinfo (obfd, os_freebsd, note_data,
+					  note_size, fname, psargs);
     }
 
   /* Thread register information.  */

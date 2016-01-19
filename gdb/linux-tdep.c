@@ -1565,7 +1565,7 @@ linux_collect_regset_section_cb (const char *sect_name, int size,
   /* PRSTATUS still needs to be treated specially.  */
   if (strcmp (sect_name, ".reg") == 0)
     data->note_data = (char *) elfcore_write_prstatus
-      (data->obfd, data->note_data, data->note_size, data->lwp,
+      (data->obfd, os_linux, data->note_data, data->note_size, data->lwp,
        gdb_signal_to_host (data->stop_signal), buf);
   else
     data->note_data = (char *) elfcore_write_register_note
