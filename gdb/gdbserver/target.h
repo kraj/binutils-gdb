@@ -28,6 +28,7 @@
 #include "target/waitstatus.h"
 #include "mem-break.h"
 #include "btrace-common.h"
+#include <sys/types.h>
 
 struct emit_ops;
 struct buffer;
