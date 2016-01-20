@@ -29,6 +29,7 @@
 #include "mem-break.h"
 #include "btrace-common.h"
 #include <vector>
+#include <sys/types.h>
 
 struct emit_ops;
 struct buffer;
