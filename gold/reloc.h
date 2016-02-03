@@ -488,6 +488,36 @@ private:
   typedef Relocate_functions<size, big_endian> This;
 
 public:
+  typedef typename elfcpp::Elf_types<size>::Elf_Addr Address;
+  template<int valsize>
+  static inline bool
+  has_overflow_signed(Address value)
+  {
+    // limit = 1 << (valsize - 1) without shift count exceeding size of type
+    Address limit = static_cast<Address>(1) << ((valsize - 1) >> 1);
+    limit <<= ((valsize - 1) >> 1);
+    limit <<= ((valsize - 1) - 2 * ((valsize - 1) >> 1));
+    return value + limit > (limit << 1) - 1;
+  }
+
+  template<int valsize>
+  static inline bool
+  has_overflow_unsigned(Address value)
+  {
+    Address limit = static_cast<Address>(1) << ((valsize - 1) >> 1);
+    limit <<= ((valsize - 1) >> 1);
+    limit <<= ((valsize - 1) - 2 * ((valsize - 1) >> 1));
+    return value > (limit << 1) - 1;
+  }
+
+  template<int valsize>
+  static inline bool
+  has_overflow_bitfield(Address value)
+  {
+    return (has_overflow_unsigned<valsize>(value)
+	    && has_overflow_signed<valsize>(value));
+  }
+
   // Do a simple 8-bit REL relocation with the addend in the section
   // contents.
   static inline void

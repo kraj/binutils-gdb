@@ -1518,37 +1518,9 @@ public:
 
 private:
   typedef Powerpc_relocate_functions<size, big_endian> This;
+  typedef Relocate_functions<size, big_endian> RelocFuncs;
   typedef typename elfcpp::Elf_types<size>::Elf_Addr Address;
   typedef typename elfcpp::Elf_types<size>::Elf_Swxword SignedAddress;
-
-  template<int valsize>
-  static inline bool
-  has_overflow_signed(Address value)
-  {
-    // limit = 1 << (valsize - 1) without shift count exceeding size of type
-    Address limit = static_cast<Address>(1) << ((valsize - 1) >> 1);
-    limit <<= ((valsize - 1) >> 1);
-    limit <<= ((valsize - 1) - 2 * ((valsize - 1) >> 1));
-    return value + limit > (limit << 1) - 1;
-  }
-
-  template<int valsize>
-  static inline bool
-  has_overflow_unsigned(Address value)
-  {
-    Address limit = static_cast<Address>(1) << ((valsize - 1) >> 1);
-    limit <<= ((valsize - 1) >> 1);
-    limit <<= ((valsize - 1) - 2 * ((valsize - 1) >> 1));
-    return value > (limit << 1) - 1;
-  }
-
-  template<int valsize>
-  static inline bool
-  has_overflow_bitfield(Address value)
-  {
-    return (has_overflow_unsigned<valsize>(value)
-	    && has_overflow_signed<valsize>(value));
-  }
 
   template<int valsize>
   static inline Status
@@ -1556,17 +1528,17 @@ private:
   {
     if (overflow == CHECK_SIGNED)
       {
-	if (has_overflow_signed<valsize>(value))
+	if (RelocFuncs::template has_overflow_signed<valsize>(value))
 	  return STATUS_OVERFLOW;
       }
     else if (overflow == CHECK_UNSIGNED)
       {
-	if (has_overflow_unsigned<valsize>(value))
+	if (RelocFuncs::template has_overflow_unsigned<valsize>(value))
 	  return STATUS_OVERFLOW;
       }
     else if (overflow == CHECK_BITFIELD)
       {
-	if (has_overflow_bitfield<valsize>(value))
+	if (RelocFuncs::template has_overflow_bitfield<valsize>(value))
 	  return STATUS_OVERFLOW;
       }
     return STATUS_OK;
