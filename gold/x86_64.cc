@@ -3411,6 +3411,14 @@ Target_x86_64<size>::Relocate::relocate(
 
   const elfcpp::Elf_Xword addend = rela.get_r_addend();
 
+  typename elfcpp::Elf_types<size>::Elf_Addr value = 0;
+  enum Overflow_check
+  {
+    CHECK_NONE,
+    CHECK_SIGNED32,
+    CHECK_UNSIGNED32
+  } overflow = CHECK_NONE;
+
   // Get the GOT offset if needed.
   // The GOT pointer points to the end of the GOT section.
   // We need to subtract the size of the GOT section to get
@@ -3461,24 +3469,22 @@ Target_x86_64<size>::Relocate::relocate(
       break;
 
     case elfcpp::R_X86_64_32:
-      // FIXME: we need to verify that value + addend fits into 32 bits:
-      //    uint64_t x = value + addend;
-      //    x == static_cast<uint64_t>(static_cast<uint32_t>(x))
-      // Likewise for other <=32-bit relocations (but see R_X86_64_32S).
-      Relocate_functions<size, false>::rela32(view, object, psymval, addend);
+      value = psymval->value(object, addend);
+      Relocate_functions<size, false>::rela32(view, value, 0);
+      overflow = CHECK_UNSIGNED32;
       break;
 
     case elfcpp::R_X86_64_32S:
-      // FIXME: we need to verify that value + addend fits into 32 bits:
-      //    int64_t x = value + addend;   // note this quantity is signed!
-      //    x == static_cast<int64_t>(static_cast<int32_t>(x))
-      Relocate_functions<size, false>::rela32(view, object, psymval, addend);
+      value = psymval->value(object, addend);
+      Relocate_functions<size, false>::rela32(view, value, 0);
+      overflow = CHECK_SIGNED32;
       break;
 
     case elfcpp::R_X86_64_PC32:
     case elfcpp::R_X86_64_PC32_BND:
-      Relocate_functions<size, false>::pcrela32(view, object, psymval, addend,
-						address);
+      value = psymval->value(object, addend) - address;
+      Relocate_functions<size, false>::pcrela32(view, value, 0, 0);
+      overflow = CHECK_SIGNED32;
       break;
 
     case elfcpp::R_X86_64_16:
@@ -3510,8 +3516,9 @@ Target_x86_64<size>::Relocate::relocate(
       // Note: while this code looks the same as for R_X86_64_PC32, it
       // behaves differently because psymval was set to point to
       // the PLT entry, rather than the symbol, in Scan::global().
-      Relocate_functions<size, false>::pcrela32(view, object, psymval, addend,
-						address);
+      value = psymval->value(object, addend) - address;
+      Relocate_functions<size, false>::pcrela32(view, value, 0, 0);
+      overflow = CHECK_SIGNED32;
       break;
 
     case elfcpp::R_X86_64_PLTOFF64:
@@ -3529,16 +3536,16 @@ Target_x86_64<size>::Relocate::relocate(
 
     case elfcpp::R_X86_64_GOT32:
       gold_assert(have_got_offset);
-      Relocate_functions<size, false>::rela32(view, got_offset, addend);
+      value = got_offset + addend;
+      Relocate_functions<size, false>::rela32(view, value, 0);
+      overflow = CHECK_UNSIGNED32;
       break;
 
     case elfcpp::R_X86_64_GOTPC32:
-      {
-	gold_assert(gsym);
-	typename elfcpp::Elf_types<size>::Elf_Addr value;
-	value = target->got_plt_section()->address();
-	Relocate_functions<size, false>::pcrela32(view, value, addend, address);
-      }
+      gold_assert(gsym);
+      value = target->got_plt_section()->address() + addend - address;
+      Relocate_functions<size, false>::pcrela32(view, value, 0, 0);
+      overflow = CHECK_SIGNED32;
       break;
 
     case elfcpp::R_X86_64_GOT64:
@@ -3570,7 +3577,6 @@ Target_x86_64<size>::Relocate::relocate(
     case elfcpp::R_X86_64_GOTPCREL:
     case elfcpp::R_X86_64_GOTPCRELX:
     case elfcpp::R_X86_64_REX_GOTPCRELX:
-      {
       // Convert
       // mov foo@GOTPCREL(%rip), %reg
       // to lea foo(%rip), %reg.
@@ -3582,8 +3588,8 @@ Target_x86_64<size>::Relocate::relocate(
 		  && Target_x86_64<size>::can_convert_mov_to_lea(gsym))))
 	{
 	  view[-2] = 0x8d;
-	  Relocate_functions<size, false>::pcrela32(view, object, psymval, addend,
-						    address);
+	  value = psymval->value(object, addend);
+	  r_type = elfcpp::R_X86_64_PC32;
 	}
       else
 	{
@@ -3599,11 +3605,11 @@ Target_x86_64<size>::Relocate::relocate(
 	      got_offset = (object->local_got_offset(r_sym, GOT_TYPE_STANDARD)
 			    - target->got_size());
 	    }
-	  typename elfcpp::Elf_types<size>::Elf_Addr value;
-	  value = target->got_plt_section()->address() + got_offset;
-	  Relocate_functions<size, false>::pcrela32(view, value, addend, address);
+	  value = target->got_plt_section()->address() + got_offset + addend;
 	}
-      }
+      value = value - address;
+      Relocate_functions<size, false>::pcrela32(view, value, 0, 0);
+      overflow = CHECK_SIGNED32;
       break;
 
     case elfcpp::R_X86_64_GOTPCREL64:
@@ -3650,6 +3656,14 @@ Target_x86_64<size>::Relocate::relocate(
 			     r_type);
       break;
     }
+
+  typedef Relocate_functions<size, 32> RelocFuncs32;
+  if ((overflow == CHECK_SIGNED32
+       && RelocFuncs32::template has_overflow_signed<32>(value))
+      || (overflow == CHECK_UNSIGNED32
+	  && RelocFuncs32::template has_overflow_unsigned<32>(value)))
+    gold_error_at_location(relinfo, relnum, rela.get_r_offset(),
+			   _("relocation type %u overflow"), r_type);
 
   return true;
 }
