@@ -1259,6 +1259,8 @@ static const unsigned int mips_isa_table[] = {
 #define INSN_XLR                 0x00000020
 /* Imagination interAptiv MR2.  */
 #define INSN_INTERAPTIV_MR2	  0x04000000
+/* Netlogic XlP instruction */
+#define INSN_XLP		0x00000080
 
 /* DSP ASE */
 #define ASE_DSP			0x00000001
@@ -1365,6 +1367,7 @@ static const unsigned int mips_isa_table[] = {
 #define CPU_OCTEON3	6503
 #define CPU_XLR     	887682   	/* decimal 'XLR'   */
 #define CPU_INTERAPTIV_MR2 736550	/* decimal 'IA2'  */
+#define CPU_XLP         887680      /* decimal 'XLP'   */
 
 /* Return true if the given CPU is included in INSN_* mask MASK.  */
 
@@ -1444,6 +1447,9 @@ cpu_is_member (int cpu, unsigned int mask)
     case CPU_MIPS64R6:
       return ((mask & INSN_ISA_MASK) == INSN_ISA32R6)
 	     || ((mask & INSN_ISA_MASK) == INSN_ISA64R6);
+
+    case CPU_XLP:
+      return (mask & INSN_XLP) != 0;
 
     default:
       return FALSE;
