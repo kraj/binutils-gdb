@@ -3444,7 +3444,7 @@ case "${target}" in
     ;;
   s390-*-* | s390x-*-*)
     ;;
-  sh*-*-* | sh[34]*-*-*)
+  sh-*-* | sh[34]*-*-*)
     ;;
   sh64-*-* | sh5*-*-*)
     ;;
@@ -3946,7 +3946,7 @@ case "${target}" in
   or1k*-*-*)
     noconfigdirs="$noconfigdirs gdb"
     ;;
-  sh*-*-* | sh64-*-*)
+  sh-*-* | sh64-*-*)
     case "${target}" in
       sh*-*-elf)
          ;;
