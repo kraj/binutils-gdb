@@ -552,6 +552,7 @@ static int mips_32bitmode = 0;
    || mips_opts.arch == CPU_RM7000                    \
    || mips_opts.arch == CPU_VR5500                    \
    || mips_opts.micromips                             \
+   || mips_opts.arch == CPU_XLP                       \
    )
 
 /* Whether the processor uses hardware interlocks to protect reads
@@ -581,6 +582,7 @@ static int mips_32bitmode = 0;
     && mips_opts.isa != ISA_MIPS3)                    \
    || mips_opts.arch == CPU_R4300                     \
    || mips_opts.micromips                             \
+   || mips_opts.arch == CPU_XLP                       \
    )
 
 /* Whether the processor uses hardware interlocks to protect reads
@@ -19409,7 +19411,7 @@ static const struct mips_cpu_info mips_cpu_info_table[] =
   /* Broadcom XLP.
      XLP is mostly like XLR, with the prominent exception that it is
      MIPS64R2 rather than MIPS64.  */
-  { "xlp",	      0, 0,			ISA_MIPS64R2, CPU_XLR },
+  { "xlp",	      0, 0,			ISA_MIPS64R2, CPU_XLP },
 
   /* MIPS 64 Release 6 */
   { "i6400",	      0, ASE_MSA,		ISA_MIPS64R6, CPU_MIPS64R6},

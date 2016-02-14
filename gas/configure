@@ -12989,6 +12989,9 @@ _ACEOF
 	  mipsisa64r6 | mipsisa64r6el)
 	    mips_cpu=mips64r6
 	    ;;
+	  mipsisa64r2nlm | mipsisa64r2nlmel)
+		mips_cpu=xlp
+		;;
 	  mipstx39 | mipstx39el)
 	    mips_cpu=r3900
 	    ;;
