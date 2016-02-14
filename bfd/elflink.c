@@ -6072,6 +6072,9 @@ bfd_elf_size_dynamic_sections (bfd *output_bfd,
 					      bed->s->sizeof_sym))
 	    return FALSE;
 	}
+
+      elf_hash_table (info)->has_interp_section
+	= bfd_get_section_by_name (dynobj, ".interp") != NULL;
     }
 
   if (! _bfd_elf_maybe_strip_eh_frame_hdr (info))

@@ -499,6 +499,9 @@ struct elf_link_hash_table
      when linking against or generating a shared object.  */
   bfd_boolean dynamic_sections_created;
 
+  /* Whether there is a .interp section.  */
+  bfd_boolean has_interp_section;
+
   /* True if this target has relocatable executables, so needs dynamic
      section symbols.  */
   bfd_boolean is_relocatable_executable;
