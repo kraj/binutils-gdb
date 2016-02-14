@@ -1157,7 +1157,7 @@ mips_opcode_32bit_p (const struct mips_opcode *mo)
 #define INSN_ISA32R3              8
 #define INSN_ISA32R5              9
 #define INSN_ISA32R6              10
-#define INSN_ISA64                11 
+#define INSN_ISA64                11
 #define INSN_ISA64R2              12
 #define INSN_ISA64R3              13
 #define INSN_ISA64R5              14
@@ -1265,6 +1265,8 @@ static const unsigned int mips_isa_table[] = {
 #define INSN_XLR                 0x00000020
 /* Imagination interAptiv MR2.  */
 #define INSN_INTERAPTIV_MR2	  0x04000000
+/* Netlogic XlP instruction */
+#define INSN_XLP		0x00000080
 
 /* DSP ASE */
 #define ASE_DSP			0x00000001
@@ -1389,6 +1391,7 @@ static const unsigned int mips_isa_table[] = {
 #define CPU_OCTEON3	6503
 #define CPU_XLR     	887682   	/* decimal 'XLR'   */
 #define CPU_INTERAPTIV_MR2 736550	/* decimal 'IA2'  */
+#define CPU_XLP         887680      /* decimal 'XLP'   */
 
 /* Return true if the given CPU is included in INSN_* mask MASK.  */
 
@@ -1458,6 +1461,9 @@ cpu_is_member (int cpu, unsigned int mask)
 
     case CPU_INTERAPTIV_MR2:
       return (mask & INSN_INTERAPTIV_MR2) != 0;
+
+    case CPU_XLP:
+      return (mask & INSN_XLP) != 0;
 
     default:
       return false;
