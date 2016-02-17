@@ -1010,6 +1010,15 @@ record_full_resume (struct target_ops *ops, ptid_t ptid, int step,
     target_async (1);
 }
 
+/* "to_do_resume" method for process record target.  */
+
+static void
+record_full_do_resume (struct target_ops *ops)
+{
+  if (!RECORD_FULL_IS_REPLAY)
+    ops->beneath->to_do_resume (ops->beneath);
+}
+
 static int record_full_get_sig = 0;
 
 /* SIGINT signal handler, registered by "to_wait" method.  */
@@ -1180,6 +1189,7 @@ record_full_wait_1 (struct target_ops *ops,
 					    "target beneath\n");
 		      ops->beneath->to_resume (ops->beneath, ptid, step,
 					       GDB_SIGNAL_0);
+		      ops->beneath->to_do_resume (ops->beneath);
 		      continue;
 		    }
 		}
@@ -1956,6 +1966,7 @@ init_record_full_ops (void)
   record_full_ops.to_close = record_full_close;
   record_full_ops.to_async = record_full_async;
   record_full_ops.to_resume = record_full_resume;
+  record_full_ops.to_do_resume = record_full_do_resume;
   record_full_ops.to_wait = record_full_wait;
   record_full_ops.to_disconnect = record_disconnect;
   record_full_ops.to_detach = record_detach;
