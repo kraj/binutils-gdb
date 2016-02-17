@@ -1406,7 +1406,8 @@ record_btrace_insert_breakpoint (struct target_ops *ops,
 static int
 record_btrace_remove_breakpoint (struct target_ops *ops,
 				 struct gdbarch *gdbarch,
-				 struct bp_target_info *bp_tgt)
+				 struct bp_target_info *bp_tgt,
+				 enum remove_bp_reason reason)
 {
   const char *old;
   int ret;
@@ -1419,7 +1420,8 @@ record_btrace_remove_breakpoint (struct target_ops *ops,
   ret = 0;
   TRY
     {
-      ret = ops->beneath->to_remove_breakpoint (ops->beneath, gdbarch, bp_tgt);
+      ret = ops->beneath->to_remove_breakpoint (ops->beneath, gdbarch, bp_tgt,
+						reason);
     }
   CATCH (except, RETURN_MASK_ALL)
     {

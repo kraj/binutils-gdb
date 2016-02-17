@@ -2387,13 +2387,14 @@ mips_insert_breakpoint (struct target_ops *ops, struct gdbarch *gdbarch,
 
 static int
 mips_remove_breakpoint (struct target_ops *ops, struct gdbarch *gdbarch,
-			struct bp_target_info *bp_tgt)
+			struct bp_target_info *bp_tgt,
+			enum remove_bp_reason reason)
 {
   if (monitor_supports_breakpoints)
     return mips_clear_breakpoint (bp_tgt->placed_address, MIPS_INSN32_SIZE,
 				  BREAK_FETCH);
   else
-    return memory_remove_breakpoint (ops, gdbarch, bp_tgt);
+    return memory_remove_breakpoint (ops, gdbarch, bp_tgt, reason);
 }
 
 /* Tell whether this target can support a hardware breakpoint.  CNT

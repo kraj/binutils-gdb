@@ -1216,7 +1216,8 @@ m32r_insert_breakpoint (struct target_ops *ops,
 static int
 m32r_remove_breakpoint (struct target_ops *ops,
 			struct gdbarch *gdbarch,
-			struct bp_target_info *bp_tgt)
+			struct bp_target_info *bp_tgt,
+			enum remove_bp_reason reason)
 {
   CORE_ADDR addr = bp_tgt->placed_address;
   int i;

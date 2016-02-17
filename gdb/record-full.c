@@ -1684,7 +1684,8 @@ record_full_insert_breakpoint (struct target_ops *ops,
 static int
 record_full_remove_breakpoint (struct target_ops *ops,
 			       struct gdbarch *gdbarch,
-			       struct bp_target_info *bp_tgt)
+			       struct bp_target_info *bp_tgt,
+			       enum remove_bp_reason reason)
 {
   struct record_full_breakpoint *bp;
   int ix;
@@ -1704,7 +1705,7 @@ record_full_remove_breakpoint (struct target_ops *ops,
 
 	      old_cleanups = record_full_gdb_operation_disable_set ();
 	      ret = ops->beneath->to_remove_breakpoint (ops->beneath, gdbarch,
-							bp_tgt);
+							bp_tgt, reason);
 	      do_cleanups (old_cleanups);
 
 	      if (ret != 0)
@@ -2171,7 +2172,8 @@ record_full_core_insert_breakpoint (struct target_ops *ops,
 static int
 record_full_core_remove_breakpoint (struct target_ops *ops,
 				    struct gdbarch *gdbarch,
-				    struct bp_target_info *bp_tgt)
+				    struct bp_target_info *bp_tgt,
+				    enum remove_bp_reason reason)
 {
   return 0;
 }
