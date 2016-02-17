@@ -4465,6 +4465,33 @@ linux_set_resume_request (struct inferior_list_entry *entry, void *arg)
 	      continue;
 	    }
 
+	  /* Ignore (wildcard) resume requests for already-resumed
+	     requests.  */
+	  if (r->resume[ndx].kind != resume_stop
+	      && thread->last_resume_kind != resume_stop)
+	    {
+	      if (debug_threads)
+		debug_printf ("already %s LWP %ld at GDB's request\n",
+			      (thread->last_resume_kind
+			       == resume_step)
+			      ? "stepping"
+			      : "continuing",
+			      lwpid_of (thread));
+	      continue;
+	    }
+
+	  /* If the thread has a pending event that has already been
+	     reported to GDBserver core, but GDB has not pulled the
+	     event out of the vStopped queue yet, likewise, ignore the
+	     (wildcard) resume request.  */
+	  if (in_queued_stop_replies (entry->id))
+	    {
+	      if (debug_threads)
+		debug_printf ("not resuming LWP %ld: has queued stop reply\n",
+			      lwpid_of (thread));
+	      continue;
+	    }
+
 	  lwp->resume = &r->resume[ndx];
 	  thread->last_resume_kind = lwp->resume->kind;
 
