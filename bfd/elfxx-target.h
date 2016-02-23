@@ -120,6 +120,9 @@
 #ifndef elf_backend_extern_protected_data
 #define elf_backend_extern_protected_data 0
 #endif
+#ifndef elf_backend_dynamic_undefined_weak
+#define elf_backend_dynamic_undefined_weak 1
+#endif
 #ifndef elf_backend_stack_align
 #define elf_backend_stack_align 16
 #endif
@@ -824,7 +827,8 @@ static struct elf_backend_data elfNN_bed =
   elf_backend_want_p_paddr_set_to_zero,
   elf_backend_default_execstack,
   elf_backend_caches_rawsize,
-  elf_backend_extern_protected_data
+  elf_backend_extern_protected_data,
+  elf_backend_dynamic_undefined_weak
 };
 
 /* Forward declaration for use when initialising alternative_target field.  */

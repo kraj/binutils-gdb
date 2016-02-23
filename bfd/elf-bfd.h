@@ -1434,6 +1434,10 @@ struct elf_backend_data
   /* Address of protected data defined in the shared library may be
      external, i.e., due to copy relocation.   */
   unsigned extern_protected_data : 1;
+
+  /* Undefined weak symbol in the executable is dynamic, i.e, requires
+     dynamic relocation.  */
+  unsigned dynamic_undefined_weak : 1;
 };
 
 /* Information about reloc sections associated with a bfd_elf_section_data

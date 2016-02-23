@@ -6360,6 +6360,7 @@ static const struct bfd_elf_special_section
 #define elf_backend_rela_normal		    1
 #define elf_backend_plt_alignment           4
 #define elf_backend_extern_protected_data   1
+#define elf_backend_dynamic_undefined_weak  0
 
 #define elf_info_to_howto		    elf_x86_64_info_to_howto
 
