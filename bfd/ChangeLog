@@ -1,6 +1,20 @@
 2016-03-14  H.J. Lu  <hongjiu.lu@intel.com>
 
 	Backport from master
+	2016-02-23  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* elflink.c (bfd_elf_record_link_assignment): Check for shared
+	library, instead of PIC, and don't check PDE when making linker
+	assigned symbol dynamic.
+
+	2016-02-22  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* elflink.c (_bfd_elf_link_renumber_dynsyms): Always create the
+	dynsym section, even if it is empty, with dynamic sections.
+
+2016-03-14  H.J. Lu  <hongjiu.lu@intel.com>
+
+	Backport from master
 	2016-01-30  H.J. Lu  <hongjiu.lu@intel.com>
 
 	PR ld/19539
