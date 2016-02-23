@@ -2873,7 +2873,11 @@ elf_x86_64_allocate_dynrelocs (struct elf_link_hash_entry *h, void * inf)
 	 dynamic.  Keep dynamic relocations for run-time function
 	 pointer initialization.  */
 
-      if ((!h->non_got_ref || eh->func_pointer_refcount > 0)
+      if ((!h->non_got_ref
+	   || eh->func_pointer_refcount > 0
+	   || (bfd_link_executable (info)
+	       && htab->elf.has_interp_section
+	       && h->root.type == bfd_link_hash_undefweak))
 	  && ((h->def_dynamic
 	       && !h->def_regular)
 	      || (htab->elf.dynamic_sections_created
@@ -4604,7 +4608,11 @@ direct:
 		  && !bfd_link_pic (info)
 		  && h != NULL
 		  && h->dynindx != -1
-		  && (!h->non_got_ref || eh->func_pointer_refcount > 0)
+		  && (!h->non_got_ref
+		      || eh->func_pointer_refcount > 0
+		      || (bfd_link_executable (info)
+			  && htab->elf.has_interp_section
+			  && h->root.type == bfd_link_hash_undefweak))
 		  && ((h->def_dynamic
 		       && !h->def_regular)
 		      || h->root.type == bfd_link_hash_undefweak

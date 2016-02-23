@@ -2663,6 +2663,18 @@ _bfd_elf_adjust_dynamic_symbol (struct elf_link_hash_entry *h, void *data)
   if (! _bfd_elf_fix_symbol_flags (h, eif))
     return FALSE;
 
+  /* Remove undefined weak symbol from the dynamic symbol table in
+     executable if there is no program interpreter.  */
+  if (h->root.type == bfd_link_hash_undefweak
+      && bfd_link_executable (eif->info)
+      && h->dynindx != -1
+      && !elf_hash_table (eif->info)->has_interp_section)
+    {
+      h->dynindx = -1;
+      _bfd_elf_strtab_delref (elf_hash_table (eif->info)->dynstr,
+			      h->dynstr_index);
+    }
+
   /* If this symbol does not require a PLT entry, and it is not
      defined by a dynamic object, or is not referenced by a regular
      object, ignore it.  We do have to handle a weak defined symbol,
@@ -6059,6 +6071,9 @@ bfd_elf_size_dynamic_sections (bfd *output_bfd,
 					      bed->s->sizeof_sym))
 	    return FALSE;
 	}
+
+      elf_hash_table (info)->has_interp_section
+	= bfd_get_section_by_name (dynobj, ".interp") != NULL;
     }
 
   if (! _bfd_elf_maybe_strip_eh_frame_hdr (info))
