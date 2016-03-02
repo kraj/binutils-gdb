@@ -4332,6 +4332,10 @@ error_free_dyn:
 	    h->root.u.c.p->alignment_power = align;
 	  else
 	    h->root.u.c.p->alignment_power = old_alignment;
+
+	  /* Common symbol in executable is a definition.  */
+	  if (bfd_link_executable (info))
+	    definition = TRUE;
 	}
 
       if (is_elf_hash_table (htab))
