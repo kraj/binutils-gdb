@@ -19,6 +19,7 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "server.h"
+#include <sys/mman.h>
 #include "tracepoint.h"
 
 /* Defined in auto-generated file aarch64.c.  */
@@ -151,6 +152,48 @@ const struct target_desc *
 get_ipa_tdesc (int idx)
 {
   return tdesc_aarch64;
+}
+
+/* Allocate buffer for the jump pads.  The branch instruction has a reach
+   of +/- 128MiB, and the executable is loaded at 0x400000 (4MiB).
+   To maximize the area of executable that can use tracepoints, try
+   allocating at 0x400000 - size initially, decreasing until we hit
+   a free area.  */
+
+void *
+alloc_jump_pad_buffer (size_t size)
+{
+  uintptr_t addr;
+  int pagesize;
+  void *res;
+
+  pagesize = sysconf (_SC_PAGE_SIZE);
+  if (pagesize == -1)
+    perror_with_name ("sysconf");
+
+  addr = 0x400000 - size;
+
+  /* size should already be page-aligned, but this can't hurt.  */
+  addr &= ~(pagesize - 1);
+
+  /* Search for a free area.  If we hit 0, we're out of luck.  */
+  for (; addr; addr -= pagesize)
+    {
+      /* No MAP_FIXED - we don't want to zap someone's mapping.  */
+      res = mmap ((void *) addr, size,
+		  PROT_READ | PROT_WRITE | PROT_EXEC,
+		  MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+
+      /* If we got what we wanted, return.  */
+      if ((uintptr_t) res < 0x400000)
+	return res;
+
+      /* If we got a mapping, but at a wrong address, undo it.  */
+      if (res != MAP_FAILED)
+	munmap (res, size);
+    }
+
+  return NULL;
 }
 
 void

@@ -132,6 +132,7 @@ void supply_static_tracepoint_registers (struct regcache *regcache,
 					 CORE_ADDR pc);
 void set_trampoline_buffer_space (CORE_ADDR begin, CORE_ADDR end,
 				  char *errmsg);
+void *alloc_jump_pad_buffer (size_t size);
 #else
 void stop_tracing (void);
 
