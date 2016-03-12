@@ -4321,6 +4321,16 @@ init_all_packet_configs (void)
     }
 }
 
+/* Helper function for cleanup below.  Argument is a pointer to a void *
+   pointing to a buffer that needs to be freed.  */
+
+static void
+xfreep (void *arg)
+{
+  void **pptr = (void **) arg;
+  xfree (*pptr);
+}
+
 /* Symbol look-up.  */
 
 static void
@@ -4329,6 +4339,7 @@ remote_check_symbols (void)
   struct remote_state *rs = get_remote_state ();
   char *msg, *reply, *tmp;
   int end;
+  long reply_size;
   struct cleanup *old_chain;
 
   /* The remote side has no concept of inferiors that aren't running
@@ -4350,13 +4361,15 @@ remote_check_symbols (void)
      because we need both at the same time.  */
   msg = (char *) xmalloc (get_remote_packet_size ());
   old_chain = make_cleanup (xfree, msg);
+  reply = (char *) xmalloc (get_remote_packet_size ());
+  make_cleanup (xfreep, &reply);
+  reply_size = get_remote_packet_size ();
 
   /* Invite target to request symbol lookups.  */
 
   putpkt ("qSymbol::");
-  getpkt (&rs->buf, &rs->buf_size, 0);
-  packet_ok (rs->buf, &remote_protocol_packets[PACKET_qSymbol]);
-  reply = rs->buf;
+  getpkt (&reply, &reply_size, 0);
+  packet_ok (reply, &remote_protocol_packets[PACKET_qSymbol]);
 
   while (startswith (reply, "qSymbol:"))
     {
@@ -4384,8 +4397,7 @@ remote_check_symbols (void)
 	}
   
       putpkt (msg);
-      getpkt (&rs->buf, &rs->buf_size, 0);
-      reply = rs->buf;
+      getpkt (&reply, &reply_size, 0);
     }
 
   do_cleanups (old_chain);

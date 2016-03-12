@@ -1,3 +1,8 @@
+2016-03-14  Marcin Kościelnicki  <koriakin@0x04.net>
+
+	* remote.c (xfreep): New function.
+	(remote_check_symbols): Allocate own buffer for reply.
+
 2016-03-13  Marcin Kościelnicki  <koriakin@0x04.net>
 
 	* s390-linux-tdep.c (s390_gen_return_address): New function.
