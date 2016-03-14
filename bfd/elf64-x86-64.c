@@ -4745,8 +4745,11 @@ elf_x86_64_relocate_section (bfd *output_bfd,
 	  if (resolved_to_zero_or_abs)
 	    break;
 
-	  if ((ABI_64_P (output_bfd)
-	       || r_type == R_X86_64_32S)
+	  if (((r_type == R_X86_64_32
+		&& info->upper_address > 0xffffffff
+		&& ABI_64_P (output_bfd))
+	       || (r_type == R_X86_64_32S
+		   && info->upper_address > 0x7fffffff))
 	      && (input_section->flags & SEC_ALLOC) != 0
 	      && (input_section->flags & SEC_READONLY) != 0
 	      && bfd_link_pic (info))
@@ -4901,7 +4904,8 @@ direct:
 	      else
 		{
 		  /* This symbol is local, or marked to become local.  */
-		  if (r_type == htab->pointer_r_type)
+		  if (info->upper_address <= 0xffffffff
+		      || r_type == htab->pointer_r_type)
 		    {
 		      relocate = TRUE;
 		      outrel.r_info = htab->r_info (0, R_X86_64_RELATIVE);

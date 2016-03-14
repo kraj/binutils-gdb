@@ -1213,6 +1213,11 @@ This option overrides linker backend default.  It can be used to avoid
 dynamic relocations against undefined weak symbols in executable.
 Supported for i386 and x86-64.
 
+@item upper-address=@var{address}
+Limit the upper load address to @var{address}. This can be used to
+avoid relocation overflow in PIE if PIE will only be loaded below
+@var{address} at run-time.  Supported for x86_64.
+
 @item call-nop=prefix-addr
 @itemx call-nop=prefix-nop
 @itemx call-nop=suffix-nop

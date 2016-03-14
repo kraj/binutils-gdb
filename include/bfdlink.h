@@ -463,6 +463,9 @@ struct bfd_link_info
   /* Compress DWARF debug sections.  */
   enum compressed_debug_section_type compress_debug;
 
+  /* Default upper load address.  Default is unlimited.  */
+  bfd_vma upper_address;
+
   /* Default stack size.  Zero means default (often zero itself), -1
      means explicitly zero-sized.  */
   bfd_signed_vma stacksize;

@@ -1,5 +1,8 @@
 -*- text -*-
 
+* Support for -z upper-address=ADDRESS in the x86-64 ELF linker, which
+  limits the upper load address to ADDRESS.
+
 * Add -z common/-z nocommon options for ELF targets to control whether to
   convert common symbols to the STT_COMMON type during a relocatable link.
 

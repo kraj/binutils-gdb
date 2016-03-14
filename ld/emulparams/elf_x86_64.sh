@@ -1,6 +1,7 @@
 . ${srcdir}/emulparams/plt_unwind.sh
 . ${srcdir}/emulparams/extern_protected_data.sh
 . ${srcdir}/emulparams/dynamic_undefined_weak.sh
+. ${srcdir}/emulparams/upper_address.sh
 . ${srcdir}/emulparams/call_nop.sh
 SCRIPT_NAME=elf
 ELFSIZE=64
