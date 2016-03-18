@@ -5900,10 +5900,6 @@ static void
 interrupt_query (void)
 {
   struct remote_state *rs = get_remote_state ();
-  struct cleanup *old_chain;
-
-  old_chain = make_cleanup_restore_target_terminal ();
-  target_terminal_ours ();
 
   if (rs->waiting_for_stop_reply && rs->ctrlc_pending_p)
     {
@@ -5920,8 +5916,6 @@ interrupt_query (void)
 		   "Give up waiting? ")))
 	quit ();
     }
-
-  do_cleanups (old_chain);
 }
 
 /* Enable/disable target terminal ownership.  Most targets can use
