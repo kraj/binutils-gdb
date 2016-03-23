@@ -389,6 +389,9 @@ struct remote_state
 
   int last_sent_step;
 
+  /* The execution direction of the last resume we got.  */
+  enum exec_direction_kind last_resume_exec_dir;
+
   char *finished_object;
   char *finished_annex;
   ULONGEST finished_offset;
@@ -477,6 +480,7 @@ new_remote_state (void)
   result->buf = (char *) xmalloc (result->buf_size);
   result->remote_traceframe_number = -1;
   result->last_sent_signal = GDB_SIGNAL_0;
+  result->last_resume_exec_dir = EXEC_FORWARD;
   result->fs_pid = -1;
 
   return result;
@@ -4934,6 +4938,8 @@ remote_open_1 (const char *name, int from_tty,
   rs->continue_thread = not_sent_ptid;
   rs->remote_traceframe_number = -1;
 
+  rs->last_resume_exec_dir = EXEC_FORWARD;
+
   /* Probe for ability to use "ThreadInfo" query, as required.  */
   rs->use_threadinfo_query = 1;
   rs->use_threadextra_query = 1;
@@ -5569,6 +5575,8 @@ remote_resume (struct target_ops *ops,
   rs->last_sent_signal = siggnal;
   rs->last_sent_step = step;
 
+  rs->last_resume_exec_dir = execution_direction;
+
   /* The vCont packet doesn't need to specify threads via Hc.  */
   /* No reverse support (yet) for vCont.  */
   if (execution_direction != EXEC_REVERSE)
@@ -5633,6 +5641,7 @@ remote_resume (struct target_ops *ops,
   if (!target_is_non_stop_p ())
     rs->waiting_for_stop_reply = 1;
 }
+
 
 
 /* Set up the signal handler for SIGINT, while the target is
@@ -13024,6 +13033,17 @@ remote_can_do_single_step (struct target_ops *ops)
     return 0;
 }
 
+/* Implementation of the to_execution_direction method for the remote
+   target.  */
+
+static enum exec_direction_kind
+remote_execution_direction (struct target_ops *self)
+{
+  struct remote_state *rs = get_remote_state ();
+
+  return rs->last_resume_exec_dir;
+}
+
 static void
 init_remote_ops (void)
 {
@@ -13169,6 +13189,7 @@ Specify the serial device it is connected to\n\
   remote_ops.to_remove_vfork_catchpoint = remote_remove_vfork_catchpoint;
   remote_ops.to_insert_exec_catchpoint = remote_insert_exec_catchpoint;
   remote_ops.to_remove_exec_catchpoint = remote_remove_exec_catchpoint;
+  remote_ops.to_execution_direction = remote_execution_direction;
 }
 
 /* Set up the extended remote vector by making a copy of the standard
