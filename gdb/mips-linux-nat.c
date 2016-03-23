@@ -41,6 +41,10 @@
 #ifndef PTRACE_GET_THREAD_AREA
 #define PTRACE_GET_THREAD_AREA 25
 #endif
+/* musl does not define and relies on compiler built-in macros for it   */
+#ifndef _ABIO32
+#define _ABIO32 1
+#endif
 
 class mips_linux_nat_target final : public linux_nat_trad_target
 {
