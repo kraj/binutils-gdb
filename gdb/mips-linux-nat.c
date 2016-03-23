@@ -46,6 +46,11 @@
 #define PTRACE_GET_THREAD_AREA 25
 #endif
 
+/* musl does not define and relies on compiler built-in macros for it   */
+#ifndef _ABIO32
+#define _ABIO32 1
+#endif
+
 /* Assume that we have PTRACE_GETREGS et al. support.  If we do not,
    we'll clear this and use PTRACE_PEEKUSER instead.  */
 static int have_ptrace_regsets = 1;
