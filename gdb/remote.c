@@ -5003,11 +5003,11 @@ remote_open_1 (const char *name, int from_tty,
 
   readahead_cache_invalidate ();
 
+  /* Start out by owning the terminal.  */
+  remote_async_terminal_ours_p = 1;
+
   if (target_async_permitted)
     {
-      /* With this target we start out by owning the terminal.  */
-      remote_async_terminal_ours_p = 1;
-
       /* FIXME: cagney/1999-09-23: During the initial connection it is
 	 assumed that the target is already ready and able to respond to
 	 requests.  Unfortunately remote_start_remote() eventually calls
