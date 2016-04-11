@@ -231,6 +231,9 @@ keep:
       bfd_size_type count = 0;
       do
 	{
+	  asection *s = p->sec->output_section;
+	  if (s != NULL && (s->flags & SEC_READONLY) != 0)
+	    info->readonly_dynrelocs_against_ifunc = TRUE;
 	  count += p->count;
 	  p = p->next;
 	}

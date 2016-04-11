@@ -452,6 +452,10 @@ struct bfd_link_info
   /* TRUE if generate a 1-byte NOP as suffix for x86 call instruction.  */
   unsigned int call_nop_as_suffix : 1;
 
+  /* TRUE if there are dynamic relocs against IFUNC symbols that apply
+     to read-only sections.  */
+  unsigned int readonly_dynrelocs_against_ifunc: 1;
+
   /* The 1-byte NOP for x86 call instruction.  */
   char call_nop_byte;
 
