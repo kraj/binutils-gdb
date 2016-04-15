@@ -1,3 +1,8 @@
+2016-04-15  Pedro Alves  <palves@redhat.com>
+
+	PR gdb/19250
+	* configure: Regenerate.
+
 2016-04-13  Antoine Tremblay  <antoine.tremblay@ericsson.com>
 
 	* linux-aarch64-low.c (aarch64_emit_add): Switch x1 and x0.

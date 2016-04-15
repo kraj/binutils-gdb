@@ -36,65 +36,73 @@ gdb_ptrace_headers='
 #if HAVE_UNISTD_H
 # include <unistd.h>
 #endif
+
+#ifdef __cplusplus
+#  define EXTERN_C extern "C"
+#else
+#  define EXTERN_C extern
+#endif
 '
 # There is no point in checking if we don't have a prototype.
 AC_CHECK_DECLS(ptrace, [], [
-  : ${gdb_cv_func_ptrace_ret='int'}
-  : ${gdb_cv_func_ptrace_args='int,int,long,long'}
+  : ${gdb_cv_func_ptrace_proto='int,int,int,long,long'}
 ], $gdb_ptrace_headers)
-# Check return type.  Varargs (used on GNU/Linux) conflict with the
-# empty argument list, so check for that explicitly.
-AC_CACHE_CHECK([return type of ptrace], gdb_cv_func_ptrace_ret,
-  AC_TRY_COMPILE($gdb_ptrace_headers,
-    [extern long ptrace (enum __ptrace_request, ...);],
-    gdb_cv_func_ptrace_ret='long',
-    AC_TRY_COMPILE($gdb_ptrace_headers,
-      [extern int ptrace ();],
-      gdb_cv_func_ptrace_ret='int',
-      gdb_cv_func_ptrace_ret='long')))
-AC_DEFINE_UNQUOTED(PTRACE_TYPE_RET, $gdb_cv_func_ptrace_ret,
-  [Define as the return type of ptrace.])
-# Check argument types.
-AC_CACHE_CHECK([types of arguments for ptrace], gdb_cv_func_ptrace_args, [
-  AC_TRY_COMPILE($gdb_ptrace_headers,
-    [extern long ptrace (enum __ptrace_request, ...);],
-    [gdb_cv_func_ptrace_args='enum __ptrace_request,int,long,long'],[
-for gdb_arg1 in 'int' 'long'; do
- for gdb_arg2 in 'pid_t' 'int' 'long'; do
-  for gdb_arg3 in 'int *' 'caddr_t' 'int' 'long' 'void *'; do
-   for gdb_arg4 in 'int' 'long' 'void *'; do
-     AC_TRY_COMPILE($gdb_ptrace_headers, [
-extern $gdb_cv_func_ptrace_ret
+
+# GNU/Linux uses a varargs prototype, so check for that explicitly.
+AC_CACHE_CHECK([return type of ptrace], gdb_cv_func_ptrace_proto, [
+  AC_TRY_COMPILE($gdb_ptrace_headers [
+EXTERN_C long ptrace (enum __ptrace_request, ...);
+      ],,
+    [gdb_cv_func_ptrace_proto='long,enum __ptrace_request,int,long,long'])
+])
+
+# Test all possible return and argument types combinations.
+AC_CACHE_CHECK([types of arguments for ptrace], gdb_cv_func_ptrace_proto, [
+
+# Provide a safe default value.
+gdb_cv_func_ptrace_proto='int,int,int,long,long'
+
+for gdb_ret in 'int' 'long'; do
+ for gdb_arg1 in 'int' 'long'; do
+  for gdb_arg2 in 'pid_t' 'int' 'long'; do
+   for gdb_arg3 in 'int *' 'caddr_t' 'int' 'long' 'void *'; do
+    for gdb_arg4 in 'int' 'long' 'void *'; do
+     AC_TRY_COMPILE($gdb_ptrace_headers [
+EXTERN_C $gdb_ret
   ptrace ($gdb_arg1, $gdb_arg2, $gdb_arg3, $gdb_arg4);
-], [gdb_cv_func_ptrace_args="$gdb_arg1,$gdb_arg2,$gdb_arg3,$gdb_arg4";
-    break 4;])
-    for gdb_arg5 in 'int *' 'int' 'long'; do
-     AC_TRY_COMPILE($gdb_ptrace_headers, [
-extern $gdb_cv_func_ptrace_ret
+], [],
+      [gdb_cv_func_ptrace_proto="$gdb_ret,$gdb_arg1,$gdb_arg2,$gdb_arg3,$gdb_arg4";
+       break 5;])
+     for gdb_arg5 in 'int *' 'int' 'long'; do
+      AC_TRY_COMPILE($gdb_ptrace_headers [
+EXTERN_C $gdb_ret
   ptrace ($gdb_arg1, $gdb_arg2, $gdb_arg3, $gdb_arg4, $gdb_arg5);
-], [
-gdb_cv_func_ptrace_args="$gdb_arg1,$gdb_arg2,$gdb_arg3,$gdb_arg4,$gdb_arg5";
-    break 5;])
+],,
+       [gdb_cv_func_ptrace_proto="$gdb_ret,$gdb_arg1,$gdb_arg2,$gdb_arg3,$gdb_arg4,$gdb_arg5";
+        break 6;])
+     done
     done
    done
   done
  done
 done
-# Provide a safe default value.
-: ${gdb_cv_func_ptrace_args='int,int,long,long'}
-])])
+
+])
+
 ac_save_IFS=$IFS; IFS=','
-set dummy `echo "$gdb_cv_func_ptrace_args" | sed 's/\*/\*/g'`
+set dummy `echo "$gdb_cv_func_ptrace_proto" | sed 's/\*/\*/g'`
 IFS=$ac_save_IFS
 shift
-AC_DEFINE_UNQUOTED(PTRACE_TYPE_ARG1, $[1],
+AC_DEFINE_UNQUOTED(PTRACE_TYPE_RET, $[1],
+  [Define as the return type of ptrace.])
+AC_DEFINE_UNQUOTED(PTRACE_TYPE_ARG1, $[2],
   [Define to the type of arg 1 for ptrace.])
-AC_DEFINE_UNQUOTED(PTRACE_TYPE_ARG3, $[3],
+AC_DEFINE_UNQUOTED(PTRACE_TYPE_ARG3, $[4],
   [Define to the type of arg 3 for ptrace.])
-AC_DEFINE_UNQUOTED(PTRACE_TYPE_ARG4, $[4],
+AC_DEFINE_UNQUOTED(PTRACE_TYPE_ARG4, $[5],
   [Define to the type of arg 4 for ptrace.])
-if test -n "$[5]"; then
-  AC_DEFINE_UNQUOTED(PTRACE_TYPE_ARG5, $[5],
+if test -n "$[6]"; then
+  AC_DEFINE_UNQUOTED(PTRACE_TYPE_ARG5, $[6],
     [Define to the type of arg 5 for ptrace.])
 fi
 

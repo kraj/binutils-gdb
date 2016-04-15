@@ -1,5 +1,15 @@
 2016-04-15  Pedro Alves  <palves@redhat.com>
 
+	PR gdb/19250
+	* ptrace.m4 (GDB_AC_PTRACE): Use extern "C" in C++ mode.  In
+	ptrace tests, declare the ptrace prototype outside main.  Replace
+	gdb_cv_func_ptrace_ret and gdb_cv_func_ptrace_proto by a single
+	variable holding return and argument types.  Make return type
+	detection just another probing axis.
+	* configure: Regenerate.
+
+2016-04-15  Pedro Alves  <palves@redhat.com>
+
 	* ada-lang.c (ada_lookup_struct_elt_type): Constify 'type_str' and
 	'name_str' locals.
 
