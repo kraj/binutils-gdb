@@ -5022,6 +5022,6 @@ lin_thread_get_thread_signals (sigset_t *set)
   /* NPTL reserves the first two RT signals, but does not provide any
      way for the debugger to query the signal numbers - fortunately
      they don't change.  */
-  sigaddset (set, __SIGRTMIN);
-  sigaddset (set, __SIGRTMIN + 1);
+  sigaddset (set, SIGRTMIN);
+  sigaddset (set, SIGRTMIN + 1);
 }
