@@ -31,7 +31,7 @@
 #include "gdb_proc_service.h"
 #include "gregset.h"
 
-#include <sgidefs.h>
+#include <asm/sgidefs.h>
 #include "nat/gdb_ptrace.h"
 #include <asm/ptrace.h>
 
