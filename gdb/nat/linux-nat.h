@@ -85,4 +85,8 @@ extern enum target_stop_reason lwp_stop_reason (struct lwp_info *lwp);
 
 extern void linux_stop_lwp (struct lwp_info *lwp);
 
+#ifndef W_STOPCODE
+#define W_STOPCODE(sig) ((sig) << 8 | 0x7f)
+#endif
+
 #endif /* LINUX_NAT_H */
