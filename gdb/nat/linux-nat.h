@@ -91,4 +91,8 @@ extern void linux_stop_lwp (struct lwp_info *lwp);
 
 extern int lwp_is_stepping (struct lwp_info *lwp);
 
+#ifndef W_STOPCODE
+#define W_STOPCODE(sig) ((sig) << 8 | 0x7f)
+#endif
+
 #endif /* NAT_LINUX_NAT_H */
