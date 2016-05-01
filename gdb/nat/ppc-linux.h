@@ -18,7 +18,13 @@
 #ifndef NAT_PPC_LINUX_H
 #define NAT_PPC_LINUX_H
 
+#if !defined(__GLIBC__)
+# define pt_regs uapi_pt_regs
+#endif
 #include <asm/ptrace.h>
+#if !defined(__GLIBC__)
+# undef pt_regs
+#endif
 #include <asm/cputable.h>
 
 /* This sometimes isn't defined.  */

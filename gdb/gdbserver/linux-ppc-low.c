@@ -23,7 +23,13 @@
 #include "elf/common.h"
 #include <sys/uio.h>
 #include <elf.h>
+#if !defined(__GLIBC__)
+# define pt_regs uapi_pt_regs
+#endif
 #include <asm/ptrace.h>
+#if !defined(__GLIBC__)
+# undef pt_regs
+#endif
 
 #include "arch/ppc-linux-common.h"
 #include "arch/ppc-linux-tdesc.h"
