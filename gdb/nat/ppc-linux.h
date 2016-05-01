@@ -18,7 +18,13 @@
 #ifndef PPC_LINUX_H
 #define PPC_LINUX_H 1
 
+#if !defined(__GLIBC__)
+# define pt_regs uapi_pt_regs
+#endif
 #include <asm/ptrace.h>
+#if !defined(__GLIBC__)
+# undef pt_regs
+#endif
 #include <asm/cputable.h>
 
 /* This sometimes isn't defined.  */

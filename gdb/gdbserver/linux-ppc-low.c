@@ -21,7 +21,13 @@
 #include "linux-low.h"
 
 #include <elf.h>
+#if !defined(__GLIBC__)
+# define pt_regs uapi_pt_regs
+#endif
 #include <asm/ptrace.h>
+#if !defined(__GLIBC__)
+# undef pt_regs
+#endif
 
 #include "nat/ppc-linux.h"
 #include "linux-ppc-tdesc.h"
