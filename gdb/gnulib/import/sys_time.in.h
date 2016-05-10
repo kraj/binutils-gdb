@@ -93,20 +93,20 @@ struct timeval
 #   define gettimeofday rpl_gettimeofday
 #  endif
 _GL_FUNCDECL_RPL (gettimeofday, int,
-                  (struct timeval *restrict, void *restrict)
+                  (struct timeval *__restrict, void *__restrict)
                   _GL_ARG_NONNULL ((1)));
 _GL_CXXALIAS_RPL (gettimeofday, int,
-                  (struct timeval *restrict, void *restrict));
+                  (struct timeval *__restrict, void *__restrict));
 # else
 #  if !@HAVE_GETTIMEOFDAY@
 _GL_FUNCDECL_SYS (gettimeofday, int,
-                  (struct timeval *restrict, void *restrict)
+                  (struct timeval *__restrict, void *__restrict)
                   _GL_ARG_NONNULL ((1)));
 #  endif
 /* Need to cast, because on glibc systems, by default, the second argument is
                                                   struct timezone *.  */
 _GL_CXXALIAS_SYS_CAST (gettimeofday, int,
-                       (struct timeval *restrict, void *restrict));
+                       (struct timeval *__restrict, void *__restrict));
 # endif
 _GL_CXXALIASWARN (gettimeofday);
 #elif defined GNULIB_POSIXCHECK
