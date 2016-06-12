@@ -4810,7 +4810,6 @@ const struct powerpc_opcode powerpc_opcodes[] = {
 {"ldepx",	X(31,29),	X_MASK,	  E500MC|PPCA2, 0,		{RT, RA0, RB}},
 
 {"waitasec",	X(31,30),      XRTRARB_MASK, POWER8,	POWER9,		{0}},
-{"wait",	X(31,30),	XWC_MASK,    POWER9,	0,		{WC}},
 
 {"lwepx",	X(31,31),	X_MASK,	  E500MC|PPCA2, 0,		{RT, RA0, RB}},
 
@@ -4864,7 +4863,7 @@ const struct powerpc_opcode powerpc_opcodes[] = {
 
 {"waitrsv",	X(31,62)|(1<<21), 0xffffffff, E500MC|PPCA2, 0,		{0}},
 {"waitimpl",	X(31,62)|(2<<21), 0xffffffff, E500MC|PPCA2, 0,		{0}},
-{"wait",	X(31,62),	XWC_MASK,    E500MC|PPCA2, 0,		{WC}},
+{"wait",	X(31,62),	XWC_MASK,    E500MC|PPCA2|POWER9, 0,	{WC}},
 
 {"dcbstep",	XRT(31,63,0),	XRT_MASK,    E500MC|PPCA2, 0,		{RA0, RB}},
 
