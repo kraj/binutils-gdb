@@ -1447,6 +1447,39 @@ get_detach_signal (struct thread_info *thread)
     }
 }
 
+/* Called when we try to resume or detach a stopped LWP and that errors
+   out.  If the LWP is no longer in ptrace-stopped state (meaning it's
+   zombie, or about to become), discard the error, clear any pending
+   status the LWP may have, and return true (we'll collect the exit status
+   soon enough).  Otherwise, return false.  */
+
+static int
+check_ptrace_stopped_lwp_gone (struct lwp_info *lp)
+{
+  struct thread_info *thread = get_lwp_thread (lp);
+
+  /* If we get an error after resuming the LWP successfully, we'd
+     confuse !T state for the LWP being gone.  */
+  gdb_assert (lp->stopped);
+
+  /* We can't just check whether the LWP is in 'Z (Zombie)' state,
+     because even if ptrace failed with ESRCH, the tracee may be "not
+     yet fully dead", but already refusing ptrace requests.  In that
+     case the tracee has 'R (Running)' state for a little bit
+     (observed in Linux 3.18).  See also the note on ESRCH in the
+     ptrace(2) man page.  Instead, check whether the LWP has any state
+     other than ptrace-stopped.  */
+
+  /* Don't assume anything if /proc/PID/status can't be read.  */
+  if (linux_proc_pid_is_trace_stopped_nowarn (lwpid_of (thread)) == 0)
+    {
+      lp->stop_reason = TARGET_STOPPED_BY_NO_REASON;
+      lp->status_pending_p = 0;
+      return 1;
+    }
+  return 0;
+}
+
 static int
 linux_detach_one_lwp (struct inferior_list_entry *entry, void *args)
 {
@@ -1480,9 +1513,10 @@ linux_detach_one_lwp (struct inferior_list_entry *entry, void *args)
     the_low_target.prepare_to_resume (lwp);
   if (ptrace (PTRACE_DETACH, lwpid_of (thread), (PTRACE_TYPE_ARG3) 0,
 	      (PTRACE_TYPE_ARG4) (long) sig) < 0)
-    error (_("Can't detach %s: %s"),
-	   target_pid_to_str (ptid_of (thread)),
-	   strerror (errno));
+    if (!check_ptrace_stopped_lwp_gone (lwp))
+      error (_("Can't detach %s: %s"),
+	     target_pid_to_str (ptid_of (thread)),
+	     strerror (errno));
 
   delete_lwp (lwp);
   return 0;
@@ -4329,39 +4363,6 @@ linux_resume_one_lwp_throw (struct lwp_info *lwp,
      otherwise handle_zombie_lwp_error would get confused.  */
   lwp->stopped = 0;
   lwp->stop_reason = TARGET_STOPPED_BY_NO_REASON;
-}
-
-/* Called when we try to resume a stopped LWP and that errors out.  If
-   the LWP is no longer in ptrace-stopped state (meaning it's zombie,
-   or about to become), discard the error, clear any pending status
-   the LWP may have, and return true (we'll collect the exit status
-   soon enough).  Otherwise, return false.  */
-
-static int
-check_ptrace_stopped_lwp_gone (struct lwp_info *lp)
-{
-  struct thread_info *thread = get_lwp_thread (lp);
-
-  /* If we get an error after resuming the LWP successfully, we'd
-     confuse !T state for the LWP being gone.  */
-  gdb_assert (lp->stopped);
-
-  /* We can't just check whether the LWP is in 'Z (Zombie)' state,
-     because even if ptrace failed with ESRCH, the tracee may be "not
-     yet fully dead", but already refusing ptrace requests.  In that
-     case the tracee has 'R (Running)' state for a little bit
-     (observed in Linux 3.18).  See also the note on ESRCH in the
-     ptrace(2) man page.  Instead, check whether the LWP has any state
-     other than ptrace-stopped.  */
-
-  /* Don't assume anything if /proc/PID/status can't be read.  */
-  if (linux_proc_pid_is_trace_stopped_nowarn (lwpid_of (thread)) == 0)
-    {
-      lp->stop_reason = TARGET_STOPPED_BY_NO_REASON;
-      lp->status_pending_p = 0;
-      return 1;
-    }
-  return 0;
 }
 
 /* Like linux_resume_one_lwp_throw, but no error is thrown if the LWP
