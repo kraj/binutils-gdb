@@ -34,6 +34,7 @@
 #include "agent.h"
 #include "gdb_wait.h"
 #include "filestuff.h"
+#include "gdbcore.h"
 
 #include <sys/types.h>
 #include <fcntl.h>
@@ -378,6 +379,25 @@ static int
 inf_child_can_use_agent (struct target_ops *self)
 {
   return agent_loaded_p ();
+}
+
+void
+inf_child_announce_detach (struct target_ops *ops, int from_tty)
+{
+  pid_t pid;
+  char *exec_file;
+
+  if (!from_tty)
+    return;
+
+  exec_file = get_exec_file (0);
+  if (exec_file == NULL)
+    exec_file = "";
+
+  pid = ptid_get_pid (inferior_ptid);
+  printf_unfiltered (_("Detaching from program: %s, %s\n"), exec_file,
+		     target_pid_to_str (pid_to_ptid (pid)));
+  gdb_flush (gdb_stdout);
 }
 
 /* Default implementation of the to_can_async_p and

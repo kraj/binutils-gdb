@@ -25,13 +25,39 @@ if ![runto_main] {
     return -1
 }
 
+# Test that GDBserver exits.
+
+proc test_server_exit {} {
+    global server_spawn_id
+    if ![info exists server_spawn_id] {
+	return
+    }
+
+    set test "server exits"
+    gdb_expect {
+	-i $server_spawn_id
+	eof {
+	    pass $test
+	    wait -i $server_spawn_id
+	    unset server_spawn_id
+	}
+	timeout {
+	    fail "$test (timeout)"
+	}
+    }
+}
+
 gdb_breakpoint "_exit"
 gdb_continue_to_breakpoint "_exit" ".*_exit.*"
+
 set test "detach"
 gdb_test_multiple $test $test {
     -re "Detaching from .*, process $decimal\r\nEnding remote debugging\.\r\n$gdb_prompt $" {
         # This is what you get with "target remote".
         pass $test
+
+	# The server should exit now.
+	test_server_exit
     }
     -re "Detaching from .*, process $decimal\r\n$gdb_prompt $" {
         pass $test

@@ -416,8 +416,7 @@ linux_fork_detach (const char *args, int from_tty)
      delete it from the fork_list, and switch to the next available
      fork.  */
 
-  if (ptrace (PTRACE_DETACH, ptid_get_pid (inferior_ptid), 0, 0))
-    error (_("Unable to detach %s"), target_pid_to_str (inferior_ptid));
+  linux_nat_detach_lwp (ptid_get_pid (inferior_ptid));
 
   delete_fork (inferior_ptid);
 

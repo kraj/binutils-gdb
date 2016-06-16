@@ -49,4 +49,6 @@ extern void inf_child_mourn_inferior (struct target_ops *ops);
 
 extern void inf_child_maybe_unpush_target (struct target_ops *ops);
 
+extern void inf_child_announce_detach (struct target_ops *ops, int from_tty);
+
 #endif

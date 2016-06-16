@@ -1414,9 +1414,12 @@ check_ptrace_stopped_lwp_gone (struct lwp_info *lp)
   return 0;
 }
 
-static int
-detach_callback (struct lwp_info *lp, void *data)
+static void
+detach_one_lwp (struct lwp_info *lp, int *signo_p)
 {
+  int lwpid = ptid_get_lwp (lp->ptid);
+  int signo;
+
   gdb_assert (lp->status == 0 || WIFSTOPPED (lp->status));
 
   if (debug_linux_nat && lp->status)
@@ -1432,37 +1435,84 @@ detach_callback (struct lwp_info *lp, void *data)
 			    "DC: Sending SIGCONT to %s\n",
 			    target_pid_to_str (lp->ptid));
 
-      kill_lwp (ptid_get_lwp (lp->ptid), SIGCONT);
+      kill_lwp (lwpid, SIGCONT);
       lp->signalled = 0;
     }
 
-  /* We don't actually detach from the LWP that has an id equal to the
-     overall process id just yet.  */
-  if (ptid_get_lwp (lp->ptid) != ptid_get_pid (lp->ptid))
+  if (signo_p == NULL)
     {
       int status = 0;
 
       /* Pass on any pending signal for this LWP.  */
       get_pending_status (lp, &status);
+      signo = WSTOPSIG (status);
+    }
+  else
+    signo = *signo_p;
 
+  /* Preparing to resume may try to write registers, and fail if the
+     lwp is zombie.  If that happend, ignore the error.  We'll handle
+     it below, when detach fails with ESRCH.  */
+  TRY
+    {
       if (linux_nat_prepare_to_resume != NULL)
 	linux_nat_prepare_to_resume (lp);
-      errno = 0;
-      if (ptrace (PTRACE_DETACH, ptid_get_lwp (lp->ptid), 0,
-		  WSTOPSIG (status)) < 0)
-	if (!check_ptrace_stopped_lwp_gone (lp))
-	  error (_("Can't detach %s: %s"), target_pid_to_str (lp->ptid),
-		 safe_strerror (errno));
+    }
+  CATCH (ex, RETURN_MASK_ERROR)
+    {
+      if (!check_ptrace_stopped_lwp_gone (lp))
+	throw_exception (ex);
+    }
+  END_CATCH
 
-      if (debug_linux_nat)
-	fprintf_unfiltered (gdb_stdlog,
-			    "PTRACE_DETACH (%s, %s, 0) (OK)\n",
-			    target_pid_to_str (lp->ptid),
-			    strsignal (WSTOPSIG (status)));
+  errno = 0;
+  if (ptrace (PTRACE_DETACH, lwpid, 0, signo) < 0)
+    {
+      int save_errno = errno;
 
-      delete_lwp (lp->ptid);
+      if (save_errno == ESRCH)
+	{
+	  int ret, status;
+
+	  ret = my_waitpid (lwpid, &status, __WALL);
+	  if (ret == -1)
+	    warning (_("Couldn't reap LWP %d while detaching: %s"),
+		     lwpid, strerror (errno));
+	  else if (!WIFEXITED (status) && !WIFSIGNALED (status))
+	    warning (_("Reaping LWP %d while detaching "
+		       "returned unexpected status 0x%x"),
+		     lwpid, status);
+	}
+      else
+	error (_("Can't detach %s: %s"), target_pid_to_str (lp->ptid),
+	       safe_strerror (save_errno));
     }
 
+  if (debug_linux_nat)
+    fprintf_unfiltered (gdb_stdlog,
+			"PTRACE_DETACH (%s, %s, 0) (OK)\n",
+			target_pid_to_str (lp->ptid),
+			strsignal (signo));
+
+  delete_lwp (lp->ptid);
+}
+
+void
+linux_nat_detach_lwp (int pid)
+{
+  struct lwp_info *lp = find_lwp_pid (pid_to_ptid (pid));
+
+  detach_one_lwp (lp, NULL);
+}
+
+static int
+detach_callback (struct lwp_info *lp, void *data)
+{
+  /* We don't actually detach from the thread group leader just yet --
+     if the process died and is zombie now, we must reap the lwps
+     first.  */
+  if (ptid_get_lwp (lp->ptid) != ptid_get_pid (lp->ptid))
+    detach_one_lwp (lp, NULL);
   return 0;
 }
 
@@ -1511,9 +1561,6 @@ linux_nat_detach (struct target_ops *ops, const char *args, int from_tty)
 			    target_pid_to_str (main_lwp->ptid));
     }
 
-  if (linux_nat_prepare_to_resume != NULL)
-    linux_nat_prepare_to_resume (main_lwp);
-
   if (forks_exist_p ())
     {
       /* Multi-fork case.  The current inferior_ptid is being detached
@@ -1524,22 +1571,18 @@ linux_nat_detach (struct target_ops *ops, const char *args, int from_tty)
     }
   else
     {
-      TRY
+      inf_child_announce_detach (ops, from_tty);
+
+      if (args != NULL)
 	{
-	  linux_ops->to_detach (ops, args, from_tty);
+	  int signo = atoi (args);
+
+	  detach_one_lwp (main_lwp, &signo);
 	}
-      CATCH (ex, RETURN_MASK_ERROR)
-	{
-	  if (!check_ptrace_stopped_lwp_gone (main_lwp))
-	    {
-	      throw_exception (ex);
-	    }
-	  /* Ignore the error since the thread is gone already.  */
-	  else
-	    {
-	      inf_ptrace_detach_success(ops);
-	    }
-	}
+      else
+        detach_one_lwp (main_lwp, NULL);
+
+      inf_ptrace_detach_success (ops);
     }
   delete_lwp (main_lwp->ptid);
 }

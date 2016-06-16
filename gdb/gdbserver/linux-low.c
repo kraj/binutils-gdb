@@ -1480,16 +1480,12 @@ check_ptrace_stopped_lwp_gone (struct lwp_info *lp)
   return 0;
 }
 
-static int
-linux_detach_one_lwp (struct inferior_list_entry *entry, void *args)
+static void
+linux_detach_one_lwp (struct lwp_info *lwp)
 {
-  struct thread_info *thread = (struct thread_info *) entry;
-  struct lwp_info *lwp = get_thread_lwp (thread);
-  int pid = * (int *) args;
+  struct thread_info *thread = get_lwp_thread (lwp);
   int sig;
-
-  if (ptid_get_pid (entry->id) != pid)
-    return 0;
+  int lwpid;
 
   /* If there is a pending SIGSTOP, get rid of it.  */
   if (lwp->stop_expected)
@@ -1511,14 +1507,47 @@ linux_detach_one_lwp (struct inferior_list_entry *entry, void *args)
   /* Finally, let it resume.  */
   if (the_low_target.prepare_to_resume != NULL)
     the_low_target.prepare_to_resume (lwp);
-  if (ptrace (PTRACE_DETACH, lwpid_of (thread), (PTRACE_TYPE_ARG3) 0,
+  lwpid = lwpid_of (thread);
+  if (ptrace (PTRACE_DETACH, lwpid, (PTRACE_TYPE_ARG3) 0,
 	      (PTRACE_TYPE_ARG4) (long) sig) < 0)
-    if (!check_ptrace_stopped_lwp_gone (lwp))
-      error (_("Can't detach %s: %s"),
-	     target_pid_to_str (ptid_of (thread)),
-	     strerror (errno));
+    {
+      if (errno == ESRCH)
+	{
+	  int ret, status;
+
+	  ret = my_waitpid (lwpid, &status, __WALL);
+	  if (ret == -1)
+	    warning (_("Couldn't reap LWP %d while detaching: %s"),
+		     lwpid, strerror (errno));
+	  else if (!WIFEXITED (status) && !WIFSIGNALED (status))
+	    warning (_("Reaping LWP %d while detaching "
+		       "returned unexpected status 0x%x"),
+		     lwpid, status);
+	}
+      else
+	error (_("Can't detach %s: %s"),
+	       target_pid_to_str (ptid_of (thread)),
+	       strerror (errno));
+    }
 
   delete_lwp (lwp);
+}
+
+static int
+linux_detach_lwp_callback (struct inferior_list_entry *entry, void *args)
+{
+  struct thread_info *thread = (struct thread_info *) entry;
+  struct lwp_info *lwp = get_thread_lwp (thread);
+  int pid = * (int *) args;
+  int lwpid = lwpid_of (thread);
+
+  if (ptid_get_pid (entry->id) != pid)
+    return 0;
+
+  if (ptid_get_pid (entry->id) == lwpid)
+    return 0;
+
+  linux_detach_one_lwp (lwp);
   return 0;
 }
 
@@ -1549,7 +1578,11 @@ linux_detach (int pid)
   /* Stabilize threads (move out of jump pads).  */
   stabilize_threads ();
 
-  find_inferior (&all_threads, linux_detach_one_lwp, &pid);
+  /* Detach from the children first.  */
+  find_inferior (&all_threads, linux_detach_lwp_callback, &pid);
+
+  struct lwp_info *lwp = find_lwp_pid (pid_to_ptid (pid));
+  linux_detach_one_lwp (lwp);
 
   the_target->mourn (process);
 
