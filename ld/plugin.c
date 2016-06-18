@@ -1286,59 +1286,65 @@ plugin_notice (struct bfd_link_info *info,
 	h = h->u.i.link;
 
       /* Nothing to do here if this def/ref is from an IR dummy BFD.  */
-      if (is_ir_dummy_bfd (abfd))
-	;
-
-      /* Making an indirect symbol counts as a reference unless this
-	 is a brand new symbol.  */
-      else if (bfd_is_ind_section (section)
-	       || (flags & BSF_INDIRECT) != 0)
+      if (!is_ir_dummy_bfd (abfd))
 	{
-	  /* ??? Some of this is questionable.  See comments in
-	     _bfd_generic_link_add_one_symbol for case IND.  */
-	  if (h->type != bfd_link_hash_new)
+	  /* Making an indirect symbol counts as a reference unless this
+	     is a brand new symbol.  */
+	  if (bfd_is_ind_section (section)
+	      || (flags & BSF_INDIRECT) != 0)
 	    {
-	      h->non_ir_ref = TRUE;
-	      inh->non_ir_ref = TRUE;
+	      /* ??? Some of this is questionable.  See comments in
+		 _bfd_generic_link_add_one_symbol for case IND.  */
+	      if (h->type != bfd_link_hash_new)
+		{
+		  h->non_ir_ref = TRUE;
+		  inh->non_ir_ref = TRUE;
+		}
+	      else if (inh->type == bfd_link_hash_new)
+		inh->non_ir_ref = TRUE;
 	    }
-	  else if (inh->type == bfd_link_hash_new)
-	    inh->non_ir_ref = TRUE;
-	}
 
-      /* Nothing to do here for warning symbols.  */
-      else if ((flags & BSF_WARNING) != 0)
-	;
+	  /* Nothing to do here for warning symbols.  */
+	  else if ((flags & BSF_WARNING) != 0)
+	    ;
 
-      /* Nothing to do here for constructor symbols.  */
-      else if ((flags & BSF_CONSTRUCTOR) != 0)
-	;
+	  /* Nothing to do here for constructor symbols.  */
+	  else if ((flags & BSF_CONSTRUCTOR) != 0)
+	    ;
 
-      /* If this is a ref, set non_ir_ref.  */
-      else if (bfd_is_und_section (section))
-	{
-	  /* Replace the undefined dummy bfd with the real one.  */
-	  if ((h->type == bfd_link_hash_undefined
-	       || h->type == bfd_link_hash_undefweak)
-	      && (h->u.undef.abfd == NULL
-		  || (h->u.undef.abfd->flags & BFD_PLUGIN) != 0))
-	    h->u.undef.abfd = abfd;
-	  h->non_ir_ref = TRUE;
-	}
+	  /* If this is a ref, set non_ir_ref.  */
+	  else if (bfd_is_und_section (section))
+	    {
+	      /* Replace the undefined dummy bfd with the real one.  */
+	      if ((h->type == bfd_link_hash_undefined
+		   || h->type == bfd_link_hash_undefweak)
+		  && (h->u.undef.abfd == NULL
+		      || (h->u.undef.abfd->flags & BFD_PLUGIN) != 0))
+		h->u.undef.abfd = abfd;
+	      h->non_ir_ref = TRUE;
+	    }
 
-      /* Otherwise, it must be a new def.  Ensure any symbol defined
-	 in an IR dummy BFD takes on a new value from a real BFD.
-	 Weak symbols are not normally overridden by a new weak
-	 definition, and strong symbols will normally cause multiple
-	 definition errors.  Avoid this by making the symbol appear
-	 to be undefined.  */
-      else if (((h->type == bfd_link_hash_defweak
-		 || h->type == bfd_link_hash_defined)
-		&& is_ir_dummy_bfd (sym_bfd = h->u.def.section->owner))
-	       || (h->type == bfd_link_hash_common
-		   && is_ir_dummy_bfd (sym_bfd = h->u.c.p->section->owner)))
-	{
-	  h->type = bfd_link_hash_undefweak;
-	  h->u.undef.abfd = sym_bfd;
+	  /* Otherwise, it must be a new def.  Ensure any symbol defined
+	     in an IR dummy BFD takes on a new value from a real BFD.
+	     Weak symbols are not normally overridden by a new weak
+	     definition, and strong symbols will normally cause multiple
+	     definition errors.  Avoid this by making the symbol appear
+	     to be undefined.  */
+	  else if (((h->type == bfd_link_hash_defweak
+		     || h->type == bfd_link_hash_defined)
+		    && is_ir_dummy_bfd (sym_bfd = h->u.def.section->owner))
+		   || (h->type == bfd_link_hash_common
+		       && is_ir_dummy_bfd (sym_bfd = h->u.c.p->section->owner)))
+	    {
+	      h->type = bfd_link_hash_undefweak;
+	      h->u.undef.abfd = sym_bfd;
+	    }
+
+	  /* If this is a common symbol, set non_ir_ref so that we get
+	     the corrrect symbol resulotion when it is overridden by IR
+	     objects. */
+	  if (bfd_is_com_section (section))
+	    h->non_ir_ref = TRUE;
 	}
     }
 
