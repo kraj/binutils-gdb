@@ -1,5 +1,15 @@
 2016-08-08  Pedro Alves  <palves@redhat.com>
 
+	Revert:
+	2016-03-15  Doug Evans  <dje@google.com>
+	* features/i386/32bit-core.xml (i386_eflags): Remove "end" spec.
+	* features/i386/32bit-sse.xml (i386_eflags): Ditto.
+	* features/i386/64bit-core.xml (i386_eflags): Ditto.
+	* features/i386/64bit-sse.xml (i386_eflags): Ditto.
+	* features/i386/x32-core.xml (i386_eflags): Ditto.
+
+2016-08-08  Pedro Alves  <palves@redhat.com>
+
 	* features/i386/amd64-avx-mpx-linux.c: Regenerate.
 	* features/i386/amd64-avx-mpx.c: Regenerate.
 	* features/i386/i386-avx-mpx-linux.c: Regenerate.
