@@ -136,59 +136,35 @@ gdb_getpgrp (void)
 }
 #endif
 
-enum gdb_has_a_terminal_flag_enum
-  {
-    yes, no, have_not_checked
-  }
-gdb_has_a_terminal_flag = have_not_checked;
-
-/* Set the initial tty state that is to be inherited by new inferiors.  */
+/* See terminal.h.  */
 
 void
 set_initial_gdb_ttystate (void)
 {
   initial_gdb_ttystate = serial_get_tty_state (stdin_serial);
+
+  /* Get all the current tty settings (including whether we have a tty
+     at all!).  Can't do this in _initialize_inflow because
+     serial_fdopen() won't work until the serial_ops_list is
+     initialized.  */
+#ifdef F_GETFL
+  our_terminal_info.tflags = fcntl (0, F_GETFL, 0);
+#endif
+  our_terminal_info.ttystate = serial_get_tty_state (stdin_serial);
+  if (our_terminal_info.ttystate != NULL)
+    {
+#ifdef PROCESS_GROUP_TYPE
+      our_terminal_info.process_group = gdb_getpgrp ();
+#endif
+    }
 }
 
 /* Does GDB have a terminal (on stdin)?  */
-int
+
+static int
 gdb_has_a_terminal (void)
 {
-  switch (gdb_has_a_terminal_flag)
-    {
-    case yes:
-      return 1;
-    case no:
-      return 0;
-    case have_not_checked:
-      /* Get all the current tty settings (including whether we have a
-         tty at all!).  Can't do this in _initialize_inflow because
-         serial_fdopen() won't work until the serial_ops_list is
-         initialized.  */
-
-#ifdef F_GETFL
-      our_terminal_info.tflags = fcntl (0, F_GETFL, 0);
-#endif
-
-      gdb_has_a_terminal_flag = no;
-      if (stdin_serial != NULL)
-	{
-	  our_terminal_info.ttystate = serial_get_tty_state (stdin_serial);
-
-	  if (our_terminal_info.ttystate != NULL)
-	    {
-	      gdb_has_a_terminal_flag = yes;
-#ifdef PROCESS_GROUP_TYPE
-	      our_terminal_info.process_group = gdb_getpgrp ();
-#endif
-	    }
-	}
-
-      return gdb_has_a_terminal_flag == yes;
-    default:
-      /* "Can't happen".  */
-      return 0;
-    }
+  return initial_gdb_ttystate != NULL;
 }
 
 /* Macro for printing errors from ioctl operations */
