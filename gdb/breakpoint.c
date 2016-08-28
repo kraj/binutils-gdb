@@ -3753,8 +3753,7 @@ create_exception_master_breakpoint (void)
 	}
 
       addr = BMSYMBOL_VALUE_ADDRESS (bp_objfile_data->exception_msym);
-      addr = gdbarch_convert_from_func_ptr_addr (gdbarch, addr,
-						 &current_target);
+      addr = gdbarch_convert_from_func_ptr_addr (gdbarch, addr, target_stack);
       b = create_internal_breakpoint (gdbarch, addr, bp_exception_master,
 				      &internal_breakpoint_ops);
       initialize_explicit_location (&explicit_loc);
@@ -5054,7 +5053,7 @@ watchpoints_triggered (struct target_waitstatus *ws)
       return 0;
     }
 
-  if (!target_stopped_data_address (&current_target, &addr))
+  if (!target_stopped_data_address (target_stack, &addr))
     {
       /* We were stopped by a watchpoint, but we don't know where.
 	 Mark all watchpoints as unknown.  */
@@ -5094,7 +5093,7 @@ watchpoints_triggered (struct target_waitstatus *ws)
 		  }
 	      }
 	    /* Exact match not required.  Within range is sufficient.  */
-	    else if (target_watchpoint_addr_within_range (&current_target,
+	    else if (target_watchpoint_addr_within_range (target_stack,
 							 addr, loc->address,
 							 loc->length))
 	      {

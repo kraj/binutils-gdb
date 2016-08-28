@@ -268,7 +268,7 @@ proceed_thread_callback (struct thread_info *thread, void *arg)
 static void
 exec_continue (char **argv, int argc)
 {
-  prepare_execution_command (&current_target, mi_async_p ());
+  prepare_execution_command (target_stack, mi_async_p ());
 
   if (non_stop)
     {
@@ -417,7 +417,7 @@ run_one_inferior (struct inferior *inf, void *arg)
   int start_p = *(int *) arg;
   const char *run_cmd = start_p ? "start" : "run";
   struct target_ops *run_target = find_run_target ();
-  int async_p = mi_async && run_target->to_can_async_p (run_target);
+  int async_p = mi_async && run_target->can_async_p ();
 
   if (inf->pid != 0)
     {
@@ -492,7 +492,7 @@ mi_cmd_exec_run (char *command, char **argv, int argc)
     {
       const char *run_cmd = start_p ? "start" : "run";
       struct target_ops *run_target = find_run_target ();
-      int async_p = mi_async && run_target->to_can_async_p (run_target);
+      int async_p = mi_async && run_target->can_async_p ();
 
       mi_execute_cli_command (run_cmd, async_p,
 			      async_p ? "&" : NULL);
@@ -1500,10 +1500,7 @@ mi_cmd_data_read_memory (char *command, char **argv, int argc)
   mbuf = XCNEWVEC (gdb_byte, total_bytes);
   make_cleanup (xfree, mbuf);
 
-  /* Dispatch memory reads to the topmost target, not the flattened
-     current_target.  */
-  nr_bytes = target_read (current_target.beneath,
-			  TARGET_OBJECT_MEMORY, NULL, mbuf,
+  nr_bytes = target_read (target_stack, TARGET_OBJECT_MEMORY, NULL, mbuf,
 			  addr, total_bytes);
   if (nr_bytes <= 0)
     error (_("Unable to read memory."));
@@ -1634,7 +1631,7 @@ mi_cmd_data_read_memory_bytes (char *command, char **argv, int argc)
   addr = parse_and_eval_address (argv[0]) + offset;
   length = atol (argv[1]);
 
-  result = read_memory_robust (current_target.beneath, addr, length);
+  result = read_memory_robust (target_stack, addr, length);
 
   cleanups = make_cleanup (free_memory_read_result_vector, &result);
 

@@ -44,6 +44,8 @@
 #define target_debug_do_print(E)			\
   fputs_unfiltered ((E), gdb_stdlog);
 
+#define target_debug_print_bool(X) \
+  target_debug_do_print (plongest (X))
 #define target_debug_print_struct_target_ops_p(X)	\
   target_debug_do_print (host_address_to_string (X))
 #define target_debug_print_enum_target_object(X)	\
@@ -159,6 +161,10 @@
 #define target_debug_print_struct_inferior_p(X)	\
   target_debug_do_print (host_address_to_string (X))
 #define target_debug_print_enum_remove_bp_reason(X) \
+  target_debug_do_print (plongest (X))
+#define target_debug_print_enum_info_proc_what(X) \
+  target_debug_do_print (plongest (X))
+#define target_debug_print_thread_control_capabilities(X) \
   target_debug_do_print (plongest (X))
 
 static void

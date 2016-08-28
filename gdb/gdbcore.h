@@ -141,7 +141,7 @@ extern void specify_exec_file_hook (void (*hook) (const char *filename));
 
 extern bfd *core_bfd;
 
-extern struct target_ops *core_target;
+extern struct target_ops *the_core_target;
 
 /* Whether to open exec and core files read-only or read-write.  */
 
@@ -157,8 +157,6 @@ extern void exec_file_attach (const char *filename, int from_tty);
    the filename of the main executable is already known.  */
 
 extern void exec_file_locate_attach (int pid, int from_tty);
-
-extern void exec_file_clear (int from_tty);
 
 extern void validate_files (void);
 

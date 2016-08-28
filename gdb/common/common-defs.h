@@ -85,4 +85,12 @@
 # define EXTERN_C_POP
 #endif
 
+#if __cplusplus >= 201103L
+# define FINAL final
+# define OVERRIDE override
+#else
+# define FINAL
+# define OVERRIDE
+#endif
+
 #endif /* COMMON_DEFS_H */

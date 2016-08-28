@@ -113,7 +113,18 @@ struct trace_file_writer
 
 extern struct trace_file_writer *tfile_trace_file_writer_new (void);
 
-extern void init_tracefile_ops (struct target_ops *ops);
+class tracefile_target : public target_ops
+{
+ public:
+  tracefile_target ();
+
+  int get_trace_status (struct trace_status *ts) OVERRIDE;
+  int has_all_memory () OVERRIDE;
+  int has_memory () OVERRIDE;
+  int has_stack () OVERRIDE;
+  int has_registers () OVERRIDE;
+  int thread_alive (ptid_t ptid) OVERRIDE;
+};
 
 extern void tracefile_fetch_registers (struct regcache *regcache, int regno);
 

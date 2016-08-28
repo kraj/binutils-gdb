@@ -18,8 +18,137 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "nat/linux-nat.h"
+#include "inf-ptrace.h"
 #include "target.h"
 #include <signal.h>
+
+/* A prototype generic GNU/Linux target.  A concrete instance should
+   override it with local methods.  */
+
+class linux_nat_target : public inf_ptrace_target
+{
+public:
+  linux_nat_target ();
+  ~linux_nat_target () OVERRIDE = 0;
+
+  thread_control_capabilities get_thread_control_capabilities () OVERRIDE
+  { return tc_schedlock; }
+
+  void create_inferior (char *, char *, char **, int) OVERRIDE;
+
+  void attach (const char *, int) OVERRIDE;
+
+  void detach (const char *, int) OVERRIDE;
+
+  void resume (ptid_t, int, enum gdb_signal) OVERRIDE;
+
+  ptid_t wait (ptid_t, struct target_waitstatus *, int) OVERRIDE;
+
+  void pass_signals (int, unsigned char *) OVERRIDE;
+
+  enum target_xfer_status xfer_partial (enum target_object object,
+					const char *annex,
+					gdb_byte *readbuf,
+					const gdb_byte *writebuf,
+					ULONGEST offset, ULONGEST len,
+					ULONGEST *xfered_len) OVERRIDE;
+
+  void kill () OVERRIDE;
+
+  void mourn_inferior () OVERRIDE;
+  int thread_alive (ptid_t ptid) OVERRIDE;
+
+  void update_thread_list () OVERRIDE;
+
+  char *pid_to_str (ptid_t) OVERRIDE;
+
+  const char *thread_name (struct thread_info *) OVERRIDE;
+
+  struct address_space *thread_address_space (ptid_t) OVERRIDE;
+
+  int stopped_by_watchpoint () OVERRIDE;
+
+  int stopped_data_address (CORE_ADDR *) OVERRIDE;
+
+  int stopped_by_sw_breakpoint () OVERRIDE;
+  int supports_stopped_by_sw_breakpoint () OVERRIDE;
+
+  int stopped_by_hw_breakpoint () OVERRIDE;
+  int supports_stopped_by_hw_breakpoint () OVERRIDE;
+
+  void thread_events (int) OVERRIDE;
+
+  int can_async_p () OVERRIDE;
+  int is_async_p () OVERRIDE;
+
+  int supports_non_stop () OVERRIDE;
+  int always_non_stop_p () OVERRIDE;
+
+  void async (int) OVERRIDE;
+
+  void terminal_inferior () OVERRIDE;
+
+  void terminal_ours () OVERRIDE;
+
+  void close () OVERRIDE;
+
+  void stop (ptid_t) OVERRIDE;
+
+  int supports_multi_process () OVERRIDE;
+
+  int supports_disable_randomization () OVERRIDE;
+
+  int core_of_thread (ptid_t ptid) OVERRIDE;
+
+  int filesystem_is_local () OVERRIDE;
+
+  int fileio_open (struct inferior *inf, const char *filename,
+		   int flags, int mode, int warn_if_slow,
+		   int *target_errno) OVERRIDE;
+
+  char *fileio_readlink (struct inferior *inf,
+			 const char *filename,
+			 int *target_errno) OVERRIDE;
+
+  int fileio_unlink (struct inferior *inf,
+		     const char *filename,
+		     int *target_errno) OVERRIDE;
+
+  int insert_fork_catchpoint (int) OVERRIDE;
+  int remove_fork_catchpoint (int) OVERRIDE;
+  int insert_vfork_catchpoint (int) OVERRIDE;
+  int remove_vfork_catchpoint (int) OVERRIDE;
+
+  int insert_exec_catchpoint (int) OVERRIDE;
+  int remove_exec_catchpoint (int) OVERRIDE;
+
+  int set_syscall_catchpoint (int, int, int, int, int *) OVERRIDE;
+
+  char *pid_to_exec_file (int pid) OVERRIDE;
+
+  void post_startup_inferior (ptid_t) OVERRIDE;
+
+  void post_attach (int) OVERRIDE;
+
+  int follow_fork (int, int) OVERRIDE;
+
+  VEC(static_tracepoint_marker_p) *static_tracepoint_markers_by_strid (const char *id);
+
+  /* Methods that are meant to overridden by the concrete
+     arch-specific target instance.  */
+
+  virtual void low_resume (ptid_t ptid, int step, enum gdb_signal sig)
+  { inf_ptrace_target::resume (ptid, step, sig); }
+
+  virtual int low_stopped_by_watchpoint ()
+  { return 0; }
+
+  virtual int low_stopped_data_address (CORE_ADDR *addr_p)
+  { return 0; }
+};
+
+/* The final/concrete instance.  */
+extern linux_nat_target *linux_target;
 
 struct arch_lwp_info;
 
@@ -149,18 +278,8 @@ extern void linux_stop_and_wait_all_lwps (void);
    left stopped.)  */
 extern void linux_unstop_all_lwps (void);
 
-/* Create a prototype generic GNU/Linux target.  The client can
-   override it with local methods.  */
-struct target_ops * linux_target (void);
-
-/* Create a generic GNU/Linux target using traditional 
-   ptrace register access.  */
-struct target_ops *
-linux_trad_target (CORE_ADDR (*register_u_offset)(struct gdbarch *, int, int));
-
-/* Register the customized GNU/Linux target.  This should be used
-   instead of calling add_target directly.  */
-void linux_nat_add_target (struct target_ops *);
+/* XXXXX all these hooks below should be made virtual protected low_
+   methods in linux_nat_target instead.  */
 
 /* Register a method to call whenever a new thread is attached.  */
 void linux_nat_set_new_thread (struct target_ops *, void (*) (struct lwp_info *));

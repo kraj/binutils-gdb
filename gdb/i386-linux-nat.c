@@ -33,9 +33,18 @@
 #include "i386-linux-tdep.h"
 #include "x86-xstate.h"
 
-#include "linux-nat.h"
 #include "x86-linux-nat.h"
 #include "nat/linux-ptrace.h"
+
+struct i386_linux_nat_target FINAL : public x86_linux_nat_target
+{
+  /* Add our register access methods.  */
+  void fetch_registers (struct regcache *, int) OVERRIDE;
+  void store_registers (struct regcache *, int) OVERRIDE;
+
+  /* Override the default ptrace resume method.  */
+  void low_resume (ptid_t ptid, int step, enum gdb_signal sig) OVERRIDE;
+};
 
 /* The register sets used in GNU/Linux ELF core-dumps are identical to
    the register sets in `struct user' that is used for a.out
@@ -451,9 +460,8 @@ store_fpxregs (const struct regcache *regcache, int tid, int regno)
    this for all registers (including the floating point and SSE
    registers).  */
 
-static void
-i386_linux_fetch_inferior_registers (struct target_ops *ops,
-				     struct regcache *regcache, int regno)
+void
+i386_linux_nat_target::fetch_registers (struct regcache *regcache, int regno)
 {
   int tid;
 
@@ -486,7 +494,7 @@ i386_linux_fetch_inferior_registers (struct target_ops *ops,
       /* The call above might reset `have_ptrace_getregs'.  */
       if (!have_ptrace_getregs)
 	{
-	  i386_linux_fetch_inferior_registers (ops, regcache, regno);
+	  fetch_registers (regcache, regno);
 	  return;
 	}
 
@@ -532,9 +540,8 @@ i386_linux_fetch_inferior_registers (struct target_ops *ops,
 /* Store register REGNO back into the child process.  If REGNO is -1,
    do this for all registers (including the floating point and SSE
    registers).  */
-static void
-i386_linux_store_inferior_registers (struct target_ops *ops,
-				     struct regcache *regcache, int regno)
+void
+i386_linux_nat_target::store_registers (struct regcache *regcache, int regno)
 {
   int tid;
 
@@ -646,9 +653,8 @@ static const unsigned char linux_syscall[] = { 0xcd, 0x80 };
    If STEP is nonzero, single-step it.
    If SIGNAL is nonzero, give it that signal.  */
 
-static void
-i386_linux_resume (struct target_ops *ops,
-		   ptid_t ptid, int step, enum gdb_signal signal)
+void
+i386_linux_nat_target::low_resume (ptid_t ptid, int step, enum gdb_signal signal)
 {
   int pid = ptid_get_lwp (ptid);
   int request;
@@ -718,19 +724,12 @@ i386_linux_resume (struct target_ops *ops,
 /* -Wmissing-prototypes */
 extern initialize_file_ftype _initialize_i386_linux_nat;
 
+
 void
 _initialize_i386_linux_nat (void)
 {
-  /* Create a generic x86 GNU/Linux target.  */
-  struct target_ops *t = x86_linux_create_target ();
-
-  /* Override the default ptrace resume method.  */
-  t->to_resume = i386_linux_resume;
-
-  /* Add our register access methods.  */
-  t->to_fetch_registers = i386_linux_fetch_inferior_registers;
-  t->to_store_registers = i386_linux_store_inferior_registers;
+  linux_target = new i386_linux_nat_target ();
 
   /* Add the target.  */
-  x86_linux_add_target (t);
+  x86_linux_add_target (linux_target);
 }
