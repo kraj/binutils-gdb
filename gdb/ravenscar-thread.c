@@ -71,7 +71,7 @@ struct ravenscar_thread_target : public target_ops
 
   void prepare_to_store (struct regcache *) OVERRIDE;
 
-  int thread_alive (ptid_t ptid) OVERRIDE;
+  bool thread_alive (ptid_t ptid) OVERRIDE;
 
   void update_thread_list () OVERRIDE;
 
@@ -83,11 +83,11 @@ struct ravenscar_thread_target : public target_ops
 
   void mourn_inferior () OVERRIDE;
 
-  int has_all_memory ()  OVERRIDE { return default_child_has_all_memory (); }
-  int has_memory ()  OVERRIDE { return default_child_has_memory (); }
-  int has_stack ()  OVERRIDE { return default_child_has_stack (); }
-  int has_registers ()  OVERRIDE { return default_child_has_registers (); }
-  int has_execution (ptid_t ptid)  OVERRIDE{ return default_child_has_execution (ptid); }
+  bool has_all_memory ()  OVERRIDE { return default_child_has_all_memory (); }
+  bool has_memory ()  OVERRIDE { return default_child_has_memory (); }
+  bool has_stack ()  OVERRIDE { return default_child_has_stack (); }
+  bool has_registers ()  OVERRIDE { return default_child_has_registers (); }
+  bool has_execution (ptid_t ptid)  OVERRIDE{ return default_child_has_execution (ptid); }
 };
 
 /* This module's target-specific operations.  */
@@ -274,11 +274,11 @@ ravenscar_thread_target::extra_thread_info (struct thread_info *tp)
   return "Ravenscar task";
 }
 
-int
+bool
 ravenscar_thread_target::thread_alive (ptid_t ptid)
 {
   /* Ravenscar tasks are non-terminating.  */
-  return 1;
+  return true;
 }
 
 char *

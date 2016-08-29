@@ -80,16 +80,16 @@ Use a core file as a target.  Specify the filename of the core file.");
 					ULONGEST *xfered_len) OVERRIDE;
   void files_info () OVERRIDE;
 
-  int thread_alive (ptid_t ptid) OVERRIDE;
+  bool thread_alive (ptid_t ptid) OVERRIDE;
   const struct target_desc *read_description () OVERRIDE;
 
   char *pid_to_str (ptid_t) OVERRIDE;
 
   const char *thread_name (struct thread_info *) OVERRIDE;
 
-  int has_memory () OVERRIDE;
-  int has_stack () OVERRIDE;
-  int has_registers () OVERRIDE;
+  bool has_memory () OVERRIDE;
+  bool has_stack () OVERRIDE;
+  bool has_registers () OVERRIDE;
   int info_proc (const char *, enum info_proc_what) OVERRIDE;
 };
 
@@ -961,12 +961,12 @@ core_target::xfer_partial (enum target_object object, const char *annex,
    exactly lively, are they?  On the other hand, if we don't claim
    that each & every one is alive, then we don't get any of them
    to appear in an "info thread" command, which is quite a useful
-   behaviour.
- */
-int
+   behavior.  */
+
+bool
 core_target::thread_alive (ptid_t ptid)
 {
-  return 1;
+  return true;
 }
 
 /* Ask the current architecture what it knows about this core file.
@@ -1030,19 +1030,19 @@ core_target::thread_name (struct thread_info *thr)
   return NULL;
 }
 
-int
+bool
 core_target::has_memory ()
 {
   return (core_bfd != NULL);
 }
 
-int
+bool
 core_target::has_stack ()
 {
   return (core_bfd != NULL);
 }
 
-int
+bool
 core_target::has_registers ()
 {
   return (core_bfd != NULL);

@@ -40,7 +40,7 @@ class darwin_nat_target : public inf_child_target
 
   void resume (ptid_t, int , enum gdb_signal) OVERRIDE;
 
-  int thread_alive (ptid_t ptid) OVERRIDE;
+  bool thread_alive (ptid_t ptid) OVERRIDE;
 
   char *pid_to_str (ptid_t) OVERRIDE;
 
@@ -53,7 +53,7 @@ class darwin_nat_target : public inf_child_target
 					ULONGEST offset, ULONGEST len,
 					ULONGEST *xfered_len) OVERRIDE;
 
-  int supports_multi_process () OVERRIDE;
+  bool supports_multi_process () OVERRIDE;
 
   ptid_t get_ada_task_ptid (long lwp, long thread) OVERRIDE;
 };

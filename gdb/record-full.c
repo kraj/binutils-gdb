@@ -223,16 +223,16 @@ public:
   void close () OVERRIDE;
   void async (int) OVERRIDE;
   ptid_t wait (ptid_t, struct target_waitstatus *, int) OVERRIDE;
-  int stopped_by_watchpoint () OVERRIDE;
-  int stopped_data_address (CORE_ADDR *) OVERRIDE;
+  bool stopped_by_watchpoint () OVERRIDE;
+  bool stopped_data_address (CORE_ADDR *) OVERRIDE;
 
-  int stopped_by_sw_breakpoint () OVERRIDE;
-  int supports_stopped_by_sw_breakpoint () OVERRIDE;
+  bool stopped_by_sw_breakpoint () OVERRIDE;
+  bool supports_stopped_by_sw_breakpoint () OVERRIDE;
 
-  int stopped_by_hw_breakpoint () OVERRIDE;
-  int supports_stopped_by_hw_breakpoint () OVERRIDE;
+  bool stopped_by_hw_breakpoint () OVERRIDE;
+  bool supports_stopped_by_hw_breakpoint () OVERRIDE;
 
-  int can_execute_reverse () OVERRIDE;
+  bool can_execute_reverse () OVERRIDE;
 
   /* Add bookmark target methods.  */
   gdb_byte *get_bookmark (const char *, int) OVERRIDE;
@@ -241,8 +241,8 @@ public:
   void info_record () OVERRIDE;
   void save_record (const char *filename) OVERRIDE;
   void delete_record () OVERRIDE;
-  int record_is_replaying (ptid_t ptid) OVERRIDE;
-  int record_will_replay (ptid_t ptid, int dir) OVERRIDE;
+  bool record_is_replaying (ptid_t ptid) OVERRIDE;
+  bool record_will_replay (ptid_t ptid, int dir) OVERRIDE;
   void record_stop_replaying () OVERRIDE;
   void goto_record_begin () OVERRIDE;
   void goto_record_end () OVERRIDE;
@@ -298,7 +298,7 @@ public:
 			 struct bp_target_info *,
 			 enum remove_bp_reason) OVERRIDE;
 
-  int has_execution (ptid_t) OVERRIDE;
+  bool has_execution (ptid_t) OVERRIDE;
 };
 
 static record_full_target *the_record_full_target;
@@ -1480,7 +1480,7 @@ record_full_base_target::wait (ptid_t ptid, struct target_waitstatus *status,
   return return_ptid;
 }
 
-int
+bool
 record_full_base_target::stopped_by_watchpoint ()
 {
   if (RECORD_FULL_IS_REPLAY)
@@ -1489,18 +1489,18 @@ record_full_base_target::stopped_by_watchpoint ()
     return beneath->stopped_by_watchpoint ();
 }
 
-int
+bool
 record_full_base_target::stopped_data_address (CORE_ADDR *addr_p)
 {
   if (RECORD_FULL_IS_REPLAY)
-    return 0;
+    return false;
   else
     return this->beneath->stopped_data_address (addr_p);
 }
 
 /* The to_stopped_by_sw_breakpoint method of target record-full.  */
 
-int
+bool
 record_full_base_target::stopped_by_sw_breakpoint ()
 {
   return record_full_stop_reason == TARGET_STOPPED_BY_SW_BREAKPOINT;
@@ -1509,15 +1509,15 @@ record_full_base_target::stopped_by_sw_breakpoint ()
 /* The to_supports_stopped_by_sw_breakpoint method of target
    record-full.  */
 
-int
+bool
 record_full_base_target::supports_stopped_by_sw_breakpoint ()
 {
-  return 1;
+  return true;
 }
 
 /* The to_stopped_by_hw_breakpoint method of target record-full.  */
 
-int
+bool
 record_full_base_target::stopped_by_hw_breakpoint ()
 {
   return record_full_stop_reason == TARGET_STOPPED_BY_HW_BREAKPOINT;
@@ -1526,10 +1526,10 @@ record_full_base_target::stopped_by_hw_breakpoint ()
 /* The to_supports_stopped_by_sw_breakpoint method of target
    record-full.  */
 
-int
+bool
 record_full_base_target::supports_stopped_by_hw_breakpoint ()
 {
-  return 1;
+  return true;
 }
 
 /* Record registers change (by user or by GDB) to list as an instruction.  */
@@ -1865,10 +1865,10 @@ record_full_target::remove_breakpoint (struct gdbarch *gdbarch,
 
 /* "to_can_execute_reverse" method for process record target.  */
 
-int
+bool
 record_full_base_target::can_execute_reverse ()
 {
-  return 1;
+  return true;
 }
 
 /* "to_get_bookmark" method for process record and prec over core.  */
@@ -1985,7 +1985,7 @@ record_full_base_target::delete_record ()
 
 /* The "to_record_is_replaying" target method.  */
 
-int
+bool
 record_full_base_target::record_is_replaying (ptid_t ptid)
 {
   return RECORD_FULL_IS_REPLAY;
@@ -1993,7 +1993,7 @@ record_full_base_target::record_is_replaying (ptid_t ptid)
 
 /* The "to_record_will_replay" target method.  */
 
-int
+bool
 record_full_base_target::record_will_replay (ptid_t ptid, int dir)
 {
   /* We can currently only record when executing forwards.  Should we be able
@@ -2266,10 +2266,10 @@ record_full_core_target::remove_breakpoint (struct gdbarch *gdbarch,
 
 /* "to_has_execution" method for prec over corefile.  */
 
-int
+bool
 record_full_core_target::has_execution (ptid_t the_ptid)
 {
-  return 1;
+  return true;
 }
 
 /* Record log save-file format

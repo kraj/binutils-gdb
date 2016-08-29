@@ -117,18 +117,18 @@ Specify the serial device it is connected to\n\
 			 enum remove_bp_reason) OVERRIDE;
 
 
-  int stopped_by_sw_breakpoint () OVERRIDE;
-  int supports_stopped_by_sw_breakpoint () OVERRIDE;
+  bool stopped_by_sw_breakpoint () OVERRIDE;
+  bool supports_stopped_by_sw_breakpoint () OVERRIDE;
 
-  int stopped_by_hw_breakpoint () OVERRIDE;
+  bool stopped_by_hw_breakpoint () OVERRIDE;
 
-  int supports_stopped_by_hw_breakpoint () OVERRIDE;
+  bool supports_stopped_by_hw_breakpoint () OVERRIDE;
 
-  int stopped_by_watchpoint () OVERRIDE;
+  bool stopped_by_watchpoint () OVERRIDE;
 
-  int stopped_data_address (CORE_ADDR *) OVERRIDE;
+  bool stopped_data_address (CORE_ADDR *) OVERRIDE;
 
-  int watchpoint_addr_within_range (CORE_ADDR, CORE_ADDR, int) OVERRIDE;
+  bool watchpoint_addr_within_range (CORE_ADDR, CORE_ADDR, int) OVERRIDE;
 
   int can_use_hw_breakpoint (enum bptype, int, int) OVERRIDE;
 
@@ -136,7 +136,7 @@ Specify the serial device it is connected to\n\
 
   int remove_hw_breakpoint (struct gdbarch *, struct bp_target_info *) OVERRIDE;
 
-  int region_ok_for_hw_watchpoint (CORE_ADDR, int) OVERRIDE;
+  bool region_ok_for_hw_watchpoint (CORE_ADDR, int) OVERRIDE;
 
   int insert_watchpoint (CORE_ADDR, int, enum target_hw_bp_type,
 			 struct expression *) OVERRIDE;
@@ -156,7 +156,7 @@ Specify the serial device it is connected to\n\
 
   void program_signals (int, unsigned char *) OVERRIDE;
 
-  int thread_alive (ptid_t ptid) OVERRIDE;
+  bool thread_alive (ptid_t ptid) OVERRIDE;
 
   const char *thread_name (struct thread_info *) OVERRIDE;
 
@@ -196,13 +196,13 @@ Specify the serial device it is connected to\n\
 				      CORE_ADDR load_module_addr,
 				      CORE_ADDR offset) OVERRIDE;
 
-  int has_all_memory ()  OVERRIDE { return default_child_has_all_memory (); }
-  int has_memory ()  OVERRIDE { return default_child_has_memory (); }
-  int has_stack ()  OVERRIDE { return default_child_has_stack (); }
-  int has_registers ()  OVERRIDE { return default_child_has_registers (); }
-  int has_execution (ptid_t ptid)  OVERRIDE { return default_child_has_execution (ptid); }
+  bool has_all_memory ()  OVERRIDE { return default_child_has_all_memory (); }
+  bool has_memory ()  OVERRIDE { return default_child_has_memory (); }
+  bool has_stack ()  OVERRIDE { return default_child_has_stack (); }
+  bool has_registers ()  OVERRIDE { return default_child_has_registers (); }
+  bool has_execution (ptid_t ptid)  OVERRIDE { return default_child_has_execution (ptid); }
 
-  int can_execute_reverse () OVERRIDE;
+  bool can_execute_reverse () OVERRIDE;
 
   VEC(mem_region_s) *memory_map () OVERRIDE;
 
@@ -216,9 +216,9 @@ Specify the serial device it is connected to\n\
 		     const gdb_byte *pattern, ULONGEST pattern_len,
 		     CORE_ADDR *found_addrp) OVERRIDE;
 
-  int can_async_p () OVERRIDE;
+  bool can_async_p () OVERRIDE;
 
-  int is_async_p () OVERRIDE;
+  bool is_async_p () OVERRIDE;
 
   void async (int) OVERRIDE;
 
@@ -230,13 +230,13 @@ Specify the serial device it is connected to\n\
 
   void terminal_ours () OVERRIDE;
 
-  int supports_non_stop () OVERRIDE;
+  bool supports_non_stop () OVERRIDE;
 
-  int supports_multi_process () OVERRIDE;
+  bool supports_multi_process () OVERRIDE;
 
-  int supports_disable_randomization () OVERRIDE;
+  bool supports_disable_randomization () OVERRIDE;
 
-  int filesystem_is_local () OVERRIDE;
+  bool filesystem_is_local () OVERRIDE;
 
 
   int fileio_open (struct inferior *inf, const char *filename,
@@ -262,19 +262,19 @@ Specify the serial device it is connected to\n\
 			 int *target_errno) OVERRIDE;
 
 
-  int supports_enable_disable_tracepoint () OVERRIDE;
+  bool supports_enable_disable_tracepoint () OVERRIDE;
 
-  int supports_string_tracing () OVERRIDE;
+  bool supports_string_tracing () OVERRIDE;
 
-  int supports_evaluation_of_breakpoint_conditions () OVERRIDE;
+  bool supports_evaluation_of_breakpoint_conditions () OVERRIDE;
 
-  int can_run_breakpoint_commands () OVERRIDE;
+  bool can_run_breakpoint_commands () OVERRIDE;
 
   void trace_init () OVERRIDE;
 
   void download_tracepoint (struct bp_location *location) OVERRIDE;
 
-  int can_download_tracepoint () OVERRIDE;
+  bool can_download_tracepoint () OVERRIDE;
 
   void download_trace_state_variable (struct trace_state_variable *tsv) OVERRIDE;
 
@@ -296,7 +296,7 @@ Specify the serial device it is connected to\n\
   int trace_find (enum trace_find_type type, int num,
 		  CORE_ADDR addr1, CORE_ADDR addr2, int *tpp) OVERRIDE;
 
-  int get_trace_state_variable_value (int tsv, LONGEST *val) OVERRIDE;
+  bool get_trace_state_variable_value (int tsv, LONGEST *val) OVERRIDE;
 
   int save_trace_data (const char *filename) OVERRIDE;
 
@@ -314,8 +314,8 @@ Specify the serial device it is connected to\n\
 
   void set_trace_buffer_size (LONGEST val) OVERRIDE;
 
-  int set_trace_notes (const char *user, const char *notes,
-		       const char *stopnotes) OVERRIDE;
+  bool set_trace_notes (const char *user, const char *notes,
+			const char *stopnotes) OVERRIDE;
 
   int core_of_thread (ptid_t ptid) OVERRIDE;
 
@@ -323,22 +323,22 @@ Specify the serial device it is connected to\n\
 		     CORE_ADDR memaddr, ULONGEST size) OVERRIDE;
 
 
-  int get_tib_address (ptid_t ptid, CORE_ADDR *addr) OVERRIDE;
+  bool get_tib_address (ptid_t ptid, CORE_ADDR *addr) OVERRIDE;
 
   void set_permissions () OVERRIDE;
 
-  int static_tracepoint_marker_at (CORE_ADDR,
-				   struct static_tracepoint_marker *marker) OVERRIDE;
+  bool static_tracepoint_marker_at (CORE_ADDR,
+				    struct static_tracepoint_marker *marker) OVERRIDE;
 
   VEC(static_tracepoint_marker_p) *
     static_tracepoint_markers_by_strid (const char *id) OVERRIDE;
 
   struct traceframe_info *traceframe_info () OVERRIDE;
 
-  int use_agent (int use) OVERRIDE;
-  int can_use_agent () OVERRIDE;
+  bool use_agent (int use) OVERRIDE;
+  bool can_use_agent () OVERRIDE;
 
-  int supports_btrace (enum btrace_format) OVERRIDE;
+  bool supports_btrace (enum btrace_format) OVERRIDE;
 
   struct btrace_target_info *enable_btrace (ptid_t ptid,
 					    const struct btrace_config *conf) OVERRIDE;
@@ -352,7 +352,7 @@ Specify the serial device it is connected to\n\
 				 enum btrace_read_type type) OVERRIDE;
 
   const struct btrace_config *btrace_conf (const struct btrace_target_info *) OVERRIDE;
-  int augmented_libraries_svr4_read () OVERRIDE;
+  bool augmented_libraries_svr4_read () OVERRIDE;
   int follow_fork (int, int) OVERRIDE;
   void follow_exec (struct inferior *, char *) OVERRIDE;
   int insert_fork_catchpoint (int) OVERRIDE;
@@ -391,7 +391,7 @@ public:
   void attach (const char *, int) OVERRIDE;
 
   void post_attach (int) OVERRIDE;
-  int supports_disable_randomization () OVERRIDE;
+  bool supports_disable_randomization () OVERRIDE;
 };
 
 /* Temp hacks for tracepoint encoding migration.  */
@@ -2498,7 +2498,7 @@ remote_thread_always_alive (ptid_t ptid)
 /* Return nonzero if the thread PTID is still alive on the remote
    system.  */
 
-int
+bool
 remote_target::thread_alive (ptid_t ptid)
 {
   struct remote_state *rs = get_remote_state ();
@@ -3659,7 +3659,7 @@ remote_target::extra_thread_info (struct thread_info *tp)
 }
 
 
-int
+bool
 remote_target::static_tracepoint_marker_at (CORE_ADDR addr,
 					    struct static_tracepoint_marker *marker)
 {
@@ -9313,7 +9313,7 @@ remote_target::mourn_inferior ()
     }
 }
 
-int
+bool
 extended_remote_target::supports_disable_randomization ()
 {
   return packet_support (PACKET_QDisableRandomization) == PACKET_ENABLE;
@@ -9682,7 +9682,7 @@ remote_target::insert_watchpoint (CORE_ADDR addr, int len,
 		  _("remote_insert_watchpoint: reached end of function"));
 }
 
-int
+bool
 remote_target::watchpoint_addr_within_range (CORE_ADDR addr,
 					     CORE_ADDR start, int length)
 {
@@ -9734,17 +9734,17 @@ int remote_hw_watchpoint_limit = -1;
 int remote_hw_watchpoint_length_limit = -1;
 int remote_hw_breakpoint_limit = -1;
 
-int
+bool
 remote_target::region_ok_for_hw_watchpoint (CORE_ADDR addr, int len)
 {
   if (remote_hw_watchpoint_length_limit == 0)
-    return 0;
+    return false;
   else if (remote_hw_watchpoint_length_limit < 0)
-    return 1;
+    return true;
   else if (len <= remote_hw_watchpoint_length_limit)
-    return 1;
+    return true;
   else
-    return 0;
+    return false;
 }
 
 int
@@ -9775,7 +9775,7 @@ remote_target::can_use_hw_breakpoint (enum bptype type, int cnt, int ot)
 
 /* The to_stopped_by_sw_breakpoint method of target remote.  */
 
-int
+bool
 remote_target::stopped_by_sw_breakpoint ()
 {
   struct thread_info *thread = inferior_thread ();
@@ -9787,7 +9787,7 @@ remote_target::stopped_by_sw_breakpoint ()
 /* The to_supports_stopped_by_sw_breakpoint method of target
    remote.  */
 
-int
+bool
 remote_target::supports_stopped_by_sw_breakpoint ()
 {
   return (packet_support (PACKET_swbreak_feature) == PACKET_ENABLE);
@@ -9795,7 +9795,7 @@ remote_target::supports_stopped_by_sw_breakpoint ()
 
 /* The to_stopped_by_hw_breakpoint method of target remote.  */
 
-int
+bool
 remote_target::stopped_by_hw_breakpoint ()
 {
   struct thread_info *thread = inferior_thread ();
@@ -9807,13 +9807,13 @@ remote_target::stopped_by_hw_breakpoint ()
 /* The to_supports_stopped_by_hw_breakpoint method of target
    remote.  */
 
-int
+bool
 remote_target::supports_stopped_by_hw_breakpoint ()
 {
   return (packet_support (PACKET_hwbreak_feature) == PACKET_ENABLE);
 }
 
-int
+bool
 remote_target::stopped_by_watchpoint ()
 {
   struct thread_info *thread = inferior_thread ();
@@ -9822,7 +9822,7 @@ remote_target::stopped_by_watchpoint ()
 	  && thread->priv->stop_reason == TARGET_STOPPED_BY_WATCHPOINT);
 }
 
-int
+bool
 remote_target::stopped_data_address (CORE_ADDR *addr_p)
 {
   struct thread_info *thread = inferior_thread ();
@@ -9831,10 +9831,10 @@ remote_target::stopped_data_address (CORE_ADDR *addr_p)
       && thread->priv->stop_reason == TARGET_STOPPED_BY_WATCHPOINT)
     {
       *addr_p = thread->priv->watch_data_address;
-      return 1;
+      return true;
     }
 
-  return 0;
+  return false;
 }
 
 
@@ -10867,7 +10867,7 @@ remote_target::get_thread_local_address (ptid_t ptid, CORE_ADDR lm,
 /* Provide thread local base, i.e. Thread Information Block address.
    Returns 1 if ptid is found and thread_local_base is non zero.  */
 
-int
+bool
 remote_target::get_tib_address (ptid_t ptid, CORE_ADDR *addr)
 {
   if (packet_support (PACKET_qGetTIBAddr) != PACKET_DISABLE)
@@ -10893,7 +10893,7 @@ remote_target::get_tib_address (ptid_t ptid, CORE_ADDR *addr)
 	  unpack_varlen_hex (rs->buf, &result);
 	  if (addr)
 	    *addr = (CORE_ADDR) result;
-	  return 1;
+	  return true;
 	}
       else if (result == PACKET_UNKNOWN)
 	error (_("Remote target doesn't support qGetTIBAddr packet"));
@@ -10903,7 +10903,7 @@ remote_target::get_tib_address (ptid_t ptid, CORE_ADDR *addr)
   else
     error (_("qGetTIBAddr not supported or disabled on this target"));
   /* Not reached.  */
-  return 0;
+  return false;
 }
 
 /* Support for inferring a target description based on the current
@@ -11625,7 +11625,7 @@ remote_target::fileio_fstat (int fd, struct stat *st, int *remote_errno)
 
 /* Implementation of to_filesystem_is_local.  */
 
-int
+bool
 remote_target::filesystem_is_local ()
 {
   /* Valgrind GDB presents itself as a remote target but works
@@ -11667,11 +11667,11 @@ remote_target::filesystem_is_local ()
 	      warning_issued = 1;
 	    }
 
-	  return 1;
+	  return true;
 	}
     }
 
-  return 0;
+  return false;
 }
 
 static int
@@ -11978,30 +11978,30 @@ remote_command (char *args, int from_tty)
   help_list (remote_cmdlist, "remote ", all_commands, gdb_stdout);
 }
 
-int
+bool
 remote_target::can_execute_reverse ()
 {
   if (packet_support (PACKET_bs) == PACKET_ENABLE
       || packet_support (PACKET_bc) == PACKET_ENABLE)
-    return 1;
+    return true;
   else
-    return 0;
+    return false;
 }
 
-int
+bool
 remote_target::supports_non_stop ()
 {
-  return 1;
+  return true;
 }
 
-int
+bool
 remote_target::supports_disable_randomization ()
 {
   /* Only supported in extended mode.  */
-  return 0;
+  return false;
 }
 
-int
+bool
 remote_target::supports_multi_process ()
 {
   struct remote_state *rs = get_remote_state ();
@@ -12015,7 +12015,7 @@ remote_supports_cond_tracepoints ()
   return packet_support (PACKET_ConditionalTracepoints) == PACKET_ENABLE;
 }
 
-int
+bool
 remote_target::supports_evaluation_of_breakpoint_conditions ()
 {
   return packet_support (PACKET_ConditionalBreakpoints) == PACKET_ENABLE;
@@ -12039,20 +12039,20 @@ remote_supports_install_in_trace ()
   return packet_support (PACKET_InstallInTrace) == PACKET_ENABLE;
 }
 
-int
+bool
 remote_target::supports_enable_disable_tracepoint ()
 {
   return (packet_support (PACKET_EnableDisableTracepoints_feature)
 	  == PACKET_ENABLE);
 }
 
-int
+bool
 remote_target::supports_string_tracing ()
 {
   return packet_support (PACKET_tracenz_feature) == PACKET_ENABLE;
 }
 
-int
+bool
 remote_target::can_run_breakpoint_commands ()
 {
   return packet_support (PACKET_BreakpointCommands) == PACKET_ENABLE;
@@ -12302,7 +12302,7 @@ remote_target::download_tracepoint (struct bp_location *loc)
   do_cleanups (old_chain);
 }
 
-int
+bool
 remote_target::can_download_tracepoint ()
 {
   struct remote_state *rs = get_remote_state ();
@@ -12313,20 +12313,20 @@ remote_target::can_download_tracepoint ()
      symbols, and fetched and merged the target's tracepoint list with
      ours.  */
   if (rs->starting_up)
-    return 0;
+    return false;
 
   ts = current_trace_status ();
   status = get_trace_status (ts);
 
   if (status == -1 || !ts->running_known || !ts->running)
-    return 0;
+    return false;
 
   /* If we are in a tracing experiment, but remote stub doesn't support
      installing tracepoint in trace, we have to return.  */
   if (!remote_supports_install_in_trace ())
-    return 0;
+    return false;
 
-  return 1;
+  return true;
 }
 
 
@@ -12636,7 +12636,7 @@ remote_target::trace_find (enum trace_find_type type, int num,
   return target_frameno;
 }
 
-int
+bool
 remote_target::get_trace_state_variable_value (int tsvnum, LONGEST *val)
 {
   struct remote_state *rs = get_remote_state ();
@@ -12654,10 +12654,10 @@ remote_target::get_trace_state_variable_value (int tsvnum, LONGEST *val)
 	{
 	  unpack_varlen_hex (reply + 1, &uval);
 	  *val = (LONGEST) uval;
-	  return 1;
+	  return true;
 	}
     }
-  return 0;
+  return false;
 }
 
 int
@@ -12856,7 +12856,7 @@ remote_target::set_trace_buffer_size (LONGEST val)
     }
 }
 
-int
+bool
 remote_target::set_trace_notes (const char *user, const char *notes,
 				const char *stop_notes)
 {
@@ -12894,15 +12894,15 @@ remote_target::set_trace_notes (const char *user, const char *notes,
   putpkt (rs->buf);
   reply = remote_get_noisy_reply (&target_buf, &target_buf_size);
   if (*reply == '\0')
-    return 0;
+    return false;
 
   if (strcmp (reply, "OK") != 0)
     error (_("Bogus reply from target: %s"), reply);
 
-  return 1;
+  return true;
 }
 
-int
+bool
 remote_target::use_agent (int use)
 {
   if (packet_support (PACKET_QAgent) != PACKET_DISABLE)
@@ -12917,14 +12917,14 @@ remote_target::use_agent (int use)
       if (strcmp (rs->buf, "OK") == 0)
 	{
 	  ::use_agent = use;
-	  return 1;
+	  return true;
 	}
     }
 
-  return 0;
+  return false;
 }
 
-int
+bool
 remote_target::can_use_agent ()
 {
   return (packet_support (PACKET_QAgent) != PACKET_DISABLE);
@@ -12951,18 +12951,18 @@ remote_btrace_reset (void)
 
 /* Check whether the target supports branch tracing.  */
 
-int
+bool
 remote_target::supports_btrace (enum btrace_format format)
 {
   if (packet_support (PACKET_Qbtrace_off) != PACKET_ENABLE)
-    return 0;
+    return false;
   if (packet_support (PACKET_qXfer_btrace) != PACKET_ENABLE)
-    return 0;
+    return false;
 
   switch (format)
     {
       case BTRACE_FORMAT_NONE:
-	return 0;
+	return false;
 
       case BTRACE_FORMAT_BTS:
 	return (packet_support (PACKET_Qbtrace_bts) == PACKET_ENABLE);
@@ -12973,7 +12973,7 @@ remote_target::supports_btrace (enum btrace_format format)
 #if defined (HAVE_LIBIPT)
 	return (packet_support (PACKET_Qbtrace_pt) == PACKET_ENABLE);
 #else /* !defined (HAVE_LIBIPT)  */
-	return 0;
+	return false;
 #endif /* !defined (HAVE_LIBIPT)  */
     }
 
@@ -13269,7 +13269,7 @@ remote_target::btrace_conf (const struct btrace_target_info *tinfo)
   return &tinfo->conf;
 }
 
-int
+bool
 remote_target::augmented_libraries_svr4_read ()
 {
   return (packet_support (PACKET_augmented_libraries_svr4_read_feature)
@@ -13354,27 +13354,27 @@ remote_target::execution_direction ()
   return rs->last_resume_exec_dir;
 }
 
-int
+bool
 remote_target::can_async_p ()
 {
   struct remote_state *rs = get_remote_state ();
 
   if (!target_async_permitted)
     /* We only enable async when the user specifically asks for it.  */
-    return 0;
+    return false;
 
   /* We're async whenever the serial device is.  */
   return serial_can_async_p (rs->remote_desc);
 }
 
-int
+bool
 remote_target::is_async_p ()
 {
   struct remote_state *rs = get_remote_state ();
 
   if (!target_async_permitted)
     /* We only enable async when the user specifically asks for it.  */
-    return 0;
+    return false;
 
   /* We're async whenever the serial device is.  */
   return serial_is_async_p (rs->remote_desc);

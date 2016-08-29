@@ -127,20 +127,20 @@ struct gdbsim_target
 
   void interrupt (ptid_t) OVERRIDE;
 
-  int thread_alive (ptid_t ptid) OVERRIDE;
+  bool thread_alive (ptid_t ptid) OVERRIDE;
 
   char *pid_to_str (ptid_t) OVERRIDE;
 
-  int has_all_memory ()  OVERRIDE;
-  int has_memory ()  OVERRIDE;
+  bool has_all_memory ()  OVERRIDE;
+  bool has_memory ()  OVERRIDE;
 
-  int has_stack ()  OVERRIDE
+  bool has_stack ()  OVERRIDE
   { return default_child_has_stack (); }
 
-  int has_registers ()  OVERRIDE
+  bool has_registers ()  OVERRIDE
   { return default_child_has_registers (); }
 
-  int has_execution (ptid_t ptid) OVERRIDE
+  bool has_execution (ptid_t ptid) OVERRIDE
   { return default_child_has_execution (ptid); }
 };
 
@@ -1291,20 +1291,20 @@ sim_command_completer (struct cmd_list_element *ignore, const char *text,
 
 /* Check to see if a thread is still alive.  */
 
-int
+bool
 gdbsim_target::thread_alive (ptid_t ptid)
 {
   struct sim_inferior_data *sim_data
     = get_sim_inferior_data_by_ptid (ptid, SIM_INSTANCE_NOT_NEEDED);
 
   if (sim_data == NULL)
-    return 0;
+    return false;
 
   if (ptid_equal (ptid, sim_data->remote_sim_ptid))
     /* The simulators' task is always alive.  */
-    return 1;
+    return true;
 
-  return 0;
+  return false;
 }
 
 /* Convert a thread ID to a string.  Returns the string in a static
@@ -1318,28 +1318,28 @@ gdbsim_target::pid_to_str (ptid_t ptid)
 
 /* Simulator memory may be accessed after the program has been loaded.  */
 
-int
+bool
 gdbsim_target::has_all_memory ()
 {
   struct sim_inferior_data *sim_data
     = get_sim_inferior_data (current_inferior (), SIM_INSTANCE_NOT_NEEDED);
 
   if (!sim_data->program_loaded)
-    return 0;
+    return false;
 
-  return 1;
+  return true;
 }
 
-int
+bool
 gdbsim_target::has_memory ()
 {
   struct sim_inferior_data *sim_data
     = get_sim_inferior_data (current_inferior (), SIM_INSTANCE_NOT_NEEDED);
 
   if (!sim_data->program_loaded)
-    return 0;
+    return false;
 
-  return 1;
+  return true;
 }
 
 void

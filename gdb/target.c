@@ -2644,10 +2644,10 @@ target_ops::create_inferior (char *, char *, char **, int)
   gdb_assert (0);;
 }
 
-int
+bool
 target_ops::can_run ()
 {
-  return 0;
+  return true;
 }
 
 int

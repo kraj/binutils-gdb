@@ -64,7 +64,7 @@ Use a trace file as a target.  Specify the filename of the trace file.");
   void files_info () OVERRIDE;
   int trace_find (enum trace_find_type type, int num,
 			  CORE_ADDR addr1, CORE_ADDR addr2, int *tpp) OVERRIDE;
-  int get_trace_state_variable_value (int tsv, LONGEST *val) OVERRIDE;
+  bool get_trace_state_variable_value (int tsv, LONGEST *val) OVERRIDE;
   struct traceframe_info *traceframe_info () OVERRIDE;
 
   void get_tracepoint_status (struct breakpoint *tp,
@@ -1039,11 +1039,11 @@ tfile_target::xfer_partial (enum target_object object,
 /* Iterate through the blocks of a trace frame, looking for a 'V'
    block with a matching tsv number.  */
 
-int
+bool
 tfile_target::get_trace_state_variable_value (int tsvnum, LONGEST *val)
 {
   int pos;
-  int found = 0;
+  bool found = false;
 
   /* Iterate over blocks in current frame and find the last 'V'
      block in which tsv number is TSVNUM.  In one trace frame, there
@@ -1064,7 +1064,7 @@ tfile_target::get_trace_state_variable_value (int tsvnum, LONGEST *val)
 	  *val = extract_signed_integer ((gdb_byte *) val, 8,
 					 gdbarch_byte_order
 					 (target_gdbarch ()));
-	  found = 1;
+	  found = true;
 	}
       pos += (4 + 8);
     }

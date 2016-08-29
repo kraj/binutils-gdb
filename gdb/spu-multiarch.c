@@ -52,7 +52,7 @@ struct spu_multiarch_target FINAL : public target_ops
 
   void mourn_inferior () OVERRIDE;
 
-    void fetch_registers (struct regcache *, int) OVERRIDE;
+  void fetch_registers (struct regcache *, int) OVERRIDE;
   void store_registers (struct regcache *, int) OVERRIDE;
 
   enum target_xfer_status xfer_partial (enum target_object object,
@@ -66,7 +66,7 @@ struct spu_multiarch_target FINAL : public target_ops
 		     const gdb_byte *pattern, ULONGEST pattern_len,
 		     CORE_ADDR *found_addrp) OVERRIDE;
 
-  int region_ok_for_hw_watchpoint (CORE_ADDR, int) OVERRIDE;
+  bool region_ok_for_hw_watchpoint (CORE_ADDR, int) OVERRIDE;
 
   struct gdbarch *thread_architecture (ptid_t) OVERRIDE;
 };
@@ -161,14 +161,15 @@ spu_multiarch_target::thread_architecture (ptid_t ptid)
 }
 
 /* Override the to_region_ok_for_hw_watchpoint routine.  */
-int
+
+bool
 spu_multiarch_target::region_ok_for_hw_watchpoint (CORE_ADDR addr, int len)
 {
   struct target_ops *ops_beneath = find_target_beneath (this);
 
   /* We cannot watch SPU local store.  */
   if (SPUADDR_SPU (addr) != -1)
-    return 0;
+    return false;
 
   return ops_beneath->region_ok_for_hw_watchpoint (addr, len);
 }

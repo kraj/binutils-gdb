@@ -84,7 +84,7 @@ Specify the filename of the executable file.");
   struct target_section_table *get_section_table () OVERRIDE;
   void files_info () OVERRIDE;
 
-  int has_memory () OVERRIDE;
+  bool has_memory () OVERRIDE;
   char *make_corefile_notes (bfd *, int *) OVERRIDE;
   int find_memory_regions (find_memory_region_ftype func, void *data) OVERRIDE;
 };
@@ -1091,7 +1091,7 @@ exec_set_section_address (const char *filename, int index, CORE_ADDR address)
     }
 }
 
-int
+bool
 exec_target::has_memory ()
 {
   /* We can provide memory if we have any file/target sections to read

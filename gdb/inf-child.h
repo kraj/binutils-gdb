@@ -59,7 +59,7 @@ struct inf_child_target
 
   void mourn_inferior () OVERRIDE;
 
-  int can_run () OVERRIDE;
+  bool can_run () OVERRIDE;
 
   bool can_create_inferior () OVERRIDE;
   void create_inferior (char *, char *, char **, int) OVERRIDE = 0;
@@ -71,16 +71,16 @@ struct inf_child_target
 
   /* We must default these because they must be implemented by any
      target that can run.  */
-  int can_async_p ()  OVERRIDE { return 0; }
-  int supports_non_stop ()  OVERRIDE { return 0; }
+  bool can_async_p ()  OVERRIDE { return false; }
+  bool supports_non_stop ()  OVERRIDE { return false; }
 
   char *pid_to_exec_file (int pid) OVERRIDE;
 
-  int has_all_memory () OVERRIDE;
-  int has_memory () OVERRIDE;
-  int has_stack () OVERRIDE;
-  int has_registers () OVERRIDE;
-  int has_execution (ptid_t) OVERRIDE;
+  bool has_all_memory () OVERRIDE;
+  bool has_memory () OVERRIDE;
+  bool has_stack () OVERRIDE;
+  bool has_registers () OVERRIDE;
+  bool has_execution (ptid_t) OVERRIDE;
 
   int fileio_open (struct inferior *inf, const char *filename,
 		   int flags, int mode, int warn_if_slow,
@@ -97,9 +97,9 @@ struct inf_child_target
   char *fileio_readlink (struct inferior *inf,
 			 const char *filename,
 			 int *target_errno) OVERRIDE;
-  int use_agent (int use) OVERRIDE;
+  bool use_agent (int use) OVERRIDE;
 
-  int can_use_agent () OVERRIDE;
+  bool can_use_agent () OVERRIDE;
 
  protected:
   /* Unpush the target if it wasn't explicitly open with "target native"

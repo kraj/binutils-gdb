@@ -74,7 +74,7 @@ struct x86_nat_target : public T
   int can_use_hw_breakpoint (enum bptype type, int cnt, int othertype) OVERRIDE
   { return x86_can_use_hw_breakpoint (type, cnt, othertype); }
 
-  int region_ok_for_hw_watchpoint (CORE_ADDR addr, int len) OVERRIDE
+  bool region_ok_for_hw_watchpoint (CORE_ADDR addr, int len) OVERRIDE
   { return x86_region_ok_for_hw_watchpoint (addr, len); }
 
   int insert_watchpoint (CORE_ADDR addr, int len,
@@ -95,10 +95,10 @@ struct x86_nat_target : public T
 			    struct bp_target_info *bp_tgt) OVERRIDE
   { return x86_remove_hw_breakpoint (gdbarch, bp_tgt); }
 
-  int stopped_by_watchpoint () OVERRIDE
+  bool stopped_by_watchpoint () OVERRIDE
   { return x86_stopped_by_watchpoint (); }
 
-  int stopped_data_address (CORE_ADDR *addr_p) OVERRIDE
+  bool stopped_data_address (CORE_ADDR *addr_p) OVERRIDE
   { return x86_stopped_data_address (addr_p); }
 };
 

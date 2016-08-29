@@ -119,11 +119,11 @@ class tracefile_target : public target_ops
   tracefile_target ();
 
   int get_trace_status (struct trace_status *ts) OVERRIDE;
-  int has_all_memory () OVERRIDE;
-  int has_memory () OVERRIDE;
-  int has_stack () OVERRIDE;
-  int has_registers () OVERRIDE;
-  int thread_alive (ptid_t ptid) OVERRIDE;
+  bool has_all_memory () OVERRIDE;
+  bool has_memory () OVERRIDE;
+  bool has_stack () OVERRIDE;
+  bool has_registers () OVERRIDE;
+  bool thread_alive (ptid_t ptid) OVERRIDE;
 };
 
 extern void tracefile_fetch_registers (struct regcache *regcache, int regno);

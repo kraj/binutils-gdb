@@ -56,7 +56,7 @@ struct inf_ptrace_target : public inf_child_target
 
   void mourn_inferior () OVERRIDE;
 
-  int thread_alive (ptid_t ptid) OVERRIDE;
+  bool thread_alive (ptid_t ptid) OVERRIDE;
 
   char *pid_to_str (ptid_t) OVERRIDE;
 
