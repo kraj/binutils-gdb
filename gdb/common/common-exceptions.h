@@ -119,10 +119,6 @@ struct gdb_exception
 
 /* The different exception mechanisms that TRY/CATCH can map to.  */
 
-/* Make GDB exceptions use setjmp/longjmp behind the scenes.  This is
-   the only mode supported when GDB is built as a C program.  */
-#define GDB_XCPT_SJMP 1
-
 /* Make GDB exceptions use try/catch behind the scenes.  */
 #define GDB_XCPT_TRY 2
 
@@ -132,11 +128,7 @@ struct gdb_exception
    spurious code between the TRY and the CATCH block.  */
 #define GDB_XCPT_RAW_TRY 3
 
-#ifdef __cplusplus
-# define GDB_XCPT GDB_XCPT_TRY
-#else
-# define GDB_XCPT GDB_XCPT_SJMP
-#endif
+#define GDB_XCPT GDB_XCPT_TRY
 
 /* Functions to drive the sjlj-based exceptions state machine.  Though
    declared here by necessity, these functions should be considered
@@ -146,15 +138,13 @@ struct gdb_exception
 extern jmp_buf *exceptions_state_mc_init (void);
 extern int exceptions_state_mc_action_iter (void);
 extern int exceptions_state_mc_action_iter_1 (void);
-extern int exceptions_state_mc_catch (struct gdb_exception *, int);
+extern struct gdb_exception exceptions_state_mc_catch ();
 
 /* Same, but for the C++ try/catch-based TRY/CATCH mechanism.  */
 
-#if GDB_XCPT != GDB_XCPT_SJMP
 extern void *exception_try_scope_entry (void);
 extern void exception_try_scope_exit (void *saved_state);
 extern void exception_rethrow (void);
-#endif
 
 /* Macro to wrap up standard try/catch behavior.
 
@@ -184,7 +174,7 @@ extern void exception_rethrow (void);
   when TRY/CATCH are mapped to C++ try/catch.  The SJLJ variants are
   needed in some cases where gdb exceptions need to cross third-party
   library code compiled without exceptions support (e.g.,
-  readline).  */
+  readline).  Also, the SJLJ versions don't support a mask */
 
 #define TRY_SJLJ \
      { \
@@ -195,26 +185,20 @@ extern void exception_rethrow (void);
      while (exceptions_state_mc_action_iter ()) \
        while (exceptions_state_mc_action_iter_1 ())
 
-#define CATCH_SJLJ(EXCEPTION, MASK)				\
-  {							\
-    struct gdb_exception EXCEPTION;				\
-    if (exceptions_state_mc_catch (&(EXCEPTION), MASK))
+/* Note: we create a local named temporary object instead of assigning
+   EXCEPTION directly to the result of exceptions_state_mc_catch()
+   directly, in order to allow catching by non-const reference, just
+   like C++ try/catch.  */
+#define CATCH_SJLJ(EXCEPTION)						\
+  {									\
+    gdb_exception sjlj_exception_object = exceptions_state_mc_catch (); \
+    if (sjlj_exception_object.reason < 0)					\
+      {									\
+	EXCEPTION = sjlj_exception_object;
 
 #define END_CATCH_SJLJ				\
+      }						\
   }
-
-#if GDB_XCPT == GDB_XCPT_SJMP
-
-/* If using SJLJ-based exceptions for all exceptions, then provide
-   standard aliases.  */
-
-#define TRY TRY_SJLJ
-#define CATCH CATCH_SJLJ
-#define END_CATCH END_CATCH_SJLJ
-
-#endif /* GDB_XCPT_SJMP */
-
-#if GDB_XCPT == GDB_XCPT_TRY || GDB_XCPT == GDB_XCPT_RAW_TRY
 
 /* Prevent error/quit during TRY from calling cleanups established
    prior to here.  This pops out the scope in either case of normal
@@ -236,53 +220,41 @@ struct exception_try_scope
 #if GDB_XCPT == GDB_XCPT_TRY
 
 /* We still need to wrap TRY/CATCH in C++ so that cleanups and C++
-   exceptions can coexist.  The TRY blocked is wrapped in a
-   do/while(0) so that break/continue within the block works the same
-   as in C.  */
+   exceptions can coexist.  */
 #define TRY								\
   try									\
     {									\
-      exception_try_scope exception_try_scope_instance;			\
-      do								\
-	{
+      exception_try_scope exception_try_scope_instance;
 
-#define CATCH(EXCEPTION, MASK)						\
-	} while (0);							\
+#define CATCH(EXCEPTION)						\
     }								        \
-  catch (struct gdb_exception ## _ ## MASK &EXCEPTION)
+  catch (EXCEPTION)
 
-#define END_CATCH				\
-  catch (...)					\
-  {						\
-    exception_rethrow ();			\
-  }
+#define END_CATCH			       \
+  catch (...)				       \
+    {					       \
+      exception_rethrow ();		       \
+    }
 
 #else
 
 #define TRY try
-#define CATCH(EXCEPTION, MASK) \
-  catch (struct gdb_exception ## _ ## MASK &EXCEPTION)
+#define CATCH(EXCEPTION) \
+  catch (EXCEPTION)
 #define END_CATCH
 
 #endif
 
 /* The exception types client code may catch.  They're just shims
-   around gdb_exception that add nothing but type info.  Which is used
-   is selected depending on the MASK argument passed to CATCH.  */
+   around gdb_exception that add nothing but type info.  */
 
-struct gdb_exception_RETURN_MASK_ALL : public gdb_exception
+struct gdb_error : public gdb_exception
 {
 };
 
-struct gdb_exception_RETURN_MASK_ERROR : public gdb_exception_RETURN_MASK_ALL
+struct gdb_quit : public gdb_exception
 {
 };
-
-struct gdb_exception_RETURN_MASK_QUIT : public gdb_exception_RETURN_MASK_ALL
-{
-};
-
-#endif /* GDB_XCPT_TRY || GDB_XCPT_RAW_TRY */
 
 /* An exception type that inherits from both std::bad_alloc and a gdb
    exception.  This is necessary because operator new can only throw
@@ -291,7 +263,7 @@ struct gdb_exception_RETURN_MASK_QUIT : public gdb_exception_RETURN_MASK_ALL
    spread around the codebase.  */
 
 struct gdb_quit_bad_alloc
-  : public gdb_exception_RETURN_MASK_QUIT,
+  : public gdb_quit,
     public std::bad_alloc
 {
   explicit gdb_quit_bad_alloc (gdb_exception ex)

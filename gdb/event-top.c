@@ -162,8 +162,6 @@ void (*after_char_processing_hook) (void);
 static void
 gdb_rl_callback_read_char_wrapper (gdb_client_data client_data)
 {
-  struct gdb_exception gdb_expt = exception_none;
-
   /* C++ exceptions can't normally be thrown across readline (unless
      it is built with -fexceptions, but it won't by default on many
      ABIs).  So we instead wrap the readline call with a sjlj-based
@@ -174,15 +172,12 @@ gdb_rl_callback_read_char_wrapper (gdb_client_data client_data)
       if (after_char_processing_hook)
 	(*after_char_processing_hook) ();
     }
-  CATCH_SJLJ (ex, RETURN_MASK_ALL)
+  CATCH_SJLJ (const gdb_exception &ex)
     {
-      gdb_expt = ex;
+      /* Rethrow using the normal EH mechanism.  */
+      throw_exception (ex);
     }
   END_CATCH_SJLJ
-
-  /* Rethrow using the normal EH mechanism.  */
-  if (gdb_expt.reason < 0)
-    throw_exception (gdb_expt);
 }
 
 /* GDB's readline callback handler.  Calls the current INPUT_HANDLER,

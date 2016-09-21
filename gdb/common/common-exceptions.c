@@ -55,26 +55,6 @@ struct catcher
 /* Where to go for throw_exception().  */
 static struct catcher *current_catcher;
 
-#if GDB_XCPT == GDB_XCPT_SJMP
-
-/* Return length of current_catcher list.  */
-
-static int
-catcher_list_size (void)
-{
-  int size;
-  struct catcher *catcher;
-
-  for (size = 0, catcher = current_catcher;
-       catcher != NULL;
-       catcher = catcher->prev)
-    ++size;
-
-  return size;
-}
-
-#endif
-
 jmp_buf *
 exceptions_state_mc_init (void)
 {
@@ -178,29 +158,13 @@ exceptions_state_mc (enum catcher_action action)
     }
 }
 
-int
-exceptions_state_mc_catch (struct gdb_exception *exception,
-			   int mask)
+struct gdb_exception
+exceptions_state_mc_catch ()
 {
-  *exception = current_catcher->exception;
+  struct gdb_exception res = current_catcher->exception;
+
   catcher_pop ();
-
-  if (exception->reason < 0)
-    {
-      if (mask & RETURN_MASK (exception->reason))
-	{
-	  /* Exit normally and let the caller handle the
-	     exception.  */
-	  return 1;
-	}
-
-      /* The caller didn't request that the event be caught, relay the
-	 event to the next exception_catch/CATCH_SJLJ.  */
-      throw_exception_sjlj (*exception);
-    }
-
-  /* No exception was thrown.  */
-  return 0;
+  return res;
 }
 
 int
@@ -214,8 +178,6 @@ exceptions_state_mc_action_iter_1 (void)
 {
   return exceptions_state_mc (CATCH_ITER_1);
 }
-
-#if GDB_XCPT != GDB_XCPT_SJMP
 
 /* How many nested TRY blocks we have.  See exception_messages and
    throw_it.  */
@@ -262,8 +224,6 @@ gdb_exception_sliced_copy (struct gdb_exception *to, const struct gdb_exception 
   *to = *from;
 }
 
-#endif /* !GDB_XCPT_SJMP */
-
 /* Return EXCEPTION to the nearest containing catch_errors().  */
 
 void
@@ -279,43 +239,29 @@ throw_exception_sjlj (struct gdb_exception exception)
   longjmp (current_catcher->buf, exception.reason);
 }
 
-#if GDB_XCPT != GDB_XCPT_SJMP
-
 /* Implementation of throw_exception that uses C++ try/catch.  */
 
-static ATTRIBUTE_NORETURN void
-throw_exception_cxx (struct gdb_exception exception)
+ATTRIBUTE_NORETURN void
+throw_exception (struct gdb_exception exception)
 {
   do_cleanups (all_cleanups ());
 
   if (exception.reason == RETURN_QUIT)
     {
-      gdb_exception_RETURN_MASK_QUIT ex;
+      gdb_quit ex;
 
       gdb_exception_sliced_copy (&ex, &exception);
       throw ex;
     }
   else if (exception.reason == RETURN_ERROR)
     {
-      gdb_exception_RETURN_MASK_ERROR ex;
+      gdb_error ex;
 
       gdb_exception_sliced_copy (&ex, &exception);
       throw ex;
     }
   else
     gdb_assert_not_reached ("invalid return reason");
-}
-
-#endif
-
-void
-throw_exception (struct gdb_exception exception)
-{
-#if GDB_XCPT == GDB_XCPT_SJMP
-  throw_exception_sjlj (exception);
-#else
-  throw_exception_cxx (exception);
-#endif
 }
 
 /* A stack of exception messages.
@@ -339,11 +285,7 @@ throw_it (enum return_reason reason, enum errors error, const char *fmt,
 {
   struct gdb_exception e;
   char *new_message;
-#if GDB_XCPT == GDB_XCPT_SJMP
-  int depth = catcher_list_size ();
-#else
   int depth = try_scope_depth;
-#endif
 
   gdb_assert (depth > 0);
 
