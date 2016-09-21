@@ -529,7 +529,7 @@ tfile_open (const char *arg, int from_tty)
     {
       /* Remove the partially set up target.  */
       unpush_target (&tfile_ops);
-      throw_exception (ex);
+      rethrow_exception ();
     }
   END_CATCH
 

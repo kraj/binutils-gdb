@@ -431,7 +431,7 @@ post_create_inferior (struct target_ops *target, int from_tty)
   CATCH (const gdb_error &ex)
     {
       if (ex.error != NOT_AVAILABLE_ERROR)
-	throw_exception (ex);
+	rethrow_exception ();
     }
   END_CATCH
 

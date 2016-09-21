@@ -1527,7 +1527,7 @@ linux_detach_one_lwp (struct lwp_info *lwp)
   CATCH (const gdb_error &ex)
     {
       if (!check_ptrace_stopped_lwp_gone (lwp))
-	throw_exception (ex);
+	rethrow_exception ();
     }
   END_CATCH
 
@@ -4586,7 +4586,7 @@ linux_resume_one_lwp (struct lwp_info *lwp,
   CATCH (const gdb_error &ex)
     {
       if (!check_ptrace_stopped_lwp_gone (lwp))
-	throw_exception (ex);
+	rethrow_exception ();
     }
   END_CATCH
 }

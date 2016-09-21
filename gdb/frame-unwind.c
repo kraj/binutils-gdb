@@ -117,7 +117,7 @@ frame_unwind_try_unwinder (struct frame_info *this_frame, void **this_cache,
 	  do_cleanups (old_cleanup);
 	  return 0;
 	}
-      throw_exception (ex);
+      rethrow_exception ();
     }
   END_CATCH
 

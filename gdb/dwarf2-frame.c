@@ -1137,7 +1137,7 @@ dwarf2_frame_cache (struct frame_info *this_frame, void **this_cache)
 	  return cache;
 	}
 
-      throw_exception (ex);
+      rethrow_exception ();
     }
   END_CATCH
 

@@ -958,7 +958,7 @@ btrace_compute_ftrace_pt (struct thread_info *tp,
 
       btrace_finalize_ftrace_pt (decoder, tp, level);
 
-      throw_exception (error);
+      rethrow_exception ();
     }
   END_CATCH
 
@@ -2499,8 +2499,7 @@ btrace_maint_update_pt_packets (struct btrace_thread_info *btinfo)
     {
       pt_pkt_free_decoder (decoder);
 
-      if (except.reason < 0)
-	throw_exception (except);
+      rethrow_exception ();
     }
   END_CATCH
 

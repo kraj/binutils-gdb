@@ -1441,7 +1441,7 @@ detach_one_lwp (struct lwp_info *lp, int *signo_p)
   CATCH (const gdb_error &ex)
     {
       if (!check_ptrace_stopped_lwp_gone (lp))
-	throw_exception (ex);
+	rethrow_exception ();
     }
   END_CATCH
 
@@ -1634,7 +1634,7 @@ linux_resume_one_lwp (struct lwp_info *lp, int step, enum gdb_signal signo)
   CATCH (const gdb_error &ex)
     {
       if (!check_ptrace_stopped_lwp_gone (lp))
-	throw_exception (ex);
+	rethrow_exception ();
     }
   END_CATCH
 }
@@ -3589,7 +3589,7 @@ resume_stopped_resumed_lwps (struct lwp_info *lp, void *data)
       CATCH (const gdb_error &ex)
 	{
 	  if (!check_ptrace_stopped_lwp_gone (lp))
-	    throw_exception (ex);
+	    rethrow_exception ();
 	}
       END_CATCH
     }

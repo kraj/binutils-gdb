@@ -3534,9 +3534,9 @@ types_deeply_equal (struct type *type1, struct type *type2)
     {
       result = check_types_worklist (&worklist, cache);
     }
-  CATCH (const gdb_exception &ex)
+  CATCH (gdb_exception &ex)
     {
-      except = ex;
+      except = gdb::move (ex);
     }
   END_CATCH
 
@@ -3545,7 +3545,7 @@ types_deeply_equal (struct type *type1, struct type *type2)
 
   /* Rethrow if there was a problem.  */
   if (except.reason < 0)
-    throw_exception (except);
+    throw_exception (gdb::move (except));
 
   return result;
 }

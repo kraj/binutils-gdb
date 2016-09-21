@@ -185,7 +185,7 @@ compile_object_run (struct compile_module *module)
       gdb_assert (!(dtor_found && executed));
       if (!dtor_found && !executed)
 	do_module_cleanup (data, 0);
-      throw_exception (ex);
+      rethrow_exception ();
     }
   END_CATCH
 

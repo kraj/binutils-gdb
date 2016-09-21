@@ -5088,7 +5088,7 @@ remote_open_1 (const char *name, int from_tty,
 	  remote_unpush_target ();
 	if (target_async_permitted)
 	  wait_forever_enabled_p = 1;
-	throw_exception (ex);
+	rethrow_exception ();
       }
     END_CATCH
   }
@@ -8988,7 +8988,7 @@ remote_kill_k (void)
       /* Otherwise, something went wrong.  We didn't actually kill
 	 the target.  Just propagate the exception, and let the
 	 user or higher layers decide what to do.  */
-      throw_exception (ex);
+      rethrow_exception ();
     }
   END_CATCH
 }
@@ -12199,7 +12199,7 @@ remote_get_trace_status (struct target_ops *self, struct trace_status *ts)
 	  exception_fprintf (gdb_stderr, ex, "qTStatus: ");
 	  return -1;
 	}
-      throw_exception (ex);
+      rethrow_exception ();
     }
   END_CATCH
 

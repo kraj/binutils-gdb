@@ -238,7 +238,7 @@ fetch_subexp_value (struct expression *exp, int *pc, struct value **valp,
 	  if (!preserve_errors)
 	    break;
 	default:
-	  throw_exception (ex);
+	  rethrow_exception ();
 	  break;
 	}
     }
@@ -780,7 +780,7 @@ evaluate_subexp_standard (struct type *expect_type,
 	      ret = value_zero (SYMBOL_TYPE (exp->elts[pc + 2].symbol),
 				not_lval);
 	    else
-	      throw_exception (except);
+	      rethrow_exception ();
 	  }
 	END_CATCH
 
@@ -1460,7 +1460,7 @@ evaluate_subexp_standard (struct type *expect_type,
 		      if (except.error == NOT_FOUND_ERROR)
 			break;
 		      else
-			throw_exception (except);
+			rethrow_exception ();
 		    }
 		  END_CATCH
 
@@ -1887,7 +1887,7 @@ evaluate_subexp_standard (struct type *expect_type,
 	      if (except.error == NOT_FOUND_ERROR)
 		break;
 	      else
-		throw_exception (except);
+		rethrow_exception ();
 	    }
 	  END_CATCH
 

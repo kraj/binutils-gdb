@@ -208,7 +208,7 @@ exception_try_scope_exit (void *saved_state)
    exception is not caught.  */
 
 void
-exception_rethrow (void)
+rethrow_exception ()
 {
   /* Run this scope's cleanups before re-throwing to the next
      outermost scope.  */
@@ -254,16 +254,6 @@ throw_it (enum return_reason reason, enum errors error, const char *fmt,
   const char *message = xstrvprintf (fmt, ap);
 
   throw_exception (reason, error, message);
-}
-
-void
-throw_exception (const gdb_exception &exception)
-{
-  const char *message = (exception.message != NULL
-			 ? xstrdup (exception.message)
-			 : NULL);
-
-  throw_exception (exception.reason, exception.error, message);
 }
 
 void

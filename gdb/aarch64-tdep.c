@@ -556,7 +556,7 @@ aarch64_make_prologue_cache (struct frame_info *this_frame, void **this_cache)
   CATCH (const gdb_error &ex)
     {
       if (ex.error != NOT_AVAILABLE_ERROR)
-	throw_exception (ex);
+	rethrow_exception ();
     }
   END_CATCH
 
@@ -683,7 +683,7 @@ aarch64_make_stub_cache (struct frame_info *this_frame, void **this_cache)
   CATCH (const gdb_error &ex)
     {
       if (ex.error != NOT_AVAILABLE_ERROR)
-	throw_exception (ex);
+	rethrow_exception ();
     }
   END_CATCH
 

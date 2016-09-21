@@ -321,9 +321,9 @@ gdb_xml_start_element_wrapper (void *data, const XML_Char *name,
     {
       gdb_xml_start_element (data, name, attrs);
     }
-  CATCH (const gdb_exception &ex)
+  CATCH (gdb_exception &ex)
     {
-      parser->error = ex;
+      parser->error = gdb::move (ex);
 #ifdef HAVE_XML_STOPPARSER
       XML_StopParser (parser->expat_parser, XML_FALSE);
 #endif
@@ -404,9 +404,9 @@ gdb_xml_end_element_wrapper (void *data, const XML_Char *name)
     {
       gdb_xml_end_element (data, name);
     }
-  CATCH (const gdb_exception &ex)
+  CATCH (gdb_exception &ex)
     {
-      parser->error = ex;
+      parser->error = gdb::move (ex);
 #ifdef HAVE_XML_STOPPARSER
       XML_StopParser (parser->expat_parser, XML_FALSE);
 #endif
@@ -584,7 +584,7 @@ gdb_xml_parse (struct gdb_xml_parser *parser, const char *buffer)
   else
     {
       gdb_assert (parser->error.reason < 0);
-      throw_exception (parser->error);
+      throw_exception (gdb::move (parser->error));
     }
 
   if (parser->last_line != 0)

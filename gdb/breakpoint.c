@@ -9809,7 +9809,7 @@ create_breakpoint (struct gdbarch *gdbarch,
 	     error.  */
 
 	  if (pending_break_support == AUTO_BOOLEAN_FALSE)
-	    throw_exception (e);
+	    rethrow_exception ();
 
 	  exception_print (gdb_stderr, e);
 
@@ -9827,7 +9827,7 @@ create_breakpoint (struct gdbarch *gdbarch,
 	  pending = 1;
 	}
       else
-	throw_exception (e);
+	rethrow_exception ();
     }
   END_CATCH
 
@@ -11464,7 +11464,7 @@ watch_command_1 (const char *arg, int accessflag, int from_tty,
   CATCH (const gdb_exception &e)
     {
       delete_breakpoint (b);
-      throw_exception (e);
+      rethrow_exception ();
     }
   END_CATCH
 
@@ -14425,11 +14425,11 @@ location_to_sals (struct breakpoint *b, struct event_location *location,
     {
       b->ops->decode_location (b, location, search_pspace, &sals);
     }
-  CATCH (const gdb_error &e)
+  CATCH (gdb_error &e)
     {
       int not_found_and_ok = 0;
 
-      exception = e;
+      exception = gdb::move (e);
 
       /* For pending breakpoints, it's expected that parsing will
 	 fail until the right shared library is loaded.  User has
@@ -14457,7 +14457,7 @@ location_to_sals (struct breakpoint *b, struct event_location *location,
 	     happens only when a binary has changed, I don't know
 	     which approach is better.  */
 	  b->enable_state = bp_disabled;
-	  throw_exception (e);
+	  rethrow_exception ();
 	}
     }
   END_CATCH
@@ -15774,7 +15774,7 @@ save_breakpoints (char *filename, int from_tty,
 	CATCH (const gdb_exception &ex)
 	  {
 	    ui_out_redirect (current_uiout, NULL);
-	    throw_exception (ex);
+	    rethrow_exception ();
 	  }
 	END_CATCH
 

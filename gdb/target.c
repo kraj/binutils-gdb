@@ -922,7 +922,7 @@ target_translate_tls_address (struct objfile *objfile, CORE_ADDR offset)
 		       objfile_name (objfile), ex.message);
 	      break;
 	    default:
-	      throw_exception (ex);
+	      rethrow_exception ();
 	      break;
 	    }
 	}

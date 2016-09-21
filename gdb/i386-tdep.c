@@ -2076,7 +2076,7 @@ i386_frame_cache (struct frame_info *this_frame, void **this_cache)
   CATCH (const gdb_error &ex)
     {
       if (ex.error != NOT_AVAILABLE_ERROR)
-	throw_exception (ex);
+	rethrow_exception ();
     }
   END_CATCH
 
@@ -2256,7 +2256,7 @@ i386_epilogue_frame_cache (struct frame_info *this_frame, void **this_cache)
   CATCH (const gdb_error &ex)
     {
       if (ex.error != NOT_AVAILABLE_ERROR)
-	throw_exception (ex);
+	rethrow_exception ();
     }
   END_CATCH
 
@@ -2452,7 +2452,7 @@ i386_sigtramp_frame_cache (struct frame_info *this_frame, void **this_cache)
   CATCH (const gdb_error &ex)
     {
       if (ex.error != NOT_AVAILABLE_ERROR)
-	throw_exception (ex);
+	rethrow_exception ();
     }
   END_CATCH
 

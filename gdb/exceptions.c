@@ -182,9 +182,9 @@ catch_exceptions_with_msg (struct ui_out *func_uiout,
     {
       val = (*func) (current_uiout, func_args);
     }
-  CATCH (const gdb_exception &ex)
+  CATCH (gdb_exception &ex)
     {
-      exception = ex;
+      exception = gdb::move (ex);
     }
   END_CATCH
 
@@ -195,7 +195,7 @@ catch_exceptions_with_msg (struct ui_out *func_uiout,
     {
       /* The caller didn't request that the event be caught.
 	 Rethrow.  */
-      throw_exception (exception);
+      throw_exception (gdb::move (exception));
     }
 
   exception_print (gdb_stderr, exception);
@@ -235,9 +235,9 @@ catch_errors (catch_errors_ftype *func, void *func_args, char *errstring,
     {
       val = func (func_args);
     }
-  CATCH (const gdb_exception &ex)
+  CATCH (gdb_exception &ex)
     {
-      exception = ex;
+      exception = gdb::move (ex);
     }
   END_CATCH
 
@@ -248,7 +248,7 @@ catch_errors (catch_errors_ftype *func, void *func_args, char *errstring,
     {
       /* The caller didn't request that the event be caught.
 	 Rethrow.  */
-      throw_exception (exception);
+      throw_exception (gdb::move (exception));
     }
 
   exception_fprintf (gdb_stderr, exception, "%s", errstring);

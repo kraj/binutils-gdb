@@ -142,7 +142,7 @@ append_ocl_sos (struct so_list **link_ptr)
 		case MEMORY_ERROR:
 		  break;
 		default:
-		  throw_exception (ex);
+		  rethrow_exception ();
 		  break;
 		}
 	    }

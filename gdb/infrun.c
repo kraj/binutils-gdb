@@ -1905,7 +1905,7 @@ displaced_step_prepare (ptid_t ptid)
 
       if (ex.error != MEMORY_ERROR
 	  && ex.error != NOT_SUPPORTED_ERROR)
-	throw_exception (ex);
+	rethrow_exception ();
 
       if (debug_infrun)
 	{

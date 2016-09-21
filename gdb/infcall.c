@@ -606,9 +606,9 @@ run_inferior_call (struct call_thread_fsm *sm,
 	 target supports asynchronous execution.  */
       wait_sync_command_done ();
     }
-  CATCH (const gdb_exception &e)
+  CATCH (gdb_exception &e)
     {
-      caught_error = e;
+      caught_error = gdb::move (e);
     }
   END_CATCH
 
@@ -1209,7 +1209,7 @@ When the function is done executing, GDB will silently stop."),
 		       e.message, name);
 	case RETURN_QUIT:
 	default:
-	  throw_exception (e);
+	  throw_exception (gdb::move (e));
 	}
     }
 

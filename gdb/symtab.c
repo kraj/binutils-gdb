@@ -5520,7 +5520,7 @@ default_make_symbol_completion_list_break_on (const char *text,
   CATCH (const gdb_error &except)
     {
       if (except.error != MAX_COMPLETIONS_REACHED_ERROR)
-	throw_exception (except);
+	rethrow_exception ();
     }
   END_CATCH
 
@@ -5686,7 +5686,7 @@ make_file_symbol_completion_list (const char *text, const char *word,
   CATCH (const gdb_error &except)
     {
       if (except.error != MAX_COMPLETIONS_REACHED_ERROR)
-	throw_exception (except);
+	rethrow_exception ();
     }
   END_CATCH
 

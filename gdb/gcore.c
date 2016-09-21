@@ -123,16 +123,16 @@ write_gcore_file (bfd *obfd)
     {
       write_gcore_file_1 (obfd);
     }
-  CATCH (const gdb_exception &e)
+  CATCH (gdb_exception &e)
     {
-      except = e;
+      except = gdb::move (e);
     }
   END_CATCH
 
   target_done_generating_core ();
 
   if (except.reason < 0)
-    throw_exception (except);
+    throw_exception (gdb::move (except));
 }
 
 static void

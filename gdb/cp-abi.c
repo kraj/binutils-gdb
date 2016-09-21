@@ -82,7 +82,7 @@ baseclass_offset (struct type *type, int index, const gdb_byte *valaddr,
   CATCH (const gdb_error &ex)
     {
       if (ex.error != NOT_AVAILABLE_ERROR)
-	throw_exception (ex);
+	rethrow_exception ();
 
       throw_error (NOT_AVAILABLE_ERROR,
 		   _("Cannot determine virtual baseclass offset "

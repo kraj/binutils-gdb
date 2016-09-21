@@ -1080,7 +1080,7 @@ call_site_find_chain (struct gdbarch *gdbarch, CORE_ADDR caller_pc,
 	  return NULL;
 	}
       else
-	throw_exception (e);
+	rethrow_exception ();
     }
   END_CATCH
 
@@ -2349,7 +2349,7 @@ dwarf2_evaluate_loc_desc_full (struct type *type, struct frame_info *frame,
 	  return allocate_optimized_out_value (type);
 	}
       else
-	throw_exception (ex);
+	rethrow_exception ();
     }
   END_CATCH
 

@@ -1227,7 +1227,7 @@ parse_exp_in_context_1 (const char **stringptr, CORE_ADDR pc,
       if (! parse_completion)
 	{
 	  xfree (ps.expout);
-	  throw_exception (except);
+	  rethrow_exception ();
 	}
     }
   END_CATCH

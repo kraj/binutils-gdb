@@ -3296,7 +3296,7 @@ rs6000_frame_cache (struct frame_info *this_frame, void **this_cache)
   CATCH (const gdb_error &ex)
     {
       if (ex.error != NOT_AVAILABLE_ERROR)
-	throw_exception (ex);
+	rethrow_exception ();
       return (struct rs6000_frame_cache *) (*this_cache);
     }
   END_CATCH
@@ -3526,7 +3526,7 @@ rs6000_epilogue_frame_cache (struct frame_info *this_frame, void **this_cache)
   CATCH (const gdb_error &ex)
     {
       if (ex.error != NOT_AVAILABLE_ERROR)
-	throw_exception (ex);
+	rethrow_exception ();
     }
   END_CATCH
 

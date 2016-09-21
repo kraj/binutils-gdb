@@ -262,7 +262,6 @@ extern struct gdb_exception exceptions_state_mc_catch ();
 
 extern void *exception_try_scope_entry (void);
 extern void exception_try_scope_exit (void *saved_state);
-extern void exception_rethrow (void);
 
 /* Macro to wrap up standard try/catch behavior.
 
@@ -351,7 +350,7 @@ struct exception_try_scope
 #define END_CATCH			       \
   catch (...)				       \
     {					       \
-      exception_rethrow ();		       \
+      rethrow_exception ();		       \
     }
 
 #else
@@ -403,12 +402,12 @@ struct gdb_quit_bad_alloc
 /* *INDENT-ON* */
 
 /* Throw an exception (as described by "struct gdb_exception").  */
-extern void throw_exception (const gdb_exception &exception)
-  ATTRIBUTE_NORETURN;
-
-/* Likewise, but take an rval reference.  */
 extern void throw_exception (gdb_exception_rval_ref exception)
   ATTRIBUTE_NORETURN;
+
+/* Rethrow the currently caught exception.  Wrapper around "throw;"
+   that also handles cleanups.  */
+extern void rethrow_exception (void);
 
 /* Throw an exception by executing a LONG JUMP to the inner most
    containing exception handler established using TRY_SJLJ.  Works the

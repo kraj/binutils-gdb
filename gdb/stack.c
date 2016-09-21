@@ -2121,16 +2121,16 @@ print_frame_local_vars (struct frame_info *frame, int num_tabs,
 				     do_print_variable_and_value,
 				     &cb_data);
     }
-  CATCH (const gdb_exception &ex)
+  CATCH (gdb_exception &ex)
     {
-      except = ex;
+      except = gdb::move (ex);
     }
   END_CATCH
 
   /* Restore the selected frame, and then rethrow if there was a problem.  */
   select_frame (frame_find_by_id (cb_data.frame_id));
   if (except.reason < 0)
-    throw_exception (except);
+    throw_exception (gdb::move (except));
 
   /* do_print_variable_and_value invalidates FRAME.  */
   frame = NULL;

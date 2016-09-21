@@ -1116,7 +1116,7 @@ process_next_line (char *p, struct command_line **command, int parse_commands,
       CATCH (const gdb_exception &ex)
 	{
 	  xfree (*command);
-	  throw_exception (ex);
+	  rethrow_exception ();
 	}
       END_CATCH
     }
