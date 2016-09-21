@@ -172,10 +172,10 @@ gdb_rl_callback_read_char_wrapper (gdb_client_data client_data)
       if (after_char_processing_hook)
 	(*after_char_processing_hook) ();
     }
-  CATCH_SJLJ (const gdb_exception &ex)
+  CATCH_SJLJ (gdb_exception &ex)
     {
       /* Rethrow using the normal EH mechanism.  */
-      throw_exception (ex);
+      throw_exception (gdb::move (ex));
     }
   END_CATCH_SJLJ
 }
@@ -194,9 +194,9 @@ gdb_rl_callback_handler (char *rl)
     {
       ui->input_handler (rl);
     }
-  CATCH (const gdb_exception &ex)
+  CATCH (gdb_exception &ex)
     {
-      gdb_rl_expt = ex;
+      gdb_rl_expt = gdb::move (ex);
     }
   END_CATCH
 
@@ -208,7 +208,7 @@ gdb_rl_callback_handler (char *rl)
      a C program.)  Note that since we're long jumping, local variable
      dtors are NOT run automatically.  */
   if (gdb_rl_expt.reason < 0)
-    throw_exception_sjlj (gdb_rl_expt);
+    throw_exception_sjlj (gdb::move (gdb_rl_expt));
 }
 
 /* Change the function to be invoked every time there is a character

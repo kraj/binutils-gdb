@@ -20,7 +20,7 @@
 #include "common-defs.h"
 #include "common-exceptions.h"
 
-const struct gdb_exception exception_none = { (enum return_reason) 0, GDB_NO_ERROR, NULL };
+const struct gdb_exception exception_none;
 
 /* Possible catcher states.  */
 enum catcher_state {
@@ -161,7 +161,7 @@ exceptions_state_mc (enum catcher_action action)
 struct gdb_exception
 exceptions_state_mc_catch ()
 {
-  struct gdb_exception res = current_catcher->exception;
+  struct gdb_exception res = gdb::move (current_catcher->exception);
 
   catcher_pop ();
   return res;
@@ -216,18 +216,10 @@ exception_rethrow (void)
   throw;
 }
 
-/* Copy the 'gdb_exception' portion of FROM to TO.  */
-
-static void
-gdb_exception_sliced_copy (struct gdb_exception *to, const struct gdb_exception *from)
-{
-  *to = *from;
-}
-
 /* Return EXCEPTION to the nearest containing catch_errors().  */
 
 void
-throw_exception_sjlj (struct gdb_exception exception)
+throw_exception_sjlj (gdb_exception_rval_ref exception)
 {
   do_cleanups (all_cleanups ());
 
@@ -235,84 +227,52 @@ throw_exception_sjlj (struct gdb_exception exception)
      to that call via setjmp's return value.  Note that REASON can't
      be zero, by definition in defs.h.  */
   exceptions_state_mc (CATCH_THROWING);
-  current_catcher->exception = exception;
+  current_catcher->exception = gdb::move (exception);
   longjmp (current_catcher->buf, exception.reason);
 }
 
-/* Implementation of throw_exception that uses C++ try/catch.  */
-
-ATTRIBUTE_NORETURN void
-throw_exception (struct gdb_exception exception)
+static void ATTRIBUTE_NORETURN
+throw_exception (enum return_reason reason,
+		 enum errors error,
+		 const char *message)
 {
+  /* Throw the exception.  */
   do_cleanups (all_cleanups ());
 
-  if (exception.reason == RETURN_QUIT)
-    {
-      gdb_quit ex;
-
-      gdb_exception_sliced_copy (&ex, &exception);
-      throw ex;
-    }
-  else if (exception.reason == RETURN_ERROR)
-    {
-      gdb_error ex;
-
-      gdb_exception_sliced_copy (&ex, &exception);
-      throw ex;
-    }
+  if (reason == RETURN_QUIT)
+    throw gdb_quit (message);
+  else if (reason == RETURN_ERROR)
+    throw gdb_error (error, message);
   else
     gdb_assert_not_reached ("invalid return reason");
 }
-
-/* A stack of exception messages.
-   This is needed to handle nested calls to throw_it: we don't want to
-   xfree space for a message before it's used.
-   This can happen if we throw an exception during a cleanup:
-   An outer TRY_CATCH may have an exception message it wants to print,
-   but while doing cleanups further calls to throw_it are made.
-
-   This is indexed by the size of the current_catcher list.
-   It is a dynamically allocated array so that we don't care how deeply
-   GDB nests its TRY_CATCHs.  */
-static char **exception_messages;
-
-/* The number of currently allocated entries in exception_messages.  */
-static int exception_messages_size;
 
 static void ATTRIBUTE_NORETURN ATTRIBUTE_PRINTF (3, 0)
 throw_it (enum return_reason reason, enum errors error, const char *fmt,
 	  va_list ap)
 {
-  struct gdb_exception e;
-  char *new_message;
-  int depth = try_scope_depth;
+  const char *message = xstrvprintf (fmt, ap);
 
-  gdb_assert (depth > 0);
+  throw_exception (reason, error, message);
+}
 
-  /* Note: The new message may use an old message's text.  */
-  new_message = xstrvprintf (fmt, ap);
+void
+throw_exception (const gdb_exception &exception)
+{
+  const char *message = (exception.message != NULL
+			 ? xstrdup (exception.message)
+			 : NULL);
 
-  if (depth > exception_messages_size)
-    {
-      int old_size = exception_messages_size;
+  throw_exception (exception.reason, exception.error, message);
+}
 
-      exception_messages_size = depth + 10;
-      exception_messages = XRESIZEVEC (char *, exception_messages,
-				       exception_messages_size);
-      memset (exception_messages + old_size, 0,
-	      (exception_messages_size - old_size) * sizeof (char *));
-    }
+void
+throw_exception (gdb_exception_rval_ref exception)
+{
+  const char *message = exception.message;
 
-  xfree (exception_messages[depth - 1]);
-  exception_messages[depth - 1] = new_message;
-
-  /* Create the exception.  */
-  e.reason = reason;
-  e.error = error;
-  e.message = new_message;
-
-  /* Throw the exception.  */
-  throw_exception (e);
+  exception.message = NULL;
+  throw_exception (exception.reason, exception.error, message);
 }
 
 void

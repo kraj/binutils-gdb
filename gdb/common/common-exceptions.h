@@ -22,6 +22,7 @@
 
 #include <setjmp.h>
 #include <new>
+#include <utility>
 
 /* Reasons for calling throw_exceptions().  NOTE: all reason values
    must be less than zero.  enum value 0 is reserved for internal use
@@ -110,12 +111,129 @@ enum errors {
   NR_ERRORS
 };
 
-struct gdb_exception
+#if __cplusplus < 201103
+
+struct gdb_exception_rval_ref
 {
   enum return_reason reason;
   enum errors error;
   const char *message;
 };
+
+#else
+
+struct gdb_exception;
+typedef gdb_exception&& gdb_exception_rval_ref;
+
+#endif
+
+struct gdb_exception
+{
+private:
+  template <typename T1, typename T2>
+  void move (T1 &to, T2 &from)
+  {
+    to.reason = from.reason;
+    to.error = from.error;
+    to.message = from.message;
+
+    from.message = NULL;
+  }
+
+public:
+  gdb_exception ()
+    : reason (return_reason (0)),
+      error (GDB_NO_ERROR),
+      message (NULL)
+  {}
+
+  gdb_exception (enum return_reason reason_,
+		 enum errors error_,
+		 const char *message_)
+    : reason (reason_),
+      error (error_),
+      message (message_)
+  {}
+
+  gdb_exception (const gdb_exception &rhs)
+    : reason (rhs.reason),
+      error (rhs.error),
+      message (rhs.message != NULL ? xstrdup (rhs.message) : NULL)
+  {}
+
+  gdb_exception (gdb_exception_rval_ref rhs) throw()
+  {
+    move (*this, rhs);
+  }
+
+  gdb_exception operator= (gdb_exception_rval_ref rhs) throw()
+  {
+    if (rhs.message != message)
+      {
+	xfree ((void *) message);
+
+	move (*this, rhs);
+      }
+    return *this;
+  }
+
+  gdb_exception operator= (const gdb_exception &rhs) throw()
+  {
+    this->reason = rhs.reason;
+    this->error = rhs.error;
+
+    if (rhs.message != message)
+      {
+	xfree ((void *) message);
+	message = rhs.message != NULL ? xstrdup (rhs.message) : NULL;
+      }
+    return *this;
+  }
+
+  ~gdb_exception ()
+  {
+    xfree ((void *) message);
+  }
+
+#if __cplusplus < 201103
+  operator gdb_exception_rval_ref () throw()
+  {
+    gdb_exception_rval_ref ref;
+
+    move (ref, *this);
+
+    return ref;
+  }
+#endif
+
+  enum return_reason reason;
+  enum errors error;
+  const char *message;
+};
+
+namespace gdb {
+
+#if __cplusplus < 201103
+
+static inline gdb_exception_rval_ref
+move (gdb_exception &rhs)
+{
+  return (gdb_exception_rval_ref) rhs;
+}
+
+static inline gdb_exception_rval_ref
+move (gdb_exception_rval_ref &rhs)
+{
+  return rhs;
+}
+
+#else
+
+using std::move;
+
+#endif
+
+}
 
 /* The different exception mechanisms that TRY/CATCH can map to.  */
 
@@ -246,14 +364,21 @@ struct exception_try_scope
 #endif
 
 /* The exception types client code may catch.  They're just shims
-   around gdb_exception that add nothing but type info.  */
+   around gdb_exception that add nothing but type info and convenient
+   constructors.  */
 
 struct gdb_error : public gdb_exception
 {
+  gdb_error (enum errors error, const char *message)
+    : gdb_exception (RETURN_ERROR, error, message)
+  {}
 };
 
 struct gdb_quit : public gdb_exception
 {
+  gdb_quit (const char *message)
+    : gdb_exception (RETURN_QUIT, GDB_NO_ERROR, message)
+  {}
 };
 
 /* An exception type that inherits from both std::bad_alloc and a gdb
@@ -266,31 +391,32 @@ struct gdb_quit_bad_alloc
   : public gdb_quit,
     public std::bad_alloc
 {
-  explicit gdb_quit_bad_alloc (gdb_exception ex)
-    : std::bad_alloc ()
-  {
-    gdb_exception *self = this;
+  explicit gdb_quit_bad_alloc (gdb_exception_rval_ref original)
+    : gdb_quit (original.message),
+      std::bad_alloc ()
+  {}
 
-    *self = ex;
-  }
+  ~gdb_quit_bad_alloc () throw ()
+  {}
 };
 
 /* *INDENT-ON* */
 
-/* Throw an exception (as described by "struct gdb_exception").  When
-   GDB is built as a C program, executes a LONG JUMP to the inner most
-   containing exception handler established using TRY/CATCH.  When
-   built as a C++ program, throws a C++ exception, using "throw".  */
-extern void throw_exception (struct gdb_exception exception)
-     ATTRIBUTE_NORETURN;
+/* Throw an exception (as described by "struct gdb_exception").  */
+extern void throw_exception (const gdb_exception &exception)
+  ATTRIBUTE_NORETURN;
+
+/* Likewise, but take an rval reference.  */
+extern void throw_exception (gdb_exception_rval_ref exception)
+  ATTRIBUTE_NORETURN;
 
 /* Throw an exception by executing a LONG JUMP to the inner most
    containing exception handler established using TRY_SJLJ.  Works the
    same regardless of whether GDB is built as a C program or a C++
    program.  Necessary in some cases where we need to throw GDB
    exceptions across third-party library code (e.g., readline).  */
-extern void throw_exception_sjlj (struct gdb_exception exception)
-     ATTRIBUTE_NORETURN;
+extern void throw_exception_sjlj (gdb_exception_rval_ref exception)
+  ATTRIBUTE_NORETURN;
 
 /* Convenience wrappers around throw_exception that throw GDB
    errors.  */
