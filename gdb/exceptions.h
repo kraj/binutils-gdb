@@ -24,10 +24,11 @@
 
 /* If E is an exception, print it's error message on the specified
    stream.  For _fprintf, prefix the message with PREFIX...  */
-extern void exception_print (struct ui_file *file, struct gdb_exception e);
-extern void exception_fprintf (struct ui_file *file, struct gdb_exception e,
-			       const char *prefix,
-			       ...) ATTRIBUTE_PRINTF (3, 4);
+extern void exception_print (struct ui_file *file, const gdb_exception &e);
+
+extern void exception_fprintf (struct ui_file *file, const gdb_exception &e,
+			       const char *prefix, ...)
+  ATTRIBUTE_PRINTF (3, 4);
 
 /* Call FUNC(UIOUT, FUNC_ARGS) but wrapped within an exception
    handler.  If an exception (enum return_reason) is thrown using
