@@ -249,7 +249,15 @@ proc make_cli_in_mi_re { command cli_in_mi_mode mode event inf cli_thread
 # Continue inferior INF until the breakpoint indicating the threads are started.
 
 proc test_continue_to_start { mode inf } {
-    global gdb_prompt gdb_spawn_id gdb_main_spawn_id
+    global gdb_prompt
+    global gdb_spawn_id gdb_main_spawn_id mi_spawn_id
+    global srcfile
+
+    global async
+
+    # MI async events sent to the secondary UI aren't suffixed with an
+    # MI prompt.
+    set async 1
 
     if { $gdb_spawn_id != $gdb_main_spawn_id } {
 	error "This should not happen."
@@ -257,7 +265,34 @@ proc test_continue_to_start { mode inf } {
 
     with_test_prefix "inferior $inf" {
 	with_spawn_id $gdb_main_spawn_id {
-	    gdb_continue_to_breakpoint "main breakpoint"
+
+	    gdb_breakpoint [gdb_get_line_number "main break line"]
+	    gdb_continue_to_breakpoint "run to breakpoint"
+
+	    with_spawn_id $mi_spawn_id {
+		mi_expect_stop "breakpoint-hit" "main" ".*" "$srcfile" ".*" {"" "disp=\"keep\""} "main stop"
+	    }
+
+	    global srcfile thread_loop_line
+	    global decimal
+
+	    gdb_test "break $srcfile:$thread_loop_line thread $inf.2" \
+		"Breakpoint $decimal .*$srcfile, line $thread_loop_line\\\." \
+		"set breakpoint thread 1"
+
+	    gdb_test "break $srcfile:$thread_loop_line thread $inf.3" \
+		"Breakpoint $decimal .*$srcfile, line $thread_loop_line\\\." \
+		"set breakpoint thread 2"
+
+	    gdb_continue_to_breakpoint "loop line breakpoint 1"
+	    with_spawn_id $mi_spawn_id {
+		mi_expect_stop "breakpoint-hit" "child_sub_function" ".*" ".*$srcfile" ".*" {"" "disp=\"keep\""} "MI loop line breakpoint 1"
+	    }
+
+	    gdb_continue_to_breakpoint "loop line breakpoint 2"
+	    with_spawn_id $mi_spawn_id {
+		mi_expect_stop "breakpoint-hit" "child_sub_function" ".*" ".*$srcfile" ".*" {"" "disp=\"keep\""} "MI loop line breakpoint 2"
+	    }
 
 	    if { $mode == "non-stop" } {
 		gdb_test "thread $inf.2" ".*" "switch to thread $inf.2"
@@ -282,6 +317,7 @@ proc test_setup { mode } {
     global gdb_main_spawn_id mi_spawn_id
     global decimal binfile main_bp_line
     global GDBFLAGS
+    global thread_loop_line
 
     mi_gdb_exit
 
@@ -305,17 +341,27 @@ proc test_setup { mode } {
     }
 
     with_spawn_id $gdb_main_spawn_id {
-	gdb_test "break $srcfile:$main_bp_line" \
-	    "Breakpoint $decimal .*$srcfile, line $main_bp_line\\\." \
-	    "set breakpoint"
-
 	test_continue_to_start $mode 1
 
 	# Add a second inferior.
 	gdb_test "add-inferior" "Added inferior 2" "Add inferior 2"
 	gdb_test "inferior 2" ".*" "switch to inferior 2"
 	gdb_load ${binfile}
-	gdb_test "start" "Temporary breakpoint.*Starting program.*"
+
+	send_gdb "start\n"
+
+	# Consume MI output first, which is much more chatty.  If gdb
+	# writes more to the tty than fits in its buffer, gdb hangs
+	# until something consumes the tty output.  So if we expected
+	# CLI output first, it might never arrive, because GDB could
+	# be blocked writting to the MI tty before it ever wrote the
+	# CLI output...
+	with_spawn_id $mi_spawn_id {
+	    mi_expect_stop "breakpoint-hit" "main" ".*" "$srcfile" ".*" {"" "disp=\"del\""} "main stop"
+	}
+
+	gdb_test "" "Temporary breakpoint.*Starting program.*"
+
 	test_continue_to_start $mode 2
 	gdb_test "inferior 1" ".*" "switch back to inferior 1"
     }
@@ -1118,7 +1164,7 @@ proc test_cli_in_mi_frame { mode cli_in_mi_mode } {
     }
 }
 
-foreach_with_prefix mode { "all-stop" "non-stop" } {
+foreach_with_prefix mode { "all-stop" } {
     with_test_prefix_procname test_setup $mode
 
     # Test selecting inferior, thread and frame from CLI

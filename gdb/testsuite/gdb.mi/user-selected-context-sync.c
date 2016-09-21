@@ -24,10 +24,14 @@
 
 static int volatile quit = 0;
 
+pthread_barrier_t barrier;
+
 static void
 child_sub_function (void)
 {
-  while (!quit); /* thread loop line */
+  pthread_barrier_wait (&barrier);
+
+  while (1); /* thread loop line */
 }
 
 static void *
@@ -44,18 +48,16 @@ main (void)
   int i = 0;
   pthread_t threads[NUM_THREADS];
 
+  //  alarm (30);
+
+  pthread_barrier_init (&barrier, NULL, 3);
+
   for (i = 0; i < NUM_THREADS; i++)
     pthread_create (&threads[i], NULL, child_function, NULL);
-
-  /* Leave enough time for the threads to reach their infinite loop. */
-  sleep (1);
   
+  pthread_barrier_wait (&barrier);
+
   i = 0; /* main break line */
-
-  sleep (2);
-  
-  /* Allow the test to exit cleanly.  */
-  quit = 1;
 
   for (i = 0; i < NUM_THREADS; i++)
     pthread_join (threads[i], NULL);
