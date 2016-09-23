@@ -465,7 +465,7 @@ gdbscm_register_breakpoint_x (SCM self)
 	  gdb_assert_not_reached ("invalid breakpoint type");
 	}
     }
-  CATCH (ex, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &ex)
     {
       except = ex;
     }
@@ -495,7 +495,7 @@ gdbscm_delete_breakpoint_x (SCM self)
     {
       delete_breakpoint (bp_smob->bp);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDBSCM_HANDLE_GDB_EXCEPTION (except);
     }
@@ -596,7 +596,7 @@ gdbscm_set_breakpoint_enabled_x (SCM self, SCM newvalue)
       else
 	disable_breakpoint (bp_smob->bp);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDBSCM_HANDLE_GDB_EXCEPTION (except);
     }
@@ -631,7 +631,7 @@ gdbscm_set_breakpoint_silent_x (SCM self, SCM newvalue)
     {
       breakpoint_set_silent (bp_smob->bp, gdbscm_is_true (newvalue));
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDBSCM_HANDLE_GDB_EXCEPTION (except);
     }
@@ -672,7 +672,7 @@ gdbscm_set_breakpoint_ignore_count_x (SCM self, SCM newvalue)
     {
       set_ignore_count (bp_smob->number, (int) value, 0);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDBSCM_HANDLE_GDB_EXCEPTION (except);
     }
@@ -793,7 +793,7 @@ gdbscm_set_breakpoint_task_x (SCM self, SCM newvalue)
 	{
 	  valid_id = valid_task_id (id);
 	}
-      CATCH (except, RETURN_MASK_ALL)
+      CATCH (const gdb_exception &except)
 	{
 	  GDBSCM_HANDLE_GDB_EXCEPTION (except);
 	}
@@ -814,7 +814,7 @@ gdbscm_set_breakpoint_task_x (SCM self, SCM newvalue)
     {
       breakpoint_set_task (bp_smob->bp, id);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDBSCM_HANDLE_GDB_EXCEPTION (except);
     }
@@ -906,7 +906,7 @@ gdbscm_set_breakpoint_condition_x (SCM self, SCM newvalue)
     {
       set_breakpoint_condition (bp_smob->bp, exp ? exp : "", 0);
     }
-  CATCH (ex, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &ex)
     {
       except = ex;
     }
@@ -997,7 +997,7 @@ gdbscm_breakpoint_commands (SCM self)
       print_command_lines (current_uiout, breakpoint_commands (bp), 0);
     }
   ui_out_redirect (current_uiout, NULL);
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       do_cleanups (chain);
       gdbscm_throw_gdb_exception (except);

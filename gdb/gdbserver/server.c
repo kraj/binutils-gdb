@@ -3464,7 +3464,7 @@ detach_or_kill_for_exit_cleanup (void *ignore)
       detach_or_kill_for_exit ();
     }
 
-  CATCH (exception, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &exception)
     {
       fflush (stdout);
       fprintf (stderr, "Detach or kill failed: %s\n", exception.message);
@@ -3778,7 +3778,7 @@ captured_main (int argc, char *argv[])
 		}
 	    }
 	}
-      CATCH (exception, RETURN_MASK_ERROR)
+      CATCH (const gdb_error &exception)
 	{
 	  fflush (stdout);
 	  fprintf (stderr, "gdbserver: %s\n", exception.message);
@@ -3806,7 +3806,7 @@ main (int argc, char *argv[])
     {
       captured_main (argc, argv);
     }
-  CATCH (exception, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &exception)
     {
       if (exception.reason == RETURN_ERROR)
 	{

@@ -6873,7 +6873,7 @@ ada_tag_value_at_base_address (struct value *obj)
       offset_to_top = value_as_long (value_ind (value_ptradd (val, -2)));
     }
 
-  CATCH (e, RETURN_MASK_ERROR)
+  CATCH (const gdb_error &e)
     {
       return obj;
     }
@@ -7010,7 +7010,7 @@ ada_tag_name (struct value *tag)
       if (tsd != NULL)
 	name = ada_tag_name_from_tsd (tsd);
     }
-  CATCH (e, RETURN_MASK_ERROR)
+  CATCH (const gdb_error &e)
     {
     }
   END_CATCH
@@ -12270,7 +12270,7 @@ ada_exception_name_addr (enum ada_exception_catchpoint_kind ex,
       result = ada_exception_name_addr_1 (ex, b);
     }
 
-  CATCH (e, RETURN_MASK_ERROR)
+  CATCH (const gdb_error &e)
     {
       warning (_("failed to get exception name: %s"), e.message);
       return 0;
@@ -12383,7 +12383,7 @@ create_excep_cond_exprs (struct ada_catchpoint *c)
 	      exp = parse_exp_1 (&s, bl->address,
 				 block_for_pc (bl->address), 0);
 	    }
-	  CATCH (e, RETURN_MASK_ERROR)
+	  CATCH (const gdb_error &e)
 	    {
 	      warning (_("failed to reevaluate internal exception condition "
 			 "for catchpoint %d: %s"),
@@ -12482,7 +12482,7 @@ should_stop_exception (const struct bp_location *bl)
       stop = value_true (evaluate_expression (ada_loc->excep_cond_expr));
       value_free_to_mark (mark);
     }
-  CATCH (ex, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &ex)
     {
       exception_fprintf (gdb_stderr, ex,
 			 _("Error in testing exception condition:\n"));

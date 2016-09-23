@@ -138,7 +138,7 @@ objfpy_get_build_id (PyObject *self, void *closure)
     {
       build_id = build_id_bfd_get (objfile->obfd);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDB_PY_HANDLE_EXCEPTION (except);
     }
@@ -450,7 +450,7 @@ objfpy_add_separate_debug_file (PyObject *self, PyObject *args, PyObject *kw)
 
       symbol_file_add_separate (abfd, file_name, symfile_flags, obj->objfile);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDB_PY_HANDLE_EXCEPTION (except);
     }

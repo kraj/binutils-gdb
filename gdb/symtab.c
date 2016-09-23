@@ -5517,7 +5517,7 @@ default_make_symbol_completion_list_break_on (const char *text,
       default_make_symbol_completion_list_break_on_1 (text, word,
 						      break_on, code);
     }
-  CATCH (except, RETURN_MASK_ERROR)
+  CATCH (const gdb_error &except)
     {
       if (except.error != MAX_COMPLETIONS_REACHED_ERROR)
 	throw_exception (except);
@@ -5683,7 +5683,7 @@ make_file_symbol_completion_list (const char *text, const char *word,
     {
       make_file_symbol_completion_list_1 (text, word, srcfile);
     }
-  CATCH (except, RETURN_MASK_ERROR)
+  CATCH (const gdb_error &except)
     {
       if (except.error != MAX_COMPLETIONS_REACHED_ERROR)
 	throw_exception (except);

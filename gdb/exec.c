@@ -219,7 +219,7 @@ exec_file_locate_attach (int pid, int from_tty)
     {
       exec_file_attach (full_exec_path, from_tty);
     }
-  CATCH (err, RETURN_MASK_ERROR)
+  CATCH (const gdb_error &err)
     {
       if (err.message != NULL)
 	warning ("%s", err.message);
@@ -235,7 +235,7 @@ exec_file_locate_attach (int pid, int from_tty)
     {
       symbol_file_add_main (full_exec_path, from_tty);
     }
-  CATCH (err, RETURN_MASK_ERROR)
+  CATCH (const gdb_error &err)
     {
       if (!exception_print_same (prev_err, err))
 	warning ("%s", err.message);

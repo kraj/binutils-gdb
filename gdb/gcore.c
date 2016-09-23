@@ -123,7 +123,7 @@ write_gcore_file (bfd *obfd)
     {
       write_gcore_file_1 (obfd);
     }
-  CATCH (e, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &e)
     {
       except = e;
     }

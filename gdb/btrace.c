@@ -580,7 +580,7 @@ ftrace_classify_insn (struct gdbarch *gdbarch, CORE_ADDR pc)
       else if (gdbarch_insn_is_jump (gdbarch, pc))
 	iclass = BTRACE_INSN_JUMP;
     }
-  CATCH (error, RETURN_MASK_ERROR)
+  CATCH (const gdb_error &error)
     {
     }
   END_CATCH
@@ -653,7 +653,7 @@ btrace_compute_ftrace_bts (struct thread_info *tp,
 	    {
 	      size = gdb_insn_length (gdbarch, pc);
 	    }
-	  CATCH (error, RETURN_MASK_ERROR)
+	  CATCH (const gdb_error &error)
 	    {
 	    }
 	  END_CATCH
@@ -852,7 +852,7 @@ btrace_pt_readmem_callback (gdb_byte *buffer, size_t size,
       if (errcode != 0)
 	result = -pte_nomap;
     }
-  CATCH (error, RETURN_MASK_ERROR)
+  CATCH (const gdb_error &error)
     {
       result = -pte_nomap;
     }
@@ -947,7 +947,7 @@ btrace_compute_ftrace_pt (struct thread_info *tp,
       ftrace_add_pt (decoder, &btinfo->begin, &btinfo->end, &level,
 		     &btinfo->ngaps);
     }
-  CATCH (error, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &error)
     {
       /* Indicate a gap in the trace if we quit trace processing.  */
       if (error.reason == RETURN_QUIT && btinfo->end != NULL)
@@ -2495,7 +2495,7 @@ btrace_maint_update_pt_packets (struct btrace_thread_info *btinfo)
     {
       btrace_maint_decode_pt (&btinfo->maint, decoder);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       pt_pkt_free_decoder (decoder);
 

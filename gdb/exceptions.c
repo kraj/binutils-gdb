@@ -182,7 +182,7 @@ catch_exceptions_with_msg (struct ui_out *func_uiout,
     {
       val = (*func) (current_uiout, func_args);
     }
-  CATCH (ex, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &ex)
     {
       exception = ex;
     }
@@ -235,7 +235,7 @@ catch_errors (catch_errors_ftype *func, void *func_args, char *errstring,
     {
       val = func (func_args);
     }
-  CATCH (ex, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &ex)
     {
       exception = ex;
     }

@@ -345,7 +345,7 @@ gdbscm_execute_gdb_command (SCM command_scm, SCM rest)
 
       do_cleanups (inner_cleanups);
     }
-  CATCH (ex, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &ex)
     {
       except = ex;
     }

@@ -2290,7 +2290,7 @@ parse_cond_to_aexpr (CORE_ADDR scope, struct expression *cond)
       aexpr = gen_eval_for_expr (scope, cond);
     }
 
-  CATCH (ex, RETURN_MASK_ERROR)
+  CATCH (const gdb_error &ex)
     {
       /* If we got here, it means the condition could not be parsed to a valid
 	 bytecode expression and thus can't be evaluated on the target's side.
@@ -2477,7 +2477,7 @@ parse_cmd_to_aexpr (CORE_ADDR scope, char *cmd)
 			  format_start, format_end - format_start,
 			  fpieces, nargs, argvec);
     }
-  CATCH (ex, RETURN_MASK_ERROR)
+  CATCH (const gdb_error &ex)
     {
       /* If we got here, it means the command could not be parsed to a valid
 	 bytecode expression and thus can't be evaluated on the target's side.
@@ -2730,7 +2730,7 @@ insert_bp_location (struct bp_location *bl,
 	      if (val)
 		bp_err = GENERIC_ERROR;
 	    }
-	  CATCH (e, RETURN_MASK_ALL)
+	  CATCH (const gdb_exception &e)
 	    {
 	      bp_err = e.error;
 	      bp_err_message = e.message;
@@ -2767,7 +2767,7 @@ insert_bp_location (struct bp_location *bl,
 		      if (val)
 			bp_err = GENERIC_ERROR;
 		    }
-		  CATCH (e, RETURN_MASK_ALL)
+		  CATCH (const gdb_exception &e)
 		    {
 		      bp_err = e.error;
 		      bp_err_message = e.message;
@@ -2793,7 +2793,7 @@ insert_bp_location (struct bp_location *bl,
 		  if (val)
 		    bp_err = GENERIC_ERROR;
 	        }
-	      CATCH (e, RETURN_MASK_ALL)
+	      CATCH (const gdb_exception &e)
 	        {
 		  bp_err = e.error;
 		  bp_err_message = e.message;
@@ -9799,7 +9799,7 @@ create_breakpoint (struct gdbarch *gdbarch,
     {
       ops->create_sals_from_location (location, &canonical, type_wanted);
     }
-  CATCH (e, RETURN_MASK_ERROR)
+  CATCH (const gdb_error &e)
     {
       /* If caller is interested in rc value from parse, set
 	 value.  */
@@ -11461,7 +11461,7 @@ watch_command_1 (const char *arg, int accessflag, int from_tty,
 	 that should be inserted.  */
       update_watchpoint (w, 1);
     }
-  CATCH (e, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &e)
     {
       delete_breakpoint (b);
       throw_exception (e);
@@ -12800,7 +12800,7 @@ update_global_location_list_nothrow (enum ugll_insert_mode insert_mode)
     {
       update_global_location_list (insert_mode);
     }
-  CATCH (e, RETURN_MASK_ERROR)
+  CATCH (const gdb_error &e)
     {
     }
   END_CATCH
@@ -14348,7 +14348,7 @@ update_breakpoint_locations (struct breakpoint *b,
 					   block_for_pc (sals.sals[i].pc), 
 					   0);
 	    }
-	  CATCH (e, RETURN_MASK_ERROR)
+	  CATCH (const gdb_error &e)
 	    {
 	      warning (_("failed to reevaluate condition "
 			 "for breakpoint %d: %s"), 
@@ -14425,7 +14425,7 @@ location_to_sals (struct breakpoint *b, struct event_location *location,
     {
       b->ops->decode_location (b, location, search_pspace, &sals);
     }
-  CATCH (e, RETURN_MASK_ERROR)
+  CATCH (const gdb_error &e)
     {
       int not_found_and_ok = 0;
 
@@ -14974,7 +14974,7 @@ enable_breakpoint_disp (struct breakpoint *bpt, enum bpdisp disposition,
 	  bpt->enable_state = bp_enabled;
 	  update_watchpoint (w, 1 /* reparse */);
 	}
-      CATCH (e, RETURN_MASK_ALL)
+      CATCH (const gdb_exception &e)
 	{
 	  bpt->enable_state = orig_enable_state;
 	  exception_fprintf (gdb_stderr, e, _("Cannot enable watchpoint %d: "),
@@ -15771,7 +15771,7 @@ save_breakpoints (char *filename, int from_tty,
 	  {
 	    print_command_lines (current_uiout, tp->commands->commands, 2);
 	  }
-	CATCH (ex, RETURN_MASK_ALL)
+	CATCH (const gdb_exception &ex)
 	  {
 	    ui_out_redirect (current_uiout, NULL);
 	    throw_exception (ex);

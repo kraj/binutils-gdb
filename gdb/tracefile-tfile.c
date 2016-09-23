@@ -525,7 +525,7 @@ tfile_open (const char *arg, int from_tty)
       if (trace_regblock_size == 0)
 	error (_("No register block size recorded in trace file"));
     }
-  CATCH (ex, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &ex)
     {
       /* Remove the partially set up target.  */
       unpush_target (&tfile_ops);

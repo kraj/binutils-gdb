@@ -186,7 +186,7 @@ check_status_exception_catchpoint (struct bpstats *bs)
 	  type_name = canon;
 	}
     }
-  CATCH (e, RETURN_MASK_ERROR)
+  CATCH (const gdb_error &e)
     {
       exception_print (gdb_stderr, e);
     }
@@ -222,7 +222,7 @@ re_set_exception_catchpoint (struct breakpoint *self)
       sals = parse_probes (location, filter_pspace, NULL);
       do_cleanups (cleanup);
     }
-  CATCH (e, RETURN_MASK_ERROR)
+  CATCH (const gdb_error &e)
     {
       /* Using the probe interface failed.  Let's fallback to the normal
 	 catchpoint mode.  */
@@ -238,7 +238,7 @@ re_set_exception_catchpoint (struct breakpoint *self)
 	  self->ops->decode_location (self, location, filter_pspace, &sals);
 	  do_cleanups (cleanup);
 	}
-      CATCH (ex, RETURN_MASK_ERROR)
+      CATCH (const gdb_error &ex)
 	{
 	  /* NOT_FOUND_ERROR just means the breakpoint will be
 	     pending, so let it through.  */

@@ -396,7 +396,7 @@ dwarf2_tailcall_sniffer_first (struct frame_info *this_frame,
 	    }
 	}
     }
-  CATCH (except, RETURN_MASK_ERROR)
+  CATCH (const gdb_error &except)
     {
       if (entry_values_debug)
 	exception_print (gdb_stdout, except);

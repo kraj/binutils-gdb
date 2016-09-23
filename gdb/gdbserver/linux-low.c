@@ -1524,7 +1524,7 @@ linux_detach_one_lwp (struct lwp_info *lwp)
       if (the_low_target.prepare_to_resume != NULL)
 	the_low_target.prepare_to_resume (lwp);
     }
-  CATCH (ex, RETURN_MASK_ERROR)
+  CATCH (const gdb_error &ex)
     {
       if (!check_ptrace_stopped_lwp_gone (lwp))
 	throw_exception (ex);
@@ -4583,7 +4583,7 @@ linux_resume_one_lwp (struct lwp_info *lwp,
     {
       linux_resume_one_lwp_throw (lwp, step, signal, info);
     }
-  CATCH (ex, RETURN_MASK_ERROR)
+  CATCH (const gdb_error &ex)
     {
       if (!check_ptrace_stopped_lwp_gone (lwp))
 	throw_exception (ex);

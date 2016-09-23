@@ -385,7 +385,7 @@ gdbpy_block_for_pc (PyObject *self, PyObject *args)
       if (cust != NULL && COMPUNIT_OBJFILE (cust) != NULL)
 	block = block_for_pc (pc);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDB_PY_HANDLE_EXCEPTION (except);
     }

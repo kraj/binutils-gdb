@@ -923,7 +923,7 @@ print_one_vtable (struct gdbarch *gdbarch, struct value *value,
 	{
 	  addr = value_as_address (vfn);
 	}
-      CATCH (ex, RETURN_MASK_ERROR)
+      CATCH (const gdb_error &ex)
 	{
 	  printf_filtered (_("<error: %s>"), ex.message);
 	  got_error = 1;

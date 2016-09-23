@@ -402,7 +402,7 @@ infpy_threads (PyObject *self, PyObject *args)
     {
       update_thread_list ();
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDB_PY_HANDLE_EXCEPTION (except);
     }
@@ -524,7 +524,7 @@ infpy_read_memory (PyObject *self, PyObject *args, PyObject *kw)
 
       read_memory (addr, buffer, length);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       xfree (buffer);
       GDB_PY_HANDLE_EXCEPTION (except);
@@ -599,7 +599,7 @@ infpy_write_memory (PyObject *self, PyObject *args, PyObject *kw)
     {
       write_memory_with_notification (addr, buffer, length);
     }
-  CATCH (ex, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &ex)
     {
       except = ex;
     }
@@ -782,7 +782,7 @@ infpy_search_memory (PyObject *self, PyObject *args, PyObject *kw)
 				    buffer, pattern_size,
 				    &found_addr);
     }
-  CATCH (ex, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &ex)
     {
       except = ex;
     }

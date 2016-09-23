@@ -558,7 +558,7 @@ enable_break2 (void)
         {
           tmp_bfd = solib_bfd_open (buf);
         }
-      CATCH (ex, RETURN_MASK_ALL)
+      CATCH (const gdb_exception &ex)
 	{
 	}
       END_CATCH

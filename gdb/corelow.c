@@ -415,7 +415,7 @@ core_open (const char *arg, int from_tty)
       target_update_thread_list ();
     }
 
-  CATCH (except, RETURN_MASK_ERROR)
+  CATCH (const gdb_error &except)
     {
       exception_print (gdb_stderr, except);
     }
@@ -468,7 +468,7 @@ core_open (const char *arg, int from_tty)
 	{
 	  thread_command (NULL, from_tty);
 	}
-      CATCH (except, RETURN_MASK_ERROR)
+      CATCH (const gdb_error &except)
 	{
 	  exception_print (gdb_stderr, except);
 	}

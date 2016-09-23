@@ -376,7 +376,7 @@ catch_command_errors (catch_command_errors_ftype *command,
 
       maybe_wait_sync_command_done (was_sync);
     }
-  CATCH (e, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &e)
     {
       return handle_command_errors (e);
     }
@@ -403,7 +403,7 @@ catch_command_errors_const (catch_command_errors_const_ftype *command,
 
       maybe_wait_sync_command_done (was_sync);
     }
-  CATCH (e, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &e)
     {
       return handle_command_errors (e);
     }
@@ -1160,7 +1160,7 @@ gdb_main (struct captured_main_args *args)
     {
       captured_main (args);
     }
-  CATCH (ex, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &ex)
     {
       exception_print (gdb_stderr, ex);
     }

@@ -154,7 +154,7 @@ pyuw_value_obj_to_pointer (PyObject *pyo_value, CORE_ADDR *addr)
           rc = 1;
         }
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       gdbpy_convert_exception (except);
     }
@@ -226,7 +226,7 @@ unwind_infopy_str (PyObject *self)
                 value_print (value, strfile, &opts);
                 fprintf_unfiltered (strfile, ")");
               }
-            CATCH (except, RETURN_MASK_ALL)
+            CATCH (const gdb_exception &except)
               {
                 GDB_PY_HANDLE_EXCEPTION (except);
               }
@@ -376,7 +376,7 @@ pending_framepy_str (PyObject *self)
       sp_str = core_addr_to_string_nz (get_frame_sp (frame));
       pc_str = core_addr_to_string_nz (get_frame_pc (frame));
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDB_PY_HANDLE_EXCEPTION (except);
     }
@@ -418,7 +418,7 @@ pending_framepy_read_register (PyObject *self, PyObject *args)
                       "Cannot read register %d from frame.",
                       regnum);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDB_PY_HANDLE_EXCEPTION (except);
     }

@@ -127,7 +127,7 @@ vlscm_unop (enum valscm_unary_opcode opcode, SCM x, const char *func_name)
 	  gdb_assert_not_reached ("unsupported operation");
 	}
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDBSCM_HANDLE_GDB_EXCEPTION_WITH_CLEANUPS (except, cleanups);
     }
@@ -266,7 +266,7 @@ vlscm_binop (enum valscm_binary_opcode opcode, SCM x, SCM y,
 	  gdb_assert_not_reached ("unsupported operation");
 	}
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDBSCM_HANDLE_GDB_EXCEPTION_WITH_CLEANUPS (except, cleanups);
     }
@@ -493,7 +493,7 @@ vlscm_rich_compare (int op, SCM x, SCM y, const char *func_name)
 	  gdb_assert_not_reached ("invalid <gdb:value> comparison");
       }
     }
-  CATCH (ex, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &ex)
     {
       except = ex;
     }
@@ -870,7 +870,7 @@ vlscm_convert_typed_value_from_scheme (const char *func_name,
 	  value = NULL;
 	}
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       except_scm = gdbscm_scm_from_gdb_exception (except);
     }

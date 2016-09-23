@@ -3293,7 +3293,7 @@ rs6000_frame_cache (struct frame_info *this_frame, void **this_cache)
       cache->base = get_frame_register_unsigned
 	(this_frame, gdbarch_sp_regnum (gdbarch));
     }
-  CATCH (ex, RETURN_MASK_ERROR)
+  CATCH (const gdb_error &ex)
     {
       if (ex.error != NOT_AVAILABLE_ERROR)
 	throw_exception (ex);
@@ -3523,7 +3523,7 @@ rs6000_epilogue_frame_cache (struct frame_info *this_frame, void **this_cache)
       trad_frame_set_value (cache->saved_regs,
 			    gdbarch_pc_regnum (gdbarch), lr);
     }
-  CATCH (ex, RETURN_MASK_ERROR)
+  CATCH (const gdb_error &ex)
     {
       if (ex.error != NOT_AVAILABLE_ERROR)
 	throw_exception (ex);

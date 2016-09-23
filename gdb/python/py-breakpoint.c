@@ -144,7 +144,7 @@ bppy_set_enabled (PyObject *self, PyObject *newvalue, void *closure)
       else
 	disable_breakpoint (self_bp->bp);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDB_PY_SET_HANDLE_EXCEPTION (except);
     }
@@ -250,7 +250,7 @@ bppy_set_task (PyObject *self, PyObject *newvalue, void *closure)
 	{
 	  valid_id = valid_task_id (id);
 	}
-      CATCH (except, RETURN_MASK_ALL)
+      CATCH (const gdb_exception &except)
 	{
 	  GDB_PY_SET_HANDLE_EXCEPTION (except);
 	}
@@ -293,7 +293,7 @@ bppy_delete_breakpoint (PyObject *self, PyObject *args)
     {
       delete_breakpoint (self_bp->bp);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDB_PY_HANDLE_EXCEPTION (except);
     }
@@ -335,7 +335,7 @@ bppy_set_ignore_count (PyObject *self, PyObject *newvalue, void *closure)
     {
       set_ignore_count (self_bp->number, (int) value, 0);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDB_PY_SET_HANDLE_EXCEPTION (except);
     }
@@ -465,7 +465,7 @@ bppy_set_condition (PyObject *self, PyObject *newvalue, void *closure)
     {
       set_breakpoint_condition (self_bp->bp, exp, 0);
     }
-  CATCH (ex, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &ex)
     {
       except = ex;
     }
@@ -504,7 +504,7 @@ bppy_get_commands (PyObject *self, void *closure)
     {
       print_command_lines (current_uiout, breakpoint_commands (bp), 0);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       ui_out_redirect (current_uiout, NULL);
       do_cleanups (chain);
@@ -722,7 +722,7 @@ bppy_init (PyObject *self, PyObject *args, PyObject *kwargs)
 
       do_cleanups (cleanup);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       bppy_pending_object = NULL;
       PyErr_Format (except.reason == RETURN_QUIT

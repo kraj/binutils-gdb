@@ -2356,7 +2356,7 @@ s390_frame_unwind_cache (struct frame_info *this_frame,
       if (!s390_prologue_frame_unwind_cache (this_frame, info))
 	s390_backchain_frame_unwind_cache (this_frame, info);
     }
-  CATCH (ex, RETURN_MASK_ERROR)
+  CATCH (const gdb_error &ex)
     {
       if (ex.error != NOT_AVAILABLE_ERROR)
 	throw_exception (ex);

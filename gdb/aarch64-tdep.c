@@ -553,7 +553,7 @@ aarch64_make_prologue_cache (struct frame_info *this_frame, void **this_cache)
     {
       aarch64_make_prologue_cache_1 (this_frame, cache);
     }
-  CATCH (ex, RETURN_MASK_ERROR)
+  CATCH (const gdb_error &ex)
     {
       if (ex.error != NOT_AVAILABLE_ERROR)
 	throw_exception (ex);
@@ -680,7 +680,7 @@ aarch64_make_stub_cache (struct frame_info *this_frame, void **this_cache)
       cache->prev_pc = get_frame_pc (this_frame);
       cache->available_p = 1;
     }
-  CATCH (ex, RETURN_MASK_ERROR)
+  CATCH (const gdb_error &ex)
     {
       if (ex.error != NOT_AVAILABLE_ERROR)
 	throw_exception (ex);

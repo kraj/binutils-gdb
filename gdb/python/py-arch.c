@@ -222,7 +222,7 @@ archpy_disassemble (PyObject *self, PyObject *args, PyObject *kw)
         {
           insn_len = gdb_print_insn (gdbarch, pc, memfile, NULL);
         }
-      CATCH (except, RETURN_MASK_ALL)
+      CATCH (const gdb_exception &except)
         {
           Py_DECREF (result_list);
           ui_file_delete (memfile);

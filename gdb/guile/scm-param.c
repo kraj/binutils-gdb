@@ -1024,7 +1024,7 @@ gdbscm_register_parameter_x (SCM self)
 			   set_list, show_list,
 			   &p_smob->set_command, &p_smob->show_command);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDBSCM_HANDLE_GDB_EXCEPTION (except);
     }
@@ -1075,7 +1075,7 @@ gdbscm_parameter_value (SCM self)
 	{
 	  found = lookup_cmd_composition (newarg, &alias, &prefix, &cmd);
 	}
-      CATCH (ex, RETURN_MASK_ALL)
+      CATCH (const gdb_exception &ex)
 	{
 	  except = ex;
 	}

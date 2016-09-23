@@ -1170,7 +1170,7 @@ ada_val_print (struct type *type, const gdb_byte *valaddr,
 		       stream, recurse, val, options,
 		       current_language);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
     }
   END_CATCH

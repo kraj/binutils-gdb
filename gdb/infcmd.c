@@ -428,7 +428,7 @@ post_create_inferior (struct target_ops *target, int from_tty)
     {
       stop_pc = regcache_read_pc (get_current_regcache ());
     }
-  CATCH (ex, RETURN_MASK_ERROR)
+  CATCH (const gdb_error &ex)
     {
       if (ex.error != NOT_AVAILABLE_ERROR)
 	throw_exception (ex);
@@ -1718,7 +1718,7 @@ print_return_value (struct ui_out *uiout, struct return_value_info *rv)
 	 delete the breakpoint.  */
       print_return_value_1 (uiout, rv);
     }
-  CATCH (ex, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &ex)
     {
       exception_print (gdb_stdout, ex);
     }

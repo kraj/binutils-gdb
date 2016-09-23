@@ -253,7 +253,7 @@ frscm_scm_from_frame (struct frame_info *frame, struct inferior *inferior)
 	}
       gdbarch = get_frame_arch (frame);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       return gdbscm_scm_from_gdb_exception (except);
     }
@@ -406,7 +406,7 @@ gdbscm_frame_valid_p (SCM self)
     {
       frame = frscm_frame_smob_to_frame (f_smob);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDBSCM_HANDLE_GDB_EXCEPTION (except);
     }
@@ -436,7 +436,7 @@ gdbscm_frame_name (SCM self)
       if (frame != NULL)
 	find_frame_funname (frame, &name, &lang, NULL);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       xfree (name);
       GDBSCM_HANDLE_GDB_EXCEPTION (except);
@@ -478,7 +478,7 @@ gdbscm_frame_type (SCM self)
       if (frame != NULL)
 	type = get_frame_type (frame);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDBSCM_HANDLE_GDB_EXCEPTION (except);
     }
@@ -508,7 +508,7 @@ gdbscm_frame_arch (SCM self)
     {
       frame = frscm_frame_smob_to_frame (f_smob);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDBSCM_HANDLE_GDB_EXCEPTION (except);
     }
@@ -539,7 +539,7 @@ gdbscm_frame_unwind_stop_reason (SCM self)
     {
       frame = frscm_frame_smob_to_frame (f_smob);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDBSCM_HANDLE_GDB_EXCEPTION (except);
     }
@@ -574,7 +574,7 @@ gdbscm_frame_pc (SCM self)
       if (frame != NULL)
 	pc = get_frame_pc (frame);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDBSCM_HANDLE_GDB_EXCEPTION (except);
     }
@@ -607,7 +607,7 @@ gdbscm_frame_block (SCM self)
       if (frame != NULL)
 	block = get_frame_block (frame, NULL);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDBSCM_HANDLE_GDB_EXCEPTION (except);
     }
@@ -658,7 +658,7 @@ gdbscm_frame_function (SCM self)
       if (frame != NULL)
 	sym = find_pc_function (get_frame_address_in_block (frame));
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDBSCM_HANDLE_GDB_EXCEPTION (except);
     }
@@ -695,7 +695,7 @@ gdbscm_frame_older (SCM self)
       if (frame != NULL)
 	prev = get_prev_frame (frame);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDBSCM_HANDLE_GDB_EXCEPTION (except);
     }
@@ -732,7 +732,7 @@ gdbscm_frame_newer (SCM self)
       if (frame != NULL)
 	next = get_next_frame (frame);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDBSCM_HANDLE_GDB_EXCEPTION (except);
     }
@@ -768,7 +768,7 @@ gdbscm_frame_sal (SCM self)
       if (frame != NULL)
 	find_frame_sal (frame, &sal);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDBSCM_HANDLE_GDB_EXCEPTION (except);
     }
@@ -814,7 +814,7 @@ gdbscm_frame_read_register (SCM self, SCM register_scm)
 	    value = value_of_register (regnum, frame);
 	}
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDBSCM_HANDLE_GDB_EXCEPTION (except);
     }
@@ -864,7 +864,7 @@ gdbscm_frame_read_var (SCM self, SCM symbol_scm, SCM rest)
     {
       frame = frscm_frame_smob_to_frame (f_smob);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDBSCM_HANDLE_GDB_EXCEPTION (except);
     }
@@ -918,7 +918,7 @@ gdbscm_frame_read_var (SCM self, SCM symbol_scm, SCM rest)
 	  var = lookup_sym.symbol;
 	  block = lookup_sym.block;
 	}
-      CATCH (ex, RETURN_MASK_ALL)
+      CATCH (const gdb_exception &ex)
 	{
 	  except = ex;
 	}
@@ -947,7 +947,7 @@ gdbscm_frame_read_var (SCM self, SCM symbol_scm, SCM rest)
     {
       value = read_var_value (var, block, frame);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDBSCM_HANDLE_GDB_EXCEPTION (except);
     }
@@ -973,7 +973,7 @@ gdbscm_frame_select (SCM self)
       if (frame != NULL)
 	select_frame (frame);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDBSCM_HANDLE_GDB_EXCEPTION (except);
     }
@@ -1000,7 +1000,7 @@ gdbscm_newest_frame (void)
     {
       frame = get_current_frame ();
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDBSCM_HANDLE_GDB_EXCEPTION (except);
     }
@@ -1021,7 +1021,7 @@ gdbscm_selected_frame (void)
     {
       frame = get_selected_frame (_("No frame is currently selected"));
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDBSCM_HANDLE_GDB_EXCEPTION (except);
     }

@@ -383,7 +383,7 @@ type_to_string (struct type *type)
       type_print (type, "", stb, -1);
       s = ui_file_xstrdup (stb, NULL);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       s = NULL;
     }

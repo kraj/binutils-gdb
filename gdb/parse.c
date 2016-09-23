@@ -1222,7 +1222,7 @@ parse_exp_in_context_1 (const char **stringptr, CORE_ADDR pc,
       if (lang->la_parser (&ps))
         lang->la_error (NULL);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       if (! parse_completion)
 	{
@@ -1314,7 +1314,7 @@ parse_expression_for_completion (const char *string, char **name,
       parse_completion = 1;
       exp = parse_exp_in_context (&string, 0, 0, 0, 0, &subexp);
     }
-  CATCH (except, RETURN_MASK_ERROR)
+  CATCH (const gdb_error &except)
     {
       /* Nothing, EXP remains NULL.  */
     }

@@ -729,7 +729,7 @@ parmpy_init (PyObject *self, PyObject *args, PyObject *kwds)
 			   set_doc, show_doc,
 			   doc, set_list, show_list);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       xfree (cmd_name);
       xfree (set_doc);

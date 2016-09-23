@@ -106,7 +106,7 @@ frame_unwind_try_unwinder (struct frame_info *this_frame, void **this_cache,
     {
       res = unwinder->sniffer (unwinder, this_frame, this_cache);
     }
-  CATCH (ex, RETURN_MASK_ERROR)
+  CATCH (const gdb_error &ex)
     {
       if (ex.error == NOT_AVAILABLE_ERROR)
 	{

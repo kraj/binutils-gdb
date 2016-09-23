@@ -52,7 +52,7 @@ operator new (std::size_t sz)
 	{
 	  malloc_failure (sz);
 	}
-      CATCH (ex, RETURN_MASK_ALL)
+      CATCH (const gdb_exception &ex)
 	{
 	  do_cleanups (all_cleanups ());
 

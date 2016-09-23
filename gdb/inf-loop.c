@@ -72,7 +72,7 @@ inferior_event_handler (enum inferior_event_type event_type,
 	    {
 	      bpstat_do_actions ();
 	    }
-	  CATCH (e, RETURN_MASK_ALL)
+	  CATCH (const gdb_exception &e)
 	    {
 	      exception_print (gdb_stderr, e);
 	    }

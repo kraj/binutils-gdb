@@ -588,7 +588,7 @@ remote_get_noisy_reply (char **buf_p,
 	      gdbarch_relocate_instruction (target_gdbarch (), &to, from);
 	      relocated = 1;
 	    }
-	  CATCH (ex, RETURN_MASK_ALL)
+	  CATCH (const gdb_exception &ex)
 	    {
 	      if (ex.error == MEMORY_ERROR)
 		{
@@ -5080,7 +5080,7 @@ remote_open_1 (const char *name, int from_tty,
       {
 	remote_start_remote (from_tty, target, extended_p);
       }
-    CATCH (ex, RETURN_MASK_ALL)
+    CATCH (const gdb_exception &ex)
       {
 	/* Pop the partially set up target - unless something else did
 	   already before throwing the exception.  */
@@ -8972,7 +8972,7 @@ remote_kill_k (void)
     {
       putpkt ("k");
     }
-  CATCH (ex, RETURN_MASK_ERROR)
+  CATCH (const gdb_error &ex)
     {
       if (ex.error == TARGET_CLOSE_ERROR)
 	{
@@ -12192,7 +12192,7 @@ remote_get_trace_status (struct target_ops *self, struct trace_status *ts)
     {
       p = remote_get_noisy_reply (&target_buf, &target_buf_size);
     }
-  CATCH (ex, RETURN_MASK_ERROR)
+  CATCH (const gdb_error &ex)
     {
       if (ex.error != TARGET_CLOSE_ERROR)
 	{
@@ -12895,7 +12895,7 @@ remote_enable_btrace (struct target_ops *self, ptid_t ptid,
     {
       btrace_read_config (&tinfo->conf);
     }
-  CATCH (err, RETURN_MASK_ERROR)
+  CATCH (const gdb_error &err)
     {
       if (err.message != NULL)
 	warning ("%s", err.message);

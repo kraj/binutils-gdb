@@ -567,7 +567,7 @@ ppscm_pretty_print_one_value (SCM printer, struct value **out_value,
 	    (_("invalid result from pretty-printer to-string"), result);
 	}
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
     }
   END_CATCH

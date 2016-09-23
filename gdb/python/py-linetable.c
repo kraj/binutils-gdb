@@ -181,7 +181,7 @@ ltpy_get_pcs_for_line (PyObject *self, PyObject *args)
     {
       pcs = find_pcs_for_symtab_line (symtab, py_line, &best_entry);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDB_PY_HANDLE_EXCEPTION (except);
     }

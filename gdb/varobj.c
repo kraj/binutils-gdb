@@ -331,7 +331,7 @@ varobj_create (char *objname,
 	  var->root->exp = parse_exp_1 (&p, pc, block, 0);
 	}
 
-      CATCH (except, RETURN_MASK_ERROR)
+      CATCH (const gdb_error &except)
 	{
 	  do_cleanups (old_chain);
 	  return NULL;
@@ -381,7 +381,7 @@ varobj_create (char *objname,
 	{
 	  value = evaluate_expression (var->root->exp);
 	}
-      CATCH (except, RETURN_MASK_ERROR)
+      CATCH (const gdb_error &except)
 	{
 	  /* Error getting the value.  Try to at least get the
 	     right type.  */
@@ -1065,7 +1065,7 @@ varobj_set_value (struct varobj *var, char *expression)
       value = evaluate_expression (exp);
     }
 
-  CATCH (except, RETURN_MASK_ERROR)
+  CATCH (const gdb_error &except)
     {
       /* We cannot proceed without a valid expression.  */
       xfree (exp);
@@ -1095,7 +1095,7 @@ varobj_set_value (struct varobj *var, char *expression)
       val = value_assign (var->value, value);
     }
 
-  CATCH (except, RETURN_MASK_ERROR)
+  CATCH (const gdb_error &except)
     {
       return 0;
     }
@@ -1356,7 +1356,7 @@ install_new_value (struct varobj *var, struct value *value, int initial)
 	      value_fetch_lazy (value);
 	    }
 
-	  CATCH (except, RETURN_MASK_ERROR)
+	  CATCH (const gdb_error &except)
 	    {
 	      /* Set the value to NULL, so that for the next -var-update,
 		 we don't try to compare the new value with this value,
@@ -2298,7 +2298,7 @@ value_of_root_1 (struct varobj **var_handle)
 	{
 	  new_val = evaluate_expression (var->root->exp);
 	}
-      CATCH (except, RETURN_MASK_ERROR)
+      CATCH (const gdb_error &except)
 	{
 	}
       END_CATCH

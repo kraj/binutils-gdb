@@ -600,7 +600,7 @@ expression_completer (struct cmd_list_element *ignore,
     {
       type = parse_expression_for_completion (text, &fieldname, &code);
     }
-  CATCH (except, RETURN_MASK_ERROR)
+  CATCH (const gdb_error &except)
     {
       return NULL;
     }

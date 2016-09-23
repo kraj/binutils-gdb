@@ -194,7 +194,7 @@ gdb_rl_callback_handler (char *rl)
     {
       ui->input_handler (rl);
     }
-  CATCH (ex, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &ex)
     {
       gdb_rl_expt = ex;
     }
@@ -1177,7 +1177,7 @@ async_disconnect (gdb_client_data arg)
       quit_cover ();
     }
 
-  CATCH (exception, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &exception)
     {
       fputs_filtered ("Could not kill the program being debugged",
 		      gdb_stderr);
@@ -1189,7 +1189,7 @@ async_disconnect (gdb_client_data arg)
     {
       pop_all_targets ();
     }
-  CATCH (exception, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &exception)
     {
     }
   END_CATCH

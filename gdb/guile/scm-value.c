@@ -166,7 +166,7 @@ vlscm_print_value_smob (SCM self, SCM port, scm_print_state *pstate)
 
       do_cleanups (old_chain);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDBSCM_HANDLE_GDB_EXCEPTION (except);
     }
@@ -200,7 +200,7 @@ vlscm_equal_p_value_smob (SCM v1, SCM v2)
     {
       result = value_equal (v1_smob->value, v2_smob->value);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDBSCM_HANDLE_GDB_EXCEPTION (except);
     }
@@ -381,7 +381,7 @@ gdbscm_make_lazy_value (SCM type_scm, SCM address_scm)
   {
     value = value_from_contents_and_address (type, NULL, address);
   }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDBSCM_HANDLE_GDB_EXCEPTION_WITH_CLEANUPS (except, cleanups);
     }
@@ -410,7 +410,7 @@ gdbscm_value_optimized_out_p (SCM self)
     {
       opt = value_optimized_out (value);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDBSCM_HANDLE_GDB_EXCEPTION (except);
     }
@@ -440,7 +440,7 @@ gdbscm_value_address (SCM self)
 	{
 	  res_val = value_addr (value);
 	}
-      CATCH (except, RETURN_MASK_ALL)
+      CATCH (const gdb_exception &except)
 	{
 	  address = SCM_BOOL_F;
 	}
@@ -479,7 +479,7 @@ gdbscm_value_dereference (SCM self)
     {
       res_val = value_ind (value);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDBSCM_HANDLE_GDB_EXCEPTION_WITH_CLEANUPS (except, cleanups);
     }
@@ -531,7 +531,7 @@ gdbscm_value_referenced_value (SCM self)
 		   " neither a pointer nor a reference"));
         }
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDBSCM_HANDLE_GDB_EXCEPTION_WITH_CLEANUPS (except, cleanups);
     }
@@ -614,7 +614,7 @@ gdbscm_value_dynamic_type (SCM self)
 
       do_cleanups (cleanup);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDBSCM_HANDLE_GDB_EXCEPTION (except);
     }
@@ -658,7 +658,7 @@ vlscm_do_cast (SCM self, SCM type_scm, enum exp_opcode op,
 	  res_val = value_cast (type, value);
 	}
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDBSCM_HANDLE_GDB_EXCEPTION_WITH_CLEANUPS (except, cleanups);
     }
@@ -728,7 +728,7 @@ gdbscm_value_field (SCM self, SCM field_scm)
 
       res_val = value_struct_elt (&tmp, NULL, field, NULL, NULL);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDBSCM_HANDLE_GDB_EXCEPTION_WITH_CLEANUPS (except, cleanups);
     }
@@ -794,7 +794,7 @@ gdbscm_value_subscript (SCM self, SCM index_scm)
 
       res_val = value_subscript (tmp, value_as_long (index));
    }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDBSCM_HANDLE_GDB_EXCEPTION_WITH_CLEANUPS (except, cleanups);
     }
@@ -830,7 +830,7 @@ gdbscm_value_call (SCM self, SCM args)
     {
       ftype = check_typedef (value_type (function));
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDBSCM_HANDLE_GDB_EXCEPTION (except);
     }
@@ -877,7 +877,7 @@ gdbscm_value_call (SCM self, SCM args)
       result = vlscm_scm_from_value (return_value);
       do_cleanups (cleanup);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDBSCM_HANDLE_GDB_EXCEPTION (except);
     }
@@ -910,7 +910,7 @@ gdbscm_value_to_bytevector (SCM self)
       length = TYPE_LENGTH (type);
       contents = value_contents (value);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDBSCM_HANDLE_GDB_EXCEPTION (except);
     }
@@ -952,7 +952,7 @@ gdbscm_value_to_bool (SCM self)
     {
       type = check_typedef (type);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDBSCM_HANDLE_GDB_EXCEPTION (except);
     }
@@ -968,7 +968,7 @@ gdbscm_value_to_bool (SCM self)
       else
 	l = value_as_long (value);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDBSCM_HANDLE_GDB_EXCEPTION (except);
     }
@@ -995,7 +995,7 @@ gdbscm_value_to_integer (SCM self)
     {
       type = check_typedef (type);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDBSCM_HANDLE_GDB_EXCEPTION (except);
     }
@@ -1011,7 +1011,7 @@ gdbscm_value_to_integer (SCM self)
       else
 	l = value_as_long (value);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDBSCM_HANDLE_GDB_EXCEPTION (except);
     }
@@ -1041,7 +1041,7 @@ gdbscm_value_to_real (SCM self)
     {
       type = check_typedef (type);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDBSCM_HANDLE_GDB_EXCEPTION (except);
     }
@@ -1054,7 +1054,7 @@ gdbscm_value_to_real (SCM self)
     {
       d = value_as_double (value);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDBSCM_HANDLE_GDB_EXCEPTION (except);
     }
@@ -1148,7 +1148,7 @@ gdbscm_value_to_string (SCM self, SCM rest)
     {
       LA_GET_STRING (value, &buffer, &length, &char_type, &la_encoding);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDBSCM_HANDLE_GDB_EXCEPTION_WITH_CLEANUPS (except, cleanups);
     }
@@ -1222,7 +1222,7 @@ gdbscm_value_to_lazy_string (SCM self, SCM rest)
 
       do_cleanups (inner_cleanup);
     }
-  CATCH (ex, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &ex)
     {
       except = ex;
     }
@@ -1263,7 +1263,7 @@ gdbscm_value_fetch_lazy_x (SCM self)
       if (value_lazy (value))
 	value_fetch_lazy (value);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDBSCM_HANDLE_GDB_EXCEPTION (except);
     }
@@ -1297,7 +1297,7 @@ gdbscm_value_print (SCM self)
 
       do_cleanups (old_chain);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDBSCM_HANDLE_GDB_EXCEPTION (except);
     }
@@ -1339,7 +1339,7 @@ gdbscm_parse_and_eval (SCM expr_scm)
     {
       res_val = parse_and_eval (expr_str);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDBSCM_HANDLE_GDB_EXCEPTION_WITH_CLEANUPS (except, cleanups);
     }
@@ -1371,7 +1371,7 @@ gdbscm_history_ref (SCM index)
     {
       res_val = access_value_history (i);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDBSCM_HANDLE_GDB_EXCEPTION (except);
     }
@@ -1397,7 +1397,7 @@ gdbscm_history_append_x (SCM value)
     {
       res_index = record_latest_value (v);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDBSCM_HANDLE_GDB_EXCEPTION (except);
     }

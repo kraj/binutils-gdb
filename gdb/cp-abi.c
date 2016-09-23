@@ -79,7 +79,7 @@ baseclass_offset (struct type *type, int index, const gdb_byte *valaddr,
 						embedded_offset,
 						address, val);
     }
-  CATCH (ex, RETURN_MASK_ERROR)
+  CATCH (const gdb_error &ex)
     {
       if (ex.error != NOT_AVAILABLE_ERROR)
 	throw_exception (ex);
@@ -116,7 +116,7 @@ value_rtti_type (struct value *v, int *full,
     {
       ret = (*current_cp_abi.rtti_type) (v, full, top, using_enc);
     }
-  CATCH (e, RETURN_MASK_ERROR)
+  CATCH (const gdb_error &e)
     {
       return NULL;
     }

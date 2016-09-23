@@ -572,7 +572,7 @@ gdbpy_parameter (PyObject *self, PyObject *args)
     {
       found = lookup_cmd_composition (newarg, &alias, &prefix, &cmd);
     }
-  CATCH (ex, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &ex)
     {
       except = ex;
     }
@@ -672,7 +672,7 @@ execute_gdb_command (PyObject *self, PyObject *args, PyObject *kw)
 
       do_cleanups (cleanup);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDB_PY_HANDLE_EXCEPTION (except);
     }
@@ -756,7 +756,7 @@ gdbpy_decode_line (PyObject *self, PyObject *args)
 	  sals.nelts = 1;
 	}
     }
-  CATCH (ex, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &ex)
     {
       except = ex;
     }
@@ -847,7 +847,7 @@ gdbpy_parse_and_eval (PyObject *self, PyObject *args)
     {
       result = parse_and_eval (expr_str);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDB_PY_HANDLE_EXCEPTION (except);
     }
@@ -877,7 +877,7 @@ gdbpy_find_pc_line (PyObject *self, PyObject *args)
       sal = find_pc_line (pc, 0);
       result = symtab_and_line_to_sal_object (sal);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDB_PY_HANDLE_EXCEPTION (except);
     }
@@ -1143,7 +1143,7 @@ gdbpy_write (PyObject *self, PyObject *args, PyObject *kw)
           fprintf_filtered (gdb_stdout, "%s", arg);
         }
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDB_PY_HANDLE_EXCEPTION (except);
     }
@@ -1217,7 +1217,7 @@ gdbpy_print_stack (void)
 	{
 	  begin_line ();
 	}
-      CATCH (except, RETURN_MASK_ALL)
+      CATCH (const gdb_exception &except)
 	{
 	}
       END_CATCH
@@ -1248,7 +1248,7 @@ gdbpy_print_stack (void)
 	    fprintf_filtered (gdb_stderr, "Python Exception %s %s: \n",
 			      type, msg);
 	}
-      CATCH (except, RETURN_MASK_ALL)
+      CATCH (const gdb_exception &except)
 	{
 	}
       END_CATCH

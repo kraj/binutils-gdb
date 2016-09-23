@@ -601,7 +601,7 @@ gdbscm_find_pc_line (SCM pc_scm)
 
       sal = find_pc_line (pc, 0);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDBSCM_HANDLE_GDB_EXCEPTION (except);
     }

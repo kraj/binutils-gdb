@@ -370,7 +370,7 @@ start_event_loop (void)
 	{
 	  result = gdb_do_one_event ();
 	}
-      CATCH (ex, RETURN_MASK_ALL)
+      CATCH (const gdb_exception &ex)
 	{
 	  exception_print (gdb_stderr, ex);
 

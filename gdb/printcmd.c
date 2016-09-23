@@ -1967,7 +1967,7 @@ do_one_display (struct display *d)
 	  d->exp = parse_expression (d->exp_string);
 	  d->block = innermost_block;
 	}
-      CATCH (ex, RETURN_MASK_ALL)
+      CATCH (const gdb_exception &ex)
 	{
 	  /* Can't re-parse the expression.  Disable this display item.  */
 	  d->enabled_p = 0;
@@ -2033,7 +2033,7 @@ do_one_display (struct display *d)
 	    addr = gdbarch_addr_bits_remove (d->exp->gdbarch, addr);
 	  do_examine (d->format, d->exp->gdbarch, addr);
 	}
-      CATCH (ex, RETURN_MASK_ERROR)
+      CATCH (const gdb_error &ex)
 	{
 	  fprintf_filtered (gdb_stdout, _("<error: %s>\n"), ex.message);
 	}
@@ -2067,7 +2067,7 @@ do_one_display (struct display *d)
 	  val = evaluate_expression (d->exp);
 	  print_formatted (val, d->format.size, &opts, gdb_stdout);
 	}
-      CATCH (ex, RETURN_MASK_ERROR)
+      CATCH (const gdb_error &ex)
 	{
 	  fprintf_filtered (gdb_stdout, _("<error: %s>"), ex.message);
 	}
@@ -2271,7 +2271,7 @@ print_variable_and_value (const char *name, struct symbol *var,
 	 function.  */
       frame = NULL;
     }
-  CATCH (except, RETURN_MASK_ERROR)
+  CATCH (const gdb_error &except)
     {
       fprintf_filtered(stream, "<error reading variable %s (%s)>", name,
 		       except.message);

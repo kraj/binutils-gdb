@@ -108,7 +108,7 @@ stpy_convert_to_value  (PyObject *self, PyObject *args)
     {
       val = value_at_lazy (self_string->type, self_string->address);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDB_PY_HANDLE_EXCEPTION (except);
     }

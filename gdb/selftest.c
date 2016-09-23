@@ -53,7 +53,7 @@ run_self_tests (void)
 	{
 	  (*func) ();
 	}
-      CATCH (ex, RETURN_MASK_ERROR)
+      CATCH (const gdb_error &ex)
 	{
 	  ++failed;
 	  exception_fprintf (gdb_stderr, ex,

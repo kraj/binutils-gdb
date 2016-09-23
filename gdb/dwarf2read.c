@@ -4288,7 +4288,7 @@ dwarf2_build_psymtabs (struct objfile *objfile)
       dwarf2_build_psymtabs_hard (objfile);
       discard_cleanups (cleanups);
     }
-  CATCH (except, RETURN_MASK_ERROR)
+  CATCH (const gdb_error &except)
     {
       exception_print (gdb_stderr, except);
     }
@@ -23557,7 +23557,7 @@ save_gdb_index_command (char *arg, int from_tty)
 	  {
 	    write_psymtabs_to_index (objfile, arg);
 	  }
-	CATCH (except, RETURN_MASK_ERROR)
+	CATCH (const gdb_error &except)
 	  {
 	    exception_fprintf (gdb_stderr, except,
 			       _("Error while writing index for `%s': "),

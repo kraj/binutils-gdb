@@ -944,7 +944,7 @@ mi_breakpoint_created (struct breakpoint *b)
 	{
 	  gdb_breakpoint_query (mi_uiout, b->number, NULL);
 	}
-      CATCH (e, RETURN_MASK_ERROR)
+      CATCH (const gdb_error &e)
 	{
 	}
       END_CATCH
@@ -1027,7 +1027,7 @@ mi_breakpoint_modified (struct breakpoint *b)
 	{
 	  gdb_breakpoint_query (mi->mi_uiout, b->number, NULL);
 	}
-      CATCH (e, RETURN_MASK_ERROR)
+      CATCH (const gdb_error &e)
 	{
 	}
       END_CATCH

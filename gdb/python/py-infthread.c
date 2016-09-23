@@ -178,7 +178,7 @@ thpy_switch (PyObject *self, PyObject *args)
     {
       switch_to_thread (thread_obj->thread->ptid);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDB_PY_HANDLE_EXCEPTION (except);
     }

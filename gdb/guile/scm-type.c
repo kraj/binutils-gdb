@@ -122,7 +122,7 @@ tyscm_type_name (struct type *type, SCM *excp)
       name = ui_file_xstrdup (stb, NULL);
       do_cleanups (old_chain);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       *excp = gdbscm_scm_from_gdb_exception (except);
       return NULL;
@@ -253,7 +253,7 @@ tyscm_equal_p_type_smob (SCM type1_scm, SCM type2_scm)
     {
       result = types_deeply_equal (type1, type2);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDBSCM_HANDLE_GDB_EXCEPTION (except);
     }
@@ -636,7 +636,7 @@ gdbscm_type_sizeof (SCM self)
     {
       check_typedef (type);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
     }
   END_CATCH
@@ -660,7 +660,7 @@ gdbscm_type_strip_typedefs (SCM self)
     {
       type = check_typedef (type);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDBSCM_HANDLE_GDB_EXCEPTION (except);
     }
@@ -682,7 +682,7 @@ tyscm_get_composite (struct type *type)
 	{
 	  type = check_typedef (type);
 	}
-      CATCH (except, RETURN_MASK_ALL)
+      CATCH (const gdb_exception &except)
 	{
 	  GDBSCM_HANDLE_GDB_EXCEPTION (except);
 	}
@@ -739,7 +739,7 @@ tyscm_array_1 (SCM self, SCM n1_scm, SCM n2_scm, int is_vector,
       if (is_vector)
 	make_vector_type (array);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDBSCM_HANDLE_GDB_EXCEPTION (except);
     }
@@ -794,7 +794,7 @@ gdbscm_type_pointer (SCM self)
     {
       type = lookup_pointer_type (type);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDBSCM_HANDLE_GDB_EXCEPTION (except);
     }
@@ -856,7 +856,7 @@ gdbscm_type_reference (SCM self)
     {
       type = lookup_reference_type (type);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDBSCM_HANDLE_GDB_EXCEPTION (except);
     }
@@ -894,7 +894,7 @@ gdbscm_type_const (SCM self)
     {
       type = make_cv_type (1, 0, type, NULL);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDBSCM_HANDLE_GDB_EXCEPTION (except);
     }
@@ -917,7 +917,7 @@ gdbscm_type_volatile (SCM self)
     {
       type = make_cv_type (0, 1, type, NULL);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDBSCM_HANDLE_GDB_EXCEPTION (except);
     }
@@ -940,7 +940,7 @@ gdbscm_type_unqualified (SCM self)
     {
       type = make_cv_type (0, 0, type, NULL);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDBSCM_HANDLE_GDB_EXCEPTION (except);
     }
@@ -1256,7 +1256,7 @@ tyscm_lookup_typename (const char *type_name, const struct block *block)
 	type = lookup_typename (current_language, get_current_arch (),
 				type_name, block, 0);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       return NULL;
     }

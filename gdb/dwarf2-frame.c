@@ -1127,7 +1127,7 @@ dwarf2_frame_cache (struct frame_info *this_frame, void **this_cache)
 	  internal_error (__FILE__, __LINE__, _("Unknown CFA rule."));
 	}
     }
-  CATCH (ex, RETURN_MASK_ERROR)
+  CATCH (const gdb_error &ex)
     {
       if (ex.error == NOT_AVAILABLE_ERROR)
 	{
@@ -2317,7 +2317,7 @@ dwarf2_build_frame_info (struct objfile *objfile)
 						EH_CIE_OR_FDE_TYPE_ID);
 	    }
 
-	  CATCH (e, RETURN_MASK_ERROR)
+	  CATCH (const gdb_error &e)
 	    {
 	      warning (_("skipping .eh_frame info of %s: %s"),
 		       objfile_name (objfile), e.message);
@@ -2358,7 +2358,7 @@ dwarf2_build_frame_info (struct objfile *objfile)
 					    &cie_table, &fde_table,
 					    EH_CIE_OR_FDE_TYPE_ID);
 	}
-      CATCH (e, RETURN_MASK_ERROR)
+      CATCH (const gdb_error &e)
 	{
 	  warning (_("skipping .debug_frame info of %s: %s"),
 		   objfile_name (objfile), e.message);

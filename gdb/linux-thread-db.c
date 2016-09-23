@@ -444,7 +444,7 @@ thread_db_find_new_threads_silently (ptid_t ptid)
       thread_db_find_new_threads_2 (ptid, 1);
     }
 
-  CATCH (except, RETURN_MASK_ERROR)
+  CATCH (const gdb_error &except)
     {
       if (libthread_db_debug)
 	exception_fprintf (gdb_stdlog, except,
@@ -1260,7 +1260,7 @@ find_new_threads_once (struct thread_db_info *info, int iteration,
 				    TD_SIGNO_MASK,
 				    TD_THR_ANY_USER_FLAGS);
     }
-  CATCH (except, RETURN_MASK_ERROR)
+  CATCH (const gdb_error &except)
     {
       if (libthread_db_debug)
 	{

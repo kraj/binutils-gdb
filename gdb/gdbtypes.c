@@ -2468,7 +2468,7 @@ safe_parse_type (struct gdbarch *gdbarch, char *p, int length)
     {
       type = parse_and_eval_type (p, length);
     }
-  CATCH (except, RETURN_MASK_ERROR)
+  CATCH (const gdb_error &except)
     {
       type = builtin_type (gdbarch)->builtin_void;
     }
@@ -3534,7 +3534,7 @@ types_deeply_equal (struct type *type1, struct type *type2)
     {
       result = check_types_worklist (&worklist, cache);
     }
-  CATCH (ex, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &ex)
     {
       except = ex;
     }

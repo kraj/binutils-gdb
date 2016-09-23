@@ -1960,7 +1960,7 @@ linux_make_corefile_notes (struct gdbarch *gdbarch, bfd *obfd, int *note_size)
     {
       update_thread_list ();
     }
-  CATCH (e, RETURN_MASK_ERROR)
+  CATCH (const gdb_error &e)
     {
       exception_print (gdb_stderr, e);
     }

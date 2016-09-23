@@ -1095,7 +1095,7 @@ val_print (struct type *type, const gdb_byte *valaddr, LONGEST embedded_offset,
 			      stream, recurse, val,
 			      &local_opts);
     }
-  CATCH (except, RETURN_MASK_ERROR)
+  CATCH (const gdb_error &except)
     {
       fprintf_filtered (stream, _("<error reading variable>"));
     }

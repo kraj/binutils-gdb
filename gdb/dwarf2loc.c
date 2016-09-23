@@ -1070,7 +1070,7 @@ call_site_find_chain (struct gdbarch *gdbarch, CORE_ADDR caller_pc,
     {
       retval = call_site_find_chain_1 (gdbarch, caller_pc, callee_pc);
     }
-  CATCH (e, RETURN_MASK_ERROR)
+  CATCH (const gdb_error &e)
     {
       if (e.error == NO_ENTRY_VALUE_ERROR)
 	{
@@ -2332,7 +2332,7 @@ dwarf2_evaluate_loc_desc_full (struct type *type, struct frame_info *frame,
     {
       dwarf_expr_eval (ctx, data, size);
     }
-  CATCH (ex, RETURN_MASK_ERROR)
+  CATCH (const gdb_error &ex)
     {
       if (ex.error == NOT_AVAILABLE_ERROR)
 	{

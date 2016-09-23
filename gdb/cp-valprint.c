@@ -320,7 +320,7 @@ cp_print_value_fields (struct type *type, struct type *real_type,
 		      v = value_static_field (type, i);
 		    }
 
-		  CATCH (ex, RETURN_MASK_ERROR)
+		  CATCH (const gdb_error &ex)
 		    {
 		      fprintf_filtered (stream,
 					_("<error reading variable: %s>"),
@@ -513,7 +513,7 @@ cp_print_value (struct type *type, struct type *real_type,
 	{
 	  boffset = baseclass_offset (type, i, valaddr, offset, address, val);
 	}
-      CATCH (ex, RETURN_MASK_ERROR)
+      CATCH (const gdb_error &ex)
 	{
 	  if (ex.error == NOT_AVAILABLE_ERROR)
 	    skip = -1;

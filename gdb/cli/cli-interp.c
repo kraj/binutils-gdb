@@ -327,7 +327,7 @@ safe_execute_command (struct ui_out *command_uiout, char *command, int from_tty)
     {
       execute_command (command, from_tty);
     }
-  CATCH (exception, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &exception)
     {
       e = exception;
     }

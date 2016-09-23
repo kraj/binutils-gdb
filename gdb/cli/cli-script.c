@@ -1113,7 +1113,7 @@ process_next_line (char *p, struct command_line **command, int parse_commands,
 	{
 	  validator ((*command)->line, closure);
 	}
-      CATCH (ex, RETURN_MASK_ALL)
+      CATCH (const gdb_exception &ex)
 	{
 	  xfree (*command);
 	  throw_exception (ex);
@@ -1702,7 +1702,7 @@ script_from_file (FILE *stream, const char *file)
       {
 	read_command_file (stream);
       }
-    CATCH (e, RETURN_MASK_ERROR)
+    CATCH (const gdb_error &e)
       {
 	/* Re-throw the error, but with the file name information
 	   prepended.  */

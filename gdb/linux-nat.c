@@ -1212,7 +1212,7 @@ linux_nat_attach (struct target_ops *ops, const char *args, int from_tty)
     {
       linux_ops->to_attach (ops, args, from_tty);
     }
-  CATCH (ex, RETURN_MASK_ERROR)
+  CATCH (const gdb_error &ex)
     {
       pid_t pid = parse_pid_to_attach (args);
       struct buffer buffer;
@@ -1438,7 +1438,7 @@ detach_one_lwp (struct lwp_info *lp, int *signo_p)
       if (linux_nat_prepare_to_resume != NULL)
 	linux_nat_prepare_to_resume (lp);
     }
-  CATCH (ex, RETURN_MASK_ERROR)
+  CATCH (const gdb_error &ex)
     {
       if (!check_ptrace_stopped_lwp_gone (lp))
 	throw_exception (ex);
@@ -1631,7 +1631,7 @@ linux_resume_one_lwp (struct lwp_info *lp, int step, enum gdb_signal signo)
     {
       linux_resume_one_lwp_throw (lp, step, signo);
     }
-  CATCH (ex, RETURN_MASK_ERROR)
+  CATCH (const gdb_error &ex)
     {
       if (!check_ptrace_stopped_lwp_gone (lp))
 	throw_exception (ex);
@@ -3586,7 +3586,7 @@ resume_stopped_resumed_lwps (struct lwp_info *lp, void *data)
 	      linux_resume_one_lwp_throw (lp, lp->step, GDB_SIGNAL_0);
 	    }
 	}
-      CATCH (ex, RETURN_MASK_ERROR)
+      CATCH (const gdb_error &ex)
 	{
 	  if (!check_ptrace_stopped_lwp_gone (lp))
 	    throw_exception (ex);

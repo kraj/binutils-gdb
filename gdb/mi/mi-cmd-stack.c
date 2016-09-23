@@ -549,7 +549,7 @@ list_arg_or_local (const struct frame_arg *arg, enum what_to_list what,
 	      common_val_print (arg->val, stb, 0, &opts,
 				language_def (SYMBOL_LANGUAGE (arg->sym)));
 	    }
-	  CATCH (except, RETURN_MASK_ERROR)
+	  CATCH (const gdb_error &except)
 	    {
 	      error_message = except.message;
 	    }

@@ -245,7 +245,7 @@ gdbscm_lazy_string_to_value (SCM self)
     {
       value = value_at_lazy (ls_smob->type, ls_smob->address);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       GDBSCM_HANDLE_GDB_EXCEPTION (except);
     }
@@ -289,7 +289,7 @@ lsscm_safe_lazy_string_to_value (SCM string, int arg_pos,
     {
       value = value_at_lazy (ls_smob->type, ls_smob->address);
     }
-  CATCH (except, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &except)
     {
       *except_scmp = gdbscm_scm_from_gdb_exception (except);
       return NULL;

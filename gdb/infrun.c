@@ -1899,7 +1899,7 @@ displaced_step_prepare (ptid_t ptid)
     {
       prepared = displaced_step_prepare_throw (ptid);
     }
-  CATCH (ex, RETURN_MASK_ERROR)
+  CATCH (const gdb_error &ex)
     {
       struct displaced_step_inferior_state *displaced_state;
 
@@ -7585,7 +7585,7 @@ insert_exception_resume_breakpoint (struct thread_info *tp,
 	  inferior_thread ()->control.exception_resume_breakpoint = bp;
 	}
     }
-  CATCH (e, RETURN_MASK_ERROR)
+  CATCH (const gdb_error &e)
     {
       /* We want to ignore errors here.  */
     }
@@ -7685,7 +7685,7 @@ check_exception_resume (struct execution_control_state *ecs,
 	    }
 	}
     }
-  CATCH (e, RETURN_MASK_ERROR)
+  CATCH (const gdb_error &e)
     {
     }
   END_CATCH
@@ -7828,7 +7828,7 @@ keep_going_pass_signal (struct execution_control_state *ecs)
 	{
 	  insert_breakpoints ();
 	}
-      CATCH (e, RETURN_MASK_ERROR)
+      CATCH (const gdb_error &e)
 	{
 	  exception_print (gdb_stderr, e);
 	  stop_waiting (ecs);

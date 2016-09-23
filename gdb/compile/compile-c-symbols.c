@@ -465,7 +465,7 @@ gcc_convert_symbol (void *datum,
 	}
     }
 
-  CATCH (e, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &e)
     {
       C_CTX (context)->c_ops->error (C_CTX (context), e.message);
     }
@@ -527,7 +527,7 @@ gcc_symbol_address (void *datum, struct gcc_c_context *gcc_context,
 	}
     }
 
-  CATCH (e, RETURN_MASK_ERROR)
+  CATCH (const gdb_error &e)
     {
       C_CTX (context)->c_ops->error (C_CTX (context), e.message);
     }
@@ -701,7 +701,7 @@ generate_c_for_for_one_variable (struct compile_c_instance *compiler,
 	}
     }
 
-  CATCH (e, RETURN_MASK_ERROR)
+  CATCH (const gdb_error &e)
     {
       if (compiler->symbol_err_map == NULL)
 	compiler->symbol_err_map = htab_create_alloc (10,

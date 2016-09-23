@@ -1650,7 +1650,7 @@ quit_force (int *exit_arg, int from_tty)
       disconnect_tracing ();
       iterate_over_inferiors (kill_or_detach, &qt);
     }
-  CATCH (ex, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &ex)
     {
       exception_print (gdb_stderr, ex);
     }
@@ -1662,7 +1662,7 @@ quit_force (int *exit_arg, int from_tty)
     {
       pop_all_targets ();
     }
-  CATCH (ex, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &ex)
     {
       exception_print (gdb_stderr, ex);
     }
@@ -1691,7 +1691,7 @@ quit_force (int *exit_arg, int from_tty)
 	    gdb_safe_append_history ();
 	}
     }
-  CATCH (ex, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &ex)
     {
       exception_print (gdb_stderr, ex);
     }
@@ -1702,7 +1702,7 @@ quit_force (int *exit_arg, int from_tty)
     {
       do_final_cleanups (all_cleanups ());
     }
-  CATCH (ex, RETURN_MASK_ALL)
+  CATCH (const gdb_exception &ex)
     {
       exception_print (gdb_stderr, ex);
     }
