@@ -981,8 +981,7 @@ set_breakpoint_condition (struct breakpoint *b, const char *exp,
     {
       struct watchpoint *w = (struct watchpoint *) b;
 
-      xfree (w->cond_exp);
-      w->cond_exp = NULL;
+      w->cond_exp.reset ();
     }
   else
     {
@@ -990,8 +989,7 @@ set_breakpoint_condition (struct breakpoint *b, const char *exp,
 
       for (loc = b->loc; loc; loc = loc->next)
 	{
-	  xfree (loc->cond);
-	  loc->cond = NULL;
+	  loc->cond.reset ();
 
 	  /* No need to free the condition agent expression
 	     bytecode (if we have one).  We will handle this
@@ -1897,11 +1895,7 @@ update_watchpoint (struct watchpoint *b, int reparse)
     {
       const char *s;
 
-      if (b->exp)
-	{
-	  xfree (b->exp);
-	  b->exp = NULL;
-	}
+      b->exp.reset ();
       s = b->exp_string_reparse ? b->exp_string_reparse : b->exp_string;
       b->exp = parse_exp_1 (&s, 0, b->exp_valid_block, 0);
       /* If the meaning of expression itself changed, the old value is
@@ -1917,11 +1911,7 @@ update_watchpoint (struct watchpoint *b, int reparse)
 	 locations (re)created below.  */
       if (b->base.cond_string != NULL)
 	{
-	  if (b->cond_exp != NULL)
-	    {
-	      xfree (b->cond_exp);
-	      b->cond_exp = NULL;
-	    }
+	  b->cond_exp.reset ();
 
 	  s = b->base.cond_string;
 	  b->cond_exp = parse_exp_1 (&s, 0, b->cond_exp_valid_block, 0);
@@ -1953,7 +1943,7 @@ update_watchpoint (struct watchpoint *b, int reparse)
       struct value *val_chain, *v, *result, *next;
       struct program_space *frame_pspace;
 
-      fetch_subexp_value (b->exp, &pc, &v, &result, &val_chain, 0);
+      fetch_subexp_value (b->exp.get (), &pc, &v, &result, &val_chain, 0);
 
       /* Avoid setting b->val if it's already set.  The meaning of
 	 b->val is 'the last value' user saw, and we should update
@@ -2337,7 +2327,7 @@ build_target_condition_list (struct bp_location *bl)
 		 case we already freed the condition bytecodes (see
 		 force_breakpoint_reinsertion).  We just
 		 need to parse the condition to bytecodes again.  */
-	      aexpr = parse_cond_to_aexpr (bl->address, loc->cond);
+	      aexpr = parse_cond_to_aexpr (bl->address, loc->cond.get ());
 	      loc->cond_bytecode = aexpr;
 	    }
 
@@ -2402,7 +2392,7 @@ static struct agent_expr *
 parse_cmd_to_aexpr (CORE_ADDR scope, char *cmd)
 {
   struct cleanup *old_cleanups = 0;
-  struct expression *expr, **argvec;
+  struct expression **argvec;
   struct agent_expr *aexpr = NULL;
   const char *cmdrest;
   const char *format_start, *format_end;
@@ -2453,8 +2443,8 @@ parse_cmd_to_aexpr (CORE_ADDR scope, char *cmd)
       const char *cmd1;
 
       cmd1 = cmdrest;
-      expr = parse_exp_1 (&cmd1, scope, block_for_pc (scope), 1);
-      argvec[nargs++] = expr;
+      expression_up expr = parse_exp_1 (&cmd1, scope, block_for_pc (scope), 1);
+      argvec[nargs++] = expr.release ();
       cmdrest = cmd1;
       if (*cmdrest == ',')
 	++cmdrest;
@@ -5198,7 +5188,7 @@ watchpoint_check (void *p)
 	return WP_VALUE_CHANGED;
 
       mark = value_mark ();
-      fetch_subexp_value (b->exp, &pc, &new_val, NULL, NULL, 0);
+      fetch_subexp_value (b->exp.get (), &pc, &new_val, NULL, NULL, 0);
 
       if (b->val_bitsize != 0)
 	new_val = extract_bitfield_from_watchpoint_value (b, new_val);
@@ -5503,10 +5493,10 @@ bpstat_check_breakpoint_conditions (bpstat bs, ptid_t ptid)
     {
       struct watchpoint *w = (struct watchpoint *) b;
 
-      cond = w->cond_exp;
+      cond = w->cond_exp.get ();
     }
   else
-    cond = bl->cond;
+    cond = bl->cond.get ();
 
   if (cond && b->disposition != disp_del_at_next_stop)
     {
@@ -7129,12 +7119,12 @@ watchpoint_locations_match (struct bp_location *loc1,
        && target_can_accel_watchpoint_condition (loc1->address, 
 						 loc1->length,
 						 loc1->watchpoint_type,
-						 w1->cond_exp))
+						 w1->cond_exp.get ()))
       || (w2->cond_exp
 	  && target_can_accel_watchpoint_condition (loc2->address, 
 						    loc2->length,
 						    loc2->watchpoint_type,
-						    w2->cond_exp)))
+						    w2->cond_exp.get ())))
     return 0;
 
   /* Note that this checks the owner's type, not the location's.  In
@@ -7342,7 +7332,6 @@ init_bp_location (struct bp_location *loc, const struct bp_location_ops *ops,
 
   loc->ops = ops;
   loc->owner = owner;
-  loc->cond = NULL;
   loc->cond_bytecode = NULL;
   loc->shlib_disabled = 0;
   loc->enabled = 1;
@@ -7411,7 +7400,7 @@ static void
 free_bp_location (struct bp_location *loc)
 {
   loc->ops->dtor (loc);
-  xfree (loc);
+  delete loc;
 }
 
 /* Increment reference count.  */
@@ -7494,7 +7483,7 @@ set_raw_breakpoint_without_location (struct gdbarch *gdbarch,
 				     enum bptype bptype,
 				     const struct breakpoint_ops *ops)
 {
-  struct breakpoint *b = XNEW (struct breakpoint);
+  struct breakpoint *b = new breakpoint ();
 
   init_raw_breakpoint_without_location (b, gdbarch, bptype, ops);
   add_to_breakpoint_chain (b);
@@ -7610,7 +7599,7 @@ set_raw_breakpoint (struct gdbarch *gdbarch,
 		    struct symtab_and_line sal, enum bptype bptype,
 		    const struct breakpoint_ops *ops)
 {
-  struct breakpoint *b = XNEW (struct breakpoint);
+  struct breakpoint *b = new breakpoint ();
 
   init_raw_breakpoint (b, gdbarch, sal, bptype, ops);
   add_to_breakpoint_chain (b);
@@ -8545,7 +8534,7 @@ add_solib_catchpoint (char *arg, int is_load, int is_temp, int enabled)
     arg = "";
   arg = skip_spaces (arg);
 
-  c = XCNEW (struct solib_catchpoint);
+  c = new solib_catchpoint ();
   cleanup = make_cleanup (xfree, c);
 
   if (*arg != '\0')
@@ -8644,7 +8633,7 @@ create_fork_vfork_event_catchpoint (struct gdbarch *gdbarch,
 				    int tempflag, char *cond_string,
                                     const struct breakpoint_ops *ops)
 {
-  struct fork_catchpoint *c = XNEW (struct fork_catchpoint);
+  struct fork_catchpoint *c = new fork_catchpoint ();
 
   init_catchpoint (&c->base, gdbarch, tempflag, cond_string, ops);
 
@@ -8905,7 +8894,7 @@ enable_breakpoints_after_startup (void)
 static struct breakpoint *
 new_single_step_breakpoint (int thread, struct gdbarch *gdbarch)
 {
-  struct breakpoint *b = XNEW (struct breakpoint);
+  struct breakpoint *b = new breakpoint ();
 
   init_raw_breakpoint_without_location (b, gdbarch, bp_single_step,
 					&momentary_breakpoint_ops);
@@ -9413,11 +9402,11 @@ create_breakpoint_sal (struct gdbarch *gdbarch,
     {
       struct tracepoint *t;
 
-      t = XCNEW (struct tracepoint);
+      t = new tracepoint ();
       b = &t->base;
     }
   else
-    b = XNEW (struct breakpoint);
+    b = new breakpoint ();
 
   old_chain = make_cleanup (xfree, b);
 
@@ -9668,11 +9657,8 @@ find_condition_and_thread (const char *tok, CORE_ADDR pc,
 
       if (toklen >= 1 && strncmp (tok, "if", toklen) == 0)
 	{
-	  struct expression *expr;
-
 	  tok = cond_start = end_tok + 1;
-	  expr = parse_exp_1 (&tok, pc, block_for_pc (pc), 0);
-	  xfree (expr);
+	  parse_exp_1 (&tok, pc, block_for_pc (pc), 0);
 	  cond_end = tok;
 	  *cond_string = savestring (cond_start, cond_end - cond_start);
 	}
@@ -9917,11 +9903,11 @@ create_breakpoint (struct gdbarch *gdbarch,
 	{
 	  struct tracepoint *t;
 
-	  t = XCNEW (struct tracepoint);
+	  t = new tracepoint ();
 	  b = &t->base;
 	}
       else
-	b = XNEW (struct breakpoint);
+	b = new breakpoint ();
 
       init_raw_breakpoint_without_location (b, gdbarch, type_wanted, ops);
       b->location = copy_event_location (location);
@@ -10642,8 +10628,6 @@ dtor_watchpoint (struct breakpoint *self)
 {
   struct watchpoint *w = (struct watchpoint *) self;
 
-  xfree (w->cond_exp);
-  xfree (w->exp);
   xfree (w->exp_string);
   xfree (w->exp_string_reparse);
   value_free (w->val);
@@ -10695,7 +10679,7 @@ insert_watchpoint (struct bp_location *bl)
   int length = w->exact ? 1 : bl->length;
 
   return target_insert_watchpoint (bl->address, length, bl->watchpoint_type,
-				   w->cond_exp);
+				   w->cond_exp.get ());
 }
 
 /* Implement the "remove" breakpoint_ops method for hardware watchpoints.  */
@@ -10707,7 +10691,7 @@ remove_watchpoint (struct bp_location *bl, enum remove_bp_reason reason)
   int length = w->exact ? 1 : bl->length;
 
   return target_remove_watchpoint (bl->address, length, bl->watchpoint_type,
-				   w->cond_exp);
+				   w->cond_exp.get ());
 }
 
 static int
@@ -11138,7 +11122,6 @@ watch_command_1 (const char *arg, int accessflag, int from_tty,
 		 int just_location, int internal)
 {
   struct breakpoint *b, *scope_breakpoint = NULL;
-  struct expression *exp;
   const struct block *exp_valid_block = NULL, *cond_exp_valid_block = NULL;
   struct value *val, *mark, *result;
   int saved_bitpos = 0, saved_bitsize = 0;
@@ -11250,7 +11233,7 @@ watch_command_1 (const char *arg, int accessflag, int from_tty,
   expression = savestring (arg, exp_end - arg);
   back_to = make_cleanup (xfree, expression);
   exp_start = arg = expression;
-  exp = parse_exp_1 (&arg, 0, 0, 0);
+  expression_up exp = parse_exp_1 (&arg, 0, 0, 0);
   exp_end = arg;
   /* Remove trailing whitespace from the expression before saving it.
      This makes the eventual display of the expression string a bit
@@ -11259,7 +11242,7 @@ watch_command_1 (const char *arg, int accessflag, int from_tty,
     --exp_end;
 
   /* Checking if the expression is not constant.  */
-  if (watchpoint_exp_is_const (exp))
+  if (watchpoint_exp_is_const (exp.get ()))
     {
       int len;
 
@@ -11271,7 +11254,7 @@ watch_command_1 (const char *arg, int accessflag, int from_tty,
 
   exp_valid_block = innermost_block;
   mark = value_mark ();
-  fetch_subexp_value (exp, &pc, &val, &result, NULL, just_location);
+  fetch_subexp_value (exp.get (), &pc, &val, &result, NULL, just_location);
 
   if (val != NULL && just_location)
     {
@@ -11307,17 +11290,14 @@ watch_command_1 (const char *arg, int accessflag, int from_tty,
   toklen = end_tok - tok;
   if (toklen >= 1 && strncmp (tok, "if", toklen) == 0)
     {
-      struct expression *cond;
-
       innermost_block = NULL;
       tok = cond_start = end_tok + 1;
-      cond = parse_exp_1 (&tok, 0, 0, 0);
+      parse_exp_1 (&tok, 0, 0, 0);
 
       /* The watchpoint expression may not be local, but the condition
 	 may still be.  E.g.: `watch global if local > 0'.  */
       cond_exp_valid_block = innermost_block;
 
-      xfree (cond);
       cond_end = tok;
     }
   if (*tok)
@@ -11371,7 +11351,7 @@ watch_command_1 (const char *arg, int accessflag, int from_tty,
   else
     bp_type = bp_hardware_watchpoint;
 
-  w = XCNEW (struct watchpoint);
+  w = new watchpoint ();
   b = &w->base;
   if (use_mask)
     init_raw_breakpoint_without_location (b, NULL, bp_type,
@@ -11382,7 +11362,7 @@ watch_command_1 (const char *arg, int accessflag, int from_tty,
   b->thread = thread;
   b->disposition = disp_donttouch;
   b->pspace = current_program_space;
-  w->exp = exp;
+  w->exp = gdb::move (exp);
   w->exp_valid_block = exp_valid_block;
   w->cond_exp_valid_block = cond_exp_valid_block;
   if (just_location)
@@ -11930,7 +11910,7 @@ catch_exec_command_1 (char *arg, int from_tty,
   if ((*arg != '\0') && !isspace (*arg))
     error (_("Junk at end of arguments."));
 
-  c = XNEW (struct exec_catchpoint);
+  c = new exec_catchpoint ();
   init_catchpoint (&c->base, gdbarch, tempflag, cond_string,
 		   &catch_exec_breakpoint_ops);
   c->exec_pathname = NULL;
@@ -12898,7 +12878,6 @@ say_where (struct breakpoint *b)
 static void
 bp_location_dtor (struct bp_location *self)
 {
-  xfree (self->cond);
   if (self->cond_bytecode)
     free_agent_expr (self->cond_bytecode);
   xfree (self->function_name);
@@ -12931,7 +12910,7 @@ base_breakpoint_allocate_location (struct breakpoint *self)
 {
   struct bp_location *loc;
 
-  loc = XNEW (struct bp_location);
+  loc = new struct bp_location ();
   init_bp_location (loc, &bp_location_ops, self);
   return loc;
 }
@@ -13783,7 +13762,7 @@ strace_marker_create_breakpoints_sal (struct gdbarch *gdbarch,
       location = copy_event_location (canonical->location);
       old_chain = make_cleanup_delete_event_location (location);
 
-      tp = XCNEW (struct tracepoint);
+      tp = new tracepoint ();
       init_breakpoint_sal (&tp->base, gdbarch, expanded,
 			   location, NULL,
 			   cond_string, extra_string,
@@ -13925,7 +13904,7 @@ delete_breakpoint (struct breakpoint *bpt)
   /* On the chance that someone will soon try again to delete this
      same bp, we mark it as deleted before freeing its storage.  */
   bpt->type = bp_none;
-  xfree (bpt);
+  delete bpt;
 }
 
 static void
