@@ -17,6 +17,9 @@
 
 * Support for Java programs compiled with gcj has been removed.
 
+* User commands now accept an unlimited number of arguments.
+  Previously, only up to 10 was accepted.
+
 * New targets
 
 Synopsys ARC			arc*-*-elf32

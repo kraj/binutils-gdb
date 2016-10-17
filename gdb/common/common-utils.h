@@ -21,6 +21,7 @@
 #define COMMON_UTILS_H
 
 #include <string>
+#include <sstream>
 
 /* If possible, define FUNCTION_NAME, a macro containing the name of
    the function being defined.  Since this macro may not always be
@@ -61,6 +62,23 @@ int xsnprintf (char *str, size_t size, const char *format, ...)
 /* Returns a std::string built from a printf-style format string.  */
 std::string string_printf (const char* fmt, ...)
   ATTRIBUTE_PRINTF (1, 2);
+
+/* Returns a string representation of val.  Replacement for
+   std::to_string, which is only available in C++11 or later.  */
+
+namespace gdb {
+
+template <class T>
+inline std::string
+to_string (const T &val)
+{
+  std::stringstream ss;
+
+  ss << val;
+  return ss.str ();
+}
+
+}
 
 /* Make a copy of the string at PTR with LEN characters
    (and add a null character at the end in the copy).
