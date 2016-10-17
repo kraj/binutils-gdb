@@ -459,8 +459,6 @@ execute_control_command (struct command_line *cmd)
     case simple_control:
       /* A simple command, execute it and return.  */
       new_line = insert_args (cmd->line);
-      if (!new_line)
-	break;
       make_cleanup (free_current_contents, &new_line);
       execute_command (new_line, 0);
       ret = cmd->control_type;
@@ -492,8 +490,6 @@ execute_control_command (struct command_line *cmd)
 
 	/* Parse the loop control expression for the while statement.  */
 	new_line = insert_args (cmd->line);
-	if (!new_line)
-	  break;
 	make_cleanup (free_current_contents, &new_line);
 	expr = parse_expression (new_line);
 	make_cleanup (free_current_contents, &expr);
@@ -560,8 +556,6 @@ execute_control_command (struct command_line *cmd)
 	print_command_trace (buffer);
 
 	new_line = insert_args (cmd->line);
-	if (!new_line)
-	  break;
 	make_cleanup (free_current_contents, &new_line);
 	/* Parse the conditional for the if statement.  */
 	expr = parse_expression (new_line);
@@ -605,8 +599,6 @@ execute_control_command (struct command_line *cmd)
 	/* Breakpoint commands list, record the commands in the
 	   breakpoint's command list and return.  */
 	new_line = insert_args (cmd->line);
-	if (!new_line)
-	  break;
 	make_cleanup (free_current_contents, &new_line);
 	ret = commands_from_control_command (new_line, cmd);
 	break;
@@ -853,8 +845,6 @@ insert_args (char *line)
 
   /* Allocate space for the new line and fill it in.  */
   new_line = (char *) xmalloc (len + 1);
-  if (new_line == NULL)
-    return NULL;
 
   /* Restore pointer to beginning of old line.  */
   line = save_line;
