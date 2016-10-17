@@ -150,6 +150,36 @@ xsnprintf (char *str, size_t size, const char *format, ...)
   return ret;
 }
 
+/* See documentation in common-utils.h.  */
+
+std::string
+string_printf (const char* fmt, ...)
+{
+  std::string str;
+  va_list vp;
+
+  /* Start by assuming some reasonable size will be sufficient.  */
+  str.resize (1024);
+
+  while (1)
+    {
+      size_t size;
+      int result;
+
+      va_start (vp, fmt);
+      size = str.size ();
+      result = vsnprintf (&str[0], size, fmt, vp);
+      va_end (vp);
+
+      str.resize (result);
+
+      if (result < size)
+	break;
+    }
+
+  return str;
+}
+
 char *
 savestring (const char *ptr, size_t len)
 {
