@@ -474,9 +474,22 @@ gdb_test "maint" \
     "\"maintenance\" must be followed by the name of a maintenance command\\.\r\nList.*unambiguous\\..*" \
     "maint w/o args"
 
-gdb_test "maint info line-table" \
-    "symtab: \[^\n\r\]+${srcfile}.*\\(\\(struct symtab \\*\\) $hex\\)\r\nlinetable: \\(\\(struct linetable \\*\\) $hex\\):\r\nINDEX.*LINE.*ADDRESS.*" \
-    "maint info line-table w/o a file name"
+set saw_symtabs 0
+set test "maint info line-table w/o a file name"
+gdb_test_multiple "maint info line-table" $test {
+    -re "symtab: \[^\n\r\]+${srcfile}.*\\(\\(struct symtab \\*\\) $hex\\)\r\nlinetable: \\(\\(struct linetable \\*\\) $hex\\):\r\nINDEX.*LINE.*ADDRESS" {
+	set saw_symtabs 1
+	exp_continue
+    }
+    -re "$decimal\[ \t\]+$decimal\[ \t\]+$hex\r\n" {
+	# Line table entries can be big.  Match them to avoid
+	# overflowing expect's buffer.
+	exp_continue
+    }
+    -re "$gdb_prompt $" {
+	gdb_assert $saw_symtabs $test
+    }
+}
 
 gdb_test "maint info line-table ${srcfile}" \
     "symtab: \[^\n\r\]+${srcfile}.*INDEX.*LINE.*ADDRESS.*" \
