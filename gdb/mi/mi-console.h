@@ -20,11 +20,37 @@
 #ifndef MI_CONSOLE_H
 #define MI_CONSOLE_H
 
-extern struct ui_file *mi_console_file_new (struct ui_file *raw,
-					    const char *prefix,
-					    char quote);
+class mi_console_file : public ui_file
+{
+public:
 
-extern void mi_console_set_raw (struct ui_file *console,
-				struct ui_file *raw);
+  /* Create a console that wraps the given output stream RAW with the
+     string PREFIX and quoting it with QUOTE.  */
+  mi_console_file (struct ui_file *raw, const char *prefix, char quote);
+
+  /* MI-specific API.  */
+  void set_raw (struct ui_file *raw);
+
+  /* ui_file-specific methods.  */
+
+  void flush () override;
+
+  void write (const char *buf, long length_buf) override;
+
+  void puts (const char *) override;
+
+  void write_buffer_on (ui_file &where) override
+  { m_buffer.write_buffer_on (where); }
+
+  void rewind () override
+  { gdb_assert_not_reached ("mi_console_file::rewind called\n"); }
+
+private:
+
+  struct ui_file *m_raw;
+  string_file m_buffer;
+  const char *m_prefix;
+  char m_quote;
+};
 
 #endif

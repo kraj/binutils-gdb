@@ -390,8 +390,8 @@ mi_out_put (struct ui_out *uiout, struct ui_file *stream)
   mi_out_data *data = (mi_out_data *) ui_out_data (uiout);
   struct ui_file *outstream = VEC_last (ui_filep, data->streams);
 
-  ui_file_put (outstream, ui_file_write_for_put, stream);
-  ui_file_rewind (outstream);
+  outstream->write_buffer_on (*stream);
+  outstream->rewind ();
 }
 
 /* Return the current MI version.  */
@@ -426,6 +426,8 @@ mi_out_data_dtor (struct ui_out *ui_out)
 {
   mi_out_data *data = (mi_out_data *) ui_out_data (ui_out);
 
+  /* XXX: Aren't we leaking the streams?  */
+
   VEC_free (ui_filep, data->streams);
   xfree (data);
 }
@@ -437,7 +439,7 @@ mi_out_new (int mi_version)
 {
   int flags = 0;
   mi_out_data *data = XNEW (mi_out_data);
-  struct ui_file *stream = mem_fileopen ();
+  struct ui_file *stream = new string_file ();
 
   mi_out_data_ctor (data, mi_version, stream);
   return ui_out_new (&mi_ui_out_impl, data, flags);

@@ -1953,7 +1953,6 @@ static void
 maintenance_print_psymbols (char *args, int from_tty)
 {
   char **argv;
-  struct ui_file *outfile;
   struct cleanup *cleanups;
   char *symname = NULL;
   char *filename = DEV_TTY;
@@ -1983,23 +1982,23 @@ print-psymbols takes an output file name and optional symbol file name"));
   filename = tilde_expand (filename);
   make_cleanup (xfree, filename);
 
-  outfile = gdb_fopen (filename, FOPEN_WT);
-  if (outfile == NULL)
+  stdio_file outfile;
+
+  if (!outfile.open (filename, FOPEN_WT))
     perror_with_name (filename);
-  make_cleanup_ui_file_delete (outfile);
 
   ALL_OBJFILES (objfile)
   {
-    fprintf_filtered (outfile, "\nPartial symtabs for objfile %s\n",
-		      objfile_name (objfile));
+    outfile.printf ("\nPartial symtabs for objfile %s\n",
+		    objfile_name (objfile));
 
     ALL_OBJFILE_PSYMTABS_REQUIRED (objfile, ps)
     {
       QUIT;
       if (symname == NULL || filename_cmp (symname, ps->filename) == 0)
 	{
-	  dump_psymtab (objfile, ps, outfile);
-	  dump_psymtab_addrmap (objfile, ps, outfile);
+	  dump_psymtab (objfile, ps, &outfile);
+	  dump_psymtab_addrmap (objfile, ps, &outfile);
 	}
     }
 
@@ -2007,8 +2006,8 @@ print-psymbols takes an output file name and optional symbol file name"));
 
     if (symname == NULL)
       {
-	fprintf_filtered (outfile, "\n");
-	dump_psymtab_addrmap (objfile, NULL, outfile);
+	outfile.puts ("\n");
+	dump_psymtab_addrmap (objfile, NULL, &outfile);
       }
   }
 

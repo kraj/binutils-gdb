@@ -412,7 +412,6 @@ static void
 maintenance_print_symbols (char *args, int from_tty)
 {
   char **argv;
-  struct ui_file *outfile;
   struct cleanup *cleanups;
   char *symname = NULL;
   char *filename = DEV_TTY;
@@ -443,18 +442,19 @@ maintenance_print_symbols (char *args, int from_tty)
   filename = tilde_expand (filename);
   make_cleanup (xfree, filename);
 
-  outfile = gdb_fopen (filename, FOPEN_WT);
-  if (outfile == 0)
+  stdio_file outfile;
+
+  if (!outfile.open (filename, FOPEN_WT))
     perror_with_name (filename);
-  make_cleanup_ui_file_delete (outfile);
 
   ALL_FILETABS (objfile, cu, s)
     {
       QUIT;
       if (symname == NULL
 	  || filename_cmp (symname, symtab_to_filename_for_display (s)) == 0)
-	dump_symtab (s, outfile);
+	dump_symtab (s, &outfile);
     }
+
   do_cleanups (cleanups);
 }
 
@@ -644,7 +644,6 @@ static void
 maintenance_print_msymbols (char *args, int from_tty)
 {
   char **argv;
-  struct ui_file *outfile;
   struct cleanup *cleanups;
   char *filename = DEV_TTY;
   char *symname = NULL;
@@ -679,10 +678,10 @@ maintenance_print_msymbols (char *args, int from_tty)
   filename = tilde_expand (filename);
   make_cleanup (xfree, filename);
 
-  outfile = gdb_fopen (filename, FOPEN_WT);
-  if (outfile == 0)
+  stdio_file outfile;
+
+  if (!outfile.open (filename, FOPEN_WT))
     perror_with_name (filename);
-  make_cleanup_ui_file_delete (outfile);
 
   ALL_PSPACES (pspace)
     ALL_PSPACE_OBJFILES (pspace, objfile)
@@ -691,9 +690,10 @@ maintenance_print_msymbols (char *args, int from_tty)
 	if (symname == NULL || (!stat (objfile_name (objfile), &obj_st)
 				&& sym_st.st_dev == obj_st.st_dev
 				&& sym_st.st_ino == obj_st.st_ino))
-	  dump_msymbols (objfile, outfile);
+	  dump_msymbols (objfile, &outfile);
       }
-  fprintf_filtered (outfile, "\n\n");
+  outfile.puts ("\n\n");
+
   do_cleanups (cleanups);
 }
 

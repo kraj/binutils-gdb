@@ -19,9 +19,18 @@
 #ifndef TUI_FILE_H
 #define TUI_FILE_H
 
-extern struct ui_file *tui_fileopen (FILE *);
-extern struct ui_file *tui_sfileopen (int);
-extern char *tui_file_get_strbuf (struct ui_file *);
-extern void tui_file_adjust_strbuf (int, struct ui_file *);
+#include "ui-file.h"
+
+/* A ``struct ui_file'' that is compatible with all the legacy
+   code.  XXX */
+
+class tui_file : public stdio_file
+{
+public:
+  explicit tui_file (FILE *stream);
+
+  void flush () override;
+  void puts (const char *) override;
+};
 
 #endif

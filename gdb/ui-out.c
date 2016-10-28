@@ -423,15 +423,13 @@ ui_out_field_core_addr (struct ui_out *uiout,
 void
 ui_out_field_stream (struct ui_out *uiout,
 		     const char *fldname,
-		     struct ui_file *stream)
+		     string_file &stream)
 {
-  std::string buffer = ui_file_as_string (stream);
-
-  if (!buffer.empty ())
-    ui_out_field_string (uiout, fldname, buffer.c_str ());
+  if (!stream.empty ())
+    ui_out_field_string (uiout, fldname, stream.c_str ());
   else
     ui_out_field_skip (uiout, fldname);
-  ui_file_rewind (stream);
+  stream.rewind ();
 }
 
 /* Used to omit a field.  */

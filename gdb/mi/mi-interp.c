@@ -126,11 +126,11 @@ mi_interpreter_init (struct interp *interp, int top_level)
 
   /* Create MI console channels, each with a different prefix so they
      can be distinguished.  */
-  mi->out = mi_console_file_new (mi->raw_stdout, "~", '"');
-  mi->err = mi_console_file_new (mi->raw_stdout, "&", '"');
+  mi->out = new mi_console_file (mi->raw_stdout, "~", '"');
+  mi->err = new mi_console_file (mi->raw_stdout, "&", '"');
   mi->log = mi->err;
-  mi->targ = mi_console_file_new (mi->raw_stdout, "@", '"');
-  mi->event_channel = mi_console_file_new (mi->raw_stdout, "=", 0);
+  mi->targ = new mi_console_file (mi->raw_stdout, "@", '"');
+  mi->event_channel = new mi_console_file (mi->raw_stdout, "=", 0);
 
   name = interp_name (interp);
   /* INTERP_MI selects the most recent released version.  "mi2" was
@@ -901,7 +901,7 @@ mi_breakpoint_created (struct breakpoint *b)
       /* We want the output from gdb_breakpoint_query to go to
 	 mi->event_channel.  One approach would be to just call
 	 gdb_breakpoint_query, and then use mi_out_put to send the current
-	 content of mi_outout into mi->event_channel.  However, that will
+	 content of mi_uiout into mi->event_channel.  However, that will
 	 break if anything is output to mi_uiout prior to calling the
 	 breakpoint_created notifications.  So, we use
 	 ui_out_redirect.  */
@@ -1394,8 +1394,8 @@ mi_set_logging (struct interp *interp, int start_log,
 	 it), and create one based on raw_stdout instead.  */
       if (logfile)
 	{
-	  ui_file_delete (out);
-	  out = tee_file_new (mi->raw_stdout, 0, logfile, 0);
+	  delete out;
+	  out = new tee_file (mi->raw_stdout, false, logfile, false);
 	}
 
       mi->saved_raw_stdout = mi->raw_stdout;
@@ -1407,11 +1407,11 @@ mi_set_logging (struct interp *interp, int start_log,
       mi->saved_raw_stdout = NULL;
     }
   
-  mi_console_set_raw (mi->out, mi->raw_stdout);
-  mi_console_set_raw (mi->err, mi->raw_stdout);
-  mi_console_set_raw (mi->log, mi->raw_stdout);
-  mi_console_set_raw (mi->targ, mi->raw_stdout);
-  mi_console_set_raw (mi->event_channel, mi->raw_stdout);
+  mi->out->set_raw (mi->raw_stdout);
+  mi->err->set_raw (mi->raw_stdout);
+  mi->log->set_raw (mi->raw_stdout);
+  mi->targ->set_raw (mi->raw_stdout);
+  mi->event_channel->set_raw (mi->raw_stdout);
 
   return 1;
 }

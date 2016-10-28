@@ -111,7 +111,7 @@ extern void ui_out_field_string (struct ui_out * uiout, const char *fldname,
 				 const char *string);
 
 extern void ui_out_field_stream (struct ui_out *uiout, const char *fldname,
-				 struct ui_file *stream);
+				 string_file &stream);
 
 extern void ui_out_field_fmt (struct ui_out *uiout, const char *fldname,
 			      const char *format, ...)

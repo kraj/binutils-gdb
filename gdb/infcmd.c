@@ -1670,21 +1670,19 @@ print_return_value_1 (struct ui_out *uiout, struct return_value_info *rv)
   if (rv->value != NULL)
     {
       struct value_print_options opts;
-      struct ui_file *stb;
-      struct cleanup *old_chain;
 
       /* Print it.  */
-      stb = mem_fileopen ();
-      old_chain = make_cleanup_ui_file_delete (stb);
       ui_out_text (uiout, "Value returned is ");
       ui_out_field_fmt (uiout, "gdb-result-var", "$%d",
 			rv->value_history_index);
       ui_out_text (uiout, " = ");
       get_no_prettyformat_print_options (&opts);
-      value_print (rv->value, stb, &opts);
+
+      string_file stb;
+
+      value_print (rv->value, &stb, &opts);
       ui_out_field_stream (uiout, "return-value", stb);
       ui_out_text (uiout, "\n");
-      do_cleanups (old_chain);
     }
   else
     {

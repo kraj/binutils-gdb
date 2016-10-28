@@ -1263,7 +1263,6 @@ output_register (struct frame_info *frame, int regnum, int format,
   struct value *val = value_of_register (regnum, frame);
   struct cleanup *tuple_cleanup;
   struct value_print_options opts;
-  struct ui_file *stb;
 
   if (skip_unavailable && !value_entirely_available (val))
     return;
@@ -1277,14 +1276,13 @@ output_register (struct frame_info *frame, int regnum, int format,
   if (format == 'r')
     format = 'z';
 
-  stb = mem_fileopen ();
-  make_cleanup_ui_file_delete (stb);
+  string_file stb;
 
   get_formatted_print_options (&opts, format);
   opts.deref_ref = 1;
   val_print (value_type (val),
 	     value_embedded_offset (val), 0,
-	     stb, 0, val, &opts, current_language);
+	     &stb, 0, val, &opts, current_language);
   ui_out_field_stream (uiout, "value", stb);
 
   do_cleanups (tuple_cleanup);
@@ -1354,14 +1352,9 @@ mi_cmd_data_write_register_values (char *command, char **argv, int argc)
 void
 mi_cmd_data_evaluate_expression (char *command, char **argv, int argc)
 {
-  struct cleanup *old_chain;
   struct value *val;
-  struct ui_file *stb;
   struct value_print_options opts;
   struct ui_out *uiout = current_uiout;
-
-  stb = mem_fileopen ();
-  old_chain = make_cleanup_ui_file_delete (stb);
 
   if (argc != 1)
     error (_("-data-evaluate-expression: "
@@ -1371,14 +1364,14 @@ mi_cmd_data_evaluate_expression (char *command, char **argv, int argc)
 
   val = evaluate_expression (expr.get ());
 
+  string_file stb;
+
   /* Print the result of the expression evaluation.  */
   get_user_print_options (&opts);
   opts.deref_ref = 0;
-  common_val_print (val, stb, 0, &opts, current_language);
+  common_val_print (val, &stb, 0, &opts, current_language);
 
   ui_out_field_stream (uiout, "value", stb);
-
-  do_cleanups (old_chain);
 }
 
 /* This is the -data-read-memory command.
@@ -1520,15 +1513,13 @@ mi_cmd_data_read_memory (char *command, char **argv, int argc)
 
   /* Build the result as a two dimentional table.  */
   {
-    struct ui_file *stream;
-    struct cleanup *cleanup_stream;
     int row;
     int row_byte;
+    struct cleanup *cleanup_list;
 
-    stream = mem_fileopen ();
-    cleanup_stream = make_cleanup_ui_file_delete (stream);
+    string_file stream;
 
-    make_cleanup_ui_out_list_begin_end (uiout, "memory");
+    cleanup_list = make_cleanup_ui_out_list_begin_end (uiout, "memory");
     for (row = 0, row_byte = 0;
 	 row < nr_rows;
 	 row++, row_byte += nr_cols * word_size)
@@ -1555,9 +1546,9 @@ mi_cmd_data_read_memory (char *command, char **argv, int argc)
 	      }
 	    else
 	      {
-		ui_file_rewind (stream);
+		stream.rewind ();
 		print_scalar_formatted (&mbuf[col_byte], word_type, &opts,
-					word_asize, stream);
+					word_asize, &stream);
 		ui_out_field_stream (uiout, NULL, stream);
 	      }
 	  }
@@ -1566,22 +1557,22 @@ mi_cmd_data_read_memory (char *command, char **argv, int argc)
 	  {
 	    int byte;
 
-	    ui_file_rewind (stream);
+	    stream.rewind ();
 	    for (byte = row_byte;
 		 byte < row_byte + word_size * nr_cols; byte++)
 	      {
 		if (byte >= nr_bytes)
-		  fputc_unfiltered ('X', stream);
+		  stream.putc ('X');
 		else if (mbuf[byte] < 32 || mbuf[byte] > 126)
-		  fputc_unfiltered (aschar, stream);
+		  stream.putc (aschar);
 		else
-		  fputc_unfiltered (mbuf[byte], stream);
+		  stream.putc (mbuf[byte]);
 	      }
 	    ui_out_field_stream (uiout, "ascii", stream);
 	  }
 	do_cleanups (cleanup_tuple);
       }
-    do_cleanups (cleanup_stream);
+    do_cleanups (cleanup_list);
   }
 }
 
@@ -2316,15 +2307,12 @@ mi_cmd_execute (struct mi_parse *parse)
   else
     {
       /* FIXME: DELETE THIS.  */
-      struct ui_file *stb;
+      string_file stb;
 
-      stb = mem_fileopen ();
+      stb.puts ("Undefined mi command: ");
+      stb.putstr (parse->command, '"');
+      stb.puts (" (missing implementation)");
 
-      fputs_unfiltered ("Undefined mi command: ", stb);
-      fputstr_unfiltered (parse->command, '"', stb);
-      fputs_unfiltered (" (missing implementation)", stb);
-
-      make_cleanup_ui_file_delete (stb);
       error_stream (stb);
     }
   do_cleanups (cleanup);
@@ -2706,12 +2694,10 @@ print_variable_or_computed (const char *expression, enum print_values values)
 {
   struct cleanup *old_chain;
   struct value *val;
-  struct ui_file *stb;
   struct type *type;
   struct ui_out *uiout = current_uiout;
 
-  stb = mem_fileopen ();
-  old_chain = make_cleanup_ui_file_delete (stb);
+  string_file stb;
 
   expression_up expr = parse_expression (expression);
 
@@ -2720,6 +2706,7 @@ print_variable_or_computed (const char *expression, enum print_values values)
   else
     val = evaluate_expression (expr.get ());
 
+  old_chain = make_cleanup (null_cleanup, NULL);
   if (values != PRINT_NO_VALUES)
     make_cleanup_ui_out_tuple_begin_end (uiout, NULL);
   ui_out_field_string (uiout, "name", expression);
@@ -2728,7 +2715,7 @@ print_variable_or_computed (const char *expression, enum print_values values)
     {
     case PRINT_SIMPLE_VALUES:
       type = check_typedef (value_type (val));
-      type_print (value_type (val), "", stb, -1);
+      type_print (value_type (val), "", &stb, -1);
       ui_out_field_stream (uiout, "type", stb);
       if (TYPE_CODE (type) != TYPE_CODE_ARRAY
 	  && TYPE_CODE (type) != TYPE_CODE_STRUCT
@@ -2738,7 +2725,7 @@ print_variable_or_computed (const char *expression, enum print_values values)
 
 	  get_no_prettyformat_print_options (&opts);
 	  opts.deref_ref = 1;
-	  common_val_print (val, stb, 0, &opts, current_language);
+	  common_val_print (val, &stb, 0, &opts, current_language);
 	  ui_out_field_stream (uiout, "value", stb);
 	}
       break;
@@ -2748,7 +2735,7 @@ print_variable_or_computed (const char *expression, enum print_values values)
 
 	get_no_prettyformat_print_options (&opts);
 	opts.deref_ref = 1;
-	common_val_print (val, stb, 0, &opts, current_language);
+	common_val_print (val, &stb, 0, &opts, current_language);
 	ui_out_field_stream (uiout, "value", stb);
       }
       break;
