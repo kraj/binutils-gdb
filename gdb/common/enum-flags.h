@@ -51,6 +51,8 @@
 
 #ifdef __cplusplus
 
+#include <type_traits>
+
 /* Traits type used to prevent the global operator overloads from
    instantiating for non-flag enums.  */
 template<typename T> struct enum_flags_type {};
@@ -66,32 +68,12 @@ template<typename T> struct enum_flags_type {};
     typedef enum_flags<enum_type> type;			\
   }
 
-/* Until we can rely on std::underlying type being universally
-   available (C++11), roll our own for enums.  */
-template<int size, bool sign> class integer_for_size { typedef void type; };
-template<> struct integer_for_size<1, 0> { typedef uint8_t type; };
-template<> struct integer_for_size<2, 0> { typedef uint16_t type; };
-template<> struct integer_for_size<4, 0> { typedef uint32_t type; };
-template<> struct integer_for_size<8, 0> { typedef uint64_t type; };
-template<> struct integer_for_size<1, 1> { typedef int8_t type; };
-template<> struct integer_for_size<2, 1> { typedef int16_t type; };
-template<> struct integer_for_size<4, 1> { typedef int32_t type; };
-template<> struct integer_for_size<8, 1> { typedef int64_t type; };
-
-template<typename T>
-struct enum_underlying_type
-{
-  typedef typename
-    integer_for_size<sizeof (T), static_cast<bool>(T (-1) < T (0))>::type
-    type;
-};
-
 template <typename E>
 class enum_flags
 {
 public:
   typedef E enum_type;
-  typedef typename enum_underlying_type<enum_type>::type underlying_type;
+  typedef typename std::underlying_type<enum_type>::type underlying_type;
 
 private:
   /* Private type used to support initializing flag types with zero:
