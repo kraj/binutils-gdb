@@ -23,7 +23,7 @@
 #include "target.h"
 #include "memory-map.h"
 
-#include "gdb_sys_time.h"
+#include <sys/time.h>
 #include <algorithm>
 
 static int

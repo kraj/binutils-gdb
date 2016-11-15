@@ -22,7 +22,7 @@
 #include "queue.h"
 
 #include <sys/types.h>
-#include "gdb_sys_time.h"
+#include <sys/time.h>
 
 #ifdef USE_WIN32API
 #include <windows.h>

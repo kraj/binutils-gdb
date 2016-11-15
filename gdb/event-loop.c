@@ -32,7 +32,7 @@
 #endif
 
 #include <sys/types.h>
-#include "gdb_sys_time.h"
+#include <sys/time.h>
 #include "gdb_select.h"
 #include "observer.h"
 #include "top.h"
