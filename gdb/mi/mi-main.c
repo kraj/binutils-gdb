@@ -56,15 +56,8 @@
 #include "observer.h"
 
 #include <ctype.h>
-#include "gdb_sys_time.h"
-
-#if defined HAVE_SYS_RESOURCE_H
-#include <sys/resource.h>
-#endif
-
-#ifdef HAVE_GETRUSAGE
-struct rusage rusage;
-#endif
+#include "cpu_time_clock.h"
+#include <chrono>
 
 enum
   {
@@ -2169,7 +2162,7 @@ mi_execute_command (const char *cmd, int from_tty)
 
       if (do_timings)
 	{
-	  command->cmd_start = XNEW (struct mi_timestamp);
+	  command->cmd_start = new mi_timestamp ();
 	  timestamp (command->cmd_start);
 	}
 
@@ -2390,8 +2383,8 @@ mi_load_progress (const char *section_name,
 		  unsigned long total_sent,
 		  unsigned long grand_total)
 {
-  struct timeval time_now, delta, update_threshold;
-  static struct timeval last_update;
+  using namespace std::chrono;
+  static steady_clock::time_point last_update;
   static char *previous_sect_name = NULL;
   int new_section;
   struct ui_out *saved_uiout;
@@ -2416,18 +2409,9 @@ mi_load_progress (const char *section_name,
 
   uiout = current_uiout;
 
-  update_threshold.tv_sec = 0;
-  update_threshold.tv_usec = 500000;
-  gettimeofday (&time_now, NULL);
-
-  delta.tv_usec = time_now.tv_usec - last_update.tv_usec;
-  delta.tv_sec = time_now.tv_sec - last_update.tv_sec;
-
-  if (delta.tv_usec < 0)
-    {
-      delta.tv_sec -= 1;
-      delta.tv_usec += 1000000L;
-    }
+  microseconds update_threshold (500000);
+  steady_clock::time_point time_now = steady_clock::now ();
+  steady_clock::duration delta = time_now - last_update;
 
   new_section = (previous_sect_name ?
 		 strcmp (previous_sect_name, section_name) : 1);
@@ -2451,13 +2435,11 @@ mi_load_progress (const char *section_name,
       gdb_flush (mi->raw_stdout);
     }
 
-  if (delta.tv_sec >= update_threshold.tv_sec &&
-      delta.tv_usec >= update_threshold.tv_usec)
+  if (delta > update_threshold)
     {
       struct cleanup *cleanup_tuple;
 
-      last_update.tv_sec = time_now.tv_sec;
-      last_update.tv_usec = time_now.tv_usec;
+      last_update = time_now;
       if (current_token)
 	fputs_unfiltered (current_token, mi->raw_stdout);
       fputs_unfiltered ("+download", mi->raw_stdout);
@@ -2480,23 +2462,10 @@ mi_load_progress (const char *section_name,
 static void
 timestamp (struct mi_timestamp *tv)
 {
-  gettimeofday (&tv->wallclock, NULL);
-#ifdef HAVE_GETRUSAGE
-  getrusage (RUSAGE_SELF, &rusage);
-  tv->utime.tv_sec = rusage.ru_utime.tv_sec;
-  tv->utime.tv_usec = rusage.ru_utime.tv_usec;
-  tv->stime.tv_sec = rusage.ru_stime.tv_sec;
-  tv->stime.tv_usec = rusage.ru_stime.tv_usec;
-#else
-  {
-    long usec = get_run_time ();
-
-    tv->utime.tv_sec = usec/1000000L;
-    tv->utime.tv_usec = usec - 1000000L*tv->utime.tv_sec;
-    tv->stime.tv_sec = 0;
-    tv->stime.tv_usec = 0;
-  }
-#endif
+  using namespace std::chrono;
+  tv->wallclock = steady_clock::now ();
+  tv->utime = user_cpu_time_clock::now ();
+  tv->stime = system_cpu_time_clock::now ();
 }
 
 static void
@@ -2517,23 +2486,19 @@ mi_print_timing_maybe (struct ui_file *file)
     print_diff_now (file, current_command_ts);
 }
 
-static long
-timeval_diff (struct timeval start, struct timeval end)
-{
-  return ((end.tv_sec - start.tv_sec) * 1000000L)
-    + (end.tv_usec - start.tv_usec);
-}
-
 static void
 print_diff (struct ui_file *file, struct mi_timestamp *start,
 	    struct mi_timestamp *end)
 {
+  using namespace std::chrono;
+  duration<double> wallclock = end->wallclock - start->wallclock;
+  duration<double> utime = end->utime - start->utime;
+  duration<double> stime = end->stime - start->stime;
+
   fprintf_unfiltered
     (file,
      ",time={wallclock=\"%0.5f\",user=\"%0.5f\",system=\"%0.5f\"}",
-     timeval_diff (start->wallclock, end->wallclock) / 1000000.0,
-     timeval_diff (start->utime, end->utime) / 1000000.0,
-     timeval_diff (start->stime, end->stime) / 1000000.0);
+     wallclock.count (), utime.count (), stime.count ());
 }
 
 void

@@ -17,7 +17,7 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "server.h"
-#include "gdb_sys_time.h"
+#include <chrono>
 
 /* Enable miscellaneous debugging output.  The name is historical - it
    was originally used to debug LinuxThreads support.  */
@@ -41,14 +41,13 @@ debug_vprintf (const char *format, va_list ap)
 
   if (debug_timestamp && new_line)
     {
-      struct timeval tm;
+      using namespace std::chrono;
 
-      gettimeofday (&tm, NULL);
+      steady_clock::time_point now = steady_clock::now ();
+      seconds s = duration_cast<seconds> (now.time_since_epoch ());
+      microseconds us = duration_cast<microseconds> (now.time_since_epoch ()) - s;
 
-      /* If gettimeofday doesn't exist, and as a portability solution it has
-	 been replaced with, e.g., time, then it doesn't make sense to print
-	 the microseconds field.  Is there a way to check for that?  */
-      fprintf (stderr, "%ld:%06ld ", (long) tm.tv_sec, (long) tm.tv_usec);
+      fprintf (stderr, "%ld:%06ld ", s.count (), us.count ());
     }
 #endif
 
