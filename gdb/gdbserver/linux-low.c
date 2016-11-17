@@ -994,8 +994,8 @@ linux_create_inferior (char *program, char **allargs)
       if (errno == ENOENT)
 	execvp (program, allargs);
 
-      fprintf (stderr, "Cannot exec %s: %s.\n", program,
-	       strerror (errno));
+      gnulib::fprintf (stderr, "Cannot exec %s: %s.\n", program,
+		       strerror (errno));
       fflush (stderr);
       _exit (0177);
     }
@@ -1981,10 +1981,10 @@ check_zombie_leaders (void)
 	     thread execs).  */
 
 	  if (debug_threads)
-	    fprintf (stderr,
-		     "CZL: Thread group leader %d zombie "
-		     "(it exited, or another thread execd).\n",
-		     leader_pid);
+	    gnulib::fprintf (stderr,
+			     "CZL: Thread group leader %d zombie "
+			     "(it exited, or another thread execd).\n",
+			     leader_pid);
 
 	  delete_lwp (leader_lp);
 	}
@@ -4461,10 +4461,10 @@ linux_resume_one_lwp_throw (struct lwp_info *lwp,
 	  if (fast_tp_collecting == 0)
 	    {
 	      if (step == 0)
-		fprintf (stderr, "BAD - reinserting but not stepping.\n");
+		gnulib::fprintf (stderr, "BAD - reinserting but not stepping.\n");
 	      if (lwp->suspended)
-		fprintf (stderr, "BAD - reinserting and suspended(%d).\n",
-			 lwp->suspended);
+		gnulib::fprintf (stderr, "BAD - reinserting and suspended(%d).\n",
+				 lwp->suspended);
 	    }
 	}
 

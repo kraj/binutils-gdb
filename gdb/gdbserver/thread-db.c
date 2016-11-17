@@ -590,8 +590,8 @@ try_thread_db_load (const char *library)
 	  const char *const libpath = dladdr_to_soname (td_init);
 
 	  if (libpath != NULL)
-	    fprintf (stderr, "Host %s resolved to: %s.\n",
-		     library, libpath);
+	    gnulib::fprintf (stderr, "Host %s resolved to: %s.\n",
+			     library, libpath);
 	}
     }
 #endif

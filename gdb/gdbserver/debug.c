@@ -47,11 +47,11 @@ debug_vprintf (const char *format, va_list ap)
       seconds s = duration_cast<seconds> (now.time_since_epoch ());
       microseconds us = duration_cast<microseconds> (now.time_since_epoch ()) - s;
 
-      fprintf (stderr, "%ld:%06ld ", s.count (), us.count ());
+      gnulib::fprintf (stderr, "%ld:%06ld ", s.count (), us.count ());
     }
 #endif
 
-  vfprintf (stderr, format, ap);
+  gnulib::vfprintf (stderr, format, ap);
 
 #if !defined (IN_PROCESS_AGENT)
   if (*format)

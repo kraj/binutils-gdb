@@ -31,9 +31,9 @@
 void
 malloc_failure (long size)
 {
-  fprintf (stderr,
-	   PREFIX "ran out of memory while trying to allocate %lu bytes\n",
-	   (unsigned long) size);
+  gnulib::fprintf (stderr,
+		   PREFIX "ran out of memory while trying to allocate %lu bytes\n",
+		   (unsigned long) size);
   exit (1);
 }
 
@@ -78,7 +78,7 @@ verror (const char *string, va_list args)
 {
 #ifdef IN_PROCESS_AGENT
   fflush (stdout);
-  vfprintf (stderr, string, args);
+  gnulib::vfprintf (stderr, string, args);
   fprintf (stderr, "\n");
   exit (1);
 #else
@@ -89,9 +89,9 @@ verror (const char *string, va_list args)
 void
 vwarning (const char *string, va_list args)
 {
-  fprintf (stderr, PREFIX);
-  vfprintf (stderr, string, args);
-  fprintf (stderr, "\n");
+  gnulib::fprintf (stderr, PREFIX);
+  gnulib::vfprintf (stderr, string, args);
+  gnulib::fprintf (stderr, "\n");
 }
 
 /* Report a problem internal to GDBserver, and exit.  */
@@ -99,10 +99,10 @@ vwarning (const char *string, va_list args)
 void
 internal_verror (const char *file, int line, const char *fmt, va_list args)
 {
-  fprintf (stderr,  "\
+  gnulib::fprintf (stderr,  "\
 %s:%d: A problem internal to " TOOLNAME " has been detected.\n", file, line);
-  vfprintf (stderr, fmt, args);
-  fprintf (stderr, "\n");
+  gnulib::vfprintf (stderr, fmt, args);
+  gnulib::fprintf (stderr, "\n");
   exit (1);
 }
 
@@ -111,10 +111,10 @@ internal_verror (const char *file, int line, const char *fmt, va_list args)
 void
 internal_vwarning (const char *file, int line, const char *fmt, va_list args)
 {
-  fprintf (stderr,  "\
+  gnulib::fprintf (stderr,  "\
 %s:%d: A problem internal to " TOOLNAME " has been detected.\n", file, line);
-  vfprintf (stderr, fmt, args);
-  fprintf (stderr, "\n");
+  gnulib::vfprintf (stderr, fmt, args);
+  gnulib::fprintf (stderr, "\n");
 }
 
 /* Convert a CORE_ADDR into a HEX string, like %lx.

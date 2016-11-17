@@ -1284,8 +1284,8 @@ add_breakpoint_condition (struct gdb_breakpoint *bp, char **condition)
 
   if (cond == NULL)
     {
-      fprintf (stderr, "Condition evaluation failed. "
-	       "Assuming unconditional.\n");
+      gnulib::fprintf (stderr, "Condition evaluation failed. "
+		       "Assuming unconditional.\n");
       return 0;
     }
 
@@ -1384,8 +1384,8 @@ add_breakpoint_commands (struct gdb_breakpoint *bp, char **command,
 
   if (cmd == NULL)
     {
-      fprintf (stderr, "Command evaluation failed. "
-	       "Disabling.\n");
+      gnulib::fprintf (stderr, "Command evaluation failed. "
+		       "Disabling.\n");
       return 0;
     }
 

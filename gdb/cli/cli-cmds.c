@@ -398,7 +398,7 @@ cd_command (char *dir, int from_tty)
   dir = tilde_expand (dir);
   cleanup = make_cleanup (xfree, dir);
 
-  if (chdir (dir) < 0)
+  if (gnulib::chdir (dir) < 0)
     perror_with_name (dir);
 
 #ifdef HAVE_DOS_BASED_FILE_SYSTEM

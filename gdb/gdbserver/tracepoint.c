@@ -71,7 +71,7 @@ trace_vdebug (const char *fmt, ...)
 
   va_start (ap, fmt);
   vsprintf (buf, fmt, ap);
-  fprintf (stderr, PROG "/tracepoint: %s\n", buf);
+  gnulib::fprintf (stderr, PROG "/tracepoint: %s\n", buf);
   va_end (ap);
 }
 

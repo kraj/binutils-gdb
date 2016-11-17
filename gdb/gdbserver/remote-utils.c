@@ -194,8 +194,8 @@ handle_accept_event (int err, gdb_client_data client_data)
   delete_file_handler (listen_desc);
 
   /* Convert IP address to string.  */
-  fprintf (stderr, "Remote debugging from host %s\n",
-	   inet_ntoa (sockaddr.sin_addr));
+  gnulib::fprintf (stderr, "Remote debugging from host %s\n",
+		   inet_ntoa (sockaddr.sin_addr));
 
   enable_async_notification (remote_desc);
 
@@ -296,7 +296,7 @@ remote_open (char *name)
 
   if (strcmp (name, STDIO_CONNECTION_NAME) == 0)
     {
-      fprintf (stderr, "Remote debugging using stdio\n");
+      gnulib::fprintf (stderr, "Remote debugging using stdio\n");
 
       /* Use stdin as the handle of the connection.
 	 We only select on reads, for example.  */
@@ -368,7 +368,7 @@ remote_open (char *name)
       }
 #endif
 
-      fprintf (stderr, "Remote debugging using %s\n", name);
+      gnulib::fprintf (stderr, "Remote debugging using %s\n", name);
 
       enable_async_notification (remote_desc);
 
@@ -389,7 +389,7 @@ remote_open (char *name)
 	perror_with_name ("Can't determine port");
       port = ntohs (sockaddr.sin_port);
 
-      fprintf (stderr, "Listening on port %d\n", port);
+      gnulib::fprintf (stderr, "Listening on port %d\n", port);
       fflush (stderr);
 
       /* Register the event loop handler.  */
@@ -664,9 +664,9 @@ putpkt_binary_1 (char *buf, int cnt, int is_notif)
 	  if (remote_debug)
 	    {
 	      if (is_notif)
-		fprintf (stderr, "putpkt (\"%s\"); [notif]\n", buf2);
+		gnulib::fprintf (stderr, "putpkt (\"%s\"); [notif]\n", buf2);
 	      else
-		fprintf (stderr, "putpkt (\"%s\"); [noack mode]\n", buf2);
+		gnulib::fprintf (stderr, "putpkt (\"%s\"); [noack mode]\n", buf2);
 	      fflush (stderr);
 	    }
 	  break;
@@ -674,7 +674,7 @@ putpkt_binary_1 (char *buf, int cnt, int is_notif)
 
       if (remote_debug)
 	{
-	  fprintf (stderr, "putpkt (\"%s\"); [looking for ack]\n", buf2);
+	  gnulib::fprintf (stderr, "putpkt (\"%s\"); [looking for ack]\n", buf2);
 	  fflush (stderr);
 	}
 
@@ -688,7 +688,7 @@ putpkt_binary_1 (char *buf, int cnt, int is_notif)
 
       if (remote_debug)
 	{
-	  fprintf (stderr, "[received '%c' (0x%x)]\n", cc, cc);
+	  gnulib::fprintf (stderr, "[received '%c' (0x%x)]\n", cc, cc);
 	  fflush (stderr);
 	}
 
@@ -750,16 +750,16 @@ input_interrupt (int unused)
 
       if (cc == 0)
 	{
-	  fprintf (stderr, "client connection closed\n");
+	  gnulib::fprintf (stderr, "client connection closed\n");
 	  return;
 	}
       else if (cc != 1 || c != '\003')
 	{
-	  fprintf (stderr, "input_interrupt, count = %d c = %d ", cc, c);
+	  gnulib::fprintf (stderr, "input_interrupt, count = %d c = %d ", cc, c);
 	  if (isprint (c))
-	    fprintf (stderr, "('%c')\n", c);
+	    gnulib::fprintf (stderr, "('%c')\n", c);
 	  else
-	    fprintf (stderr, "('\\x%02x')\n", c & 0xff);
+	    gnulib::fprintf (stderr, "('\\x%02x')\n", c & 0xff);
 	  return;
 	}
 
@@ -889,7 +889,7 @@ readchar (void)
 	  if (readchar_bufcnt == 0)
 	    {
 	      if (remote_debug)
-		fprintf (stderr, "readchar: Got EOF\n");
+		gnulib::fprintf (stderr, "readchar: Got EOF\n");
 	    }
 	  else
 	    perror ("readchar");
@@ -977,7 +977,7 @@ getpkt (char *buf)
 	    break;
 	  if (remote_debug)
 	    {
-	      fprintf (stderr, "[getpkt: discarding char '%c']\n", c);
+	      gnulib::fprintf (stderr, "[getpkt: discarding char '%c']\n", c);
 	      fflush (stderr);
 	    }
 
@@ -1006,16 +1006,16 @@ getpkt (char *buf)
 
       if (noack_mode)
 	{
-	  fprintf (stderr,
-		   "Bad checksum, sentsum=0x%x, csum=0x%x, "
-		   "buf=%s [no-ack-mode, Bad medium?]\n",
-		   (c1 << 4) + c2, csum, buf);
+	  gnulib::fprintf (stderr,
+			   "Bad checksum, sentsum=0x%x, csum=0x%x, "
+			   "buf=%s [no-ack-mode, Bad medium?]\n",
+			   (c1 << 4) + c2, csum, buf);
 	  /* Not much we can do, GDB wasn't expecting an ack/nac.  */
 	  break;
 	}
 
-      fprintf (stderr, "Bad checksum, sentsum=0x%x, csum=0x%x, buf=%s\n",
-	       (c1 << 4) + c2, csum, buf);
+      gnulib::fprintf (stderr, "Bad checksum, sentsum=0x%x, csum=0x%x, buf=%s\n",
+		       (c1 << 4) + c2, csum, buf);
       if (write_prim ("-", 1) != 1)
 	return -1;
     }
@@ -1024,7 +1024,7 @@ getpkt (char *buf)
     {
       if (remote_debug)
 	{
-	  fprintf (stderr, "getpkt (\"%s\");  [sending ack] \n", buf);
+	  gnulib::fprintf (stderr, "getpkt (\"%s\");  [sending ack] \n", buf);
 	  fflush (stderr);
 	}
 
@@ -1033,7 +1033,7 @@ getpkt (char *buf)
 
       if (remote_debug)
 	{
-	  fprintf (stderr, "[sent ack]\n");
+	  gnulib::fprintf (stderr, "[sent ack]\n");
 	  fflush (stderr);
 	}
     }
@@ -1041,7 +1041,7 @@ getpkt (char *buf)
     {
       if (remote_debug)
 	{
-	  fprintf (stderr, "getpkt (\"%s\");  [no ack sent] \n", buf);
+	  gnulib::fprintf (stderr, "getpkt (\"%s\");  [no ack sent] \n", buf);
 	  fflush (stderr);
 	}
     }
