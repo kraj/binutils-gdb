@@ -30,7 +30,7 @@ class mi_ui_out : public ui_out
 {
 public:
 
-  explicit mi_ui_out (int mi_version, ui_file *stream);
+  explicit mi_ui_out (int mi_version, string_file *stream);
   virtual ~mi_ui_out ();
 
   /* MI-specific */

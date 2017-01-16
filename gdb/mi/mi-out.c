@@ -251,8 +251,8 @@ mi_ui_out::put (ui_file *stream)
 {
   ui_file *outstream = m_streams.back ();
 
-  ui_file_put (outstream, ui_file_write_for_put, stream);
-  ui_file_rewind (outstream);
+  outstream->write_buffer_on (*stream);
+  outstream->rewind ();
 }
 
 /* Return the current MI version.  */
@@ -265,7 +265,7 @@ mi_ui_out::version ()
 
 /* Constructor for an `mi_out_data' object.  */
 
-mi_ui_out::mi_ui_out (int mi_version, ui_file *stream)
+mi_ui_out::mi_ui_out (int mi_version, string_file *stream)
 : m_suppress_field_separator (false),
   m_suppress_output (false),
   m_mi_version (mi_version)
@@ -284,7 +284,7 @@ mi_ui_out::~mi_ui_out ()
 mi_ui_out *
 mi_out_new (int mi_version)
 {
-  ui_file *stream = mem_fileopen ();
+  struct string_file *stream = new string_file ();
 
   return new mi_ui_out (mi_version, stream);
 }

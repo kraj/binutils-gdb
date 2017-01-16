@@ -24,74 +24,86 @@ struct ui_file;
 
 #include <string>
 
-/* Create a generic ui_file object with null methods.  */
-
-extern struct ui_file *ui_file_new (void);
-
-/* Override methods used by specific implementations of a UI_FILE
-   object.  */
-
-typedef void (ui_file_flush_ftype) (struct ui_file *stream);
-extern void set_ui_file_flush (struct ui_file *stream,
-			       ui_file_flush_ftype *flush);
-
-/* NOTE: Both fputs and write methods are available.  Default
-   implementations that mapping one onto the other are included.  */
-typedef void (ui_file_write_ftype) (struct ui_file *stream,
-				    const char *buf, long length_buf);
-extern void set_ui_file_write (struct ui_file *stream,
-			       ui_file_write_ftype *fputs);
-
-typedef void (ui_file_fputs_ftype) (const char *, struct ui_file *stream);
-extern void set_ui_file_fputs (struct ui_file *stream,
-			       ui_file_fputs_ftype *fputs);
-
-/* This version of "write" is safe for use in signal handlers.
-   It's not guaranteed that all existing output will have been
-   flushed first.
-   Implementations are also free to ignore some or all of the request.
-   fputs_async is not provided as the async versions are rarely used,
-   no point in having both for a rarely used interface.  */
-typedef void (ui_file_write_async_safe_ftype)
-  (struct ui_file *stream, const char *buf, long length_buf);
-extern void set_ui_file_write_async_safe
-  (struct ui_file *stream, ui_file_write_async_safe_ftype *write_async_safe);
-
-typedef long (ui_file_read_ftype) (struct ui_file *stream,
-				   char *buf, long length_buf);
-extern void set_ui_file_read (struct ui_file *stream,
-			      ui_file_read_ftype *fread);
-
-typedef int (ui_file_isatty_ftype) (struct ui_file *stream);
-extern void set_ui_file_isatty (struct ui_file *stream,
-				ui_file_isatty_ftype *isatty);
-
-typedef void (ui_file_rewind_ftype) (struct ui_file *stream);
-extern void set_ui_file_rewind (struct ui_file *stream,
-				ui_file_rewind_ftype *rewind);
-
 typedef void (ui_file_put_method_ftype) (void *object, const char *buffer,
 					 long length_buffer);
-typedef void (ui_file_put_ftype) (struct ui_file *stream,
-				  ui_file_put_method_ftype *method,
-				  void *context);
-extern void set_ui_file_put (struct ui_file *stream, ui_file_put_ftype *put);
 
-typedef void (ui_file_delete_ftype) (struct ui_file * stream);
-extern void set_ui_file_data (struct ui_file *stream, void *data,
-			      ui_file_delete_ftype *to_delete);
+/* The ui_file base class.  */
 
-typedef int (ui_file_fseek_ftype) (struct ui_file *stream, long offset,
-				   int whence);
-extern void set_ui_file_fseek (struct ui_file *stream,
-			       ui_file_fseek_ftype *fseek_ptr);
+class ui_file
+{
+public:
+  ui_file ();
+  virtual ~ui_file ();
 
-extern void *ui_file_data (struct ui_file *file);
+  /* Public non-virtual API.  */
 
+  void printf (const char *, ...) ATTRIBUTE_PRINTF (2, 3);
+
+  /* Print a string whose delimiter is QUOTER.  Note that these
+     routines should only be call for printing things which are
+     independent of the language of the program being debugged.  */
+  void putstr (const char *str, int quoter);
+
+  void putstrn (const char *str, int n, int quoter);
+
+  int putc (int c);
+
+  void vprintf (const char *, va_list) ATTRIBUTE_PRINTF (2, 0);
+
+  /* Methods below are both public, and overridable by ui_file
+     subclasses.  */
+
+  virtual void write (const char *buf, long length_buf) = 0;
+
+  /* This version of "write" is safe for use in signal handlers.  It's
+     not guaranteed that all existing output will have been flushed
+     first.  Implementations are also free to ignore some or all of
+     the request.  puts_async is not provided as the async versions
+     are rarely used, no point in having both for a rarely used
+     interface.  */
+  virtual void write_async_safe (const char *buf, long length_buf)
+  { gdb_assert_not_reached ("write_async_safe"); }
+
+  virtual void puts (const char *str)
+  { this->write (str, strlen (str)); }
+
+  virtual long read (char *buf, long length_buf)
+  { gdb_assert_not_reached ("can't read from this file type"); }
+
+  virtual bool isatty ()
+  { return false; }
+
+  virtual void flush ()
+  {}
+
+  /* The following two methods are meant to be overridden by
+     locally-buffered ui_files.  */
+
+  /* Rewind local buffer.  I.e., clear it.  */
+  virtual void rewind ()
+  {}
+
+  /* Write contents of local buffer onto WRITE.  */
+  virtual void write_buffer_on (ui_file &where)
+  {}
+};
+
+typedef std::unique_ptr<ui_file> ui_file_up;
+
+/* A ui_file that writes to nowhere.  */
+
+class null_file : public ui_file
+{
+public:
+  void write (const char *buf, long length_buf) override;
+  void write_async_safe (const char *buf, long sizeof_buf) override;
+  void puts (const char *str) override;
+};
+
+/* A preallocated null_file stream.  */
+extern null_file null_stream;
 
 extern void gdb_flush (struct ui_file *);
-
-extern void ui_file_delete (struct ui_file *stream);
 
 extern void ui_file_rewind (struct ui_file *stream);
 
@@ -100,59 +112,168 @@ extern int ui_file_isatty (struct ui_file *);
 extern void ui_file_write (struct ui_file *file, const char *buf,
 			   long length_buf);
 
-/* A wrapper for ui_file_write that is suitable for use by
-   ui_file_put.  */
-
-extern void ui_file_write_for_put (void *data, const char *buffer,
-				   long length_buffer);
-
 extern void ui_file_write_async_safe (struct ui_file *file, const char *buf,
 				      long length_buf);
 
-/* NOTE: copies left to right.  */
-extern void ui_file_put (struct ui_file *src,
-			 ui_file_put_method_ftype *write, void *dest);
-
-/* Returns a freshly allocated buffer containing the entire contents
-   of FILE (as determined by ui_file_put()) with a NUL character
-   appended.  LENGTH, if not NULL, is set to the size of the buffer
-   minus that appended NUL.  */
-extern char *ui_file_xstrdup (struct ui_file *file, long *length);
-
-/* Returns a std::string containing the entire contents of FILE (as
-   determined by ui_file_put()).  */
-extern std::string ui_file_as_string (struct ui_file *file);
-
-/* Similar to ui_file_xstrdup, but return a new string allocated on
-   OBSTACK.  */
-extern char *ui_file_obsavestring (struct ui_file *file,
-				   struct obstack *obstack, long *length);
-
 extern long ui_file_read (struct ui_file *file, char *buf, long length_buf);
 
-extern int ui_file_fseek (struct ui_file *file, long offset, int whence);
+/* A std::string-based ui_file.  Can be used as a scratch buffer for
+   collecting output.  */
 
-/* Create/open a memory based file.  Can be used as a scratch buffer
-   for collecting output.  */
-extern struct ui_file *mem_fileopen (void);
+class string_file : public ui_file
+{
+public:
+  string_file ();
+  ~string_file () override;
 
+  /* Override ui_file methods.  */
 
+  void rewind () override;
 
-/* Open/create a STDIO based UI_FILE using the already open FILE.  */
-extern struct ui_file *stdio_fileopen (FILE *file);
+  void write (const char *buf, long length_buf) override;
 
-/* Likewise, for stderr-like streams.  */
-extern struct ui_file *stderr_fileopen (FILE *file);
+  void write_buffer_on (ui_file &where) override
+  { where.write (m_string.data (), m_string.size ()); }
 
+  long read (char *buf, long length_buf) override
+  { gdb_assert_not_reached ("a string_file is not readable"); }
 
-/* Open NAME returning an STDIO based UI_FILE.  */
-extern struct ui_file *gdb_fopen (const char *name, const char *mode);
+  /* string_file-specific public API.  */
 
-/* Create a file which writes to both ONE and TWO.  CLOSE_ONE
-   and CLOSE_TWO indicate whether the original files should be
-   closed when the new file is closed.  */
-extern struct ui_file *tee_file_new (struct ui_file *one,
-				     int close_one,
-				     struct ui_file *two,
-				     int close_two);
+  /* Accesses the std::string containing the entire output collected
+     so far.  Returns a non-const reference so that it's easy to move
+     the string contents out of the string_file.  */
+  std::string &string ();
+
+  /* Provide a few convenience methods with the same API as the
+     underlying std::string.  */
+  const char *data () const { return m_string.data (); }
+  const char *c_str () const { return m_string.c_str (); }
+  size_t size () const { return m_string.size (); }
+  bool empty () const;
+
+private:
+  /* The internal buffer.  */
+  std::string m_string;
+};
+
+/* A ui_file implementation that maps directly onto <stdio.h>'s
+   FILE.  */
+
+class stdio_file : public ui_file
+{
+public:
+  /* Create a ui_file from a previously opened FILE.  If not CLOSE_P,
+     then behave like like fdopen().  */
+  explicit stdio_file (FILE *file, bool close_p = false);
+
+  /* Create an stdio_file that is not managing any file yet.  Call
+     open to actually open something.  */
+  stdio_file ();
+
+  ~stdio_file () override;
+
+  /* Open NAME in mode MODE.  Returns true on success, false
+     otherwise.  Destroying the stdio_file closes the underlying FILE
+     handle.  */
+  bool open (const char *name, const char *mode);
+
+  void flush () override;
+
+  void write (const char *buf, long length_buf) override;
+
+  void write_async_safe (const char *buf, long length_buf) override;
+
+  void puts (const char *) override;
+
+  long read (char *buf, long length_buf) override;
+
+  bool isatty () override;
+
+  void rewind () override
+  { gdb_assert_not_reached ("can't rewind a stdio file"); }
+
+private:
+  /* Sets the internal stream to FILE, and saves the FILE's file
+     descriptor in M_FD.  */
+  void set_stream (FILE *file);
+
+  /* The file.  */
+  FILE *m_file;
+
+  /* The associated file descriptor is extracted ahead of time for
+     stdio_file::write_async_safe's benefit, in case fileno isn't
+     async-safe.  */
+  int m_fd;
+
+  /* Whether M_FILE should be closed on destruction.  */
+  bool m_close_p;
+};
+
+/* Like stdio_file, but specifically for stderr.
+
+   This exists because there is no real line-buffering on Windows, see
+   <http://msdn.microsoft.com/en-us/library/86cebhfs%28v=vs.71%29.aspx>
+   so the stdout is either fully-buffered or non-buffered.  We can't
+   make stdout non-buffered, because of two concerns:
+
+    1. Non-buffering hurts performance.
+    2. Non-buffering may change GDB's behavior when it is interacting
+       with a front-end, such as Emacs.
+
+   We leave stdout as fully buffered, but flush it first when
+   something is written to stderr.
+
+   Note the the 'write_async_safe' method is not overwritten, because
+   there's no way to flush a stream in an async-safe manner.
+   Fortunately, it doesn't really matter, because:
+
+    1. That method is only used for printing internal debug output
+       from signal handlers.
+
+    2. Windows hosts don't have a concept of async-safeness.  Signal
+       handlers run in a separate thread, so they can call the regular
+       non-async-safe output routines freely.
+*/
+class stderr_file : public stdio_file
+{
+public:
+  explicit stderr_file (FILE *stream);
+
+  /* Flushes gdb_stdout before writing to the underlying stream.  */
+  void write (const char *buf, long length_buf) override;
+
+  /* Flushes gdb_stdout before writing to the underlying stream.  */
+  void puts (const char *linebuffer) override;
+};
+
+/* A ui_file implementation that maps onto two ui-file objects.  */
+
+class tee_file : public ui_file
+{
+public:
+  /* Create a file which writes to both ONE and TWO.  CLOSE_ONE and
+     CLOSE_TWO indicate whether the original files should be closed
+     when the new file is closed.  */
+  tee_file (ui_file *one, bool close_one,
+	    ui_file *two, bool close_two);
+  ~tee_file () override;
+
+  void write (const char *buf, long length_buf) override;
+  void write_async_safe (const char *buf, long length_buf) override;
+  void puts (const char *) override;
+
+  bool isatty () override;
+  void flush () override;
+
+  void rewind () override
+  { gdb_assert_not_reached ("tee_file::rewind called\n"); }
+
+private:
+  /* The two underlying ui_files, and whether they should each be
+     closed on destruction.  */
+  struct ui_file *m_one, *m_two;
+  bool m_close_one, m_close_two;
+};
+
 #endif
