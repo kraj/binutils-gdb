@@ -303,7 +303,7 @@ extern void (*deprecated_error_begin_hook) (void);
 
 extern char *warning_pre_print;
 
-extern void error_stream (struct ui_file *) ATTRIBUTE_NORETURN;
+extern void error_stream (const string_file &) ATTRIBUTE_NORETURN;
 
 extern void demangler_vwarning (const char *file, int line,
 			       const char *, va_list ap)

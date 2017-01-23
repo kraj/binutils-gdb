@@ -53,7 +53,7 @@ struct disasm_insn
 extern int gdb_pretty_print_insn (struct gdbarch *gdbarch, struct ui_out *uiout,
 				  struct disassemble_info * di,
 				  const struct disasm_insn *insn, int flags,
-				  struct ui_file *stb);
+				  string_file &stb);
 
 /* Return a filled in disassemble_info object for use by gdb.  */
 

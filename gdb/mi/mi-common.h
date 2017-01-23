@@ -19,6 +19,8 @@
 #ifndef MI_COMMON_H
 #define MI_COMMON_H
 
+struct mi_console_file;
+
 /* Represents the reason why GDB is sending an asynchronous command to
    the front end.  NOTE: When modifing this, don't forget to update
    gdb.texinfo!  */
@@ -51,11 +53,11 @@ const char *async_reason_lookup (enum async_reply_reason reason);
 struct mi_interp
 {
   /* MI's output channels */
-  struct ui_file *out;
-  struct ui_file *err;
-  struct ui_file *log;
-  struct ui_file *targ;
-  struct ui_file *event_channel;
+  struct mi_console_file *out;
+  struct mi_console_file *err;
+  struct mi_console_file *log;
+  struct mi_console_file *targ;
+  struct mi_console_file *event_channel;
 
   /* Raw console output.  */
   struct ui_file *raw_stdout;
