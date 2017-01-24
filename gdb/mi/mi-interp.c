@@ -1373,26 +1373,25 @@ mi_ui_out (struct interp *interp)
 /* Do MI-specific logging actions; save raw_stdout, and change all
    the consoles to use the supplied ui-file(s).  */
 
-static int
-mi_set_logging (struct interp *interp, int start_log,
-		struct ui_file *out, struct ui_file *logfile)
+static void
+mi_set_logging (struct interp *interp,
+	        ui_file_up logfile, bool logging_redirect)
 {
   struct mi_interp *mi = (struct mi_interp *) interp_data (interp);
 
-  if (!mi)
-    return 0;
+  gdb_assert (mi != NULL);
 
-  if (start_log)
+  if (logfile != NULL)
     {
-      /* The tee created already is based on gdb_stdout, which for MI
-	 is a console and so we end up in an infinite loop of console
-	 writing to ui_file writing to console etc.  So discard the
-	 existing tee (it hasn't been used yet, and MI won't ever use
-	 it), and create one based on raw_stdout instead.  */
-      if (logfile)
+      ui_file *out;
+
+      if (logging_redirect)
+	out = logfile.release ();
+      else
 	{
-	  delete out;
-	  out = new tee_file (mi->raw_stdout, false, logfile, false);
+	  /* Note the tee takes ownership of the log file.  */
+	  out = new tee_file (mi->raw_stdout, false, logfile.get (), true);
+	  logfile.release ();
 	}
 
       mi->saved_raw_stdout = mi->raw_stdout;
@@ -1400,6 +1399,7 @@ mi_set_logging (struct interp *interp, int start_log,
     }
   else
     {
+      delete mi->raw_stdout;
       mi->raw_stdout = mi->saved_raw_stdout;
       mi->saved_raw_stdout = NULL;
     }
@@ -1409,8 +1409,6 @@ mi_set_logging (struct interp *interp, int start_log,
   mi->log->set_raw (mi->raw_stdout);
   mi->targ->set_raw (mi->raw_stdout);
   mi->event_channel->set_raw (mi->raw_stdout);
-
-  return 1;
 }
 
 /* The MI interpreter's vtable.  */

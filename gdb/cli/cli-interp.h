@@ -20,6 +20,9 @@
 
 struct interp;
 
+extern void cli_set_logging (struct interp *interp,
+			     ui_file_up logfile, bool logging_redirect);
+
 extern int cli_interpreter_supports_command_editing (struct interp *interp);
 
 extern void cli_interpreter_pre_command_loop (struct interp *self);
