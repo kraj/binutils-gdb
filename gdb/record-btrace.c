@@ -696,7 +696,6 @@ btrace_insn_history (struct ui_out *uiout,
 		     const struct btrace_insn_iterator *begin,
 		     const struct btrace_insn_iterator *end, int flags)
 {
-  struct ui_file *stb;
   struct cleanup *cleanups, *ui_item_chain;
   struct disassemble_info di;
   struct gdbarch *gdbarch;
@@ -709,12 +708,11 @@ btrace_insn_history (struct ui_out *uiout,
   flags |= DISASSEMBLY_SPECULATIVE;
 
   gdbarch = target_gdbarch ();
-  stb = mem_fileopen ();
-  cleanups = make_cleanup_ui_file_delete (stb);
-  di = gdb_disassemble_info (gdbarch, stb);
+  string_file stb;
+  di = gdb_disassemble_info (gdbarch, &stb);
   last_lines = btrace_mk_line_range (NULL, 0, 0);
 
-  make_cleanup_ui_out_list_begin_end (uiout, "asm_insns");
+  cleanups = make_cleanup_ui_out_list_begin_end (uiout, "asm_insns");
 
   /* UI_ITEM_CHAIN is a cleanup chain for the last source line and the
      instructions corresponding to that line.  */
