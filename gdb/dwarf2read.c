@@ -12167,7 +12167,7 @@ dwarf2_rnglists_process (unsigned offset, struct dwarf2_cu *cu,
 
 template <typename Callback>
 static int
-dwarf2_ranges_process (unsigned offset, struct dwarf2_cu *cu,
+dwarf2_ranges_process (int mode, unsigned offset, struct dwarf2_cu *cu,
 		       Callback &&callback)
 {
   struct objfile *objfile = cu->objfile;
@@ -12209,7 +12209,8 @@ dwarf2_ranges_process (unsigned offset, struct dwarf2_cu *cu,
       buffer += addr_size;
       range_end = read_address (obfd, buffer, cu, &dummy);
       buffer += addr_size;
-      offset += 2 * addr_size;
+      // not used anywhere.
+      // offset += 2 * addr_size;
 
       /* An end of list marker is a pair of zero addresses.  */
       if (range_beginning == 0 && range_end == 0)
@@ -12249,12 +12250,20 @@ dwarf2_ranges_process (unsigned offset, struct dwarf2_cu *cu,
       if (range_beginning == range_end)
 	continue;
 
-      range_beginning += base;
-      range_end += base;
+      if (mode == 0)
+	{
+	  range_beginning += base;
+	  range_end += base;
+	}
+      else
+	{
+	  range_beginning += base + baseaddr;
+	  range_end += base + baseaddr;
+	}
 
       /* A not-uncommon case of bad debug info.
 	 Don't pollute the addrmap with bad data.  */
-      if (range_beginning + baseaddr == 0
+      if (range_beginning + baseaddr == 0 // probably this "+ baseaddr" should be removed?
 	  && !dwarf2_per_objfile->has_section_at_zero)
 	{
 	  complaint (&symfile_complaints,
@@ -12287,7 +12296,7 @@ dwarf2_ranges_read (unsigned offset, CORE_ADDR *low_return,
   CORE_ADDR high = 0;
   int retval;
 
-  retval = dwarf2_ranges_process (offset, cu,
+  retval = dwarf2_ranges_process (0, offset, cu,
     [&] (CORE_ADDR range_beginning, CORE_ADDR range_end)
     {
       if (ranges_pst != NULL)
@@ -12574,7 +12583,7 @@ dwarf2_record_block_ranges (struct die_info *die, struct block *block,
       CORE_ADDR base = cu->base_address;
       int base_known = cu->base_known;
 
-      dwarf2_ranges_process (offset, cu,
+      dwarf2_ranges_process (1, offset, cu,
 	[&] (CORE_ADDR start, CORE_ADDR end)
 	{
 	  start = gdbarch_adjust_dwarf2_addr (gdbarch, start);
