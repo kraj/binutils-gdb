@@ -5391,10 +5391,6 @@ static VEC (char_ptr) *
 make_file_symbol_completion_list_1 (const char *text, const char *word,
 				    const char *srcfile)
 {
-  struct symbol *sym;
-  struct symtab *s;
-  struct block *b;
-  struct block_iterator iter;
   /* The symbol we are completing on.  Points in same buffer as text.  */
   const char *sym_text;
   /* Length of sym_text.  */
@@ -5445,37 +5441,15 @@ make_file_symbol_completion_list_1 (const char *text, const char *word,
 
   sym_text_len = strlen (sym_text);
 
-  /* Find the symtab for SRCFILE (this loads it if it was not yet read
-     in).  */
-  s = lookup_symtab (srcfile);
-  if (s == NULL)
+  /* Go through symtabs for SRCFILE and check the externs and statics
+     for symbols which match.  */
+  iterate_over_symtabs (srcfile, [&] (struct symtab *symtab)
     {
-      /* Maybe they typed the file with leading directories, while the
-	 symbol tables record only its basename.  */
-      const char *tail = lbasename (srcfile);
-
-      if (tail > srcfile)
-	s = lookup_symtab (tail);
-    }
-
-  /* If we have no symtab for that file, return an empty list.  */
-  if (s == NULL)
-    return (return_val);
-
-  /* Go through this symtab and check the externs and statics for
-     symbols which match.  */
-
-  b = BLOCKVECTOR_BLOCK (SYMTAB_BLOCKVECTOR (s), GLOBAL_BLOCK);
-  ALL_BLOCK_SYMBOLS (b, iter, sym)
-    {
-      COMPLETION_LIST_ADD_SYMBOL (sym, sym_text, sym_text_len, text, word);
-    }
-
-  b = BLOCKVECTOR_BLOCK (SYMTAB_BLOCKVECTOR (s), STATIC_BLOCK);
-  ALL_BLOCK_SYMBOLS (b, iter, sym)
-    {
-      COMPLETION_LIST_ADD_SYMBOL (sym, sym_text, sym_text_len, text, word);
-    }
+      add_symtab_completions (symtab->compunit_symtab,
+			      sym_text, sym_text_len,
+			      text, word, TYPE_CODE_UNDEF);
+      return false;
+    });
 
   return (return_val);
 }
