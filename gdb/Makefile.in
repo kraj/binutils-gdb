@@ -523,6 +523,12 @@ SUBDIR_PYTHON_DEPS =
 SUBDIR_PYTHON_LDFLAGS =
 SUBDIR_PYTHON_CFLAGS =
 
+SUBDIR_UNITTESTS_SRCS = \
+	unittests/function-view-selftests.c
+
+SUBDIR_UNITTESTS_OBS = \
+	function-view-selftests.o
+
 # Opcodes currently live in one of two places.  Either they are in the
 # opcode library, typically ../opcodes, or they are in a header file
 # in INCLUDE_DIR.
@@ -1216,7 +1222,8 @@ SFILES = \
 	common/xml-utils.c \
 	mi/mi-common.c \
 	target/waitstatus.c \
-	$(SUBDIR_GCC_COMPILE_SRCS)
+	$(SUBDIR_GCC_COMPILE_SRCS) \
+	$(SUBDIR_UNITTEST_SRCS)
 
 LINTFILES = $(SFILES) $(YYFILES) $(CONFIG_SRCS) init.c
 
@@ -1800,7 +1807,8 @@ COMMON_OBS = $(DEPFILES) $(CONFIG_OBS) $(YYOBJ) \
 	xml-syscall.o \
 	xml-tdesc.o \
 	xml-utils.o \
-	$(SUBDIR_GCC_COMPILE_OBS)
+	$(SUBDIR_GCC_COMPILE_OBS) \
+	$(SUBDIR_UNITTESTS_OBS)
 
 TSOBS = inflow.o
 
@@ -1906,6 +1914,10 @@ all: gdb$(EXEEXT) $(CONFIG_ALL)
 	$(POSTCOMPILE)
 
 %.o: $(srcdir)/tui/%.c
+	$(COMPILE) $<
+	$(POSTCOMPILE)
+
+%.o: ${srcdir}/unittests/%.c
 	$(COMPILE) $<
 	$(POSTCOMPILE)
 
@@ -2124,7 +2136,13 @@ test-cp-name-parser$(EXEEXT): test-cp-name-parser.o $(LIBIBERTY)
 # duplicates.  Files in the gdb/ directory can end up appearing in
 # COMMON_OBS (as a .o file) and CONFIG_SRCS (as a .c file).
 
-INIT_FILES = $(COMMON_OBS) $(TSOBS) $(CONFIG_SRCS) $(SUBDIR_GCC_COMPILE_SRCS)
+INIT_FILES = \
+	$(COMMON_OBS) \
+	$(TSOBS) \
+	$(CONFIG_SRCS) \
+	$(SUBDIR_GCC_COMPILE_SRCS) \
+	$(SUBDIR_UNITTESTS_SRCS)
+
 init.c: $(INIT_FILES)
 	@echo Making init.c
 	@rm -f init.c-tmp init.l-tmp
