@@ -8053,8 +8053,16 @@ EOF
 		  esac
 		fi
 	      else
-		eval flag=\"$hardcode_libdir_flag_spec\"
-		func_append dep_rpath " $flag"
+                # We only want to hardcode in an rpath if it isn't in the
+                # default dlsearch path.
+                func_normal_abspath "$libdir"
+                libdir_norm=$func_normal_abspath_result
+	        case " $sys_lib_dlsearch_path " in
+	        *" $libdir_norm "*) ;;
+	        *) eval flag=\"$hardcode_libdir_flag_spec\"
+                   func_append dep_rpath " $flag"
+                   ;;
+	        esac
 	      fi
 	    elif test -n "$runpath_var"; then
 	      case "$perm_rpath " in
@@ -8790,8 +8798,16 @@ EOF
 	      esac
 	    fi
 	  else
-	    eval flag=\"$hardcode_libdir_flag_spec\"
-	    func_append rpath " $flag"
+            # We only want to hardcode in an rpath if it isn't in the
+            # default dlsearch path.
+            func_normal_abspath "$libdir"
+            libdir_norm=$func_normal_abspath_result
+	    case " $sys_lib_dlsearch_path " in
+	    *" $libdir_norm "*) ;;
+	    *) eval flag=\"$hardcode_libdir_flag_spec\"
+               rpath+=" $flag"
+               ;;
+	    esac
 	  fi
 	elif test -n "$runpath_var"; then
 	  case "$perm_rpath " in
@@ -8841,8 +8857,14 @@ EOF
 	      esac
 	    fi
 	  else
-	    eval flag=\"$hardcode_libdir_flag_spec\"
-	    func_append rpath " $flag"
+            # We only want to hardcode in an rpath if it isn't in the
+            # default dlsearch path.
+	    case " $sys_lib_dlsearch_path " in
+	    *" $libdir "*) ;;
+	    *) eval flag=\"$hardcode_libdir_flag_spec\"
+               func_append rpath " $flag"
+               ;;
+	    esac
 	  fi
 	elif test -n "$runpath_var"; then
 	  case "$finalize_perm_rpath " in
