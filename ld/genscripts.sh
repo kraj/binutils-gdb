@@ -189,29 +189,6 @@ append_to_lib_path()
   fi
 }
 
-# Always search $(tooldir)/lib, aka /usr/local/TARGET/lib when native
-# except when LIBPATH=":".
-if [ "${LIB_PATH}" != ":" ] ; then
-  libs=
-  if [ "x${TOOL_LIB}" = "x" ] ; then
-    if [ "x${NATIVE}" = "xyes" ] ; then
-      libs="${exec_prefix}/${target_alias}/lib"
-    fi
-  else
-    # For multilib'ed targets, ensure both ${target_alias}/lib${LIBPATH_SUFFIX}
-    # and ${TOOL_LIB}/lib${LIBPATH_SUFFIX} are in the default search path,
-    # because 64bit libraries may be in both places, depending on
-    # cross-development setup method (e.g.: /usr/s390x-linux/lib64
-    # vs. /usr/s390-linux/lib64)
-    case "${NATIVE}:${LIBPATH_SUFFIX}:${TOOL_LIB}" in
-      :* | *::* | *:*:*${LIBPATH_SUFFIX}) ;;
-      *) libs="${exec_prefix}/${target_alias}/lib${LIBPATH_SUFFIX}" ;;
-    esac
-    libs="${exec_prefix}/${TOOL_LIB}/lib ${libs}"
-  fi
-  append_to_lib_path ${libs}
-fi
-
 if [ "x${LIB_PATH}" = "x" ] && [ "x${USE_LIBPATH}" = xyes ] ; then
   libs=${NATIVE_LIB_DIRS}
   if [ "x${NATIVE}" = "xyes" ] ; then
