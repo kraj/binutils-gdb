@@ -167,7 +167,7 @@ changequote(,)dnl
   x=`sed -n -e 's/^[ 	]*PICFLAG[ 	]*=[ 	]*//p' < ../libiberty/Makefile | sed -n '$p'`
 changequote([,])dnl
   if test -n "$x"; then
-    SHARED_LIBADD="-L`pwd`/../libiberty/pic -liberty"
+    SHARED_LIBADD="`pwd`/../libiberty/pic/libiberty.a"
   fi
 
   case "${host}" in
