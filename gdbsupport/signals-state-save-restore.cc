@@ -38,7 +38,7 @@ save_original_signals_state (bool quiet)
   int i;
   int res;
 
-  res = gdb_sigmask (0,  NULL, &original_signal_mask);
+  res = gdb_sigmask (SIG_BLOCK,  NULL, &original_signal_mask);
   if (res == -1)
     perror_with_name (("sigprocmask"));
 
