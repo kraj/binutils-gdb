@@ -41,7 +41,7 @@ save_original_signals_state (bool quiet)
   int i;
   int res;
 
-  res = sigprocmask (0,  NULL, &original_signal_mask);
+  res = sigprocmask (SIG_BLOCK,  NULL, &original_signal_mask);
   if (res == -1)
     perror_with_name (("sigprocmask"));
 
