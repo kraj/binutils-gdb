@@ -12969,42 +12969,38 @@ _bfd_elf_gc_mark_extra_sections (struct bfd_link_info *info,
 	    isec->gc_mark = 1;
 	}
 
-      if (! debug_frag_seen)
-	continue;
-
       /* Look for CODE sections which are going to be discarded,
 	 and find and discard any fragmented debug sections which
 	 are associated with that code section.  */
-      for (isec = ibfd->sections; isec != NULL; isec = isec->next)
-	if ((isec->flags & SEC_CODE) != 0
-	    && isec->gc_mark == 0)
-	  {
-	    unsigned int ilen;
-	    asection *dsec;
+      if (debug_frag_seen)
+	for (isec = ibfd->sections; isec != NULL; isec = isec->next)
+	  if ((isec->flags & SEC_CODE) != 0
+	      && isec->gc_mark == 0)
+	    {
+	      unsigned int ilen;
+	      asection *dsec;
 
-	    ilen = strlen (isec->name);
+	      ilen = strlen (isec->name);
 
-	    /* Association is determined by the name of the debug section
-	       containing the name of the code section as a suffix.  For
-	       example .debug_line.text.foo is a debug section associated
-	       with .text.foo.  */
-	    for (dsec = ibfd->sections; dsec != NULL; dsec = dsec->next)
-	      {
-		unsigned int dlen;
+	      /* Association is determined by the name of the debug
+	         section containing the name of the code section as
+		 a suffix.  For example .debug_line.text.foo is a
+		 debug section associated with .text.foo.  */
+	      for (dsec = ibfd->sections; dsec != NULL; dsec = dsec->next)
+		{
+		  unsigned int dlen;
 
-		if (dsec->gc_mark == 0
-		    || (dsec->flags & SEC_DEBUGGING) == 0)
-		  continue;
+		  if (dsec->gc_mark == 0
+		      || (dsec->flags & SEC_DEBUGGING) == 0)
+		    continue;
 
-		dlen = strlen (dsec->name);
+		  dlen = strlen (dsec->name);
 
-		if (dlen > ilen
-		    && strncmp (dsec->name + (dlen - ilen),
-				isec->name, ilen) == 0)
-		  {
+		  if (dlen > ilen
+		      && strncmp (dsec->name + (dlen - ilen),
+				  isec->name, ilen) == 0)
 		    dsec->gc_mark = 0;
-		  }
-	      }
+		}
 	  }
     }
   return TRUE;
