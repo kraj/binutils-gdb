@@ -1639,7 +1639,7 @@ gdb_sniff_from_mangled_name (const char *mangled, char **demangled)
 static bool
 cp_fq_symbol_name_matches (const char *symbol_search_name,
 			   const lookup_name_info &lookup_name,
-			   completion_match *match)
+			   completion_match_result *comp_match_res)
 {
   /* Get the demangled name.  */
   const std::string &name = lookup_name.cplus ().lookup_name ();
@@ -1652,8 +1652,11 @@ cp_fq_symbol_name_matches (const char *symbol_search_name,
 			    name.c_str (), name.size (),
 			    mode) == 0)
     {
-      if (match != NULL)
-	match->set_match (symbol_search_name);
+      if (comp_match_res != NULL)
+	{
+	  comp_match_res->match.set_match (symbol_search_name);
+	  comp_match_res->match_for_lcd.set_match (symbol_search_name);
+	}
       return true;
     }
 
