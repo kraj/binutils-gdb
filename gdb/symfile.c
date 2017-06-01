@@ -3866,6 +3866,7 @@ symfile_free_objfile (struct objfile *objfile)
 void
 expand_symtabs_matching
   (gdb::function_view<expand_symtabs_file_matcher_ftype> file_matcher,
+   const lookup_name_info &lookup_name,
    gdb::function_view<expand_symtabs_symbol_matcher_ftype> symbol_matcher,
    gdb::function_view<expand_symtabs_exp_notify_ftype> expansion_notify,
    enum search_domain kind)
@@ -3876,6 +3877,7 @@ expand_symtabs_matching
   {
     if (objfile->sf)
       objfile->sf->qf->expand_symtabs_matching (objfile, file_matcher,
+						lookup_name,
 						symbol_matcher,
 						expansion_notify, kind);
   }
