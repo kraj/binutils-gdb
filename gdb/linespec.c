@@ -359,6 +359,7 @@ static VEC (symbolp) *find_label_symbols (struct linespec_state *self,
 static void find_linespec_symbols (struct linespec_state *self,
 				   VEC (symtab_ptr) *file_symtabs,
 				   const char *name,
+				   symbol_name_match_type name_match_type,
 				   VEC (symbolp) **symbols,
 				   VEC (bound_minimal_symbol_d) **minsyms);
 
@@ -1868,6 +1869,7 @@ linespec_parse_basic (linespec_parser *parser)
 
 	  linespec_complete_function (tmp_tracker,
 				      parser->completion_word,
+				      symbol_name_match_type::WILD,
 				      source_filename);
 
 	  if (tmp_tracker.have_completions ())
@@ -1892,6 +1894,7 @@ linespec_parse_basic (linespec_parser *parser)
   /* Try looking it up as a function/method.  */
   find_linespec_symbols (PARSER_STATE (parser),
 			 PARSER_RESULT (parser)->file_symtabs, name,
+			 symbol_name_match_type::WILD,
 			 &symbols, &minimal_symbols);
 
   if (symbols != NULL || minimal_symbols != NULL)
@@ -2383,6 +2386,7 @@ convert_explicit_location_to_linespec (struct linespec_state *self,
 				       linespec_p result,
 				       const char *source_filename,
 				       const char *function_name,
+				       symbol_name_match_type fname_match_type,
 				       const char *label_name,
 				       struct line_offset line_offset)
 {
@@ -2412,8 +2416,8 @@ convert_explicit_location_to_linespec (struct linespec_state *self,
   if (function_name != NULL)
     {
       find_linespec_symbols (self, result->file_symtabs,
-			     function_name, &symbols,
-			     &minimal_symbols);
+			     function_name, fname_match_type,
+			     &symbols, &minimal_symbols);
 
       if (symbols == NULL && minimal_symbols == NULL)
 	symbol_not_found_error (function_name,
@@ -2453,6 +2457,7 @@ convert_explicit_location_to_sals (struct linespec_state *self,
   convert_explicit_location_to_linespec (self, result,
 					 explicit_loc->source_filename,
 					 explicit_loc->function_name,
+					 explicit_loc->func_name_match_type,
 					 explicit_loc->label_name,
 					 explicit_loc->line_offset);
   return convert_linespec_to_sals (self, result);
@@ -2828,10 +2833,10 @@ linespec_lex_to_end (const char **stringp)
 void
 linespec_complete_function (completion_tracker &tracker,
 			    const char *function,
+			    symbol_name_match_type func_match_type,
 			    const char *source_filename)
 {
   complete_symbol_mode mode = complete_symbol_mode::LINESPEC;
-  symbol_name_match_type func_match_type = symbol_name_match_type::WILD;
 
   if (source_filename != NULL)
     {
@@ -2870,7 +2875,8 @@ complete_linespec_component (linespec_parser *parser,
     {
       completion_list fn_list;
 
-      linespec_complete_function (tracker, text, source_filename);
+      linespec_complete_function (tracker, text, symbol_name_match_type::WILD,
+				  source_filename);
       if (source_filename == NULL)
 	{
 	  /* Haven't seen a source component, like in "b
@@ -2940,6 +2946,7 @@ linespec_complete_label (completion_tracker &tracker,
 			 const struct language_defn *language,
 			 const char *source_filename,
 			 const char *function_name,
+			 symbol_name_match_type func_name_match_type,
 			 const char *label_name)
 {
   linespec_parser parser;
@@ -2956,6 +2963,7 @@ linespec_complete_label (completion_tracker &tracker,
 					     PARSER_RESULT (&parser),
 					     source_filename,
 					     function_name,
+					     func_name_match_type,
 					     NULL, unknown_offset);
     }
   CATCH (ex, RETURN_MASK_ERROR)
@@ -3039,7 +3047,7 @@ linespec_complete (completion_tracker &tracker, const char *text)
       VEC (bound_minimal_symbol_d) *minimal_symbols;
       find_linespec_symbols (PARSER_STATE (&parser),
 			     PARSER_RESULT (&parser)->file_symtabs,
-			     func_name,
+			     func_name, symbol_name_match_type::WILD,
 			     &function_symbols, &minimal_symbols);
 
       PARSER_RESULT (&parser)->function_symbols = function_symbols;
@@ -3936,6 +3944,7 @@ symtabs_from_filename (const char *filename,
 static void
 find_function_symbols (struct linespec_state *state,
 		       VEC (symtab_ptr) *file_symtabs, const char *name,
+		       symbol_name_match_type name_match_type,
 		       VEC (symbolp) **symbols,
 		       VEC (bound_minimal_symbol_d) **minsyms)
 {
@@ -3955,8 +3964,7 @@ find_function_symbols (struct linespec_state *state,
     add_all_symbol_names_from_pspace (&info, state->search_pspace,
 				      symbol_names, FUNCTIONS_DOMAIN);
   else
-    add_matching_symbols_to_info (name, symbol_name_match_type::WILD,
-				  FUNCTIONS_DOMAIN,
+    add_matching_symbols_to_info (name, name_match_type, FUNCTIONS_DOMAIN,
 				  &info, state->search_pspace);
 
   do_cleanups (cleanup);
@@ -3985,6 +3993,7 @@ static void
 find_linespec_symbols (struct linespec_state *state,
 		       VEC (symtab_ptr) *file_symtabs,
 		       const char *lookup_name,
+		       symbol_name_match_type name_match_type,
 		       VEC (symbolp) **symbols,
 		       VEC (bound_minimal_symbol_d) **minsyms)
 {
@@ -4002,6 +4011,7 @@ find_linespec_symbols (struct linespec_state *state,
      2) break class::method where method is in class (and not a baseclass)  */
 
   find_function_symbols (state, file_symtabs, lookup_name,
+			 name_match_type,
 			 symbols, minsyms);
 
   /* If we were unable to locate a symbol of the same name, try dividing

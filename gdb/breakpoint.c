@@ -15218,7 +15218,10 @@ Explicit locations are similar to linespecs but use an option/argument\n\
 syntax to specify location parameters.\n\
 Example: To specify the start of the label named \"the_top\" in the\n\
 function \"fact\" in the file \"factorial.c\", use \"-source factorial.c\n\
--function fact -label the_top\".\n"
+-function fact -label the_top\".\n\
+For C++, \"-function\" matches all functions with the given name ignoring\n\
+missing leading specifiers (namespaces and classes).  You can override\n\
+that by instead specifying a fully qualified name using \"-qualified\".\n"
 
 /* This help string is used for the break, hbreak, tbreak and thbreak
    commands.  It is defined as a macro to prevent duplication.
