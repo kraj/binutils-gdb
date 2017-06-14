@@ -13,5 +13,5 @@ Symbol table '\.dynsym' contains [0-9]+ entries:
 #...
  +[0-9]+: +[a-f0-9]+ +0 +NOTYPE +LOCAL +DEFAULT +[0-9]+ +__stop_scnfoo
 #...
- +[0-9]+: 0+10 + +0 +NOTYPE +GLOBAL +DEFAULT +ABS +.sizeof.scnfoo
+ +[0-9]+: 0+10 + +0 +NOTYPE +LOCAL +DEFAULT +ABS +.sizeof.scnfoo
 #pass

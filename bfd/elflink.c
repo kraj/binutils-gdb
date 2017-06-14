@@ -14193,3 +14193,70 @@ elf_append_rel (bfd *abfd, asection *s, Elf_Internal_Rela *rel)
   BFD_ASSERT (loc + bed->s->sizeof_rel <= s->contents + s->size);
   bed->s->swap_reloc_out (abfd, rel, loc);
 }
+
+/* Lookup and hide SYMBOL for section SEC.  */
+
+static void
+elf_lookup_and_hide_section_symbol (struct bfd_link_info *info,
+				    const char *symbol, asection *sec)
+{
+  struct elf_link_hash_entry *h
+    = elf_link_hash_lookup (elf_hash_table (info), symbol, FALSE,
+			    FALSE, TRUE);
+  if (h != NULL
+      && (h->root.type == bfd_link_hash_undefined
+	  || h->root.type == bfd_link_hash_undefweak)
+      && h->u2.start_stop_section == NULL)
+    {
+      h->start_stop = 1;
+      h->u2.start_stop_section = sec;
+      _bfd_elf_link_hash_hide_symbol (info, h, TRUE);
+      if (ELF_ST_VISIBILITY (h->other) != STV_INTERNAL)
+	h->other = ((h->other & ~ELF_ST_VISIBILITY (-1))
+		    | STV_HIDDEN);
+    }
+}
+
+/* Check for input sections whose names match references to
+   __start_SECNAME, __stop_SECNAME, .startof.SECNAME or
+   .sizeof.SECNAME symbols.  Mark the matched symbols as hidden
+   and set start_stop for garbage collection.  */
+
+void
+_bfd_elf_link_setup_section_symbols (struct bfd_link_info *info)
+{
+  bfd *abfd;
+  asection *s;
+  char leading_char = bfd_get_symbol_leading_char (info->output_bfd);
+
+  for (abfd = info->input_bfds; abfd; abfd = abfd->link.next)
+    for (s = abfd->sections; s; s = s->next)
+      {
+	const char *ps;
+	const char *name = bfd_get_section_name (abfd, s);
+	char *symbol = (char *) xmalloc (strlen (name) + 10);
+
+	sprintf (symbol, ".startof.%s", name);
+	elf_lookup_and_hide_section_symbol (info, symbol, s);
+
+	sprintf (symbol, ".sizeof.%s", name);
+	elf_lookup_and_hide_section_symbol (info, symbol, s);
+
+	for (ps = name; *ps != '\0'; ps++)
+	  if (!ISALNUM ((unsigned char) *ps) && *ps != '_')
+	    break;
+	if (*ps == '\0')
+	  {
+
+	    symbol[0] = leading_char;
+	    sprintf (symbol + (leading_char != 0), "__start_%s", name);
+	    elf_lookup_and_hide_section_symbol (info, symbol, s);
+
+	    symbol[0] = leading_char;
+	    sprintf (symbol + (leading_char != 0), "__stop_%s", name);
+	    elf_lookup_and_hide_section_symbol (info, symbol, s);
+	  }
+
+	free (symbol);
+      }
+}
