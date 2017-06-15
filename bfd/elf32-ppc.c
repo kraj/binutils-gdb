@@ -6056,8 +6056,11 @@ allocate_dynrelocs (struct elf_link_hash_entry *h, void *inf)
      changes.  */
   else if (bfd_link_pic (info))
     {
-      /* Discard relocs on undefined symbols that must be local.  */
+      /* Discard relocs on undefined symbols that must be local.
+	 start_stop is set on __start_SECNAME/__stop_SECNAME which
+	 mark section SECNAME and will be defined by linker later.  */
       if (h->root.type == bfd_link_hash_undefined
+	  && !h->start_stop
 	  && ELF_ST_VISIBILITY (h->other) != STV_DEFAULT)
 	eh->dyn_relocs = NULL;
 
