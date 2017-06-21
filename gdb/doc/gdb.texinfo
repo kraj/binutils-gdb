@@ -1638,39 +1638,56 @@ its notion of a word.  To permit word completion to work in this
 situation, you may enclose words in @code{'} (single quote marks) in
 @value{GDBN} commands.
 
-The most likely situation where you might need this is in typing the
-name of a C@t{++} function.  This is because C@t{++} allows function
-overloading (multiple definitions of the same function, distinguished
-by argument type).  For example, when you want to set a breakpoint you
-may need to distinguish whether you mean the version of @code{name}
-that takes an @code{int} parameter, @code{name(int)}, or the version
-that takes a @code{float} parameter, @code{name(float)}.  To use the
-word-completion facilities in this situation, type a single quote
+A likely situation where you might need this is in typing an
+expression that involves a C@t{++} symbol name with template
+parameters.  This is because when completing expressions, GDB treats
+the @samp{<} character as word delimiter, assuming that it's the
+less-than comparison operator (@pxref{C Operators, , C and C@t{++}
+Operators}).
+
+For example, when you want to call a C@t{++} template function
+interactively using the @code{print} or @code{call} commands, you may
+need to distinguish whether you mean the version of @code{name} that
+was specialized for @code{int}, @code{name<int>()}, or the version
+that was specialized for @code{float}, @code{name<float>()}.  To use
+the word-completion facilities in this situation, type a single quote
 @code{'} at the beginning of the function name.  This alerts
 @value{GDBN} that it may need to consider more information than usual
 when you press @key{TAB} or @kbd{M-?} to request word completion:
 
 @smallexample
-(@value{GDBP}) b 'bubble( @kbd{M-?}
-bubble(double,double)    bubble(int,int)
-(@value{GDBP}) b 'bubble(
+(@value{GDBP}) p 'func< @kbd{M-?}
+func<int>()    func<float>()
+(@value{GDBP}) p 'func<
 @end smallexample
 
-In some cases, @value{GDBN} can tell that completing a name requires using
-quotes.  When this happens, @value{GDBN} inserts the quote for you (while
-completing as much as it can) if you do not type the quote in the first
-place:
+When setting breakpoints however (@pxref{Specify Location}), you don't
+usually need to type a quote before the function name, because
+@value{GDBN} understands that you want to set a breakpoint on a
+function:
 
 @smallexample
-(@value{GDBP}) b bub @key{TAB}
-@exdent @value{GDBN} alters your input line to the following, and rings a bell:
-(@value{GDBP}) b 'bubble(
+(@value{GDBP}) b func< @kbd{M-?}
+func<int>()    func<float>()
+(@value{GDBP}) b func<
 @end smallexample
 
-@noindent
-In general, @value{GDBN} can tell that a quote is needed (and inserts it) if
-you have not yet started typing the argument list when you ask for
-completion on an overloaded symbol.
+This is true even in the case of typing the name of C@t{++} overloaded
+functions (multiple definitions of the same function, distinguished by
+argument type).  For example, when you want to set a breakpoint you
+don't need to distinguish whether you mean the version of @code{name}
+that takes an @code{int} parameter, @code{name(int)}, or the version
+that takes a @code{float} parameter, @code{name(float)}.
+
+@smallexample
+(@value{GDBP}) b bubble( @kbd{M-?}
+bubble(int)    bubble(double)
+(@value{GDBP}) b bubble(dou @kbd{M-?}
+bubble(double)
+@end smallexample
+
+See @ref{quoting names} for a description of other scenarios that
+require quoting.
 
 For more information about overloaded functions, see @ref{C Plus Plus
 Expressions, ,C@t{++} Expressions}.  You can use the command @code{set
@@ -7899,6 +7916,16 @@ name of @file{/build/trunk/gcc/expr.c}, but not
 Specifies the line that begins the body of the function @var{function}.
 For example, in C, this is the line with the open brace.
 
+For C@t{++}, @var{function} is interpreted as specifying all functions
+named @var{function} ignoring missing leading specifiers (namespaces
+and classes).
+
+For example, assuming a program with symbols named @code{A::B::func}
+and @code{B::func}, both commands @w{@kbd{break func}} and
+@w{@kbd{break B::func}} set a breakpoint on both symbols.  To
+override this, you can use the explicit location option
+@code{-qualified}.  @xref{Explicit Locations}.
+
 @item @var{function}:@var{label}
 Specifies the line where @var{label} appears in @var{function}.
 
@@ -7963,6 +7990,22 @@ on function locations unmodified by other options (such as @code{-label}
 or @code{-line}) refer to the line that begins the body of the function.
 In C, for example, this is the line with the open brace.
 
+For C@t{++}, @var{function} is interpreted as specifying all functions
+named @var{function} ignoring missing leading specifiers (namespaces
+and classes).
+
+For example, assuming a program with symbols named @code{A::B::func}
+and @code{B::func}, both commands @w{@kbd{break -function func}} and
+@w{@kdb{break -function B::func}} set a breakpoint on both symbols.
+
+@item -qualified @var{function}
+Like @code{-function}, but the value specifies a fully qualified name
+of a function.
+
+For example, assuming a C@t{++} program with symbols named
+@code{A::B::func} and @code{B::func}, the @w{@kbd{break -qualified
+B::func}} command sets a breakpoint on @code{B::func}, only.
+
 @item -label @var{label}
 The value specifies the name of a label.  When the function
 name is not specified, the label is searched in the function of the currently
@@ -7976,7 +8019,7 @@ relative to the current line.
 @end table
 
 Explicit location options may be abbreviated by omitting any non-unique
-trailing characters from the option name, e.g., @code{break -s main.c -li 3}.
+trailing characters from the option name, e.g., @w{@kdb{break -s main.c -li 3}}.
 
 @node Address Locations
 @subsection Address Locations
@@ -15062,6 +15105,49 @@ the same notation that is used to declare such symbols in C@t{++}: type
 also use the @value{GDBN} command-line word completion facilities to list the
 available choices, or to finish the type list for you.
 @xref{Completion,, Command Completion}, for details on how to do this.
+
+@item @r{Breakpoints in functions with ABI tags}
+
+The GNU C@t{++} compiler introduced the notion of ABI ``tags'', which
+correspond to changes in the ABI of a type, function, or variable that
+would not otherwise be reflected in a mangled name.  See
+@url{https://developers.redhat.com/blog/2015/02/05/gcc5-and-the-c11-abi/}
+for more detail.
+
+The ABI tags are visible in C@t{++} demangled names.  For example, a
+function that returns a std::string:
+
+@smallexample
+std::string function(int);
+@end smallexample
+
+@noindent
+when compiled for the C++11 ABI is marked with the @code{cxx11} ABI
+tag, and @value{GDBN} displays the symbol like this:
+
+@smallexample
+function[abi:cxx11](int)
+@end smallexample
+
+You can set a breakpoint on such functions simply as if they had no
+tag.  For example:
+
+@smallexample
+(gdb) b function(int)
+Breakpoint 2 at 0x40060d: file main.cc, line 10.
+(gdb) info breakpoints
+Num     Type           Disp Enb Address    What
+1       breakpoint     keep y   0x0040060d in function[abi:cxx11](int)
+                                           at main.cc:10
+@end smallexample
+
+On the rare occasion you need to disambiguate between different ABI
+tags, you can do so by simply including the ABI tag in the function
+name, like:
+
+@smallexample
+(@value{GDBP}) b ambiguous[abi:other_tag](int)
+@end smallexample
 @end table
 
 @node Decimal Floating Point
@@ -16888,6 +16974,7 @@ file-management commands (@pxref{Files, ,Commands to Specify Files}).
 @cindex symbol names
 @cindex names of symbols
 @cindex quoting names
+@anchor{quoting names}
 Occasionally, you may need to refer to symbols that contain unusual
 characters, which @value{GDBN} ordinarily treats as word delimiters.  The
 most frequent case is in referring to static variables in other

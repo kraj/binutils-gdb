@@ -123,6 +123,77 @@ starti
     (gdb) p (float) var
     $3 = 3.14
 
+* Completion improvements
+
+  ** GDB can now complete function parameters in linespecs and
+     explicit locations without quoting.  When setting breakpoints,
+     quoting around functions names to help with TAB-completion is
+     generally no longer necessary.  For example, this now completes
+     correctly:
+
+      (gdb) b function(in[TAB]
+      (gdb) b function(int)
+
+     Related, GDB is no longer confused with completing functions in
+     C++ anonymous namespaces:
+
+      (gdb) b (anon[TAB]
+      (gdb) b (anonymous namespace)::[TAB][TAB]
+      (anonymous namespace)::a_function()
+      (anonymous namespace)::b_function()
+
+  ** GDB now has much improved linespec and explicit locations TAB
+     completion support, that better understands what you're
+     completing and offers better suggestions.  For example, GDB no
+     longer offers data symbols as possible completions when you're
+     setting a breakpoint.
+
+  ** GDB now TAB-completes label symbol names.
+
+  ** The "complete" command now mimics TAB completion accurately.
+
+* Breakpoints on C++ functions now ignore leading namespaces/classes
+
+  By default, breakpoints on functions/methods are now interpreted as
+  specifying all functions with the given name ignoring missing
+  leading specifiers (namespaces and classes).
+
+  For example, assuming a C++ program with symbols named:
+
+    A::B::func
+    B::func
+
+  both commands "break func" and "break B::func" set a breakpoint on
+  both symbols.  The explicit location option "-function" was changed
+  accordingly.
+
+  To override this, you can specify an explicitly fully qualified
+  name, usign the new explicit location option "-qualified".  For
+  example, using the same C++ program, the "break -qualified B::func"
+  command sets a breakpoint on "B::func", only.
+
+* Breakpoints on functions marked with C++ ABI tags
+
+  GDB can now set breakpoints on functions marked with C++ ABI tags
+  (e.g., [abi:cxx11]).  See here for a description of ABI tags:
+  https://developers.redhat.com/blog/2015/02/05/gcc5-and-the-c11-abi/
+
+  Functions with a C++11 abi tag are demangled/displayed like this:
+
+    function[abi:cxx11](int)
+            ^^^^^^^^^^^
+
+  You can now set a breakpoint on such functions simply as if they had
+  no tag, like:
+
+    (gdb) b function(int)
+
+  Or if you need to disambiguate between tags, like:
+
+    (gdb) b function[abi:other_tag](int)
+
+  Tab completion was adjusted accordingly as well.
+
 * New native configurations
 
 FreeBSD/aarch64			aarch64*-*-freebsd*
