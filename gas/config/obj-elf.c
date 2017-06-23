@@ -1414,6 +1414,14 @@ obj_elf_symver (int ignore ATTRIBUTE_UNUSED)
   c = get_symbol_name (& name);
   lex_type[(unsigned char) '@'] = old_lexat;
 
+  if (S_IS_COMMON (sym))
+    {
+      as_bad (_("`%s' can't be versioned to common symbol '%s'"),
+	      name, S_GET_NAME (sym));
+      ignore_rest_of_line ();
+      return;
+    }
+
   if (symbol_get_obj (sym)->versioned_name == NULL)
     {
       symbol_get_obj (sym)->versioned_name = xstrdup (name);
@@ -2299,6 +2307,16 @@ elf_frob_symbol (symbolS *symp, int *puntp)
 	      if (S_IS_EXTERNAL (symp))
 		S_SET_EXTERNAL (symp2);
 	    }
+	}
+    }
+  else if (S_IS_COMMON (symp))
+    {
+      const char *sname = S_GET_NAME (symp);
+      if (strchr (sname, ELF_VER_CHR))
+	{
+	  as_bad (_("symbol `%s' can't be versioned to common symbol"),
+		  sname);
+	  return;
 	}
     }
 
