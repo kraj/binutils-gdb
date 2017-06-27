@@ -451,11 +451,23 @@ DESCRIPTION
 file_ptr
 bfd_get_file_size (bfd *abfd)
 {
+  ufile_ptr file_size;
+
+  if (abfd->file_size_set)
+    return abfd->file_size;
+
   if (abfd->my_archive != NULL
       && !bfd_is_thin_archive (abfd->my_archive))
     return arelt_size (abfd);
 
-  return bfd_get_size (abfd);
+  file_size = bfd_get_size (abfd);
+  if (abfd->direction == read_direction)
+    {
+      abfd->file_size = file_size;
+      abfd->file_size_set = TRUE;
+    }
+
+  return file_size;
 }
 
 /*

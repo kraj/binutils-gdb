@@ -206,6 +206,10 @@ CODE_FRAGMENT
 .     getting it from the file each time.  *}
 .  unsigned int mtime_set : 1;
 .
+.  {* Set if we have a cached file size, rather than getting it from the
+.     file each time.  *}
+.  unsigned int file_size_set : 1;
+.
 .  {* Flag set if symbols from this BFD should not be exported.  *}
 .  unsigned int no_export : 1;
 .
@@ -266,6 +270,9 @@ CODE_FRAGMENT
 .  {* A field used by _bfd_generic_link_add_archive_symbols.  This will
 .     be used only for archive elements.  *}
 .  int archive_pass;
+.
+.  {* The file size.  *}
+.  ufile_ptr file_size;
 .
 .  {* Stuff only useful for object files:
 .     The start address.  *}
