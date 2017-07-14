@@ -188,4 +188,19 @@ int gdb_bfd_count_sections (bfd *abfd);
 
 int gdb_bfd_requires_relocations (bfd *abfd);
 
+/* Wrapper around bfd_map_over_sections to allow passing in any kind
+   of callable, including lambdas with captures.  */
+
+template<typename Callback>
+static void
+gdb_bfd_map_over_sections (struct bfd *abfd, Callback &&cb)
+{
+  auto erased_cb = [] (bfd *abfd, asection *sectp, void *data)
+    {
+      Callback *restored = static_cast<Callback *> (data);
+      (*restored) (abfd, sectp);
+    };
+  bfd_map_over_sections (abfd, erased_cb, &cb);
+}
+
 #endif /* GDB_BFD_H */
