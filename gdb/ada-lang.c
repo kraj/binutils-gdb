@@ -5891,11 +5891,20 @@ ada_lookup_encoded_symbol (const char *name, const struct block *block,
 {
   struct block_symbol *candidates;
   int n_candidates;
+  std::string verbatim;
+
+  /* Since we already have an encoded name, force a verbatim match, to
+     avoid a double encoding.  */
+  verbatim.reserve (1 + strlen (name) + 1);
+  verbatim += "<";
+  verbatim += name;
+  verbatim += ">";
 
   gdb_assert (info != NULL);
   memset (info, 0, sizeof (struct block_symbol));
 
-  n_candidates = ada_lookup_symbol_list (name, block, domain, &candidates);
+  n_candidates = ada_lookup_symbol_list (verbatim.c_str (),
+					 block, domain, &candidates);
   if (n_candidates == 0)
     return;
 
