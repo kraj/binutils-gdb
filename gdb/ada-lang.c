@@ -3579,7 +3579,7 @@ resolve_subexp (struct expression **expp, int *pos, int deprocedure_p,
           int n_candidates;
 
           n_candidates =
-            ada_lookup_symbol_list (ada_encode (ada_decoded_op_name (op)),
+            ada_lookup_symbol_list (ada_decoded_op_name (op),
                                     (struct block *) NULL, VAR_DOMAIN,
                                     &candidates);
           i = ada_resolve_function (candidates, n_candidates, argvec, nargs,
