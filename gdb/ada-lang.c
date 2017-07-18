@@ -5661,7 +5661,6 @@ add_nonlocal_symbols (struct obstack *obstackp,
   memset (&data, 0, sizeof data);
   data.obstackp = obstackp;
 
-  const char *name = ada_lookup_name (lookup_name);
   bool is_wild_match = lookup_name.ada ().wild_match_p ();
 
   ALL_OBJFILES (objfile)
@@ -5669,12 +5668,14 @@ add_nonlocal_symbols (struct obstack *obstackp,
       data.objfile = objfile;
 
       if (is_wild_match)
-	objfile->sf->qf->map_matching_symbols (objfile, name, domain, global,
+	objfile->sf->qf->map_matching_symbols (objfile, lookup_name.name ().c_str (),
+					       domain, global,
 					       aux_add_nonlocal_symbols, &data,
 					       symbol_name_match_type::WILD,
 					       NULL);
       else
-	objfile->sf->qf->map_matching_symbols (objfile, name, domain, global,
+	objfile->sf->qf->map_matching_symbols (objfile, lookup_name.name ().c_str (),
+					       domain, global,
 					       aux_add_nonlocal_symbols, &data,
 					       symbol_name_match_type::FULL,
 					       compare_names);
@@ -5692,13 +5693,16 @@ add_nonlocal_symbols (struct obstack *obstackp,
 
   if (num_defns_collected (obstackp) == 0 && global && !is_wild_match)
     {
+      const char *name = ada_lookup_name (lookup_name);
+      std::string name1;
+
       ALL_OBJFILES (objfile)
         {
-	  char *name1 = (char *) alloca (strlen (name) + sizeof ("_ada_"));
-	  strcpy (name1, "_ada_");
-	  strcpy (name1 + sizeof ("_ada_") - 1, name);
+	  name1 = "<_ada_";
+	  name1 += name;
+	  name1 += '>';
 	  data.objfile = objfile;
-	  objfile->sf->qf->map_matching_symbols (objfile, name1, domain,
+	  objfile->sf->qf->map_matching_symbols (objfile, name1.c_str (), domain,
 						 global,
 						 aux_add_nonlocal_symbols,
 						 &data,
