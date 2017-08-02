@@ -2095,6 +2095,8 @@ gld${EMULATION_NAME}_place_orphan (asection *s,
     }
 
   if (!bfd_link_relocatable (&link_info)
+      && iself
+      && link_info.output_bfd->xvec->flavour == bfd_target_elf_flavour
       && (s->flags & SEC_ALLOC) != 0
       && (elf_section_flags (s) & SHF_GNU_MBIND) != 0)
     {
@@ -2137,6 +2139,7 @@ gld${EMULATION_NAME}_place_orphan (asection *s,
 
   /* Look through the script to see where to place this section.  */
   if (constraint == 0
+      && iself
       && link_info.output_bfd->xvec->flavour == bfd_target_elf_flavour)
     for (os = lang_output_section_find (secname);
 	 os != NULL;
