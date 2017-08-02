@@ -2158,11 +2158,11 @@ gld${EMULATION_NAME}_place_orphan (asection *s,
 		== elf_section_data (s)->this_hdr.sh_info)
 	    && (os->bfd_section->flags == 0
 		|| ((!bfd_link_relocatable (&link_info)
-		     || (iself && (((elf_section_flags (s)
-				     ^ elf_section_flags (os->bfd_section))
-				    & SHF_EXCLUDE) == 0)))
+		     || (((elf_section_flags (s)
+			   ^ elf_section_flags (os->bfd_section))
+			  & SHF_EXCLUDE) == 0))
 		    && ((s->flags ^ os->bfd_section->flags)
-		     & (SEC_LOAD | SEC_ALLOC)) == 0
+			& (SEC_LOAD | SEC_ALLOC)) == 0
 		    && _bfd_elf_match_sections_by_type (link_info.output_bfd,
 							os->bfd_section,
 							s->owner, s))))
