@@ -183,12 +183,15 @@ static reloc_howto_type x86_64_elf_howto_table[] =
   HOWTO(R_X86_64_REX_GOTPCRELX, 0, 2, 32, TRUE, 0, complain_overflow_signed,
 	bfd_elf_generic_reloc, "R_X86_64_REX_GOTPCRELX", FALSE, 0xffffffff,
 	0xffffffff, TRUE),
+  HOWTO(R_X86_64_GPREL, 0, 2, 32, FALSE, 0, complain_overflow_signed,
+	bfd_elf_generic_reloc, "R_X86_64_GPREL",
+	FALSE, MINUS_ONE, MINUS_ONE, FALSE),
 
   /* We have a gap in the reloc numbers here.
      R_X86_64_standard counts the number up to this point, and
      R_X86_64_vt_offset is the value to subtract from a reloc type of
      R_X86_64_GNU_VT* to form an index into this table.  */
-#define R_X86_64_standard (R_X86_64_REX_GOTPCRELX + 1)
+#define R_X86_64_standard (R_X86_64_GPREL + 1)
 #define R_X86_64_vt_offset (R_X86_64_GNU_VTINHERIT - R_X86_64_standard)
 
 /* GNU extension to record C++ vtable hierarchy.  */
@@ -264,6 +267,7 @@ static const struct elf_reloc_map x86_64_reloc_map[] =
   { BFD_RELOC_X86_64_PLT32_BND,	R_X86_64_PLT32_BND, },
   { BFD_RELOC_X86_64_GOTPCRELX, R_X86_64_GOTPCRELX, },
   { BFD_RELOC_X86_64_REX_GOTPCRELX, R_X86_64_REX_GOTPCRELX, },
+  { BFD_RELOC_GPREL32,		R_X86_64_GPREL, },
   { BFD_RELOC_VTABLE_INHERIT,	R_X86_64_GNU_VTINHERIT, },
   { BFD_RELOC_VTABLE_ENTRY,	R_X86_64_GNU_VTENTRY, },
 };
@@ -1092,6 +1096,12 @@ struct elf_x86_64_link_hash_entry
      real definition and check it when allowing copy reloc in PIE.  */
   unsigned int needs_copy : 1;
 
+  /* TRUE if symbol is __gp.  */
+  unsigned int is_gp : 1;
+
+  /* TRUE if symbol has GPREL relocations.  */
+  unsigned int has_gprel_reloc : 1;
+
   /* TRUE if symbol has GOT or PLT relocations.  */
   unsigned int has_got_reloc : 1;
 
@@ -1170,6 +1180,8 @@ struct elf_x86_64_link_hash_table
   asection *plt_second_eh_frame;
   asection *plt_got;
   asection *plt_got_eh_frame;
+
+  struct elf_link_hash_entry *gp;
 
   /* Parameters describing PLT generation, lazy or non-lazy.  */
   struct elf_x86_64_plt_layout plt;
@@ -1261,6 +1273,8 @@ elf_x86_64_link_hash_newfunc (struct bfd_hash_entry *entry,
       eh->dyn_relocs = NULL;
       eh->tls_type = GOT_UNKNOWN;
       eh->needs_copy = 0;
+      eh->is_gp = 0;
+      eh->has_gprel_reloc = 0;
       eh->has_got_reloc = 0;
       eh->has_non_got_reloc = 0;
       eh->no_finish_dynamic_symbol = 0;
@@ -1423,6 +1437,7 @@ elf_x86_64_copy_indirect_symbol (struct bfd_link_info *info,
   edir = (struct elf_x86_64_link_hash_entry *) dir;
   eind = (struct elf_x86_64_link_hash_entry *) ind;
 
+  edir->has_gprel_reloc |= eind->has_gprel_reloc;
   edir->has_got_reloc |= eind->has_got_reloc;
   edir->has_non_got_reloc |= eind->has_non_got_reloc;
 
@@ -2098,6 +2113,7 @@ elf_x86_64_convert_load_reloc (bfd *abfd, asection *sec,
       /* Avoid optimizing GOTPCREL relocations againt _DYNAMIC since
 	 ld.so may use its link-time address.  */
       else if (h->start_stop
+	       || ((struct elf_x86_64_link_hash_entry *) h)->is_gp
 	       || ((h->def_regular
 		    || h->root.type == bfd_link_hash_defined
 		    || h->root.type == bfd_link_hash_defweak)
@@ -2108,8 +2124,10 @@ elf_x86_64_convert_load_reloc (bfd *abfd, asection *sec,
 	     set by an assignment in a linker script in
 	     bfd_elf_record_link_assignment.  start_stop is set
 	     on __start_SECNAME/__stop_SECNAME which mark section
-	     SECNAME.  */
+	     SECNAME.  is_gp is set on __gp symbol which will be
+	     resolved to GP section and marked as hidden.  */
 	  if (h->start_stop
+	      || ((struct elf_x86_64_link_hash_entry *) h)->is_gp
 	      || (h->def_regular
 		  && (h->root.type == bfd_link_hash_new
 		      || h->root.type == bfd_link_hash_undefined
@@ -2453,18 +2471,26 @@ elf_x86_64_check_relocs (bfd *abfd, struct bfd_link_info *info,
 	  if (isym == NULL)
 	    goto error_return;
 
-	  /* Check relocation against local STT_GNU_IFUNC symbol.  */
-	  if (ELF_ST_TYPE (isym->st_info) == STT_GNU_IFUNC)
+	  /* Check relocation against local STT_GNU_IFUNC symbol and
+	     GPREL relocation.  */
+	  if (r_type == R_X86_64_GPREL
+	      || ELF_ST_TYPE (isym->st_info) == STT_GNU_IFUNC)
 	    {
 	      h = elf_x86_64_get_local_sym_hash (htab, abfd, rel,
 						 TRUE);
 	      if (h == NULL)
 		goto error_return;
 
-	      /* Fake a STT_GNU_IFUNC symbol.  */
-	      h->root.root.string = bfd_elf_sym_name (abfd, symtab_hdr,
-						      isym, NULL);
-	      h->type = STT_GNU_IFUNC;
+	      if (r_type == R_X86_64_GPREL)
+		/* Prepare for GP section.  */
+		h->root.u.def.section
+		  = bfd_section_from_elf_index (abfd, isym->st_shndx);
+	      else
+		/* Fake a STT_GNU_IFUNC symbol.  */
+		h->root.root.string = bfd_elf_sym_name (abfd, symtab_hdr,
+							isym, NULL);
+
+	      h->type = ELF_ST_TYPE (isym->st_info);
 	      h->def_regular = 1;
 	      h->ref_regular = 1;
 	      h->forced_local = 1;
@@ -2889,6 +2915,11 @@ do_size:
 	  if (h != NULL
 	      && !bfd_elf_gc_record_vtentry (abfd, sec, h, rel->r_addend))
 	    goto error_return;
+	  break;
+
+	case R_X86_64_GPREL:
+	  if (eh != NULL)
+	    eh->has_gprel_reloc = 1;
 	  break;
 
 	default:
@@ -3547,6 +3578,10 @@ elf_x86_64_allocate_local_dynrelocs (void **slot, void *inf)
 {
   struct elf_link_hash_entry *h
     = (struct elf_link_hash_entry *) *slot;
+
+  /* Skip local symbol with GPREL relocation.  */
+  if (((struct elf_x86_64_link_hash_entry *) h)->has_gprel_reloc)
+    return TRUE;
 
   if (h->type != STT_GNU_IFUNC
       || !h->def_regular
@@ -5716,6 +5751,41 @@ direct:
 	  relocation -= elf_x86_64_dtpoff_base (info);
 	  break;
 
+	case R_X86_64_GPREL:
+	  if (h == NULL || h->def_regular)
+	    {
+	      asection *def_sec;
+
+	      if (h != NULL)
+		def_sec = h->root.u.def.section;
+	      else
+		def_sec = local_sections[r_symndx];
+
+	      if (htab->gp->root.u.def.section
+		  != def_sec->output_section)
+		{
+		  if (h != NULL && h->root.root.string != NULL)
+		    _bfd_error_handler
+		      /* xgettext:c-format */
+		      (_("%B: symbol `%s' with GPREL relocation "
+			 "defined in %B(%A) isn't in GP section `%A'"),
+		       input_bfd, h->root.root.string, def_sec->owner,
+		       def_sec, htab->gp->root.u.def.section);
+		  else
+		    _bfd_error_handler
+		      /* xgettext:c-format */
+		      (_("%B: GPREL relocation at %#Lx in section "
+			 "`%A' must be against symbol defined in GP "
+			 "section `%A'"),
+		       input_bfd, rel->r_offset, input_section,
+		       htab->gp->root.u.def.section);
+		  return FALSE;
+		}
+	      relocation -= (htab->gp->root.u.def.section->vma
+			     + htab->gp->root.u.def.value);
+	    }
+	  break;
+
 	default:
 	  break;
 	}
@@ -6225,8 +6295,12 @@ elf_x86_64_finish_local_dynamic_symbol (void **slot, void *inf)
   struct bfd_link_info *info
     = (struct bfd_link_info *) inf;
 
+  /* Skip local symbol with GPREL relocation.  */
+  if (((struct elf_x86_64_link_hash_entry *) h)->has_gprel_reloc)
+    return TRUE;
+
   return elf_x86_64_finish_dynamic_symbol (info->output_bfd,
-					     info, h, NULL);
+					   info, h, NULL);
 }
 
 /* Finish up undefined weak symbol handling in PIE.  Fill its PLT entry
@@ -7332,6 +7406,7 @@ elf_x86_64_link_setup_gnu_properties (struct bfd_link_info *info)
   bfd_boolean use_ibt_plt;
   unsigned int plt_alignment, features;
   struct elf_x86_64_link_hash_table *htab;
+  struct elf_link_hash_entry *gp;
   bfd *pbfd;
 
   features = 0;
@@ -7712,7 +7787,135 @@ error_alignment:
 	goto error_alignment;
     }
 
+  /* Set is_gp for __gp symbol.  */
+  gp = elf_link_hash_lookup (elf_hash_table (info), "__gp", FALSE,
+			     FALSE, FALSE);
+  if (gp != NULL)
+    {
+      ((struct elf_x86_64_link_hash_entry *) gp)->is_gp = 1;
+      htab->gp = gp;
+    }
+
   return pbfd;
+}
+
+/* Set up GP section from symbols with GPREL relocations.  */
+
+static bfd_boolean
+elf_x86_64_setup_gp (struct elf_link_hash_entry *h, void * inf)
+{
+  struct bfd_link_info *info;
+  struct elf_x86_64_link_hash_table *htab;
+  struct elf_x86_64_link_hash_entry *eh;
+  struct elf_link_hash_entry *gp;
+  const struct elf_backend_data *bed;
+  asection *gpsection;
+  bfd_size_type gpsection_size;
+
+  eh = (struct elf_x86_64_link_hash_entry *) h;
+
+  /* Skip if there is no GPREL relocation or symbol is undefined.  */
+  if (!eh->has_gprel_reloc
+      || (h->root.type != bfd_link_hash_defined
+	  && h->root.type != bfd_link_hash_defweak))
+    return TRUE;
+
+  info = (struct bfd_link_info *) inf;
+  htab = elf_x86_64_hash_table (info);
+  if (htab == NULL)
+    return FALSE;
+
+  gpsection = h->root.u.def.section->output_section;
+  gpsection_size = bfd_get_section_size (gpsection);
+  if (gpsection_size > 0xffffffff)
+    {
+      info->callbacks->einfo (_("%F%B: GP section `%A' size overflow\n"),
+			      info->output_bfd, gpsection);
+      return FALSE;
+    }
+
+  gp = htab->gp;
+  gp->def_regular = 1;
+  gp->root.type = bfd_link_hash_defined;
+  gp->root.u.def.value = gpsection_size / 2;
+  gp->root.u.def.section = gpsection;
+  gp->root.linker_def = 1;
+  gp->other = STV_HIDDEN;
+  bed = get_elf_backend_data (info->output_bfd);
+  bed->elf_backend_hide_symbol (info, gp, TRUE);
+
+  return FALSE;
+}
+
+/* Set up GP section from local symbols with GPREL relocations.  */
+
+static bfd_boolean
+elf_x86_64_setup_gp_from_local_symbol (void **slot, void *inf)
+{
+  struct elf_link_hash_entry *h
+    = (struct elf_link_hash_entry *) *slot;
+  struct bfd_link_info *info
+    = (struct bfd_link_info *) inf;
+
+  return elf_x86_64_setup_gp (h, info);
+}
+
+/* Set up GP section for __gp symbol.  */
+
+static bfd_boolean
+elf_x86_64_final_link (bfd *abfd, struct bfd_link_info *info)
+{
+  if (!bfd_link_relocatable (info))
+    {
+      struct elf_link_hash_entry *gp;
+      struct elf_x86_64_link_hash_table *htab;
+
+      htab = elf_x86_64_hash_table (info);
+      if (htab == NULL)
+	return FALSE;
+
+      gp = htab->gp;
+      if (gp != NULL)
+	{
+	  if (gp->root.type == bfd_link_hash_defined
+	      || gp->root.type == bfd_link_hash_defweak)
+	    {
+	      /* Hide __gp.  */
+	      const struct elf_backend_data *bed
+		= get_elf_backend_data (abfd);
+	      gp->other = STV_HIDDEN;
+	      bed->elf_backend_hide_symbol (info, gp, TRUE);
+	    }
+	  else
+	    {
+	      /* Set up __gp from a symbol with GPREL relocations.  */
+	      elf_link_hash_traverse (&htab->elf,
+				      elf_x86_64_setup_gp,
+				      info);
+
+	      if (gp->root.type != bfd_link_hash_defined
+		  && gp->root.type != bfd_link_hash_defweak)
+		{
+		  /* Set up __gp from a local symbol with GPREL
+		     relocations.  */
+		  htab_traverse (htab->loc_hash_table,
+				 elf_x86_64_setup_gp_from_local_symbol,
+				 info);
+		}
+
+	      if (gp->root.type != bfd_link_hash_defined
+		  && gp->root.type != bfd_link_hash_defweak)
+		{
+		  info->callbacks->einfo (_("%F%B: undefined __gp symbol\n"),
+					  info->output_bfd);
+		  return FALSE;
+		}
+	    }
+	}
+    }
+
+  /* Invoke the regular ELF backend linker to do all the work.  */
+  return bfd_elf_final_link (abfd, info);
 }
 
 static const struct bfd_elf_special_section
@@ -7779,6 +7982,7 @@ elf_x86_64_special_sections[]=
 #define elf_backend_object_p		    elf64_x86_64_elf_object_p
 #define bfd_elf64_mkobject		    elf_x86_64_mkobject
 #define bfd_elf64_get_synthetic_symtab	    elf_x86_64_get_synthetic_symtab
+#define bfd_elf64_bfd_final_link	    elf_x86_64_final_link
 
 #define elf_backend_section_from_shdr \
 	elf_x86_64_section_from_shdr
@@ -8078,6 +8282,8 @@ elf32_x86_64_nacl_elf_object_p (bfd *abfd)
   elf_x86_64_mkobject
 #define bfd_elf32_get_synthetic_symtab \
   elf_x86_64_get_synthetic_symtab
+#define bfd_elf32_bfd_final_link \
+  elf_x86_64_final_link
 
 #undef elf_backend_object_p
 #define elf_backend_object_p \

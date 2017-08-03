@@ -567,6 +567,9 @@ run_dump_test "pr20253-4f"
 run_dump_test "pr20253-5a"
 run_dump_test "pr20253-5b"
 run_dump_test "tlsdesc2"
+run_dump_test "gprel-3"
+run_dump_test "gprel-4"
+run_dump_test "gprel-5"
 
 proc undefined_weak {cflags ldflags} {
     set testname "Undefined weak symbol"
@@ -1568,6 +1571,51 @@ run_ld_link_tests [list \
 	{start.s foo.s} \
 	"" \
 	"pr21626" \
+    ] \
+]
+
+run_ld_link_exec_tests [list \
+    [list \
+	"Run GPREL 1" \
+	"" \
+	"" \
+	{gprel-1a.S gprel-1b.c} \
+	"gprel-1" "pass.out" \
+    ] \
+    [list \
+	"Run GPREL 1 (PIE)" \
+	"-pie" \
+	"" \
+	{gprel-1a.S gprel-1b.c} \
+	"gprel-1-pie" "pass.out" "-fPIE" \
+    ] \
+    [list \
+	"Run GPREL 1 (static)" \
+	"-static" \
+	"" \
+	{gprel-1a.S gprel-1b.c} \
+	"gprel-1-static" "pass.out" \
+    ] \
+    [list \
+	"Run GPREL 2" \
+	"" \
+	"" \
+	{gprel-2a.S gprel-2b.c} \
+	"gprel-2" "pass.out" \
+    ] \
+    [list \
+	"Run GPREL 2 (PIE)" \
+	"-pie" \
+	"" \
+	{gprel-2a.S gprel-2b.c} \
+	"gprel-2-pie" "pass.out" "-fPIE" \
+    ] \
+    [list \
+	"Run GPREL 2 (static)" \
+	"-static" \
+	"" \
+	{gprel-2a.S gprel-2b.c} \
+	"gprel-2-static" "pass.out" \
     ] \
 ]
 
