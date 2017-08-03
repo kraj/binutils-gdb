@@ -238,6 +238,9 @@ struct elf_x86_link_hash_entry
      should be resolved to 0 if zero_undefweak > 0.  */
   unsigned int zero_undefweak : 2;
 
+  /* TRUE if symbol has GPOFF relocations.  */
+  unsigned int has_gpoff_reloc : 1;
+
   /* Don't call finish_dynamic_symbol on this symbol.  */
   unsigned int no_finish_dynamic_symbol : 1;
 
@@ -432,6 +435,9 @@ struct elf_x86_link_hash_table
 
   /* Parameters describing non-lazy PLT generation.  */
   const struct elf_x86_non_lazy_plt_layout *non_lazy_plt;
+
+  /* Cache __gp symbol.  */
+  struct elf_link_hash_entry *gp;
 
   union
   {
@@ -663,6 +669,9 @@ extern bfd_boolean _bfd_x86_elf_merge_gnu_properties
 extern bfd * _bfd_x86_elf_link_setup_gnu_properties
   (struct bfd_link_info *, struct elf_x86_init_table *);
 
+extern bfd_boolean _bfd_x86_elf_final_link
+  (bfd *, struct bfd_link_info *);
+
 #define bfd_elf64_mkobject \
   _bfd_x86_elf_mkobject
 #define bfd_elf32_mkobject \
@@ -675,6 +684,10 @@ extern bfd * _bfd_x86_elf_link_setup_gnu_properties
   _bfd_x86_elf_link_check_relocs
 #define bfd_elf32_bfd_link_check_relocs \
   _bfd_x86_elf_link_check_relocs
+#define bfd_elf64_bfd_final_link \
+  _bfd_x86_elf_final_link
+#define bfd_elf32_bfd_final_link \
+  _bfd_x86_elf_final_link
 
 #define elf_backend_size_dynamic_sections \
   _bfd_x86_elf_size_dynamic_sections

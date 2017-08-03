@@ -173,12 +173,15 @@ static reloc_howto_type x86_64_elf_howto_table[] =
   HOWTO(R_X86_64_REX_GOTPCRELX, 0, 2, 32, TRUE, 0, complain_overflow_signed,
 	bfd_elf_generic_reloc, "R_X86_64_REX_GOTPCRELX", FALSE, 0xffffffff,
 	0xffffffff, TRUE),
+  HOWTO(R_X86_64_GPOFF, 0, 2, 32, FALSE, 0, complain_overflow_signed,
+	bfd_elf_generic_reloc, "R_X86_64_GPOFF",
+	FALSE, MINUS_ONE, MINUS_ONE, FALSE),
 
   /* We have a gap in the reloc numbers here.
      R_X86_64_standard counts the number up to this point, and
      R_X86_64_vt_offset is the value to subtract from a reloc type of
      R_X86_64_GNU_VT* to form an index into this table.  */
-#define R_X86_64_standard (R_X86_64_REX_GOTPCRELX + 1)
+#define R_X86_64_standard (R_X86_64_GPOFF + 1)
 #define R_X86_64_vt_offset (R_X86_64_GNU_VTINHERIT - R_X86_64_standard)
 
 /* GNU extension to record C++ vtable hierarchy.  */
@@ -260,6 +263,7 @@ static const struct elf_reloc_map x86_64_reloc_map[] =
   { BFD_RELOC_X86_64_PLT32_BND,	R_X86_64_PLT32_BND, },
   { BFD_RELOC_X86_64_GOTPCRELX, R_X86_64_GOTPCRELX, },
   { BFD_RELOC_X86_64_REX_GOTPCRELX, R_X86_64_REX_GOTPCRELX, },
+  { BFD_RELOC_GPREL32,		R_X86_64_GPOFF, },
   { BFD_RELOC_VTABLE_INHERIT,	R_X86_64_GNU_VTINHERIT, },
   { BFD_RELOC_VTABLE_ENTRY,	R_X86_64_GNU_VTENTRY, },
 };
@@ -1833,18 +1837,26 @@ elf_x86_64_check_relocs (bfd *abfd, struct bfd_link_info *info,
 	  if (isym == NULL)
 	    goto error_return;
 
-	  /* Check relocation against local STT_GNU_IFUNC symbol.  */
-	  if (ELF_ST_TYPE (isym->st_info) == STT_GNU_IFUNC)
+	  /* Check relocation against local STT_GNU_IFUNC symbol and
+	     GPOFF relocation.  */
+	  if (r_type == R_X86_64_GPOFF
+	      || ELF_ST_TYPE (isym->st_info) == STT_GNU_IFUNC)
 	    {
 	      h = _bfd_elf_x86_get_local_sym_hash (htab, abfd, rel,
 						   TRUE);
 	      if (h == NULL)
 		goto error_return;
 
-	      /* Fake a STT_GNU_IFUNC symbol.  */
-	      h->root.root.string = bfd_elf_sym_name (abfd, symtab_hdr,
-						      isym, NULL);
-	      h->type = STT_GNU_IFUNC;
+	      if (r_type == R_X86_64_GPOFF)
+		/* Prepare for GP section.  */
+		h->root.u.def.section
+		  = bfd_section_from_elf_index (abfd, isym->st_shndx);
+	      else
+		/* Fake a STT_GNU_IFUNC symbol.  */
+		h->root.root.string = bfd_elf_sym_name (abfd, symtab_hdr,
+							isym, NULL);
+
+	      h->type = ELF_ST_TYPE (isym->st_info);
 	      h->def_regular = 1;
 	      h->ref_regular = 1;
 	      h->forced_local = 1;
@@ -2248,6 +2260,11 @@ do_size:
 	  if (h != NULL
 	      && !bfd_elf_gc_record_vtentry (abfd, sec, h, rel->r_addend))
 	    goto error_return;
+	  break;
+
+	case R_X86_64_GPOFF:
+	  if (eh != NULL)
+	    eh->has_gpoff_reloc = 1;
 	  break;
 
 	default:
@@ -3755,6 +3772,41 @@ direct:
 	  relocation -= _bfd_x86_elf_dtpoff_base (info);
 	  break;
 
+	case R_X86_64_GPOFF:
+	  if (h == NULL || h->def_regular)
+	    {
+	      asection *def_sec;
+
+	      if (h != NULL)
+		def_sec = h->root.u.def.section;
+	      else
+		def_sec = local_sections[r_symndx];
+
+	      if (htab->gp->root.u.def.section
+		  != def_sec->output_section)
+		{
+		  if (h != NULL && h->root.root.string != NULL)
+		    _bfd_error_handler
+		      /* xgettext:c-format */
+		      (_("%B: symbol `%s' with GPOFF relocation "
+			 "defined in %B(%A) isn't in GP section `%A'"),
+		       input_bfd, h->root.root.string, def_sec->owner,
+		       def_sec, htab->gp->root.u.def.section);
+		  else
+		    _bfd_error_handler
+		      /* xgettext:c-format */
+		      (_("%B: GPOFF relocation at %#Lx in section "
+			 "`%A' must be against symbol defined in GP "
+			 "section `%A'"),
+		       input_bfd, rel->r_offset, input_section,
+		       htab->gp->root.u.def.section);
+		  return FALSE;
+		}
+	      relocation -= (htab->gp->root.u.def.section->vma
+			     + htab->gp->root.u.def.value);
+	    }
+	  break;
+
 	default:
 	  break;
 	}
@@ -4262,6 +4314,10 @@ elf_x86_64_finish_local_dynamic_symbol (void **slot, void *inf)
     = (struct elf_link_hash_entry *) *slot;
   struct bfd_link_info *info
     = (struct bfd_link_info *) inf;
+
+  /* Skip local symbol with GPOFF relocation.  */
+  if (((struct elf_x86_link_hash_entry *) h)->has_gpoff_reloc)
+    return TRUE;
 
   return elf_x86_64_finish_dynamic_symbol (info->output_bfd,
 					   info, h, NULL);

@@ -143,9 +143,12 @@ static reloc_howto_type elf_howto_table[]=
   HOWTO(R_386_GOT32X, 0, 2, 32, FALSE, 0, complain_overflow_bitfield,
 	bfd_elf_generic_reloc, "R_386_GOT32X",
 	TRUE, 0xffffffff, 0xffffffff, FALSE),
+  HOWTO(R_386_GPOFF, 0, 2, 32, FALSE, 0, complain_overflow_signed,
+	bfd_elf_generic_reloc, "R_386_GPOFF",
+	TRUE, 0xffffffff, 0xffffffff, FALSE),
 
   /* Another gap.  */
-#define R_386_ext2 (R_386_GOT32X + 1 - R_386_tls_offset)
+#define R_386_ext2 (R_386_GPOFF + 1 - R_386_tls_offset)
 #define R_386_vt_offset (R_386_GNU_VTINHERIT - R_386_ext2)
 
 /* GNU extension to record C++ vtable hierarchy.  */
@@ -336,6 +339,10 @@ elf_i386_reloc_type_lookup (bfd *abfd ATTRIBUTE_UNUSED,
     case BFD_RELOC_386_GOT32X:
       TRACE ("BFD_RELOC_386_GOT32X");
       return &elf_howto_table[R_386_GOT32X - R_386_tls_offset];
+
+    case BFD_RELOC_GPREL32:
+      TRACE ("BFD_RELOC_GPREL32");
+      return &elf_howto_table[R_386_GPOFF - R_386_tls_offset];
 
     case BFD_RELOC_VTABLE_INHERIT:
       TRACE ("BFD_RELOC_VTABLE_INHERIT");
@@ -1520,17 +1527,26 @@ elf_i386_check_relocs (bfd *abfd,
 	  if (isym == NULL)
 	    goto error_return;
 
-	  /* Check relocation against local STT_GNU_IFUNC symbol.  */
-	  if (ELF32_ST_TYPE (isym->st_info) == STT_GNU_IFUNC)
+	  /* Check relocation against local STT_GNU_IFUNC symbol and
+	     GPOFF relocation.   */
+	  if (r_type == R_386_GPOFF
+	      || ELF32_ST_TYPE (isym->st_info) == STT_GNU_IFUNC)
 	    {
 	      h = _bfd_elf_x86_get_local_sym_hash (htab, abfd, rel, TRUE);
 	      if (h == NULL)
 		goto error_return;
 
-	      /* Fake a STT_GNU_IFUNC symbol.  */
-	      h->root.root.string = bfd_elf_sym_name (abfd, symtab_hdr,
-						      isym, NULL);
-	      h->type = STT_GNU_IFUNC;
+	      if (r_type == R_386_GPOFF)
+		/* Prepare for GP section.  */
+		h->root.u.def.section
+		  = bfd_section_from_elf_index (abfd, isym->st_shndx);
+	      else
+		/* Fake a STT_GNU_IFUNC symbol.  */
+		h->root.root.string = bfd_elf_sym_name (abfd, symtab_hdr,
+
+							isym, NULL);
+
+	      h->type = ELF_ST_TYPE (isym->st_info);
 	      h->def_regular = 1;
 	      h->ref_regular = 1;
 	      h->forced_local = 1;
@@ -1877,6 +1893,11 @@ do_size:
 	  if (h != NULL
 	      && !bfd_elf_gc_record_vtentry (abfd, sec, h, rel->r_offset))
 	    goto error_return;
+	  break;
+
+	case R_386_GPOFF:
+	  if (eh != NULL)
+	    eh->has_gpoff_reloc = 1;
 	  break;
 
 	default:
@@ -3411,6 +3432,41 @@ disallow_got32:
 	    relocation = -elf_i386_tpoff (info, relocation);
 	  break;
 
+	case R_386_GPOFF:
+	  if (h == NULL || h->def_regular)
+	    {
+	      asection *def_sec;
+
+	      if (h != NULL)
+		def_sec = h->root.u.def.section;
+	      else
+		def_sec = local_sections[r_symndx];
+
+	      if (htab->gp->root.u.def.section
+		  != def_sec->output_section)
+		{
+		  if (h != NULL && h->root.root.string != NULL)
+		    _bfd_error_handler
+		      /* xgettext:c-format */
+		      (_("%B: symbol `%s' with GPOFF relocation "
+			 "defined in %B(%A) isn't in GP section `%A'"),
+		       input_bfd, h->root.root.string, def_sec->owner,
+		       def_sec, htab->gp->root.u.def.section);
+		  else
+		    _bfd_error_handler
+		      /* xgettext:c-format */
+		      (_("%B: GPOFF relocation at %#Lx in section "
+			 "`%A' must be against symbol defined in GP "
+			 "section `%A'"),
+		       input_bfd, rel->r_offset, input_section,
+		       htab->gp->root.u.def.section);
+		  return FALSE;
+		}
+	      relocation -= (htab->gp->root.u.def.section->vma
+			     + htab->gp->root.u.def.value);
+	    }
+	  break;
+
 	default:
 	  break;
 	}
@@ -3913,6 +3969,10 @@ elf_i386_finish_local_dynamic_symbol (void **slot, void *inf)
     = (struct elf_link_hash_entry *) *slot;
   struct bfd_link_info *info
     = (struct bfd_link_info *) inf;
+
+  /* Skip local symbol with GPOFF relocation.  */
+  if (((struct elf_x86_link_hash_entry *) h)->has_gpoff_reloc)
+    return TRUE;
 
   return elf_i386_finish_dynamic_symbol (info->output_bfd, info,
 					 h, NULL);

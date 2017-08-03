@@ -579,6 +579,10 @@ elf_x86_allocate_local_dynreloc (void **slot, void *inf)
   struct elf_link_hash_entry *h
     = (struct elf_link_hash_entry *) *slot;
 
+  /* Skip local symbol with GPOFF relocation.  */
+  if (((struct elf_x86_link_hash_entry *) h)->has_gpoff_reloc)
+    return TRUE;
+
   if (h->type != STT_GNU_IFUNC
       || !h->def_regular
       || !h->ref_regular
@@ -864,6 +868,21 @@ _bfd_x86_elf_link_check_relocs (bfd *abfd, struct bfd_link_info *info)
 	    {
 	      elf_x86_hash_entry (h)->local_ref = 2;
 	      elf_x86_hash_entry (h)->linker_def = 1;
+	    }
+
+	  /* Cache and hide __gp symbol.  */
+	  h = elf_link_hash_lookup (elf_hash_table (info), "__gp", FALSE,
+				    FALSE, FALSE);
+	  if (h != NULL)
+	    {
+	      htab->gp = h;
+	      /* It should be defined by elf_x86_64_setup_gp later.  */
+	      if (h->root.type != bfd_link_hash_defined
+		  && h->root.type != bfd_link_hash_defweak)
+		h->def_regular = 1;
+	      h->other = STV_HIDDEN;
+	      bed = get_elf_backend_data (info->output_bfd);
+	      bed->elf_backend_hide_symbol (info, h, TRUE);
 	    }
 	}
     }
@@ -1627,6 +1646,7 @@ _bfd_x86_elf_copy_indirect_symbol (struct bfd_link_info *info,
   edir->gotoff_ref |= eind->gotoff_ref;
 
   edir->zero_undefweak |= eind->zero_undefweak;
+  edir->has_gpoff_reloc |= eind->has_gpoff_reloc;
 
   if (ELIMINATE_COPY_RELOCS
       && ind->root.type != bfd_link_hash_indirect
@@ -2749,4 +2769,103 @@ error_alignment:
     }
 
   return pbfd;
+}
+
+/* Set up GP section from symbols with GPOFF relocations.  */
+
+static bfd_boolean
+elf_x86_setup_gp (struct elf_link_hash_entry *h, void * inf)
+{
+  struct bfd_link_info *info;
+  struct elf_x86_link_hash_table *htab;
+  struct elf_x86_link_hash_entry *eh;
+  struct elf_link_hash_entry *gp;
+  asection *gpsection;
+  bfd_size_type gpsection_size;
+  const struct elf_backend_data *bed;
+
+  eh = (struct elf_x86_link_hash_entry *) h;
+
+  /* Skip if there is no GPOFF relocation or symbol is undefined.  */
+  if (!eh->has_gpoff_reloc
+      || (h->root.type != bfd_link_hash_defined
+	  && h->root.type != bfd_link_hash_defweak))
+    return TRUE;
+
+  info = (struct bfd_link_info *) inf;
+  bed = get_elf_backend_data (info->output_bfd);
+  htab = elf_x86_hash_table (info, bed->target_id);
+  if (htab == NULL)
+    return FALSE;
+
+  gpsection = h->root.u.def.section->output_section;
+  gpsection_size = bfd_get_section_size (gpsection);
+
+  if (bed->target_id == X86_64_ELF_DATA && gpsection_size > 0xffffffff)
+    {
+      info->callbacks->einfo (_("%F%B: GP section `%A' size overflow\n"),
+			      info->output_bfd, gpsection);
+      return FALSE;
+    }
+
+  gp = htab->gp;
+  gp->root.type = bfd_link_hash_defined;
+  gp->root.u.def.value = gpsection_size / 2;
+  gp->root.u.def.section = gpsection;
+  gp->root.linker_def = 1;
+
+  /* Found GP section.  No need to continue.  */
+  return FALSE;
+}
+
+/* Set up GP section from local symbols with GPOFF relocations.  */
+
+static bfd_boolean
+elf_x86_setup_gp_from_local_symbol (void **slot, void *inf)
+{
+  struct elf_link_hash_entry *h
+    = (struct elf_link_hash_entry *) *slot;
+  struct bfd_link_info *info
+    = (struct bfd_link_info *) inf;
+
+  return elf_x86_setup_gp (h, info);
+}
+
+/* Set up GP section for __gp symbol.  */
+
+bfd_boolean
+_bfd_x86_elf_final_link (bfd *abfd, struct bfd_link_info *info)
+{
+  if (!bfd_link_relocatable (info))
+    {
+      struct elf_link_hash_entry *gp;
+      struct elf_x86_link_hash_table *htab;
+      const struct elf_backend_data *bed = get_elf_backend_data (abfd);
+
+      htab = elf_x86_hash_table (info, bed->target_id);
+      if (htab == NULL)
+	return FALSE;
+
+      gp = htab->gp;
+      if (gp != NULL
+	  && gp->root.type != bfd_link_hash_defined
+	  && gp->root.type != bfd_link_hash_defweak)
+	{
+	  /* Set up __gp from a symbol with GPOFF relocations.  */
+	  elf_link_hash_traverse (&htab->elf, elf_x86_setup_gp, info);
+
+	  if (gp->root.type != bfd_link_hash_defined
+	      && gp->root.type != bfd_link_hash_defweak)
+	    {
+	      /* Set up __gp from a local symbol with GPOFF
+		 relocations.  */
+	      htab_traverse (htab->loc_hash_table,
+			     elf_x86_setup_gp_from_local_symbol,
+			     info);
+	    }
+	}
+    }
+
+  /* Invoke the regular ELF backend linker to do all the work.  */
+  return bfd_elf_final_link (abfd, info);
 }
