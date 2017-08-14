@@ -9,5 +9,5 @@ Symbol table '\.dynsym' contains [0-9]+ entries:
 #...
  +[0-9]+: +[a-f0-9]+ +0 +NOTYPE +LOCAL +DEFAULT +[0-9]+ +.startof.scnfoo
 #...
- +[0-9]+: +[a-f0-9]+ +0 +NOTYPE +LOCAL +DEFAULT +[0-9]+ +___?start_scnfoo
+ +[0-9]+: +[a-f0-9]+ +0 +NOTYPE +GLOBAL +DEFAULT +[0-9]+ +___?start_scnfoo
 #pass

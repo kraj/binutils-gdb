@@ -14261,17 +14261,46 @@ bfd_elf_define_start_stop (struct bfd_link_info *info,
 			   const char *symbol, asection *sec)
 {
   struct bfd_link_hash_entry *h;
+  struct elf_link_hash_entry *eh;
 
   h = bfd_generic_define_start_stop (info, symbol, sec);
-  if (h != NULL)
+  eh = (struct elf_link_hash_entry *) h;
+  if (eh != NULL)
     {
-      struct elf_link_hash_entry *eh = (struct elf_link_hash_entry *) h;
       eh->start_stop = 1;
       eh->u2.start_stop_section = sec;
+    }
+  else
+    {
+      /* Override definition from a shared object.  */
+       h = bfd_link_hash_lookup (info->hash, symbol, FALSE, FALSE,
+				 FALSE);
+       eh = (struct elf_link_hash_entry *) h;
+       if (eh != NULL && eh->def_dynamic)
+	 {
+	   eh->root.type = bfd_link_hash_defined;
+	   eh->root.u.def.section = sec;
+	   eh->root.u.def.value = 0;
+	   eh->start_stop = 1;
+	   eh->u2.start_stop_section = sec;
+	   eh->def_dynamic = 0;
+	   eh->def_regular = 1;
+	 }
+       else
+	 h = NULL;
+    }
+
+  if (h != NULL
+      && ELF_ST_VISIBILITY (eh->other) != STV_INTERNAL
+      && (!bfd_link_dll (info) || symbol[0] == '.'))
+    {
+      /* When building shared objects, don't mark __start and __stop
+	 symbols as hidden to support dlsym.  */
       _bfd_elf_link_hash_hide_symbol (info, eh, TRUE);
       if (ELF_ST_VISIBILITY (eh->other) != STV_INTERNAL)
 	eh->other = ((eh->other & ~ELF_ST_VISIBILITY (-1))
 		     | STV_HIDDEN);
     }
+
   return h;
 }
