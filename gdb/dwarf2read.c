@@ -9297,9 +9297,17 @@ find_file_and_directory (struct die_info *die, struct dwarf2_cu *cu)
 /* Handle DW_AT_stmt_list for a compilation unit.
    DIE is the DW_TAG_compile_unit die for CU.
    COMP_DIR is the compilation directory.  LOWPC is passed to
-   dwarf_decode_lines.  See dwarf_decode_lines comments about it.  */
+   dwarf_decode_lines.  See dwarf_decode_lines comments about it.
 
-static void
+   If a line header is successfully decoded, then CU->line_header is
+   set to it.  The returned unique_ptr is used to extend the lifetime
+   of a temporary line_header.  If we're using a line header hash,
+   then the hash owns the created line_header, and thus this function
+   returns an empty unique_ptr.  Otherwise, an owning pointer to the
+   created line header is returned, so that the caller can safely
+   access CU->line_header.  */
+
+static line_header_up
 handle_DW_AT_stmt_list (struct die_info *die, struct dwarf2_cu *cu,
 			const char *comp_dir, CORE_ADDR lowpc) /* ARI: editCase function */
 {
@@ -9315,7 +9323,7 @@ handle_DW_AT_stmt_list (struct die_info *die, struct dwarf2_cu *cu,
 
   attr = dwarf2_attr (die, DW_AT_stmt_list, cu);
   if (attr == NULL)
-    return;
+    return NULL;
 
   sect_offset line_offset = (sect_offset) DW_UNSND (attr);
 
@@ -9353,7 +9361,7 @@ handle_DW_AT_stmt_list (struct die_info *die, struct dwarf2_cu *cu,
 	{
 	  gdb_assert (*slot != NULL);
 	  cu->line_header = (struct line_header *) *slot;
-	  return;
+	  return NULL;
 	}
     }
 
@@ -9361,7 +9369,7 @@ handle_DW_AT_stmt_list (struct die_info *die, struct dwarf2_cu *cu,
      We always have to call also dwarf_decode_lines for it.  */
   line_header_up lh = dwarf_decode_line_header (line_offset, cu);
   if (lh == NULL)
-    return;
+    return NULL;
   cu->line_header = lh.get ();
 
   if (dwarf2_per_objfile->line_header_hash == NULL)
@@ -9377,7 +9385,7 @@ handle_DW_AT_stmt_list (struct die_info *die, struct dwarf2_cu *cu,
     {
       /* This newly decoded line number information unit will be owned
 	 by line_header_hash hash table.  */
-      *slot = cu->line_header;
+      *slot = lh.release ();
     }
   else
     {
@@ -9391,8 +9399,7 @@ handle_DW_AT_stmt_list (struct die_info *die, struct dwarf2_cu *cu,
   decode_mapping = (die->tag != DW_TAG_partial_unit);
   dwarf_decode_lines (cu->line_header, comp_dir, cu, NULL, lowpc,
 		      decode_mapping);
-
-  lh.release ();
+  return lh;
 }
 
 /* Process DW_TAG_compile_unit or DW_TAG_partial_unit.  */
@@ -9436,8 +9443,15 @@ read_file_scope (struct die_info *die, struct dwarf2_cu *cu)
 
   /* Decode line number information if present.  We do this before
      processing child DIEs, so that the line header table is available
-     for DW_AT_decl_file.  */
-  handle_DW_AT_stmt_list (die, cu, fnd.comp_dir, lowpc);
+     for DW_AT_decl_file.
+
+     Note we always access CU->line_header and not MAYBE_TEMP_LH
+     below, because the latter is NULL if the CU owns the created
+     line_header.  This variable exists to extend the lifetime of the
+     temporary line header (if any) until after we're done processing
+     child DIEs.  */
+  line_header_up maybe_temp_lh
+    = handle_DW_AT_stmt_list (die, cu, fnd.comp_dir, lowpc);
 
   /* Process all dies in compilation unit.  */
   if (die->child != NULL)
@@ -9481,9 +9495,10 @@ read_file_scope (struct die_info *die, struct dwarf2_cu *cu)
    Create the set of symtabs used by this TU, or if this TU is sharing
    symtabs with another TU and the symtabs have already been created
    then restore those symtabs in the line header.
-   We don't need the pc/line-number mapping for type units.  */
+   We don't need the pc/line-number mapping for type units.  Returns
+   an owning pointer to the decoded line header.  */
 
-static void
+static line_header_up
 setup_type_unit_groups (struct die_info *die, struct dwarf2_cu *cu)
 {
   struct dwarf2_per_cu_data *per_cu = cu->per_cu;
@@ -9527,7 +9542,7 @@ setup_type_unit_groups (struct die_info *die, struct dwarf2_cu *cu)
 	  gdb_assert (tu_group->symtabs == NULL);
 	  restart_symtab (tu_group->compunit_symtab, "", 0);
 	}
-      return;
+      return NULL;
     }
 
   cu->line_header = lh.get ();
@@ -9576,7 +9591,7 @@ setup_type_unit_groups (struct die_info *die, struct dwarf2_cu *cu)
 	}
     }
 
-  lh.release ();
+  return lh;
 
   /* The main symtab is allocated last.  Type units don't have DW_AT_name
      so they don't have a "real" (so to speak) symtab anyway.
@@ -9600,7 +9615,7 @@ read_type_unit_scope (struct die_info *die, struct dwarf2_cu *cu)
   /* Initialize (or reinitialize) the machinery for building symtabs.
      We do this before processing child DIEs, so that the line header table
      is available for DW_AT_decl_file.  */
-  setup_type_unit_groups (die, cu);
+  line_header_up temp_lh = setup_type_unit_groups (die, cu);
 
   if (die->child != NULL)
     {

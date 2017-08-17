@@ -1,3 +1,10 @@
+2017-08-17  Pedro Alves  <palves@redhat.com>
+
+	* dwarf2read.c (handle_DW_AT_stmt_list): Return a line_header_up
+	extending the lifetime of a temporary line_header.
+	(read_file_scope): Hold the unique_ptr returned by
+	handle_DW_AT_stmt_list in a variable.
+
 2017-08-17  Alex Lindsay  <alexlindsay239@gmail.com>  (tiny change)
 
 	* elfread.c (elf_read_minimal_symbols): xfree synthsyms.
