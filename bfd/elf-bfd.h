@@ -177,6 +177,8 @@ struct elf_link_hash_entry
   unsigned int ref_dynamic : 1;
   /* Symbol is defined by a shared object.  */
   unsigned int def_dynamic : 1;
+  /* Symbol is defined as a protected symbol.  */
+  unsigned int def_protected : 1;
   /* Symbol has a non-weak reference from a non-shared object (other than
      the object in which it is defined).  */
   unsigned int ref_regular_nonweak : 1;
@@ -1887,21 +1889,27 @@ struct elf_obj_tdata
 
   /* An identifier used to distinguish different target
      specific extensions to this structure.  */
-  enum elf_target_id object_id;
+  ENUM_BITFIELD (elf_target_id) object_id : 6;
 
   /* Whether a dyanmic object was specified normally on the linker
      command line, or was specified when --as-needed was in effect,
      or was found via a DT_NEEDED entry.  */
-  enum dynamic_lib_link_class dyn_lib_class;
+  ENUM_BITFIELD (dynamic_lib_link_class) dyn_lib_class : 4;
+
+  /* Whether if the bfd contains symbols that have the STT_GNU_IFUNC
+     symbol type or STB_GNU_UNIQUE binding.  */
+  ENUM_BITFIELD (elf_gnu_symbols) has_gnu_symbols : 3;
+
+  /* Whether if the bfd contains the GNU_PROPERTY_NO_COPY_ON_PROTECTED
+     property.  */
+  unsigned int has_no_copy_on_protected : 1;
 
   /* Irix 5 often screws up the symbol table, sorting local symbols
      after global symbols.  This flag is set if the symbol table in
      this BFD appears to be screwed up.  If it is, we ignore the
      sh_info field in the symbol table header, and always read all the
      symbols.  */
-  bfd_boolean bad_symtab;
-
-  enum elf_gnu_symbols has_gnu_symbols;
+  unsigned int bad_symtab : 1;
 
   /* Information grabbed from an elf core file.  */
   struct core_elf_obj_tdata *core;
@@ -1956,6 +1964,8 @@ struct elf_obj_tdata
 #define elf_other_obj_attributes_proc(bfd) \
   (elf_other_obj_attributes (bfd) [OBJ_ATTR_PROC])
 #define elf_properties(bfd) (elf_tdata (bfd) -> properties)
+#define elf_has_no_copy_on_protected(bfd) \
+  (elf_tdata(bfd) -> has_no_copy_on_protected)
 
 extern void _bfd_elf_swap_verdef_in
   (bfd *, const Elf_External_Verdef *, Elf_Internal_Verdef *);
@@ -2805,6 +2815,17 @@ extern asection _bfd_elf_large_com_section;
      && ((INFO)->symbolic \
 	 || (H)->start_stop \
 	 || ((INFO)->dynamic && !(H)->dynamic)))
+
+/* Should copy relocation be generated for a symbol.  Don't generate
+   copy relocation against a protected symbol defined in a shared
+   object with GNU_PROPERTY_NO_COPY_ON_PROTECTED.  */
+#define SYMBOL_NO_COPYRELOC(INFO, H) \
+  ((H)->def_protected \
+   && ((H)->root.type == bfd_link_hash_defined \
+       || (H)->root.type == bfd_link_hash_defweak) \
+   && elf_has_no_copy_on_protected ((H)->root.u.def.section->owner) \
+   && ((H)->root.u.def.section->owner->flags & DYNAMIC) != 0 \
+   && ((H)->root.u.def.section->flags & SEC_CODE) == 0)
 
 #ifdef __cplusplus
 }

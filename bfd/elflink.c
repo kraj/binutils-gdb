@@ -4638,6 +4638,8 @@ error_free_dyn:
 	      else
 		{
 		  h->def_regular = 1;
+		  h->def_protected = (ELF_ST_VISIBILITY (isym->st_other)
+				      == STV_PROTECTED);
 		  if (h->def_dynamic)
 		    {
 		      h->def_dynamic = 0;
@@ -4664,6 +4666,9 @@ error_free_dyn:
 		{
 		  h->def_dynamic = 1;
 		  hi->def_dynamic = 1;
+		  h->def_protected = hi->def_protected
+		    = (ELF_ST_VISIBILITY (isym->st_other)
+		       == STV_PROTECTED);
 		}
 
 	      /* If the indirect symbol has been forced local, don't
