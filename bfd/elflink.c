@@ -10444,7 +10444,7 @@ elf_link_input_bfd (struct elf_final_link_info *flinfo, bfd *input_bfd)
 		    (_("error: %B: size of section %A is not "
 		       "multiple of address size"),
 		     input_bfd, o);
-		  bfd_set_error (bfd_error_on_input);
+		  bfd_set_input_error (input_bfd, bfd_get_error ());
 		  return FALSE;
 		}
 	      o->flags |= SEC_ELF_REVERSE_COPY;
