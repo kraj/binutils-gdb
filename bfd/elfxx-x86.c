@@ -106,7 +106,7 @@ elf_x86_allocate_dynrelocs (struct elf_link_hash_entry *h, void *inf)
 
   plt_entry_size = htab->plt.plt_entry_size;
 
-  resolved_to_zero = UNDEFINED_WEAK_RESOLVED_TO_ZERO (info, eh);
+  resolved_to_zero = UNDEFINED_WEAK_RESOLVED_TO_ZERO (info, h);
 
   /* Clear the reference count of function pointer relocations if
      symbol isn't a normal function.  */
@@ -672,10 +672,10 @@ _bfd_x86_elf_link_hash_newfunc (struct bfd_hash_entry *entry,
 	 file.  This ensures that a symbol created by a non-ELF symbol
 	 reader will have the flag set correctly.  */
       eh->elf.non_elf = 1;
+      eh->elf.zero_undefweak = 1;
       eh->plt_second.offset = (bfd_vma) -1;
       eh->plt_got.offset = (bfd_vma) -1;
       eh->tlsdesc_got = (bfd_vma) -1;
-      eh->zero_undefweak = 1;
     }
 
   return entry;
@@ -861,7 +861,7 @@ _bfd_x86_elf_link_check_relocs (bfd *abfd, struct bfd_link_info *info)
 		  || h->root.type == bfd_link_hash_undefweak
 		  || h->root.type == bfd_link_hash_common))
 	    {
-	      elf_x86_hash_entry (h)->local_ref = 2;
+	      h->local_ref = 2;
 	      elf_x86_hash_entry (h)->linker_def = 1;
 	    }
 	}
@@ -1407,8 +1407,6 @@ _bfd_x86_elf_copy_indirect_symbol (struct bfd_link_info *info,
      generate a R_386_COPY reloc.  */
   edir->gotoff_ref |= eind->gotoff_ref;
 
-  edir->zero_undefweak |= eind->zero_undefweak;
-
   if (ELIMINATE_COPY_RELOCS
       && ind->root.type != bfd_link_hash_indirect
       && dir->dynamic_adjusted)
@@ -1442,8 +1440,7 @@ bfd_boolean
 _bfd_x86_elf_fixup_symbol (struct bfd_link_info *info,
 			   struct elf_link_hash_entry *h)
 {
-  if (h->dynindx != -1
-      && UNDEFINED_WEAK_RESOLVED_TO_ZERO (info, elf_x86_hash_entry (h)))
+  if (h->dynindx != -1 && UNDEFINED_WEAK_RESOLVED_TO_ZERO (info, h))
     {
       h->dynindx = -1;
       _bfd_elf_strtab_delref (elf_hash_table (info)->dynstr,
@@ -1537,7 +1534,9 @@ _bfd_x86_elf_adjust_dynamic_symbol (struct bfd_link_info *info,
       || h->needs_plt)
     {
       if (h->plt.refcount <= 0
-	  || SYMBOL_CALLS_LOCAL (info, h)
+	  || (SYMBOL_CALLS_LOCAL (info, h)
+	      && (h->root.type != bfd_link_hash_undefweak
+		  || h->zero_undefweak > 0))
 	  || (ELF_ST_VISIBILITY (h->other) != STV_DEFAULT
 	      && h->root.type == bfd_link_hash_undefweak))
 	{
@@ -1666,51 +1665,6 @@ _bfd_x86_elf_adjust_dynamic_symbol (struct bfd_link_info *info,
     }
 
   return _bfd_elf_adjust_dynamic_copy (info, h, s);
-}
-
-/* Return TRUE if a symbol is referenced locally.  It is similar to
-   SYMBOL_REFERENCES_LOCAL, but it also checks version script.  It
-   works in check_relocs.  */
-
-bfd_boolean
-_bfd_x86_elf_link_symbol_references_local (struct bfd_link_info *info,
-					   struct elf_link_hash_entry *h)
-{
-  struct elf_x86_link_hash_entry *eh = elf_x86_hash_entry (h);
-  struct elf_x86_link_hash_table *htab
-    = (struct elf_x86_link_hash_table *) info->hash;
-
-  if (eh->local_ref > 1)
-    return TRUE;
-
-  if (eh->local_ref == 1)
-    return FALSE;
-
-  /* Unversioned symbols defined in regular objects can be forced local
-     by linker version script.  A weak undefined symbol is forced local
-     if
-     1. It has non-default visibility.  Or
-     2. When building executable, there is no dynamic linker.  Or
-     3. or "-z nodynamic-undefined-weak" is used.
-   */
-  if (SYMBOL_REFERENCES_LOCAL (info, h)
-      || (h->root.type == bfd_link_hash_undefweak
-	  && (ELF_ST_VISIBILITY (h->other) != STV_DEFAULT
-	      || (bfd_link_executable (info)
-		  && htab->interp == NULL)
-	      || info->dynamic_undefined_weak == 0))
-      || ((h->def_regular || ELF_COMMON_DEF_P (h))
-	  && h->versioned == unversioned
-	  && info->version_info != NULL
-	  && bfd_hide_sym_by_version (info->version_info,
-				      h->root.root.string)))
-    {
-      eh->local_ref = 2;
-      return TRUE;
-    }
-
-  eh->local_ref = 1;
-  return FALSE;
 }
 
 /* Return the section that should be marked against GC for a given

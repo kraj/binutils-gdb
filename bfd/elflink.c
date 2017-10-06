@@ -3103,14 +3103,52 @@ _bfd_elf_symbol_refs_local_p (struct elf_link_hash_entry *h,
   if (h == NULL)
     return TRUE;
 
+  if (h->local_ref > 1)
+    return TRUE;
+
+  if (h->local_ref == 1)
+    return FALSE;
+
   /* STV_HIDDEN or STV_INTERNAL ones must be local.  */
   if (ELF_ST_VISIBILITY (h->other) == STV_HIDDEN
       || ELF_ST_VISIBILITY (h->other) == STV_INTERNAL)
-    return TRUE;
+    {
+      h->local_ref = 2;
+      return TRUE;
+    }
 
   /* Forced local symbols resolve locally.  */
   if (h->forced_local)
-    return TRUE;
+    {
+      h->local_ref = 2;
+      return TRUE;
+    }
+
+  hash_table = elf_hash_table (info);
+
+  /* Unversioned symbols defined in regular objects can be forced local
+     by linker version script.  A weak undefined symbol is forced local
+     if
+     1. It has non-default visibility.  Or
+     2. When building executable, there is no dynamic linker.  Or
+     3. or "-z nodynamic-undefined-weak" is used.
+   */
+  if ((h->root.type == bfd_link_hash_undefweak
+       && (ELF_ST_VISIBILITY (h->other) != STV_DEFAULT
+	   || (bfd_link_executable (info)
+	       && (info->nointerp
+		   || !is_elf_hash_table (hash_table)
+		   || !hash_table->dynamic_sections_created))
+	   || info->dynamic_undefined_weak == 0))
+      || ((h->def_regular || ELF_COMMON_DEF_P (h))
+	  && h->versioned == unversioned
+	  && info->version_info != NULL
+	  && bfd_hide_sym_by_version (info->version_info,
+				      h->root.root.string)))
+    {
+      h->local_ref = 2;
+      return TRUE;
+    }
 
   /* Common symbols that become definitions don't get the DEF_REGULAR
      flag set, so test it first, and don't bail out.  */
@@ -3119,26 +3157,40 @@ _bfd_elf_symbol_refs_local_p (struct elf_link_hash_entry *h,
   /* If we don't have a definition in a regular file, then we can't
      resolve locally.  The sym is either undefined or dynamic.  */
   else if (!h->def_regular)
-    return FALSE;
+    {
+      h->local_ref = 1;
+      return FALSE;
+    }
 
   /* Non-dynamic symbols resolve locally.  */
   if (h->dynindx == -1)
-    return TRUE;
+    {
+      h->local_ref = 2;
+      return TRUE;
+    }
 
   /* At this point, we know the symbol is defined and dynamic.  In an
      executable it must resolve locally, likewise when building symbolic
      shared libraries.  */
   if (bfd_link_executable (info) || SYMBOLIC_BIND (info, h))
-    return TRUE;
+    {
+      h->local_ref = 2;
+      return TRUE;
+    }
 
   /* Now deal with defined dynamic symbols in shared libraries.  Ones
      with default visibility might not resolve locally.  */
   if (ELF_ST_VISIBILITY (h->other) == STV_DEFAULT)
-    return FALSE;
+    {
+      h->local_ref = 1;
+      return FALSE;
+    }
 
-  hash_table = elf_hash_table (info);
   if (!is_elf_hash_table (hash_table))
-    return TRUE;
+    {
+      h->local_ref = 2;
+      return TRUE;
+    }
 
   bed = get_elf_backend_data (hash_table->dynobj);
 
@@ -3148,13 +3200,19 @@ _bfd_elf_symbol_refs_local_p (struct elf_link_hash_entry *h,
        || (info->extern_protected_data < 0
 	   && !bed->extern_protected_data))
       && !bed->is_function_type (h->type))
-    return TRUE;
+    {
+      h->local_ref = 2;
+      return TRUE;
+    }
 
   /* Function pointer equality tests may require that STV_PROTECTED
      symbols be treated as dynamic symbols.  If the address of a
      function not defined in an executable is set to that function's
      plt entry in the executable, then the address of the function in
-     a shared library must also be the plt entry in the executable.  */
+     a shared library must also be the plt entry in the executable.
+
+     We must leave local_ref as unknown since it depends on
+     local_protected.  */
   return local_protected;
 }
 
@@ -7241,6 +7299,7 @@ _bfd_elf_link_hash_newfunc (struct bfd_hash_entry *entry,
 	 file.  This ensures that a symbol created by a non-ELF symbol
 	 reader will have the flag set correctly.  */
       ret->non_elf = 1;
+      ret->zero_undefweak = 1;
     }
 
   return entry;
@@ -7266,6 +7325,7 @@ _bfd_elf_link_hash_copy_indirect (struct bfd_link_info *info,
   dir->non_got_ref |= ind->non_got_ref;
   dir->needs_plt |= ind->needs_plt;
   dir->pointer_equality_needed |= ind->pointer_equality_needed;
+  dir->zero_undefweak |= ind->zero_undefweak;
 
   if (ind->root.type != bfd_link_hash_indirect)
     return;

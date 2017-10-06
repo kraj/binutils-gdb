@@ -216,6 +216,16 @@ struct elf_link_hash_entry
   /* Symbol is __start_SECNAME or __stop_SECNAME to mark section
      SECNAME.  */
   unsigned int start_stop : 1;
+  /* 0: Symbol references are unknown.
+     1: Symbol references aren't local.
+     2: Symbol references are local.
+   */
+  unsigned int local_ref : 2;
+  /* Bit 0: Symbol has no GOT nor PLT relocations.
+     Bit 1: Symbol has non-GOT/non-PLT relocations in text sections.
+     zero_undefweak is initialized to 1 and undefined weak symbol
+     should be resolved to 0 if zero_undefweak > 0.  */
+  unsigned int zero_undefweak : 2;
 
   /* String table index in .dynstr if this is a dynamic symbol.  */
   unsigned long dynstr_index;
@@ -265,6 +275,16 @@ struct elf_link_hash_entry
 /* Will _calls_ to this symbol always call the version in this object?  */
 #define SYMBOL_CALLS_LOCAL(INFO, H) \
   _bfd_elf_symbol_refs_local_p (H, INFO, 1)
+
+/* TRUE if an undefined weak symbol should be resolved to 0.  Local
+   undefined weak symbol is always resolved to 0.  Reference to an
+   undefined weak symbol is resolved to 0 in executable if undefined
+   weak symbol should be resolved to 0 (zero_undefweak > 0).  */
+#define UNDEFINED_WEAK_RESOLVED_TO_ZERO(INFO, H) \
+  ((H)->root.type == bfd_link_hash_undefweak		 \
+   && (SYMBOL_REFERENCES_LOCAL ((INFO), (H))		 \
+       || (bfd_link_executable (INFO)			 \
+	   && (H)->zero_undefweak > 0)))
 
 /* Common symbols that are turned into definitions don't have the
    DEF_REGULAR flag set, so they might appear to be undefined.

@@ -45,20 +45,6 @@
    && elf_hash_table_id ((struct elf_link_hash_table *) ((p)->hash)) == (id) \
     ? ((struct elf_x86_link_hash_table *) ((p)->hash)) : NULL)
 
-/* Will references to this symbol always be local in this object?  */
-#define SYMBOL_REFERENCES_LOCAL_P(INFO, H) \
-  _bfd_x86_elf_link_symbol_references_local ((INFO), (H))
-
-/* TRUE if an undefined weak symbol should be resolved to 0.  Local
-   undefined weak symbol is always resolved to 0.  Reference to an
-   undefined weak symbol is resolved to 0 in executable if undefined
-   weak symbol should be resolved to 0 (zero_undefweak > 0).  */
-#define UNDEFINED_WEAK_RESOLVED_TO_ZERO(INFO, EH) \
-  ((EH)->elf.root.type == bfd_link_hash_undefweak		 \
-   && (SYMBOL_REFERENCES_LOCAL_P ((INFO), &(EH)->elf)		 \
-       || (bfd_link_executable (INFO)				 \
-	   && (EH)->zero_undefweak > 0)))
-
 /* Should copy relocation be generated for a symbol.  Don't generate
    copy relocation against a protected symbol defined in a shared
    object with GNU_PROPERTY_NO_COPY_ON_PROTECTED.  */
@@ -155,7 +141,7 @@
   (!WILL_CALL_FINISH_DYNAMIC_SYMBOL ((HTAB)->elf.dynamic_sections_created, \
 				     bfd_link_pic (INFO), (H)) \
    || (bfd_link_pic (INFO) \
-       && SYMBOL_REFERENCES_LOCAL_P ((INFO), (H))) \
+       && SYMBOL_REFERENCES_LOCAL ((INFO), (H))) \
        || (ELF_ST_VISIBILITY ((H)->other) \
 	   && (H)->root.type == bfd_link_hash_undefweak))
 
@@ -232,12 +218,6 @@ struct elf_x86_link_hash_entry
 
   unsigned char tls_type;
 
-  /* Bit 0: Symbol has no GOT nor PLT relocations.
-     Bit 1: Symbol has non-GOT/non-PLT relocations in text sections.
-     zero_undefweak is initialized to 1 and undefined weak symbol
-     should be resolved to 0 if zero_undefweak > 0.  */
-  unsigned int zero_undefweak : 2;
-
   /* Don't call finish_dynamic_symbol on this symbol.  */
   unsigned int no_finish_dynamic_symbol : 1;
 
@@ -246,12 +226,6 @@ struct elf_x86_link_hash_entry
 
   /* TRUE if symbol is defined as a protected symbol.  */
   unsigned int def_protected : 1;
-
-  /* 0: Symbol references are unknown.
-     1: Symbol references aren't local.
-     2: Symbol references are local.
-   */
-  unsigned int local_ref : 2;
 
   /* TRUE if symbol is defined by linker.  */
   unsigned int linker_def : 1;
@@ -619,9 +593,6 @@ extern bfd_boolean _bfd_x86_elf_hash_symbol
   (struct elf_link_hash_entry *);
 
 extern bfd_boolean _bfd_x86_elf_adjust_dynamic_symbol
-  (struct bfd_link_info *, struct elf_link_hash_entry *);
-
-extern bfd_boolean _bfd_x86_elf_link_symbol_references_local
   (struct bfd_link_info *, struct elf_link_hash_entry *);
 
 extern asection * _bfd_x86_elf_gc_mark_hook

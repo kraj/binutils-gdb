@@ -1296,8 +1296,8 @@ elf_i386_convert_load_reloc (bfd *abfd, Elf_Internal_Shdr *symtab_hdr,
 	goto convert_load;
     }
 
-  /* NB: Also set linker_def via SYMBOL_REFERENCES_LOCAL_P.  */
-  local_ref = SYMBOL_REFERENCES_LOCAL_P (link_info, h);
+  /* NB: Also set linker_def via SYMBOL_REFERENCES_LOCAL.  */
+  local_ref = SYMBOL_REFERENCES_LOCAL (link_info, h);
 
   /* Undefined weak symbol is only bound locally in executable
      and its reference is resolved as 0.  */
@@ -1619,7 +1619,7 @@ elf_i386_check_relocs (bfd *abfd,
 	  if (h == NULL)
 	    continue;
 
-	  eh->zero_undefweak &= 0x2;
+	  h->zero_undefweak &= 0x2;
 	  h->needs_plt = 1;
 	  h->plt.refcount += 1;
 	  break;
@@ -1745,16 +1745,16 @@ elf_i386_check_relocs (bfd *abfd,
 	create_got:
 	  if (r_type != R_386_TLS_IE)
 	    {
-	      if (eh != NULL)
-		eh->zero_undefweak &= 0x2;
+	      if (h != NULL)
+		h->zero_undefweak &= 0x2;
 	      break;
 	    }
 	  /* Fall through */
 
 	case R_386_TLS_LE_32:
 	case R_386_TLS_LE:
-	  if (eh != NULL)
-	    eh->zero_undefweak &= 0x2;
+	  if (h != NULL)
+	    h->zero_undefweak &= 0x2;
 	  if (bfd_link_executable (info))
 	    break;
 	  info->flags |= DF_STATIC_TLS;
@@ -1762,8 +1762,8 @@ elf_i386_check_relocs (bfd *abfd,
 
 	case R_386_32:
 	case R_386_PC32:
-	  if (eh != NULL && (sec->flags & SEC_CODE) != 0)
-	    eh->zero_undefweak |= 0x2;
+	  if (h != NULL && (sec->flags & SEC_CODE) != 0)
+	    h->zero_undefweak |= 0x2;
 do_relocation:
 	  /* We are called after all symbols have been resolved.  Only
 	     relocation against STT_GNU_IFUNC symbol must go through
@@ -2438,8 +2438,8 @@ do_ifunc_pointer:
 	    }
 	}
 
-      resolved_to_zero = (eh != NULL
-			  && UNDEFINED_WEAK_RESOLVED_TO_ZERO (info, eh));
+      resolved_to_zero = (h != NULL
+			  && UNDEFINED_WEAK_RESOLVED_TO_ZERO (info, h));
 
       switch (r_type)
 	{
@@ -2663,7 +2663,7 @@ disallow_got32:
 		  bfd_set_error (bfd_error_bad_value);
 		  return FALSE;
 		}
-	      else if (!SYMBOL_REFERENCES_LOCAL_P (info, h)
+	      else if (!SYMBOL_REFERENCES_LOCAL (info, h)
 		       && (h->type == STT_FUNC
 			   || h->type == STT_OBJECT)
 		       && ELF_ST_VISIBILITY (h->other) == STV_PROTECTED)
@@ -3552,7 +3552,7 @@ elf_i386_finish_dynamic_symbol (bfd *output_bfd,
   /* We keep PLT/GOT entries without dynamic PLT/GOT relocations for
      resolved undefined weak symbols in executable so that their
      references have value 0 at run-time.  */
-  local_undefweak = UNDEFINED_WEAK_RESOLVED_TO_ZERO (info, eh);
+  local_undefweak = UNDEFINED_WEAK_RESOLVED_TO_ZERO (info, h);
 
   if (h->plt.offset != (bfd_vma) -1)
     {
@@ -3835,7 +3835,7 @@ elf_i386_finish_dynamic_symbol (bfd *output_bfd,
 		     in static executable.  */
 		  relgot = htab->elf.irelplt;
 		}
-	      if (SYMBOL_REFERENCES_LOCAL_P (info, h))
+	      if (SYMBOL_REFERENCES_LOCAL (info, h))
 		{
 		  info->callbacks->minfo (_("Local IFUNC function `%s' in %B\n"),
 					  h->root.root.string,
@@ -3885,7 +3885,7 @@ elf_i386_finish_dynamic_symbol (bfd *output_bfd,
 	    }
 	}
       else if (bfd_link_pic (info)
-	       && SYMBOL_REFERENCES_LOCAL_P (info, h))
+	       && SYMBOL_REFERENCES_LOCAL (info, h))
 	{
 	  BFD_ASSERT((h->got.offset & 1) != 0);
 	  rel.r_info = ELF32_R_INFO (0, R_386_RELATIVE);

@@ -1541,8 +1541,8 @@ elf_x86_64_convert_load_reloc (bfd *abfd,
       bfd_boolean local_ref;
       struct elf_x86_link_hash_entry *eh = elf_x86_hash_entry (h);
 
-      /* NB: Also set linker_def via SYMBOL_REFERENCES_LOCAL_P.  */
-      local_ref = SYMBOL_REFERENCES_LOCAL_P (link_info, h);
+      /* NB: Also set linker_def via SYMBOL_REFERENCES_LOCAL.  */
+      local_ref = SYMBOL_REFERENCES_LOCAL (link_info, h);
       if ((relocx || opcode == 0x8b)
 	  && (h->root.type == bfd_link_hash_undefweak
 	      && !eh->linker_def
@@ -1957,8 +1957,8 @@ elf_x86_64_check_relocs (bfd *abfd, struct bfd_link_info *info,
 	  if (!bfd_link_executable (info) && ABI_64_P (abfd))
 	    return elf_x86_64_need_pic (info, abfd, sec, h, symtab_hdr, isym,
 					&x86_64_elf_howto_table[r_type]);
-	  if (eh != NULL)
-	    eh->zero_undefweak &= 0x2;
+	  if (h != NULL)
+	    h->zero_undefweak &= 0x2;
 	  break;
 
 	case R_X86_64_GOTTPOFF:
@@ -2065,8 +2065,8 @@ elf_x86_64_check_relocs (bfd *abfd, struct bfd_link_info *info,
 	case R_X86_64_GOTPC32:
 	case R_X86_64_GOTPC64:
 	create_got:
-	  if (eh != NULL)
-	    eh->zero_undefweak &= 0x2;
+	  if (h != NULL)
+	    h->zero_undefweak &= 0x2;
 	  break;
 
 	case R_X86_64_PLT32:
@@ -2083,7 +2083,7 @@ elf_x86_64_check_relocs (bfd *abfd, struct bfd_link_info *info,
 	  if (h == NULL)
 	    continue;
 
-	  eh->zero_undefweak &= 0x2;
+	  h->zero_undefweak &= 0x2;
 	  h->needs_plt = 1;
 	  h->plt.refcount += 1;
 	  break;
@@ -2133,8 +2133,8 @@ elf_x86_64_check_relocs (bfd *abfd, struct bfd_link_info *info,
 	case R_X86_64_PC64:
 	case R_X86_64_64:
 pointer:
-	  if (eh != NULL && (sec->flags & SEC_CODE) != 0)
-	    eh->zero_undefweak |= 0x2;
+	  if (h != NULL && (sec->flags & SEC_CODE) != 0)
+	    h->zero_undefweak |= 0x2;
 	  /* We are called after all symbols have been resolved.  Only
 	     relocation against STT_GNU_IFUNC symbol must go through
 	     PLT.  */
@@ -2738,8 +2738,8 @@ do_ifunc_pointer:
 	    }
 	}
 
-      resolved_to_zero = (eh != NULL
-			  && UNDEFINED_WEAK_RESOLVED_TO_ZERO (info, eh));
+      resolved_to_zero = (h != NULL
+			  && UNDEFINED_WEAK_RESOLVED_TO_ZERO (info, h));
 
       /* When generating a shared object, the relocations handled here are
 	 copied into the output file to be resolved at run time.  */
@@ -2906,7 +2906,7 @@ do_ifunc_pointer:
 		  return FALSE;
 		}
 	      else if (!bfd_link_executable (info)
-		       && !SYMBOL_REFERENCES_LOCAL_P (info, h)
+		       && !SYMBOL_REFERENCES_LOCAL (info, h)
 		       && (h->type == STT_FUNC
 			   || h->type == STT_OBJECT)
 		       && ELF_ST_VISIBILITY (h->other) == STV_PROTECTED)
@@ -3054,7 +3054,7 @@ do_ifunc_pointer:
 		    || r_type == R_X86_64_PC32_BND)
 		   && is_32bit_relative_branch (contents, rel->r_offset));
 
-	      if (SYMBOL_REFERENCES_LOCAL_P (info, h))
+	      if (SYMBOL_REFERENCES_LOCAL (info, h))
 		{
 		  /* Symbol is referenced locally.  Make sure it is
 		     defined locally or for a branch.  */
@@ -3912,7 +3912,7 @@ elf_x86_64_finish_dynamic_symbol (bfd *output_bfd,
   /* We keep PLT/GOT entries without dynamic PLT/GOT relocations for
      resolved undefined weak symbols in executable so that their
      references have value 0 at run-time.  */
-  local_undefweak = UNDEFINED_WEAK_RESOLVED_TO_ZERO (info, eh);
+  local_undefweak = UNDEFINED_WEAK_RESOLVED_TO_ZERO (info, h);
 
   if (h->plt.offset != (bfd_vma) -1)
     {
@@ -4175,7 +4175,7 @@ elf_x86_64_finish_dynamic_symbol (bfd *output_bfd,
 		     in static executable.  */
 		  relgot = htab->elf.irelplt;
 		}
-	      if (SYMBOL_REFERENCES_LOCAL_P (info, h))
+	      if (SYMBOL_REFERENCES_LOCAL (info, h))
 		{
 		  info->callbacks->minfo (_("Local IFUNC function `%s' in %B\n"),
 					  h->root.root.string,
@@ -4224,7 +4224,7 @@ elf_x86_64_finish_dynamic_symbol (bfd *output_bfd,
 	    }
 	}
       else if (bfd_link_pic (info)
-	       && SYMBOL_REFERENCES_LOCAL_P (info, h))
+	       && SYMBOL_REFERENCES_LOCAL (info, h))
 	{
 	  if (!(h->def_regular || ELF_COMMON_DEF_P (h)))
 	    return FALSE;
