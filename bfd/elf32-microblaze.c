@@ -1002,6 +1002,7 @@ microblaze_elf_relocate_section (bfd *output_bfd,
       else
 	{
 	  bfd_vma relocation;
+	  bfd_boolean resolved_to_zero;
 
 	  /* This is a final link.  */
 	  sym = NULL;
@@ -1040,6 +1041,9 @@ microblaze_elf_relocate_section (bfd *output_bfd,
 	      r = bfd_reloc_outofrange;
 	      goto check_reloc;
 	    }
+
+	  resolved_to_zero = (h != NULL
+			      && UNDEFINED_WEAK_RESOLVED_TO_ZERO (info, h));
 
 	  switch ((int) r_type)
 	    {
@@ -1257,7 +1261,8 @@ microblaze_elf_relocate_section (bfd *output_bfd,
 		/* Need to generate relocs ? */
 		if ((bfd_link_pic (info) || indx != 0)
 		    && (h == NULL
-		    || ELF_ST_VISIBILITY (h->other) == STV_DEFAULT
+		    || (ELF_ST_VISIBILITY (h->other) == STV_DEFAULT
+			&& !resolved_to_zero)
 		    || h->root.type != bfd_link_hash_undefweak))
 		  need_relocs = TRUE;
 
@@ -1432,7 +1437,8 @@ microblaze_elf_relocate_section (bfd *output_bfd,
 
 		if ((bfd_link_pic (info)
 		     && (h == NULL
-			 || ELF_ST_VISIBILITY (h->other) == STV_DEFAULT
+			 || (ELF_ST_VISIBILITY (h->other) == STV_DEFAULT
+			     && !resolved_to_zero)
 			 || h->root.type != bfd_link_hash_undefweak)
 		     && (!howto->pc_relative
 			 || (h != NULL
@@ -2850,6 +2856,8 @@ allocate_dynrelocs (struct elf_link_hash_entry *h, void * dat)
 		pp = &p->next;
 	    }
 	}
+      else if (UNDEFINED_WEAK_RESOLVED_TO_ZERO (info, h))
+	eh->dyn_relocs = NULL;
     }
   else
     {
