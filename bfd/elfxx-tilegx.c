@@ -2410,7 +2410,8 @@ allocate_dynrelocs (struct elf_link_hash_entry *h, void *inf)
       if (eh->dyn_relocs != NULL
 	  && h->root.type == bfd_link_hash_undefweak)
 	{
-	  if (ELF_ST_VISIBILITY (h->other) != STV_DEFAULT)
+	  if (ELF_ST_VISIBILITY (h->other) != STV_DEFAULT
+	      || UNDEFINED_WEAK_RESOLVED_TO_ZERO (info, h))
 	    eh->dyn_relocs = NULL;
 
 	  /* Make sure undefined weak symbols are output as a dynamic
@@ -2970,7 +2971,7 @@ tilegx_elf_relocate_section (bfd *output_bfd, struct bfd_link_info *info,
       const char *name;
       bfd_vma off;
       bfd_boolean is_plt = FALSE;
-
+      bfd_boolean resolved_to_zero;
       bfd_boolean unresolved_reloc;
 
       r_type = TILEGX_ELF_R_TYPE (rel->r_info);
@@ -3224,6 +3225,9 @@ tilegx_elf_relocate_section (bfd *output_bfd, struct bfd_link_info *info,
 	  break;
 	}
 
+      resolved_to_zero = (h != NULL
+			  && UNDEFINED_WEAK_RESOLVED_TO_ZERO (info, h));
+
       switch (r_type)
 	{
 	case R_TILEGX_IMM16_X0_HW0_GOT:
@@ -3421,7 +3425,8 @@ tilegx_elf_relocate_section (bfd *output_bfd, struct bfd_link_info *info,
 
 	  if ((bfd_link_pic (info)
 	       && (h == NULL
-		   || ELF_ST_VISIBILITY (h->other) == STV_DEFAULT
+		   || (ELF_ST_VISIBILITY (h->other) == STV_DEFAULT
+		       && !resolved_to_zero)
 		   || h->root.type != bfd_link_hash_undefweak)
 	       && (! howto->pc_relative
 		   || !SYMBOL_CALLS_LOCAL (info, h)))
