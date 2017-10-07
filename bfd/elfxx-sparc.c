@@ -683,20 +683,6 @@ struct _bfd_sparc_elf_dyn_relocs
   bfd_size_type pc_count;
 };
 
-/* Is an undefined weak symbol resolved to 0 ?
-   Reference to an undefined weak symbol is resolved to 0 when
-   building an executable if it isn't dynamic and
-   1. Has non-GOT/non-PLT relocations in text section.
-   Or
-   2. Has no GOT/PLT relocation.  */
-#define UNDEFINED_WEAK_RESOLVED_TO_ZERO(INFO, EH)               \
-  ((EH)->elf.root.type == bfd_link_hash_undefweak               \
-   && bfd_link_executable (INFO)                                \
-   && (_bfd_sparc_elf_hash_table (INFO)->interp == NULL         \
-       || !(EH)->has_got_reloc                                  \
-       || (EH)->has_non_got_reloc                               \
-       || !(INFO)->dynamic_undefined_weak))
-
 /* SPARC ELF linker hash entry.  */
 
 struct _bfd_sparc_elf_link_hash_entry
@@ -711,13 +697,6 @@ struct _bfd_sparc_elf_link_hash_entry
 #define GOT_TLS_GD      2
 #define GOT_TLS_IE      3
   unsigned char tls_type;
-
-    /* Symbol has GOT or PLT relocations.  */
-  unsigned int has_got_reloc : 1;
-
-  /* Symbol has non-GOT/non-PLT relocations in text sections.  */
-  unsigned int has_non_got_reloc : 1;
-
 };
 
 #define _bfd_sparc_elf_hash_entry(ent) ((struct _bfd_sparc_elf_link_hash_entry *)(ent))
@@ -1039,8 +1018,6 @@ link_hash_newfunc (struct bfd_hash_entry *entry,
       eh = (struct _bfd_sparc_elf_link_hash_entry *) entry;
       eh->dyn_relocs = NULL;
       eh->tls_type = GOT_UNKNOWN;
-      eh->has_got_reloc = 0;
-      eh->has_non_got_reloc = 0;
     }
 
   return entry;
@@ -1337,10 +1314,6 @@ _bfd_sparc_elf_copy_indirect_symbol (struct bfd_link_info *info,
       eind->tls_type = GOT_UNKNOWN;
     }
 
-  /* Copy has_got_reloc and has_non_got_reloc.  */
-  edir->has_got_reloc |= eind->has_got_reloc;
-  edir->has_non_got_reloc |= eind->has_non_got_reloc;
-
   _bfd_elf_link_hash_copy_indirect (info, dir, ind);
 }
 
@@ -1428,7 +1401,6 @@ _bfd_sparc_elf_check_relocs (bfd *abfd, struct bfd_link_info *info,
       unsigned int r_type;
       unsigned int r_symndx;
       struct elf_link_hash_entry *h;
-      struct _bfd_sparc_elf_link_hash_entry *eh;
       Elf_Internal_Sym *isym;
 
       r_symndx = SPARC_ELF_R_SYMNDX (htab, rel->r_info);
@@ -1516,15 +1488,14 @@ _bfd_sparc_elf_check_relocs (bfd *abfd, struct bfd_link_info *info,
 	  }
 
       r_type = sparc_elf_tls_transition (info, abfd, r_type, h == NULL);
-      eh = (struct _bfd_sparc_elf_link_hash_entry *) h;
 
       switch (r_type)
 	{
 	case R_SPARC_TLS_LDM_HI22:
 	case R_SPARC_TLS_LDM_LO10:
 	  htab->tls_ldm_got.refcount += 1;
-          if (eh != NULL)
-            eh->has_got_reloc = 1;
+          if (h != NULL)
+	    h->zero_undefweak &= 0x2;
 	  break;
 
 	case R_SPARC_TLS_LE_HIX22:
@@ -1643,8 +1614,8 @@ _bfd_sparc_elf_check_relocs (bfd *abfd, struct bfd_link_info *info,
 		return FALSE;
 	    }
 
-          if (eh != NULL)
-            eh->has_got_reloc = 1;
+          if (h != NULL)
+	    h->zero_undefweak &= 0x2;
 	  break;
 
 	case R_SPARC_TLS_GD_CALL:
@@ -1714,8 +1685,7 @@ _bfd_sparc_elf_check_relocs (bfd *abfd, struct bfd_link_info *info,
 	  }
 	  h->plt.refcount += 1;
 
-          eh = (struct _bfd_sparc_elf_link_hash_entry *) h;
-          eh->has_got_reloc = 1;
+	  h->zero_undefweak &= 0x2;
 	  break;
 
 	case R_SPARC_PC10:
@@ -1769,8 +1739,8 @@ _bfd_sparc_elf_check_relocs (bfd *abfd, struct bfd_link_info *info,
 	  if (h != NULL)
 	    h->non_got_ref = 1;
 
-          if (eh != NULL && (sec->flags & SEC_CODE) != 0)
-            eh->has_non_got_reloc = 1;
+          if (h != NULL && (sec->flags & SEC_CODE) != 0)
+            h->zero_undefweak |= 0x2;
 
 	r_sparc_plt32:
 	  if (h != NULL && !bfd_link_pic (info))
@@ -1963,8 +1933,7 @@ _bfd_sparc_elf_fixup_symbol (struct bfd_link_info *info,
                              struct elf_link_hash_entry *h)
 {
   if (h->dynindx != -1
-      && UNDEFINED_WEAK_RESOLVED_TO_ZERO (info,
-                                          _bfd_sparc_elf_hash_entry (h)))
+      && UNDEFINED_WEAK_RESOLVED_TO_ZERO (info, h))
     {
       h->dynindx = -1;
       _bfd_elf_strtab_delref (elf_hash_table (info)->dynstr,
@@ -2138,7 +2107,7 @@ allocate_dynrelocs (struct elf_link_hash_entry *h, void * inf)
   BFD_ASSERT (htab != NULL);
 
   eh = (struct _bfd_sparc_elf_link_hash_entry *) h;
-  resolved_to_zero = UNDEFINED_WEAK_RESOLVED_TO_ZERO (info, eh);
+  resolved_to_zero = UNDEFINED_WEAK_RESOLVED_TO_ZERO (info, h);
 
   if ((htab->elf.dynamic_sections_created
        && h->plt.refcount > 0)
@@ -2967,7 +2936,6 @@ _bfd_sparc_elf_relocate_section (bfd *output_bfd,
       reloc_howto_type *howto;
       unsigned long r_symndx;
       struct elf_link_hash_entry *h;
-      struct _bfd_sparc_elf_link_hash_entry *eh;
       Elf_Internal_Sym *sym;
       asection *sec;
       bfd_vma relocation, off;
@@ -3154,9 +3122,8 @@ _bfd_sparc_elf_relocate_section (bfd *output_bfd,
 	    }
 	}
 
-      eh = (struct _bfd_sparc_elf_link_hash_entry *) h;
-      resolved_to_zero = (eh != NULL
-                          && UNDEFINED_WEAK_RESOLVED_TO_ZERO (info, eh));
+      resolved_to_zero = (h != NULL
+                          && UNDEFINED_WEAK_RESOLVED_TO_ZERO (info, h));
 
       switch (r_type)
 	{
@@ -4340,19 +4307,16 @@ _bfd_sparc_elf_finish_dynamic_symbol (bfd *output_bfd,
 {
   struct _bfd_sparc_elf_link_hash_table *htab;
   const struct elf_backend_data *bed;
-  struct _bfd_sparc_elf_link_hash_entry  *eh;
   bfd_boolean local_undefweak;
 
   htab = _bfd_sparc_elf_hash_table (info);
   BFD_ASSERT (htab != NULL);
   bed = get_elf_backend_data (output_bfd);
 
-  eh = (struct _bfd_sparc_elf_link_hash_entry *) h;
-
   /* We keep PLT/GOT entries without dynamic PLT/GOT relocations for
      resolved undefined weak symbols in executable so that their
      references have value 0 at run-time.  */
-  local_undefweak = UNDEFINED_WEAK_RESOLVED_TO_ZERO (info, eh);
+  local_undefweak = UNDEFINED_WEAK_RESOLVED_TO_ZERO (info, h);
 
   if (h->plt.offset != (bfd_vma) -1)
     {
