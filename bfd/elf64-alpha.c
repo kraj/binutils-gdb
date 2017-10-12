@@ -1908,7 +1908,7 @@ elf64_alpha_check_relocs (bfd *abfd, struct bfd_link_info *info,
 	case R_ALPHA_GOTTPREL:
 	  need = NEED_GOT | NEED_GOT_ENTRY;
 	  gotent_flags = ALPHA_ELF_LINK_HASH_TLS_IE;
-	  if (bfd_link_pic (info))
+	  if (!bfd_link_executable (info))
 	    info->flags |= DF_STATIC_TLS;
 	  break;
 
@@ -4722,7 +4722,7 @@ elf64_alpha_relocate_section (bfd *output_bfd, struct bfd_link_info *info,
 		  BFD_ASSERT (elf_hash_table (info)->tls_sec != NULL);
 		  if (r_type == R_ALPHA_GOTDTPREL)
 		    value -= dtp_base;
-		  else if (!bfd_link_pic (info))
+		  else if (bfd_link_executable (info))
 		    value -= tp_base;
 		  else
 		    {
