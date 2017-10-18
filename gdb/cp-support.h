@@ -98,6 +98,9 @@ extern char *cp_func_name (const char *full_name);
 extern gdb::unique_xmalloc_ptr<char> cp_remove_params
   (const char *demanged_name);
 
+extern gdb::unique_xmalloc_ptr<char> cp_remove_params_if_any
+  (const char *qualified, bool completion_mode);
+
 extern struct symbol **make_symbol_overload_list (const char *,
 						  const char *);
 
