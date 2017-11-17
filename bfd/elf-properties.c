@@ -394,6 +394,10 @@ _bfd_elf_link_setup_gnu_properties (struct bfd_link_info *info)
       sec = bfd_get_section_by_name (first_pbfd,
 				     NOTE_GNU_PROPERTY_SECTION_NAME);
 
+      if (sec == NULL)
+	info->callbacks->einfo (_("%P%F: failed to find GNU property section: %s\n"),
+				  NOTE_GNU_PROPERTY_SECTION_NAME);
+
       /* Update stack size in .note.gnu.property with -z stack-size=N
 	 if N > 0.  */
       if (info->stacksize > 0)

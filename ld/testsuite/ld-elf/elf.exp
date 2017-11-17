@@ -352,6 +352,17 @@ if { [istarget *-*-linux*]
     ]
 }
 
+run_cc_link_tests [list \
+    [list \
+	"PR ld/22450" \
+	"-Wl,-r -nostdlib -nostartfiles" \
+	"" \
+	{ pr22450.S } \
+	{{error_output "pr22450.err"}} \
+	"pr22450" \
+    ] \
+]
+
 # <http://www.gnu.org/software/hurd/open_issues/binutils.html#static>
 # Be cautious to not XFAIL for *-*-linux-gnu*, *-*-kfreebsd-gnu*, etc.
 switch -regexp $target_triplet {
