@@ -4887,6 +4887,7 @@ error_free_dyn:
 	  if (!add_needed
 	      && matched
 	      && definition
+	      && !h->root.ldscript_def
 	      && ((dynsym
 		   && h->ref_regular_nonweak
 		   && (old_bfd == NULL

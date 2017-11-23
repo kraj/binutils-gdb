@@ -3,6 +3,8 @@
 # This file is now misnamed, because it supports both 32 bit and 64 bit
 # ELF emulations.
 test -z "${ELFSIZE}" && ELFSIZE=32
+test -z "${ETEXT_NAME}" && ETEXT_NAME=${USER_LABEL_PREFIX}etext
+SCRIPT_TYPE=`echo "type_${SCRIPT_NAME}" | sed -e "s/-/_/g"`
 if [ -z "$MACHINE" ]; then
   OUTPUT_ARCH=${ARCH}
 else
@@ -1284,6 +1286,49 @@ gld${EMULATION_NAME}_after_open (void)
       return;
     }
 
+EOF
+
+# FIXME: Update for other ${SCRIPT_NAME} if PR ld/22471 tests failed.
+case ${SCRIPT_NAME} in
+  arclinux | elf | elf64hppa | elfxtensa | nds32elf)
+    fragment <<EOF
+  if (link_info.linker_script == ${SCRIPT_TYPE})
+    {
+      struct bfd_link_hash_entry *h;
+      const char *symbols[] =
+	{
+	  "__${ETEXT_NAME}",
+	  "_${ETEXT_NAME}",
+	  "${ETEXT_NAME}",
+	  "${USER_LABEL_PREFIX}" "__bss_start",
+	  "${USER_LABEL_PREFIX}" "_edata",
+	  "${USER_LABEL_PREFIX}" "edata",
+	  "${USER_LABEL_PREFIX}" "_end",
+	  "${USER_LABEL_PREFIX}" "end",
+	  NULL
+	};
+      const char **p;
+
+      /* These symbols will be defined by default linker script.  Set
+	 ldscript_def if they are referenced.  */
+      for (p = symbols; *p != NULL; p++)
+	{
+	  h = bfd_link_hash_lookup (link_info.hash, *p, FALSE, FALSE,
+				    FALSE);
+	  if (h != NULL
+	      && (h->type == bfd_link_hash_new
+		  || h->type == bfd_link_hash_undefined
+		  || h->type == bfd_link_hash_undefweak
+		  || h->type == bfd_link_hash_common))
+	    h->ldscript_def = 1;
+	}
+    }
+
+EOF
+    ;;
+esac
+
+fragment <<EOF
   if (!link_info.traditional_format)
     {
       bfd *elfbfd = NULL;
@@ -2350,7 +2395,11 @@ sc="-f stringify.sed"
 fragment <<EOF
 {
   *isfile = 0;
+EOF
 
+echo "  link_info.linker_script = ${SCRIPT_TYPE};" >> e${EMULATION_NAME}.c
+
+fragment <<EOF
   if (bfd_link_relocatable (&link_info) && config.build_constructors)
     return
 EOF
@@ -2409,7 +2458,11 @@ else
 fragment <<EOF
 {
   *isfile = 1;
+EOF
 
+echo "  link_info.linker_script = ${SCRIPT_TYPE};" >> e${EMULATION_NAME}.c
+
+fragment <<EOF
   if (bfd_link_relocatable (&link_info) && config.build_constructors)
     return "ldscripts/${EMULATION_NAME}.xu";
   else if (bfd_link_relocatable (&link_info))

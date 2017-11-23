@@ -296,6 +296,45 @@ enum output_type
   type_dll,
 };
 
+/* Types of linker script.  */
+enum linker_script_type
+{
+  type_unknown,
+  type_armbpabi,	/* From armbpabi.sc.  */
+  type_arclinux,	/* From arclinux.sc.  */
+  type_avr,		/* From avr.sc.  */
+  type_elf,		/* From elf.sc.  */
+  type_elf_chaos,	/* From elf_chaos.sc.  */
+  type_elf32crx,	/* From elf32crx.sc.  */
+  type_elfarc,		/* From elfarc.sc.  */
+  type_elfarcv2,	/* From elfarcv2.sc.  */
+  type_elf32cr16,	/* From elf32cr16.sc.  */
+  type_elf32cr16c,	/* From elf32cr16c.sc.  */
+  type_elf32sh_symbian,	/* From elf32sh-symbian.sc.  */
+  type_elf32xc16x,	/* From elf32xc16x.sc.  */
+  type_elf32xc16xl,	/* From elf32xc16xl.sc.  */
+  type_elf32xc16xs,	/* From elf32xc16xs.sc.  */
+  type_elf64hppa,	/* From elf64hppa.sc.  */
+  type_elfd10v,		/* From elfd10v.sc.  */
+  type_elfi370,		/* From elfi370.sc.  */
+  type_elfm68hc11,	/* From elfm68hc11.sc.  */
+  type_elfm68hc12,	/* From elfm68hc12.sc.  */
+  type_elfmicroblaze,	/* From elfmicroblaze.sc.  */
+  type_elfxgate,	/* From elfxgate.sc.  */
+  type_elfxtensa,	/* From elfxtensa.sc.  */
+  type_epiphany_4x4,	/* From epiphany_4x4.sc.  */
+  type_hppaelf,		/* From hppaelf.sc.  */
+  type_mep,		/* From mep.sc.  */
+  type_nds32elf,	/* From nds32elf.sc.  */
+  type_nw,		/* From nw.sc.  */
+  type_pru,		/* From pru.sc.  */
+  type_psos,		/* From psos.sc.  */
+  type_v850,		/* From v850.sc.  */
+  type_v850_rh850,	/* From v850_rh850.sc.  */
+  type_visium,		/* From visium.sc.  */
+  type_xstormy16	/* From xstormy16.sc.  */
+};
+
 #define bfd_link_pde(info)	   ((info)->type == type_pde)
 #define bfd_link_dll(info)	   ((info)->type == type_dll)
 #define bfd_link_relocatable(info) ((info)->type == type_relocatable)
@@ -491,6 +530,9 @@ struct bfd_link_info
 
   /* TRUE if common symbols should be treated as undefined.  */
   unsigned int inhibit_common_definition : 1;
+
+  /* Type of linker script used.  */
+  ENUM_BITFIELD (linker_script_type) linker_script : 6;
 
   /* The 1-byte NOP for x86 call instruction.  */
   char call_nop_byte;
