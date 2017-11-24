@@ -17910,6 +17910,7 @@ process_notes_at (Filedata *           filedata,
   Elf_External_Note * external;
   char * end;
   bfd_boolean res = TRUE;
+  bfd_vma align;
 
   if (length <= 0)
     return FALSE;
@@ -17936,6 +17937,15 @@ process_notes_at (Filedata *           filedata,
   else
     printf (_("\nDisplaying notes found at file offset 0x%08lx with length 0x%08lx:\n"),
 	    (unsigned long) offset, (unsigned long) length);
+
+  /* NB: Some note sections may have alignment value of 0 or 1.  gABI
+     specifies that notes should be aligned to 4 bytes in 32-bit
+     objects and to 8 bytes in 64-bit objects.  As a Linux extension,
+     we also support 4 byte alignment in 64-bit objects.  If section
+     alignment is less than 4, we treate alignment as 4 bytes.   */
+  align = section->sh_addralign;
+  if (align < 4)
+    align = 4;
 
   printf (_("  %-20s %10s\tDescription\n"), _("Owner"), _("Data size"));
 
@@ -17971,11 +17981,11 @@ process_notes_at (Filedata *           filedata,
 	  inote.descsz   = BYTE_GET (external->descsz);
 	  inote.descdata = ((char *) external
 			    + ELF_NOTE_DESC_OFFSET (inote.namesz,
-						    section->sh_addralign));
+						    align));
 	  inote.descpos  = offset + (inote.descdata - (char *) pnotes);
 	  next = ((char *) external
 		  + ELF_NOTE_NEXT_OFFSET (inote.namesz, inote.descsz,
-					  section->sh_addralign));
+					  align));
 	}
       else
 	{
