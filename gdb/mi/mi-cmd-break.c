@@ -189,7 +189,8 @@ mi_cmd_break_insert_1 (int dprintf, const char *command, char **argv, int argc)
       IGNORE_COUNT_OPT, THREAD_OPT, PENDING_OPT, DISABLE_OPT,
       TRACEPOINT_OPT,
       EXPLICIT_SOURCE_OPT, EXPLICIT_FUNC_OPT,
-      EXPLICIT_LABEL_OPT, EXPLICIT_LINE_OPT
+      EXPLICIT_LABEL_OPT, EXPLICIT_LINE_OPT,
+      QUALIFIED_OPT,
     };
   static const struct mi_opt opts[] =
   {
@@ -205,6 +206,7 @@ mi_cmd_break_insert_1 (int dprintf, const char *command, char **argv, int argc)
     {"-function", EXPLICIT_FUNC_OPT, 1},
     {"-label", EXPLICIT_LABEL_OPT, 1},
     {"-line", EXPLICIT_LINE_OPT, 1},
+    {"-qualified", QUALIFIED_OPT, 0},
     { 0, 0, 0 }
   };
 
@@ -262,6 +264,9 @@ mi_cmd_break_insert_1 (int dprintf, const char *command, char **argv, int argc)
 	case EXPLICIT_LINE_OPT:
 	  is_explicit = 1;
 	  explicit_loc.line_offset = linespec_parse_line_offset (oarg);
+	  break;
+	case QUALIFIED_OPT:
+	  explicit_loc.func_name_match_type = symbol_name_match_type::FULL;
 	  break;
 	}
     }
@@ -337,8 +342,9 @@ mi_cmd_break_insert_1 (int dprintf, const char *command, char **argv, int argc)
     }
   else
     {
-      location = string_to_event_location_basic (&address, current_language,
-						 symbol_name_match_type::WILD);
+      location
+	= string_to_event_location_basic (&address, current_language,
+					  explicit_loc.func_name_match_type);
       if (*address)
 	error (_("Garbage '%s' at end of location"), address);
     }
