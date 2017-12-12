@@ -946,23 +946,36 @@ c_print_type_struct_field_offset (struct type *type, unsigned int field_idx,
 	fprintf_filtered (stream, "/* XXX %2u-byte hole  */\n", hole_byte);
     }
 
-  /* The position of the field, relative to the beginning of the
-     struct.  Assume this number will have 4 digits.  */
-  fprintf_filtered (stream, "/* %4u",
-		    (bitpos + offset_bitpos) / TARGET_CHAR_BIT);
-
   if (TYPE_FIELD_PACKED (type, field_idx))
     {
       /* We're dealing with a bitfield.  Print how many bits are left
 	 to be used.  */
       fieldsize_bit = TYPE_FIELD_BITSIZE (type, field_idx);
-      fprintf_filtered (stream, ":%u",
-			fieldsize_byte * TARGET_CHAR_BIT - fieldsize_bit);
+
+      LONGEST container_bitsize = TYPE_LENGTH (ftype) * TARGET_CHAR_BIT;
+
+      unsigned int v_bitpos;
+      if ((bitpos % container_bitsize) + fieldsize_bit <= container_bitsize)
+	v_bitpos = bitpos % container_bitsize;
+      else
+	v_bitpos = bitpos % TARGET_CHAR_BIT;
+      unsigned int byte_offset = (bitpos - v_bitpos) / TARGET_CHAR_BIT;
+
+      /* The position of the field, relative to the beginning of the
+	 struct, and remaining bits.  */
+      fprintf_filtered (stream, "/* %4u:%2u",
+			byte_offset,
+			((byte_offset + fieldsize_byte) * TARGET_CHAR_BIT
+			 - fieldsize_bit - bitpos));
     }
   else
     {
+      /* The position of the field, relative to the beginning of the
+	 struct.  */
+      fprintf_filtered (stream, "/* %4u   ",
+			(bitpos + offset_bitpos) / TARGET_CHAR_BIT);
+
       fieldsize_bit = fieldsize_byte * TARGET_CHAR_BIT;
-      fprintf_filtered (stream, "   ");
     }
 
   fprintf_filtered (stream, "   |  %4u */", fieldsize_byte);
