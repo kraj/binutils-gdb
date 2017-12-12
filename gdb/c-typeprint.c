@@ -32,6 +32,14 @@
 #include "cp-abi.h"
 #include "cp-support.h"
 
+/* When printing the offsets of a struct and its fields (i.e., 'ptype
+   /o'; type_print_options::print_offsets), we use this many
+   characters when printing the offset information at the beginning of
+   the line.  This is needed in order to generate the correct amount
+   of whitespaces when no offset info should be printed for a certain
+   field.  */
+#define OFFSET_SPC_LEN 23
+
 /* A list of access specifiers used for printing.  */
 
 enum access_specifier
@@ -836,21 +844,36 @@ c_type_print_template_args (const struct type_print_options *flags,
     fputs_filtered (_("] "), stream);
 }
 
+/* Use 'print_spaces_filtered', but take into consideration the
+   type_print_options FLAGS in order to determine how many whitespaces
+   will be printed.  */
+
+static void
+print_spaces_filtered_with_print_options (int level, struct ui_file *stream,
+					const struct type_print_options *flags)
+{
+  if (!flags->print_offsets)
+    print_spaces_filtered (level, stream);
+  else
+    print_spaces_filtered (level + OFFSET_SPC_LEN, stream);
+}
+
 /* Output an access specifier to STREAM, if needed.  LAST_ACCESS is the
    last access specifier output (typically returned by this function).  */
 
 static enum access_specifier
 output_access_specifier (struct ui_file *stream,
 			 enum access_specifier last_access,
-			 int level, bool is_protected, bool is_private)
+			 int level, bool is_protected, bool is_private,
+			 const struct type_print_options *flags)
 {
   if (is_protected)
     {
       if (last_access != s_protected)
 	{
 	  last_access = s_protected;
-	  fprintfi_filtered (level + 2, stream,
-			     "protected:\n");
+	  print_spaces_filtered_with_print_options (level + 2, stream, flags);
+	  fprintf_filtered (stream, "protected:\n");
 	}
     }
   else if (is_private)
@@ -858,8 +881,8 @@ output_access_specifier (struct ui_file *stream,
       if (last_access != s_private)
 	{
 	  last_access = s_private;
-	  fprintfi_filtered (level + 2, stream,
-			     "private:\n");
+	  print_spaces_filtered_with_print_options (level + 2, stream, flags);
+	  fprintf_filtered (stream, "private:\n");
 	}
     }
   else
@@ -867,12 +890,84 @@ output_access_specifier (struct ui_file *stream,
       if (last_access != s_public)
 	{
 	  last_access = s_public;
-	  fprintfi_filtered (level + 2, stream,
-			     "public:\n");
+	  print_spaces_filtered_with_print_options (level + 2, stream, flags);
+	  fprintf_filtered (stream, "public:\n");
 	}
     }
 
   return last_access;
+}
+
+/* Print information about the offset of TYPE inside its union.
+   FIELD_IDX represents the index of this TYPE inside the union.  We
+   just print the type size, and nothing more.
+
+   The output is strongly based on pahole(1).  */
+
+static void
+c_print_type_union_field_offset (struct type *type, unsigned int field_idx,
+				 struct ui_file *stream)
+{
+  struct type *ftype = check_typedef (TYPE_FIELD_TYPE (type, field_idx));
+
+  fprintf_filtered (stream, "/*              %4u */", TYPE_LENGTH (ftype));
+}
+
+/* Print information about the offset of TYPE inside its struct.
+   FIELD_IDX represents the index of this TYPE inside the struct, and
+   ENDPOS is the end position of the previous type (this is how we
+   calculate whether there are holes in the struct).  At the end,
+   ENDPOS is updated.
+
+   The output is strongly based on pahole(1).  */
+
+static void
+c_print_type_struct_field_offset (struct type *type, unsigned int field_idx,
+				  unsigned int *endpos, struct ui_file *stream,
+				  unsigned int offset_bitpos)
+{
+  struct type *ftype = check_typedef (TYPE_FIELD_TYPE (type, field_idx));
+  unsigned int bitpos = TYPE_FIELD_BITPOS (type, field_idx);
+  unsigned int fieldsize_byte = TYPE_LENGTH (ftype);
+  unsigned int fieldsize_bit;
+
+  if (*endpos > 0 && *endpos < bitpos)
+    {
+      /* If ENDPOS is smaller than the current type's bitpos, it means
+	 there's a hole in the struct, so we report it here.  */
+      unsigned int hole = bitpos - *endpos;
+      unsigned int hole_byte = hole / TARGET_CHAR_BIT;
+      unsigned int hole_bit = hole % TARGET_CHAR_BIT;
+
+      if (hole_bit > 0)
+	fprintf_filtered (stream, "/* XXX %2u-bit hole   */\n", hole_bit);
+
+      if (hole_byte > 0)
+	fprintf_filtered (stream, "/* XXX %2u-byte hole  */\n", hole_byte);
+    }
+
+  /* The position of the field, relative to the beginning of the
+     struct.  Assume this number will have 4 digits.  */
+  fprintf_filtered (stream, "/* %4u",
+		    (bitpos + offset_bitpos) / TARGET_CHAR_BIT);
+
+  if (TYPE_FIELD_PACKED (type, field_idx))
+    {
+      /* We're dealing with a bitfield.  Print how many bits are left
+	 to be used.  */
+      fieldsize_bit = TYPE_FIELD_BITSIZE (type, field_idx);
+      fprintf_filtered (stream, ":%u",
+			fieldsize_byte * TARGET_CHAR_BIT - fieldsize_bit);
+    }
+  else
+    {
+      fieldsize_bit = fieldsize_byte * TARGET_CHAR_BIT;
+      fprintf_filtered (stream, "   ");
+    }
+
+  fprintf_filtered (stream, "   |  %4u */", fieldsize_byte);
+
+  *endpos = bitpos + fieldsize_bit;
 }
 
 /* Return true is an access label (i.e., "public:", "private:",
@@ -1083,6 +1178,8 @@ c_type_print_base_struct_union (struct type *type, struct ui_file *stream,
 
       int len = TYPE_NFIELDS (type);
       vptr_fieldno = get_vptr_fieldno (type, &basetype);
+      unsigned int endpos = 0;
+
       for (int i = TYPE_N_BASECLASSES (type); i < len; i++)
 	{
 	  QUIT;
@@ -1099,18 +1196,51 @@ c_type_print_base_struct_union (struct type *type, struct ui_file *stream,
 	      section_type = output_access_specifier
 		(stream, section_type, level,
 		 TYPE_FIELD_PROTECTED (type, i),
-		 TYPE_FIELD_PRIVATE (type, i));
+		 TYPE_FIELD_PRIVATE (type, i), flags);
+	    }
+
+	  bool is_static = field_is_static (&TYPE_FIELD (type, i));
+
+	  if (flags->print_offsets)
+	    {
+	      if (!is_static)
+		{
+		  if (TYPE_CODE (type) == TYPE_CODE_STRUCT)
+		    c_print_type_struct_field_offset (type, i, &endpos, stream,
+						      flags->offset_bitpos);
+		  else if (TYPE_CODE (type) == TYPE_CODE_UNION)
+		    c_print_type_union_field_offset (type, i, stream);
+		}
+	      else
+		print_spaces_filtered (OFFSET_SPC_LEN, stream);
 	    }
 
 	  print_spaces_filtered (level + 4, stream);
-	  if (field_is_static (&TYPE_FIELD (type, i)))
+	  if (is_static)
 	    fprintf_filtered (stream, "static ");
+
+	  int newshow = show - 1;
+
+	  if (flags->print_offsets
+	      && (TYPE_CODE (TYPE_FIELD_TYPE (type, i)) == TYPE_CODE_STRUCT
+		  || TYPE_CODE (TYPE_FIELD_TYPE (type, i)) == TYPE_CODE_UNION))
+	    {
+	      /* If we're printing offsets and this field's type is
+		 either a struct or an union, then we're interested in
+		 expanding it.  */
+	      ++newshow;
+
+	      /* Make sure we carry our offset when we expand the
+		 struct.  */
+	      local_flags.offset_bitpos
+		= flags->offset_bitpos + TYPE_FIELD_BITPOS (type, i);
+	    }
+
 	  c_print_type (TYPE_FIELD_TYPE (type, i),
 			TYPE_FIELD_NAME (type, i),
-			stream, show - 1, level + 4,
+			stream, newshow, level + 4,
 			&local_flags);
-	  if (!field_is_static (&TYPE_FIELD (type, i))
-	      && TYPE_FIELD_PACKED (type, i))
+	  if (!is_static && TYPE_FIELD_PACKED (type, i))
 	    {
 	      /* It is a bitfield.  This code does not attempt
 		 to look at the bitpos and reconstruct filler,
@@ -1173,9 +1303,10 @@ c_type_print_base_struct_union (struct type *type, struct ui_file *stream,
 	      section_type = output_access_specifier
 		(stream, section_type, level,
 		 TYPE_FN_FIELD_PROTECTED (f, j),
-		 TYPE_FN_FIELD_PRIVATE (f, j));
+		 TYPE_FN_FIELD_PRIVATE (f, j), flags);
 
-	      print_spaces_filtered (level + 4, stream);
+	      print_spaces_filtered_with_print_options (level + 4, stream,
+							flags);
 	      if (TYPE_FN_FIELD_VIRTUAL_P (f, j))
 		fprintf_filtered (stream, "virtual ");
 	      else if (TYPE_FN_FIELD_STATIC_P (f, j))
@@ -1194,9 +1325,16 @@ c_type_print_base_struct_union (struct type *type, struct ui_file *stream,
 		       && !is_full_physname_constructor  /* " " */
 		       && !is_type_conversion_operator (type, i, j))
 		{
+		  unsigned int old_po = local_flags.print_offsets;
+
+		  /* Temporarily disable print_offsets, because it
+		     would mess with indentation.  */
+		  local_flags.print_offsets = 0;
 		  c_print_type (TYPE_TARGET_TYPE (TYPE_FN_FIELD_TYPE (f, j)),
 				"", stream, -1, 0,
 				&local_flags);
+		  local_flags.print_offsets = old_po;
+
 		  fputs_filtered (" ", stream);
 		}
 	      if (TYPE_FN_FIELD_STUB (f, j))
@@ -1277,9 +1415,16 @@ c_type_print_base_struct_union (struct type *type, struct ui_file *stream,
 
 	  for (int i = 0; i < TYPE_NESTED_TYPES_COUNT (type); ++i)
 	    {
-	      print_spaces_filtered (level + 4, stream);
+	      unsigned int old_po = semi_local_flags.print_offsets;
+
+	      /* Temporarily disable print_offsets, because it
+		 would mess with indentation.  */
+	      print_spaces_filtered_with_print_options (level + 4, stream,
+							flags);
+	      semi_local_flags.print_offsets = 0;
 	      c_print_type (TYPE_NESTED_TYPES_FIELD_TYPE (type, i),
 			    "", stream, show, level + 4, &semi_local_flags);
+	      semi_local_flags.print_offsets = old_po;
 	      fprintf_filtered (stream, ";\n");
 	    }
 	}
@@ -1305,10 +1450,16 @@ c_type_print_base_struct_union (struct type *type, struct ui_file *stream,
 		  section_type = output_access_specifier
 		    (stream, section_type, level,
 		     TYPE_TYPEDEF_FIELD_PROTECTED (type, i),
-		     TYPE_TYPEDEF_FIELD_PRIVATE (type, i));
+		     TYPE_TYPEDEF_FIELD_PRIVATE (type, i), flags);
 		}
-	      print_spaces_filtered (level + 4, stream);
+	      print_spaces_filtered_with_print_options (level + 4, stream,
+							flags);
 	      fprintf_filtered (stream, "typedef ");
+
+	      unsigned int old_po = semi_local_flags.print_offsets;
+	      /* Temporarily disable print_offsets, because it
+		 would mess with indentation.  */
+	      semi_local_flags.print_offsets = 0;
 
 	      /* We want to print typedefs with substitutions
 		 from the template parameters or globally-known
@@ -1317,12 +1468,20 @@ c_type_print_base_struct_union (struct type *type, struct ui_file *stream,
 			    TYPE_TYPEDEF_FIELD_NAME (type, i),
 			    stream, show - 1, level + 4,
 			    &semi_local_flags);
+	      semi_local_flags.print_offsets = old_po;
 	      fprintf_filtered (stream, ";\n");
 	    }
 	}
 
+      if (flags->print_offsets && level > 0)
+	print_spaces_filtered (OFFSET_SPC_LEN, stream);
+
       fprintfi_filtered (level, stream, "}");
     }
+
+  if (show > 0 && flags->print_offsets)
+    fprintf_filtered (stream, " /* total size: %4u bytes */",
+		      TYPE_LENGTH (type));
 
   do_cleanups (local_cleanups);
 }

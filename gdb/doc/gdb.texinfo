@@ -17211,6 +17211,10 @@ names are substituted when printing other types.
 @item T
 Print typedefs defined in the class.  This is the default, but the flag
 exists in case you change the default with @command{set print type typedefs}.
+
+@item o
+Print the offsets and sizes of fields in a struct, similar to what the
+@command{pahole} tool does.
 @end table
 
 @kindex ptype

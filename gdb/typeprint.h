@@ -35,8 +35,17 @@ struct type_print_options
   /* True means print typedefs in a class.  */
   unsigned int print_typedefs : 1;
 
+  /* True means to print offsets, a la 'pahole'.  */
+  unsigned int print_offsets : 1;
+
   /* The number of nested type definitions to print.  -1 == all.  */
   int print_nested_type_limit;
+
+  /* The offset to be applied to bitpos when PRINT_OFFSETS is true.
+     This is needed for when we are printing nested structs and want
+     to make sure that the printed offset for each field carries off
+     the offset of the outter struct.  */
+  unsigned int offset_bitpos;
 
   /* If not NULL, a local typedef hash table used when printing a
      type.  */

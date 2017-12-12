@@ -1,0 +1,158 @@
+# This testcase is part of GDB, the GNU debugger.
+
+# Copyright 2017 Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+standard_testfile .cc
+
+# Test only works on x86_64 LP64 targets.  That's how we guarantee
+# that the expected holes will be present in the struct.
+if { !([istarget "x86_64-*-*"] && [is_lp64_target]) } {
+    untested "test work only on x86_64 lp64"
+    return 0
+}
+
+if { [prepare_for_testing "failed to prepare" $testfile $srcfile \
+	  { debug c++ optimize=-O0 }] } {
+    return -1
+}
+
+# Test general offset printing, ctor/dtor printing, union, formatting.
+gdb_test "ptype /o struct abc" \
+    [multi_line \
+"type = struct abc {" \
+"/\\\* offset    |  size \\\*/" \
+"                         public:" \
+"/\\\*    8      |     8 \\\*/    void \\\*field1;" \
+"/\\\*   16:31   |     4 \\\*/    unsigned int field2 : 1;" \
+"/\\\* XXX  7-bit hole   \\\*/" \
+"/\\\* XXX  3-byte hole  \\\*/" \
+"/\\\*   20      |     4 \\\*/    int field3;" \
+"/\\\*   24      |     1 \\\*/    char field4;" \
+"/\\\* XXX  7-byte hole  \\\*/" \
+"/\\\*   32      |     8 \\\*/    uint64_t field5;" \
+"/\\\*   40      |     8 \\\*/    union {" \
+"/\\\*                 8 \\\*/        void \\\*field6;" \
+"/\\\*                 4 \\\*/        int field7;" \
+"                           } /\\\* total size:    8 bytes \\\*/ field8;" \
+"" \
+"                           abc\\(void\\);" \
+"                           ~abc\\(\\);" \
+"} /\\\* total size:   48 bytes \\\*/"] \
+    "ptype offset struct abc"
+
+# Test nested structs.
+gdb_test "ptype /o struct pqr" \
+    [multi_line \
+"type = struct pqr {" \
+"/\\\* offset    |  size \\\*/" \
+"/\\\*    0      |     4 \\\*/    int f1;" \
+"/\\\* XXX  4-byte hole  \\\*/" \
+"/\\\*    8      |    16 \\\*/    struct xyz {" \
+"/\\\*    8      |     4 \\\*/        int f1;" \
+"/\\\*   12      |     1 \\\*/        char f2;" \
+"/\\\* XXX  3-byte hole  \\\*/" \
+"/\\\*   16      |     8 \\\*/        void \\\*f3;" \
+"/\\\*   24      |    24 \\\*/        struct tuv {" \
+"/\\\*   24      |     4 \\\*/            int a1;" \
+"/\\\* XXX  4-byte hole  \\\*/" \
+"/\\\*   32      |     8 \\\*/            char *a2;" \
+"/\\\*   40      |     4 \\\*/            int a3;" \
+"                               } /\\\* total size:   24 bytes \\\*/ f4;" \
+"                           } /\\\* total size:   40 bytes \\\*/ ff2;" \
+"/\\\*   48      |     1 \\\*/    char ff3;" \
+"} /\\\* total size:   56 bytes \\\*/"] \
+    "ptype offset struct pqr"
+
+# Test that the offset is properly reset when we are printing an union
+# and go inside two inner structs.
+# This also tests a struct inside a struct inside an union.
+gdb_test "ptype /o union qwe" \
+    [multi_line \
+"/\\\* offset    |  size \\\*/" \
+"/\\\*                24 \\\*/    struct tuv {" \
+"/\\\*    0      |     4 \\\*/        int a1;" \
+"/\\\* XXX  4-byte hole  \\\*/" \
+"/\\\*    8      |     8 \\\*/        char \\\*a2;" \
+"/\\\*   16      |     4 \\\*/        int a3;" \
+"                           } /\\\* total size:   24 bytes \\\*/ fff1;" \
+"/\\\*                40 \\\*/    struct xyz {" \
+"/\\\*    0      |     4 \\\*/        int f1;" \
+"/\\\*    4      |     1 \\\*/        char f2;" \
+"/\\\* XXX  3-byte hole  \\\*/" \
+"/\\\*    8      |     8 \\\*/        void \\\*f3;" \
+"/\\\*   16      |    24 \\\*/        struct tuv {" \
+"/\\\*   16      |     4 \\\*/            int a1;" \
+"/\\\* XXX  4-byte hole  \\\*/" \
+"/\\\*   24      |     8 \\\*/            char \\\*a2;" \
+"/\\\*   32      |     4 \\\*/            int a3;" \
+"                               } /\\\* total size:   24 bytes \\\*/ f4;" \
+"                           } /\\\* total size:   40 bytes \\\*/ fff2;" \
+"} /\\\* total size:   40 bytes \\\*/"] \
+    "ptype offset union qwe"
+
+# Test printing a struct that contains an union, and that also
+# contains a struct.
+gdb_test "ptype /o struct poi" \
+    [multi_line \
+"/\\\* offset    |  size \\\*/" \
+"/\\\*    0      |     4 \\\*/    int f1;" \
+"/\\\* XXX  4-byte hole  \\\*/" \
+"/\\\*    8      |    40 \\\*/    union qwe {" \
+"/\\\*                24 \\\*/        struct tuv {" \
+"/\\\*    8      |     4 \\\*/            int a1;" \
+"/\\\* XXX  4-byte hole  \\\*/" \
+"/\\\*   16      |     8 \\\*/            char \\\*a2;" \
+"/\\\*   24      |     4 \\\*/            int a3;" \
+"                               } /\\\* total size:   24 bytes \\\*/ fff1;" \
+"/\\\*                40 \\\*/        struct xyz {" \
+"/\\\*    8      |     4 \\\*/            int f1;" \
+"/\\\*   12      |     1 \\\*/            char f2;" \
+"/\\\* XXX  3-byte hole  \\\*/" \
+"/\\\*   16      |     8 \\\*/            void \\\*f3;" \
+"/\\\*   24      |    24 \\\*/            struct tuv {" \
+"/\\\*   24      |     4 \\\*/                int a1;" \
+"/\\\* XXX  4-byte hole  \\\*/" \
+"/\\\*   32      |     8 \\\*/                char \\\*a2;" \
+"/\\\*   40      |     4 \\\*/                int a3;" \
+"                                   } /\\\* total size:   24 bytes \\\*/ f4;" \
+"                               } /\\\* total size:   40 bytes \\\*/ fff2;" \
+"                           } /\\\* total size:   40 bytes \\\*/ f2;" \
+"/\\\*   48      |     2 \\\*/    uint16_t f3;" \
+"/\\\* XXX  6-byte hole  */" \
+"/\\\*   56      |    56 \\\*/    struct pqr {" \
+"/\\\*   56      |     4 \\\*/        int ff1;" \
+"/\\\* XXX  4-byte hole  \\\*/" \
+"/\\\*   64      |    40 \\\*/        struct xyz {" \
+"/\\\*   64      |     4 \\\*/            int f1;" \
+"/\\\*   68      |     1 \\\*/            char f2;" \
+"/\\\* XXX  3-byte hole  \\\*/" \
+"/\\\*   72      |     8 \\\*/            void \\\*f3;" \
+"/\\\*   80      |    24 \\\*/            struct tuv {" \
+"/\\\*   80      |     4 \\\*/                int a1;" \
+"/\\\* XXX  4-byte hole  \\\*/" \
+"/\\\*   88      |     8 \\\*/                char \\\*a2;" \
+"/\\\*   96      |     4 \\\*/                int a3;" \
+"                                   } /\\\* total size:   24 bytes \\\*/ f4;" \
+"                               } /\\\* total size:   40 bytes \\\*/ ff2;" \
+"/\\\*  104      |     1 \\\*/        char ff3;" \
+"                           } /\\\* total size:   56 bytes \\\*/ f4;" \
+"} /\\\* total size:  112 bytes \\\*/"] \
+    "ptype offset struct poi"
+
+# Test that we don't print any header when issuing a "ptype /o" on a
+# non-struct, non-union, non-class type.
+gdb_test "ptype /o int" "int" "ptype offset int"
+gdb_test "ptype /o uint8_t" "char" "ptype offset uint8_t"
