@@ -894,7 +894,7 @@ class General_options
 
   DEFINE_string(fuse_ld, options::ONE_DASH, '\0', "",
 		N_("Ignored for GCC linker option compatibility"),
-		NULL);
+		N_("[gold,bfd]"));
 
   // g
 
@@ -1101,12 +1101,16 @@ class General_options
 	      NULL, N_("(ARM only) Ignore for backward compatibility"));
 
   DEFINE_var(plt_align, options::TWO_DASHES, '\0', 0, "5",
-	     N_("(PowerPC64 only) Align PLT call stubs to fit cache lines"),
+	     N_("(PowerPC only) Align PLT call stubs to fit cache lines"),
 	     N_("[=P2ALIGN]"), true, int, int, options::parse_uint, false);
 
   DEFINE_bool(plt_localentry, options::TWO_DASHES, '\0', false,
 	      N_("(PowerPC64 only) Optimize calls to ELFv2 localentry:0 functions"),
 	      N_("(PowerPC64 only) Don't optimize ELFv2 calls"));
+
+  DEFINE_bool(speculate_indirect_jumps, options::TWO_DASHES, '\0', true,
+	      N_("(PowerPC only) PLT call stubs without speculation barrier"),
+	      N_("(PowerPC only) PLT call stubs with speculation barrier"));
 
   DEFINE_bool(plt_static_chain, options::TWO_DASHES, '\0', false,
 	      N_("(PowerPC64 only) PLT call stubs should load r11"),

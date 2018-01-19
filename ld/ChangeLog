@@ -1,3 +1,94 @@
+2018-01-18  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* testsuite/ld-elf/group1.d: Also xfail Solaris.
+
+2018-01-18  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* testsuite/ld-elf/linkinfo1a.d: Updated for slightly different
+	PLT/GOT order/layout for Solaris/x86 targets.
+	* testsuite/ld-elf/linkinfo1b.d: Likewise.
+
+2018-01-18  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/22728
+	* emultempl/solaris2.em (elf_solaris2_after_allocation): Fold
+	into ...
+	(elf_solaris2_before_allocation): This.
+	(LDEMUL_AFTER_ALLOCATION): Removed.
+
+2018-01-18  Alan Modra  <amodra@gmail.com>
+
+	* emultempl/ppc32elf.em: Support optional --plt-align arg.
+	* emultempl/ppc64elf.em: Support negative --plt-align arg.
+
+2018-01-17  Alan Modra  <amodra@gmail.com>
+
+	* emultempl/ppc32elf.em (params): Init new field.
+	(OPTION_SPECULATE_INDIRECT_JUMPS): Define.
+	(OPTION_NO_SPECULATE_INDIRECT_JUMPS): Define.
+	(PARSE_AND_LIST_LONGOPTS): Handle new options.
+	(PARSE_AND_LIST_ARGS_CASES): Likewise.
+	(PARSE_AND_LIST_OPTIONS): Likewise.
+	* emultempl/ppc64elf.em (params): Init new field.
+	(OPTION_SPECULATE_INDIRECT_JUMPS): Define.
+	(OPTION_NO_SPECULATE_INDIRECT_JUMPS): Define.
+	(PARSE_AND_LIST_LONGOPTS): Handle --speculate-indirect-jumps.
+	(PARSE_AND_LIST_OPTIONS): Likewise.
+	(PARSE_AND_LIST_ARGS_CASES): Likewise.
+	* ld.texinfo (--no-plt-thread-safe): Correct itemx.
+	(--speculate-indirect-jumps): Document.
+	* testsuite/ld-powerpc/elfv2exe.d,
+	* testsuite/ld-powerpc/elfv2so.d,
+	* testsuite/ld-powerpc/relbrlt.d,
+	* testsuite/ld-powerpc/powerpc.exp: Disable plt alignment and
+	speculation barriers on various tests.
+
+2018-01-17  Alan Modra  <amodra@gmail.com>
+
+	* emultempl/ppc32elf.em (params): Init new field.
+	(enum ppc32_opt): New enum to define OPTION_* values.  Add
+	OPTION_PLT_ALIGN and OPTION_NO_PLT_ALIGN.
+	(PARSE_AND_LIST_LONGOPTS): Handle new options.
+	(PARSE_AND_LIST_ARGS_CASES): Likewise.
+	(PARSE_AND_LIST_OPTIONS): Likewise.  Break up help output.
+	* emultempl/ppc64elf.em (ppc_add_stub_section): Init alignment
+	correctly for negative --plt-stub-align.
+	* testsuite/ld-powerpc/elfv2exe.d,
+	* testsuite/ld-powerpc/elfv2so.d,
+	* testsuite/ld-powerpc/relbrlt.d,
+	* testsuite/ld-powerpc/relbrlt.s,
+	* testsuite/ld-powerpc/tlsexe.d,
+	* testsuite/ld-powerpc/tlsexe.r,
+	* testsuite/ld-powerpc/tlsexe32.d,
+	* testsuite/ld-powerpc/tlsexe32.g,
+	* testsuite/ld-powerpc/tlsexe32.r,
+	* testsuite/ld-powerpc/tlsexetoc.d,
+	* testsuite/ld-powerpc/tlsexetoc.r,
+	* testsuite/ld-powerpc/tlsopt5_32.d,
+	* testsuite/ld-powerpc/tlsso.d,
+	* testsuite/ld-powerpc/tlstocso.d: Update for changed stub order.
+
+2018-01-16  Nick Clifton  <nickc@redhat.com>
+
+	* po/pt_BR.po: Updated Brazilian Portugese translation.
+
+2018-01-15  Nick Clifton  <nickc@redhat.com>
+
+	* po/uk.po: Updated Ukranian translation.
+
+2018-01-13  Nick Clifton  <nickc@redhat.com>
+
+	* po/ld.pot: Regenerated.
+
+2018-01-13  Nick Clifton  <nickc@redhat.com>
+
+	* configure: Regenerate.
+
+2018-01-13  Nick Clifton  <nickc@redhat.com>
+
+	2.30 branch created.
+	* NEWS: Add marker for 2.30.
+
 2018-01-12  Alan Modra  <amodra@gmail.com>
 
 	* testsuite/ld-elf/elf.exp: xfail "pr22374 function pointer

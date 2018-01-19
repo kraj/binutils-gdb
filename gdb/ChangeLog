@@ -1,3 +1,155 @@
+2018-01-19  Yao Qi  <yao.qi@linaro.org>
+
+	* arm-linux-tdep.c (arm_linux_gcc_target_options): New function.
+	(arm_linux_init_abi): Install it.
+
+2018-01-19  Yao Qi  <yao.qi@linaro.org>
+
+	* osabi.c (gdb_osabi_names): Extend the regexp for
+	arm-linux-gnueabihf.
+
+2018-01-18  Yao Qi  <yao.qi@linaro.org>
+
+	* dwarf2read.c (abbrev_table) <abbrevs>: Rename it to
+	m_abbrevs.
+	(abbrev_table::add_abbrev): Update.
+	(abbrev_table::lookup_abbrev): Update.
+
+2018-01-18  Yao Qi  <yao.qi@linaro.org>
+
+	* ppc-linux-tdep.c (ppu2spu_prev_register): Call cooked_read.
+
+2018-01-17  Sergio Durigan Junior  <sergiodj@redhat.com>
+
+	* compile/compile.c (compile_to_object): Convert "triplet_rx"
+	to "std::string".
+
+2018-01-17  Tom Tromey  <tom@tromey.com>
+
+	* dwarf2read.c (symbolp): Remove typedef.  Don't instantiate VEC.
+
+2018-01-17  Tom Tromey  <tom@tromey.com>
+
+	* gdbtypes.h (add_dyn_prop): Remove objfile parameter.
+	* gdbtypes.c (add_dyn_prop): Remove objfile parameter.
+	(create_array_type_with_stride): Update.
+	* dwarf2read.c (set_die_type): Update.
+
+2018-01-17  Tom Tromey  <tom@tromey.com>
+
+	* dwarf2read.c (delayed_method_info): Remove typedef.
+	(dwarf2_cu::method_info): Now a std::vector.
+	(add_to_method_list): Update.
+	(free_delayed_list): Remove.
+	(compute_delayed_physnames): Update.
+	(process_full_comp_unit, process_full_type_unit): Clear the method
+	list.  Remove cleanups.
+	(psymtab_include_file_name): Add name_holder parameter.  Use
+	unique_xmalloc_ptr.
+	(dwarf_decode_lines): Update.
+
+2018-01-17  Tom Tromey  <tom@tromey.com>
+	    Simon Marchi  <simon.marchi@ericsson.com>
+
+	* dwarf2read.c (struct dwarf2_cu): Add constructor, destructor.
+	(dwarf2_per_objfile::free_cached_comp_units)
+	(init_tu_and_read_dwo_dies, init_cutu_and_read_dies)
+	(init_cutu_and_read_dies_no_follow): Update.
+	(dwarf2_cu::dwarf2_cu): Rename from init_one_comp_unit.
+	(dwarf2_cu::~dwarf2_cu): New.
+	(free_heap_comp_unit, free_stack_comp_unit): Remove.
+	(age_cached_comp_units, free_one_cached_comp_unit): Update.
+
+2018-01-17  Tom Tromey  <tom@tromey.com>
+	    Simon Marchi  <simon.marchi@ericsson.com>
+
+	* dwarf2read.c (struct dwarf2_cu) <abbrev_table>: Remove.
+	(struct die_reader_specs) <abbrev_table>: New member.
+	(struct abbrev_table): Add constructor.
+	<alloc_abbrev, add_abbrev, lookup_abbrev>: Declare.
+	<abbrev_obstack>: Now an auto_obstack.
+	(abbrev_table_up): New typedef.
+	(init_cu_die_reader): Add abbrev_table parameter.
+	(read_cutu_die_from_dwo): Remove abbrev_table_provided parameter.
+	Add result_dwo_abbrev_table.
+	(init_tu_and_read_dwo_dies, init_cutu_and_read_dies)
+	(init_cutu_and_read_dies_no_follow, build_type_psymtabs_1):
+	Update.
+	(peek_die_abbrev): Take die_reader_specs, not dwarf_cu as
+	parameter.
+	(skip_children): Update.
+	(abbrev_table::alloc_abbrev): Rename from
+	abbrev_table_alloc_abbrev.
+	(abbrev_table::add_abbrev): Rename from abbrev_table_add_abbrev.
+	(abbrev_table::lookup_abbrev): Rename from
+	abbrev_table_lookup_abbrev.
+	(abbrev_table_read_table): Return abbrev_table_up.
+	(abbrev_table_free, abbrev_table_free_cleanup)
+	(dwarf2_read_abbrevs, dwarf2_free_abbrev_table): Remove.
+	(load_partial_dies): Update.
+
+2018-01-17  Tom Tromey  <tom@tromey.com>
+
+	* dwarf2read.c (dwarf2_compute_name): Update comment.
+	(read_func_scope, read_variable): Update.
+	(new_symbol): Remove.
+	(new_symbol_full): Rename to new_symbol.
+
+2018-01-17  Mike Gulick  <mgulick@mathworks.com>
+
+	PR gdb/16577
+	* gdb_bfd.c (gdb_bfd_map_section): If unable to read object file, issue
+	a warning instead of throwing an error, set section size to 0 and return
+	NULL.
+	* gdb_bfd.h (gdb_bfd_map_section): Update description.
+
+2018-01-17  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* nat/linux-ptrace.h (linux_ptrace_attach_fail_reason): Return
+	std::string.
+	(linux_ptrace_attach_fail_reason_string): Likewise.
+	* nat/linux-ptrace.c (linux_ptrace_attach_fail_reason):
+	Likewise.
+	(linux_ptrace_attach_fail_reason_string): Likewise.
+	* linux-nat.c (attach_proc_task_lwp_callback): Adjust.
+
+2018-01-17  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* linux-nat.c (linux_nat_attach): Remove xstrdup.
+
+2018-01-17  Eldar Abusalimov  <eldar.abusalimov@jetbrains.com>
+
+	PR gdb/21559
+	* configure.ac: Include <sys/types.h> prior to <sys/user.h> when
+	checking for fs_base/gs_base fields in struct user_regs_struct.
+	* configure: Regenerate.
+
+2018-01-17  Yao Qi  <yao.qi@linaro.org>
+
+	* aarch64-linux-tdep.c (aarch64_linux_gcc_target_options): New
+	function.
+	(aarch64_linux_init_abi): Install it to gdbarch hook
+	gcc_target_options.
+
+2018-01-15  Pedro Alves  <palves@redhat.com>
+
+	* common/signals-state-save-restore.c
+	(save_original_signals_state): Fix typos.
+
+2017-01-12  Tom Tromey  <tom@tromey.com>
+	    Sergio Durigan Junior  <sergiodj@redhat.com>
+
+	* Makefile.in (install-only): Install gdb-add-index.
+
+2018-01-12  John Baldwin  <jhb@FreeBSD.org>
+
+	* fbsd-tdep.c (KVE_PROTECTION): Correct value.
+
+2018-01-12  Andreas Arnez  <arnez@linux.vnet.ibm.com>
+
+	* infrun.c (keep_going_pass_signal): Clear step-over info when
+	insert_breakpoints fails.
+
 2018-01-11  Pedro Alves  <palves@redhat.com>
 
 	PR gdb/22583

@@ -1,3 +1,24 @@
+2018-01-17  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* linux-low.c (attach_proc_task_lwp_callback): Adjust to
+	linux_ptrace_attach_fail_reason_string now returning an
+	std::string.
+	(linux_attach): Likewise.
+	* thread-db.c (attach_thread): Likewise.
+
+2018-01-17  Eldar Abusalimov  <eldar.abusalimov@jetbrains.com>
+
+	PR gdb/21559
+	* configure.ac: Include <sys/types.h> prior to <sys/user.h> when
+	checking for fs_base/gs_base fields in struct user_regs_struct.
+	* configure: Regenerate.
+
+2018-01-16  Yao Qi  <yao.qi@linaro.org>
+
+	PR gdb/18749
+	* linux-low.c (fetch_register): Call supply_register instead of
+	error.
+
 2018-01-08  Yao Qi  <yao.qi@linaro.org>
 	    Simon Marchi  <simon.marchi@ericsson.com>
 

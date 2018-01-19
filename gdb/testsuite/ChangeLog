@@ -1,3 +1,54 @@
+2018-01-19  Ruslan Kabatsayev  <b7.10110111@gmail.com>
+
+	* gdb.arch/powerpc-d128-regs.exp: Replace expected "\[\t\]*" from
+	"info reg" with "\[ \t\]*".
+	* gdb.arch/altivec-regs.exp: Replace expected "\t" from "info reg" with
+	"\[ \t\]+".
+	* gdb.arch/s390-multiarch.exp: Ditto.
+	* gdb.base/pc-fp.exp: Ditto.
+	* gdb.reverse/i386-precsave.exp: Ditto.
+	* gdb.reverse/i386-reverse.exp: Ditto.
+	* gdb.reverse/i387-env-reverse.exp: Ditto.
+	* gdb.reverse/i387-stack-reverse.exp: Ditto.
+
+2018-01-18  Andreas Arnez  <arnez@linux.vnet.ibm.com>
+
+	* lib/gdb.exp (gdb_compile): Re-enable use of
+	universal_compile_options for languages other than Rust.
+
+2018-01-18  Andreas Arnez  <arnez@linux.vnet.ibm.com>
+
+	* gdb.arch/s390-tdbregs.exp: Add the compile option -msoft-float.
+
+2018-01-17  Mike Gulick  <mgulick@mathworks.com>
+
+	PR gdb/16577
+	* gdb.base/solib-vanish.exp: New.
+	* gdb.base/solib-vanish-main.c: New.
+	* gdb.base/solib-vanish-lib1.c: New.
+	* gdb.base/solib-vanish-lib2.c: New.
+
+2018-01-17  Yao Qi  <yao.qi@linaro.org>
+
+	* gdb.compile/compile.exp: Match the address printed for
+	frame in the output of command "bt".
+
+2018-01-15  Tom Tromey  <tom@tromey.com>
+
+	* gdb.guile/scm-ports.exp (test_mem_port_rw): Use get_valueof to
+	compute sp_reg.
+
+2018-01-12  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.base/whatis-ptype-typedefs.exp: Don't run tests if we failed
+	to prepare.
+	(prepare): Return 0 on error, 1 on success.
+
+2018-01-12  Pedro Alves  <palves@redhat.com>
+
+	* gdb.base/continue-after-aborted-step-over.c: New.
+	* gdb.base/continue-after-aborted-step-over.exp: New.
+
 2018-01-11  Simon Marchi  <simon.marchi@ericsson.com>
 
 	* lib/gdb.exp (gdb_compile): Ignore shlib= and shlib_load

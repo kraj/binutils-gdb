@@ -1159,9 +1159,10 @@ attach_proc_task_lwp_callback (ptid_t ptid)
 	}
       else if (err != 0)
 	{
-	  warning (_("Cannot attach to lwp %d: %s"),
-		   lwpid,
-		   linux_ptrace_attach_fail_reason_string (ptid, err));
+	  std::string reason
+	    = linux_ptrace_attach_fail_reason_string (ptid, err);
+
+	  warning (_("Cannot attach to lwp %d: %s"), lwpid, reason.c_str ());
 	}
 
       return 1;
@@ -1186,8 +1187,11 @@ linux_attach (unsigned long pid)
      soon.  */
   err = linux_attach_lwp (ptid);
   if (err != 0)
-    error ("Cannot attach to process %ld: %s",
-	   pid, linux_ptrace_attach_fail_reason_string (ptid, err));
+    {
+      std::string reason = linux_ptrace_attach_fail_reason_string (ptid, err);
+
+      error ("Cannot attach to process %ld: %s", pid, reason.c_str ());
+    }
 
   proc = linux_add_process (pid, 1);
 
@@ -5555,7 +5559,11 @@ fetch_register (const struct usrregs_info *usrregs,
 		(PTRACE_TYPE_ARG3) (uintptr_t) regaddr, (PTRACE_TYPE_ARG4) 0);
       regaddr += sizeof (PTRACE_XFER_TYPE);
       if (errno != 0)
-	error ("reading register %d: %s", regno, strerror (errno));
+	{
+	  /* Mark register REGNO unavailable.  */
+	  supply_register (regcache, regno, NULL);
+	  return;
+	}
     }
 
   if (the_low_target.supply_ptrace_register)

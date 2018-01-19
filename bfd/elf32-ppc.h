@@ -32,6 +32,12 @@ struct ppc_elf_params
   /* Chooses the type of .plt.  */
   enum ppc_elf_plt_type plt_style;
 
+  /* Set if individual PLT call stubs should be aligned.  */
+  int plt_stub_align;
+
+  /* Clear if PLT call stubs should use a speculative execution barrier.  */
+  int speculate_indirect_jumps;
+
   /* Whether to emit symbols for stubs.  */
   int emit_stub_syms;
 

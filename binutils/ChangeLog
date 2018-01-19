@@ -1,3 +1,44 @@
+2018-01-18  Nick Clifton  <nickc@redhat.com>
+
+	* po/bg.po: Updated Bulgarian translation.
+
+2018-01-16  Joel Brobecker  <brobecker@adacore.com>
+
+	* README-how-to-make-a-release: Add reminder to update the
+	branch name in gdbadmin's crontab on sourceware.
+
+2018-01-16  Joel Brobecker  <brobecker@adacore.com>
+
+	* README-how-to-make-a-release: Remove trailing spaces.
+
+2018-01-16  Nick Clifton  <nickc@redhat.com>
+
+	* po/fr.po: Updated French translation.
+
+2018-01-15  Nick Clifton  <nickc@redhat.com>
+
+	* po/uk.po: Updated Ukranian translation.
+
+2018-01-13  Nick Clifton  <nickc@redhat.com>
+
+	* README-how-to-make-a-release: Update notes.
+	* po/binutils.pot: Regenerated.
+
+2018-01-13  Nick Clifton  <nickc@redhat.com>
+
+	* configure: Regenerate.
+
+2018-01-13  Nick Clifton  <nickc@redhat.com>
+
+	2.30 branch created.
+	* NEWS: Add marker for 2.30.
+
+2018-01-12  Nick Clifton  <nickc@redhat.com>
+
+	* README-how-to-make-a-release: Add notes on how to make the
+	branch and prelease snapshot.
+	* BRANCHES: Add binutils-2_29-branch.
+
 2018-01-10  Nick Clifton  <nickc@redhat.com>
 
 	* MAINTAINERS: Note that it is now the configure.ac file and not
