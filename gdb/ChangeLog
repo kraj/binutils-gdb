@@ -1,3 +1,102 @@
+2018-01-19  Tom Tromey  <tom@tromey.com>
+
+	* rust-lang.c (rust_lookup_symbol_nonlocal): Look up qualified
+	symbols in the static and global blocks.
+
+2018-01-19  James Clarke  <jrtc27@jrtc27.com>
+
+	* nat/linux-ptrace.c: Remove unnecessary reinclusion of
+	gdb_ptrace.h, and move including gdb_wait.h ...
+	* nat/linux-ptrace.h: ... to here.
+
+2018-01-19  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* inf-ptrace.c (inf_ptrace_detach): Adjust call to
+	inf_ptrace_detach_success.
+	(inf_ptrace_detach_success): Add inferior parameter, use it
+	instead of inferior_ptid, pass it to detach_inferior.
+	* inf-ptrace.h (inf_ptrace_detach_success): Add inferior
+	parameter.
+	* inferior.c (detach_inferior): Add overload that takes an
+	inferior object.
+	* inferior.h (detach_inferior): Likewise.
+	* linux-nat.c (linux_nat_detach): Use the inf parameter, don't
+	use inferior_ptid, adjust call to inf_ptrace_detach_success.
+	* linux-thread-db.c (thread_db_detach): Use inf parameter.
+
+2018-01-19  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* target.h (struct target_ops) <to_detach>: Add inferior
+	parameter.
+	(target_detach): Likewise.
+	* target.c (dispose_inferior): Pass inferior down.
+	(target_detach): Pass inferior down.  Assert that it is equal to
+	the current inferior.
+	* aix-thread.c (aix_thread_detach): Pass inferior down.
+	* corefile.c (core_file_command): Pass current_inferior() down.
+	* corelow.c (core_detach): Add inferior parameter.
+	* darwin-nat.c (darwin_detach): Likewise.
+	* gnu-nat.c (gnu_detach): Likewise.
+	* inf-ptrace.c (inf_ptrace_detach): Likewise.
+	* infcmd.c (detach_command): Pass current_inferior() down to
+	target_detach.
+	* infrun.c (follow_fork_inferior): Pass parent_inf to
+	target_detach.
+	(handle_vfork_child_exec_or_exit): Pass inf->vfork_parent to
+	target_detach.
+	* linux-nat.c (linux_nat_detach): Add inferior parameter.
+	* linux-thread-db.c (thread_db_detach): Likewise.
+	* nto-procfs.c (procfs_detach): Likewise.
+	* procfs.c (procfs_detach): Likewise.
+	* record.c (record_detach): Likewise.
+	* record.h (struct inferior): Forward-declare.
+	(record_detach): Add inferior parameter.
+	* remote-sim.c (gdbsim_detach): Likewise.
+	* remote.c (remote_detach_1): Likewise.
+	(remote_detach): Likewise.
+	(extended_remote_detach): Likewise.
+	* sol-thread.c (sol_thread_detach): Likewise.
+	* target-debug.h (target_debug_print_inferior_p): New macro.
+	* target-delegates.c: Re-generate.
+	* top.c (kill_or_detach): Pass inferior down to target_detach.
+	* windows-nat.c (windows_detach): Add inferior parameter.
+
+2018-01-19  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* target.h (struct target_ops) <to_detach>: Remove args
+	parameter.
+	(target_detach): Likewise.
+	* target.c (dispose_inferior): Adjust.
+	(target_detach): Remove args parameter, adjust.
+	* aix-thread.c (aix_thread_detach): Adjust.
+	* corefile.c (core_file_command): Adjust.
+	* corelow.c (core_detach): Adjust.
+	* darwin-nat.c (darwin_detach): Adjust.
+	* gnu-nat.c (gnu_detach): Adjust.
+	* inf-ptrace.c (inf_ptrace_detach): Adjust.
+	* infcmd.c (detach_command): Adjust
+	* infrun.c (follow_fork_inferior): Adjust.
+	(handle_vfork_child_exec_or_exit): Adjust.
+	* linux-fork.c (linux_fork_detach): Remove args parameter.
+	* linux-fork.h (linux_fork_detach): Likewise.
+	* linux-nat.c (linux_nat_detach): Likewise, and adjust.
+	* linux-thread-db.c (thread_db_detach): Likewise.
+	* nto-procfs.c (procfs_detach): Likewise.
+	* procfs.c (procfs_detach): Likewise.
+	(do_detach): Remove signo parameter.
+	* record.c (record_detach): Remove args parameter.
+	* record.h (record_detach): Likewise.
+	* remote-sim.c (gdbsim_detach): Likewise.
+	* remote.c (remote_detach_1): Likewise.
+	(remote_detach): Likewise.
+	(extended_remote_detach): Likewise.
+	* sol-thread.c (sol_thread_detach): Likewise.
+	* target-delegates.c: Re-generate.
+	* top.c (struct qt_args) <args>: Remove field.
+	(kill_or_detach): Don't pass args.
+	(quit_force): Don't set args.
+	* windows-nat.c (windows_detach): Remove args parameter.
+
 2018-01-19  Yao Qi  <yao.qi@linaro.org>
 
 	* arm-linux-tdep.c (arm_linux_gcc_target_options): New function.

@@ -2108,7 +2108,7 @@ dispose_inferior (struct inferior *inf, void *args)
       if (target_has_execution)
 	target_kill ();
       else
-	target_detach (NULL, 0);
+	target_detach (inf, 0);
     }
 
   return 0;
@@ -2141,11 +2141,18 @@ target_preopen (int from_tty)
   target_pre_inferior (from_tty);
 }
 
-/* Detach a target after doing deferred register stores.  */
+/* See target.h.  */
 
 void
-target_detach (const char *args, int from_tty)
+target_detach (inferior *inf, int from_tty)
 {
+  /* As long as some to_detach implementations rely on the current_inferior
+     (either directly, or indirectly, like through target_gdbarch or by
+     reading memory), INF needs to be the current inferior.  When that
+     requirement will become no longer true, then we can remove this
+     assertion.  */
+  gdb_assert (inf == current_inferior ());
+
   if (gdbarch_has_global_breakpoints (target_gdbarch ()))
     /* Don't remove global breakpoints here.  They're removed on
        disconnection from the target.  */
@@ -2157,7 +2164,7 @@ target_detach (const char *args, int from_tty)
 
   prepare_for_detach ();
 
-  current_target.to_detach (&current_target, args, from_tty);
+  current_target.to_detach (&current_target, inf, from_tty);
 }
 
 void

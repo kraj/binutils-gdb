@@ -1497,12 +1497,10 @@ detach_callback (struct lwp_info *lp, void *data)
 }
 
 static void
-linux_nat_detach (struct target_ops *ops, const char *args, int from_tty)
+linux_nat_detach (struct target_ops *ops, inferior *inf, int from_tty)
 {
-  int pid;
   struct lwp_info *main_lwp;
-
-  pid = ptid_get_pid (inferior_ptid);
+  int pid = inf->pid;
 
   /* Don't unregister from the event loop, as there may be other
      inferiors running. */
@@ -1517,7 +1515,7 @@ linux_nat_detach (struct target_ops *ops, const char *args, int from_tty)
   iterate_over_lwps (pid_to_ptid (pid), detach_callback, NULL);
 
   /* Only the initial process should be left right now.  */
-  gdb_assert (num_lwps (ptid_get_pid (inferior_ptid)) == 1);
+  gdb_assert (num_lwps (pid) == 1);
 
   main_lwp = find_lwp_pid (pid_to_ptid (pid));
 
@@ -1527,25 +1525,18 @@ linux_nat_detach (struct target_ops *ops, const char *args, int from_tty)
 	 from, but there are other viable forks to debug.  Detach from
 	 the current fork, and context-switch to the first
 	 available.  */
-      linux_fork_detach (args, from_tty);
+      linux_fork_detach (from_tty);
     }
   else
     {
-      int signo;
-
       target_announce_detach (from_tty);
 
-      /* Pass on any pending signal for the last LWP, unless the user
-	 requested detaching with a different signal (most likely 0,
-	 meaning, discard the signal).  */
-      if (args != NULL)
-	signo = atoi (args);
-      else
-	signo = get_detach_signal (main_lwp);
+      /* Pass on any pending signal for the last LWP.  */
+      int signo = get_detach_signal (main_lwp);
 
       detach_one_lwp (main_lwp, &signo);
 
-      inf_ptrace_detach_success (ops);
+      inf_ptrace_detach_success (ops, inf);
     }
 }
 
