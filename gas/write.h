@@ -61,6 +61,7 @@ struct fix
   /* Some bits for the CPU specific code.  */
   unsigned fx_tcbit : 1;
   unsigned fx_tcbit2 : 1;
+  unsigned fx_tcbit3 : 1;
 
   /* Has this relocation already been applied?  */
   unsigned fx_done : 1;

@@ -390,6 +390,9 @@ struct _i386_insn
     /* Have NOTRACK prefix.  */
     const char *notrack_prefix;
 
+    /* Need R_X86_64_THUNK_GOTPCRELX relocation.  */
+    bfd_boolean need_thunk_gotpcrelx;
+
     /* Error message.  */
     enum i386_error error;
   };
@@ -3140,6 +3143,7 @@ tc_i386_fix_adjustable (fixS *fixP ATTRIBUTE_UNUSED)
       || fixP->fx_r_type == BFD_RELOC_X86_64_GOTPCREL
       || fixP->fx_r_type == BFD_RELOC_X86_64_GOTPCRELX
       || fixP->fx_r_type == BFD_RELOC_X86_64_REX_GOTPCRELX
+      || fixP->fx_r_type == BFD_RELOC_X86_64_THUNK_GOTPCRELX
       || fixP->fx_r_type == BFD_RELOC_X86_64_TLSGD
       || fixP->fx_r_type == BFD_RELOC_X86_64_TLSLD
       || fixP->fx_r_type == BFD_RELOC_X86_64_DTPOFF32
@@ -7510,6 +7514,7 @@ output_disp (fragS *insn_start_frag, offsetT insn_start_off)
 		 instructions.  Always generate R_386_GOT32X for
 		 "sym*GOT" operand in 32-bit mode.  */
 	      if ((generate_relax_relocations
+		   || i.need_thunk_gotpcrelx
 		   || (!object_64bit
 		       && i.rm.mode == 0
 		       && i.rm.regmem == 5))
@@ -7529,7 +7534,14 @@ output_disp (fragS *insn_start_frag, offsetT insn_start_off)
 		      if (i.base_reg
 			  && (i.base_reg->reg_num == RegRip
 			      || i.base_reg->reg_num == RegEip))
-		      fixP->fx_tcbit2 = 1;
+			{
+			  fixP->fx_tcbit2 = 1;
+			  /* movq foo@GOTPCREL_THUNK(%rip), %reg  */
+			  if (i.tm.base_opcode == 0x8b
+			      && i.need_thunk_gotpcrelx
+			      && (i.rex & REX_W) != 0)
+			    fixP->fx_tcbit3 = 1;
+			}
 		    }
 		  else
 		    fixP->fx_tcbit2 = 1;
@@ -7744,6 +7756,9 @@ lex_got (enum bfd_reloc_code_real *rel,
     { STRING_COMMA_LEN ("GOTOFF"),   { BFD_RELOC_386_GOTOFF,
 				       BFD_RELOC_X86_64_GOTOFF64 },
       OPERAND_TYPE_IMM64_DISP64 },
+    { STRING_COMMA_LEN ("GOTPCREL_THUNK"),{ _dummy_first_bfd_reloc_code_real,
+				       BFD_RELOC_X86_64_THUNK_GOTPCRELX },
+      OPERAND_TYPE_IMM32_32S_DISP32 },
     { STRING_COMMA_LEN ("GOTPCREL"), { _dummy_first_bfd_reloc_code_real,
 				       BFD_RELOC_X86_64_GOTPCREL },
       OPERAND_TYPE_IMM32_32S_DISP32 },
@@ -8519,6 +8534,7 @@ i386_finalize_displacement (segT exp_seg ATTRIBUTE_UNUSED, expressionS *exp,
      to be relative to the beginning of the section.  */
   if (i.reloc[this_operand] == BFD_RELOC_386_GOTOFF
       || i.reloc[this_operand] == BFD_RELOC_X86_64_GOTPCREL
+      || i.reloc[this_operand] == BFD_RELOC_X86_64_THUNK_GOTPCRELX
       || i.reloc[this_operand] == BFD_RELOC_X86_64_GOTOFF64)
     {
       if (exp->X_op != O_symbol)
@@ -8530,7 +8546,10 @@ i386_finalize_displacement (segT exp_seg ATTRIBUTE_UNUSED, expressionS *exp,
 	section_symbol (S_GET_SEGMENT (exp->X_add_symbol));
       exp->X_op = O_subtract;
       exp->X_op_symbol = GOT_symbol;
-      if (i.reloc[this_operand] == BFD_RELOC_X86_64_GOTPCREL)
+      i.need_thunk_gotpcrelx
+	= i.reloc[this_operand] == BFD_RELOC_X86_64_THUNK_GOTPCRELX;
+      if (i.need_thunk_gotpcrelx
+	  || i.reloc[this_operand] == BFD_RELOC_X86_64_GOTPCREL)
 	i.reloc[this_operand] = BFD_RELOC_32_PCREL;
       else if (i.reloc[this_operand] == BFD_RELOC_X86_64_GOTOFF64)
 	i.reloc[this_operand] = BFD_RELOC_64;
@@ -10796,9 +10815,11 @@ i386_validate_fix (fixS *fixp)
 		abort ();
 #if defined (OBJ_ELF) || defined (OBJ_MAYBE_ELF)
 	      if (fixp->fx_tcbit2)
-		fixp->fx_r_type = (fixp->fx_tcbit
-				   ? BFD_RELOC_X86_64_REX_GOTPCRELX
-				   : BFD_RELOC_X86_64_GOTPCRELX);
+		fixp->fx_r_type = (fixp->fx_tcbit3
+				   ? BFD_RELOC_X86_64_THUNK_GOTPCRELX
+				   : (fixp->fx_tcbit
+				      ? BFD_RELOC_X86_64_REX_GOTPCRELX
+				      : BFD_RELOC_X86_64_GOTPCRELX));
 	      else
 #endif
 		fixp->fx_r_type = BFD_RELOC_X86_64_GOTPCREL;
@@ -10820,6 +10841,8 @@ i386_validate_fix (fixS *fixp)
 	  && fixp->fx_tcbit2)
 	fixp->fx_r_type = BFD_RELOC_386_GOT32X;
     }
+  else if (fixp->fx_r_type == BFD_RELOC_X86_64_THUNK_GOTPCRELX)
+    fixp->fx_r_type = BFD_RELOC_X86_64_GOTPCREL;
 #endif
 }
 
@@ -10857,6 +10880,7 @@ tc_gen_reloc (asection *section ATTRIBUTE_UNUSED, fixS *fixp)
     case BFD_RELOC_X86_64_GOTPCREL:
     case BFD_RELOC_X86_64_GOTPCRELX:
     case BFD_RELOC_X86_64_REX_GOTPCRELX:
+    case BFD_RELOC_X86_64_THUNK_GOTPCRELX:
     case BFD_RELOC_386_PLT32:
     case BFD_RELOC_386_GOT32:
     case BFD_RELOC_386_GOT32X:
@@ -11014,6 +11038,7 @@ tc_gen_reloc (asection *section ATTRIBUTE_UNUSED, fixS *fixp)
 	  case BFD_RELOC_X86_64_GOTPCREL:
 	  case BFD_RELOC_X86_64_GOTPCRELX:
 	  case BFD_RELOC_X86_64_REX_GOTPCRELX:
+	  case BFD_RELOC_X86_64_THUNK_GOTPCRELX:
 	  case BFD_RELOC_X86_64_TLSGD:
 	  case BFD_RELOC_X86_64_TLSLD:
 	  case BFD_RELOC_X86_64_GOTTPOFF:

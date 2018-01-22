@@ -1,0 +1,25 @@
+#...
+[a-f0-9]+ <main>:
+ +[a-f0-9]+:	55                   	push   %rbp
+ +[a-f0-9]+:	41 54                	push   %r12
+ +[a-f0-9]+:	48 83 ec 08          	sub    \$0x8,%rsp
+ +[a-f0-9]+:	[ a-f0-9]+   	bnd callq [a-f0-9]+ <foo>
+ +[a-f0-9]+:	0f 1f 80 00 00 00 00 	nopl   0x0\(%rax\)
+ +[a-f0-9]+:	[ a-f0-9]+ 	mov    0x[a-f0-9]+\(%rip\),%rbp        # [a-f0-9]+ <bar>
+ +[a-f0-9]+:	[ a-f0-9]+  	bnd callq [a-f0-9]+ <__x86_indirect_thunk_bnd_rbp>
+ +[a-f0-9]+:	[ a-f0-9]+ 	mov    0x[a-f0-9]+\(%rip\),%r11        # [a-f0-9]+ <plt>
+ +[a-f0-9]+:	[ a-f0-9]+  	bnd callq [a-f0-9]+ <__x86_indirect_thunk_bnd_r11>
+ +[a-f0-9]+:	[ a-f0-9]+   	bnd callq [a-f0-9]+ <foo>
+ +[a-f0-9]+:	0f 1f 80 00 00 00 00 	nopl   0x0\(%rax\)
+ +[a-f0-9]+:	[ a-f0-9]+  	bnd callq [a-f0-9]+ <__x86_indirect_thunk_bnd_rbp>
+ +[a-f0-9]+:	[ a-f0-9]+ 	mov    0x[a-f0-9]+\(%rip\),%rdx        # [a-f0-9]+ <plt>
+ +[a-f0-9]+:	[ a-f0-9]+  	bnd callq [a-f0-9]+ <__x86_indirect_thunk_bnd_rdx>
+ +[a-f0-9]+:	31 ff                	xor    %edi,%edi
+ +[a-f0-9]+:	41 5c                	pop    %r12
+ +[a-f0-9]+:	5d                   	pop    %rbp
+ +[a-f0-9]+:	48 83 c4 08          	add    \$0x8,%rsp
+ +[a-f0-9]+:	[ a-f0-9]+   	bnd jmpq [a-f0-9]+ <myexit>
+ +[a-f0-9]+:	0f 1f 80 00 00 00 00 	nopl   0x0\(%rax\)
+ +[a-f0-9]+:	f2 c3                	bnd retq 
+
+#pass

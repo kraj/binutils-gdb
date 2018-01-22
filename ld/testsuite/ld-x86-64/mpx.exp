@@ -88,6 +88,41 @@ run_cc_link_tests [list \
 	{{readelf {-r --wide} mpx2c.rd}} \
 	"libmpx2c.a" \
     ] \
+    [list \
+	"Build gotpcrel3d.so" \
+	"-shared" \
+	"" \
+	{ gotpcrel3d.S } \
+	"" \
+	"gotpcrel3d.so" \
+    ] \
+    [list \
+	"Build gotpcrel3a.o gotpcrel3b.o gotpcrel3c.o" \
+	"" \
+	"-Wa,-mrelax-relocations=yes" \
+	{ gotpcrel3a.S gotpcrel3b.c gotpcrel3c.c } \
+    ] \
+    [list \
+	"Build gotpcrel3" \
+	"$NOPIE_LDFLAGS -Wl,--as-needed tmpdir/gotpcrel3a.o \
+	 tmpdir/gotpcrel3b.o tmpdir/gotpcrel3c.o \
+	 tmpdir/gotpcrel3d.so" \
+	{ dummy.s } \
+	"" \
+	{{objdump {-dw} gotpcrel3.dd}} \
+	"gotpcrel3" \
+    ] \
+]
+
+run_ld_link_exec_tests [list \
+    [list \
+	"Run gotpcrel3" \
+	"-Wl,--no-as-needed tmpdir/gotpcrel3d.so" \
+	"" \
+	{ gotpcrel3a.S gotpcrel3b.c gotpcrel3c.c } \
+	"gotpcrel3" \
+	"gotpcrel3.out" \
+    ] \
 ]
 
 set run_tests {

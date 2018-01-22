@@ -876,6 +876,30 @@ if { [isnative] && [which $CC] != 0 } {
 	    "gotpcrel1" \
 	] \
 	[list \
+	    "Build gotpcrel2d.so" \
+	    "-shared" \
+	    "" \
+	    { gotpcrel2d.S } \
+	    "" \
+	    "gotpcrel2d.so" \
+	] \
+	[list \
+	    "Build gotpcrel2a.o gotpcrel2b.o gotpcrel2c.o" \
+	    "" \
+	    "-Wa,-mrelax-relocations=yes" \
+	    { gotpcrel2a.S gotpcrel2b.c gotpcrel2c.c } \
+	] \
+	[list \
+	    "Build gotpcrel2" \
+	    "$NOPIE_LDFLAGS -Wl,--as-needed tmpdir/gotpcrel2a.o \
+	     tmpdir/gotpcrel2b.o tmpdir/gotpcrel2c.o \
+	     tmpdir/gotpcrel2d.so" \
+	    { dummy.s } \
+	    "" \
+	    {{objdump {-dw} gotpcrel2.dd}} \
+	    "gotpcrel2" \
+	] \
+	[list \
 	    "Build pr19319.so" \
 	    "-shared" \
 	    "" \
@@ -1262,6 +1286,14 @@ if { [isnative] && [which $CC] != 0 } {
 	    { gotpcrel1a.S gotpcrel1b.c gotpcrel1c.c } \
 	    "gotpcrel1" \
 	    "gotpcrel1.out" \
+	] \
+	[list \
+	    "Run gotpcrel2" \
+	    "-Wl,--no-as-needed tmpdir/gotpcrel2d.so" \
+	    "" \
+	    { gotpcrel2a.S gotpcrel2b.c gotpcrel2c.c } \
+	    "gotpcrel2" \
+	    "gotpcrel2.out" \
 	] \
 	[list \
 	    "Run property 1" \

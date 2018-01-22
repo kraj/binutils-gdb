@@ -173,12 +173,15 @@ static reloc_howto_type x86_64_elf_howto_table[] =
   HOWTO(R_X86_64_REX_GOTPCRELX, 0, 2, 32, TRUE, 0, complain_overflow_signed,
 	bfd_elf_generic_reloc, "R_X86_64_REX_GOTPCRELX", FALSE, 0xffffffff,
 	0xffffffff, TRUE),
+  HOWTO(R_X86_64_THUNK_GOTPCRELX, 0, 2, 32, TRUE, 0, complain_overflow_signed,
+	bfd_elf_generic_reloc, "R_X86_64_THUNK_GOTPCRELX", FALSE, 0xffffffff,
+	0xffffffff, TRUE),
 
   /* We have a gap in the reloc numbers here.
      R_X86_64_standard counts the number up to this point, and
      R_X86_64_vt_offset is the value to subtract from a reloc type of
      R_X86_64_GNU_VT* to form an index into this table.  */
-#define R_X86_64_standard (R_X86_64_REX_GOTPCRELX + 1)
+#define R_X86_64_standard (R_X86_64_THUNK_GOTPCRELX + 1)
 #define R_X86_64_vt_offset (R_X86_64_GNU_VTINHERIT - R_X86_64_standard)
 
 /* GNU extension to record C++ vtable hierarchy.  */
@@ -260,6 +263,7 @@ static const struct elf_reloc_map x86_64_reloc_map[] =
   { BFD_RELOC_X86_64_PLT32_BND,	R_X86_64_PLT32_BND, },
   { BFD_RELOC_X86_64_GOTPCRELX, R_X86_64_GOTPCRELX, },
   { BFD_RELOC_X86_64_REX_GOTPCRELX, R_X86_64_REX_GOTPCRELX, },
+  { BFD_RELOC_X86_64_THUNK_GOTPCRELX, R_X86_64_THUNK_GOTPCRELX, },
   { BFD_RELOC_VTABLE_INHERIT,	R_X86_64_GNU_VTINHERIT, },
   { BFD_RELOC_VTABLE_ENTRY,	R_X86_64_GNU_VTENTRY, },
 };
@@ -1410,6 +1414,62 @@ elf_x86_64_need_pic (struct bfd_link_info *info,
   return FALSE;
 }
 
+#define X86_INDIRECT_THUNK_R "__x86_indirect_thunk_r"
+#define X86_INDIRECT_THUNK_BND_R "__x86_indirect_thunk_bnd_r"
+
+/* Return TRUE if the destination register of movq matches the register,
+   REG, in __x86_indirect_thunk_[bnd_]REG.  Otherwise, return FALSE.  */
+
+static bfd_boolean
+elf_x86_64_check_thunk_gotpcrelx (struct elf_link_hash_entry *h,
+				  unsigned int modrm,
+				  unsigned int rex,
+				  bfd_boolean bnd_p)
+{
+  /* Check for the relocation against __x86_indirect_thunk_[bnd_]reg.  */
+  int thunk_prefix = 0;
+
+  if (bnd_p)
+    {
+      if (strncmp (h->root.root.string, X86_INDIRECT_THUNK_BND_R,
+		   sizeof (X86_INDIRECT_THUNK_BND_R) - 1) == 0)
+	thunk_prefix = sizeof (X86_INDIRECT_THUNK_BND_R) - 1;
+    }
+  else
+    {
+      if (strncmp (h->root.root.string, X86_INDIRECT_THUNK_R,
+		   sizeof (X86_INDIRECT_THUNK_R) - 1) == 0)
+	thunk_prefix = sizeof (X86_INDIRECT_THUNK_R) - 1;
+    }
+
+  if (thunk_prefix)
+    {
+      /* This a relocation against __x86_indirect_thunk_[bnd_]reg.
+	 Check if the destination register of movq matches.  */
+      unsigned int reg;
+      static const char *regs[16] =
+	{
+	  "ax", "dx", "cx", "bx", "si", "di", "bp", "",
+	  "8", "9", "10", "11", "12", "13", "14", "15"
+	};
+      if ((rex & REX_W) != 0
+	  && ((rex & (~(REX_W | REX_R))) == REX_OPCODE))
+	{
+	  if ((modrm & 0xc7) == 0x5)
+	    {
+	      reg = (modrm & 0x38) >> 3;
+	      if ((rex & REX_R) != 0)
+		reg += 8;
+	      if (strcmp (h->root.root.string + thunk_prefix,
+			  regs[reg]) == 0)
+		return TRUE;
+	    }
+	}
+    }
+
+  return FALSE;
+}
+
 /* With the local symbol, foo, we convert
    mov foo@GOTPCREL(%rip), %reg
    to
@@ -1434,6 +1494,8 @@ elf_x86_64_convert_load_reloc (bfd *abfd,
 			       bfd_byte *contents,
 			       unsigned int *r_type_p,
 			       Elf_Internal_Rela *irel,
+			       Elf_Internal_Rela *irel_start,
+			       Elf_Internal_Rela *irel_end,
 			       struct elf_link_hash_entry *h,
 			       bfd_boolean *converted,
 			       struct bfd_link_info *link_info)
@@ -1450,8 +1512,10 @@ elf_x86_64_convert_load_reloc (bfd *abfd,
   unsigned int r_type = *r_type_p;
   unsigned int r_symndx;
   bfd_vma roff = irel->r_offset;
+  bfd_boolean has_rex = (r_type == R_X86_64_REX_GOTPCRELX
+			 || r_type == R_X86_64_THUNK_GOTPCRELX);
 
-  if (roff < (r_type == R_X86_64_REX_GOTPCRELX ? 3 : 2))
+  if (roff < (has_rex ? 3 : 2))
     return TRUE;
 
   raddend = irel->r_addend;
@@ -1462,8 +1526,7 @@ elf_x86_64_convert_load_reloc (bfd *abfd,
   htab = elf_x86_hash_table (link_info, X86_64_ELF_DATA);
   is_pic = bfd_link_pic (link_info);
 
-  relocx = (r_type == R_X86_64_GOTPCRELX
-	    || r_type == R_X86_64_REX_GOTPCRELX);
+  relocx = r_type == R_X86_64_GOTPCRELX || has_rex;
 
   /* TRUE if --no-relax is used.  */
   no_overflow = link_info->disable_target_specific_optimizations > 1;
@@ -1597,6 +1660,8 @@ elf_x86_64_convert_load_reloc (bfd *abfd,
     return TRUE;
 
 convert:
+  modrm = bfd_get_8 (abfd, contents + roff - 1);
+
   if (opcode == 0xff)
     {
       /* We have "call/jmp *foo@GOTPCREL(%rip)".  */
@@ -1606,7 +1671,6 @@ convert:
 
       /* Convert R_X86_64_GOTPCRELX and R_X86_64_REX_GOTPCRELX to
 	 R_X86_64_PC32.  */
-      modrm = bfd_get_8 (abfd, contents + roff - 1);
       if (modrm == 0x25)
 	{
 	  /* Convert to "jmp foo nop".  */
@@ -1655,13 +1719,114 @@ convert:
       unsigned int rex;
       unsigned int rex_mask = REX_R;
 
-      if (r_type == R_X86_64_REX_GOTPCRELX)
+      if (has_rex)
 	rex = bfd_get_8 (abfd, contents + roff - 3);
       else
 	rex = 0;
 
       if (opcode == 0x8b)
 	{
+	  if (r_type == R_X86_64_THUNK_GOTPCRELX)
+	    {
+	      unsigned int r_symndx_next;
+	      Elf_Internal_Rela *rel;
+	      bfd_boolean bnd_next_p = FALSE;
+	      bfd_boolean match = FALSE;
+	      Elf_Internal_Shdr *symtab_hdr
+		= &elf_symtab_hdr (abfd);
+	      struct elf_link_hash_entry **sym_hashes
+		= elf_sym_hashes (abfd);
+
+	      /* Check if we can covert
+		   movq           foo@GOTPCREL_THUNK(%rip), %reg
+		   [bnd] call/jmp __x86_indirect_thunk_[bnd_]reg
+		 to
+		   [bnd] call/jmp foo
+		   nop            0L(%rax)
+	       */
+
+	      /* Find the relocation for the next instruction.  */
+	      for (rel = irel_start; rel < irel_end; rel++)
+		if (ELF32_R_TYPE (rel->r_info) == R_X86_64_PC32)
+		  {
+		    if ((roff + 5) == rel->r_offset)
+		      {
+			match = TRUE;
+			opcode = bfd_get_8 (abfd, contents + roff + 4);
+		      }
+		    else if ((roff + 6) == rel->r_offset)
+		      {
+			opcode = bfd_get_8 (abfd, contents + roff + 4);
+			if (opcode == BND_PREFIX_OPCODE)
+			  {
+			    match = TRUE;
+			    bnd_next_p = TRUE;
+			    opcode = bfd_get_8 (abfd,
+						contents + roff + 5);
+			  }
+			else
+			  {
+			    /* Quit if it isn't the BND prefix.  */
+			    break;
+			  }
+		      }
+
+		    /* Continue if this isn't the right relocation.  */
+		    if (!match)
+		      continue;
+
+		    /* Quit if the instruction isn't call nor jmp.  */
+		    if (opcode != 0xe8 && opcode != 0xe9)
+		      break;
+
+		    /* Quit if the symbol is local.  */
+		    r_symndx_next = htab->r_sym (rel->r_info);
+		    if (r_symndx_next < symtab_hdr->sh_info)
+		      break;
+
+		    h = sym_hashes[r_symndx_next - symtab_hdr->sh_info];
+		    while (h->root.type == bfd_link_hash_indirect
+			   || h->root.type == bfd_link_hash_warning)
+		      h = (struct elf_link_hash_entry *) h->root.u.i.link;
+
+		    /* Quit if the instructions don't match.  */
+		    if (!elf_x86_64_check_thunk_gotpcrelx (h,
+							   modrm, rex,
+							   bnd_next_p))
+		      break;
+
+		    /* Convert:
+			 movq           foo@GOTPCREL_THUNK(%rip), %reg
+			 [bnd] call/jmp __x86_indirect_thunk_[bnd_]reg
+		       to
+			 [bnd] call/jmp foo
+			 nop            0L(%rax)
+
+		       movq has REX 8b MODRM.  call/jmp has e8/ef.
+		     */
+		    if (bnd_next_p)
+		      {
+			/* Write the BND prefix.  */
+			roff -= 1;
+			bfd_put_8 (abfd, BND_PREFIX_OPCODE,
+				   contents + roff - 2);
+		      }
+		    else
+		      roff -= 2;
+		    irel->r_offset = roff;
+		    irel->r_addend = -4;
+		    /* Clear the 4-byte displacement and write 7-byte
+		       NOP: nopl 0L(%rax).  */
+		    memcpy (contents + roff,
+			    "\0\0\0\0\x0f\x1f\x80\0\0\0\0", 11);
+		    /* Skip the relocation for NOP.  */
+		    rel->r_info = htab->r_info (0, R_X86_64_NONE);
+		    r_type = R_X86_64_PC32;
+		    bfd_put_8 (abfd, opcode, contents + roff - 1);
+		    goto update_reloc;
+		  }
+	    }
+
 	  if (to_reloc_pc32)
 	    {
 	      /* Convert "mov foo@GOTPCREL(%rip), %reg" to
@@ -1674,7 +1839,6 @@ convert:
 	      /* Convert "mov foo@GOTPCREL(%rip), %reg" to
 		 "mov $foo, %reg".  */
 	      opcode = 0xc7;
-	      modrm = bfd_get_8 (abfd, contents + roff - 1);
 	      modrm = 0xc0 | (modrm & 0x38) >> 3;
 	      if ((rex & REX_W) != 0
 		  && ABI_64_P (link_info->output_bfd))
@@ -1701,7 +1865,6 @@ convert:
 	  if (to_reloc_pc32)
 	    return TRUE;
 
-	  modrm = bfd_get_8 (abfd, contents + roff - 1);
 	  if (opcode == 0x85)
 	    {
 	      /* Convert "test %reg, foo@GOTPCREL(%rip)" to
@@ -1738,6 +1901,7 @@ rewrite_modrm_rex:
       bfd_put_8 (abfd, opcode, contents + roff - 2);
     }
 
+update_reloc:
   *r_type_p = r_type;
   irel->r_info = htab->r_info (r_symndx,
 			       r_type | R_X86_64_converted_reloc_bit);
@@ -1908,13 +2072,17 @@ elf_x86_64_check_relocs (bfd *abfd, struct bfd_link_info *info,
       converted_reloc = FALSE;
       if ((r_type == R_X86_64_GOTPCREL
 	   || r_type == R_X86_64_GOTPCRELX
-	   || r_type == R_X86_64_REX_GOTPCRELX)
+	   || r_type == R_X86_64_REX_GOTPCRELX
+	   || r_type == R_X86_64_THUNK_GOTPCRELX)
 	  && (h == NULL || h->type != STT_GNU_IFUNC))
 	{
 	  Elf_Internal_Rela *irel = (Elf_Internal_Rela *) rel;
+	  Elf_Internal_Rela *irel_start = (Elf_Internal_Rela *) relocs;
+	  Elf_Internal_Rela *irel_end = (Elf_Internal_Rela *) rel_end;
 	  if (!elf_x86_64_convert_load_reloc (abfd, contents, &r_type,
-					      irel, h, &converted_reloc,
-					      info))
+					      irel, irel_start,
+					      irel_end, h,
+					      &converted_reloc, info))
 	    goto error_return;
 
 	  if (converted_reloc)
@@ -1951,6 +2119,7 @@ elf_x86_64_check_relocs (bfd *abfd, struct bfd_link_info *info,
 	case R_X86_64_GOTPCREL:
 	case R_X86_64_GOTPCRELX:
 	case R_X86_64_REX_GOTPCRELX:
+	case R_X86_64_THUNK_GOTPCRELX:
 	case R_X86_64_TLSGD:
 	case R_X86_64_GOT64:
 	case R_X86_64_GOTPCREL64:
@@ -2517,6 +2686,7 @@ elf_x86_64_relocate_section (bfd *output_bfd,
 	    case R_X86_64_GOTPCREL:
 	    case R_X86_64_GOTPCRELX:
 	    case R_X86_64_REX_GOTPCRELX:
+	    case R_X86_64_THUNK_GOTPCRELX:
 	    case R_X86_64_GOTPCREL64:
 	      base_got = htab->elf.sgot;
 	      off = h->got.offset;
@@ -2738,6 +2908,7 @@ do_ifunc_pointer:
 	case R_X86_64_GOTPCREL:
 	case R_X86_64_GOTPCRELX:
 	case R_X86_64_REX_GOTPCRELX:
+	case R_X86_64_THUNK_GOTPCRELX:
 	case R_X86_64_GOTPCREL64:
 	  /* Use global offset table entry as symbol value.  */
 	case R_X86_64_GOTPLT64:
@@ -2847,6 +3018,7 @@ do_ifunc_pointer:
 	  if (r_type != R_X86_64_GOTPCREL
 	      && r_type != R_X86_64_GOTPCRELX
 	      && r_type != R_X86_64_REX_GOTPCRELX
+	      && r_type != R_X86_64_THUNK_GOTPCRELX
 	      && r_type != R_X86_64_GOTPCREL64)
 	    relocation -= htab->elf.sgotplt->output_section->vma
 			  - htab->elf.sgotplt->output_offset;
