@@ -1,0 +1,105 @@
+From 6dc5c8a5542abee7064c82d0c1d69b7a6982f0c5 Mon Sep 17 00:00:00 2001
+From: "H.J. Lu" <hjl.tools@gmail.com>
+Date: Tue, 23 Jan 2018 12:09:12 -0800
+Subject: [PATCH 2/2] gold: Initial R_X86_64_THUNK_GOTPCRELX support
+
+Treat R_X86_64_THUNK_GOTPCRELX as R_X86_64_REX_GOTPCRELX,
+
+elfcpp/
+
+	* x86_64.h (R_X86_64_THUNK_GOTPCRELX): New.
+
+gold/
+
+	* x86_64.cc (can_convert_mov_to_lea): Also accept
+	R_X86_64_THUNK_GOTPCRELX.
+	(Scan::get_reference_flags): Handle R_X86_64_THUNK_GOTPCRELX.
+	(Scan::local): Likewise.
+	(Scan::possible_function_pointer_reloc): Likewise.
+	(Scan::global): Likewise.
+	(Relocate::relocate): Likewise.
+---
+ elfcpp/x86_64.h |  2 ++
+ gold/x86_64.cc  | 11 +++++++++--
+ 2 files changed, 11 insertions(+), 2 deletions(-)
+
+diff --git a/elfcpp/x86_64.h b/elfcpp/x86_64.h
+index a8883dd20c..653ecd92ff 100644
+--- a/elfcpp/x86_64.h
++++ b/elfcpp/x86_64.h
+@@ -98,6 +98,8 @@ enum
+ 			   // without REX prefix, relaxable.
+   R_X86_64_REX_GOTPCRELX = 42, // 32 bit signed PC relative offset to GOT
+ 			       // with REX prefix, relaxable.
++  R_X86_64_THUNK_GOTPCRELX = 43, // 32 bit signed PC relative offset to GOT
++			       // with REX prefix, relaxable.
+   // GNU vtable garbage collection extensions.
+   R_X86_64_GNU_VTINHERIT = 250,
+   R_X86_64_GNU_VTENTRY = 251
+diff --git a/gold/x86_64.cc b/gold/x86_64.cc
+index a8140602b0..ca65776b1a 100644
+--- a/gold/x86_64.cc
++++ b/gold/x86_64.cc
+@@ -1048,7 +1048,8 @@ class Target_x86_64 : public Sized_target<size, false>
+     // We cannot do the conversion unless it's one of these relocations.
+     if (r_type != elfcpp::R_X86_64_GOTPCREL
+         && r_type != elfcpp::R_X86_64_GOTPCRELX
+-        && r_type != elfcpp::R_X86_64_REX_GOTPCRELX)
++        && r_type != elfcpp::R_X86_64_REX_GOTPCRELX
++        && r_type != elfcpp::R_X86_64_THUNK_GOTPCRELX)
+       return false;
+     // We cannot convert references to IFUNC symbols, or to symbols that
+     // are not local to the current module.
+@@ -2770,6 +2771,7 @@ Target_x86_64<size>::Scan::get_reference_flags(unsigned int r_type)
+     case elfcpp::R_X86_64_GOTPCREL:
+     case elfcpp::R_X86_64_GOTPCRELX:
+     case elfcpp::R_X86_64_REX_GOTPCRELX:
++    case elfcpp::R_X86_64_THUNK_GOTPCRELX:
+     case elfcpp::R_X86_64_GOTPLT64:
+       // Absolute in GOT.
+       return Symbol::ABSOLUTE_REF;
+@@ -3056,6 +3058,7 @@ Target_x86_64<size>::Scan::local(Symbol_table* symtab,
+     case elfcpp::R_X86_64_GOTPCREL:
+     case elfcpp::R_X86_64_GOTPCRELX:
+     case elfcpp::R_X86_64_REX_GOTPCRELX:
++    case elfcpp::R_X86_64_THUNK_GOTPCRELX:
+     case elfcpp::R_X86_64_GOTPLT64:
+       {
+ 	// The symbol requires a GOT section.
+@@ -3069,7 +3072,8 @@ Target_x86_64<size>::Scan::local(Symbol_table* symtab,
+ 	if (!parameters->incremental()
+ 	    && (r_type == elfcpp::R_X86_64_GOTPCREL
+ 		|| r_type == elfcpp::R_X86_64_GOTPCRELX
+-		|| r_type == elfcpp::R_X86_64_REX_GOTPCRELX)
++		|| r_type == elfcpp::R_X86_64_REX_GOTPCRELX
++		|| r_type == elfcpp::R_X86_64_THUNK_GOTPCRELX)
+ 	    && reloc.get_r_offset() >= 2
+ 	    && !is_ifunc)
+ 	  {
+@@ -3302,6 +3306,7 @@ Target_x86_64<size>::Scan::possible_function_pointer_reloc(
+     case elfcpp::R_X86_64_GOTPCREL:
+     case elfcpp::R_X86_64_GOTPCRELX:
+     case elfcpp::R_X86_64_REX_GOTPCRELX:
++    case elfcpp::R_X86_64_THUNK_GOTPCRELX:
+     case elfcpp::R_X86_64_GOTPLT64:
+       {
+ 	return true;
+@@ -3533,6 +3538,7 @@ Target_x86_64<size>::Scan::global(Symbol_table* symtab,
+     case elfcpp::R_X86_64_GOTPCREL:
+     case elfcpp::R_X86_64_GOTPCRELX:
+     case elfcpp::R_X86_64_REX_GOTPCRELX:
++    case elfcpp::R_X86_64_THUNK_GOTPCRELX:
+     case elfcpp::R_X86_64_GOTPLT64:
+       {
+ 	// The symbol requires a GOT entry.
+@@ -4244,6 +4250,7 @@ Target_x86_64<size>::Relocate::relocate(
+     case elfcpp::R_X86_64_GOTPCREL:
+     case elfcpp::R_X86_64_GOTPCRELX:
+     case elfcpp::R_X86_64_REX_GOTPCRELX:
++    case elfcpp::R_X86_64_THUNK_GOTPCRELX:
+       {
+       // Convert
+       // mov foo@GOTPCREL(%rip), %reg
+-- 
+2.14.3
+

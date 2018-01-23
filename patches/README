@@ -23,6 +23,8 @@ patches="
 	binutils-secondary.patch
 	binutils-pr21128.patch
 	binutils-pr21129.patch
+	binutils-x86-64-thunk.patch
+	binutils-x86-64-gold-thunk.patch
 	binutils-x86-gpoff.patch
 "
 

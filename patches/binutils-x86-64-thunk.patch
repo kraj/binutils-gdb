@@ -1,0 +1,1336 @@
+From 584f0b3e3b838fa100bec004ad523d730eeb9875 Mon Sep 17 00:00:00 2001
+From: "H.J. Lu" <hjl.tools@gmail.com>
+Date: Mon, 22 Jan 2018 11:51:28 -0800
+Subject: [PATCH] x86-64: Add R_X86_64_THUNK_GOTPCRELX
+
+The R_X86_64_THUNK_GOTPCRELX relocation is almost identical to
+R_X86_64_REX_GOTPCRELX, except for it is only used to convert function
+call via GOT slot with call and return thunks:
+
+	[bnd] call/jmp *foo@GOTPCREL(%rip)
+
+to
+
+	movq           foo@GOTPCREL_THUNK(%rip), %reg
+	[bnd] call/jmp __x86_indirect_thunk_[bnd_]reg
+
+If foo is defined locally, they can be converted to
+
+	[bnd] call/jmp foo
+	nop            0L(%rax)
+
+When 'movq foo@GOTPCREL_THUNK(%rip), %reg" is found, we need to scan
+relocations to check if there is a relocation applied to the next
+instruction which is "[bnd] call/jmp __x86_indirect_thunk_[bnd_]reg"
+before we convert them.
+
+bfd/
+
+	* elf64-x86-64.c (x86_64_elf_howto_table): Add
+	R_X86_64_THUNK_GOTPCRELX.
+	(x86_64_reloc_map): Likewise.
+	(R_X86_64_standard): Replace R_X86_64_REX_GOTPCRELX with
+	R_X86_64_THUNK_GOTPCRELX.
+	(X86_INDIRECT_THUNK_R): New.
+	(X86_INDIRECT_THUNK_BND_R): New.
+	(elf_x86_64_check_thunk_gotpcrelx): Likewise.
+	(elf_x86_64_convert_load_reloc): Add 2 arguments for start and
+	end of relocations.  When converting R_X86_64_THUNK_GOTPCRELX,
+	scan relocations to find and convert the matching branch of
+	__x86_indirect_thunk_[bnd_]reg.
+	(elf_x86_64_check_relocs): Handle R_X86_64_THUNK_GOTPCRELX.
+	Pass relocs and rel_end to elf_x86_64_convert_load_reloc.
+	(elf_x86_64_relocate_section): Handle R_X86_64_THUNK_GOTPCRELX.
+	* reloc.c (bfd_reloc_code_real): Add
+	BFD_RELOC_X86_64_THUNK_GOTPCRELX.
+	* bfd-in2.h: Regenerated.
+	* libbfd.h: Likewise.
+
+gas/
+
+	* write.h (fix): Add fx_tcbit3.
+	* config/tc-i386.c (_i386_insn): Add need_thunk_gotpcrelx.
+	(tc_i386_fix_adjustable): Handle
+	BFD_RELOC_X86_64_THUNK_GOTPCRELX.
+	(tc_gen_reloc): Likewise.
+	(output_disp): Set fixP->fx_tcbit3 to 1 for
+	"movq foo@THUNK_GOTPCRELX(%rip), %reg".
+	(lex_got): Handle @THUNK_GOTPCRELX.
+	(i386_finalize_displacement): Handle
+	BFD_RELOC_X86_64_THUNK_GOTPCRELX.  Set i.need_thunk_gotpcrelx
+	for BFD_RELOC_X86_64_THUNK_GOTPCRELX.
+	(i386_validate_fix): Set fixp->fx_r_type to
+	BFD_RELOC_X86_64_THUNK_GOTPCRELX if fixP->fx_tcbit3 is set.
+	Adjust fixp->fx_r_type to BFD_RELOC_X86_64_GOTPCREL without
+	GOT.
+	* config/tc-i386.h (tc_i386_fix_adjustable): Also TRUE for
+	BFD_RELOC_X86_64_THUNK_GOTPCRELX.
+	* testsuite/gas/i386/i386.exp: Run x86-64-gotpcrel-2 and
+	x86-64-localpic-2.
+	* testsuite/gas/i386/x86-64-gotpcrel-2.d: New file.
+	* testsuite/gas/i386/x86-64-gotpcrel-2.s: Likewise.
+	* testsuite/gas/i386/x86-64-localpic-2.d: Likewise.
+	* testsuite/gas/i386/x86-64-localpic-2.s: Likewise.
+	* testsuite/gas/i386/ilp32/x86-64-gotpcrel-2.d: Likewise.
+	* testsuite/gas/i386/ilp32/x86-64-localpic-2.: Likewise.
+
+include/
+
+	* elf/x86-64.h (R_X86_64_THUNK_GOTPCRELX): New.
+
+ld/
+
+	* testsuite/ld-x86-64/gotpcrel2.dd: New file.
+	* testsuite/ld-x86-64/gotpcrel2.out: Likewise.
+	* testsuite/ld-x86-64/gotpcrel2a.S: Likewise.
+	* testsuite/ld-x86-64/gotpcrel2b.c: Likewise.
+	* testsuite/ld-x86-64/gotpcrel2c.c: Likewise.
+	* testsuite/ld-x86-64/gotpcrel2d.S: Likewise.
+	* testsuite/ld-x86-64/gotpcrel3.dd: Likewise.
+	* testsuite/ld-x86-64/gotpcrel3.out: Likewise.
+	* testsuite/ld-x86-64/gotpcrel3a.S: Likewise.
+	* testsuite/ld-x86-64/gotpcrel3b.c: Likewise.
+	* testsuite/ld-x86-64/gotpcrel3c.c: Likewise.
+	* testsuite/ld-x86-64/gotpcrel3d.S: Likewise.
+	* testsuite/ld-x86-64/mpx.exp: Run gotpcrel3 tests.
+	* testsuite/ld-x86-64/x86-64.exp: Run gotpcrel2 tests.
+---
+ bfd/bfd-in2.h                                    |   1 +
+ bfd/elf64-x86-64.c                               | 194 +++++++++++++++++++++--
+ bfd/libbfd.h                                     |   1 +
+ bfd/reloc.c                                      |   2 +
+ gas/config/tc-i386.c                             |  35 +++-
+ gas/config/tc-i386.h                             |   3 +-
+ gas/testsuite/gas/i386/i386.exp                  |   3 +
+ gas/testsuite/gas/i386/ilp32/x86-64-gotpcrel-2.d |  31 ++++
+ gas/testsuite/gas/i386/ilp32/x86-64-localpic-2.d |  11 ++
+ gas/testsuite/gas/i386/x86-64-gotpcrel-2.d       |  28 ++++
+ gas/testsuite/gas/i386/x86-64-gotpcrel-2.s       |  25 +++
+ gas/testsuite/gas/i386/x86-64-localpic-2.d       |  10 ++
+ gas/testsuite/gas/i386/x86-64-localpic-2.s       |   4 +
+ gas/write.h                                      |   1 +
+ include/elf/x86-64.h                             |   3 +
+ ld/testsuite/ld-x86-64/gotpcrel2.dd              |  25 +++
+ ld/testsuite/ld-x86-64/gotpcrel2.out             |   8 +
+ ld/testsuite/ld-x86-64/gotpcrel2a.S              |  78 +++++++++
+ ld/testsuite/ld-x86-64/gotpcrel2b.c              |   7 +
+ ld/testsuite/ld-x86-64/gotpcrel2c.c              |   7 +
+ ld/testsuite/ld-x86-64/gotpcrel2d.S              |  42 +++++
+ ld/testsuite/ld-x86-64/gotpcrel3.dd              |  25 +++
+ ld/testsuite/ld-x86-64/gotpcrel3.out             |   8 +
+ ld/testsuite/ld-x86-64/gotpcrel3a.S              |  78 +++++++++
+ ld/testsuite/ld-x86-64/gotpcrel3b.c              |   7 +
+ ld/testsuite/ld-x86-64/gotpcrel3c.c              |   7 +
+ ld/testsuite/ld-x86-64/gotpcrel3d.S              |  42 +++++
+ ld/testsuite/ld-x86-64/mpx.exp                   |  35 ++++
+ ld/testsuite/ld-x86-64/x86-64.exp                |  32 ++++
+ 29 files changed, 736 insertions(+), 17 deletions(-)
+ create mode 100644 gas/testsuite/gas/i386/ilp32/x86-64-gotpcrel-2.d
+ create mode 100644 gas/testsuite/gas/i386/ilp32/x86-64-localpic-2.d
+ create mode 100644 gas/testsuite/gas/i386/x86-64-gotpcrel-2.d
+ create mode 100644 gas/testsuite/gas/i386/x86-64-gotpcrel-2.s
+ create mode 100644 gas/testsuite/gas/i386/x86-64-localpic-2.d
+ create mode 100644 gas/testsuite/gas/i386/x86-64-localpic-2.s
+ create mode 100644 ld/testsuite/ld-x86-64/gotpcrel2.dd
+ create mode 100644 ld/testsuite/ld-x86-64/gotpcrel2.out
+ create mode 100644 ld/testsuite/ld-x86-64/gotpcrel2a.S
+ create mode 100644 ld/testsuite/ld-x86-64/gotpcrel2b.c
+ create mode 100644 ld/testsuite/ld-x86-64/gotpcrel2c.c
+ create mode 100644 ld/testsuite/ld-x86-64/gotpcrel2d.S
+ create mode 100644 ld/testsuite/ld-x86-64/gotpcrel3.dd
+ create mode 100644 ld/testsuite/ld-x86-64/gotpcrel3.out
+ create mode 100644 ld/testsuite/ld-x86-64/gotpcrel3a.S
+ create mode 100644 ld/testsuite/ld-x86-64/gotpcrel3b.c
+ create mode 100644 ld/testsuite/ld-x86-64/gotpcrel3c.c
+ create mode 100644 ld/testsuite/ld-x86-64/gotpcrel3d.S
+
+diff --git a/bfd/bfd-in2.h b/bfd/bfd-in2.h
+index f4b3720b4b..cfb07be188 100644
+--- a/bfd/bfd-in2.h
++++ b/bfd/bfd-in2.h
+@@ -3323,6 +3323,7 @@ instruction.  */
+   BFD_RELOC_X86_64_PLT32_BND,
+   BFD_RELOC_X86_64_GOTPCRELX,
+   BFD_RELOC_X86_64_REX_GOTPCRELX,
++  BFD_RELOC_X86_64_THUNK_GOTPCRELX,
+ 
+ /* ns32k relocations  */
+   BFD_RELOC_NS32K_IMM_8,
+diff --git a/bfd/elf64-x86-64.c b/bfd/elf64-x86-64.c
+index ba4f47bff4..7f5ecbe111 100644
+--- a/bfd/elf64-x86-64.c
++++ b/bfd/elf64-x86-64.c
+@@ -173,12 +173,15 @@ static reloc_howto_type x86_64_elf_howto_table[] =
+   HOWTO(R_X86_64_REX_GOTPCRELX, 0, 2, 32, TRUE, 0, complain_overflow_signed,
+ 	bfd_elf_generic_reloc, "R_X86_64_REX_GOTPCRELX", FALSE, 0xffffffff,
+ 	0xffffffff, TRUE),
++  HOWTO(R_X86_64_THUNK_GOTPCRELX, 0, 2, 32, TRUE, 0, complain_overflow_signed,
++	bfd_elf_generic_reloc, "R_X86_64_THUNK_GOTPCRELX", FALSE, 0xffffffff,
++	0xffffffff, TRUE),
+ 
+   /* We have a gap in the reloc numbers here.
+      R_X86_64_standard counts the number up to this point, and
+      R_X86_64_vt_offset is the value to subtract from a reloc type of
+      R_X86_64_GNU_VT* to form an index into this table.  */
+-#define R_X86_64_standard (R_X86_64_REX_GOTPCRELX + 1)
++#define R_X86_64_standard (R_X86_64_THUNK_GOTPCRELX + 1)
+ #define R_X86_64_vt_offset (R_X86_64_GNU_VTINHERIT - R_X86_64_standard)
+ 
+ /* GNU extension to record C++ vtable hierarchy.  */
+@@ -260,6 +263,7 @@ static const struct elf_reloc_map x86_64_reloc_map[] =
+   { BFD_RELOC_X86_64_PLT32_BND,	R_X86_64_PLT32_BND, },
+   { BFD_RELOC_X86_64_GOTPCRELX, R_X86_64_GOTPCRELX, },
+   { BFD_RELOC_X86_64_REX_GOTPCRELX, R_X86_64_REX_GOTPCRELX, },
++  { BFD_RELOC_X86_64_THUNK_GOTPCRELX, R_X86_64_THUNK_GOTPCRELX, },
+   { BFD_RELOC_VTABLE_INHERIT,	R_X86_64_GNU_VTINHERIT, },
+   { BFD_RELOC_VTABLE_ENTRY,	R_X86_64_GNU_VTENTRY, },
+ };
+@@ -1410,6 +1414,62 @@ elf_x86_64_need_pic (struct bfd_link_info *info,
+   return FALSE;
+ }
+ 
++#define X86_INDIRECT_THUNK_R "__x86_indirect_thunk_r"
++#define X86_INDIRECT_THUNK_BND_R "__x86_indirect_thunk_bnd_r"
++
++/* Return TRUE if the destination register of movq matches the register,
++   REG, in __x86_indirect_thunk_[bnd_]REG.  Otherwise, return FALSE.  */
++
++static bfd_boolean
++elf_x86_64_check_thunk_gotpcrelx (struct elf_link_hash_entry *h,
++				  unsigned int modrm,
++				  unsigned int rex,
++				  bfd_boolean bnd_p)
++{
++  /* Check for the relocation against __x86_indirect_thunk_[bnd_]reg.  */
++  int thunk_prefix = 0;
++
++  if (bnd_p)
++    {
++      if (strncmp (h->root.root.string, X86_INDIRECT_THUNK_BND_R,
++		   sizeof (X86_INDIRECT_THUNK_BND_R) - 1) == 0)
++	thunk_prefix = sizeof (X86_INDIRECT_THUNK_BND_R) - 1;
++    }
++  else
++    {
++      if (strncmp (h->root.root.string, X86_INDIRECT_THUNK_R,
++		   sizeof (X86_INDIRECT_THUNK_R) - 1) == 0)
++	thunk_prefix = sizeof (X86_INDIRECT_THUNK_R) - 1;
++    }
++
++  if (thunk_prefix)
++    {
++      /* This a relocation against __x86_indirect_thunk_[bnd_]reg.
++	 Check if the destination register of movq matches.  */
++      unsigned int reg;
++      static const char *regs[16] =
++	{
++	  "ax", "dx", "cx", "bx", "si", "di", "bp", "",
++	  "8", "9", "10", "11", "12", "13", "14", "15"
++	};
++      if ((rex & REX_W) != 0
++	  && ((rex & (~(REX_W | REX_R))) == REX_OPCODE))
++	{
++	  if ((modrm & 0xc7) == 0x5)
++	    {
++	      reg = (modrm & 0x38) >> 3;
++	      if ((rex & REX_R) != 0)
++		reg += 8;
++	      if (strcmp (h->root.root.string + thunk_prefix,
++			  regs[reg]) == 0)
++		return TRUE;
++	    }
++	}
++    }
++
++  return FALSE;
++}
++
+ /* With the local symbol, foo, we convert
+    mov foo@GOTPCREL(%rip), %reg
+    to
+@@ -1434,6 +1494,8 @@ elf_x86_64_convert_load_reloc (bfd *abfd,
+ 			       bfd_byte *contents,
+ 			       unsigned int *r_type_p,
+ 			       Elf_Internal_Rela *irel,
++			       Elf_Internal_Rela *irel_start,
++			       Elf_Internal_Rela *irel_end,
+ 			       struct elf_link_hash_entry *h,
+ 			       bfd_boolean *converted,
+ 			       struct bfd_link_info *link_info)
+@@ -1450,8 +1512,10 @@ elf_x86_64_convert_load_reloc (bfd *abfd,
+   unsigned int r_type = *r_type_p;
+   unsigned int r_symndx;
+   bfd_vma roff = irel->r_offset;
++  bfd_boolean has_rex = (r_type == R_X86_64_REX_GOTPCRELX
++			 || r_type == R_X86_64_THUNK_GOTPCRELX);
+ 
+-  if (roff < (r_type == R_X86_64_REX_GOTPCRELX ? 3 : 2))
++  if (roff < (has_rex ? 3 : 2))
+     return TRUE;
+ 
+   raddend = irel->r_addend;
+@@ -1462,8 +1526,7 @@ elf_x86_64_convert_load_reloc (bfd *abfd,
+   htab = elf_x86_hash_table (link_info, X86_64_ELF_DATA);
+   is_pic = bfd_link_pic (link_info);
+ 
+-  relocx = (r_type == R_X86_64_GOTPCRELX
+-	    || r_type == R_X86_64_REX_GOTPCRELX);
++  relocx = r_type == R_X86_64_GOTPCRELX || has_rex;
+ 
+   /* TRUE if --no-relax is used.  */
+   no_overflow = link_info->disable_target_specific_optimizations > 1;
+@@ -1597,6 +1660,8 @@ elf_x86_64_convert_load_reloc (bfd *abfd,
+     return TRUE;
+ 
+ convert:
++  modrm = bfd_get_8 (abfd, contents + roff - 1);
++
+   if (opcode == 0xff)
+     {
+       /* We have "call/jmp *foo@GOTPCREL(%rip)".  */
+@@ -1606,7 +1671,6 @@ convert:
+ 
+       /* Convert R_X86_64_GOTPCRELX and R_X86_64_REX_GOTPCRELX to
+ 	 R_X86_64_PC32.  */
+-      modrm = bfd_get_8 (abfd, contents + roff - 1);
+       if (modrm == 0x25)
+ 	{
+ 	  /* Convert to "jmp foo nop".  */
+@@ -1655,13 +1719,114 @@ convert:
+       unsigned int rex;
+       unsigned int rex_mask = REX_R;
+ 
+-      if (r_type == R_X86_64_REX_GOTPCRELX)
++      if (has_rex)
+ 	rex = bfd_get_8 (abfd, contents + roff - 3);
+       else
+ 	rex = 0;
+ 
+       if (opcode == 0x8b)
+ 	{
++	  if (r_type == R_X86_64_THUNK_GOTPCRELX)
++	    {
++	      unsigned int r_symndx_next;
++	      Elf_Internal_Rela *rel;
++	      bfd_boolean bnd_next_p = FALSE;
++	      bfd_boolean match = FALSE;
++	      Elf_Internal_Shdr *symtab_hdr
++		= &elf_symtab_hdr (abfd);
++	      struct elf_link_hash_entry **sym_hashes
++		= elf_sym_hashes (abfd);
++
++	      /* Check if we can covert
++		   movq           foo@GOTPCREL_THUNK(%rip), %reg
++		   [bnd] call/jmp __x86_indirect_thunk_[bnd_]reg
++		 to
++		   [bnd] call/jmp foo
++		   nop            0L(%rax)
++	       */
++
++	      /* Find the relocation for the next instruction.  */
++	      for (rel = irel_start; rel < irel_end; rel++)
++		if (ELF32_R_TYPE (rel->r_info) == R_X86_64_PC32)
++		  {
++		    if ((roff + 5) == rel->r_offset)
++		      {
++			match = TRUE;
++			opcode = bfd_get_8 (abfd, contents + roff + 4);
++		      }
++		    else if ((roff + 6) == rel->r_offset)
++		      {
++			opcode = bfd_get_8 (abfd, contents + roff + 4);
++			if (opcode == BND_PREFIX_OPCODE)
++			  {
++			    match = TRUE;
++			    bnd_next_p = TRUE;
++			    opcode = bfd_get_8 (abfd,
++						contents + roff + 5);
++			  }
++			else
++			  {
++			    /* Quit if it isn't the BND prefix.  */
++			    break;
++			  }
++		      }
++
++		    /* Continue if this isn't the right relocation.  */
++		    if (!match)
++		      continue;
++
++		    /* Quit if the instruction isn't call nor jmp.  */
++		    if (opcode != 0xe8 && opcode != 0xe9)
++		      break;
++
++		    /* Quit if the symbol is local.  */
++		    r_symndx_next = htab->r_sym (rel->r_info);
++		    if (r_symndx_next < symtab_hdr->sh_info)
++		      break;
++
++		    h = sym_hashes[r_symndx_next - symtab_hdr->sh_info];
++		    while (h->root.type == bfd_link_hash_indirect
++			   || h->root.type == bfd_link_hash_warning)
++		      h = (struct elf_link_hash_entry *) h->root.u.i.link;
++
++		    /* Quit if the instructions don't match.  */
++		    if (!elf_x86_64_check_thunk_gotpcrelx (h,
++							   modrm, rex,
++							   bnd_next_p))
++		      break;
++
++		    /* Convert:
++			 movq           foo@GOTPCREL_THUNK(%rip), %reg
++			 [bnd] call/jmp __x86_indirect_thunk_[bnd_]reg
++		       to
++			 [bnd] call/jmp foo
++			 nop            0L(%rax)
++
++		       movq has REX 8b MODRM.  call/jmp has e8/ef.
++		     */
++		    if (bnd_next_p)
++		      {
++			/* Write the BND prefix.  */
++			roff -= 1;
++			bfd_put_8 (abfd, BND_PREFIX_OPCODE,
++				   contents + roff - 2);
++		      }
++		    else
++		      roff -= 2;
++		    irel->r_offset = roff;
++		    irel->r_addend = -4;
++		    /* Clear the 4-byte displacement and write 7-byte
++		       NOP: nopl 0L(%rax).  */
++		    memcpy (contents + roff,
++			    "\0\0\0\0\x0f\x1f\x80\0\0\0\0", 11);
++		    /* Skip the relocation for NOP.  */
++		    rel->r_info = htab->r_info (0, R_X86_64_NONE);
++		    r_type = R_X86_64_PC32;
++		    bfd_put_8 (abfd, opcode, contents + roff - 1);
++		    goto update_reloc;
++		  }
++	    }
++
+ 	  if (to_reloc_pc32)
+ 	    {
+ 	      /* Convert "mov foo@GOTPCREL(%rip), %reg" to
+@@ -1674,7 +1839,6 @@ convert:
+ 	      /* Convert "mov foo@GOTPCREL(%rip), %reg" to
+ 		 "mov $foo, %reg".  */
+ 	      opcode = 0xc7;
+-	      modrm = bfd_get_8 (abfd, contents + roff - 1);
+ 	      modrm = 0xc0 | (modrm & 0x38) >> 3;
+ 	      if ((rex & REX_W) != 0
+ 		  && ABI_64_P (link_info->output_bfd))
+@@ -1701,7 +1865,6 @@ convert:
+ 	  if (to_reloc_pc32)
+ 	    return TRUE;
+ 
+-	  modrm = bfd_get_8 (abfd, contents + roff - 1);
+ 	  if (opcode == 0x85)
+ 	    {
+ 	      /* Convert "test %reg, foo@GOTPCREL(%rip)" to
+@@ -1738,6 +1901,7 @@ rewrite_modrm_rex:
+       bfd_put_8 (abfd, opcode, contents + roff - 2);
+     }
+ 
++update_reloc:
+   *r_type_p = r_type;
+   irel->r_info = htab->r_info (r_symndx,
+ 			       r_type | R_X86_64_converted_reloc_bit);
+@@ -1908,13 +2072,17 @@ elf_x86_64_check_relocs (bfd *abfd, struct bfd_link_info *info,
+       converted_reloc = FALSE;
+       if ((r_type == R_X86_64_GOTPCREL
+ 	   || r_type == R_X86_64_GOTPCRELX
+-	   || r_type == R_X86_64_REX_GOTPCRELX)
++	   || r_type == R_X86_64_REX_GOTPCRELX
++	   || r_type == R_X86_64_THUNK_GOTPCRELX)
+ 	  && (h == NULL || h->type != STT_GNU_IFUNC))
+ 	{
+ 	  Elf_Internal_Rela *irel = (Elf_Internal_Rela *) rel;
++	  Elf_Internal_Rela *irel_start = (Elf_Internal_Rela *) relocs;
++	  Elf_Internal_Rela *irel_end = (Elf_Internal_Rela *) rel_end;
+ 	  if (!elf_x86_64_convert_load_reloc (abfd, contents, &r_type,
+-					      irel, h, &converted_reloc,
+-					      info))
++					      irel, irel_start,
++					      irel_end, h,
++					      &converted_reloc, info))
+ 	    goto error_return;
+ 
+ 	  if (converted_reloc)
+@@ -1951,6 +2119,7 @@ elf_x86_64_check_relocs (bfd *abfd, struct bfd_link_info *info,
+ 	case R_X86_64_GOTPCREL:
+ 	case R_X86_64_GOTPCRELX:
+ 	case R_X86_64_REX_GOTPCRELX:
++	case R_X86_64_THUNK_GOTPCRELX:
+ 	case R_X86_64_TLSGD:
+ 	case R_X86_64_GOT64:
+ 	case R_X86_64_GOTPCREL64:
+@@ -2517,6 +2686,7 @@ elf_x86_64_relocate_section (bfd *output_bfd,
+ 	    case R_X86_64_GOTPCREL:
+ 	    case R_X86_64_GOTPCRELX:
+ 	    case R_X86_64_REX_GOTPCRELX:
++	    case R_X86_64_THUNK_GOTPCRELX:
+ 	    case R_X86_64_GOTPCREL64:
+ 	      base_got = htab->elf.sgot;
+ 	      off = h->got.offset;
+@@ -2738,6 +2908,7 @@ do_ifunc_pointer:
+ 	case R_X86_64_GOTPCREL:
+ 	case R_X86_64_GOTPCRELX:
+ 	case R_X86_64_REX_GOTPCRELX:
++	case R_X86_64_THUNK_GOTPCRELX:
+ 	case R_X86_64_GOTPCREL64:
+ 	  /* Use global offset table entry as symbol value.  */
+ 	case R_X86_64_GOTPLT64:
+@@ -2847,6 +3018,7 @@ do_ifunc_pointer:
+ 	  if (r_type != R_X86_64_GOTPCREL
+ 	      && r_type != R_X86_64_GOTPCRELX
+ 	      && r_type != R_X86_64_REX_GOTPCRELX
++	      && r_type != R_X86_64_THUNK_GOTPCRELX
+ 	      && r_type != R_X86_64_GOTPCREL64)
+ 	    relocation -= htab->elf.sgotplt->output_section->vma
+ 			  - htab->elf.sgotplt->output_offset;
+diff --git a/bfd/libbfd.h b/bfd/libbfd.h
+index 2f5f16e776..d07d40485d 100644
+--- a/bfd/libbfd.h
++++ b/bfd/libbfd.h
+@@ -1340,6 +1340,7 @@ static const char *const bfd_reloc_code_real_names[] = { "@@uninitialized@@",
+   "BFD_RELOC_X86_64_PLT32_BND",
+   "BFD_RELOC_X86_64_GOTPCRELX",
+   "BFD_RELOC_X86_64_REX_GOTPCRELX",
++  "BFD_RELOC_X86_64_THUNK_GOTPCRELX",
+   "BFD_RELOC_NS32K_IMM_8",
+   "BFD_RELOC_NS32K_IMM_16",
+   "BFD_RELOC_NS32K_IMM_32",
+diff --git a/bfd/reloc.c b/bfd/reloc.c
+index a1353a281b..5c963f9b17 100644
+--- a/bfd/reloc.c
++++ b/bfd/reloc.c
+@@ -2805,6 +2805,8 @@ ENUMX
+   BFD_RELOC_X86_64_GOTPCRELX
+ ENUMX
+   BFD_RELOC_X86_64_REX_GOTPCRELX
++ENUMX
++  BFD_RELOC_X86_64_THUNK_GOTPCRELX
+ ENUMDOC
+   x86-64/elf relocations
+ 
+diff --git a/gas/config/tc-i386.c b/gas/config/tc-i386.c
+index 32a8b31d30..2241075142 100644
+--- a/gas/config/tc-i386.c
++++ b/gas/config/tc-i386.c
+@@ -390,6 +390,9 @@ struct _i386_insn
+     /* Have NOTRACK prefix.  */
+     const char *notrack_prefix;
+ 
++    /* Need R_X86_64_THUNK_GOTPCRELX relocation.  */
++    bfd_boolean need_thunk_gotpcrelx;
++
+     /* Error message.  */
+     enum i386_error error;
+   };
+@@ -3140,6 +3143,7 @@ tc_i386_fix_adjustable (fixS *fixP ATTRIBUTE_UNUSED)
+       || fixP->fx_r_type == BFD_RELOC_X86_64_GOTPCREL
+       || fixP->fx_r_type == BFD_RELOC_X86_64_GOTPCRELX
+       || fixP->fx_r_type == BFD_RELOC_X86_64_REX_GOTPCRELX
++      || fixP->fx_r_type == BFD_RELOC_X86_64_THUNK_GOTPCRELX
+       || fixP->fx_r_type == BFD_RELOC_X86_64_TLSGD
+       || fixP->fx_r_type == BFD_RELOC_X86_64_TLSLD
+       || fixP->fx_r_type == BFD_RELOC_X86_64_DTPOFF32
+@@ -7510,6 +7514,7 @@ output_disp (fragS *insn_start_frag, offsetT insn_start_off)
+ 		 instructions.  Always generate R_386_GOT32X for
+ 		 "sym*GOT" operand in 32-bit mode.  */
+ 	      if ((generate_relax_relocations
++		   || i.need_thunk_gotpcrelx
+ 		   || (!object_64bit
+ 		       && i.rm.mode == 0
+ 		       && i.rm.regmem == 5))
+@@ -7529,7 +7534,14 @@ output_disp (fragS *insn_start_frag, offsetT insn_start_off)
+ 		      if (i.base_reg
+ 			  && (i.base_reg->reg_num == RegRip
+ 			      || i.base_reg->reg_num == RegEip))
+-		      fixP->fx_tcbit2 = 1;
++			{
++			  fixP->fx_tcbit2 = 1;
++			  /* movq foo@GOTPCREL_THUNK(%rip), %reg  */
++			  if (i.tm.base_opcode == 0x8b
++			      && i.need_thunk_gotpcrelx
++			      && (i.rex & REX_W) != 0)
++			    fixP->fx_tcbit3 = 1;
++			}
+ 		    }
+ 		  else
+ 		    fixP->fx_tcbit2 = 1;
+@@ -7744,6 +7756,9 @@ lex_got (enum bfd_reloc_code_real *rel,
+     { STRING_COMMA_LEN ("GOTOFF"),   { BFD_RELOC_386_GOTOFF,
+ 				       BFD_RELOC_X86_64_GOTOFF64 },
+       OPERAND_TYPE_IMM64_DISP64 },
++    { STRING_COMMA_LEN ("GOTPCREL_THUNK"),{ _dummy_first_bfd_reloc_code_real,
++				       BFD_RELOC_X86_64_THUNK_GOTPCRELX },
++      OPERAND_TYPE_IMM32_32S_DISP32 },
+     { STRING_COMMA_LEN ("GOTPCREL"), { _dummy_first_bfd_reloc_code_real,
+ 				       BFD_RELOC_X86_64_GOTPCREL },
+       OPERAND_TYPE_IMM32_32S_DISP32 },
+@@ -8519,6 +8534,7 @@ i386_finalize_displacement (segT exp_seg ATTRIBUTE_UNUSED, expressionS *exp,
+      to be relative to the beginning of the section.  */
+   if (i.reloc[this_operand] == BFD_RELOC_386_GOTOFF
+       || i.reloc[this_operand] == BFD_RELOC_X86_64_GOTPCREL
++      || i.reloc[this_operand] == BFD_RELOC_X86_64_THUNK_GOTPCRELX
+       || i.reloc[this_operand] == BFD_RELOC_X86_64_GOTOFF64)
+     {
+       if (exp->X_op != O_symbol)
+@@ -8530,7 +8546,10 @@ i386_finalize_displacement (segT exp_seg ATTRIBUTE_UNUSED, expressionS *exp,
+ 	section_symbol (S_GET_SEGMENT (exp->X_add_symbol));
+       exp->X_op = O_subtract;
+       exp->X_op_symbol = GOT_symbol;
+-      if (i.reloc[this_operand] == BFD_RELOC_X86_64_GOTPCREL)
++      i.need_thunk_gotpcrelx
++	= i.reloc[this_operand] == BFD_RELOC_X86_64_THUNK_GOTPCRELX;
++      if (i.need_thunk_gotpcrelx
++	  || i.reloc[this_operand] == BFD_RELOC_X86_64_GOTPCREL)
+ 	i.reloc[this_operand] = BFD_RELOC_32_PCREL;
+       else if (i.reloc[this_operand] == BFD_RELOC_X86_64_GOTOFF64)
+ 	i.reloc[this_operand] = BFD_RELOC_64;
+@@ -10796,9 +10815,11 @@ i386_validate_fix (fixS *fixp)
+ 		abort ();
+ #if defined (OBJ_ELF) || defined (OBJ_MAYBE_ELF)
+ 	      if (fixp->fx_tcbit2)
+-		fixp->fx_r_type = (fixp->fx_tcbit
+-				   ? BFD_RELOC_X86_64_REX_GOTPCRELX
+-				   : BFD_RELOC_X86_64_GOTPCRELX);
++		fixp->fx_r_type = (fixp->fx_tcbit3
++				   ? BFD_RELOC_X86_64_THUNK_GOTPCRELX
++				   : (fixp->fx_tcbit
++				      ? BFD_RELOC_X86_64_REX_GOTPCRELX
++				      : BFD_RELOC_X86_64_GOTPCRELX));
+ 	      else
+ #endif
+ 		fixp->fx_r_type = BFD_RELOC_X86_64_GOTPCREL;
+@@ -10820,6 +10841,8 @@ i386_validate_fix (fixS *fixp)
+ 	  && fixp->fx_tcbit2)
+ 	fixp->fx_r_type = BFD_RELOC_386_GOT32X;
+     }
++  else if (fixp->fx_r_type == BFD_RELOC_X86_64_THUNK_GOTPCRELX)
++    fixp->fx_r_type = BFD_RELOC_X86_64_GOTPCREL;
+ #endif
+ }
+ 
+@@ -10857,6 +10880,7 @@ tc_gen_reloc (asection *section ATTRIBUTE_UNUSED, fixS *fixp)
+     case BFD_RELOC_X86_64_GOTPCREL:
+     case BFD_RELOC_X86_64_GOTPCRELX:
+     case BFD_RELOC_X86_64_REX_GOTPCRELX:
++    case BFD_RELOC_X86_64_THUNK_GOTPCRELX:
+     case BFD_RELOC_386_PLT32:
+     case BFD_RELOC_386_GOT32:
+     case BFD_RELOC_386_GOT32X:
+@@ -11014,6 +11038,7 @@ tc_gen_reloc (asection *section ATTRIBUTE_UNUSED, fixS *fixp)
+ 	  case BFD_RELOC_X86_64_GOTPCREL:
+ 	  case BFD_RELOC_X86_64_GOTPCRELX:
+ 	  case BFD_RELOC_X86_64_REX_GOTPCRELX:
++	  case BFD_RELOC_X86_64_THUNK_GOTPCRELX:
+ 	  case BFD_RELOC_X86_64_TLSGD:
+ 	  case BFD_RELOC_X86_64_TLSLD:
+ 	  case BFD_RELOC_X86_64_GOTTPOFF:
+diff --git a/gas/config/tc-i386.h b/gas/config/tc-i386.h
+index 6e4f440c09..93db8504f0 100644
+--- a/gas/config/tc-i386.h
++++ b/gas/config/tc-i386.h
+@@ -175,7 +175,8 @@ extern int tc_i386_fix_adjustable (struct fix *);
+    || (FIX)->fx_r_type == BFD_RELOC_386_PLT32			\
+    || (FIX)->fx_r_type == BFD_RELOC_386_GOTPC			\
+    || (FIX)->fx_r_type == BFD_RELOC_X86_64_GOTPCRELX		\
+-   || (FIX)->fx_r_type == BFD_RELOC_X86_64_REX_GOTPCRELX)
++   || (FIX)->fx_r_type == BFD_RELOC_X86_64_REX_GOTPCRELX	\
++   || (FIX)->fx_r_type == BFD_RELOC_X86_64_THUNK_GOTPCRELX)
+ 
+ extern int i386_parse_name (char *, expressionS *, char *);
+ #define md_parse_name(s, e, m, c) i386_parse_name (s, e, c)
+diff --git a/gas/testsuite/gas/i386/i386.exp b/gas/testsuite/gas/i386/i386.exp
+index a21ef84997..53dd10b3b2 100644
+--- a/gas/testsuite/gas/i386/i386.exp
++++ b/gas/testsuite/gas/i386/i386.exp
+@@ -961,6 +961,9 @@ if [expr ([istarget "i*86-*-*"] || [istarget "x86_64-*-*"]) && [gas_64_check]] t
+ 	run_dump_test "x86-64-gotpcrel-no-relax"
+ 
+ 	run_dump_test "x86-64-addend"
++
++	run_dump_test "x86-64-gotpcrel-2"
++	run_dump_test "x86-64-localpic-2"
+     }
+ 
+     set ASFLAGS "$old_ASFLAGS"
+diff --git a/gas/testsuite/gas/i386/ilp32/x86-64-gotpcrel-2.d b/gas/testsuite/gas/i386/ilp32/x86-64-gotpcrel-2.d
+new file mode 100644
+index 0000000000..aaaf489955
+--- /dev/null
++++ b/gas/testsuite/gas/i386/ilp32/x86-64-gotpcrel-2.d
+@@ -0,0 +1,31 @@
++#source: ../x86-64-gotpcrel-2.s
++#as: --x32 -mrelax-relocations=no
++#objdump: -dwr
++#name: x86-64 (ILP32) gotpcrel 2
++
++.*: +file format .*
++
++
++Disassembly of section .text:
++
++0+ <_start>:
++[ 	]*[a-f0-9]+:	48 c7 c0 00 00 00 00 	mov    \$0x0,%rax	3: R_X86_64_GOTPCREL	foo
++[ 	]*[a-f0-9]+:	48 8b 04 25 00 00 00 00 	mov    0x0,%rax	b: R_X86_64_GOTPCREL	foo
++[ 	]*[a-f0-9]+:	48 8b 05 00 00 00 00 	mov    0x0\(%rip\),%rax        # 16 <_start\+0x16>	12: R_X86_64_THUNK_GOTPCRELX	foo-0x4
++[ 	]*[a-f0-9]+:	8b 05 00 00 00 00    	mov    0x0\(%rip\),%eax        # 1c <_start\+0x1c>	18: R_X86_64_GOTPCRELX	foo-0x4
++[ 	]*[a-f0-9]+:	48 8b 81 00 00 00 00 	mov    0x0\(%rcx\),%rax	1f: R_X86_64_GOTPCREL	foo
++[ 	]*[a-f0-9]+:	ff 15 00 00 00 00    	callq  \*0x0\(%rip\)        # 29 <_start\+0x29>	25: R_X86_64_GOTPCRELX	foo-0x4
++[ 	]*[a-f0-9]+:	ff 90 00 00 00 00    	callq  \*0x0\(%rax\)	2b: R_X86_64_GOTPCREL	foo
++[ 	]*[a-f0-9]+:	ff 25 00 00 00 00    	jmpq   \*0x0\(%rip\)        # 35 <_start\+0x35>	31: R_X86_64_GOTPCRELX	foo-0x4
++[ 	]*[a-f0-9]+:	ff a1 00 00 00 00    	jmpq   \*0x0\(%rcx\)	37: R_X86_64_GOTPCREL	foo
++[ 	]*[a-f0-9]+:	48 c7 c0 00 00 00 00 	mov    \$0x0,%rax	3e: R_X86_64_GOTPCREL	foo
++[ 	]*[a-f0-9]+:	48 8b 04 25 00 00 00 00 	mov    0x0,%rax	46: R_X86_64_GOTPCREL	foo
++[ 	]*[a-f0-9]+:	48 8b 05 00 00 00 00 	mov    0x0\(%rip\),%rax        # 51 <_start\+0x51>	4d: R_X86_64_THUNK_GOTPCRELX	foo-0x4
++[ 	]*[a-f0-9]+:	8b 05 00 00 00 00    	mov    0x0\(%rip\),%eax        # 57 <_start\+0x57>	53: R_X86_64_GOTPCRELX	foo-0x4
++[ 	]*[a-f0-9]+:	48 8b 81 00 00 00 00 	mov    0x0\(%rcx\),%rax	5a: R_X86_64_GOTPCREL	foo
++[ 	]*[a-f0-9]+:	ff 15 00 00 00 00    	callq  \*0x0\(%rip\)        # 64 <_start\+0x64>	60: R_X86_64_GOTPCRELX	foo-0x4
++[ 	]*[a-f0-9]+:	ff 90 00 00 00 00    	callq  \*0x0\(%rax\)	66: R_X86_64_GOTPCREL	foo
++[ 	]*[a-f0-9]+:	ff 25 00 00 00 00    	jmpq   \*0x0\(%rip\)        # 70 <_start\+0x70>	6c: R_X86_64_GOTPCRELX	foo-0x4
++[ 	]*[a-f0-9]+:	ff a1 00 00 00 00    	jmpq   \*0x0\(%rcx\)	72: R_X86_64_GOTPCREL	foo
++#pass
++#pass
+diff --git a/gas/testsuite/gas/i386/ilp32/x86-64-localpic-2.d b/gas/testsuite/gas/i386/ilp32/x86-64-localpic-2.d
+new file mode 100644
+index 0000000000..9054af2335
+--- /dev/null
++++ b/gas/testsuite/gas/i386/ilp32/x86-64-localpic-2.d
+@@ -0,0 +1,11 @@
++#source: ../x86-64-localpic-2.s
++#as: --x32 -mrelax-relocations=no
++#readelf: -rsW
++#name: x86-64 (ILP32) local PIC 2
++
++Relocation section '.rela.text' at offset 0x[0-9a-f]+ contains 1 entry:
++ +Offset +Info +Type +Sym. Value +Symbol's Name \+ Addend
++[0-9a-f]+ +[0-9a-f]+ R_X86_64_THUNK_GOTPCRELX +[0-9a-f]+ +foo - 4
++#...
++ +[0-9]+: +[0-9a-f]+ +[0-9a-f]+ +NOTYPE +LOCAL +DEFAULT +[0-9]+ +foo
++#pass
+diff --git a/gas/testsuite/gas/i386/x86-64-gotpcrel-2.d b/gas/testsuite/gas/i386/x86-64-gotpcrel-2.d
+new file mode 100644
+index 0000000000..fbf75570ed
+--- /dev/null
++++ b/gas/testsuite/gas/i386/x86-64-gotpcrel-2.d
+@@ -0,0 +1,28 @@
++#as: -mrelax-relocations=no
++#objdump: -dwr
++
++.*: +file format .*
++
++
++Disassembly of section .text:
++
++0+ <_start>:
++[ 	]*[a-f0-9]+:	48 c7 c0 00 00 00 00 	mov    \$0x0,%rax	3: R_X86_64_GOTPCREL	foo
++[ 	]*[a-f0-9]+:	48 8b 04 25 00 00 00 00 	mov    0x0,%rax	b: R_X86_64_GOTPCREL	foo
++[ 	]*[a-f0-9]+:	48 8b 05 00 00 00 00 	mov    0x0\(%rip\),%rax        # 16 <_start\+0x16>	12: R_X86_64_THUNK_GOTPCRELX	foo-0x4
++[ 	]*[a-f0-9]+:	8b 05 00 00 00 00    	mov    0x0\(%rip\),%eax        # 1c <_start\+0x1c>	18: R_X86_64_GOTPCRELX	foo-0x4
++[ 	]*[a-f0-9]+:	48 8b 81 00 00 00 00 	mov    0x0\(%rcx\),%rax	1f: R_X86_64_GOTPCREL	foo
++[ 	]*[a-f0-9]+:	ff 15 00 00 00 00    	callq  \*0x0\(%rip\)        # 29 <_start\+0x29>	25: R_X86_64_GOTPCRELX	foo-0x4
++[ 	]*[a-f0-9]+:	ff 90 00 00 00 00    	callq  \*0x0\(%rax\)	2b: R_X86_64_GOTPCREL	foo
++[ 	]*[a-f0-9]+:	ff 25 00 00 00 00    	jmpq   \*0x0\(%rip\)        # 35 <_start\+0x35>	31: R_X86_64_GOTPCRELX	foo-0x4
++[ 	]*[a-f0-9]+:	ff a1 00 00 00 00    	jmpq   \*0x0\(%rcx\)	37: R_X86_64_GOTPCREL	foo
++[ 	]*[a-f0-9]+:	48 c7 c0 00 00 00 00 	mov    \$0x0,%rax	3e: R_X86_64_GOTPCREL	foo
++[ 	]*[a-f0-9]+:	48 8b 04 25 00 00 00 00 	mov    0x0,%rax	46: R_X86_64_GOTPCREL	foo
++[ 	]*[a-f0-9]+:	48 8b 05 00 00 00 00 	mov    0x0\(%rip\),%rax        # 51 <_start\+0x51>	4d: R_X86_64_THUNK_GOTPCRELX	foo-0x4
++[ 	]*[a-f0-9]+:	8b 05 00 00 00 00    	mov    0x0\(%rip\),%eax        # 57 <_start\+0x57>	53: R_X86_64_GOTPCRELX	foo-0x4
++[ 	]*[a-f0-9]+:	48 8b 81 00 00 00 00 	mov    0x0\(%rcx\),%rax	5a: R_X86_64_GOTPCREL	foo
++[ 	]*[a-f0-9]+:	ff 15 00 00 00 00    	callq  \*0x0\(%rip\)        # 64 <_start\+0x64>	60: R_X86_64_GOTPCRELX	foo-0x4
++[ 	]*[a-f0-9]+:	ff 90 00 00 00 00    	callq  \*0x0\(%rax\)	66: R_X86_64_GOTPCREL	foo
++[ 	]*[a-f0-9]+:	ff 25 00 00 00 00    	jmpq   \*0x0\(%rip\)        # 70 <_start\+0x70>	6c: R_X86_64_GOTPCRELX	foo-0x4
++[ 	]*[a-f0-9]+:	ff a1 00 00 00 00    	jmpq   \*0x0\(%rcx\)	72: R_X86_64_GOTPCREL	foo
++#pass
+diff --git a/gas/testsuite/gas/i386/x86-64-gotpcrel-2.s b/gas/testsuite/gas/i386/x86-64-gotpcrel-2.s
+new file mode 100644
+index 0000000000..aba8bbb6de
+--- /dev/null
++++ b/gas/testsuite/gas/i386/x86-64-gotpcrel-2.s
+@@ -0,0 +1,25 @@
++	.text
++_start:
++	movq	$foo@GOTPCREL_THUNK, %rax
++	movq	foo@GOTPCREL_THUNK, %rax
++	movq	foo@GOTPCREL_THUNK(%rip), %rax
++	movl	foo@GOTPCREL_THUNK(%rip), %eax
++	movq	foo@GOTPCREL_THUNK(%rcx), %rax
++
++	call	*foo@GOTPCREL_THUNK(%rip)
++	call	*foo@GOTPCREL_THUNK(%rax)
++	jmp	*foo@GOTPCREL_THUNK(%rip)
++	jmp	*foo@GOTPCREL_THUNK(%rcx)
++
++	.intel_syntax noprefix
++
++	mov	rax, offset foo@gotpcrel_thunk
++	mov	rax, QWORD PTR [foo@GOTPCREL_THUNK]
++	mov	rax, QWORD PTR foo@GOTPCREL_THUNK[rip]
++	mov	eax, DWORD PTR foo@GOTPCREL_THUNK[rip]
++	mov	rax, QWORD PTR [rcx + foo@GOTPCREL_THUNK]
++
++	call	QWORD PTR foo@GOTPCREL_THUNK[rip]
++	call	QWORD PTR [rax + foo@GOTPCREL_THUNK]
++	jmp	QWORD PTR [rip + foo@GOTPCREL_THUNK]
++	jmp	QWORD PTR [rcx + foo@GOTPCREL_THUNK]
+diff --git a/gas/testsuite/gas/i386/x86-64-localpic-2.d b/gas/testsuite/gas/i386/x86-64-localpic-2.d
+new file mode 100644
+index 0000000000..3c037518c1
+--- /dev/null
++++ b/gas/testsuite/gas/i386/x86-64-localpic-2.d
+@@ -0,0 +1,10 @@
++#as: -mrelax-relocations=no
++#readelf: -rsW
++#name: x86-64 local PIC 2
++
++Relocation section '.rela.text' at offset 0x[0-9a-f]+ contains 1 entry:
++ +Offset +Info +Type +Symbol's Value +Symbol's Name \+ Addend
++[0-9a-f]+ +[0-9a-f]+ R_X86_64_THUNK_GOTPCRELX +[0-9a-f]+ +foo - 4
++#...
++ +[0-9]+: +[0-9a-f]+ +[0-9a-f]+ +NOTYPE +LOCAL +DEFAULT +[0-9]+ +foo
++#pass
+diff --git a/gas/testsuite/gas/i386/x86-64-localpic-2.s b/gas/testsuite/gas/i386/x86-64-localpic-2.s
+new file mode 100644
+index 0000000000..22279b5052
+--- /dev/null
++++ b/gas/testsuite/gas/i386/x86-64-localpic-2.s
+@@ -0,0 +1,4 @@
++	.text
++foo:
++	.quad 0
++	movq	foo@GOTPCREL_THUNK(%rip), %rax
+diff --git a/gas/write.h b/gas/write.h
+index 3c6f259748..5604a1c4b5 100644
+--- a/gas/write.h
++++ b/gas/write.h
+@@ -61,6 +61,7 @@ struct fix
+   /* Some bits for the CPU specific code.  */
+   unsigned fx_tcbit : 1;
+   unsigned fx_tcbit2 : 1;
++  unsigned fx_tcbit3 : 1;
+ 
+   /* Has this relocation already been applied?  */
+   unsigned fx_done : 1;
+diff --git a/include/elf/x86-64.h b/include/elf/x86-64.h
+index 8d364ab650..2f0d92237a 100644
+--- a/include/elf/x86-64.h
++++ b/include/elf/x86-64.h
+@@ -82,6 +82,9 @@ START_RELOC_NUMBERS (elf_x86_64_reloc_type)
+      /* Load from 32 bit signed pc relative offset to GOT entry with
+ 	REX prefix, relaxable.  */
+      RELOC_NUMBER (R_X86_64_REX_GOTPCRELX, 42)
++     /* Similar to R_X86_64_REX_GOTPCRELX, except for it is only used
++        to convert function call via GOT slot with a scratch register.  */
++     RELOC_NUMBER (R_X86_64_THUNK_GOTPCRELX, 43)
+      RELOC_NUMBER (R_X86_64_GNU_VTINHERIT, 250)       /* GNU C++ hack  */
+      RELOC_NUMBER (R_X86_64_GNU_VTENTRY, 251)         /* GNU C++ hack  */
+ END_RELOC_NUMBERS (R_X86_64_max)
+diff --git a/ld/testsuite/ld-x86-64/gotpcrel2.dd b/ld/testsuite/ld-x86-64/gotpcrel2.dd
+new file mode 100644
+index 0000000000..6a705d120a
+--- /dev/null
++++ b/ld/testsuite/ld-x86-64/gotpcrel2.dd
+@@ -0,0 +1,25 @@
++#...
++[a-f0-9]+ <main>:
++ +[a-f0-9]+:	55                   	push   %rbp
++ +[a-f0-9]+:	41 54                	push   %r12
++ +[a-f0-9]+:	48 83 ec 08          	sub    \$0x8,%rsp
++ +[a-f0-9]+:	[ a-f0-9]+       	callq  [a-f0-9]+ <foo>
++ +[a-f0-9]+:	0f 1f 80 00 00 00 00 	nopl   0x0\(%rax\)
++ +[a-f0-9]+:	[ a-f0-9]+ 	mov    0x[a-f0-9]+\(%rip\),%rbp        # [a-f0-9]+ <bar>
++ +[a-f0-9]+:	[ a-f0-9]+       	callq  [a-f0-9]+ <__x86_indirect_thunk_rbp>
++ +[a-f0-9]+:	[ a-f0-9]+ 	mov    0x[a-f0-9]+\(%rip\),%r11        # [a-f0-9]+ <plt>
++ +[a-f0-9]+:	[ a-f0-9]+       	callq  [a-f0-9]+ <__x86_indirect_thunk_r11>
++ +[a-f0-9]+:	[ a-f0-9]+       	callq  [a-f0-9]+ <foo>
++ +[a-f0-9]+:	0f 1f 80 00 00 00 00 	nopl   0x0\(%rax\)
++ +[a-f0-9]+:	[ a-f0-9]+       	callq  [a-f0-9]+ <__x86_indirect_thunk_rbp>
++ +[a-f0-9]+:	[ a-f0-9]+ 	mov    0x[a-f0-9]+\(%rip\),%rdx        # [a-f0-9]+ <plt>
++ +[a-f0-9]+:	[ a-f0-9]+       	callq  [a-f0-9]+ <__x86_indirect_thunk_rdx>
++ +[a-f0-9]+:	31 ff                	xor    %edi,%edi
++ +[a-f0-9]+:	41 5c                	pop    %r12
++ +[a-f0-9]+:	5d                   	pop    %rbp
++ +[a-f0-9]+:	48 83 c4 08          	add    \$0x8,%rsp
++ +[a-f0-9]+:	[ a-f0-9]+       	jmpq   [a-f0-9]+ <myexit>
++ +[a-f0-9]+:	0f 1f 80 00 00 00 00 	nopl   0x0\(%rax\)
++ +[a-f0-9]+:	c3                   	retq   
++
++#pass
+diff --git a/ld/testsuite/ld-x86-64/gotpcrel2.out b/ld/testsuite/ld-x86-64/gotpcrel2.out
+new file mode 100644
+index 0000000000..4d35632d3c
+--- /dev/null
++++ b/ld/testsuite/ld-x86-64/gotpcrel2.out
+@@ -0,0 +1,8 @@
++foo
++bar
++plt
++plt
++foo
++bar
++plt
++plt
+diff --git a/ld/testsuite/ld-x86-64/gotpcrel2a.S b/ld/testsuite/ld-x86-64/gotpcrel2a.S
+new file mode 100644
+index 0000000000..9d7793c7f8
+--- /dev/null
++++ b/ld/testsuite/ld-x86-64/gotpcrel2a.S
+@@ -0,0 +1,78 @@
++	.text
++	.globl	main
++	.type	main, @function
++main:
++	pushq	%rbp
++	pushq	%r12
++	subq	$8, %rsp
++	movq	foo@GOTPCREL_THUNK(%rip), %rax
++	call	__x86_indirect_thunk_rax
++	movq	bar@GOTPCREL_THUNK(%rip), %rbp
++	call	__x86_indirect_thunk_rbp
++	movq	plt@GOTPCREL_THUNK(%rip), %r11
++	call	__x86_indirect_thunk_r11
++	movq	foo@GOTPCREL_THUNK(%rip), %rax
++	call	__x86_indirect_thunk_rax
++	call	__x86_indirect_thunk_rbp
++	movq	plt@GOTPCREL_THUNK(%rip), %rdx
++	call	__x86_indirect_thunk_rdx
++	xorl	%edi, %edi
++	popq	%r12
++	popq	%rbp
++	addq	$8, %rsp
++	movq	myexit@GOTPCREL_THUNK(%rip), %r11
++	jmp	__x86_indirect_thunk_r11
++	ret
++	.size	main, .-main
++	.section	.text.__x86_indirect_thunk_rax,"axG",@progbits,__x86_indirect_thunk_r11,comdat
++	.globl	__x86_indirect_thunk_rax
++	.hidden	__x86_indirect_thunk_rax
++	.type	__x86_indirect_thunk_rax, @function
++__x86_indirect_thunk_rax:
++	call	.LIND7
++.LIND6:
++	pause
++	lfence
++	jmp	.LIND6
++.LIND7:
++	mov	%rax, (%rsp)
++	ret
++	.section	.text.__x86_indirect_thunk_rdx,"axG",@progbits,__x86_indirect_thunk_r11,comdat
++	.globl	__x86_indirect_thunk_rdx
++	.hidden	__x86_indirect_thunk_rdx
++	.type	__x86_indirect_thunk_rdx, @function
++__x86_indirect_thunk_rdx:
++	call	.LIND3
++.LIND2:
++	pause
++	lfence
++	jmp	.LIND2
++.LIND3:
++	mov	%rdx, (%rsp)
++	ret
++	.section	.text.__x86_indirect_thunk_rbp,"axG",@progbits,__x86_indirect_thunk_r11,comdat
++	.globl	__x86_indirect_thunk_rbp
++	.hidden	__x86_indirect_thunk_rbp
++	.type	__x86_indirect_thunk_rbp, @function
++__x86_indirect_thunk_rbp:
++	call	.LIND5
++.LIND4:
++	pause
++	lfence
++	jmp	.LIND4
++.LIND5:
++	mov	%rbp, (%rsp)
++	ret
++	.section	.text.__x86_indirect_thunk_r11,"axG",@progbits,__x86_indirect_thunk_r11,comdat
++	.globl	__x86_indirect_thunk_r11
++	.hidden	__x86_indirect_thunk_r11
++	.type	__x86_indirect_thunk_r11, @function
++__x86_indirect_thunk_r11:
++	call	.LIND1
++.LIND0:
++	pause
++	lfence
++	jmp	.LIND0
++.LIND1:
++	mov	%r11, (%rsp)
++	ret
+diff --git a/ld/testsuite/ld-x86-64/gotpcrel2b.c b/ld/testsuite/ld-x86-64/gotpcrel2b.c
+new file mode 100644
+index 0000000000..cf0c78e222
+--- /dev/null
++++ b/ld/testsuite/ld-x86-64/gotpcrel2b.c
+@@ -0,0 +1,7 @@
++#include <stdio.h>
++
++void
++foo (void)
++{
++  printf ("%s\n", __FUNCTION__);
++}
+diff --git a/ld/testsuite/ld-x86-64/gotpcrel2c.c b/ld/testsuite/ld-x86-64/gotpcrel2c.c
+new file mode 100644
+index 0000000000..05f5fc2e3a
+--- /dev/null
++++ b/ld/testsuite/ld-x86-64/gotpcrel2c.c
+@@ -0,0 +1,7 @@
++#include <stdlib.h>
++
++void
++myexit (int status)
++{
++  exit (status);
++}
+diff --git a/ld/testsuite/ld-x86-64/gotpcrel2d.S b/ld/testsuite/ld-x86-64/gotpcrel2d.S
+new file mode 100644
+index 0000000000..cd2a808d3e
+--- /dev/null
++++ b/ld/testsuite/ld-x86-64/gotpcrel2d.S
+@@ -0,0 +1,42 @@
++	.text
++	.globl	bar
++	.type	bar, @function
++bar:
++	leaq	__FUNCTION__.2215(%rip), %rdi
++	movq	puts@GOTPCREL_THUNK(%rip), %r11
++	jmp	__x86_indirect_thunk_r11
++	.size	bar, .-bar
++	.globl	plt
++	.type	plt, @function
++plt:
++	leaq	__FUNCTION__.2219(%rip), %rdi
++	subq	$8, %rsp
++	movq	puts@GOTPCREL_THUNK(%rip), %r11
++	call	__x86_indirect_thunk_r11
++	leaq	__FUNCTION__.2219(%rip), %rdi
++	addq	$8, %rsp
++	movq	puts@GOTPCREL_THUNK(%rip), %r11
++	jmp	__x86_indirect_thunk_r11
++	.size	plt, .-plt
++	.section	.text.__x86_indirect_thunk_r11,"axG",@progbits,__x86_indirect_thunk_r11,comdat
++	.globl	__x86_indirect_thunk_r11
++	.hidden	__x86_indirect_thunk_r11
++	.type	__x86_indirect_thunk_r11, @function
++__x86_indirect_thunk_r11:
++	call	.LIND1
++.LIND0:
++	pause
++	lfence
++	jmp	.LIND0
++.LIND1:
++	mov	%r11, (%rsp)
++	ret
++	.section	.rodata
++	.type	__FUNCTION__.2219, @object
++	.size	__FUNCTION__.2219, 4
++__FUNCTION__.2219:
++	.string	"plt"
++	.type	__FUNCTION__.2215, @object
++	.size	__FUNCTION__.2215, 4
++__FUNCTION__.2215:
++	.string	"bar"
+diff --git a/ld/testsuite/ld-x86-64/gotpcrel3.dd b/ld/testsuite/ld-x86-64/gotpcrel3.dd
+new file mode 100644
+index 0000000000..9d1ab32f8a
+--- /dev/null
++++ b/ld/testsuite/ld-x86-64/gotpcrel3.dd
+@@ -0,0 +1,25 @@
++#...
++[a-f0-9]+ <main>:
++ +[a-f0-9]+:	55                   	push   %rbp
++ +[a-f0-9]+:	41 54                	push   %r12
++ +[a-f0-9]+:	48 83 ec 08          	sub    \$0x8,%rsp
++ +[a-f0-9]+:	[ a-f0-9]+   	bnd callq [a-f0-9]+ <foo>
++ +[a-f0-9]+:	0f 1f 80 00 00 00 00 	nopl   0x0\(%rax\)
++ +[a-f0-9]+:	[ a-f0-9]+ 	mov    0x[a-f0-9]+\(%rip\),%rbp        # [a-f0-9]+ <bar>
++ +[a-f0-9]+:	[ a-f0-9]+  	bnd callq [a-f0-9]+ <__x86_indirect_thunk_bnd_rbp>
++ +[a-f0-9]+:	[ a-f0-9]+ 	mov    0x[a-f0-9]+\(%rip\),%r11        # [a-f0-9]+ <plt>
++ +[a-f0-9]+:	[ a-f0-9]+  	bnd callq [a-f0-9]+ <__x86_indirect_thunk_bnd_r11>
++ +[a-f0-9]+:	[ a-f0-9]+   	bnd callq [a-f0-9]+ <foo>
++ +[a-f0-9]+:	0f 1f 80 00 00 00 00 	nopl   0x0\(%rax\)
++ +[a-f0-9]+:	[ a-f0-9]+  	bnd callq [a-f0-9]+ <__x86_indirect_thunk_bnd_rbp>
++ +[a-f0-9]+:	[ a-f0-9]+ 	mov    0x[a-f0-9]+\(%rip\),%rdx        # [a-f0-9]+ <plt>
++ +[a-f0-9]+:	[ a-f0-9]+  	bnd callq [a-f0-9]+ <__x86_indirect_thunk_bnd_rdx>
++ +[a-f0-9]+:	31 ff                	xor    %edi,%edi
++ +[a-f0-9]+:	41 5c                	pop    %r12
++ +[a-f0-9]+:	5d                   	pop    %rbp
++ +[a-f0-9]+:	48 83 c4 08          	add    \$0x8,%rsp
++ +[a-f0-9]+:	[ a-f0-9]+   	bnd jmpq [a-f0-9]+ <myexit>
++ +[a-f0-9]+:	0f 1f 80 00 00 00 00 	nopl   0x0\(%rax\)
++ +[a-f0-9]+:	f2 c3                	bnd retq 
++
++#pass
+diff --git a/ld/testsuite/ld-x86-64/gotpcrel3.out b/ld/testsuite/ld-x86-64/gotpcrel3.out
+new file mode 100644
+index 0000000000..4d35632d3c
+--- /dev/null
++++ b/ld/testsuite/ld-x86-64/gotpcrel3.out
+@@ -0,0 +1,8 @@
++foo
++bar
++plt
++plt
++foo
++bar
++plt
++plt
+diff --git a/ld/testsuite/ld-x86-64/gotpcrel3a.S b/ld/testsuite/ld-x86-64/gotpcrel3a.S
+new file mode 100644
+index 0000000000..a9b1f1154a
+--- /dev/null
++++ b/ld/testsuite/ld-x86-64/gotpcrel3a.S
+@@ -0,0 +1,78 @@
++	.text
++	.globl	main
++	.type	main, @function
++main:
++	pushq	%rbp
++	pushq	%r12
++	subq	$8, %rsp
++	movq	foo@GOTPCREL_THUNK(%rip), %rax
++	bnd call	__x86_indirect_thunk_bnd_rax
++	movq	bar@GOTPCREL_THUNK(%rip), %rbp
++	bnd call	__x86_indirect_thunk_bnd_rbp
++	movq	plt@GOTPCREL_THUNK(%rip), %r11
++	bnd call	__x86_indirect_thunk_bnd_r11
++	movq	foo@GOTPCREL_THUNK(%rip), %rax
++	bnd call	__x86_indirect_thunk_bnd_rax
++	bnd call	__x86_indirect_thunk_bnd_rbp
++	movq	plt@GOTPCREL_THUNK(%rip), %rdx
++	bnd call	__x86_indirect_thunk_bnd_rdx
++	xorl	%edi, %edi
++	popq	%r12
++	popq	%rbp
++	addq	$8, %rsp
++	movq	myexit@GOTPCREL_THUNK(%rip), %r11
++	bnd jmp	__x86_indirect_thunk_bnd_r11
++	bnd ret
++	.size	main, .-main
++	.section	.text.__x86_indirect_thunk_bnd_rax,"axG",@progbits,__x86_indirect_thunk_bnd_r11,comdat
++	.globl	__x86_indirect_thunk_bnd_rax
++	.hidden	__x86_indirect_thunk_bnd_rax
++	.type	__x86_indirect_thunk_bnd_rax, @function
++__x86_indirect_thunk_bnd_rax:
++	bnd call	.LIND7
++.LIND6:
++	pause
++	lfence
++	jmp	.LIND6
++.LIND7:
++	mov	%rax, (%rsp)
++	bnd ret
++	.section	.text.__x86_indirect_thunk_bnd_rdx,"axG",@progbits,__x86_indirect_thunk_bnd_r11,comdat
++	.globl	__x86_indirect_thunk_bnd_rdx
++	.hidden	__x86_indirect_thunk_bnd_rdx
++	.type	__x86_indirect_thunk_bnd_rdx, @function
++__x86_indirect_thunk_bnd_rdx:
++	bnd call	.LIND3
++.LIND2:
++	pause
++	lfence
++	jmp	.LIND2
++.LIND3:
++	mov	%rdx, (%rsp)
++	bnd ret
++	.section	.text.__x86_indirect_thunk_bnd_rbp,"axG",@progbits,__x86_indirect_thunk_bnd_r11,comdat
++	.globl	__x86_indirect_thunk_bnd_rbp
++	.hidden	__x86_indirect_thunk_bnd_rbp
++	.type	__x86_indirect_thunk_bnd_rbp, @function
++__x86_indirect_thunk_bnd_rbp:
++	bnd call	.LIND5
++.LIND4:
++	pause
++	lfence
++	jmp	.LIND4
++.LIND5:
++	mov	%rbp, (%rsp)
++	bnd ret
++	.section	.text.__x86_indirect_thunk_bnd_r11,"axG",@progbits,__x86_indirect_thunk_bnd_r11,comdat
++	.globl	__x86_indirect_thunk_bnd_r11
++	.hidden	__x86_indirect_thunk_bnd_r11
++	.type	__x86_indirect_thunk_bnd_r11, @function
++__x86_indirect_thunk_bnd_r11:
++	bnd call	.LIND1
++.LIND0:
++	pause
++	lfence
++	jmp	.LIND0
++.LIND1:
++	mov	%r11, (%rsp)
++	bnd ret
+diff --git a/ld/testsuite/ld-x86-64/gotpcrel3b.c b/ld/testsuite/ld-x86-64/gotpcrel3b.c
+new file mode 100644
+index 0000000000..cf0c78e222
+--- /dev/null
++++ b/ld/testsuite/ld-x86-64/gotpcrel3b.c
+@@ -0,0 +1,7 @@
++#include <stdio.h>
++
++void
++foo (void)
++{
++  printf ("%s\n", __FUNCTION__);
++}
+diff --git a/ld/testsuite/ld-x86-64/gotpcrel3c.c b/ld/testsuite/ld-x86-64/gotpcrel3c.c
+new file mode 100644
+index 0000000000..05f5fc2e3a
+--- /dev/null
++++ b/ld/testsuite/ld-x86-64/gotpcrel3c.c
+@@ -0,0 +1,7 @@
++#include <stdlib.h>
++
++void
++myexit (int status)
++{
++  exit (status);
++}
+diff --git a/ld/testsuite/ld-x86-64/gotpcrel3d.S b/ld/testsuite/ld-x86-64/gotpcrel3d.S
+new file mode 100644
+index 0000000000..642ccda287
+--- /dev/null
++++ b/ld/testsuite/ld-x86-64/gotpcrel3d.S
+@@ -0,0 +1,42 @@
++	.text
++	.globl	bar
++	.type	bar, @function
++bar:
++	leaq	__FUNCTION__.2215(%rip), %rdi
++	movq	puts@GOTPCREL_THUNK(%rip), %r11
++	bnd jmp	__x86_indirect_thunk_bnd_r11
++	.size	bar, .-bar
++	.globl	plt
++	.type	plt, @function
++plt:
++	leaq	__FUNCTION__.2219(%rip), %rdi
++	subq	$8, %rsp
++	movq	puts@GOTPCREL_THUNK(%rip), %r11
++	bnd call	__x86_indirect_thunk_bnd_r11
++	leaq	__FUNCTION__.2219(%rip), %rdi
++	addq	$8, %rsp
++	movq	puts@GOTPCREL_THUNK(%rip), %r11
++	bnd jmp	__x86_indirect_thunk_bnd_r11
++	.size	plt, .-plt
++	.section	.text.__x86_indirect_thunk_bnd_r11,"axG",@progbits,__x86_indirect_thunk_bnd_r11,comdat
++	.globl	__x86_indirect_thunk_bnd_r11
++	.hidden	__x86_indirect_thunk_bnd_r11
++	.type	__x86_indirect_thunk_bnd_r11, @function
++__x86_indirect_thunk_bnd_r11:
++	bnd call	.LIND1
++.LIND0:
++	pause
++	lfence
++	jmp	.LIND0
++.LIND1:
++	mov	%r11, (%rsp)
++	bnd ret
++	.section	.rodata
++	.type	__FUNCTION__.2219, @object
++	.size	__FUNCTION__.2219, 4
++__FUNCTION__.2219:
++	.string	"plt"
++	.type	__FUNCTION__.2215, @object
++	.size	__FUNCTION__.2215, 4
++__FUNCTION__.2215:
++	.string	"bar"
+diff --git a/ld/testsuite/ld-x86-64/mpx.exp b/ld/testsuite/ld-x86-64/mpx.exp
+index 15140151f5..3c418ebbd7 100644
+--- a/ld/testsuite/ld-x86-64/mpx.exp
++++ b/ld/testsuite/ld-x86-64/mpx.exp
+@@ -88,6 +88,41 @@ run_cc_link_tests [list \
+ 	{{readelf {-r --wide} mpx2c.rd}} \
+ 	"libmpx2c.a" \
+     ] \
++    [list \
++	"Build gotpcrel3d.so" \
++	"-shared" \
++	"" \
++	{ gotpcrel3d.S } \
++	"" \
++	"gotpcrel3d.so" \
++    ] \
++    [list \
++	"Build gotpcrel3a.o gotpcrel3b.o gotpcrel3c.o" \
++	"" \
++	"-Wa,-mrelax-relocations=yes" \
++	{ gotpcrel3a.S gotpcrel3b.c gotpcrel3c.c } \
++    ] \
++    [list \
++	"Build gotpcrel3" \
++	"$NOPIE_LDFLAGS -Wl,--as-needed tmpdir/gotpcrel3a.o \
++	 tmpdir/gotpcrel3b.o tmpdir/gotpcrel3c.o \
++	 tmpdir/gotpcrel3d.so" \
++	{ dummy.s } \
++	"" \
++	{{objdump {-dw} gotpcrel3.dd}} \
++	"gotpcrel3" \
++    ] \
++]
++
++run_ld_link_exec_tests [list \
++    [list \
++	"Run gotpcrel3" \
++	"-Wl,--no-as-needed tmpdir/gotpcrel3d.so" \
++	"" \
++	{ gotpcrel3a.S gotpcrel3b.c gotpcrel3c.c } \
++	"gotpcrel3" \
++	"gotpcrel3.out" \
++    ] \
+ ]
+ 
+ set run_tests {
+diff --git a/ld/testsuite/ld-x86-64/x86-64.exp b/ld/testsuite/ld-x86-64/x86-64.exp
+index e7f338ee11..b61219884e 100644
+--- a/ld/testsuite/ld-x86-64/x86-64.exp
++++ b/ld/testsuite/ld-x86-64/x86-64.exp
+@@ -875,6 +875,30 @@ if { [isnative] && [which $CC] != 0 } {
+ 	    {{objdump {-dw} gotpcrel1.dd}} \
+ 	    "gotpcrel1" \
+ 	] \
++	[list \
++	    "Build gotpcrel2d.so" \
++	    "-shared" \
++	    "" \
++	    { gotpcrel2d.S } \
++	    "" \
++	    "gotpcrel2d.so" \
++	] \
++	[list \
++	    "Build gotpcrel2a.o gotpcrel2b.o gotpcrel2c.o" \
++	    "" \
++	    "-Wa,-mrelax-relocations=yes" \
++	    { gotpcrel2a.S gotpcrel2b.c gotpcrel2c.c } \
++	] \
++	[list \
++	    "Build gotpcrel2" \
++	    "$NOPIE_LDFLAGS -Wl,--as-needed tmpdir/gotpcrel2a.o \
++	     tmpdir/gotpcrel2b.o tmpdir/gotpcrel2c.o \
++	     tmpdir/gotpcrel2d.so" \
++	    { dummy.s } \
++	    "" \
++	    {{objdump {-dw} gotpcrel2.dd}} \
++	    "gotpcrel2" \
++	] \
+ 	[list \
+ 	    "Build pr19319.so" \
+ 	    "-shared" \
+@@ -1263,6 +1287,14 @@ if { [isnative] && [which $CC] != 0 } {
+ 	    "gotpcrel1" \
+ 	    "gotpcrel1.out" \
+ 	] \
++	[list \
++	    "Run gotpcrel2" \
++	    "-Wl,--no-as-needed tmpdir/gotpcrel2d.so" \
++	    "" \
++	    { gotpcrel2a.S gotpcrel2b.c gotpcrel2c.c } \
++	    "gotpcrel2" \
++	    "gotpcrel2.out" \
++	] \
+ 	[list \
+ 	    "Run property 1" \
+ 	    "" \
+-- 
+2.14.3
+
