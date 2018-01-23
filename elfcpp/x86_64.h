@@ -98,6 +98,8 @@ enum
 			   // without REX prefix, relaxable.
   R_X86_64_REX_GOTPCRELX = 42, // 32 bit signed PC relative offset to GOT
 			       // with REX prefix, relaxable.
+  R_X86_64_THUNK_GOTPCRELX = 43, // 32 bit signed PC relative offset to GOT
+			       // with REX prefix, relaxable.
   // GNU vtable garbage collection extensions.
   R_X86_64_GNU_VTINHERIT = 250,
   R_X86_64_GNU_VTENTRY = 251
