@@ -312,7 +312,7 @@ static m32c_write_reg_t m32c_r3r2r1r0_write;
 static enum register_status
 m32c_raw_read (struct m32c_reg *reg, struct regcache *cache, gdb_byte *buf)
 {
-  return regcache_raw_read (cache, reg->num, buf);
+  return cache->raw_read (reg->num, buf);
 }
 
 
@@ -333,7 +333,8 @@ m32c_read_flg (struct regcache *cache)
 {
   struct gdbarch_tdep *tdep = gdbarch_tdep (cache->arch ());
   ULONGEST flg;
-  regcache_raw_read_unsigned (cache, tdep->flg->num, &flg);
+
+  cache->raw_read (tdep->flg->num, &flg);
   return flg & 0xffff;
 }
 
@@ -354,7 +355,7 @@ static enum register_status
 m32c_banked_read (struct m32c_reg *reg, struct regcache *cache, gdb_byte *buf)
 {
   struct m32c_reg *bank_reg = m32c_banked_register (reg, cache);
-  return regcache_raw_read (cache, bank_reg->num, buf);
+  return cache->raw_read (bank_reg->num, buf);
 }
 
 
@@ -447,7 +448,7 @@ m32c_part_read (struct m32c_reg *reg, struct regcache *cache, gdb_byte *buf)
 
   memset (buf, 0, TYPE_LENGTH (reg->type));
   m32c_find_part (reg, &offset, &len);
-  return regcache_cooked_read_part (cache, reg->rx->num, offset, len, buf);
+  return cache->cooked_read_part (reg->rx->num, offset, len, buf);
 }
 
 
@@ -482,17 +483,16 @@ m32c_cat_read (struct m32c_reg *reg, struct regcache *cache, gdb_byte *buf)
 
   if (gdbarch_byte_order (reg->arch) == BFD_ENDIAN_BIG)
     {
-      status = regcache_cooked_read (cache, reg->rx->num, buf);
+      status = cache->cooked_read (reg->rx->num, buf);
       if (status == REG_VALID)
-	status = regcache_cooked_read (cache, reg->ry->num, buf + high_bytes);
+	status = cache->cooked_read (reg->ry->num, buf + high_bytes);
     }
   else
     {
-      status = regcache_cooked_read (cache, reg->rx->num, buf + low_bytes);
+      status = cache->cooked_read (reg->rx->num, buf + low_bytes);
       if (status == REG_VALID)
-	status = regcache_cooked_read (cache, reg->ry->num, buf);
+	status = cache->cooked_read (reg->ry->num, buf);
     }
-
   return status;
 }
 
@@ -536,23 +536,23 @@ m32c_r3r2r1r0_read (struct m32c_reg *reg, struct regcache *cache, gdb_byte *buf)
 
   if (gdbarch_byte_order (reg->arch) == BFD_ENDIAN_BIG)
     {
-      status = regcache_cooked_read (cache, tdep->r0->num, buf + len * 3);
+      status = cache->cooked_read (tdep->r0->num, buf + len * 3);
       if (status == REG_VALID)
-	status = regcache_cooked_read (cache, tdep->r1->num, buf + len * 2);
+	status = cache->cooked_read (tdep->r1->num, buf + len * 2);
       if (status == REG_VALID)
-	status = regcache_cooked_read (cache, tdep->r2->num, buf + len * 1);
+	status = cache->cooked_read (tdep->r2->num, buf + len * 1);
       if (status == REG_VALID)
-	status = regcache_cooked_read (cache, tdep->r3->num, buf);
+	status = cache->cooked_read (tdep->r3->num, buf);
     }
   else
     {
-      status = regcache_cooked_read (cache, tdep->r0->num, buf);
+      status = cache->cooked_read (tdep->r0->num, buf);
       if (status == REG_VALID)
-	status = regcache_cooked_read (cache, tdep->r1->num, buf + len * 1);
+	status = cache->cooked_read (tdep->r1->num, buf + len * 1);
       if (status == REG_VALID)
-	status = regcache_cooked_read (cache, tdep->r2->num, buf + len * 2);
+	status = cache->cooked_read (tdep->r2->num, buf + len * 2);
       if (status == REG_VALID)
-	status = regcache_cooked_read (cache, tdep->r3->num, buf + len * 3);
+	status = cache->cooked_read (tdep->r3->num, buf + len * 3);
     }
 
   return status;

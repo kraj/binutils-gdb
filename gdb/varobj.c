@@ -30,6 +30,7 @@
 #include "gdbthread.h"
 #include "inferior.h"
 #include "varobj-iter.h"
+#include "parser-defs.h"
 
 #if HAVE_PYTHON
 #include "python/python.h"
@@ -297,7 +298,6 @@ varobj_create (const char *objname,
       else
 	fi = NULL;
 
-      /* frame = -2 means always use selected frame.  */
       if (type == USE_SELECTED_FRAME)
 	var->root->floating = true;
 
@@ -310,7 +310,8 @@ varobj_create (const char *objname,
 	}
 
       p = expression;
-      innermost_block = NULL;
+      innermost_block.reset (INNERMOST_BLOCK_FOR_SYMBOLS
+			     | INNERMOST_BLOCK_FOR_REGISTERS);
       /* Wrap the call to parse expression, so we can 
          return a sensible error.  */
       TRY
@@ -335,7 +336,8 @@ varobj_create (const char *objname,
 	}
 
       var->format = variable_default_display (var.get ());
-      var->root->valid_block = innermost_block;
+      var->root->valid_block =
+	var->root->floating ? NULL : innermost_block.block ();
       var->name = expression;
       /* For a root var, the name and the expr are the same.  */
       var->path_expr = expression;
@@ -344,7 +346,7 @@ varobj_create (const char *objname,
          we must select the appropriate frame before parsing
          the expression, otherwise the value will not be current.
          Since select_frame is so benign, just call it for all cases.  */
-      if (innermost_block)
+      if (var->root->valid_block)
 	{
 	  /* User could specify explicit FRAME-ADDR which was not found but
 	     EXPRESSION is frame specific and we would not be able to evaluate

@@ -1460,7 +1460,6 @@ enum options
     OPTION_NO_MCU,
     OPTION_MIPS16E2,
     OPTION_NO_MIPS16E2,
-    OPTION_COMPAT_ARCH_BASE,
     OPTION_M4650,
     OPTION_NO_M4650,
     OPTION_M4010,
@@ -19958,6 +19957,9 @@ MIPS options:\n\
 -mips16			generate mips16 instructions\n\
 -no-mips16		do not generate mips16 instructions\n"));
   fprintf (stream, _("\
+-mmips16e2		generate MIPS16e2 instructions\n\
+-mno-mips16e2		do not generate MIPS16e2 instructions\n"));
+  fprintf (stream, _("\
 -mmicromips		generate microMIPS instructions\n\
 -mno-micromips		do not generate microMIPS instructions\n"));
   fprintf (stream, _("\
@@ -20044,9 +20046,14 @@ MIPS options:\n\
   fputc ('\n', stream);
 
   fprintf (stream, _("\
--32			create o32 ABI object file (default)\n\
--n32			create n32 ABI object file\n\
--64			create 64 ABI object file\n"));
+-32			create o32 ABI object file%s\n"),
+	   MIPS_DEFAULT_ABI == O32_ABI ? _(" (default)") : "");
+  fprintf (stream, _("\
+-n32			create n32 ABI object file%s\n"),
+	   MIPS_DEFAULT_ABI == N32_ABI ? _(" (default)") : "");
+  fprintf (stream, _("\
+-64			create 64 ABI object file%s\n"),
+	   MIPS_DEFAULT_ABI == N64_ABI ? _(" (default)") : "");
 }
 
 #ifdef TE_IRIX

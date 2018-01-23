@@ -1,3 +1,244 @@
+2018-01-23  Philipp Rudo  <prudo@linux.vnet.ibm.com>
+
+	* s390-linux-tdep.c (s390_record_address_mask)
+	(s390_record_calc_disp_common, s390_record_calc_disp)
+	(s390_record_calc_disp_vsce, s390_record_calc_rl, s390_popcnt)
+	(s390_record_gpr_g, s390_record_gpr_h, s390_record_vr)
+	(s390_process_record): Move to s390-tdep.c.
+	(s390_linux_init_abi_any): Adjust.
+	* s390-tdep.c (s390_record_address_mask)
+	(s390_record_calc_disp_common, s390_record_calc_disp)
+	(s390_record_calc_disp_vsce, s390_record_calc_rl, s390_popcnt)
+	(s390_record_gpr_g, s390_record_gpr_h, s390_record_vr)
+	(s390_process_record): Moved from s390-linux-tdep.c
+	(s390_gdbarch_init): Adjust.
+
+2018-01-23  Philipp Rudo  <prudo@linux.vnet.ibm.com>
+
+	* s390-linux-nat.c (s390-tdep.h): New include.
+	* Makefile.in (ALL_TARGET_OBS): Add s390-tdep.o.
+	(HFILES_NO_SRCDIR): Add s390-tdep.h.
+	(ALLDEPFILES): Add s390-tdep.c.
+	* configure.tgt (s390*-*-linux*): Add s390-tdep.o.
+	* s390-linux-tdep.h (HWCAP_S390_*, S390_*_REGNUM): Move to...
+	* s390-tdep.h: ...this.  New file.
+	* s390-linux-tdep.c (s390-tdep.h): New include.
+	(_initialize_s390_tdep): Rename to...
+	(_initialize_s390_linux_tdep): ...this and adjust.
+	(s390_abi_kind, s390_vector_abi_kind, gdbarch_tdep)
+	(enum named opcodes, S390_NUM_GPRS, S390_NUM_FPRS): Move to
+	s390-tdep.h.
+	(s390_break_insn, s390_breakpoint, s390_readinstruction, is_ri)
+	(is_ril, is_rr, is_rre, is_rs, is_rsy, is_rx, is_rxy)
+	(s390_is_partial_instruction, s390_software_single_step)
+	(is_non_branch_ril, s390_displaced_step_copy_insn)
+	(s390_displaced_step_fixup, s390_displaced_step_hw_singlestep)
+	(s390_prologue_data, s390_addr, s390_store, s390_load)
+	(s390_check_for_saved, s390_analyze_prologue, s390_skip_prologue)
+	(s390_register_call_saved, s390_guess_tracepoint_registers)
+	(s390_register_name, s390_dwarf_regmap, s390_dwarf_reg_to_regnum)
+	(regnum_is_gpr_full, regnum_is_vxr_full, s390_value_from_register)
+	(s390_pseudo_register_name, s390_pseudo_register_type)
+	(s390_pseudo_register_read, s390_pseudo_register_write)
+	(s390_pseudo_register_reggroup_p, s390_ax_pseudo_register_collect)
+	(s390_ax_pseudo_register_push_stack, s390_gen_return_address)
+	(s390_addr_bits_remove, s390_address_class_type_flags)
+	(s390_address_class_type_flags_to_name)
+	(s390_address_class_name_to_type_flags, s390_effective_inner_type)
+	(s390_function_arg_float, s390_function_arg_vector)
+	(is_power_of_two, s390_function_arg_integer, s390_arg_state)
+	(s390_handle_arg, s390_push_dummy_call, s390_dummy_id)
+	(s390_frame_align, s390_register_return_value, s390_return_value)
+	(s390_stack_frame_destroyed_p, s390_unwind_pc, s390_unwind_sp)
+	(s390_unwind_pseudo_register, s390_adjust_frame_regnum)
+	(s390_dwarf2_prev_register, s390_dwarf2_frame_init_reg)
+	(s390_trad_frame_prev_register, s390_unwind_cache)
+	(s390_prologue_frame_unwind_cache)
+	(s390_backchain_frame_unwind_cache, s390_frame_unwind_cache)
+	(s390_frame_this_id, s390_frame_prev_register, s390_frame_unwind)
+	(s390_stub_unwind_cache, s390_stub_frame_unwind_cache)
+	(s390_stub_frame_this_id, s390_stub_frame_prev_register)
+	(s390_stub_frame_sniffer, s390_stub_frame_unwind)
+	(s390_frame_base_address, s390_local_base_address)
+	(s390_frame_base, s390_gcc_target_options)
+	(s390_gnu_triplet_regexp, s390_stap_is_single_operand)
+	(s390_validate_reg_range, s390_tdesc_valid)
+	(s390_gdbarch_tdep_alloc, s390_gdbarch_init): Move to...
+	* s390-tdep.c: ...this.  New file.
+
+2018-01-23  Philipp Rudo  <prudo@linux.vnet.ibm.com>
+
+	* s390-linux-tdep.c (gdbarch_tdep.s390_syscall_record): New hook.
+	(s390_process_record, s390_gdbarch_tdep_alloc)
+	(s390_linux_init_abi_any): Use/set new hook.
+
+2018-01-23  Philipp Rudo  <prudo@linux.vnet.ibm.com>
+
+	* s390-linux-tdep.c (osabi.h): New include.
+	(s390_linux_init_abi_31, s390_linux_init_abi_64)
+	(s390_linux_init_abi_any): New functions.
+	(s390_gdbarch_init, _initialize_s390_tdep): Adjust.
+
+2018-01-23  Philipp Rudo  <prudo@linux.vnet.ibm.com>
+
+	* s390-linux-tdep.c (s390_gdbarch_init): Use gdb_assert for
+	tdesc_has_registers check
+
+2018-01-23  Philipp Rudo  <prudo@linux.vnet.ibm.com>
+
+	* s390-linux-tdep.c (s390_tdesc_valid): New function.
+	(s390_validate_reg_range): New macro.
+	(s390_gdbarch_init): Adjust.
+
+2018-01-23  Philipp Rudo  <prudo@linux.vnet.ibm.com>
+
+	* s390-linux-tdep.c (gdbarch_tdep) <tdesc>: New field.
+	(s390_gdbarch_tdep_alloc): Adjust.
+	(s390_gdbarch_init): Adjust.
+
+2018-01-23  Philipp Rudo  <prudo@linux.vnet.ibm.com>
+
+	* s390-linux-tdep.c (gdbarch_tdep) <have_linux_v1, have_linux_v2>
+	<have_tdb>: Change type to bool.
+	(s390_gdbarch_tdep_alloc): Adjust.
+	(s390_gdbarch_init): Adjust.
+
+2018-01-23  Philipp Rudo  <prudo@linux.vnet.ibm.com>
+
+	* s390-linux-tdep (s390_abi_kind) <ABI_NONE>: New default field.
+	(gdbarch_tdep) <have_upper, have_vx>: New fields.
+	(s390_gdbarch_tdep_alloc): New function.
+	(s390_gdbarch_init): Allocate tdep at start and use its fields
+	instead of separate variables.
+
+2018-01-23  Philipp Rudo  <prudo@linux.vnet.ibm.com>
+
+	* s390-linux-tdep.c (s390_gdbarch_init): Remove duplicate checks
+	when looking for cached gdbarch and add comment for remaining.
+
+2018-01-22  Pedro Alves  <palves@redhat.com>
+	    Sergio Durigan Junior  <sergiodj@redhat.com>
+
+	* typeprint.c (whatis_exp): Initialize "val" in the "whatis type"
+	case.
+
+2018-01-22  Maciej W. Rozycki  <macro@mips.com>
+
+	* MAINTAINERS: Update my company e-mail address.
+
+2018-01-22  Yao Qi  <yao.qi@linaro.org>
+
+	* regcache.c (cooked_write_test): New function.
+	(_initialize_regcache): Register the test.
+
+2018-01-22  Yao Qi  <yao.qi@linaro.org>
+
+	* ia64-tdep.c (ia64_pseudo_register_read): Call
+	regcache->cooked_read instead of regcache_cooked_read_unsigned.
+	* m32c-tdep.c (m32c_cat_read): Likewise.
+	(m32c_r3r2r1r0_read): Likewise.
+	* m68hc11-tdep.c (m68hc11_pseudo_register_read): Likewise.
+	* xtensa-tdep.c (xtensa_register_read_masked): Likewise.
+
+2018-01-22  Yao Qi  <yao.qi@linaro.org>
+
+	* aarch64-tdep.c (aarch64_pseudo_read_value): Call regcache
+	method raw_read instead of regcache_raw_read.
+	* amd64-tdep.c (amd64_pseudo_register_read_value): Likewise.
+	* arm-tdep.c (arm_neon_quad_read): Likewise.
+	* avr-tdep.c (avr_pseudo_register_read): Likewise.
+	* bfin-tdep.c (bfin_pseudo_register_read): Likewise.
+	* frv-tdep.c (frv_pseudo_register_read): Likewise.
+	* h8300-tdep.c (h8300_pseudo_register_read): Likewise.
+	* i386-tdep.c (i386_mmx_regnum_to_fp_regnum): Likewise.
+	(i386_pseudo_register_read_into_value): Likewise.
+	* mep-tdep.c (mep_pseudo_cr32_read): Likewise.
+	* msp430-tdep.c (msp430_pseudo_register_read): Likewise.
+	* nds32-tdep.c (nds32_pseudo_register_read): Likewise.
+	* rl78-tdep.c (rl78_pseudo_register_read): Likewise.
+	* s390-linux-tdep.c (s390_pseudo_register_read): Likewise.
+	* sparc-tdep.c (sparc32_pseudo_register_read):  Likewise.
+	* sparc64-tdep.c (sparc64_pseudo_register_read): Likewise.
+	* spu-tdep.c (spu_pseudo_register_read_spu):  Likewise.
+	* xtensa-tdep.c (xtensa_pseudo_register_read): Likewise.
+
+2018-01-22  Yao Qi  <yao.qi@linaro.org>
+
+	* Makefile.in (ALL_TARGET_OBS): Remove mt-tdep.o.
+	* configure.tgt: Remove target mt.
+	* mt-tdep.c: Remove.
+	* regcache.c (cooked_read_test): Remove the check for mt.
+
+2018-01-22  Yao Qi  <yao.qi@linaro.org>
+
+	* jit.c (jit_frame_prev_register): Call regcache::cooked_read
+	instead of gdbarch_pseudo_register_read_value.
+
+2018-01-22  Joel Brobecker  <brobecker@adacore.com>
+
+	* dwarf2read.c (need_gnat_info): Return nonzero if the cu's
+	language is Ada.
+
+2018-01-22  Joel Brobecker  <brobecker@adacore.com>
+
+	* linespec.c (create_sals_line_offset): Remove code that preserved
+	the symtab_and_line's line number.
+
+2018-01-21  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* varobj.c (varobj_create): Don't set valid_block when creating a
+	floating varobj.
+
+2018-01-21  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* varobj.c (varobj_create): Remove out of date comment.
+
+2018-01-21  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	PR mi/20395
+	* ada-exp.y (write_var_from_sym): Pass extra parameter when
+	updating innermost block.
+	* parse.c (innermost_block_tracker::update): Take extra type
+	parameter, and check types match before updating innermost block.
+	(write_dollar_variable): Update innermost block for registers.
+	* parser-defs.h (enum innermost_block_tracker_type): New enum.
+	(innermost_block_tracker::innermost_block_tracker): Initialise
+	m_types member.
+	(innermost_block_tracker::reset): Take type parameter.
+	(innermost_block_tracker::update): Take type parameter, and pass
+	type through as needed.
+	(innermost_block_tracker::m_types): New member.
+	* varobj.c (varobj_create): Pass type when reseting innermost
+	block.
+
+2018-01-21  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* ada-exp.y (write_var_from_sym): Switch to innermost_block API.
+	* ada-lang.c (resolve_subexp): Likewise.
+	* breakpoint.c (set_breakpoint_condition) Likewise.
+	(watch_command_1) Likewise.
+	* c-exp.y (variable): Likewise.
+	* d-exp.y (PrimaryExpression): Likewise.
+	* f-exp.y (variable): Likewise.
+	* go-exp.y (variable): Likewise.
+	* m2-exp.y (variable): Likewise.
+	* objfiles.c (objfile::~objfile): Likewise.
+	* p-exp.y (variable): Likewise.
+	* parse.c (innermost_block): Change type.
+	* parser-defs.h (class innermost_block_tracker): New.
+	(innermost_block): Change to innermost_block_tracker.
+	* printcmd.c (display_command): Switch to innermost_block API.
+	(do_one_display): Likewise.
+	* rust-exp.y (do_one_display): Likewise.
+	* symfile.c (clear_symtab_users): Likewise.
+	* varobj.c (varobj_create): Switch to innermost_block API, replace
+	use of innermost_block with block stored on varobj object.
+
+2018-01-21  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* expression.h (innermost_block): Remove declaration.
+	* varobj.c: Add 'parser-defs.h' include.
+
 2018-01-19  Tom Tromey  <tom@tromey.com>
 
 	* rust-lang.c (rust_lookup_symbol_nonlocal): Look up qualified
