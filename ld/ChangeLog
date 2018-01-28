@@ -1,3 +1,68 @@
+2018-01-27  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/22751
+	* testsuite/config/default.exp (INT128_CFLAGS): New.
+	* testsuite/ld-plugin/lto.exp (INT128_CFLAGS): New.
+	Run ld/22751 tests.
+	* testsuite/ld-plugin/pr22751.c: New file.
+	* testsuite/lib/ld-lib.exp (run_ld_link_exec_tests): Add
+	ld trailing options.
+
+2018-01-28  Alan Modra  <amodra@gmail.com>
+
+	PR 22751
+	* ldlang.c (find_rescan_insertion): Look past bfds with claim_archive
+	set.
+
+2018-01-26  Maciej W. Rozycki  <macro@mips.com>
+
+	* emulparams/elf32mipswindiss.sh (EXTRA_EM_FILE): Set to
+	`mipself'.
+
+2018-01-25  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* testsuite/ld-sparc/sparc.exp (32-bit: Helper shared library):
+	Link with a version script.
+	(32-bit: TLS -fpie): New test.
+	(64-bit: Helper shared library): Link with a version script.
+	(64-bit: TLS -fpie): New test.
+	(64-bit: GOTDATA relocations): Pass -Av9 to the assembler.
+	* testsuite/ld-sparc/tlslib.ver: New file.
+	* testsuite/ld-sparc/tlspie32.dd: Likewise.
+	* testsuite/ld-sparc/tlspie32.s: Likewise.
+	* testsuite/ld-sparc/tlspie64.dd: Likewise.
+	* testsuite/ld-sparc/tlspie64.s: Likewise.
+	* testsuite/ld-sparc/tlssunbin32.dd: Adjust for versioned symbol.
+	* testsuite/ld-sparc/tlssunbin32.rd: Likewise.
+	* testsuite/ld-sparc/tlssunbin32.sd: Likewise.
+	* testsuite/ld-sparc/tlssunbin64.dd: Likewise.
+	* testsuite/ld-sparc/tlssunbin64.rd: Likewise.
+	* testsuite/ld-sparc/tlssunbin64.sd: Likewise.
+
+2018-01-24  Renlin Li  <renlin.li@arm.com>
+
+	* testsuite/ld-aarch64/aarch64-elf.exp: Run new testes.
+	* testsuite/ld-aarch64/emit-relocs-287.s: Fix test case.
+	* testsuite/ld-aarch64/emit-relocs-287.d: Fix expected output.
+	* testsuite/ld-aarch64/emit-relocs-287-overflow.s: New.
+	* testsuite/ld-aarch64/emit-relocs-287-overflow.d: New.
+	* testsuite/ld-aarch64/emit-relocs-288.d: New.
+	* testsuite/ld-aarch64/emit-relocs-288.s: New.
+	* testsuite/ld-aarch64/emit-relocs-289.d: New.
+	* testsuite/ld-aarch64/emit-relocs-289.s: New.
+	* testsuite/ld-aarch64/emit-relocs-289-overflow.s: New.
+	* testsuite/ld-aarch64/emit-relocs-289-overflow.d: New.
+	* testsuite/ld-aarch64/emit-relocs-290.d: New.
+	* testsuite/ld-aarch64/emit-relocs-290.s: New.
+	* testsuite/ld-aarch64/emit-relocs-291.d: New.
+	* testsuite/ld-aarch64/emit-relocs-291.s: New.
+	* testsuite/ld-aarch64/emit-relocs-291-overflow.s: New.
+	* testsuite/ld-aarch64/emit-relocs-291-overflow.d: New.
+	* testsuite/ld-aarch64/emit-relocs-292.d: New.
+	* testsuite/ld-aarch64/emit-relocs-292.s: New.
+	* testsuite/ld-aarch64/emit-relocs-293.d: New.
+	* testsuite/ld-aarch64/emit-relocs-293.s: New.
+
 2018-01-20  H.J. Lu  <hongjiu.lu@intel.com>
 
 	PR ld/22721

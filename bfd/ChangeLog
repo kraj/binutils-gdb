@@ -1,3 +1,63 @@
+2018-01-27  Nick Clifton  <nickc@redhat.com>
+
+	* po/ru.po: Updated Russian translation.
+
+2018-01-26  Alan Modra  <amodra@gmail.com>
+
+	* elflink.c (bfd_elf_define_start_stop): Override symbols when
+	they are defined dynamically.
+
+2018-01-26  Alan Modra  <amodra@gmail.com>
+
+	* elf64-ppc.c (ppc64_elf_size_stubs): Iterate sizing when
+	.branch_lt changes size.
+
+2018-01-25  Alan Modra  <amodra@gmail.com>
+
+	PR 22746
+	* elfcode.h (elf_object_p): Avoid integer overflow.
+
+2018-01-25  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR ld/22727
+	* elfxx-sparc.c (_bfd_sparc_elf_check_relocs) <R_SPARC_TLS_GD_CALL>:
+	Do a mere lookup of the __tls_get_addr symbol instead of adding it.
+
+	Revert
+	2017-10-19  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/22263
+	* elfxx-sparc.c (sparc_elf_tls_transition): Replace
+	bfd_link_pic with !bfd_link_executable, !bfd_link_pic with
+	bfd_link_executable for TLS check.
+	(_bfd_sparc_elf_check_relocs): Likewise.
+	(allocate_dynrelocs): Likewise.
+	(_bfd_sparc_elf_relocate_section): Likewise.
+
+2018-01-24  Renlin Li  <renlin.li@arm.com>
+
+	* elfnn-aarch64.c (elfNN_aarch64_final_link_relocate): Add support for
+	BFD_RELOC_AARCH64_MOVW_PREL_G0, BFD_RELOC_AARCH64_MOVW_PREL_G0_NC,
+	BFD_RELOC_AARCH64_MOVW_PREL_G1, BFD_RELOC_AARCH64_MOVW_PREL_G1_NC,
+	BFD_RELOC_AARCH64_MOVW_PREL_G2, BFD_RELOC_AARCH64_MOVW_PREL_G2_NC,
+	BFD_RELOC_AARCH64_MOVW_PREL_G3.
+	* elfxx-aarch64.c (_bfd_aarch64_elf_put_addend): Likewise.
+	(_bfd_aarch64_elf_resolve_relocation): Likewise.
+
+2018-01-24  Renlin Li  <renlin.li@arm.com>
+
+	* reloc.c: Add BFD_RELOC_AARCH64_MOVW_PREL_G0,
+	BFD_RELOC_AARCH64_MOVW_PREL_G0_NC, BFD_RELOC_AARCH64_MOVW_PREL_G1,
+	BFD_RELOC_AARCH64_MOVW_PREL_G1_NC, BFD_RELOC_AARCH64_MOVW_PREL_G2,
+	BFD_RELOC_AARCH64_MOVW_PREL_G2_NC, BFD_RELOC_AARCH64_MOVW_PREL_G3.
+	* elfnn-aarch64.c (elfNN_aarch64_howto_table): Add entries for
+	BFD_RELOC_AARCH64_MOVW_PREL_G0, BFD_RELOC_AARCH64_MOVW_PREL_G0_NC,
+	BFD_RELOC_AARCH64_MOVW_PREL_G1, BFD_RELOC_AARCH64_MOVW_PREL_G1_NC,
+	BFD_RELOC_AARCH64_MOVW_PREL_G2, BFD_RELOC_AARCH64_MOVW_PREL_G2_NC,
+	BFD_RELOC_AARCH64_MOVW_PREL_G3.
+	* bfd-in2.h: Regenerate.
+	* libbfd.h: Regenerate.
+
 2018-01-23  Maciej W. Rozycki  <macro@mips.com>
 
 	* elfxx-mips.c (_bfd_mips_elf_final_link): Update a stale
