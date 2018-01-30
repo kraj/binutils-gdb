@@ -1,3 +1,56 @@
+2018-01-30  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/ld-gc/stop.d,
+	* testsuite/ld-gc/stop.s: New test.
+	* testsuite/ld-gc/gc.exp: Run it.
+
+2018-01-30  Maciej W. Rozycki  <macro@mips.com>
+
+	PR ld/22649
+	* testsuite/ld-elf/pr22649-2ab-mips.msg: New stderr output.
+	* testsuite/ld-elf/pr22649-2cd-mips.msg: New stderr output.
+	* testsuite/ld-elf/shared.exp: Use the new outputs with
+	`mips*-*-*' targets.
+
+2018-01-30  Maciej W. Rozycki  <macro@mips.com>
+
+	* testsuite/ld-elf/comm-data1.sd: Alternatively accept
+	`PRC[0xff02]' in place of a regular section index.
+	* testsuite/ld-elf/pr21703-shared.sd: Likewise `PRC[0xff01]'.
+
+2018-01-29  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/ld-elf/pr21964-3a.c: New file.
+	* testsuite/ld-elf/pr21964-3c.c: New file.
+	* testsuite/ld-elf/shared.exp: Run new __start/__stop testcase.
+
+2018-01-29  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* testsuite/ld-elf/shared.exp (AFLAGS_PIC): Define on SPARC.
+	(pr22269-1): Pass AFLAGS_PIC to the assembler.
+
+2018-01-29  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* testsuite/ld-elf/pr22450.d: Remove reference to SPARC64.
+
+2018-01-29  Maciej W. Rozycki  <macro@mips.com>
+
+	* testsuite/ld-mips-elf/comm-data.exp: Correct support for
+	targets using non-traditional MIPS emulation or having a limited
+	selection of ABIs available.  Don't force big endianness, use
+	defaults.
+
+2018-01-29  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/22732
+	* testsuite/config/default.exp (STATIC_LDFLAGS): New.  Set to
+	"-static" if target compiler supports it.
+	* testsuite/ld-bootstrap/bootstrap.exp: Skip static executable
+	tests if target compiler doesn't support it.
+	* testsuite/ld-ifunc/ifunc.exp: Likewise.
+	* testsuite/lib/ld-lib.exp (run_ld_link_exec_tests): Likewise.
+	(run_cc_link_tests): Likewise.
+
 2018-01-27  H.J. Lu  <hongjiu.lu@intel.com>
 
 	PR ld/22751

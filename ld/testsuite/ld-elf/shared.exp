@@ -42,6 +42,10 @@ set AFLAGS_PIC ""
 if [istarget "tic6x-*-*"] {
     append AFLAGS_PIC " -mpic -mpid=near"
 }
+if [istarget "sparc*-*-*"] {
+    append AFLAGS_PIC " -K PIC"
+}
+
 # This target requires a non-default emulation for successful shared
 # library/executable builds.
 set LFLAGS ""
@@ -93,6 +97,11 @@ run_ld_link_tests [list \
 ]
 
 if { [check_gc_sections_available] } {
+    if [istarget mips*-*-*] {
+	set actions {{ld pr22649-2ab-mips.msg}}
+    } else {
+	set actions {{ld pr22649.msg}}
+    }
     run_ld_link_tests [list \
 	[list \
 	    "Build pr22649-2a.so" \
@@ -100,7 +109,7 @@ if { [check_gc_sections_available] } {
 	    "" \
 	    "$AFLAGS_PIC" \
 	    {pr22649-2a.s} \
-	    {{ld pr22649.msg}} \
+	    $actions \
 	    "pr22649-2a.so" \
 	] \
 	[list \
@@ -109,16 +118,23 @@ if { [check_gc_sections_available] } {
 	    "tmpdir/pr22649-1.so" \
 	    "$AFLAGS_PIC" \
 	    {pr22649-2a.s} \
-	    {{ld pr22649.msg}} \
+	    $actions \
 	    "pr22649-2b.so" \
 	] \
+    ]
+    if { [istarget mips*-*-*] && ![istarget *-*-elf*] } {
+	set actions {{ld pr22649-2cd-mips.msg}}
+    } else {
+	set actions {}
+    }
+    run_ld_link_tests [list \
 	[list \
 	    "Build pr22649-2c.so" \
 	    "$LFLAGS -shared -gc-sections -print-gc-sections" \
 	    "" \
 	    "$AFLAGS_PIC" \
 	    {pr22649-2b.s} \
-	    {} \
+	    $actions \
 	    "pr22649-2b.so" \
 	] \
 	[list \
@@ -127,7 +143,7 @@ if { [check_gc_sections_available] } {
 	    "tmpdir/pr22649-1.so" \
 	    "$AFLAGS_PIC" \
 	    {pr22649-2b.s} \
-	    {} \
+	    $actions \
 	    "pr22649-2b.so" \
 	] \
     ]
@@ -565,6 +581,9 @@ set build_tests {
   {"Build pr21964-2b.so"
    "-shared" "-fPIC"
    {pr21964-2b.c} {} "pr21964-2b.so"}
+  {"Build pr21964-3a.so"
+   "-shared" "-fPIC"
+   {pr21964-3a.c} {} "pr21964-3a.so"}
   {"Dump pr21978.so"
    "-shared" "-fPIC -g -O2"
    {pr21978a.c pr21978b.c} {{objdump {-Sl} pr21978.od}} "pr21978.so"}
@@ -577,7 +596,7 @@ run_ld_link_tests [list \
 	"Build pr22269-1" \
 	"-pie -e _start --no-dynamic-linker -z text" \
 	"" \
-	"" \
+	"$AFLAGS_PIC" \
 	{ pr22269-1.c } \
 	{{readelf -rW pr22269-1.rd}} \
 	"pr22269-1" \
@@ -701,6 +720,9 @@ set run_tests [list \
     [list "Run pr21964-1" \
      "-Wl,--no-as-needed,-rpath,tmpdir tmpdir/pr21964-1a.so tmpdir/pr21964-1b.so" "" \
      {pr21964-1c.c} "pr21964-1" "pass.out" ] \
+    [list "Run pr21964-3" \
+     "-Wl,--no-as-needed,-rpath,tmpdir tmpdir/pr21964-1a.so tmpdir/pr21964-1b.so tmpdir/pr21964-3a.so" "" \
+     {pr21964-3c.c} "pr21964-3" "pass.out" ] \
 ]
 
 # NetBSD ELF systems do not currently support the .*_array sections.
