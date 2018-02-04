@@ -1,3 +1,40 @@
+2018-02-04  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* testsuite/ld-i386/lea1d.d: Replace -Sw with -SW.
+	* testsuite/ld-i386/lea1e.d: Likewise.
+	* testsuite/ld-i386/lea1f.d: Likewise.
+	* testsuite/ld-x86-64/lea1g.d: Likewise.
+	* testsuite/ld-x86-64/lea1h.d: Likewise.
+	* testsuite/ld-x86-64/lea1i.d: Likewise.
+	* testsuite/ld-x86-64/lea1j.d: Likewise.
+	* testsuite/ld-x86-64/lea1k.d: Likewise.
+	* testsuite/ld-x86-64/lea1l.d: Likewise.
+
+2018-02-03  Nick Clifton  <nickc@redhat.com>
+
+	PR 22762
+	* scripttempl/pe.sc: Remove PROVIDE()s from __CTOR_LIST__ and
+	__DTOR_LIST__ symbols.  Add a comment explaining why this is
+	necessary.
+	* scripttemp/pep.sc: Likewise.
+	* ld.texinfo (PROVIDE): Add a note about the effect of common
+	symbols.
+
+2018-02-03  Sandra Loosemore  <sandra@codesourcery.com>
+
+	* emulparams/nios2elf.sh (GENERATE_SHLIB_SCRIPT): Don't set.
+
+2018-02-02  Maciej W. Rozycki  <macro@mips.com>
+
+	* testsuite/ld-elf/shared.exp: Add $AFLAGS_PIC throughout to PIC
+	assembly builds where missing and remove `tic6x-*-*' XFAIL
+	markings accordingly.
+
+2018-02-01  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* ldexp.c (fold_name, exp_fold_tree_1): Avoid pointer arithmetic
+	on NULL pointer.
+
 2018-01-31  H.J. Lu  <hongjiu.lu@intel.com>
 
 	* testsuite/ld-elf/pr21964-5.c (my_var): Mark as used.

@@ -1,3 +1,22 @@
+2018-02-01  Leszek Swirski  <leszeks@google.com>
+
+	* varobj.c (varobj_formatted_print_options): Allow recursive
+	pretty printing if pretty printing is enabled.
+
+2018-02-01  Leszek Swirski  <leszeks@google.com>
+
+	* c-exp.y (lex_one_token, classify_name, yylex): Don't classify
+	names after a structop as a filename.
+
+2018-02-01  Yao Qi  <yao.qi@linaro.org>
+
+	* arm-tdep.c (arm_record_data_proc_misc_ld_str): Rewrite it.
+	(arm_record_coproc_data_proc): Likewise.
+
+2018-02-01  Yao Qi  <yao.qi@linaro.org>
+
+	* arm-tdep.c (arm_record_extension_space): Change ret to signed.
+
 2018-01-31  Nikola Prica  <nikola.prica@rt-rk.com>
 
 	* rs6000-tdep.c (skip_prologue): Remove shifting for lr_reg and
