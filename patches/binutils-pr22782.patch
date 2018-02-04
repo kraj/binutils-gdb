@@ -1,0 +1,904 @@
+From 819765a71dd4ba3eb8db45ed737d6954faa0993c Mon Sep 17 00:00:00 2001
+From: "H.J. Lu" <hjl.tools@gmail.com>
+Date: Sun, 4 Feb 2018 07:56:55 -0800
+Subject: [PATCH] x86: Remove the unused _GLOBAL_OFFSET_TABLE_
+
+Since _GLOBAL_OFFSET_TABLE_ may be referenced implicitly on x86,
+checking ref_regular_nonweak leaves the unused _GLOBAL_OFFSET_TABLE_
+in output.  This patch checks explicit GOT references instead.
+
+ld-i386/discarded1.s and ld-x86-64/discarded1.s are updated to avoid
+linker optimization which removes GOT references.
+
+bfd/
+
+	PR ld/22782
+	* elf32-i386.c (elf_i386_check_relocs): Set got_referenced if
+	GOT is referenced.
+	* elf64-x86-64.c (elf_x86_64_check_relocs): Likewise.
+	* elfxx-x86.c (_bfd_x86_elf_size_dynamic_sections): Likewise.
+	Check got_referenced instead of ref_regular_nonweak.  Remove
+	the unused _GLOBAL_OFFSET_TABLE_ from symbol table.
+	* elfxx-x86.h (elf_x86_link_hash_table): Add got_referenced.
+
+ld/
+
+	PR ld/22782
+	* testsuite/ld-i386/discarded1.s: Replace mov with div.
+	* testsuite/ld-x86-64/discarded1.s: Likewise.
+	* testsuite/ld-i386/i386.exp: Run pr22782.
+	* testsuite/ld-i386/load1-nacl.d: Updated for removing
+	_GLOBAL_OFFSET_TABLE_ from output.
+	* testsuite/ld-i386/load1.d: Likewise.
+	* testsuite/ld-x86-64/load1a-nacl.d: Likewise.
+	* testsuite/ld-x86-64/load1a.d: Likewise.
+	* testsuite/ld-x86-64/load1b-nacl.d: Likewise.
+	* testsuite/ld-x86-64/load1b.d: Likewise.
+	* testsuite/ld-i386/pr22782.d: New file.
+	* testsuite/ld-i386/pr22782.s: Likewise.
+	* testsuite/ld-x86-64/pr22782.s: Likewise.
+	* testsuite/ld-x86-64/pr22782a.d: Likewise.
+	* testsuite/ld-x86-64/pr22782b.d: Likewise.
+	* testsuite/ld-x86-64/x86-64.exp: Run pr22782a and pr22782b.
+---
+ bfd/elf32-i386.c                     | 16 ++++++-
+ bfd/elf64-x86-64.c                   |  4 ++
+ bfd/elfxx-x86.c                      | 20 ++++++++-
+ bfd/elfxx-x86.h                      |  3 ++
+ ld/testsuite/ld-i386/discarded1.s    |  2 +-
+ ld/testsuite/ld-i386/i386.exp        |  1 +
+ ld/testsuite/ld-i386/load1-nacl.d    | 84 ++++++++++++++++++------------------
+ ld/testsuite/ld-i386/load1.d         | 84 ++++++++++++++++++------------------
+ ld/testsuite/ld-i386/pr22782.d       | 10 +++++
+ ld/testsuite/ld-i386/pr22782.s       | 15 +++++++
+ ld/testsuite/ld-x86-64/discarded1.s  |  2 +-
+ ld/testsuite/ld-x86-64/load1a-nacl.d | 76 ++++++++++++++++----------------
+ ld/testsuite/ld-x86-64/load1a.d      | 76 ++++++++++++++++----------------
+ ld/testsuite/ld-x86-64/load1b-nacl.d | 76 ++++++++++++++++----------------
+ ld/testsuite/ld-x86-64/load1b.d      | 76 ++++++++++++++++----------------
+ ld/testsuite/ld-x86-64/pr22782.s     | 15 +++++++
+ ld/testsuite/ld-x86-64/pr22782a.d    | 11 +++++
+ ld/testsuite/ld-x86-64/pr22782b.d    | 11 +++++
+ ld/testsuite/ld-x86-64/x86-64.exp    |  2 +
+ 19 files changed, 342 insertions(+), 242 deletions(-)
+ create mode 100644 ld/testsuite/ld-i386/pr22782.d
+ create mode 100644 ld/testsuite/ld-i386/pr22782.s
+ create mode 100644 ld/testsuite/ld-x86-64/pr22782.s
+ create mode 100644 ld/testsuite/ld-x86-64/pr22782a.d
+ create mode 100644 ld/testsuite/ld-x86-64/pr22782b.d
+
+diff --git a/bfd/elf32-i386.c b/bfd/elf32-i386.c
+index 1f380dbdc3..b8b914ea29 100644
+--- a/bfd/elf32-i386.c
++++ b/bfd/elf32-i386.c
+@@ -1578,6 +1578,10 @@ elf_i386_check_relocs (bfd *abfd,
+ 				     rel, rel_end, h, r_symndx, FALSE))
+ 	goto error_return;
+ 
++      /* Check if GOT is referenced.  */
++      if (h == htab->elf.hgot)
++	htab->got_referenced = TRUE;
++
+       switch (r_type)
+ 	{
+ 	case R_386_TLS_LDM:
+@@ -1720,11 +1724,19 @@ elf_i386_check_relocs (bfd *abfd,
+ 
+ 	case R_386_GOTOFF:
+ 	case R_386_GOTPC:
+-	create_got:
++create_got:
+ 	  if (r_type != R_386_TLS_IE)
+ 	    {
+ 	      if (eh != NULL)
+-		eh->zero_undefweak &= 0x2;
++		{
++		  eh->zero_undefweak &= 0x2;
++
++		  /* Need GOT to resolve undefined weak symbol to 0.  */
++		  if (r_type == R_386_GOTOFF
++		      && h->root.type == bfd_link_hash_undefweak
++		      && bfd_link_executable (info))
++		    htab->got_referenced = TRUE;
++		}
+ 	      break;
+ 	    }
+ 	  /* Fall through */
+diff --git a/bfd/elf64-x86-64.c b/bfd/elf64-x86-64.c
+index ba4f47bff4..e97126c83d 100644
+--- a/bfd/elf64-x86-64.c
++++ b/bfd/elf64-x86-64.c
+@@ -1927,6 +1927,10 @@ elf_x86_64_check_relocs (bfd *abfd, struct bfd_link_info *info,
+ 				       rel, rel_end, h, r_symndx, FALSE))
+ 	goto error_return;
+ 
++      /* Check if GOT is referenced.  */
++      if (h == htab->elf.hgot)
++	htab->got_referenced = TRUE;
++
+       eh = (struct elf_x86_link_hash_entry *) h;
+       switch (r_type)
+ 	{
+diff --git a/bfd/elfxx-x86.c b/bfd/elfxx-x86.c
+index a7db5d9dfe..753650b8b3 100644
+--- a/bfd/elfxx-x86.c
++++ b/bfd/elfxx-x86.c
+@@ -972,6 +972,7 @@ _bfd_x86_elf_size_dynamic_sections (bfd *output_bfd,
+       if (!local_got)
+ 	continue;
+ 
++      htab->got_referenced = TRUE;
+       symtab_hdr = &elf_symtab_hdr (ibfd);
+       locsymcount = symtab_hdr->sh_info;
+       end_local_got = local_got + locsymcount;
+@@ -1030,6 +1031,7 @@ _bfd_x86_elf_size_dynamic_sections (bfd *output_bfd,
+       htab->tls_ld_or_ldm_got.offset = htab->elf.sgot->size;
+       htab->elf.sgot->size += 2 * htab->got_entry_size;
+       htab->elf.srelgot->size += htab->sizeof_reloc;
++      htab->got_referenced = TRUE;
+     }
+   else
+     htab->tls_ld_or_ldm_got.offset = -1;
+@@ -1078,6 +1080,7 @@ _bfd_x86_elf_size_dynamic_sections (bfd *output_bfd,
+ 	    htab->elf.splt->size = htab->plt.plt_entry_size;
+ 	  htab->tlsdesc_plt = htab->elf.splt->size;
+ 	  htab->elf.splt->size += htab->plt.plt_entry_size;
++	  htab->got_referenced = TRUE;
+ 	}
+     }
+ 
+@@ -1086,7 +1089,7 @@ _bfd_x86_elf_size_dynamic_sections (bfd *output_bfd,
+       /* Don't allocate .got.plt section if there are no GOT nor PLT
+ 	 entries and there is no reference to _GLOBAL_OFFSET_TABLE_.  */
+       if ((htab->elf.hgot == NULL
+-	   || !htab->elf.hgot->ref_regular_nonweak)
++	   || !htab->got_referenced)
+ 	  && (htab->elf.sgotplt->size == bed->got_header_size)
+ 	  && (htab->elf.splt == NULL
+ 	      || htab->elf.splt->size == 0)
+@@ -1096,7 +1099,20 @@ _bfd_x86_elf_size_dynamic_sections (bfd *output_bfd,
+ 	      || htab->elf.iplt->size == 0)
+ 	  && (htab->elf.igotplt == NULL
+ 	      || htab->elf.igotplt->size == 0))
+-	htab->elf.sgotplt->size = 0;
++	{
++	  htab->elf.sgotplt->size = 0;
++	  if (htab->elf.hgot != NULL)
++	    {
++	      /* Remove the unused _GLOBAL_OFFSET_TABLE_ from symbol
++		 table. */
++	      htab->elf.hgot->root.type = bfd_link_hash_undefined;
++	      htab->elf.hgot->root.u.undef.abfd
++		= htab->elf.hgot->root.u.def.section->owner;
++	      htab->elf.hgot->root.linker_def = 0;
++	      htab->elf.hgot->ref_regular = 0;
++	      htab->elf.hgot->def_regular = 0;
++	    }
++	}
+     }
+ 
+   if (_bfd_elf_eh_frame_present (info))
+diff --git a/bfd/elfxx-x86.h b/bfd/elfxx-x86.h
+index e2a83ad830..b515ee61b0 100644
+--- a/bfd/elfxx-x86.h
++++ b/bfd/elfxx-x86.h
+@@ -478,6 +478,9 @@ struct elf_x86_link_hash_table
+       is only used for i386.  */
+   bfd_byte plt0_pad_byte;
+ 
++  /* TRUE if GOT is referenced.  */
++  unsigned int got_referenced : 1;
++
+   bfd_vma (*r_info) (bfd_vma, bfd_vma);
+   bfd_vma (*r_sym) (bfd_vma);
+   bfd_boolean (*is_reloc_section) (const char *);
+diff --git a/ld/testsuite/ld-i386/discarded1.s b/ld/testsuite/ld-i386/discarded1.s
+index 9b20c87e25..21e5cb7f90 100644
+--- a/ld/testsuite/ld-i386/discarded1.s
++++ b/ld/testsuite/ld-i386/discarded1.s
+@@ -2,7 +2,7 @@
+ .globl _start
+ 	.type	_start, @function
+ _start:
+-	movl	x@GOT(%ecx), %eax
++	divl	x@GOT(%ecx), %eax
+ 	.size	_start, .-_start
+ .globl x
+ 	.data
+diff --git a/ld/testsuite/ld-i386/i386.exp b/ld/testsuite/ld-i386/i386.exp
+index c4fc545dbb..e4ec07d0e9 100644
+--- a/ld/testsuite/ld-i386/i386.exp
++++ b/ld/testsuite/ld-i386/i386.exp
+@@ -450,6 +450,7 @@ run_dump_test "pr22115-1b"
+ run_dump_test "pr22115-1c"
+ run_dump_test "pr22115-1d"
+ run_dump_test "pr22135"
++run_dump_test "pr22782"
+ 
+ if { !([istarget "i?86-*-linux*"]
+        || [istarget "i?86-*-gnu*"]
+diff --git a/ld/testsuite/ld-i386/load1-nacl.d b/ld/testsuite/ld-i386/load1-nacl.d
+index 1dbba1107f..317d1c4054 100644
+--- a/ld/testsuite/ld-i386/load1-nacl.d
++++ b/ld/testsuite/ld-i386/load1-nacl.d
+@@ -8,52 +8,52 @@
+ 
+ SYMBOL TABLE:
+ #...
+-10030080 l     O .data	0+1 bar
++10030074 l     O .data	0+1 bar
+ #...
+-10030081 g     O .data	0+1 foo
++10030075 g     O .data	0+1 foo
+ #...
+ 
+ Disassembly of section .text:
+ 
+ 0+20000 <_start>:
+-[ 	]*[a-f0-9]+:	c7 c0 80 00 03 10    	mov    \$0x10030080,%eax
+-[ 	]*[a-f0-9]+:	81 d0 80 00 03 10    	adc    \$0x10030080,%eax
+-[ 	]*[a-f0-9]+:	81 c3 80 00 03 10    	add    \$0x10030080,%ebx
+-[ 	]*[a-f0-9]+:	81 e1 80 00 03 10    	and    \$0x10030080,%ecx
+-[ 	]*[a-f0-9]+:	81 fa 80 00 03 10    	cmp    \$0x10030080,%edx
+-[ 	]*[a-f0-9]+:	81 cf 80 00 03 10    	or     \$0x10030080,%edi
+-[ 	]*[a-f0-9]+:	81 de 80 00 03 10    	sbb    \$0x10030080,%esi
+-[ 	]*[a-f0-9]+:	81 ed 80 00 03 10    	sub    \$0x10030080,%ebp
+-[ 	]*[a-f0-9]+:	81 f4 80 00 03 10    	xor    \$0x10030080,%esp
+-[ 	]*[a-f0-9]+:	f7 c1 80 00 03 10    	test   \$0x10030080,%ecx
+-[ 	]*[a-f0-9]+:	c7 c0 80 00 03 10    	mov    \$0x10030080,%eax
+-[ 	]*[a-f0-9]+:	81 d0 80 00 03 10    	adc    \$0x10030080,%eax
+-[ 	]*[a-f0-9]+:	81 c3 80 00 03 10    	add    \$0x10030080,%ebx
+-[ 	]*[a-f0-9]+:	81 e1 80 00 03 10    	and    \$0x10030080,%ecx
+-[ 	]*[a-f0-9]+:	81 fa 80 00 03 10    	cmp    \$0x10030080,%edx
+-[ 	]*[a-f0-9]+:	81 cf 80 00 03 10    	or     \$0x10030080,%edi
+-[ 	]*[a-f0-9]+:	81 de 80 00 03 10    	sbb    \$0x10030080,%esi
+-[ 	]*[a-f0-9]+:	81 ed 80 00 03 10    	sub    \$0x10030080,%ebp
+-[ 	]*[a-f0-9]+:	81 f4 80 00 03 10    	xor    \$0x10030080,%esp
+-[ 	]*[a-f0-9]+:	f7 c1 80 00 03 10    	test   \$0x10030080,%ecx
+-[ 	]*[a-f0-9]+:	c7 c0 81 00 03 10    	mov    \$0x10030081,%eax
+-[ 	]*[a-f0-9]+:	81 d0 81 00 03 10    	adc    \$0x10030081,%eax
+-[ 	]*[a-f0-9]+:	81 c3 81 00 03 10    	add    \$0x10030081,%ebx
+-[ 	]*[a-f0-9]+:	81 e1 81 00 03 10    	and    \$0x10030081,%ecx
+-[ 	]*[a-f0-9]+:	81 fa 81 00 03 10    	cmp    \$0x10030081,%edx
+-[ 	]*[a-f0-9]+:	81 cf 81 00 03 10    	or     \$0x10030081,%edi
+-[ 	]*[a-f0-9]+:	81 de 81 00 03 10    	sbb    \$0x10030081,%esi
+-[ 	]*[a-f0-9]+:	81 ed 81 00 03 10    	sub    \$0x10030081,%ebp
+-[ 	]*[a-f0-9]+:	81 f4 81 00 03 10    	xor    \$0x10030081,%esp
+-[ 	]*[a-f0-9]+:	f7 c1 81 00 03 10    	test   \$0x10030081,%ecx
+-[ 	]*[a-f0-9]+:	c7 c0 81 00 03 10    	mov    \$0x10030081,%eax
+-[ 	]*[a-f0-9]+:	81 d0 81 00 03 10    	adc    \$0x10030081,%eax
+-[ 	]*[a-f0-9]+:	81 c3 81 00 03 10    	add    \$0x10030081,%ebx
+-[ 	]*[a-f0-9]+:	81 e1 81 00 03 10    	and    \$0x10030081,%ecx
+-[ 	]*[a-f0-9]+:	81 fa 81 00 03 10    	cmp    \$0x10030081,%edx
+-[ 	]*[a-f0-9]+:	81 cf 81 00 03 10    	or     \$0x10030081,%edi
+-[ 	]*[a-f0-9]+:	81 de 81 00 03 10    	sbb    \$0x10030081,%esi
+-[ 	]*[a-f0-9]+:	81 ed 81 00 03 10    	sub    \$0x10030081,%ebp
+-[ 	]*[a-f0-9]+:	81 f4 81 00 03 10    	xor    \$0x10030081,%esp
+-[ 	]*[a-f0-9]+:	f7 c1 81 00 03 10    	test   \$0x10030081,%ecx
++[ 	]*[a-f0-9]+:	c7 c0 74 00 03 10    	mov    \$0x10030074,%eax
++[ 	]*[a-f0-9]+:	81 d0 74 00 03 10    	adc    \$0x10030074,%eax
++[ 	]*[a-f0-9]+:	81 c3 74 00 03 10    	add    \$0x10030074,%ebx
++[ 	]*[a-f0-9]+:	81 e1 74 00 03 10    	and    \$0x10030074,%ecx
++[ 	]*[a-f0-9]+:	81 fa 74 00 03 10    	cmp    \$0x10030074,%edx
++[ 	]*[a-f0-9]+:	81 cf 74 00 03 10    	or     \$0x10030074,%edi
++[ 	]*[a-f0-9]+:	81 de 74 00 03 10    	sbb    \$0x10030074,%esi
++[ 	]*[a-f0-9]+:	81 ed 74 00 03 10    	sub    \$0x10030074,%ebp
++[ 	]*[a-f0-9]+:	81 f4 74 00 03 10    	xor    \$0x10030074,%esp
++[ 	]*[a-f0-9]+:	f7 c1 74 00 03 10    	test   \$0x10030074,%ecx
++[ 	]*[a-f0-9]+:	c7 c0 74 00 03 10    	mov    \$0x10030074,%eax
++[ 	]*[a-f0-9]+:	81 d0 74 00 03 10    	adc    \$0x10030074,%eax
++[ 	]*[a-f0-9]+:	81 c3 74 00 03 10    	add    \$0x10030074,%ebx
++[ 	]*[a-f0-9]+:	81 e1 74 00 03 10    	and    \$0x10030074,%ecx
++[ 	]*[a-f0-9]+:	81 fa 74 00 03 10    	cmp    \$0x10030074,%edx
++[ 	]*[a-f0-9]+:	81 cf 74 00 03 10    	or     \$0x10030074,%edi
++[ 	]*[a-f0-9]+:	81 de 74 00 03 10    	sbb    \$0x10030074,%esi
++[ 	]*[a-f0-9]+:	81 ed 74 00 03 10    	sub    \$0x10030074,%ebp
++[ 	]*[a-f0-9]+:	81 f4 74 00 03 10    	xor    \$0x10030074,%esp
++[ 	]*[a-f0-9]+:	f7 c1 74 00 03 10    	test   \$0x10030074,%ecx
++[ 	]*[a-f0-9]+:	c7 c0 75 00 03 10    	mov    \$0x10030075,%eax
++[ 	]*[a-f0-9]+:	81 d0 75 00 03 10    	adc    \$0x10030075,%eax
++[ 	]*[a-f0-9]+:	81 c3 75 00 03 10    	add    \$0x10030075,%ebx
++[ 	]*[a-f0-9]+:	81 e1 75 00 03 10    	and    \$0x10030075,%ecx
++[ 	]*[a-f0-9]+:	81 fa 75 00 03 10    	cmp    \$0x10030075,%edx
++[ 	]*[a-f0-9]+:	81 cf 75 00 03 10    	or     \$0x10030075,%edi
++[ 	]*[a-f0-9]+:	81 de 75 00 03 10    	sbb    \$0x10030075,%esi
++[ 	]*[a-f0-9]+:	81 ed 75 00 03 10    	sub    \$0x10030075,%ebp
++[ 	]*[a-f0-9]+:	81 f4 75 00 03 10    	xor    \$0x10030075,%esp
++[ 	]*[a-f0-9]+:	f7 c1 75 00 03 10    	test   \$0x10030075,%ecx
++[ 	]*[a-f0-9]+:	c7 c0 75 00 03 10    	mov    \$0x10030075,%eax
++[ 	]*[a-f0-9]+:	81 d0 75 00 03 10    	adc    \$0x10030075,%eax
++[ 	]*[a-f0-9]+:	81 c3 75 00 03 10    	add    \$0x10030075,%ebx
++[ 	]*[a-f0-9]+:	81 e1 75 00 03 10    	and    \$0x10030075,%ecx
++[ 	]*[a-f0-9]+:	81 fa 75 00 03 10    	cmp    \$0x10030075,%edx
++[ 	]*[a-f0-9]+:	81 cf 75 00 03 10    	or     \$0x10030075,%edi
++[ 	]*[a-f0-9]+:	81 de 75 00 03 10    	sbb    \$0x10030075,%esi
++[ 	]*[a-f0-9]+:	81 ed 75 00 03 10    	sub    \$0x10030075,%ebp
++[ 	]*[a-f0-9]+:	81 f4 75 00 03 10    	xor    \$0x10030075,%esp
++[ 	]*[a-f0-9]+:	f7 c1 75 00 03 10    	test   \$0x10030075,%ecx
+ #pass
+diff --git a/ld/testsuite/ld-i386/load1.d b/ld/testsuite/ld-i386/load1.d
+index 9c4aa8e164..2e4957b0ad 100644
+--- a/ld/testsuite/ld-i386/load1.d
++++ b/ld/testsuite/ld-i386/load1.d
+@@ -7,52 +7,52 @@
+ 
+ SYMBOL TABLE:
+ #...
+-0+8049170 l     O .data	0+1 bar
++0+8049164 l     O .data	0+1 bar
+ #...
+-0+8049171 g     O .data	0+1 foo
++0+8049165 g     O .data	0+1 foo
+ #...
+ 
+ Disassembly of section .text:
+ 
+ 0+8048074 <_start>:
+-[ 	]*[a-f0-9]+:	c7 c0 70 91 04 08    	mov    \$0x8049170,%eax
+-[ 	]*[a-f0-9]+:	81 d0 70 91 04 08    	adc    \$0x8049170,%eax
+-[ 	]*[a-f0-9]+:	81 c3 70 91 04 08    	add    \$0x8049170,%ebx
+-[ 	]*[a-f0-9]+:	81 e1 70 91 04 08    	and    \$0x8049170,%ecx
+-[ 	]*[a-f0-9]+:	81 fa 70 91 04 08    	cmp    \$0x8049170,%edx
+-[ 	]*[a-f0-9]+:	81 cf 70 91 04 08    	or     \$0x8049170,%edi
+-[ 	]*[a-f0-9]+:	81 de 70 91 04 08    	sbb    \$0x8049170,%esi
+-[ 	]*[a-f0-9]+:	81 ed 70 91 04 08    	sub    \$0x8049170,%ebp
+-[ 	]*[a-f0-9]+:	81 f4 70 91 04 08    	xor    \$0x8049170,%esp
+-[ 	]*[a-f0-9]+:	f7 c1 70 91 04 08    	test   \$0x8049170,%ecx
+-[ 	]*[a-f0-9]+:	c7 c0 70 91 04 08    	mov    \$0x8049170,%eax
+-[ 	]*[a-f0-9]+:	81 d0 70 91 04 08    	adc    \$0x8049170,%eax
+-[ 	]*[a-f0-9]+:	81 c3 70 91 04 08    	add    \$0x8049170,%ebx
+-[ 	]*[a-f0-9]+:	81 e1 70 91 04 08    	and    \$0x8049170,%ecx
+-[ 	]*[a-f0-9]+:	81 fa 70 91 04 08    	cmp    \$0x8049170,%edx
+-[ 	]*[a-f0-9]+:	81 cf 70 91 04 08    	or     \$0x8049170,%edi
+-[ 	]*[a-f0-9]+:	81 de 70 91 04 08    	sbb    \$0x8049170,%esi
+-[ 	]*[a-f0-9]+:	81 ed 70 91 04 08    	sub    \$0x8049170,%ebp
+-[ 	]*[a-f0-9]+:	81 f4 70 91 04 08    	xor    \$0x8049170,%esp
+-[ 	]*[a-f0-9]+:	f7 c1 70 91 04 08    	test   \$0x8049170,%ecx
+-[ 	]*[a-f0-9]+:	c7 c0 71 91 04 08    	mov    \$0x8049171,%eax
+-[ 	]*[a-f0-9]+:	81 d0 71 91 04 08    	adc    \$0x8049171,%eax
+-[ 	]*[a-f0-9]+:	81 c3 71 91 04 08    	add    \$0x8049171,%ebx
+-[ 	]*[a-f0-9]+:	81 e1 71 91 04 08    	and    \$0x8049171,%ecx
+-[ 	]*[a-f0-9]+:	81 fa 71 91 04 08    	cmp    \$0x8049171,%edx
+-[ 	]*[a-f0-9]+:	81 cf 71 91 04 08    	or     \$0x8049171,%edi
+-[ 	]*[a-f0-9]+:	81 de 71 91 04 08    	sbb    \$0x8049171,%esi
+-[ 	]*[a-f0-9]+:	81 ed 71 91 04 08    	sub    \$0x8049171,%ebp
+-[ 	]*[a-f0-9]+:	81 f4 71 91 04 08    	xor    \$0x8049171,%esp
+-[ 	]*[a-f0-9]+:	f7 c1 71 91 04 08    	test   \$0x8049171,%ecx
+-[ 	]*[a-f0-9]+:	c7 c0 71 91 04 08    	mov    \$0x8049171,%eax
+-[ 	]*[a-f0-9]+:	81 d0 71 91 04 08    	adc    \$0x8049171,%eax
+-[ 	]*[a-f0-9]+:	81 c3 71 91 04 08    	add    \$0x8049171,%ebx
+-[ 	]*[a-f0-9]+:	81 e1 71 91 04 08    	and    \$0x8049171,%ecx
+-[ 	]*[a-f0-9]+:	81 fa 71 91 04 08    	cmp    \$0x8049171,%edx
+-[ 	]*[a-f0-9]+:	81 cf 71 91 04 08    	or     \$0x8049171,%edi
+-[ 	]*[a-f0-9]+:	81 de 71 91 04 08    	sbb    \$0x8049171,%esi
+-[ 	]*[a-f0-9]+:	81 ed 71 91 04 08    	sub    \$0x8049171,%ebp
+-[ 	]*[a-f0-9]+:	81 f4 71 91 04 08    	xor    \$0x8049171,%esp
+-[ 	]*[a-f0-9]+:	f7 c1 71 91 04 08    	test   \$0x8049171,%ecx
++[ 	]*[a-f0-9]+:	c7 c0 64 91 04 08    	mov    \$0x8049164,%eax
++[ 	]*[a-f0-9]+:	81 d0 64 91 04 08    	adc    \$0x8049164,%eax
++[ 	]*[a-f0-9]+:	81 c3 64 91 04 08    	add    \$0x8049164,%ebx
++[ 	]*[a-f0-9]+:	81 e1 64 91 04 08    	and    \$0x8049164,%ecx
++[ 	]*[a-f0-9]+:	81 fa 64 91 04 08    	cmp    \$0x8049164,%edx
++[ 	]*[a-f0-9]+:	81 cf 64 91 04 08    	or     \$0x8049164,%edi
++[ 	]*[a-f0-9]+:	81 de 64 91 04 08    	sbb    \$0x8049164,%esi
++[ 	]*[a-f0-9]+:	81 ed 64 91 04 08    	sub    \$0x8049164,%ebp
++[ 	]*[a-f0-9]+:	81 f4 64 91 04 08    	xor    \$0x8049164,%esp
++[ 	]*[a-f0-9]+:	f7 c1 64 91 04 08    	test   \$0x8049164,%ecx
++[ 	]*[a-f0-9]+:	c7 c0 64 91 04 08    	mov    \$0x8049164,%eax
++[ 	]*[a-f0-9]+:	81 d0 64 91 04 08    	adc    \$0x8049164,%eax
++[ 	]*[a-f0-9]+:	81 c3 64 91 04 08    	add    \$0x8049164,%ebx
++[ 	]*[a-f0-9]+:	81 e1 64 91 04 08    	and    \$0x8049164,%ecx
++[ 	]*[a-f0-9]+:	81 fa 64 91 04 08    	cmp    \$0x8049164,%edx
++[ 	]*[a-f0-9]+:	81 cf 64 91 04 08    	or     \$0x8049164,%edi
++[ 	]*[a-f0-9]+:	81 de 64 91 04 08    	sbb    \$0x8049164,%esi
++[ 	]*[a-f0-9]+:	81 ed 64 91 04 08    	sub    \$0x8049164,%ebp
++[ 	]*[a-f0-9]+:	81 f4 64 91 04 08    	xor    \$0x8049164,%esp
++[ 	]*[a-f0-9]+:	f7 c1 64 91 04 08    	test   \$0x8049164,%ecx
++[ 	]*[a-f0-9]+:	c7 c0 65 91 04 08    	mov    \$0x8049165,%eax
++[ 	]*[a-f0-9]+:	81 d0 65 91 04 08    	adc    \$0x8049165,%eax
++[ 	]*[a-f0-9]+:	81 c3 65 91 04 08    	add    \$0x8049165,%ebx
++[ 	]*[a-f0-9]+:	81 e1 65 91 04 08    	and    \$0x8049165,%ecx
++[ 	]*[a-f0-9]+:	81 fa 65 91 04 08    	cmp    \$0x8049165,%edx
++[ 	]*[a-f0-9]+:	81 cf 65 91 04 08    	or     \$0x8049165,%edi
++[ 	]*[a-f0-9]+:	81 de 65 91 04 08    	sbb    \$0x8049165,%esi
++[ 	]*[a-f0-9]+:	81 ed 65 91 04 08    	sub    \$0x8049165,%ebp
++[ 	]*[a-f0-9]+:	81 f4 65 91 04 08    	xor    \$0x8049165,%esp
++[ 	]*[a-f0-9]+:	f7 c1 65 91 04 08    	test   \$0x8049165,%ecx
++[ 	]*[a-f0-9]+:	c7 c0 65 91 04 08    	mov    \$0x8049165,%eax
++[ 	]*[a-f0-9]+:	81 d0 65 91 04 08    	adc    \$0x8049165,%eax
++[ 	]*[a-f0-9]+:	81 c3 65 91 04 08    	add    \$0x8049165,%ebx
++[ 	]*[a-f0-9]+:	81 e1 65 91 04 08    	and    \$0x8049165,%ecx
++[ 	]*[a-f0-9]+:	81 fa 65 91 04 08    	cmp    \$0x8049165,%edx
++[ 	]*[a-f0-9]+:	81 cf 65 91 04 08    	or     \$0x8049165,%edi
++[ 	]*[a-f0-9]+:	81 de 65 91 04 08    	sbb    \$0x8049165,%esi
++[ 	]*[a-f0-9]+:	81 ed 65 91 04 08    	sub    \$0x8049165,%ebp
++[ 	]*[a-f0-9]+:	81 f4 65 91 04 08    	xor    \$0x8049165,%esp
++[ 	]*[a-f0-9]+:	f7 c1 65 91 04 08    	test   \$0x8049165,%ecx
+ #pass
+diff --git a/ld/testsuite/ld-i386/pr22782.d b/ld/testsuite/ld-i386/pr22782.d
+new file mode 100644
+index 0000000000..29486acc1f
+--- /dev/null
++++ b/ld/testsuite/ld-i386/pr22782.d
+@@ -0,0 +1,10 @@
++#as: --32
++#ld: -melf_i386
++#readelf: -SWs
++
++#failif
++#...
++[ 	]*\[.*\][ 	]+.*\.got\.plt .*
++#...
++.* _GLOBAL_OFFSET_TABLE_
++#...
+diff --git a/ld/testsuite/ld-i386/pr22782.s b/ld/testsuite/ld-i386/pr22782.s
+new file mode 100644
+index 0000000000..b8a42fc65f
+--- /dev/null
++++ b/ld/testsuite/ld-i386/pr22782.s
+@@ -0,0 +1,15 @@
++	.text
++	.globl	_start
++	.type	_start, @function
++_start:
++	movl	errno@indntpoff, %eax
++	movl	%gs:(%eax), %eax
++	ret
++	.globl	errno
++	.hidden	errno
++	.section	.tbss,"awT",@nobits
++	.align 4
++	.type	errno, @object
++	.size	errno, 4
++errno:
++	.zero	4
+diff --git a/ld/testsuite/ld-x86-64/discarded1.s b/ld/testsuite/ld-x86-64/discarded1.s
+index c638ed965b..16c7e93172 100644
+--- a/ld/testsuite/ld-x86-64/discarded1.s
++++ b/ld/testsuite/ld-x86-64/discarded1.s
+@@ -2,7 +2,7 @@
+ .globl _start
+ 	.type	_start, @function
+ _start:
+-	movq	x@GOTPCREL(%rip), %rax
++	divq	x@GOTPCREL(%rip), %rax
+ 	.size	_start, .-_start
+ .globl x
+ 	.data
+diff --git a/ld/testsuite/ld-x86-64/load1a-nacl.d b/ld/testsuite/ld-x86-64/load1a-nacl.d
+index aba9db9537..f038400a5e 100644
+--- a/ld/testsuite/ld-x86-64/load1a-nacl.d
++++ b/ld/testsuite/ld-x86-64/load1a-nacl.d
+@@ -8,48 +8,48 @@
+ 
+ SYMBOL TABLE:
+ #...
+-0+100300c8 l     O .data	0+1 bar
++0+100300b0 l     O .data	0+1 bar
+ #...
+-0+100300c9 g     O .data	0+1 foo
++0+100300b1 g     O .data	0+1 foo
+ #...
+ 
+ Disassembly of section .text:
+ 
+ 0+20000 <_start>:
+-[ 	]*[a-f0-9]+:	81 d0 c8 00 03 10    	adc    \$0x100300c8,%eax
+-[ 	]*[a-f0-9]+:	81 c3 c8 00 03 10    	add    \$0x100300c8,%ebx
+-[ 	]*[a-f0-9]+:	81 e1 c8 00 03 10    	and    \$0x100300c8,%ecx
+-[ 	]*[a-f0-9]+:	81 fa c8 00 03 10    	cmp    \$0x100300c8,%edx
+-[ 	]*[a-f0-9]+:	81 ce c8 00 03 10    	or     \$0x100300c8,%esi
+-[ 	]*[a-f0-9]+:	81 df c8 00 03 10    	sbb    \$0x100300c8,%edi
+-[ 	]*[a-f0-9]+:	81 ed c8 00 03 10    	sub    \$0x100300c8,%ebp
+-[ 	]*[a-f0-9]+:	41 81 f0 c8 00 03 10 	xor    \$0x100300c8,%r8d
+-[ 	]*[a-f0-9]+:	41 f7 c7 c8 00 03 10 	test   \$0x100300c8,%r15d
+-[ 	]*[a-f0-9]+:	48 81 d0 c8 00 03 10 	adc    \$0x100300c8,%rax
+-[ 	]*[a-f0-9]+:	48 81 c3 c8 00 03 10 	add    \$0x100300c8,%rbx
+-[ 	]*[a-f0-9]+:	48 81 e1 c8 00 03 10 	and    \$0x100300c8,%rcx
+-[ 	]*[a-f0-9]+:	48 81 fa c8 00 03 10 	cmp    \$0x100300c8,%rdx
+-[ 	]*[a-f0-9]+:	48 81 cf c8 00 03 10 	or     \$0x100300c8,%rdi
+-[ 	]*[a-f0-9]+:	48 81 de c8 00 03 10 	sbb    \$0x100300c8,%rsi
+-[ 	]*[a-f0-9]+:	48 81 ed c8 00 03 10 	sub    \$0x100300c8,%rbp
+-[ 	]*[a-f0-9]+:	49 81 f0 c8 00 03 10 	xor    \$0x100300c8,%r8
+-[ 	]*[a-f0-9]+:	49 f7 c7 c8 00 03 10 	test   \$0x100300c8,%r15
+-[ 	]*[a-f0-9]+:	81 d0 c9 00 03 10    	adc    \$0x100300c9,%eax
+-[ 	]*[a-f0-9]+:	81 c3 c9 00 03 10    	add    \$0x100300c9,%ebx
+-[ 	]*[a-f0-9]+:	81 e1 c9 00 03 10    	and    \$0x100300c9,%ecx
+-[ 	]*[a-f0-9]+:	81 fa c9 00 03 10    	cmp    \$0x100300c9,%edx
+-[ 	]*[a-f0-9]+:	81 ce c9 00 03 10    	or     \$0x100300c9,%esi
+-[ 	]*[a-f0-9]+:	81 df c9 00 03 10    	sbb    \$0x100300c9,%edi
+-[ 	]*[a-f0-9]+:	81 ed c9 00 03 10    	sub    \$0x100300c9,%ebp
+-[ 	]*[a-f0-9]+:	41 81 f0 c9 00 03 10 	xor    \$0x100300c9,%r8d
+-[ 	]*[a-f0-9]+:	41 f7 c7 c9 00 03 10 	test   \$0x100300c9,%r15d
+-[ 	]*[a-f0-9]+:	48 81 d0 c9 00 03 10 	adc    \$0x100300c9,%rax
+-[ 	]*[a-f0-9]+:	48 81 c3 c9 00 03 10 	add    \$0x100300c9,%rbx
+-[ 	]*[a-f0-9]+:	48 81 e1 c9 00 03 10 	and    \$0x100300c9,%rcx
+-[ 	]*[a-f0-9]+:	48 81 fa c9 00 03 10 	cmp    \$0x100300c9,%rdx
+-[ 	]*[a-f0-9]+:	48 81 cf c9 00 03 10 	or     \$0x100300c9,%rdi
+-[ 	]*[a-f0-9]+:	48 81 de c9 00 03 10 	sbb    \$0x100300c9,%rsi
+-[ 	]*[a-f0-9]+:	48 81 ed c9 00 03 10 	sub    \$0x100300c9,%rbp
+-[ 	]*[a-f0-9]+:	49 81 f0 c9 00 03 10 	xor    \$0x100300c9,%r8
+-[ 	]*[a-f0-9]+:	49 f7 c7 c9 00 03 10 	test   \$0x100300c9,%r15
++[ 	]*[a-f0-9]+:	81 d0 b0 00 03 10    	adc    \$0x100300b0,%eax
++[ 	]*[a-f0-9]+:	81 c3 b0 00 03 10    	add    \$0x100300b0,%ebx
++[ 	]*[a-f0-9]+:	81 e1 b0 00 03 10    	and    \$0x100300b0,%ecx
++[ 	]*[a-f0-9]+:	81 fa b0 00 03 10    	cmp    \$0x100300b0,%edx
++[ 	]*[a-f0-9]+:	81 ce b0 00 03 10    	or     \$0x100300b0,%esi
++[ 	]*[a-f0-9]+:	81 df b0 00 03 10    	sbb    \$0x100300b0,%edi
++[ 	]*[a-f0-9]+:	81 ed b0 00 03 10    	sub    \$0x100300b0,%ebp
++[ 	]*[a-f0-9]+:	41 81 f0 b0 00 03 10 	xor    \$0x100300b0,%r8d
++[ 	]*[a-f0-9]+:	41 f7 c7 b0 00 03 10 	test   \$0x100300b0,%r15d
++[ 	]*[a-f0-9]+:	48 81 d0 b0 00 03 10 	adc    \$0x100300b0,%rax
++[ 	]*[a-f0-9]+:	48 81 c3 b0 00 03 10 	add    \$0x100300b0,%rbx
++[ 	]*[a-f0-9]+:	48 81 e1 b0 00 03 10 	and    \$0x100300b0,%rcx
++[ 	]*[a-f0-9]+:	48 81 fa b0 00 03 10 	cmp    \$0x100300b0,%rdx
++[ 	]*[a-f0-9]+:	48 81 cf b0 00 03 10 	or     \$0x100300b0,%rdi
++[ 	]*[a-f0-9]+:	48 81 de b0 00 03 10 	sbb    \$0x100300b0,%rsi
++[ 	]*[a-f0-9]+:	48 81 ed b0 00 03 10 	sub    \$0x100300b0,%rbp
++[ 	]*[a-f0-9]+:	49 81 f0 b0 00 03 10 	xor    \$0x100300b0,%r8
++[ 	]*[a-f0-9]+:	49 f7 c7 b0 00 03 10 	test   \$0x100300b0,%r15
++[ 	]*[a-f0-9]+:	81 d0 b1 00 03 10    	adc    \$0x100300b1,%eax
++[ 	]*[a-f0-9]+:	81 c3 b1 00 03 10    	add    \$0x100300b1,%ebx
++[ 	]*[a-f0-9]+:	81 e1 b1 00 03 10    	and    \$0x100300b1,%ecx
++[ 	]*[a-f0-9]+:	81 fa b1 00 03 10    	cmp    \$0x100300b1,%edx
++[ 	]*[a-f0-9]+:	81 ce b1 00 03 10    	or     \$0x100300b1,%esi
++[ 	]*[a-f0-9]+:	81 df b1 00 03 10    	sbb    \$0x100300b1,%edi
++[ 	]*[a-f0-9]+:	81 ed b1 00 03 10    	sub    \$0x100300b1,%ebp
++[ 	]*[a-f0-9]+:	41 81 f0 b1 00 03 10 	xor    \$0x100300b1,%r8d
++[ 	]*[a-f0-9]+:	41 f7 c7 b1 00 03 10 	test   \$0x100300b1,%r15d
++[ 	]*[a-f0-9]+:	48 81 d0 b1 00 03 10 	adc    \$0x100300b1,%rax
++[ 	]*[a-f0-9]+:	48 81 c3 b1 00 03 10 	add    \$0x100300b1,%rbx
++[ 	]*[a-f0-9]+:	48 81 e1 b1 00 03 10 	and    \$0x100300b1,%rcx
++[ 	]*[a-f0-9]+:	48 81 fa b1 00 03 10 	cmp    \$0x100300b1,%rdx
++[ 	]*[a-f0-9]+:	48 81 cf b1 00 03 10 	or     \$0x100300b1,%rdi
++[ 	]*[a-f0-9]+:	48 81 de b1 00 03 10 	sbb    \$0x100300b1,%rsi
++[ 	]*[a-f0-9]+:	48 81 ed b1 00 03 10 	sub    \$0x100300b1,%rbp
++[ 	]*[a-f0-9]+:	49 81 f0 b1 00 03 10 	xor    \$0x100300b1,%r8
++[ 	]*[a-f0-9]+:	49 f7 c7 b1 00 03 10 	test   \$0x100300b1,%r15
+ #pass
+diff --git a/ld/testsuite/ld-x86-64/load1a.d b/ld/testsuite/ld-x86-64/load1a.d
+index 0eb4880719..bbbd204f7a 100644
+--- a/ld/testsuite/ld-x86-64/load1a.d
++++ b/ld/testsuite/ld-x86-64/load1a.d
+@@ -8,48 +8,48 @@
+ 
+ SYMBOL TABLE:
+ #...
+-0+6001b8 l     O .data	0+1 bar
++0+60019e l     O .data	0+1 bar
+ #...
+-0+6001b9 g     O .data	0+1 foo
++0+60019f g     O .data	0+1 foo
+ #...
+ 
+ Disassembly of section .text:
+ 
+ 0+4000b0 <_start>:
+-[ 	]*[a-f0-9]+:	81 d0 b8 01 60 00    	adc    \$0x6001b8,%eax
+-[ 	]*[a-f0-9]+:	81 c3 b8 01 60 00    	add    \$0x6001b8,%ebx
+-[ 	]*[a-f0-9]+:	81 e1 b8 01 60 00    	and    \$0x6001b8,%ecx
+-[ 	]*[a-f0-9]+:	81 fa b8 01 60 00    	cmp    \$0x6001b8,%edx
+-[ 	]*[a-f0-9]+:	81 ce b8 01 60 00    	or     \$0x6001b8,%esi
+-[ 	]*[a-f0-9]+:	81 df b8 01 60 00    	sbb    \$0x6001b8,%edi
+-[ 	]*[a-f0-9]+:	81 ed b8 01 60 00    	sub    \$0x6001b8,%ebp
+-[ 	]*[a-f0-9]+:	41 81 f0 b8 01 60 00 	xor    \$0x6001b8,%r8d
+-[ 	]*[a-f0-9]+:	41 f7 c7 b8 01 60 00 	test   \$0x6001b8,%r15d
+-[ 	]*[a-f0-9]+:	48 81 d0 b8 01 60 00 	adc    \$0x6001b8,%rax
+-[ 	]*[a-f0-9]+:	48 81 c3 b8 01 60 00 	add    \$0x6001b8,%rbx
+-[ 	]*[a-f0-9]+:	48 81 e1 b8 01 60 00 	and    \$0x6001b8,%rcx
+-[ 	]*[a-f0-9]+:	48 81 fa b8 01 60 00 	cmp    \$0x6001b8,%rdx
+-[ 	]*[a-f0-9]+:	48 81 cf b8 01 60 00 	or     \$0x6001b8,%rdi
+-[ 	]*[a-f0-9]+:	48 81 de b8 01 60 00 	sbb    \$0x6001b8,%rsi
+-[ 	]*[a-f0-9]+:	48 81 ed b8 01 60 00 	sub    \$0x6001b8,%rbp
+-[ 	]*[a-f0-9]+:	49 81 f0 b8 01 60 00 	xor    \$0x6001b8,%r8
+-[ 	]*[a-f0-9]+:	49 f7 c7 b8 01 60 00 	test   \$0x6001b8,%r15
+-[ 	]*[a-f0-9]+:	81 d0 b9 01 60 00    	adc    \$0x6001b9,%eax
+-[ 	]*[a-f0-9]+:	81 c3 b9 01 60 00    	add    \$0x6001b9,%ebx
+-[ 	]*[a-f0-9]+:	81 e1 b9 01 60 00    	and    \$0x6001b9,%ecx
+-[ 	]*[a-f0-9]+:	81 fa b9 01 60 00    	cmp    \$0x6001b9,%edx
+-[ 	]*[a-f0-9]+:	81 ce b9 01 60 00    	or     \$0x6001b9,%esi
+-[ 	]*[a-f0-9]+:	81 df b9 01 60 00    	sbb    \$0x6001b9,%edi
+-[ 	]*[a-f0-9]+:	81 ed b9 01 60 00    	sub    \$0x6001b9,%ebp
+-[ 	]*[a-f0-9]+:	41 81 f0 b9 01 60 00 	xor    \$0x6001b9,%r8d
+-[ 	]*[a-f0-9]+:	41 f7 c7 b9 01 60 00 	test   \$0x6001b9,%r15d
+-[ 	]*[a-f0-9]+:	48 81 d0 b9 01 60 00 	adc    \$0x6001b9,%rax
+-[ 	]*[a-f0-9]+:	48 81 c3 b9 01 60 00 	add    \$0x6001b9,%rbx
+-[ 	]*[a-f0-9]+:	48 81 e1 b9 01 60 00 	and    \$0x6001b9,%rcx
+-[ 	]*[a-f0-9]+:	48 81 fa b9 01 60 00 	cmp    \$0x6001b9,%rdx
+-[ 	]*[a-f0-9]+:	48 81 cf b9 01 60 00 	or     \$0x6001b9,%rdi
+-[ 	]*[a-f0-9]+:	48 81 de b9 01 60 00 	sbb    \$0x6001b9,%rsi
+-[ 	]*[a-f0-9]+:	48 81 ed b9 01 60 00 	sub    \$0x6001b9,%rbp
+-[ 	]*[a-f0-9]+:	49 81 f0 b9 01 60 00 	xor    \$0x6001b9,%r8
+-[ 	]*[a-f0-9]+:	49 f7 c7 b9 01 60 00 	test   \$0x6001b9,%r15
++[ 	]*[a-f0-9]+:	81 d0 9e 01 60 00    	adc    \$0x60019e,%eax
++[ 	]*[a-f0-9]+:	81 c3 9e 01 60 00    	add    \$0x60019e,%ebx
++[ 	]*[a-f0-9]+:	81 e1 9e 01 60 00    	and    \$0x60019e,%ecx
++[ 	]*[a-f0-9]+:	81 fa 9e 01 60 00    	cmp    \$0x60019e,%edx
++[ 	]*[a-f0-9]+:	81 ce 9e 01 60 00    	or     \$0x60019e,%esi
++[ 	]*[a-f0-9]+:	81 df 9e 01 60 00    	sbb    \$0x60019e,%edi
++[ 	]*[a-f0-9]+:	81 ed 9e 01 60 00    	sub    \$0x60019e,%ebp
++[ 	]*[a-f0-9]+:	41 81 f0 9e 01 60 00 	xor    \$0x60019e,%r8d
++[ 	]*[a-f0-9]+:	41 f7 c7 9e 01 60 00 	test   \$0x60019e,%r15d
++[ 	]*[a-f0-9]+:	48 81 d0 9e 01 60 00 	adc    \$0x60019e,%rax
++[ 	]*[a-f0-9]+:	48 81 c3 9e 01 60 00 	add    \$0x60019e,%rbx
++[ 	]*[a-f0-9]+:	48 81 e1 9e 01 60 00 	and    \$0x60019e,%rcx
++[ 	]*[a-f0-9]+:	48 81 fa 9e 01 60 00 	cmp    \$0x60019e,%rdx
++[ 	]*[a-f0-9]+:	48 81 cf 9e 01 60 00 	or     \$0x60019e,%rdi
++[ 	]*[a-f0-9]+:	48 81 de 9e 01 60 00 	sbb    \$0x60019e,%rsi
++[ 	]*[a-f0-9]+:	48 81 ed 9e 01 60 00 	sub    \$0x60019e,%rbp
++[ 	]*[a-f0-9]+:	49 81 f0 9e 01 60 00 	xor    \$0x60019e,%r8
++[ 	]*[a-f0-9]+:	49 f7 c7 9e 01 60 00 	test   \$0x60019e,%r15
++[ 	]*[a-f0-9]+:	81 d0 9f 01 60 00    	adc    \$0x60019f,%eax
++[ 	]*[a-f0-9]+:	81 c3 9f 01 60 00    	add    \$0x60019f,%ebx
++[ 	]*[a-f0-9]+:	81 e1 9f 01 60 00    	and    \$0x60019f,%ecx
++[ 	]*[a-f0-9]+:	81 fa 9f 01 60 00    	cmp    \$0x60019f,%edx
++[ 	]*[a-f0-9]+:	81 ce 9f 01 60 00    	or     \$0x60019f,%esi
++[ 	]*[a-f0-9]+:	81 df 9f 01 60 00    	sbb    \$0x60019f,%edi
++[ 	]*[a-f0-9]+:	81 ed 9f 01 60 00    	sub    \$0x60019f,%ebp
++[ 	]*[a-f0-9]+:	41 81 f0 9f 01 60 00 	xor    \$0x60019f,%r8d
++[ 	]*[a-f0-9]+:	41 f7 c7 9f 01 60 00 	test   \$0x60019f,%r15d
++[ 	]*[a-f0-9]+:	48 81 d0 9f 01 60 00 	adc    \$0x60019f,%rax
++[ 	]*[a-f0-9]+:	48 81 c3 9f 01 60 00 	add    \$0x60019f,%rbx
++[ 	]*[a-f0-9]+:	48 81 e1 9f 01 60 00 	and    \$0x60019f,%rcx
++[ 	]*[a-f0-9]+:	48 81 fa 9f 01 60 00 	cmp    \$0x60019f,%rdx
++[ 	]*[a-f0-9]+:	48 81 cf 9f 01 60 00 	or     \$0x60019f,%rdi
++[ 	]*[a-f0-9]+:	48 81 de 9f 01 60 00 	sbb    \$0x60019f,%rsi
++[ 	]*[a-f0-9]+:	48 81 ed 9f 01 60 00 	sub    \$0x60019f,%rbp
++[ 	]*[a-f0-9]+:	49 81 f0 9f 01 60 00 	xor    \$0x60019f,%r8
++[ 	]*[a-f0-9]+:	49 f7 c7 9f 01 60 00 	test   \$0x60019f,%r15
+ #pass
+diff --git a/ld/testsuite/ld-x86-64/load1b-nacl.d b/ld/testsuite/ld-x86-64/load1b-nacl.d
+index 524207d882..f4ab3bea07 100644
+--- a/ld/testsuite/ld-x86-64/load1b-nacl.d
++++ b/ld/testsuite/ld-x86-64/load1b-nacl.d
+@@ -8,48 +8,48 @@
+ 
+ SYMBOL TABLE:
+ #...
+-10030090 l     O .data	0+1 bar
++10030074 l     O .data	0+1 bar
+ #...
+-10030091 g     O .data	0+1 foo
++10030075 g     O .data	0+1 foo
+ #...
+ 
+ Disassembly of section .text:
+ 
+ 0+20000 <_start>:
+- +[a-f0-9]+:	81 d0 90 00 03 10    	adc    \$0x10030090,%eax
+- +[a-f0-9]+:	81 c3 90 00 03 10    	add    \$0x10030090,%ebx
+- +[a-f0-9]+:	81 e1 90 00 03 10    	and    \$0x10030090,%ecx
+- +[a-f0-9]+:	81 fa 90 00 03 10    	cmp    \$0x10030090,%edx
+- +[a-f0-9]+:	81 ce 90 00 03 10    	or     \$0x10030090,%esi
+- +[a-f0-9]+:	81 df 90 00 03 10    	sbb    \$0x10030090,%edi
+- +[a-f0-9]+:	81 ed 90 00 03 10    	sub    \$0x10030090,%ebp
+- +[a-f0-9]+:	41 81 f0 90 00 03 10 	xor    \$0x10030090,%r8d
+- +[a-f0-9]+:	41 f7 c7 90 00 03 10 	test   \$0x10030090,%r15d
+- +[a-f0-9]+:	48 81 d0 90 00 03 10 	adc    \$0x10030090,%rax
+- +[a-f0-9]+:	48 81 c3 90 00 03 10 	add    \$0x10030090,%rbx
+- +[a-f0-9]+:	48 81 e1 90 00 03 10 	and    \$0x10030090,%rcx
+- +[a-f0-9]+:	48 81 fa 90 00 03 10 	cmp    \$0x10030090,%rdx
+- +[a-f0-9]+:	48 81 cf 90 00 03 10 	or     \$0x10030090,%rdi
+- +[a-f0-9]+:	48 81 de 90 00 03 10 	sbb    \$0x10030090,%rsi
+- +[a-f0-9]+:	48 81 ed 90 00 03 10 	sub    \$0x10030090,%rbp
+- +[a-f0-9]+:	49 81 f0 90 00 03 10 	xor    \$0x10030090,%r8
+- +[a-f0-9]+:	49 f7 c7 90 00 03 10 	test   \$0x10030090,%r15
+- +[a-f0-9]+:	81 d0 91 00 03 10    	adc    \$0x10030091,%eax
+- +[a-f0-9]+:	81 c3 91 00 03 10    	add    \$0x10030091,%ebx
+- +[a-f0-9]+:	81 e1 91 00 03 10    	and    \$0x10030091,%ecx
+- +[a-f0-9]+:	81 fa 91 00 03 10    	cmp    \$0x10030091,%edx
+- +[a-f0-9]+:	81 ce 91 00 03 10    	or     \$0x10030091,%esi
+- +[a-f0-9]+:	81 df 91 00 03 10    	sbb    \$0x10030091,%edi
+- +[a-f0-9]+:	81 ed 91 00 03 10    	sub    \$0x10030091,%ebp
+- +[a-f0-9]+:	41 81 f0 91 00 03 10 	xor    \$0x10030091,%r8d
+- +[a-f0-9]+:	41 f7 c7 91 00 03 10 	test   \$0x10030091,%r15d
+- +[a-f0-9]+:	48 81 d0 91 00 03 10 	adc    \$0x10030091,%rax
+- +[a-f0-9]+:	48 81 c3 91 00 03 10 	add    \$0x10030091,%rbx
+- +[a-f0-9]+:	48 81 e1 91 00 03 10 	and    \$0x10030091,%rcx
+- +[a-f0-9]+:	48 81 fa 91 00 03 10 	cmp    \$0x10030091,%rdx
+- +[a-f0-9]+:	48 81 cf 91 00 03 10 	or     \$0x10030091,%rdi
+- +[a-f0-9]+:	48 81 de 91 00 03 10 	sbb    \$0x10030091,%rsi
+- +[a-f0-9]+:	48 81 ed 91 00 03 10 	sub    \$0x10030091,%rbp
+- +[a-f0-9]+:	49 81 f0 91 00 03 10 	xor    \$0x10030091,%r8
+- +[a-f0-9]+:	49 f7 c7 91 00 03 10 	test   \$0x10030091,%r15
++ +[a-f0-9]+:	81 d0 74 00 03 10    	adc    \$0x10030074,%eax
++ +[a-f0-9]+:	81 c3 74 00 03 10    	add    \$0x10030074,%ebx
++ +[a-f0-9]+:	81 e1 74 00 03 10    	and    \$0x10030074,%ecx
++ +[a-f0-9]+:	81 fa 74 00 03 10    	cmp    \$0x10030074,%edx
++ +[a-f0-9]+:	81 ce 74 00 03 10    	or     \$0x10030074,%esi
++ +[a-f0-9]+:	81 df 74 00 03 10    	sbb    \$0x10030074,%edi
++ +[a-f0-9]+:	81 ed 74 00 03 10    	sub    \$0x10030074,%ebp
++ +[a-f0-9]+:	41 81 f0 74 00 03 10 	xor    \$0x10030074,%r8d
++ +[a-f0-9]+:	41 f7 c7 74 00 03 10 	test   \$0x10030074,%r15d
++ +[a-f0-9]+:	48 81 d0 74 00 03 10 	adc    \$0x10030074,%rax
++ +[a-f0-9]+:	48 81 c3 74 00 03 10 	add    \$0x10030074,%rbx
++ +[a-f0-9]+:	48 81 e1 74 00 03 10 	and    \$0x10030074,%rcx
++ +[a-f0-9]+:	48 81 fa 74 00 03 10 	cmp    \$0x10030074,%rdx
++ +[a-f0-9]+:	48 81 cf 74 00 03 10 	or     \$0x10030074,%rdi
++ +[a-f0-9]+:	48 81 de 74 00 03 10 	sbb    \$0x10030074,%rsi
++ +[a-f0-9]+:	48 81 ed 74 00 03 10 	sub    \$0x10030074,%rbp
++ +[a-f0-9]+:	49 81 f0 74 00 03 10 	xor    \$0x10030074,%r8
++ +[a-f0-9]+:	49 f7 c7 74 00 03 10 	test   \$0x10030074,%r15
++ +[a-f0-9]+:	81 d0 75 00 03 10    	adc    \$0x10030075,%eax
++ +[a-f0-9]+:	81 c3 75 00 03 10    	add    \$0x10030075,%ebx
++ +[a-f0-9]+:	81 e1 75 00 03 10    	and    \$0x10030075,%ecx
++ +[a-f0-9]+:	81 fa 75 00 03 10    	cmp    \$0x10030075,%edx
++ +[a-f0-9]+:	81 ce 75 00 03 10    	or     \$0x10030075,%esi
++ +[a-f0-9]+:	81 df 75 00 03 10    	sbb    \$0x10030075,%edi
++ +[a-f0-9]+:	81 ed 75 00 03 10    	sub    \$0x10030075,%ebp
++ +[a-f0-9]+:	41 81 f0 75 00 03 10 	xor    \$0x10030075,%r8d
++ +[a-f0-9]+:	41 f7 c7 75 00 03 10 	test   \$0x10030075,%r15d
++ +[a-f0-9]+:	48 81 d0 75 00 03 10 	adc    \$0x10030075,%rax
++ +[a-f0-9]+:	48 81 c3 75 00 03 10 	add    \$0x10030075,%rbx
++ +[a-f0-9]+:	48 81 e1 75 00 03 10 	and    \$0x10030075,%rcx
++ +[a-f0-9]+:	48 81 fa 75 00 03 10 	cmp    \$0x10030075,%rdx
++ +[a-f0-9]+:	48 81 cf 75 00 03 10 	or     \$0x10030075,%rdi
++ +[a-f0-9]+:	48 81 de 75 00 03 10 	sbb    \$0x10030075,%rsi
++ +[a-f0-9]+:	48 81 ed 75 00 03 10 	sub    \$0x10030075,%rbp
++ +[a-f0-9]+:	49 81 f0 75 00 03 10 	xor    \$0x10030075,%r8
++ +[a-f0-9]+:	49 f7 c7 75 00 03 10 	test   \$0x10030075,%r15
+ #pass
+diff --git a/ld/testsuite/ld-x86-64/load1b.d b/ld/testsuite/ld-x86-64/load1b.d
+index acbd2fc536..42202c6030 100644
+--- a/ld/testsuite/ld-x86-64/load1b.d
++++ b/ld/testsuite/ld-x86-64/load1b.d
+@@ -8,50 +8,50 @@
+ 
+ SYMBOL TABLE:
+ #...
+-0+600180 l     O .data	0+1 bar
++0+600162 l     O .data	0+1 bar
+ #...
+-0+600181 g     O .data	0+1 foo
++0+600163 g     O .data	0+1 foo
+ #...
+ 
+ 
+ Disassembly of section .text:
+ 
+ 0+400074 <_start>:
+- +[a-f0-9]+:	81 d0 80 01 60 00    	adc    \$0x600180,%eax
+- +[a-f0-9]+:	81 c3 80 01 60 00    	add    \$0x600180,%ebx
+- +[a-f0-9]+:	81 e1 80 01 60 00    	and    \$0x600180,%ecx
+- +[a-f0-9]+:	81 fa 80 01 60 00    	cmp    \$0x600180,%edx
+- +[a-f0-9]+:	81 ce 80 01 60 00    	or     \$0x600180,%esi
+- +[a-f0-9]+:	81 df 80 01 60 00    	sbb    \$0x600180,%edi
+- +[a-f0-9]+:	81 ed 80 01 60 00    	sub    \$0x600180,%ebp
+- +[a-f0-9]+:	41 81 f0 80 01 60 00 	xor    \$0x600180,%r8d
+- +[a-f0-9]+:	41 f7 c7 80 01 60 00 	test   \$0x600180,%r15d
+- +[a-f0-9]+:	48 81 d0 80 01 60 00 	adc    \$0x600180,%rax
+- +[a-f0-9]+:	48 81 c3 80 01 60 00 	add    \$0x600180,%rbx
+- +[a-f0-9]+:	48 81 e1 80 01 60 00 	and    \$0x600180,%rcx
+- +[a-f0-9]+:	48 81 fa 80 01 60 00 	cmp    \$0x600180,%rdx
+- +[a-f0-9]+:	48 81 cf 80 01 60 00 	or     \$0x600180,%rdi
+- +[a-f0-9]+:	48 81 de 80 01 60 00 	sbb    \$0x600180,%rsi
+- +[a-f0-9]+:	48 81 ed 80 01 60 00 	sub    \$0x600180,%rbp
+- +[a-f0-9]+:	49 81 f0 80 01 60 00 	xor    \$0x600180,%r8
+- +[a-f0-9]+:	49 f7 c7 80 01 60 00 	test   \$0x600180,%r15
+- +[a-f0-9]+:	81 d0 81 01 60 00    	adc    \$0x600181,%eax
+- +[a-f0-9]+:	81 c3 81 01 60 00    	add    \$0x600181,%ebx
+- +[a-f0-9]+:	81 e1 81 01 60 00    	and    \$0x600181,%ecx
+- +[a-f0-9]+:	81 fa 81 01 60 00    	cmp    \$0x600181,%edx
+- +[a-f0-9]+:	81 ce 81 01 60 00    	or     \$0x600181,%esi
+- +[a-f0-9]+:	81 df 81 01 60 00    	sbb    \$0x600181,%edi
+- +[a-f0-9]+:	81 ed 81 01 60 00    	sub    \$0x600181,%ebp
+- +[a-f0-9]+:	41 81 f0 81 01 60 00 	xor    \$0x600181,%r8d
+- +[a-f0-9]+:	41 f7 c7 81 01 60 00 	test   \$0x600181,%r15d
+- +[a-f0-9]+:	48 81 d0 81 01 60 00 	adc    \$0x600181,%rax
+- +[a-f0-9]+:	48 81 c3 81 01 60 00 	add    \$0x600181,%rbx
+- +[a-f0-9]+:	48 81 e1 81 01 60 00 	and    \$0x600181,%rcx
+- +[a-f0-9]+:	48 81 fa 81 01 60 00 	cmp    \$0x600181,%rdx
+- +[a-f0-9]+:	48 81 cf 81 01 60 00 	or     \$0x600181,%rdi
+- +[a-f0-9]+:	48 81 de 81 01 60 00 	sbb    \$0x600181,%rsi
+- +[a-f0-9]+:	48 81 ed 81 01 60 00 	sub    \$0x600181,%rbp
+- +[a-f0-9]+:	49 81 f0 81 01 60 00 	xor    \$0x600181,%r8
+- +[a-f0-9]+:	49 f7 c7 81 01 60 00 	test   \$0x600181,%r15
++ +[a-f0-9]+:	81 d0 62 01 60 00    	adc    \$0x600162,%eax
++ +[a-f0-9]+:	81 c3 62 01 60 00    	add    \$0x600162,%ebx
++ +[a-f0-9]+:	81 e1 62 01 60 00    	and    \$0x600162,%ecx
++ +[a-f0-9]+:	81 fa 62 01 60 00    	cmp    \$0x600162,%edx
++ +[a-f0-9]+:	81 ce 62 01 60 00    	or     \$0x600162,%esi
++ +[a-f0-9]+:	81 df 62 01 60 00    	sbb    \$0x600162,%edi
++ +[a-f0-9]+:	81 ed 62 01 60 00    	sub    \$0x600162,%ebp
++ +[a-f0-9]+:	41 81 f0 62 01 60 00 	xor    \$0x600162,%r8d
++ +[a-f0-9]+:	41 f7 c7 62 01 60 00 	test   \$0x600162,%r15d
++ +[a-f0-9]+:	48 81 d0 62 01 60 00 	adc    \$0x600162,%rax
++ +[a-f0-9]+:	48 81 c3 62 01 60 00 	add    \$0x600162,%rbx
++ +[a-f0-9]+:	48 81 e1 62 01 60 00 	and    \$0x600162,%rcx
++ +[a-f0-9]+:	48 81 fa 62 01 60 00 	cmp    \$0x600162,%rdx
++ +[a-f0-9]+:	48 81 cf 62 01 60 00 	or     \$0x600162,%rdi
++ +[a-f0-9]+:	48 81 de 62 01 60 00 	sbb    \$0x600162,%rsi
++ +[a-f0-9]+:	48 81 ed 62 01 60 00 	sub    \$0x600162,%rbp
++ +[a-f0-9]+:	49 81 f0 62 01 60 00 	xor    \$0x600162,%r8
++ +[a-f0-9]+:	49 f7 c7 62 01 60 00 	test   \$0x600162,%r15
++ +[a-f0-9]+:	81 d0 63 01 60 00    	adc    \$0x600163,%eax
++ +[a-f0-9]+:	81 c3 63 01 60 00    	add    \$0x600163,%ebx
++ +[a-f0-9]+:	81 e1 63 01 60 00    	and    \$0x600163,%ecx
++ +[a-f0-9]+:	81 fa 63 01 60 00    	cmp    \$0x600163,%edx
++ +[a-f0-9]+:	81 ce 63 01 60 00    	or     \$0x600163,%esi
++ +[a-f0-9]+:	81 df 63 01 60 00    	sbb    \$0x600163,%edi
++ +[a-f0-9]+:	81 ed 63 01 60 00    	sub    \$0x600163,%ebp
++ +[a-f0-9]+:	41 81 f0 63 01 60 00 	xor    \$0x600163,%r8d
++ +[a-f0-9]+:	41 f7 c7 63 01 60 00 	test   \$0x600163,%r15d
++ +[a-f0-9]+:	48 81 d0 63 01 60 00 	adc    \$0x600163,%rax
++ +[a-f0-9]+:	48 81 c3 63 01 60 00 	add    \$0x600163,%rbx
++ +[a-f0-9]+:	48 81 e1 63 01 60 00 	and    \$0x600163,%rcx
++ +[a-f0-9]+:	48 81 fa 63 01 60 00 	cmp    \$0x600163,%rdx
++ +[a-f0-9]+:	48 81 cf 63 01 60 00 	or     \$0x600163,%rdi
++ +[a-f0-9]+:	48 81 de 63 01 60 00 	sbb    \$0x600163,%rsi
++ +[a-f0-9]+:	48 81 ed 63 01 60 00 	sub    \$0x600163,%rbp
++ +[a-f0-9]+:	49 81 f0 63 01 60 00 	xor    \$0x600163,%r8
++ +[a-f0-9]+:	49 f7 c7 63 01 60 00 	test   \$0x600163,%r15
+ #pass
+ #pass
+diff --git a/ld/testsuite/ld-x86-64/pr22782.s b/ld/testsuite/ld-x86-64/pr22782.s
+new file mode 100644
+index 0000000000..f4f0adc73f
+--- /dev/null
++++ b/ld/testsuite/ld-x86-64/pr22782.s
+@@ -0,0 +1,15 @@
++	.text
++	.globl	_start
++	.type	_start, @function
++_start:
++	movq	errno@gottpoff(%rip), %rax
++	movl	%fs:(%rax), %eax
++	ret
++	.globl	errno
++	.hidden	errno
++	.section	.tbss,"awT",@nobits
++	.align 4
++	.type	errno, @object
++	.size	errno, 4
++errno:
++	.zero	4
+diff --git a/ld/testsuite/ld-x86-64/pr22782a.d b/ld/testsuite/ld-x86-64/pr22782a.d
+new file mode 100644
+index 0000000000..6eb15e1750
+--- /dev/null
++++ b/ld/testsuite/ld-x86-64/pr22782a.d
+@@ -0,0 +1,11 @@
++#source: pr22782.s
++#as: --64
++#ld: -melf_x86_64
++#readelf: -SWs
++
++#failif
++#...
++[ 	]*\[.*\][ 	]+.*\.got\.plt .*
++#...
++.* _GLOBAL_OFFSET_TABLE_
++#...
+diff --git a/ld/testsuite/ld-x86-64/pr22782b.d b/ld/testsuite/ld-x86-64/pr22782b.d
+new file mode 100644
+index 0000000000..1b3cdaf396
+--- /dev/null
++++ b/ld/testsuite/ld-x86-64/pr22782b.d
+@@ -0,0 +1,11 @@
++#source: pr22782.s
++#as: --x32
++#ld: -melf32_x86_64
++#readelf: -SWs
++
++#failif
++#...
++[ 	]*\[.*\][ 	]+.*\.got\.plt .*
++#...
++.* _GLOBAL_OFFSET_TABLE_
++#...
+diff --git a/ld/testsuite/ld-x86-64/x86-64.exp b/ld/testsuite/ld-x86-64/x86-64.exp
+index e7f338ee11..af3afcc2c7 100644
+--- a/ld/testsuite/ld-x86-64/x86-64.exp
++++ b/ld/testsuite/ld-x86-64/x86-64.exp
+@@ -379,6 +379,8 @@ run_dump_test "pr22115-1c-x32"
+ run_dump_test "pr22115-1d"
+ run_dump_test "pr22115-1d-x32"
+ run_dump_test "pr22135"
++run_dump_test "pr22782a"
++run_dump_test "pr22782b"
+ 
+ if { ![istarget "x86_64-*-linux*"] && ![istarget "x86_64-*-nacl*"]} {
+     return
+-- 
+2.14.3
+
