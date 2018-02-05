@@ -1,4 +1,4 @@
-From 819765a71dd4ba3eb8db45ed737d6954faa0993c Mon Sep 17 00:00:00 2001
+From 6f660784b4b997490893c3d4403ed3562ae26a60 Mon Sep 17 00:00:00 2001
 From: "H.J. Lu" <hjl.tools@gmail.com>
 Date: Sun, 4 Feb 2018 07:56:55 -0800
 Subject: [PATCH] x86: Remove the unused _GLOBAL_OFFSET_TABLE_
@@ -14,11 +14,13 @@ bfd/
 
 	PR ld/22782
 	* elf32-i386.c (elf_i386_check_relocs): Set got_referenced if
-	GOT is referenced.
-	* elf64-x86-64.c (elf_x86_64_check_relocs): Likewise.
-	* elfxx-x86.c (_bfd_x86_elf_size_dynamic_sections): Likewise.
-	Check got_referenced instead of ref_regular_nonweak.  Remove
-	the unused _GLOBAL_OFFSET_TABLE_ from symbol table.
+	_GLOBAL_OFFSET_TABLE_ is referenced or GOT is needed to resolve
+	undefined weak symbol to 0.
+	* elf64-x86-64.c (elf_x86_64_check_relocs): Set got_referenced
+	if _GLOBAL_OFFSET_TABLE_ is referenced.
+	* elfxx-x86.c (_bfd_x86_elf_size_dynamic_sections): Check
+	got_referenced instead of ref_regular_nonweak.  Remove the
+	unused _GLOBAL_OFFSET_TABLE_ from symbol table.
 	* elfxx-x86.h (elf_x86_link_hash_table): Add got_referenced.
 
 ld/
@@ -43,7 +45,7 @@ ld/
 ---
  bfd/elf32-i386.c                     | 16 ++++++-
  bfd/elf64-x86-64.c                   |  4 ++
- bfd/elfxx-x86.c                      | 20 ++++++++-
+ bfd/elfxx-x86.c                      | 17 +++++++-
  bfd/elfxx-x86.h                      |  3 ++
  ld/testsuite/ld-i386/discarded1.s    |  2 +-
  ld/testsuite/ld-i386/i386.exp        |  1 +
@@ -60,7 +62,7 @@ ld/
  ld/testsuite/ld-x86-64/pr22782a.d    | 11 +++++
  ld/testsuite/ld-x86-64/pr22782b.d    | 11 +++++
  ld/testsuite/ld-x86-64/x86-64.exp    |  2 +
- 19 files changed, 342 insertions(+), 242 deletions(-)
+ 19 files changed, 339 insertions(+), 242 deletions(-)
  create mode 100644 ld/testsuite/ld-i386/pr22782.d
  create mode 100644 ld/testsuite/ld-i386/pr22782.s
  create mode 100644 ld/testsuite/ld-x86-64/pr22782.s
@@ -68,14 +70,14 @@ ld/
  create mode 100644 ld/testsuite/ld-x86-64/pr22782b.d
 
 diff --git a/bfd/elf32-i386.c b/bfd/elf32-i386.c
-index 1f380dbdc3..b8b914ea29 100644
+index 1f380dbdc3..1bdf3d41ec 100644
 --- a/bfd/elf32-i386.c
 +++ b/bfd/elf32-i386.c
 @@ -1578,6 +1578,10 @@ elf_i386_check_relocs (bfd *abfd,
  				     rel, rel_end, h, r_symndx, FALSE))
  	goto error_return;
  
-+      /* Check if GOT is referenced.  */
++      /* Check if _GLOBAL_OFFSET_TABLE_ is referenced.  */
 +      if (h == htab->elf.hgot)
 +	htab->got_referenced = TRUE;
 +
@@ -105,14 +107,14 @@ index 1f380dbdc3..b8b914ea29 100644
  	    }
  	  /* Fall through */
 diff --git a/bfd/elf64-x86-64.c b/bfd/elf64-x86-64.c
-index ba4f47bff4..e97126c83d 100644
+index ba4f47bff4..aad9b85296 100644
 --- a/bfd/elf64-x86-64.c
 +++ b/bfd/elf64-x86-64.c
 @@ -1927,6 +1927,10 @@ elf_x86_64_check_relocs (bfd *abfd, struct bfd_link_info *info,
  				       rel, rel_end, h, r_symndx, FALSE))
  	goto error_return;
  
-+      /* Check if GOT is referenced.  */
++      /* Check if _GLOBAL_OFFSET_TABLE_ is referenced.  */
 +      if (h == htab->elf.hgot)
 +	htab->got_referenced = TRUE;
 +
@@ -120,34 +122,10 @@ index ba4f47bff4..e97126c83d 100644
        switch (r_type)
  	{
 diff --git a/bfd/elfxx-x86.c b/bfd/elfxx-x86.c
-index a7db5d9dfe..753650b8b3 100644
+index a7db5d9dfe..dbda542526 100644
 --- a/bfd/elfxx-x86.c
 +++ b/bfd/elfxx-x86.c
-@@ -972,6 +972,7 @@ _bfd_x86_elf_size_dynamic_sections (bfd *output_bfd,
-       if (!local_got)
- 	continue;
- 
-+      htab->got_referenced = TRUE;
-       symtab_hdr = &elf_symtab_hdr (ibfd);
-       locsymcount = symtab_hdr->sh_info;
-       end_local_got = local_got + locsymcount;
-@@ -1030,6 +1031,7 @@ _bfd_x86_elf_size_dynamic_sections (bfd *output_bfd,
-       htab->tls_ld_or_ldm_got.offset = htab->elf.sgot->size;
-       htab->elf.sgot->size += 2 * htab->got_entry_size;
-       htab->elf.srelgot->size += htab->sizeof_reloc;
-+      htab->got_referenced = TRUE;
-     }
-   else
-     htab->tls_ld_or_ldm_got.offset = -1;
-@@ -1078,6 +1080,7 @@ _bfd_x86_elf_size_dynamic_sections (bfd *output_bfd,
- 	    htab->elf.splt->size = htab->plt.plt_entry_size;
- 	  htab->tlsdesc_plt = htab->elf.splt->size;
- 	  htab->elf.splt->size += htab->plt.plt_entry_size;
-+	  htab->got_referenced = TRUE;
- 	}
-     }
- 
-@@ -1086,7 +1089,7 @@ _bfd_x86_elf_size_dynamic_sections (bfd *output_bfd,
+@@ -1086,7 +1086,7 @@ _bfd_x86_elf_size_dynamic_sections (bfd *output_bfd,
        /* Don't allocate .got.plt section if there are no GOT nor PLT
  	 entries and there is no reference to _GLOBAL_OFFSET_TABLE_.  */
        if ((htab->elf.hgot == NULL
@@ -156,7 +134,7 @@ index a7db5d9dfe..753650b8b3 100644
  	  && (htab->elf.sgotplt->size == bed->got_header_size)
  	  && (htab->elf.splt == NULL
  	      || htab->elf.splt->size == 0)
-@@ -1096,7 +1099,20 @@ _bfd_x86_elf_size_dynamic_sections (bfd *output_bfd,
+@@ -1096,7 +1096,20 @@ _bfd_x86_elf_size_dynamic_sections (bfd *output_bfd,
  	      || htab->elf.iplt->size == 0)
  	  && (htab->elf.igotplt == NULL
  	      || htab->elf.igotplt->size == 0))
