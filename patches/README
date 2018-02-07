@@ -26,6 +26,7 @@ patches="
 	binutils-x86-64-thunk.patch
 	binutils-x86-64-gold-thunk.patch
 	binutils-x86-gpoff.patch
+	binutils-x86-64-plt32.patch
 "
 
 for p in $patches
