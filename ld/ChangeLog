@@ -1,3 +1,40 @@
+2018-02-06  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* testsuite/ld-elf/tls.exp (AFLAGS_PIC): Define on SPARC.
+	(pr22263-1): Pass AFLAGS_PIC to the assembler.
+	* testsuite/ld-sparc/tlspie32.s: Add test for other 3 transitions.
+	* testsuite/ld-sparc/tlspie32.dd: Adjust to above.
+	* testsuite/ld-sparc/tlspie64.s: Add test for other 3 transitions.
+	* testsuite/ld-sparc/tlspie64.dd: Adjust to above.
+
+2018-02-05  Renlin Li  <renlin.li@arm.com>
+
+	PR ld/22764
+	* testsuite/ld-aarch64/emit-relocs-258.s: Define symbol as an address.
+	* testsuite/ld-aarch64/emit-relocs-259.s: Likewise.
+	* testsuite/ld-aarch64/pr22764.s: New.
+	* testsuite/ld-aarch64/pr22764.d: New.
+
+2018-02-05  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/22782
+	* testsuite/ld-i386/discarded1.s: Replace mov with div.
+	* testsuite/ld-x86-64/discarded1.s: Likewise.
+	* testsuite/ld-i386/i386.exp: Run pr22782.
+	* testsuite/ld-i386/load1-nacl.d: Updated for removing
+	_GLOBAL_OFFSET_TABLE_ from output.
+	* testsuite/ld-i386/load1.d: Likewise.
+	* testsuite/ld-x86-64/load1a-nacl.d: Likewise.
+	* testsuite/ld-x86-64/load1a.d: Likewise.
+	* testsuite/ld-x86-64/load1b-nacl.d: Likewise.
+	* testsuite/ld-x86-64/load1b.d: Likewise.
+	* testsuite/ld-i386/pr22782.d: New file.
+	* testsuite/ld-i386/pr22782.s: Likewise.
+	* testsuite/ld-x86-64/pr22782.s: Likewise.
+	* testsuite/ld-x86-64/pr22782a.d: Likewise.
+	* testsuite/ld-x86-64/pr22782b.d: Likewise.
+	* testsuite/ld-x86-64/x86-64.exp: Run pr22782a and pr22782b.
+
 2018-02-05  Nick Clifton  <nickc@redhat.com>
 
 	* po/pt_BR.po: Updated Brazilian Portuguese translation.

@@ -1,3 +1,99 @@
+2018-02-06  Jim Wilson  <jimw@sifive.com>
+
+	* elfnn-riscv.c (riscv_elf_relocate_section): Return TRUE if used
+	callback to report an error.
+
+2018-02-06  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR ld/22263
+	* elfxx-sparc.c (sparc_elf_tls_transition): Turn call to bfd_link_pic
+	into call to !bfd_link_executable and tidy up.
+	(_bfd_sparc_elf_check_relocs): Fix formatting and tidy up.
+	<R_SPARC_TLS_LE_HIX22>: Turn call to bfd_link_pic into call to
+	!bfd_link_executable.
+	<R_SPARC_TLS_IE_HI22>: Likewise.
+	<GOT relocations>: Remove useless code, tidy and merge related blocks.
+	<R_SPARC_TLS_GD_CALL>: Turn call to bfd_link_pic into call to
+	!bfd_link_executable.
+	<R_SPARC_WPLT30>: Tidy up.
+	(_bfd_sparc_elf_gc_mark_hook): Turn call to bfd_link_pic into call to
+	!bfd_link_executable.
+	(allocate_dynrelocs): Likewise.
+	(_bfd_sparc_elf_relocate_section): Fix formatting and tidy up.
+	<R_SPARC_TLS_GD_HI22>: Merge into...
+	<R_SPARC_TLS_GD_LO10>: ...this.  Adjust 4th argument in call to
+	sparc_elf_tls_transition and remove redundant code.
+	<R_SPARC_TLS_LDM_HI22>: Turn call to bfd_link_pic into call to
+	!bfd_link_executable.
+	<R_SPARC_TLS_LDO_HIX22>: Likewise.
+	<R_SPARC_TLS_LE_HIX22>: Likewise.  Tidy up.
+	<R_SPARC_TLS_LDM_CALL>: Likewise.
+	<R_SPARC_TLS_GD_CALL>: Likewise.  Tidy up.
+	<R_SPARC_TLS_GD_ADD>: Likewise.
+	<R_SPARC_TLS_LDM_ADD>: Likewise.
+	<R_SPARC_TLS_LDO_ADD>: Likewise.
+	<R_SPARC_TLS_IE_LD>: Likewise.
+
+2018-02-06  Miloš Stojanović  <milos.stojanovic@rt-rk.com>
+
+	PR 22789
+	* elfxx-mips.c (_bfd_mips_elf_find_nearest_line): If the dwarf
+	functions failed to find the function name, try the generic elf
+	find function instead.
+
+2018-02-06  Sergio Durigan Junior  <sergiodj@redhat.com>
+
+	* coff-rs6000.c (xcoff_write_archive_contents_old): Use
+	'memcpy' instead of 'strncpy' when writing the magic number.
+
+2018-02-06  Nick Clifton  <nickc@redhat.com>
+
+	PR 22794
+	* opncls.c (bfd_get_debug_link_info_1): Check the size of the
+	section before attempting to read it in.
+	(bfd_get_alt_debug_link_info): Likewise.
+
+2018-02-06  Paul Carroll  <pcarroll@codesourcery.com>
+
+	* bfd/dwarf2.c (find_abstract_name): Modified to return file and
+	line information in addition to name, if they can be found.
+
+2018-02-05  Renlin Li  <renlin.li@arm.com>
+
+	PR ld/22764
+	* elfnn-aarch64.c (elfNN_aarch64_check_relocs): Relax the
+	R_AARCH64_ABS32 and R_AARCH64_ABS16 for absolute symbol. Apply the
+	check for writeable section as well.
+
+2018-02-05  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/22782
+	* elf32-i386.c (elf_i386_check_relocs): Set got_referenced if
+	_GLOBAL_OFFSET_TABLE_ is referenced or GOT is needed to resolve
+	undefined weak symbol to 0.
+	* elf64-x86-64.c (elf_x86_64_check_relocs): Set got_referenced
+	if _GLOBAL_OFFSET_TABLE_ is referenced.
+	* elfxx-x86.c (_bfd_x86_elf_size_dynamic_sections): Check
+	got_referenced instead of ref_regular_nonweak.  Remove the
+	unused _GLOBAL_OFFSET_TABLE_ from symbol table.
+	* elfxx-x86.h (elf_x86_link_hash_table): Add got_referenced.
+
+2018-02-05  Maciej W. Rozycki  <macro@mips.com>
+
+	* elfnn-riscv.c (_bfd_riscv_relax_pc): Use `memset' to
+	initialize `hi_reloc'.
+
+2018-02-05  Maciej W. Rozycki  <macro@mips.com>
+
+	* elfxx-mips.c (_bfd_mips_elf_section_processing): For
+	SHT_MIPS_REGINFO sections don't assert the correct size and
+	report an error instead.
+
+2018-02-05  Maciej W. Rozycki  <macro@mips.com>
+
+	* elf.c (_bfd_elf_write_object_contents): Propagate a failure
+	status from `->elf_backend_section_processing'.
+
 2018-02-02  Jim Wilson  <jimw@sifive.com>
 
 	PR ld/22756

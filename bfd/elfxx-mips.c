@@ -7102,8 +7102,17 @@ _bfd_mips_elf_section_processing (bfd *abfd, Elf_Internal_Shdr *hdr)
     {
       bfd_byte buf[4];
 
-      BFD_ASSERT (hdr->sh_size == sizeof (Elf32_External_RegInfo));
       BFD_ASSERT (hdr->contents == NULL);
+
+      if (hdr->sh_size != sizeof (Elf32_External_RegInfo))
+	{
+	  _bfd_error_handler
+	    (_("%B: Incorrect `.reginfo' section size; expected %Lu, got %Lu"),
+	     abfd, (bfd_size_type) sizeof (Elf32_External_RegInfo),
+	     hdr->sh_size);
+	  bfd_set_error (bfd_error_bad_value);
+	  return FALSE;
+	}
 
       if (bfd_seek (abfd,
 		    hdr->sh_offset + sizeof (Elf32_External_RegInfo) - 4,
@@ -12657,13 +12666,29 @@ _bfd_mips_elf_find_nearest_line (bfd *abfd, asymbol **symbols,
 				     line_ptr, discriminator_ptr,
 				     dwarf_debug_sections,
 				     ABI_64_P (abfd) ? 8 : 0,
-				     &elf_tdata (abfd)->dwarf2_find_line_info))
-    return TRUE;
+				     &elf_tdata (abfd)->dwarf2_find_line_info)
+      || _bfd_dwarf1_find_nearest_line (abfd, symbols, section, offset,
+					filename_ptr, functionname_ptr,
+					line_ptr))
+    {
+      /* PR 22789: If the function name or filename was not found through
+	 the debug information, then try an ordinary lookup instead.  */
+      if ((functionname_ptr != NULL && *functionname_ptr == NULL)
+	  || (filename_ptr != NULL && *filename_ptr == NULL))
+	{
+	  /* Do not override already discovered names.  */
+	  if (functionname_ptr != NULL && *functionname_ptr != NULL)
+	    functionname_ptr = NULL;
 
-  if (_bfd_dwarf1_find_nearest_line (abfd, symbols, section, offset,
-				     filename_ptr, functionname_ptr,
-				     line_ptr))
-    return TRUE;
+	  if (filename_ptr != NULL && *filename_ptr != NULL)
+	    filename_ptr = NULL;
+
+	  _bfd_elf_find_function (abfd, symbols, section, offset,
+				  filename_ptr, functionname_ptr);
+	}
+
+      return TRUE;
+    }
 
   msec = bfd_get_section_by_name (abfd, ".mdebug");
   if (msec != NULL)

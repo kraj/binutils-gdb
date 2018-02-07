@@ -2253,6 +2253,7 @@ riscv_elf_relocate_section (bfd *output_bfd,
       if (msg)
 	info->callbacks->warning
 	  (info, msg, name, input_bfd, input_section, rel->r_offset);
+      ret = TRUE;
       goto out;
     }
 
@@ -3143,7 +3144,8 @@ _bfd_riscv_relax_pc  (bfd *abfd,
 
   /* Chain the _LO relocs to their cooresponding _HI reloc to compute the
    * actual target address.  */
-  riscv_pcgp_hi_reloc hi_reloc = {0};
+  riscv_pcgp_hi_reloc hi_reloc;
+  memset (&hi_reloc, 0, sizeof (hi_reloc));
   switch (ELFNN_R_TYPE (rel->r_info))
     {
     case R_RISCV_PCREL_LO12_I:

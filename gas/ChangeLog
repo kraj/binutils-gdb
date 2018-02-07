@@ -1,3 +1,16 @@
+2018-02-05  Maciej W. Rozycki  <macro@mips.com>
+
+	* config/tc-riscv.c (riscv_handle_implicit_zero_offset): Rename
+	`expr' parameter to `ep'.
+
+2018-02-05  Maciej W. Rozycki  <macro@mips.com>
+
+	* testsuite/gas/mips/reginfo-2.d: New test.
+	* testsuite/gas/mips/reginfo-2-n32.d: New test.
+	* testsuite/gas/mips/reginfo-2.l: New test stderr output.
+	* testsuite/gas/mips/reginfo-2.s: New test source.
+	* testsuite/gas/mips/mips.exp: Run the new tests.
+
 2018-02-05  Nick Clifton  <nickc@redhat.com>
 
 	* po/ru.po: Updated Russian translation.
