@@ -129,14 +129,15 @@ struct target_so_ops
     int (*in_dynsym_resolve_code) (CORE_ADDR pc);
 
     /* Find and open shared library binary file.  */
-    gdb_bfd_ref_ptr (*bfd_open) (char *pathname);
+    gdb_bfd_ref_ptr (*bfd_open) (const char *pathname);
 
     /* Optional extra hook for finding and opening a solib.
        If TEMP_PATHNAME is non-NULL: If the file is successfully opened a
        pointer to a malloc'd and realpath'd copy of SONAME is stored there,
        otherwise NULL is stored there.  */
     int (*find_and_open_solib) (const char *soname,
-        unsigned o_flags, char **temp_pathname);
+				unsigned o_flags,
+				gdb::unique_xmalloc_ptr<char> *temp_pathname);
 
     /* Hook for looking up global symbols in a library-specific way.  */
     struct block_symbol (*lookup_lib_global_symbol)
@@ -192,16 +193,18 @@ typedef std::unique_ptr<so_list, so_deleter> so_list_up;
 struct so_list *master_so_list (void);
 
 /* Find main executable binary file.  */
-extern char *exec_file_find (const char *in_pathname, int *fd);
+extern gdb::unique_xmalloc_ptr<char> exec_file_find (const char *in_pathname,
+						     int *fd);
 
 /* Find shared library binary file.  */
-extern char *solib_find (const char *in_pathname, int *fd);
+extern gdb::unique_xmalloc_ptr<char> solib_find (const char *in_pathname,
+						 int *fd);
 
 /* Open BFD for shared library file.  */
-extern gdb_bfd_ref_ptr solib_bfd_fopen (char *pathname, int fd);
+extern gdb_bfd_ref_ptr solib_bfd_fopen (const char *pathname, int fd);
 
 /* Find solib binary file and open it.  */
-extern gdb_bfd_ref_ptr solib_bfd_open (char *in_pathname);
+extern gdb_bfd_ref_ptr solib_bfd_open (const char *in_pathname);
 
 /* FIXME: gdbarch needs to control this variable.  */
 extern struct target_so_ops *current_target_so_ops;

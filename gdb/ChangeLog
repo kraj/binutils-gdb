@@ -1,3 +1,62 @@
+2018-02-14  Tom Tromey  <tom@tromey.com>
+
+	* solist.h (struct target_so_ops) <bfd_open>: Make pathname
+	const.
+	(solib_bfd_open): Make pathname const.
+	* solib.c (solib_bfd_open): Make pathname const.
+	* solib-spu.c (spu_bfd_fopen): Make name const.
+	(spu_bfd_open): Make pathname const.
+	* solib-darwin.c (darwin_bfd_open): Make pathname const.
+	* solib-aix.c (solib_aix_bfd_open): Make pathname const.
+
+2018-02-14  Tom Tromey  <tom@tromey.com>
+
+	* symfile.c (symfile_bfd_open): Update.
+	* source.h (openp, source_full_path_of, find_and_open_source):
+	Change argument type to unique_xmalloc_ptr.
+	* source.c (openp): Take a unique_xmalloc_ptr.
+	(source_full_path_of, find_and_open_source): Likewise.
+	(open_source_file, symtab_to_fullname): Update.
+	* solist.h (struct target_so_ops) <find_and_open_solib>: Take a
+	unique_xmalloc_ptr.
+	* solib.c (solib_find_1): Use unique_xmalloc_ptr.
+	(exec_file_find): Update.
+	* psymtab.c (psymtab_to_fullname): Update.
+	* nto-tdep.h (nto_find_and_open_solib): Update.
+	* nto-tdep.c (nto_find_and_open_solib): Change temp_path to a
+	unique_xmalloc_ptr.
+	* exec.c (exec_file_attach): Update.
+	* dwarf2read.c (try_open_dwop_file): Use unique_xmalloc_ptr.
+	* cli/cli-cmds.c (find_and_open_script): Use unique_xmalloc_ptr.
+
+2018-02-14  Tom Tromey  <tom@tromey.com>
+
+	* solib.c: Include source.h.
+	* nto-tdep.c: Include source.h.
+	* mi/mi-cmd-env.c: Include source.h.
+	* infcmd.c: Include source.h.
+	* exec.c: Include source.h.
+	* defs.h (enum openp_flag, openp, source_full_path_of, mod_path)
+	(add_path, directory_switch, source_path, init_source_path): Move
+	declarations...
+	* source.h (enum openp_flag, openp, source_full_path_of, mod_path)
+	(add_path, directory_switch, source_path, init_source_path):
+	...here.
+
+2018-02-14  Tom Tromey  <tom@tromey.com>
+
+	* solist.h (exec_file_find, solib_find): Return
+	unique_xmalloc_ptr.
+	(solib_bfd_fopen): Take a const char *.
+	* solib.c (solib_find_1): Return unique_xmalloc_ptr.
+	(exec_file_find, solib_find): Likewise.
+	(solib_bfd_fopen): Do not take ownership of "pathname".
+	(solib_bfd_open): Use unique_xmalloc_ptr.
+	* solib-darwin.c (darwin_bfd_open): Use unique_xmalloc_ptr.
+	* solib-aix.c (solib_aix_bfd_open): Use unique_xmalloc_ptr.
+	* infrun.c (follow_exec): Use unique_xmalloc_ptr.
+	* exec.c (exec_file_locate_attach): Use unique_xmalloc_ptr.
+
 2018-02-14  Joel Brobecker  <brobecker@adacore.com>
 
 	* ada-lang.c (name_match_type_from_name): Remove reference to
