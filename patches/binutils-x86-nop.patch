@@ -1,0 +1,1367 @@
+From 4b4d9702f86b39cc48b01701326d553a75a06b8b Mon Sep 17 00:00:00 2001
+From: "H.J. Lu" <hjl.tools@gmail.com>
+Date: Fri, 9 Feb 2018 03:46:06 -0800
+Subject: [PATCH] x86: Add .nop directive to assembler
+
+Implement the '.nop SIZE[, LIMIT]' directive for x86 assembler.  This
+directive emits SIZE bytes filled with 'NOP' instructions.  SIZE is
+absolute expression, which must be between 0 and 512.  LIMIT specifies
+the size limit of a single 'NOP' instruction.  If the comma and LIMIT
+are omitted, LIMIT is assumed to the maximum supported size of a single
+'NOP' instruction.  The valid values of LIMIT are between 1 and 8 for
+16-bit mode, between 1 and 10 for 32-bit mode, between 1 and 11 for
+64-bit mode.  This directive is only allowed in text sections.
+
+This is implemented by adding a relax state, rs_space_nop, to enum
+_relax_state, which is similar to rs_space, but it fills with NOPs,
+instead of a single byte.  A pseudo relocation, BFD_RELOC_NOP_DIRECTIVE,
+is added to fix up frag data with the proper number of NOPs.  The new
+rs_space_nop state is processed only when TARGET_USE_NOP_DIRECTIVE is
+defined.  To enable .nop directive, a target backend should
+
+1. Define TARGET_USE_NOP_DIRECTIVE.
+2. Create a rs_space_nop frag for .nop directive.
+3. Update md_convert_frag to create a fixup with BFD_RELOC_NOP_DIRECTIVE
+for rs_space_nop frag.
+4. Update md_apply_fix to process fixup with BFD_RELOC_NOP_DIRECTIVE.
+
+bfd/
+
+	* reloc.c (BFD_RELOC_NOP_DIRECTIVE): New pseudo relocation.
+	* bfd-in2.h: Regenerated.
+	* libbfd.h: Likewise.
+
+gas/
+
+	* as.h (_relax_state): Add rs_space_nop.
+	* write.c (cvt_frag_to_fill): Handle rs_space_nop if
+	TARGET_USE_NOP_DIRECTIVE is define.
+	(relax_segment): Likewise.
+	* config/tc-i386.c (MAX_NOP_DIRECTIVE_SIZE): New.
+	(alt64_11): Likewise.
+	(alt64_patt): Likewise.
+	(md_convert_frag): Handle rs_space_nop.
+	(md_apply_fix): Handle BFD_RELOC_NOP_DIRECTIVE.
+	(s_nop): New function prototype.
+	(md_pseudo_table): Add "nop".
+	(i386_align_code): Call i386_output_nops.
+	(i386_output_nops): New function.
+	(s_nop): Likewise.
+	* config/tc-i386.h (TARGET_USE_NOP_DIRECTIVE): New.
+	* doc/as.texinfo: Document .nop directive for x86.
+	* testsuite/gas/i386/i386.exp: Run .nop directive tests.
+	* testsuite/gas/i386/nop-1.d: New file.
+	* testsuite/gas/i386/nop-1.s: Likewise.
+	* testsuite/gas/i386/nop-2.d: Likewise.
+	* testsuite/gas/i386/nop-2.s: Likewise.
+	* testsuite/gas/i386/nop-3.d: Likewise.
+	* testsuite/gas/i386/nop-3.s: Likewise.
+	* testsuite/gas/i386/nop-4.d: Likewise.
+	* testsuite/gas/i386/nop-4.s: Likewise.
+	* testsuite/gas/i386/nop-5.d: Likewise.
+	* testsuite/gas/i386/nop-5.s: Likewise.
+	* testsuite/gas/i386/nop-6.d: Likewise.
+	* testsuite/gas/i386/nop-6.s: Likewise.
+	* testsuite/gas/i386/nop-bad-1.l: Likewise.
+	* testsuite/gas/i386/nop-bad-1.s: Likewise.
+	* testsuite/gas/i386/x86-64-nop-1.d: Likewise.
+	* testsuite/gas/i386/x86-64-nop-2.d: Likewise.
+	* testsuite/gas/i386/x86-64-nop-3.d: Likewise.
+	* testsuite/gas/i386/x86-64-nop-4.d: Likewise.
+	* testsuite/gas/i386/x86-64-nop-5.d: Likewise.
+	* testsuite/gas/i386/x86-64-nop-6.d: Likewise.
+---
+ bfd/bfd-in2.h                         |   4 +
+ bfd/libbfd.h                          |   2 +
+ bfd/reloc.c                           |   6 +
+ gas/as.h                              |  10 +
+ gas/config/tc-i386.c                  | 371 ++++++++++++++++++++++++----------
+ gas/config/tc-i386.h                  |   3 +
+ gas/doc/as.texinfo                    |  20 ++
+ gas/testsuite/gas/i386/i386.exp       |  14 ++
+ gas/testsuite/gas/i386/nop-1.d        |  31 +++
+ gas/testsuite/gas/i386/nop-1.s        |  21 ++
+ gas/testsuite/gas/i386/nop-2.d        |  40 ++++
+ gas/testsuite/gas/i386/nop-2.s        |  22 ++
+ gas/testsuite/gas/i386/nop-3.d        |  20 ++
+ gas/testsuite/gas/i386/nop-3.s        |  15 ++
+ gas/testsuite/gas/i386/nop-4.d        |  23 +++
+ gas/testsuite/gas/i386/nop-4.s        |  18 ++
+ gas/testsuite/gas/i386/nop-5.d        |  25 +++
+ gas/testsuite/gas/i386/nop-5.s        |  19 ++
+ gas/testsuite/gas/i386/nop-6.d        |  17 ++
+ gas/testsuite/gas/i386/nop-6.s        |  25 +++
+ gas/testsuite/gas/i386/nop-bad-1.l    |   5 +
+ gas/testsuite/gas/i386/nop-bad-1.s    |   5 +
+ gas/testsuite/gas/i386/x86-64-nop-1.d |  32 +++
+ gas/testsuite/gas/i386/x86-64-nop-2.d |  41 ++++
+ gas/testsuite/gas/i386/x86-64-nop-3.d |  21 ++
+ gas/testsuite/gas/i386/x86-64-nop-4.d |  24 +++
+ gas/testsuite/gas/i386/x86-64-nop-5.d |  26 +++
+ gas/testsuite/gas/i386/x86-64-nop-6.d |  18 ++
+ gas/write.c                           |  23 ++-
+ 29 files changed, 789 insertions(+), 112 deletions(-)
+ create mode 100644 gas/testsuite/gas/i386/nop-1.d
+ create mode 100644 gas/testsuite/gas/i386/nop-1.s
+ create mode 100644 gas/testsuite/gas/i386/nop-2.d
+ create mode 100644 gas/testsuite/gas/i386/nop-2.s
+ create mode 100644 gas/testsuite/gas/i386/nop-3.d
+ create mode 100644 gas/testsuite/gas/i386/nop-3.s
+ create mode 100644 gas/testsuite/gas/i386/nop-4.d
+ create mode 100644 gas/testsuite/gas/i386/nop-4.s
+ create mode 100644 gas/testsuite/gas/i386/nop-5.d
+ create mode 100644 gas/testsuite/gas/i386/nop-5.s
+ create mode 100644 gas/testsuite/gas/i386/nop-6.d
+ create mode 100644 gas/testsuite/gas/i386/nop-6.s
+ create mode 100644 gas/testsuite/gas/i386/nop-bad-1.l
+ create mode 100644 gas/testsuite/gas/i386/nop-bad-1.s
+ create mode 100644 gas/testsuite/gas/i386/x86-64-nop-1.d
+ create mode 100644 gas/testsuite/gas/i386/x86-64-nop-2.d
+ create mode 100644 gas/testsuite/gas/i386/x86-64-nop-3.d
+ create mode 100644 gas/testsuite/gas/i386/x86-64-nop-4.d
+ create mode 100644 gas/testsuite/gas/i386/x86-64-nop-5.d
+ create mode 100644 gas/testsuite/gas/i386/x86-64-nop-6.d
+
+diff --git a/bfd/bfd-in2.h b/bfd/bfd-in2.h
+index a8c830368c..43436b3cf0 100644
+--- a/bfd/bfd-in2.h
++++ b/bfd/bfd-in2.h
+@@ -2740,6 +2740,10 @@ The 24-bit relocation is used in some Intel 960 configurations.  */
+   BFD_RELOC_SIZE32,
+   BFD_RELOC_SIZE64,
+ 
++/* This is the pseudo NOP relocation for .nop directive.  */
++  BFD_RELOC_NOP_DIRECTIVE,
++
++
+ /* Relocations used by 68K ELF.  */
+   BFD_RELOC_68K_GLOB_DAT,
+   BFD_RELOC_68K_JMP_SLOT,
+diff --git a/bfd/libbfd.h b/bfd/libbfd.h
+index 0266e922a8..0feb350a63 100644
+--- a/bfd/libbfd.h
++++ b/bfd/libbfd.h
+@@ -973,6 +973,8 @@ static const char *const bfd_reloc_code_real_names[] = { "@@uninitialized@@",
+   "BFD_RELOC_8_PLTOFF",
+   "BFD_RELOC_SIZE32",
+   "BFD_RELOC_SIZE64",
++  "BFD_RELOC_NOP_DIRECTIVE",
++
+   "BFD_RELOC_68K_GLOB_DAT",
+   "BFD_RELOC_68K_JMP_SLOT",
+   "BFD_RELOC_68K_RELATIVE",
+diff --git a/bfd/reloc.c b/bfd/reloc.c
+index 5547e5424c..d430693fb9 100644
+--- a/bfd/reloc.c
++++ b/bfd/reloc.c
+@@ -1798,6 +1798,12 @@ ENUMX
+ ENUMDOC
+   Size relocations.
+ 
++ENUM
++  BFD_RELOC_NOP_DIRECTIVE
++ENUMDOC
++  This is the pseudo NOP relocation for .nop directive.
++COMMENT
++
+ ENUM
+   BFD_RELOC_68K_GLOB_DAT
+ ENUMX
+diff --git a/gas/as.h b/gas/as.h
+index c33353a9c5..9d5dba4e52 100644
+--- a/gas/as.h
++++ b/gas/as.h
+@@ -279,6 +279,16 @@ enum _relax_state
+      1 variable char: fill character  */
+   rs_space,
+ 
++  /* .nop directive with expression operand that needs to be computed
++     later.  Similar to rs_space, but different.  It fills with NOPs.
++     fr_symbol: operand
++     1 constant byte: NOP fill control byte.
++     NB: rs_space_nop is used only if TARGET_USE_NOP_DIRECTIVE is
++     defined in tc-XXX.h, which is included after enum _relax_state
++     has been defined.  It is harmless since there is no rs_space_nop
++     frag without TARGET_USE_NOP_DIRECTIVE.  */
++  rs_space_nop,
++
+   /* A DWARF leb128 value; only ELF uses this.  The subtype is 0 for
+      unsigned, 1 for signed.  */
+   rs_leb128,
+diff --git a/gas/config/tc-i386.c b/gas/config/tc-i386.c
+index c2df31b8b8..d15f71675c 100644
+--- a/gas/config/tc-i386.c
++++ b/gas/config/tc-i386.c
+@@ -33,6 +33,9 @@
+ #include "elf/x86-64.h"
+ #include "opcodes/i386-init.h"
+ 
++/* The maximum size of .nop directive.  */
++#define MAX_NOP_DIRECTIVE_SIZE 512
++
+ #ifndef REGISTER_WARNINGS
+ #define REGISTER_WARNINGS 1
+ #endif
+@@ -186,6 +189,7 @@ static const seg_entry *build_modrm_byte (void);
+ static void output_insn (void);
+ static void output_imm (fragS *, offsetT);
+ static void output_disp (fragS *, offsetT);
++static void s_nop (int);
+ #ifndef I386COFF
+ static void s_bss (int);
+ #endif
+@@ -1130,6 +1134,7 @@ const pseudo_typeS md_pseudo_table[] =
+   {"disallow_index_reg", set_allow_index_reg, 0},
+   {"sse_check", set_check, 0},
+   {"operand_check", set_check, 1},
++  {"nop", s_nop, 0},
+ #if defined (OBJ_ELF) || defined (OBJ_MAYBE_ELF)
+   {"largecomm", handle_large_common, 0},
+ #else
+@@ -1152,105 +1157,135 @@ static struct hash_control *op_hash;
+ /* Hash table for register lookup.  */
+ static struct hash_control *reg_hash;
+ 
+-void
+-i386_align_code (fragS *fragP, int count)
+-{
+   /* Various efficient no-op patterns for aligning code labels.
+      Note: Don't try to assemble the instructions in the comments.
+      0L and 0w are not legal.  */
+-  static const unsigned char f32_1[] =
+-    {0x90};					/* nop			*/
+-  static const unsigned char f32_2[] =
+-    {0x66,0x90};				/* xchg %ax,%ax */
+-  static const unsigned char f32_3[] =
+-    {0x8d,0x76,0x00};				/* leal 0(%esi),%esi	*/
+-  static const unsigned char f32_4[] =
+-    {0x8d,0x74,0x26,0x00};			/* leal 0(%esi,1),%esi	*/
+-  static const unsigned char f32_5[] =
+-    {0x90,					/* nop			*/
+-     0x8d,0x74,0x26,0x00};			/* leal 0(%esi,1),%esi	*/
+-  static const unsigned char f32_6[] =
+-    {0x8d,0xb6,0x00,0x00,0x00,0x00};		/* leal 0L(%esi),%esi	*/
+-  static const unsigned char f32_7[] =
+-    {0x8d,0xb4,0x26,0x00,0x00,0x00,0x00};	/* leal 0L(%esi,1),%esi */
+-  static const unsigned char f32_8[] =
+-    {0x90,					/* nop			*/
+-     0x8d,0xb4,0x26,0x00,0x00,0x00,0x00};	/* leal 0L(%esi,1),%esi */
+-  static const unsigned char f32_9[] =
+-    {0x89,0xf6,					/* movl %esi,%esi	*/
+-     0x8d,0xbc,0x27,0x00,0x00,0x00,0x00};	/* leal 0L(%edi,1),%edi */
+-  static const unsigned char f32_10[] =
+-    {0x8d,0x76,0x00,				/* leal 0(%esi),%esi	*/
+-     0x8d,0xbc,0x27,0x00,0x00,0x00,0x00};	/* leal 0L(%edi,1),%edi */
+-  static const unsigned char f32_11[] =
+-    {0x8d,0x74,0x26,0x00,			/* leal 0(%esi,1),%esi	*/
+-     0x8d,0xbc,0x27,0x00,0x00,0x00,0x00};	/* leal 0L(%edi,1),%edi */
+-  static const unsigned char f32_12[] =
+-    {0x8d,0xb6,0x00,0x00,0x00,0x00,		/* leal 0L(%esi),%esi	*/
+-     0x8d,0xbf,0x00,0x00,0x00,0x00};		/* leal 0L(%edi),%edi	*/
+-  static const unsigned char f32_13[] =
+-    {0x8d,0xb6,0x00,0x00,0x00,0x00,		/* leal 0L(%esi),%esi	*/
+-     0x8d,0xbc,0x27,0x00,0x00,0x00,0x00};	/* leal 0L(%edi,1),%edi */
+-  static const unsigned char f32_14[] =
+-    {0x8d,0xb4,0x26,0x00,0x00,0x00,0x00,	/* leal 0L(%esi,1),%esi */
+-     0x8d,0xbc,0x27,0x00,0x00,0x00,0x00};	/* leal 0L(%edi,1),%edi */
+-  static const unsigned char f16_3[] =
+-    {0x8d,0x74,0x00};				/* lea 0(%esi),%esi	*/
+-  static const unsigned char f16_4[] =
+-    {0x8d,0xb4,0x00,0x00};			/* lea 0w(%si),%si	*/
+-  static const unsigned char f16_5[] =
+-    {0x90,					/* nop			*/
+-     0x8d,0xb4,0x00,0x00};			/* lea 0w(%si),%si	*/
+-  static const unsigned char f16_6[] =
+-    {0x89,0xf6,					/* mov %si,%si		*/
+-     0x8d,0xbd,0x00,0x00};			/* lea 0w(%di),%di	*/
+-  static const unsigned char f16_7[] =
+-    {0x8d,0x74,0x00,				/* lea 0(%si),%si	*/
+-     0x8d,0xbd,0x00,0x00};			/* lea 0w(%di),%di	*/
+-  static const unsigned char f16_8[] =
+-    {0x8d,0xb4,0x00,0x00,			/* lea 0w(%si),%si	*/
+-     0x8d,0xbd,0x00,0x00};			/* lea 0w(%di),%di	*/
+-  static const unsigned char jump_31[] =
+-    {0xeb,0x1d,0x90,0x90,0x90,0x90,0x90,	/* jmp .+31; lotsa nops	*/
+-     0x90,0x90,0x90,0x90,0x90,0x90,0x90,0x90,
+-     0x90,0x90,0x90,0x90,0x90,0x90,0x90,0x90,
+-     0x90,0x90,0x90,0x90,0x90,0x90,0x90,0x90};
+-  static const unsigned char *const f32_patt[] = {
+-    f32_1, f32_2, f32_3, f32_4, f32_5, f32_6, f32_7, f32_8,
+-    f32_9, f32_10, f32_11, f32_12, f32_13, f32_14
+-  };
+-  static const unsigned char *const f16_patt[] = {
+-    f32_1, f32_2, f16_3, f16_4, f16_5, f16_6, f16_7, f16_8
+-  };
+-  /* nopl (%[re]ax) */
+-  static const unsigned char alt_3[] =
+-    {0x0f,0x1f,0x00};
+-  /* nopl 0(%[re]ax) */
+-  static const unsigned char alt_4[] =
+-    {0x0f,0x1f,0x40,0x00};
+-  /* nopl 0(%[re]ax,%[re]ax,1) */
+-  static const unsigned char alt_5[] =
+-    {0x0f,0x1f,0x44,0x00,0x00};
+-  /* nopw 0(%[re]ax,%[re]ax,1) */
+-  static const unsigned char alt_6[] =
+-    {0x66,0x0f,0x1f,0x44,0x00,0x00};
+-  /* nopl 0L(%[re]ax) */
+-  static const unsigned char alt_7[] =
+-    {0x0f,0x1f,0x80,0x00,0x00,0x00,0x00};
+-  /* nopl 0L(%[re]ax,%[re]ax,1) */
+-  static const unsigned char alt_8[] =
+-    {0x0f,0x1f,0x84,0x00,0x00,0x00,0x00,0x00};
+-  /* nopw 0L(%[re]ax,%[re]ax,1) */
+-  static const unsigned char alt_9[] =
+-    {0x66,0x0f,0x1f,0x84,0x00,0x00,0x00,0x00,0x00};
+-  /* nopw %cs:0L(%[re]ax,%[re]ax,1) */
+-  static const unsigned char alt_10[] =
+-    {0x66,0x2e,0x0f,0x1f,0x84,0x00,0x00,0x00,0x00,0x00};
+-  static const unsigned char *const alt_patt[] = {
+-    f32_1, f32_2, alt_3, alt_4, alt_5, alt_6, alt_7, alt_8,
+-    alt_9, alt_10
+-  };
++static const unsigned char f32_1[] =
++  {0x90};				/* nop			*/
++static const unsigned char f32_2[] =
++  {0x66,0x90};				/* xchg %ax,%ax		*/
++static const unsigned char f32_3[] =
++  {0x8d,0x76,0x00};			/* leal 0(%esi),%esi	*/
++static const unsigned char f32_4[] =
++  {0x8d,0x74,0x26,0x00};		/* leal 0(%esi,1),%esi	*/
++static const unsigned char f32_5[] =
++  {0x90,				/* nop			*/
++   0x8d,0x74,0x26,0x00};		/* leal 0(%esi,1),%esi	*/
++static const unsigned char f32_6[] =
++  {0x8d,0xb6,0x00,0x00,0x00,0x00};	/* leal 0L(%esi),%esi	*/
++static const unsigned char f32_7[] =
++  {0x8d,0xb4,0x26,0x00,0x00,0x00,0x00};	/* leal 0L(%esi,1),%esi */
++static const unsigned char f32_8[] =
++  {0x90,				/* nop			*/
++   0x8d,0xb4,0x26,0x00,0x00,0x00,0x00};	/* leal 0L(%esi,1),%esi */
++static const unsigned char f32_9[] =
++  {0x89,0xf6,				/* movl %esi,%esi	*/
++   0x8d,0xbc,0x27,0x00,0x00,0x00,0x00};	/* leal 0L(%edi,1),%edi */
++static const unsigned char f32_10[] =
++  {0x8d,0x76,0x00,			/* leal 0(%esi),%esi	*/
++   0x8d,0xbc,0x27,0x00,0x00,0x00,0x00};	/* leal 0L(%edi,1),%edi */
++static const unsigned char f32_11[] =
++  {0x8d,0x74,0x26,0x00,			/* leal 0(%esi,1),%esi	*/
++   0x8d,0xbc,0x27,0x00,0x00,0x00,0x00};	/* leal 0L(%edi,1),%edi */
++static const unsigned char f32_12[] =
++  {0x8d,0xb6,0x00,0x00,0x00,0x00,	/* leal 0L(%esi),%esi	*/
++   0x8d,0xbf,0x00,0x00,0x00,0x00};	/* leal 0L(%edi),%edi	*/
++static const unsigned char f32_13[] =
++  {0x8d,0xb6,0x00,0x00,0x00,0x00,	/* leal 0L(%esi),%esi	*/
++   0x8d,0xbc,0x27,0x00,0x00,0x00,0x00};	/* leal 0L(%edi,1),%edi */
++static const unsigned char f32_14[] =
++  {0x8d,0xb4,0x26,0x00,0x00,0x00,0x00,	/* leal 0L(%esi,1),%esi */
++   0x8d,0xbc,0x27,0x00,0x00,0x00,0x00};	/* leal 0L(%edi,1),%edi */
++static const unsigned char f16_3[] =
++  {0x8d,0x74,0x00};			/* lea 0(%esi),%esi	*/
++static const unsigned char f16_4[] =
++  {0x8d,0xb4,0x00,0x00};		/* lea 0w(%si),%si	*/
++static const unsigned char f16_5[] =
++  {0x90,				/* nop			*/
++   0x8d,0xb4,0x00,0x00};		/* lea 0w(%si),%si	*/
++static const unsigned char f16_6[] =
++  {0x89,0xf6,				/* mov %si,%si		*/
++   0x8d,0xbd,0x00,0x00};		/* lea 0w(%di),%di	*/
++static const unsigned char f16_7[] =
++  {0x8d,0x74,0x00,			/* lea 0(%si),%si	*/
++   0x8d,0xbd,0x00,0x00};		/* lea 0w(%di),%di	*/
++static const unsigned char f16_8[] =
++  {0x8d,0xb4,0x00,0x00,			/* lea 0w(%si),%si	*/
++   0x8d,0xbd,0x00,0x00};		/* lea 0w(%di),%di	*/
++static const unsigned char jump_31[] =
++  {0xeb,0x1d,0x90,0x90,0x90,0x90,0x90,	/* jmp .+31; lotsa nops	*/
++   0x90,0x90,0x90,0x90,0x90,0x90,0x90,0x90,
++   0x90,0x90,0x90,0x90,0x90,0x90,0x90,0x90,
++   0x90,0x90,0x90,0x90,0x90,0x90,0x90,0x90};
++/* 32-bit NOPs patterns.  */
++static const unsigned char *const f32_patt[] = {
++  f32_1, f32_2, f32_3, f32_4, f32_5, f32_6, f32_7, f32_8,
++  f32_9, f32_10, f32_11, f32_12, f32_13, f32_14
++};
++/* 16-bit NOPs patterns.  */
++static const unsigned char *const f16_patt[] = {
++  f32_1, f32_2, f16_3, f16_4, f16_5, f16_6, f16_7, f16_8
++};
++/* nopl (%[re]ax) */
++static const unsigned char alt_3[] =
++  {0x0f,0x1f,0x00};
++/* nopl 0(%[re]ax) */
++static const unsigned char alt_4[] =
++  {0x0f,0x1f,0x40,0x00};
++/* nopl 0(%[re]ax,%[re]ax,1) */
++static const unsigned char alt_5[] =
++  {0x0f,0x1f,0x44,0x00,0x00};
++/* nopw 0(%[re]ax,%[re]ax,1) */
++static const unsigned char alt_6[] =
++  {0x66,0x0f,0x1f,0x44,0x00,0x00};
++/* nopl 0L(%[re]ax) */
++static const unsigned char alt_7[] =
++  {0x0f,0x1f,0x80,0x00,0x00,0x00,0x00};
++/* nopl 0L(%[re]ax,%[re]ax,1) */
++static const unsigned char alt_8[] =
++  {0x0f,0x1f,0x84,0x00,0x00,0x00,0x00,0x00};
++/* nopw 0L(%[re]ax,%[re]ax,1) */
++static const unsigned char alt_9[] =
++  {0x66,0x0f,0x1f,0x84,0x00,0x00,0x00,0x00,0x00};
++/* nopw %cs:0L(%[re]ax,%[re]ax,1) */
++static const unsigned char alt_10[] =
++  {0x66,0x2e,0x0f,0x1f,0x84,0x00,0x00,0x00,0x00,0x00};
++/* 32-bit and 64-bit NOPs patterns.  */
++static const unsigned char *const alt_patt[] = {
++  f32_1, f32_2, alt_3, alt_4, alt_5, alt_6, alt_7, alt_8,
++  alt_9, alt_10
++};
++/* 64-bit only: nopw %cs:0L(%eax,%eax,1) */
++static const unsigned char alt64_11[] =
++  {0x67,0x66,0x2e,0x0f,0x1f,0x84,0x00,0x00,0x00,0x00,0x00};
++/* 64-bit NOPs patterns.  */
++static const unsigned char *const alt64_patt[] = {
++  f32_1, f32_2, alt_3, alt_4, alt_5, alt_6, alt_7, alt_8,
++  alt_9, alt_10, alt64_11
++};
++
++/* Copy COUNT bytes of NOPs to WHERE from PATT with the maximum
++   size of a single NOP instruction MAX_SINGLE_NOP_SIZE.  */
++
++static void
++i386_output_nops (char *where, const unsigned char *const *patt,
++		  int count, int max_single_nop_size)
++
++{
++  while (count > max_single_nop_size)
++    {
++      count -= max_single_nop_size;
++      memcpy (where + count, patt[max_single_nop_size - 1],
++	      max_single_nop_size);
++    }
+ 
++  if (count)
++    memcpy (where, patt[count - 1], count);
++}
++
++void
++i386_align_code (fragS *fragP, int count)
++{
+   /* Only align for at least a positive non-zero boundary. */
+   if (count <= 0 || count > MAX_MEM_FOR_RS_ALIGN_CODE)
+     return;
+@@ -1403,17 +1438,8 @@ i386_align_code (fragS *fragP, int count)
+ 	  /* Maximum length of an instruction is 10 byte.  If the
+ 	     padding is greater than 10 bytes and we don't use jump,
+ 	     we have to break it into smaller pieces.  */
+-	  int padding = count;
+-	  while (padding > 10)
+-	    {
+-	      padding -= 10;
+-	      memcpy (fragP->fr_literal + fragP->fr_fix + padding,
+-		      patt [9], 10);
+-	    }
+-
+-	  if (padding)
+-	    memcpy (fragP->fr_literal + fragP->fr_fix,
+-		    patt [padding - 1], padding);
++	  i386_output_nops (fragP->fr_literal + fragP->fr_fix,
++			    patt, count, 10);
+ 	}
+     }
+   fragP->fr_var = count;
+@@ -9489,6 +9515,9 @@ md_estimate_size_before_relax (fragS *fragP, segT segment)
+    In:	Address of frag.
+ 	fr_type == rs_machine_dependent.
+ 	fr_subtype is what the address relaxed to.
++	Or
++	fr_type == rs_space_nop.
++	fr_var is the size of .nop directive.
+ 
+    Out:	Any fixSs and constants are set up.
+ 	Caller will turn frag into a ".space 0".  */
+@@ -9498,12 +9527,42 @@ md_convert_frag (bfd *abfd ATTRIBUTE_UNUSED, segT sec ATTRIBUTE_UNUSED,
+                  fragS *fragP)
+ {
+   unsigned char *opcode;
+-  unsigned char *where_to_put_displacement = NULL;
++  unsigned char *where_to_put_displacement;
+   offsetT target_address;
+   offsetT opcode_address;
+-  unsigned int extension = 0;
++  unsigned int extension;
+   offsetT displacement_from_opcode_start;
+ 
++  if (fragP->fr_type == rs_space_nop)
++    {
++      /* Get the size of .nop directive.  */
++      offsetT amount = fragP->fr_var;
++      if (amount < 0
++	  || amount > MAX_NOP_DIRECTIVE_SIZE)
++	{
++	  as_bad_where (fragP->fr_file, fragP->fr_line,
++			 _("invalid .nop directive size: %ld "
++			   "(expect less than %d)"),
++			 (long) amount, MAX_NOP_DIRECTIVE_SIZE);
++	  /* Prevent repeat of this error message.  */
++	  fragP->fr_symbol = NULL;
++	}
++      else if (amount != 0)
++	{
++	  fix_new (fragP, fragP->fr_fix, amount,
++		   fragP->fr_symbol,
++		   fragP->fr_offset, 0,
++		   BFD_RELOC_NOP_DIRECTIVE);
++	  fragP->fr_fix += amount;
++	}
++      frag_wane (fragP);
++      return;
++    }
++
++  gas_assert (fragP->fr_type == rs_machine_dependent);
++
++  where_to_put_displacement = NULL;
++  extension = 0;
+   opcode = (unsigned char *) fragP->fr_opcode;
+ 
+   /* Address we want to reach in file space.  */
+@@ -9604,8 +9663,27 @@ md_convert_frag (bfd *abfd ATTRIBUTE_UNUSED, segT sec ATTRIBUTE_UNUSED,
+ void
+ md_apply_fix (fixS *fixP, valueT *valP, segT seg ATTRIBUTE_UNUSED)
+ {
+-  char *p = fixP->fx_where + fixP->fx_frag->fr_literal;
+-  valueT value = *valP;
++  fragS *fragP = fixP->fx_frag;
++  char *p = fragP->fr_literal + fixP->fx_where;
++  valueT value;
++
++  if (fixP->fx_r_type == BFD_RELOC_NOP_DIRECTIVE)
++    {
++      /* Output NOPs for .nop directive.  */
++      const unsigned char *const *patt
++	= (flag_code == CODE_16BIT
++	   ? f16_patt
++	   : (flag_code == CODE_64BIT
++	      ? alt64_patt
++	      : alt_patt));
++      /* The maximum size of a single NOP instruction is stored in
++         the first byte.  */
++      i386_output_nops (p, patt, fixP->fx_size, *p);
++      fixP->fx_done = 1;
++      return;
++    }
++
++  value = *valP;
+ 
+ #if !defined (TE_Mach)
+   if (fixP->fx_pcrel)
+@@ -10885,6 +10963,79 @@ s_bss (int ignore ATTRIBUTE_UNUSED)
+ 
+ #endif
+ 
++/* Implement .nop directive.  */
++
++void
++s_nop (int ignore ATTRIBUTE_UNUSED)
++{
++  expressionS exp;
++  expressionS val;
++  int max_single_nop_size;
++
++#ifdef md_flush_pending_output
++  md_flush_pending_output ();
++#endif
++
++#ifdef md_cons_align
++  md_cons_align (1);
++#endif
++
++  /* Get the longest single NOP size.  */
++  max_single_nop_size
++    = (flag_code == CODE_16BIT
++       ? sizeof (f16_patt) / sizeof (f16_patt[0])
++       : (flag_code == CODE_64BIT
++	  ? sizeof (alt64_patt) / sizeof (alt64_patt[0])
++	  : sizeof (alt_patt) / sizeof (alt_patt[0])));
++				     ;
++  expression (&exp);
++
++  SKIP_WHITESPACE ();
++  if (*input_line_pointer == ',')
++    {
++      ++input_line_pointer;
++      expression (&val);
++    }
++  else
++    {
++      /* Default to the longest single NOP.  */
++      val.X_op = O_constant;
++      val.X_add_number = max_single_nop_size;
++    }
++
++  if (val.X_op == O_constant)
++    {
++      if (val.X_add_number <= 0
++	  || val.X_add_number > max_single_nop_size)
++	{
++	  as_bad (_("invalide single nop size: %ld "
++		    "(expect within [0, %d])"),
++		  (long) val.X_add_number, max_single_nop_size);
++	  goto getout;
++	}
++
++      /* Store the maximum single NOP size in fr_opcode.  */
++      if (!need_pass_2)
++	{
++	  char *p;
++	  symbolS *sym = make_expr_symbol (&exp);
++
++	  /* Start a new rs_space_nop frag for .nop directive with
++	     up to MAX_NOP_DIRECTIVE_SIZE bytes of NOPs.  Store the
++	     maximum size of a single NOP instruction in the first
++	     byte of NOP output.  */
++	  p = frag_var (rs_space_nop, MAX_NOP_DIRECTIVE_SIZE, 0,
++			(relax_substateT) 0, sym, (offsetT) 0, NULL);
++	  *p = val.X_add_number;
++	}
++    }
++  else
++    as_bad (_("unsupported variable single nop limit in .nop directive"));
++
++getout:
++  demand_empty_rest_of_line ();
++}
++
+ void
+ i386_validate_fix (fixS *fixp)
+ {
+diff --git a/gas/config/tc-i386.h b/gas/config/tc-i386.h
+index 9a17dc01e7..facfea3174 100644
+--- a/gas/config/tc-i386.h
++++ b/gas/config/tc-i386.h
+@@ -288,6 +288,9 @@ extern void sco_id (void);
+ 
+ #define WORKING_DOT_WORD 1
+ 
++/* We want .nop direct directive.  */
++#define TARGET_USE_NOP_DIRECTIVE 1
++
+ /* We want .cfi_* pseudo-ops for generating unwind info.  */
+ #define TARGET_USE_CFIPOP 1
+ 
+diff --git a/gas/doc/as.texinfo b/gas/doc/as.texinfo
+index f4e0fddefb..c693af159a 100644
+--- a/gas/doc/as.texinfo
++++ b/gas/doc/as.texinfo
+@@ -4523,6 +4523,9 @@ Some machine configurations provide additional directives.
+ * Sleb128::			@code{.sleb128 @var{expressions}}
+ @ifclear no-space-dir
+ * Space::                       @code{.space @var{size} , @var{fill}}
++@ifset I80386
++* Nop::                         @code{.nop @var{size}[, @var{limit}]}
++@end ifset
+ @end ifclear
+ @ifset have-stabs
+ * Stab::                        @code{.stabd, .stabn, .stabs}
+@@ -6851,6 +6854,23 @@ Assembly Language Reference Manual} (HP 92432-90001) for the meaning of the
+ for a summary.
+ @end quotation
+ @end ifset
++
++@ifset I80386
++@node Nop
++@section @code{.nop @var{size}[, @var{limit}]}
++
++@cindex @code{nop} directive
++@cindex filling memory with NOP
++This directive emits @var{size} bytes filled with @code{NOP}
++instructions.  @var{size} is absolute expression, which must be
++between 0 and 512.  @var{limit} specifies the size limit of a
++single @code{NOP} instruction.  If the comma and @var{limit} are
++omitted, @var{limit} is assumed to the maximum supported size of
++a single @code{NOP} instruction.  The valid values of @var{limit}
++are between 1 and 8 for 16-bit mode, between 1 and 10 for 32-bit mode,
++between 1 and 11 for 64-bit mode.  This directive is only allowed
++in text sections.
++@end ifset
+ @end ifclear
+ 
+ @ifset have-stabs
+diff --git a/gas/testsuite/gas/i386/i386.exp b/gas/testsuite/gas/i386/i386.exp
+index bb997f8e96..fa1019ef0f 100644
+--- a/gas/testsuite/gas/i386/i386.exp
++++ b/gas/testsuite/gas/i386/i386.exp
+@@ -431,6 +431,8 @@ if [expr ([istarget "i*86-*-*"] ||  [istarget "x86_64-*-*"]) && [gas_32_check]]
+     run_dump_test "align-1a"
+     run_dump_test "align-1b"
+     run_list_test "inval-pseudo" "-al"
++    run_dump_test "nop-1"
++    run_dump_test "nop-2"
+ 
+     # These tests require support for 8 and 16 bit relocs,
+     # so we only run them for ELF and COFF targets.
+@@ -494,6 +496,10 @@ if [expr ([istarget "i*86-*-*"] ||  [istarget "x86_64-*-*"]) && [gas_32_check]]
+ 	run_dump_test "got-no-relax"
+ 
+ 	run_dump_test "addend"
++	run_dump_test "nop-3"
++	run_dump_test "nop-4"
++	run_dump_test "nop-5"
++	run_dump_test "nop-6"
+ 
+ 	if { [gas_64_check] } then {
+ 	    run_dump_test "att-regs"
+@@ -541,6 +547,7 @@ if [expr [istarget "i*86-*-*"] || [istarget "x86_64-*-*"]] then {
+     run_list_test "space1" "-al"
+     run_dump_test rept
+     run_dump_test pr19498
++    run_list_test "nop-bad-1" ""
+     if [is_elf_format] then {
+ 	run_list_test_stdin "list-1" "-al"
+ 	run_list_test_stdin "list-2" "-al"
+@@ -907,6 +914,8 @@ if [expr ([istarget "i*86-*-*"] || [istarget "x86_64-*-*"]) && [gas_64_check]] t
+     run_list_test "x86-64-notrackbad" "-al"
+     run_dump_test "x86-64-movd"
+     run_dump_test "x86-64-movd-intel"
++    run_dump_test "x86-64-nop-1"
++    run_dump_test "x86-64-nop-2"
+ 
+     if { ![istarget "*-*-aix*"]
+       && ![istarget "*-*-beos*"]
+@@ -970,6 +979,11 @@ if [expr ([istarget "i*86-*-*"] || [istarget "x86_64-*-*"]) && [gas_64_check]] t
+ 
+ 	run_dump_test "x86-64-gpoff"
+ 	run_list_test "x86-64-inval-gpoff" "-al"
++
++	run_dump_test "x86-64-nop-3"
++	run_dump_test "x86-64-nop-4"
++	run_dump_test "x86-64-nop-5"
++	run_dump_test "x86-64-nop-6"
+     }
+ 
+     set ASFLAGS "$old_ASFLAGS"
+diff --git a/gas/testsuite/gas/i386/nop-1.d b/gas/testsuite/gas/i386/nop-1.d
+new file mode 100644
+index 0000000000..46422c88db
+--- /dev/null
++++ b/gas/testsuite/gas/i386/nop-1.d
+@@ -0,0 +1,31 @@
++#objdump: -drw
++#name: i386 .nop 1
++
++.*: +file format .*
++
++
++Disassembly of section .text:
++
++0+ <single>:
++ +[a-f0-9]+:	90                   	nop
++
++0+1 <pseudo_1>:
++ +[a-f0-9]+:	90                   	nop
++
++0+2 <pseudo_8>:
++ +[a-f0-9]+:	0f 1f 84 00 00 00 00 00 	nopl   0x0\(%eax,%eax,1\)
++
++0+a <pseudo_8_4>:
++ +[a-f0-9]+:	0f 1f 40 00          	nopl   0x0\(%eax\)
++ +[a-f0-9]+:	0f 1f 40 00          	nopl   0x0\(%eax\)
++
++0+12 <pseudo_20>:
++ +[a-f0-9]+:	66 2e 0f 1f 84 00 00 00 00 00 	nopw   %cs:0x0\(%eax,%eax,1\)
++ +[a-f0-9]+:	66 2e 0f 1f 84 00 00 00 00 00 	nopw   %cs:0x0\(%eax,%eax,1\)
++
++0+26 <pseudo_30>:
++ +[a-f0-9]+:	66 2e 0f 1f 84 00 00 00 00 00 	nopw   %cs:0x0\(%eax,%eax,1\)
++ +[a-f0-9]+:	66 2e 0f 1f 84 00 00 00 00 00 	nopw   %cs:0x0\(%eax,%eax,1\)
++ +[a-f0-9]+:	66 2e 0f 1f 84 00 00 00 00 00 	nopw   %cs:0x0\(%eax,%eax,1\)
++ +[a-f0-9]+:	31 c0                	xor    %eax,%eax
++#pass
+diff --git a/gas/testsuite/gas/i386/nop-1.s b/gas/testsuite/gas/i386/nop-1.s
+new file mode 100644
+index 0000000000..891783dce8
+--- /dev/null
++++ b/gas/testsuite/gas/i386/nop-1.s
+@@ -0,0 +1,21 @@
++       .text
++single:
++	.nop 0
++	nop
++
++pseudo_1:
++	.nop 1
++
++pseudo_8:
++	.nop 8
++
++pseudo_8_4:
++	.nop 8, 4
++
++pseudo_20:
++	.nop 20
++
++pseudo_30:
++	.nop 30
++
++	xor %eax, %eax
+diff --git a/gas/testsuite/gas/i386/nop-2.d b/gas/testsuite/gas/i386/nop-2.d
+new file mode 100644
+index 0000000000..332b990a97
+--- /dev/null
++++ b/gas/testsuite/gas/i386/nop-2.d
+@@ -0,0 +1,40 @@
++#objdump: -drw -Mi8086
++#name: i386 .nop 2
++
++.*: +file format .*
++
++
++Disassembly of section .text:
++
++0+ <single>:
++ +[a-f0-9]+:	90                   	nop
++
++0+1 <pseudo_1>:
++ +[a-f0-9]+:	90                   	nop
++
++0+2 <pseudo_8>:
++ +[a-f0-9]+:	8d b4 00 00          	lea    0x0\(%si\),%si
++ +[a-f0-9]+:	8d bd 00 00          	lea    0x0\(%di\),%di
++
++0+a <pseudo_8_4>:
++ +[a-f0-9]+:	8d b4 00 00          	lea    0x0\(%si\),%si
++ +[a-f0-9]+:	8d b4 00 00          	lea    0x0\(%si\),%si
++
++0+12 <pseudo_20>:
++ +[a-f0-9]+:	8d b4 00 00          	lea    0x0\(%si\),%si
++ +[a-f0-9]+:	8d b4 00 00          	lea    0x0\(%si\),%si
++ +[a-f0-9]+:	8d bd 00 00          	lea    0x0\(%di\),%di
++ +[a-f0-9]+:	8d b4 00 00          	lea    0x0\(%si\),%si
++ +[a-f0-9]+:	8d bd 00 00          	lea    0x0\(%di\),%di
++
++0+26 <pseudo_30>:
++ +[a-f0-9]+:	89 f6                	mov    %si,%si
++ +[a-f0-9]+:	8d bd 00 00          	lea    0x0\(%di\),%di
++ +[a-f0-9]+:	8d b4 00 00          	lea    0x0\(%si\),%si
++ +[a-f0-9]+:	8d bd 00 00          	lea    0x0\(%di\),%di
++ +[a-f0-9]+:	8d b4 00 00          	lea    0x0\(%si\),%si
++ +[a-f0-9]+:	8d bd 00 00          	lea    0x0\(%di\),%di
++ +[a-f0-9]+:	8d b4 00 00          	lea    0x0\(%si\),%si
++ +[a-f0-9]+:	8d bd 00 00          	lea    0x0\(%di\),%di
++ +[a-f0-9]+:	66 31 c0             	xor    %eax,%eax
++#pass
+diff --git a/gas/testsuite/gas/i386/nop-2.s b/gas/testsuite/gas/i386/nop-2.s
+new file mode 100644
+index 0000000000..2b71b9786d
+--- /dev/null
++++ b/gas/testsuite/gas/i386/nop-2.s
+@@ -0,0 +1,22 @@
++       .text
++       .code16
++single:
++	.nop 0
++	nop
++
++pseudo_1:
++	.nop 1
++
++pseudo_8:
++	.nop 8
++
++pseudo_8_4:
++	.nop 8, 4
++
++pseudo_20:
++	.nop 20
++
++pseudo_30:
++	.nop 30
++
++	xor %eax, %eax
+diff --git a/gas/testsuite/gas/i386/nop-3.d b/gas/testsuite/gas/i386/nop-3.d
+new file mode 100644
+index 0000000000..bebd24bc08
+--- /dev/null
++++ b/gas/testsuite/gas/i386/nop-3.d
+@@ -0,0 +1,20 @@
++#objdump: -drw
++#name: i386 .nop 3
++
++.*: +file format .*
++
++
++Disassembly of section .text:
++
++0+ <_start>:
++ +[a-f0-9]+:	31 c0                	xor    %eax,%eax
++ +[a-f0-9]+:	85 c0                	test   %eax,%eax
++ +[a-f0-9]+:	0f 1f 00             	nopl   \(%eax\)
++ +[a-f0-9]+:	31 c0                	xor    %eax,%eax
++ +[a-f0-9]+:	31 c0                	xor    %eax,%eax
++
++Disassembly of section .altinstr_replacement:
++
++0+ <.altinstr_replacement>:
++ +[a-f0-9]+:	e9 fc ff ff ff       	jmp    1 <.altinstr_replacement\+0x1>	1: (R_386_PC)?(DISP)?32	foo
++#pass
+diff --git a/gas/testsuite/gas/i386/nop-3.s b/gas/testsuite/gas/i386/nop-3.s
+new file mode 100644
+index 0000000000..57370ff579
+--- /dev/null
++++ b/gas/testsuite/gas/i386/nop-3.s
+@@ -0,0 +1,15 @@
++	.text
++_start:
++	xor %eax, %eax
++140:
++	testl %eax, %eax
++141:
++	.nop -(((144f-143f)-(141b-140b)) > 0)*((144f-143f)-(141b-140b)),7
++142:
++	xor %eax, %eax
++	.pushsection .altinstr_replacement,"ax"
++143:
++	jmp foo
++144:
++	.popsection
++	xor %eax, %eax
+diff --git a/gas/testsuite/gas/i386/nop-4.d b/gas/testsuite/gas/i386/nop-4.d
+new file mode 100644
+index 0000000000..99ddcd3994
+--- /dev/null
++++ b/gas/testsuite/gas/i386/nop-4.d
+@@ -0,0 +1,23 @@
++#objdump: -drw
++#name: i386 .nop 4
++
++.*: +file format .*
++
++
++Disassembly of section .text:
++
++0+ <_start>:
++ +[a-f0-9]+:	31 c0                	xor    %eax,%eax
++ +[a-f0-9]+:	85 c0                	test   %eax,%eax
++ +[a-f0-9]+:	66 0f 1f 84 00 00 00 00 00 	nopw   0x0\(%eax,%eax,1\)
++ +[a-f0-9]+:	31 c0                	xor    %eax,%eax
++ +[a-f0-9]+:	31 c0                	xor    %eax,%eax
++
++Disassembly of section .altinstr_replacement:
++
++0+ <.altinstr_replacement>:
++ +[a-f0-9]+:	89 c0                	mov    %eax,%eax
++ +[a-f0-9]+:	89 c0                	mov    %eax,%eax
++ +[a-f0-9]+:	89 c0                	mov    %eax,%eax
++ +[a-f0-9]+:	e9 fc ff ff ff       	jmp    7 <.altinstr_replacement\+0x7>	7: (R_386_PC)?(DISP)?32	foo
++#pass
+diff --git a/gas/testsuite/gas/i386/nop-4.s b/gas/testsuite/gas/i386/nop-4.s
+new file mode 100644
+index 0000000000..f7aa11187e
+--- /dev/null
++++ b/gas/testsuite/gas/i386/nop-4.s
+@@ -0,0 +1,18 @@
++	.text
++_start:
++	xor %eax, %eax
++140:
++	testl %eax, %eax
++141:
++	.nop -(((144f-143f)-(141b-140b)) > 0)*((144f-143f)-(141b-140b))
++142:
++	xor %eax, %eax
++	.pushsection .altinstr_replacement,"ax"
++143:
++	mov %eax, %eax
++	mov %eax, %eax
++	mov %eax, %eax
++	jmp foo
++144:
++	.popsection
++	xor %eax, %eax
+diff --git a/gas/testsuite/gas/i386/nop-5.d b/gas/testsuite/gas/i386/nop-5.d
+new file mode 100644
+index 0000000000..aab4258b19
+--- /dev/null
++++ b/gas/testsuite/gas/i386/nop-5.d
+@@ -0,0 +1,25 @@
++#objdump: -drw
++#name: i386 .nop 5
++
++.*: +file format .*
++
++
++Disassembly of section .text:
++
++0+ <_start>:
++ +[a-f0-9]+:	31 c0                	xor    %eax,%eax
++ +[a-f0-9]+:	85 c0                	test   %eax,%eax
++ +[a-f0-9]+:	0f 1f 44 00 00       	nopl   0x0\(%eax,%eax,1\)
++ +[a-f0-9]+:	66 0f 1f 44 00 00    	nopw   0x0\(%eax,%eax,1\)
++ +[a-f0-9]+:	31 c0                	xor    %eax,%eax
++ +[a-f0-9]+:	31 c0                	xor    %eax,%eax
++
++Disassembly of section .altinstr_replacement:
++
++0+ <.altinstr_replacement>:
++ +[a-f0-9]+:	89 c0                	mov    %eax,%eax
++ +[a-f0-9]+:	89 c0                	mov    %eax,%eax
++ +[a-f0-9]+:	89 c0                	mov    %eax,%eax
++ +[a-f0-9]+:	89 c0                	mov    %eax,%eax
++ +[a-f0-9]+:	e9 fc ff ff ff       	jmp    9 <.altinstr_replacement\+0x9>	9: (R_386_PC)?(DISP)?32	foo
++#pass
+diff --git a/gas/testsuite/gas/i386/nop-5.s b/gas/testsuite/gas/i386/nop-5.s
+new file mode 100644
+index 0000000000..4f563ce82f
+--- /dev/null
++++ b/gas/testsuite/gas/i386/nop-5.s
+@@ -0,0 +1,19 @@
++	.text
++_start:
++	xor %eax, %eax
++140:
++	testl %eax, %eax
++141:
++	.nop -(((144f-143f)-(141b-140b)) > 0)*((144f-143f)-(141b-140b)),6
++142:
++	xor %eax, %eax
++	.pushsection .altinstr_replacement,"ax"
++143:
++	mov %eax, %eax
++	mov %eax, %eax
++	mov %eax, %eax
++	mov %eax, %eax
++	jmp foo
++144:
++	.popsection
++	xor %eax, %eax
+diff --git a/gas/testsuite/gas/i386/nop-6.d b/gas/testsuite/gas/i386/nop-6.d
+new file mode 100644
+index 0000000000..93ee8def03
+--- /dev/null
++++ b/gas/testsuite/gas/i386/nop-6.d
+@@ -0,0 +1,17 @@
++#objdump: -drw
++#name: i386 .nop 6
++
++.*: +file format .*
++
++
++Disassembly of section .text:
++
++0+ <_start>:
++ +[a-f0-9]+:	0f 1f 40 00          	nopl   0x0\(%eax\)
++
++Disassembly of section .altinstr_replacement:
++
++0+ <.altinstr_replacement>:
++ +[a-f0-9]+:	75 fe                	jne    0 <_start>
++ +[a-f0-9]+:	89 c4                	mov    %eax,%esp
++#pass
+diff --git a/gas/testsuite/gas/i386/nop-6.s b/gas/testsuite/gas/i386/nop-6.s
+new file mode 100644
+index 0000000000..c7b1e2cbf0
+--- /dev/null
++++ b/gas/testsuite/gas/i386/nop-6.s
+@@ -0,0 +1,25 @@
++.macro mknops nr_bytes
++    .nop \nr_bytes, 9
++.endm
++
++.macro ALTERNATIVE
++.L\@_orig_s:
++.L\@_orig_e:
++     mknops (-(((.L\@_repl_e\()1 - .L\@_repl_s\()1) - (.L\@_orig_e - .L\@_orig_s)) > 0) * ((.L\@_repl_e\()1 - .L\@_repl_s\()1) - (.L\@_orig_e - .L\@_orig_s)))
++.L\@_orig_p:
++
++    .section .discard, "a", @progbits
++    .byte (.L\@_orig_p - .L\@_orig_s)
++    .byte 0xff + (.L\@_repl_e\()1 - .L\@_repl_s\()1) - (.L\@_orig_p - .L\@_orig_s)
++
++    .section .altinstr_replacement, "ax", @progbits
++.L\@_repl_s\()1:
++.L\@_fill_rsb_loop:
++    jnz .L\@_fill_rsb_loop
++    mov %eax, %esp
++.L\@_repl_e\()1:
++.endm
++
++	.text
++_start:
++ALTERNATIVE
+diff --git a/gas/testsuite/gas/i386/nop-bad-1.l b/gas/testsuite/gas/i386/nop-bad-1.l
+new file mode 100644
+index 0000000000..8e6c9daac9
+--- /dev/null
++++ b/gas/testsuite/gas/i386/nop-bad-1.l
+@@ -0,0 +1,5 @@
++.*: Assembler messages:
++.*:2: Error: invalide single nop size: -2 \(expect within \[0, [0-9]+\]\)
++.*:3: Error: invalide single nop size: 20 \(expect within \[0, [0-9]+\]\)
++.*:5: Warning: .space or .fill with negative value, ignored
++.*:4: Error: invalid .nop directive size: 600 \(expect less than [0-9]+\)
+diff --git a/gas/testsuite/gas/i386/nop-bad-1.s b/gas/testsuite/gas/i386/nop-bad-1.s
+new file mode 100644
+index 0000000000..0127e418da
+--- /dev/null
++++ b/gas/testsuite/gas/i386/nop-bad-1.s
+@@ -0,0 +1,5 @@
++	.text
++        .nop 100, -2
++        .nop 100, 20
++        .nop 600
++        .nop -1
+diff --git a/gas/testsuite/gas/i386/x86-64-nop-1.d b/gas/testsuite/gas/i386/x86-64-nop-1.d
+new file mode 100644
+index 0000000000..f3edc7d346
+--- /dev/null
++++ b/gas/testsuite/gas/i386/x86-64-nop-1.d
+@@ -0,0 +1,32 @@
++#source: nop-1.s
++#objdump: -drw
++#name: x86-64 .nop 1
++
++.*: +file format .*
++
++
++Disassembly of section .text:
++
++0+ <single>:
++ +[a-f0-9]+:	90                   	nop
++
++0+1 <pseudo_1>:
++ +[a-f0-9]+:	90                   	nop
++
++0+2 <pseudo_8>:
++ +[a-f0-9]+:	0f 1f 84 00 00 00 00 00 	nopl   0x0\(%rax,%rax,1\)
++
++0+a <pseudo_8_4>:
++ +[a-f0-9]+:	0f 1f 40 00          	nopl   0x0\(%rax\)
++ +[a-f0-9]+:	0f 1f 40 00          	nopl   0x0\(%rax\)
++
++0+12 <pseudo_20>:
++ +[a-f0-9]+:	66 0f 1f 84 00 00 00 00 00 	nopw   0x0\(%rax,%rax,1\)
++ +[a-f0-9]+:	67 66 2e 0f 1f 84 00 00 00 00 00 	nopw   %cs:0x0\(%eax,%eax,1\)
++
++0+26 <pseudo_30>:
++ +[a-f0-9]+:	0f 1f 84 00 00 00 00 00 	nopl   0x0\(%rax,%rax,1\)
++ +[a-f0-9]+:	67 66 2e 0f 1f 84 00 00 00 00 00 	nopw   %cs:0x0\(%eax,%eax,1\)
++ +[a-f0-9]+:	67 66 2e 0f 1f 84 00 00 00 00 00 	nopw   %cs:0x0\(%eax,%eax,1\)
++ +[a-f0-9]+:	31 c0                	xor    %eax,%eax
++#pass
+diff --git a/gas/testsuite/gas/i386/x86-64-nop-2.d b/gas/testsuite/gas/i386/x86-64-nop-2.d
+new file mode 100644
+index 0000000000..e894d2c7bf
+--- /dev/null
++++ b/gas/testsuite/gas/i386/x86-64-nop-2.d
+@@ -0,0 +1,41 @@
++#source: nop-2.s
++#objdump: -drw -Mi8086
++#name: x86-64 .nop 2
++
++.*: +file format .*
++
++
++Disassembly of section .text:
++
++0+ <single>:
++ +[a-f0-9]+:	90                   	nop
++
++0+1 <pseudo_1>:
++ +[a-f0-9]+:	90                   	nop
++
++0+2 <pseudo_8>:
++ +[a-f0-9]+:	8d b4 00 00          	lea    0x0\(%si\),%si
++ +[a-f0-9]+:	8d bd 00 00          	lea    0x0\(%di\),%di
++
++0+a <pseudo_8_4>:
++ +[a-f0-9]+:	8d b4 00 00          	lea    0x0\(%si\),%si
++ +[a-f0-9]+:	8d b4 00 00          	lea    0x0\(%si\),%si
++
++0+12 <pseudo_20>:
++ +[a-f0-9]+:	8d b4 00 00          	lea    0x0\(%si\),%si
++ +[a-f0-9]+:	8d b4 00 00          	lea    0x0\(%si\),%si
++ +[a-f0-9]+:	8d bd 00 00          	lea    0x0\(%di\),%di
++ +[a-f0-9]+:	8d b4 00 00          	lea    0x0\(%si\),%si
++ +[a-f0-9]+:	8d bd 00 00          	lea    0x0\(%di\),%di
++
++0+26 <pseudo_30>:
++ +[a-f0-9]+:	89 f6                	mov    %si,%si
++ +[a-f0-9]+:	8d bd 00 00          	lea    0x0\(%di\),%di
++ +[a-f0-9]+:	8d b4 00 00          	lea    0x0\(%si\),%si
++ +[a-f0-9]+:	8d bd 00 00          	lea    0x0\(%di\),%di
++ +[a-f0-9]+:	8d b4 00 00          	lea    0x0\(%si\),%si
++ +[a-f0-9]+:	8d bd 00 00          	lea    0x0\(%di\),%di
++ +[a-f0-9]+:	8d b4 00 00          	lea    0x0\(%si\),%si
++ +[a-f0-9]+:	8d bd 00 00          	lea    0x0\(%di\),%di
++ +[a-f0-9]+:	66 31 c0             	xor    %eax,%eax
++#pass
+diff --git a/gas/testsuite/gas/i386/x86-64-nop-3.d b/gas/testsuite/gas/i386/x86-64-nop-3.d
+new file mode 100644
+index 0000000000..b43239af6f
+--- /dev/null
++++ b/gas/testsuite/gas/i386/x86-64-nop-3.d
+@@ -0,0 +1,21 @@
++#source: nop-3.s
++#objdump: -drw
++#name: x86-64 .nop 3
++
++.*: +file format .*
++
++
++Disassembly of section .text:
++
++0+ <_start>:
++ +[a-f0-9]+:	31 c0                	xor    %eax,%eax
++ +[a-f0-9]+:	85 c0                	test   %eax,%eax
++ +[a-f0-9]+:	0f 1f 00             	nopl   \(%rax\)
++ +[a-f0-9]+:	31 c0                	xor    %eax,%eax
++ +[a-f0-9]+:	31 c0                	xor    %eax,%eax
++
++Disassembly of section .altinstr_replacement:
++
++0+ <.altinstr_replacement>:
++ +[a-f0-9]+:	e9 00 00 00 00       	jmpq   5 <_start\+0x5>	1: R_X86_64_PLT32	foo-0x4
++#pass
+diff --git a/gas/testsuite/gas/i386/x86-64-nop-4.d b/gas/testsuite/gas/i386/x86-64-nop-4.d
+new file mode 100644
+index 0000000000..a910171303
+--- /dev/null
++++ b/gas/testsuite/gas/i386/x86-64-nop-4.d
+@@ -0,0 +1,24 @@
++#source: nop-4.s
++#objdump: -drw
++#name: x86-64 .nop 4
++
++.*: +file format .*
++
++
++Disassembly of section .text:
++
++0+ <_start>:
++ +[a-f0-9]+:	31 c0                	xor    %eax,%eax
++ +[a-f0-9]+:	85 c0                	test   %eax,%eax
++ +[a-f0-9]+:	66 0f 1f 84 00 00 00 00 00 	nopw   0x0\(%rax,%rax,1\)
++ +[a-f0-9]+:	31 c0                	xor    %eax,%eax
++ +[a-f0-9]+:	31 c0                	xor    %eax,%eax
++
++Disassembly of section .altinstr_replacement:
++
++0+ <.altinstr_replacement>:
++ +[a-f0-9]+:	89 c0                	mov    %eax,%eax
++ +[a-f0-9]+:	89 c0                	mov    %eax,%eax
++ +[a-f0-9]+:	89 c0                	mov    %eax,%eax
++ +[a-f0-9]+:	e9 00 00 00 00       	jmpq   b <_start\+0xb>	7: R_X86_64_PLT32	foo-0x4
++#pass
+diff --git a/gas/testsuite/gas/i386/x86-64-nop-5.d b/gas/testsuite/gas/i386/x86-64-nop-5.d
+new file mode 100644
+index 0000000000..57493cf6dc
+--- /dev/null
++++ b/gas/testsuite/gas/i386/x86-64-nop-5.d
+@@ -0,0 +1,26 @@
++#source: nop-5.s
++#objdump: -drw
++#name: x86-64 .nop 5
++
++.*: +file format .*
++
++
++Disassembly of section .text:
++
++0+ <_start>:
++ +[a-f0-9]+:	31 c0                	xor    %eax,%eax
++ +[a-f0-9]+:	85 c0                	test   %eax,%eax
++ +[a-f0-9]+:	0f 1f 44 00 00       	nopl   0x0\(%rax,%rax,1\)
++ +[a-f0-9]+:	66 0f 1f 44 00 00    	nopw   0x0\(%rax,%rax,1\)
++ +[a-f0-9]+:	31 c0                	xor    %eax,%eax
++ +[a-f0-9]+:	31 c0                	xor    %eax,%eax
++
++Disassembly of section .altinstr_replacement:
++
++0+ <.altinstr_replacement>:
++ +[a-f0-9]+:	89 c0                	mov    %eax,%eax
++ +[a-f0-9]+:	89 c0                	mov    %eax,%eax
++ +[a-f0-9]+:	89 c0                	mov    %eax,%eax
++ +[a-f0-9]+:	89 c0                	mov    %eax,%eax
++ +[a-f0-9]+:	e9 00 00 00 00       	jmpq   d <_start\+0xd>	9: R_X86_64_PLT32	foo-0x4
++#pass
+diff --git a/gas/testsuite/gas/i386/x86-64-nop-6.d b/gas/testsuite/gas/i386/x86-64-nop-6.d
+new file mode 100644
+index 0000000000..520f590945
+--- /dev/null
++++ b/gas/testsuite/gas/i386/x86-64-nop-6.d
+@@ -0,0 +1,18 @@
++#source: nop-6.s
++#objdump: -drw
++#name: x86-64 .nop 6
++
++.*: +file format .*
++
++
++Disassembly of section .text:
++
++0+ <_start>:
++ +[a-f0-9]+:	0f 1f 40 00          	nopl   0x0\(%rax\)
++
++Disassembly of section .altinstr_replacement:
++
++0+ <.altinstr_replacement>:
++ +[a-f0-9]+:	75 fe                	jne    0 <_start>
++ +[a-f0-9]+:	89 c4                	mov    %eax,%esp
++#pass
+diff --git a/gas/write.c b/gas/write.c
+index 2869660cfe..9e2ef5767d 100644
+--- a/gas/write.c
++++ b/gas/write.c
+@@ -457,6 +457,12 @@ cvt_frag_to_fill (segT sec ATTRIBUTE_UNUSED, fragS *fragP)
+       fragP->fr_type = rs_fill;
+       break;
+ 
++#ifdef TARGET_USE_NOP_DIRECTIVE
++    case rs_space_nop:
++      md_convert_frag (stdoutput, sec, fragP);
++      break;
++#endif
++
+     case rs_fill:
+       break;
+ 
+@@ -2461,6 +2467,9 @@ relax_segment (struct frag *segment_frag_root, segT segment, int pass)
+ 	  break;
+ 
+ 	case rs_space:
++#ifdef TARGET_USE_NOP_DIRECTIVE
++	case rs_space_nop:
++#endif
+ 	  break;
+ 
+ 	case rs_machine_dependent:
+@@ -2765,6 +2774,9 @@ relax_segment (struct frag *segment_frag_root, segT segment, int pass)
+ 		break;
+ 
+ 	      case rs_space:
++#ifdef TARGET_USE_NOP_DIRECTIVE
++	      case rs_space_nop:
++#endif
+ 		growth = 0;
+ 		if (symbolP)
+ 		  {
+@@ -2795,8 +2807,15 @@ relax_segment (struct frag *segment_frag_root, segT segment, int pass)
+ 			fragP->fr_symbol = 0;
+ 		      }
+ 		    else
+-		      growth = (was_address + fragP->fr_fix + amount
+-				- fragP->fr_next->fr_address);
++		      {
++			growth = (was_address + fragP->fr_fix + amount
++				  - fragP->fr_next->fr_address);
++#ifdef TARGET_USE_NOP_DIRECTIVE
++			if (growth != 0
++			    && fragP->fr_type == rs_space_nop)
++			  fragP->fr_var = growth;
++#endif
++		      }
+ 		  }
+ 		break;
+ 
+-- 
+2.14.3
+
