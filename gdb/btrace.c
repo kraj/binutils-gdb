@@ -1579,11 +1579,8 @@ btrace_enable (struct thread_info *tp, const struct btrace_config *conf)
 
 #if !defined (HAVE_LIBIPT)
   if (conf->format == BTRACE_FORMAT_PT)
-    error (_("GDB does not support Intel Processor Trace."));
+    error (_("Intel Processor Trace support was disabled at compile time."));
 #endif /* !defined (HAVE_LIBIPT) */
-
-  if (!target_supports_btrace (conf->format))
-    error (_("Target does not support branch tracing."));
 
   DEBUG ("enable thread %s (%s)", print_thread_id (tp),
 	 target_pid_to_str (tp->ptid));
@@ -2221,7 +2218,8 @@ parse_xml_btrace (struct btrace_data *btrace, const char *buffer)
 
 #else  /* !defined (HAVE_LIBEXPAT) */
 
-  error (_("Cannot process branch trace.  XML parsing is not supported."));
+  error (_("Cannot process branch trace.  XML support was disabled at "
+	   "compile time."));
 
 #endif  /* !defined (HAVE_LIBEXPAT) */
 }
@@ -2315,7 +2313,8 @@ parse_xml_btrace_conf (struct btrace_config *conf, const char *xml)
 
 #else  /* !defined (HAVE_LIBEXPAT) */
 
-  error (_("XML parsing is not supported."));
+  error (_("Cannot process the branch trace configuration.  XML support "
+	   "was disabled at compile time."));
 
 #endif  /* !defined (HAVE_LIBEXPAT) */
 }

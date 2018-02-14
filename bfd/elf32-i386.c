@@ -1812,7 +1812,7 @@ do_relocation:
 
 	  size_reloc = FALSE;
 do_size:
-	  if (NEED_DYNAMIC_RELOCATION_P (info, h, sec, r_type,
+	  if (NEED_DYNAMIC_RELOCATION_P (info, FALSE, h, sec, r_type,
 					 R_386_32))
 	    {
 	      struct elf_dyn_relocs *p;
@@ -4190,6 +4190,7 @@ elf_i386_get_synthetic_symtab (bfd *abfd,
   switch (get_elf_x86_backend_data (abfd)->target_os)
     {
     case is_normal:
+    case is_solaris:
       non_lazy_plt = &elf_i386_non_lazy_plt;
       lazy_ibt_plt = &elf_i386_lazy_ibt_plt;
       non_lazy_ibt_plt = &elf_i386_non_lazy_ibt_plt;
@@ -4349,6 +4350,7 @@ elf_i386_link_setup_gnu_properties (struct bfd_link_info *info)
   switch (get_elf_x86_backend_data (info->output_bfd)->target_os)
     {
     case is_normal:
+    case is_solaris:
       init_table.plt0_pad_byte = 0x0;
       init_table.lazy_plt = &elf_i386_lazy_plt;
       init_table.non_lazy_plt = &elf_i386_non_lazy_plt;
@@ -4465,6 +4467,14 @@ elf_i386_fbsd_post_process_headers (bfd *abfd, struct bfd_link_info *info)
 #define	TARGET_LITTLE_SYM		i386_elf32_sol2_vec
 #undef	TARGET_LITTLE_NAME
 #define	TARGET_LITTLE_NAME		"elf32-i386-sol2"
+
+static const struct elf_x86_backend_data elf_i386_solaris_arch_bed =
+  {
+    is_solaris				/* os */
+  };
+
+#undef	elf_backend_arch_data
+#define	elf_backend_arch_data		&elf_i386_solaris_arch_bed
 
 #undef elf_backend_post_process_headers
 
@@ -4591,6 +4601,9 @@ elf32_iamcu_elf_object_p (bfd *abfd)
 
 #undef	ELF_MACHINE_CODE
 #define	ELF_MACHINE_CODE		EM_IAMCU
+
+#undef	elf_backend_arch_data
+#define	elf_backend_arch_data		&elf_i386_arch_bed
 
 #undef	ELF_OSABI
 

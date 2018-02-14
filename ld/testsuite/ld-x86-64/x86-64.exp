@@ -1127,7 +1127,7 @@ if { [isnative] && [which $CC] != 0 } {
 	] \
 	[list \
 	    "Build pr22393-3" \
-	    "$NOPIE_LDFLAGS -Wl,-z,separate-code,-z,max-page-size=0x1000,--no-as-needed tmpdir/pr22393-2a.so" \
+	    "$NOPIE_LDFLAGS -Wl,-z,separate-code,-z,max-page-size=0x1000,--no-as-needed tmpdir/pr22393-3a.so" \
 	    "$NOPIE_CFLAGS" \
 	    {pr22393-3b.c} \
 	    {{readelf -lW pr22393-3a.rd} \
@@ -1136,7 +1136,7 @@ if { [isnative] && [which $CC] != 0 } {
 	] \
 	[list \
 	    "Build pr22393-3 (PIE)" \
-	    "-pie -Wl,-z,separate-code,-z,max-page-size=0x1000,--no-as-needed tmpdir/pr22393-2a-now.so" \
+	    "-pie -Wl,-z,separate-code,-z,max-page-size=0x1000,--no-as-needed tmpdir/pr22393-3a-now.so" \
 	    "-fPIE" \
 	    {pr22393-3b.c} \
 	    {{readelf -lW pr22393-3a.rd} \
@@ -1151,6 +1151,61 @@ if { [isnative] && [which $CC] != 0 } {
 	    {{readelf -lW pr22393-3a.rd} \
 	     {readelf -lW pr22393-3b.rd}} \
 	    "pr22393-3-static" \
+	] \
+	[list \
+	    "Build pr22791-1.so" \
+	    "-shared" \
+	    "-fPIC" \
+	    { pr22791-1a.c } \
+	    {} \
+	    "pr22791-1.so" \
+	] \
+	[list \
+	    "Build pr22791-1" \
+	    "-pie -Wl,--no-as-needed tmpdir/pr22791-1.so" \
+	    "$NOPIE_CFLAGS" \
+	    { pr22791-1b.s } \
+	    {{error_output "pr22791-1.err"}} \
+	    "pr22791-1" \
+	] \
+	[list \
+	    "Build pr22791-2a.o" \
+	    "" \
+	    "$NOPIE_CFLAGS" \
+	    { pr22791-2a.s } \
+	] \
+	[list \
+	    "Build pr22791-2.so" \
+	    "-shared tmpdir/pr22791-2a.o" \
+	    "-fPIC" \
+	    { pr22791-2b.c } \
+	    {{readelf -drW pr22791-2.rd}} \
+	    "pr22791-2.so" \
+	] \
+	[list \
+	    "Build pr22791-2" \
+	    "-pie -Wl,--no-as-needed tmpdir/pr22791-2.so" \
+	    "$NOPIE_CFLAGS" \
+	    { pr22791-2c.s } \
+	    {{readelf -drW pr22791-2.rd}} \
+	    "pr22791-2" \
+	] \
+	[list \
+	    "Build pr22842.so" \
+	    "-shared" \
+	    "-fPIC" \
+	    { pr22842a.c } \
+	    {} \
+	    "pr22842.so" \
+	] \
+	[list \
+	    "Build pr22842" \
+	    "-pie -Wl,--no-as-needed tmpdir/pr22842.so" \
+	    "" \
+	    { pr22842b.S } \
+	    {{readelf -rW pr22842a.rd} \
+	     {readelf -rW pr22842b.rd}} \
+	    "pr22842" \
 	] \
     ]
 
@@ -1475,6 +1530,23 @@ if { [isnative] && [which $CC] != 0 } {
 	    "" \
 	    {pr22393-3a.c pr22393-3b.c} \
 	    "pr22393-3-static" \
+	    "pass.out" \
+	] \
+	[list \
+	    "Run pr22791-2" \
+	    "-pie -Wl,--no-as-needed tmpdir/pr22791-2.so" \
+	    "" \
+	    { pr22791-2c.s } \
+	    "pr22791-2" \
+	    "pass.out" \
+	    "$NOPIE_CFLAGS" \
+	] \
+	[list \
+	    "Build pr22842" \
+	    "-pie -Wl,--no-as-needed tmpdir/pr22842.so" \
+	    "" \
+	    { pr22842b.S } \
+	    "pr22842" \
 	    "pass.out" \
 	] \
     ]

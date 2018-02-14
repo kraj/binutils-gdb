@@ -2135,7 +2135,17 @@ pointer:
 		     as pointer, make sure that PLT is used if foo is
 		     a function defined in a shared library.  */
 		  if ((sec->flags & SEC_CODE) == 0)
-		    h->pointer_equality_needed = 1;
+		    {
+		      h->pointer_equality_needed = 1;
+		      if (bfd_link_pie (info)
+			  && h->type == STT_FUNC
+			  && !h->def_regular
+			  && h->def_dynamic)
+			{
+			  h->needs_plt = 1;
+			  h->plt.refcount = 1;
+			}
+		    }
 		}
 	      else if (r_type != R_X86_64_PC32_BND
 		       && r_type != R_X86_64_PC64)
@@ -2173,7 +2183,7 @@ pointer:
 
 	  size_reloc = FALSE;
 do_size:
-	  if (NEED_DYNAMIC_RELOCATION_P (info, h, sec, r_type,
+	  if (NEED_DYNAMIC_RELOCATION_P (info, TRUE, h, sec, r_type,
 					 htab->pointer_r_type))
 	    {
 	      struct elf_dyn_relocs *p;
@@ -2305,24 +2315,6 @@ elf_x86_64_tpoff (struct bfd_link_info *info, bfd_vma address)
   /* Consider special static TLS alignment requirements.  */
   static_tls_size = BFD_ALIGN (htab->tls_size, bed->static_tls_alignment);
   return address - static_tls_size - htab->tls_sec->vma;
-}
-
-/* Is the instruction before OFFSET in CONTENTS a 32bit relative
-   branch?  */
-
-static bfd_boolean
-is_32bit_relative_branch (bfd_byte *contents, bfd_vma offset)
-{
-  /* Opcode		Instruction
-     0xe8		call
-     0xe9		jump
-     0x0f 0x8x		conditional jump */
-  return ((offset > 0
-	   && (contents [offset - 1] == 0xe8
-	       || contents [offset - 1] == 0xe9))
-	  || (offset > 1
-	      && contents [offset - 2] == 0x0f
-	      && (contents [offset - 1] & 0xf0) == 0x80));
 }
 
 /* Relocate an x86_64 ELF section.  */
@@ -2986,6 +2978,7 @@ do_ifunc_pointer:
 	      break;
 	    }
 
+use_plt:
 	  if (h->plt.offset != (bfd_vma) -1)
 	    {
 	      if (htab->plt_second != NULL)
@@ -3023,14 +3016,18 @@ do_ifunc_pointer:
 	case R_X86_64_PC32:
 	case R_X86_64_PC32_BND:
 	  /* Don't complain about -fPIC if the symbol is undefined when
-	     building executable unless it is unresolved weak symbol or
-	     -z nocopyreloc is used.  */
+	     building executable unless it is unresolved weak symbol,
+	     references a dynamic definition in PIE or -z nocopyreloc
+	     is used.  */
 	  if ((input_section->flags & SEC_ALLOC) != 0
 	      && (input_section->flags & SEC_READONLY) != 0
 	      && h != NULL
 	      && ((bfd_link_executable (info)
 		   && ((h->root.type == bfd_link_hash_undefweak
 			&& !resolved_to_zero)
+		       || (bfd_link_pie (info)
+			   && !h->def_regular
+			   && h->def_dynamic)
 		       || ((info->nocopyreloc
 			    || (eh->def_protected
 				&& elf_has_no_copy_on_protected (h->root.u.def.section->owner)))
@@ -3039,32 +3036,36 @@ do_ifunc_pointer:
 		  || bfd_link_dll (info)))
 	    {
 	      bfd_boolean fail = FALSE;
-	      bfd_boolean branch
-		= ((r_type == R_X86_64_PC32
-		    || r_type == R_X86_64_PC32_BND)
-		   && is_32bit_relative_branch (contents, rel->r_offset));
-
 	      if (SYMBOL_REFERENCES_LOCAL_P (info, h))
 		{
 		  /* Symbol is referenced locally.  Make sure it is
-		     defined locally or for a branch.  */
-		  fail = (!(h->def_regular || ELF_COMMON_DEF_P (h))
-			  && !branch);
+		     defined locally.  */
+		  fail = !(h->def_regular || ELF_COMMON_DEF_P (h));
 		}
 	      else if (!(bfd_link_pie (info)
 			 && (h->needs_copy || eh->needs_copy)))
 		{
 		  /* Symbol doesn't need copy reloc and isn't referenced
-		     locally.  We only allow branch to symbol with
-		     non-default visibility. */
-		  fail = (!branch
-			  || ELF_ST_VISIBILITY (h->other) == STV_DEFAULT);
+		     locally.  Address of protected function may not be
+		     reachable at run-time.  */
+		  fail = (ELF_ST_VISIBILITY (h->other) == STV_DEFAULT
+			  || (ELF_ST_VISIBILITY (h->other) == STV_PROTECTED
+			      && h->type == STT_FUNC));
 		}
 
 	      if (fail)
 		return elf_x86_64_need_pic (info, input_bfd, input_section,
 					    h, NULL, NULL, howto);
 	    }
+	  /* Since x86-64 has PC-relative PLT, we can use PLT in PIE
+	     as function address.  */
+	  else if (h != NULL
+		   && (input_section->flags & SEC_CODE) == 0
+		   && bfd_link_pie (info)
+		   && h->type == STT_FUNC
+		   && !h->def_regular
+		   && h->def_dynamic)
+	    goto use_plt;
 	  /* Fall through.  */
 
 	case R_X86_64_8:
@@ -4519,7 +4520,7 @@ elf_x86_64_get_synthetic_symtab (bfd *abfd,
   if (relsize <= 0)
     return -1;
 
-  if (get_elf_x86_backend_data (abfd)->target_os == is_normal)
+  if (get_elf_x86_backend_data (abfd)->target_os != is_nacl)
     {
       lazy_plt = &elf_x86_64_lazy_plt;
       non_lazy_plt = &elf_x86_64_non_lazy_plt;
@@ -4870,8 +4871,7 @@ elf_x86_64_link_setup_gnu_properties (struct bfd_link_info *info)
   /* This is unused for x86-64.  */
   init_table.plt0_pad_byte = 0x90;
 
-  if (get_elf_x86_backend_data (info->output_bfd)->target_os
-      == is_normal)
+  if (get_elf_x86_backend_data (info->output_bfd)->target_os != is_nacl)
     {
       if (info->bndplt)
 	{
@@ -5038,6 +5038,14 @@ elf_x86_64_special_sections[]=
 #define TARGET_LITTLE_SYM		    x86_64_elf64_sol2_vec
 #undef  TARGET_LITTLE_NAME
 #define TARGET_LITTLE_NAME		    "elf64-x86-64-sol2"
+
+static const struct elf_x86_backend_data elf_x86_64_solaris_arch_bed =
+  {
+    is_solaris				    /* os */
+  };
+
+#undef	elf_backend_arch_data
+#define	elf_backend_arch_data		    &elf_x86_64_solaris_arch_bed
 
 /* Restore default: we cannot use ELFOSABI_SOLARIS, otherwise ELFOSABI_NONE
    objects won't be recognized.  */

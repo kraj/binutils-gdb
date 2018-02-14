@@ -1,3 +1,91 @@
+2018-02-13  Max Filippov  <jcmvbkbc@gmail.com>
+
+	* config/tc-xtensa.c (xg_find_best_trampoline): Skip trampoline
+	frag that contains source address.
+
+2018-02-13  Nick Clifton  <nickc@redhat.com>
+
+	PR 22773
+	* config/tc-arm.c (md_apply_fix): Test Rn field of Thumb ORR
+	instruction before assuming that it is a MOV instruction.
+	* testsuite/gas/arm/pr22773.s: New test.
+	* testsuite/gas/arm/pr22773.d: New test driver.
+	* testsuite/gas/arm/pr22773.l: New expected output.
+
+2018-02-13  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR gas/22791
+	* config/tc-i386.c (need_plt32_p): New function.
+	(output_jump): Generate BFD_RELOC_X86_64_PLT32 if possible.
+	(md_estimate_size_before_relax): Likewise.
+	* testsuite/gas/i386/reloc64.d: Updated.
+	* testsuite/gas/i386/x86-64-jump.d: Likewise.
+	* testsuite/gas/i386/x86-64-mpx-branch-1.d: Likewise.
+	* testsuite/gas/i386/x86-64-mpx-branch-2.d: Likewise.
+	* testsuite/gas/i386/x86-64-relax-2.d: Likewise.
+	* testsuite/gas/i386/x86-64-relax-3.d: Likewise.
+	* testsuite/gas/i386/ilp32/reloc64.d: Likewise.
+	* testsuite/gas/i386/ilp32/x86-64-branch.d: Likewise.
+
+2018-02-13  Maciej W. Rozycki  <macro@mips.com>
+
+	* testsuite/gas/mips/loongson-3a-2.d: Rename test.
+
+2018-02-13  Nick Clifton  <nickc@redhat.com>
+
+	PR 22823
+	* config/obj-elf.c (elf_pseudo_table): Remove now redundant
+	casts.
+	(obj_elf_vtable_inherit): Rename to obj_elf_get_vtable_inherit.
+	(obj_elf_vtable_inherit): New stub function that calls
+	obj_elf_get_vtable_inherit.
+	(obj_elf_vtable_entry): Rename to obj_elf_get_vtable_entry.
+	(obj_elf_vtable_entry): New stub function that calls
+	obj_elf_get_vtable_entry.
+	* config/obj-elf.h (obj_elf_vtable_inherit): Update prototype.
+	(obj_elf_vtable_entry) Likewise.
+	(obj_elf_get_vtable_inherit) Likewise.
+	(obj_elf_get_vtable_entry) Likewise.
+	* config/tc-arm.c (md_pseudo_table): Remove now redundant cast.
+	* config/tc-i386c (md_pseudo_table): Likewise.
+	* config/tc-hppa.c (pa_vtable_entry): Call
+	obj_elf_get_vtable_entry.
+	(pa_vtable_inherit): Call obj_elf_get_vtable_inherit.
+	* config/tc-mips.c (s_mips_file): Replace call to dwarf2_get_file
+	with call to dwarf2_get_filename.
+	* dwarf2dbg.c (dwarf2_directive_file): Rename to
+	dwarf2_directive_filename.
+	(dwarf2_directive_file): New stub function that calls
+	dwarf2_directive_filename.
+	* dwarf2dbg.h: Prototype dwarf2_directive_filename.
+
+2018-02-12  Maciej W. Rozycki  <macro@mips.com>
+
+	* testsuite/gas/mips/reginfo-2-n32.d: Add `--no-pad-sections' to
+	`as' flags.
+
+2018-02-12  Henry Wong <henry@stuffedcow.net>
+
+	* testsuite/gas/mips/r6.d: Update for "sigrie" encoding fix.
+	* testsuite/gas/mips/r6-n32.d: Likewise.
+	* testsuite/gas/mips/r6-n64.d: Likewise.
+
+2018-02-12  Nick Clifton  <nickc@redhat.com>
+
+	* po/ru.po: Updated Russian translation.
+
+2018-02-08  Alan Modra  <amodra@gmail.com>
+
+	PR 22819
+	* config/tc-ppc.c (md_assemble): Rewrite insn alignment checking.
+	(ppc_frag_check): Likewise.
+	* testsuite/gas/ppc/misalign.d,
+	* testsuite/gas/ppc/misalign.l,
+	* testsuite/gas/ppc/misalign.s: New test.
+	* testsuite/gas/ppc/misalign2.d,
+	* testsuite/gas/ppc/misalign2.s: New test.
+	* testsuite/gas/ppc/ppc.exp: Run them.
+
 2018-02-05  Maciej W. Rozycki  <macro@mips.com>
 
 	* config/tc-riscv.c (riscv_handle_implicit_zero_offset): Rename

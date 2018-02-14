@@ -1,3 +1,186 @@
+2018-02-14  Joel Brobecker  <brobecker@adacore.com>
+
+	* ada-lang.c (name_match_type_from_name): Remove reference to
+	ada_name_for_lookup in function's documentation.
+	* ada-lang.h (ada_name_for_lookup): Delete declaration.
+
+2018-02-13  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* defs.h (enum openp_flags): New enum.
+	(OPF_TRY_CWD_FIRST, OPF_SEARCH_IN_PATH, OPF_RETURN_REALPATH):
+	Move to enum openp_flags.
+	(openp_flags): New enum flags.
+	(openp): Change parameter type to openp_flags.
+	* source.c (openp): Change parameter type to openp_flags.
+	* cli/cli-cmds.c (find_and_open_script): Use openp_flags.
+	* dwarf2read.c (try_open_dwop_file): Use openp_flags.
+
+2018-02-13  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* maint.c (_initialize_maint_cmds): Fix prefix of maint set/show
+	per-command.
+
+2018-02-12  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* dwarf2read.c (dwarf2_release_queue): Delete function, move body
+	into...
+	(class dwarf2_queue_guard): ...the destructor of this new class.
+	(dw2_do_instantiate_symtab): Create instance of the new class
+	dwarf2_queue_guard, remove cleanup.
+
+2018-02-09  Tom Tromey  <tom@tromey.com>
+
+	* source.c (find_source_lines): Don't reference past the end of
+	the vector.
+
+2018-02-09  Markus Metzger  <markus.t.metzger@intel.com>
+
+	* remote.c (remote_btrace_maybe_reopen): Change error message.
+	* btrace.c (btrace_enable): Likewise.
+	(parse_xml_btrace): Likewise.
+	(parse_xml_btrace_conf): Likewise.
+
+2018-02-09  Markus Metzger  <markus.t.metzger@intel.com>
+
+	* nat/linux-btrace.c (diagnose_perf_event_open_fail): New.
+	(linux_enable_pt, linux_enable_bts): Call
+	diagnose_perf_event_open_fail.
+
+2018-02-09  Markus Metzger  <markus.t.metzger@intel.com>
+
+	* nat/linux-btrace.c (perf_event_pt_event_type): Improve error message.
+	Remove parameter and change return type.  Update callers.  Move it.
+	(linux_enable_bts, linux_enable_pt): Improve error message.
+	(linux_enable_pt): Remove zero buffer size check.
+	(linux_enable_btrace): Improve error messages.  Remove NULL return
+	check.
+
+2018-02-09  Markus Metzger  <markus.t.metzger@intel.com>
+
+	* btrace.c (btrace_enable): Remove target_supports_btrace call.
+	* nat/linux-btrace.c (perf_event_pt_event_type): Move.
+	(kernel_supports_bts, kernel_supports_pt, linux_supports_bts)
+	(linux_supports_pt, linux_supports_btrace): Remove.
+	(linux_enable_bts): Call cpu_supports_bts.
+	* nat/linux-btrace.h (linux_supports_btrace): Remove.
+	* remote.c (remote_supports_btrace): Remove.
+	(init_remote_ops): Remove remote_supports_btrace.
+	* target-delegates.c: Regenerated.
+	* target.c (target_supports_btrace): Remove.
+	* target.h (target_ops) <to_supports_btrace>: Remove
+	(target_supports_btrace): Remove.
+	* x86-linux-nat.c (x86_linux_create_target): Remove
+	linux_supports_btrace.
+
+2018-02-09  Markus Metzger  <markus.t.metzger@intel.com>
+
+	* nat/linux-btrace.c (linux_enable_btrace): Throw exception if enabling
+	btrace failed.
+	* x86-linux-nat.c (x86_linux_enable_btrace): Catch btrace enabling
+	exception and use message in own exception.
+
+2018-02-09  Markus Metzger  <markus.t.metzger@intel.com>
+
+	* nat/linux-btrace.c: Include scoped_fd.h and scoped_mmap.h.
+	(perf_event_pt_event_type): Use gdb_file_up.
+	(linux_enable_bts, linux_enable_pt): Use gdb::unique_xmalloc_ptr,
+	scoped_fd, and scoped_mmap.
+
+2018-02-09  Markus Metzger  <markus.t.metzger@intel.com>
+
+	* common/scoped_mmap.h: New.
+	* unittests/scoped_mmap-selftest.c: New.
+	* Makefile.in (SUBDIR_UNITTESTS_SRCS): Add
+	unittests/scoped_mmap-selftest.c.
+
+2018-02-09  Markus Metzger  <markus.t.metzger@intel.com>
+
+	* common/scoped_fd.h: New.
+	* unittests/scoped_fd-selftest.c: New.
+	* Makefile.in (SUBDIR_UNITTESTS_SRCS): Add
+	unittests/scoped_fd-selftest.c.
+
+2018-02-09  Tom Tromey  <tom@tromey.com>
+
+	* auto-load.c (auto_load_section_scripts): Use
+	gdb::unique_xmalloc_ptr.
+
+2018-02-09  Tom Tromey  <tom@tromey.com>
+
+	* auto-load.c (execute_script_contents): Use std::string.
+
+2018-02-09  Joel Brobecker  <brobecker@adacore.com>
+
+	* NEWS <Changes in GDB 8.1>: Clarify that "rbreak" is a new
+	Python function, rather than a new command.
+
+2018-02-08  Tom Tromey  <tom@tromey.com>
+
+	* solib.c (solib_find_1): Use std::string.
+	(solib_bfd_fopen): Use unique_xmalloc_ptr.
+
+2018-02-08  Tom Tromey  <tom@tromey.com>
+
+	* build-id.c (build_id_to_debug_bfd): Use unique_xmalloc_ptr.
+
+2018-02-08  Tom Tromey  <tom@tromey.com>
+
+	* source.c (find_source_lines): Use gdb::def_vector.
+
+2018-02-08  Tom Tromey  <tom@tromey.com>
+
+	* macrocmd.c (struct temporary_macro_definition): New.
+	(macro_define_command): Use temporary_macro_definition.  Remove
+	cleanups.
+	(free_macro_definition_ptr): Remove.
+
+2018-02-08  Tom Tromey  <tom@tromey.com>
+
+	* macroexp.c (maybe_expand): Use std::string.
+
+2018-02-08  Tom Tromey  <tom@tromey.com>
+
+	* macroexp.c (struct macro_buffer): Add initializers for some
+	members.
+	(init_buffer, init_shared_buffer, free_buffer)
+	(free_buffer_return_text): Remove.
+	(macro_buffer): New constructors.
+	(~macro_buffer): New destructor.
+	(macro_buffer::set_shared): New method.
+	(macro_buffer::resize_buffer, macro_buffer::appendc)
+	(macro_buffer::appendmem): Now methods, not free functions.
+	(set_token, append_tokens_without_splicing, stringify)
+	(macro_stringify): Update.
+	(gather_arguments): Change return type.  Remove argc_p argument,
+	add args_ptr argument.  Use std::vector.
+	(substitute_args): Remove argc argument.  Accept std::vector.
+	(expand): Update.  Use std::vector.
+	(scan, macro_expand, macro_expand_next): Update.
+
+2018-02-08  Tom Tromey  <tom@tromey.com>
+
+	* symtab.c (default_collect_symbol_completion_matches_break_on):
+	Use unique_xmalloc_ptr.
+	* macroscope.h: (sal_macro_scope, user_macro_scope)
+	(default_macro_scope): Return unique_xmalloc_ptr.
+	* macroscope.c (sal_macro_scope, user_macro_scope)
+	(default_macro_scope): Return unique_xmalloc_ptr.
+	* macroexp.h (macro_expand, macro_expand_once): Return
+	unique_xmalloc_ptr.
+	* macroexp.c (macro_expand, macro_expand_once): Return
+	unique_xmalloc_ptr.
+	* macrocmd.c (macro_expand_command, macro_expand_once_command)
+	(info_macro_command, info_macros_command): Use
+	unique_xmalloc_ptr.
+	* compile/compile-c-support.c (write_macro_definitions): Use
+	unique_xmalloc_ptr.
+	* c-exp.y (c_parse): Use unique_xmalloc_ptr.
+
+2018-02-07  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* value.c (value_static_field): Assign field type instead of
+	containing type when returning an optimized out value.
+
 2018-02-06  Yao Qi  <yao.qi@linaro.org>
 
 	* ft32-tdep.c (ft32_read_pc): Remove.

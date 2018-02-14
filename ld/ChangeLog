@@ -1,3 +1,65 @@
+2018-02-14  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/22842
+	* testsuite/ld-i386/i386.exp: Run PR ld/22842 tests.
+	* testsuite/ld-x86-64/x86-64.exp: Likewise.
+	* testsuite/ld-i386/pr22842a.c: New file.
+	* testsuite/ld-i386/pr22842b.S: Likewise.
+	* testsuite/ld-x86-64/pr22842a.c: Likewise.
+	* testsuite/ld-x86-64/pr22842a.rd: Likewise.
+	* testsuite/ld-x86-64/pr22842b.S: Likewise.
+	* testsuite/ld-x86-64/pr22842b.rd: Likewise.
+
+2018-02-14  Maciej W. Rozycki  <macro@mips.com>
+
+	* ldlex.h (ldlex_command): Remove prototype.
+
+2018-02-13  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* testsuite/ld-x86-64/x86-64.exp: Replace pr22393-2a.so and
+	pr22393-2a-now.so with pr22393-3a.so and pr22393-3a-now.so.
+
+2018-02-14  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR 22836
+	* testsuite/ld-elf/pr22836-1.s: New file.
+	* testsuite/ld-elf/pr22836-1a.d: Likewise.
+	* testsuite/ld-elf/pr22836-1b.d: Likewise.
+
+2018-02-13  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR gas/22791
+	* testsuite/ld-x86-64/mpx1c.rd: Updated.
+	* testsuite/ld-x86-64/pr22791-1.err: New file.
+	* testsuite/ld-x86-64/pr22791-1a.c: Likewise.
+	* testsuite/ld-x86-64/pr22791-1b.s: Likewise.
+	* testsuite/ld-x86-64/pr22791-2.rd: Likewise.
+	* testsuite/ld-x86-64/pr22791-2a.s: Likewise.
+	* testsuite/ld-x86-64/pr22791-2b.c: Likewise.
+	* testsuite/ld-x86-64/pr22791-2c.s: Likewise.
+	* testsuite/ld-x86-64/x86-64.exp: Run PR ld/22791 tests.
+
+2018-02-13  Alan Modra  <amodra@gmail.com>
+
+	PR 22836
+	* testsuite/ld-elf/pr22836-2.d,
+	* testsuite/ld-elf/pr22836-2.s: New test.
+
+2018-02-13  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/ld-x86-64/pr14207.d: Adjust relro p_filesz.
+
+2018-02-07  Alan Modra  <amodra@gmail.com>
+
+	Revert 2018-01-17  Alan Modra  <amodra@gmail.com>
+	* emultempl/ppc32elf.em: Remove --speculate-indirect-jumps support.
+	* emultempl/ppc64elf.em: Likesize
+	* ld.texinfo: Likewise
+	* testsuite/ld-powerpc/elfv2exe.d,
+	* testsuite/ld-powerpc/elfv2so.d,
+	* testsuite/ld-powerpc/relbrlt.d,
+	* testsuite/ld-powerpc/powerpc.exp: Likewise.
+
 2018-02-06  Eric Botcazou  <ebotcazou@adacore.com>
 
 	* testsuite/ld-elf/tls.exp (AFLAGS_PIC): Define on SPARC.
