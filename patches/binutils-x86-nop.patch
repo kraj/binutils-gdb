@@ -1,54 +1,46 @@
-From 4b4d9702f86b39cc48b01701326d553a75a06b8b Mon Sep 17 00:00:00 2001
+From ee256ee23b0e29351ac2db250597d3e3aa28f757 Mon Sep 17 00:00:00 2001
 From: "H.J. Lu" <hjl.tools@gmail.com>
 Date: Fri, 9 Feb 2018 03:46:06 -0800
-Subject: [PATCH] x86: Add .nop directive to assembler
+Subject: [PATCH] Add .nop assembler directive
 
-Implement the '.nop SIZE[, LIMIT]' directive for x86 assembler.  This
-directive emits SIZE bytes filled with 'NOP' instructions.  SIZE is
-absolute expression, which must be between 0 and 512.  LIMIT specifies
-the size limit of a single 'NOP' instruction.  If the comma and LIMIT
-are omitted, LIMIT is assumed to the maximum supported size of a single
-'NOP' instruction.  The valid values of LIMIT are between 1 and 8 for
-16-bit mode, between 1 and 10 for 32-bit mode, between 1 and 11 for
-64-bit mode.  This directive is only allowed in text sections.
+Implement the '.nop SIZE[, CONTROL]' assembler directive, which emits
+SIZE bytes filled with no-op instructions.  SIZE is absolute expression.
+The optional CONTROL byte controls how no-op instructions should be
+generated.  If the comma and @var{control} are omitted, CONTROL is
+assumed to be zero.
 
-This is implemented by adding a relax state, rs_space_nop, to enum
-_relax_state, which is similar to rs_space, but it fills with NOPs,
-instead of a single byte.  A pseudo relocation, BFD_RELOC_NOP_DIRECTIVE,
-is added to fix up frag data with the proper number of NOPs.  The new
-rs_space_nop state is processed only when TARGET_USE_NOP_DIRECTIVE is
-defined.  To enable .nop directive, a target backend should
+For Intel 80386 and AMD x86-64 targets, CONTROL byte specifies the size
+limit of a single no-op instruction.  The valid values of CONTROL byte
+are between 0 and 8 for 16-bit mode, between 0 and 10 for 32-bit mode,
+between 0 and 11 for 64-bit mode.  When 0 is used, the no-op size limit
+is set to the maximum supported size.
 
-1. Define TARGET_USE_NOP_DIRECTIVE.
-2. Create a rs_space_nop frag for .nop directive.
-3. Update md_convert_frag to create a fixup with BFD_RELOC_NOP_DIRECTIVE
-for rs_space_nop frag.
-4. Update md_apply_fix to process fixup with BFD_RELOC_NOP_DIRECTIVE.
-
-bfd/
-
-	* reloc.c (BFD_RELOC_NOP_DIRECTIVE): New pseudo relocation.
-	* bfd-in2.h: Regenerated.
-	* libbfd.h: Likewise.
+2 new relax states, rs_space_nop and rs_fill_nop, are added to enum
+_relax_state, which are similar to rs_space and rs_fill, respectively,
+but they fill with no-op instructions, instead of a single byte.  The
+default no-op instruction fill is zero.  A target backend should override
+md_generate_nops to generate proper no-op instructions.
 
 gas/
 
-	* as.h (_relax_state): Add rs_space_nop.
-	* write.c (cvt_frag_to_fill): Handle rs_space_nop if
-	TARGET_USE_NOP_DIRECTIVE is define.
+	* as.h (_relax_state): Add rs_space_nop and rs_fill_nop.
+	* read.c (potable): Add .nop.
+	(s_nop): New function.
+	* read.h (s_nop): New prototype.
+	* write.c (cvt_frag_to_fill): Handle rs_space_nop and
+	rs_fill_nop.
+	(md_generate_nops): New function.
 	(relax_segment): Likewise.
-	* config/tc-i386.c (MAX_NOP_DIRECTIVE_SIZE): New.
-	(alt64_11): Likewise.
+	(write_contents): Use md_generate_nops for rs_fill_nop.
+	* config/tc-i386.c (alt64_11): New.
 	(alt64_patt): Likewise.
 	(md_convert_frag): Handle rs_space_nop.
-	(md_apply_fix): Handle BFD_RELOC_NOP_DIRECTIVE.
-	(s_nop): New function prototype.
-	(md_pseudo_table): Add "nop".
-	(i386_align_code): Call i386_output_nops.
 	(i386_output_nops): New function.
-	(s_nop): Likewise.
-	* config/tc-i386.h (TARGET_USE_NOP_DIRECTIVE): New.
-	* doc/as.texinfo: Document .nop directive for x86.
+	(i386_generate_nops): Likewise.
+	(i386_align_code): Call i386_output_nops.
+	* config/tc-i386.h (i386_generate_nops): New.
+	(md_generate_nops): Likewise.
+	* doc/as.texinfo: Document .nop directive.
 	* testsuite/gas/i386/i386.exp: Run .nop directive tests.
 	* testsuite/gas/i386/nop-1.d: New file.
 	* testsuite/gas/i386/nop-1.s: Likewise.
@@ -71,36 +63,35 @@ gas/
 	* testsuite/gas/i386/x86-64-nop-5.d: Likewise.
 	* testsuite/gas/i386/x86-64-nop-6.d: Likewise.
 ---
- bfd/bfd-in2.h                         |   4 +
- bfd/libbfd.h                          |   2 +
- bfd/reloc.c                           |   6 +
- gas/as.h                              |  10 +
- gas/config/tc-i386.c                  | 371 ++++++++++++++++++++++++----------
- gas/config/tc-i386.h                  |   3 +
- gas/doc/as.texinfo                    |  20 ++
+ gas/as.h                              |   9 ++
+ gas/config/tc-i386.c                  | 272 +++++++++++++++++++++-------------
+ gas/config/tc-i386.h                  |   5 +
+ gas/doc/as.texinfo                    |  18 +++
+ gas/read.c                            |  52 +++++++
+ gas/read.h                            |   1 +
  gas/testsuite/gas/i386/i386.exp       |  14 ++
- gas/testsuite/gas/i386/nop-1.d        |  31 +++
- gas/testsuite/gas/i386/nop-1.s        |  21 ++
- gas/testsuite/gas/i386/nop-2.d        |  40 ++++
- gas/testsuite/gas/i386/nop-2.s        |  22 ++
- gas/testsuite/gas/i386/nop-3.d        |  20 ++
+ gas/testsuite/gas/i386/nop-1.d        |  31 ++++
+ gas/testsuite/gas/i386/nop-1.s        |  21 +++
+ gas/testsuite/gas/i386/nop-2.d        |  40 +++++
+ gas/testsuite/gas/i386/nop-2.s        |  22 +++
+ gas/testsuite/gas/i386/nop-3.d        |  20 +++
  gas/testsuite/gas/i386/nop-3.s        |  15 ++
  gas/testsuite/gas/i386/nop-4.d        |  23 +++
- gas/testsuite/gas/i386/nop-4.s        |  18 ++
- gas/testsuite/gas/i386/nop-5.d        |  25 +++
- gas/testsuite/gas/i386/nop-5.s        |  19 ++
- gas/testsuite/gas/i386/nop-6.d        |  17 ++
- gas/testsuite/gas/i386/nop-6.s        |  25 +++
- gas/testsuite/gas/i386/nop-bad-1.l    |   5 +
- gas/testsuite/gas/i386/nop-bad-1.s    |   5 +
- gas/testsuite/gas/i386/x86-64-nop-1.d |  32 +++
- gas/testsuite/gas/i386/x86-64-nop-2.d |  41 ++++
- gas/testsuite/gas/i386/x86-64-nop-3.d |  21 ++
+ gas/testsuite/gas/i386/nop-4.s        |  18 +++
+ gas/testsuite/gas/i386/nop-5.d        |  25 ++++
+ gas/testsuite/gas/i386/nop-5.s        |  19 +++
+ gas/testsuite/gas/i386/nop-6.d        |  17 +++
+ gas/testsuite/gas/i386/nop-6.s        |  25 ++++
+ gas/testsuite/gas/i386/nop-bad-1.l    |   4 +
+ gas/testsuite/gas/i386/nop-bad-1.s    |   4 +
+ gas/testsuite/gas/i386/x86-64-nop-1.d |  32 ++++
+ gas/testsuite/gas/i386/x86-64-nop-2.d |  41 +++++
+ gas/testsuite/gas/i386/x86-64-nop-3.d |  21 +++
  gas/testsuite/gas/i386/x86-64-nop-4.d |  24 +++
- gas/testsuite/gas/i386/x86-64-nop-5.d |  26 +++
- gas/testsuite/gas/i386/x86-64-nop-6.d |  18 ++
- gas/write.c                           |  23 ++-
- 29 files changed, 789 insertions(+), 112 deletions(-)
+ gas/testsuite/gas/i386/x86-64-nop-5.d |  26 ++++
+ gas/testsuite/gas/i386/x86-64-nop-6.d |  18 +++
+ gas/write.c                           |  57 ++++++-
+ 28 files changed, 763 insertions(+), 111 deletions(-)
  create mode 100644 gas/testsuite/gas/i386/nop-1.d
  create mode 100644 gas/testsuite/gas/i386/nop-1.s
  create mode 100644 gas/testsuite/gas/i386/nop-2.d
@@ -122,103 +113,31 @@ gas/
  create mode 100644 gas/testsuite/gas/i386/x86-64-nop-5.d
  create mode 100644 gas/testsuite/gas/i386/x86-64-nop-6.d
 
-diff --git a/bfd/bfd-in2.h b/bfd/bfd-in2.h
-index a8c830368c..43436b3cf0 100644
---- a/bfd/bfd-in2.h
-+++ b/bfd/bfd-in2.h
-@@ -2740,6 +2740,10 @@ The 24-bit relocation is used in some Intel 960 configurations.  */
-   BFD_RELOC_SIZE32,
-   BFD_RELOC_SIZE64,
- 
-+/* This is the pseudo NOP relocation for .nop directive.  */
-+  BFD_RELOC_NOP_DIRECTIVE,
-+
-+
- /* Relocations used by 68K ELF.  */
-   BFD_RELOC_68K_GLOB_DAT,
-   BFD_RELOC_68K_JMP_SLOT,
-diff --git a/bfd/libbfd.h b/bfd/libbfd.h
-index 0266e922a8..0feb350a63 100644
---- a/bfd/libbfd.h
-+++ b/bfd/libbfd.h
-@@ -973,6 +973,8 @@ static const char *const bfd_reloc_code_real_names[] = { "@@uninitialized@@",
-   "BFD_RELOC_8_PLTOFF",
-   "BFD_RELOC_SIZE32",
-   "BFD_RELOC_SIZE64",
-+  "BFD_RELOC_NOP_DIRECTIVE",
-+
-   "BFD_RELOC_68K_GLOB_DAT",
-   "BFD_RELOC_68K_JMP_SLOT",
-   "BFD_RELOC_68K_RELATIVE",
-diff --git a/bfd/reloc.c b/bfd/reloc.c
-index 5547e5424c..d430693fb9 100644
---- a/bfd/reloc.c
-+++ b/bfd/reloc.c
-@@ -1798,6 +1798,12 @@ ENUMX
- ENUMDOC
-   Size relocations.
- 
-+ENUM
-+  BFD_RELOC_NOP_DIRECTIVE
-+ENUMDOC
-+  This is the pseudo NOP relocation for .nop directive.
-+COMMENT
-+
- ENUM
-   BFD_RELOC_68K_GLOB_DAT
- ENUMX
 diff --git a/gas/as.h b/gas/as.h
-index c33353a9c5..9d5dba4e52 100644
+index c33353a9c5..e9b1947f33 100644
 --- a/gas/as.h
 +++ b/gas/as.h
-@@ -279,6 +279,16 @@ enum _relax_state
+@@ -279,6 +279,15 @@ enum _relax_state
       1 variable char: fill character  */
    rs_space,
  
 +  /* .nop directive with expression operand that needs to be computed
 +     later.  Similar to rs_space, but different.  It fills with NOPs.
 +     fr_symbol: operand
-+     1 constant byte: NOP fill control byte.
-+     NB: rs_space_nop is used only if TARGET_USE_NOP_DIRECTIVE is
-+     defined in tc-XXX.h, which is included after enum _relax_state
-+     has been defined.  It is harmless since there is no rs_space_nop
-+     frag without TARGET_USE_NOP_DIRECTIVE.  */
++     1 constant byte: NOP fill control byte.  */
 +  rs_space_nop,
++
++  /* Similar to rs_fill.  It is used to implement .nop directive .  */
++  rs_fill_nop,
 +
    /* A DWARF leb128 value; only ELF uses this.  The subtype is 0 for
       unsigned, 1 for signed.  */
    rs_leb128,
 diff --git a/gas/config/tc-i386.c b/gas/config/tc-i386.c
-index c2df31b8b8..d15f71675c 100644
+index c2df31b8b8..8ad8ec8a0c 100644
 --- a/gas/config/tc-i386.c
 +++ b/gas/config/tc-i386.c
-@@ -33,6 +33,9 @@
- #include "elf/x86-64.h"
- #include "opcodes/i386-init.h"
- 
-+/* The maximum size of .nop directive.  */
-+#define MAX_NOP_DIRECTIVE_SIZE 512
-+
- #ifndef REGISTER_WARNINGS
- #define REGISTER_WARNINGS 1
- #endif
-@@ -186,6 +189,7 @@ static const seg_entry *build_modrm_byte (void);
- static void output_insn (void);
- static void output_imm (fragS *, offsetT);
- static void output_disp (fragS *, offsetT);
-+static void s_nop (int);
- #ifndef I386COFF
- static void s_bss (int);
- #endif
-@@ -1130,6 +1134,7 @@ const pseudo_typeS md_pseudo_table[] =
-   {"disallow_index_reg", set_allow_index_reg, 0},
-   {"sse_check", set_check, 0},
-   {"operand_check", set_check, 1},
-+  {"nop", s_nop, 0},
- #if defined (OBJ_ELF) || defined (OBJ_MAYBE_ELF)
-   {"largecomm", handle_large_common, 0},
- #else
-@@ -1152,105 +1157,135 @@ static struct hash_control *op_hash;
+@@ -1152,105 +1152,174 @@ static struct hash_control *op_hash;
  /* Hash table for register lookup.  */
  static struct hash_control *reg_hash;
  
@@ -424,9 +343,9 @@ index c2df31b8b8..d15f71675c 100644
 +  alt_9, alt_10, alt64_11
 +};
 +
-+/* Copy COUNT bytes of NOPs to WHERE from PATT with the maximum
++/* Genenerate COUNT bytes of NOPs to WHERE from PATT with the maximum
 +   size of a single NOP instruction MAX_SINGLE_NOP_SIZE.  */
-+
+ 
 +static void
 +i386_output_nops (char *where, const unsigned char *const *patt,
 +		  int count, int max_single_nop_size)
@@ -438,9 +357,48 @@ index c2df31b8b8..d15f71675c 100644
 +      memcpy (where + count, patt[max_single_nop_size - 1],
 +	      max_single_nop_size);
 +    }
- 
++
 +  if (count)
 +    memcpy (where, patt[count - 1], count);
++}
++
++
++/* Genenerate COUNT bytes of NOPs to WHERE with the maximum size of a
++   single NOP instruction LIMIT.  */
++
++void
++i386_generate_nops (fragS *f, char *where, offsetT count, int limit)
++{
++  /* Output NOPs for .nop directive.  */
++  int max_single_nop_size;
++  const unsigned char *const *patt;
++
++  if (flag_code == CODE_16BIT)
++    {
++      patt = f16_patt;
++      max_single_nop_size = sizeof (f16_patt) / sizeof (f16_patt[0]);
++    }
++  else if (flag_code == CODE_64BIT)
++    {
++      patt = alt64_patt;
++      max_single_nop_size = sizeof (alt64_patt) / sizeof (alt64_patt[0]);
++    }
++  else
++    {
++      patt = alt_patt;
++      max_single_nop_size = sizeof (alt_patt) / sizeof (alt_patt[0]);
++    }
++  if (limit == 0)
++    limit = max_single_nop_size;
++  else if (limit > max_single_nop_size)
++    {
++      as_bad_where (f->fr_file, f->fr_line,
++		    _("invalide single nop size: %d (expect within [0, %d])"),
++		    limit, max_single_nop_size);
++      return;
++    }
++
++  i386_output_nops (where, patt, count, limit);
 +}
 +
 +void
@@ -449,7 +407,7 @@ index c2df31b8b8..d15f71675c 100644
    /* Only align for at least a positive non-zero boundary. */
    if (count <= 0 || count > MAX_MEM_FOR_RS_ALIGN_CODE)
      return;
-@@ -1403,17 +1438,8 @@ i386_align_code (fragS *fragP, int count)
+@@ -1403,17 +1472,8 @@ i386_align_code (fragS *fragP, int count)
  	  /* Maximum length of an instruction is 10 byte.  If the
  	     padding is greater than 10 bytes and we don't use jump,
  	     we have to break it into smaller pieces.  */
@@ -469,103 +427,79 @@ index c2df31b8b8..d15f71675c 100644
  	}
      }
    fragP->fr_var = count;
-@@ -9489,6 +9515,9 @@ md_estimate_size_before_relax (fragS *fragP, segT segment)
-    In:	Address of frag.
- 	fr_type == rs_machine_dependent.
- 	fr_subtype is what the address relaxed to.
-+	Or
-+	fr_type == rs_space_nop.
-+	fr_var is the size of .nop directive.
+diff --git a/gas/config/tc-i386.h b/gas/config/tc-i386.h
+index 9a17dc01e7..7a03def4fe 100644
+--- a/gas/config/tc-i386.h
++++ b/gas/config/tc-i386.h
+@@ -288,6 +288,11 @@ extern void sco_id (void);
  
-    Out:	Any fixSs and constants are set up.
- 	Caller will turn frag into a ".space 0".  */
-@@ -9498,12 +9527,42 @@ md_convert_frag (bfd *abfd ATTRIBUTE_UNUSED, segT sec ATTRIBUTE_UNUSED,
-                  fragS *fragP)
- {
-   unsigned char *opcode;
--  unsigned char *where_to_put_displacement = NULL;
-+  unsigned char *where_to_put_displacement;
-   offsetT target_address;
-   offsetT opcode_address;
--  unsigned int extension = 0;
-+  unsigned int extension;
-   offsetT displacement_from_opcode_start;
+ #define WORKING_DOT_WORD 1
  
-+  if (fragP->fr_type == rs_space_nop)
-+    {
-+      /* Get the size of .nop directive.  */
-+      offsetT amount = fragP->fr_var;
-+      if (amount < 0
-+	  || amount > MAX_NOP_DIRECTIVE_SIZE)
-+	{
-+	  as_bad_where (fragP->fr_file, fragP->fr_line,
-+			 _("invalid .nop directive size: %ld "
-+			   "(expect less than %d)"),
-+			 (long) amount, MAX_NOP_DIRECTIVE_SIZE);
-+	  /* Prevent repeat of this error message.  */
-+	  fragP->fr_symbol = NULL;
-+	}
-+      else if (amount != 0)
-+	{
-+	  fix_new (fragP, fragP->fr_fix, amount,
-+		   fragP->fr_symbol,
-+		   fragP->fr_offset, 0,
-+		   BFD_RELOC_NOP_DIRECTIVE);
-+	  fragP->fr_fix += amount;
-+	}
-+      frag_wane (fragP);
-+      return;
-+    }
++/* How to generate NOPs for .nop direct directive.  */
++extern void i386_generate_nops (fragS *, char *, offsetT, int);
++#define md_generate_nops(frag, where, amount, control) \
++  i386_generate_nops ((frag), (where), (amount), (control))
 +
-+  gas_assert (fragP->fr_type == rs_machine_dependent);
-+
-+  where_to_put_displacement = NULL;
-+  extension = 0;
-   opcode = (unsigned char *) fragP->fr_opcode;
+ /* We want .cfi_* pseudo-ops for generating unwind info.  */
+ #define TARGET_USE_CFIPOP 1
  
-   /* Address we want to reach in file space.  */
-@@ -9604,8 +9663,27 @@ md_convert_frag (bfd *abfd ATTRIBUTE_UNUSED, segT sec ATTRIBUTE_UNUSED,
- void
- md_apply_fix (fixS *fixP, valueT *valP, segT seg ATTRIBUTE_UNUSED)
- {
--  char *p = fixP->fx_where + fixP->fx_frag->fr_literal;
--  valueT value = *valP;
-+  fragS *fragP = fixP->fx_frag;
-+  char *p = fragP->fr_literal + fixP->fx_where;
-+  valueT value;
-+
-+  if (fixP->fx_r_type == BFD_RELOC_NOP_DIRECTIVE)
-+    {
-+      /* Output NOPs for .nop directive.  */
-+      const unsigned char *const *patt
-+	= (flag_code == CODE_16BIT
-+	   ? f16_patt
-+	   : (flag_code == CODE_64BIT
-+	      ? alt64_patt
-+	      : alt_patt));
-+      /* The maximum size of a single NOP instruction is stored in
-+         the first byte.  */
-+      i386_output_nops (p, patt, fixP->fx_size, *p);
-+      fixP->fx_done = 1;
-+      return;
-+    }
-+
-+  value = *valP;
+diff --git a/gas/doc/as.texinfo b/gas/doc/as.texinfo
+index f4e0fddefb..3084bcb871 100644
+--- a/gas/doc/as.texinfo
++++ b/gas/doc/as.texinfo
+@@ -4479,6 +4479,7 @@ Some machine configurations provide additional directives.
+ * MRI::				@code{.mri @var{val}}
+ * Noaltmacro::                  @code{.noaltmacro}
+ * Nolist::                      @code{.nolist}
++* Nop::                         @code{.nop @var{size}[, @var{control}]}
+ * Octa::                        @code{.octa @var{bignums}}
+ * Offset::			@code{.offset @var{loc}}
+ * Org::                         @code{.org @var{new-lc}, @var{fill}}
+@@ -6101,6 +6102,23 @@ internal counter (which is zero initially).   @code{.list} increments the
+ counter, and @code{.nolist} decrements it.  Assembly listings are
+ generated whenever the counter is greater than zero.
  
- #if !defined (TE_Mach)
-   if (fixP->fx_pcrel)
-@@ -10885,6 +10963,79 @@ s_bss (int ignore ATTRIBUTE_UNUSED)
- 
- #endif
- 
-+/* Implement .nop directive.  */
++@node Nop
++@section @code{.nop @var{size}[, @var{control}]}
 +
++@cindex @code{nop} directive
++@cindex filling memory with no-op instructions
++This directive emits @var{size} bytes filled with no-op instructions.
++@var{size} is absolute expression, which must be a positve value.
++@var{control} controls how no-op instructions should be generated.  If
++the comma and @var{control} are omitted, @var{control} is assumed to be
++zero.
++
++Note: For Intel 80386 and AMD x86-64 targets, @var{control} specifies
++the size limit of a no-op instruction.  The valid values of @var{control}
++are between 0 and 8 for 16-bit mode, between 0 and 10 for 32-bit mode,
++between 0 and 11 for 64-bit mode.  When 0 is used, the no-op instruction
++size limit is set to the maximum supported size.
++
+ @node Octa
+ @section @code{.octa @var{bignums}}
+ 
+diff --git a/gas/read.c b/gas/read.c
+index 7bf52f1121..23bd9aefef 100644
+--- a/gas/read.c
++++ b/gas/read.c
+@@ -442,6 +442,7 @@ static const pseudo_typeS potable[] = {
+ /* size  */
+   {"space", s_space, 0},
+   {"skip", s_space, 0},
++  {"nop", s_nop, 0},
+   {"sleb128", s_leb128, 1},
+   {"spc", s_ignore, 0},
+   {"stabd", s_stab, 'd'},
+@@ -3508,6 +3509,57 @@ s_space (int mult)
+     mri_comment_end (stop, stopc);
+ }
+ 
 +void
 +s_nop (int ignore ATTRIBUTE_UNUSED)
 +{
 +  expressionS exp;
 +  expressionS val;
-+  int max_single_nop_size;
 +
 +#ifdef md_flush_pending_output
 +  md_flush_pending_output ();
@@ -575,17 +509,8 @@ index c2df31b8b8..d15f71675c 100644
 +  md_cons_align (1);
 +#endif
 +
-+  /* Get the longest single NOP size.  */
-+  max_single_nop_size
-+    = (flag_code == CODE_16BIT
-+       ? sizeof (f16_patt) / sizeof (f16_patt[0])
-+       : (flag_code == CODE_64BIT
-+	  ? sizeof (alt64_patt) / sizeof (alt64_patt[0])
-+	  : sizeof (alt_patt) / sizeof (alt_patt[0])));
-+				     ;
 +  expression (&exp);
 +
-+  SKIP_WHITESPACE ();
 +  if (*input_line_pointer == ',')
 +    {
 +      ++input_line_pointer;
@@ -593,99 +518,49 @@ index c2df31b8b8..d15f71675c 100644
 +    }
 +  else
 +    {
-+      /* Default to the longest single NOP.  */
 +      val.X_op = O_constant;
-+      val.X_add_number = max_single_nop_size;
++      val.X_add_number = 0;
 +    }
 +
 +  if (val.X_op == O_constant)
 +    {
-+      if (val.X_add_number <= 0
-+	  || val.X_add_number > max_single_nop_size)
++      if (val.X_add_number < 0)
 +	{
-+	  as_bad (_("invalide single nop size: %ld "
-+		    "(expect within [0, %d])"),
-+		  (long) val.X_add_number, max_single_nop_size);
-+	  goto getout;
++	  as_warn (_("negative nop control byte, ignored"));
++	  val.X_add_number = 0;
 +	}
 +
-+      /* Store the maximum single NOP size in fr_opcode.  */
 +      if (!need_pass_2)
 +	{
++	  /* Store the NOP control byte in the first byte of frag.  */
 +	  char *p;
 +	  symbolS *sym = make_expr_symbol (&exp);
-+
-+	  /* Start a new rs_space_nop frag for .nop directive with
-+	     up to MAX_NOP_DIRECTIVE_SIZE bytes of NOPs.  Store the
-+	     maximum size of a single NOP instruction in the first
-+	     byte of NOP output.  */
-+	  p = frag_var (rs_space_nop, MAX_NOP_DIRECTIVE_SIZE, 0,
-+			(relax_substateT) 0, sym, (offsetT) 0, NULL);
++	  p = frag_var (rs_space_nop, 1, 1, (relax_substateT) 0,
++			sym, (offsetT) 0, (char *) 0);
 +	  *p = val.X_add_number;
 +	}
 +    }
 +  else
-+    as_bad (_("unsupported variable single nop limit in .nop directive"));
++    as_bad (_("unsupported variable nop control in .nop directive"));
 +
-+getout:
 +  demand_empty_rest_of_line ();
 +}
 +
- void
- i386_validate_fix (fixS *fixp)
- {
-diff --git a/gas/config/tc-i386.h b/gas/config/tc-i386.h
-index 9a17dc01e7..facfea3174 100644
---- a/gas/config/tc-i386.h
-+++ b/gas/config/tc-i386.h
-@@ -288,6 +288,9 @@ extern void sco_id (void);
- 
- #define WORKING_DOT_WORD 1
- 
-+/* We want .nop direct directive.  */
-+#define TARGET_USE_NOP_DIRECTIVE 1
-+
- /* We want .cfi_* pseudo-ops for generating unwind info.  */
- #define TARGET_USE_CFIPOP 1
- 
-diff --git a/gas/doc/as.texinfo b/gas/doc/as.texinfo
-index f4e0fddefb..c693af159a 100644
---- a/gas/doc/as.texinfo
-+++ b/gas/doc/as.texinfo
-@@ -4523,6 +4523,9 @@ Some machine configurations provide additional directives.
- * Sleb128::			@code{.sleb128 @var{expressions}}
- @ifclear no-space-dir
- * Space::                       @code{.space @var{size} , @var{fill}}
-+@ifset I80386
-+* Nop::                         @code{.nop @var{size}[, @var{limit}]}
-+@end ifset
- @end ifclear
- @ifset have-stabs
- * Stab::                        @code{.stabd, .stabn, .stabs}
-@@ -6851,6 +6854,23 @@ Assembly Language Reference Manual} (HP 92432-90001) for the meaning of the
- for a summary.
- @end quotation
- @end ifset
-+
-+@ifset I80386
-+@node Nop
-+@section @code{.nop @var{size}[, @var{limit}]}
-+
-+@cindex @code{nop} directive
-+@cindex filling memory with NOP
-+This directive emits @var{size} bytes filled with @code{NOP}
-+instructions.  @var{size} is absolute expression, which must be
-+between 0 and 512.  @var{limit} specifies the size limit of a
-+single @code{NOP} instruction.  If the comma and @var{limit} are
-+omitted, @var{limit} is assumed to the maximum supported size of
-+a single @code{NOP} instruction.  The valid values of @var{limit}
-+are between 1 and 8 for 16-bit mode, between 1 and 10 for 32-bit mode,
-+between 1 and 11 for 64-bit mode.  This directive is only allowed
-+in text sections.
-+@end ifset
- @end ifclear
- 
- @ifset have-stabs
+ /* This is like s_space, but the value is a floating point number with
+    the given precision.  This is for the MRI dcb.s pseudo-op and
+    friends.  */
+diff --git a/gas/read.h b/gas/read.h
+index eebdc4e745..3f0927bc9e 100644
+--- a/gas/read.h
++++ b/gas/read.h
+@@ -206,6 +206,7 @@ extern void s_purgem (int);
+ extern void s_rept (int);
+ extern void s_set (int);
+ extern void s_space (int mult);
++extern void s_nop (int);
+ extern void s_stab (int what);
+ extern void s_struct (int);
+ extern void s_text (int);
 diff --git a/gas/testsuite/gas/i386/i386.exp b/gas/testsuite/gas/i386/i386.exp
 index bb997f8e96..fa1019ef0f 100644
 --- a/gas/testsuite/gas/i386/i386.exp
@@ -1089,25 +964,23 @@ index 0000000000..c7b1e2cbf0
 +ALTERNATIVE
 diff --git a/gas/testsuite/gas/i386/nop-bad-1.l b/gas/testsuite/gas/i386/nop-bad-1.l
 new file mode 100644
-index 0000000000..8e6c9daac9
+index 0000000000..34be496b4b
 --- /dev/null
 +++ b/gas/testsuite/gas/i386/nop-bad-1.l
-@@ -0,0 +1,5 @@
+@@ -0,0 +1,4 @@
 +.*: Assembler messages:
-+.*:2: Error: invalide single nop size: -2 \(expect within \[0, [0-9]+\]\)
++.*:2: Warning: negative nop control byte, ignored
++.*:4: Warning: \.space, \.nop or \.fill with negative value, ignored
 +.*:3: Error: invalide single nop size: 20 \(expect within \[0, [0-9]+\]\)
-+.*:5: Warning: .space or .fill with negative value, ignored
-+.*:4: Error: invalid .nop directive size: 600 \(expect less than [0-9]+\)
 diff --git a/gas/testsuite/gas/i386/nop-bad-1.s b/gas/testsuite/gas/i386/nop-bad-1.s
 new file mode 100644
-index 0000000000..0127e418da
+index 0000000000..53cc7d554a
 --- /dev/null
 +++ b/gas/testsuite/gas/i386/nop-bad-1.s
-@@ -0,0 +1,5 @@
+@@ -0,0 +1,4 @@
 +	.text
 +        .nop 100, -2
 +        .nop 100, 20
-+        .nop 600
 +        .nop -1
 diff --git a/gas/testsuite/gas/i386/x86-64-nop-1.d b/gas/testsuite/gas/i386/x86-64-nop-1.d
 new file mode 100644
@@ -1308,60 +1181,137 @@ index 0000000000..520f590945
 + +[a-f0-9]+:	89 c4                	mov    %eax,%esp
 +#pass
 diff --git a/gas/write.c b/gas/write.c
-index 2869660cfe..9e2ef5767d 100644
+index 2869660cfe..f6db96ea66 100644
 --- a/gas/write.c
 +++ b/gas/write.c
-@@ -457,6 +457,12 @@ cvt_frag_to_fill (segT sec ATTRIBUTE_UNUSED, fragS *fragP)
-       fragP->fr_type = rs_fill;
+@@ -435,6 +435,8 @@ cvt_frag_to_fill (segT sec ATTRIBUTE_UNUSED, fragS *fragP)
+ {
+   switch (fragP->fr_type)
+     {
++    case rs_space_nop:
++      goto skip_align;
+     case rs_align:
+     case rs_align_code:
+     case rs_align_test:
+@@ -443,6 +445,7 @@ cvt_frag_to_fill (segT sec ATTRIBUTE_UNUSED, fragS *fragP)
+ #ifdef HANDLE_ALIGN
+       HANDLE_ALIGN (fragP);
+ #endif
++skip_align:
+       know (fragP->fr_next != NULL);
+       fragP->fr_offset = (fragP->fr_next->fr_address
+ 			  - fragP->fr_address
+@@ -450,14 +453,18 @@ cvt_frag_to_fill (segT sec ATTRIBUTE_UNUSED, fragS *fragP)
+       if (fragP->fr_offset < 0)
+ 	{
+ 	  as_bad_where (fragP->fr_file, fragP->fr_line,
+-			_("attempt to .org/.space backwards? (%ld)"),
++			_("attempt to .org/.space/.nop backwards? (%ld)"),
+ 			(long) fragP->fr_offset);
+ 	  fragP->fr_offset = 0;
+ 	}
+-      fragP->fr_type = rs_fill;
++      if (fragP->fr_type == rs_space_nop)
++	fragP->fr_type = rs_fill_nop;
++      else
++	fragP->fr_type = rs_fill;
        break;
  
-+#ifdef TARGET_USE_NOP_DIRECTIVE
-+    case rs_space_nop:
-+      md_convert_frag (stdoutput, sec, fragP);
-+      break;
+     case rs_fill:
++    case rs_fill_nop:
+       break;
+ 
+     case rs_leb128:
+@@ -1570,6 +1577,18 @@ compress_debug (bfd *abfd, asection *sec, void *xxx ATTRIBUTE_UNUSED)
+     }
+ }
+ 
++#ifndef md_generate_nops
++/* Genenerate COUNT bytes of NOPs to WHERE.  Default NOP fill is zero.
++   A target backend should override this with proper NOPs.   */
++
++static void
++md_generate_nops (fragS *f ATTRIBUTE_UNUSED, char *where,
++		  offsetT count, int control ATTRIBUTE_UNUSED)
++{
++  memset (where, 0, count);
++}
 +#endif
 +
-     case rs_fill:
-       break;
+ static void
+ write_contents (bfd *abfd ATTRIBUTE_UNUSED,
+ 		asection *sec,
+@@ -1593,7 +1612,7 @@ write_contents (bfd *abfd ATTRIBUTE_UNUSED,
+       char *fill_literal;
+       offsetT count;
  
-@@ -2461,6 +2467,9 @@ relax_segment (struct frag *segment_frag_root, segT segment, int pass)
+-      gas_assert (f->fr_type == rs_fill);
++      gas_assert (f->fr_type == rs_fill || f->fr_type == rs_fill_nop);
+       if (f->fr_fix)
+ 	{
+ 	  x = bfd_set_section_contents (stdoutput, sec,
+@@ -1610,9 +1629,35 @@ write_contents (bfd *abfd ATTRIBUTE_UNUSED,
+ 		      bfd_errmsg (bfd_get_error ()));
+ 	  offset += f->fr_fix;
+ 	}
+-      fill_literal = f->fr_literal + f->fr_fix;
++
+       fill_size = f->fr_var;
+       count = f->fr_offset;
++      fill_literal = f->fr_literal + f->fr_fix;
++
++      if (f->fr_type == rs_fill_nop)
++	{
++	  gas_assert (count >= 0 && fill_size == 1);
++	  if (count > 0)
++	    {
++	      char *buf = xmalloc (count);
++	      md_generate_nops (f, buf, count, *fill_literal);
++	      x = bfd_set_section_contents
++		(stdoutput, sec, buf, (file_ptr) offset,
++		 (bfd_size_type) count);
++	      if (!x)
++		as_fatal (ngettext ("can't fill %ld byte "
++				    "in section %s of %s: '%s'",
++				    "can't fill %ld bytes "
++				    "in section %s of %s: '%s'",
++				    (long) count), (long) count,
++				    sec->name, stdoutput->filename,
++				    bfd_errmsg (bfd_get_error ()));
++	      offset += count;
++	      free (buf);
++	    }
++	  continue;
++	}
++
+       gas_assert (count >= 0);
+       if (fill_size && count)
+ 	{
+@@ -2461,6 +2506,7 @@ relax_segment (struct frag *segment_frag_root, segT segment, int pass)
  	  break;
  
  	case rs_space:
-+#ifdef TARGET_USE_NOP_DIRECTIVE
 +	case rs_space_nop:
-+#endif
  	  break;
  
  	case rs_machine_dependent:
-@@ -2765,6 +2774,9 @@ relax_segment (struct frag *segment_frag_root, segT segment, int pass)
+@@ -2765,6 +2811,7 @@ relax_segment (struct frag *segment_frag_root, segT segment, int pass)
  		break;
  
  	      case rs_space:
-+#ifdef TARGET_USE_NOP_DIRECTIVE
 +	      case rs_space_nop:
-+#endif
  		growth = 0;
  		if (symbolP)
  		  {
-@@ -2795,8 +2807,15 @@ relax_segment (struct frag *segment_frag_root, segT segment, int pass)
+@@ -2791,7 +2838,7 @@ relax_segment (struct frag *segment_frag_root, segT segment, int pass)
+ 			  }
+ 
+ 			as_warn_where (fragP->fr_file, fragP->fr_line,
+-				       _(".space or .fill with negative value, ignored"));
++				       _(".space, .nop or .fill with negative value, ignored"));
  			fragP->fr_symbol = 0;
  		      }
  		    else
--		      growth = (was_address + fragP->fr_fix + amount
--				- fragP->fr_next->fr_address);
-+		      {
-+			growth = (was_address + fragP->fr_fix + amount
-+				  - fragP->fr_next->fr_address);
-+#ifdef TARGET_USE_NOP_DIRECTIVE
-+			if (growth != 0
-+			    && fragP->fr_type == rs_space_nop)
-+			  fragP->fr_var = growth;
-+#endif
-+		      }
- 		  }
- 		break;
- 
 -- 
 2.14.3
 
