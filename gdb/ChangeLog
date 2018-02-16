@@ -1,3 +1,28 @@
+2018-02-16  Yao Qi  <yao.qi@linaro.org>
+
+	* block.c (block_namespace_info): Inherit allocate_on_obstack.
+	(block_initialize_namespace): Use new.
+	* dwarf2read.c (dwarf2_per_objfile): Inherit allocate_on_obstack.
+	(dwarf2_free_objfile): Use delete.
+	* gdbtypes.c (type_pair): Inherit allocate_on_obstack.
+	(copy_type_recursive): Use new.
+	* gdb_obstack.h (allocate_on_obstack): New.
+
+2018-02-15  Yao Qi  <yao.qi@linaro.org>
+
+	PR gdb/22849
+	* inferior.c (exit_inferior_1): Reset inf->control.
+
+2018-02-15  Joel Brobecker  <brobecker@adacore.com>
+
+	* ada-lang.c (ada_to_fixed_value_create): Delete advance
+	declaration.
+
+2018-02-14  Pedro Alves  <palves@redhat.com>
+
+	* frame-unwind.c (frame_unwind_try_unwinder): Always call
+	frame_cleanup_after_sniffer on exception.
+
 2018-02-14  Tom Tromey  <tom@tromey.com>
 
 	* solist.h (struct target_so_ops) <bfd_open>: Make pathname
