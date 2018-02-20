@@ -1,0 +1,40 @@
+From f856a4e2550c6ae8d9e27de75a214150dc66be52 Mon Sep 17 00:00:00 2001
+From: "H.J. Lu" <hjl.tools@gmail.com>
+Date: Fri, 16 Feb 2018 11:38:59 -0800
+Subject: [PATCH 3/4] ld-elf/eh4: Pass -z max-page-size=0x200000 -z
+ noseparate-code to ld
+
+-z separate-code creates separate code LOAD segment, aligns it to the
+maximum page size and places .plt section before .text section.  But
+ld-elf/eh4 passes -Ttext 0x400 to linker to place .text section at
+address 0x400, which is impossible for linker to accomplish:
+
+$ ld -shared -Ttext 0x400 -z separate-code -o x.so eh4.o
+ld: section .eh_frame LMA [0000000000200000,000000000020006b] overlaps section .plt LMA [0000000000200000,000000000020001f]
+
+Since also ld-elf/eh4 checks exact addresses, this patch passes
+-z max-page-size=0x200000 -z noseparate-code to ld.
+
+	PR ld/22845
+	* ld-elf/eh4.d: Pass -z max-page-size=0x200000 -z noseparate-code
+	to ld.
+---
+ ld/testsuite/ld-elf/eh4.d | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/ld/testsuite/ld-elf/eh4.d b/ld/testsuite/ld-elf/eh4.d
+index 6c1cb320d1..391efb8cd2 100644
+--- a/ld/testsuite/ld-elf/eh4.d
++++ b/ld/testsuite/ld-elf/eh4.d
+@@ -1,7 +1,7 @@
+ #source: eh4.s
+ #source: eh4a.s
+ #as: --64
+-#ld: -melf_x86_64 -shared -Ttext 0x400
++#ld: -melf_x86_64 -shared -Ttext 0x400 -z max-page-size=0x200000 -z noseparate-code
+ #readelf: -wf
+ #target: x86_64-*-*
+ 
+-- 
+2.14.3
+
