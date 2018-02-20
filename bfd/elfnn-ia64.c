@@ -617,9 +617,9 @@ elfNN_ia64_relax_section (bfd *abfd, asection *sec,
 	    {
 	      _bfd_error_handler
 		/* xgettext:c-format */
-		(_("%B: Can't relax br at %#Lx in section `%A'."
+		(_("%pB: Can't relax br at %#" PRIx64 " in section `%pA'."
 		   " Please use brl or indirect branch."),
-		 sec->owner, roff, sec);
+		 sec->owner, (uint64_t) roff, sec);
 	      bfd_set_error (bfd_error_bad_value);
 	      goto error_return;
 	    }
@@ -3693,8 +3693,8 @@ elfNN_ia64_choose_gp (bfd *abfd, struct bfd_link_info *info, bfd_boolean final)
 overflow:
 	  _bfd_error_handler
 	    /* xgettext:c-format */
-	    (_("%B: short data segment overflowed (%#Lx >= 0x400000)"),
-	     abfd, max_short_vma - min_short_vma);
+	    (_("%pB: short data segment overflowed (%#" PRIx64 " >= 0x400000)"),
+	     abfd, (uint64_t) (max_short_vma - min_short_vma));
 	  return FALSE;
 	}
       else if ((gp_val > min_short_vma
@@ -3703,7 +3703,7 @@ overflow:
 		   && max_short_vma - gp_val >= 0x200000))
 	{
 	  _bfd_error_handler
-	    (_("%B: __gp does not cover short data segment"), abfd);
+	    (_("%pB: __gp does not cover short data segment"), abfd);
 	  return FALSE;
 	}
     }
@@ -3844,7 +3844,7 @@ elfNN_ia64_relocate_section (bfd *output_bfd,
 	{
 	  _bfd_error_handler
 	    /* xgettext:c-format */
-	    (_("%B: unknown relocation type %d"), input_bfd, (int) r_type);
+	    (_("%pB: unknown relocation type %d"), input_bfd, (int) r_type);
 	  bfd_set_error (bfd_error_bad_value);
 	  ret_val = FALSE;
 	  continue;
@@ -3971,7 +3971,7 @@ elfNN_ia64_relocate_section (bfd *output_bfd,
 		     shared libraries nor dynamic executables.  */
 		  _bfd_error_handler
 		    /* xgettext:c-format */
-		    (_("%B: non-pic code with imm relocation against dynamic symbol `%s'"),
+		    (_("%pB: non-pic code with imm relocation against dynamic symbol `%s'"),
 		     input_bfd,
 		     h ? h->root.root.string
 		       : bfd_elf_sym_name (input_bfd, symtab_hdr, sym,
@@ -4039,7 +4039,7 @@ elfNN_ia64_relocate_section (bfd *output_bfd,
 	    {
 	      _bfd_error_handler
 		/* xgettext:c-format */
-		(_("%B: @gprel relocation against dynamic symbol %s"),
+		(_("%pB: @gprel relocation against dynamic symbol %s"),
 		 input_bfd,
 		 h ? h->root.root.string
 		   : bfd_elf_sym_name (input_bfd, symtab_hdr, sym,
@@ -4102,7 +4102,7 @@ elfNN_ia64_relocate_section (bfd *output_bfd,
 		      /* ??? People shouldn't be doing non-pic code in
 			 shared libraries.  Hork.  */
 		      _bfd_error_handler
-			(_("%B: linking non-pic code in a position independent executable"),
+			(_("%pB: linking non-pic code in a position independent executable"),
 			 input_bfd);
 		      ret_val = FALSE;
 		      continue;
@@ -4240,13 +4240,13 @@ elfNN_ia64_relocate_section (bfd *output_bfd,
 
 	      if (r_type == R_IA64_PCREL21BI)
 		/* xgettext:c-format */
-		msg = _("%B: @internal branch to dynamic symbol %s");
+		msg = _("%pB: @internal branch to dynamic symbol %s");
 	      else if (r_type == R_IA64_PCREL21F || r_type == R_IA64_PCREL21M)
 		/* xgettext:c-format */
-		msg = _("%B: speculation fixup to dynamic symbol %s");
+		msg = _("%pB: speculation fixup to dynamic symbol %s");
 	      else
 		/* xgettext:c-format */
-		msg = _("%B: @pcrel relocation against dynamic symbol %s");
+		msg = _("%pB: @pcrel relocation against dynamic symbol %s");
 	      _bfd_error_handler (msg, input_bfd,
 				  h ? h->root.root.string
 				  : bfd_elf_sym_name (input_bfd,
@@ -4481,10 +4481,10 @@ missing_tls_sec:
 	      case R_IA64_LTOFF_DTPREL22:
 		_bfd_error_handler
 		  /* xgettext:c-format */
-		  (_("%B: missing TLS section for relocation %s against `%s'"
-		     " at %#Lx in section `%A'."),
+		  (_("%pB: missing TLS section for relocation %s against `%s'"
+		     " at %#" PRIx64 " in section `%pA'."),
 		   input_bfd, howto->name, name,
-		   rel->r_offset, input_section);
+		   (uint64_t) rel->r_offset, input_section);
 		break;
 
 	      case R_IA64_PCREL21B:
@@ -4498,10 +4498,11 @@ missing_tls_sec:
 		       that the section is too big to relax.  */
 		    _bfd_error_handler
 		      /* xgettext:c-format */
-		      (_("%B: Can't relax br (%s) to `%s' at %#Lx"
-			 " in section `%A' with size %#Lx (> 0x1000000)."),
-		       input_bfd, howto->name, name, rel->r_offset,
-		       input_section, input_section->size);
+		      (_("%pB: Can't relax br (%s) to `%s' at %#" PRIx64
+			 " in section `%pA' with size %#" PRIx64
+			 " (> 0x1000000)."),
+		       input_bfd, howto->name, name, (uint64_t) rel->r_offset,
+		       input_section, (uint64_t) input_section->size);
 		    break;
 		  }
 		/* Fall through.  */
@@ -4755,7 +4756,7 @@ elfNN_ia64_merge_private_bfd_data (bfd *ibfd, struct bfd_link_info *info)
   if ((in_flags & EF_IA_64_TRAPNIL) != (out_flags & EF_IA_64_TRAPNIL))
     {
       _bfd_error_handler
-	(_("%B: linking trap-on-NULL-dereference with non-trapping files"),
+	(_("%pB: linking trap-on-NULL-dereference with non-trapping files"),
 	 ibfd);
 
       bfd_set_error (bfd_error_bad_value);
@@ -4764,7 +4765,7 @@ elfNN_ia64_merge_private_bfd_data (bfd *ibfd, struct bfd_link_info *info)
   if ((in_flags & EF_IA_64_BE) != (out_flags & EF_IA_64_BE))
     {
       _bfd_error_handler
-	(_("%B: linking big-endian files with little-endian files"),
+	(_("%pB: linking big-endian files with little-endian files"),
 	 ibfd);
 
       bfd_set_error (bfd_error_bad_value);
@@ -4773,7 +4774,7 @@ elfNN_ia64_merge_private_bfd_data (bfd *ibfd, struct bfd_link_info *info)
   if ((in_flags & EF_IA_64_ABI64) != (out_flags & EF_IA_64_ABI64))
     {
       _bfd_error_handler
-	(_("%B: linking 64-bit files with 32-bit files"),
+	(_("%pB: linking 64-bit files with 32-bit files"),
 	 ibfd);
 
       bfd_set_error (bfd_error_bad_value);
@@ -4782,7 +4783,7 @@ elfNN_ia64_merge_private_bfd_data (bfd *ibfd, struct bfd_link_info *info)
   if ((in_flags & EF_IA_64_CONS_GP) != (out_flags & EF_IA_64_CONS_GP))
     {
       _bfd_error_handler
-	(_("%B: linking constant-gp files with non-constant-gp files"),
+	(_("%pB: linking constant-gp files with non-constant-gp files"),
 	 ibfd);
 
       bfd_set_error (bfd_error_bad_value);
@@ -4792,7 +4793,7 @@ elfNN_ia64_merge_private_bfd_data (bfd *ibfd, struct bfd_link_info *info)
       != (out_flags & EF_IA_64_NOFUNCDESC_CONS_GP))
     {
       _bfd_error_handler
-	(_("%B: linking auto-pic files with non-auto-pic files"),
+	(_("%pB: linking auto-pic files with non-auto-pic files"),
 	 ibfd);
 
       bfd_set_error (bfd_error_bad_value);
@@ -5064,6 +5065,7 @@ elfNN_hpux_backend_symbol_processing (bfd *abfd ATTRIBUTE_UNUSED,
 	elfNN_ia64_print_private_bfd_data
 
 #define elf_backend_plt_readonly	1
+#define elf_backend_can_gc_sections	1
 #define elf_backend_want_plt_sym	0
 #define elf_backend_plt_alignment	5
 #define elf_backend_got_header_size	0

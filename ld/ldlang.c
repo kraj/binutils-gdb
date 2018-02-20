@@ -1315,13 +1315,13 @@ lang_memory_region_lookup (const char *const name, bfd_boolean create)
       if (strcmp (n->name, name) == 0)
 	{
 	  if (create)
-	    einfo (_("%P:%S: warning: redeclaration of memory region `%s'\n"),
+	    einfo (_("%P:%pS: warning: redeclaration of memory region `%s'\n"),
 		   NULL, name);
 	  return r;
 	}
 
   if (!create && strcmp (name, DEFAULT_MEMORY_REGION))
-    einfo (_("%P:%S: warning: memory region `%s' not declared\n"),
+    einfo (_("%P:%pS: warning: memory region `%s' not declared\n"),
 	   NULL, name);
 
   new_region = (lang_memory_region_type *)
@@ -1358,7 +1358,7 @@ lang_memory_region_alias (const char *alias, const char *region_name)
      the default memory region.  */
   if (strcmp (region_name, DEFAULT_MEMORY_REGION) == 0
       || strcmp (alias, DEFAULT_MEMORY_REGION) == 0)
-    einfo (_("%F%P:%S: error: alias for default memory region\n"), NULL);
+    einfo (_("%F%P:%pS: error: alias for default memory region\n"), NULL);
 
   /* Look for the target region and check if the alias is not already
      in use.  */
@@ -1369,14 +1369,14 @@ lang_memory_region_alias (const char *alias, const char *region_name)
 	if (region == NULL && strcmp (n->name, region_name) == 0)
 	  region = r;
 	if (strcmp (n->name, alias) == 0)
-	  einfo (_("%F%P:%S: error: redefinition of memory region "
+	  einfo (_("%F%P:%pS: error: redefinition of memory region "
 		   "alias `%s'\n"),
 		 NULL, alias);
       }
 
   /* Check if the target region exists.  */
   if (region == NULL)
-    einfo (_("%F%P:%S: error: memory region `%s' "
+    einfo (_("%F%P:%pS: error: memory region `%s' "
 	     "for alias `%s' does not exist\n"),
 	   NULL, region_name, alias);
 
@@ -2016,8 +2016,8 @@ lang_print_asneeded (void)
 	}
 
       if (m->ref != NULL)
-	minfo ("%B ", m->ref);
-      minfo ("(%T)\n", m->name);
+	minfo ("%pB ", m->ref);
+      minfo ("(%pT)\n", m->name);
     }
 }
 
@@ -2770,15 +2770,15 @@ load_symbols (lang_input_statement_type *entry,
 	{
 	  char **p;
 
-	  einfo (_("%B: file not recognized: %E\n"), entry->the_bfd);
-	  einfo (_("%B: matching formats:"), entry->the_bfd);
+	  einfo (_("%pB: file not recognized: %E\n"), entry->the_bfd);
+	  einfo (_("%pB: matching formats:"), entry->the_bfd);
 	  for (p = matching; *p != NULL; p++)
 	    einfo (" %s", *p);
 	  einfo ("%F\n");
 	}
       else if (err != bfd_error_file_not_recognized
 	       || place == NULL)
-	einfo (_("%F%B: file not recognized: %E\n"), entry->the_bfd);
+	einfo (_("%F%pB: file not recognized: %E\n"), entry->the_bfd);
 
       bfd_close (entry->the_bfd);
       entry->the_bfd = NULL;
@@ -2829,7 +2829,7 @@ load_symbols (lang_input_statement_type *entry,
       if (!entry->flags.reload)
 	ldlang_add_file (entry);
       if (trace_files || verbose)
-	info_msg ("%I\n", entry);
+	info_msg ("%pI\n", entry);
       break;
 
     case bfd_archive:
@@ -2851,7 +2851,7 @@ load_symbols (lang_input_statement_type *entry,
 
 	      if (!bfd_check_format (member, bfd_object))
 		{
-		  einfo (_("%F%B: member %B in archive is not an object\n"),
+		  einfo (_("%F%pB: member %pB in archive is not an object\n"),
 			 entry->the_bfd, member);
 		  loaded = FALSE;
 		}
@@ -2866,7 +2866,7 @@ load_symbols (lang_input_statement_type *entry,
 		 substitute BFD for us.  */
 	      if (!bfd_link_add_symbols (subsbfd, &link_info))
 		{
-		  einfo (_("%F%B: error adding symbols: %E\n"), member);
+		  einfo (_("%F%pB: error adding symbols: %E\n"), member);
 		  loaded = FALSE;
 		}
 	    }
@@ -2880,7 +2880,7 @@ load_symbols (lang_input_statement_type *entry,
   if (bfd_link_add_symbols (entry->the_bfd, &link_info))
     entry->flags.loaded = TRUE;
   else
-    einfo (_("%F%B: error adding symbols: %E\n"), entry->the_bfd);
+    einfo (_("%F%pB: error adding symbols: %E\n"), entry->the_bfd);
 
   return entry->flags.loaded;
 }
@@ -4142,7 +4142,7 @@ print_one_symbol (struct bfd_link_hash_entry *hash_entry, void *ptr)
 	      + hash_entry->u.def.section->output_offset
 	      + hash_entry->u.def.section->output_section->vma));
 
-      minfo ("             %T\n", hash_entry->root.string);
+      minfo ("             %pT\n", hash_entry->root.string);
     }
 
   return TRUE;
@@ -4230,7 +4230,7 @@ print_input_section (asection *i, bfd_boolean is_discarded)
 	size = 0;
     }
 
-  minfo ("0x%V %W %B\n", addr, size, i->owner);
+  minfo ("0x%V %W %pB\n", addr, size, i->owner);
 
   if (size != i->rawsize && i->rawsize != 0)
     {
@@ -4675,8 +4675,9 @@ insert_pad (lang_statement_union_type **ptr,
     }
   pad->padding_statement.output_offset = dot - output_section->vma;
   pad->padding_statement.size = alignment_needed;
-  output_section->size = TO_SIZE (dot + TO_ADDR (alignment_needed)
-				  - output_section->vma);
+  if (!(output_section->flags & SEC_FIXED_SIZE))
+    output_section->size = TO_SIZE (dot + TO_ADDR (alignment_needed)
+				    - output_section->vma);
 }
 
 /* Work out how much this section will move the dot point.  */
@@ -4725,7 +4726,8 @@ size_input_section
 
       /* Mark how big the output section must be to contain this now.  */
       dot += TO_ADDR (i->size);
-      o->size = TO_SIZE (dot - o->vma);
+      if (!(o->flags & SEC_FIXED_SIZE))
+	o->size = TO_SIZE (dot - o->vma);
     }
 
   return dot;
@@ -4955,7 +4957,7 @@ os_region_check (lang_output_section_statement_type *os,
     {
       if (tree != NULL)
 	{
-	  einfo (_("%X%P: address 0x%v of %B section `%s'"
+	  einfo (_("%X%P: address 0x%v of %pB section `%s'"
 		   " is not within region `%s'\n"),
 		 region->current,
 		 os->bfd_section->owner,
@@ -4966,7 +4968,7 @@ os_region_check (lang_output_section_statement_type *os,
 	{
 	  region->had_full_message = TRUE;
 
-	  einfo (_("%X%P: %B section `%s' will not fit in region `%s'\n"),
+	  einfo (_("%X%P: %pB section `%s' will not fit in region `%s'\n"),
 		 os->bfd_section->owner,
 		 os->bfd_section->name,
 		 region->name_list.name);
@@ -5047,7 +5049,7 @@ lang_size_sections_1
 		      dot += expld.result.section->vma;
 		  }
 		else if (expld.phase != lang_mark_phase_enum)
-		  einfo (_("%F%S: non constant or forward reference"
+		  einfo (_("%F%pS: non constant or forward reference"
 			   " address expression for section %s\n"),
 			 os->addr_tree, os->name);
 	      }
@@ -5079,7 +5081,8 @@ lang_size_sections_1
 		bfd_set_section_vma (os->bfd_section->owner,
 				     os->bfd_section,
 				     bfd_section_vma (input->owner, input));
-		os->bfd_section->size = input->size;
+		if (!(os->bfd_section->flags & SEC_FIXED_SIZE))
+		  os->bfd_section->size = input->size;
 		break;
 	      }
 
@@ -5194,7 +5197,9 @@ lang_size_sections_1
 			  + os->block_value - 1)
 			 & - (bfd_vma) os->block_value);
 
-		os->bfd_section->size = TO_SIZE (after - os->bfd_section->vma);
+		if (!(os->bfd_section->flags & SEC_FIXED_SIZE))
+		  os->bfd_section->size = TO_SIZE (after
+						   - os->bfd_section->vma);
 	      }
 
 	    /* Set section lma.  */
@@ -5379,8 +5384,10 @@ lang_size_sections_1
 	    if (size < TO_SIZE ((unsigned) 1))
 	      size = TO_SIZE ((unsigned) 1);
 	    dot += TO_ADDR (size);
-	    output_section_statement->bfd_section->size
-	      = TO_SIZE (dot - output_section_statement->bfd_section->vma);
+	    if (!(output_section_statement->bfd_section->flags
+		  & SEC_FIXED_SIZE))
+	      output_section_statement->bfd_section->size
+		= TO_SIZE (dot - output_section_statement->bfd_section->vma);
 
 	  }
 	  break;
@@ -5395,8 +5402,10 @@ lang_size_sections_1
 	      output_section_statement->bfd_section;
 	    size = bfd_get_reloc_size (s->reloc_statement.howto);
 	    dot += TO_ADDR (size);
-	    output_section_statement->bfd_section->size
-	      = TO_SIZE (dot - output_section_statement->bfd_section->vma);
+	    if (!(output_section_statement->bfd_section->flags
+		  & SEC_FIXED_SIZE))
+	      output_section_statement->bfd_section->size
+		= TO_SIZE (dot - output_section_statement->bfd_section->vma);
 	  }
 	  break;
 
@@ -6291,7 +6300,7 @@ lang_check (void)
 	  && (bfd_get_file_flags (input_bfd) & HAS_RELOC) != 0)
 	{
 	  einfo (_("%P%F: Relocatable linking with relocations from"
-		   " format %s (%B) to format %s (%B) is not supported\n"),
+		   " format %s (%pB) to format %s (%pB) is not supported\n"),
 		 bfd_get_target (input_bfd), input_bfd,
 		 bfd_get_target (link_info.output_bfd), link_info.output_bfd);
 	  /* einfo with %F exits.  */
@@ -6300,7 +6309,7 @@ lang_check (void)
       if (compatible == NULL)
 	{
 	  if (command_line.warn_mismatch)
-	    einfo (_("%P%X: %s architecture of input file `%B'"
+	    einfo (_("%P%X: %s architecture of input file `%pB'"
 		     " is incompatible with %s output\n"),
 		   bfd_printable_name (input_bfd), input_bfd,
 		   bfd_printable_name (link_info.output_bfd));
@@ -6323,7 +6332,7 @@ lang_check (void)
 	    {
 	      if (command_line.warn_mismatch)
 		einfo (_("%P%X: failed to merge target specific data"
-			 " of file %B\n"), input_bfd);
+			 " of file %pB\n"), input_bfd);
 	    }
 	  if (!command_line.warn_mismatch)
 	    bfd_set_error_handler (pfn);
@@ -6393,7 +6402,7 @@ lang_one_common (struct bfd_link_hash_entry *h, void *info)
 
   section = h->u.c.p->section;
   if (!bfd_define_common_symbol (link_info.output_bfd, &link_info, h))
-    einfo (_("%P%F: Could not define common symbol `%T': %E\n"),
+    einfo (_("%P%F: Could not define common symbol `%pT': %E\n"),
 	   h->root.string);
 
   if (config.map_file != NULL)
@@ -6449,7 +6458,7 @@ lang_one_common (struct bfd_link_hash_entry *h, void *info)
 	  ++len;
 	}
 
-      minfo ("%B\n", section->owner);
+      minfo ("%pB\n", section->owner);
     }
 
   return TRUE;
@@ -6480,7 +6489,7 @@ ldlang_place_orphan (asection *s)
       int constraint = 0;
 
       if (config.orphan_handling == orphan_handling_error)
-	einfo (_("%X%P: error: unplaced orphan section `%A' from `%B'.\n"),
+	einfo (_("%X%P: error: unplaced orphan section `%pA' from `%pB'.\n"),
 	       s, s->owner);
 
       if (config.unique_orphan_sections || unique_section_p (s, NULL))
@@ -6498,7 +6507,7 @@ ldlang_place_orphan (asection *s)
 	}
 
       if (config.orphan_handling == orphan_handling_warn)
-	einfo (_("%P: warning: orphan section `%A' from `%B' being "
+	einfo (_("%P: warning: orphan section `%pA' from `%pB' being "
 		 "placed in section `%s'.\n"),
 	       s, s->owner, os->name);
     }
@@ -6716,7 +6725,7 @@ lang_enter_output_section_statement (const char *output_section_statement_name,
 
   os->align_lma_with_input = align_with_input == ALIGN_WITH_INPUT;
   if (os->align_lma_with_input && align != NULL)
-    einfo (_("%F%P:%S: error: align with input and explicit align specified\n"),
+    einfo (_("%F%P:%pS: error: align with input and explicit align specified\n"),
 	   NULL);
 
   os->subsection_alignment =
@@ -6764,7 +6773,8 @@ lang_reset_memory_regions (void)
     {
       /* Save the last size for possible use by bfd_relax_section.  */
       o->rawsize = o->size;
-      o->size = 0;
+      if (!(o->flags & SEC_FIXED_SIZE))
+	o->size = 0;
     }
 }
 
@@ -7637,7 +7647,7 @@ lang_get_regions (lang_memory_region_type **region,
     *region = lang_memory_region_lookup (memspec, FALSE);
 
   if (have_lma && lma_memspec != 0)
-    einfo (_("%X%P:%S: section has both a load address and a load region\n"),
+    einfo (_("%X%P:%pS: section has both a load address and a load region\n"),
 	   NULL);
 }
 
@@ -7752,7 +7762,7 @@ lang_new_phdr (const char *name,
 	&& (*pp)->type == 1
 	&& !((*pp)->filehdr || (*pp)->phdrs))
       {
-	einfo (_("%X%P:%S: PHDRS and FILEHDR are not supported"
+	einfo (_("%X%P:%pS: PHDRS and FILEHDR are not supported"
 		 " when prior PT_LOAD headers lack them\n"), NULL);
 	hdrs = FALSE;
       }

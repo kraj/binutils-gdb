@@ -1192,11 +1192,11 @@ mmix_elf_perform_relocation (asection *isec, reloc_howto_type *howto,
 	  {
 	    _bfd_error_handler
 	      /* xgettext:c-format */
-	      (_("%B: Internal inconsistency error for value for\n\
- linker-allocated global register: linked: %#Lx != relaxed: %#Lx"),
+	      (_("%pB: Internal inconsistency error for value for\n\
+ linker-allocated global register: linked: %#" PRIx64 " != relaxed: %#" PRIx64 ""),
 	       isec->owner,
-	       value,
-	       gregdata->reloc_request[bpo_index].value);
+	       (uint64_t) value,
+	       (uint64_t) gregdata->reloc_request[bpo_index].value);
 	    bfd_set_error (bfd_error_bad_value);
 	    return bfd_reloc_overflow;
 	  }
@@ -1261,7 +1261,7 @@ mmix_info_to_howto_rela (bfd *abfd ATTRIBUTE_UNUSED,
   if (r_type >= (unsigned int) R_MMIX_max)
     {
       /* xgettext:c-format */
-      _bfd_error_handler (_("%B: invalid MMIX reloc number: %d"), abfd, r_type);
+      _bfd_error_handler (_("%pB: invalid MMIX reloc number: %d"), abfd, r_type);
       r_type = 0;
     }
   cache_ptr->howto = &elf_mmix_howto_table[r_type];
@@ -1613,14 +1613,14 @@ mmix_final_link_relocate (reloc_howto_type *howto, asection *input_section,
 	  if (symname == NULL || *symname == 0)
 	    _bfd_error_handler
 	      /* xgettext:c-format */
-	      (_("%B: base-plus-offset relocation against register symbol:"
-		 " (unknown) in %A"),
+	      (_("%pB: base-plus-offset relocation against register symbol:"
+		 " (unknown) in %pA"),
 	       input_section->owner, symsec);
 	  else
 	    _bfd_error_handler
 	      /* xgettext:c-format */
-	      (_("%B: base-plus-offset relocation against register symbol:"
-		 " %s in %A"),
+	      (_("%pB: base-plus-offset relocation against register symbol:"
+		 " %s in %pA"),
 	       input_section->owner, symname, symsec);
 	  return bfd_reloc_overflow;
 	}
@@ -1664,14 +1664,14 @@ mmix_final_link_relocate (reloc_howto_type *howto, asection *input_section,
 	  if (symname == NULL || *symname == 0)
 	    _bfd_error_handler
 	      /* xgettext:c-format */
-	      (_("%B: register relocation against non-register symbol:"
-		 " (unknown) in %A"),
+	      (_("%pB: register relocation against non-register symbol:"
+		 " (unknown) in %pA"),
 	       input_section->owner, symsec);
 	  else
 	    _bfd_error_handler
 	      /* xgettext:c-format */
-	      (_("%B: register relocation against non-register symbol:"
-		 " %s in %A"),
+	      (_("%pB: register relocation against non-register symbol:"
+		 " %s in %pA"),
 	       input_section->owner, symname, symsec);
 
 	  /* The bfd_reloc_outofrange return value, though intuitively a
@@ -1707,7 +1707,7 @@ mmix_final_link_relocate (reloc_howto_type *howto, asection *input_section,
 		       MMIX_REG_SECTION_NAME) != 0)
 	{
 	  _bfd_error_handler
-	    (_("%B: directive LOCAL valid only with a register or absolute value"),
+	    (_("%pB: directive LOCAL valid only with a register or absolute value"),
 	     input_section->owner);
 
 	  return bfd_reloc_overflow;
@@ -1738,9 +1738,10 @@ mmix_final_link_relocate (reloc_howto_type *howto, asection *input_section,
 	    /* FIXME: Better error message.  */
 	    _bfd_error_handler
 	      /* xgettext:c-format */
-	      (_("%B: LOCAL directive: Register $%Ld is not a local register."
-		 "  First global register is $%Ld."),
-	       input_section->owner, srel, first_global);
+	      (_("%pB: LOCAL directive: "
+		 "Register $%" PRId64 " is not a local register."
+		 "  First global register is $%" PRId64 "."),
+	       input_section->owner, (int64_t) srel, (int64_t) first_global);
 
 	    return bfd_reloc_overflow;
 	  }
@@ -2166,7 +2167,7 @@ mmix_elf_add_symbol_hook (bfd *abfd,
 	     h->u.def.section->owner is NULL.  */
 	  _bfd_error_handler
 	    /* xgettext:c-format */
-	    (_("%B: Error: multiple definition of `%s'; start of %s "
+	    (_("%pB: Error: multiple definition of `%s'; start of %s "
 	       "is set in a earlier linked file\n"),
 	     abfd, *namep,
 	     *namep + strlen (MMIX_LOC_SECTION_START_SYMBOL_PREFIX));

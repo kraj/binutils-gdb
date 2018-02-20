@@ -98,6 +98,24 @@ typedef BFD_HOST_64_BIT bfd_int64_t;
 typedef BFD_HOST_U_64_BIT bfd_uint64_t;
 #endif
 
+#ifdef HAVE_INTTYPES_H
+# include <inttypes.h>
+#else
+# if BFD_HOST_64BIT_LONG
+#  define BFD_PRI64 "l"
+# elif defined (__MSVCRT__)
+#  define BFD_PRI64 "I64"
+# else
+#  define BFD_PRI64 "ll"
+# endif
+# undef PRId64
+# define PRId64 BFD_PRI64 "d"
+# undef PRIu64
+# define PRIu64 BFD_PRI64 "u"
+# undef PRIx64
+# define PRIx64 BFD_PRI64 "x"
+#endif
+
 #if BFD_ARCH_SIZE >= 64
 #define BFD64
 #endif
@@ -1324,13 +1342,10 @@ typedef struct bfd_section
   /* The section contains thread local data.  */
 #define SEC_THREAD_LOCAL                0x400
 
-  /* The section has GOT references.  This flag is only for the
-     linker, and is currently only used by the elf32-hppa back end.
-     It will be set if global offset table references were detected
-     in this section, which indicate to the linker that the section
-     contains PIC code, and must be handled specially when doing a
-     static link.  */
-#define SEC_HAS_GOT_REF                 0x800
+  /* The section's size is fixed.  Generic linker code will not
+     recalculate it and it is up to whoever has set this flag to
+     get the size right.  */
+#define SEC_FIXED_SIZE                  0x800
 
   /* The section contains common symbols (symbols may be defined
      multiple times, the value of a symbol is the amount of

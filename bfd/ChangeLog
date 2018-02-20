@@ -1,3 +1,230 @@
+2018-02-20  Jason Duerstock  <jason.duerstock@gmail.com>
+
+	* elfnn-ia64.c (elf_backend_can_gc_sections): Enable.
+
+2018-02-19  Maciej W. Rozycki  <macro@mips.com>
+
+	Revert
+	2018-01-12  Vlad Ivanov  <vlad@ivanov.email>
+
+	* elfxx-mips.c (_bfd_mips_elf_final_link): Notify user when
+	.reginfo section has wrong size.
+
+2018-02-19  Maciej W. Rozycki  <macro@mips.com>
+
+	* elfxx-mips.c (_bfd_mips_elf_always_size_sections): Set
+	SEC_FIXED_SIZE and SEC_HAS_CONTENTS flags for `.reginfo' and
+	`.MIPS.abiflags' sections.
+	(_bfd_mips_elf_final_link): Avoid reading beyond `.reginfo'
+	section's end.
+
+2018-02-19  Maciej W. Rozycki  <macro@mips.com>
+
+	* section.c (SEC_FIXED_SIZE): New macro.
+	* bfd-in2.h: Regenerate.
+
+2018-02-19  Maciej W. Rozycki  <macro@mips.com>
+
+	* section.c (SEC_HAS_GOT_REF): Remove macro.
+	* bfd-in2.h: Regenerate.
+
+2018-02-19  Alan Modra  <amodra@gmail.com>
+
+	* elf-attrs.c (_bfd_elf_parse_attributes): Correct _bfd_error_handler
+	arguments.
+	* elfxx-mips.c (_bfd_mips_elf_final_link): Likewise.
+	* elfnn-riscv.c (_bfd_riscv_relax_align): Likewise.
+	(_bfd_riscv_relax_pc): Likewise and fix typos.
+	* libbfd-in.h (_bfd_error_handler): Add attribute printf.
+	* libbfd.h: Regenerate.
+
+2018-02-19  Alan Modra  <amodra@gmail.com>
+
+	* dwarf2.c (read_section): Don't use 'll' format modifier.
+	(find_abstract_instance): Likewise.
+	* elfcore.h (elf_core_file_p): Likewise.
+
+2018-02-19  Alan Modra  <amodra@gmail.com>
+
+	* bfd-in.h: Include inttypes.h or if not available define
+	PRId64, PRIu64 and PRIx64.
+	* bfd.c (_bfd_doprnt, _bfd_doprnt_scan): Remove support for L
+	modifier to print bfd_vma.
+	* coff-arm.c, * coff-mcore.c, * coff-ppc.c, * coff-rs6000.c,
+	* coff-sh.c, * coff-tic80.c, * coffcode.h, * coffgen.c, * cofflink.c,
+	* compress.c, * dwarf2.c, * elf-m10300.c, * elf.c, * elf32-arc.c,
+	* elf32-arm.c, * elf32-bfin.c, * elf32-cris.c, * elf32-hppa.c,
+	* elf32-i386.c, * elf32-ip2k.c, * elf32-lm32.c, * elf32-m32r.c,
+	* elf32-m68k.c, * elf32-metag.c, * elf32-nds32.c, * elf32-nios2.c,
+	* elf32-ppc.c, * elf32-rx.c, * elf32-s390.c, * elf32-score.c,
+	* elf32-score7.c, * elf32-sh.c, * elf32-sh64.c, * elf32-spu.c,
+	* elf32-tic6x.c, * elf32-tilepro.c, * elf32-v850.c, * elf32-vax.c,
+	* elf32-xtensa.c, * elf64-alpha.c, * elf64-hppa.c, * elf64-ia64-vms.c,
+	* elf64-mmix.c, * elf64-s390.c, * elf64-sh64.c, * elf64-x86-64.c,
+	* elfcode.h, * elfcore.h, * elflink.c, * elfnn-aarch64.c,
+	* elfnn-ia64.c, * elfnn-riscv.c, * elfxx-mips.c, * elfxx-sparc.c,
+	* elfxx-tilegx.c, * ieee.c, * ihex.c, * mach-o.c, * merge.c, * mmo.c,
+	* peXXigen.c, * xcofflink.c: Replace use of Lx modifier with PRIx64,
+	and cast input to uint64_t, and similarly for Ld and Lu.
+	* bfd-in2.h: Regenerate.
+
+2018-02-19  Alan Modra  <amodra@gmail.com>
+
+	* elf32-arm.c, * elf32-hppa.c, * elf32-lm32.c, * elf32-m32r.c,
+	* elf32-metag.c, * elf32-nds32.c, * elf32-or1k.c, * elf32-ppc.c,
+	* elf32-s390.c, * elf32-sh.c, * elf32-tic6x.c, * elf32-tilepro.c,
+	* elf64-ppc.c, * elf64-s390.c, * elflink.c, * elfnn-aarch64.c,
+	* elfnn-riscv.c, * elfxx-sparc.c, * elfxx-tilegx.c, * elfxx-x86.c,
+	* reloc.c: Replace use of %R and %T in format strings passed to
+	einfo and friends by %pR and %pT.
+
+2018-02-19  Alan Modra  <amodra@gmail.com>
+
+	* bfd.c (_bfd_doprnt, _bfd_doprnt_scan): Handle %pA and %pB in place
+	of %A and %B.
+	* aout-adobe.c: Update all messages using %A and %B.
+	* aout-cris.c: Likewise.
+	* aoutx.h: Likewise.
+	* archive.c: Likewise.
+	* binary.c: Likewise.
+	* cache.c: Likewise.
+	* coff-alpha.c: Likewise.
+	* coff-arm.c: Likewise.
+	* coff-i860.c: Likewise.
+	* coff-mcore.c: Likewise.
+	* coff-ppc.c: Likewise.
+	* coff-rs6000.c: Likewise.
+	* coff-sh.c: Likewise.
+	* coff-tic4x.c: Likewise.
+	* coff-tic54x.c: Likewise.
+	* coff-tic80.c: Likewise.
+	* coff64-rs6000.c: Likewise.
+	* coffcode.h: Likewise.
+	* coffgen.c: Likewise.
+	* cofflink.c: Likewise.
+	* coffswap.h: Likewise.
+	* compress.c: Likewise.
+	* cpu-arm.c: Likewise.
+	* ecoff.c: Likewise.
+	* elf-attrs.c: Likewise.
+	* elf-eh-frame.c: Likewise.
+	* elf-ifunc.c: Likewise.
+	* elf-m10300.c: Likewise.
+	* elf-properties.c: Likewise.
+	* elf-s390-common.c: Likewise.
+	* elf.c: Likewise.
+	* elf32-arc.c: Likewise.
+	* elf32-arm.c: Likewise.
+	* elf32-avr.c: Likewise.
+	* elf32-bfin.c: Likewise.
+	* elf32-cr16.c: Likewise.
+	* elf32-cr16c.c: Likewise.
+	* elf32-cris.c: Likewise.
+	* elf32-crx.c: Likewise.
+	* elf32-d10v.c: Likewise.
+	* elf32-d30v.c: Likewise.
+	* elf32-epiphany.c: Likewise.
+	* elf32-fr30.c: Likewise.
+	* elf32-frv.c: Likewise.
+	* elf32-gen.c: Likewise.
+	* elf32-hppa.c: Likewise.
+	* elf32-i370.c: Likewise.
+	* elf32-i386.c: Likewise.
+	* elf32-i960.c: Likewise.
+	* elf32-ip2k.c: Likewise.
+	* elf32-iq2000.c: Likewise.
+	* elf32-lm32.c: Likewise.
+	* elf32-m32c.c: Likewise.
+	* elf32-m32r.c: Likewise.
+	* elf32-m68hc11.c: Likewise.
+	* elf32-m68hc12.c: Likewise.
+	* elf32-m68hc1x.c: Likewise.
+	* elf32-m68k.c: Likewise.
+	* elf32-mcore.c: Likewise.
+	* elf32-mep.c: Likewise.
+	* elf32-metag.c: Likewise.
+	* elf32-microblaze.c: Likewise.
+	* elf32-moxie.c: Likewise.
+	* elf32-msp430.c: Likewise.
+	* elf32-mt.c: Likewise.
+	* elf32-nds32.c: Likewise.
+	* elf32-nios2.c: Likewise.
+	* elf32-or1k.c: Likewise.
+	* elf32-pj.c: Likewise.
+	* elf32-ppc.c: Likewise.
+	* elf32-rl78.c: Likewise.
+	* elf32-rx.c: Likewise.
+	* elf32-s390.c: Likewise.
+	* elf32-score.c: Likewise.
+	* elf32-score7.c: Likewise.
+	* elf32-sh-symbian.c: Likewise.
+	* elf32-sh.c: Likewise.
+	* elf32-sh64.c: Likewise.
+	* elf32-sparc.c: Likewise.
+	* elf32-spu.c: Likewise.
+	* elf32-tic6x.c: Likewise.
+	* elf32-tilepro.c: Likewise.
+	* elf32-v850.c: Likewise.
+	* elf32-vax.c: Likewise.
+	* elf32-visium.c: Likewise.
+	* elf32-wasm32.c: Likewise.
+	* elf32-xgate.c: Likewise.
+	* elf32-xtensa.c: Likewise.
+	* elf64-alpha.c: Likewise.
+	* elf64-gen.c: Likewise.
+	* elf64-hppa.c: Likewise.
+	* elf64-ia64-vms.c: Likewise.
+	* elf64-mmix.c: Likewise.
+	* elf64-ppc.c: Likewise.
+	* elf64-s390.c: Likewise.
+	* elf64-sh64.c: Likewise.
+	* elf64-sparc.c: Likewise.
+	* elf64-x86-64.c: Likewise.
+	* elfcode.h: Likewise.
+	* elfcore.h: Likewise.
+	* elflink.c: Likewise.
+	* elfnn-aarch64.c: Likewise.
+	* elfnn-ia64.c: Likewise.
+	* elfnn-riscv.c: Likewise.
+	* elfxx-mips.c: Likewise.
+	* elfxx-sparc.c: Likewise.
+	* elfxx-tilegx.c: Likewise.
+	* elfxx-x86.c: Likewise.
+	* hpux-core.c: Likewise.
+	* ieee.c: Likewise.
+	* ihex.c: Likewise.
+	* libbfd.c: Likewise.
+	* linker.c: Likewise.
+	* mach-o.c: Likewise.
+	* merge.c: Likewise.
+	* mmo.c: Likewise.
+	* oasys.c: Likewise.
+	* pdp11.c: Likewise.
+	* pe-mips.c: Likewise.
+	* peXXigen.c: Likewise.
+	* peicode.h: Likewise.
+	* reloc.c: Likewise.
+	* rs6000-core.c: Likewise.
+	* srec.c: Likewise.
+	* stabs.c: Likewise.
+	* vms-alpha.c: Likewise.
+	* xcofflink.c: Likewise.
+
+2018-02-19  Alan Modra  <amodra@gmail.com>
+
+	PR 22845
+	* elf.c (IS_TBSS): Define.
+	(_bfd_elf_map_sections_to_segments): Use IS_TBSS.
+	(assign_file_positions_for_non_load_sections): Revert last change.
+	Properly calculate load segment limits to compare against relro limits.
+
+2018-02-17  Alan Modra  <amodra@gmail.com>
+
+	PR 22845
+	* elf.c (assign_file_positions_for_non_load_sections): Ignore
+	degenerate zero size PT_LOAD segments when finding one overlapping
+	the PT_GNU_RELRO segment.
+
 2018-02-16  Alan Modra  <amodra@gmail.com>
 
 	* libbfd.c (_bfd_bool_bfd_false_error): Rename from bfd_false.

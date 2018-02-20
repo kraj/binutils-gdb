@@ -536,7 +536,7 @@ lm32_info_to_howto_rela (bfd *abfd ATTRIBUTE_UNUSED,
   if (r_type >= (unsigned int) R_LM32_max)
     {
       /* xgettext:c-format */
-      _bfd_error_handler (_("%B: invalid LM32 reloc number: %d"), abfd, r_type);
+      _bfd_error_handler (_("%pB: invalid LM32 reloc number: %d"), abfd, r_type);
       r_type = 0;
     }
   cache_ptr->howto = &lm32_elf_howto_table[r_type];
@@ -1427,8 +1427,9 @@ lm32_elf_finish_dynamic_sections (bfd *output_bfd,
 	      != (lm32fdpic_fixup32_section (info)->reloc_count * 4))
 	{
 	  _bfd_error_handler
-	    ("LINKER BUG: .rofixup section size mismatch: size/4 %Ld != relocs %d",
-	    lm32fdpic_fixup32_section (info)->size/4,
+	    ("LINKER BUG: .rofixup section size mismatch: size/4 %" PRId64
+	     " != relocs %d",
+	    (int64_t) (lm32fdpic_fixup32_section (info)->size / 4),
 	    lm32fdpic_fixup32_section (info)->reloc_count);
 	  return FALSE;
 	}
@@ -1449,7 +1450,9 @@ lm32_elf_finish_dynamic_sections (bfd *output_bfd,
 	  if (hend->u.def.value != value)
 	    {
 	      _bfd_error_handler
-		("LINKER BUG: .rofixup section hend->u.def.value != value: %Ld != %Ld", hend->u.def.value, value);
+		("LINKER BUG: .rofixup section hend->u.def.value != value: %"
+		 PRId64 " != %" PRId64,
+		 (int64_t) hend->u.def.value, (int64_t) value);
 	      return FALSE;
 	    }
 	}
@@ -1986,7 +1989,7 @@ maybe_set_textrel (struct elf_link_hash_entry *h, void *info_p)
 
       info->flags |= DF_TEXTREL;
       info->callbacks->minfo
-	(_("%B: dynamic relocation against `%T' in read-only section `%A'\n"),
+	(_("%pB: dynamic relocation against `%pT' in read-only section `%pA'\n"),
 	 sec->owner, h->root.root.string, sec);
 
       /* Not an error, just cut short the traversal.  */

@@ -1574,9 +1574,10 @@ bfin_relocate_section (bfd * output_bfd,
 	{
 	  _bfd_error_handler
 	    /* xgettext:c-format */
-	    (_("%B(%A+%#Lx): unresolvable relocation against symbol `%s'"),
-	     input_bfd,
-	     input_section, rel->r_offset, h->root.root.string);
+	    (_("%pB(%pA+%#" PRIx64 "): "
+	       "unresolvable relocation against symbol `%s'"),
+	     input_bfd, input_section, (uint64_t) rel->r_offset,
+	     h->root.root.string);
 	  return FALSE;
 	}
 
@@ -1605,8 +1606,9 @@ bfin_relocate_section (bfd * output_bfd,
 	    {
 	      _bfd_error_handler
 		/* xgettext:c-format */
-		(_("%B(%A+%#Lx): reloc against `%s': error %d"),
-		 input_bfd, input_section, rel->r_offset, name, (int) r);
+		(_("%pB(%pA+%#" PRIx64 "): reloc against `%s': error %d"),
+		 input_bfd, input_section, (uint64_t) rel->r_offset,
+		 name, (int) r);
 	      return FALSE;
 	    }
 	}
@@ -2625,8 +2627,9 @@ bfinfdpic_relocate_section (bfd * output_bfd,
 	    {
 	      _bfd_error_handler
 		/* xgettext:c-format */
-		(_("%B: relocation at `%A+%#Lx' references symbol `%s' with nonzero addend"),
-		 input_bfd, input_section, rel->r_offset, name);
+		(_("%pB: relocation at `%pA+%#" PRIx64 "' "
+		   "references symbol `%s' with nonzero addend"),
+		 input_bfd, input_section, (uint64_t) rel->r_offset, name);
 	      return FALSE;
 
 	    }
@@ -4684,7 +4687,7 @@ bfinfdpic_check_relocs (bfd *abfd, struct bfd_link_info *info,
 	bad_reloc:
 	  _bfd_error_handler
 	    /* xgettext:c-format */
-	    (_("%B: unsupported relocation type %d"),
+	    (_("%pB: unsupported relocation type %d"),
 	     abfd, (int) ELF32_R_TYPE (rel->r_info));
 	  return FALSE;
 	}
@@ -4759,7 +4762,7 @@ elf32_bfin_merge_private_bfd_data (bfd *ibfd, struct bfd_link_info *info)
   if (0)
 #endif
   _bfd_error_handler
-    ("old_flags = 0x%.8x, new_flags = 0x%.8x, init = %s, filename = %B",
+    ("old_flags = 0x%.8x, new_flags = 0x%.8x, init = %s, filename = %pB",
      old_flags, new_flags, elf_flags_init (obfd) ? "yes" : "no", ibfd);
 
   if (!elf_flags_init (obfd))			/* First call, no flags set.  */
@@ -4773,11 +4776,11 @@ elf32_bfin_merge_private_bfd_data (bfd *ibfd, struct bfd_link_info *info)
       error = TRUE;
       if (IS_FDPIC (obfd))
 	_bfd_error_handler
-	  (_("%B: cannot link non-fdpic object file into fdpic executable"),
+	  (_("%pB: cannot link non-fdpic object file into fdpic executable"),
 	   ibfd);
       else
 	_bfd_error_handler
-	  (_("%B: cannot link fdpic object file into non-fdpic executable"),
+	  (_("%pB: cannot link fdpic object file into non-fdpic executable"),
 	   ibfd);
     }
 

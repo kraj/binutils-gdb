@@ -649,10 +649,7 @@ union _bfd_doprnt_args
 };
 
 /* This macro and _bfd_doprnt taken from libiberty _doprnt.c, tidied a
-   little and extended to handle '%A', '%B' and positional parameters.
-   'L' as a modifer for integer formats is used for bfd_vma and
-   bfd_size_type args, which vary in size depending on BFD
-   configuration.  */
+   little and extended to handle '%pA', '%pB' and positional parameters.  */
 
 #define PRINT_TYPE(TYPE, FIELD) \
   do								\
@@ -800,21 +797,6 @@ _bfd_doprnt (FILE *stream, const char *format, union _bfd_doprnt_args *args)
 		  PRINT_TYPE (int, i);
 		else
 		  {
-		    /* L modifier for bfd_vma or bfd_size_type may be
-		       either long long or long.  */
-		    if (ptr[-2] == 'L')
-		      {
-			sptr[-2] = 'l';
-			if (BFD_ARCH_SIZE < 64 || BFD_HOST_64BIT_LONG)
-			  wide_width = 1;
-			else
-			  {
-			    sptr[-1] = 'l';
-			    *sptr++ = ptr[-1];
-			    *sptr = '\0';
-			  }
-		      }
-
 		    switch (wide_width)
 		      {
 		      case 0:
@@ -866,53 +848,55 @@ _bfd_doprnt (FILE *stream, const char *format, union _bfd_doprnt_args *args)
 	      PRINT_TYPE (char *, p);
 	      break;
 	    case 'p':
-	      PRINT_TYPE (void *, p);
-	      break;
-	    case 'A':
-	      {
-		asection *sec;
-		bfd *abfd;
-		const char *group = NULL;
-		struct coff_comdat_info *ci;
+	      if (*ptr == 'A')
+		{
+		  asection *sec;
+		  bfd *abfd;
+		  const char *group = NULL;
+		  struct coff_comdat_info *ci;
 
-		sec = (asection *) args[arg_no].p;
-		if (sec == NULL)
-		  /* Invoking %A with a null section pointer is an
-		     internal error.  */
-		  abort ();
-		abfd = sec->owner;
-		if (abfd != NULL
-		    && bfd_get_flavour (abfd) == bfd_target_elf_flavour
-		    && elf_next_in_group (sec) != NULL
-		    && (sec->flags & SEC_GROUP) == 0)
-		  group = elf_group_name (sec);
-		else if (abfd != NULL
-			 && bfd_get_flavour (abfd) == bfd_target_coff_flavour
-			 && (ci = bfd_coff_get_comdat_section (sec->owner,
-							       sec)) != NULL)
-		  group = ci->name;
-		if (group != NULL)
-		  result = fprintf (stream, "%s[%s]", sec->name, group);
-		else
-		  result = fprintf (stream, "%s", sec->name);
-	      }
-	      break;
-	    case 'B':
-	      {
-		bfd *abfd;
+		  ptr++;
+		  sec = (asection *) args[arg_no].p;
+		  if (sec == NULL)
+		    /* Invoking %pA with a null section pointer is an
+		       internal error.  */
+		    abort ();
+		  abfd = sec->owner;
+		  if (abfd != NULL
+		      && bfd_get_flavour (abfd) == bfd_target_elf_flavour
+		      && elf_next_in_group (sec) != NULL
+		      && (sec->flags & SEC_GROUP) == 0)
+		    group = elf_group_name (sec);
+		  else if (abfd != NULL
+			   && bfd_get_flavour (abfd) == bfd_target_coff_flavour
+			   && (ci = bfd_coff_get_comdat_section (sec->owner,
+								 sec)) != NULL)
+		    group = ci->name;
+		  if (group != NULL)
+		    result = fprintf (stream, "%s[%s]", sec->name, group);
+		  else
+		    result = fprintf (stream, "%s", sec->name);
+		}
+	      else if (*ptr == 'B')
+		{
+		  bfd *abfd;
 
-		abfd = (bfd *) args[arg_no].p;
-		if (abfd == NULL)
-		  /* Invoking %B with a null bfd pointer is an
-		     internal error.  */
-		  abort ();
-		else if (abfd->my_archive
-			 && !bfd_is_thin_archive (abfd->my_archive))
-		  result = fprintf (stream, "%s(%s)",
-				    abfd->my_archive->filename, abfd->filename);
-		else
-		  result = fprintf (stream, "%s", abfd->filename);
-	      }
+		  ptr++;
+		  abfd = (bfd *) args[arg_no].p;
+		  if (abfd == NULL)
+		    /* Invoking %pB with a null bfd pointer is an
+		       internal error.  */
+		    abort ();
+		  else if (abfd->my_archive
+			   && !bfd_is_thin_archive (abfd->my_archive))
+		    result = fprintf (stream, "%s(%s)",
+				      abfd->my_archive->filename,
+				      abfd->filename);
+		  else
+		    result = fprintf (stream, "%s", abfd->filename);
+		}
+	      else
+		PRINT_TYPE (void *, p);
 	      break;
 	    default:
 	      abort();
@@ -1049,12 +1033,6 @@ _bfd_doprnt_scan (const char *format, union _bfd_doprnt_args *args)
 		  arg_type = Int;
 		else
 		  {
-		    if (ptr[-2] == 'L')
-		      {
-			if (BFD_ARCH_SIZE < 64 || BFD_HOST_64BIT_LONG)
-			  wide_width = 1;
-		      }
-
 		    switch (wide_width)
 		      {
 		      case 0:
@@ -1094,9 +1072,11 @@ _bfd_doprnt_scan (const char *format, union _bfd_doprnt_args *args)
 	      }
 	      break;
 	    case 's':
+	      arg_type = Ptr;
+	      break;
 	    case 'p':
-	    case 'A':
-	    case 'B':
+	      if (*ptr == 'A' || *ptr == 'B')
+		ptr++;
 	      arg_type = Ptr;
 	      break;
 	    default:
@@ -1116,8 +1096,8 @@ _bfd_doprnt_scan (const char *format, union _bfd_doprnt_args *args)
 /* This is the default routine to handle BFD error messages.
    Like fprintf (stderr, ...), but also handles some extra format specifiers.
 
-   %A section name from section.  For group components, prints group name too.
-   %B file name from bfd.  For archive components, prints archive too.
+   %pA section name from section.  For group components, prints group name too.
+   %pB file name from bfd.  For archive components, prints archive too.
 
    Beware: Only supports a maximum of 9 format arguments.  */
 

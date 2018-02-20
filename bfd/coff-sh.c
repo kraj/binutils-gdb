@@ -775,8 +775,9 @@ sh_relax_section (bfd *abfd,
       if (laddr >= sec->size)
 	{
 	  /* xgettext: c-format */
-	  _bfd_error_handler (_("%B: %#Lx: warning: bad R_SH_USES offset"),
-			      abfd, irel->r_vaddr);
+	  _bfd_error_handler
+	    (_("%pB: %#" PRIx64 ": warning: bad R_SH_USES offset"),
+	     abfd, (uint64_t) irel->r_vaddr);
 	  continue;
 	}
       insn = bfd_get_16 (abfd, contents + laddr);
@@ -786,8 +787,8 @@ sh_relax_section (bfd *abfd,
 	{
 	  _bfd_error_handler
 	    /* xgettext: c-format */
-	    (_("%B: %#Lx: warning: R_SH_USES points to unrecognized insn %#x"),
-	     abfd, irel->r_vaddr, insn);
+	    (_("%pB: %#" PRIx64 ": warning: R_SH_USES points to unrecognized insn %#x"),
+	     abfd, (uint64_t) irel->r_vaddr, insn);
 	  continue;
 	}
 
@@ -804,8 +805,8 @@ sh_relax_section (bfd *abfd,
 	{
 	  _bfd_error_handler
 	    /* xgettext: c-format */
-	    (_("%B: %#Lx: warning: bad R_SH_USES load offset"),
-	     abfd, irel->r_vaddr);
+	    (_("%pB: %#" PRIx64 ": warning: bad R_SH_USES load offset"),
+	     abfd, (uint64_t) irel->r_vaddr);
 	  continue;
 	}
 
@@ -829,8 +830,8 @@ sh_relax_section (bfd *abfd,
 	{
 	  _bfd_error_handler
 	    /* xgettext: c-format */
-	    (_("%B: %#Lx: warning: could not find expected reloc"),
-	     abfd, paddr);
+	    (_("%pB: %#" PRIx64 ": warning: could not find expected reloc"),
+	     abfd, (uint64_t) paddr);
 	  continue;
 	}
 
@@ -846,8 +847,8 @@ sh_relax_section (bfd *abfd,
 	{
 	  _bfd_error_handler
 	    /* xgettext: c-format */
-	    (_("%B: %#Lx: warning: symbol in unexpected section"),
-	     abfd, paddr);
+	    (_("%pB: %#" PRIx64 ": warning: symbol in unexpected section"),
+	     abfd, (uint64_t) paddr);
 	  continue;
 	}
 
@@ -972,8 +973,8 @@ sh_relax_section (bfd *abfd,
 	{
 	  _bfd_error_handler
 	    /* xgettext: c-format */
-	    (_("%B: %#Lx: warning: could not find expected COUNT reloc"),
-	     abfd, paddr);
+	    (_("%pB: %#" PRIx64 ": warning: could not find expected COUNT reloc"),
+	     abfd, (uint64_t) paddr);
 	  continue;
 	}
 
@@ -982,8 +983,8 @@ sh_relax_section (bfd *abfd,
       if (irelcount->r_offset == 0)
 	{
 	  /* xgettext: c-format */
-	  _bfd_error_handler (_("%B: %#Lx: warning: bad count"),
-			      abfd, paddr);
+	  _bfd_error_handler (_("%pB: %#" PRIx64 ": warning: bad count"),
+			      abfd, (uint64_t) paddr);
 	  continue;
 	}
 
@@ -1354,8 +1355,8 @@ sh_relax_delete_bytes (bfd *abfd,
 	    {
 	      _bfd_error_handler
 		/* xgettext: c-format */
-		(_("%B: %#Lx: fatal: reloc overflow while relaxing"),
-		 abfd, irel->r_vaddr);
+		(_("%pB: %#" PRIx64 ": fatal: reloc overflow while relaxing"),
+		 abfd, (uint64_t) irel->r_vaddr);
 	      bfd_set_error (bfd_error_bad_value);
 	      return FALSE;
 	    }
@@ -1449,7 +1450,7 @@ sh_relax_delete_bytes (bfd *abfd,
       || obj_raw_syments (abfd) != NULL)
     {
       _bfd_error_handler
-	(_("%B: fatal: generic symbols retrieved before relaxing"), abfd);
+	(_("%pB: fatal: generic symbols retrieved before relaxing"), abfd);
       bfd_set_error (bfd_error_invalid_operation);
       return FALSE;
     }
@@ -2642,8 +2643,8 @@ sh_swap_insns (bfd *      abfd,
 	    {
 	      _bfd_error_handler
 		/* xgettext: c-format */
-		(_("%B: %#Lx: fatal: reloc overflow while relaxing"),
-		 abfd, irel->r_vaddr);
+		(_("%pB: %#" PRIx64 ": fatal: reloc overflow while relaxing"),
+		 abfd, (uint64_t) irel->r_vaddr);
 	      bfd_set_error (bfd_error_bad_value);
 	      return FALSE;
 	    }
@@ -2780,7 +2781,7 @@ sh_relocate_section (bfd *output_bfd ATTRIBUTE_UNUSED,
 	    {
 	      _bfd_error_handler
 		/* xgettext: c-format */
-		(_("%B: illegal symbol index %ld in relocs"),
+		(_("%pB: illegal symbol index %ld in relocs"),
 		 input_bfd, symndx);
 	      bfd_set_error (bfd_error_bad_value);
 	      return FALSE;

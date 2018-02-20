@@ -574,7 +574,7 @@ hppa_add_stub (const char *stub_name,
   if (hsh == NULL)
     {
       /* xgettext:c-format */
-      _bfd_error_handler (_("%B: cannot create stub entry %s"),
+      _bfd_error_handler (_("%pB: cannot create stub entry %s"),
 			  section->owner, stub_name);
       return NULL;
     }
@@ -826,10 +826,11 @@ hppa_build_one_stub (struct bfd_hash_entry *bh, void *in_arg)
 	{
 	  _bfd_error_handler
 	    /* xgettext:c-format */
-	    (_("%B(%A+%#Lx): cannot reach %s, recompile with -ffunction-sections"),
+	    (_("%pB(%pA+%#" PRIx64 "): "
+	       "cannot reach %s, recompile with -ffunction-sections"),
 	     hsh->target_section->owner,
 	     stub_sec,
-	     hsh->stub_offset,
+	     (uint64_t) hsh->stub_offset,
 	     hsh->bh_root.string);
 	  bfd_set_error (bfd_error_bad_value);
 	  return FALSE;
@@ -1239,7 +1240,7 @@ elf32_hppa_check_relocs (bfd *abfd,
 	    {
 	      _bfd_error_handler
 		/* xgettext:c-format */
-		(_("%B: relocation %s can not be used when making a shared object; recompile with -fPIC"),
+		(_("%pB: relocation %s can not be used when making a shared object; recompile with -fPIC"),
 		 abfd,
 		 elf_hppa_howto_table[r_type].name);
 	      bfd_set_error (bfd_error_bad_value);
@@ -2079,7 +2080,7 @@ maybe_set_textrel (struct elf_link_hash_entry *eh, void *inf)
 
       info->flags |= DF_TEXTREL;
       info->callbacks->minfo
-	(_("%B: dynamic relocation against `%T' in read-only section `%A'\n"),
+	(_("%pB: dynamic relocation against `%pT' in read-only section `%pA'\n"),
 	 sec->owner, eh->root.root.string, sec);
 
       /* Not an error, just cut short the traversal.  */
@@ -2677,7 +2678,7 @@ get_local_syms (bfd *output_bfd, bfd *input_bfd, struct bfd_link_info *info)
 		  else
 		    {
 		      /* xgettext:c-format */
-		      _bfd_error_handler (_("%B: duplicate export stub %s"),
+		      _bfd_error_handler (_("%pB: duplicate export stub %s"),
 					  input_bfd, stub_name);
 		    }
 		}
@@ -3330,10 +3331,11 @@ final_link_relocate (asection *input_section,
 		   error.  */
 		_bfd_error_handler
 		  /* xgettext:c-format */
-		  (_("%B(%A+%#Lx): %s fixup for insn %#x is not supported in a non-shared link"),
+		  (_("%pB(%pA+%#" PRIx64 "): %s fixup for insn %#x "
+		     "is not supported in a non-shared link"),
 		   input_bfd,
 		   input_section,
-		   offset,
+		   (uint64_t) offset,
 		   howto->name,
 		   insn);
 	    }
@@ -3496,10 +3498,11 @@ final_link_relocate (asection *input_section,
     {
       _bfd_error_handler
 	/* xgettext:c-format */
-	(_("%B(%A+%#Lx): cannot reach %s, recompile with -ffunction-sections"),
+	(_("%pB(%pA+%#" PRIx64 "): cannot reach %s, "
+	   "recompile with -ffunction-sections"),
 	 input_bfd,
 	 input_section,
-	 offset,
+	 (uint64_t) offset,
 	 hsh->bh_root.string);
       bfd_set_error (bfd_error_bad_value);
       return bfd_reloc_notsupported;
@@ -4139,7 +4142,7 @@ elf32_hppa_relocate_section (bfd *output_bfd,
 		    if (*sym_name == '\0')
 		      sym_name = bfd_section_name (input_bfd, sym_sec);
 		    _bfd_error_handler
-		      (_("%B:%s has both normal and TLS relocs"),
+		      (_("%pB:%s has both normal and TLS relocs"),
 		       input_bfd, sym_name);
 		  }
 		bfd_set_error (bfd_error_bad_value);
@@ -4198,10 +4201,10 @@ elf32_hppa_relocate_section (bfd *output_bfd,
 	    {
 	      _bfd_error_handler
 		/* xgettext:c-format */
-		(_("%B(%A+%#Lx): cannot handle %s for %s"),
+		(_("%pB(%pA+%#" PRIx64 "): cannot handle %s for %s"),
 		 input_bfd,
 		 input_section,
-		 rela->r_offset,
+		 (uint64_t) rela->r_offset,
 		 howto->name,
 		 sym_name);
 	      bfd_set_error (bfd_error_bad_value);

@@ -2817,8 +2817,9 @@ bfd_mach_o_build_exec_seg_command (bfd *abfd, bfd_mach_o_segment_command *seg)
 	{
 	  _bfd_error_handler
 	    /* xgettext:c-format */
-	    (_("section address (%#Lx) below start of segment (%#Lx)"),
-	       s->addr, vma);
+	    (_("section address (%#" PRIx64 ") "
+	       "below start of segment (%#" PRIx64 ")"),
+	       (uint64_t) s->addr, (uint64_t) vma);
 	  return FALSE;
 	}
 
@@ -4759,7 +4760,7 @@ bfd_mach_o_read_command (bfd *abfd, bfd_mach_o_load_command *command)
       break;
     default:
       command->len = 0;
-      _bfd_error_handler (_("%B: unknown load command %#x"),
+      _bfd_error_handler (_("%pB: unknown load command %#x"),
 			  abfd, command->type);
       return FALSE;
     }

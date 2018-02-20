@@ -722,7 +722,7 @@ process_def_file_and_drectve (bfd *abfd ATTRIBUTE_UNUSED, struct bfd_link_info *
 
 	  if (!bfd_generic_link_read_symbols (b))
 	    {
-	      einfo (_("%B%F: could not read symbols: %E\n"), b);
+	      einfo (_("%pB%F: could not read symbols: %E\n"), b);
 	      return;
 	    }
 
@@ -1301,7 +1301,7 @@ pe_walk_relocs_of_symbol (struct bfd_link_info *info,
 
       if (!bfd_generic_link_read_symbols (b))
 	{
-	  einfo (_("%B%F: could not read symbols: %E\n"), b);
+	  einfo (_("%pB%F: could not read symbols: %E\n"), b);
 	  return;
 	}
 
@@ -1396,7 +1396,7 @@ generate_reloc (bfd *abfd, struct bfd_link_info *info)
 
 	  if (!bfd_generic_link_read_symbols (b))
 	    {
-	      einfo (_("%B%F: could not read symbols: %E\n"), b);
+	      einfo (_("%pB%F: could not read symbols: %E\n"), b);
 	      return;
 	    }
 
@@ -2701,7 +2701,7 @@ pe_create_import_fixup (arelent *rel, asection *s, bfd_vma addend, char *name)
       runtime_pseudo_relocs_created++;
     }
   else if (addend != 0)
-    einfo (_("%P%X%C: variable '%T' can't be auto-imported. Please read the documentation for ld's --enable-auto-import for details.\n"),
+    einfo (_("%P%X%C: variable '%pT' can't be auto-imported. Please read the documentation for ld's --enable-auto-import for details.\n"),
 	   s->owner, s, rel->address, sym->name);
 }
 
