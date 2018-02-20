@@ -26,10 +26,7 @@ patches="
 	binutils-x86-64-thunk.patch
 	binutils-x86-64-gold-thunk.patch
 	binutils-x86-gpoff.patch
-0001-Exclude-zero-size-section-for-RELRO-segment-match.patch
-0002-ld-elf-ehdr_start-Pass-build-id-to-ld.patch
-0003-ld-elf-eh4-Pass-z-max-page-size-0x200000-z-noseparat.patch
-0004-x86-Enable-z-separate-code-by-default.patch
+	binutils-x86-separate-code.patch
 "
 
 for p in $patches
