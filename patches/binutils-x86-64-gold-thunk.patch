@@ -1,4 +1,4 @@
-From 6dc5c8a5542abee7064c82d0c1d69b7a6982f0c5 Mon Sep 17 00:00:00 2001
+From 86af7dbf63343978140d1876db85dc5951cfd212 Mon Sep 17 00:00:00 2001
 From: "H.J. Lu" <hjl.tools@gmail.com>
 Date: Tue, 23 Jan 2018 12:09:12 -0800
 Subject: [PATCH 2/2] gold: Initial R_X86_64_THUNK_GOTPCRELX support
