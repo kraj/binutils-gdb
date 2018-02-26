@@ -1,7 +1,7 @@
-From 6f9121b5ec26791c9c33bb3eb048e2204ea17a3b Mon Sep 17 00:00:00 2001
+From 4913bf6d3440c537e3011eac28ce0cace4c029f9 Mon Sep 17 00:00:00 2001
 From: "H.J. Lu" <hjl.tools@gmail.com>
 Date: Wed, 21 Feb 2018 03:19:25 -0800
-Subject: [PATCH] gas: Add --with-optimization=OPTION
+Subject: [PATCH 1/3] x86: Add -O/-O2/-Os assembler command-line options
 
 On x86, some instructions have alternate shorter encodings:
 
@@ -43,29 +43,20 @@ enabled with -Os.
 
 This patch does:
 
-1. Add --with-optimization=OPTION configure option for x86 gas.  This
-allows the default optimization type to be adjusted at configure time.
-2. Add {nooptimize} pseudo prefix to disable instruction size
+1. Add {nooptimize} pseudo prefix to disable instruction size
 optimization.
-3. Add optimize to i386_opcode_modifier to tell assembler that encoding
+2. Add optimize to i386_opcode_modifier to tell assembler that encoding
 of an instruction may be optimized.
 
 gas/
 
-	* NEWS: Mention --with-optimization=OPTION.
-	* configure.ac: Add --with-optimization=OPTION.
-	(DEFAULT_OPTIMIZATION): New AC_DEFINE_UNQUOTED for
-	--with-optimization=OPTION.
-	* config.in: Regenerated.
-	* configure: Likewise.
+	PR gas/22871
 	* config/tc-i386.c (_i386_insn): Add no_optimize.
 	(optimize): New.
 	(optimize_for_space): Likewise.
 	(fits_in_imm7): New function.
 	(fits_in_imm31): Likewise.
 	(optimize_encoding): Likewise.
-	(md_begin): Set optimize and optimize_for_space if
-	optimize_for_space < 0.
 	(md_assemble): Call optimize_encoding to optimize encoding.
 	(parse_insn): Handle {nooptimize}.
 	(md_shortopts): Append "O::".
@@ -94,6 +85,7 @@ gas/
 
 opcodes/
 
+	PR gas/22871
 	* i386-gen.c (opcode_modifiers): Add Optimize.
 	* i386-opc.h (Optimize): New enum.
 	(i386_opcode_modifier): Add optimize.
@@ -105,12 +97,8 @@ opcodes/
 	vpxord and vpxorq.
 	* i386-tbl.h: Regenerated.
 ---
- gas/NEWS                                      |     3 +
- gas/config.in                                 |     3 +
- gas/config/tc-i386.c                          |   270 +-
- gas/configure                                 |    28 +-
- gas/configure.ac                              |    20 +
- gas/doc/c-i386.texi                           |    28 +
+ gas/config/tc-i386.c                          |   236 +-
+ gas/doc/c-i386.texi                           |    25 +
  gas/testsuite/gas/cfi/cfi-x86_64.d            |     1 +
  gas/testsuite/gas/i386/i386.exp               |     7 +
  gas/testsuite/gas/i386/ilp32/cfi/cfi-x86_64.d |     1 +
@@ -132,7 +120,7 @@ opcodes/
  opcodes/i386-opc.h                            |     4 +
  opcodes/i386-opc.tbl                          |    65 +-
  opcodes/i386-tbl.h                            | 10658 ++++++++++++------------
- 27 files changed, 6197 insertions(+), 5358 deletions(-)
+ 23 files changed, 6108 insertions(+), 5356 deletions(-)
  create mode 100644 gas/testsuite/gas/i386/optimize-1.d
  create mode 100644 gas/testsuite/gas/i386/optimize-1.s
  create mode 100644 gas/testsuite/gas/i386/optimize-2.d
@@ -148,35 +136,8 @@ opcodes/
  create mode 100644 gas/testsuite/gas/i386/x86-64-optimize-4.d
  create mode 100644 gas/testsuite/gas/i386/x86-64-optimize-4.s
 
-diff --git a/gas/NEWS b/gas/NEWS
-index 27ee306f2f..b7bde221c7 100644
---- a/gas/NEWS
-+++ b/gas/NEWS
-@@ -1,5 +1,8 @@
- -*- text -*-
- 
-+* Add --with-optimization=OPTION configure option for x86 gas.  This
-+  allows the default optimization type to be adjusted at configure time.
-+
- * Add support for .nop directive.  It is currently supported only for
-   x86 targets.
- 
-diff --git a/gas/config.in b/gas/config.in
-index 0855179696..d00895805d 100644
---- a/gas/config.in
-+++ b/gas/config.in
-@@ -46,6 +46,9 @@
- /* Define to 1 if you want to generate x86 relax relocations by default. */
- #undef DEFAULT_GENERATE_X86_RELAX_RELOCATIONS
- 
-+/* Define default optimization. */
-+#undef DEFAULT_OPTIMIZATION
-+
- /* Supported emulations. */
- #undef EMULATIONS
- 
 diff --git a/gas/config/tc-i386.c b/gas/config/tc-i386.c
-index dff42bdb91..8ea005acaf 100644
+index dff42bdb91..f9dccdbd9e 100644
 --- a/gas/config/tc-i386.c
 +++ b/gas/config/tc-i386.c
 @@ -372,6 +372,9 @@ struct _i386_insn
@@ -207,7 +168,7 @@ index dff42bdb91..8ea005acaf 100644
 +   3. Above plus optimize "test{q,l,w} $imm8,%r{64,32,16}" to
 +      "testb $imm7,%r8".
 + */
-+static int optimize_for_space = -1;
++static int optimize_for_space = 0;
 +
  /* Register prefix used for error message.  */
  static const char *register_prefix = "%";
@@ -231,48 +192,7 @@ index dff42bdb91..8ea005acaf 100644
  static i386_operand_type
  smallest_imm_type (offsetT num)
  {
-@@ -2878,6 +2909,40 @@ md_begin (void)
-       x86_dwarf2_return_column = 8;
-       x86_cie_data_alignment = -4;
-     }
-+
-+  if (optimize_for_space < 0)
-+    {
-+      optimize = 0;
-+      optimize_for_space = 0;
-+#ifdef DEFAULT_OPTIMIZATION
-+      {
-+	/* Set default optimization from DEFAULT_OPTIMIZATION.  */
-+	const char *default_optimization = DEFAULT_OPTIMIZATION;
-+	if (*default_optimization == '-')
-+	  default_optimization++;
-+	if (*default_optimization == 'O')
-+	  {
-+	    default_optimization++;
-+	    if (*default_optimization == 's')
-+	      {
-+		optimize_for_space = 1;
-+		/* Turn on all encoding optimizations.  */
-+		optimize = -1;
-+	      }
-+	    else
-+	      {
-+		/* Turn off -Os.  */
-+		optimize_for_space = 0;
-+
-+		if (*default_optimization != '\0')
-+		  optimize = atoi (default_optimization);
-+		else
-+		  optimize = 0;
-+	      }
-+	  }
-+      }
-+#endif
-+    }
- }
- 
- void
-@@ -3712,6 +3777,179 @@ check_hle (void)
+@@ -3712,6 +3743,179 @@ check_hle (void)
      }
  }
  
@@ -416,7 +336,7 @@ index dff42bdb91..8ea005acaf 100644
 +	     EVEX VOP %zmmM, %zmmM, %zmmN
 +	       -> VEX vpxor %xmmM, %xmmM, %xmmN (M and N < 16)
 +	       -> EVEX VOP %xmmM, %xmmM, %xmmN (M || N >= 16)
-+	     EVEX vpandn %ymmM, %ymmM, %ymmN
++	     EVEX VOP %ymmM, %ymmM, %ymmN
 +	       -> VEX vpxor %xmmM, %xmmM, %xmmN (M and N < 16)
 +	       -> EVEX VOP %xmmM, %xmmM, %xmmN (M || N >= 16)
 +       */
@@ -452,7 +372,7 @@ index dff42bdb91..8ea005acaf 100644
  /* This is the guts of the machine-dependent assembler.  LINE points to a
     machine dependent instruction.  This function is supposed to emit
     the frags/bytes it assembles to.  */
-@@ -3877,6 +4115,9 @@ md_assemble (char *line)
+@@ -3877,6 +4081,9 @@ md_assemble (char *line)
        i.disp_operands = 0;
      }
  
@@ -462,7 +382,7 @@ index dff42bdb91..8ea005acaf 100644
    if (!process_suffix ())
      return;
  
-@@ -4131,6 +4372,10 @@ parse_insn (char *line, char *mnemonic)
+@@ -4131,6 +4338,10 @@ parse_insn (char *line, char *mnemonic)
  		  /* {rex} */
  		  i.rex_encoding = TRUE;
  		  break;
@@ -473,7 +393,7 @@ index dff42bdb91..8ea005acaf 100644
  		default:
  		  abort ();
  		}
-@@ -10074,9 +10319,9 @@ md_operand (expressionS *e)
+@@ -10074,9 +10285,9 @@ md_operand (expressionS *e)
  
  
  #if defined (OBJ_ELF) || defined (OBJ_MAYBE_ELF)
@@ -485,7 +405,7 @@ index dff42bdb91..8ea005acaf 100644
  #endif
  
  #define OPTION_32 (OPTION_MD_BASE + 0)
-@@ -10513,6 +10758,27 @@ md_parse_option (int c, const char *arg)
+@@ -10513,6 +10724,27 @@ md_parse_option (int c, const char *arg)
        intel64 = 1;
        break;
  
@@ -513,123 +433,11 @@ index dff42bdb91..8ea005acaf 100644
      default:
        return 0;
      }
-diff --git a/gas/configure b/gas/configure
-index fbac8f44d5..ce9cf5f245 100755
---- a/gas/configure
-+++ b/gas/configure
-@@ -774,6 +774,7 @@ enable_elf_stt_common
- enable_werror
- enable_build_warnings
- with_cpu
-+with_optimization
- enable_nls
- enable_maintainer_mode
- with_system_zlib
-@@ -1440,6 +1441,9 @@ Optional Packages:
-   --with-gnu-ld           assume the C compiler uses GNU ld [default=no]
-   --with-cpu=CPU          default cpu variant is CPU (currently only supported
-                           on ARC)
-+  --with-optimization=OPTION
-+                          default optimization is OPTION (currently only
-+                          supported on x86)
-   --with-system-zlib      use installed libz
- 
- Some influential environment variables:
-@@ -10987,7 +10991,7 @@ else
-   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
-   lt_status=$lt_dlunknown
-   cat > conftest.$ac_ext <<_LT_EOF
--#line 10990 "configure"
-+#line 10994 "configure"
- #include "confdefs.h"
- 
- #if HAVE_DLFCN_H
-@@ -11093,7 +11097,7 @@ else
-   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
-   lt_status=$lt_dlunknown
-   cat > conftest.$ac_ext <<_LT_EOF
--#line 11096 "configure"
-+#line 11100 "configure"
- #include "confdefs.h"
- 
- #if HAVE_DLFCN_H
-@@ -11917,6 +11921,15 @@ _ACEOF
- fi
- 
- 
-+# PR gas/22871
-+# Provide a configure time option to override our default.
-+ac_default_optimization=unset
-+
-+# Check whether --with-optimization was given.
-+if test "${with_optimization+set}" = set; then :
-+  withval=$with_optimization; ac_default_optimization=$with_optimization
-+fi
-+
- # PR 14072
- 
- 
-@@ -12680,6 +12693,17 @@ cat >>confdefs.h <<_ACEOF
- _ACEOF
- 
- 
-+if test ${ac_default_optimization} = unset; then
-+  ac_default_optimization=no
-+fi
-+if test ${ac_default_optimization} != no; then
-+
-+cat >>confdefs.h <<_ACEOF
-+#define DEFAULT_OPTIMIZATION "$ac_default_optimization"
-+_ACEOF
-+
-+fi
-+
- if test ${ac_default_elf_stt_common} = unset; then
-   ac_default_elf_stt_common=0
- fi
-diff --git a/gas/configure.ac b/gas/configure.ac
-index 043b5c810b..f4f8de265b 100644
---- a/gas/configure.ac
-+++ b/gas/configure.ac
-@@ -118,6 +118,18 @@ AC_ARG_WITH(cpu,
-                                 [Target specific CPU.])],
-             [])
- 
-+# PR gas/22871
-+dnl Option --with-optimization=OPTION allows configure-time control of the
-+dnl default optimization type within the assembler.  Currently only the
-+dnl x88 target supports this feature, but others may be added in the
-+dnl future.
-+# Provide a configure time option to override our default.
-+ac_default_optimization=unset
-+AC_ARG_WITH(optimization,
-+	    AS_HELP_STRING([--with-optimization=OPTION],
-+            [default optimization is OPTION (currently only supported on x86)]),
-+ac_default_optimization=$with_optimization)dnl
-+
- # PR 14072
- AH_VERBATIM([00_CONFIG_H_CHECK],
- [/* Check that config.h is #included before system headers
-@@ -602,6 +614,14 @@ AC_DEFINE_UNQUOTED(DEFAULT_GENERATE_X86_RELAX_RELOCATIONS,
-   $ac_default_x86_relax_relocations,
-   [Define to 1 if you want to generate x86 relax relocations by default.])
- 
-+if test ${ac_default_optimization} = unset; then
-+  ac_default_optimization=no
-+fi
-+if test ${ac_default_optimization} != no; then
-+  AC_DEFINE_UNQUOTED(DEFAULT_OPTIMIZATION, "$ac_default_optimization",
-+    [Define default optimization.])
-+fi
-+
- if test ${ac_default_elf_stt_common} = unset; then
-   ac_default_elf_stt_common=0
- fi
 diff --git a/gas/doc/c-i386.texi b/gas/doc/c-i386.texi
-index 6b2def0457..de9e97543d 100644
+index 6b2def0457..965e0ff5bc 100644
 --- a/gas/doc/c-i386.texi
 +++ b/gas/doc/c-i386.texi
-@@ -411,6 +411,31 @@ with 01, 10 and 11 RC bits, respectively.
+@@ -411,6 +411,28 @@ with 01, 10 and 11 RC bits, respectively.
  This option specifies that the assembler should accept only AMD64 or
  Intel64 ISA in 64-bit mode.  The default is to accept both.
  
@@ -655,13 +463,10 @@ index 6b2def0457..de9e97543d 100644
 +and 64-bit register tests with immediate as 8-bit register test with
 +immediate.  @samp{-O0} turns off this optimization.
 +
-+The default optimization can be controlled by configure option
-+@option{--with-optimization=[-O|-O1|-O2|-Os]}.
-+
  @end table
  @c man end
  
-@@ -647,6 +672,9 @@ Different encoding options can be specified via pseudo prefixes:
+@@ -647,6 +669,9 @@ Different encoding options can be specified via pseudo prefixes:
  @samp{@{rex@}} -- prefer REX prefix for integer and legacy vector
  instructions (x86-64 only).  Note that this differs from the @samp{rex}
  prefix which generates REX prefix unconditionally.

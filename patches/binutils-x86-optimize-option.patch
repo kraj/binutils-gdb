@@ -1,0 +1,207 @@
+From 05de8b0d5bc045deafa258b50a8e5c4d53c79b5a Mon Sep 17 00:00:00 2001
+From: "H.J. Lu" <hjl.tools@gmail.com>
+Date: Mon, 26 Feb 2018 13:40:56 -0800
+Subject: [PATCH 3/3] gas: Add --with-optimization=OPTION
+
+x86 assembler supports -O/-O2/-Os command-line options to select shorter
+alternate encodings.  This patch allows the default optimization type to
+be adjusted at configure time.
+
+	* configure.ac: Add --with-optimization=OPTION.
+	(DEFAULT_OPTIMIZATION): New AC_DEFINE_UNQUOTED for
+	--with-optimization=OPTION.
+	* config.in: Regenerated.
+	* configure: Likewise.
+	* config/tc-i386.c (optimize_for_space): Initialize to -1.
+	(md_begin): Set optimize and optimize_for_space if
+	optimize_for_space < 0.
+---
+ gas/config.in        |  3 +++
+ gas/config/tc-i386.c | 36 +++++++++++++++++++++++++++++++++++-
+ gas/configure        | 28 ++++++++++++++++++++++++++--
+ gas/configure.ac     | 20 ++++++++++++++++++++
+ 4 files changed, 84 insertions(+), 3 deletions(-)
+
+diff --git a/gas/config.in b/gas/config.in
+index 0855179696..d00895805d 100644
+--- a/gas/config.in
++++ b/gas/config.in
+@@ -46,6 +46,9 @@
+ /* Define to 1 if you want to generate x86 relax relocations by default. */
+ #undef DEFAULT_GENERATE_X86_RELAX_RELOCATIONS
+ 
++/* Define default optimization. */
++#undef DEFAULT_OPTIMIZATION
++
+ /* Supported emulations. */
+ #undef EMULATIONS
+ 
+diff --git a/gas/config/tc-i386.c b/gas/config/tc-i386.c
+index 80c01b9539..a4ee3a8c86 100644
+--- a/gas/config/tc-i386.c
++++ b/gas/config/tc-i386.c
+@@ -617,7 +617,7 @@ static int optimize = 0;
+    3. Above plus optimize "test{q,l,w} $imm8,%r{64,32,16}" to
+       "testb $imm7,%r8".
+  */
+-static int optimize_for_space = 0;
++static int optimize_for_space = -1;
+ 
+ /* Register prefix used for error message.  */
+ static const char *register_prefix = "%";
+@@ -2909,6 +2909,40 @@ md_begin (void)
+       x86_dwarf2_return_column = 8;
+       x86_cie_data_alignment = -4;
+     }
++
++  if (optimize_for_space < 0)
++    {
++      optimize = 0;
++      optimize_for_space = 0;
++#ifdef DEFAULT_OPTIMIZATION
++      {
++	/* Set default optimization from DEFAULT_OPTIMIZATION.  */
++	const char *default_optimization = DEFAULT_OPTIMIZATION;
++	if (*default_optimization == '-')
++	  default_optimization++;
++	if (*default_optimization == 'O')
++	  {
++	    default_optimization++;
++	    if (*default_optimization == 's')
++	      {
++		optimize_for_space = 1;
++		/* Turn on all encoding optimizations.  */
++		optimize = -1;
++	      }
++	    else
++	      {
++		/* Turn off -Os.  */
++		optimize_for_space = 0;
++
++		if (*default_optimization != '\0')
++		  optimize = atoi (default_optimization);
++		else
++		  optimize = 0;
++	      }
++	  }
++      }
++#endif
++    }
+ }
+ 
+ void
+diff --git a/gas/configure b/gas/configure
+index fbac8f44d5..ce9cf5f245 100755
+--- a/gas/configure
++++ b/gas/configure
+@@ -774,6 +774,7 @@ enable_elf_stt_common
+ enable_werror
+ enable_build_warnings
+ with_cpu
++with_optimization
+ enable_nls
+ enable_maintainer_mode
+ with_system_zlib
+@@ -1440,6 +1441,9 @@ Optional Packages:
+   --with-gnu-ld           assume the C compiler uses GNU ld [default=no]
+   --with-cpu=CPU          default cpu variant is CPU (currently only supported
+                           on ARC)
++  --with-optimization=OPTION
++                          default optimization is OPTION (currently only
++                          supported on x86)
+   --with-system-zlib      use installed libz
+ 
+ Some influential environment variables:
+@@ -10987,7 +10991,7 @@ else
+   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
+   lt_status=$lt_dlunknown
+   cat > conftest.$ac_ext <<_LT_EOF
+-#line 10990 "configure"
++#line 10994 "configure"
+ #include "confdefs.h"
+ 
+ #if HAVE_DLFCN_H
+@@ -11093,7 +11097,7 @@ else
+   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
+   lt_status=$lt_dlunknown
+   cat > conftest.$ac_ext <<_LT_EOF
+-#line 11096 "configure"
++#line 11100 "configure"
+ #include "confdefs.h"
+ 
+ #if HAVE_DLFCN_H
+@@ -11917,6 +11921,15 @@ _ACEOF
+ fi
+ 
+ 
++# PR gas/22871
++# Provide a configure time option to override our default.
++ac_default_optimization=unset
++
++# Check whether --with-optimization was given.
++if test "${with_optimization+set}" = set; then :
++  withval=$with_optimization; ac_default_optimization=$with_optimization
++fi
++
+ # PR 14072
+ 
+ 
+@@ -12680,6 +12693,17 @@ cat >>confdefs.h <<_ACEOF
+ _ACEOF
+ 
+ 
++if test ${ac_default_optimization} = unset; then
++  ac_default_optimization=no
++fi
++if test ${ac_default_optimization} != no; then
++
++cat >>confdefs.h <<_ACEOF
++#define DEFAULT_OPTIMIZATION "$ac_default_optimization"
++_ACEOF
++
++fi
++
+ if test ${ac_default_elf_stt_common} = unset; then
+   ac_default_elf_stt_common=0
+ fi
+diff --git a/gas/configure.ac b/gas/configure.ac
+index 043b5c810b..f4f8de265b 100644
+--- a/gas/configure.ac
++++ b/gas/configure.ac
+@@ -118,6 +118,18 @@ AC_ARG_WITH(cpu,
+                                 [Target specific CPU.])],
+             [])
+ 
++# PR gas/22871
++dnl Option --with-optimization=OPTION allows configure-time control of the
++dnl default optimization type within the assembler.  Currently only the
++dnl x88 target supports this feature, but others may be added in the
++dnl future.
++# Provide a configure time option to override our default.
++ac_default_optimization=unset
++AC_ARG_WITH(optimization,
++	    AS_HELP_STRING([--with-optimization=OPTION],
++            [default optimization is OPTION (currently only supported on x86)]),
++ac_default_optimization=$with_optimization)dnl
++
+ # PR 14072
+ AH_VERBATIM([00_CONFIG_H_CHECK],
+ [/* Check that config.h is #included before system headers
+@@ -602,6 +614,14 @@ AC_DEFINE_UNQUOTED(DEFAULT_GENERATE_X86_RELAX_RELOCATIONS,
+   $ac_default_x86_relax_relocations,
+   [Define to 1 if you want to generate x86 relax relocations by default.])
+ 
++if test ${ac_default_optimization} = unset; then
++  ac_default_optimization=no
++fi
++if test ${ac_default_optimization} != no; then
++  AC_DEFINE_UNQUOTED(DEFAULT_OPTIMIZATION, "$ac_default_optimization",
++    [Define default optimization.])
++fi
++
+ if test ${ac_default_elf_stt_common} = unset; then
+   ac_default_elf_stt_common=0
+ fi
+-- 
+2.14.3
+

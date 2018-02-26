@@ -28,6 +28,8 @@ patches="
 	binutils-x86-gpoff.patch
 	binutils-x86-separate-code.patch
 	binutils-x86-optimize.patch
+	binutils-x86-optimize-vpsub.patch
+	binutils-x86-optimize-option.patch
 "
 
 for p in $patches
