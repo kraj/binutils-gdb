@@ -1,4 +1,4 @@
-From 9476ce21ed66600af7f99c688f5a96c01c7e4f4b Mon Sep 17 00:00:00 2001
+From a56ed417e8ed5be190f28d6db7df132886ef7cfb Mon Sep 17 00:00:00 2001
 From: "H.J. Lu" <hjl.tools@gmail.com>
 Date: Mon, 4 Nov 2013 09:17:45 -0800
 Subject: [PATCH 1/3] Add lto and none-lto input support for ld -r
@@ -433,7 +433,7 @@ index 9742c1ac7f..6b7b8dd31f 100644
  symindex bfd_get_next_mapent
     (bfd *abfd, symindex previous, carsym **sym);
 diff --git a/bfd/bfd.c b/bfd/bfd.c
-index 7c9ab25ad0..5946e49dea 100644
+index 288b5b14fe..0bc8354306 100644
 --- a/bfd/bfd.c
 +++ b/bfd/bfd.c
 @@ -57,6 +57,14 @@ CODE_FRAGMENT
@@ -515,7 +515,7 @@ index 7c9ab25ad0..5946e49dea 100644
 +  return NULL;
 +}
 diff --git a/bfd/elf.c b/bfd/elf.c
-index 2fb8377274..35fe4d2db5 100644
+index 5d39a9881d..8909cdc2ed 100644
 --- a/bfd/elf.c
 +++ b/bfd/elf.c
 @@ -2621,6 +2621,7 @@ static const struct bfd_elf_special_section special_sections_g[] =
@@ -1032,7 +1032,7 @@ index 61a1ca7c1e..e5045d8448 100644
  /* The next three section types are defined by Solaris, and are named
     SHT_SUNW*.  We use them in GNU code, so we also define SHT_GNU*
 diff --git a/ld/emultempl/aarch64elf.em b/ld/emultempl/aarch64elf.em
-index 629e1cc3ce..afb81ed43a 100644
+index 34d03f31ce..89b5649629 100644
 --- a/ld/emultempl/aarch64elf.em
 +++ b/ld/emultempl/aarch64elf.em
 @@ -275,7 +275,7 @@ gld${EMULATION_NAME}_after_allocation (void)
@@ -1060,7 +1060,7 @@ index 629e1cc3ce..afb81ed43a 100644
 -LDEMUL_FINISH=gld${EMULATION_NAME}_finish
 +LDEMUL_FINISH=aarch64_finish
 diff --git a/ld/emultempl/alphaelf.em b/ld/emultempl/alphaelf.em
-index 727f44aae4..0522d1edab 100644
+index cbcd179dba..8fc4e9720d 100644
 --- a/ld/emultempl/alphaelf.em
 +++ b/ld/emultempl/alphaelf.em
 @@ -104,7 +104,7 @@ alpha_finish (void)
@@ -1073,10 +1073,10 @@ index 727f44aae4..0522d1edab 100644
  EOF
  
 diff --git a/ld/emultempl/armelf.em b/ld/emultempl/armelf.em
-index 35908236ad..a7ba496ff3 100644
+index 2d98064ed3..da83b57cc7 100644
 --- a/ld/emultempl/armelf.em
 +++ b/ld/emultempl/armelf.em
-@@ -416,7 +416,7 @@ gld${EMULATION_NAME}_after_allocation (void)
+@@ -417,7 +417,7 @@ gld${EMULATION_NAME}_after_allocation (void)
  }
  
  static void
@@ -1085,7 +1085,7 @@ index 35908236ad..a7ba496ff3 100644
  {
    struct bfd_link_hash_entry * h;
  
-@@ -443,7 +443,7 @@ gld${EMULATION_NAME}_finish (void)
+@@ -444,7 +444,7 @@ gld${EMULATION_NAME}_finish (void)
  	}
      }
  
@@ -1094,14 +1094,14 @@ index 35908236ad..a7ba496ff3 100644
  
    if (params.thumb_entry_symbol)
      {
-@@ -793,4 +793,4 @@ LDEMUL_BEFORE_PARSE=gld"${EMULATION_NAME}"_before_parse
+@@ -794,4 +794,4 @@ LDEMUL_BEFORE_PARSE=gld"${EMULATION_NAME}"_before_parse
  LDEMUL_SET_SYMBOLS=gld"${EMULATION_NAME}"_set_symbols
  
  # Call the extra arm-elf function
 -LDEMUL_FINISH=gld${EMULATION_NAME}_finish
 +LDEMUL_FINISH=arm_finish
 diff --git a/ld/emultempl/avrelf.em b/ld/emultempl/avrelf.em
-index 4f33ad1f7b..9db69fc0d8 100644
+index a05c39adad..e3f5c4a865 100644
 --- a/ld/emultempl/avrelf.em
 +++ b/ld/emultempl/avrelf.em
 @@ -226,7 +226,7 @@ avr_finish (void)
@@ -1114,7 +1114,7 @@ index 4f33ad1f7b..9db69fc0d8 100644
  EOF
  
 diff --git a/ld/emultempl/elf32.em b/ld/emultempl/elf32.em
-index eb90743cee..7667a63786 100644
+index aae9d1f625..60a79195c1 100644
 --- a/ld/emultempl/elf32.em
 +++ b/ld/emultempl/elf32.em
 @@ -66,6 +66,7 @@ static void gld${EMULATION_NAME}_before_allocation (void);
@@ -1221,7 +1221,7 @@ index eb90743cee..7667a63786 100644
    ${LDEMUL_OPEN_DYNAMIC_ARCHIVE-gld${EMULATION_NAME}_open_dynamic_archive},
    ${LDEMUL_PLACE_ORPHAN-gld${EMULATION_NAME}_place_orphan},
 diff --git a/ld/emultempl/ppc32elf.em b/ld/emultempl/ppc32elf.em
-index 1b6339ea56..dcdf372d9e 100644
+index 3c335b7412..c8e2ac5f27 100644
 --- a/ld/emultempl/ppc32elf.em
 +++ b/ld/emultempl/ppc32elf.em
 @@ -212,7 +212,7 @@ ppc_finish (void)
@@ -1234,7 +1234,7 @@ index 1b6339ea56..dcdf372d9e 100644
  
  EOF
 diff --git a/ld/emultempl/ppc64elf.em b/ld/emultempl/ppc64elf.em
-index 0f8062a694..295ea3c3c2 100644
+index 62c298ccf3..e32c5455ed 100644
 --- a/ld/emultempl/ppc64elf.em
 +++ b/ld/emultempl/ppc64elf.em
 @@ -563,7 +563,7 @@ gld${EMULATION_NAME}_after_allocation (void)
@@ -1262,7 +1262,7 @@ index 0f8062a694..295ea3c3c2 100644
 -LDEMUL_FINISH=gld${EMULATION_NAME}_finish
 +LDEMUL_FINISH=ppc_finish
 diff --git a/ld/emultempl/spuelf.em b/ld/emultempl/spuelf.em
-index 90c8531aa2..252e81de30 100644
+index a40605ddb9..e56ee1f14b 100644
 --- a/ld/emultempl/spuelf.em
 +++ b/ld/emultempl/spuelf.em
 @@ -416,7 +416,7 @@ spu_elf_relink (void)
@@ -1283,7 +1283,7 @@ index 90c8531aa2..252e81de30 100644
  }
  
  static char *
-@@ -832,5 +832,5 @@ PARSE_AND_LIST_ARGS_CASES='
+@@ -851,5 +851,5 @@ PARSE_AND_LIST_ARGS_CASES='
  
  LDEMUL_AFTER_OPEN=spu_after_open
  LDEMUL_BEFORE_ALLOCATION=spu_before_allocation
@@ -1291,7 +1291,7 @@ index 90c8531aa2..252e81de30 100644
 +LDEMUL_FINISH=spu_finish
  LDEMUL_CHOOSE_TARGET=gld${EMULATION_NAME}_choose_target
 diff --git a/ld/ldexp.c b/ld/ldexp.c
-index a44a4fe054..94beb544b6 100644
+index f9dc362930..ef5e6f28e4 100644
 --- a/ld/ldexp.c
 +++ b/ld/ldexp.c
 @@ -1617,14 +1617,15 @@ align_n (bfd_vma value, bfd_vma align)
@@ -1312,7 +1312,7 @@ index a44a4fe054..94beb544b6 100644
 +				 definedness_newfunc,
 +				 sizeof (struct definedness_hash_entry),
 +				 13))
-     einfo (_("%P%F: can not create hash table: %E\n"));
+     einfo (_("%F%P: can not create hash table: %E\n"));
  }
  
 @@ -1659,7 +1660,8 @@ ldexp_finalize_syms (void)
@@ -1342,7 +1342,7 @@ index d58cacba1c..542e94ff6a 100644
  
  #endif
 diff --git a/ld/ldfile.c b/ld/ldfile.c
-index 6532a57d96..d9933404c5 100644
+index a72ff13526..20ce7e96ca 100644
 --- a/ld/ldfile.c
 +++ b/ld/ldfile.c
 @@ -316,7 +316,9 @@ success:
@@ -1356,7 +1356,7 @@ index 6532a57d96..d9933404c5 100644
    /* It opened OK, the format checked out, and the plugins have had
       their chance to claim it, so this is success.  */
 diff --git a/ld/ldlang.c b/ld/ldlang.c
-index 54019826f6..3860bcad35 100644
+index 35e4f1eaba..a18a9edfea 100644
 --- a/ld/ldlang.c
 +++ b/ld/ldlang.c
 @@ -36,6 +36,7 @@
@@ -2509,7 +2509,7 @@ index 1ecb152be1..298e082e44 100644
    OPTION_DEFAULT_SCRIPT,
    OPTION_PRINT_OUTPUT_FORMAT,
 diff --git a/ld/ldmain.c b/ld/ldmain.c
-index 6945654c28..aa73237857 100644
+index b6914db5da..d36c2d3d11 100644
 --- a/ld/ldmain.c
 +++ b/ld/ldmain.c
 @@ -223,6 +223,9 @@ main (int argc, char **argv)
@@ -2580,7 +2580,7 @@ index 6945654c28..aa73237857 100644
    /* Even if we're producing relocatable output, some non-fatal errors should
 @@ -483,6 +459,8 @@ main (int argc, char **argv)
        if (!bfd_close (link_info.output_bfd))
- 	einfo (_("%F%pB: final close failed: %E\n"), link_info.output_bfd);
+ 	einfo (_("%F%P: %pB: final close failed: %E\n"), link_info.output_bfd);
  
 +      link_info.output_bfd = NULL;
 +
@@ -2607,7 +2607,7 @@ index 6945654c28..aa73237857 100644
  
    ldlang_add_file (input);
  
-@@ -1496,3 +1479,38 @@ notice (struct bfd_link_info *info,
+@@ -1514,3 +1497,38 @@ notice (struct bfd_link_info *info,
  
    return TRUE;
  }
@@ -2658,7 +2658,7 @@ index 34bde0373d..6b22e54856 100644
 +
  #endif
 diff --git a/ld/lexsup.c b/ld/lexsup.c
-index f2191602d4..dc72ea4b2c 100644
+index 636ce17bab..23c711b159 100644
 --- a/ld/lexsup.c
 +++ b/ld/lexsup.c
 @@ -174,6 +174,9 @@ static const struct ld_option ld_options[] =
@@ -2673,7 +2673,7 @@ index f2191602d4..dc72ea4b2c 100644
      ONE_DASH },
 @@ -1038,6 +1041,9 @@ parse_args (unsigned argc, char **argv)
  	  if (plugin_opt_plugin_arg (optarg))
- 	    einfo (_("%P%F: bad -plugin-opt option\n"));
+ 	    einfo (_("%F%P: bad -plugin-opt option\n"));
  	  break;
 +	case OPTION_PLUGIN_SAVE_TEMPS:
 +	  plugin_save_temps = TRUE;
@@ -2682,7 +2682,7 @@ index f2191602d4..dc72ea4b2c 100644
  	case 'q':
  	  link_info.emitrelocations = TRUE;
 diff --git a/ld/plugin.c b/ld/plugin.c
-index 0fb51c2696..8d9ae7fbc3 100644
+index fad8bc0e38..259c18f3ff 100644
 --- a/ld/plugin.c
 +++ b/ld/plugin.c
 @@ -56,6 +56,9 @@ extern int errno;
