@@ -593,6 +593,9 @@ elfNN_ia64_relax_section (bfd *abfd, asection *sec,
 		     1, change it to slot 2.  */
 		  if ((irel->r_offset & 3) == 1)
 		    irel->r_offset += 1;
+
+		  changed_contents = TRUE;
+		  changed_relocs = TRUE;
 		}
 
 	      continue;
@@ -607,6 +610,9 @@ elfNN_ia64_relax_section (bfd *abfd, asection *sec,
 
 	      /* Make the relocation offset point to slot 1.  */
 	      irel->r_offset = (irel->r_offset & ~((bfd_vma) 0x3)) + 1;
+
+	      changed_contents = TRUE;
+	      changed_relocs = TRUE;
 	      continue;
 	    }
 
@@ -617,8 +623,8 @@ elfNN_ia64_relax_section (bfd *abfd, asection *sec,
 	    {
 	      _bfd_error_handler
 		/* xgettext:c-format */
-		(_("%pB: Can't relax br at %#" PRIx64 " in section `%pA'."
-		   " Please use brl or indirect branch."),
+		(_("%pB: can't relax br at %#" PRIx64 " in section `%pA';"
+		   " please use brl or indirect branch"),
 		 sec->owner, (uint64_t) roff, sec);
 	      bfd_set_error (bfd_error_bad_value);
 	      goto error_return;
@@ -3842,9 +3848,9 @@ elfNN_ia64_relocate_section (bfd *output_bfd,
       r_type = ELFNN_R_TYPE (rel->r_info);
       if (r_type > R_IA64_MAX_RELOC_CODE)
 	{
-	  _bfd_error_handler
-	    /* xgettext:c-format */
-	    (_("%pB: unknown relocation type %d"), input_bfd, (int) r_type);
+	  /* xgettext:c-format */
+	  _bfd_error_handler (_("%pB: unsupported relocation type %#x"),
+			      input_bfd, (int) r_type);
 	  bfd_set_error (bfd_error_bad_value);
 	  ret_val = FALSE;
 	  continue;

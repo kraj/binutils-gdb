@@ -15,8 +15,9 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
+#include "common-defs.h"
 #include "i386.h"
-#include "tdesc.h"
+#include "common/tdesc.h"
 #include "x86-xstate.h"
 #include <stdlib.h>
 

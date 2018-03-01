@@ -470,7 +470,7 @@ coff_mcore_relocate_section (bfd * output_bfd,
 	{
 	default:
 	  /* xgettext: c-format */
-	  _bfd_error_handler (_("%pB: unsupported relocation type 0x%02x"),
+	  _bfd_error_handler (_("%pB: unsupported relocation type %#x"),
 			      input_bfd, r_type);
 	  bfd_set_error (bfd_error_bad_value);
 	  return FALSE;
@@ -478,7 +478,7 @@ coff_mcore_relocate_section (bfd * output_bfd,
 	case IMAGE_REL_MCORE_ABSOLUTE:
 	  _bfd_error_handler
 	    /* xgettext: c-format */
-	    (_("Warning: unsupported reloc %s <file %pB, section %pA>\n"
+	    (_("warning: unsupported reloc %s <file %pB, section %pA>\n"
 	       "sym %ld (%s), r_vaddr %" PRId64 " (%#" PRIx64 ")"),
 	     howto->name, input_bfd, input_section,
 	     rel->r_symndx, my_name, (int64_t) rel->r_vaddr,

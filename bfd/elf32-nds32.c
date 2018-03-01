@@ -2894,7 +2894,8 @@ nds32_info_to_howto_rel (bfd *abfd ATTRIBUTE_UNUSED, arelent *cache_ptr,
   if (r_type > R_NDS32_GNU_VTENTRY)
     {
       /* xgettext:c-format */
-      _bfd_error_handler (_("%pB: invalid NDS32 reloc number: %d"), abfd, r_type);
+      _bfd_error_handler (_("%pB: unsupported relocation type %#x"),
+			  abfd, r_type);
       r_type = 0;
     }
   cache_ptr->howto = bfd_elf32_bfd_reloc_type_table_lookup (r_type);
@@ -3229,7 +3230,7 @@ nds32_elf_final_sda_base (bfd *output_bfd, struct bfd_link_info *info,
 	}
       else
 	{
-	  _bfd_error_handler (_("error: Can't find symbol: _SDA_BASE_."));
+	  _bfd_error_handler (_("error: can't find symbol: %s"), "_SDA_BASE_");
 	  return bfd_reloc_dangerous;
 	}
     }
@@ -4407,15 +4408,15 @@ nds32_elf_relocate_section (bfd *		   output_bfd ATTRIBUTE_UNUSED,
       /* Set the _ITB_BASE_.  */
       if (!nds32_elf_ex9_itb_base (info))
 	{
-	  _bfd_error_handler (_("%pB: error: Cannot set _ITB_BASE_"),
-			      output_bfd);
+	  _bfd_error_handler (_("%pB: error: cannot set %s"),
+			      output_bfd, "_ITB_BASE_");
 	  bfd_set_error (bfd_error_bad_value);
 	}
     }
 
   if (table->target_optimize & NDS32_RELAX_JUMP_IFC_ON)
     if (!nds32_elf_ifc_reloc ())
-      _bfd_error_handler (_("error: IFC relocation error."));
+      _bfd_error_handler (_("error: IFC relocation error"));
 
  /* Relocation for .ex9.itable.  */
   if (table->target_optimize & NDS32_RELAX_EX9_ON
@@ -4449,7 +4450,7 @@ nds32_elf_relocate_section (bfd *		   output_bfd ATTRIBUTE_UNUSED,
       if (r_type >= R_NDS32_max)
 	{
 	  /* xgettext:c-format */
-	  _bfd_error_handler (_("%pB: error: unknown relocation type %d."),
+	  _bfd_error_handler (_("%pB: unsupported relocation type %#x"),
 			      input_bfd, r_type);
 	  bfd_set_error (bfd_error_bad_value);
 	  ret = FALSE;
@@ -4895,8 +4896,8 @@ nds32_elf_relocate_section (bfd *		   output_bfd ATTRIBUTE_UNUSED,
 	  if (bfd_link_pic (info))
 	    {
 	      _bfd_error_handler
-		(_("%pB: warning: cannot deal R_NDS32_25_ABS_RELA in shared "
-		   "mode."), input_bfd);
+		(_("%pB: warning: %s unsupported in shared mode"),
+		 input_bfd, "R_NDS32_25_ABS_RELA");
 	      return FALSE;
 	    }
 	  break;
@@ -5029,7 +5030,7 @@ nds32_elf_relocate_section (bfd *		   output_bfd ATTRIBUTE_UNUSED,
 	    {
 	      /* Incorrect alignment.  */
 	      _bfd_error_handler
-		(_("%pB: warning: unaligned access to GOT entry."), input_bfd);
+		(_("%pB: warning: unaligned access to GOT entry"), input_bfd);
 	      ret = FALSE;
 	      r = bfd_reloc_dangerous;
 	      goto check_reloc;
@@ -5071,7 +5072,7 @@ handle_sda:
 	      if (r != bfd_reloc_ok)
 		{
 		  _bfd_error_handler
-		    (_("%pB: warning: relocate SDA_BASE failed."), input_bfd);
+		    (_("%pB: warning: relocate SDA_BASE failed"), input_bfd);
 		  ret = FALSE;
 		  goto check_reloc;
 		}
@@ -5093,7 +5094,8 @@ handle_sda:
 		  /* Incorrect alignment.  */
 		  _bfd_error_handler
 		    /* xgettext:c-format */
-		    (_("%pB(%pA): warning: unaligned small data access of type %d."),
+		    (_("%pB(%pA): warning: unaligned small data access"
+		       " of type %d"),
 		     input_bfd, input_section, r_type);
 		  ret = FALSE;
 		  goto check_reloc;
@@ -5885,7 +5887,7 @@ nds32_elf_merge_private_bfd_data (bfd *ibfd, struct bfd_link_info *info)
   if (bfd_little_endian (ibfd) != bfd_little_endian (obfd))
     {
       _bfd_error_handler
-	(_("%pB: warning: Endian mismatch with previous modules."), ibfd);
+	(_("%pB: warning: endian mismatch with previous modules"), ibfd);
 
       bfd_set_error (bfd_error_bad_value);
       return FALSE;
@@ -5895,8 +5897,8 @@ nds32_elf_merge_private_bfd_data (bfd *ibfd, struct bfd_link_info *info)
   if (in_version == E_NDS32_ELF_VER_1_2)
     {
       _bfd_error_handler
-	(_("%pB: warning: Older version of object file encountered, "
-	   "Please recompile with current tool chain."), ibfd);
+	(_("%pB: warning: older version of object file encountered, "
+	   "please recompile with current tool chain"), ibfd);
     }
 
   /* We may need to merge V1 and V2 arch object files to V2.  */
@@ -5973,7 +5975,7 @@ nds32_elf_merge_private_bfd_data (bfd *ibfd, struct bfd_link_info *info)
   if ((in_flags & EF_NDS_ABI) != (out_flags & EF_NDS_ABI))
     {
       _bfd_error_handler
-	(_("%pB: error: ABI mismatch with previous modules."), ibfd);
+	(_("%pB: error: ABI mismatch with previous modules"), ibfd);
 
       bfd_set_error (bfd_error_bad_value);
       return FALSE;
@@ -5984,7 +5986,8 @@ nds32_elf_merge_private_bfd_data (bfd *ibfd, struct bfd_link_info *info)
       if (((in_flags & EF_NDS_ARCH) != E_N1_ARCH))
 	{
 	  _bfd_error_handler
-	    (_("%pB: error: Instruction set mismatch with previous modules."), ibfd);
+	    (_("%pB: error: instruction set mismatch with previous modules"),
+	     ibfd);
 
 	  bfd_set_error (bfd_error_bad_value);
 	  return FALSE;
@@ -6010,7 +6013,7 @@ nds32_elf_merge_private_bfd_data (bfd *ibfd, struct bfd_link_info *info)
       if (in_version != out_version)
 	_bfd_error_handler
 	  /* xgettext:c-format */
-	  (_("%pB: warning: Incompatible elf-versions %s and  %s."),
+	  (_("%pB: warning: incompatible elf-versions %s and %s"),
 	   ibfd, nds32_elfver_strtab[out_version],
 	   nds32_elfver_strtab[in_version]);
 
@@ -8532,7 +8535,8 @@ done_adjust_diff:
 		  && (blank_t2->offset > raddr
 		      || blank_t2->next->offset <= raddr))
 		_bfd_error_handler
-		  (_("%pB: Error: search_nds32_elf_blank reports wrong node\n"), abfd);
+		  (_("%pB: error: search_nds32_elf_blank reports wrong node"),
+		   abfd);
 
 	      /* Mark reloc in deleted portion as NONE.
 		 For some relocs like R_NDS32_LABEL that doesn't modify the
@@ -11651,7 +11655,7 @@ nds32_elf_pick_relax (bfd_boolean init, asection *sec, bfd_boolean *again,
 	  break;
 	case NDS32_RELAX_JUMP_IFC_ROUND:
 	  if (!nds32_elf_ifc_finish (link_info))
-	    _bfd_error_handler (_("error: Jump IFC Fail."));
+	    _bfd_error_handler (_("error: jump IFC fail"));
 	  if (table->target_optimize & NDS32_RELAX_EX9_ON)
 	    {
 	      pass++;
@@ -11668,7 +11672,7 @@ nds32_elf_pick_relax (bfd_boolean init, asection *sec, bfd_boolean *again,
 	    {
 	      /* Do jump IFC optimization again.  */
 	      if (!nds32_elf_ifc_finish (link_info))
-		_bfd_error_handler (_("error: Jump IFC Fail."));
+		_bfd_error_handler (_("error: jump IFC fail"));
 	    }
 	  break;
 	default:
@@ -11779,7 +11783,8 @@ nds32_elf_relax_section (bfd *abfd, asection *sec,
       /* Set the _ITB_BASE_.  */
       if (!nds32_elf_ex9_itb_base (link_info))
 	{
-	  _bfd_error_handler (_("%pB: error: Cannot set _ITB_BASE_"), abfd);
+	  _bfd_error_handler (_("%pB: error: cannot set %s"),
+			      abfd, "_ITB_BASE_");
 	  bfd_set_error (bfd_error_bad_value);
 	}
     }
@@ -12525,7 +12530,7 @@ nds32_relax_fp_as_gp (struct bfd_link_info *link_info,
 	  /* Begin of the region.  */
 	  if (begin_rel)
 	    /* xgettext:c-format */
-	    _bfd_error_handler (_("%pB: Nested OMIT_FP in %pA."), abfd, sec);
+	    _bfd_error_handler (_("%pB: nested OMIT_FP in %pA"), abfd, sec);
 
 	  begin_rel = irel;
 	  nds32_fag_init (&fag_head);
@@ -12544,7 +12549,8 @@ nds32_relax_fp_as_gp (struct bfd_link_info *link_info,
 	  if (begin_rel == NULL)
 	    {
 	      /* xgettext:c-format */
-	      _bfd_error_handler (_("%pB: Unmatched OMIT_FP in %pA."), abfd, sec);
+	      _bfd_error_handler (_("%pB: unmatched OMIT_FP in %pA"),
+				  abfd, sec);
 	      continue;
 	    }
 
@@ -14603,7 +14609,7 @@ nds32_elf_ex9_init (void)
 			      sizeof (struct elf_nds32_code_hash_entry),
 			      1023))
     {
-      _bfd_error_handler (_("Linker: cannot init ex9 hash table error \n"));
+      _bfd_error_handler (_("cannot init ex9 hash table error"));
       return FALSE;
     }
   return TRUE;
@@ -15012,7 +15018,7 @@ nds32_elf_ex9_reloc_jmp (struct bfd_link_info *link_info)
 					 (fix_ptr->sec->owner, fix_ptr->sec,
 					  &source_contents, TRUE))
 				    _bfd_error_handler
-				      (_("Linker: error cannot fixed ex9 relocation \n"));
+				      (_("error: cannot fix ex9 relocation"));
 				  if (temp_ptr->order < 32)
 				    insn_ex9 = INSN_EX9_IT_2;
 				  else

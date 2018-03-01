@@ -1,3 +1,22 @@
+2018-02-26  Alan Modra  <amodra@gmail.com>
+
+	* crx-dis.c (getregliststring): Allocate a large enough buffer
+	to silence false positive gcc8 warning.
+
+2018-02-22  Shea Levy <shea@shealevy.com>
+
+	* disassemble.c (ARCH_riscv): Define if ARCH_all.
+
+2018-02-22  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* i386-opc.tbl: Add {rex},
+	* i386-tbl.h: Regenerated.
+
+2018-02-20  Maciej W. Rozycki  <macro@mips.com>
+
+	* mips16-opc.c (decode_mips16_operand) <'M'>: Remove case.
+	(mips16_opcodes): Replace `M' with `m' for "restore".
+
 2018-02-19  Thomas Preud'homme  <thomas.preudhomme@arm.com>
 
 	* arm-dis.c (thumb_opcodes): Fix BXNS mask.

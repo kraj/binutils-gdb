@@ -2554,7 +2554,8 @@ frv_info_to_howto_rela (bfd *abfd ATTRIBUTE_UNUSED,
       if (r_type >= (unsigned int) R_FRV_max)
 	{
 	  /* xgettext:c-format */
-	  _bfd_error_handler (_("%pB: invalid FRV reloc number: %d"), abfd, r_type);
+	  _bfd_error_handler (_("%pB: unsupported relocation type %#x"),
+			      abfd, r_type);
 	  r_type = 0;
 	}
       cache_ptr->howto = & elf32_frv_howto_table [r_type];
@@ -3529,9 +3530,10 @@ elf32_frv_relocate_section (bfd *output_bfd ATTRIBUTE_UNUSED,
 		    if (addend)
 		      {
 			info->callbacks->einfo
-			  (_("%H: R_FRV_FUNCDESC references dynamic symbol"
+			  (_("%H: %s references dynamic symbol"
 			     " with nonzero addend\n"),
-			   input_bfd, input_section, rel->r_offset);
+			   input_bfd, input_section, rel->r_offset,
+			   "R_FRV_FUNCDESC");
 			return FALSE;
 		      }
 		    dynindx = h->dynindx;
@@ -3650,9 +3652,10 @@ elf32_frv_relocate_section (bfd *output_bfd ATTRIBUTE_UNUSED,
 		if (addend && r_type == R_FRV_FUNCDESC_VALUE)
 		  {
 		    info->callbacks->einfo
-		      (_("%H: R_FRV_FUNCDESC_VALUE"
-			 " references dynamic symbol with nonzero addend\n"),
-		       input_bfd, input_section, rel->r_offset);
+		      (_("%H: %s references dynamic symbol"
+			 " with nonzero addend\n"),
+		       input_bfd, input_section, rel->r_offset,
+		       "R_FRV_FUNCDESC_VALUE");
 		    return FALSE;
 		  }
 		dynindx = h->dynindx;
@@ -6250,10 +6253,9 @@ elf32_frv_check_relocs (bfd *abfd,
 
 	default:
 	bad_reloc:
-	  info->callbacks->einfo
-	    /* xgettext:c-format */
-	    (_("%pB: unsupported relocation type %i\n"),
-	     abfd, ELF32_R_TYPE (rel->r_info));
+	  /* xgettext:c-format */
+	  _bfd_error_handler (_("%pB: unsupported relocation type %#x"),
+			      abfd, (unsigned int) ELF32_R_TYPE (rel->r_info));
 	  return FALSE;
 	}
     }

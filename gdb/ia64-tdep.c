@@ -876,13 +876,13 @@ ia64_breakpoint_from_pc (struct gdbarch *gdbarch,
 }
 
 static CORE_ADDR
-ia64_read_pc (struct regcache *regcache)
+ia64_read_pc (readable_regcache *regcache)
 {
   ULONGEST psr_value, pc_value;
   int slot_num;
 
-  regcache_cooked_read_unsigned (regcache, IA64_PSR_REGNUM, &psr_value);
-  regcache_cooked_read_unsigned (regcache, IA64_IP_REGNUM, &pc_value);
+  regcache->cooked_read (IA64_PSR_REGNUM, &psr_value);
+  regcache->cooked_read (IA64_IP_REGNUM, &pc_value);
   slot_num = (psr_value >> 41) & 3;
 
   return pc_value | (slot_num * SLOT_MULTIPLIER);
@@ -927,7 +927,7 @@ rse_address_add(CORE_ADDR addr, int nslots)
 }
 
 static enum register_status
-ia64_pseudo_register_read (struct gdbarch *gdbarch, struct regcache *regcache,
+ia64_pseudo_register_read (struct gdbarch *gdbarch, readable_regcache *regcache,
                            int regnum, gdb_byte *buf)
 {
   enum bfd_endian byte_order = gdbarch_byte_order (gdbarch);

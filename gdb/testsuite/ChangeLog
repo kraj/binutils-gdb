@@ -1,3 +1,41 @@
+2018-02-26  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* gdb.base/load-command.c: New file.
+	* gdb.base/load-command.exp: New file.
+	* lib/gdb.exp (gdb_is_target_remote_prompt): Rename to...
+	(gdb_is_target_1): ...this, and generalize for other targets
+	than just remote.
+	(gdb_is_target_remote): Use gdb_is_target_1.
+	(gdb_is_target_native): use gdb_is_target_1.
+
+2018-02-26  Tom Tromey  <tom@tromey.com>
+
+	PR python/16497:
+	* gdb.python/py-framefilter.exp: Update test.
+
+2018-02-26  Tom Tromey  <tom@tromey.com>
+
+	* gdb.dwarf2/variant.c: New file.
+	* gdb.dwarf2/variant.exp: New file.
+
+2018-02-26  Tom Tromey  <tom@tromey.com>
+
+	* gdb.rust/simple.exp: Accept more possible results in enum test.
+
+2018-02-25  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* lib/cp-support.exp (cp_test_ptype_class): Move space inside
+	parentheses.
+
+2018-02-23  Maciej W. Rozycki  <macro@mips.com>
+
+	* lib/cp-support.exp (cp_test_ptype_class): Fix a typo in the
+	name of a variable: $actual_linejj -> $actual_line.
+
+2018-02-21  John Baldwin  <jhb@FreeBSD.org>
+
+	* gdb.arch/amd64-i386-address.exp: Fix a typo.
+
 2018-02-20  Markus Metzger  <markus.t.metzger@intel.com>
 
 	* gdb.btrace/buffer-size.exp: Do not force BTS.

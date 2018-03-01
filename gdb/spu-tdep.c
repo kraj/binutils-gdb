@@ -182,7 +182,7 @@ spu_register_type (struct gdbarch *gdbarch, int reg_nr)
 /* Pseudo registers for preferred slots - stack pointer.  */
 
 static enum register_status
-spu_pseudo_register_read_spu (struct regcache *regcache, const char *regname,
+spu_pseudo_register_read_spu (readable_regcache *regcache, const char *regname,
 			      gdb_byte *buf)
 {
   struct gdbarch *gdbarch = regcache->arch ();
@@ -207,7 +207,7 @@ spu_pseudo_register_read_spu (struct regcache *regcache, const char *regname,
 }
 
 static enum register_status
-spu_pseudo_register_read (struct gdbarch *gdbarch, struct regcache *regcache,
+spu_pseudo_register_read (struct gdbarch *gdbarch, readable_regcache *regcache,
                           int regnum, gdb_byte *buf)
 {
   gdb_byte reg[16];
@@ -1176,11 +1176,12 @@ spu_unwind_sp (struct gdbarch *gdbarch, struct frame_info *next_frame)
 }
 
 static CORE_ADDR
-spu_read_pc (struct regcache *regcache)
+spu_read_pc (readable_regcache *regcache)
 {
   struct gdbarch_tdep *tdep = gdbarch_tdep (regcache->arch ());
   ULONGEST pc;
-  regcache_cooked_read_unsigned (regcache, SPU_PC_REGNUM, &pc);
+
+  regcache->cooked_read (SPU_PC_REGNUM, &pc);
   /* Mask off interrupt enable bit.  */
   return SPUADDR (tdep->id, pc & -4);
 }
@@ -1202,7 +1203,7 @@ spu_write_pc (struct regcache *regcache, CORE_ADDR pc)
 struct spu2ppu_cache
 {
   struct frame_id frame_id;
-  struct regcache *regcache;
+  readonly_detached_regcache *regcache;
 };
 
 static struct gdbarch *
@@ -1229,7 +1230,7 @@ spu2ppu_prev_register (struct frame_info *this_frame,
   gdb_byte *buf;
 
   buf = (gdb_byte *) alloca (register_size (gdbarch, regnum));
-  regcache_cooked_read (cache->regcache, regnum, buf);
+  cache->regcache->cooked_read (regnum, buf);
   return frame_unwind_got_bytes (this_frame, regnum, buf);
 }
 
@@ -1274,7 +1275,7 @@ spu2ppu_sniffer (const struct frame_unwind *self,
 	{
 	  struct regcache *regcache;
 	  regcache = get_thread_arch_regcache (inferior_ptid, target_gdbarch ());
-	  cache->regcache = regcache_dup (regcache);
+	  cache->regcache = new readonly_detached_regcache (*regcache);
 	  *this_prologue_cache = cache;
 	  return 1;
 	}

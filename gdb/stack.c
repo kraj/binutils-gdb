@@ -1744,7 +1744,9 @@ backtrace_command_1 (const char *count_exp, int show_locals, int no_filters,
       else
 	{
 	  py_start = 0;
-	  py_end = count;
+	  /* The argument to apply_ext_lang_frame_filter is the number
+	     of the final frame to print, and frames start at 0.  */
+	  py_end = count - 1;
 	}
     }
   else
@@ -1773,11 +1775,13 @@ backtrace_command_1 (const char *count_exp, int show_locals, int no_filters,
 
   if (! no_filters)
     {
-      int flags = PRINT_LEVEL | PRINT_FRAME_INFO | PRINT_ARGS;
+      frame_filter_flags flags = PRINT_LEVEL | PRINT_FRAME_INFO | PRINT_ARGS;
       enum ext_lang_frame_args arg_type;
 
       if (show_locals)
 	flags |= PRINT_LOCALS;
+      if (from_tty)
+	flags |= PRINT_MORE_FRAMES;
 
       if (!strcmp (print_frame_arguments, "scalars"))
 	arg_type = CLI_SCALAR_VALUES;

@@ -639,7 +639,7 @@ microblaze_elf_reloc_name_lookup (bfd *abfd ATTRIBUTE_UNUSED,
 /* Set the howto pointer for a RCE ELF reloc.  */
 
 static void
-microblaze_elf_info_to_howto (bfd * abfd ATTRIBUTE_UNUSED,
+microblaze_elf_info_to_howto (bfd * abfd,
 			      arelent * cache_ptr,
 			      Elf_Internal_Rela * dst)
 {
@@ -653,7 +653,7 @@ microblaze_elf_info_to_howto (bfd * abfd ATTRIBUTE_UNUSED,
   if (r_type >= R_MICROBLAZE_max)
     {
       /* xgettext:c-format */
-      _bfd_error_handler (_("%pB: unrecognised MicroBlaze reloc number: %d"),
+      _bfd_error_handler (_("%pB: unsupported relocation type %#x"),
 			  abfd, r_type);
       bfd_set_error (bfd_error_bad_value);
       r_type = R_MICROBLAZE_NONE;
@@ -929,7 +929,7 @@ microblaze_elf_relocate_section (bfd *output_bfd,
       if (r_type < 0 || r_type >= (int) R_MICROBLAZE_max)
 	{
 	  /* xgettext:c-format */
-	  _bfd_error_handler (_("%pB: unknown relocation type %d"),
+	  _bfd_error_handler (_("%pB: unsupported relocation type %#x"),
 			      input_bfd, (int) r_type);
 	  bfd_set_error (bfd_error_bad_value);
 	  ret = FALSE;
@@ -1061,7 +1061,7 @@ microblaze_elf_relocate_section (bfd *output_bfd,
 		      {
 			_bfd_error_handler
 			  /* xgettext:c-format */
-			  (_("%pB: The target (%s) of an %s relocation"
+			  (_("%pB: the target (%s) of an %s relocation"
 			     " is in the wrong section (%pA)"),
 			   input_bfd,
 			   sym_name,
@@ -1109,7 +1109,7 @@ microblaze_elf_relocate_section (bfd *output_bfd,
 		      {
 			_bfd_error_handler
 			  /* xgettext:c-format */
-			  (_("%pB: The target (%s) of an %s relocation"
+			  (_("%pB: the target (%s) of an %s relocation"
 			     " is in the wrong section (%pA)"),
 			   input_bfd,
 			   sym_name,

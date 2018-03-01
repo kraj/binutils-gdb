@@ -632,7 +632,7 @@ bfd_elf32_bfd_reloc_name_lookup (bfd *abfd ATTRIBUTE_UNUSED,
 /* Set the howto pointer for an MSP430 ELF reloc.  */
 
 static void
-msp430_info_to_howto_rela (bfd * abfd ATTRIBUTE_UNUSED,
+msp430_info_to_howto_rela (bfd * abfd,
 			   arelent * cache_ptr,
 			   Elf_Internal_Rela * dst)
 {
@@ -645,7 +645,8 @@ msp430_info_to_howto_rela (bfd * abfd ATTRIBUTE_UNUSED,
       if (r_type >= (unsigned int) R_MSP430x_max)
 	{
 	  /* xgettext:c-format */
-	  _bfd_error_handler (_("%pB: invalid MSP430X reloc number: %d"), abfd, r_type);
+	  _bfd_error_handler (_("%pB: unsupported relocation type %#x"),
+			      abfd, r_type);
 	  r_type = 0;
 	}
       cache_ptr->howto = elf_msp430x_howto_table + r_type;
@@ -655,7 +656,8 @@ msp430_info_to_howto_rela (bfd * abfd ATTRIBUTE_UNUSED,
   if (r_type >= (unsigned int) R_MSP430_max)
     {
       /* xgettext:c-format */
-      _bfd_error_handler (_("%pB: invalid MSP430 reloc number: %d"), abfd, r_type);
+      _bfd_error_handler (_("%pB: unsupported relocation type %#x"),
+			  abfd, r_type);
       r_type = 0;
     }
   cache_ptr->howto = &elf_msp430_howto_table[r_type];
@@ -829,7 +831,7 @@ msp430_final_link_relocate (reloc_howto_type *	   howto,
 		  {
 		    info->callbacks->warning
 		      (info,
-		       _("Try enabling relaxation to avoid relocation truncations"),
+		       _("try enabling relaxation to avoid relocation truncations"),
 		       NULL, input_bfd, input_section, relocation);
 		    warned = TRUE;
 		  }
@@ -1143,7 +1145,7 @@ msp430_final_link_relocate (reloc_howto_type *	   howto,
 		{
 		  info->callbacks->warning
 		    (info,
-		     _("Try enabling relaxation to avoid relocation truncations"),
+		     _("try enabling relaxation to avoid relocation truncations"),
 		     NULL, input_bfd, input_section, relocation);
 		  warned = TRUE;
 		}
@@ -2349,7 +2351,7 @@ elf32_msp430_obj_attrs_handle_unknown (bfd *abfd, int tag)
 {
   _bfd_error_handler
     /* xgettext:c-format */
-    (_("Warning: %pB: Unknown MSPABI object attribute %d"),
+    (_("warning: %pB: unknown MSPABI object attribute %d"),
      abfd, tag);
   return TRUE;
 }

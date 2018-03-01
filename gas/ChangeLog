@@ -1,3 +1,78 @@
+2018-02-26  Maciej W. Rozycki  <macro@mips.com>
+
+	* doc/as.texinfo (Pseudo Ops): Clean up `.dc' and `.ds'
+	descriptions.
+
+2018-02-26  Nick Clifton  <nickc@redhat.com>
+
+	* doc/as.texinfo (Dc): Fix typo.
+
+2018-02-26  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/gas/mips/reginfo-2.l: Update.
+
+2018-02-23  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/gas/mips/reginfo-2.l: Update.
+
+2018-02-23  Nick Clifton  <nickc@redhat.com>
+
+	* doc/as.texinfo (Pseudo Ops): Add nodes for .dc, .dcb and .ds.
+
+2018-02-23  Kuan-Lin Chen  <kuanlinchentw@gmail.com>
+
+	* config/tc-nds32.c (ict_model): New function. Hook new
+	directive .ict_model.
+	(nds32_insert_relax_entry): Tag the bits of entry relocation
+	for .ict_model.
+
+2018-02-22  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* config/tc-i386.c (_i386_insn): Add rex_encoding.
+	(md_assemble): When i.rex_encoding is true, generate a REX byte
+	if possible.
+	(parse_insn): Set i.rex_encoding for {rex}.
+	* doc/c-i386.texi: Document {rex}.
+	* testsuite/gas/i386/x86-64-pseudos.s: Add {rex} tests.
+	* testsuite/gas/i386/x86-64-pseudos.d: Updated.
+
+2018-02-22  A. Wilcox  <awilfox@adelielinux.org>
+
+	PR 22014
+	* config/tc-mips.c (mips_lookup_insn): Use memmove to strip the
+	instruction size suffix.
+
+2018-02-20  Maciej W. Rozycki  <macro@mips.com>
+
+	* testsuite/gas/mips/mips16-branch-reloc-4.d: New test.
+	* testsuite/gas/mips/mips16-branch-reloc-5.d: New test.
+	* testsuite/gas/mips/mips16-branch-reloc-4.s: New test source.
+	* testsuite/gas/mips/mips16-branch-reloc-5.s: New test source.
+	* testsuite/gas/mips/mips.exp: Run the new tests.
+
+2018-02-20  Max Filippov  <jcmvbkbc@gmail.com>
+
+	* config/tc-xtensa.c (struct litpool_frag): Add new field
+	literal_count.
+	(MAX_AUTO_POOL_LITERALS, MAX_EXPLICIT_POOL_LITERALS)
+	(MAX_POOL_LITERALS): New macro definitions.
+	(auto_litpool_limit): Initialize to 0.
+	(md_parse_option): Set auto_litpool_limit in the presence of
+	--auto-litpools option.
+	(xtensa_maybe_create_literal_pool_frag): Zero-initialize
+	literal_count field.
+	(xg_find_litpool): New function. Make sure that found literal
+	pool size is within the limit.
+	(xtensa_move_literals): Extract literal pool search code into
+	the new function.
+	* testsuite/gas/xtensa/all.exp: Add auto-litpools-2 test.
+	* testsuite/gas/xtensa/auto-litpools-2.d: New file.
+	* testsuite/gas/xtensa/auto-litpools-2.s: New file.
+	* testsuite/gas/xtensa/auto-litpools.d: Fix up changed
+	addresses.
+	* testsuite/gas/xtensa/auto-litpools.s: Change literal value so
+	that objdump doesn't get out of sync.
+
 2018-02-20  Thomas Preud'homme  <thomas.preudhomme@arm.com>
 
 	* doc/c-arm.texi (.arch_extension): Mention extensions it accepts are

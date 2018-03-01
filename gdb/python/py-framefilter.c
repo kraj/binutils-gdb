@@ -920,7 +920,7 @@ py_print_args (PyObject *filter,
     on success.  It can also throw an exception RETURN_QUIT.  */
 
 static enum ext_lang_bt_status
-py_print_frame (PyObject *filter, int flags,
+py_print_frame (PyObject *filter, frame_filter_flags flags,
 		enum ext_lang_frame_args args_type,
 		struct ui_out *out, int indent, htab_t levels_printed)
 {
@@ -1332,7 +1332,7 @@ bootstrap_python_frame_filters (struct frame_info *frame,
 
 enum ext_lang_bt_status
 gdbpy_apply_frame_filter (const struct extension_language_defn *extlang,
-			  struct frame_info *frame, int flags,
+			  struct frame_info *frame, frame_filter_flags flags,
 			  enum ext_lang_frame_args args_type,
 			  struct ui_out *out, int frame_low, int frame_high)
 {
@@ -1354,6 +1354,18 @@ gdbpy_apply_frame_filter (const struct extension_language_defn *extlang,
   END_CATCH
 
   gdbpy_enter enter_py (gdbarch, current_language);
+
+  /* When we're limiting the number of frames, be careful to request
+     one extra frame, so that we can print a message if there are more
+     frames.  */
+  int frame_countdown = -1;
+  if ((flags & PRINT_MORE_FRAMES) != 0 && frame_low >= 0 && frame_high >= 0)
+    {
+      ++frame_high;
+      /* This has an extra +1 because it is checked before a frame is
+	 printed.  */
+      frame_countdown = frame_high - frame_low + 1;
+    }
 
   gdbpy_ref<> iterable (bootstrap_python_frame_filters (frame, frame_low,
 							frame_high));
@@ -1400,6 +1412,19 @@ gdbpy_apply_frame_filter (const struct extension_language_defn *extlang,
 	      return EXT_LANG_BT_ERROR;
 	    }
 	  break;
+	}
+
+      if (frame_countdown != -1)
+	{
+	  gdb_assert ((flags & PRINT_MORE_FRAMES) != 0);
+	  --frame_countdown;
+	  if (frame_countdown == 0)
+	    {
+	      /* We've printed all the frames we were asked to
+		 print, but more frames existed.  */
+	      printf_filtered (_("(More stack frames follow...)\n"));
+	      break;
+	    }
 	}
 
       success = py_print_frame (item.get (), flags, args_type, out, 0,

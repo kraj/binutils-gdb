@@ -289,7 +289,8 @@ rl78_info_to_howto_rela (bfd *		     abfd ATTRIBUTE_UNUSED,
   if (r_type >= (unsigned int) R_RL78_max)
     {
       /* xgettext:c-format */
-      _bfd_error_handler (_("%pB: invalid RL78 reloc number: %d"), abfd, r_type);
+      _bfd_error_handler (_("%pB: unsupported relocation type %#x"),
+			  abfd, r_type);
       r_type = 0;
     }
   cache_ptr->howto = rl78_elf_howto_table + r_type;
@@ -367,7 +368,7 @@ static unsigned int rl78_stack_top;
       if (rl78_stack_top < NUM_STACK_ENTRIES)	\
 	rl78_stack [rl78_stack_top ++] = (val);	\
       else					\
-	_bfd_error_handler (_("Internal Error: RL78 reloc stack overflow")); \
+	_bfd_error_handler (_("internal error: RL78 reloc stack overflow")); \
     }						\
   while (0)
 
@@ -378,7 +379,7 @@ static unsigned int rl78_stack_top;
 	(dest) = rl78_stack [-- rl78_stack_top];\
       else					\
 	{					\
-	  _bfd_error_handler (_("Internal Error: RL78 reloc stack underflow")); \
+	  _bfd_error_handler (_("internal error: RL78 reloc stack underflow")); \
 	  (dest) = 0;				\
 	}					\
     }						\
@@ -1047,7 +1048,8 @@ rl78_elf_relocate_section
 	    {
 	      relocation = 0;
 	      if (h->root.type != bfd_link_hash_undefweak)
-		_bfd_error_handler (_("Warning: RL78_SYM reloc with an unknown symbol"));
+		_bfd_error_handler
+		  (_("warning: RL78_SYM reloc with an unknown symbol"));
 	    }
 	  (void) rl78_compute_complex_reloc (r_type, relocation, input_section);
 	  break;

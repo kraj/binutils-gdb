@@ -146,7 +146,7 @@ spu_elf_bfd_to_reloc_type (bfd_reloc_code_real_type code)
 }
 
 static void
-spu_elf_info_to_howto (bfd *abfd ATTRIBUTE_UNUSED,
+spu_elf_info_to_howto (bfd *abfd,
 		       arelent *cache_ptr,
 		       Elf_Internal_Rela *dst)
 {
@@ -157,7 +157,7 @@ spu_elf_info_to_howto (bfd *abfd ATTRIBUTE_UNUSED,
   if (r_type >= R_SPU_max)
     {
       /* xgettext:c-format */
-      _bfd_error_handler (_("%pB: unrecognised SPU reloc number: %d"),
+      _bfd_error_handler (_("%pB: unsupported relocation type %#x"),
 			  abfd, r_type);
       bfd_set_error (bfd_error_bad_value);
       r_type = R_SPU_NONE;
@@ -724,7 +724,7 @@ spu_elf_find_overlays (struct bfd_link_info *info)
 	      if ((s->vma - vma_start) & (htab->params->line_size - 1))
 		{
 		  info->callbacks->einfo (_("%X%P: overlay section %pA "
-					    "does not start on a cache line.\n"),
+					    "does not start on a cache line\n"),
 					  s);
 		  bfd_set_error (bfd_error_bad_value);
 		  return 0;
@@ -732,7 +732,7 @@ spu_elf_find_overlays (struct bfd_link_info *info)
 	      else if (s->size > htab->params->line_size)
 		{
 		  info->callbacks->einfo (_("%X%P: overlay section %pA "
-					    "is larger than a cache line.\n"),
+					    "is larger than a cache line\n"),
 					  s);
 		  bfd_set_error (bfd_error_bad_value);
 		  return 0;
@@ -752,7 +752,7 @@ spu_elf_find_overlays (struct bfd_link_info *info)
 	  if (s->vma < ovl_end)
 	    {
 	      info->callbacks->einfo (_("%X%P: overlay section %pA "
-					"is not in cache area.\n"),
+					"is not in cache area\n"),
 				      alloc_sec[i-1]);
 	      bfd_set_error (bfd_error_bad_value);
 	      return 0;
@@ -794,7 +794,7 @@ spu_elf_find_overlays (struct bfd_link_info *info)
 		      /* xgettext:c-format */
 		      info->callbacks->einfo (_("%X%P: overlay sections %pA "
 						"and %pA do not start at the "
-						"same address.\n"),
+						"same address\n"),
 					      s0, s);
 		      bfd_set_error (bfd_error_bad_value);
 		      return 0;
@@ -3321,7 +3321,7 @@ remove_cycles (struct function_info *fun,
 	      const char *f2 = func_name (call->fun);
 
 	      /* xgettext:c-format */
-	      info->callbacks->info (_("Stack analysis will ignore the call "
+	      info->callbacks->info (_("stack analysis will ignore the call "
 				       "from %s to %s\n"),
 				     f1, f2);
 	    }

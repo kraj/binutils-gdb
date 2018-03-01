@@ -1389,7 +1389,7 @@ copy_special_section_fields (const bfd *ibfd,
 	{
 	  _bfd_error_handler
 	    /* xgettext:c-format */
-	    (_("%pB: Invalid sh_link field (%d) in section number %d"),
+	    (_("%pB: invalid sh_link field (%d) in section number %d"),
 	     ibfd, iheader->sh_link, secnum);
 	  return FALSE;
 	}
@@ -1405,7 +1405,7 @@ copy_special_section_fields (const bfd *ibfd,
 	   if we could not find a match ?  */
 	_bfd_error_handler
 	  /* xgettext:c-format */
-	  (_("%pB: Failed to find link section for section %d"), obfd, secnum);
+	  (_("%pB: failed to find link section for section %d"), obfd, secnum);
     }
 
   if (iheader->sh_info)
@@ -1432,7 +1432,7 @@ copy_special_section_fields (const bfd *ibfd,
       else
 	_bfd_error_handler
 	  /* xgettext:c-format */
-	  (_("%pB: Failed to find info section for section %d"), obfd, secnum);
+	  (_("%pB: failed to find info section for section %d"), obfd, secnum);
     }
 
   return changed;
@@ -3223,7 +3223,7 @@ elf_fake_sections (bfd *abfd, asection *asect, void *fsarg)
     {
       _bfd_error_handler
 	/* xgettext:c-format */
-	(_("%pB: error: Alignment power %d of section `%pA' is too big"),
+	(_("%pB: error: alignment power %d of section `%pA' is too big"),
 	 abfd, asect->alignment_power, asect);
       arg->failed = TRUE;
       return;
@@ -5472,7 +5472,7 @@ assign_file_positions_for_load_sections (bfd *abfd,
 		      && p->p_paddr < (bfd_vma) off))
 		{
 		  _bfd_error_handler
-		    (_("%pB: Not enough room for program headers,"
+		    (_("%pB: not enough room for program headers,"
 		       " try linking with -N"),
 		     abfd);
 		  bfd_set_error (bfd_error_bad_value);
@@ -5859,6 +5859,7 @@ assign_file_positions_for_non_load_sections (bfd *abfd,
       if (p->p_type == PT_GNU_RELRO)
 	{
 	  bfd_vma start, end;
+	  bfd_boolean ok;
 
 	  if (link_info != NULL)
 	    {
@@ -5881,6 +5882,7 @@ assign_file_positions_for_non_load_sections (bfd *abfd,
 	      end = 0;
 	    }
 
+	  ok = FALSE;
 	  if (start < end)
 	    {
 	      struct elf_segment_map *lm;
@@ -5902,48 +5904,54 @@ assign_file_positions_for_non_load_sections (bfd *abfd,
 		      && lm->sections[0]->vma < end)
 		    break;
 		}
-	      BFD_ASSERT (lm != NULL);
 
-	      /* Find the section starting the RELRO segment.  */
-	      for (i = 0; i < lm->count; i++)
+	      if (lm != NULL)
 		{
-		  asection *s = lm->sections[i];
-		  if (s->vma >= start
-		      && s->vma < end
-		      && s->size != 0)
-		    break;
+		  /* Find the section starting the RELRO segment.  */
+		  for (i = 0; i < lm->count; i++)
+		    {
+		      asection *s = lm->sections[i];
+		      if (s->vma >= start
+			  && s->vma < end
+			  && s->size != 0)
+			break;
+		    }
+
+		  if (i < lm->count)
+		    {
+		      p->p_vaddr = lm->sections[i]->vma;
+		      p->p_paddr = lm->sections[i]->lma;
+		      p->p_offset = lm->sections[i]->filepos;
+		      p->p_memsz = end - p->p_vaddr;
+		      p->p_filesz = p->p_memsz;
+
+		      /* The RELRO segment typically ends a few bytes
+			 into .got.plt but other layouts are possible.
+			 In cases where the end does not match any
+			 loaded section (for instance is in file
+			 padding), trim p_filesz back to correspond to
+			 the end of loaded section contents.  */
+		      if (p->p_filesz > lp->p_vaddr + lp->p_filesz - p->p_vaddr)
+			p->p_filesz = lp->p_vaddr + lp->p_filesz - p->p_vaddr;
+
+		      /* Preserve the alignment and flags if they are
+			 valid.  The gold linker generates RW/4 for
+			 the PT_GNU_RELRO section.  It is better for
+			 objcopy/strip to honor these attributes
+			 otherwise gdb will choke when using separate
+			 debug files.  */
+		      if (!m->p_align_valid)
+			p->p_align = 1;
+		      if (!m->p_flags_valid)
+			p->p_flags = PF_R;
+		      ok = TRUE;
+		    }
 		}
-	      BFD_ASSERT (i < lm->count);
-
-	      p->p_vaddr = lm->sections[i]->vma;
-	      p->p_paddr = lm->sections[i]->lma;
-	      p->p_offset = lm->sections[i]->filepos;
-	      p->p_memsz = end - p->p_vaddr;
-	      p->p_filesz = p->p_memsz;
-
-	      /* The RELRO segment typically ends a few bytes into
-		 .got.plt but other layouts are possible.  In cases
-		 where the end does not match any loaded section (for
-		 instance is in file padding), trim p_filesz back to
-		 correspond to the end of loaded section contents.  */
-	      if (p->p_filesz > lp->p_vaddr + lp->p_filesz - p->p_vaddr)
-		p->p_filesz = lp->p_vaddr + lp->p_filesz - p->p_vaddr;
-
-	      /* Preserve the alignment and flags if they are valid. The
-		 gold linker generates RW/4 for the PT_GNU_RELRO section.
-		 It is better for objcopy/strip to honor these attributes
-		 otherwise gdb will choke when using separate debug files.
-	       */
-	      if (!m->p_align_valid)
-		p->p_align = 1;
-	      if (!m->p_flags_valid)
-		p->p_flags = PF_R;
 	    }
-	  else
-	    {
-	      memset (p, 0, sizeof *p);
-	      p->p_type = PT_NULL;
-	    }
+	  if (link_info != NULL)
+	    BFD_ASSERT (ok);
+	  if (!ok)
+	    memset (p, 0, sizeof *p);
 	}
       else if (p->p_type == PT_GNU_STACK)
 	{
@@ -6119,9 +6127,7 @@ assign_file_positions_except_relocs (bfd *abfd,
 	}
 
       /* Write out the program headers.  */
-      alloc = elf_program_header_size (abfd) / bed->s->sizeof_phdr;
-
-      /* Sort the program headers into the ordering required by the ELF standard.  */
+      alloc = elf_elfheader (abfd)->e_phnum;
       if (alloc == 0)
 	return TRUE;
 
@@ -6143,14 +6149,14 @@ assign_file_positions_except_relocs (bfd *abfd,
 							alloc))
 	  && tdata->phdr[1].p_type == PT_LOAD
 	  && (tdata->phdr[1].p_vaddr > tdata->phdr[0].p_vaddr
-	      || (tdata->phdr[1].p_vaddr + tdata->phdr[1].p_memsz)
-	      <  (tdata->phdr[0].p_vaddr + tdata->phdr[0].p_memsz)))
+	      || (tdata->phdr[1].p_vaddr + tdata->phdr[1].p_memsz
+		  < tdata->phdr[0].p_vaddr + tdata->phdr[0].p_memsz)))
 	{
 	  /* The fix for this error is usually to edit the linker script being
 	     used and set up the program headers manually.  Either that or
 	     leave room for the headers at the start of the SECTIONS.  */
-	  _bfd_error_handler (_("\
-%pB: error: PHDR segment not covered by LOAD segment"),
+	  _bfd_error_handler (_("%pB: error: PHDR segment not covered"
+				" by LOAD segment"),
 			      abfd);
 	  return FALSE;
 	}
@@ -6837,9 +6843,10 @@ rewrite_elf_program_header (bfd *ibfd, bfd *obfd)
 	  if (segment->p_type == PT_LOAD
 	      && (segment->p_filesz > 0 || segment->p_memsz == 0))
 	    /* xgettext:c-format */
-	    _bfd_error_handler (_("%pB: warning: Empty loadable segment detected"
-				  " at vaddr=%#" PRIx64 ", is this intentional?"),
-				ibfd, (uint64_t) segment->p_vaddr);
+	    _bfd_error_handler
+	      (_("%pB: warning: empty loadable segment detected"
+		 " at vaddr=%#" PRIx64 ", is this intentional?"),
+	       ibfd, (uint64_t) segment->p_vaddr);
 
 	  map->count = 0;
 	  *pointer_to_map = map;
@@ -7949,10 +7956,11 @@ error_return:
 		  if (shndx == SHN_BAD)
 		    {
 		      /* xgettext:c-format */
-		      _bfd_error_handler (_("\
-Unable to find equivalent output section for symbol '%s' from section '%s'"),
-					  syms[idx]->name ? syms[idx]->name : "<Local sym>",
-					  sec->name);
+		      _bfd_error_handler
+			(_("unable to find equivalent output section"
+			   " for symbol '%s' from section '%s'"),
+			 syms[idx]->name ? syms[idx]->name : "<Local sym>",
+			 sec->name);
 		      bfd_set_error (bfd_error_invalid_operation);
 		      goto error_return;
 		    }
@@ -8959,10 +8967,9 @@ _bfd_elf_validate_reloc (bfd *abfd, arelent *areloc)
   return TRUE;
 
  fail:
-  _bfd_error_handler
-    /* xgettext:c-format */
-    (_("%pB: unsupported relocation type %s"),
-     abfd, areloc->howto->name);
+  /* xgettext:c-format */
+  _bfd_error_handler (_("%pB: %s unsupported"),
+		      abfd, areloc->howto->name);
   bfd_set_error (bfd_error_bad_value);
   return FALSE;
 }

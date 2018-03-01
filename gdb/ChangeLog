@@ -1,3 +1,490 @@
+2018-02-26  Maciej W. Rozycki  <macro@mips.com>
+
+	* mips-tdep.c (mips_gdbarch_init): Don't use a 32-bit BFD
+	architecture with a 64-bit ABI.
+
+2018-02-26  Maciej W. Rozycki  <macro@mips.com>
+
+	* gdb/mips-tdep.c (mips_gdbarch_init): Reorder ABI determination
+	ahead of target description loading.
+
+2018-02-26  Tom Tromey  <tom@tromey.com>
+
+	* stack.c (backtrace_command_1): Update.
+	* python/python-internal.h (gdbpy_apply_frame_filter): Change type
+	of "flags".
+	* python/py-framefilter.c (py_print_frame)
+	(gdbpy_apply_frame_filter): Change type of "flags".
+	* mi/mi-cmd-stack.c (mi_apply_ext_lang_frame_filter): Change type
+	of "flags".
+	(mi_cmd_stack_list_frames, mi_cmd_stack_list_locals)
+	(mi_cmd_stack_list_args, mi_cmd_stack_list_variables): Update.
+	* extension.h (enum frame_filter_flag): Rename from
+	frame_filter_flags.
+	(frame_filter_flags): Define using DEF_ENUM_FLAGS_TYPE.
+	(apply_ext_lang_frame_filter): Change type of "flags".
+	* extension.c (apply_ext_lang_frame_filter): Change type of
+	"flags".
+	* extension-priv.h (struct extension_language_ops)
+	<apply_frame_filter>: Change type of "flags".
+
+2018-02-26  Tom Tromey  <tom@tromey.com>
+
+	PR python/16497:
+	* stack.c (backtrace_command_1): Set PRINT_MORE_FRAMES flag.  Fix
+	off-by-one in py_end computation.
+	* python/py-framefilter.c (gdbpy_apply_frame_filter): Handle
+	PRINT_MORE_FRAMES.
+	* extension.h (enum frame_filter_flags) <PRINT_MORE_FRAMES>: New
+	constant.
+
+2018-02-26  Tom Tromey  <tom@tromey.com>
+
+	* dwarf2read.c (struct variant_field): New.
+	(struct nextfield) <variant>: New field.
+	(dwarf2_add_field): Handle DW_TAG_variant_part.
+	(dwarf2_attach_fields_to_type): Attach a discriminant_info to a
+	discriminated union.
+	(read_structure_type): Handle DW_TAG_variant_part.
+	(handle_struct_member_die): New function, extracted from
+	process_structure_scope.  Handle DW_TAG_variant.
+	(process_structure_scope): Handle discriminated unions.  Call
+	handle_struct_member_die.
+
+2018-02-26  Tom Tromey  <tom@tromey.com>
+
+	* rust-lang.h (rust_last_path_segment): Declare.
+	* rust-lang.c (rust_last_path_segment): Now public.  Change
+	contract.
+	(struct disr_info): Remove.
+	(RUST_ENUM_PREFIX, RUST_ENCODED_ENUM_REAL)
+	(RUST_ENCODED_ENUM_HIDDEN, rust_union_is_untagged)
+	(rust_get_disr_info, rust_tuple_variant_type_p): Remove.
+	(rust_enum_p, rust_enum_variant): New function.
+	(rust_underscore_fields): Remove "offset" parameter.
+	(rust_print_enum): New function.
+	(rust_val_print) <TYPE_CODE_UNION>: Remove enum code.
+	<TYPE_CODE_STRUCT>: Call rust_print_enum when appropriate.
+	(rust_print_struct_def): Add "for_rust_enum" parameter.  Handle
+	enums.
+	(rust_internal_print_type): New function, from rust_print_type.
+	Remove enum code.
+	(rust_print_type): Call rust_internal_print_type.
+	(rust_evaluate_subexp) <STRUCTOP_ANONYMOUS, STRUCTOP_STRUCT>:
+	Update enum handling.
+	* dwarf2read.c (struct dwarf2_cu) <rust_unions>: New field.
+	(rust_fully_qualify, alloc_discriminant_info, quirk_rust_enum)
+	(rust_union_quirks): New functions.
+	(process_full_comp_unit, process_full_type_unit): Call
+	rust_union_quirks.
+	(process_structure_scope): Update rust_unions if necessary.
+
+2018-02-26  Tom Tromey  <tom@tromey.com>
+
+	* value.h (value_union_variant): Declare.
+	* valops.c (value_union_variant): New function.
+	* gdbtypes.h (TYPE_FLAG_DISCRIMINATED_UNION): New macro.
+	(struct discriminant_info): New.
+	(enum dynamic_prop_node_kind) <DYN_PROP_DISCRIMINATED>: New
+	enumerator.
+	(struct main_type) <flag_discriminated_union>: New field.
+
+2018-02-26  Tom Tromey  <tom@tromey.com>
+
+	* Makefile.in (SUBDIR_UNITTESTS_SRCS): Add
+	unittests/unpack-selftests.c.
+	* unittests/unpack-selftests.c: New file.
+	* value.c (unpack_bits_as_long): Fix bugs in non-bitfield cases.
+
+2018-02-26  Yao Qi  <yao.qi@linaro.org>
+
+	* dwarf2read.c (struct partial_die_info) <read>: New method.
+	(read_partial_die): Remove the declaration.
+	(load_partial_dies): Update.
+	(partial_die_info::partial_die_info):
+	(read_partial_die): Change it to partial_die_info::read.
+
+2018-02-26  Yao Qi  <yao.qi@linaro.org>
+
+	* dwarf2read.c (struct partial_die_info) <fixup>: New method.
+	(fixup_partial_die): Remove declaration.
+	(scan_partial_symbols): Update.
+	(partial_die_parent_scope): Likewise.
+	(partial_die_full_name): Likewise.
+	(fixup_partial_die): Change it to partial_die_info::fixup.
+
+2018-02-26  Yao Qi  <yao.qi@linaro.org>
+
+	* dwarf2read.c (read_partial_die): Update the declaration.
+	(load_partial_dies): Caller update.
+	(read_partial_die): Remove one argument abbrev_len.
+
+2018-02-26  Yao Qi  <yao.qi@linaro.org>
+
+	* dwarf2read.c (struct partial_die_info): Add ctor, delete
+	assignment operator.
+	(load_partial_dies): Use ctor and copy ctor.
+	(read_partial_die): Update.
+	(dwarf2_cu::find_partial_die): Use ctor.
+
+2018-02-26  Yao Qi  <yao.qi@linaro.org>
+
+	* dwarf2read.c (struct dwarf2_cu) <find_partial_die>: New method.
+	(find_partial_die_in_comp_unit): Change it to
+	dwarf2_cu::find_partial_die.
+	(find_partial_die): Update.
+
+2018-02-26  Yao Qi  <yao.qi@linaro.org>
+
+	* dwarf2read.c (read_partial_die): Remove the code checking abbrev
+	is NULL.
+
+2018-02-26  Yao Qi  <yao.qi@linaro.org>
+
+	* dwarf2read.c (load_partial_dies): Move the location of XOBNEW.
+
+2018-02-26  Alan Hayward  <alan.hayward@arm.com>
+
+	* arch/amd64.h: Use common/tdesc.h.
+	* arch/i386.c: Likewise.
+	* arch/i386.h: Likewise.
+	* arch/tic6x.c: Likewise.
+	* arch/tdesc.h: Move file from here...
+	* common/tdesc.h: ...to here.
+	* features/aarch64-core.c: Regenerate.
+	* features/aarch64-fpu.c: Regenerate.
+	* features/i386/32bit-avx.c: Regenerate.
+	* features/i386/32bit-avx512.c: Regenerate.
+	* features/i386/32bit-core.c: Regenerate.
+	* features/i386/32bit-linux.c: Regenerate.
+	* features/i386/32bit-mpx.c: Regenerate.
+	* features/i386/32bit-pkeys.c: Regenerate.
+	* features/i386/32bit-sse.c: Regenerate.
+	* features/i386/64bit-avx.c: Regenerate.
+	* features/i386/64bit-avx512.c: Regenerate.
+	* features/i386/64bit-core.c: Regenerate.
+	* features/i386/64bit-linux.c: Regenerate.
+	* features/i386/64bit-mpx.c: Regenerate.
+	* features/i386/64bit-pkeys.c: Regenerate.
+	* features/i386/64bit-segments.c: Regenerate.
+	* features/i386/64bit-sse.c: Regenerate.
+	* features/i386/x32-core.c: Regenerate.
+	* features/tic6x-c6xp.c: Regenerate.
+	* features/tic6x-core.c: Regenerate.
+	* features/tic6x-gp.c: Regenerate.
+	* target-descriptions.c: Use common/tdesc.h.
+	* target-descriptions.h: Likewise.
+
+2018-02-24  Tom Tromey  <tom@tromey.com>
+
+	* linux-thread-db.c (try_thread_db_load_from_pdir_1)
+	(try_thread_db_load_from_dir, thread_db_load_search): Use
+	std::string.
+	(info_auto_load_libthread_db_compare): Return bool.  Change
+	argument types.
+	(info_auto_load_libthread_db): Use std::vector, std::string.
+	Remove cleanups.
+
+2018-02-24  Tom Tromey  <tom@tromey.com>
+
+	* i386-tdep.c (i386_fast_tracepoint_valid_at): "msg" now a
+	std::string.
+	* gdbarch.sh (fast_tracepoint_valid_at): Change "msg" to a
+	std::string*.
+	* gdbarch.c: Rebuild.
+	* gdbarch.h: Rebuild.
+	* breakpoint.c (check_fast_tracepoint_sals): Use std::string.
+	* arch-utils.h (default_fast_tracepoint_valid_at): Update.
+	* arch-utils.c (default_fast_tracepoint_valid_at): "msg" now a
+	std::string*.
+
+2018-02-23  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* gdbtypes.h (sect_offset): Change type to uint64_t.
+	(sect_offset_str): New function.
+	* dwarf2read.c (create_addrmap_from_aranges): Use
+	sect_offset_str.
+	(error_check_comp_unit_head): Likewise.
+	(create_debug_type_hash_table): Likewise.
+	(read_cutu_die_from_dwo): Likewise.
+	(init_cutu_and_read_dies): Likewise.
+	(init_cutu_and_read_dies_no_follow): Likewise.
+	(process_psymtab_comp_unit_reader): Likewise.
+	(partial_die_parent_scope): Likewise.
+	(peek_die_abbrev): Likewise.
+	(process_queue): Likewise.
+	(dwarf2_physname): Likewise.
+	(read_namespace_alias): Likewise.
+	(read_import_statement): Likewise.
+	(create_dwo_cu_reader): Likewise.
+	(create_cus_hash_table): Likewise.
+	(lookup_dwo_cutu): Likewise.
+	(inherit_abstract_dies): Likewise.
+	(read_func_scope): Likewise.
+	(read_call_site_scope): Likewise.
+	(dwarf2_add_member_fn): Likewise.
+	(read_common_block): Likewise.
+	(read_module_type): Likewise.
+	(read_typedef): Likewise.
+	(read_subrange_type): Likewise.
+	(load_partial_dies): Likewise.
+	(read_partial_die): Likewise.
+	(find_partial_die): Likewise.
+	(read_str_index): Likewise.
+	(dwarf2_string_attr): Likewise.
+	(build_error_marker_type): Likewise.
+	(lookup_die_type): Likewise.
+	(dump_die_shallow): Likewise.
+	(follow_die_ref): Likewise.
+	(dwarf2_fetch_die_loc_sect_off): Likewise.
+	(dwarf2_fetch_constant_bytes): Likewise.
+	(follow_die_sig): Likewise.
+	(get_signatured_type): Likewise.
+	(get_DW_AT_signature_type): Likewise.
+	(dwarf2_find_containing_comp_unit): Likewise.
+	(set_die_type): Likewise.
+
+2018-02-21  John Baldwin  <jhb@FreeBSD.org>
+
+	* arch/aarch64.c: Include "common-defs.h".
+	* arch/amd64.c: Likewise.
+	* arch/i386.c: Likewise.
+
+2018-02-21  Tom Tromey  <tom@tromey.com>
+
+	* value.h: (extract_field_op): Update.
+	* eval.c (extract_field_op): Return a const char *.
+	* expression.h (parse_expression_for_completion): Update.
+	* completer.c (complete_expression): Update.
+	(add_struct_fields): Make fieldname const.
+	* parse.c (expout_completion_name): Now a unique_xmalloc_ptr.
+	(mark_completion_tag, parse_exp_in_context_1): Update.
+	(parse_expression_for_completion): Change "name" to
+	unique_xmalloc_ptr*.
+
+2018-02-21  Tom Tromey  <tom@tromey.com>
+
+	* infcall.c (call_function_by_hand_dummy): Use std::vector.
+
+2018-02-21  Yao Qi  <yao.qi@linaro.org>
+
+	* avr-tdep.c (avr_read_pc): Change parameter type to
+	readable_regcache.
+	* gdbarch.sh (read_pc): Likewise.
+	* gdbarch.c: Re-generated.
+	* gdbarch.h: Re-generated.
+	* hppa-tdep.c (hppa_read_pc): Change parameter type to
+	readable_regcache.
+	* ia64-tdep.c (ia64_read_pc): Likewise.
+	* mips-tdep.c (mips_read_pc): Likewise.
+	* spu-tdep.c (spu_read_pc): Likewise.
+
+2018-02-21  Yao Qi  <yao.qi@linaro.org>
+
+	* Makefile.in (COMMON_SFILES): Add regcache-dump.c
+	* regcache-dump.c: New file.
+	* regcache.c: Move register_dump to regcache-dump.c.
+	(maintenance_print_registers): Likewise.
+	(maintenance_print_raw_registers): Likewise.
+	(maintenance_print_cooked_registers): Likewise.
+	(maintenance_print_register_groups): Likewise.
+	(maintenance_print_remote_registers): Likewise.
+	(_initialize_regcache): Likewise.
+	* regcache.h (register_dump): Moved from regcache.c.
+
+2018-02-21  Yao Qi  <yao.qi@linaro.org>
+
+	* regcache.c (regcache::regcache): Update.
+	(regcache::invalidate): Move it to detached_regcache::invalidate.
+	(get_thread_arch_aspace_regcache): Update.
+	(regcache::raw_update): Update.
+	(regcache::cooked_read): Remove some code.
+	(regcache::cooked_read_value): Likewise.
+	(regcache::raw_write): Remove assert on m_readonly_p.
+	(regcache::raw_supply_integer): Move it to
+	detached_regcache::raw_supply_integer.
+	(regcache::raw_supply_zeroed): Likewise.
+	* regcache.h (detached_regcache) <raw_supply_integer>: New
+	declaration.
+	<raw_supply_zeroed, invalidate>: Likewise.
+	(regcache) <raw_supply_integer, raw_supply_zeroed>: Removed.
+	<invalidate>: Likewise.
+	<m_readonly_p>: Removed.
+
+2018-02-21  Yao Qi  <yao.qi@linaro.org>
+
+	* infcmd.c (get_return_value): Let stop_regs point to
+	get_current_regcache.
+	* regcache.c (regcache::regcache): Remove.
+	(register_dump_reg_buffer): New class.
+	(regcache_print): Adjust.
+	* regcache.h (regcache): Remove constructors.
+
+2018-02-21  Yao Qi  <yao.qi@linaro.org>
+
+	* regcache.c (class register_dump): New class.
+	(register_dump_regcache, register_dump_none): New class.
+	(register_dump_remote, register_dump_groups): New class.
+	(regcache_print): Update.
+	* regcache.h (regcache_dump_what): Move it to regcache.c.
+	(regcache) <dump>: Remove.
+
+2018-02-21  Yao Qi  <yao.qi@linaro.org>
+
+	* jit.c (struct jit_unwind_private) <regcache>: Change its type to
+	 reg_buffer_rw *.
+	(jit_unwind_reg_set_impl): Call raw_supply.
+	(jit_frame_sniffer): Use reg_buffer_rw.
+	* record-full.c (record_full_core_regbuf): Change its type.
+	(record_full_core_open_1): Use reg_buffer_rw.
+	(record_full_close): Likewise.
+	(record_full_core_fetch_registers): Use regcache->raw_supply.
+	(record_full_core_store_registers): Likewise.
+	* regcache.c (regcache::get_register_status): Move it to
+	reg_buffer.
+	(regcache_raw_set_cached_value): Remove.
+	(regcache::raw_set_cached_value): Remove.
+	(regcache::raw_write): Call raw_supply.
+	(regcache::raw_supply): Move it to reg_buffer_rw.
+	* regcache.h (regcache_raw_set_cached_value): Remove.
+	(reg_buffer_rw): New class.
+
+2018-02-21  Yao Qi  <yao.qi@linaro.org>
+
+	* dummy-frame.c (dummy_frame_cache) <prev_regcache>: Use
+	readonly_detached_regcache.
+	(dummy_frame_prev_register): Use regcache->cooked_read.
+	* frame.c (frame_save_as_regcache): Change return type.
+	(frame_pop): Update.
+	* frame.h (frame_save_as_regcache): Update declaration.
+	* inferior.h (get_infcall_suspend_state_regcache): Update
+	declaration.
+	* infrun.c (infcall_suspend_state) <registers>: use
+	readonly_detached_regcache.
+	(save_infcall_suspend_state): Don't use regcache_dup.
+	(get_infcall_suspend_state_regcache): Change return type.
+	* linux-fork.c (struct fork_info) <savedregs>: Change to
+	readonly_detached_regcache.
+	<pc>: New field.
+	(fork_save_infrun_state): Don't use regcache_dup.
+	(info_checkpoints_command): Adjust.
+	* mi/mi-main.c (register_changed_p): Update declaration.
+	(mi_cmd_data_list_changed_registers): Use
+	readonly_detached_regcache.
+	(register_changed_p): Change parameter type to
+	readonly_detached_regcache.
+	* ppc-linux-tdep.c (ppu2spu_cache) <regcache>: Use
+	readonly_detached_regcache.
+	(ppu2spu_sniffer): Construct a new readonly_detached_regcache.
+	* regcache.c (readonly_detached_regcache::readonly_detached_regcache):
+	New.
+	(regcache::save): Move it to reg_buffer.
+	(regcache::restore): Change parameter type.
+	(regcache_dup): Remove.
+	* regcache.h (reg_buffer) <save>: New method.
+	(readonly_detached_regcache): New class.
+	* spu-tdep.c (spu2ppu_cache) <regcache>: Use
+	readonly_detached_regcache.
+	(spu2ppu_sniffer): Construct a new readonly_detached_regcache.
+
+2018-02-21  Yao Qi  <yao.qi@linaro.org>
+
+	* frame.c (frame_save_as_regcache): Use regcache method save.
+	(frame_pop): Use regcache method restore.
+	* infrun.c (restore_infcall_suspend_state): Likewise.
+	* linux-fork.c (fork_load_infrun_state): Likewise.
+	* ppc-linux-tdep.c (ppu2spu_sniffer): User regcache method
+	save.
+	* regcache.c (regcache_save): Remove.
+	(regcache::restore): More asserts.
+	(regcache_cpy): Remove.
+	* regcache.h (regcache_save): Remove the declaration.
+	(regcache::restore): Move from private to public.
+	Remove the friend declaration of regcache_cpy.
+	(regcache_cpy): Remove declaration.
+
+2018-02-21  Yao Qi  <yao.qi@linaro.org>
+
+	* aarch64-tdep.c (aarch64_pseudo_register_read_value): Change
+	parameter type to 'readable_regcache *'.
+	* amd64-tdep.c (amd64_pseudo_register_read_value): Likewise.
+	* arm-tdep.c (arm_neon_quad_read): Likewise.
+	(arm_pseudo_read): Likewise.
+	* avr-tdep.c (avr_pseudo_register_read): Likewise.
+	* bfin-tdep.c (bfin_pseudo_register_read): Likewise.
+	* frv-tdep.c (frv_pseudo_register_read): Likewise.
+	* gdbarch.c: Re-generated.
+	* gdbarch.h: Re-generated.
+	* gdbarch.sh (pseudo_register_read): Change parameter type to
+	'readable_regcache *'.
+	(pseudo_register_read_value): Likewise.
+	* h8300-tdep.c (pseudo_from_raw_register): Likewise.
+	(h8300_pseudo_register_read): Likewise.
+	* hppa-tdep.c (hppa_pseudo_register_read): Likewise.
+	* i386-tdep.c (i386_mmx_regnum_to_fp_regnum): Likewise.
+	(i386_pseudo_register_read_into_value): Likewise.
+	(i386_pseudo_register_read_value): Likewise.
+	* i386-tdep.h (i386_pseudo_register_read_into_value): Update
+	declaration.
+	* ia64-tdep.c (ia64_pseudo_register_read): Likewise.
+	* m32c-tdep.c (m32c_raw_read): Likewise.
+	(m32c_read_flg): Likewise.
+	(m32c_banked_register): Likewise.
+	(m32c_banked_read): Likewise.
+	(m32c_sb_read): Likewise.
+	(m32c_part_read): Likewise.
+	(m32c_cat_read): Likewise.
+	(m32c_r3r2r1r0_read): Likewise.
+	(m32c_pseudo_register_read): Likewise.
+	* m68hc11-tdep.c (m68hc11_pseudo_register_read): Likewise.
+	* mep-tdep.c (mep_pseudo_cr32_read): Likewise.
+	(mep_pseudo_cr64_read): Likewise.
+	(mep_pseudo_register_read): Likewise.
+	* mips-tdep.c (mips_pseudo_register_read): Likewise.
+	* msp430-tdep.c (msp430_pseudo_register_read): Likewise.
+	* nds32-tdep.c (nds32_pseudo_register_read): Likewise.
+	* regcache.c (regcache::raw_read): Move it to readable_regcache.
+	(regcache::cooked_read): Likewise.
+	(regcache::cooked_read_value): Likewise.
+	(regcache_cooked_read_signed):
+	(regcache::cooked_read): Likewise.
+	* regcache.h (readable_regcache): New class.
+	(regcache): Inherit readable_regcache.  Move some methods to
+	readable_regcache.
+	* rl78-tdep.c (rl78_pseudo_register_read): Change
+	parameter type to 'readable_regcache *'.
+	* rs6000-tdep.c (do_regcache_raw_read): Remove.
+	(e500_pseudo_register_read): Change parameter type to
+	'readable_regcache *'.
+	(dfp_pseudo_register_read): Likewise.
+	(vsx_pseudo_register_read): Likewise.
+	(efpr_pseudo_register_read): Likewise.
+	* s390-tdep.c (s390_pseudo_register_read): Likewise.
+	* sh-tdep.c (sh_pseudo_register_read): Likewise.
+	* sh64-tdep.c (pseudo_register_read_portions): Likewise.
+	(sh64_pseudo_register_read): Likewise.
+	* sparc-tdep.c (sparc32_pseudo_register_read): Likewise.
+	* sparc64-tdep.c (sparc64_pseudo_register_read): Likewise.
+	* spu-tdep.c (spu_pseudo_register_read_spu): Likewise.
+	(spu_pseudo_register_read): Likewise.
+	* xtensa-tdep.c	(xtensa_register_read_masked): Likewise.
+	(xtensa_pseudo_register_read): Likewise.
+
+2018-02-21  Yao Qi  <yao.qi@linaro.org>
+
+	* regcache.c (regcache::regcache): Call reg_buffer ctor.
+	(regcache::arch): Move it to reg_buffer::arch.
+	(regcache::register_buffer): Likewise.
+	(regcache::assert_regnum): Likewise.
+	(regcache::num_raw_registers): Likewise.
+	* regcache.h (reg_buffer): New class.
+	(regcache): Inherit reg_buffer.
+
+2018-02-20  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* remote-sim.c (gdb_os_printf_filtered, gdb_os_vprintf_filtered,
+	gdb_os_evprintf_filtered, gdb_os_error): Add ATTRIBUTE_PRINTF.
+
 2018-02-20  Markus Metzger  <markus.t.metzger@intel.com>
 
 	* gnulib/update-gnulib.sh (IMPORTED_GNULIB_MODULES): Add mkstemp.

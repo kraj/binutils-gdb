@@ -3248,7 +3248,7 @@ i386_pseudo_register_type (struct gdbarch *gdbarch, int regnum)
    the MMX registers need to be mapped onto floating point registers.  */
 
 static int
-i386_mmx_regnum_to_fp_regnum (struct regcache *regcache, int regnum)
+i386_mmx_regnum_to_fp_regnum (readable_regcache *regcache, int regnum)
 {
   struct gdbarch_tdep *tdep = gdbarch_tdep (regcache->arch ());
   int mmxreg, fpreg;
@@ -3269,7 +3269,7 @@ i386_mmx_regnum_to_fp_regnum (struct regcache *regcache, int regnum)
 
 void
 i386_pseudo_register_read_into_value (struct gdbarch *gdbarch,
-				      struct regcache *regcache,
+				      readable_regcache *regcache,
 				      int regnum,
 				      struct value *result_value)
 {
@@ -3448,7 +3448,7 @@ i386_pseudo_register_read_into_value (struct gdbarch *gdbarch,
 
 static struct value *
 i386_pseudo_register_read_value (struct gdbarch *gdbarch,
-				 struct regcache *regcache,
+				 readable_regcache *regcache,
 				 int regnum)
 {
   struct value *result;
@@ -8111,7 +8111,7 @@ static const int i386_record_regmap[] =
 
 static int
 i386_fast_tracepoint_valid_at (struct gdbarch *gdbarch, CORE_ADDR addr,
-			       char **msg)
+			       std::string *msg)
 {
   int len, jumplen;
 
@@ -8144,15 +8144,15 @@ i386_fast_tracepoint_valid_at (struct gdbarch *gdbarch, CORE_ADDR addr,
       /* Return a bit of target-specific detail to add to the caller's
 	 generic failure message.  */
       if (msg)
-	*msg = xstrprintf (_("; instruction is only %d bytes long, "
-			     "need at least %d bytes for the jump"),
-			   len, jumplen);
+	*msg = string_printf (_("; instruction is only %d bytes long, "
+				"need at least %d bytes for the jump"),
+			      len, jumplen);
       return 0;
     }
   else
     {
       if (msg)
-	*msg = NULL;
+	msg->clear ();
       return 1;
     }
 }
