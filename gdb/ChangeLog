@@ -1,3 +1,82 @@
+2018-02-28  Sergio Durigan Junior  <sergiodj@redhat.com>
+	    Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* common/common-utils.c: Include "sys/stat.h".
+	(is_regular_file): Move here from "source.c"; change return
+	type to "bool".
+	* common/common-utils.h (is_regular_file): New prototype.
+	* common/pathstuff.c (contains_dir_separator): New function.
+	* common/pathstuff.h (contains_dir_separator): New prototype.
+	* source.c: Don't include "sys/stat.h".
+	(is_regular_file): Move to "common/common-utils.c".
+
+2018-02-28  Sergio Durigan Junior  <sergiodj@redhat.com>
+
+	* Makefile.in (COMMON_SFILES): Add "common/pathstuff.c".
+	(HFILES_NO_SRCDIR): Add "common/pathstuff.h".
+	* auto-load.c: Include "common/pathstuff.h".
+	* common/common-def.h (current_directory): Move here.
+	* common/gdb_tilde_expand.c (gdb_tilde_expand_up): New
+	function.
+	* common/gdb_tilde_expand.h (gdb_tilde_expand_up): New
+	prototype.
+	* common/pathstuff.c: New file.
+	* common/pathstuff.h: New file.
+	* compile/compile.c: Include "common/pathstuff.h".
+	* defs.h (current_directory): Move to "common/common-defs.h".
+	* dwarf2read.c: Include "common/pathstuff.h".
+	* exec.c: Likewise.
+	* guile/scm-safe-call.c: Likewise.
+	* linux-thread-db.c: Likewise.
+	* main.c: Likewise.
+	* nto-tdep.c: Likewise.
+	* objfiles.c: Likewise.
+	* source.c: Likewise.
+	* symtab.c: Likewise.
+	* utils.c: Include "common/pathstuff.h".
+	(gdb_realpath): Move to "common/pathstuff.c".
+	(gdb_realpath_keepfile): Likewise.
+	(gdb_abspath): Likewise.
+	* utils.h (gdb_realpath): Move to "common/pathstuff.h".
+	(gdb_realpath_keepfile): Likewise.
+	(gdb_abspath): Likewise.
+
+2018-02-28  John Baldwin  <jhb@FreeBSD.org>
+
+	* fbsd-nat.c (fbsd_resume): Use PT_SETSTEP for stepping and a
+	wildcard process pid for super_resume for kernels with a
+	specific bug.
+
+2018-02-27  Phil Muldoon  <pmuldoon@redhat.com>
+
+	* compile/compile.c (get_args): Add additional comments
+	explaining function.
+
+2018-02-27  Simon Marchi  <simon.marchi@polymtl.ca>
+	    Tom Tromey  <tom@tromey.com>
+
+	* target.h (memory_write_request_s): Remove typedef.  Don't define
+	VEC.
+	(target_write_memory_blocks): Change argument to std::vector.
+	(struct memory_write_request): Add constructor.
+	* target-memory.c (compare_block_starting_address): Return bool.
+	Change argument types.
+	(claim_memory): Change arguments to use std::vector.
+	(split_regular_and_flash_blocks, blocks_to_erase)
+	(compute_garbled_blocks): Likewise.
+	(cleanup_request_data, cleanup_write_requests_vector): Remove.
+	(target_write_memory_blocks): Change argument to std::vector.
+	* symfile.c (struct load_section_data): Add constructor and
+	destructor.  Use std::vector for "requests".
+	(struct load_progress_data): Add initializers.
+	(load_section_callback): Update.  Use "new".
+	(clear_memory_write_data): Remove.
+	(generic_load): Update.
+
+2018-02-27  Alan Hayward  <alan.hayward@arm.com>
+
+	* arch/aarch64.h: Use common/tdesc.h.
+
 2018-02-26  Maciej W. Rozycki  <macro@mips.com>
 
 	* mips-tdep.c (mips_gdbarch_init): Don't use a 32-bit BFD
