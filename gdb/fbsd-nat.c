@@ -26,6 +26,7 @@
 #include "gdbcmd.h"
 #include "gdbthread.h"
 #include "gdb_wait.h"
+#include "inf-ptrace.h"
 #include <sys/types.h>
 #include <sys/procfs.h>
 #include <sys/ptrace.h>
@@ -44,6 +45,14 @@
 #include "fbsd-tdep.h"
 
 #include <list>
+
+#ifdef TRAP_BRKPT
+/* MIPS does not set si_code for SIGTRAP.  sparc64 reports
+   non-standard values in si_code for SIGTRAP.  */
+# if !defined(__mips__) && !defined(__sparc64__)
+#  define USE_SIGTRAP_SIGINFO
+# endif
+#endif
 
 /* Return the name of a file that can be opened to get the symbols for
    the child process identified by PID.  */
@@ -765,6 +774,7 @@ fbsd_xfer_partial (struct target_ops *ops, enum target_object object,
 
 #ifdef PT_LWPINFO
 static int debug_fbsd_lwp;
+static int debug_fbsd_nat;
 
 static void (*super_resume) (struct target_ops *,
 			     ptid_t,
@@ -780,6 +790,14 @@ show_fbsd_lwp_debug (struct ui_file *file, int from_tty,
 		     struct cmd_list_element *c, const char *value)
 {
   fprintf_filtered (file, _("Debugging of FreeBSD lwp module is %s.\n"), value);
+}
+
+static void
+show_fbsd_nat_debug (struct ui_file *file, int from_tty,
+		     struct cmd_list_element *c, const char *value)
+{
+  fprintf_filtered (file, _("Debugging of FreeBSD native target is %s.\n"),
+		    value);
 }
 
 /*
@@ -1178,6 +1196,56 @@ fbsd_resume (struct target_ops *ops,
   super_resume (ops, ptid, step, signo);
 }
 
+#ifdef USE_SIGTRAP_SIGINFO
+/* Handle breakpoint and trace traps reported via SIGTRAP.  If the
+   trap was a breakpoint or trace trap that should be reported to the
+   core, return true.  */
+
+static bool
+fbsd_handle_debug_trap (struct target_ops *ops, ptid_t ptid,
+			const struct ptrace_lwpinfo &pl)
+{
+
+  /* Ignore traps without valid siginfo or for signals other than
+     SIGTRAP.  */
+  if (! (pl.pl_flags & PL_FLAG_SI) || pl.pl_siginfo.si_signo != SIGTRAP)
+    return false;
+
+  /* Trace traps are either a single step or a hardware watchpoint or
+     breakpoint.  */
+  if (pl.pl_siginfo.si_code == TRAP_TRACE)
+    {
+      if (debug_fbsd_nat)
+	fprintf_unfiltered (gdb_stdlog,
+			    "FNAT: trace trap for LWP %ld\n", ptid.lwp ());
+      return true;
+    }
+
+  if (pl.pl_siginfo.si_code == TRAP_BRKPT)
+    {
+      /* Fixup PC for the software breakpoint.  */
+      struct regcache *regcache = get_thread_regcache (ptid);
+      struct gdbarch *gdbarch = regcache->arch ();
+      int decr_pc = gdbarch_decr_pc_after_break (gdbarch);
+
+      if (debug_fbsd_nat)
+	fprintf_unfiltered (gdb_stdlog,
+			    "FNAT: sw breakpoint trap for LWP %ld\n",
+			    ptid.lwp ());
+      if (decr_pc != 0)
+	{
+	  CORE_ADDR pc;
+
+	  pc = regcache_read_pc (regcache);
+	  regcache_write_pc (regcache, pc - decr_pc);
+	}
+      return true;
+    }
+
+  return false;
+}
+#endif
+
 /* Wait for the child specified by PTID to do something.  Return the
    process ID of the child, or MINUS_ONE_PTID in case of error; store
    the status in *OURSTATUS.  */
@@ -1211,6 +1279,18 @@ fbsd_wait (struct target_ops *ops,
 	    perror_with_name (("ptrace"));
 
 	  wptid = ptid_build (pid, pl.pl_lwpid, 0);
+
+	  if (debug_fbsd_nat)
+	    {
+	      fprintf_unfiltered (gdb_stdlog,
+				  "FNAT: stop for LWP %u event %d flags %#x\n",
+				  pl.pl_lwpid, pl.pl_event, pl.pl_flags);
+	      if (pl.pl_flags & PL_FLAG_SI)
+		fprintf_unfiltered (gdb_stdlog,
+				    "FNAT: si_signo %u si_code %u\n",
+				    pl.pl_siginfo.si_signo,
+				    pl.pl_siginfo.si_code);
+	    }
 
 #ifdef PT_LWP_EVENTS
 	  if (pl.pl_flags & PL_FLAG_EXITED)
@@ -1351,6 +1431,11 @@ fbsd_wait (struct target_ops *ops,
 	    }
 #endif
 
+#ifdef USE_SIGTRAP_SIGINFO
+	  if (fbsd_handle_debug_trap (ops, wptid, pl))
+	    return wptid;
+#endif
+
 	  /* Note that PL_FLAG_SCE is set for any event reported while
 	     a thread is executing a system call in the kernel.  In
 	     particular, signals that interrupt a sleep in a system
@@ -1388,6 +1473,42 @@ fbsd_wait (struct target_ops *ops,
       return wptid;
     }
 }
+
+#ifdef USE_SIGTRAP_SIGINFO
+/* Implement the "to_stopped_by_sw_breakpoint" target_ops method.  */
+
+static int
+fbsd_stopped_by_sw_breakpoint (struct target_ops *ops)
+{
+  struct ptrace_lwpinfo pl;
+
+  if (ptrace (PT_LWPINFO, get_ptrace_pid (inferior_ptid), (caddr_t) &pl,
+	      sizeof pl) == -1)
+    return 0;
+
+  return ((pl.pl_flags & PL_FLAG_SI)
+	  && pl.pl_siginfo.si_signo == SIGTRAP
+	  && pl.pl_siginfo.si_code == TRAP_BRKPT);
+}
+
+/* Implement the "to_supports_stopped_by_sw_breakpoint" target_ops
+   method.  */
+
+static int
+fbsd_supports_stopped_by_sw_breakpoint (struct target_ops *ops)
+{
+  return 1;
+}
+
+/* Implement the "to_supports_stopped_by_hw_breakpoint" target_ops
+   method.  */
+
+static int
+fbsd_supports_stopped_by_hw_breakpoint (struct target_ops *ops)
+{
+  return ops->to_stopped_by_hw_breakpoint != NULL;
+}
+#endif
 
 #ifdef TDP_RFPPWAIT
 /* Target hook for follow_fork.  On entry and at return inferior_ptid is
@@ -1539,6 +1660,13 @@ fbsd_nat_add_target (struct target_ops *t)
   t->to_wait = fbsd_wait;
   t->to_post_startup_inferior = fbsd_post_startup_inferior;
   t->to_post_attach = fbsd_post_attach;
+#ifdef USE_SIGTRAP_SIGINFO
+  t->to_stopped_by_sw_breakpoint = fbsd_stopped_by_sw_breakpoint;
+  t->to_supports_stopped_by_sw_breakpoint
+    = fbsd_supports_stopped_by_sw_breakpoint;
+  t->to_supports_stopped_by_hw_breakpoint
+    = fbsd_supports_stopped_by_hw_breakpoint;
+#endif
 #ifdef TDP_RFPPWAIT
   t->to_follow_fork = fbsd_follow_fork;
   t->to_insert_fork_catchpoint = fbsd_insert_fork_catchpoint;
@@ -1568,6 +1696,14 @@ Show debugging of FreeBSD lwp module."), _("\
 Enables printf debugging output."),
 			   NULL,
 			   &show_fbsd_lwp_debug,
+			   &setdebuglist, &showdebuglist);
+  add_setshow_boolean_cmd ("fbsd-nat", class_maintenance,
+			   &debug_fbsd_nat, _("\
+Set debugging of FreeBSD native target."), _("\
+Show debugging of FreeBSD native target."), _("\
+Enables printf debugging output."),
+			   NULL,
+			   &show_fbsd_nat_debug,
 			   &setdebuglist, &showdebuglist);
 #endif
 }

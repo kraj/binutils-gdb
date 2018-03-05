@@ -29,17 +29,25 @@ DEF_VEC_P (char_ptr);
 
 DEF_VEC_P (const_char_ptr);
 
-extern void free_char_ptr_vec (VEC (char_ptr) *char_ptr_vec);
+/* Split STR, a list of DELIMITER-separated fields, into a char pointer vector.
 
-extern struct cleanup *
-  make_cleanup_free_char_ptr_vec (VEC (char_ptr) *char_ptr_vec);
+   You may modify the returned strings.  */
 
-extern VEC (char_ptr) *delim_string_to_char_ptr_vec (const char *str,
-						     char delimiter);
+extern std::vector<gdb::unique_xmalloc_ptr<char>>
+  delim_string_to_char_ptr_vec (const char *str, char delimiter);
 
-extern void dirnames_to_char_ptr_vec_append (VEC (char_ptr) **vecp,
-					     const char *dirnames);
+/* Like dirnames_to_char_ptr_vec, but append the directories to *VECP.  */
 
-extern VEC (char_ptr) *dirnames_to_char_ptr_vec (const char *dirnames);
+extern void dirnames_to_char_ptr_vec_append
+  (std::vector<gdb::unique_xmalloc_ptr<char>> *vecp, const char *dirnames);
+
+/* Split DIRNAMES by DIRNAME_SEPARATOR delimiter and return a list of all the
+   elements in their original order.  For empty string ("") DIRNAMES return
+   list of one empty string ("") element.
+
+   You may modify the returned strings.  */
+
+extern std::vector<gdb::unique_xmalloc_ptr<char>>
+  dirnames_to_char_ptr_vec (const char *dirnames);
 
 #endif /* GDB_VECS_H */

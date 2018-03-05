@@ -1,3 +1,146 @@
+2018-03-04  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* record-btrace.c (btrace_print_lines): Change type of flags to
+	gdb_disassembly_flags.
+
+2018-03-04  John Baldwin  <jhb@FreeBSD.org>
+
+	* fbsd-nat.c: Include "inf-ptrace.h".
+	(USE_SIGTRAP_SIGINFO): Conditionally define.
+	[USE_SIGTRAP_SIGINFO] (fbsd_handle_debug_trap): New function.
+	(fbsd_wait) [USE_SIGTRAP_SIGINFO]: Call "fbsd_handle_debug_trap".
+	[USE_SIGTRAP_SIGINFO] (fbsd_stopped_by_sw_breakpoint): New
+	function.
+	[USE_SIGTRAP_SIGINFO] (fbsd_supports_stopped_by_sw_breakpoint):
+	Likewise.
+	[USE_SIGTRAP_SIGINFO] (fbsd_supports_stopped_by_hw_breakpoint):
+	Likewise.
+	(fbsd_nat_add_target) [USE_SIGTRAP_SIGINFO]: Set
+	"stopped_by_sw_breakpoint", "supports_stopped_by_sw_breakpoint",
+	"supports_stopped_by_hw_breakpoint" target methods.
+
+2018-03-04  John Baldwin  <jhb@FreeBSD.org>
+
+	* NEWS (Changes since GDB 8.1): Add "set/show debug fbsd-nat".
+	* fbsd-nat.c (debug_fbsd_nat): New variable.
+	(show_fbsd_nat_debug): New function.
+	(fbsd_wait): Log LWP info if "debug_fbsd_nat" is enabled.
+	(_initialize_fbsd_nat): Add "fbsd-nat" debug boolean command.
+
+2018-03-04  John Baldwin  <jhb@FreeBSD.org>
+
+	* nat/x86-dregs.c (x86_dr_stopped_by_hw_breakpoint): New function.
+	* nat/x86-dregs.h (x86_dr_stopped_by_hw_breakpoint): New
+	prototype.
+	* x86-nat.c (x86_stopped_by_hw_breakpoint): New function.
+	(x86_use_watchpoints): Set "stopped_by_hw_breakpoint" target
+	method.
+
+2018-03-02  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* common/gdb_vecs.c (free_char_ptr_vec): Remove.
+	* common/gdb_vecs.h (free_char_ptr_vec): Remove.
+
+2018-03-02  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* charset.c (struct charset_vector): New.
+	(charsets): Change type to charset_vector.
+	(find_charset_names): Adjust.
+	(add_one): Adjust.
+	(_initialize_charset): Adjust.
+
+2018-03-02  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* progspace.h (struct program_space) <deleted_solibs>: Change
+	type to std::vector<std::string>.
+	* progspace.c (clear_program_space_solib_cache): Adjust.
+	* breakpoint.c (print_solib_event): Adjust.
+	(check_status_catch_solib): Adjust.
+	* solib.c (update_solib_list): Adjust.
+	* ui-out.h (class ui_out) <field_string>: New overload.
+	* ui-out.c (ui_out::field_string): New overload.
+
+2018-03-02  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* progspace.h (struct program_space): Add constructor and
+	destructor, initialize fields.
+	(add_program_space): Remove.
+	* progspace.c (add_program_space): Rename to...
+	(program_space::program_space): ... this.
+	(release_program_space): Rename to...
+	(program_space::~program_space): ... this.
+	(delete_program_space): Use delete to delete program_space.
+	(initialize_progspace): Use new to allocate program_space.
+	* inferior.c (add_inferior_with_spaces): Likewise.
+	(clone_inferior_command): Likewise.
+	* infrun.c (follow_fork_inferior): Likewise.
+	(handle_vfork_child_exec_or_exit): Likewise.
+
+2018-03-02  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* common/gdb_vecs.h (make_cleanup_free_char_ptr_vec): Remove.
+	(delim_string_to_char_ptr_vec): Return std::vector of
+	gdb::unique_xmalloc_ptr.
+	(dirnames_to_char_ptr_vec_append): Take std::vector of
+	gdb::unique_xmalloc_ptr.
+	(dirnames_to_char_ptr_vec): Return std::vector of
+	gdb::unique_xmalloc_ptr.
+	* common/gdb_vecs.c (delim_string_to_char_ptr_vec_append):
+	Take std::vector of gdb::unique_xmalloc_ptr, adjust the code.
+	(delim_string_to_char_ptr_vec): Return an std::vector of
+	gdb::unique_xmalloc_ptr, adjust the code.
+	(dirnames_to_char_ptr_vec_append): Take an std::vector of
+	gdb::unique_xmalloc_ptr, adjust the code.
+	(dirnames_to_char_ptr_vec): Return an std::vector of
+	gdb::unique_xmalloc_ptr, adjust the code.
+	* auto-load.c (auto_load_safe_path_vec): Change type to
+	std::vector of gdb::unique_xmalloc_ptr.
+	(auto_load_expand_dir_vars): Return an std::vector of
+	gdb::unique_xmalloc_ptr, adjust the code.
+	(auto_load_safe_path_vec_update): Adjust.
+	(filename_is_in_auto_load_safe_path_vec): Adjust.
+	(auto_load_objfile_script_1): Adjust.
+	* build-id.c (build_id_to_debug_bfd): Adjust.
+	* linux-thread-db.c (thread_db_load_search): Adjust.
+	* source.c (add_path): Adjust.
+	(openp): Adjust.
+	* symfile.c (find_separate_debug_file): Adjust.
+	* utils.c (do_free_char_ptr_vec): Remove.
+	(make_cleanup_free_char_ptr_vec): Remove.
+
+2018-03-01  Sergio Durigan Junior  <sergiodj@redhat.com>
+
+	PR gdb/22907
+	* common/pathstuff.c: Conditionally include "<windows.h>".
+
+2018-03-01  Georg Sauthoff  <mail@georg.so>
+
+	PR gdb/22888
+	* gcore.in: Quote variables and switch interpreter to bash.
+
+2018-03-01  Tom Tromey  <tom@tromey.com>
+
+	* dwarf2read.c (alloc_discriminant_info): Fix default_index
+	assertion.  Add assertion for discriminant_index.
+	(quirk_rust_enum): Use correct base type name in univariant case.
+
+2018-03-01  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* record.c (get_call_history_modifiers): Return a
+	record_print_flags.
+	(cmd_record_call_history): Adjust.
+	* record-btrace.c (record_btrace_call_history): Adjust.
+	(record_btrace_call_history_range): Adjust.
+	(record_btrace_call_history_from): Adjust.
+	* target-debug.h (target_debug_print_record_print_flags): New.
+	* target-delegates.c: Re-generate.
+	* target.c (target_call_history): Change flags type.
+	(target_call_history_from): Likewise.
+	(target_call_history_range): Likewise.
+	* target.h (struct target_ops) <target_call_history>: Likewise.
+	(target_call_history_from): Likewise.
+	(target_call_history_range): Likewise.
+
 2018-02-28  Sergio Durigan Junior  <sergiodj@redhat.com>
 	    Simon Marchi  <simon.marchi@polymtl.ca>
 
