@@ -1,3 +1,117 @@
+2018-03-07  Alan Hayward  <alan.hayward@arm.com>
+
+	* defs.h: Remove MAX_REGISTER_SIZE.
+	* regcache.c (init_regcache_descr): Remove MAX_REGISTER_SIZE
+	asserts.
+	* python/py-unwind.c (pyuw_sniffer): Likewise.
+
+2018-03-07  Tom Tromey  <tom@tromey.com>
+
+	* linux-tdep.c (linux_info_proc): Update.
+	* target.h (struct target_ops) <to_fileio_readlink>: Return
+	optional<string>.
+	(target_fileio_readlink): Return optional<string>.
+	* remote.c (remote_hostio_readlink): Return optional<string>.
+	* inf-child.c (inf_child_fileio_readlink): Return
+	optional<string>.
+	* target.c (target_fileio_readlink): Return optional<string>.
+
+2018-03-07  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* regcache.c (cooked_read_test): Add riscv to the list of
+	architectures that have a save_reggroup.
+
+2018-03-07  Andreas Arnez  <arnez@linux.vnet.ibm.com>
+
+	* gnu-v3-abi.c (gnuv3_rtti_type): Add early exit if the given
+	value is not a dynamic class object.
+
+2018-03-06  Tom Tromey  <tom@tromey.com>
+
+	* rust-exp.y: Formatting fixes.
+
+2018-03-06  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* riscv-tdep.c (riscv_register_name): Remove target description
+	support.
+	(riscv_gdbarch_init): Remove target description check.
+
+2018-03-06  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* riscv-tdep.c: Remove 'Contributed by ...' lines from header
+	comment.
+	* riscv-tdep.h: Likewise.
+
+2018-03-06  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* riscv-tdep.c (riscv_pseudo_register_read): Delete.
+	(riscv_pseudo_register_write): Delete.
+	(riscv_gdbarch_init): Remove all use of pseudo registers.
+
+2018-03-06  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* record-btrace.c (btrace_print_lines): Replace cleanup
+	parameter with RAII equivalents.
+	(btrace_insn_history): Replace cleanup with RAII equivalents.
+	* ui-out.h (make_cleanup_ui_out_list_begin_end,
+	make_cleanup_ui_out_tuple_begin_end): Remove.
+	* ui-out.c (struct ui_out_end_cleanup_data, do_cleanup_end,
+	make_cleanup_ui_out_end, make_cleanup_ui_out_tuple_begin_end,
+	make_cleanup_ui_out_list_begin_end): Remove.
+
+2018-03-06  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* record-btrace.c (record_btrace_maybe_mark_async_event): Change
+	parameter types to std::vector.  Use bool.
+	(record_btrace_wait): Replace VEC(tp_t) with
+	std::vector<thread_info *>.
+	* common/gdb_vecs.h (unordered_remove, ordered_remove): New.
+
+2018-03-06  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* record-btrace.c (record_btrace_disable_callback): Remove.
+	(struct scoped_btrace_disable): New.
+	(record_btrace_open): Use scoped_btrace_disable.
+
+2018-03-06  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* riscv-tdep.c (riscv_return_value): Change type to ULONGEST for
+	reading values from registers.
+
+2018-03-06  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* riscv-tdep.c (riscv_push_dummy_call): Use core_addr_to_string_nz
+	where appropriate.
+
+2018-03-06  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* riscv-tdep.c (riscv_print_arg_location): Add header comment,
+	change parameter type.  Use GDB's print functions, and use
+	core_addr_to_string where appropriate.
+	(riscv_push_dummy_call): Use core_addr_to_string where
+	appropriate, update call to riscv_print_arg_location, and reindent
+	a few lines.
+	(riscv_return_value): Update call to riscv_print_arg_location.
+
+2018-03-06  Andrew Burgess  <andrew.burgess@embecosm.com>
+	    Tim Newsome <tim@sifive.com>
+	    Albert Ou <a0u@eecs.berkeley.edu>
+	    Darius Rad <darius@bluespec.com>
+
+	* Makefile.in (ALL_TARGET_OBS): Add riscv-tdep.o
+	(HFILES_NO_SRCDIR): Add riscv-tdep.h.
+	(ALLDEPFILES): Add riscv-tdep.c
+	* configure.tgt: Add riscv support.
+	* riscv-tdep.c: New file.
+	* riscv-tdep.h: New file.
+	* NEWS: Mention new target.
+	* MAINTAINERS: Add entry for riscv.
+
+2018-03-06  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* amd64-tdep.c (amd64_classify_aggregate): Ignore zero sized
+	fields within aggregates.
+
 2018-03-04  Simon Marchi  <simon.marchi@polymtl.ca>
 
 	* record-btrace.c (btrace_print_lines): Change type of flags to

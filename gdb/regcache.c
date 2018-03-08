@@ -117,7 +117,6 @@ init_regcache_descr (struct gdbarch *gdbarch)
 	descr->sizeof_register[i] = TYPE_LENGTH (descr->register_type[i]);
 	descr->register_offset[i] = offset;
 	offset += descr->sizeof_register[i];
-	gdb_assert (MAX_REGISTER_SIZE >= descr->sizeof_register[i]);
       }
     /* Set the real size of the raw register cache buffer.  */
     descr->sizeof_raw_registers = offset;
@@ -127,7 +126,6 @@ init_regcache_descr (struct gdbarch *gdbarch)
 	descr->sizeof_register[i] = TYPE_LENGTH (descr->register_type[i]);
 	descr->register_offset[i] = offset;
 	offset += descr->sizeof_register[i];
-	gdb_assert (MAX_REGISTER_SIZE >= descr->sizeof_register[i]);
       }
     /* Set the real size of the readonly register cache buffer.  */
     descr->sizeof_cooked_registers = offset;
@@ -1695,7 +1693,8 @@ cooked_read_test (struct gdbarch *gdbarch)
 	      || bfd_arch == bfd_arch_msp430 || bfd_arch == bfd_arch_mep
 	      || bfd_arch == bfd_arch_mips || bfd_arch == bfd_arch_v850_rh850
 	      || bfd_arch == bfd_arch_tic6x || bfd_arch == bfd_arch_mn10300
-	      || bfd_arch == bfd_arch_rl78 || bfd_arch == bfd_arch_score)
+	      || bfd_arch == bfd_arch_rl78 || bfd_arch == bfd_arch_score
+	      || bfd_arch == bfd_arch_riscv)
 	    {
 	      /* Raw registers.  If raw registers are not in save_reggroup,
 		 their status are unknown.  */

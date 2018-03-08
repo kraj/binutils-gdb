@@ -398,8 +398,6 @@ enum
   FloatMF,
   /* src/dest swap for floats. */
   FloatR,
-  /* has float insn direction bit. */
-  FloatD,
   /* needs size prefix if in 32-bit mode */
   Size16,
   /* needs size prefix if in 16-bit mode */
@@ -549,11 +547,13 @@ enum
 	2: 128bit EVEX prefix.
 	3: 256bit EVEX prefix.
 	4: Length-ignored (LIG) EVEX prefix.
+	5: Length determined from actual operands.
    */
 #define EVEX512                1
 #define EVEX128                2
 #define EVEX256                3
 #define EVEXLIG                4
+#define EVEXDYN                5
   EVex,
 
   /* AVX512 masking support:
@@ -604,8 +604,6 @@ enum
   /* Support encoding optimization.  */
   Optimize,
 
-  /* Compatible with old (<= 2.8.1) versions of gcc  */
-  OldGcc,
   /* AT&T mnemonic.  */
   ATTMnemonic,
   /* AT&T syntax.  */
@@ -633,7 +631,6 @@ typedef struct i386_opcode_modifier
   unsigned int jumpintersegment:1;
   unsigned int floatmf:1;
   unsigned int floatr:1;
-  unsigned int floatd:1;
   unsigned int size16:1;
   unsigned int size32:1;
   unsigned int size64:1;
@@ -682,7 +679,6 @@ typedef struct i386_opcode_modifier
   unsigned int nodefmask:1;
   unsigned int implicitquadgroup:1;
   unsigned int optimize:1;
-  unsigned int oldgcc:1;
   unsigned int attmnemonic:1;
   unsigned int attsyntax:1;
   unsigned int intelsyntax:1;

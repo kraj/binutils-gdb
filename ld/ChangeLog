@@ -1,3 +1,34 @@
+2018-03-08  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/22929
+	* testsuite/ld-i386/i386.exp: Run PR ld/22929 test.
+	* testsuite/ld-x86-64/x86-64.exp: Likewise.
+	* testsuite/ld-i386/pr22929.d: New file.
+	* testsuite/ld-i386/pr22929.s: Likewise.
+	* testsuite/ld-x86-64/pr22929.d: Likewise.
+	* testsuite/ld-x86-64/pr22929.s: Likewise.
+
+2018-03-07  Max Filippov  <jcmvbkbc@gmail.com>
+
+	* emulparams/elf32xtensa.sh (COMMONPAGESIZE): Define.
+
+2018-03-07  Renlin Li  <renlin.li@arm.com>
+
+	PR ld/20402
+	* testsuite/ld-aarch64/aarch64-elf.exp: Run new test.
+	* testsuite/ld-aarch64/pr20402.s: New.
+	* testsuite/ld-aarch64/pr20402.d: New.
+
+2018-03-06  Jim Wilson  <jimw@sifive.com>
+
+	PR 22920
+	* emultempl/riscvelf.em (riscv_create_output_section_statements): New.
+	(LDEMUL_CREATE_OUTPUT_SECTION_STATEMENTS): New.
+	* testsuite/ld-elf/pr21884.d (#notarget): Add riscv*-*-*.
+	* testsuite/ld-unique/pr21529.d (#notarget): Likewise.
+	* testsuite/ld-srec/srec.exp (run_srec_test): For riscv*-*-* target,
+	call setup_xfail.
+
 2018-03-03  James Cowgill  <james.cowgill@mips.com>
 	    Maciej W. Rozycki  <macro@mips.com>
 
