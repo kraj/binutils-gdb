@@ -2622,6 +2622,10 @@ set_cpu_arch (int dummy ATTRIBUTE_UNUSED)
 		  cpu_arch_flags = flags;
 		  cpu_arch_isa_flags = flags;
 		}
+	      else
+		cpu_arch_isa_flags
+		  = cpu_flags_or (cpu_arch_isa_flags,
+				  cpu_arch[j].flags);
 	      (void) restore_line_pointer (e);
 	      demand_empty_rest_of_line ();
 	      return;
@@ -3871,7 +3875,8 @@ optimize_encoding (void)
 	       || (!i.mask
 		   && !i.rounding
 		   && is_evex_encoding (&i.tm)
-		   && cpu_arch_flags.bitfield.cpuavx512vl))
+		   && (i.tm.cpu_flags.bitfield.cpuavx512vl
+		       || cpu_arch_isa_flags.bitfield.cpuavx512vl)))
 	   && ((i.tm.base_opcode == 0x55
 		|| i.tm.base_opcode == 0x6655
 		|| i.tm.base_opcode == 0x66df
@@ -3915,13 +3920,7 @@ optimize_encoding (void)
        */
       if (is_evex_encoding (&i.tm))
 	{
-	  /* If only lower 16 vector registers are used, we can use
-	     VEX encoding.  */
-	  for (j = 0; j < 3; j++)
-	    if (register_number (i.op[j].regs) > 15)
-	      break;
-
-	  if (j < 3)
+	  if (i.vec_encoding == vex_encoding_evex)
 	    i.tm.opcode_modifier.evex = EVEX128;
 	  else
 	    {
@@ -8525,6 +8524,12 @@ check_VecOperations (char *op_string, char *op_end)
 	      return NULL;
 	    }
 	  op_string++;
+
+	  /* Strip whitespace since the addition of pseudo prefixes
+	     changed how the scrubber treats '{'.  */
+	  if (is_space_char (*op_string))
+	    ++op_string;
+
 	  continue;
 	}
     unknown_vec_op:
@@ -10524,6 +10529,10 @@ md_parse_option (int c, const char *arg)
 		      cpu_arch_flags = flags;
 		      cpu_arch_isa_flags = flags;
 		    }
+		  else
+		    cpu_arch_isa_flags
+		      = cpu_flags_or (cpu_arch_isa_flags,
+				      cpu_arch[j].flags);
 		  break;
 		}
 	    }

@@ -1,3 +1,69 @@
+2018-03-09  Eli Zaretskii  <eliz@gnu.org>
+
+	* top.c (print_gdb_configuration): Reflect LIBIPT, LIBMEMCHECK,
+	and LIBMPFR in the printed configuration.
+
+2018-03-08  Tom Tromey  <tom@tromey.com>
+
+	* source.c (get_filename_and_charpos): Use scoped_fd.
+	* nto-procfs.c (procfs_open_1): Use scoped_fd.
+	(procfs_pidlist): Likewise.
+	* procfs.c (proc_get_LDT_entry): Use scoped_fd.
+	(iterate_over_mappings): Likewise.
+
+2018-03-08  Tom Tromey  <tom@tromey.com>
+
+	* infcall.c (struct call_return_meta_info)
+	<stack_temporaries_enabled>: Remove.
+	(get_call_return_value, call_function_by_hand_dummy): Update.
+	* thread.c (disable_thread_stack_temporaries): Remove.
+	(enable_thread_stack_temporaries): Remove.
+	(thread_stack_temporaries_enabled_p): Return bool.
+	(push_thread_stack_temporary, value_in_thread_stack_temporaries)
+	(get_last_thread_stack_temporary): Update.
+	* eval.c (evaluate_subexp): Update.
+	* gdbthread.h (class enable_thread_stack_temporaries): Now a
+	class, not a function.
+	(value_ptr, value_vec): Remove typedefs.
+	(class thread_info) <stack_temporaries_enabled>: Now bool.
+	<stack_temporaries>: Now a std::vector.
+	(thread_stack_temporaries_enabled_p)
+	(value_in_thread_stack_temporaries): Return bool.
+
+2018-03-08  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* remote.c (putpkt_binary): Fix omitted bytes reporting.
+	(getpkt_or_notif_sane_1): Likewise.
+
+2018-03-08  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* build-id.c (build_id_to_debug_bfd): Use std::string.
+
+2018-03-08  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* build-id.c (find_separate_debug_file_by_buildid): Return
+	std::string.
+	* build-id.h (find_separate_debug_file_by_buildid): Return
+	std::string.
+	* coffread.c (coff_symfile_read): Adjust to std::string.
+	* elfread.c (elf_symfile_read): Adjust to std::string.
+	* symfile.c (separate_debug_file_exists): Change parameter to
+	std::string.
+	(find_separate_debug_file): Return std::string.
+	(find_separate_debug_file_by_debuglink): Return std::string.
+	* symfile.h (find_separate_debug_file_by_debuglink): Return
+	std::string.
+
+2018-03-08  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* common/xml-utils.c (xml_escape_text): Move code to...
+	(xml_escape_text_append): ... this new function.
+	* common/xml-utils.h (xml_escape_text_append): New declaration.
+	* unittests/xml-utils-selftests.c (test_xml_escape_text_append):
+	New function.
+	(_initialize_xml_utils): register test_xml_escape_text_append as
+	a selftest.
+
 2018-03-07  Alan Hayward  <alan.hayward@arm.com>
 
 	* defs.h: Remove MAX_REGISTER_SIZE.
