@@ -1,3 +1,8 @@
+2018-03-09  Roland McGrath  <mcgrathr@google.com>
+
+	* testsuite/ld-elf/elf.exp (pr20995-2): XFAIL on aarch64*-*-elf*,
+	another target without RELRO.
+
 2018-02-09  Eric Botcazou  <ebotcazou@adacore.com>
 
 	* testsuite/ld-elf/pr22450.d: Remove reference to SPARC64.
