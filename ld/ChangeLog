@@ -1,3 +1,8 @@
+2018-03-09  Roland McGrath  <mcgrathr@google.com>
+
+	* testsuite/ld-elf/shared.exp (pr20995-2): XFAIL on aarch64*-*-elf*,
+	another target without RELRO.
+
 2018-03-09  Nick Clifton  <nickc@redhat.com>
 
 	* testsuite/ld-ifunc/ifuncmod5.s: New test.  Checks that targets
