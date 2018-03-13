@@ -1,3 +1,49 @@
+2018-03-12  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* riscv-tdep.c (riscv_sw_breakpoint_from_kind): Add localization
+	to error message string.
+	(riscv_register_name): Use xsnprintf instead of sprintf.
+	(riscv_insn::fetch_instruction): Use gdb_assert instead of
+	internal_error.
+	(riscv_print_arg_location): Use gdb_assert_not_reached instead of
+	error.
+	(riscv_push_dummy_call): Likewise.
+
+2018-03-12  Tom Tromey  <tom@tromey.com>
+
+	* rs6000-aix-tdep.c (rs6000_aix_core_xfer_shared_libraries_aix):
+	Use gdb::byte_vector.
+	* arm-tdep.c (arm_exidx_new_objfile): Use gdb::byte_vector.
+
+2018-03-12  Yao Qi  <yao.qi@linaro.org>
+
+	* ia64-libunwind-tdep.c (libunwind_get_reg_special): Change
+	parameter type to readable_regcache.
+	* ia64-libunwind-tdep.h (libunwind_get_reg_special): Update
+	the declaration.
+
+2018-03-11  Tom Tromey  <tom@tromey.com>
+
+	* dwarf2read.c (struct nextfield): Add initializers.
+	(struct nextfnfield): Remove.
+	(struct fnfieldlist): Add initializers.  Remove "length" and
+	"head", use std::vector.
+	(struct decl_field_list): Remove.
+	(struct field_info): Add initializers.
+	<fields, baseclasses>: Now std::vector.
+	<nbaseclasses, nfnfields, typedef_field_list_count,
+	nested_types_list_count>: Remove.
+	(dwarf2_add_field, dwarf2_add_type_defn)
+	(dwarf2_attach_fields_to_type, dwarf2_add_member_fn)
+	(dwarf2_attach_fn_fields_to_type, handle_struct_member_die)
+	(process_structure_scope): Update.
+
+2018-03-11  Tom Tromey  <tom@tromey.com>
+
+	* dwarf2read.c (sort_tu_by_abbrev_offset): Change to be suitable
+	for use by std::sort.
+	(build_type_psymtabs_1): Use std::vector.
+
 2018-03-09  Eli Zaretskii  <eliz@gnu.org>
 
 	* top.c (print_gdb_configuration): Reflect LIBIPT, LIBMEMCHECK,
