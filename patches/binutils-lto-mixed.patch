@@ -1,4 +1,4 @@
-From a56ed417e8ed5be190f28d6db7df132886ef7cfb Mon Sep 17 00:00:00 2001
+From d9c7a57c70ea99931d41c71922cd041a6893d143 Mon Sep 17 00:00:00 2001
 From: "H.J. Lu" <hjl.tools@gmail.com>
 Date: Mon, 4 Nov 2013 09:17:45 -0800
 Subject: [PATCH 1/3] Add lto and none-lto input support for ld -r
@@ -515,7 +515,7 @@ index 288b5b14fe..0bc8354306 100644
 +  return NULL;
 +}
 diff --git a/bfd/elf.c b/bfd/elf.c
-index 5d39a9881d..8909cdc2ed 100644
+index 8ea5a81cbe..36388565b3 100644
 --- a/bfd/elf.c
 +++ b/bfd/elf.c
 @@ -2621,6 +2621,7 @@ static const struct bfd_elf_special_section special_sections_g[] =
@@ -913,7 +913,7 @@ index 6aa18d5db3..7affd9c0dc 100644
  .#define bfd_com_section_ptr (&_bfd_std_section[0])
  .{* Pointer to the undefined section.  *}
 diff --git a/binutils/objcopy.c b/binutils/objcopy.c
-index 8cdf27a87e..6ea2cd5e21 100644
+index d0a152c0f6..8e08a6510e 100644
 --- a/binutils/objcopy.c
 +++ b/binutils/objcopy.c
 @@ -1195,35 +1195,6 @@ is_specified_symbol (const char *name, htab_t htab)
@@ -961,7 +961,7 @@ index 8cdf27a87e..6ea2cd5e21 100644
        if (gsym != NULL)
  	gname = gsym->name;
        else
-@@ -3794,7 +3765,7 @@ setup_section (bfd *ibfd, sec_ptr isection, void *obfdarg)
+@@ -3803,7 +3774,7 @@ setup_section (bfd *ibfd, sec_ptr isection, void *obfdarg)
  
    if ((isection->flags & SEC_GROUP) != 0)
      {
@@ -971,7 +971,7 @@ index 8cdf27a87e..6ea2cd5e21 100644
        if (gsym != NULL)
  	{
 diff --git a/binutils/readelf.c b/binutils/readelf.c
-index e3af50a9c9..c3d859e724 100644
+index b85db9f97c..26a4eebedf 100644
 --- a/binutils/readelf.c
 +++ b/binutils/readelf.c
 @@ -4175,6 +4175,7 @@ get_section_type_name (Filedata * filedata, unsigned int sh_type)
@@ -1032,10 +1032,10 @@ index 61a1ca7c1e..e5045d8448 100644
  /* The next three section types are defined by Solaris, and are named
     SHT_SUNW*.  We use them in GNU code, so we also define SHT_GNU*
 diff --git a/ld/emultempl/aarch64elf.em b/ld/emultempl/aarch64elf.em
-index 34d03f31ce..89b5649629 100644
+index fe0255c57f..c87b1262ac 100644
 --- a/ld/emultempl/aarch64elf.em
 +++ b/ld/emultempl/aarch64elf.em
-@@ -275,7 +275,7 @@ gld${EMULATION_NAME}_after_allocation (void)
+@@ -277,7 +277,7 @@ gld${EMULATION_NAME}_after_allocation (void)
  }
  
  static void
@@ -1044,7 +1044,7 @@ index 34d03f31ce..89b5649629 100644
  {
    if (!bfd_link_relocatable (&link_info))
      {
-@@ -287,7 +287,7 @@ gld${EMULATION_NAME}_finish (void)
+@@ -289,7 +289,7 @@ gld${EMULATION_NAME}_finish (void)
  	}
      }
  
@@ -1053,7 +1053,7 @@ index 34d03f31ce..89b5649629 100644
  }
  
  /* This is a convenient point to tell BFD about target specific flags.
-@@ -448,4 +448,4 @@ LDEMUL_CREATE_OUTPUT_SECTION_STATEMENTS=aarch64_elf_create_output_section_statem
+@@ -450,4 +450,4 @@ LDEMUL_CREATE_OUTPUT_SECTION_STATEMENTS=aarch64_elf_create_output_section_statem
  LDEMUL_BEFORE_PARSE=gld"${EMULATION_NAME}"_before_parse
  
  # Call the extra arm-elf function
@@ -1114,7 +1114,7 @@ index a05c39adad..e3f5c4a865 100644
  EOF
  
 diff --git a/ld/emultempl/elf32.em b/ld/emultempl/elf32.em
-index aae9d1f625..60a79195c1 100644
+index 9b8971eac4..8160456aa4 100644
 --- a/ld/emultempl/elf32.em
 +++ b/ld/emultempl/elf32.em
 @@ -66,6 +66,7 @@ static void gld${EMULATION_NAME}_before_allocation (void);
@@ -1125,7 +1125,7 @@ index aae9d1f625..60a79195c1 100644
  EOF
  
  if [ "x${USE_LIBPATH}" = xyes ] ; then
-@@ -2041,6 +2042,8 @@ elf_orphan_compatible (asection *in, asection *out)
+@@ -2042,6 +2043,8 @@ elf_orphan_compatible (asection *in, asection *out)
  					  in->owner, in);
  }
  
@@ -1134,7 +1134,7 @@ index aae9d1f625..60a79195c1 100644
  /* Place an orphan section.  We use this to put random SHF_ALLOC
     sections in the right segment.  */
  
-@@ -2049,7 +2052,7 @@ gld${EMULATION_NAME}_place_orphan (asection *s,
+@@ -2050,7 +2053,7 @@ gld${EMULATION_NAME}_place_orphan (asection *s,
  				   const char *secname,
  				   int constraint)
  {
@@ -1143,7 +1143,7 @@ index aae9d1f625..60a79195c1 100644
      {
        { ".text",
  	SEC_HAS_CONTENTS | SEC_ALLOC | SEC_LOAD | SEC_READONLY | SEC_CODE,
-@@ -2079,6 +2082,7 @@ gld${EMULATION_NAME}_place_orphan (asection *s,
+@@ -2080,6 +2083,7 @@ gld${EMULATION_NAME}_place_orphan (asection *s,
  	SEC_HAS_CONTENTS,
  	0, 0, 0, 0 },
      };
@@ -1151,7 +1151,7 @@ index aae9d1f625..60a79195c1 100644
    enum orphan_save_index
      {
        orphan_text = 0,
-@@ -2091,7 +2095,6 @@ gld${EMULATION_NAME}_place_orphan (asection *s,
+@@ -2092,7 +2096,6 @@ gld${EMULATION_NAME}_place_orphan (asection *s,
        orphan_sdata,
        orphan_nonalloc
      };
@@ -1159,7 +1159,7 @@ index aae9d1f625..60a79195c1 100644
    struct orphan_save *place;
    lang_output_section_statement_type *after;
    lang_output_section_statement_type *os;
-@@ -2217,15 +2220,22 @@ gld${EMULATION_NAME}_place_orphan (asection *s,
+@@ -2218,15 +2221,22 @@ gld${EMULATION_NAME}_place_orphan (asection *s,
  
    if (!orphan_init_done)
      {
@@ -1183,7 +1183,7 @@ index aae9d1f625..60a79195c1 100644
        orphan_init_done = 1;
      }
  
-@@ -2317,6 +2327,27 @@ gld${EMULATION_NAME}_place_orphan (asection *s,
+@@ -2318,6 +2328,27 @@ gld${EMULATION_NAME}_place_orphan (asection *s,
  EOF
  fi
  
@@ -1211,7 +1211,7 @@ index aae9d1f625..60a79195c1 100644
  if test x"$LDEMUL_AFTER_ALLOCATION" != xgld"$EMULATION_NAME"_after_allocation; then
  fragment <<EOF
  
-@@ -2908,7 +2939,7 @@ struct ld_emulation_xfer_struct ld_${EMULATION_NAME}_emulation =
+@@ -2909,7 +2940,7 @@ struct ld_emulation_xfer_struct ld_${EMULATION_NAME}_emulation =
    ${LDEMUL_GET_SCRIPT-gld${EMULATION_NAME}_get_script},
    "${EMULATION_NAME}",
    "${OUTPUT_FORMAT}",
@@ -2509,7 +2509,7 @@ index 1ecb152be1..298e082e44 100644
    OPTION_DEFAULT_SCRIPT,
    OPTION_PRINT_OUTPUT_FORMAT,
 diff --git a/ld/ldmain.c b/ld/ldmain.c
-index b6914db5da..d36c2d3d11 100644
+index 6527613c98..f65e3659a8 100644
 --- a/ld/ldmain.c
 +++ b/ld/ldmain.c
 @@ -223,6 +223,9 @@ main (int argc, char **argv)
@@ -2522,7 +2522,7 @@ index b6914db5da..d36c2d3d11 100644
    /* Set up the sysroot directory.  */
    ld_sysroot = get_sysroot (argc, argv);
    if (*ld_sysroot)
-@@ -300,8 +303,8 @@ main (int argc, char **argv)
+@@ -307,8 +310,8 @@ main (int argc, char **argv)
    default_target = ldemul_choose_target (argc, argv);
    config.maxpagesize = bfd_emul_get_maxpagesize (default_target);
    config.commonpagesize = bfd_emul_get_commonpagesize (default_target);
@@ -2533,7 +2533,7 @@ index b6914db5da..d36c2d3d11 100644
    ldemul_before_parse ();
    lang_has_input_file = FALSE;
    parse_args (argc, argv);
-@@ -316,34 +319,7 @@ main (int argc, char **argv)
+@@ -323,34 +326,7 @@ main (int argc, char **argv)
  
    ldemul_set_symbols ();
  
@@ -2569,7 +2569,7 @@ index b6914db5da..d36c2d3d11 100644
  
    if (verbose)
      {
-@@ -463,7 +439,7 @@ main (int argc, char **argv)
+@@ -470,7 +446,7 @@ main (int argc, char **argv)
      fprintf (stderr, "lookup = %p val %lx\n", h, h ? h->u.def.value : 1);
    }
  #endif
@@ -2578,7 +2578,7 @@ index b6914db5da..d36c2d3d11 100644
    lang_finish ();
  
    /* Even if we're producing relocatable output, some non-fatal errors should
-@@ -483,6 +459,8 @@ main (int argc, char **argv)
+@@ -490,6 +466,8 @@ main (int argc, char **argv)
        if (!bfd_close (link_info.output_bfd))
  	einfo (_("%F%P: %pB: final close failed: %E\n"), link_info.output_bfd);
  
@@ -2587,7 +2587,7 @@ index b6914db5da..d36c2d3d11 100644
        /* If the --force-exe-suffix is enabled, and we're making an
  	 executable file and it doesn't end in .exe, copy it to one
  	 which does.  */
-@@ -530,6 +508,9 @@ main (int argc, char **argv)
+@@ -537,6 +515,9 @@ main (int argc, char **argv)
  	}
      }
  
@@ -2597,7 +2597,7 @@ index b6914db5da..d36c2d3d11 100644
    END_PROGRESS (program_name);
  
    if (config.stats)
-@@ -832,7 +813,9 @@ add_archive_element (struct bfd_link_info *info,
+@@ -839,7 +820,9 @@ add_archive_element (struct bfd_link_info *info,
  	  *subsbfd = input->the_bfd;
  	}
      }
@@ -2607,7 +2607,7 @@ index b6914db5da..d36c2d3d11 100644
  
    ldlang_add_file (input);
  
-@@ -1514,3 +1497,38 @@ notice (struct bfd_link_info *info,
+@@ -1521,3 +1504,38 @@ notice (struct bfd_link_info *info,
  
    return TRUE;
  }
