@@ -1,3 +1,35 @@
+2018-03-15  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* Makefile.in (SUBDIR_UNITTESTS_SRCS): Add
+	unittests/utils-selftests.c.
+	* unittests/utils-selftests.c: New file.
+
+2018-03-14  Tom Tromey  <tom@tromey.com>
+
+	PR cli/14977:
+	* printcmd.c (printf_c_string, printf_wide_c_string): Special case
+	for NULL.
+
+2018-03-14  Tom Tromey  <tom@tromey.com>
+
+	PR cli/19918:
+	* printcmd.c (printf_pointer): Allow "-" in format.
+
+2018-03-14  Tom Tromey  <tom@tromey.com>
+
+	* printcmd.c (_initialize_printcmd): Add usage to printf.
+
+2018-03-14  Yao Qi  <qiyao@sourceware.org>
+
+	* MAINTAINERS: Update my email address.
+
+2018-03-13  Tom Tromey  <tom@tromey.com>
+
+	* machoread.c (macho_check_dsym): Change filenamep to a
+	std::string*.
+	(macho_symfile_read): Update.
+	* symfile.c (load_command): Use std::string.
+
 2018-03-12  Andrew Burgess  <andrew.burgess@embecosm.com>
 
 	* riscv-tdep.c (riscv_sw_breakpoint_from_kind): Add localization

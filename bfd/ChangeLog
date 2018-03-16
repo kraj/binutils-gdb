@@ -1,3 +1,40 @@
+2018-03-15  Max Filippov  <jcmvbkbc@gmail.com>
+
+	* elf32-xtensa.c (xlate_map_entry): Change types of address
+	fields from 'unsigned' to 'bfd_vma'.
+	(xlate_offset_with_removed_text): Use struct xlate_map_entry as
+	the key argument to bsearch. Allow offsets past the end of a
+	section, use the last map entry for translation of such offsets.
+
+2018-03-15  Kuan-Lin Chen  <kuanlinchentw@gmail.com>
+
+	* elf32-nds32.c (nds32_elf_ex9_build_hash_table): Removed.
+	Not support the target feature.
+	(nds32_elf_ex9_itb_base): Likewise.
+	(nds32_elf_ex9_import_table): Likewise.
+	(nds32_elf_ex9_finish): Likewise.
+	(nds32_elf_ex9_reloc_jmp): Likewise.
+	(nds32_elf_get_insn_with_reg): Likewise.
+	(nds32_get_local_syms): Likewise.
+	(nds32_elf_ex9_replace_instruction): Likewise.
+	(nds32_elf_ifc_calc): Likewise.
+	(nds32_elf_ifc_finish): Likewise.
+	(nds32_elf_ifc_replace): Likewise.
+	(nds32_elf_ifc_reloc): Likewise.
+
+2018-03-14  Alan Modra  <amodra@gmail.com>
+
+	* elf64-ppc.c (sfpr_define): Adjust for stub_sec size having
+	sfpr size added before defining alias symbols.
+	(ppc64_elf_build_stubs): Add stub section padding before
+	copying sfpr contents and defining save/restore alias symbols.
+
+2018-03-14  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/20882
+	* elflink.c (elf_gc_mark_debug_section): Also check the local
+	debug definition section.
+
 2018-03-13  Nick Clifton  <nickc@redhat.com>
 
 	PR 22113

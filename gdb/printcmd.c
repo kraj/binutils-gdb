@@ -2220,6 +2220,11 @@ printf_c_string (struct ui_file *stream, const char *format,
   int j;
 
   tem = value_as_address (value);
+  if (tem == 0)
+    {
+      fprintf_filtered (stream, format, "(null)");
+      return;
+    }
 
   /* This is a %s argument.  Find the length of the string.  */
   for (j = 0;; j++)
@@ -2260,6 +2265,11 @@ printf_wide_c_string (struct ui_file *stream, const char *format,
   gdb_byte *buf = (gdb_byte *) alloca (wcwidth);
 
   tem = value_as_address (value);
+  if (tem == 0)
+    {
+      fprintf_filtered (stream, format, "(null)");
+      return;
+    }
 
   /* This is a %s argument.  Find the length of the string.  */
   for (j = 0;; j += wcwidth)
@@ -2399,8 +2409,9 @@ printf_pointer (struct ui_file *stream, const char *format,
   if (val != 0)
     *fmt_p++ = '#';
 
-  /* Copy any width.  */
-  while (*p >= '0' && *p < '9')
+  /* Copy any width or flags.  Only the "-" flag is valid for pointers
+     -- see the format_pieces constructor.  */
+  while (*p == '-' || (*p >= '0' && *p < '9'))
     *fmt_p++ = *p++;
 
   gdb_assert (*p == 'p' && *(p + 1) == '\0');
@@ -2680,8 +2691,9 @@ No argument means cancel all automatic-display expressions.\n\
 Do \"info display\" to see current list of code numbers."), &deletelist);
 
   add_com ("printf", class_vars, printf_command, _("\
-printf \"printf format string\", arg1, arg2, arg3, ..., argn\n\
-This is useful for formatted output in user-defined commands."));
+Formatted printing, like the C \"printf\" function.\n\
+Usage: printf \"format string\", arg1, arg2, arg3, ..., argn\n\
+This supports most C printf format specifications, like %s, %d, etc."));
 
   add_com ("output", class_vars, output_command, _("\
 Like \"print\" but don't put in value history and don't print newline.\n\
