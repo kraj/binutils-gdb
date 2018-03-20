@@ -49,7 +49,7 @@
 #include "target.h"
 #include "value.h"
 #include "symfile.h"
-#include "observer.h"
+#include "observable.h"
 #include "auxv.h"
 #include "elf/common.h"
 #include "gdb_bfd.h"
@@ -88,9 +88,6 @@ symbol_file_add_from_memory (struct bfd *templ, CORE_ADDR addr,
   struct bfd *nbfd;
   struct bfd_section *sec;
   bfd_vma loadbase;
-  struct section_addr_info *sai;
-  unsigned int i;
-  struct cleanup *cleanup;
   symfile_add_flags add_flags = 0;
 
   if (bfd_get_flavour (templ) != bfd_target_elf_flavour)
@@ -114,31 +111,24 @@ symbol_file_add_from_memory (struct bfd *templ, CORE_ADDR addr,
     error (_("Got object file from memory but can't read symbols: %s."),
 	   bfd_errmsg (bfd_get_error ()));
 
-  sai = alloc_section_addr_info (bfd_count_sections (nbfd));
-  cleanup = make_cleanup (xfree, sai);
-  i = 0;
+  section_addr_info sai;
   for (sec = nbfd->sections; sec != NULL; sec = sec->next)
     if ((bfd_get_section_flags (nbfd, sec) & (SEC_ALLOC|SEC_LOAD)) != 0)
-      {
-	sai->other[i].addr = bfd_get_section_vma (nbfd, sec) + loadbase;
-	sai->other[i].name = (char *) bfd_get_section_name (nbfd, sec);
-	sai->other[i].sectindex = sec->index;
-	++i;
-      }
-  sai->num_sections = i;
+      sai.emplace_back (bfd_get_section_vma (nbfd, sec) + loadbase,
+			bfd_get_section_name (nbfd, sec),
+			sec->index);
 
   if (from_tty)
     add_flags |= SYMFILE_VERBOSE;
 
   objf = symbol_file_add_from_bfd (nbfd, bfd_get_filename (nbfd),
-				   add_flags, sai, OBJF_SHARED, NULL);
+				   add_flags, &sai, OBJF_SHARED, NULL);
 
   add_target_sections_of_objfile (objf);
 
   /* This might change our ideas about frames already looked at.  */
   reinit_frame_cache ();
 
-  do_cleanups (cleanup);
   return objf;
 }
 
@@ -229,5 +219,5 @@ _initialize_symfile_mem (void)
 
   /* Want to know of each new inferior so that its vsyscall info can
      be extracted.  */
-  observer_attach_inferior_created (add_vsyscall_page);
+  gdb::observers::inferior_created.attach (add_vsyscall_page);
 }

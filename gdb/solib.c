@@ -38,7 +38,7 @@
 #include "filenames.h"		/* for DOSish file names */
 #include "exec.h"
 #include "solist.h"
-#include "observer.h"
+#include "observable.h"
 #include "readline/readline.h"
 #include "remote.h"
 #include "solib.h"
@@ -676,8 +676,6 @@ solib_read_symbols (struct so_list *so, symfile_add_flags flags)
 
       TRY
 	{
-	  struct section_addr_info *sap;
-
 	  /* Have we already loaded this shared object?  */
 	  ALL_OBJFILES (so->objfile)
 	    {
@@ -687,13 +685,13 @@ solib_read_symbols (struct so_list *so, symfile_add_flags flags)
 	    }
 	  if (so->objfile == NULL)
 	    {
-	      sap = build_section_addr_info_from_section_table (so->sections,
-								so->sections_end);
+	      section_addr_info sap
+		= build_section_addr_info_from_section_table (so->sections,
+							      so->sections_end);
 	      so->objfile = symbol_file_add_from_bfd (so->abfd, so->so_name,
-						      flags, sap, OBJF_SHARED,
-						      NULL);
+						      flags, &sap,
+						      OBJF_SHARED, NULL);
 	      so->objfile->addr_low = so->addr_low;
-	      free_section_addr_info (sap);
 	    }
 
 	  so->symbols_loaded = 1;
@@ -826,7 +824,7 @@ update_solib_list (int from_tty)
 	{
 	  /* Notify any observer that the shared object has been
 	     unloaded before we remove it from GDB's tables.  */
-	  observer_notify_solib_unloaded (gdb);
+	  gdb::observers::solib_unloaded.notify (gdb);
 
 	  current_program_space->deleted_solibs.push_back (gdb->so_name);
 
@@ -887,7 +885,7 @@ update_solib_list (int from_tty)
 
 	  /* Notify any observer that the shared object has been
 	     loaded now that we've added it to GDB's tables.  */
-	  observer_notify_solib_loaded (i);
+	  gdb::observers::solib_loaded.notify (i);
 	}
 
       /* If a library was not found, issue an appropriate warning
@@ -1195,7 +1193,7 @@ clear_solib (void)
       struct so_list *so = so_list_head;
 
       so_list_head = so->next;
-      observer_notify_solib_unloaded (so);
+      gdb::observers::solib_unloaded.notify (so);
       remove_target_sections (so);
       free_so (so);
     }
@@ -1476,8 +1474,8 @@ gdb_bfd_lookup_symbol_from_symtab (bfd *abfd,
     {
       unsigned int i;
 
-      asymbol **symbol_table = (asymbol **) xmalloc (storage_needed);
-      struct cleanup *back_to = make_cleanup (xfree, symbol_table);
+      gdb::def_vector<asymbol *> storage (storage_needed / sizeof (asymbol *));
+      asymbol **symbol_table = storage.data ();
       unsigned int number_of_symbols =
 	bfd_canonicalize_symtab (abfd, symbol_table);
 
@@ -1512,7 +1510,6 @@ gdb_bfd_lookup_symbol_from_symtab (bfd *abfd,
 	      break;
 	    }
 	}
-      do_cleanups (back_to);
     }
 
   return symaddr;
@@ -1535,8 +1532,8 @@ bfd_lookup_symbol_from_dyn_symtab (bfd *abfd,
   if (storage_needed > 0)
     {
       unsigned int i;
-      asymbol **symbol_table = (asymbol **) xmalloc (storage_needed);
-      struct cleanup *back_to = make_cleanup (xfree, symbol_table);
+      gdb::def_vector<asymbol *> storage (storage_needed / sizeof (asymbol *));
+      asymbol **symbol_table = storage.data ();
       unsigned int number_of_symbols =
 	bfd_canonicalize_dynamic_symtab (abfd, symbol_table);
 
@@ -1551,7 +1548,6 @@ bfd_lookup_symbol_from_dyn_symtab (bfd *abfd,
 	      break;
 	    }
 	}
-      do_cleanups (back_to);
     }
   return symaddr;
 }
@@ -1599,7 +1595,7 @@ _initialize_solib (void)
 {
   solib_data = gdbarch_data_register_pre_init (solib_init);
 
-  observer_attach_free_objfile (remove_user_added_objfile);
+  gdb::observers::free_objfile.attach (remove_user_added_objfile);
 
   add_com ("sharedlibrary", class_files, sharedlibrary_command,
 	   _("Load shared object library symbols for files matching REGEXP."));
