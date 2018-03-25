@@ -1,3 +1,36 @@
+2018-03-22  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-opc.tbl: Drop VecESize from register only insn forms and
+	memory forms not allowing broadcast.
+	* i386-tlb.h: Re-generate.
+
+2018-03-22  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-opc.tbl (vfrczs*, vphadd*, vphsub*, vpmacs*, vpmadcs*,
+	vprot*, vpsha*, vpshl*, bextr, blc*, bls*, t1mskc, tzmsk, sha1*,
+	sha256*): Drop Disp<N>.
+
+2018-03-22  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-dis.c (EbndS, bnd_swap_mode): New.
+	(prefix_table): Use EbndS.
+	(OP_E_register, OP_E_memory): Also handle bnd_swap_mode.
+	* i386-opc.tbl (bndmov): Move misplaced Load.
+	* i386-tlb.h: Re-generate.
+
+2018-03-22  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-opc.tbl (vcvtdq2pd, vcvtps2pd, vcvtudq2pd): Use separate
+	templates allowing memory operands and folded ones for register
+	only flavors.
+	* i386-tlb.h: Re-generate.
+
+2018-03-22  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-opc.tbl (vfrczp*, vpcmov, vpermil2p*): Fold 128- and
+	256-bit templates. Drop redundant leftover Disp<N>.
+	* i386-tlb.h: Re-generate.
+
 2018-03-14  Kito Cheng  <kito.cheng@gmail.com>
 
 	* riscv-opc.c (riscv_insn_types): New.

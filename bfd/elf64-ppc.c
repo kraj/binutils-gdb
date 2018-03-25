@@ -3269,10 +3269,9 @@ ppc64_elf_get_synthetic_symtab (bfd *abfd,
 				asymbol **ret)
 {
   asymbol *s;
-  long i;
-  long count;
+  size_t i, j, count;
   char *names;
-  long symcount, codesecsym, codesecsymend, secsymend, opdsymend;
+  size_t symcount, codesecsym, codesecsymend, secsymend, opdsymend;
   asection *opd = NULL;
   bfd_boolean relocatable = (abfd->flags & (EXEC_P | DYNAMIC)) == 0;
   asymbol **syms;
@@ -3317,13 +3316,20 @@ ppc64_elf_get_synthetic_symtab (bfd *abfd,
       else
 	memcpy (syms, static_syms, (symcount + 1) * sizeof (*syms));
 
+      /* Trim uninteresting symbols.  Interesting symbols are section,
+	 function, and notype symbols.  */
+      for (i = 0, j = 0; i < symcount; ++i)
+	if ((syms[i]->flags & (BSF_FILE | BSF_OBJECT | BSF_THREAD_LOCAL
+			       | BSF_RELC | BSF_SRELC)) == 0)
+	  syms[j++] = syms[i];
+      symcount = j;
+
       synthetic_relocatable = relocatable;
       synthetic_opd = opd;
       qsort (syms, symcount, sizeof (*syms), compare_symbols);
 
       if (!relocatable && symcount > 1)
 	{
-	  long j;
 	  /* Trim duplicate syms, since we may have merged the normal and
 	     dynamic symbols.  Actually, we only care about syms that have
 	     different values, so trim any with the same value.  */
@@ -3339,7 +3345,7 @@ ppc64_elf_get_synthetic_symtab (bfd *abfd,
 	 sym->section directly.  With separate debug info files, the
 	 symbols will be extracted from the debug file while abfd passed
 	 to this function is the real binary.  */
-      if (opd != NULL && strcmp (syms[i]->section->name, ".opd") == 0)
+      if (strcmp (syms[i]->section->name, ".opd") == 0)
 	++i;
       codesecsym = i;
 
@@ -3374,7 +3380,7 @@ ppc64_elf_get_synthetic_symtab (bfd *abfd,
       bfd_boolean (*slurp_relocs) (bfd *, asection *, asymbol **, bfd_boolean);
       arelent *r;
       size_t size;
-      long relcount;
+      size_t relcount;
 
       if (opdsymend == secsymend)
 	goto done;
@@ -3473,7 +3479,7 @@ ppc64_elf_get_synthetic_symtab (bfd *abfd,
       bfd_boolean (*slurp_relocs) (bfd *, asection *, asymbol **, bfd_boolean);
       bfd_byte *contents = NULL;
       size_t size;
-      long plt_count = 0;
+      size_t plt_count = 0;
       bfd_vma glink_vma = 0, resolv_vma = 0;
       asection *dynamic, *glink = NULL, *relplt = NULL;
       arelent *p;
@@ -3610,7 +3616,7 @@ ppc64_elf_get_synthetic_symtab (bfd *abfd,
 	  ent = bfd_get_64 (abfd, contents + syms[i]->value);
 	  if (!sym_exists_at (syms, opdsymend, symcount, -1, ent))
 	    {
-	      long lo, hi;
+	      size_t lo, hi;
 	      size_t len;
 	      asection *sec = abfd->sections;
 
@@ -3619,7 +3625,7 @@ ppc64_elf_get_synthetic_symtab (bfd *abfd,
 	      hi = codesecsymend;
 	      while (lo < hi)
 		{
-		  long mid = (lo + hi) >> 1;
+		  size_t mid = (lo + hi) >> 1;
 		  if (syms[mid]->section->vma < ent)
 		    lo = mid + 1;
 		  else if (syms[mid]->section->vma > ent)
@@ -11356,7 +11362,7 @@ ppc_size_one_stub (struct bfd_hash_entry *gen_entry, void *in_arg)
 
       local_off = PPC64_LOCAL_ENTRY_OFFSET (stub_entry->other);
 
-      /* If the branch offset if too big, use a ppc_stub_plt_branch.
+      /* If the branch offset is too big, use a ppc_stub_plt_branch.
 	 Do the same for -R objects without function descriptors.  */
       if (off + (1 << 25) >= (bfd_vma) (1 << 26) - local_off
 	  || (stub_entry->stub_type == ppc_stub_long_branch_r2off
@@ -11700,7 +11706,9 @@ ppc64_elf_layout_multitoc (struct bfd_link_info *info)
 		  htab->elf.irelplt->size += rel_size;
 		  htab->got_reli_size += rel_size;
 		}
-	      else if (bfd_link_pic (info))
+	      else if (bfd_link_pic (info)
+		       && !((ent->tls_type & TLS_TPREL) != 0
+			    && bfd_link_executable (info)))
 		{
 		  asection *srel = ppc64_elf_tdata (ibfd)->relgot;
 		  srel->size += rel_size;
@@ -13897,7 +13905,8 @@ ppc64_elf_relocate_section (bfd *output_bfd,
 	  break;
 
 	case R_PPC64_TLSGD:
-	  if (tls_mask != 0 && (tls_mask & TLS_GD) == 0)
+	  if (tls_mask != 0 && (tls_mask & TLS_GD) == 0
+	      && rel + 1 < relend)
 	    {
 	      unsigned int insn2;
 	      bfd_vma offset = rel->r_offset;
@@ -13931,7 +13940,8 @@ ppc64_elf_relocate_section (bfd *output_bfd,
 	  break;
 
 	case R_PPC64_TLSLD:
-	  if (tls_mask != 0 && (tls_mask & TLS_LD) == 0)
+	  if (tls_mask != 0 && (tls_mask & TLS_LD) == 0
+	      && rel + 1 < relend)
 	    {
 	      unsigned int insn2;
 	      bfd_vma offset = rel->r_offset;

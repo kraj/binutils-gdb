@@ -1937,10 +1937,13 @@ match_mem_size (const insn_template *t, unsigned int j)
 		   && !t->operand_types[j].bitfield.fword)
 	       /* For scalar opcode templates to allow register and memory
 		  operands at the same time, some special casing is needed
-		  here.  */
+		  here.  Also for v{,p}broadcast*, {,v}pmov{s,z}*, and
+		  down-conversion vpmov*.  */
 	       || ((t->operand_types[j].bitfield.regsimd
 		    && !t->opcode_modifier.broadcast
-		    && (t->operand_types[j].bitfield.dword
+		    && (t->operand_types[j].bitfield.byte
+			|| t->operand_types[j].bitfield.word
+			|| t->operand_types[j].bitfield.dword
 			|| t->operand_types[j].bitfield.qword))
 		   ? (i.types[j].bitfield.xmmword
 		      || i.types[j].bitfield.ymmword
@@ -5050,14 +5053,15 @@ check_VecOperands (const insn_template *t)
       /* Check if specified broadcast is supported in this instruction,
 	 and it's applied to memory operand of DWORD or QWORD type,
 	 depending on VecESize.  */
+      op = i.broadcast->operand;
       if (i.broadcast->type != t->opcode_modifier.broadcast
-	  || !i.types[i.broadcast->operand].bitfield.mem
+	  || !i.types[op].bitfield.mem
 	  || (t->opcode_modifier.vecesize == 0
-	      && !i.types[i.broadcast->operand].bitfield.dword
-	      && !i.types[i.broadcast->operand].bitfield.unspecified)
+	      && !i.types[op].bitfield.dword
+	      && !i.types[op].bitfield.unspecified)
 	  || (t->opcode_modifier.vecesize == 1
-	      && !i.types[i.broadcast->operand].bitfield.qword
-	      && !i.types[i.broadcast->operand].bitfield.unspecified))
+	      && !i.types[op].bitfield.qword
+	      && !i.types[op].bitfield.unspecified))
 	goto bad_broadcast;
 
       broadcasted_opnd_size = t->opcode_modifier.vecesize ? 64 : 32;
@@ -5073,9 +5077,9 @@ check_VecOperands (const insn_template *t)
 	goto bad_broadcast;
 
       if ((broadcasted_opnd_size == 256
-	   && !t->operand_types[i.broadcast->operand].bitfield.ymmword)
+	   && !t->operand_types[op].bitfield.ymmword)
 	  || (broadcasted_opnd_size == 512
-	      && !t->operand_types[i.broadcast->operand].bitfield.zmmword))
+	      && !t->operand_types[op].bitfield.zmmword))
 	{
 	bad_broadcast:
 	  i.error = unsupported_broadcast;
@@ -5424,6 +5428,14 @@ match_template (char mnem_suffix)
 	      && operand_type_equal (&i.types [0], &acc32)
 	      && operand_type_equal (&i.types [1], &acc32))
 	    continue;
+	  /* xrelease mov %eax, <disp> is another special case. It must not
+	     match the accumulator-only encoding of mov.  */
+	  if (flag_code != CODE_64BIT
+	      && i.hle_prefix
+	      && t->base_opcode == 0xa0
+	      && i.types[0].bitfield.acc
+	      && operand_type_check (i.types[1], anymem))
+	    continue;
 	  /* If we want store form, we reverse direction of operands.  */
 	  if (i.dir_encoding == dir_encoding_store
 	      && t->opcode_modifier.d)
@@ -5510,10 +5522,14 @@ check_reverse:
 		case 4:
 		  if (!operand_type_match (overlap3, i.types[3])
 		      || (check_register
-			  && !operand_type_register_match (i.types[2],
-							   operand_types[2],
-							   i.types[3],
-							   operand_types[3])))
+			  && (!operand_type_register_match (i.types[1],
+							    operand_types[1],
+							    i.types[3],
+							    operand_types[3])
+			      || !operand_type_register_match (i.types[2],
+							       operand_types[2],
+							       i.types[3],
+							       operand_types[3]))))
 		    continue;
 		  /* Fall through.  */
 		case 3:
