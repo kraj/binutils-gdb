@@ -1,3 +1,8 @@
+2018-03-20  Weimin Pan  <weimin.pan@oracle.com>
+
+	* gdb.cp/static-typedef-print.exp: New file.
+	* gdb.cp/static-typedef-print.cc: New file.
+
 2018-01-22  Pedro Alves  <palves@redhat.com>
 	    Sergio Durigan Junior  <sergiodj@redhat.com>
 
