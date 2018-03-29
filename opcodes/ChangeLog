@@ -1,3 +1,43 @@
+2018-03-28  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-gen.c (opcode_modifiers): Delete VecESize.
+	* i386-opc.h (VecESize): Delete.
+	(struct i386_opcode_modifier): Delete vecesize.
+	* i386-opc.tbl: Drop VecESize.
+	* i386-tlb.h: Re-generate.
+
+2018-03-28  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-opc.h (NO_BROADCAST, BROADCAST_1TO16, BROADCAST_1TO8,
+	BROADCAST_1TO4, BROADCAST_1TO2): Delete.
+	(struct i386_opcode_modifier): Shrink broadcast field to 1 bit.
+	* i386-opc.tbl: Replace Broadcast=<N> by Broadcast.
+	* i386-tlb.h: Re-generate.
+
+2018-03-28  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-opc.tbl (vcvt*d2si, vcvt*d2usi, vcvt*s2si, vcvt*s2usi):
+	Fold AVX512 forms
+	* i386-tlb.h: Re-generate.
+
+2018-03-28  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-dis.c (prefix_table): Drop Y for cvt*2si.
+	(vex_len_table): Drop Y for vcvt*2si.
+	(putop): Replace plain 'Y' handling by abort().
+
+2018-03-28  Nick Clifton  <nickc@redhat.com>
+
+	PR 22988
+	* aarch64-tbl.h (aarch64_opcode_table): Add entries for LDFF1xx
+	instructions with only a base address register.
+	* aarch64-opc.c (operand_general_constraint_met_p): Add code to
+	handle AARHC64_OPND_SVE_ADDR_R.
+	(aarch64_print_operand): Likewise.
+	* aarch64-asm-2.c: Regenerate.
+	* aarch64_dis-2.c: Regenerate.
+	* aarch64-opc-2.c: Regenerate.
+
 2018-03-22  Jan Beulich  <jbeulich@suse.com>
 
 	* i386-opc.tbl: Drop VecESize from register only insn forms and

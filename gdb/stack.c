@@ -1692,55 +1692,23 @@ info_frame_command (const char *addr_exp, int from_tty)
    frames.  */
 
 static void
-backtrace_command_1 (const char *count_exp, int show_locals, int no_filters,
-		     int from_tty)
+backtrace_command_1 (const char *count_exp, frame_filter_flags flags,
+		     int no_filters, int from_tty)
 {
   struct frame_info *fi;
   int count;
   int i;
-  struct frame_info *trailing;
-  int trailing_level, py_start = 0, py_end = 0;
+  int py_start = 0, py_end = 0;
   enum ext_lang_bt_status result = EXT_LANG_BT_ERROR;
 
   if (!target_has_stack)
     error (_("No stack."));
 
-  /* The following code must do two things.  First, it must set the
-     variable TRAILING to the frame from which we should start
-     printing.  Second, it must set the variable count to the number
-     of frames which we should print, or -1 if all of them.  */
-  trailing = get_current_frame ();
-
-  trailing_level = 0;
   if (count_exp)
     {
       count = parse_and_eval_long (count_exp);
       if (count < 0)
-	{
-	  struct frame_info *current;
-
-	  py_start = count;
-	  count = -count;
-
-	  current = trailing;
-	  while (current && count--)
-	    {
-	      QUIT;
-	      current = get_prev_frame (current);
-	    }
-
-	  /* Will stop when CURRENT reaches the top of the stack.
-	     TRAILING will be COUNT below it.  */
-	  while (current)
-	    {
-	      QUIT;
-	      trailing = get_prev_frame (trailing);
-	      current = get_prev_frame (current);
-	      trailing_level++;
-	    }
-
-	  count = -1;
-	}
+	py_start = count;
       else
 	{
 	  py_start = 0;
@@ -1755,31 +1723,11 @@ backtrace_command_1 (const char *count_exp, int show_locals, int no_filters,
       count = -1;
     }
 
-  if (info_verbose)
-    {
-      /* Read in symbols for all of the frames.  Need to do this in a
-         separate pass so that "Reading in symbols for xxx" messages
-         don't screw up the appearance of the backtrace.  Also if
-         people have strong opinions against reading symbols for
-         backtrace this may have to be an option.  */
-      i = count;
-      for (fi = trailing; fi != NULL && i--; fi = get_prev_frame (fi))
-	{
-	  CORE_ADDR pc;
-
-	  QUIT;
-	  pc = get_frame_address_in_block (fi);
-	  expand_symtab_containing_pc (pc, find_pc_mapped_section (pc));
-	}
-    }
-
   if (! no_filters)
     {
-      frame_filter_flags flags = PRINT_LEVEL | PRINT_FRAME_INFO | PRINT_ARGS;
       enum ext_lang_frame_args arg_type;
 
-      if (show_locals)
-	flags |= PRINT_LOCALS;
+      flags |= PRINT_LEVEL | PRINT_FRAME_INFO | PRINT_ARGS;
       if (from_tty)
 	flags |= PRINT_MORE_FRAMES;
 
@@ -1799,6 +1747,39 @@ backtrace_command_1 (const char *count_exp, int show_locals, int no_filters,
      "no-filters" has been specified from the command.  */
   if (no_filters ||  result == EXT_LANG_BT_NO_FILTERS)
     {
+      struct frame_info *trailing;
+
+      /* The following code must do two things.  First, it must set the
+	 variable TRAILING to the frame from which we should start
+	 printing.  Second, it must set the variable count to the number
+	 of frames which we should print, or -1 if all of them.  */
+      trailing = get_current_frame ();
+
+      if (count_exp != NULL && count < 0)
+	{
+	  struct frame_info *current;
+
+	  count = -count;
+
+	  current = trailing;
+	  while (current && count--)
+	    {
+	      QUIT;
+	      current = get_prev_frame (current);
+	    }
+
+	  /* Will stop when CURRENT reaches the top of the stack.
+	     TRAILING will be COUNT below it.  */
+	  while (current)
+	    {
+	      QUIT;
+	      trailing = get_prev_frame (trailing);
+	      current = get_prev_frame (current);
+	    }
+
+	  count = -1;
+	}
+
       for (i = 0, fi = trailing; fi && count--; i++, fi = get_prev_frame (fi))
 	{
 	  QUIT;
@@ -1809,7 +1790,7 @@ backtrace_command_1 (const char *count_exp, int show_locals, int no_filters,
 	     the frame->prev field gets set to NULL in that case).  */
 
 	  print_frame_info (fi, 1, LOCATION, 1, 0);
-	  if (show_locals)
+	  if ((flags & PRINT_LOCALS) != 0)
 	    {
 	      struct frame_id frame_id = get_frame_id (fi);
 
@@ -1850,61 +1831,40 @@ backtrace_command_1 (const char *count_exp, int show_locals, int no_filters,
 static void
 backtrace_command (const char *arg, int from_tty)
 {
-  int fulltrace_arg = -1, arglen = 0, argc = 0, no_filters  = -1;
-  int user_arg = 0;
+  bool filters = true;
+  frame_filter_flags flags = 0;
 
-  std::string reconstructed_arg;
   if (arg)
     {
-      char **argv;
-      int i;
+      bool done = false;
 
-      gdb_argv built_argv (arg);
-      argv = built_argv.get ();
-      argc = 0;
-      for (i = 0; argv[i]; i++)
+      while (!done)
 	{
-	  unsigned int j;
+	  const char *save_arg = arg;
+	  std::string this_arg = extract_arg (&arg);
 
-	  for (j = 0; j < strlen (argv[i]); j++)
-	    argv[i][j] = TOLOWER (argv[i][j]);
+	  if (this_arg.empty ())
+	    break;
 
-	  if (no_filters < 0 && subset_compare (argv[i], "no-filters"))
-	    no_filters = argc;
+	  if (subset_compare (this_arg.c_str (), "no-filters"))
+	    filters = false;
+	  else if (subset_compare (this_arg.c_str (), "full"))
+	    flags |= PRINT_LOCALS;
+	  else if (subset_compare (this_arg.c_str (), "hide"))
+	    flags |= PRINT_HIDE;
 	  else
 	    {
-	      if (fulltrace_arg < 0 && subset_compare (argv[i], "full"))
-		fulltrace_arg = argc;
-	      else
-		{
-		  user_arg++;
-		  arglen += strlen (argv[i]);
-		}
+	      /* Not a recognized argument, so stop.  */
+	      arg = save_arg;
+	      done = true;
 	    }
-	  argc++;
 	}
-      arglen += user_arg;
-      if (fulltrace_arg >= 0 || no_filters >= 0)
-	{
-	  if (arglen > 0)
-	    {
-	      for (i = 0; i < argc; i++)
-		{
-		  if (i != fulltrace_arg && i != no_filters)
-		    {
-		      reconstructed_arg += argv[i];
-		      reconstructed_arg += " ";
-		    }
-		}
-	      arg = reconstructed_arg.c_str ();
-	    }
-	  else
-	    arg = NULL;
-	}
+
+      if (*arg == '\0')
+	arg = NULL;
     }
 
-  backtrace_command_1 (arg, fulltrace_arg >= 0 /* show_locals */,
-		       no_filters >= 0 /* no frame-filters */, from_tty);
+  backtrace_command_1 (arg, flags, !filters /* no frame-filters */, from_tty);
 }
 
 /* Iterate over the local variables of a block B, calling CB with
@@ -2576,22 +2536,23 @@ This is useful in command scripts."));
 Select and print a stack frame.\nWith no argument, \
 print the selected stack frame.  (See also \"info frame\").\n\
 An argument specifies the frame to select.\n\
-It can be a stack frame number or the address of the frame.\n"));
+It can be a stack frame number or the address of the frame."));
 
   add_com_alias ("f", "frame", class_stack, 1);
 
   add_com_suppress_notification ("select-frame", class_stack, select_frame_command, _("\
 Select a stack frame without printing anything.\n\
 An argument specifies the frame to select.\n\
-It can be a stack frame number or the address of the frame.\n"),
+It can be a stack frame number or the address of the frame."),
 		 &cli_suppress_notification.user_selected_context);
 
   add_com ("backtrace", class_stack, backtrace_command, _("\
 Print backtrace of all stack frames, or innermost COUNT frames.\n\
-With a negative argument, print outermost -COUNT frames.\nUse of the \
-'full' qualifier also prints the values of the local variables.\n\
+Usage: backtrace [QUALIFIERS]... [COUNT]\n\
+With a negative argument, print outermost -COUNT frames.\n\
+Use of the 'full' qualifier also prints the values of the local variables.\n\
 Use of the 'no-filters' qualifier prohibits frame filters from executing\n\
-on this backtrace.\n"));
+on this backtrace."));
   add_com_alias ("bt", "backtrace", class_stack, 0);
 
   add_com_alias ("where", "backtrace", class_alias, 0);
@@ -2609,7 +2570,7 @@ on this backtrace.\n"));
   if (dbx_commands)
     add_com ("func", class_stack, func_command, _("\
 Select the stack frame that contains <func>.\n\
-Usage: func <name>\n"));
+Usage: func <name>"));
 
   add_setshow_enum_cmd ("frame-arguments", class_stack,
 			print_frame_arguments_choices, &print_frame_arguments,

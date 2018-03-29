@@ -1,4 +1,249 @@
-2017-11-01  Weimin Pan  <weimin.pan@oracle.com>
+2018-03-27  Tom Tromey  <tom@tromey.com>
+
+	* utils.c (prompt_for_continue): Use unique_xmalloc_ptr.
+
+2018-03-27  Pedro Alves  <palves@redhat.com>
+	    Tom Tromey  <tom@tromey.com>
+
+	* top.c (class gdb_readline_wrapper_cleanup): Add constructor,
+	destructor.  Now a class.
+	(gdb_readline_wrapper_cleanup): Remove function.
+	(gdb_readline_wrapper): Remove cleanups.
+
+2018-03-27  Tom Tromey  <tom@tromey.com>
+
+	* typeprint.h (struct type_print_options) <local_typedefs,
+	global_typedefs>: Remove "struct" keyword.
+	(class typedef_hash_table): New class.
+	(recursively_update_typedef_hash, add_template_parameters)
+	(create_typedef_hash, free_typedef_hash, copy_typedef_hash)
+	(find_typedef_in_hash): Don't declare.
+	* typeprint.c (struct typedef_hash_table): Move to typeprint.h.
+	(typedef_hash_table::recursively_update): Rename from
+	recursively_update_typedef_hash.  Now a member.
+	(typedef_hash_table::add_template_parameters): Rename from
+	add_template_parameters.  Now a member.
+	(typedef_hash_table::typedef_hash_table): Now a constructor;
+	rename from create_typedef_hash.
+	(typedef_hash_table::~typedef_hash_table): Now a destructor;
+	rename from free_typedef_hash.
+	(do_free_typedef_hash, make_cleanup_free_typedef_hash)
+	(do_free_global_table): Remove.
+	(typedef_hash_table::typedef_hash_table): New constructor; renamed
+	from copy_type_recursive.
+	(create_global_typedef_table): Remove.
+	(typedef_hash_table::find_global_typedef): Now a member of
+	typedef_hash_table.
+	(typedef_hash_table::find_typedef): Rename from
+	find_typedef_in_hash; now a member.
+	(whatis_exp): Update.
+	* extension.h (struct ext_lang_type_printers): Add constructor and
+	destructor.
+	(start_ext_lang_type_printers, free_ext_lang_type_printers): Don't
+	declare.
+	* extension.c (ext_lang_type_printers::ext_lang_type_printers):
+	Now a constructor; rename from start_ext_lang_type_printers.
+	(ext_lang_type_printers): Now a destructor; rename from
+	free_ext_lang_type_printers.
+	* c-typeprint.c (find_typedef_for_canonicalize, c_print_type_1):
+	Update.
+	(c_type_print_base_struct_union): Update.  Remove cleanups.
+
+2018-03-27  Tom Tromey  <tom@tromey.com>
+
+	* dwarf-index-write.c: Include <cmath>.
+
+2018-03-27  Joel Brobecker  <brobecker@adacore.com>
+
+	* NEWS: Add entry describing new "set|show varsize-limit" command.
+	* ada-lang.c (_initialize_ada_language): Add "set/show varsize-limit"
+	command.
+	* printcmd.c (_initialize_printcmd): Add "set var" alias of
+	"set variable".
+
+2018-03-27  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* Makefile.in (COMMON_SFILES): Add dwarf-index-common.c and
+	dwarf-index-write.c
+	(HFILES_NO_SRCDIR): Add dwarf-index-common.h and dwarf2read.h.
+	* dwarf-index-common.c: New file.
+	* dwarf-index-common.h: New file.
+	* dwarf-index-write.c: New file.
+	* dwarf2read.c: Include dwarf2read.h and dwarf-index-common.h.
+	(struct dwarf2_section_info): Move from here.
+	(dwarf2_section_info_def): Likewise.
+	(DEF_VEC_O (dwarf2_section_info_def)): Likewise.
+	(offset_type): Likewise.
+	(DW2_GDB_INDEX_SYMBOL_STATIC_SET_VALUE): Likewise.
+	(DW2_GDB_INDEX_SYMBOL_KIND_SET_VALUE): Likewise.
+	(DW2_GDB_INDEX_CU_SET_VALUE): Likewise.
+	(byte_swap): Likewise.
+	(MAYBE_SWAP): Likewise.
+	(dwarf2_per_cu_ptr): Likewise.
+	(DEF_VEC_P (dwarf2_per_cu_ptr)): Likewise.
+	(struct tu_stats): Likewise.
+	(struct dwarf2_per_objfile): Likewise.
+	(struct dwarf2_per_cu_data): Likewise.
+	(struct signatured_type): Likewise.
+	(sig_type_ptr): Likewise.
+	(DEF_VEC_P (sig_type_ptr)): Likewise.
+	(INDEX4_SUFFIX): Likewise.
+	(INDEX5_SUFFIX): Likewise.
+	(DEBUG_STR_SUFFIX): Likewise.
+	(dwarf2_read_section): Make non-static.
+	(mapped_index_string_hash): Move from here.
+	(dwarf5_djb_hash): Likewise.
+	(file_write): Likewise.
+	(class data_buf): Likewise.
+	(struct symtab_index_entry): Likewise.
+	(struct mapped_symtab): Likewise.
+	(find_slot): Likewise.
+	(hash_expand): Likewise.
+	(add_index_entry): Likewise.
+	(uniquify_cu_indices): Likewise.
+	(class c_str_view): Likewise.
+	(class c_str_view_hasher): Likewise.
+	(class vector_hasher): Likewise.
+	(write_hash_table): Likewise.
+	(psym_index_map): Likewise.
+	(struct addrmap_index_data): Likewise.
+	(add_address_entry): Likewise.
+	(add_address_entry_worker): Likewise.
+	(write_address_map): Likewise.
+	(symbol_kind): Likewise.
+	(write_psymbols): Likewise.
+	(struct signatured_type_index_data): Likewise.
+	(write_one_signatured_type): Likewise.
+	(recursively_count_psymbols): Likewise.
+	(recursively_write_psymbols): Likewise.
+	(class debug_names): Likewise.
+	(check_dwarf64_offsets): Likewise.
+	(psyms_seen_size): Likewise.
+	(write_gdbindex): Likewise.
+	(write_debug_names): Likewise.
+	(assert_file_size): Likewise.
+	(write_psymtabs_to_index): Likewise.
+	(save_gdb_index_command): Likewise.
+	(_initialize_dwarf2_read): Don't register the "save gdb-index"
+	command.
+	* dwarf2read.h: New file.
+
+2018-03-27  Joel Brobecker  <brobecker@adacore.com>
+
+	PR gdb/22670
+	* dwarf2read.c (dwarf2_physname): Do not return the demangled
+	symbol name if the CU's language stores symbol names in linkage
+	format.
+	* language.h (struct language_defn)
+	<la_store_sym_names_in_linkage_form_p>: New field.  Adjust
+	all instances of this struct.
+
+2018-03-26  Tom Tromey  <tom@tromey.com>
+
+	* stack.c (backtrace_command_1): Remove verbose code.
+
+2018-03-26  Tom Tromey  <tom@tromey.com>
+
+	* python/py-framefilter.c (py_print_type): Don't catch
+	exceptions.  Return void.
+	(py_print_value): Likewise.
+	(py_print_single_arg): Likewise.
+	(enumerate_args): Don't catch exceptions.
+	(py_print_args): Likewise.
+	(py_print_frame): Likewise.
+	(gdbpy_apply_frame_filter): Catch exceptions here.
+
+2018-03-26  Tom Tromey  <tom@tromey.com>
+
+	* stack.c (_initialize_stack): Remove trailing newlines from help
+	text.  Add "Usage" line to "backtrace" help.
+
+2018-03-26  Tom Tromey  <tom@tromey.com>
+
+	PR python/16486:
+	* python/py-framefilter.c (py_print_args): Call wrap_hint.
+
+2018-03-26  Tom Tromey  <tom@tromey.com>
+
+	* python/py-framefilter.c (py_print_single_arg): Return
+	EXT_LANG_BT_ERROR from catch.
+
+2018-03-26  Tom Tromey  <tom@tromey.com>
+
+	PR backtrace/15584:
+	* stack.c (backtrace_command_1): Move some code into no-filters
+	"if".
+
+2018-03-26  Tom Tromey  <tom@tromey.com>
+
+	* python/py-framefilter.c (throw_quit_or_print_exception): New
+	function.
+	(gdbpy_apply_frame_filter): Use it.
+
+2018-03-26  Tom Tromey  <tom@tromey.com>
+
+	PR cli/17716:
+	* python/py-framefilter.c (py_print_type, py_print_value)
+	(enumerate_args, py_print_args, gdbpy_apply_frame_filter): Use
+	RETURN_MASK_ERROR.
+
+2018-03-26  Tom Tromey  <tom@tromey.com>
+
+	* python/py-framefilter.c (enumerate_args): Use
+	gdb::unique_xmalloc_ptr.
+
+2018-03-26  Tom Tromey  <tom@tromey.com>
+
+	* python/py-framefilter.c (py_print_frame): Return
+	EXT_LANG_BT_OK.
+	(gdbpy_apply_frame_filter): Update comment.
+	* extension.h (enum ext_lang_bt_status) <EXT_LANG_BT_COMPLETED>:
+	Remove.
+	<EXT_LANG_BT_NO_FILTERS>: Change value.
+
+2018-03-26  Tom Tromey  <tom@tromey.com>
+
+	PR backtrace/15582:
+	* stack.c (backtrace_command): Parse "hide" argument.
+	* python/py-framefilter.c (py_print_frame): Handle PRINT_HIDE.
+	* extension.h (enum frame_filter_flags) <PRINT_HIDE>: New
+	constant.
+
+2018-03-26  Tom Tromey  <tom@tromey.com>
+
+	* stack.c (backtrace_command_1): Remove "show_locals" parameter,
+	add "flags".
+	(backtrace_command): Remove "fulltrace", add "flags".
+
+2018-03-26  Tom Tromey  <tom@tromey.com>
+
+	* stack.c (backtrace_command): Rewrite command line parsing.
+
+2018-03-26  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* dwarf2read.c (DEF_VEC_I(offset_type)): Remove.
+
+2018-03-26  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* filename-seen-cache.h: Add include guard.
+
+2018-03-26  Keith Seitz  <keiths@redhat.com>
+
+	* symfile.c (place_section): Remove "struct" from section_addr_info
+	in comment.
+	* windows-nat.c (struct safe_symbol_file_add_args) <addrs>: Remove
+	"struct" keyword from section_addr_info.
+
+2018-03-26  Alan Hayward  <alan.hayward@arm.com>
+
+	* regformats/regdef.h (reg): Add constructors.
+
+2018-03-25  Pedro Alves  <palves@redhat.com>
+
+	* eval.c (evaluate_funcall): Swap OP_VAR_MSYM_VALUE/OP_VAR_VALUE
+	if then/else bodies in var_func_name extraction.
+
+2018-03-23  Weimin Pan  <weimin.pan@oracle.com>
 
 	* minsyms.c (lookup_minimal_symbol_and_objfile): Use
 	lookup_minimal_symbol() to find symbol entry.

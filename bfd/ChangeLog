@@ -1,3 +1,77 @@
+2018-03-29  Maciej W. Rozycki  <macro@mips.com>
+
+	* elf32-mips.c (mips_info_to_howto_rel): Remove the calls to
+	`_bfd_error_handler' and to set the `bfd_error_bad_value' error.
+
+2018-03-28  Maciej W. Rozycki  <macro@mips.com>
+
+	* elf-hppa.h (elf_hppa_info_to_howto_rel): Remove
+	ATTRIBUTE_UNUSED from `abfd'.
+
+2018-03-28  Maciej W. Rozycki  <macro@mips.com>
+
+	* elf-hppa.h (elf_hppa_info_to_howto_rel): Correct
+	`_bfd_error_handler' call formatting.
+
+2018-03-28  Maciej W. Rozycki  <macro@mips.com>
+
+	* elf32-mips.c (mips_info_to_howto_rel): Call
+	`mips_elf32_rtype_to_howto' directly rather than via
+	`->elf_backend_mips_rtype_to_howto'.
+
+2018-03-28  Renlin Li  <renlin.li@arm.com>
+
+	PR ld/22970
+	* elfnn-aarch64.c (IS_AARCH64_TLS_RELOC): Add cases for
+	BFD_RELOC_AARCH64_TLSLE_LDST16_TPREL_LO12,
+	BFD_RELOC_AARCH64_TLSLE_LDST16_TPREL_LO12_NC,
+	BFD_RELOC_AARCH64_TLSLE_LDST32_TPREL_LO12,
+	BFD_RELOC_AARCH64_TLSLE_LDST32_TPREL_LO12_NC,
+	BFD_RELOC_AARCH64_TLSLE_LDST64_TPREL_LO12,
+	BFD_RELOC_AARCH64_TLSLE_LDST64_TPREL_LO12_NC,
+	BFD_RELOC_AARCH64_TLSLE_LDST8_TPREL_LO12,
+	BFD_RELOC_AARCH64_TLSLE_LDST8_TPREL_LO12_NC.
+	(elfNN_aarch64_final_link_relocate): Support new relocations.
+	* elfxx-aarch64.c (_bfd_aarch64_elf_put_addend): Support new
+	relocations.
+	(_bfd_aarch64_elf_resolve_relocation): Support new relocations.
+
+2018-03-28  Renlin Li  <renlin.li@arm.com>
+
+	PR ld/22970
+	* reloc.c: Add BFD_RELOC_AARCH64_TLSLE_LDST_TPREL_LO12
+	BFD_RELOC_AARCH64_TLSLE_LDST_TPREL_LO12_NC,
+	BFD_RELOC_AARCH64_TLSLE_LDST16_TPREL_LO12,
+	BFD_RELOC_AARCH64_TLSLE_LDST16_TPREL_LO12_NC,
+	BFD_RELOC_AARCH64_TLSLE_LDST32_TPREL_LO12,
+	BFD_RELOC_AARCH64_TLSLE_LDST32_TPREL_LO12_NC,
+	BFD_RELOC_AARCH64_TLSLE_LDST64_TPREL_LO12,
+	BFD_RELOC_AARCH64_TLSLE_LDST64_TPREL_LO12_NC,
+	BFD_RELOC_AARCH64_TLSLE_LDST8_TPREL_LO12,
+	BFD_RELOC_AARCH64_TLSLE_LDST8_TPREL_LO12_NC.
+	* elfnn-aarch64.c (elfNN_aarch64_howto_table): Add table entry for
+	TLSLE_LDST16_TPREL_LO12,
+	TLSLE_LDST16_TPREL_LO12_NC,
+	TLSLE_LDST32_TPREL_LO12,
+	TLSLE_LDST32_TPREL_LO12_NC,
+	TLSLE_LDST64_TPREL_LO12,
+	TLSLE_LDST64_TPREL_LO12_NC,
+	TLSLE_LDST8_TPREL_LO12,
+	TLSLE_LDST8_TPREL_LO12_NC.
+	* bfd-in2.h: Regenerated.
+	* libbfd.h: Regenerated.
+
+2018-03-28  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR ld/22972
+	* elfxx-sparc.c (struct _bfd_sparc_elf_link_hash_entry): Add new flag
+	has_old_style_got_reloc.
+	(_bfd_sparc_elf_check_relocs) <GOT relocations>: Set it for old-style
+	relocations.  Fix a couple of long lines.
+	(_bfd_sparc_elf_relocate_section) <R_SPARC_GOTDATA_OP>: Do not generate
+	a R_SPARC_NONE for the GOT slot if the symbol is also subject to old-style
+	GOT relocations.
+
 2018-03-25  H.J. Lu  <hongjiu.lu@intel.com>
 
 	PR ld/23000

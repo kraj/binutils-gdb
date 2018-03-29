@@ -1021,7 +1021,7 @@ _bfd_elf_hppa_gen_reloc_type (bfd *abfd,
 /* Translate from an elf into field into a howto relocation pointer.  */
 
 static bfd_boolean
-elf_hppa_info_to_howto (bfd *abfd ATTRIBUTE_UNUSED,
+elf_hppa_info_to_howto (bfd *abfd,
 			arelent *bfd_reloc,
 			Elf_Internal_Rela *elf_reloc)
 {
@@ -1051,7 +1051,8 @@ elf_hppa_info_to_howto_rel (bfd *abfd,
   if (r_type >= (unsigned int) R_PARISC_UNIMPLEMENTED)
     {
       /* xgettext:c-format */
-      _bfd_error_handler (_("%pB: unsupported relocation type %#x"), abfd, r_type);
+      _bfd_error_handler (_("%pB: unsupported relocation type %#x"),
+			  abfd, r_type);
       bfd_set_error (bfd_error_bad_value);
       return FALSE;
     }

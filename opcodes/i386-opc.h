@@ -566,22 +566,6 @@ enum
 #define BOTH_MASKING    3
   Masking,
 
-  /* Input element size of vector insn:
-	0: 32bit.
-	1: 64bit.
-   */
-  VecESize,
-
-  /* Broadcast factor.
-	0: No broadcast.
-	1: 1to16 broadcast.
-	2: 1to8 broadcast.
-   */
-#define NO_BROADCAST	0
-#define BROADCAST_1TO16	1
-#define BROADCAST_1TO8	2
-#define BROADCAST_1TO4	3
-#define BROADCAST_1TO2	4
   Broadcast,
 
   /* Static rounding control is supported.  */
@@ -671,8 +655,7 @@ typedef struct i386_opcode_modifier
   unsigned int noavx:1;
   unsigned int evex:3;
   unsigned int masking:2;
-  unsigned int vecesize:1;
-  unsigned int broadcast:3;
+  unsigned int broadcast:1;
   unsigned int staticrounding:1;
   unsigned int sae:1;
   unsigned int disp8memshift:3;

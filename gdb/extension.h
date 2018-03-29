@@ -76,13 +76,9 @@ enum ext_lang_bt_status
        succeeded.  */
     EXT_LANG_BT_OK = 1,
 
-    /* Return when the frame filter process is complete, and all
-       operations have succeeded.  */
-    EXT_LANG_BT_COMPLETED = 2,
-
     /* Return when the frame filter process is complete, but there
        were no filter registered and enabled to process.  */
-    EXT_LANG_BT_NO_FILTERS = 3
+    EXT_LANG_BT_NO_FILTERS = 2
   };
 
 /* Flags to pass to apply_extlang_frame_filter.  */
@@ -103,6 +99,9 @@ enum frame_filter_flag
 
     /* Set this flag if a "More frames" message is to be printed.  */
     PRINT_MORE_FRAMES = 1 << 4,
+
+    /* Set this flag if elided frames should not be printed.  */
+    PRINT_HIDE = 1 << 5,
   };
 
 DEF_ENUM_FLAGS_TYPE (enum frame_filter_flag, frame_filter_flags);
@@ -147,6 +146,11 @@ enum ext_lang_bp_stop
 
 struct ext_lang_type_printers
 {
+  ext_lang_type_printers ();
+  ~ext_lang_type_printers ();
+
+  DISABLE_COPY_AND_ASSIGN (ext_lang_type_printers);
+
   /* Type-printers from Python.  */
   void *py_type_printers;
 };
@@ -274,12 +278,8 @@ extern void eval_ext_lang_from_control_command (struct command_line *cmd);
 
 extern void auto_load_ext_lang_scripts_for_objfile (struct objfile *);
 
-extern struct ext_lang_type_printers *start_ext_lang_type_printers (void);
-
 extern char *apply_ext_lang_type_printers (struct ext_lang_type_printers *,
 					   struct type *);
-
-extern void free_ext_lang_type_printers (struct ext_lang_type_printers *);
 
 extern int apply_ext_lang_val_pretty_printer
   (struct type *type,
