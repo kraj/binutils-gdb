@@ -1821,8 +1821,6 @@ static void prepare_one_comp_unit (struct dwarf2_cu *cu,
 				   struct die_info *comp_unit_die,
 				   enum language pretend_language);
 
-static void free_cached_comp_units (void *);
-
 static void age_cached_comp_units (struct dwarf2_per_objfile *dwarf2_per_objfile);
 
 static void free_one_cached_comp_unit (struct dwarf2_per_cu_data *);
@@ -1961,13 +1959,21 @@ static struct dwo_unit *lookup_dwo_type_unit
 
 static void queue_and_load_all_dwo_tus (struct dwarf2_per_cu_data *);
 
-static void free_dwo_file_cleanup (void *);
+static void free_dwo_file (struct dwo_file *);
 
-struct free_dwo_file_cleanup_data
+/* A unique_ptr helper to free a dwo_file.  */
+
+struct dwo_file_deleter
 {
-  struct dwo_file *dwo_file;
-  struct dwarf2_per_objfile *dwarf2_per_objfile;
+  void operator() (struct dwo_file *df) const
+  {
+    free_dwo_file (df);
+  }
 };
+
+/* A unique pointer to a dwo_file.  */
+
+typedef std::unique_ptr<struct dwo_file, dwo_file_deleter> dwo_file_up;
 
 static void process_cu_includes (struct dwarf2_per_objfile *dwarf2_per_objfile);
 
@@ -2171,6 +2177,30 @@ dwarf2_per_objfile::free_cached_comp_units ()
       per_cu = next_cu;
     }
 }
+
+/* A helper class that calls free_cached_comp_units on
+   destruction.  */
+
+class free_cached_comp_units
+{
+public:
+
+  explicit free_cached_comp_units (dwarf2_per_objfile *per_objfile)
+    : m_per_objfile (per_objfile)
+  {
+  }
+
+  ~free_cached_comp_units ()
+  {
+    m_per_objfile->free_cached_comp_units ();
+  }
+
+  DISABLE_COPY_AND_ASSIGN (free_cached_comp_units);
+
+private:
+
+  dwarf2_per_objfile *m_per_objfile;
+};
 
 /* Try to locate the sections we need for DWARF 2 debugging
    information and return true if we have enough to do something.
@@ -2876,12 +2906,10 @@ dw2_instantiate_symtab (struct dwarf2_per_cu_data *per_cu)
   gdb_assert (dwarf2_per_objfile->using_index);
   if (!per_cu->v.quick->compunit_symtab)
     {
-      struct cleanup *back_to = make_cleanup (free_cached_comp_units,
-					      dwarf2_per_objfile);
+      free_cached_comp_units freer (dwarf2_per_objfile);
       scoped_restore decrementer = increment_reading_symtab ();
       dw2_do_instantiate_symtab (per_cu);
       process_cu_includes (dwarf2_per_objfile);
-      do_cleanups (back_to);
     }
 
   return per_cu->v.quick->compunit_symtab;
@@ -8434,7 +8462,6 @@ set_partial_user (struct dwarf2_per_objfile *dwarf2_per_objfile)
 static void
 dwarf2_build_psymtabs_hard (struct dwarf2_per_objfile *dwarf2_per_objfile)
 {
-  struct cleanup *back_to;
   int i;
   struct objfile *objfile = dwarf2_per_objfile->objfile;
 
@@ -8450,7 +8477,7 @@ dwarf2_build_psymtabs_hard (struct dwarf2_per_objfile *dwarf2_per_objfile)
 
   /* Any cached compilation units will be linked by the per-objfile
      read_in_chain.  Make sure to free them when we're done.  */
-  back_to = make_cleanup (free_cached_comp_units, dwarf2_per_objfile);
+  free_cached_comp_units freer (dwarf2_per_objfile);
 
   build_type_psymtabs (dwarf2_per_objfile);
 
@@ -8490,8 +8517,6 @@ dwarf2_build_psymtabs_hard (struct dwarf2_per_objfile *dwarf2_per_objfile)
 						    &objfile->objfile_obstack);
   /* At this point we want to keep the address map.  */
   save_psymtabs_addrmap.release ();
-
-  do_cleanups (back_to);
 
   if (dwarf_read_debug)
     fprintf_unfiltered (gdb_stdlog, "Done building psymtabs of %s\n",
@@ -12966,8 +12991,6 @@ open_and_init_dwo_file (struct dwarf2_per_cu_data *per_cu,
 {
   struct dwarf2_per_objfile *dwarf2_per_objfile = per_cu->dwarf2_per_objfile;
   struct objfile *objfile = dwarf2_per_objfile->objfile;
-  struct dwo_file *dwo_file;
-  struct cleanup *cleanups;
 
   gdb_bfd_ref_ptr dbfd (open_dwo_file (dwarf2_per_objfile, dwo_name, comp_dir));
   if (dbfd == NULL)
@@ -12976,16 +12999,14 @@ open_and_init_dwo_file (struct dwarf2_per_cu_data *per_cu,
 	fprintf_unfiltered (gdb_stdlog, "DWO file not found: %s\n", dwo_name);
       return NULL;
     }
-  dwo_file = OBSTACK_ZALLOC (&objfile->objfile_obstack, struct dwo_file);
+
+  /* We use a unique pointer here, despite the obstack allocation,
+     because a dwo_file needs some cleanup if it is abandoned.  */
+  dwo_file_up dwo_file (OBSTACK_ZALLOC (&objfile->objfile_obstack,
+					struct dwo_file));
   dwo_file->dwo_name = dwo_name;
   dwo_file->comp_dir = comp_dir;
   dwo_file->dbfd = dbfd.release ();
-
-  free_dwo_file_cleanup_data *cleanup_data = XNEW (free_dwo_file_cleanup_data);
-  cleanup_data->dwo_file = dwo_file;
-  cleanup_data->dwarf2_per_objfile = dwarf2_per_objfile;
-
-  cleanups = make_cleanup (free_dwo_file_cleanup, cleanup_data);
 
   bfd_map_over_sections (dwo_file->dbfd, dwarf2_locate_dwo_sections,
 			 &dwo_file->sections);
@@ -12993,15 +13014,13 @@ open_and_init_dwo_file (struct dwarf2_per_cu_data *per_cu,
   create_cus_hash_table (dwarf2_per_objfile, *dwo_file, dwo_file->sections.info,
 			 dwo_file->cus);
 
-  create_debug_types_hash_table (dwarf2_per_objfile, dwo_file,
+  create_debug_types_hash_table (dwarf2_per_objfile, dwo_file.get (),
 				 dwo_file->sections.types, dwo_file->tus);
-
-  discard_cleanups (cleanups);
 
   if (dwarf_read_debug)
     fprintf_unfiltered (gdb_stdlog, "DWO file found: %s\n", dwo_name);
 
-  return dwo_file;
+  return dwo_file.release ();
 }
 
 /* This function is mapped across the sections and remembers the offset and
@@ -13496,31 +13515,15 @@ queue_and_load_all_dwo_tus (struct dwarf2_per_cu_data *per_cu)
 }
 
 /* Free all resources associated with DWO_FILE.
-   Close the DWO file and munmap the sections.
-   All memory should be on the objfile obstack.  */
+   Close the DWO file and munmap the sections.  */
 
 static void
-free_dwo_file (struct dwo_file *dwo_file, struct objfile *objfile)
+free_dwo_file (struct dwo_file *dwo_file)
 {
-
   /* Note: dbfd is NULL for virtual DWO files.  */
   gdb_bfd_unref (dwo_file->dbfd);
 
   VEC_free (dwarf2_section_info_def, dwo_file->sections.types);
-}
-
-/* Wrapper for free_dwo_file for use in cleanups.  */
-
-static void
-free_dwo_file_cleanup (void *arg)
-{
-  struct free_dwo_file_cleanup_data *data
-    = (struct free_dwo_file_cleanup_data *) arg;
-  struct objfile *objfile = data->dwarf2_per_objfile->objfile;
-
-  free_dwo_file (data->dwo_file, objfile);
-
-  xfree (data);
 }
 
 /* Traversal function for free_dwo_files.  */
@@ -13529,9 +13532,8 @@ static int
 free_dwo_file_from_slot (void **slot, void *info)
 {
   struct dwo_file *dwo_file = (struct dwo_file *) *slot;
-  struct objfile *objfile = (struct objfile *) info;
 
-  free_dwo_file (dwo_file, objfile);
+  free_dwo_file (dwo_file);
 
   return 1;
 }
@@ -25070,17 +25072,6 @@ prepare_one_comp_unit (struct dwarf2_cu *cu, struct die_info *comp_unit_die,
     }
 
   cu->producer = dwarf2_string_attr (comp_unit_die, DW_AT_producer, cu);
-}
-
-/* Free all cached compilation units.  */
-
-static void
-free_cached_comp_units (void *data)
-{
-  struct dwarf2_per_objfile *dwarf2_per_objfile
-    = (struct dwarf2_per_objfile *) data;
-
-  dwarf2_per_objfile->free_cached_comp_units ();
 }
 
 /* Increase the age counter on each cached compilation unit, and free

@@ -22,10 +22,7 @@
 
 #include "vec.h"
 
-typedef char *char_ptr;
 typedef const char *const_char_ptr;
-
-DEF_VEC_P (char_ptr);
 
 DEF_VEC_P (const_char_ptr);
 
