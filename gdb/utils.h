@@ -89,12 +89,18 @@ extern int strcmp_iw (const char *string1, const char *string2);
 
 extern int strcmp_iw_ordered (const char *, const char *);
 
-extern int streq (const char *, const char *);
+/* Return true if the strings are equal.  */
+
+extern bool streq (const char *, const char *);
+
+/* A variant of streq that is suitable for use as an htab
+   callback.  */
+
+extern int streq_hash (const void *, const void *);
 
 extern int subset_compare (const char *, const char *);
 
 int compare_positive_ints (const void *ap, const void *bp);
-int compare_strings (const void *ap, const void *bp);
 
 /* Compare C strings for std::sort.  */
 

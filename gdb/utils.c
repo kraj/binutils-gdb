@@ -2601,13 +2601,22 @@ strcmp_iw_ordered (const char *string1, const char *string2)
     }
 }
 
-/* A simple comparison function with opposite semantics to strcmp.  */
+/* See utils.h.  */
 
-int
+bool
 streq (const char *lhs, const char *rhs)
 {
   return !strcmp (lhs, rhs);
 }
+
+/* See utils.h.  */
+
+int
+streq_hash (const void *lhs, const void *rhs)
+{
+  return streq ((const char *) lhs, (const char *) rhs);
+}
+
 
 
 /*
@@ -2926,17 +2935,6 @@ compare_positive_ints (const void *ap, const void *bp)
   /* Because we know we're comparing two ints which are positive,
      there's no danger of overflow here.  */
   return * (int *) ap - * (int *) bp;
-}
-
-/* String compare function for qsort.  */
-
-int
-compare_strings (const void *arg1, const void *arg2)
-{
-  const char **s1 = (const char **) arg1;
-  const char **s2 = (const char **) arg2;
-
-  return strcmp (*s1, *s2);
 }
 
 #define AMBIGUOUS_MESS1	".\nMatching formats:"
