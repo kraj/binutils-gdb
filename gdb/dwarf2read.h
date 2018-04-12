@@ -89,6 +89,7 @@ struct tu_stats
 struct dwarf2_debug_sections;
 struct mapped_index;
 struct mapped_debug_names;
+struct signatured_type;
 
 /* Collection of data recorded per objfile.
    This hangs off of dwarf2_objfile_data_key.  */
@@ -104,6 +105,30 @@ struct dwarf2_per_objfile : public allocate_on_obstack
   ~dwarf2_per_objfile ();
 
   DISABLE_COPY_AND_ASSIGN (dwarf2_per_objfile);
+
+  /* Return the CU/TU given its index.
+
+     This is intended for loops like:
+
+     for (i = 0; i < (dwarf2_per_objfile->n_comp_units
+		      + dwarf2_per_objfile->n_type_units); ++i)
+       {
+         dwarf2_per_cu_data *per_cu = dwarf2_per_objfile->get_cutu (i);
+
+         ...;
+       }
+  */
+  dwarf2_per_cu_data *get_cutu (int index);
+
+  /* Return the CU given its index.
+     This differs from get_cutu in that it's for when you know INDEX refers to a
+     CU.  */
+  dwarf2_per_cu_data *get_cu (int index);
+
+  /* Return the TU given its index.
+     This differs from get_cutu in that it's for when you know INDEX refers to a
+     TU.  */
+  signatured_type *get_tu (int index);
 
   /* Free all cached compilation units.  */
   void free_cached_comp_units ();
@@ -140,21 +165,10 @@ public:
 
   /* Table of all the compilation units.  This is used to locate
      the target compilation unit of a particular reference.  */
-  struct dwarf2_per_cu_data **all_comp_units = NULL;
+  std::vector<dwarf2_per_cu_data *> all_comp_units;
 
-  /* The number of compilation units in ALL_COMP_UNITS.  */
-  int n_comp_units = 0;
-
-  /* The number of .debug_types-related CUs.  */
-  int n_type_units = 0;
-
-  /* The number of elements allocated in all_type_units.
-     If there are skeleton-less TUs, we add them to all_type_units lazily.  */
-  int n_allocated_type_units = 0;
-
-  /* The .debug_types-related CUs (TUs).
-     This is stored in malloc space because we may realloc it.  */
-  struct signatured_type **all_type_units = NULL;
+  /* The .debug_types-related CUs (TUs).  */
+  std::vector<signatured_type *> all_type_units;
 
   /* Table of struct type_unit_group objects.
      The hash key is the DW_AT_stmt_list value.  */

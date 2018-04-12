@@ -41,6 +41,8 @@
 #include "user-regs.h"
 #include <algorithm>
 #include "completer.h"
+#include "selftest.h"
+#include "common/array-view.h"
 
 /* Definition of a user function.  */
 struct internal_function
@@ -66,11 +68,23 @@ struct range
 
   /* Length of the range.  */
   LONGEST length;
+
+  /* Returns true if THIS is strictly less than OTHER, useful for
+     searching.  We keep ranges sorted by offset and coalesce
+     overlapping and contiguous ranges, so this just compares the
+     starting offset.  */
+
+  bool operator< (const range &other) const
+  {
+    return offset < other.offset;
+  }
+
+  /* Returns true if THIS is equal to OTHER.  */
+  bool operator== (const range &other) const
+  {
+    return offset == other.offset && length == other.length;
+  }
 };
-
-typedef struct range range_s;
-
-DEF_VEC_O(range_s);
 
 /* Returns true if the ranges defined by [offset1, offset1+len1) and
    [offset2, offset2+len2) overlap.  */
@@ -86,25 +100,14 @@ ranges_overlap (LONGEST offset1, LONGEST len1,
   return (l < h);
 }
 
-/* Returns true if the first argument is strictly less than the
-   second, useful for VEC_lower_bound.  We keep ranges sorted by
-   offset and coalesce overlapping and contiguous ranges, so this just
-   compares the starting offset.  */
-
-static int
-range_lessthan (const range_s *r1, const range_s *r2)
-{
-  return r1->offset < r2->offset;
-}
-
 /* Returns true if RANGES contains any range that overlaps [OFFSET,
    OFFSET+LENGTH).  */
 
 static int
-ranges_contain (VEC(range_s) *ranges, LONGEST offset, LONGEST length)
+ranges_contain (const std::vector<range> &ranges, LONGEST offset,
+		LONGEST length)
 {
-  range_s what;
-  LONGEST i;
+  range what;
 
   what.offset = offset;
   what.length = length;
@@ -140,21 +143,22 @@ ranges_contain (VEC(range_s) *ranges, LONGEST offset, LONGEST length)
        I=1
   */
 
-  i = VEC_lower_bound (range_s, ranges, &what, range_lessthan);
 
-  if (i > 0)
+  auto i = std::lower_bound (ranges.begin (), ranges.end (), what);
+
+  if (i > ranges.begin ())
     {
-      struct range *bef = VEC_index (range_s, ranges, i - 1);
+      const struct range &bef = *(i - 1);
 
-      if (ranges_overlap (bef->offset, bef->length, offset, length))
+      if (ranges_overlap (bef.offset, bef.length, offset, length))
 	return 1;
     }
 
-  if (i < VEC_length (range_s, ranges))
+  if (i < ranges.end ())
     {
-      struct range *r = VEC_index (range_s, ranges, i);
+      const struct range &r = *i;
 
-      if (ranges_overlap (r->offset, r->length, offset, length))
+      if (ranges_overlap (r.offset, r.length, offset, length))
 	return 1;
     }
 
@@ -168,9 +172,35 @@ static struct cmd_list_element *functionlist;
 
 struct value
 {
+  explicit value (struct type *type_)
+    : modifiable (1),
+      lazy (1),
+      initialized (1),
+      stack (0),
+      type (type_),
+      enclosing_type (type_)
+  {
+    location.address = 0;
+  }
+
+  ~value ()
+  {
+    if (VALUE_LVAL (this) == lval_computed)
+      {
+	const struct lval_funcs *funcs = location.computed.funcs;
+
+	if (funcs->free_closure)
+	  funcs->free_closure (this);
+      }
+    else if (VALUE_LVAL (this) == lval_xcallable)
+      delete location.xm_worker;
+  }
+
+  DISABLE_COPY_AND_ASSIGN (value);
+
   /* Type of value; either not an lval, or one of the various
      different possible kinds of lval.  */
-  enum lval_type lval;
+  enum lval_type lval = not_lval;
 
   /* Is it modifiable?  Only relevant if lval != not_lval.  */
   unsigned int modifiable : 1;
@@ -197,9 +227,6 @@ struct value
   /* If value is from the stack.  If this is set, read_stack will be
      used instead of read_memory to enable extra caching.  */
   unsigned int stack : 1;
-
-  /* If the value has been released.  */
-  unsigned int released : 1;
 
   /* Location of value (if lval).  */
   union
@@ -240,27 +267,27 @@ struct value
   /* Describes offset of a value within lval of a structure in target
      addressable memory units.  Note also the member embedded_offset
      below.  */
-  LONGEST offset;
+  LONGEST offset = 0;
 
   /* Only used for bitfields; number of bits contained in them.  */
-  LONGEST bitsize;
+  LONGEST bitsize = 0;
 
   /* Only used for bitfields; position of start of field.  For
      gdbarch_bits_big_endian=0 targets, it is the position of the LSB.  For
      gdbarch_bits_big_endian=1 targets, it is the position of the MSB.  */
-  LONGEST bitpos;
+  LONGEST bitpos = 0;
 
   /* The number of references to this value.  When a value is created,
      the value chain holds a reference, so REFERENCE_COUNT is 1.  If
      release_value is called, this value is removed from the chain but
      the caller of release_value now has a reference to this value.
      The caller must arrange for a call to value_free later.  */
-  int reference_count;
+  int reference_count = 1;
 
   /* Only used for bitfields; the containing value.  This allows a
      single read from the target when displaying multiple
      bitfields.  */
-  struct value *parent;
+  value_ref_ptr parent;
 
   /* Type of the value.  */
   struct type *type;
@@ -306,18 +333,12 @@ struct value
      `type', and `embedded_offset' is zero, so everything works
      normally.  */
   struct type *enclosing_type;
-  LONGEST embedded_offset;
-  LONGEST pointed_to_offset;
-
-  /* Values are stored in a chain, so that they can be deleted easily
-     over calls to the inferior.  Values assigned to internal
-     variables, put into the value history or exposed to Python are
-     taken off this list.  */
-  struct value *next;
+  LONGEST embedded_offset = 0;
+  LONGEST pointed_to_offset = 0;
 
   /* Actual contents of the value.  Target byte-order.  NULL or not
      valid if lazy is nonzero.  */
-  gdb_byte *contents;
+  gdb::unique_xmalloc_ptr<gdb_byte> contents;
 
   /* Unavailable ranges in CONTENTS.  We mark unavailable ranges,
      rather than available, since the common and default case is for a
@@ -325,7 +346,7 @@ struct value
      The unavailable ranges are tracked in bits.  Note that a contents
      bit that has been optimized out doesn't really exist in the
      program, so it can't be marked unavailable either.  */
-  VEC(range_s) *unavailable;
+  std::vector<range> unavailable;
 
   /* Likewise, but for optimized out contents (a chunk of the value of
      a variable that does not actually exist in the program).  If LVAL
@@ -334,7 +355,7 @@ struct value
      saved registers and optimized-out program variables values are
      treated pretty much the same, except not-saved registers have a
      different string representation and related error strings.  */
-  VEC(range_s) *optimized_out;
+  std::vector<range> optimized_out;
 };
 
 /* See value.h.  */
@@ -378,7 +399,7 @@ value_entirely_available (struct value *value)
   if (value->lazy)
     value_fetch_lazy (value);
 
-  if (VEC_empty (range_s, value->unavailable))
+  if (value->unavailable.empty ())
     return 1;
   return 0;
 }
@@ -389,20 +410,20 @@ value_entirely_available (struct value *value)
 
 static int
 value_entirely_covered_by_range_vector (struct value *value,
-					VEC(range_s) **ranges)
+					const std::vector<range> &ranges)
 {
   /* We can only tell whether the whole value is optimized out /
      unavailable when we try to read it.  */
   if (value->lazy)
     value_fetch_lazy (value);
 
-  if (VEC_length (range_s, *ranges) == 1)
+  if (ranges.size () == 1)
     {
-      struct range *t = VEC_index (range_s, *ranges, 0);
+      const struct range &t = ranges[0];
 
-      if (t->offset == 0
-	  && t->length == (TARGET_CHAR_BIT
-			   * TYPE_LENGTH (value_enclosing_type (value))))
+      if (t.offset == 0
+	  && t.length == (TARGET_CHAR_BIT
+			  * TYPE_LENGTH (value_enclosing_type (value))))
 	return 1;
     }
 
@@ -412,24 +433,23 @@ value_entirely_covered_by_range_vector (struct value *value,
 int
 value_entirely_unavailable (struct value *value)
 {
-  return value_entirely_covered_by_range_vector (value, &value->unavailable);
+  return value_entirely_covered_by_range_vector (value, value->unavailable);
 }
 
 int
 value_entirely_optimized_out (struct value *value)
 {
-  return value_entirely_covered_by_range_vector (value, &value->optimized_out);
+  return value_entirely_covered_by_range_vector (value, value->optimized_out);
 }
 
 /* Insert into the vector pointed to by VECTORP the bit range starting of
    OFFSET bits, and extending for the next LENGTH bits.  */
 
 static void
-insert_into_bit_range_vector (VEC(range_s) **vectorp,
+insert_into_bit_range_vector (std::vector<range> *vectorp,
 			      LONGEST offset, LONGEST length)
 {
-  range_s newr;
-  int i;
+  range newr;
 
   /* Insert the range sorted.  If there's overlap or the new range
      would be contiguous with an existing range, merge.  */
@@ -517,76 +537,77 @@ insert_into_bit_range_vector (VEC(range_s) **vectorp,
 
   */
 
-  i = VEC_lower_bound (range_s, *vectorp, &newr, range_lessthan);
-  if (i > 0)
+  auto i = std::lower_bound (vectorp->begin (), vectorp->end (), newr);
+  if (i > vectorp->begin ())
     {
-      struct range *bef = VEC_index (range_s, *vectorp, i - 1);
+      struct range &bef = *(i - 1);
 
-      if (ranges_overlap (bef->offset, bef->length, offset, length))
+      if (ranges_overlap (bef.offset, bef.length, offset, length))
 	{
 	  /* #1 */
-	  ULONGEST l = std::min (bef->offset, offset);
-	  ULONGEST h = std::max (bef->offset + bef->length, offset + length);
+	  ULONGEST l = std::min (bef.offset, offset);
+	  ULONGEST h = std::max (bef.offset + bef.length, offset + length);
 
-	  bef->offset = l;
-	  bef->length = h - l;
+	  bef.offset = l;
+	  bef.length = h - l;
 	  i--;
 	}
-      else if (offset == bef->offset + bef->length)
+      else if (offset == bef.offset + bef.length)
 	{
 	  /* #2 */
-	  bef->length += length;
+	  bef.length += length;
 	  i--;
 	}
       else
 	{
 	  /* #3 */
-	  VEC_safe_insert (range_s, *vectorp, i, &newr);
+	  i = vectorp->insert (i, newr);
 	}
     }
   else
     {
       /* #4 */
-      VEC_safe_insert (range_s, *vectorp, i, &newr);
+      i = vectorp->insert (i, newr);
     }
 
   /* Check whether the ranges following the one we've just added or
      touched can be folded in (#5 above).  */
-  if (i + 1 < VEC_length (range_s, *vectorp))
+  if (i != vectorp->end () && i + 1 < vectorp->end ())
     {
-      struct range *t;
-      struct range *r;
       int removed = 0;
-      int next = i + 1;
+      auto next = i + 1;
 
       /* Get the range we just touched.  */
-      t = VEC_index (range_s, *vectorp, i);
+      struct range &t = *i;
       removed = 0;
 
       i = next;
-      for (; VEC_iterate (range_s, *vectorp, i, r); i++)
-	if (r->offset <= t->offset + t->length)
-	  {
-	    ULONGEST l, h;
+      for (; i < vectorp->end (); i++)
+	{
+	  struct range &r = *i;
+	  if (r.offset <= t.offset + t.length)
+	    {
+	      ULONGEST l, h;
 
-	    l = std::min (t->offset, r->offset);
-	    h = std::max (t->offset + t->length, r->offset + r->length);
+	      l = std::min (t.offset, r.offset);
+	      h = std::max (t.offset + t.length, r.offset + r.length);
 
-	    t->offset = l;
-	    t->length = h - l;
+	      t.offset = l;
+	      t.length = h - l;
 
-	    removed++;
-	  }
-	else
-	  {
-	    /* If we couldn't merge this one, we won't be able to
-	       merge following ones either, since the ranges are
-	       always sorted by OFFSET.  */
-	    break;
-	  }
+	      removed++;
+	    }
+	  else
+	    {
+	      /* If we couldn't merge this one, we won't be able to
+		 merge following ones either, since the ranges are
+		 always sorted by OFFSET.  */
+	      break;
+	    }
+	}
 
       if (removed != 0)
-	VEC_block_remove (range_s, *vectorp, next, removed);
+	vectorp->erase (next, next + removed);
     }
 }
 
@@ -612,15 +633,17 @@ mark_value_bytes_unavailable (struct value *value,
    found, or -1 if none was found.  */
 
 static int
-find_first_range_overlap (VEC(range_s) *ranges, int pos,
+find_first_range_overlap (const std::vector<range> *ranges, int pos,
 			  LONGEST offset, LONGEST length)
 {
-  range_s *r;
   int i;
 
-  for (i = pos; VEC_iterate (range_s, ranges, i, r); i++)
-    if (ranges_overlap (r->offset, r->length, offset, length))
-      return i;
+  for (i = pos; i < ranges->size (); i++)
+    {
+      const range &r = (*ranges)[i];
+      if (ranges_overlap (r.offset, r.length, offset, length))
+	return i;
+    }
 
   return -1;
 }
@@ -733,7 +756,7 @@ memcmp_with_bit_offsets (const gdb_byte *ptr1, size_t offset1_bits,
 struct ranges_and_idx
 {
   /* The ranges.  */
-  VEC(range_s) *ranges;
+  const std::vector<range> *ranges;
 
   /* The range we've last found in RANGES.  Given ranges are sorted,
      we can start the next lookup here.  */
@@ -767,12 +790,12 @@ find_first_range_overlap_and_match (struct ranges_and_idx *rp1,
     return 0;
   else
     {
-      range_s *r1, *r2;
+      const range *r1, *r2;
       ULONGEST l1, h1;
       ULONGEST l2, h2;
 
-      r1 = VEC_index (range_s, rp1->ranges, rp1->idx);
-      r2 = VEC_index (range_s, rp2->ranges, rp2->idx);
+      r1 = &(*rp1->ranges)[rp1->idx];
+      r2 = &(*rp2->ranges)[rp2->idx];
 
       /* Get the unavailable windows intersected by the incoming
 	 ranges.  The first and last ranges that overlap the argument
@@ -828,10 +851,10 @@ value_contents_bits_eq (const struct value *val1, int offset1,
 
   memset (&rp1, 0, sizeof (rp1));
   memset (&rp2, 0, sizeof (rp2));
-  rp1[0].ranges = val1->unavailable;
-  rp2[0].ranges = val2->unavailable;
-  rp1[1].ranges = val1->optimized_out;
-  rp2[1].ranges = val2->optimized_out;
+  rp1[0].ranges = &val1->unavailable;
+  rp2[0].ranges = &val2->unavailable;
+  rp1[1].ranges = &val1->optimized_out;
+  rp2[1].ranges = &val2->optimized_out;
 
   while (length > 0)
     {
@@ -858,8 +881,8 @@ value_contents_bits_eq (const struct value *val1, int offset1,
 	}
 
       /* Compare the available/valid contents.  */
-      if (memcmp_with_bit_offsets (val1->contents, offset1,
-				   val2->contents, offset2, l) != 0)
+      if (memcmp_with_bit_offsets (val1->contents.get (), offset1,
+				   val2->contents.get (), offset2, l) != 0)
 	return false;
 
       length -= h;
@@ -881,32 +904,17 @@ value_contents_eq (const struct value *val1, LONGEST offset1,
 }
 
 
-/* The value-history records all the values printed
-   by print commands during this session.  Each chunk
-   records 60 consecutive values.  The first chunk on
-   the chain records the most recent values.
-   The total number of values is in value_history_count.  */
+/* The value-history records all the values printed by print commands
+   during this session.  */
 
-#define VALUE_HISTORY_CHUNK 60
-
-struct value_history_chunk
-  {
-    struct value_history_chunk *next;
-    struct value *values[VALUE_HISTORY_CHUNK];
-  };
-
-/* Chain of chunks now in use.  */
-
-static struct value_history_chunk *value_history_chain;
-
-static int value_history_count;	/* Abs number of last entry stored.  */
+static std::vector<value_ref_ptr> value_history;
 
 
 /* List of all value objects currently allocated
    (except for those released by calls to release_value)
    This is so they can be freed after each command.  */
 
-static struct value *all_values;
+static std::vector<value_ref_ptr> all_values;
 
 /* Allocate a lazy value for type TYPE.  Its actual content is
    "lazily" allocated too: the content field of the return value is
@@ -925,25 +933,10 @@ allocate_value_lazy (struct type *type)
      description correctly.  */
   check_typedef (type);
 
-  val = XCNEW (struct value);
-  val->contents = NULL;
-  val->next = all_values;
-  all_values = val;
-  val->type = type;
-  val->enclosing_type = type;
-  VALUE_LVAL (val) = not_lval;
-  val->location.address = 0;
-  val->offset = 0;
-  val->bitpos = 0;
-  val->bitsize = 0;
-  val->lazy = 1;
-  val->embedded_offset = 0;
-  val->pointed_to_offset = 0;
-  val->modifiable = 1;
-  val->initialized = 1;  /* Default to initialized.  */
+  val = new struct value (type);
 
   /* Values start out on the all_values chain.  */
-  val->reference_count = 1;
+  all_values.emplace_back (val);
 
   return val;
 }
@@ -1025,8 +1018,8 @@ allocate_value_contents (struct value *val)
   if (!val->contents)
     {
       check_type_length_before_alloc (val->enclosing_type);
-      val->contents
-	= (gdb_byte *) xzalloc (TYPE_LENGTH (val->enclosing_type));
+      val->contents.reset
+	((gdb_byte *) xzalloc (TYPE_LENGTH (val->enclosing_type)));
     }
 }
 
@@ -1085,12 +1078,6 @@ allocate_optimized_out_value (struct type *type)
 
 /* Accessor methods.  */
 
-struct value *
-value_next (const struct value *value)
-{
-  return value->next;
-}
-
 struct type *
 value_type (const struct value *value)
 {
@@ -1138,7 +1125,7 @@ set_value_bitsize (struct value *value, LONGEST bit)
 struct value *
 value_parent (const struct value *value)
 {
-  return value->parent;
+  return value->parent.get ();
 }
 
 /* See value.h.  */
@@ -1146,12 +1133,7 @@ value_parent (const struct value *value)
 void
 set_value_parent (struct value *value, struct value *parent)
 {
-  struct value *old = value->parent;
-
-  value->parent = parent;
-  if (parent != NULL)
-    value_incref (parent);
-  value_free (old);
+  value->parent = value_ref_ptr (value_incref (parent));
 }
 
 gdb_byte *
@@ -1161,14 +1143,14 @@ value_contents_raw (struct value *value)
   int unit_size = gdbarch_addressable_memory_unit_size (arch);
 
   allocate_value_contents (value);
-  return value->contents + value->embedded_offset * unit_size;
+  return value->contents.get () + value->embedded_offset * unit_size;
 }
 
 gdb_byte *
 value_contents_all_raw (struct value *value)
 {
   allocate_value_contents (value);
-  return value->contents;
+  return value->contents.get ();
 }
 
 struct type *
@@ -1230,7 +1212,7 @@ error_value_optimized_out (void)
 static void
 require_not_optimized_out (const struct value *value)
 {
-  if (!VEC_empty (range_s, value->optimized_out))
+  if (!value->optimized_out.empty ())
     {
       if (value->lval == lval_register)
 	error (_("register has not been saved in frame"));
@@ -1242,7 +1224,7 @@ require_not_optimized_out (const struct value *value)
 static void
 require_available (const struct value *value)
 {
-  if (!VEC_empty (range_s, value->unavailable))
+  if (!value->unavailable.empty ())
     throw_error (NOT_AVAILABLE_ERROR, _("value is not available"));
 }
 
@@ -1251,14 +1233,14 @@ value_contents_for_printing (struct value *value)
 {
   if (value->lazy)
     value_fetch_lazy (value);
-  return value->contents;
+  return value->contents.get ();
 }
 
 const gdb_byte *
 value_contents_for_printing_const (const struct value *value)
 {
   gdb_assert (!value->lazy);
-  return value->contents;
+  return value->contents.get ();
 }
 
 const gdb_byte *
@@ -1274,19 +1256,16 @@ value_contents_all (struct value *value)
    SRC_BIT_OFFSET+BIT_LENGTH) ranges into *DST_RANGE, adjusted.  */
 
 static void
-ranges_copy_adjusted (VEC (range_s) **dst_range, int dst_bit_offset,
-		      VEC (range_s) *src_range, int src_bit_offset,
+ranges_copy_adjusted (std::vector<range> *dst_range, int dst_bit_offset,
+		      const std::vector<range> &src_range, int src_bit_offset,
 		      int bit_length)
 {
-  range_s *r;
-  int i;
-
-  for (i = 0; VEC_iterate (range_s, src_range, i, r); i++)
+  for (const range &r : src_range)
     {
       ULONGEST h, l;
 
-      l = std::max (r->offset, (LONGEST) src_bit_offset);
-      h = std::min (r->offset + r->length,
+      l = std::max (r.offset, (LONGEST) src_bit_offset);
+      h = std::min (r.offset + r.length,
 		    (LONGEST) src_bit_offset + bit_length);
 
       if (l < h)
@@ -1425,7 +1404,7 @@ value_optimized_out (struct value *value)
 {
   /* We can only know if a value is optimized out once we have tried to
      fetch it.  */
-  if (VEC_empty (range_s, value->optimized_out) && value->lazy)
+  if (value->optimized_out.empty () && value->lazy)
     {
       TRY
 	{
@@ -1438,7 +1417,7 @@ value_optimized_out (struct value *value)
       END_CATCH
     }
 
-  return !VEC_empty (range_s, value->optimized_out);
+  return !value->optimized_out.empty ();
 }
 
 /* Mark contents of VALUE as optimized out, starting at OFFSET bytes, and
@@ -1531,7 +1510,7 @@ value_address (const struct value *value)
   if (value->lval != lval_memory)
     return 0;
   if (value->parent != NULL)
-    return value_address (value->parent) + value->offset;
+    return value_address (value->parent.get ()) + value->offset;
   if (NULL != TYPE_DATA_LOCATION (value_type (value)))
     {
       gdb_assert (PROP_CONST == TYPE_DATA_LOCATION_KIND (value_type (value)));
@@ -1588,16 +1567,19 @@ deprecated_value_modifiable (const struct value *value)
 struct value *
 value_mark (void)
 {
-  return all_values;
+  if (all_values.empty ())
+    return nullptr;
+  return all_values.back ().get ();
 }
 
 /* Take a reference to VAL.  VAL will not be deallocated until all
    references are released.  */
 
-void
+struct value *
 value_incref (struct value *val)
 {
   val->reference_count++;
+  return val;
 }
 
 /* Release a reference to VAL, which was acquired with value_incref.
@@ -1605,34 +1587,15 @@ value_incref (struct value *val)
    chain.  */
 
 void
-value_free (struct value *val)
+value_decref (struct value *val)
 {
-  if (val)
+  if (val != nullptr)
     {
       gdb_assert (val->reference_count > 0);
       val->reference_count--;
-      if (val->reference_count > 0)
-	return;
-
-      /* If there's an associated parent value, drop our reference to
-	 it.  */
-      if (val->parent != NULL)
-	value_free (val->parent);
-
-      if (VALUE_LVAL (val) == lval_computed)
-	{
-	  const struct lval_funcs *funcs = val->location.computed.funcs;
-
-	  if (funcs->free_closure)
-	    funcs->free_closure (val);
-	}
-      else if (VALUE_LVAL (val) == lval_xcallable)
-	  delete val->location.xm_worker;
-
-      xfree (val->contents);
-      VEC_free (range_s, val->unavailable);
+      if (val->reference_count == 0)
+	delete val;
     }
-  xfree (val);
 }
 
 /* Free all values allocated since MARK was obtained by value_mark
@@ -1640,113 +1603,58 @@ value_free (struct value *val)
 void
 value_free_to_mark (const struct value *mark)
 {
-  struct value *val;
-  struct value *next;
-
-  for (val = all_values; val && val != mark; val = next)
-    {
-      next = val->next;
-      val->released = 1;
-      value_free (val);
-    }
-  all_values = val;
-}
-
-/* Free all the values that have been allocated (except for those released).
-   Call after each command, successful or not.
-   In practice this is called before each command, which is sufficient.  */
-
-void
-free_all_values (void)
-{
-  struct value *val;
-  struct value *next;
-
-  for (val = all_values; val; val = next)
-    {
-      next = val->next;
-      val->released = 1;
-      value_free (val);
-    }
-
-  all_values = 0;
-}
-
-/* Frees all the elements in a chain of values.  */
-
-void
-free_value_chain (struct value *v)
-{
-  struct value *next;
-
-  for (; v; v = next)
-    {
-      next = value_next (v);
-      value_free (v);
-    }
+  auto iter = std::find (all_values.begin (), all_values.end (), mark);
+  if (iter == all_values.end ())
+    all_values.clear ();
+  else
+    all_values.erase (iter + 1, all_values.end ());
 }
 
 /* Remove VAL from the chain all_values
    so it will not be freed automatically.  */
 
-void
+value_ref_ptr
 release_value (struct value *val)
 {
   struct value *v;
 
-  if (all_values == val)
-    {
-      all_values = val->next;
-      val->next = NULL;
-      val->released = 1;
-      return;
-    }
+  if (val == nullptr)
+    return value_ref_ptr ();
 
-  for (v = all_values; v; v = v->next)
+  std::vector<value_ref_ptr>::reverse_iterator iter;
+  for (iter = all_values.rbegin (); iter != all_values.rend (); ++iter)
     {
-      if (v->next == val)
+      if (*iter == val)
 	{
-	  v->next = val->next;
-	  val->next = NULL;
-	  val->released = 1;
-	  break;
+	  value_ref_ptr result = *iter;
+	  all_values.erase (iter.base () - 1);
+	  return result;
 	}
     }
+
+  /* We must always return an owned reference.  Normally this happens
+     because we transfer the reference from the value chain, but in
+     this case the value was not on the chain.  */
+  return value_ref_ptr (value_incref (val));
 }
 
-/* If the value is not already released, release it.
-   If the value is already released, increment its reference count.
-   That is, this function ensures that the value is released from the
-   value chain and that the caller owns a reference to it.  */
+/* See value.h.  */
 
-void
-release_value_or_incref (struct value *val)
-{
-  if (val->released)
-    value_incref (val);
-  else
-    release_value (val);
-}
-
-/* Release all values up to mark  */
-struct value *
+std::vector<value_ref_ptr>
 value_release_to_mark (const struct value *mark)
 {
-  struct value *val;
-  struct value *next;
+  std::vector<value_ref_ptr> result;
 
-  for (val = next = all_values; next; next = next->next)
+  auto iter = std::find (all_values.begin (), all_values.end (), mark);
+  if (iter == all_values.end ())
+    std::swap (result, all_values);
+  else
     {
-      if (next->next == mark)
-	{
-	  all_values = next->next;
-	  next->next = NULL;
-	  return val;
-	}
-      next->released = 1;
+      std::move (iter + 1, all_values.end (), std::back_inserter (result));
+      all_values.erase (iter + 1, all_values.end ());
     }
-  all_values = 0;
-  return val;
+  std::reverse (result.begin (), result.end ());
+  return result;
 }
 
 /* Return a copy of the value ARG.
@@ -1779,9 +1687,9 @@ value_copy (struct value *arg)
 	      TYPE_LENGTH (value_enclosing_type (arg)));
 
     }
-  val->unavailable = VEC_copy (range_s, arg->unavailable);
-  val->optimized_out = VEC_copy (range_s, arg->optimized_out);
-  set_value_parent (val, arg->parent);
+  val->unavailable = arg->unavailable;
+  val->optimized_out = arg->optimized_out;
+  val->parent = arg->parent;
   if (VALUE_LVAL (val) == lval_computed)
     {
       const struct lval_funcs *funcs = val->location.computed.funcs;
@@ -1896,29 +1804,9 @@ record_latest_value (struct value *val)
      but the current contents of that location.  c'est la vie...  */
   val->modifiable = 0;
 
-  /* The value may have already been released, in which case we're adding a
-     new reference for its entry in the history.  That is why we call
-     release_value_or_incref here instead of release_value.  */
-  release_value_or_incref (val);
+  value_history.push_back (release_value (val));
 
-  /* Here we treat value_history_count as origin-zero
-     and applying to the value being stored now.  */
-
-  i = value_history_count % VALUE_HISTORY_CHUNK;
-  if (i == 0)
-    {
-      struct value_history_chunk *newobj = XCNEW (struct value_history_chunk);
-
-      newobj->next = value_history_chain;
-      value_history_chain = newobj;
-    }
-
-  value_history_chain->values[i] = val;
-
-  /* Now we regard value_history_count as origin-one
-     and applying to the value just stored.  */
-
-  return ++value_history_count;
+  return value_history.size ();
 }
 
 /* Return a copy of the value in the history with sequence number NUM.  */
@@ -1926,12 +1814,11 @@ record_latest_value (struct value *val)
 struct value *
 access_value_history (int num)
 {
-  struct value_history_chunk *chunk;
   int i;
   int absnum = num;
 
   if (absnum <= 0)
-    absnum += value_history_count;
+    absnum += value_history.size ();
 
   if (absnum <= 0)
     {
@@ -1942,20 +1829,12 @@ access_value_history (int num)
       else
 	error (_("History does not go back to $$%d."), -num);
     }
-  if (absnum > value_history_count)
+  if (absnum > value_history.size ())
     error (_("History has not yet reached $%d."), absnum);
 
   absnum--;
 
-  /* Now absnum is always absolute and origin zero.  */
-
-  chunk = value_history_chain;
-  for (i = (value_history_count - 1) / VALUE_HISTORY_CHUNK
-	 - absnum / VALUE_HISTORY_CHUNK;
-       i > 0; i--)
-    chunk = chunk->next;
-
-  return value_copy (chunk->values[absnum % VALUE_HISTORY_CHUNK]);
+  return value_copy (value_history[absnum].get ());
 }
 
 static void
@@ -1975,13 +1854,13 @@ show_values (const char *num_exp, int from_tty)
   else
     {
       /* "show values" means print the last 10 values.  */
-      num = value_history_count - 9;
+      num = value_history.size () - 9;
     }
 
   if (num <= 0)
     num = 1;
 
-  for (i = num; i < num + 10 && i <= value_history_count; i++)
+  for (i = num; i < num + 10 && i <= value_history.size (); i++)
     {
       struct value_print_options opts;
 
@@ -2416,7 +2295,7 @@ set_internalvar (struct internalvar *var, struct value *val)
 	 deleted by free_all_values.  From here on this function should not
 	 call error () until new_data is installed into the var->u to avoid
 	 leaking memory.  */
-      release_value (new_data.value);
+      release_value (new_data.value).release ();
 
       /* Internal variables which are created from values with a dynamic
          location don't need the location property of the origin anymore.
@@ -2478,7 +2357,7 @@ clear_internalvar (struct internalvar *var)
   switch (var->kind)
     {
     case INTERNALVAR_VALUE:
-      value_free (var->u.value);
+      value_decref (var->u.value);
       break;
 
     case INTERNALVAR_STRING:
@@ -2629,7 +2508,6 @@ void
 preserve_values (struct objfile *objfile)
 {
   htab_t copied_types;
-  struct value_history_chunk *cur;
   struct internalvar *var;
   int i;
 
@@ -2637,10 +2515,8 @@ preserve_values (struct objfile *objfile)
      it is soon to be deleted.  */
   copied_types = create_copied_types_hash (objfile);
 
-  for (cur = value_history_chain; cur; cur = cur->next)
-    for (i = 0; i < VALUE_HISTORY_CHUNK; i++)
-      if (cur->values[i])
-	preserve_one_value (cur->values[i], objfile, copied_types);
+  for (const value_ref_ptr &item : value_history)
+    preserve_one_value (item.get (), objfile, copied_types);
 
   for (var = internalvars; var; var = var->next)
     preserve_one_internalvar (var, objfile, copied_types);
@@ -3007,7 +2883,8 @@ set_value_enclosing_type (struct value *val, struct type *new_encl_type)
     {
       check_type_length_before_alloc (new_encl_type);
       val->contents
-	= (gdb_byte *) xrealloc (val->contents, TYPE_LENGTH (new_encl_type));
+	.reset ((gdb_byte *) xrealloc (val->contents.release (),
+				       TYPE_LENGTH (new_encl_type)));
     }
 
   val->enclosing_type = new_encl_type;
@@ -3862,8 +3739,8 @@ value_fetch_lazy (struct value *val)
   /* A value is either lazy, or fully fetched.  The
      availability/validity is only established as we try to fetch a
      value.  */
-  gdb_assert (VEC_empty (range_s, val->optimized_out));
-  gdb_assert (VEC_empty (range_s, val->unavailable));
+  gdb_assert (val->optimized_out.empty ());
+  gdb_assert (val->unavailable.empty ());
   if (value_bitsize (val))
     {
       /* To read a lazy bitfield, read the entire enclosing value.  This
@@ -4034,6 +3911,148 @@ isvoid_internal_fn (struct gdbarch *gdbarch,
   return value_from_longest (builtin_type (gdbarch)->builtin_int, ret);
 }
 
+#if GDB_SELF_TEST
+namespace selftests
+{
+
+/* Test the ranges_contain function.  */
+
+static void
+test_ranges_contain ()
+{
+  std::vector<range> ranges;
+  range r;
+
+  /* [10, 14] */
+  r.offset = 10;
+  r.length = 5;
+  ranges.push_back (r);
+
+  /* [20, 24] */
+  r.offset = 20;
+  r.length = 5;
+  ranges.push_back (r);
+
+  /* [2, 6] */
+  SELF_CHECK (!ranges_contain (ranges, 2, 5));
+  /* [9, 13] */
+  SELF_CHECK (ranges_contain (ranges, 9, 5));
+  /* [10, 11] */
+  SELF_CHECK (ranges_contain (ranges, 10, 2));
+  /* [10, 14] */
+  SELF_CHECK (ranges_contain (ranges, 10, 5));
+  /* [13, 18] */
+  SELF_CHECK (ranges_contain (ranges, 13, 6));
+  /* [14, 18] */
+  SELF_CHECK (ranges_contain (ranges, 14, 5));
+  /* [15, 18] */
+  SELF_CHECK (!ranges_contain (ranges, 15, 4));
+  /* [16, 19] */
+  SELF_CHECK (!ranges_contain (ranges, 16, 4));
+  /* [16, 21] */
+  SELF_CHECK (ranges_contain (ranges, 16, 6));
+  /* [21, 21] */
+  SELF_CHECK (ranges_contain (ranges, 21, 1));
+  /* [21, 25] */
+  SELF_CHECK (ranges_contain (ranges, 21, 5));
+  /* [26, 28] */
+  SELF_CHECK (!ranges_contain (ranges, 26, 3));
+}
+
+/* Check that RANGES contains the same ranges as EXPECTED.  */
+
+static bool
+check_ranges_vector (gdb::array_view<const range> ranges,
+		     gdb::array_view<const range> expected)
+{
+  return ranges == expected;
+}
+
+/* Test the insert_into_bit_range_vector function.  */
+
+static void
+test_insert_into_bit_range_vector ()
+{
+  std::vector<range> ranges;
+
+  /* [10, 14] */
+  {
+    insert_into_bit_range_vector (&ranges, 10, 5);
+    static const range expected[] = {
+      {10, 5}
+    };
+    SELF_CHECK (check_ranges_vector (ranges, expected));
+  }
+
+  /* [10, 14] */
+  {
+    insert_into_bit_range_vector (&ranges, 11, 4);
+    static const range expected = {10, 5};
+    SELF_CHECK (check_ranges_vector (ranges, expected));
+  }
+
+  /* [10, 14] [20, 24] */
+  {
+    insert_into_bit_range_vector (&ranges, 20, 5);
+    static const range expected[] = {
+      {10, 5},
+      {20, 5},
+    };
+    SELF_CHECK (check_ranges_vector (ranges, expected));
+  }
+
+  /* [10, 14] [17, 24] */
+  {
+    insert_into_bit_range_vector (&ranges, 17, 5);
+    static const range expected[] = {
+      {10, 5},
+      {17, 8},
+    };
+    SELF_CHECK (check_ranges_vector (ranges, expected));
+  }
+
+  /* [2, 8] [10, 14] [17, 24] */
+  {
+    insert_into_bit_range_vector (&ranges, 2, 7);
+    static const range expected[] = {
+      {2, 7},
+      {10, 5},
+      {17, 8},
+    };
+    SELF_CHECK (check_ranges_vector (ranges, expected));
+  }
+
+  /* [2, 14] [17, 24] */
+  {
+    insert_into_bit_range_vector (&ranges, 9, 1);
+    static const range expected[] = {
+      {2, 13},
+      {17, 8},
+    };
+    SELF_CHECK (check_ranges_vector (ranges, expected));
+  }
+
+  /* [2, 14] [17, 24] */
+  {
+    insert_into_bit_range_vector (&ranges, 9, 1);
+    static const range expected[] = {
+      {2, 13},
+      {17, 8},
+    };
+    SELF_CHECK (check_ranges_vector (ranges, expected));
+  }
+
+  /* [2, 33] */
+  {
+    insert_into_bit_range_vector (&ranges, 4, 30);
+    static const range expected = {2, 32};
+    SELF_CHECK (check_ranges_vector (ranges, expected));
+  }
+}
+
+} /* namespace selftests */
+#endif /* GDB_SELF_TEST */
+
 void
 _initialize_values (void)
 {
@@ -4085,4 +4104,9 @@ prevents future values, larger than this size, from being allocated."),
 			    set_max_value_size,
 			    show_max_value_size,
 			    &setlist, &showlist);
+#if GDB_SELF_TEST
+  selftests::register_test ("ranges_contain", selftests::test_ranges_contain);
+  selftests::register_test ("insert_into_bit_range_vector",
+			    selftests::test_insert_into_bit_range_vector);
+#endif
 }

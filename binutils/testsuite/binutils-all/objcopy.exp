@@ -80,7 +80,6 @@ proc objcopy_test {testname srcfile} {
 	setup_xfail "h8300-*-coff"
 	setup_xfail "h8500-*-rtems*" "h8500-*-coff"
 	setup_xfail "hppa*-*-*"
-	setup_xfail "i960-*"
 	setup_xfail "m68*-*-*coff" "m68*-*-hpux*" "m68*-*-lynxos*"
 	setup_xfail "m68*-*-sysv*" "m68*-apple-aux*"
 	setup_xfail "m8*-*"
@@ -1091,7 +1090,6 @@ if [is_elf_format] {
 	       || [istarget "d10v-*"] \
 	       || [istarget "dlx-*"] \
 	       || [istarget "i*86-*"] \
-	       || [istarget "i960-*"] \
 	       || [istarget "m681*-*"] \
 	       || [istarget "m68hc1*-*"] \
 	       || ([istarget "mips*-*"] \
@@ -1107,6 +1105,30 @@ if [is_elf_format] {
 	set reloc_format rela
     }
     run_dump_test "strip-13" [list [list source strip-13${reloc_format}.s]]
+    # Select a relocation number that corresponds to one actually
+    # supported by the target and ABI being tested.
+    if { [istarget "aarch64*-*"] } {
+	set reloc 259
+    } elseif { [istarget "ia64*-*"] \
+	       || [istarget "m32r*-*"] \
+	       || [istarget "nds32*-*"] \
+	       || [istarget "v850*-*"] } {
+	set reloc 50
+    } elseif { [istarget "pru-*"] } {
+	set reloc 11
+    } else {
+	set reloc 1
+    }
+    run_dump_test "strip-14" [list \
+				[list source strip-14${reloc_format}.s] \
+				[list as "--defsym RELOC=${reloc}"] \
+				[list as [expr {[is_elf64 tmpdir/bintest.o] \
+				    ? "--defsym ELF64=1" : ""}]]]
+    run_dump_test "strip-15" [list \
+				[list source strip-15${reloc_format}.s] \
+				[list as "--defsym RELOC=${reloc}"] \
+				[list as [expr {[is_elf64 tmpdir/bintest.o] \
+				    ? "--defsym ELF64=1" : ""}]]]
 
     # This requires STB_GNU_UNIQUE support with OSABI set to GNU.
     if { [supports_gnu_unique] } {

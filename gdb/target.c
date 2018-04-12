@@ -48,6 +48,7 @@
 #include <algorithm>
 #include "byte-vector.h"
 #include "terminal.h"
+#include <algorithm>
 
 static void generic_tls_error (void) ATTRIBUTE_NORETURN;
 
@@ -1937,18 +1938,17 @@ target_write (struct target_ops *ops,
 				     NULL, NULL);
 }
 
-/* Read OBJECT/ANNEX using OPS.  Store the result in *BUF_P and return
-   the size of the transferred data.  PADDING additional bytes are
-   available in *BUF_P.  This is a helper function for
-   target_read_alloc; see the declaration of that function for more
-   information.  */
+/* Help for target_read_alloc and target_read_stralloc.  See their comments
+   for details.  */
 
-static LONGEST
+template <typename T>
+gdb::optional<gdb::def_vector<T>>
 target_read_alloc_1 (struct target_ops *ops, enum target_object object,
-		     const char *annex, gdb_byte **buf_p, int padding)
+		     const char *annex)
 {
-  size_t buf_alloc, buf_pos;
-  gdb_byte *buf;
+  gdb::def_vector<T> buf;
+  size_t buf_pos = 0;
+  const int chunk = 4096;
 
   /* This function does not have a length parameter; it reads the
      entire OBJECT).  Also, it doesn't support objects fetched partly
@@ -1959,82 +1959,64 @@ target_read_alloc_1 (struct target_ops *ops, enum target_object object,
 
   /* Start by reading up to 4K at a time.  The target will throttle
      this number down if necessary.  */
-  buf_alloc = 4096;
-  buf = (gdb_byte *) xmalloc (buf_alloc);
-  buf_pos = 0;
   while (1)
     {
       ULONGEST xfered_len;
       enum target_xfer_status status;
 
-      status = target_read_partial (ops, object, annex, &buf[buf_pos],
-				    buf_pos, buf_alloc - buf_pos - padding,
+      buf.resize (buf_pos + chunk);
+
+      status = target_read_partial (ops, object, annex,
+				    (gdb_byte *) &buf[buf_pos],
+				    buf_pos, chunk,
 				    &xfered_len);
 
       if (status == TARGET_XFER_EOF)
 	{
 	  /* Read all there was.  */
-	  if (buf_pos == 0)
-	    xfree (buf);
-	  else
-	    *buf_p = buf;
-	  return buf_pos;
+	  buf.resize (buf_pos);
+	  return buf;
 	}
       else if (status != TARGET_XFER_OK)
 	{
 	  /* An error occurred.  */
-	  xfree (buf);
-	  return TARGET_XFER_E_IO;
+	  return {};
 	}
 
       buf_pos += xfered_len;
-
-      /* If the buffer is filling up, expand it.  */
-      if (buf_alloc < buf_pos * 2)
-	{
-	  buf_alloc *= 2;
-	  buf = (gdb_byte *) xrealloc (buf, buf_alloc);
-	}
 
       QUIT;
     }
 }
 
-/* Read OBJECT/ANNEX using OPS.  Store the result in *BUF_P and return
-   the size of the transferred data.  See the declaration in "target.h"
-   function for more information about the return value.  */
+/* See target.h  */
 
-LONGEST
+gdb::optional<gdb::byte_vector>
 target_read_alloc (struct target_ops *ops, enum target_object object,
-		   const char *annex, gdb_byte **buf_p)
+		   const char *annex)
 {
-  return target_read_alloc_1 (ops, object, annex, buf_p, 0);
+  return target_read_alloc_1<gdb_byte> (ops, object, annex);
 }
 
 /* See target.h.  */
 
-gdb::unique_xmalloc_ptr<char>
+gdb::optional<gdb::char_vector>
 target_read_stralloc (struct target_ops *ops, enum target_object object,
 		      const char *annex)
 {
-  gdb_byte *buffer;
-  char *bufstr;
-  LONGEST i, transferred;
+  gdb::optional<gdb::char_vector> buf
+    = target_read_alloc_1<char> (ops, object, annex);
 
-  transferred = target_read_alloc_1 (ops, object, annex, &buffer, 1);
-  bufstr = (char *) buffer;
+  if (!buf)
+    return {};
 
-  if (transferred < 0)
-    return NULL;
-
-  if (transferred == 0)
-    return gdb::unique_xmalloc_ptr<char> (xstrdup (""));
-
-  bufstr[transferred] = 0;
+  if (buf->back () != '\0')
+    buf->push_back ('\0');
 
   /* Check for embedded NUL bytes; but allow trailing NULs.  */
-  for (i = strlen (bufstr); i < transferred; i++)
-    if (bufstr[i] != 0)
+  for (auto it = std::find (buf->begin (), buf->end (), '\0');
+       it != buf->end (); it++)
+    if (*it != '\0')
       {
 	warning (_("target object %d, annex %s, "
 		   "contained unexpected null characters"),
@@ -2042,7 +2024,7 @@ target_read_stralloc (struct target_ops *ops, enum target_object object,
 	break;
       }
 
-  return gdb::unique_xmalloc_ptr<char> (bufstr);
+  return buf;
 }
 
 /* Memory transfer methods.  */
@@ -2744,7 +2726,7 @@ target_supports_multi_process (void)
 
 /* See target.h.  */
 
-gdb::unique_xmalloc_ptr<char>
+gdb::optional<gdb::char_vector>
 target_get_osdata (const char *type)
 {
   struct target_ops *t;
@@ -2758,7 +2740,7 @@ target_get_osdata (const char *type)
     t = find_default_run_target ("get OS data");
 
   if (!t)
-    return NULL;
+    return {};
 
   return target_read_stralloc (t, TARGET_OBJECT_OSDATA, type);
 }
@@ -2809,56 +2791,70 @@ default_fileio_target (void)
 
 /* File handle for target file operations.  */
 
-typedef struct
+struct fileio_fh_t
 {
-  /* The target on which this file is open.  */
-  struct target_ops *t;
+  /* The target on which this file is open.  NULL if the target is
+     meanwhile closed while the handle is open.  */
+  target_ops *target;
 
   /* The file descriptor on the target.  */
-  int fd;
-} fileio_fh_t;
+  int target_fd;
 
-DEF_VEC_O (fileio_fh_t);
+  /* Check whether this fileio_fh_t represents a closed file.  */
+  bool is_closed ()
+  {
+    return target_fd < 0;
+  }
+};
 
 /* Vector of currently open file handles.  The value returned by
    target_fileio_open and passed as the FD argument to other
    target_fileio_* functions is an index into this vector.  This
    vector's entries are never freed; instead, files are marked as
    closed, and the handle becomes available for reuse.  */
-static VEC (fileio_fh_t) *fileio_fhandles;
-
-/* Macro to check whether a fileio_fh_t represents a closed file.  */
-#define is_closed_fileio_fh(fd) ((fd) < 0)
+static std::vector<fileio_fh_t> fileio_fhandles;
 
 /* Index into fileio_fhandles of the lowest handle that might be
    closed.  This permits handle reuse without searching the whole
    list each time a new file is opened.  */
 static int lowest_closed_fd;
 
+/* Invalidate the target associated with open handles that were open
+   on target TARG, since we're about to close (and maybe destroy) the
+   target.  The handles remain open from the client's perspective, but
+   trying to do anything with them other than closing them will fail
+   with EIO.  */
+
+static void
+fileio_handles_invalidate_target (target_ops *targ)
+{
+  for (fileio_fh_t &fh : fileio_fhandles)
+    if (fh.target == targ)
+      fh.target = NULL;
+}
+
 /* Acquire a target fileio file descriptor.  */
 
 static int
-acquire_fileio_fd (struct target_ops *t, int fd)
+acquire_fileio_fd (target_ops *target, int target_fd)
 {
-  fileio_fh_t *fh;
-
-  gdb_assert (!is_closed_fileio_fh (fd));
-
   /* Search for closed handles to reuse.  */
-  for (;
-       VEC_iterate (fileio_fh_t, fileio_fhandles,
-                    lowest_closed_fd, fh);
-       lowest_closed_fd++)
-    if (is_closed_fileio_fh (fh->fd))
-      break;
+  for (; lowest_closed_fd < fileio_fhandles.size (); lowest_closed_fd++)
+    {
+      fileio_fh_t &fh = fileio_fhandles[lowest_closed_fd];
+
+      if (fh.is_closed ())
+	break;
+    }
 
   /* Push a new handle if no closed handles were found.  */
-  if (lowest_closed_fd == VEC_length (fileio_fh_t, fileio_fhandles))
-    fh = VEC_safe_push (fileio_fh_t, fileio_fhandles, NULL);
+  if (lowest_closed_fd == fileio_fhandles.size ())
+    fileio_fhandles.push_back (fileio_fh_t {target, target_fd});
+  else
+    fileio_fhandles[lowest_closed_fd] = {target, target_fd};
 
-  /* Fill in the handle.  */
-  fh->t = t;
-  fh->fd = fd;
+  /* Should no longer be marked closed.  */
+  gdb_assert (!fileio_fhandles[lowest_closed_fd].is_closed ());
 
   /* Return its index, and start the next lookup at
      the next index.  */
@@ -2870,14 +2866,17 @@ acquire_fileio_fd (struct target_ops *t, int fd)
 static void
 release_fileio_fd (int fd, fileio_fh_t *fh)
 {
-  fh->fd = -1;
+  fh->target_fd = -1;
   lowest_closed_fd = std::min (lowest_closed_fd, fd);
 }
 
 /* Return a pointer to the fileio_fhandle_t corresponding to FD.  */
 
-#define fileio_fd_to_fh(fd) \
-  VEC_index (fileio_fh_t, fileio_fhandles, (fd))
+static fileio_fh_t *
+fileio_fd_to_fh (int fd)
+{
+  return &fileio_fhandles[fd];
+}
 
 /* Helper for target_fileio_open and
    target_fileio_open_warn_if_slow.  */
@@ -2947,11 +2946,13 @@ target_fileio_pwrite (int fd, const gdb_byte *write_buf, int len,
   fileio_fh_t *fh = fileio_fd_to_fh (fd);
   int ret = -1;
 
-  if (is_closed_fileio_fh (fh->fd))
+  if (fh->is_closed ())
     *target_errno = EBADF;
+  else if (fh->target == NULL)
+    *target_errno = EIO;
   else
-    ret = fh->t->to_fileio_pwrite (fh->t, fh->fd, write_buf,
-				   len, offset, target_errno);
+    ret = fh->target->to_fileio_pwrite (fh->target, fh->target_fd, write_buf,
+					len, offset, target_errno);
 
   if (targetdebug)
     fprintf_unfiltered (gdb_stdlog,
@@ -2971,11 +2972,13 @@ target_fileio_pread (int fd, gdb_byte *read_buf, int len,
   fileio_fh_t *fh = fileio_fd_to_fh (fd);
   int ret = -1;
 
-  if (is_closed_fileio_fh (fh->fd))
+  if (fh->is_closed ())
     *target_errno = EBADF;
+  else if (fh->target == NULL)
+    *target_errno = EIO;
   else
-    ret = fh->t->to_fileio_pread (fh->t, fh->fd, read_buf,
-				  len, offset, target_errno);
+    ret = fh->target->to_fileio_pread (fh->target, fh->target_fd, read_buf,
+				       len, offset, target_errno);
 
   if (targetdebug)
     fprintf_unfiltered (gdb_stdlog,
@@ -2994,10 +2997,13 @@ target_fileio_fstat (int fd, struct stat *sb, int *target_errno)
   fileio_fh_t *fh = fileio_fd_to_fh (fd);
   int ret = -1;
 
-  if (is_closed_fileio_fh (fh->fd))
+  if (fh->is_closed ())
     *target_errno = EBADF;
+  else if (fh->target == NULL)
+    *target_errno = EIO;
   else
-    ret = fh->t->to_fileio_fstat (fh->t, fh->fd, sb, target_errno);
+    ret = fh->target->to_fileio_fstat (fh->target, fh->target_fd,
+				       sb, target_errno);
 
   if (targetdebug)
     fprintf_unfiltered (gdb_stdlog,
@@ -3014,11 +3020,15 @@ target_fileio_close (int fd, int *target_errno)
   fileio_fh_t *fh = fileio_fd_to_fh (fd);
   int ret = -1;
 
-  if (is_closed_fileio_fh (fh->fd))
+  if (fh->is_closed ())
     *target_errno = EBADF;
   else
     {
-      ret = fh->t->to_fileio_close (fh->t, fh->fd, target_errno);
+      if (fh->target != NULL)
+	ret = fh->target->to_fileio_close (fh->target, fh->target_fd,
+					   target_errno);
+      else
+	ret = 0;
       release_fileio_fd (fd, fh);
     }
 
@@ -3403,6 +3413,8 @@ void
 target_close (struct target_ops *targ)
 {
   gdb_assert (!target_is_pushed (targ));
+
+  fileio_handles_invalidate_target (targ);
 
   if (targ->to_xclose != NULL)
     targ->to_xclose (targ);

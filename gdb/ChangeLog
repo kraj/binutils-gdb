@@ -1,3 +1,622 @@
+2018-04-11  Pedro Alves  <palves@redhat.com>
+
+	* target.c (fileio_fh_t::t): Add comment.
+	(target_fileio_pwrite, target_fileio_pread, target_fileio_fstat)
+	(target_fileio_close): Handle a NULL target.
+	(invalidate_fileio_fh): New.
+	(target_close): Call it.
+	* remote.c (remote_hostio_send_command): No longer check whether
+	remote_desc is open.
+
+2018-04-11  Pedro Alves  <palves@redhat.com>
+
+	* target.c (fileio_fh_t): Make it a named struct instead of a
+	typedef.
+	(fileio_fh_t::is_closed): New method.
+	(DEF_VEC_O (fileio_fh_t)): Remove.
+	(fileio_fhandles): Now a std::vector.
+	(is_closed_fileio_fh): Delete.
+	(acquire_fileio_fd): Adjust.  Rename parameters.
+	(release_fileio_fd): Adjust.
+	(fileio_fd_to_fh): Reimplement as a function instead of a macro.
+	(target_fileio_pwrite, target_fileio_pread, target_fileio_fstat)
+	(target_fileio_close): Adjust.
+
+2018-04-10  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* auto-load.c (auto_load_safe_path_vec_update): Iterate by
+	index.
+
+2018-04-10  Pedro Alves  <palves@redhat.com>
+
+	* gdbthread.h (finish_thread_state_cleanup): Delete declaration.
+	(scoped_finish_thread_state): New class.
+	* infcmd.c (run_command_1): Use it instead of finish_thread_state
+	cleanup.
+	* infrun.c (proceed, prepare_for_detach, wait_for_inferior)
+	(fetch_inferior_event, normal_stop): Likewise.
+	* thread.c (finish_thread_state_cleanup): Delete.
+
+2018-04-09  Simon Marchi  <simon.marchi@polymtl.ca>
+	    Pedro Alves  <palves@redhat.com>
+
+	* value.c: Include "selftest.h" and "common/array-view.h".
+	(struct range) <operator ==>: New.
+	(test_ranges_contain): New.
+	(check_ranges_vector): New.
+	(test_insert_into_bit_range_vector): New.
+	(_initialize_values): Register selftests.
+	* common/array-view.h (operator==, operator!=): New.
+
+2018-04-09  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* common/gdb_vecs.h (unordered_remove): Add overload that takes
+	an iterator.
+	* inline-frame.c: Include <algorithm>.
+	(struct inline_state): Add constructor.
+	(inline_state_s): Remove.
+	(DEF_VEC_O(inline_state_s)): Remove.
+	(inline_states): Change type to std::vector.
+	(find_inline_frame_state): Adjust to std::vector.
+	(allocate_inline_frame_state): Remove.
+	(clear_inline_frame_state): Adjust to std::vector.
+	(skip_inline_frames): Adjust to std::vector.
+
+2018-04-09  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* tracepoint.h (struct trace_state_variable): Add constructor.
+	<name>: Change type to std::string.
+	* tracepoint.c (tsv_s): Remove.
+	(DEF_VEC_O(tsv_s)): Remove.
+	(tvariables): Change to std::vector.
+	(create_trace_state_variable): Adjust to std::vector.
+	(find_trace_state_variable): Likewise.
+	(find_trace_state_variable_by_number): Likewise.
+	(delete_trace_state_variable): Likewise.
+	(trace_variable_command): Adjust to std::string.
+	(delete_trace_variable_command): Likewise.
+	(tvariables_info_1): Adjust to std::vector.
+	(save_trace_state_variables): Likewise.
+	(start_tracing): Likewise.
+	(merge_uploaded_trace_state_variables): Adjust to std::vector
+	and std::string.
+	* target.h (struct target_ops)
+	<to_download_trace_state_variable>: Pass reference to
+	trace_state_variable.
+	* target-debug.h (target_debug_print_const_trace_state_variable_r): New.
+	* target-delegates.c: Re-generate.
+	* mi/mi-interp.c (mi_tsv_created): Adjust to std::string.
+	(mi_tsv_deleted): Likewise.
+	* mi/mi-main.c (mi_cmd_trace_frame_collected): Likewise.
+	* remote.c (remote_download_trace_state_variable): Change
+	pointer to reference and adjust.
+	* make-target-delegates (parse_argtypes): Handle references.
+	(write_function_header): Likewise.
+	(munge_type): Likewise.
+
+2018-04-09  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* Makefile.in (SUBDIR_UNITTESTS_SRCS): Add
+	string_view-selftests.c.
+	* unittests/basic_string_view/capacity/1.cc: Adapt to GDB
+	testsuite.
+	* unittests/basic_string_view/cons/char/1.cc: Likewise.
+	* unittests/basic_string_view/cons/char/2.cc: Likewise.
+	* unittests/basic_string_view/cons/char/3.cc: Likewise.
+	* unittests/basic_string_view/element_access/char/1.cc:
+	Likewise.
+	* unittests/basic_string_view/element_access/char/empty.cc:
+	Likewise.
+	* unittests/basic_string_view/element_access/char/front_back.cc:
+	Likewise.
+	* unittests/basic_string_view/inserters/char/2.cc: Likewise.
+	* unittests/basic_string_view/modifiers/remove_prefix/char/1.cc:
+	Likewise.
+	* unittests/basic_string_view/modifiers/remove_suffix/char/1.cc:
+	Likewise.
+	* unittests/basic_string_view/modifiers/swap/char/1.cc:
+	Likewise.
+	* unittests/basic_string_view/operations/compare/char/1.cc:
+	Likewise.
+	* unittests/basic_string_view/operations/compare/char/13650.cc:
+	Likewise.
+	* unittests/basic_string_view/operations/copy/char/1.cc:
+	Likewise.
+	* unittests/basic_string_view/operations/data/char/1.cc:
+	Likewise.
+	* unittests/basic_string_view/operations/find/char/1.cc:
+	Likewise.
+	* unittests/basic_string_view/operations/find/char/2.cc:
+	Likewise.
+	* unittests/basic_string_view/operations/find/char/3.cc:
+	Likewise.
+	* unittests/basic_string_view/operations/find/char/4.cc:
+	Likewise.
+	* unittests/basic_string_view/operations/rfind/char/1.cc:
+	Likewise.
+	* unittests/basic_string_view/operations/rfind/char/2.cc:
+	Likewise.
+	* unittests/basic_string_view/operations/rfind/char/3.cc:
+	Likewise.
+	* unittests/basic_string_view/operations/substr/char/1.cc:
+	Likewise.
+	* unittests/basic_string_view/operators/char/2.cc: Likewise.
+	* unittests/string_view-selftests.c: New file.
+
+2018-04-09  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* unittests/basic_string_view/capacity/1.cc: New file.
+	* unittests/basic_string_view/capacity/empty_neg.cc: New file.
+	* unittests/basic_string_view/cons/char/1.cc: New file.
+	* unittests/basic_string_view/cons/char/2.cc: New file.
+	* unittests/basic_string_view/cons/char/3.cc: New file.
+	* unittests/basic_string_view/cons/wchar_t/1.cc: New file.
+	* unittests/basic_string_view/cons/wchar_t/2.cc: New file.
+	* unittests/basic_string_view/cons/wchar_t/3.cc: New file.
+	* unittests/basic_string_view/element_access/char/1.cc: New file.
+	* unittests/basic_string_view/element_access/char/2.cc: New file.
+	* unittests/basic_string_view/element_access/char/empty.cc: New file.
+	* unittests/basic_string_view/element_access/char/front_back.cc: New file.
+	* unittests/basic_string_view/element_access/wchar_t/1.cc: New file.
+	* unittests/basic_string_view/element_access/wchar_t/2.cc: New file.
+	* unittests/basic_string_view/element_access/wchar_t/empty.cc: New file.
+	* unittests/basic_string_view/element_access/wchar_t/front_back.cc: New file.
+	* unittests/basic_string_view/include.cc: New file.
+	* unittests/basic_string_view/inserters/char/1.cc: New file.
+	* unittests/basic_string_view/inserters/char/2.cc: New file.
+	* unittests/basic_string_view/inserters/char/3.cc: New file.
+	* unittests/basic_string_view/inserters/pod/10081-out.cc: New file.
+	* unittests/basic_string_view/inserters/wchar_t/1.cc: New file.
+	* unittests/basic_string_view/inserters/wchar_t/2.cc: New file.
+	* unittests/basic_string_view/inserters/wchar_t/3.cc: New file.
+	* unittests/basic_string_view/literals/types.cc: New file.
+	* unittests/basic_string_view/literals/values.cc: New file.
+	* unittests/basic_string_view/modifiers/remove_prefix/char/1.cc: New file.
+	* unittests/basic_string_view/modifiers/remove_prefix/wchar_t/1.cc: New file.
+	* unittests/basic_string_view/modifiers/remove_suffix/char/1.cc: New file.
+	* unittests/basic_string_view/modifiers/remove_suffix/wchar_t/1.cc: New file.
+	* unittests/basic_string_view/modifiers/swap/char/1.cc: New file.
+	* unittests/basic_string_view/modifiers/swap/wchar_t/1.cc: New file.
+	* unittests/basic_string_view/operations/compare/char/1.cc: New file.
+	* unittests/basic_string_view/operations/compare/char/13650.cc: New file.
+	* unittests/basic_string_view/operations/compare/char/2.cc: New file.
+	* unittests/basic_string_view/operations/compare/char/70483.cc: New file.
+	* unittests/basic_string_view/operations/compare/wchar_t/1.cc: New file.
+	* unittests/basic_string_view/operations/compare/wchar_t/13650.cc: New file.
+	* unittests/basic_string_view/operations/compare/wchar_t/2.cc: New file.
+	* unittests/basic_string_view/operations/copy/char/1.cc: New file.
+	* unittests/basic_string_view/operations/copy/wchar_t/1.cc: New file.
+	* unittests/basic_string_view/operations/data/char/1.cc: New file.
+	* unittests/basic_string_view/operations/data/wchar_t/1.cc: New file.
+	* unittests/basic_string_view/operations/find/char/1.cc: New file.
+	* unittests/basic_string_view/operations/find/char/2.cc: New file.
+	* unittests/basic_string_view/operations/find/char/3.cc: New file.
+	* unittests/basic_string_view/operations/find/char/4.cc: New file.
+	* unittests/basic_string_view/operations/find/wchar_t/1.cc: New file.
+	* unittests/basic_string_view/operations/find/wchar_t/2.cc: New file.
+	* unittests/basic_string_view/operations/find/wchar_t/3.cc: New file.
+	* unittests/basic_string_view/operations/find/wchar_t/4.cc: New file.
+	* unittests/basic_string_view/operations/rfind/char/1.cc: New file.
+	* unittests/basic_string_view/operations/rfind/char/2.cc: New file.
+	* unittests/basic_string_view/operations/rfind/char/3.cc: New file.
+	* unittests/basic_string_view/operations/rfind/wchar_t/1.cc: New file.
+	* unittests/basic_string_view/operations/rfind/wchar_t/2.cc: New file.
+	* unittests/basic_string_view/operations/rfind/wchar_t/3.cc: New file.
+	* unittests/basic_string_view/operations/string_conversion/1.cc: New file.
+	* unittests/basic_string_view/operations/substr/char/1.cc: New file.
+	* unittests/basic_string_view/operations/substr/wchar_t/1.cc: New file.
+	* unittests/basic_string_view/operators/char/2.cc: New file.
+	* unittests/basic_string_view/operators/wchar_t/2.cc: New file.
+	* unittests/basic_string_view/range_access/char/1.cc: New file.
+	* unittests/basic_string_view/range_access/wchar_t/1.cc: New file.
+	* unittests/basic_string_view/requirements/explicit_instantiation/1.cc: New file.
+	* unittests/basic_string_view/requirements/explicit_instantiation/char/1.cc: New file.
+	* unittests/basic_string_view/requirements/explicit_instantiation/char16_t/1.cc: New file.
+	* unittests/basic_string_view/requirements/explicit_instantiation/char32_t/1.cc: New file.
+	* unittests/basic_string_view/requirements/explicit_instantiation/wchar_t/1.cc: New file.
+	* unittests/basic_string_view/requirements/typedefs.cc: New file.
+	* unittests/basic_string_view/typedefs.cc: New file.
+	* unittests/basic_string_view/types/1.cc: New file.
+
+2018-04-09  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* common/gdb_string_view.h: Remove libstdc++ implementation
+	details, adjust to gdb reality.
+	* common/gdb_string_view.tcc: Likewise.
+	* cli/cli-script.c (struct string_view): Remove.
+	(user_args) <m_args>: Change element type to gdb::string_view.
+	(user_args::insert_args): Adjust.
+
+2018-04-09  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* common/gdb_string_view.h: New file.
+	* common/gdb_string_view.tcc: New file.
+
+2018-04-09  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* ax_cxx_compile_stdcxx.m4: Sync with upstream.
+	* configure: Re-generate.
+
+2018-04-09  Pedro Alves  <palves@redhat.com>
+
+	* gdbarch.sh: Include "observable.h" instead of "observer.h".
+	(set_target_gdbarch): Call
+	gdb::observers::architecture_changed.notify instead of
+	observer_notify_architecture_changed.
+
+2018-04-07  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* tracepoint.c (struct current_traceframe_cleanup): Remove.
+	(do_restore_current_traceframe_cleanup): Remove.
+	(restore_current_traceframe_cleanup_dtor): Remove.
+	(make_cleanup_restore_current_traceframe): Remove.
+	(scoped_restore_current_traceframe::scoped_restore_current_traceframe):
+	New.
+	* tracepoint.h (struct scoped_restore_current_traceframe): New.
+	* infrun.c (fetch_inferior_event): Use
+	scoped_restore_current_traceframe.
+
+2018-04-07  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* dwarf2read.h (struct dwarf2_per_objfile) <n_type_units>:
+	Remove.
+	<n_allocated_type_units>: Remove.
+	<all_type_units>: Change to std::vector.
+	* dwarf2read.c (dwarf2_per_objfile::~dwarf2_per_objfile): Adjust
+	to std::vector change.
+	(dwarf2_per_objfile::get_cutu): Likewise.
+	(dwarf2_per_objfile::get_tu): Likewise.
+	(create_signatured_type_table_from_index): Likewise.
+	(create_signatured_type_table_from_debug_names): Likewise.
+	(dw2_symtab_iter_next): Likewise.
+	(dw2_print_stats): Likewise.
+	(dw2_expand_all_symtabs): Likewise.
+	(dw2_expand_marked_cus): Likewise.
+	(dw2_debug_names_iterator::next): Likewise.
+	(dwarf2_initialize_objfile): Likewise.
+	(add_signatured_type_cu_to_table): Likewise.
+	(create_all_type_units): Likewise.
+	(add_type_unit): Likewise.
+	(struct tu_abbrev_offset): Add constructor.
+	(build_type_psymtabs_1): Adjust to std::vector change.
+	(print_tu_stats): Likewise.
+	* dwarf-index-write.c (check_dwarf64_offsets): Likewise.
+	(write_debug_names): Likewise.
+
+2018-04-07  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* dwarf2read.h (struct dwarf2_per_objfile) <all_comp_units>: Likewise.
+	Make an std::vector.
+	<n_comp_units>: Remove.
+	* dwarf2read.c (dwarf2_per_objfile::~dwarf2_per_objfile): Adjust
+	to std::vector change.
+	(dwarf2_per_objfile::get_cutu): Likewise.
+	(dwarf2_per_objfile::get_cu): Likewise.
+	(create_cus_from_index): Likewise.
+	(create_addrmap_from_index): Likewise.
+	(create_addrmap_from_aranges): Likewise.
+	(dwarf2_read_index): Likewise.
+	(dw2_find_last_source_symtab): Likewise.
+	(dw2_map_symtabs_matching_filename): Likewise.
+	(dw2_symtab_iter_next): Likewise.
+	(dw2_print_stats): Likewise.
+	(dw2_expand_all_symtabs): Likewise.
+	(dw2_expand_symtabs_with_fullname): Likewise.
+	(dw2_expand_marked_cus): Likewise.
+	(dw2_map_symbol_filenames): Likewise.
+	(create_cus_from_debug_names): Likewise.
+	(dwarf2_read_debug_names): Likewise.
+	(dw2_debug_names_iterator::next): Likewise.
+	(dwarf2_initialize_objfile): Likewise.
+	(set_partial_user): Likewise.
+	(dwarf2_build_psymtabs_hard): Likewise.
+	(read_comp_units_from_section): Remove arguments, adjust to
+	std::vector change.
+	(create_all_comp_units): Adjust to std::vector and
+	read_comp_units_from_section changes.
+	(dwarf2_find_containing_comp_unit): Adjust to std::vector
+	change.
+	* dwarf-index-write.c (check_dwarf64_offsets): Likewise.
+	(psyms_seen_size): Likewise.
+	(write_gdbindex): Likewise.
+	(write_debug_names): Likewise.
+
+2018-04-07  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* dwarf2read.c (create_cus_from_index_list): Replace objfile arg
+	with dwarf2_per_objfile.
+	(create_cus_from_index): Likewise.
+	(create_signatured_type_table_from_index): Likewise.
+	(dwarf2_read_index): Likewise.
+	(dwarf2_initialize_objfile): Likewise.
+	(dwarf2_fetch_die_loc_sect_off):  Get dwarf2_per_objfile from
+	per_cu rather than get_dwarf2_per_objfile.
+
+2018-04-07  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* dwarf2read.h (struct signatured_type): Forward declare.
+	(struct dwarf2_per_objfile) <get_cutu, get_cu, get_tu>:
+	New methods.
+	* dwarf2read.c (dwarf2_per_objfile::get_cutu): Rename from...
+	(dw2_get_cutu): ...this.
+	(dwarf2_per_objfile::get_cu): Rename from...
+	(dw2_get_cu): ...this.
+	(dwarf2_per_objfile::get_tu): New.
+	(create_addrmap_from_index): Adjust.
+	(create_addrmap_from_aranges): Adjust.
+	(dw2_find_last_source_symtab): Adjust.
+	(dw2_map_symtabs_matching_filename): Adjust.
+	(dw2_symtab_iter_next): Adjust.
+	(dw2_print_stats): Adjust.
+	(dw2_expand_all_symtabs): Adjust.
+	(dw2_expand_symtabs_with_fullname): Adjust.
+	(dw2_expand_marked_cus): Adjust.
+	(dw_expand_symtabs_matching_file_matcher): Adjust.
+	(dw2_map_symbol_filenames): Adjust.
+	(dw2_debug_names_iterator::next): Adjust.
+	(dwarf2_initialize_objfile): Adjust.
+	(set_partial_user): Adjust.
+	(dwarf2_build_psymtabs_hard): Adjust.
+
+2018-04-07  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* dwarf2read.c (create_signatured_type_table_from_debug_names):
+	Remove unused variables.
+	(dw2_map_symtabs_matching_filename): Likewise.
+	(dwarf2_record_block_ranges): Likewise.
+	(dwarf2_read_addr_index): Likewise.
+	(follow_die_offset): Likewise.
+
+2018-04-07  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* progspace.c (clone_program_space): Pass SYMFILE_DEFER_BP_RESET
+	to symbol_file_add_main.
+
+2018-04-07  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	PR mi/22299
+	* mi/mi-console.c (do_fputc_async_safe): New.
+	(mi_console_file::write_async_safe): New.
+	(mi_console_file::flush): Adjust calls to fputstrn_unfiltered.
+	* mi/mi-console.h (class mi_console_file) <write_async_safe>:
+	New.
+	* ui-file.c (ui_file::putstrn): Adjust call to
+	fputstrn_unfiltered.
+	* utils.c (printchar): Replace do_fputs and do_fprintf
+	parameters by do_fputc.
+	(fputstr_filtered): Adjust call to printchar.
+	(fputstr_unfiltered): Likewise.
+	(fputstrn_filtered): Likewise.
+	(fputstrn_unfiltered): Add do_fputc parameter, pass to
+	printchar.
+	* utils.h (do_fputc_ftype): New typedef.
+	(fputstrn_unfiltered): Add do_fputc parameter.
+
+2018-04-07  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* regformats/i386/i386-avx.dat: Remove.
+
+2018-04-07  Simon Marchi  <simon.marchi@ericsson.com>
+
+	PR gdb/22979
+	* amd64-tdep.c (amd64_none_init_abi): New function.
+	(amd64_x32_none_init_abi): New function.
+	(_initialize_amd64_tdep): Register handlers for x86-64 and
+	x64_32 with GDB_OSABI_NONE.
+	* osabi.c (gdbarch_init_osabi): Allow running handlers for the
+	GDB_OSABI_NONE osabi.
+
+2018-04-07  Simon Marchi  <simon.marchi@ericsson.com>
+
+	PR gdb/22980
+	* defs.h (enum gdb_osabi): Remove GDB_OSABI_UNINITIALIZED, add
+	GDB_OSABI_NONE.
+	* arch-utils.c (gdbarch_info_init): Don't set info->osabi.
+	* osabi.c (gdb_osabi_names): Add "unknown" entry.
+
+2018-04-07  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* common/byte-vector.h (char_vector): New type.
+	* target.h (target_read_alloc): Return
+	gdb::optional<byte_vector>.
+	(target_read_stralloc): Return gdb::optional<char_vector>.
+	(target_get_osdata): Return gdb::optional<char_vector>.
+	* target.c (target_read_alloc_1): Templatize.  Replacement
+	manual memory management with vector.
+	(target_read_alloc): Change return type, adjust.
+	(target_read_stralloc): Change return type, adjust.
+	(target_get_osdata): Change return type, adjust.
+	* auxv.c (struct auxv_info) <length>: Remove.
+	<data>: Change type to gdb::optional<byte_vector>.
+	(auxv_inferior_data_cleanup): Free auxv_info with delete.
+	(get_auxv_inferior_data): Allocate auxv_info with new, adjust.
+	(target_auxv_search): Adjust.
+	(fprint_target_auxv): Adjust.
+	* avr-tdep.c (avr_io_reg_read_command): Adjust.
+	* linux-tdep.c (linux_spu_make_corefile_notes): Adjust.
+	(linux_make_corefile_notes): Adjust.
+	* osdata.c (get_osdata): Adjust.
+	* remote.c (remote_get_threads_with_qxfer): Adjust.
+	(remote_memory_map): Adjust.
+	(remote_traceframe_info): Adjust.
+	(btrace_read_config): Adjust.
+	(remote_read_btrace): Adjust.
+	(remote_pid_to_exec_file): Adjust.
+	* solib-aix.c (solib_aix_get_library_list): Adjust.
+	* solib-dsbt.c (decode_loadmap): Don't free buf.
+	(dsbt_get_initial_loadmaps): Adjust.
+	* solib-svr4.c (svr4_current_sos_via_xfer_libraries): Adjust.
+	* solib-target.c (solib_target_current_sos): Adjust.
+	* tracepoint.c (sdata_make_value): Adjust.
+	* xml-support.c (xinclude_start_include): Adjust.
+	(xml_fetch_content_from_file): Adjust.
+	* xml-support.h (xml_fetch_another): Change return type.
+	(xml_fetch_content_from_file): Change return type.
+	* xml-syscall.c (xml_init_syscalls_info): Adjust.
+	* xml-tdesc.c (file_read_description_xml): Adjust.
+	(fetch_available_features_from_target): Change return type.
+	(target_fetch_description_xml): Adjust.
+	(target_read_description_xml): Adjust.
+
+2018-04-06  Tom Tromey  <tom@tromey.com>
+
+	* value.c (~value): Update.
+	(struct value) <contents>: Now unique_xmalloc_ptr.
+	(value_contents_bits_eq, allocate_value_contents)
+	(value_contents_raw, value_contents_all_raw)
+	(value_contents_for_printing, value_contents_for_printing_const)
+	(set_value_enclosing_type): Update.
+
+2018-04-06  Tom Tromey  <tom@tromey.com>
+
+	* value.c (range_s): Remove typedef, VEC.
+	(struct range): Add operator<.
+	(range_lessthan): Remove.
+	(ranges_contain): Change type.
+	(~value): Update.
+	(struct value) <unavailable, optimized_out>: Now std::vector.
+	(value_entirely_available)
+	(value_entirely_covered_by_range_vector)
+	(value_entirely_unavailable, value_entirely_optimized_out):
+	Update.
+	(insert_into_bit_range_vector): Change argument type.
+	(find_first_range_overlap): Likewise.
+	(struct ranges_and_idx, value_contents_bits_eq)
+	(require_not_optimized_out, require_available): Update.
+	(ranges_copy_adjusted): Change argument types.
+	(value_optimized_out, value_copy, value_fetch_lazy): Update.
+
+2018-04-06  Tom Tromey  <tom@tromey.com>
+
+	* value.c (~value): Update.
+	(struct value) <parent>: Now a value_ref_ptr.
+	(value_parent, set_value_parent, value_address, value_copy):
+	Update.
+
+2018-04-06  Tom Tromey  <tom@tromey.com>
+
+	* value.c (struct value): Add constructor, destructor, and member
+	initializers.
+	(allocate_value_lazy, value_decref): Update.
+
+2018-04-06  Tom Tromey  <tom@tromey.com>
+
+	* value.c (struct value) <released, next>: Remove.
+	(all_values): Now a std::vector.
+	(allocate_value_lazy): Update.
+	(value_next): Remove.
+	(value_mark, value_free_to_mark, release_value)
+	(value_release_to_mark): Update.
+
+2018-04-06  Tom Tromey  <tom@tromey.com>
+
+	* value.h (fetch_subexp_value, value_release_to_mark): Update.
+	(free_value_chain): Remove.
+	* value.c (free_value_chain): Remove.
+	(value_release_to_mark): Return a std::vector.
+	* ppc-linux-nat.c (num_memory_accesses): Change "chain" to a
+	std::vector.
+	(check_condition): Update.
+	* eval.c (fetch_subexp_value): Change "val_chain" to a
+	std::vector.
+	* breakpoint.c (update_watchpoint): Update.
+	(can_use_hardware_watchpoint): Change "vals" to a std::vector.
+
+2018-04-06  Tom Tromey  <tom@tromey.com>
+
+	* value.h (free_all_values): Remove.
+	* value.c (free_all_values): Remove.
+
+2018-04-06  Tom Tromey  <tom@tromey.com>
+
+	* value.c (VALUE_HISTORY_CHUNK, struct value_history_chunk)
+	(value_history_chain, value_history_count): Remove.
+	(value_history): New global.
+	(record_latest_value, access_value_history, show_values)
+	(preserve_values): Update.
+
+2018-04-06  Tom Tromey  <tom@tromey.com>
+
+	* varobj.h (struct varobj) <value>: Now a value_ref_ptr.
+	* varobj.c (varobj_set_display_format, varobj_set_value)
+	(install_default_visualizer, construct_visualizer)
+	(install_new_value, ~varobj, varobj_get_value_type)
+	(my_value_of_variable, varobj_editable_p): Update.
+	* c-varobj.c (c_describe_child, c_value_of_variable)
+	(cplus_number_of_children, cplus_describe_child): Update.
+	* ada-varobj.c (ada_number_of_children, ada_name_of_child)
+	(ada_path_expr_of_child, ada_value_of_child, ada_type_of_child)
+	(ada_value_of_variable, ada_value_is_changeable_p): Update.
+
+2018-04-06  Tom Tromey  <tom@tromey.com>
+
+	* printcmd.c (last_examine_address): Change type to
+	value_ref_ptr.
+	(do_examine, x_command): Update.
+
+2018-04-06  Tom Tromey  <tom@tromey.com>
+
+	* value.c (release_value): Update.
+	* breakpoint.h (struct watchpoint) <val>: Now a value_ref_ptr.
+	(struct bpstats) <val>: Now a value_ref_ptr.
+	* breakpoint.c (update_watchpoint, breakpoint_init_inferior)
+	(~bpstats, bpstats, bpstat_clear_actions, watchpoint_check)
+	(~watchpoint, print_it_watchpoint, watch_command_1)
+	(invalidate_bp_value_on_memory_change): Update.
+
+2018-04-06  Tom Tromey  <tom@tromey.com>
+
+	* varobj.c (varobj_clear_saved_item)
+	(update_dynamic_varobj_children, install_new_value, ~varobj):
+	Update.
+	* value.h (value_incref): Move declaration earlier.
+	(value_decref): Rename from value_free.
+	(struct value_ref_policy): New.
+	(value_ref_ptr): New typedef.
+	(struct value_deleter): Remove.
+	(gdb_value_up): Remove typedef.
+	(release_value): Change return type.
+	(release_value_or_incref): Remove.
+	* value.c (set_value_parent): Update.
+	(value_incref): Change return type.
+	(value_decref): Rename from value_free.
+	(value_free_to_mark, free_all_values, free_value_chain): Update.
+	(release_value): Return value_ref_ptr.
+	(release_value_or_incref): Remove.
+	(record_latest_value, set_internalvar, clear_internalvar):
+	Update.
+	* stack.c (info_frame_command): Don't call value_free.
+	* python/py-value.c (valpy_dealloc, valpy_new)
+	(value_to_value_object): Update.
+	* printcmd.c (do_examine): Update.
+	* opencl-lang.c (lval_func_free_closure): Update.
+	* mi/mi-main.c (register_changed_p): Don't call value_free.
+	* mep-tdep.c (mep_frame_prev_register): Don't call value_free.
+	* m88k-tdep.c (m88k_frame_prev_register): Don't call value_free.
+	* m68hc11-tdep.c (m68hc11_frame_prev_register): Don't call
+	value_free.
+	* guile/scm-value.c (vlscm_free_value_smob)
+	(vlscm_scm_from_value): Update.
+	* frame.c (frame_register_unwind, frame_unwind_register_signed)
+	(frame_unwind_register_unsigned, get_frame_register_bytes)
+	(put_frame_register_bytes): Don't call value_free.
+	* findvar.c (address_from_register): Don't call value_free.
+	* dwarf2read.c (dwarf2_compute_name): Don't call value_free.
+	* dwarf2loc.c (entry_data_value_free_closure)
+	(value_of_dwarf_reg_entry, free_pieced_value_closure)
+	(dwarf2_evaluate_loc_desc_full): Update.
+	* breakpoint.c (update_watchpoint, breakpoint_init_inferior)
+	(~bpstats, bpstats, bpstat_clear_actions, watchpoint_check)
+	(~watchpoint, watch_command_1)
+	(invalidate_bp_value_on_memory_change): Update.
+	* alpha-tdep.c (alpha_register_to_value): Don't call value_free.
+
+2018-04-06  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	PR gdb/23022
+	* warning.m4: Add -Wno-error=deprecated-register.
+	* configure: Re-generate.
+
 2018-04-05  Tom Tromey  <tom@tromey.com>
 
 	* linespec.h: Remove include of "vec.h".

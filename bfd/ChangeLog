@@ -1,3 +1,176 @@
+2018-04-11  Alan Modra  <amodra@gmail.com>
+
+	* aout-adobe.c: Delete.
+	* bout.c: Delete.
+	* coff-i860.c: Delete.
+	* coff-i960.c: Delete.
+	* cpu-i860.c: Delete.
+	* cpu-i960.c: Delete.
+	* elf32-i860.c: Delete.
+	* elf32-i960.c: Delete.
+	* hosts/i860mach3.h: Delete.
+	* Makefile.am: Remove i860, i960, bout, and adobe support.
+	* archures.c: Remove i860 and i960 support.
+	* coffcode.h: Likewise.
+	* reloc.c: Likewise.
+	* aoutx.h: Comment updates.
+	* archive.c: Remove BOUT and i960 support.
+	* bfd.c: Remove BOUT support.
+	* coffswap.h: Remove i960 support.
+	* config.bfd: Remove i860, i960 and adobe targets.
+	* configure.ac: Remove adode, bout, i860, i960, icoff targets.
+	* targets.c: Likewise.
+	* ieee.c: Remove i960 support.
+	* mach-o.c: Remove i860 support.
+	* Makefile.in: Regenerate.
+	* bfd-in2.h: Regenerate.
+	* configure: Regenerate.
+	* libbfd.h: Regenerate.
+	* po/SRC-POTFILES.in: Regenerate.
+
+2018-04-09  Maciej W. Rozycki  <macro@mips.com>
+
+	* elf64-mips.c (mips_elf64_write_rel): Handle a NULL BFD pointer
+	in the BFD symbol referred by the relocation.
+	(mips_elf64_write_rela): Likewise.
+
+2018-04-09  Maciej W. Rozycki  <macro@mips.com>
+
+	* elf64-mips.c (mips_elf64_slurp_one_reloc_table): Issue an
+	error for out-of-range `r_sym' values.
+
+2018-04-09  Alan Modra  <amodra@gmail.com>
+
+	* elf64-ppc.c (struct _ppc64_elf_section_data): Add has_pltcall field.
+	(struct ppc_link_hash_table): Add can_convert_all_inline_plt.
+	(ppc64_elf_check_relocs): Set has_pltcall.
+	(ppc64_elf_adjust_dynamic_symbol): Discard some PLT entries.
+	(ppc64_elf_inline_plt): New function.
+	(ppc64_elf_size_dynamic_sections): Discard some PLT entries for locals.
+	* elf64-ppc.h (ppc64_elf_inline_plt): Declare.
+	* elf32-ppc.c (has_pltcall): Define.
+	(struct ppc_elf_link_hash_table): Add can_convert_all_inline_plt.
+	(ppc_elf_check_relocs): Set has_pltcall.
+	(ppc_elf_inline_plt): New function.
+	(ppc_elf_adjust_dynamic_symbol): Discard some PLT entries.
+	(ppc_elf_size_dynamic_sections): Likewise.
+	* elf32-ppc.h (ppc_elf_inline_plt): Declare.
+
+2018-04-09  Alan Modra  <amodra@gmail.com>
+
+	* elf32-ppc.c (ppc_elf_howto_raw): Add PLTSEQ and PLTCALL howtos.
+	(is_plt_seq_reloc): New function.
+	(ppc_elf_check_relocs): Handle PLTSEQ and PLTCALL relocs.
+	(ppc_elf_tls_optimize): Handle inline plt call sequence.
+	(ppc_elf_relax_section): Handle PLTCALL reloc.
+	(ppc_elf_relocate_section): Nop out inline plt call sequence when
+	resolving locally.
+	* elf64-ppc.c (ppc64_elf_howto_raw): Add R_PPC64_PLTSEQ and
+	R_PPC64_PLTCALL entries.  Comment R_PPC64_TOCSAVE.
+	(has_tls_get_addr_call): Correct comment.
+	(is_branch_reloc): Add PLTCALL.
+	(is_plt_seq_reloc): New function.
+	(ppc64_elf_check_relocs): Handle PLT16_LO_DS reloc.  Set
+	has_tls_reloc for R_PPC64_TLSGD and R_PPC64_TLSLD.  Create plt
+	entry for R_PPC64_PLTCALL.
+	(ppc64_elf_tls_optimize): Handle inline plt call sequence.
+	(ppc_type_of_stub): Handle PLTCALL reloc.
+	(toc_adjusting_stub_needed): Likewise.
+	(ppc64_elf_relocate_section): Set "can_plt_call" for PLTCALL
+	reloc insn.  Nop out inline plt call sequence when resolving
+	locally.  Handle __tls_get_addr inline plt call optimization.
+
+2018-04-09  Alan Modra  <amodra@gmail.com>
+
+	* elf64-ppc.c (LOCAL_PLT_ENTRY_SIZE): Define.
+	(struct ppc_stub_hash_entry): Add symtype field.
+	(PLT_KEEP): Define.
+	(struct ppc_link_hash_table): Add pltlocal and relpltlocal.
+	(create_linkage_sections): Create pltlocal and relpltlocal.
+	(ppc64_elf_check_relocs): Allow PLT relocs on local symbols.
+	Set PLT_KEEP.
+	(ppc64_elf_adjust_dynamic_symbol): Keep PLT entries for inline calls.
+	(allocate_dynrelocs): Allocate pltlocal and relpltlocal.
+	(ppc64_elf_size_dynamic_sections): Size pltlocal and relpltlocal.
+	Keep PLT entries for inline calls against locals.
+	(ppc_build_one_stub): Use pltlocal as appropriate.
+	(ppc_size_one_stub): Likewise.
+	(ppc64_elf_size_stubs): Set symtype.
+	(build_global_entry_stubs_and_plt): Init pltlocal and write
+	relpltlocal for globals.
+	(write_plt_relocs_for_local_syms): Likewise for local syms.
+	(ppc64_elf_relocate_section): Support PLT for local syms.
+	* elf32-ppc.c (PLT_KEEP): Define.
+	(struct ppc_elf_link_hash_table): Add pltlocal and relpltlocal.
+	(ppc_elf_create_glink): Create pltlocal and relpltlocal.
+	(ppc_elf_check_relocs): Allow PLT relocs on local symbols.
+	Set PLT_KEEP.  Adjust update_local_sym_info call.
+	(ppc_elf_adjust_dynamic_symbol): Keep PLT entries for inline calls.
+	(allocate_dynrelocs): Allocate pltlocal and relpltlocal.
+	(ppc_elf_size_dynamic_sections): Size pltlocal and relpltlocal.
+	(ppc_elf_relocate_section): Support PLT16 relocs for local syms.
+	(write_global_sym_plt): Init pltlocal and write relpltlocal.
+	(ppc_finish_symbols): Likewise for locals.
+
+2018-04-09  Alan Modra  <amodra@gmail.com>
+
+	* elf64-ppc.c (ppc_build_one_stub): Move output of PLT relocs
+	for local symbols to..
+	(write_plt_relocs_for_local_syms): ..here.  New function.
+	(ppc64_elf_finish_dynamic_symbol): Move output of PLT relocs for
+	global symbols to..
+	(build_global_entry_stubs_and_plt): ..here.  Rename from
+	build_global_entry_stubs.
+	(ppc64_elf_build_stubs): Always call build_global_entry_stubs_and_plt.
+	Call write_plt_relocs_for_local_syms.
+	* elf32-ppc.c (get_sym_h): New function.
+	(ppc_elf_relax_section): Use get_sym_h.
+	(ppc_elf_relocate_section): Move output of PLT relocs and glink
+	stubs for local symbols to..
+	(ppc_finish_symbols): ..here.  New function.
+	(ppc_elf_finish_dynamic_symbol): Move output of PLT relocs for
+	global syms to..
+	(write_global_sym_plt): ..here.  New function.
+	* elf32-ppc.h (ppc_elf_modify_segment_map): Delete attribute.
+	(ppc_finish_symbols): Declare.
+
+2018-04-09  Alan Modra  <amodra@gmail.com>
+
+	* elf32-ppc.c (ppc_elf_check_relocs): Handle PLT16 relocs.
+	(ppc_elf_relocate_section): Likewise.
+	* elf64-ppc.c (ppc64_elf_check_relocs): Handle PLT16_LO_DS.
+	(ppc64_elf_relocate_section): Likewise.  Correct PLT16
+	resolution to plt entry relative to toc pointer.
+
+2018-04-09  Alan Modra  <amodra@gmail.com>
+
+	* elf64-ppc.c (TLS_TLS, TLS_GD, TLS_LD, TLS_TPREL, TLS_DTPREL,
+	TLS_TPRELGD, TLS_EXPLICIT):  Renumber.  Test TLS_TLS throughout
+	file when other TLS flags are tested in a mask.
+	(TLS_MARK, NON_GOT): Define.
+	(PLT_IFUNC): Redefine, and test TLS_TLS throughout file as well.
+	(update_local_sym_info): Don't create got entry when NON_GOT.
+	(ppc64_elf_check_relocs): Pass NON_GOT with PLT_IFUNC.
+	Set TLS_MARK.
+	(get_tls_mask): Do toc lookup if tls_mask is just TLS_MARK.
+	(ppc64_elf_relocate_section): Likewise.
+	(ppc64_elf_tls_optimize): Don't attempt to optimize indirect
+	__tls_get_addr calls lacking a marker reloc.
+	* elf32-ppc.c (TLS_TLS, TLS_GD, TLS_LD, TLS_TPREL, TLS_DTPREL,
+	TLS_TPRELGD): Renumber.  Update comment.
+	(TLS_MARK, NON_GOT): Define.
+	(PLT_IFUNC): Redefine, and test TLS_TLS throughout file as well.
+	(update_local_sym_info): Don't create got entry when NON_GOT.
+	(ppc_elf_check_relocs): Pass NON_GOT with PLT_IFUNC.
+	Set TLS_MARK.
+	(ppc_elf_tls_optimize): Don't attempt to optimize indirect
+	__tls_get_addr calls lacking a marker reloc.
+
+2018-04-06  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* elf64-x86-64.c (elf_x86_64_info_to_howto): Don't mask out
+	R_X86_64_converted_reloc_bit.
+
 2018-04-05  H.J. Lu  <hongjiu.lu@intel.com>
 
 	PR gas/22318
