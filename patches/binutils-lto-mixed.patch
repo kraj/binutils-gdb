@@ -1,4 +1,4 @@
-From d9c7a57c70ea99931d41c71922cd041a6893d143 Mon Sep 17 00:00:00 2001
+From 8bffc6fed95847442f24c5715d3117d6c4e39841 Mon Sep 17 00:00:00 2001
 From: "H.J. Lu" <hjl.tools@gmail.com>
 Date: Mon, 4 Nov 2013 09:17:45 -0800
 Subject: [PATCH 1/3] Add lto and none-lto input support for ld -r
@@ -365,7 +365,7 @@ ld/testsuite/
  create mode 100644 ld/testsuite/ld-plugin/lto-4r-d.d
 
 diff --git a/bfd/bfd-in2.h b/bfd/bfd-in2.h
-index 9742c1ac7f..6b7b8dd31f 100644
+index 3f5d38bedf..62d8258685 100644
 --- a/bfd/bfd-in2.h
 +++ b/bfd/bfd-in2.h
 @@ -1142,6 +1142,9 @@ bfd_boolean bfd_fill_in_gnu_debuglink_section
@@ -388,7 +388,7 @@ index 9742c1ac7f..6b7b8dd31f 100644
  /* Pointer to the common section.  */
  #define bfd_com_section_ptr (&_bfd_std_section[0])
  /* Pointer to the undefined section.  */
-@@ -6779,6 +6785,14 @@ struct bfd_build_id
+@@ -6756,6 +6762,14 @@ struct bfd_build_id
      bfd_byte data[1];
    };
  
@@ -403,7 +403,7 @@ index 9742c1ac7f..6b7b8dd31f 100644
  struct bfd
  {
    /* The filename the application opened the BFD with.  */
-@@ -6957,6 +6971,9 @@ struct bfd
+@@ -6934,6 +6948,9 @@ struct bfd
    /* Set if this is a plugin output file.  */
    unsigned int lto_output : 1;
  
@@ -413,7 +413,7 @@ index 9742c1ac7f..6b7b8dd31f 100644
    /* Set to dummy BFD created when claimed by a compiler plug-in
       library.  */
    bfd *plugin_dummy_bfd;
-@@ -6982,6 +6999,9 @@ struct bfd
+@@ -6959,6 +6976,9 @@ struct bfd
    /* The last section on the section list.  */
    struct bfd_section *section_last;
  
@@ -423,7 +423,7 @@ index 9742c1ac7f..6b7b8dd31f 100644
    /* The number of sections.  */
    unsigned int section_count;
  
-@@ -7297,6 +7317,8 @@ bfd_boolean bfd_convert_section_contents
+@@ -7273,6 +7293,8 @@ bfd_boolean bfd_convert_section_contents
     (bfd *ibfd, asection *isec, bfd *obfd,
      bfd_byte **ptr, bfd_size_type *ptr_size);
  
@@ -433,7 +433,7 @@ index 9742c1ac7f..6b7b8dd31f 100644
  symindex bfd_get_next_mapent
     (bfd *abfd, symindex previous, carsym **sym);
 diff --git a/bfd/bfd.c b/bfd/bfd.c
-index 288b5b14fe..0bc8354306 100644
+index a1b6bf10b2..6873e29528 100644
 --- a/bfd/bfd.c
 +++ b/bfd/bfd.c
 @@ -57,6 +57,14 @@ CODE_FRAGMENT
@@ -471,7 +471,7 @@ index 288b5b14fe..0bc8354306 100644
  .  {* The number of sections.  *}
  .  unsigned int section_count;
  .
-@@ -2593,3 +2607,42 @@ bfd_convert_section_contents (bfd *ibfd, sec_ptr isec, bfd *obfd,
+@@ -2592,3 +2606,42 @@ bfd_convert_section_contents (bfd *ibfd, sec_ptr isec, bfd *obfd,
    *ptr_size = size;
    return TRUE;
  }
@@ -971,10 +971,10 @@ index d0a152c0f6..8e08a6510e 100644
        if (gsym != NULL)
  	{
 diff --git a/binutils/readelf.c b/binutils/readelf.c
-index b85db9f97c..26a4eebedf 100644
+index 166dd23383..9f10634588 100644
 --- a/binutils/readelf.c
 +++ b/binutils/readelf.c
-@@ -4175,6 +4175,7 @@ get_section_type_name (Filedata * filedata, unsigned int sh_type)
+@@ -4161,6 +4161,7 @@ get_section_type_name (Filedata * filedata, unsigned int sh_type)
      case 0x7ffffffd:		return "AUXILIARY";
      case 0x7fffffff:		return "FILTER";
      case SHT_GNU_LIBLIST:	return "GNU_LIBLIST";
@@ -1020,7 +1020,7 @@ index 5d637acbab..fe10091e69 100644
    unsigned int allow_undefined_version: 1;
  
 diff --git a/include/elf/common.h b/include/elf/common.h
-index 61a1ca7c1e..e5045d8448 100644
+index f4354721bf..77e391e707 100644
 --- a/include/elf/common.h
 +++ b/include/elf/common.h
 @@ -502,6 +502,7 @@
@@ -1221,23 +1221,23 @@ index 9b8971eac4..8160456aa4 100644
    ${LDEMUL_OPEN_DYNAMIC_ARCHIVE-gld${EMULATION_NAME}_open_dynamic_archive},
    ${LDEMUL_PLACE_ORPHAN-gld${EMULATION_NAME}_place_orphan},
 diff --git a/ld/emultempl/ppc32elf.em b/ld/emultempl/ppc32elf.em
-index 3c335b7412..c8e2ac5f27 100644
+index 439f89131d..662adbc9a4 100644
 --- a/ld/emultempl/ppc32elf.em
 +++ b/ld/emultempl/ppc32elf.em
-@@ -212,7 +212,7 @@ ppc_finish (void)
- {
-   if (params.ppc476_workaround)
+@@ -233,7 +233,7 @@ ppc_finish (void)
      lang_for_each_statement (no_zero_padding);
+   if (!ppc_finish_symbols (&link_info))
+     einfo (_("%X%P: ppc_finish_symbols problem %E\n"));
 -  finish_default ();
 +  gld${EMULATION_NAME}_finish ();
  }
  
  EOF
 diff --git a/ld/emultempl/ppc64elf.em b/ld/emultempl/ppc64elf.em
-index 62c298ccf3..e32c5455ed 100644
+index 60bc8bdffa..69b54df32d 100644
 --- a/ld/emultempl/ppc64elf.em
 +++ b/ld/emultempl/ppc64elf.em
-@@ -563,7 +563,7 @@ gld${EMULATION_NAME}_after_allocation (void)
+@@ -575,7 +575,7 @@ gld${EMULATION_NAME}_after_allocation (void)
  /* Final emulation specific call.  */
  
  static void
@@ -1246,7 +1246,7 @@ index 62c298ccf3..e32c5455ed 100644
  {
    char *msg = NULL;
    char *line, *endline;
-@@ -594,7 +594,7 @@ gld${EMULATION_NAME}_finish (void)
+@@ -606,7 +606,7 @@ gld${EMULATION_NAME}_finish (void)
    if (msg != NULL)
      free (msg);
  
@@ -1255,7 +1255,7 @@ index 62c298ccf3..e32c5455ed 100644
  }
  
  
-@@ -949,4 +949,4 @@ LDEMUL_CREATE_OUTPUT_SECTION_STATEMENTS=ppc_create_output_section_statements
+@@ -970,4 +970,4 @@ LDEMUL_CREATE_OUTPUT_SECTION_STATEMENTS=ppc_create_output_section_statements
  LDEMUL_AFTER_OPEN=ppc_after_open
  LDEMUL_BEFORE_ALLOCATION=ppc_before_allocation
  LDEMUL_AFTER_ALLOCATION=gld${EMULATION_NAME}_after_allocation
@@ -2993,7 +2993,7 @@ index 0000000000..d4c58526cc
 +.* .gnu_object_only.*
 +#pass
 diff --git a/ld/testsuite/ld-plugin/lto.exp b/ld/testsuite/ld-plugin/lto.exp
-index 7300f481f3..f3dce9b773 100644
+index 19aec3f7f2..b27e8586e0 100644
 --- a/ld/testsuite/ld-plugin/lto.exp
 +++ b/ld/testsuite/ld-plugin/lto.exp
 @@ -88,6 +88,15 @@ set lto_link_tests [list \
