@@ -48,10 +48,6 @@
 #endif
 #endif
 
-#ifdef TC_SPARC
-#include "coff/sparc.h"
-#endif
-
 #ifdef TC_I386
 #ifdef TE_PEP
 #include "coff/x86_64.h"
@@ -83,16 +79,6 @@
 #ifdef TC_Z8K
 #include "coff/z8k.h"
 #define TARGET_FORMAT "coff-z8k"
-#endif
-
-#ifdef TC_H8300
-#include "coff/h8300.h"
-#define TARGET_FORMAT "coff-h8300"
-#endif
-
-#ifdef TC_H8500
-#include "coff/h8500.h"
-#define TARGET_FORMAT "coff-h8500"
 #endif
 
 #ifdef TC_SH

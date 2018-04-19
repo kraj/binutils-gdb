@@ -12223,14 +12223,6 @@ _ACEOF
 
     generic_target=${cpu_type}-${target_vendor}-${target_os}
     case ${generic_target} in
-      i386-*-sco3.2v5*)
-	if test ${this_target} = $target; then
-
-$as_echo "#define SCO_ELF 1" >>confdefs.h
-
-	fi
-	;;
-
       i386-*-msdosdjgpp* \
       | i386-*-go32* \
       | i386-go32-rtems*)
@@ -12267,12 +12259,6 @@ $as_echo "#define TARGET_SOLARIS_COMMENT 1" >>confdefs.h
 	if test x${endian} = xbig; then
 	  as_fn_error "Solaris must be configured little endian" "$LINENO" 5
 	fi
-	;;
-
-      sh*-*-symbianelf*)
-
-$as_echo "#define TARGET_SYMBIAN 1" >>confdefs.h
-
 	;;
     esac
 
@@ -12768,12 +12754,6 @@ case ${obj_format} in
     case ${target_cpu_type} in
       i386)
 $as_echo "#define I386COFF 1" >>confdefs.h
- ;;
-      m68k)
-$as_echo "#define M68KCOFF 1" >>confdefs.h
- ;;
-      m88k)
-$as_echo "#define M88KCOFF 1" >>confdefs.h
  ;;
       x86_64)
 $as_echo "#define I386COFF 1" >>confdefs.h

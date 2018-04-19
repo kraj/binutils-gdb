@@ -729,7 +729,6 @@ ALL_TARGET_OBS = \
 	m68k-bsd-tdep.o \
 	m68k-linux-tdep.o \
 	m68k-tdep.o \
-	m88k-tdep.o \
 	mep-tdep.o \
 	microblaze-linux-tdep.o \
 	microblaze-tdep.o \
@@ -768,7 +767,6 @@ ALL_TARGET_OBS = \
 	sh-linux-tdep.o \
 	sh-nbsd-tdep.o \
 	sh-tdep.o \
-	sh64-tdep.o \
 	sol2-tdep.o \
 	solib-aix.o \
 	solib-darwin.o \
@@ -793,6 +791,7 @@ ALL_TARGET_OBS = \
 	vax-nbsd-tdep.o \
 	vax-tdep.o \
 	windows-tdep.o \
+	x86-tdep.o \
 	xcoffread.o \
 	xstormy16-tdep.o \
 	xtensa-config.o \
@@ -969,6 +968,7 @@ COMMON_SFILES = \
 	common/run-time-clock.c \
 	common/signals.c \
 	common/signals-state-save-restore.c \
+	common/tdesc.c \
 	common/vec.c \
 	common/xml-utils.c \
 	complaints.c \
@@ -1290,7 +1290,6 @@ HFILES_NO_SRCDIR = \
 	m2-lang.h \
 	m32r-tdep.h \
 	m68k-tdep.h \
-	m88k-tdep.h \
 	macroexp.h \
 	macroscope.h \
 	macrotab.h \
@@ -1356,7 +1355,6 @@ HFILES_NO_SRCDIR = \
 	ser-unix.h \
 	serial.h \
 	sh-tdep.h \
-	sh64-tdep.h \
 	sim-regno.h \
 	skip.h \
 	sol2-tdep.h \
@@ -1450,6 +1448,7 @@ HFILES_NO_SRCDIR = \
 	common/run-time-clock.h \
 	common/signals-state-save-restore.h \
 	common/symbol.h \
+	common/tdesc.h \
 	common/vec.h \
 	common/version.h \
 	common/x86-xstate.h \
@@ -1521,7 +1520,8 @@ HFILES_NO_SRCDIR = \
 	tui/tui-win.h \
 	tui/tui-windata.h \
 	tui/tui-wingeneral.h \
-	tui/tui-winsource.h
+	tui/tui-winsource.h \
+	x86-tdep.h
 
 # Header files that already have srcdir in them, or which are in objdir.
 
@@ -2269,8 +2269,6 @@ ALLDEPFILES = \
 	m68k-linux-nat.c \
 	m68k-linux-tdep.c \
 	m68k-tdep.c \
-	m88k-bsd-nat.c \
-	m88k-tdep.c \
 	microblaze-linux-tdep.c \
 	microblaze-tdep.c \
 	mingw-hdep.c \
@@ -2324,7 +2322,6 @@ ALLDEPFILES = \
 	sh-nbsd-nat.c \
 	sh-nbsd-tdep.c \
 	sh-tdep.c \
-	sh64-tdep.c \
 	sol2-tdep.c \
 	solib-aix.c \
 	solib-spu.c \
@@ -2363,6 +2360,7 @@ ALLDEPFILES = \
 	windows-nat.c \
 	windows-tdep.c \
 	x86-nat.c \
+	x86-tdep.c \
 	xcoffread.c \
 	xstormy16-tdep.c \
 	xtensa-config.c \

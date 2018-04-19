@@ -190,12 +190,6 @@ for this_target in $target $canon_targets ; do
 
     generic_target=${cpu_type}-${target_vendor}-${target_os}
     case ${generic_target} in
-      i386-*-sco3.2v5*)
-	if test ${this_target} = $target; then
-	  AC_DEFINE(SCO_ELF, 1, [Define if defaulting to ELF on SCO 5.])
-	fi
-	;;
-
       i386-*-msdosdjgpp* \
       | i386-*-go32* \
       | i386-go32-rtems*)
@@ -230,10 +224,6 @@ changequote([,])dnl
 	if test x${endian} = xbig; then
 	  AC_MSG_ERROR(Solaris must be configured little endian)
 	fi
-	;;
-
-      sh*-*-symbianelf*)
-	AC_DEFINE(TARGET_SYMBIAN, 1, [Define if target is Symbian OS.])
 	;;
     esac
 
@@ -688,8 +678,6 @@ case ${obj_format} in
   coff)
     case ${target_cpu_type} in
       i386) AC_DEFINE(I386COFF, 1, [Using i386 COFF?]) ;;
-      m68k) AC_DEFINE(M68KCOFF, 1, [Using m68k COFF?]) ;;
-      m88k) AC_DEFINE(M88KCOFF, 1, [Using m88k COFF?]) ;;
       x86_64) AC_DEFINE(I386COFF, 1, [Using i386 COFF?]) ;;
     esac
     ;;

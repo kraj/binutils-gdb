@@ -228,8 +228,6 @@ AC_CHECK_HEADER(iconv.h)
 AM_ICONV
 
 all_targets=false
-BUILD_NLMCONV=
-NLMCONV_DEFS=
 BUILD_SRCONV=
 BUILD_DLLTOOL=
 DLLTOOL_DEFS=
@@ -248,9 +246,7 @@ for targ in $target $canon_targets
 do
     if test "x$targ" = "xall"; then
         all_targets=true
-	BUILD_NLMCONV='$(NLMCONV_PROG)$(EXEEXT)'
 	BUILD_SRCONV='$(SRCONV_PROG)'
-	NLMCONV_DEFS="-DNLMCONV_I386 -DNLMCONV_ALPHA -DNLMCONV_POWERPC -DNLMCONV_SPARC"
 	BUILD_MISC="${BUILD_MISC} "'bin2c$(EXEEXT_FOR_BUILD)'
 	BUILD_WINDRES='$(WINDRES_PROG)$(EXEEXT)'
 	BUILD_WINDMC='$(WINDMC_PROG)$(EXEEXT)'
@@ -263,40 +259,10 @@ do
 	od_vectors="$od_vectors objdump_private_desc_xcoff"
     else
 	case $targ in
-changequote(,)dnl
-	i[3-7]86*-*-netware*)
-changequote([,])dnl
-	  BUILD_NLMCONV='$(NLMCONV_PROG)$(EXEEXT)'
-	  NLMCONV_DEFS="$NLMCONV_DEFS -DNLMCONV_I386"
-	  ;;
-	alpha*-*-netware*)
-	  BUILD_NLMCONV='$(NLMCONV_PROG)$(EXEEXT)'
-	  NLMCONV_DEFS="$NLMCONV_DEFS -DNLMCONV_ALPHA"
-	  ;;
-	powerpc*-*-netware*)
-	  BUILD_NLMCONV='$(NLMCONV_PROG)$(EXEEXT)'
-	  NLMCONV_DEFS="$NLMCONV_DEFS -DNLMCONV_POWERPC"
-	  ;;
-	sparc*-*-netware*)
-	  BUILD_NLMCONV='$(NLMCONV_PROG)$(EXEEXT)'
-	  NLMCONV_DEFS="$NLMCONV_DEFS -DNLMCONV_SPARC"
-	  ;;
-	esac
-
-	case $targ in
 	*-*-hms*) BUILD_SRCONV='$(SRCONV_PROG)' ;;
 	esac
 
 	case $targ in
-	arm-epoc-pe*)
-  	  BUILD_DLLTOOL='$(DLLTOOL_PROG)$(EXEEXT)'
-	  if test -z "$DLLTOOL_DEFAULT"; then
-	    DLLTOOL_DEFAULT="-DDLLTOOL_DEFAULT_ARM_EPOC"
-	  fi
-	  DLLTOOL_DEFS="$DLLTOOL_DEFS -DDLLTOOL_ARM_EPOC -DDLLTOOL_ARM"
-	  BUILD_WINDRES='$(WINDRES_PROG)$(EXEEXT)'
-	  BUILD_WINDMC='$(WINDMC_PROG)$(EXEEXT)'
-	  ;;
 	arm-wince-pe* | arm-*-wince | arm*-*-cegcc* | arm*-*-mingw32ce*)
   	  BUILD_DLLTOOL='$(DLLTOOL_PROG)$(EXEEXT)'
 	  if test -z "$DLLTOOL_DEFAULT"; then
@@ -473,8 +439,6 @@ fi
 
 OBJDUMP_DEFS="${OBJDUMP_DEFS} -DOBJDUMP_PRIVATE_VECTORS=\"${OBJDUMP_PRIVATE_VECTORS}\""
 
-AC_SUBST(NLMCONV_DEFS)
-AC_SUBST(BUILD_NLMCONV)
 AC_SUBST(BUILD_SRCONV)
 AC_SUBST(BUILD_DLLTOOL)
 AC_SUBST(DLLTOOL_DEFS)

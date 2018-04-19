@@ -118,6 +118,7 @@ xmltarget=x
 xmlarch=x
 xmlosabi=x
 expedite=x
+feature=x
 exec < $1
 while do_read
 do
@@ -131,7 +132,7 @@ do
     echo "{"
     echo "  static struct target_desc tdesc_${name}_s;"
     echo "  struct target_desc *result = &tdesc_${name}_s;"
-
+    echo "  struct tdesc_feature *feature = tdesc_create_feature (result, \"${name}\");"
     continue
   elif test "${type}" = "xmltarget"; then
     xmltarget="${entry}"
@@ -145,11 +146,14 @@ do
   elif test "${type}" = "expedite"; then
     expedite="${entry}"
     continue
+  elif test "${type}" = "feature"; then
+    feature="${entry}"
+    continue
   elif test "${name}" = x; then
     echo "$0: $1 does not specify \`\`name''." 1>&2
     exit 1
   else
-    echo "  tdesc_create_reg ((struct tdesc_feature *) result, \"${entry}\","
+    echo "  tdesc_create_reg (feature, \"${entry}\","
     echo "  0, 0, NULL, ${type}, NULL);"
 
     offset=`expr ${offset} + ${type}`
@@ -159,7 +163,9 @@ done
 
 echo
 echo "static const char *expedite_regs_${name}[] = { \"`echo ${expedite} | sed 's/,/", "/g'`\", 0 };"
-if test "${xmltarget}" = x; then
+if test "${feature}" != x; then
+  echo "static const char *xmltarget_${name} = 0;"
+elif test "${xmltarget}" = x; then
   if test "${xmlarch}" = x && test "${xmlosabi}" = x; then
     echo "static const char *xmltarget_${name} = 0;"
   else

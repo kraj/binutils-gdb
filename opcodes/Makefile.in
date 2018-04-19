@@ -364,7 +364,6 @@ HFILES = \
 	epiphany-desc.h epiphany-opc.h \
 	fr30-desc.h fr30-opc.h \
 	frv-desc.h frv-opc.h \
-	h8500-opc.h \
 	i386-init.h \
 	i386-opc.h \
 	i386-tbl.h \
@@ -382,9 +381,7 @@ HFILES = \
 	mt-desc.h mt-opc.h \
 	score-opc.h \
 	sh-opc.h \
-	sh64-opc.h \
 	sysdep.h \
-	w65-opc.h \
 	xc16x-desc.h xc16x-opc.h \
 	xstormy16-desc.h xstormy16-opc.h \
 	z8k-opc.h
@@ -440,10 +437,7 @@ TARGET_LIBOPCODES_CFILES = \
 	ft32-dis.c \
 	ft32-opc.c \
 	h8300-dis.c \
-	h8500-dis.c \
 	hppa-dis.c \
-	i370-dis.c \
-	i370-opc.c \
 	i386-dis.c \
 	i386-opc.c \
 	ia64-dis.c \
@@ -483,7 +477,6 @@ TARGET_LIBOPCODES_CFILES = \
 	m68hc11-opc.c \
 	m68k-dis.c \
 	m68k-opc.c \
-	m88k-dis.c \
 	mcore-dis.c \
 	mep-asm.c \
 	mep-desc.c \
@@ -536,8 +529,6 @@ TARGET_LIBOPCODES_CFILES = \
 	score-dis.c \
 	score7-dis.c \
 	sh-dis.c \
-	sh64-dis.c \
-	sh64-opc.c \
 	sparc-dis.c \
 	sparc-opc.c \
 	spu-dis.c \
@@ -558,7 +549,6 @@ TARGET_LIBOPCODES_CFILES = \
 	vax-dis.c \
 	visium-dis.c \
 	visium-opc.c \
-	w65-dis.c \
 	wasm32-dis.c \
 	xc16x-asm.c \
 	xc16x-desc.c \
@@ -847,10 +837,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ft32-dis.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ft32-opc.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/h8300-dis.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/h8500-dis.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hppa-dis.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/i370-dis.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/i370-opc.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/i386-dis.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/i386-opc.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ia64-dis.Plo@am__quote@
@@ -890,7 +877,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/m68hc11-opc.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/m68k-dis.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/m68k-opc.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/m88k-dis.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mcore-dis.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mep-asm.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mep-desc.Plo@am__quote@
@@ -943,8 +929,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/score-dis.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/score7-dis.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sh-dis.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sh64-dis.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sh64-opc.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sparc-dis.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sparc-opc.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spu-dis.Plo@am__quote@
@@ -965,7 +949,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vax-dis.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/visium-dis.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/visium-opc.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/w65-dis.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wasm32-dis.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xc16x-asm.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xc16x-desc.Plo@am__quote@

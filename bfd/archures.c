@@ -217,12 +217,8 @@ DESCRIPTION
 .#define bfd_mach_iamcu			(1 << 8)
 .#define bfd_mach_i386_iamcu		(bfd_mach_i386_i386 | bfd_mach_iamcu)
 .#define bfd_mach_i386_iamcu_intel_syntax (bfd_mach_i386_iamcu | bfd_mach_i386_intel_syntax)
-.  bfd_arch_we32k,     {* AT&T WE32xxx.  *}
-.  bfd_arch_tahoe,     {* CCI/Harris Tahoe.  *}
-.  bfd_arch_i370,      {* IBM 360/370 Mainframes.  *}
 .  bfd_arch_romp,      {* IBM ROMP PC/RT.  *}
 .  bfd_arch_convex,    {* Convex.  *}
-.  bfd_arch_m88k,      {* Motorola 88xxx.  *}
 .  bfd_arch_m98k,      {* Motorola 98xxx.  *}
 .  bfd_arch_pyramid,   {* Pyramid Technology.  *}
 .  bfd_arch_h8300,     {* Renesas H8/300 (formerly Hitachi H8/300).  *}
@@ -288,7 +284,6 @@ DESCRIPTION
 .  bfd_arch_z8k,       {* Zilog Z8000.  *}
 .#define bfd_mach_z8001		1
 .#define bfd_mach_z8002		2
-.  bfd_arch_h8500,     {* Renesas H8/500 (formerly Hitachi H8/500).  *}
 .  bfd_arch_sh,	       {* Renesas / SuperH SH (formerly Hitachi SH).  *}
 .#define bfd_mach_sh				1
 .#define bfd_mach_sh2				0x20
@@ -310,7 +305,6 @@ DESCRIPTION
 .#define bfd_mach_sh4a				0x4a
 .#define bfd_mach_sh4a_nofpu			0x4b
 .#define bfd_mach_sh4al_dsp			0x4d
-.#define bfd_mach_sh5				0x50
 .  bfd_arch_alpha,     {* Dec Alpha.  *}
 .#define bfd_mach_alpha_ev4	0x10
 .#define bfd_mach_alpha_ev5	0x20
@@ -337,7 +331,6 @@ DESCRIPTION
 .#define bfd_mach_n1h_v3	4
 .#define bfd_mach_n1h_v3m	5
 .  bfd_arch_ns32k,     {* National Semiconductors ns32000.  *}
-.  bfd_arch_w65,       {* WDC 65816.  *}
 .  bfd_arch_tic30,     {* Texas Instruments TMS320C30.  *}
 .  bfd_arch_tic4x,     {* Texas Instruments TMS320C3X/4X.  *}
 .#define bfd_mach_tic3x		30
@@ -579,9 +572,7 @@ extern const bfd_arch_info_type bfd_epiphany_arch;
 extern const bfd_arch_info_type bfd_fr30_arch;
 extern const bfd_arch_info_type bfd_frv_arch;
 extern const bfd_arch_info_type bfd_h8300_arch;
-extern const bfd_arch_info_type bfd_h8500_arch;
 extern const bfd_arch_info_type bfd_hppa_arch;
-extern const bfd_arch_info_type bfd_i370_arch;
 extern const bfd_arch_info_type bfd_i386_arch;
 extern const bfd_arch_info_type bfd_iamcu_arch;
 extern const bfd_arch_info_type bfd_ia64_arch;
@@ -597,7 +588,6 @@ extern const bfd_arch_info_type bfd_m68hc12_arch;
 extern const bfd_arch_info_type bfd_m9s12x_arch;
 extern const bfd_arch_info_type bfd_m9s12xg_arch;
 extern const bfd_arch_info_type bfd_m68k_arch;
-extern const bfd_arch_info_type bfd_m88k_arch;
 extern const bfd_arch_info_type bfd_mcore_arch;
 extern const bfd_arch_info_type bfd_mep_arch;
 extern const bfd_arch_info_type bfd_metag_arch;
@@ -641,8 +631,6 @@ extern const bfd_arch_info_type bfd_v850_rh850_arch;
 extern const bfd_arch_info_type bfd_vax_arch;
 extern const bfd_arch_info_type bfd_visium_arch;
 extern const bfd_arch_info_type bfd_wasm32_arch;
-extern const bfd_arch_info_type bfd_w65_arch;
-extern const bfd_arch_info_type bfd_we32k_arch;
 extern const bfd_arch_info_type bfd_xstormy16_arch;
 extern const bfd_arch_info_type bfd_xtensa_arch;
 extern const bfd_arch_info_type bfd_xc16x_arch;
@@ -672,9 +660,7 @@ static const bfd_arch_info_type * const bfd_archures_list[] =
     &bfd_fr30_arch,
     &bfd_frv_arch,
     &bfd_h8300_arch,
-    &bfd_h8500_arch,
     &bfd_hppa_arch,
-    &bfd_i370_arch,
     &bfd_i386_arch,
     &bfd_iamcu_arch,
     &bfd_ia64_arch,
@@ -690,7 +676,6 @@ static const bfd_arch_info_type * const bfd_archures_list[] =
     &bfd_m9s12x_arch,
     &bfd_m9s12xg_arch,
     &bfd_m68k_arch,
-    &bfd_m88k_arch,
     &bfd_mcore_arch,
     &bfd_mep_arch,
     &bfd_metag_arch,
@@ -730,9 +715,7 @@ static const bfd_arch_info_type * const bfd_archures_list[] =
     &bfd_v850_rh850_arch,
     &bfd_vax_arch,
     &bfd_visium_arch,
-    &bfd_w65_arch,
     &bfd_wasm32_arch,
-    &bfd_we32k_arch,
     &bfd_xstormy16_arch,
     &bfd_xtensa_arch,
     &bfd_xc16x_arch,
@@ -1169,19 +1152,6 @@ bfd_default_scan (const bfd_arch_info_type *info, const char *string)
 
   switch (number)
     {
-      /* FIXME: These are needed to parse IEEE objects.  */
-      /* The following seven case's are here only for compatibility with
-	 older binutils (at least IEEE objects from binutils 2.9.1 require
-	 them).  */
-    case bfd_mach_m68000:
-    case bfd_mach_m68010:
-    case bfd_mach_m68020:
-    case bfd_mach_m68030:
-    case bfd_mach_m68040:
-    case bfd_mach_m68060:
-    case bfd_mach_cpu32:
-      arch = bfd_arch_m68k;
-      break;
     case 68000:
       arch = bfd_arch_m68k;
       number = bfd_mach_m68000;
@@ -1229,10 +1199,6 @@ bfd_default_scan (const bfd_arch_info_type *info, const char *string)
     case 5282:
       arch = bfd_arch_m68k;
       number = bfd_mach_mcf_isa_aplus_emac;
-      break;
-
-    case 32000:
-      arch = bfd_arch_we32k;
       break;
 
     case 3000:

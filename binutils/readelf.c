@@ -109,6 +109,8 @@
 #include "elf/hppa.h"
 #include "elf/i386.h"
 #include "elf/i370.h"
+#include "elf/i860.h"
+#include "elf/i960.h"
 #include "elf/ia64.h"
 #include "elf/ip2k.h"
 #include "elf/lm32.h"
@@ -513,7 +515,8 @@ print_symbol (signed int width, const char *symbol)
       width = - width;
       extra_padding = TRUE;
     }
-  assert (width != 0);
+  else if (width == 0)
+    return 0;
 
   if (do_wide)
     /* Set the remaining width to a very large value.
@@ -763,6 +766,7 @@ guess_is_rela (unsigned int e_machine)
       /* Targets that use REL relocations.  */
     case EM_386:
     case EM_IAMCU:
+    case EM_960:
     case EM_ARM:
     case EM_D10V:
     case EM_CYGNUS_D10V:
@@ -776,6 +780,7 @@ guess_is_rela (unsigned int e_machine)
 
       /* Targets that use RELA relocations.  */
     case EM_68K:
+    case EM_860:
     case EM_AARCH64:
     case EM_ADAPTEVA_EPIPHANY:
     case EM_ALPHA:
@@ -1271,6 +1276,10 @@ dump_relocations (Filedata *          filedata,
 	  rtype = elf_m68k_reloc_type (type);
 	  break;
 
+	case EM_960:
+	  rtype = elf_i960_reloc_type (type);
+	  break;
+
 	case EM_AVR:
 	case EM_AVR_OLD:
 	  rtype = elf_avr_reloc_type (type);
@@ -1418,6 +1427,10 @@ dump_relocations (Filedata *          filedata,
 
 	case EM_CRIS:
 	  rtype = elf_cris_reloc_type (type);
+	  break;
+
+	case EM_860:
+	  rtype = elf_i860_reloc_type (type);
 	  break;
 
 	case EM_X86_64:
@@ -2252,6 +2265,7 @@ get_machine_name (unsigned e_machine)
     case EM_68K:		return "MC68000";
     case EM_88K:		return "MC88000";
     case EM_IAMCU:		return "Intel MCU";
+    case EM_860:		return "Intel 80860";
     case EM_MIPS:		return "MIPS R3000";
     case EM_S370:		return "IBM System/370";
       /* 10 */
@@ -2260,6 +2274,7 @@ get_machine_name (unsigned e_machine)
     case EM_PARISC:		return "HPPA";
     case EM_VPP550:		return "Fujitsu VPP500";
     case EM_SPARC32PLUS:	return "Sparc v8+" ;
+    case EM_960:		return "Intel 80960";
     case EM_PPC:		return "PowerPC";
       /* 20 */
     case EM_PPC64:		return "PowerPC64";
@@ -9639,7 +9654,7 @@ process_dynamic_section (Filedata * filedata)
 	  if (archive_file_offset != 0)
 	    str_tab_len = archive_file_size - offset;
 	  else
-	    str_tab_len = filedata->file_size;
+	    str_tab_len = filedata->file_size - offset;
 
 	  if (str_tab_len < 1)
 	    {
@@ -12181,6 +12196,10 @@ is_32bit_abs_reloc (Filedata * filedata, unsigned int reloc_type)
       return reloc_type == 1; /* R_386_32.  */
     case EM_68K:
       return reloc_type == 1; /* R_68K_32.  */
+    case EM_860:
+      return reloc_type == 1; /* R_860_32.  */
+    case EM_960:
+      return reloc_type == 2; /* R_960_32.  */
     case EM_AARCH64:
       return (reloc_type == 258
 	      || reloc_type == 1); /* R_AARCH64_ABS32 || R_AARCH64_P32_ABS32 */

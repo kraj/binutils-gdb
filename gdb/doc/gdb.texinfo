@@ -6952,9 +6952,72 @@ and to read-write memory.  Beware that the accessed memory corresponds
 to the live target and not necessarily to the current replay
 position.
 
+@item set record btrace cpu @var{identifier}
+Set the processor to be used for enabling workarounds for processor
+errata when decoding the trace.
+
+Processor errata are defects in processor operation, caused by its
+design or manufacture.  They can cause a trace not to match the
+specification.  This, in turn, may cause trace decode to fail.
+@value{GDBN} can detect erroneous trace packets and correct them, thus
+avoiding the decoding failures.  These corrections are known as
+@dfn{errata workarounds}, and are enabled based on the processor on
+which the trace was recorded.
+
+By default, @value{GDBN} attempts to detect the processor
+automatically, and apply the necessary workarounds for it.  However,
+you may need to specify the processor if @value{GDBN} does not yet
+support it.  This command allows you to do that, and also allows to
+disable the workarounds.
+
+The argument @var{identifier} identifies the @sc{cpu} and is of the
+form: @code{@var{vendor}:@var{procesor identifier}}.  In addition,
+there are two special identifiers, @code{none} and @code{auto}
+(default).
+
+The following vendor identifiers and corresponding processor
+identifiers are currently supported:
+
+@multitable @columnfractions .1 .9
+
+@item @code{intel}
+@tab @var{family}/@var{model}[/@var{stepping}]
+
+@end multitable
+
+On GNU/Linux systems, the processor @var{family}, @var{model}, and
+@var{stepping} can be obtained from @code{/proc/cpuinfo}.
+
+If @var{identifier} is @code{auto}, enable errata workarounds for the
+processor on which the trace was recorded.  If @var{identifier} is
+@code{none}, errata workarounds are disabled.
+
+For example, when using an old @value{GDBN} on a new system, decode
+may fail because @value{GDBN} does not support the new processor.  It
+often suffices to specify an older processor that @value{GDBN}
+supports.
+
+@smallexample
+(gdb) info record
+Active record target: record-btrace
+Recording format: Intel Processor Trace.
+Buffer size: 16kB.
+Failed to configure the Intel Processor Trace decoder: unknown cpu.
+(gdb) set record btrace cpu intel:6/158
+(gdb) info record
+Active record target: record-btrace
+Recording format: Intel Processor Trace.
+Buffer size: 16kB.
+Recorded 84872 instructions in 3189 functions (0 gaps) for thread 1 (...).
+@end smallexample
+
 @kindex show record btrace
 @item show record btrace replay-memory-access
 Show the current setting of @code{replay-memory-access}.
+
+@item show record btrace cpu
+Show the processor to be used for enabling trace decode errata
+workarounds.
 
 @kindex set record btrace bts
 @item set record btrace bts buffer-size @var{size}
@@ -17522,7 +17585,7 @@ name is @code{value}.
 
 This command differs from @code{ptype} in two ways: first, like
 @code{whatis}, it does not print a detailed description; second, it
-lists all source files where a type is defined.
+lists all source files and line numbers where a type is defined.
 
 @kindex info type-printers
 @item info type-printers
@@ -17600,24 +17663,29 @@ have already been read, and files whose symbols will be read when needed.
 @kindex info functions
 @item info functions
 Print the names and data types of all defined functions.
+Similarly to @samp{info types}, this command groups its output by source
+files and annotates each function definition with its source line
+number.
 
 @item info functions @var{regexp}
-Print the names and data types of all defined functions
-whose names contain a match for regular expression @var{regexp}.
-Thus, @samp{info fun step} finds all functions whose names
-include @code{step}; @samp{info fun ^step} finds those whose names
-start with @code{step}.  If a function name contains characters
-that conflict with the regular expression language (e.g.@:
+Like @samp{info functions}, but only print the names and data types of
+functions whose names contain a match for regular expression
+@var{regexp}.  Thus, @samp{info fun step} finds all functions whose
+names include @code{step}; @samp{info fun ^step} finds those whose names
+start with @code{step}.  If a function name contains characters that
+conflict with the regular expression language (e.g.@:
 @samp{operator*()}), they may be quoted with a backslash.
 
 @kindex info variables
 @item info variables
 Print the names and data types of all variables that are defined
 outside of functions (i.e.@: excluding local variables).
+The printed variables are grouped by source files and annotated with
+their respective source line numbers.
 
 @item info variables @var{regexp}
-Print the names and data types of all variables (except for local
-variables) whose names contain a match for regular expression
+Like @kbd{info variables}, but only print the names and data types of
+non-local variables whose names contain a match for regular expression
 @var{regexp}.
 
 @kindex info classes

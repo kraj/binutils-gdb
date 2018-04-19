@@ -77,18 +77,13 @@ proc objcopy_test {testname srcfile} {
 	# files in the first place, and may order things a little
 	# differently. Those systems should use setup_xfail here.
 
-	setup_xfail "h8300-*-coff"
-	setup_xfail "h8500-*-rtems*" "h8500-*-coff"
 	setup_xfail "hppa*-*-*"
-	setup_xfail "m68*-*-*coff" "m68*-*-hpux*" "m68*-*-lynxos*"
-	setup_xfail "m68*-*-sysv*" "m68*-apple-aux*"
 	setup_xfail "m8*-*"
 	setup_xfail "sh-*-coff*"
-	setup_xfail "tic80-*-*" "w65-*"
+	setup_xfail "tic80-*-*"
 
 	clear_xfail "hppa*64*-*-hpux*" "hppa*-*-linux*" "hppa*-*-lites*"
 	clear_xfail "hppa*-*-*n*bsd*" "hppa*-*-rtems*" "*-*-*elf*"
-	clear_xfail "m68*-*-sysv4*"
 
 	if [string equal "" $exec_output] then {
 	    pass "objcopy ($testname)"
@@ -1134,12 +1129,7 @@ if [is_elf_format] {
     if { [supports_gnu_unique] } {
 	run_dump_test "strip-10"
     }
-    set extra_strip11 ""
-    if { [istarget "sh64*-*"] } {
-	# pr17755 testcase
-	set extra_strip11 { { "as" "--isa=SHmedia --abi=64" } }
-    }
-    run_dump_test "strip-11" $extra_strip11
+    run_dump_test "strip-11"
 
     if { [istarget "i*86-*"] || [istarget "x86_64-*-*"] } {
 	# Check to make sure we don't strip a symbol named in relocations.

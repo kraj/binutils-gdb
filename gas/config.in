@@ -181,12 +181,6 @@
    */
 #undef LT_OBJDIR
 
-/* Using m68k COFF? */
-#undef M68KCOFF
-
-/* Using m88k COFF? */
-#undef M88KCOFF
-
 /* Default CPU for MIPS targets. */
 #undef MIPS_CPU_STRING_DEFAULT
 
@@ -274,9 +268,6 @@
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
 
-/* Define if defaulting to ELF on SCO 5. */
-#undef SCO_ELF
-
 /* If using the C implementation of alloca, define if you know the
    direction of stack growth for your system; otherwise it will be
    automatically deduced at runtime.
@@ -311,9 +302,6 @@
 
 /* Define if default target is PowerPC Solaris. */
 #undef TARGET_SOLARIS_COMMENT
-
-/* Define if target is Symbian OS. */
-#undef TARGET_SYMBIAN
 
 /* Target vendor. */
 #undef TARGET_VENDOR

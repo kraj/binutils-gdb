@@ -73,6 +73,8 @@ if {    ![istarget alpha*-*-*vms*]
 gas_test_error "equiv1.s" "" ".equiv for symbol already set to another one"
 gas_test_error "equiv2.s" "" ".equiv for symbol already set to an expression"
 
+gas_test_error "none.s" "-o $srcdir/$subdir/none.s" "Output file must be distinct from input"
+
 # .equ works differently on some targets.
 case $target_triplet in {
     { hppa*-*-* } { }
@@ -159,7 +161,6 @@ case $target_triplet in {
     { z80-*-* } { }
     default {
 	run_dump_test redef
-	setup_xfail "arm-epoc-pe*"
 	# These targets fail redef2 because they disallow redefined
 	# symbols on relocs.
 	setup_xfail "m68hc1*-*-*" "m6811-*-*" "m6812-*-*" "rl78-*-*"
@@ -462,9 +463,6 @@ dg-finish
 case $target_triplet in {
     { "mmix-*-*" } {
 	set nop_type 5
-    }
-    { "i370-*-*" } {
-	set nop_type 3
     }
     { "or1k*-*-*" } {
 	set nop_type 2

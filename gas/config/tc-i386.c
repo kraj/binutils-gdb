@@ -432,7 +432,6 @@ const char extra_symbol_chars[] = "*%-([{}"
 	 && !defined (TE_GNU)				\
 	 && !defined (TE_LINUX)				\
 	 && !defined (TE_NACL)				\
-	 && !defined (TE_NETWARE)			\
 	 && !defined (TE_FreeBSD)			\
 	 && !defined (TE_DragonFly)			\
 	 && !defined (TE_NetBSD)))
@@ -1028,6 +1027,8 @@ static const arch_entry cpu_arch[] =
     CPU_PCONFIG_FLAGS, 0 },
   { STRING_COMMA_LEN (".waitpkg"), PROCESSOR_UNKNOWN,
     CPU_WAITPKG_FLAGS, 0 },
+  { STRING_COMMA_LEN (".cldemote"), PROCESSOR_UNKNOWN,
+    CPU_CLDEMOTE_FLAGS, 0 },
 };
 
 static const noarch_entry cpu_noarch[] =

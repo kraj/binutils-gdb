@@ -148,7 +148,6 @@ TARGET_CPU_CFILES = \
 	config/tc-h8300.c \
 	config/tc-hppa.c \
 	config/tc-ia64.c \
-	config/tc-i370.c \
 	config/tc-i386.c \
 	config/tc-ip2k.c \
 	config/tc-iq2000.c \
@@ -182,7 +181,6 @@ TARGET_CPU_CFILES = \
 	config/tc-s390.c \
 	config/tc-score.c \
 	config/tc-sh.c \
-	config/tc-sh64.c \
 	config/tc-sparc.c \
 	config/tc-spu.c \
 	config/tc-tic30.c \
@@ -223,7 +221,6 @@ TARGET_CPU_HFILES = \
 	config/tc-h8300.h \
 	config/tc-hppa.h \
 	config/tc-ia64.h \
-	config/tc-i370.h \
 	config/tc-i386.h \
 	config/tc-ip2k.h \
 	config/tc-iq2000.h \
@@ -256,7 +253,6 @@ TARGET_CPU_HFILES = \
 	config/tc-s390.h \
 	config/tc-score.h \
 	config/tc-sh.h \
-	config/tc-sh64.h \
 	config/tc-sparc.h \
 	config/tc-spu.h \
 	config/tc-tic30.h \
@@ -310,8 +306,6 @@ TARG_ENV_HFILES = \
 	config/te-armfbsdeabi.h \
 	config/te-armfbsdvfp.h \
 	config/te-armlinuxeabi.h \
-	config/te-dynix.h \
-	config/te-epoc-pe.h \
 	config/te-freebsd.h \
 	config/te-generic.h \
 	config/te-gnu.h \
@@ -319,22 +313,16 @@ TARG_ENV_HFILES = \
 	config/te-hppa.h \
 	config/te-hppa64.h \
 	config/te-hppalinux64.h \
-	config/te-i386aix.h \
 	config/te-ia64aix.h \
 	config/te-interix.h \
 	config/te-lynx.h \
-	config/te-mach.h \
 	config/te-macos.h \
 	config/te-nbsd.h \
 	config/te-nbsd532.h \
-	config/te-netware.h \
 	config/te-pc532mach.h \
 	config/te-pe.h \
-	config/te-psos.h \
 	config/te-riscix.h \
 	config/te-solaris.h \
-	config/te-sparcaout.h \
-	config/te-sun3.h \
 	config/te-svr4.h \
 	config/te-symbian.h \
 	config/te-tmips.h \

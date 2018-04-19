@@ -1,3 +1,94 @@
+2018-04-17  Igor Tsimbalist  <igor.v.tsimbalist@intel.com>
+
+	* i386-dis.c: Add REG_0F1C_MOD_0, MOD_0F1C_PREFIX_0,
+	PREFIX_0F1C.
+	* i386-gen.c (cpu_flag_init): Add CPU_CLDEMOTE_FLAGS,
+	(cpu_flags): Add CpuCLDEMOTE.
+	* i386-init.h: Regenerate.
+	* i386-opc.h (enum): Add CpuCLDEMOTE,
+	(i386_cpu_flags): Add cpucldemote.
+	* i386-opc.tbl: Add cldemote.
+	* i386-tbl.h: Regenerate.
+
+2018-04-16  Alan Modra  <amodra@gmail.com>
+
+	* Makefile.am: Remove sh5 and sh64 support.
+	* configure.ac: Likewise.
+	* disassemble.c: Likewise.
+	* disassemble.h: Likewise.
+	* sh-dis.c: Likewise.
+	* sh64-dis.c: Delete.
+	* sh64-opc.c: Delete.
+	* sh64-opc.h: Delete.
+	* Makefile.in: Regenerate.
+	* configure: Regenerate.
+	* po/POTFILES.in: Regenerate.
+
+2018-04-16  Alan Modra  <amodra@gmail.com>
+
+	* Makefile.am: Remove w65 support.
+	* configure.ac: Likewise.
+	* disassemble.c: Likewise.
+	* disassemble.h: Likewise.
+	* w65-dis.c: Delete.
+	* w65-opc.h: Delete.
+	* Makefile.in: Regenerate.
+	* configure: Regenerate.
+	* po/POTFILES.in: Regenerate.
+
+2018-04-16  Alan Modra  <amodra@gmail.com>
+
+	* configure.ac: Remove we32k support.
+	* configure: Regenerate.
+
+2018-04-16  Alan Modra  <amodra@gmail.com>
+
+	* Makefile.am: Remove m88k support.
+	* configure.ac: Likewise.
+	* disassemble.c: Likewise.
+	* disassemble.h: Likewise.
+	* m88k-dis.c: Delete.
+	* Makefile.in: Regenerate.
+	* configure: Regenerate.
+	* po/POTFILES.in: Regenerate.
+
+2018-04-16  Alan Modra  <amodra@gmail.com>
+
+	* Makefile.am: Remove i370 support.
+	* configure.ac: Likewise.
+	* disassemble.c: Likewise.
+	* disassemble.h: Likewise.
+	* i370-dis.c: Delete.
+	* i370-opc.c: Delete.
+	* Makefile.in: Regenerate.
+	* configure: Regenerate.
+	* po/POTFILES.in: Regenerate.
+
+2018-04-16  Alan Modra  <amodra@gmail.com>
+
+	* Makefile.am: Remove h8500 support.
+	* configure.ac: Likewise.
+	* disassemble.c: Likewise.
+	* disassemble.h: Likewise.
+	* h8500-dis.c: Delete.
+	* h8500-opc.h: Delete.
+	* Makefile.in: Regenerate.
+	* configure: Regenerate.
+	* po/POTFILES.in: Regenerate.
+
+2018-04-16  Alan Modra  <amodra@gmail.com>
+
+	* configure.ac: Remove tahoe support.
+	* configure: Regenerate.
+
+2018-04-15  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* i386-dis.c (prefix_table): Replace Em with Edq on tpause and
+	umwait.
+	* i386-opc.tbl: Allow 32-bit registers for tpause and umwait in
+	64-bit mode.
+	* i386-tbl.h: Regenerated.
+
 2018-04-11  Igor Tsimbalist  <igor.v.tsimbalist@intel.com>
 
 	* i386-dis.c (enum): Add PREFIX_MOD_0_0FAE_REG_6,

@@ -1,3 +1,130 @@
+2018-04-18  Nick Clifton  <nickc@redhat.com>
+
+	PR 23062
+	* dwarf.c (read_and_display_attr_value): Replace assertions with
+	test and warning message.
+
+2018-04-18  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/lib/binutils-common.exp: Remove support for assorted
+	aout targets.
+
+2018-04-17  Nick Clifton  <nickc@redhat.com>
+
+	PR 23063
+	* readelf.c (print_symbol): If the width is zero, return straight
+	away.
+
+	PR 23064
+	* dwarf.c (process_cu_tu_index): Test for a potential buffer
+	overrun before copying signature pointer.
+
+2018-04-17  Alan Modra  <amodra@gmail.com>
+
+	* readelf.c: Revert 2018-04-16 and 2018-04-11 changes.
+
+2018-04-16  Alan Modra  <amodra@gmail.com>
+
+	* readelf.c (get_machine_name): Correct typo.
+
+2018-04-16  Alan Modra  <amodra@gmail.com>
+
+	* configure.ac: Remove arm-epoc-pe support.
+	* dlltool.c: Likewise.
+	* configure: Regenerate.
+
+2018-04-16  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/lib/binutils-common.exp: Remove sparc-aout and
+	sparc-coff support.
+
+2018-04-16  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/binutils-all/copy-2.d: Remove m68k-aout and m68k-coff
+	support.
+	* testsuite/binutils-all/copy-3.d: Likewise.
+	* testsuite/binutils-all/objcopy.exp: Likewise.
+	* testsuite/lib/binutils-common.exp: Likewise.
+
+2018-04-16  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/binutils-all/objcopy.exp: Remove sh5 and sh64 support.
+
+2018-04-16  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/binutils-all/objcopy.exp: Remove w65 support.
+
+2018-04-16  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/binutils-all/objdump.exp: Remove we32k support.
+
+2018-04-16  Alan Modra  <amodra@gmail.com>
+
+	* MAINTAINERS (Mark Kettenis): Move to past maintainers.
+	* testsuite/binutils-all/objdump.exp: Remove m88k support.
+
+2018-04-16  Alan Modra  <amodra@gmail.com>
+
+	* readelf.c: Remove i370 support.
+	* testsuite/binutils-all/objdump.exp: Likewise.
+
+2018-04-16  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/binutils-all/objcopy.exp: Remove h8500 support.
+	* testsuite/lib/binutils-common.exp: Likewise.
+
+2018-04-16  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/binutils-all/objcopy.exp: Remove h8300-coff support.
+
+2018-04-16  Alan Modra  <amodra@gmail.com>
+
+	* Makefile.am: Remove IEEE 695 support.
+	* budbg.h: Likewise.
+	* doc/binutils.texi: Likewise.
+	* makefile.vms: Likewise.
+	* objcopy.c: Likewise.
+	* objdump.c: Likewise.
+	* rddbg.c: Likewise.
+	* ieee.c: Delete.
+	* Makefile.in: Regenerate.
+	* po/POTFILES.in: Regenerate.
+
+2018-04-16  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/binutils-all/copy-2.d: Remove newsos3 support.
+	* testsuite/binutils-all/nm.exp: Likewise.
+
+2018-04-16  Alan Modra  <amodra@gmail.com>
+
+	* .gitignore: Remove netware support.
+	* Makefile.am: Likewise.
+	* configure.ac: Likewise.
+	* doc/Makefile.am: Likewise.
+	* doc/binutils.texi: Likewise.
+	* testsuite/binutils-all/nm.exp: Likewise.
+	* nlmconv.c: Delete.
+	* nlmconv.h: Delete.
+	* nlmheader.y: Delete.
+	* Makefile.in: Regenerate.
+	* configure: Regenerate.
+	* doc/Makefile.in: Regenerate.
+	* po/POTFILES.in: Regenerate.
+
+2018-04-16  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/binutils-all/objdump.exp: Remove tahoe support.
+
+2018-04-14  Alan Modra  <amodra@gmail.com>
+
+	* readelf.c (get_machine_name): Revert 2018-04-11 change.
+
+2018-04-12  Nick Clifton  <nickc@redhat.com>
+
+	PR 23050
+	* readelf.c (process_dynamic_section): Correct dynamic string
+	table size calculation.
+
 2018-04-11  Alan Modra  <amodra@gmail.com>
 
 	* ieee.c: Remove i960 support.

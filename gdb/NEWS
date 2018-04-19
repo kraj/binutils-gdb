@@ -3,6 +3,9 @@
 
 *** Changes since GDB 8.1
 
+* The commands 'info variables/functions/types' now show the source line
+  numbers of symbol definitions when available.
+
 * 'info proc' now works on running processes on FreeBSD systems and core
   files created on FreeBSD systems.
 
@@ -17,9 +20,20 @@ set|show varsize-limit
   objects being printed when those objects have a variable type,
   instead of that maximum size being hardcoded to 65536 bytes.
 
+set|show record btrace cpu
+  Controls the processor to be used for enabling errata workarounds for
+  branch trace decode.
+
 * New targets
 
 RiscV ELF			riscv*-*-elf
+
+* Removed targets and native configurations
+
+m88k running OpenBSD  		m88*-*-openbsd*
+SH-5/SH64 ELF			sh64-*-elf*, SH-5/SH64 support in sh*
+SH-5/SH64 running GNU/Linux	SH-5/SH64 support in sh*-*-linux*
+SH-5/SH64 running OpenBSD 	SH-5/SH64 support in sh*-*-openbsd*
 
 *** Changes in GDB 8.1
 

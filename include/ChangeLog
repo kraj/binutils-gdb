@@ -1,3 +1,94 @@
+2018-04-18  Alan Modra  <amodra@gmail.com>
+
+	* coff/mipspe.h: Delete.
+
+2018-04-18  Alan Modra  <amodra@gmail.com>
+
+	* aout/dynix3.h: Delete.
+
+2018-04-17 Andrew Sadek  <andrew.sadek.se@gmail.com>
+
+	Microblaze Target: PIC data text relative
+
+	* bfdlink.h (Add flag): Add new flag @ 'bfd_link_info' struct.
+	* elf/microblaze.h (Add 3 new relocations):
+	R_MICROBLAZE_TEXTPCREL_64, R_MICROBLAZE_TEXTREL_64
+	and R_MICROBLAZE_TEXTREL_32_LO for relax function.
+
+2018-04-17  Alan Modra  <amodra@gmail.com>
+
+	* elf/i370.h: Revert removal.
+	* elf/i860.h: Likewise.
+	* elf/i960.h: Likewise.
+
+2018-04-16  Alan Modra  <amodra@gmail.com>
+
+	* coff/sparc.h: Delete.
+
+2018-04-16  Alan Modra  <amodra@gmail.com>
+
+	* aout/host.h: Remove m68k-aout and m68k-coff support.
+	* aout/hp300hpux.h: Delete.
+	* coff/apollo.h: Delete.
+	* coff/aux-coff.h: Delete.
+	* coff/m68k.h: Delete.
+
+2018-04-16  Alan Modra  <amodra@gmail.com>
+
+	* dis-asm.h: Remove sh5 and sh64 support.
+
+2018-04-16  Alan Modra  <amodra@gmail.com>
+
+	* coff/internal.h: Remove w65 support.
+	* coff/w65.h: Delete.
+
+2018-04-16  Alan Modra  <amodra@gmail.com>
+
+	* coff/we32k.h: Delete.
+
+2018-04-16  Alan Modra  <amodra@gmail.com>
+
+	* coff/internal.h: Remove m88k support.
+	* coff/m88k.h: Delete.
+	* opcode/m88k.h: Delete.
+
+2018-04-16  Alan Modra  <amodra@gmail.com>
+
+	* elf/i370.h: Delete.
+	* opcode/i370.h: Delete.
+
+2018-04-16  Alan Modra  <amodra@gmail.com>
+
+	* coff/h8500.h: Delete.
+	* coff/internal.h: Remove h8500 support.
+
+2018-04-16  Alan Modra  <amodra@gmail.com>
+
+	* coff/h8300.h: Delete.
+
+2018-04-16  Alan Modra  <amodra@gmail.com>
+
+	* ieee.h: Delete.
+
+2018-04-16  Alan Modra  <amodra@gmail.com>
+
+	* aout/host.h: Remove newsos3 support.
+
+2018-04-16  Alan Modra  <amodra@gmail.com>
+
+	* nlm/ChangeLog-9315: Delete.
+	* nlm/alpha-ext.h: Delete.
+	* nlm/common.h: Delete.
+	* nlm/external.h: Delete.
+	* nlm/i386-ext.h: Delete.
+	* nlm/internal.h: Delete.
+	* nlm/ppc-ext.h: Delete.
+	* nlm/sparc32-ext.h: Delete.
+
+2018-04-16  Alan Modra  <amodra@gmail.com>
+
+	* opcode/tahoe.h: Delete.
+
 2018-04-11  Alan Modra  <amodra@gmail.com>
 
 	* aout/adobe.h: Delete.

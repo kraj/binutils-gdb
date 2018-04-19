@@ -344,10 +344,6 @@ struct internal_aouthdr
 #define C_PRAGMA	111	/* Advice to compiler or linker	*/
 #define C_SEGMENT	112	/* 80960 segment name		*/
 
-  /* Storage classes for m88k */
-#define C_SHADOW        107     /* shadow symbol                */
-#define C_VERSION       108     /* coff version symbol          */
-
  /* New storage classes for RS/6000 */
 #define C_HIDEXT        107	/* Un-named external symbol */
 #define C_BINCL         108	/* Marks beginning of include file */
@@ -812,34 +808,5 @@ struct internal_reloc
 #define R_OFF8    0x32		/* 8 bit signed abs, for (i[xy]+d) */
 #define R_IMM24   0x33          /* 24 bit abs */
 /* R_JR, R_IMM8, R_IMM16, R_IMM32 - as for Z8k */
-
-/* H8500 modes */
-
-#define R_H8500_IMM8  	1		/*  8 bit immediate 	*/
-#define R_H8500_IMM16 	2		/* 16 bit immediate	*/
-#define R_H8500_PCREL8 	3		/*  8 bit pcrel 	*/
-#define R_H8500_PCREL16 4		/* 16 bit pcrel 	*/
-#define R_H8500_HIGH8  	5		/* high 8 bits of 24 bit address */
-#define R_H8500_LOW16 	7		/* low 16 bits of 24 bit immediate */
-#define R_H8500_IMM24	6		/* 24 bit immediate */
-#define R_H8500_IMM32   8               /* 32 bit immediate */
-#define R_H8500_HIGH16  9		/* high 16 bits of 32 bit immediate */
-
-/* W65 modes */
-
-#define R_W65_ABS8	1  /* addr & 0xff 		*/
-#define R_W65_ABS16	2  /* addr & 0xffff 		*/
-#define R_W65_ABS24	3  /* addr & 0xffffff 		*/
-
-#define R_W65_ABS8S8    4  /* (addr >> 8) & 0xff 	*/
-#define R_W65_ABS8S16   5  /* (addr >> 16) & 0xff 	*/
-
-#define R_W65_ABS16S8   6  /* (addr >> 8) & 0ffff 	*/
-#define R_W65_ABS16S16  7  /* (addr >> 16) & 0ffff 	*/
-
-#define R_W65_PCR8	8
-#define R_W65_PCR16	9
-
-#define R_W65_DP       10  /* direct page 8 bits only   */
 
 #endif /* GNU_COFF_INTERNAL_H */

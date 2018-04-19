@@ -615,8 +615,6 @@ extern bfd_boolean _bfd_handle_already_linked
 
 /* Externally visible ECOFF routines.  */
 
-extern bfd_vma bfd_ecoff_get_gp_value
-  (bfd * abfd);
 extern bfd_boolean bfd_ecoff_set_gp_value
   (bfd *abfd, bfd_vma gp_value);
 extern bfd_boolean bfd_ecoff_set_regmasks
@@ -785,8 +783,6 @@ extern bfd_boolean bfd_sunos_size_dynamic_sections
 
 extern bfd_boolean bfd_i386linux_size_dynamic_sections
   (bfd *, struct bfd_link_info *);
-extern bfd_boolean bfd_m68klinux_size_dynamic_sections
-  (bfd *, struct bfd_link_info *);
 extern bfd_boolean bfd_sparclinux_size_dynamic_sections
   (bfd *, struct bfd_link_info *);
 
@@ -854,9 +850,6 @@ union internal_auxent;
 
 extern bfd_boolean bfd_coff_set_symbol_class
   (bfd *, struct bfd_symbol *, unsigned int);
-
-extern bfd_boolean bfd_m68k_coff_create_embedded_relocs
-  (bfd *, struct bfd_link_info *, struct bfd_section *, struct bfd_section *, char **);
 
 /* ARM VFP11 erratum workaround support.  */
 typedef enum
@@ -2094,12 +2087,8 @@ enum bfd_architecture
 #define bfd_mach_iamcu                 (1 << 8)
 #define bfd_mach_i386_iamcu            (bfd_mach_i386_i386 | bfd_mach_iamcu)
 #define bfd_mach_i386_iamcu_intel_syntax (bfd_mach_i386_iamcu | bfd_mach_i386_intel_syntax)
-  bfd_arch_we32k,     /* AT&T WE32xxx.  */
-  bfd_arch_tahoe,     /* CCI/Harris Tahoe.  */
-  bfd_arch_i370,      /* IBM 360/370 Mainframes.  */
   bfd_arch_romp,      /* IBM ROMP PC/RT.  */
   bfd_arch_convex,    /* Convex.  */
-  bfd_arch_m88k,      /* Motorola 88xxx.  */
   bfd_arch_m98k,      /* Motorola 98xxx.  */
   bfd_arch_pyramid,   /* Pyramid Technology.  */
   bfd_arch_h8300,     /* Renesas H8/300 (formerly Hitachi H8/300).  */
@@ -2165,7 +2154,6 @@ enum bfd_architecture
   bfd_arch_z8k,       /* Zilog Z8000.  */
 #define bfd_mach_z8001         1
 #define bfd_mach_z8002         2
-  bfd_arch_h8500,     /* Renesas H8/500 (formerly Hitachi H8/500).  */
   bfd_arch_sh,        /* Renesas / SuperH SH (formerly Hitachi SH).  */
 #define bfd_mach_sh                            1
 #define bfd_mach_sh2                           0x20
@@ -2187,7 +2175,6 @@ enum bfd_architecture
 #define bfd_mach_sh4a                          0x4a
 #define bfd_mach_sh4a_nofpu                    0x4b
 #define bfd_mach_sh4al_dsp                     0x4d
-#define bfd_mach_sh5                           0x50
   bfd_arch_alpha,     /* Dec Alpha.  */
 #define bfd_mach_alpha_ev4     0x10
 #define bfd_mach_alpha_ev5     0x20
@@ -2214,7 +2201,6 @@ enum bfd_architecture
 #define bfd_mach_n1h_v3        4
 #define bfd_mach_n1h_v3m       5
   bfd_arch_ns32k,     /* National Semiconductors ns32000.  */
-  bfd_arch_w65,       /* WDC 65816.  */
   bfd_arch_tic30,     /* Texas Instruments TMS320C30.  */
   bfd_arch_tic4x,     /* Texas Instruments TMS320C3X/4X.  */
 #define bfd_mach_tic3x         30
@@ -2614,7 +2600,7 @@ struct reloc_howto_struct
      slot of the instruction, so that a PC relative relocation can
      be made just by adding in an ordinary offset (e.g., sun3 a.out).
      Some formats leave the displacement part of an instruction
-     empty (e.g., m88k bcs); this flag signals the fact.  */
+     empty (e.g., ELF); this flag signals the fact.  */
   bfd_boolean pcrel_offset;
 };
 
@@ -5845,6 +5831,16 @@ to two words (uses imm instruction).  */
 to two words (uses imm instruction).  */
   BFD_RELOC_MICROBLAZE_64_TLSTPREL,
 
+/* This is a 64 bit reloc that stores the 32 bit pc relative
+value in two words (with an imm instruction).  The relocation is
+PC-relative offset from start of TEXT.  */
+  BFD_RELOC_MICROBLAZE_64_TEXTPCREL,
+
+/* This is a 64 bit reloc that stores the 32 bit offset
+value in two words (with an imm instruction).  The relocation is
+relative offset from start of TEXT.  */
+  BFD_RELOC_MICROBLAZE_64_TEXTREL,
+
 /* AArch64 pseudo relocation code to mark the start of the AArch64
 relocation enumerators.  N.B. the order of the enumerators is
 important as several tables in the AArch64 bfd backend are indexed
@@ -7003,20 +6999,15 @@ struct bfd
     {
       struct aout_data_struct *aout_data;
       struct artdata *aout_ar_data;
-      struct _oasys_data *oasys_obj_data;
-      struct _oasys_ar_data *oasys_ar_data;
       struct coff_tdata *coff_obj_data;
       struct pe_tdata *pe_obj_data;
       struct xcoff_tdata *xcoff_obj_data;
       struct ecoff_tdata *ecoff_obj_data;
-      struct ieee_data_struct *ieee_data;
-      struct ieee_ar_data_struct *ieee_ar_data;
       struct srec_data_struct *srec_data;
       struct verilog_data_struct *verilog_data;
       struct ihex_data_struct *ihex_data;
       struct tekhex_data_struct *tekhex_data;
       struct elf_obj_tdata *elf_obj_data;
-      struct nlm_obj_tdata *nlm_obj_data;
       struct mmo_data_struct *mmo_data;
       struct sun_core_struct *sun_core_data;
       struct sco5_core_struct *sco5_core_data;
@@ -7251,7 +7242,7 @@ bfd_vma bfd_emul_get_maxpagesize (const char *);
 
 void bfd_emul_set_maxpagesize (const char *, bfd_vma);
 
-bfd_vma bfd_emul_get_commonpagesize (const char *);
+bfd_vma bfd_emul_get_commonpagesize (const char *, bfd_boolean);
 
 void bfd_emul_set_commonpagesize (const char *, bfd_vma);
 
@@ -7325,9 +7316,6 @@ enum bfd_flavour
   bfd_target_ecoff_flavour,
   bfd_target_xcoff_flavour,
   bfd_target_elf_flavour,
-  bfd_target_ieee_flavour,
-  bfd_target_nlm_flavour,
-  bfd_target_oasys_flavour,
   bfd_target_tekhex_flavour,
   bfd_target_srec_flavour,
   bfd_target_verilog_flavour,

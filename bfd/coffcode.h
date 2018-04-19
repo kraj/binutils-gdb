@@ -32,12 +32,12 @@ SECTION
 
 	Coff in all its varieties is implemented with a few common
 	files and a number of implementation specific files. For
-	example, The 88k bcs coff format is implemented in the file
-	@file{coff-m88k.c}. This file @code{#include}s
-	@file{coff/m88k.h} which defines the external structure of the
-	coff format for the 88k, and @file{coff/internal.h} which
-	defines the internal structure. @file{coff-m88k.c} also
-	defines the relocations used by the 88k format
+	example, the i386 coff format is implemented in the file
+	@file{coff-i386.c}.  This file @code{#include}s
+	@file{coff/i386.h} which defines the external structure of the
+	coff format for the i386, and @file{coff/internal.h} which
+	defines the internal structure. @file{coff-i386.c} also
+	defines the relocations used by the i386 coff format
 	@xref{Relocations}.
 
 SUBSECTION
@@ -2103,7 +2103,7 @@ coff_set_arch_mach_hook (bfd *abfd, void * filehdr)
     case I386MAGIC:
     case I386PTXMAGIC:
     case I386AIXMAGIC:		/* Danbury PS/2 AIX C Compiler.  */
-    case LYNXCOFFMAGIC:		/* Shadows the m68k Lynx number below, sigh.  */
+    case LYNXCOFFMAGIC:
       arch = bfd_arch_i386;
       break;
 #endif
@@ -2143,30 +2143,6 @@ coff_set_arch_mach_hook (bfd *abfd, void * filehdr)
 	    case F_ARM_5:  machine = bfd_mach_arm_XScale;  break;
 	    }
 	}
-      break;
-#endif
-#ifdef MC68MAGIC
-    case MC68MAGIC:
-    case M68MAGIC:
-#ifdef MC68KBCSMAGIC
-    case MC68KBCSMAGIC:
-#endif
-#ifdef APOLLOM68KMAGIC
-    case APOLLOM68KMAGIC:
-#endif
-#ifdef LYNXCOFFMAGIC
-    case LYNXCOFFMAGIC:
-#endif
-      arch = bfd_arch_m68k;
-      machine = bfd_mach_m68020;
-      break;
-#endif
-#ifdef MC88MAGIC
-    case MC88MAGIC:
-    case MC88DMAGIC:
-    case MC88OMAGIC:
-      arch = bfd_arch_m88k;
-      machine = 88100;
       break;
 #endif
 #ifdef Z80MAGIC
@@ -2279,57 +2255,6 @@ coff_set_arch_mach_hook (bfd *abfd, void * filehdr)
       break;
 #endif
 
-#ifdef WE32KMAGIC
-    case WE32KMAGIC:
-      arch = bfd_arch_we32k;
-      break;
-#endif
-
-#ifdef H8300MAGIC
-    case H8300MAGIC:
-      arch = bfd_arch_h8300;
-      machine = bfd_mach_h8300;
-      /* !! FIXME this probably isn't the right place for this.  */
-      abfd->flags |= BFD_IS_RELAXABLE;
-      break;
-#endif
-
-#ifdef H8300HMAGIC
-    case H8300HMAGIC:
-      arch = bfd_arch_h8300;
-      machine = bfd_mach_h8300h;
-      /* !! FIXME this probably isn't the right place for this.  */
-      abfd->flags |= BFD_IS_RELAXABLE;
-      break;
-#endif
-
-#ifdef H8300SMAGIC
-    case H8300SMAGIC:
-      arch = bfd_arch_h8300;
-      machine = bfd_mach_h8300s;
-      /* !! FIXME this probably isn't the right place for this.  */
-      abfd->flags |= BFD_IS_RELAXABLE;
-      break;
-#endif
-
-#ifdef H8300HNMAGIC
-    case H8300HNMAGIC:
-      arch = bfd_arch_h8300;
-      machine = bfd_mach_h8300hn;
-      /* !! FIXME this probably isn't the right place for this.  */
-      abfd->flags |= BFD_IS_RELAXABLE;
-      break;
-#endif
-
-#ifdef H8300SNMAGIC
-    case H8300SNMAGIC:
-      arch = bfd_arch_h8300;
-      machine = bfd_mach_h8300sn;
-      /* !! FIXME this probably isn't the right place for this.  */
-      abfd->flags |= BFD_IS_RELAXABLE;
-      break;
-#endif
-
 #ifdef SH_ARCH_MAGIC_BIG
     case SH_ARCH_MAGIC_BIG:
     case SH_ARCH_MAGIC_LITTLE:
@@ -2343,12 +2268,6 @@ coff_set_arch_mach_hook (bfd *abfd, void * filehdr)
 #ifdef MIPS_ARCH_MAGIC_WINCE
     case MIPS_ARCH_MAGIC_WINCE:
       arch = bfd_arch_mips;
-      break;
-#endif
-
-#ifdef H8500MAGIC
-    case H8500MAGIC:
-      arch = bfd_arch_h8500;
       break;
 #endif
 
@@ -2409,12 +2328,6 @@ coff_set_arch_mach_hook (bfd *abfd, void * filehdr)
 #ifdef MCOREMAGIC
     case MCOREMAGIC:
       arch = bfd_arch_mcore;
-      break;
-#endif
-
-#ifdef W65MAGIC
-    case W65MAGIC:
-      arch = bfd_arch_w65;
       break;
 #endif
 
@@ -2863,45 +2776,6 @@ coff_set_flags (bfd * abfd,
       return TRUE;
 #endif
 
-#ifdef MC68MAGIC
-    case bfd_arch_m68k:
-#ifdef APOLLOM68KMAGIC
-      *magicp = APOLLO_COFF_VERSION_NUMBER;
-#else
-      /* NAMES_HAVE_UNDERSCORE may be defined by coff-u68k.c.  */
-#ifdef NAMES_HAVE_UNDERSCORE
-      *magicp = MC68KBCSMAGIC;
-#else
-      *magicp = MC68MAGIC;
-#endif
-#endif
-#ifdef LYNXOS
-      /* Just overwrite the usual value if we're doing Lynx.  */
-      *magicp = LYNXCOFFMAGIC;
-#endif
-      return TRUE;
-#endif
-
-#ifdef MC88MAGIC
-    case bfd_arch_m88k:
-      *magicp = MC88OMAGIC;
-      return TRUE;
-#endif
-
-#ifdef H8300MAGIC
-    case bfd_arch_h8300:
-      switch (bfd_get_mach (abfd))
-	{
-	case bfd_mach_h8300:   *magicp = H8300MAGIC;   return TRUE;
-	case bfd_mach_h8300h:  *magicp = H8300HMAGIC;  return TRUE;
-	case bfd_mach_h8300s:  *magicp = H8300SMAGIC;  return TRUE;
-	case bfd_mach_h8300hn: *magicp = H8300HNMAGIC; return TRUE;
-	case bfd_mach_h8300sn: *magicp = H8300SNMAGIC; return TRUE;
-	default: break;
-	}
-      break;
-#endif
-
 #ifdef SH_ARCH_MAGIC_BIG
     case bfd_arch_sh:
 #ifdef COFF_IMAGE_WITH_PE
@@ -2931,19 +2805,6 @@ coff_set_flags (bfd * abfd,
       return TRUE;
 #endif
 
-#ifdef H8500MAGIC
-    case bfd_arch_h8500:
-      *magicp = H8500MAGIC;
-      return TRUE;
-      break;
-#endif
-
-#ifdef WE32KMAGIC
-    case bfd_arch_we32k:
-      *magicp = WE32KMAGIC;
-      return TRUE;
-#endif
-
 #ifdef RS6000COFF_C
     case bfd_arch_rs6000:
 #ifndef PPCMAGIC
@@ -2957,12 +2818,6 @@ coff_set_flags (bfd * abfd,
 #ifdef MCOREMAGIC
     case bfd_arch_mcore:
       * magicp = MCOREMAGIC;
-      return TRUE;
-#endif
-
-#ifdef W65MAGIC
-    case bfd_arch_w65:
-      *magicp = W65MAGIC;
       return TRUE;
 #endif
 
@@ -3979,32 +3834,6 @@ coff_write_object_contents (bfd * abfd)
     internal_a.magic = TIC80_ARCH_MAGIC;
 #define __A_MAGIC_SET__
 #endif /* TIC80 */
-#if M88
-#define __A_MAGIC_SET__
-    internal_a.magic = PAGEMAGICBCS;
-#endif /* M88 */
-
-#if APOLLO_M68
-#define __A_MAGIC_SET__
-    internal_a.magic = APOLLO_COFF_VERSION_NUMBER;
-#endif
-
-#if defined(M68) || defined(WE32K) || defined(M68K)
-#define __A_MAGIC_SET__
-#if defined(LYNXOS)
-    internal_a.magic = LYNXCOFFMAGIC;
-#else
-#if defined(TARG_AUX)
-    internal_a.magic = (abfd->flags & D_PAGED ? PAGEMAGICPEXECPAGED :
-			abfd->flags & WP_TEXT ? PAGEMAGICPEXECSWAPPED :
-			PAGEMAGICEXECSWAPPED);
-#else
-#if defined (PAGEMAGICPEXECPAGED)
-    internal_a.magic = PAGEMAGICPEXECPAGED;
-#endif
-#endif /* TARG_AUX */
-#endif /* LYNXOS */
-#endif /* M68 || WE32K || M68K */
 
 #if defined(ARM)
 #define __A_MAGIC_SET__
@@ -5099,8 +4928,7 @@ SUBSUBSECTION
 	o The reloc index is turned into a pointer to a howto
 	structure, in a back end specific way. For instance, the 386
 	uses the @code{r_type} to directly produce an index
-	into a howto table vector; the 88k subtracts a number from the
-	@code{r_type} field and creates an addend field.
+	into a howto table vector.
 */
 
 #ifndef CALC_ADDEND
