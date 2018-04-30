@@ -44,6 +44,7 @@ proc is_elf_format {} {
 	 && ![istarget *-*-sysv4*]
 	 && ![istarget *-*-unixware*]
 	 && ![istarget *-*-wasm32*]
+	 && ![istarget arm*-*-uclinuxfdpiceabi]
 	 && ![istarget avr-*-*]
 	 && ![istarget bfin-*-uclinux]
 	 && ![istarget frv-*-uclinux*]
@@ -80,8 +81,6 @@ proc is_aout_format {} {
     if { [istarget *-*-*aout*]
 	 || [istarget *-*-bsd*]
 	 || [istarget *-*-msdos*]
-	 || [istarget arm-*-netbsd*]
-	 || [istarget arm-*-openbsd*]
 	 || [istarget ns32k-*-*]
 	 || [istarget pdp11-*-*]
 	 || [istarget vax-*-netbsd] } {
@@ -126,6 +125,17 @@ proc is_elf64 { binary_file } {
     }
 
     return 0
+}
+
+# True if the target matches TARGET, specified as a TCL procedure if
+# in square brackets or as machine triplet otherwise.
+#
+proc match_target { target } {
+   if [string match {\[*\]} $target] {
+	return $target
+   } else {
+	return [istarget $target]
+   }
 }
 
 # True if the ELF target supports STB_GNU_UNIQUE with the ELF header's

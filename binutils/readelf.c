@@ -2578,6 +2578,12 @@ decode_ARM_machine_flags (unsigned e_flags, char buf[])
       e_flags &= ~ EF_ARM_RELEXEC;
     }
 
+  if (e_flags & EF_ARM_PIC)
+    {
+      strcat (buf, ", position independent");
+      e_flags &= ~ EF_ARM_PIC;
+    }
+
   /* Now handle EABI specific flags.  */
   switch (eabi)
     {
@@ -3718,6 +3724,7 @@ get_osabi_name (Filedata * filedata, unsigned int osabi)
 	    switch (osabi)
 	      {
 	      case ELFOSABI_ARM:	return "ARM";
+	      case ELFOSABI_ARM_FDPIC:	return "ARM FDPIC";
 	      default:
 		break;
 	      }
@@ -12298,7 +12305,8 @@ is_32bit_abs_reloc (Filedata * filedata, unsigned int reloc_type)
     case EM_OR1K:
       return reloc_type == 1; /* R_OR1K_32.  */
     case EM_PARISC:
-      return (reloc_type == 1 /* R_PARISC_DIR32.  */
+      return (reloc_type == 1 /* R_PARISC_DIR32.  */	      
+	      || reloc_type == 2 /* R_PARISC_DIR21L.  */
 	      || reloc_type == 41); /* R_PARISC_SECREL32.  */
     case EM_PJ:
     case EM_PJ_OLD:

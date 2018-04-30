@@ -1,3 +1,39 @@
+2018-04-27  Maciej W. Rozycki  <macro@mips.com>
+
+	* testsuite/lib/binutils-common.exp (match_target): New procedure.
+	* testsuite/lib/utils-lib.exp (run_dump_test): Use it in place
+	of `istarget' for matching with `target', `not-target', `skip'
+	and `not-skip' options.
+
+2018-04-26  Nick Clifton  <nickc@redhat.com>
+
+	* readelf.c (is_32bit_abs_reloc): Support R_PARISC_DIR32 as a
+	32-bit absolute reloc for the HPPA target.
+	* testsuite/binutils-all/note-5.d: New test.
+	* testsuite/binutils-all/note-5.s: Source file for new test.
+	* testsuite/binutils-all/objcopy.exp: Run new test.
+
+2018-04-25  Christophe Lyon  <christophe.lyon@st.com>
+
+	* testsuite/binutils-all/elfedit-2.d: Accept arm*-*-uclinuxfdpiceabi.
+	* testsuite/binutils-all/elfedit-3.d: Likewise.
+	* testsuite/binutils-all/objcopy.exp: Likewise.
+	* testsuite/binutils-all/strip-3.d: Likewise.
+	* testsuite/lib/binutils-common.exp: Likewise.
+
+2018-04-25  Christophe Lyon  <christophe.lyon@st.com>
+	Mickaël Guêné  <mickael.guene@st.com>
+
+	* readelf.c (decode_ARM_machine_flags): Support EF_ARM_PIC.
+	(get_osabi_name): Support ELFOSABI_ARM_FDPIC.
+
+2018-04-25  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/binutils-all/arm/objdump.exp: Remove arm-aout and
+	arm-coff support.
+	* testsuite/binutils-all/objcopy.exp: Likewise.
+	* testsuite/lib/binutils-common.exp: Likewise.
+
 2018-04-18  Nick Clifton  <nickc@redhat.com>
 
 	PR 23062

@@ -1,3 +1,70 @@
+2018-04-27  Tom Tromey  <tom@tromey.com>
+
+	PR rust/22545:
+	* gdb.rust/simple.exp: Add inclusive range tests.
+
+2018-04-26  Pedro Alves  <palves@redhat.com>
+
+	* gdb.base/gnu-ifunc.exp (set-break): Test that GDB resolves
+	ifunc breakpoint locations correctly of ifunc breakpoints set
+	while the program resolves the ifunc.
+
+2018-04-26  Pedro Alves  <palves@redhat.com>
+
+	* gdb.base/gnu-ifunc-final.c: New file.
+	* gdb.base/gnu-ifunc.c (final): Delete, moved to gnu-ifunc-final.c.
+	* gdb.base/gnu-ifunc.exp (executable): Delete.
+	(staticexecutable): Adjust.
+	(lib_opts, exec_opts): Delete.
+	(make_binsuffix, build, set-break): New procedures.
+	(misc_tests): New, with tests factored out from the top level.
+	(top level): Test different combinations of ifunc resolver name,
+	resolver with and with debug info, and ifunc target with and
+	without debug info.  Wrap static tests with with_target_prefix.
+
+2018-04-26  Pedro Alves  <palves@redhat.com>
+
+	* gdb.compile/compile-ifunc.exp: Also expect "function has unknown
+	return type" warnings.
+
+2018-04-25  Pedro Alves  <palves@redhat.com>
+
+	* gdb.base/hook-stop.exp: Expect "killed" instead of "has been
+	killed".
+	* gdb.base/kill-after-signal.exp: Likewise.
+	* gdb.threads/kill.exp: Likewise.
+
+2018-04-24  Jan Kratochvil  <jan.kratochvil@redhat.com>
+	    Sergio Durigan Junior  <sergiodj@redhat.com>
+	    Pedro Alves  <palves@redhat.com>
+
+	* gdb.base/attach-non-pgrp-leader.exp: Adjust 'Detaching...'
+	regexps to expect for '[Inferior ... detached]' as well.
+	* gdb.base/attach.exp: Likewise.
+	* gdb.base/catch-syscall.exp (check_for_program_end): Adjust
+	"gdb_continue_to_end".
+	(test_catch_syscall_with_wrong_args): Likewise.
+	* gdb.base/foll-fork.exp: Adjust regexps to match '[' and
+	']'.  Don't set 'verbose' on.
+	* gdb.base/foll-vfork.exp: Likewise.
+	* gdb.base/fork-print-inferior-events.c: New file.
+	* gdb.base/fork-print-inferior-events.exp: New file.
+	* gdb.base/hook-stop.exp: Adjust regexps to expect for new
+	'[Inferior ... has been killed]' message.
+	* gdb.base/kill-after-signal.exp: Likewise.
+	* gdb.base/solib-overlap.exp: Adjust regexps to expect for new
+	detach message.
+	* gdb.threads/kill.exp: Adjust regexps to expect for new kill
+	message.
+	* gdb.threads/clone-attach-detach.exp: Adjust 'Detaching...'
+	regexps to expect for '[Inferior ... detached]' as well.
+	* gdb.threads/process-dies-while-detaching.exp: Likewise.
+
+2018-04-24  Simon Marchi  <simon.marchi@ericsson.com>
+
+	PR gdb/23104
+	* gdb.base/info-shared.exp: Replace libs=-ldl with shlib_load.
+
 2018-04-19  Richard Bunt  <richard.bunt@arm.com>
 
 	* gdb.threads/multiple-successive-infcall.c: New test.

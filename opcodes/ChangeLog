@@ -1,3 +1,56 @@
+2018-04-26  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-opc.tbl: Fold various non-memory operand AVX512VL
+	templates into their base ones.
+	* i386-tlb.h: Re-generate.
+
+2018-04-26  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-gen.c (cpu_flag_init): Use CPU_XOP_FLAGS for
+	CPU_BDVER1_FLAGS. Use CPU_AVX2_FLAGS for CPU_ZNVER1_FLAGS. Use
+	CPU_AVX_FLAGS for CPU_BTVER1_FLAGS. Add CPU_XSAVE_FLAGS to
+	CPU_LWP_FLAGS, CPU_AVX_FLAGS, CPU_MPX_FLAGS, and CPU_OSPKE_FLAGS.
+	* i386-init.h: Re-generate.
+
+2018-04-26  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-gen.c (cpu_flag_init): Drop all uses of CpuRegMMX,
+	CpuRegXMM, CpuRegYMM, CpuRegZMM, and CpuRegMask. Use
+	CPU_AVX2_FLAGS for CPU_AVX512F_FLAGS and drop bogus comment.
+	Don't use CPU_AVX2_FLAGS for CPU_AVX512VL_FLAGS and drop bogus
+	comment.
+	(cpu_flags): Drop CpuRegMMX, CpuRegXMM, CpuRegYMM, CpuRegZMM,
+	and CpuRegMask.
+	* i386-opc.h: CpuRegMMX, CpuRegXMM, CpuRegYMM, CpuRegZMM,
+	CpuRegMask: Delete.
+	(union i386_cpu_flags): Remove cpuregmmx, cpuregxmm, cpuregymm,
+	cpuregzmm, and cpuregmask.
+	* i386-init.h: Re-generate.
+	* i386-tbl.h: Re-generate.
+
+2018-04-26  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-gen.c (cpu_flag_init): CPU_I586_FLAGS inherits Cpu387 only.
+	CPU_287_FLAGS is Cpu287 only. CPU_387_FLAGS is Cpu387 only.
+	* i386-init.h: Re-generate.
+
+2018-04-26  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-gen.c (VexImmExt): Delete.
+	* i386-opc.h (VexImmExt, veximmext): Delete.
+	* i386-opc.tbl: Drop all VexImmExt uses.
+	* i386-tlb.h: Re-generate.
+
+2018-04-25  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-opc.tbl (vpslld, vpsrad, vpsrld): Drop AVX512VL
+	register-only forms.
+	* i386-tlb.h: Re-generate.
+
+2018-04-25  Tamar Christina  <tamar.christina@arm.com>
+
+	* aarch64-tbl.h (sqrdmlah, sqrdmlsh): Fix masks.
+
 2018-04-17  Igor Tsimbalist  <igor.v.tsimbalist@intel.com>
 
 	* i386-dis.c: Add REG_0F1C_MOD_0, MOD_0F1C_PREFIX_0,

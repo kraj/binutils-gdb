@@ -1,3 +1,196 @@
+2018-04-27  Alan Modra  <amodra@gmail.com>
+
+	* bfd-in2.h: Regenerate.
+	* libbfd.h: Regenerate.
+
+2018-04-27  Alan Modra  <amodra@gmail.com>
+
+	PR 23123
+	PR 22374
+	* elf32-ppc.c (ppc_elf_adjust_dynamic_symbol): Don't drop plt
+	relocs for ifuncs.
+	* elf64-ppc.c (ppc64_elf_adjust_dynamic_symbol): Comment fixes.
+
+2018-04-26  Pedro Alves  <palves@redhat.com>
+
+	* elf64-ppc.c (ppc64_elf_get_synthetic_symtab): Don't consider
+	ifunc and non-ifunc symbols duplicates.
+
+2018-04-25  Christophe Lyon  <christophe.lyon@st.com>
+	Mickaël Guêné  <mickael.guene@st.com>
+
+	* elf32-arm.c (elf32_arm_fdpic_thumb_plt_entry): New.
+	(elf32_arm_plt_needs_thumb_stub_p): Handle thumb-only case.
+	(elf32_arm_populate_plt_entry): Likewise.
+	(elf32_arm_output_plt_map_1): Likewise.
+	(elf32_arm_output_arch_local_syms): Likewise.
+
+2018-04-25  Christophe Lyon  <christophe.lyon@st.com>
+	Mickaël Guêné  <mickael.guene@st.com>
+
+	* elf32-arm.c (elf32_arm_finish_dynamic_symbol): Handle
+	_GLOBAL_OFFSET_TABLE_ in FDPIC mode.
+
+2018-04-25  Christophe Lyon  <christophe.lyon@st.com>
+	Mickaël Guêné  <mickael.guene@st.com>
+
+	* elf32-arm.c (bfd_elf32_arm_set_target_params): Handle FDPIC case
+	for R_ARM_TARGET2.
+
+2018-04-25  Christophe Lyon  <christophe.lyon@st.com>
+	Mickaël Guêné  <mickael.guene@st.com>
+
+	* elf32-arm.c (DEFAULT_STACK_SIZE): New.
+	(elf32_arm_always_size_sections): Create stack segment.
+
+2018-04-25  Christophe Lyon  <christophe.lyon@st.com>
+	Mickaël Guêné  <mickael.guene@st.com>
+
+	* bfd-in2.h (BFD_RELOC_ARM_TLS_GD32_FDPIC)
+	(BFD_RELOC_ARM_TLS_LDM32_FDPIC, BFD_RELOC_ARM_TLS_IE32_FDPIC): New
+	relocations.
+	* elf32-arm.c (elf32_arm_howto_table_2): Add R_ARM_TLS_GD32_FDPIC,
+	R_ARM_TLS_LDM32_FDPIC, R_ARM_TLS_IE32_FDPIC relocations.
+	(elf32_arm_reloc_map): Add R_ARM_TLS_GD32_FDPIC,
+	R_ARM_TLS_LDM32_FDPIC, R_ARM_TLS_IE32_FDPIC.
+	(struct elf32_arm_link_hash_table): Update comment.
+	(elf32_arm_final_link_relocate): Handle TLS FDPIC relocations.
+	(IS_ARM_TLS_RELOC): Likewise.
+	(elf32_arm_check_relocs): Likewise.
+	(allocate_dynrelocs_for_symbol): Likewise.
+	(elf32_arm_size_dynamic_sections): Update comment.
+	* reloc.c: Add BFD_RELOC_ARM_TLS_GD32_FDPIC,
+	BFD_RELOC_ARM_TLS_LDM32_FDPIC, BFD_RELOC_ARM_TLS_IE32_FDPIC.
+
+2018-04-25  Christophe Lyon  <christophe.lyon@st.com>
+	Mickaël Guêné  <mickael.guene@st.com>
+
+	* elf32-arm.c (elf32_arm_fdpic_plt_entry): New.
+	(elf32_arm_create_dynamic_sections): Handle FDPIC.
+	(elf32_arm_allocate_plt_entry): Likewise.
+	(elf32_arm_populate_plt_entry): Likewise.
+	(elf32_arm_output_plt_map_1): Likewise.
+
+2018-04-25  Christophe Lyon  <christophe.lyon@st.com>
+	Mickaël Guêné  <mickael.guene@st.com>
+
+	* elf32-arm.c (struct fdpic_local): New.
+	(elf_arm_obj_tdata): Add local_fdpic_cnts field.
+	(elf32_arm_local_fdpic_cnts): New.
+	(struct fdpic_global): New.
+	(elf32_arm_link_hash_entry): Add fdpic_cnts field.
+	(elf32_arm_link_hash_table): Add srofixup field.
+	(arm_elf_add_rofixup): New.
+	(arm_elf_fill_funcdesc): New.
+	(elf32_arm_link_hash_newfunc): Handle fdpic_cnts.
+	(elf32_arm_allocate_local_sym_info): Likewise.
+	(create_got_section): Create .rofixup section.
+	(elf32_arm_copy_indirect_symbol): Handle fdpic_cnts.
+	(bfd_elf32_arm_set_target_params): Handle FDPIC.
+	(elf32_arm_final_link_relocate): Likewise.
+	(elf32_arm_check_relocs): Likewise.
+	(allocate_dynrelocs_for_symbol): Likewise.
+	(elf32_arm_size_dynamic_sections): Likewise.
+	(elf32_arm_finish_dynamic_sections): Likewise.
+	(elf32_arm_output_arch_local_syms): Likewise.
+	(elf32_arm_fdpic_omit_section_dynsym): New.
+
+2018-04-25  Christophe Lyon  <christophe.lyon@st.com>
+	Mickaël Guêné  <mickael.guene@st.com>
+
+	* bfd-in2.c (BFD_RELOC_ARM_GOTFUNCDESC)
+	(BFD_RELOC_ARM_GOTOFFFUNCDESC, BFD_RELOC_ARM_FUNCDESC)
+	(BFD_RELOC_ARM_FUNCDESC_VALUE): New.
+	* elf32-arm.c (elf32_arm_howto_table_2): Add R_ARM_GOTFUNCDESC,
+	R_ARM_GOTOFFFUNCDESC, R_ARM_FUNCDESC, R_ARM_FUNCDESC_VALUE.
+	(elf32_arm_howto_from_type): Take new members of
+	elf32_arm_howto_table_2 into account.
+	(elf32_arm_reloc_map): Add BFD_RELOC_ARM_GOTFUNCDESC,
+	BFD_RELOC_ARM_GOTOFFFUNCDESC, BFD_RELOC_ARM_FUNCDESC,
+	BFD_RELOC_ARM_FUNCDESC_VALUE.
+	* reloc.c: Add BFD_RELOC_ARM_GOTFUNCDESC,
+	BFD_RELOC_ARM_GOTOFFFUNCDESC, BFD_RELOC_ARM_FUNCDESC,
+	BFD_RELOC_ARM_FUNCDESC_VALUE.
+
+2018-04-25  Christophe Lyon  <christophe.lyon@st.com>
+	Mickaël Guêné  <mickael.guene@st.com>
+
+	* elf32-arm.c (elf32_arm_print_private_bfd_data): Support
+	EF_ARM_PIC and ELFOSABI_ARM_FDPIC.
+	(elf32_arm_post_process_headers): Support ELFOSABI_ARM_FDPIC.
+	(ELF_OSABI): Define to ELFOSABI_ARM_FDPIC.
+
+2018-04-25  Christophe Lyon  <christophe.lyon@st.com>
+	Mickaël Guêné  <mickael.guene@st.com>
+
+	* config.bfd (arm*-*-linux-*): Add arm_elf32_fdpic_be_vec and
+	arm_elf32_fdpic_le_vec to targ_selvecs. Accept
+	arm*-*-uclinuxfdpiceabi.
+	* configure.ac: Add support for arm_elf32_fdpic_be_vec and
+	arm_elf32_fdpic_le_vec.
+	* configure: Regenerate.
+	* elf32-arm.c (struct elf32_arm_link_hash_table): Add fdpic_p.
+	(elf32_arm_link_hash_table_create): Initialize fdpic_p.
+	(TARGET_LITTLE_SYM, TARGET_LITTLE_NAME, TARGET_BIG_SYM)
+	(TARGET_BIG_NAME, elf_match_priority): Define for FDPIC targets.
+	(elf32_arm_fdpic_link_hash_table_create): New.
+	* targets.c (_bfd_target_vector): Add arm_elf32_fdpic_be_vec and
+	arm_elf32_fdpic_le_vec.
+
+2018-04-25  Alan Modra  <amodra@gmail.com>
+
+	* elf-linux-core.h: Disable gcc-8 string truncation warning.
+	* elf.c (elfcore_write_prpsinfo): Likewise.
+
+2018-04-25  Alan Modra  <amodra@gmail.com>
+
+	* Makefile.am: Remove arm-aout and arm-coff support.
+	* config.bfd: Likewise.
+	* configure.ac: Likewise.
+	* targets.c: Likewise.
+	* aout-arm.c: Delete.
+	* armnetbsd.c: Delete.
+	* riscix.c: Delete.
+	* Makefile.in: Regenerate.
+	* configure: Regenerate.
+	* po/SRC-POTFILES.in: Regenerate.
+
+2018-04-24  Nick Clifton  <nickc@redhat.com>
+
+	PR 23113
+	* elf.c (ignore_section_sym): Check for the output_section pointer
+	being NULL before dereferencing it.
+
+	PR 23110
+	* peXXigen.c (_bfd_XX_bfd_copy_private_bfd_data_common): Check for
+	a negative PE_DEBUG_DATA size before iterating over the debug data.
+
+2018-04-23  Alan Modra  <amodra@gmail.com>
+
+	* elf-linux-core.h: Revert last change.
+	* elf.c: Likewise.
+
+2018-04-23  Nick Clifton  <nickc@redhat.com>
+
+	PR 23056
+	* aoutx.h (aout_get_external_symbols): Allocate an extra byte at
+	the end of the string table, and zero it.
+
+2018-04-23  Alan Modra  <amodra@gmail.com>
+
+	* elf-linux-core.h (swap_linux_prpsinfo32_ugid32_out): Disable
+	gcc-8 string truncation warning.
+	(swap_linux_prpsinfo32_ugid16_out): Likewise.
+	(swap_linux_prpsinfo64_ugid32_out): Likewise.
+	(swap_linux_prpsinfo64_ugid16_out): Likewise.
+	* elf.c (elfcore_write_prpsinfo): Likewise.
+
+2018-04-23  Nick Clifton  <nickc@redhat.com>
+
+	PR 23056
+	* aoutx.h (aout_get_external_symbols): Allocate an extra byte at
+	the end of the string table, and zero it.
+
 2018-04-20  Alan Modra  <amodra@gmail.com>
 
 	PR 22978

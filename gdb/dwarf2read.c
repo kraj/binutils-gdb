@@ -3411,7 +3411,7 @@ find_slot_in_mapped_hash (struct mapped_index *index, const char *name,
 
 /* A helper function that reads the .gdb_index from SECTION and fills
    in MAP.  FILENAME is the name of the file containing the section;
-   it is used for error reporting.  DEPRECATED_OK is nonzero if it is
+   it is used for error reporting.  DEPRECATED_OK is true if it is
    ok to use deprecated sections.
 
    CU_LIST, CU_LIST_ELEMENTS, TYPES_LIST, and TYPES_LIST_ELEMENTS are
@@ -3420,10 +3420,10 @@ find_slot_in_mapped_hash (struct mapped_index *index, const char *name,
 
    Returns 1 if all went well, 0 otherwise.  */
 
-static int
+static bool
 read_index_from_section (struct objfile *objfile,
 			 const char *filename,
-			 int deprecated_ok,
+			 bool deprecated_ok,
 			 struct dwarf2_section_info *section,
 			 struct mapped_index *map,
 			 const gdb_byte **cu_list,
@@ -4577,13 +4577,13 @@ public:
   DISABLE_COPY_AND_ASSIGN (mock_mapped_index);
 
   /* Return the number of names in the symbol table.  */
-  virtual size_t symbol_name_count () const
+  size_t symbol_name_count () const override
   {
     return m_symbol_table.size ();
   }
 
   /* Get the name of the symbol at IDX in the symbol table.  */
-  virtual const char *symbol_name_at (offset_type idx) const
+  const char *symbol_name_at (offset_type idx) const override
   {
     return m_symbol_table[idx];
   }

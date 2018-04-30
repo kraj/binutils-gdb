@@ -1,3 +1,258 @@
+2018-04-30  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* dwarf2read.c (read_index_from_section): Use bool.
+
+2018-04-29  Fabian Groffen  <grobian@gentoo.org>
+
+	PR gdb/22950
+	* proc-events.c (init_syscall_table): Guard usage os SYS_uuidsys
+	with #ifdef.
+
+2018-04-29  John Reiser  <jreiser@BitWagon.com>
+
+	PR build/22873
+	* gdb/Makefile.in: (.c:.l, .c:.y): Write the target only in the
+	last step, and do it atomically.
+
+2018-04-27  Alexandre Oliva  <aoliva@redhat.com>
+
+	* compile/compile-c-types.c (convert_int, convert_float):
+	Update for C FE v1.
+
+2018-04-27  Tom Tromey  <tom@tromey.com>
+
+	PR rust/22545:
+	* rust-lang.c (rust_inclusive_range_type_p): New function.
+	(rust_range): Handle inclusive ranges.
+	(rust_compute_range): Likewise.
+	* rust-exp.y (struct rust_op) <inclusive>: New field.
+	(DOTDOTEQ): New constant.
+	(range_expr): Add "..=" productions.
+	(operator_tokens): Add "..=" token.
+	(ast_range): Add "inclusive" parameter.
+	(convert_ast_to_expression) <case OP_RANGE>: Handle inclusive
+	ranges.
+	* parse.c (operator_length_standard) <case OP_RANGE>: Handle new
+	bounds values.
+	* expression.h (enum range_type) <NONE_BOUND_DEFAULT_EXCLUSIVE,
+	LOW_BOUND_DEFAULT_EXCLUSIVE>: New constants.
+	Update comments.
+	* expprint.c (print_subexp_standard): Handle new bounds values.
+	(dump_subexp_body_standard): Likewise.
+
+2018-04-27  Tom Tromey  <tom@tromey.com>
+
+	* configure: Rebuild.
+	* warning.m4 (AM_GDB_WARNINGS): Add -Wsuggest-override.
+	* dwarf2loc.c (class dwarf_evaluate_loc_desc): Use "override", not
+	"OVERRIDE".
+	(class symbol_needs_eval_context): Likewise.
+	* dwarf2read.c (mock_mapped_index::symbol_name_count)
+	(mock_mapped_index::symbol_name_at): Use "override".  Remove
+	"virtual".
+	* dwarf2-frame.c (dwarf_expr_executor::get_addr_index): Use
+	"override".
+	(class dwarf_expr_executor): Use "override", not "OVERRIDE".
+	* aarch64-tdep.c (instruction_reader::read): Use "override".
+	(instruction_reader_test::read): Likewise.
+	* arm-tdep.c (instruction_reader::read): Use "override".
+	(instruction_reader_thumb::read): Likewise.
+
+2018-04-26  Andrzej Kaczmarek  <andrzej.kaczmarek@codecoup.pl>
+
+	PR remote/9665
+	* remote.c (send_g_packet): Use putpkt/getpkt/packet_check_result
+	instead of remote_send.
+	(remote_send): Remove.
+
+2018-04-26  Pedro Alves  <palves@redhat.com>
+
+	* elfread.c (elf_gnu_ifunc_resolver_return_stop): Use
+	find_function_start_sal instead of find_pc_line.
+
+2018-04-26  Pedro Alves  <palves@redhat.com>
+
+	* breakpoint.c (set_breakpoint_location_function): Handle
+	mst_data_gnu_ifunc.
+	* c-exp.y (variable production): Handle mst_data_gnu_ifunc.
+	* elfread.c (elf_symtab_read): Give data symbols with
+	BSF_GNU_INDIRECT_FUNCTION set mst_data_gnu_ifunc type.
+	(elf_rel_plt_read): Update comment.
+	* linespec.c (convert_linespec_to_sals): Handle
+	mst_data_gnu_ifunc.
+	(minsym_found): Handle mst_data_gnu_ifunc.
+	* minsyms.c (msymbol_is_function, minimal_symbol_reader::record)
+	(find_solib_trampoline_target): Handle mst_data_gnu_ifunc.
+	* parse.c (find_minsym_type_and_address): Handle
+	mst_data_gnu_ifunc.
+	* symmisc.c (dump_msymbols): Handle mst_data_gnu_ifunc.
+	* symtab.c (find_gnu_ifunc): Handle mst_data_gnu_ifunc.
+	* symtab.h (minimal_symbol_type) <mst_text_gnu_ifunc>: Update
+	comment.
+	<mst_data_gnu_ifunc>: New enumerator.
+
+2018-04-26  Pedro Alves  <palves@redhat.com>
+
+	* minsyms.c (lookup_minimal_symbol_by_pc_section_1): Rename to ...
+	(lookup_minimal_symbol_by_pc_section): ... this.  Replace
+	'want_trampoline' parameter by a lookup_msym_prefer parameter.
+	Handle it.
+	(lookup_minimal_symbol_by_pc_section): Delete old implementation.
+	(lookup_minimal_symbol_by_pc): Adjust.
+	(in_gnu_ifunc_stub): Prefer GNU ifunc symbols.
+	(lookup_solib_trampoline_symbol_by_pc): Adjust.
+	* minsyms.h (lookup_msym_prefer): New enum.
+	(lookup_minimal_symbol_by_pc_section): Replace 'want_trampoline'
+	parameter by a lookup_msym_prefer parameter.
+
+2018-04-26  Pedro Alves  <palves@redhat.com>
+
+	* elfread.c (elf_gnu_ifunc_record_cache): Check if the symbol name
+	ends in "@plt" instead of looking at the symbol's section.
+
+2018-04-26  Pedro Alves  <palves@redhat.com>
+
+	* blockframe.c (cache_pc_function_is_gnu_ifunc): Delete.  Remove
+	all references.
+	(find_pc_partial_function_gnu_ifunc): Rename to ...
+	(find_pc_partial_function): ... this, and remove references to
+	'is_gnu_ifunc_p'.
+	(find_pc_partial_function): Delete old implementation.
+	* symtab.h (find_pc_partial_function_gnu_ifunc): Delete.
+
+2018-04-26  Pedro Alves  <palves@redhat.com>
+
+	* linespec.c (struct bound_minimal_symbol_search_key): New.
+	(convert_linespec_to_sals): Sort minimal symbols earlier.  Don't
+	skip first line if we found a GNU ifunc minimal symbol by name.
+	(compare_msymbols): Change parameters to work with a destructured
+	lhs minsym.
+	(compare_msymbols_for_qsort, compare_msymbols_for_bsearch): New
+	functions.
+
+2018-04-26  Pedro Alves  <palves@redhat.com>
+
+	* breakpoint.c (set_breakpoint_location_function): Don't resolve
+	ifunc targets here.  Instead, if we have an ifunc minsym, use its
+	address/name.
+	(add_location_to_breakpoint): Store the minsym and the objfile in
+	the breakpoint location.
+	* breakpoint.h (bp_location) <msymbol, objfile>: New fields.
+	* linespec.c (minsym_found): Resolve GNU ifunc targets here.
+	Record the minsym in the sal.
+	* symtab.h (symtab_and_line) <msymbol>: New field.
+
+2018-04-26  Pedro Alves  <palves@redhat.com>
+
+	* elfread.c (elf_gnu_ifunc_resolve_by_got): Don't write to *ADDR_P
+	unless we actually resolved the ifunc.
+
+2018-04-26  Pedro Alves  <palves@redhat.com>
+
+	* c-exp.y (variable production): Prefer ifunc minsyms over
+	regular function symbols.
+	* symtab.c (find_gnu_ifunc): New function.
+	* minsyms.h (lookup_msym_prefer): New enum.
+	(lookup_minimal_symbol_by_pc_section): Replace 'want_trampoline'
+	parameter by a lookup_msym_prefer parameter.
+	* symtab.h (find_gnu_ifunc): New declaration.
+
+2018-04-26  Pedro Alves  <palves@redhat.com>
+
+	* blockframe.c (find_gnu_ifunc_target_type): New function.
+	(find_function_type): New.
+	* eval.c (evaluate_var_msym_value): For GNU ifunc types, always
+	return a value with a memory address.
+	(eval_call): For calls to GNU ifunc functions, try to find the
+	type of the target function from the type that the resolver
+	returns.
+	* gdbtypes.c (objfile_type): Don't install a return type for ifunc
+	symbols.
+	* infcall.c (find_function_return_type): Delete.
+	(find_function_addr): Add 'function_type' parameter.  For calls to
+	GNU ifunc functions, try to find the type of the target function
+	from the type that the resolver returns, and return it via
+	FUNCTION_TYPE.
+	(call_function_by_hand_dummy): Adjust to use the function type
+	returned by find_function_addr.
+	(find_function_addr): Add 'function_type' parameter and move
+	description here.
+	* symtab.h (find_function_type, find_gnu_ifunc_target_type): New
+	declarations.
+
+2018-04-26  Pedro Alves  <palves@redhat.com>
+
+	* c-exp.y (variable production): Skip finding an alias for ifunc
+	symbols.
+
+2018-04-26  Pedro Alves  <palves@redhat.com>
+
+	* elfread.c (elf_rel_plt_read): Look for relocations for .got.plt too.
+
+2018-04-25  Pedro Alves  <palves@redhat.com>
+
+	* infcmd.c (kill_command): Print the pid as string, not the whole
+	thread's ptid.  Add comment.  s/has been killed/killed/ in output
+	message.
+	* remote.c (remote_detach_1): Print the pid as string, not the
+	whole thread's ptid.
+
+2018-04-24  Jan Kratochvil  <jan.kratochvil@redhat.com>
+	    Sergio Durigan Junior  <sergiodj@redhat.com>
+	    Pedro Alves  <palves@redhat.com>
+
+	* infcmd.c (kill_command): Print message when inferior has
+	been killed.
+	* inferior.c (print_inferior_events): Remove 'static'.  Set as
+	'1'.
+	(add_inferior): Improve message printed when
+	'print_inferior_events' is on.
+	(exit_inferior): Remove message printed when
+	'print_inferior_events' is on.
+	(detach_inferior): Improve message printed when
+	'print_inferior_events' is on.
+	(initialize_inferiors): Use 'add_inferior_silent' to set
+	'current_inferior_'.
+	* inferior.h (print_inferior_events): Declare here as
+	'extern'.
+	* infrun.c (follow_fork_inferior): Print '[Attaching...]' or
+	'[Detaching...]' messages when 'print_inferior_events' is on.
+	Use 'add_thread_silent' instead of 'add_thread'.  Add '[' and ']'
+	as prefix/suffix for messages.  Remove periods.  Fix erroneous
+	'Detaching after fork from child...', replace it by '... from
+	parent...'.
+	(handle_vfork_child_exec_or_exit): Add '[' and ']' as
+	prefix/suffix when printing 'Detaching...' messages.  Print
+	them when 'print_inferior_events' is on.
+	* remote.c (remote_detach_1): Print message when detaching
+	from inferior and '!is_fork_parent'.
+
+2018-04-24  Tom Tromey  <tom@tromey.com>
+
+	* cli-out.h: Reindent.
+
+2018-04-24  Tom Tromey  <tom@tromey.com>
+
+	* cli-out.c (cli_ui_out::out_field_fmt): Remove.
+	(cli_ui_out::do_field_string): Use fputs_filtered.
+	* cli-out.h (class cli_ui_out) <out_field_fmt>: Remove.
+
+2018-04-23  Tom Tromey  <tom@tromey.com>
+
+	* guile/scm-frame.c (gdbscm_frame_read_var): Use
+	gdb::unique_xmalloc_ptr.
+
+2018-04-23  Tom Tromey  <tom@tromey.com>
+
+	* configure: Rebuild.
+
+2018-04-22  Rajendra SY  <rajendra.sy@gmail.com>
+
+	PR gdb/23095
+	* gdb/testsuite/gdb.base/break-probes.exp: Pass shlib_load to
+	prepare_for_testing.  Set normal_bp to r_debug_state if target
+	is bsd.
+
 2018-04-21  Pedro Alves  <palves@redhat.com>
 	    Rajendra SY  <rajendra.sy@gmail.com>
 

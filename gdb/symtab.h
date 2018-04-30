@@ -580,8 +580,26 @@ enum minimal_symbol_type
 {
   mst_unknown = 0,		/* Unknown type, the default */
   mst_text,			/* Generally executable instructions */
-  mst_text_gnu_ifunc,		/* Executable code returning address
+
+  /* A GNU ifunc symbol, in the .text section.  GDB uses to know
+     whether the user is setting a breakpoint on a GNU ifunc function,
+     and thus GDB needs to actually set the breakpoint on the target
+     function.  It is also used to know whether the program stepped
+     into an ifunc resolver -- the resolver may get a separate
+     symbol/alias under a different name, but it'll have the same
+     address as the ifunc symbol.  */
+  mst_text_gnu_ifunc,           /* Executable code returning address
 				   of executable code */
+
+  /* A GNU ifunc function descriptor symbol, in a data section
+     (typically ".opd").  Seen on architectures that use function
+     descriptors, like PPC64/ELFv1.  In this case, this symbol's value
+     is the address of the descriptor.  There'll be a corresponding
+     mst_text_gnu_ifunc synthetic symbol for the text/entry
+     address.  */
+  mst_data_gnu_ifunc,		/* Executable code returning address
+				   of executable code */
+
   mst_slot_got_plt,		/* GOT entries for .plt sections */
   mst_data,			/* Generally initialized data */
   mst_bss,			/* Generally uninitialized data */
@@ -1665,15 +1683,24 @@ extern struct symbol *find_pc_sect_function (CORE_ADDR, struct obj_section *);
 
 extern struct symbol *find_symbol_at_address (CORE_ADDR);
 
-extern int find_pc_partial_function_gnu_ifunc (CORE_ADDR pc, const char **name,
-					       CORE_ADDR *address,
-					       CORE_ADDR *endaddr,
-					       int *is_gnu_ifunc_p);
-
 /* lookup function from address, return name, start addr and end addr.  */
 
 extern int find_pc_partial_function (CORE_ADDR, const char **, CORE_ADDR *,
 				     CORE_ADDR *);
+
+/* Return the type of a function with its first instruction exactly at
+   the PC address.  Return NULL otherwise.  */
+
+extern struct type *find_function_type (CORE_ADDR pc);
+
+/* See if we can figure out the function's actual type from the type
+   that the resolver returns.  RESOLVER_FUNADDR is the address of the
+   ifunc resolver.  */
+
+extern struct type *find_gnu_ifunc_target_type (CORE_ADDR resolver_funaddr);
+
+/* Find the GNU ifunc minimal symbol that matches SYM.  */
+extern bound_minimal_symbol find_gnu_ifunc (const symbol *sym);
 
 extern void clear_pc_function_cache (void);
 
@@ -1751,6 +1778,7 @@ struct symtab_and_line
   struct symtab *symtab = NULL;
   struct symbol *symbol = NULL;
   struct obj_section *section = NULL;
+  struct minimal_symbol *msymbol = NULL;
   /* Line number.  Line numbers start at 1 and proceed through symtab->nlines.
      0 is never a valid line number; it is used to indicate that line number
      information is not available.  */
@@ -1889,8 +1917,17 @@ int matching_obj_sections (struct obj_section *, struct obj_section *);
 
 extern struct symtab *find_line_symtab (struct symtab *, int, int *, int *);
 
-extern struct symtab_and_line find_function_start_sal (struct symbol *sym,
-						       int);
+/* Given a function symbol SYM, find the symtab and line for the start
+   of the function.  If FUNFIRSTLINE is true, we want the first line
+   of real code inside the function.  */
+extern symtab_and_line find_function_start_sal (symbol *sym, bool
+						funfirstline);
+
+/* Same, but start with a function address/section instead of a
+   symbol.  */
+extern symtab_and_line find_function_start_sal (CORE_ADDR func_addr,
+						obj_section *section,
+						bool funfirstline);
 
 extern void skip_prologue_sal (struct symtab_and_line *);
 

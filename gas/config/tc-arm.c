@@ -75,6 +75,9 @@ static struct
   unsigned	  sp_restored:1;
 } unwind;
 
+/* Whether --fdpic was given.  */
+static int arm_fdpic;
+
 #endif /* OBJ_ELF */
 
 /* Results from operand parsing worker functions.  */
@@ -1040,7 +1043,6 @@ static int
 my_get_expression (expressionS * ep, char ** str, int prefix_mode)
 {
   char * save_in;
-  segT	 seg;
 
   /* In unified syntax, all prefixes are optional.  */
   if (unified_syntax)
@@ -1072,7 +1074,7 @@ my_get_expression (expressionS * ep, char ** str, int prefix_mode)
   save_in = input_line_pointer;
   input_line_pointer = *str;
   in_my_get_expression = TRUE;
-  seg = expression (ep);
+  expression (ep);
   in_my_get_expression = FALSE;
 
   if (ep->X_op == O_illegal || ep->X_op == O_absent)
@@ -1085,22 +1087,6 @@ my_get_expression (expressionS * ep, char ** str, int prefix_mode)
 		      ? _("missing expression") :_("bad expression"));
       return 1;
     }
-
-#ifdef OBJ_AOUT
-  if (seg != absolute_section
-      && seg != text_section
-      && seg != data_section
-      && seg != bss_section
-      && seg != undefined_section)
-    {
-      inst.error = _("bad segment");
-      *str = input_line_pointer;
-      input_line_pointer = save_in;
-      return 1;
-    }
-#else
-  (void) seg;
-#endif
 
   /* Get rid of any bignums now, so that we don't generate an error for which
      we can't establish a line number later on.	 Big numbers are never valid
@@ -19317,7 +19303,16 @@ static struct reloc_entry reloc_names[] =
   { "tlscall", BFD_RELOC_ARM_TLS_CALL},
 	{ "TLSCALL", BFD_RELOC_ARM_TLS_CALL},
   { "tlsdescseq", BFD_RELOC_ARM_TLS_DESCSEQ},
-	{ "TLSDESCSEQ", BFD_RELOC_ARM_TLS_DESCSEQ}
+	{ "TLSDESCSEQ", BFD_RELOC_ARM_TLS_DESCSEQ},
+  { "gotfuncdesc", BFD_RELOC_ARM_GOTFUNCDESC },
+	{ "GOTFUNCDESC", BFD_RELOC_ARM_GOTFUNCDESC },
+  { "gotofffuncdesc", BFD_RELOC_ARM_GOTOFFFUNCDESC },
+	{ "GOTOFFFUNCDESC", BFD_RELOC_ARM_GOTOFFFUNCDESC },
+  { "funcdesc", BFD_RELOC_ARM_FUNCDESC },
+	{ "FUNCDESC", BFD_RELOC_ARM_FUNCDESC },
+   { "tlsgd_fdpic", BFD_RELOC_ARM_TLS_GD32_FDPIC },      { "TLSGD_FDPIC", BFD_RELOC_ARM_TLS_GD32_FDPIC },
+   { "tlsldm_fdpic", BFD_RELOC_ARM_TLS_LDM32_FDPIC },    { "TLSLDM_FDPIC", BFD_RELOC_ARM_TLS_LDM32_FDPIC },
+   { "gottpoff_fdpic", BFD_RELOC_ARM_TLS_IE32_FDPIC },   { "GOTTPOFF_FDIC", BFD_RELOC_ARM_TLS_IE32_FDPIC },
 };
 #endif
 
@@ -22060,21 +22055,6 @@ valueT
 md_section_align (segT	 segment ATTRIBUTE_UNUSED,
 		  valueT size)
 {
-#if (defined (OBJ_AOUT) || defined (OBJ_MAYBE_AOUT))
-  if (OUTPUT_FLAVOR == bfd_target_aout_flavour)
-    {
-      /* For a.out, force the section size to be aligned.  If we don't do
-	 this, BFD will align it for us, but it will not write out the
-	 final bytes of the section.  This may be a bug in BFD, but it is
-	 easier to fix it here since that is how the other a.out targets
-	 work.  */
-      int align;
-
-      align = bfd_get_section_alignment (stdoutput, segment);
-      size = ((size + (1 << align) - 1) & (-((valueT) 1 << align)));
-    }
-#endif
-
   return size;
 }
 
@@ -24005,6 +23985,21 @@ md_apply_fix (fixS *	fixP,
       S_SET_THREAD_LOCAL (fixP->fx_addsy);
       break;
 
+      /* Same handling as above, but with the arm_fdpic guard.  */
+    case BFD_RELOC_ARM_TLS_GD32_FDPIC:
+    case BFD_RELOC_ARM_TLS_IE32_FDPIC:
+    case BFD_RELOC_ARM_TLS_LDM32_FDPIC:
+      if (arm_fdpic)
+	{
+	  S_SET_THREAD_LOCAL (fixP->fx_addsy);
+	}
+      else
+	{
+	  as_bad_where (fixP->fx_file, fixP->fx_line,
+			_("Relocation supported only in FDPIC mode"));
+	}
+      break;
+
     case BFD_RELOC_ARM_GOT32:
     case BFD_RELOC_ARM_GOTOFF:
       break;
@@ -24020,6 +24015,22 @@ md_apply_fix (fixS *	fixP,
 	 during reloc processing later.  */
       if (fixP->fx_done || !seg->use_rela_p)
 	md_number_to_chars (buf, fixP->fx_offset, 4);
+      break;
+
+      /* Relocations for FDPIC.  */
+    case BFD_RELOC_ARM_GOTFUNCDESC:
+    case BFD_RELOC_ARM_GOTOFFFUNCDESC:
+    case BFD_RELOC_ARM_FUNCDESC:
+      if (arm_fdpic)
+	{
+	  if (fixP->fx_done || !seg->use_rela_p)
+	    md_number_to_chars (buf, 0, 4);
+	}
+      else
+	{
+	  as_bad_where (fixP->fx_file, fixP->fx_line,
+			_("Relocation supported only in FDPIC mode"));
+      }
       break;
 #endif
 
@@ -24782,14 +24793,20 @@ tc_gen_reloc (asection *section, fixS *fixp)
     case BFD_RELOC_ARM_THUMB_ALU_ABS_G1_NC:
     case BFD_RELOC_ARM_THUMB_ALU_ABS_G2_NC:
     case BFD_RELOC_ARM_THUMB_ALU_ABS_G3_NC:
+    case BFD_RELOC_ARM_GOTFUNCDESC:
+    case BFD_RELOC_ARM_GOTOFFFUNCDESC:
+    case BFD_RELOC_ARM_FUNCDESC:
       code = fixp->fx_r_type;
       break;
 
     case BFD_RELOC_ARM_TLS_GOTDESC:
     case BFD_RELOC_ARM_TLS_GD32:
+    case BFD_RELOC_ARM_TLS_GD32_FDPIC:
     case BFD_RELOC_ARM_TLS_LE32:
     case BFD_RELOC_ARM_TLS_IE32:
+    case BFD_RELOC_ARM_TLS_IE32_FDPIC:
     case BFD_RELOC_ARM_TLS_LDM32:
+    case BFD_RELOC_ARM_TLS_LDM32_FDPIC:
       /* BFD will include the symbol's address in the addend.
 	 But we don't want that, so subtract it out again here.  */
       if (!S_IS_COMMON (fixp->fx_addsy))
@@ -25055,9 +25072,12 @@ arm_fix_adjustable (fixS * fixP)
       || fixP->fx_r_type == BFD_RELOC_ARM_GOT32
       || fixP->fx_r_type == BFD_RELOC_ARM_GOTOFF
       || fixP->fx_r_type == BFD_RELOC_ARM_TLS_GD32
+      || fixP->fx_r_type == BFD_RELOC_ARM_TLS_GD32_FDPIC
       || fixP->fx_r_type == BFD_RELOC_ARM_TLS_LE32
       || fixP->fx_r_type == BFD_RELOC_ARM_TLS_IE32
+      || fixP->fx_r_type == BFD_RELOC_ARM_TLS_IE32_FDPIC
       || fixP->fx_r_type == BFD_RELOC_ARM_TLS_LDM32
+      || fixP->fx_r_type == BFD_RELOC_ARM_TLS_LDM32_FDPIC
       || fixP->fx_r_type == BFD_RELOC_ARM_TLS_LDO32
       || fixP->fx_r_type == BFD_RELOC_ARM_TLS_GOTDESC
       || fixP->fx_r_type == BFD_RELOC_ARM_TLS_CALL
@@ -25111,10 +25131,20 @@ elf32_arm_target_format (void)
 	  ? "elf32-bigarm-nacl"
 	  : "elf32-littlearm-nacl");
 #else
-  if (target_big_endian)
-    return "elf32-bigarm";
+  if (arm_fdpic)
+    {
+      if (target_big_endian)
+	return "elf32-bigarm-fdpic";
+      else
+	return "elf32-littlearm-fdpic";
+    }
   else
-    return "elf32-littlearm";
+    {
+      if (target_big_endian)
+	return "elf32-bigarm";
+      else
+	return "elf32-littlearm";
+    }
 #endif
 }
 
@@ -25634,6 +25664,7 @@ const char * md_shortopts = "m:k";
 #endif
 #endif
 #define OPTION_FIX_V4BX (OPTION_MD_BASE + 2)
+#define OPTION_FDPIC (OPTION_MD_BASE + 3)
 
 struct option md_longopts[] =
 {
@@ -25644,6 +25675,9 @@ struct option md_longopts[] =
   {"EL", no_argument, NULL, OPTION_EL},
 #endif
   {"fix-v4bx", no_argument, NULL, OPTION_FIX_V4BX},
+#ifdef OBJ_ELF
+  {"fdpic", no_argument, NULL, OPTION_FDPIC},
+#endif
   {NULL, no_argument, NULL, 0}
 };
 
@@ -26815,6 +26849,12 @@ md_parse_option (int c, const char * arg)
       fix_v4bx = TRUE;
       break;
 
+#ifdef OBJ_ELF
+    case OPTION_FDPIC:
+      arm_fdpic = TRUE;
+      break;
+#endif /* OBJ_ELF */
+
     case 'a':
       /* Listing option.  Just ignore these, we don't support additional
 	 ones.	*/
@@ -26909,6 +26949,11 @@ md_show_usage (FILE * fp)
 
   fprintf (fp, _("\
   --fix-v4bx              Allow BX in ARMv4 code\n"));
+
+#ifdef OBJ_ELF
+  fprintf (fp, _("\
+  --fdpic                 generate an FDPIC object file\n"));
+#endif /* OBJ_ELF */
 }
 
 #ifdef OBJ_ELF

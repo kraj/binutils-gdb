@@ -122,8 +122,6 @@ static void remote_mourn (struct target_ops *ops);
 
 static void extended_remote_restart (void);
 
-static void remote_send (char **buf, long *sizeof_buf_p);
-
 static int readchar (int timeout);
 
 static void remote_serial_write (const char *str, int len);
@@ -5137,7 +5135,16 @@ remote_detach_1 (int from_tty, inferior *inf)
   /* If doing detach-on-fork, we don't mourn, because that will delete
      breakpoints that should be available for the followed inferior.  */
   if (!is_fork_parent)
-    target_mourn_inferior (inferior_ptid);
+    {
+      /* Save the pid as a string before mourning, since that will
+	 unpush the remote target, and we need the string after.  */
+      std::string infpid = target_pid_to_str (pid_to_ptid (pid));
+
+      target_mourn_inferior (inferior_ptid);
+      if (print_inferior_events)
+	printf_unfiltered (_("[Inferior %d (%s) detached]\n"),
+			   inf->num, infpid.c_str ());
+    }
   else
     {
       inferior_ptid = null_ptid;
@@ -7515,7 +7522,11 @@ send_g_packet (void)
   int buf_len;
 
   xsnprintf (rs->buf, get_remote_packet_size (), "g");
-  remote_send (&rs->buf, &rs->buf_size);
+  putpkt (rs->buf);
+  getpkt (&rs->buf, &rs->buf_size, 0);
+  if (packet_check_result (rs->buf) == PACKET_ERROR)
+    error (_("Could not read registers; remote failure reply '%s'"),
+           rs->buf);
 
   /* We can get out of synch in various cases.  If the first character
      in the buffer is not a hex character, assume that has happened
@@ -8589,22 +8600,6 @@ remote_serial_write (const char *str, int len)
 
   if (rs->got_ctrlc_during_io)
     set_quit_flag ();
-}
-
-/* Send the command in *BUF to the remote machine, and read the reply
-   into *BUF.  Report an error if we get an error reply.  Resize
-   *BUF using xrealloc if necessary to hold the result, and update
-   *SIZEOF_BUF.  */
-
-static void
-remote_send (char **buf,
-	     long *sizeof_buf)
-{
-  putpkt (*buf);
-  getpkt (buf, sizeof_buf, 0);
-
-  if ((*buf)[0] == 'E')
-    error (_("Remote failure reply: %s"), *buf);
 }
 
 /* Return a string representing an escaped version of BUF, of len N.

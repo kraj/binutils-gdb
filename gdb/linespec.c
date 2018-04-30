@@ -2258,12 +2258,6 @@ convert_linespec_to_sals (struct linespec_state *state, linespec_p ls)
   else if (ls->function_symbols != NULL || ls->minimal_symbols != NULL)
     {
       /* We have just a bunch of functions and/or methods.  */
-      int i;
-      struct symtab_and_line sal;
-      struct symbol *sym;
-      bound_minimal_symbol_d *elem;
-      struct program_space *pspace;
-
       if (ls->function_symbols != NULL)
 	{
 	  /* Sort symbols so that symbols with the same program space are next
@@ -2272,30 +2266,81 @@ convert_linespec_to_sals (struct linespec_state *state, linespec_p ls)
 		 VEC_length (symbolp, ls->function_symbols),
 		 sizeof (symbolp), compare_symbols);
 
-	  for (i = 0; VEC_iterate (symbolp, ls->function_symbols, i, sym); ++i)
+	  struct symbol *sym;
+	  for (int i = 0; VEC_iterate (symbolp, ls->function_symbols, i, sym); ++i)
 	    {
-	      pspace = SYMTAB_PSPACE (symbol_symtab (sym));
+	      program_space *pspace = SYMTAB_PSPACE (symbol_symtab (sym));
 	      set_current_program_space (pspace);
-	      if (symbol_to_sal (&sal, state->funfirstline, sym)
-		  && maybe_add_address (state->addr_set, pspace, sal.pc))
-		add_sal_to_sals (state, &sals, &sal,
-				 SYMBOL_NATURAL_NAME (sym), 0);
+
+	      /* Don't skip to the first line of the function if we
+		 had found an ifunc minimal symbol for this function,
+		 because that means that this function is an ifunc
+		 resolver with the same name as the ifunc itself.  */
+	      bool found_ifunc = false;
+
+	      if (state->funfirstline
+		   && ls->minimal_symbols != NULL
+		   && SYMBOL_CLASS (sym) == LOC_BLOCK)
+		{
+		  const CORE_ADDR addr
+		    = BLOCK_START (SYMBOL_BLOCK_VALUE (sym));
+
+		  bound_minimal_symbol_d *elem;
+		  for (int m = 0;
+		       VEC_iterate (bound_minimal_symbol_d, ls->minimal_symbols,
+				    m, elem);
+		       ++m)
+		    {
+		      if (MSYMBOL_TYPE (elem->minsym) == mst_text_gnu_ifunc
+			  || MSYMBOL_TYPE (elem->minsym) == mst_data_gnu_ifunc)
+			{
+			  CORE_ADDR msym_addr = BMSYMBOL_VALUE_ADDRESS (*elem);
+			  if (MSYMBOL_TYPE (elem->minsym) == mst_data_gnu_ifunc)
+			    {
+			      struct gdbarch *gdbarch
+				= get_objfile_arch (elem->objfile);
+			      msym_addr
+				= (gdbarch_convert_from_func_ptr_addr
+				   (gdbarch,
+				    msym_addr,
+				    &current_target));
+			    }
+
+			  if (msym_addr == addr)
+			    {
+			      found_ifunc = true;
+			      break;
+			    }
+			}
+		    }
+		}
+
+	      if (!found_ifunc)
+		{
+		  symtab_and_line sal;
+		  if (symbol_to_sal (&sal, state->funfirstline, sym)
+		      && maybe_add_address (state->addr_set, pspace, sal.pc))
+		    add_sal_to_sals (state, &sals, &sal,
+				     SYMBOL_NATURAL_NAME (sym), 0);
+		}
 	    }
 	}
 
       if (ls->minimal_symbols != NULL)
 	{
-	  /* Sort minimal symbols by program space, too.  */
+	  /* Sort minimal symbols by program space, too  */
 	  qsort (VEC_address (bound_minimal_symbol_d, ls->minimal_symbols),
 		 VEC_length (bound_minimal_symbol_d, ls->minimal_symbols),
 		 sizeof (bound_minimal_symbol_d), compare_msymbols);
 
-	  for (i = 0;
+	  bound_minimal_symbol_d *elem;
+
+	  for (int i = 0;
 	       VEC_iterate (bound_minimal_symbol_d, ls->minimal_symbols,
 			    i, elem);
 	       ++i)
 	    {
-	      pspace = elem->objfile->pspace;
+	      program_space *pspace = elem->objfile->pspace;
 	      set_current_program_space (pspace);
 	      minsym_found (state, elem->objfile, elem->minsym, &sals);
 	    }
@@ -4244,33 +4289,36 @@ minsym_found (struct linespec_state *self, struct objfile *objfile,
 	      struct minimal_symbol *msymbol,
 	      std::vector<symtab_and_line> *result)
 {
-  struct symtab_and_line sal;
+  bool want_start_sal;
 
   CORE_ADDR func_addr;
-  if (msymbol_is_function (objfile, msymbol, &func_addr))
+  bool is_function = msymbol_is_function (objfile, msymbol, &func_addr);
+
+  if (is_function)
     {
-      sal = find_pc_sect_line (func_addr, NULL, 0);
+      const char *msym_name = MSYMBOL_LINKAGE_NAME (msymbol);
 
-      if (self->funfirstline)
-	{
-	  if (sal.symtab != NULL
-	      && (COMPUNIT_LOCATIONS_VALID (SYMTAB_COMPUNIT (sal.symtab))
-		  || SYMTAB_LANGUAGE (sal.symtab) == language_asm))
-	    {
-	      struct gdbarch *gdbarch = get_objfile_arch (objfile);
-
-	      sal.pc = func_addr;
-	      if (gdbarch_skip_entrypoint_p (gdbarch))
-		sal.pc = gdbarch_skip_entrypoint (gdbarch, sal.pc);
-	    }
-	  else
-	    skip_prologue_sal (&sal);
-	}
+      if (MSYMBOL_TYPE (msymbol) == mst_text_gnu_ifunc
+	  || MSYMBOL_TYPE (msymbol) == mst_data_gnu_ifunc)
+	want_start_sal = gnu_ifunc_resolve_name (msym_name, &func_addr);
+      else
+	want_start_sal = true;
     }
+
+  symtab_and_line sal;
+
+  if (is_function && want_start_sal)
+    sal = find_function_start_sal (func_addr, NULL, self->funfirstline);
   else
     {
       sal.objfile = objfile;
-      sal.pc = MSYMBOL_VALUE_ADDRESS (objfile, msymbol);
+      sal.msymbol = msymbol;
+      /* Store func_addr, not the minsym's address in case this was an
+	 ifunc that hasn't been resolved yet.  */
+      if (is_function)
+	sal.pc = func_addr;
+      else
+	sal.pc = MSYMBOL_VALUE_ADDRESS (objfile, msymbol);
       sal.pspace = current_program_space;
     }
 
@@ -4343,6 +4391,7 @@ add_minsym (struct minimal_symbol *minsym, struct objfile *objfile,
 
   struct bound_minimal_symbol mo = {minsym, objfile};
   msyms->push_back (mo);
+  return;
 }
 
 /* Search for minimal symbols called NAME.  If SEARCH_PSPACE
@@ -4383,6 +4432,7 @@ search_minsyms_for_name (struct collect_info *info,
 					    add_minsym (msym, objfile, nullptr,
 							info->state->list_mode,
 							&minsyms);
+					    return false;
 					  });
 	}
       }
@@ -4398,6 +4448,7 @@ search_minsyms_for_name (struct collect_info *info,
 	       {
 		 add_minsym (msym, SYMTAB_OBJFILE (symtab), symtab,
 			     info->state->list_mode, &minsyms);
+		 return false;
 	       });
 	}
     }
