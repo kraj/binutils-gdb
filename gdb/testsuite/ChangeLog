@@ -1,3 +1,90 @@
+2018-05-04  Tom Tromey  <tom@tromey.com>
+
+	PR python/22730:
+	* gdb.python/python.exp: Test multi-line execute.
+
+2018-05-04  Tom Tromey  <tom@tromey.com>
+
+	PR python/22731:
+	* gdb.python/py-breakpoint.exp: Test setting breakpoint commands.
+
+2018-05-04  Tom Tromey  <tom@tromey.com>
+
+	PR gdb/11750:
+	* gdb.base/define.exp: Test defining a user command inside a user
+	command.
+	* gdb.base/commands.exp (define_if_without_arg_test): Test "define".
+
+2018-05-04  Jan Kratochvil  <jan.kratochvil@redhat.com>
+	    Pedro Alves <palves@redhat.com>
+
+	PR breakpoints/19806 and support for PR external/20207.
+	* gdb.base/watchpoint-unaligned.c: New file.
+	* gdb.base/watchpoint-unaligned.exp: New file.
+
+2018-05-04  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.base/maint.exp: Make test names unique, use
+	test_prefix_command_help to test 'help maint info', and remove
+	repeated test of 'help maint'.
+
+2018-05-04  Tom Tromey  <tom@tromey.com>
+
+	PR gdb/22619:
+	* gdb.base/long_long.exp (gdb_test_long_long): Add test for repeat
+	behavior.
+
+2018-05-04  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.base/maint.exp: Process output from 'maint print registers'
+	line at a time.
+
+2018-05-04  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* lib/mi-support.exp (mi_run_cmd_full): Fix regexp and add a
+	timeout.
+
+2018-05-03  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.base/callfuncs.exp (fetch_all_registers): Add riscv register
+	filter pattern.
+
+2018-05-02  Pedro Alves  <palves@redhat.com>
+
+	* gdb.base/breakpoint-in-ro-region.exp: Adjust to to_resume and
+	to_log_command renames.
+	* gdb.base/sss-bp-on-user-bp-2.exp: Likewise.
+
+2018-05-02  Tom Tromey  <tom@tromey.com>
+
+	* gdb.python/py-parameter.exp: Set test message.
+
+2018-05-02  Tom Tromey  <tom@tromey.com>
+
+	PR python/20084:
+	* gdb.python/py-parameter.exp: Add PARAM_ZUINTEGER and
+	PARAM_ZUINTEGER_UNLIMITED tests.
+
+2018-04-28  Dan Robertson  <danlrobertson89@gmail.com>
+
+	PR rust/23124
+	* gdb.rust/expr.exp: Test that the unit type is correctly parsed
+	when casting.
+
+2018-04-30  Tom Tromey  <tom@tromey.com>
+
+	* gdb.python/py-type.exp: Check align attribute.
+	* gdb.python/py-type.c: New "aligncheck" global.
+
+2018-04-30  Tom Tromey  <tom@tromey.com>
+
+	PR exp/17095:
+	* gdb.dwarf2/dw2-align.exp: New file.
+	* gdb.cp/align.exp: New file.
+	* gdb.base/align.exp: New file.
+	* lib/gdb.exp (gdb_int128_helper): New proc.
+	(has_int128_c, has_int128_cxx): New caching procs.
+
 2018-04-27  Tom Tromey  <tom@tromey.com>
 
 	PR rust/22545:

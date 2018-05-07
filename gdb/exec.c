@@ -49,15 +49,39 @@
 
 void (*deprecated_file_changed_hook) (const char *);
 
-/* Prototypes for local functions */
-
-static void exec_files_info (struct target_ops *);
-
-static void init_exec_ops (void);
+static const target_info exec_target_info = {
+  "exec",
+  N_("Local exec file"),
+  N_("Use an executable file as a target.\n\
+Specify the filename of the executable file.")
+};
 
 /* The target vector for executable files.  */
 
-static struct target_ops exec_ops;
+struct exec_target final : public target_ops
+{
+  exec_target ()
+  { to_stratum = file_stratum; }
+
+  const target_info &info () const override
+  { return exec_target_info; }
+
+  void close () override;
+  enum target_xfer_status xfer_partial (enum target_object object,
+					const char *annex,
+					gdb_byte *readbuf,
+					const gdb_byte *writebuf,
+					ULONGEST offset, ULONGEST len,
+					ULONGEST *xfered_len) override;
+  struct target_section_table *get_section_table () override;
+  void files_info () override;
+
+  bool has_memory () override;
+  char *make_corefile_notes (bfd *, int *) override;
+  int find_memory_regions (find_memory_region_ftype func, void *data) override;
+};
+
+static exec_target exec_ops;
 
 /* Whether to open exec and core files read-only or read-write.  */
 
@@ -72,7 +96,7 @@ show_write_files (struct ui_file *file, int from_tty,
 
 
 static void
-exec_open (const char *args, int from_tty)
+exec_target_open (const char *args, int from_tty)
 {
   target_preopen (from_tty);
   exec_file_attach (args, from_tty);
@@ -105,8 +129,8 @@ exec_close (void)
 /* This is the target_close implementation.  Clears all target
    sections and closes all executable bfds from all program spaces.  */
 
-static void
-exec_close_1 (struct target_ops *self)
+void
+exec_target::close ()
 {
   struct program_space *ss;
   scoped_restore_current_program_space restore_pspace;
@@ -119,17 +143,7 @@ exec_close_1 (struct target_ops *self)
     }
 }
 
-void
-exec_file_clear (int from_tty)
-{
-  /* Remove exec file.  */
-  exec_close ();
-
-  if (from_tty)
-    printf_unfiltered (_("No executable file now.\n"));
-}
-
-/* See exec.h.  */
+/* See gdbcore.h.  */
 
 void
 try_open_exec_file (const char *exec_file_host, struct inferior *inf,
@@ -246,7 +260,7 @@ exec_file_attach (const char *filename, int from_tty)
   /* First, acquire a reference to the current exec_bfd.  We release
      this at the end of the function; but acquiring it now lets the
      BFD cache return it if this call refers to the same file.  */
-  gdb_bfd_ref_ptr exec_bfd_holder = new_bfd_ref (exec_bfd);
+  gdb_bfd_ref_ptr exec_bfd_holder = gdb_bfd_ref_ptr::new_reference (exec_bfd);
 
   /* Remove any previous exec file.  */
   exec_close ();
@@ -846,19 +860,19 @@ section_table_xfer_memory_partial (gdb_byte *readbuf, const gdb_byte *writebuf,
   return TARGET_XFER_EOF;		/* We can't help.  */
 }
 
-static struct target_section_table *
-exec_get_section_table (struct target_ops *ops)
+struct target_section_table *
+exec_target::get_section_table ()
 {
   return current_target_sections;
 }
 
-static enum target_xfer_status
-exec_xfer_partial (struct target_ops *ops, enum target_object object,
-		   const char *annex, gdb_byte *readbuf,
-		   const gdb_byte *writebuf,
-		   ULONGEST offset, ULONGEST len, ULONGEST *xfered_len)
+enum target_xfer_status
+exec_target::xfer_partial (enum target_object object,
+			   const char *annex, gdb_byte *readbuf,
+			   const gdb_byte *writebuf,
+			   ULONGEST offset, ULONGEST len, ULONGEST *xfered_len)
 {
-  struct target_section_table *table = target_get_section_table (ops);
+  struct target_section_table *table = get_section_table ();
 
   if (object == TARGET_OBJECT_MEMORY)
     return section_table_xfer_memory_partial (readbuf, writebuf,
@@ -940,8 +954,8 @@ print_section_info (struct target_section_table *t, bfd *abfd)
     }
 }
 
-static void
-exec_files_info (struct target_ops *t)
+void
+exec_target::files_info ()
 {
   if (exec_bfd)
     print_section_info (current_target_sections, exec_bfd);
@@ -981,7 +995,7 @@ set_section_command (const char *args, int from_tty)
 	  p->addr += offset;
 	  p->endaddr += offset;
 	  if (from_tty)
-	    exec_files_info (&exec_ops);
+	    exec_ops.files_info ();
 	  return;
 	}
     }
@@ -1013,29 +1027,8 @@ exec_set_section_address (const char *filename, int index, CORE_ADDR address)
     }
 }
 
-/* If mourn is being called in all the right places, this could be say
-   `gdb internal error' (since generic_mourn calls
-   breakpoint_init_inferior).  */
-
-static int
-ignore (struct target_ops *ops, struct gdbarch *gdbarch,
-	struct bp_target_info *bp_tgt)
-{
-  return 0;
-}
-
-/* Implement the to_remove_breakpoint method.  */
-
-static int
-exec_remove_breakpoint (struct target_ops *ops, struct gdbarch *gdbarch,
-			struct bp_target_info *bp_tgt,
-			enum remove_bp_reason reason)
-{
-  return 0;
-}
-
-static int
-exec_has_memory (struct target_ops *ops)
+bool
+exec_target::has_memory ()
 {
   /* We can provide memory if we have any file/target sections to read
      from.  */
@@ -1043,42 +1036,22 @@ exec_has_memory (struct target_ops *ops)
 	  != current_target_sections->sections_end);
 }
 
-static char *
-exec_make_note_section (struct target_ops *self, bfd *obfd, int *note_size)
+char *
+exec_target::make_corefile_notes (bfd *obfd, int *note_size)
 {
   error (_("Can't create a corefile"));
 }
 
-/* Fill in the exec file target vector.  Very few entries need to be
-   defined.  */
-
-static void
-init_exec_ops (void)
+int
+exec_target::find_memory_regions (find_memory_region_ftype func, void *data)
 {
-  exec_ops.to_shortname = "exec";
-  exec_ops.to_longname = "Local exec file";
-  exec_ops.to_doc = "Use an executable file as a target.\n\
-Specify the filename of the executable file.";
-  exec_ops.to_open = exec_open;
-  exec_ops.to_close = exec_close_1;
-  exec_ops.to_xfer_partial = exec_xfer_partial;
-  exec_ops.to_get_section_table = exec_get_section_table;
-  exec_ops.to_files_info = exec_files_info;
-  exec_ops.to_insert_breakpoint = ignore;
-  exec_ops.to_remove_breakpoint = exec_remove_breakpoint;
-  exec_ops.to_stratum = file_stratum;
-  exec_ops.to_has_memory = exec_has_memory;
-  exec_ops.to_make_corefile_notes = exec_make_note_section;
-  exec_ops.to_find_memory_regions = objfile_find_memory_regions;
-  exec_ops.to_magic = OPS_MAGIC;
+  return objfile_find_memory_regions (this, func, data);
 }
 
 void
 _initialize_exec (void)
 {
   struct cmd_list_element *c;
-
-  init_exec_ops ();
 
   if (!dbx_commands)
     {
@@ -1113,5 +1086,5 @@ Show writing into executable and core files."), NULL,
 			   show_write_files,
 			   &setlist, &showlist);
 
-  add_target_with_completer (&exec_ops, filename_completer);
+  add_target (exec_target_info, exec_target_open, filename_completer);
 }

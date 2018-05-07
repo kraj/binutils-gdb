@@ -2405,7 +2405,7 @@ ppc_elf_write_core_note (bfd *abfd, char *buf, int *bufsiz, int note_type, ...)
 
     case NT_PRPSINFO:
       {
-	char data[128];
+	char data[128] ATTRIBUTE_NONSTRING;
 	va_list ap;
 
 	va_start (ap, note_type);
@@ -4776,12 +4776,12 @@ _bfd_elf_ppc_merge_fp_attributes (bfd *ibfd, struct bfd_link_info *info)
 	_bfd_error_handler
 	  /* xgettext:c-format */
 	  (_("warning: %pB uses IBM long double, "
-	     "%pB uses IEEE long double"), ibfd, obfd);
+	     "%pB uses IEEE long double"), obfd, ibfd);
       else if (out_fp == 3 * 4 && in_fp == 1 * 4)
 	_bfd_error_handler
 	  /* xgettext:c-format */
 	  (_("warning: %pB uses IBM long double, "
-	     "%pB uses IEEE long double"), obfd, ibfd);
+	     "%pB uses IEEE long double"), ibfd, obfd);
     }
 }
 

@@ -97,13 +97,3 @@ fill_fpregset (const struct regcache *regcache,
 {
   sparc_collect_fpregset (&sparc_sol2_fpregmap, regcache, regnum, fpregs);
 }
-
-void
-_initialize_sparc_sol2_nat (void)
-{
-  struct target_ops *t;
-
-  t = procfs_target ();
-  procfs_use_watchpoints (t);
-  add_target (t);
-}

@@ -1133,7 +1133,7 @@ value_parent (const struct value *value)
 void
 set_value_parent (struct value *value, struct value *parent)
 {
-  value->parent = value_ref_ptr (value_incref (parent));
+  value->parent = value_ref_ptr::new_reference (parent);
 }
 
 gdb_byte *
@@ -1572,14 +1572,12 @@ value_mark (void)
   return all_values.back ().get ();
 }
 
-/* Take a reference to VAL.  VAL will not be deallocated until all
-   references are released.  */
+/* See value.h.  */
 
-struct value *
+void
 value_incref (struct value *val)
 {
   val->reference_count++;
-  return val;
 }
 
 /* Release a reference to VAL, which was acquired with value_incref.
@@ -1635,7 +1633,7 @@ release_value (struct value *val)
   /* We must always return an owned reference.  Normally this happens
      because we transfer the reference from the value chain, but in
      this case the value was not on the chain.  */
-  return value_ref_ptr (value_incref (val));
+  return value_ref_ptr::new_reference (val);
 }
 
 /* See value.h.  */
@@ -3071,7 +3069,7 @@ value_fn_field (struct value **arg1p, struct fn_field *f,
 
       set_value_address (v,
 	gdbarch_convert_from_func_ptr_addr
-	   (gdbarch, BMSYMBOL_VALUE_ADDRESS (msym), &current_target));
+	   (gdbarch, BMSYMBOL_VALUE_ADDRESS (msym), target_stack));
     }
 
   if (arg1p)

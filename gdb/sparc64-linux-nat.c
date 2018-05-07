@@ -30,6 +30,25 @@
 #include "target.h"
 #include "linux-nat.h"
 
+class sparc64_linux_nat_target final : public linux_nat_target
+{
+public:
+  /* Add our register access methods.  */
+  void fetch_registers (struct regcache *regcache, int regnum) override
+  { sparc_fetch_inferior_registers (this, regcache, regnum); }
+
+  void store_registers (struct regcache *regcache, int regnum) override;
+  { sparc_store_inferior_registers (this, regcache, regnum); }
+
+  /* Override linux_nat_target low methods.  */
+
+  /* ADI support */
+  void low_forget_process (pid_t pid) override
+  { sparc_forget_process (pid); }
+};
+
+static sparc64_linux_nat_target the_sparc64_linux_nat_target;
+
 static const struct sparc_gregmap sparc64_linux_ptrace_gregmap =
 {
   16 * 8,			/* "tstate" */
@@ -72,22 +91,11 @@ fill_fpregset (const struct regcache *regcache,
 void
 _initialize_sparc64_linux_nat (void)
 {
-  struct target_ops *t;
-
-  /* Fill in the generic GNU/Linux methods.  */
-  t = linux_target ();
-
   sparc_fpregmap = &sparc64_bsd_fpregmap;
 
-  /* Add our register access methods.  */
-  t->to_fetch_registers = sparc_fetch_inferior_registers;
-  t->to_store_registers = sparc_store_inferior_registers;
-
   /* Register the target.  */
-  linux_nat_add_target (t);
-
-  /* ADI support */
-  linux_nat_set_forget_process (t, sparc64_forget_process);
+  linux_target = &the_sparc64_linux_nat_target;
+  add_inf_child_target (&the_sparc64_linux_nat_target);
 
   sparc_gregmap = &sparc64_linux_ptrace_gregmap;
 }

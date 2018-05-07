@@ -147,12 +147,6 @@ extern void set_gdbarch_long_bit (struct gdbarch *gdbarch, int long_bit);
 extern int gdbarch_long_long_bit (struct gdbarch *gdbarch);
 extern void set_gdbarch_long_long_bit (struct gdbarch *gdbarch, int long_long_bit);
 
-/* Alignment of a long long or unsigned long long for the target
-   machine. */
-
-extern int gdbarch_long_long_align_bit (struct gdbarch *gdbarch);
-extern void set_gdbarch_long_long_align_bit (struct gdbarch *gdbarch, int long_long_align_bit);
-
 /* The ABI default bit-size and format for "half", "float", "double", and
    "long double".  These bit/format pairs should eventually be combined
    into a single object.  For the moment, just initialize them as a pair.
@@ -1559,6 +1553,12 @@ extern void set_gdbarch_disassembler_options (struct gdbarch *gdbarch, char ** d
 
 extern const disasm_options_t * gdbarch_valid_disassembler_options (struct gdbarch *gdbarch);
 extern void set_gdbarch_valid_disassembler_options (struct gdbarch *gdbarch, const disasm_options_t * valid_disassembler_options);
+
+/* Type alignment. */
+
+typedef ULONGEST (gdbarch_type_align_ftype) (struct gdbarch *gdbarch, struct type *type);
+extern ULONGEST gdbarch_type_align (struct gdbarch *gdbarch, struct type *type);
+extern void set_gdbarch_type_align (struct gdbarch *gdbarch, gdbarch_type_align_ftype *type_align);
 
 /* Definition for an unknown syscall, used basically in error-cases.  */
 #define UNKNOWN_SYSCALL (-1)

@@ -1,3 +1,19 @@
+2018-05-04  Tom Tromey  <tom@tromey.com>
+
+	PR python/22731:
+	* python.texi (Breakpoints In Python): Mention that "commands" is
+	writable.
+
+2018-05-02  Tom Tromey  <tom@tromey.com>
+
+	PR python/20084:
+	* python.texi (Parameters In Python): Document PARAM_ZUINTEGER and
+	PARAM_ZUINTEGER_UNLIMITED.
+
+2018-04-30  Tom Tromey  <tom@tromey.com>
+
+	* python.texi (Types In Python): Document Type.align.
+
 2018-04-13  Andreas Arnez  <arnez@linux.vnet.ibm.com>
 
 	* gdb.texinfo (Symbols): Mention the fact that "info

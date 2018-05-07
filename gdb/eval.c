@@ -215,6 +215,7 @@ fetch_subexp_value (struct expression *exp, int *pc, struct value **valp,
 	case MEMORY_ERROR:
 	  if (!preserve_errors)
 	    break;
+	  /* Fall through.  */
 	default:
 	  throw_exception (ex);
 	  break;
@@ -1747,7 +1748,7 @@ evaluate_subexp_standard (struct type *expect_type,
 	    /* The address might point to a function descriptor;
 	       resolve it to the actual code address instead.  */
 	    addr = gdbarch_convert_from_func_ptr_addr (exp->gdbarch, addr,
-						       &current_target);
+						       target_stack);
 
 	    /* Is it a high_level symbol?  */
 	    sym = find_pc_function (addr);
@@ -2666,6 +2667,19 @@ evaluate_subexp_standard (struct type *expect_type,
 	  return eval_skip_value (exp);
 	}
       return evaluate_subexp_for_sizeof (exp, pos, noside);
+
+    case UNOP_ALIGNOF:
+      {
+	struct type *type
+	  = value_type (evaluate_subexp (NULL_TYPE, exp, pos,
+					 EVAL_AVOID_SIDE_EFFECTS));
+	/* FIXME: This should be size_t.  */
+	struct type *size_type = builtin_type (exp->gdbarch)->builtin_int;
+	ULONGEST align = type_align (type);
+	if (align == 0)
+	  error (_("could not determine alignment of type"));
+	return value_from_longest (size_type, align);
+      }
 
     case UNOP_CAST:
       (*pos) += 2;

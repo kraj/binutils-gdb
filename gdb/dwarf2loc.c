@@ -2482,7 +2482,7 @@ dwarf2_evaluate_loc_desc_full (struct type *type, struct frame_info *frame,
 	    /* Preserve VALUE because we are going to free values back
 	       to the mark, but we still need the value contents
 	       below.  */
-	    value_ref_ptr value_holder (value_incref (value));
+	    value_ref_ptr value_holder = value_ref_ptr::new_reference (value);
 	    free_values.free_to_mark ();
 
 	    retval = allocate_value (subobj_type);
@@ -2865,7 +2865,7 @@ dwarf2_loc_desc_get_symbol_read_needs (const gdb_byte *data, size_t size,
 /* A helper function that throws an unimplemented error mentioning a
    given DWARF operator.  */
 
-static void
+static void ATTRIBUTE_NORETURN
 unimplemented (unsigned int op)
 {
   const char *name = get_DW_OP_name (op);

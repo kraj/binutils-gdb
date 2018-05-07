@@ -50,10 +50,6 @@
 #include "source.h"
 #include "common/byte-vector.h"
 
-#ifdef TUI
-#include "tui/tui.h"		/* For tui_active et al.   */
-#endif
-
 /* Last specified output format.  */
 
 static char last_format = 0;
@@ -61,6 +57,10 @@ static char last_format = 0;
 /* Last specified examination size.  'b', 'h', 'w' or `q'.  */
 
 static char last_size = 'w';
+
+/* Last specified count for the 'x' command.  */
+
+static int last_count;
 
 /* Default address to examine next, and associated architecture.  */
 
@@ -211,9 +211,7 @@ decode_format (const char **string_ptr, int oformat, int osize)
 	break;
     }
 
-  while (*p == ' ' || *p == '\t')
-    p++;
-  *string_ptr = p;
+  *string_ptr = skip_spaces (p);
 
   /* Set defaults for format and size if not specified.  */
   if (val.format == '?')
@@ -1616,6 +1614,11 @@ x_command (const char *exp, int from_tty)
   fmt.count = 1;
   fmt.raw = 0;
 
+  /* If there is no expression and no format, use the most recent
+     count.  */
+  if (exp == nullptr && last_count > 0)
+    fmt.count = last_count;
+
   if (exp && *exp == '/')
     {
       const char *tmp = exp + 1;
@@ -1623,6 +1626,8 @@ x_command (const char *exp, int from_tty)
       fmt = decode_format (&tmp, last_format, last_size);
       exp = (char *) tmp;
     }
+
+  last_count = fmt.count;
 
   /* If we have an expression, evaluate it and use it as the address.  */
 

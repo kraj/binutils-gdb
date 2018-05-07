@@ -43,6 +43,49 @@
 
 #include "inf-ptrace.h"
 
+class ia64_linux_nat_target final : public linux_nat_target
+{
+public:
+  /* Add our register access methods.  */
+  void fetch_registers (struct regcache *, int) override;
+  void store_registers (struct regcache *, int) override;
+
+  enum target_xfer_status xfer_partial (enum target_object object,
+					const char *annex,
+					gdb_byte *readbuf,
+					const gdb_byte *writebuf,
+					ULONGEST offset, ULONGEST len,
+					ULONGEST *xfered_len) override;
+
+  const struct target_desc *read_description () override;
+
+  /* Override watchpoint routines.  */
+
+  /* The IA-64 architecture can step over a watch point (without
+     triggering it again) if the "dd" (data debug fault disable) bit
+     in the processor status word is set.
+
+     This PSR bit is set in
+     ia64_linux_nat_target::stopped_by_watchpoint when the code there
+     has determined that a hardware watchpoint has indeed been hit.
+     The CPU will then be able to execute one instruction without
+     triggering a watchpoint.  */
+  bool have_steppable_watchpoint () { return 1; }
+
+  int can_use_hw_breakpoint (enum bptype, int, int) override;
+  bool stopped_by_watchpoint () override;
+  bool stopped_data_address (CORE_ADDR *) override;
+  int insert_watchpoint (CORE_ADDR, int, enum target_hw_bp_type,
+			 struct expression *) override;
+  int remove_watchpoint (CORE_ADDR, int, enum target_hw_bp_type,
+			 struct expression *) override;
+  /* Override linux_nat_target low methods.  */
+  void low_new_thread (struct lwp_info *lp) override;
+  bool low_status_is_event (int status) override;
+};
+
+static ia64_linux_nat_target the_ia64_linux_nat_target;
+
 /* These must match the order of the register names.
 
    Some sort of lookup table is needed because the offsets associated
@@ -542,11 +585,10 @@ is_power_of_2 (int val)
   return onecount <= 1;
 }
 
-static int
-ia64_linux_insert_watchpoint (struct target_ops *self,
-			      CORE_ADDR addr, int len,
-			      enum target_hw_bp_type type,
-			      struct expression *cond)
+int
+ia64_linux_nat_target::insert_watchpoint (CORE_ADDR addr, int len,
+					  enum target_hw_bp_type type,
+					  struct expression *cond)
 {
   struct lwp_info *lp;
   int idx;
@@ -598,11 +640,10 @@ ia64_linux_insert_watchpoint (struct target_ops *self,
   return 0;
 }
 
-static int
-ia64_linux_remove_watchpoint (struct target_ops *self,
-			      CORE_ADDR addr, int len,
-			      enum target_hw_bp_type type,
-			      struct expression *cond)
+int
+ia64_linux_nat_target::remove_watchpoint (CORE_ADDR addr, int len,
+					  enum target_hw_bp_type type,
+					  struct expression *cond)
 {
   int idx;
   long dbr_addr, dbr_mask;
@@ -650,19 +691,19 @@ ia64_linux_new_thread (struct lwp_info *lp)
     enable_watchpoints_in_psr (lp->ptid);
 }
 
-static int
-ia64_linux_stopped_data_address (struct target_ops *ops, CORE_ADDR *addr_p)
+bool
+ia64_linux_nat_target::stopped_data_address (CORE_ADDR *addr_p)
 {
   CORE_ADDR psr;
   siginfo_t siginfo;
   struct regcache *regcache = get_current_regcache ();
 
   if (!linux_nat_get_siginfo (inferior_ptid, &siginfo))
-    return 0;
+    return false;
 
   if (siginfo.si_signo != SIGTRAP
       || (siginfo.si_code & 0xffff) != 0x0004 /* TRAP_HWBKPT */)
-    return 0;
+    return false;
 
   regcache_cooked_read_unsigned (regcache, IA64_PSR_REGNUM, &psr);
   psr |= IA64_PSR_DD;	/* Set the dd bit - this will disable the watchpoint
@@ -670,14 +711,14 @@ ia64_linux_stopped_data_address (struct target_ops *ops, CORE_ADDR *addr_p)
   regcache_cooked_write_unsigned (regcache, IA64_PSR_REGNUM, psr);
 
   *addr_p = (CORE_ADDR) siginfo.si_addr;
-  return 1;
+  return true;
 }
 
-static int
-ia64_linux_stopped_by_watchpoint (struct target_ops *ops)
+bool
+ia64_linux_nat_target::stopped_by_watchpoint ()
 {
   CORE_ADDR addr;
-  return ia64_linux_stopped_data_address (ops, &addr);
+  return stopped_data_address (&addr);
 }
 
 static int
@@ -765,9 +806,8 @@ ia64_linux_fetch_register (struct regcache *regcache, int regnum)
 /* Fetch register REGNUM from the inferior.  If REGNUM is -1, do this
    for all registers.  */
 
-static void
-ia64_linux_fetch_registers (struct target_ops *ops,
-			    struct regcache *regcache, int regnum)
+void
+ia64_linux_nat_target::fetch_registers (struct regcache *regcache, int regnum)
 {
   if (regnum == -1)
     for (regnum = 0;
@@ -820,9 +860,8 @@ ia64_linux_store_register (const struct regcache *regcache, int regnum)
 /* Store register REGNUM back into the inferior.  If REGNUM is -1, do
    this for all registers.  */
 
-static void
-ia64_linux_store_registers (struct target_ops *ops,
-			    struct regcache *regcache, int regnum)
+void
+ia64_linux_nat_target::store_registers (struct regcache *regcache, int regnum)
 {
   if (regnum == -1)
     for (regnum = 0;
@@ -833,18 +872,14 @@ ia64_linux_store_registers (struct target_ops *ops,
     ia64_linux_store_register (regcache, regnum);
 }
 
+/* Implement the xfer_partial target_ops method.  */
 
-static target_xfer_partial_ftype *super_xfer_partial;
-
-/* Implement the to_xfer_partial target_ops method.  */
-
-static enum target_xfer_status
-ia64_linux_xfer_partial (struct target_ops *ops,
-			 enum target_object object,
-			 const char *annex,
-			 gdb_byte *readbuf, const gdb_byte *writebuf,
-			 ULONGEST offset, ULONGEST len,
-			 ULONGEST *xfered_len)
+enum target_xfer_status
+ia64_linux_nat_target::xfer_partial (enum target_object object,
+				     const char *annex,
+				     gdb_byte *readbuf, const gdb_byte *writebuf,
+				     ULONGEST offset, ULONGEST len,
+				     ULONGEST *xfered_len)
 {
   if (object == TARGET_OBJECT_UNWIND_TABLE && readbuf != NULL)
     {
@@ -875,8 +910,8 @@ ia64_linux_xfer_partial (struct target_ops *ops,
       return TARGET_XFER_OK;
     }
 
-  return super_xfer_partial (ops, object, annex, readbuf, writebuf,
-			     offset, len, xfered_len);
+  return linux_nat_target::xfer_partial (object, annex, readbuf, writebuf,
+					 offset, len, xfered_len);
 }
 
 /* For break.b instruction ia64 CPU forgets the immediate value and generates
@@ -884,8 +919,8 @@ ia64_linux_xfer_partial (struct target_ops *ops,
    ia64 does not use gdbarch_decr_pc_after_break so we do not have to make any
    difference for the signals here.  */
 
-static int
-ia64_linux_status_is_event (int status)
+bool
+ia64_linux_nat_target::low_status_is_event (int status)
 {
   return WIFSTOPPED (status) && (WSTOPSIG (status) == SIGTRAP
 				 || WSTOPSIG (status) == SIGILL);
@@ -894,39 +929,7 @@ ia64_linux_status_is_event (int status)
 void
 _initialize_ia64_linux_nat (void)
 {
-  struct target_ops *t;
-
-  /* Fill in the generic GNU/Linux methods.  */
-  t = linux_target ();
-
-  /* Override the default fetch/store register routines.  */
-  t->to_fetch_registers = ia64_linux_fetch_registers;
-  t->to_store_registers = ia64_linux_store_registers;
-
-  /* Override the default to_xfer_partial.  */
-  super_xfer_partial = t->to_xfer_partial;
-  t->to_xfer_partial = ia64_linux_xfer_partial;
-
-  /* Override watchpoint routines.  */
-
-  /* The IA-64 architecture can step over a watch point (without triggering
-     it again) if the "dd" (data debug fault disable) bit in the processor
-     status word is set.
-
-     This PSR bit is set in ia64_linux_stopped_by_watchpoint when the
-     code there has determined that a hardware watchpoint has indeed
-     been hit.  The CPU will then be able to execute one instruction
-     without triggering a watchpoint.  */
-
-  t->to_have_steppable_watchpoint = 1;
-  t->to_can_use_hw_breakpoint = ia64_linux_can_use_hw_breakpoint;
-  t->to_stopped_by_watchpoint = ia64_linux_stopped_by_watchpoint;
-  t->to_stopped_data_address = ia64_linux_stopped_data_address;
-  t->to_insert_watchpoint = ia64_linux_insert_watchpoint;
-  t->to_remove_watchpoint = ia64_linux_remove_watchpoint;
-
   /* Register the target.  */
-  linux_nat_add_target (t);
-  linux_nat_set_new_thread (t, ia64_linux_new_thread);
-  linux_nat_set_status_is_event (t, ia64_linux_status_is_event);
+  linux_target = &the_ia64_linux_nat_target;
+  add_inf_child_target (&the_ia64_linux_nat_target);
 }

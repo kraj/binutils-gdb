@@ -360,9 +360,6 @@ v;int;long_bit;;;8 * sizeof (long);4*TARGET_CHAR_BIT;;0
 # Number of bits in a long long or unsigned long long for the target
 # machine.
 v;int;long_long_bit;;;8 * sizeof (LONGEST);2*gdbarch->long_bit;;0
-# Alignment of a long long or unsigned long long for the target
-# machine.
-v;int;long_long_align_bit;;;8 * sizeof (LONGEST);2*gdbarch->long_bit;;0
 
 # The ABI default bit-size and format for "half", "float", "double", and
 # "long double".  These bit/format pairs should eventually be combined
@@ -1162,6 +1159,9 @@ m;int;addressable_memory_unit_size;void;;;default_addressable_memory_unit_size;;
 # Functions for allowing a target to modify its disassembler options.
 v;char **;disassembler_options;;;0;0;;0;pstring_ptr (gdbarch->disassembler_options)
 v;const disasm_options_t *;valid_disassembler_options;;;0;0;;0;host_address_to_string (gdbarch->valid_disassembler_options)
+
+# Type alignment.
+m;ULONGEST;type_align;struct type *type;type;;default_type_align;;0
 
 EOF
 }

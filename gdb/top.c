@@ -571,7 +571,7 @@ execute_command (const char *p, int from_tty)
       line = p;
 
       /* If trace-commands is set then this will print this command.  */
-      print_command_trace (p);
+      print_command_trace ("%s", p);
 
       c = lookup_cmd (&cmd, cmdlist, "", 0, 1);
       p = cmd;
@@ -642,7 +642,12 @@ execute_command (const char *p, int from_tty)
 	}
     }
 
-  check_frame_language_change ();
+  /* Only perform the frame-language-change check if the command
+     we just finished executing did not resume the inferior's execution.
+     If it did resume the inferior, we will do that check after
+     the inferior stopped.  */
+  if (has_stack_frames () && !is_running (inferior_ptid))
+    check_frame_language_change ();
 
   discard_cleanups (cleanup_if_error);
 }

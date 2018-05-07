@@ -175,7 +175,6 @@ struct gdbarch
   int int_bit;
   int long_bit;
   int long_long_bit;
-  int long_long_align_bit;
   int half_bit;
   const struct floatformat ** half_format;
   int float_bit;
@@ -353,6 +352,7 @@ struct gdbarch
   gdbarch_addressable_memory_unit_size_ftype *addressable_memory_unit_size;
   char ** disassembler_options;
   const disasm_options_t * valid_disassembler_options;
+  gdbarch_type_align_ftype *type_align;
 };
 
 /* Create a new ``struct gdbarch'' based on information provided by
@@ -388,7 +388,6 @@ gdbarch_alloc (const struct gdbarch_info *info,
   gdbarch->int_bit = 4*TARGET_CHAR_BIT;
   gdbarch->long_bit = 4*TARGET_CHAR_BIT;
   gdbarch->long_long_bit = 2*gdbarch->long_bit;
-  gdbarch->long_long_align_bit = 2*gdbarch->long_bit;
   gdbarch->half_bit = 2*TARGET_CHAR_BIT;
   gdbarch->float_bit = 4*TARGET_CHAR_BIT;
   gdbarch->double_bit = 8*TARGET_CHAR_BIT;
@@ -465,6 +464,7 @@ gdbarch_alloc (const struct gdbarch_info *info,
   gdbarch->gcc_target_options = default_gcc_target_options;
   gdbarch->gnu_triplet_regexp = default_gnu_triplet_regexp;
   gdbarch->addressable_memory_unit_size = default_addressable_memory_unit_size;
+  gdbarch->type_align = default_type_align;
   /* gdbarch_alloc() */
 
   return gdbarch;
@@ -528,7 +528,6 @@ verify_gdbarch (struct gdbarch *gdbarch)
   /* Skip verify of int_bit, invalid_p == 0 */
   /* Skip verify of long_bit, invalid_p == 0 */
   /* Skip verify of long_long_bit, invalid_p == 0 */
-  /* Skip verify of long_long_align_bit, invalid_p == 0 */
   /* Skip verify of half_bit, invalid_p == 0 */
   if (gdbarch->half_format == 0)
     gdbarch->half_format = floatformats_ieee_half;
@@ -716,6 +715,7 @@ verify_gdbarch (struct gdbarch *gdbarch)
   /* Skip verify of addressable_memory_unit_size, invalid_p == 0 */
   /* Skip verify of disassembler_options, invalid_p == 0 */
   /* Skip verify of valid_disassembler_options, invalid_p == 0 */
+  /* Skip verify of type_align, invalid_p == 0 */
   if (!log.empty ())
     internal_error (__FILE__, __LINE__,
                     _("verify_gdbarch: the following are invalid ...%s"),
@@ -1163,9 +1163,6 @@ gdbarch_dump (struct gdbarch *gdbarch, struct ui_file *file)
                       "gdbarch_dump: long_double_format = %s\n",
                       pformat (gdbarch->long_double_format));
   fprintf_unfiltered (file,
-                      "gdbarch_dump: long_long_align_bit = %s\n",
-                      plongest (gdbarch->long_long_align_bit));
-  fprintf_unfiltered (file,
                       "gdbarch_dump: long_long_bit = %s\n",
                       plongest (gdbarch->long_long_bit));
   fprintf_unfiltered (file,
@@ -1442,6 +1439,9 @@ gdbarch_dump (struct gdbarch *gdbarch, struct ui_file *file)
                       "gdbarch_dump: target_desc = %s\n",
                       host_address_to_string (gdbarch->target_desc));
   fprintf_unfiltered (file,
+                      "gdbarch_dump: type_align = <%s>\n",
+                      host_address_to_string (gdbarch->type_align));
+  fprintf_unfiltered (file,
                       "gdbarch_dump: gdbarch_unwind_pc_p() = %d\n",
                       gdbarch_unwind_pc_p (gdbarch));
   fprintf_unfiltered (file,
@@ -1630,23 +1630,6 @@ set_gdbarch_long_long_bit (struct gdbarch *gdbarch,
                            int long_long_bit)
 {
   gdbarch->long_long_bit = long_long_bit;
-}
-
-int
-gdbarch_long_long_align_bit (struct gdbarch *gdbarch)
-{
-  gdb_assert (gdbarch != NULL);
-  /* Skip verify of long_long_align_bit, invalid_p == 0 */
-  if (gdbarch_debug >= 2)
-    fprintf_unfiltered (gdb_stdlog, "gdbarch_long_long_align_bit called\n");
-  return gdbarch->long_long_align_bit;
-}
-
-void
-set_gdbarch_long_long_align_bit (struct gdbarch *gdbarch,
-                                 int long_long_align_bit)
-{
-  gdbarch->long_long_align_bit = long_long_align_bit;
 }
 
 int
@@ -5098,6 +5081,23 @@ set_gdbarch_valid_disassembler_options (struct gdbarch *gdbarch,
                                         const disasm_options_t * valid_disassembler_options)
 {
   gdbarch->valid_disassembler_options = valid_disassembler_options;
+}
+
+ULONGEST
+gdbarch_type_align (struct gdbarch *gdbarch, struct type *type)
+{
+  gdb_assert (gdbarch != NULL);
+  gdb_assert (gdbarch->type_align != NULL);
+  if (gdbarch_debug >= 2)
+    fprintf_unfiltered (gdb_stdlog, "gdbarch_type_align called\n");
+  return gdbarch->type_align (gdbarch, type);
+}
+
+void
+set_gdbarch_type_align (struct gdbarch *gdbarch,
+                        gdbarch_type_align_ftype type_align)
+{
+  gdbarch->type_align = type_align;
 }
 
 

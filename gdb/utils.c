@@ -275,6 +275,7 @@ can_dump_core (enum resource_limit_kind limit_kind)
     case LIMIT_CUR:
       if (rlim.rlim_cur == 0)
 	return 0;
+      /* Fall through.  */
 
     case LIMIT_MAX:
       if (rlim.rlim_max == 0)
@@ -2848,22 +2849,6 @@ gdb_realpath_tests ()
 }
 
 #endif /* GDB_SELF_TEST */
-
-ULONGEST
-align_up (ULONGEST v, int n)
-{
-  /* Check that N is really a power of two.  */
-  gdb_assert (n && (n & (n-1)) == 0);
-  return (v + n - 1) & -n;
-}
-
-ULONGEST
-align_down (ULONGEST v, int n)
-{
-  /* Check that N is really a power of two.  */
-  gdb_assert (n && (n & (n-1)) == 0);
-  return (v & -n);
-}
 
 /* Allocation function for the libiberty hash table which uses an
    obstack.  The obstack is passed as DATA.  */

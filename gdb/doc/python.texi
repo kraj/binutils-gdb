@@ -930,6 +930,13 @@ description of the @code{Type.fields} method for a description of the
 
 An instance of @code{Type} has the following attributes:
 
+@defvar Type.alignof
+The alignment of this type, in bytes.  Type alignment comes from the
+debugging information; if it was not specified, then @value{GDBN} will
+use the relevant ABI to try to determine the alignment.  In some
+cases, even this is not possible, and zero will be returned.
+@end defvar
+
 @defvar Type.code
 The type code for this type.  The type code will be one of the
 @code{TYPE_CODE_} constants defined below.
@@ -3800,6 +3807,19 @@ The value is a filename.  This is just like
 The value is an integer.  This is like @code{PARAM_INTEGER}, except 0
 is interpreted as itself.
 
+@findex PARAM_ZUINTEGER
+@findex gdb.PARAM_ZUINTEGER
+@item gdb.PARAM_ZUINTEGER
+The value is an unsigned integer.  This is like @code{PARAM_INTEGER},
+except 0 is interpreted as itself, and the value cannot be negative.
+
+@findex PARAM_ZUINTEGER_UNLIMITED
+@findex gdb.PARAM_ZUINTEGER_UNLIMITED
+@item gdb.PARAM_ZUINTEGER_UNLIMITED
+The value is a signed integer.  This is like @code{PARAM_ZUINTEGER},
+except the special value -1 should be interpreted to mean
+``unlimited''.  Other negative values are not allowed.
+
 @findex PARAM_ENUM
 @findex gdb.PARAM_ENUM
 @item gdb.PARAM_ENUM
@@ -5116,7 +5136,7 @@ value is @code{None}.  This attribute is writable.
 This attribute holds the commands attached to the breakpoint.  If
 there are commands, this attribute's value is a string holding all the
 commands, separated by newlines.  If there are no commands, this
-attribute is @code{None}.  This attribute is not writable.
+attribute is @code{None}.  This attribute is writable.
 @end defvar
 
 @node Finish Breakpoints in Python

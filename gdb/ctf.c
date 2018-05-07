@@ -32,6 +32,36 @@
 #include <ctype.h>
 #include <algorithm>
 
+/* The CTF target.  */
+
+static const target_info ctf_target_info = {
+  "ctf",
+  N_("CTF file"),
+  N_("(Use a CTF directory as a target.\n\
+Specify the filename of the CTF directory.")
+};
+
+class ctf_target final : public tracefile_target
+{
+public:
+  const target_info &info () const override
+  { return ctf_target_info; }
+
+  void close () override;
+  void fetch_registers (struct regcache *, int) override;
+  enum target_xfer_status xfer_partial (enum target_object object,
+						const char *annex,
+						gdb_byte *readbuf,
+						const gdb_byte *writebuf,
+						ULONGEST offset, ULONGEST len,
+						ULONGEST *xfered_len) override;
+  void files_info () override;
+  int trace_find (enum trace_find_type type, int num,
+			  CORE_ADDR addr1, CORE_ADDR addr2, int *tpp) override;
+  bool get_trace_state_variable_value (int tsv, LONGEST *val) override;
+  traceframe_info_up traceframe_info () override;
+};
+
 /* GDB saves trace buffers and other information (such as trace
    status) got from the remote target into Common Trace Format (CTF).
    The following types of information are expected to save in CTF:
@@ -826,7 +856,7 @@ static struct bt_iter_pos *start_pos;
 /* The name of CTF directory.  */
 static char *trace_dirname;
 
-static struct target_ops ctf_ops;
+static ctf_target ctf_ops;
 
 /* Destroy ctf iterator and context.  */
 
@@ -1075,7 +1105,7 @@ ctf_read_tp (struct uploaded_tp **uploaded_tps)
    second packet which contains events on trace blocks.  */
 
 static void
-ctf_open (const char *dirname, int from_tty)
+ctf_target_open (const char *dirname, int from_tty)
 {
   struct bt_ctf_event *event;
   uint32_t event_id;
@@ -1142,8 +1172,8 @@ ctf_open (const char *dirname, int from_tty)
 /* This is the implementation of target_ops method to_close.  Destroy
    CTF iterator and context.  */
 
-static void
-ctf_close (struct target_ops *self)
+void
+ctf_target::close ()
 {
   int pid;
 
@@ -1161,8 +1191,8 @@ ctf_close (struct target_ops *self)
 /* This is the implementation of target_ops method to_files_info.
    Print the directory name of CTF trace data.  */
 
-static void
-ctf_files_info (struct target_ops *t)
+void
+ctf_target::files_info ()
 {
   printf_filtered ("\t`%s'\n", trace_dirname);
 }
@@ -1172,9 +1202,8 @@ ctf_files_info (struct target_ops *t)
    extract contents from events, and set REGCACHE with the contents.
    If no matched events are found, mark registers unavailable.  */
 
-static void
-ctf_fetch_registers (struct target_ops *ops,
-		     struct regcache *regcache, int regno)
+void
+ctf_target::fetch_registers (struct regcache *regcache, int regno)
 {
   struct gdbarch *gdbarch = regcache->arch ();
   struct bt_ctf_event *event = NULL;
@@ -1258,11 +1287,11 @@ ctf_fetch_registers (struct target_ops *ops,
    OFFSET is within the range, read the contents from events to
    READBUF.  */
 
-static enum target_xfer_status
-ctf_xfer_partial (struct target_ops *ops, enum target_object object,
-		  const char *annex, gdb_byte *readbuf,
-		  const gdb_byte *writebuf, ULONGEST offset,
-		  ULONGEST len, ULONGEST *xfered_len)
+enum target_xfer_status
+ctf_target::xfer_partial (enum target_object object,
+			  const char *annex, gdb_byte *readbuf,
+			  const gdb_byte *writebuf, ULONGEST offset,
+			  ULONGEST len, ULONGEST *xfered_len)
 {
   /* We're only doing regular memory for now.  */
   if (object != TARGET_OBJECT_MEMORY)
@@ -1397,12 +1426,11 @@ ctf_xfer_partial (struct target_ops *ops, enum target_object object,
    trace variable is found, set the value of it to *VAL and return
    true, otherwise return false.  */
 
-static int
-ctf_get_trace_state_variable_value (struct target_ops *self,
-				    int tsvnum, LONGEST *val)
+bool
+ctf_target::get_trace_state_variable_value (int tsvnum, LONGEST *val)
 {
   struct bt_iter_pos *pos;
-  int found = 0;
+  bool found = false;
 
   gdb_assert (ctf_iter != NULL);
   /* Save the current position.  */
@@ -1433,7 +1461,7 @@ ctf_get_trace_state_variable_value (struct target_ops *self,
 	      def = bt_ctf_get_field (event, scope, "val");
 	      *val = bt_ctf_get_uint64 (def);
 
-	      found = 1;
+	      found = true;
 	    }
 	}
 
@@ -1515,9 +1543,9 @@ ctf_get_traceframe_address (void)
    Iterate the events whose name is "frame", extract the tracepoint
    number in it.  Return traceframe number when matched.  */
 
-static int
-ctf_trace_find (struct target_ops *self, enum trace_find_type type, int num,
-		CORE_ADDR addr1, CORE_ADDR addr2, int *tpp)
+int
+ctf_target::trace_find (enum trace_find_type type, int num,
+			CORE_ADDR addr1, CORE_ADDR addr2, int *tpp)
 {
   int tfnum = 0;
   int found = 0;
@@ -1617,10 +1645,10 @@ ctf_trace_find (struct target_ops *self, enum trace_find_type type, int num,
    frame, extract memory range information, and return them in
    traceframe_info.  */
 
-static traceframe_info_up
-ctf_traceframe_info (struct target_ops *self)
+traceframe_info_up
+ctf_target::traceframe_info ()
 {
-  traceframe_info_up info (new traceframe_info);
+  traceframe_info_up info (new struct traceframe_info);
   const char *name;
   struct bt_iter_pos *pos;
 
@@ -1684,27 +1712,6 @@ ctf_traceframe_info (struct target_ops *self)
   return info;
 }
 
-static void
-init_ctf_ops (void)
-{
-  memset (&ctf_ops, 0, sizeof (ctf_ops));
-
-  init_tracefile_ops (&ctf_ops);
-  ctf_ops.to_shortname = "ctf";
-  ctf_ops.to_longname = "CTF file";
-  ctf_ops.to_doc = "Use a CTF directory as a target.\n\
-Specify the filename of the CTF directory.";
-  ctf_ops.to_open = ctf_open;
-  ctf_ops.to_close = ctf_close;
-  ctf_ops.to_fetch_registers = ctf_fetch_registers;
-  ctf_ops.to_xfer_partial = ctf_xfer_partial;
-  ctf_ops.to_files_info = ctf_files_info;
-  ctf_ops.to_trace_find = ctf_trace_find;
-  ctf_ops.to_get_trace_state_variable_value
-    = ctf_get_trace_state_variable_value;
-  ctf_ops.to_traceframe_info = ctf_traceframe_info;
-}
-
 #endif
 
 /* module initialization */
@@ -1713,8 +1720,6 @@ void
 _initialize_ctf (void)
 {
 #if HAVE_LIBBABELTRACE
-  init_ctf_ops ();
-
-  add_target_with_completer (&ctf_ops, filename_completer);
+  add_target (ctf_target_info, ctf_target_open, filename_completer);
 #endif
 }

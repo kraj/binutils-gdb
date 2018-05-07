@@ -1015,8 +1015,8 @@ check_no_tracepoint_commands (struct command_line *commands)
 	error (_("The 'while-stepping' command can "
 		 "only be used for tracepoints"));
 
-      for (i = 0; i < c->body_count; ++i)
-	check_no_tracepoint_commands ((c->body_list)[i]);
+      check_no_tracepoint_commands (c->body_list_0.get ());
+      check_no_tracepoint_commands (c->body_list_1.get ());
 
       /* Not that command parsing removes leading whitespace and comment
 	 lines and also empty lines.  So, we only need to check for
@@ -1127,8 +1127,8 @@ validate_commands_for_breakpoint (struct breakpoint *b,
 	{
 	  struct command_line *c2;
 
-	  gdb_assert (while_stepping->body_count == 1);
-	  c2 = while_stepping->body_list[0];
+	  gdb_assert (while_stepping->body_list_1 == nullptr);
+	  c2 = while_stepping->body_list_0.get ();
 	  for (; c2; c2 = c2->next)
 	    {
 	      if (c2->control_type == while_stepping_control)
@@ -1168,7 +1168,7 @@ static_tracepoints_here (CORE_ADDR addr)
 
 void
 breakpoint_set_commands (struct breakpoint *b, 
-			 command_line_up &&commands)
+			 counted_command_line &&commands)
 {
   validate_commands_for_breakpoint (b, commands.get ());
 
@@ -1216,14 +1216,6 @@ breakpoint_set_task (struct breakpoint *b, int task)
     gdb::observers::breakpoint_modified.notify (b);
 }
 
-void
-check_tracepoint_command (char *line, void *closure)
-{
-  struct breakpoint *b = (struct breakpoint *) closure;
-
-  validate_actionline (line, b);
-}
-
 static void
 commands_command_1 (const char *arg, int from_tty,
 		    struct command_line *control)
@@ -1248,7 +1240,7 @@ commands_command_1 (const char *arg, int from_tty,
        if (cmd == NULL)
 	 {
 	   if (control != NULL)
-	     cmd = copy_command_lines (control->body_list[0]);
+	     cmd = control->body_list_0;
 	   else
 	     {
 	       std::string str
@@ -1256,11 +1248,15 @@ commands_command_1 (const char *arg, int from_tty,
 				    "%s, one per line."),
 				  arg);
 
-	       cmd = read_command_lines (&str[0],
-					 from_tty, 1,
-					 (is_tracepoint (b)
-					  ? check_tracepoint_command : 0),
-					 b);
+	       auto do_validate = [=] (const char *line)
+				  {
+				    validate_actionline (line, b);
+				  };
+	       gdb::function_view<void (const char *)> validator;
+	       if (is_tracepoint (b))
+		 validator = do_validate;
+
+	       cmd = read_command_lines (str.c_str (), from_tty, 1, validator);
 	     }
 	 }
 
@@ -3493,8 +3489,7 @@ create_exception_master_breakpoint (void)
 	}
 
       addr = BMSYMBOL_VALUE_ADDRESS (bp_objfile_data->exception_msym);
-      addr = gdbarch_convert_from_func_ptr_addr (gdbarch, addr,
-						 &current_target);
+      addr = gdbarch_convert_from_func_ptr_addr (gdbarch, addr, target_stack);
       b = create_internal_breakpoint (gdbarch, addr, bp_exception_master,
 				      &internal_breakpoint_ops);
       initialize_explicit_location (&explicit_loc);
@@ -4734,7 +4729,7 @@ bpstats::bpstats ()
 int
 watchpoints_triggered (struct target_waitstatus *ws)
 {
-  int stopped_by_watchpoint = target_stopped_by_watchpoint ();
+  bool stopped_by_watchpoint = target_stopped_by_watchpoint ();
   CORE_ADDR addr;
   struct breakpoint *b;
 
@@ -4753,7 +4748,7 @@ watchpoints_triggered (struct target_waitstatus *ws)
       return 0;
     }
 
-  if (!target_stopped_data_address (&current_target, &addr))
+  if (!target_stopped_data_address (target_stack, &addr))
     {
       /* We were stopped by a watchpoint, but we don't know where.
 	 Mark all watchpoints as unknown.  */
@@ -4793,7 +4788,7 @@ watchpoints_triggered (struct target_waitstatus *ws)
 		  }
 	      }
 	    /* Exact match not required.  Within range is sufficient.  */
-	    else if (target_watchpoint_addr_within_range (&current_target,
+	    else if (target_watchpoint_addr_within_range (target_stack,
 							 addr, loc->address,
 							 loc->length))
 	      {
@@ -8596,9 +8591,7 @@ static void
 mention (struct breakpoint *b)
 {
   b->ops->print_mention (b);
-  if (current_uiout->is_mi_like_p ())
-    return;
-  printf_filtered ("\n");
+  current_uiout->text ("\n");
 }
 
 
@@ -8776,18 +8769,12 @@ update_dprintf_command_list (struct breakpoint *b)
 		    _("Invalid dprintf style."));
 
   gdb_assert (printf_line != NULL);
+
   /* Manufacture a printf sequence.  */
-  {
-    struct command_line *printf_cmd_line = XNEW (struct command_line);
-
-    printf_cmd_line->control_type = simple_control;
-    printf_cmd_line->body_count = 0;
-    printf_cmd_line->body_list = NULL;
-    printf_cmd_line->next = NULL;
-    printf_cmd_line->line = printf_line;
-
-    breakpoint_set_commands (b, command_line_up (printf_cmd_line));
-  }
+  struct command_line *printf_cmd_line
+    = new struct command_line (simple_control, printf_line);
+  breakpoint_set_commands (b, counted_command_line (printf_cmd_line,
+						    command_lines_deleter ()));
 }
 
 /* Update all dprintf commands, making their command lists reflect
@@ -9795,12 +9782,9 @@ print_mention_ranged_breakpoint (struct breakpoint *b)
   gdb_assert (bl);
   gdb_assert (b->type == bp_hardware_breakpoint);
 
-  if (uiout->is_mi_like_p ())
-    return;
-
-  printf_filtered (_("Hardware assisted ranged breakpoint %d from %s to %s."),
-		   b->number, paddress (bl->gdbarch, bl->address),
-		   paddress (bl->gdbarch, bl->address + bl->length - 1));
+  uiout->message (_("Hardware assisted ranged breakpoint %d from %s to %s."),
+		  b->number, paddress (bl->gdbarch, bl->address),
+		  paddress (bl->gdbarch, bl->address + bl->length - 1));
 }
 
 /* Implement the "print_recreate" breakpoint_ops method for
@@ -14791,12 +14775,12 @@ create_tracepoint_from_upload (struct uploaded_tp *utp)
      function.  */
   if (!utp->cmd_strings.empty ())
     {
-      command_line_up cmd_list;
+      counted_command_line cmd_list;
 
       this_utp = utp;
       next_cmd = 0;
 
-      cmd_list = read_command_lines_1 (read_uploaded_action, 1, NULL, NULL);
+      cmd_list = read_command_lines_1 (read_uploaded_action, 1, NULL);
 
       breakpoint_set_commands (tp, std::move (cmd_list));
     }

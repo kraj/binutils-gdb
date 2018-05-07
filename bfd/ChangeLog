@@ -1,3 +1,62 @@
+2018-05-07  Alan Modra  <amodra@gmail.com>
+
+	* cofflink.c (_bfd_coff_link_input_bfd): Use memcmp rather than
+	strncmp when checking for ".bf" special symbol.
+	* peXXigen.c (_bfd_XXi_swap_scnhdr_out): Make pe_required_section_flags
+	section name a char array, remove sentinal known_sections entry,
+	and adjust loop over known_sections to suit.  Use memcmp rather
+	than strncmp.
+
+2018-05-04  Alan Modra  <amodra@gmail.com>
+
+	* elf-linux-core.h (struct elf_external_linux_prpsinfo32_ugid32),
+	(struct elf_external_linux_prpsinfo32_ugid16),
+	(struct elf_external_linux_prpsinfo64_ugid32),
+	(struct elf_external_linux_prpsinfo64_ugid16): Add ATTRIBUTE_NONSTRING
+	to pr_fname and pr_psargs fields.  Remove GCC diagnostic pragmas.
+	Move comment to..
+	* elf.c (elfcore_write_prpsinfo): ..here.  Indent nested preprocessor
+	directives.
+	* elf32-arm.c (elf32_arm_nabi_write_core_note): Add ATTRIBUTE_NONSTRING
+	to data.
+	* elf32-ppc.c (ppc_elf_write_core_note): Likewise.
+	* elf32-s390.c (elf_s390_write_core_note): Likewise.
+	* elf64-s390.c (elf_s390_write_core_note): Likewise.
+	* elfxx-aarch64.c (_bfd_aarch64_elf_write_core_note): Likewise.
+	* elf64-x86-64.c (elf_x86_64_write_core_note): Add GCC diagnostic
+	pragmas.
+	* peXXigen.c (_bfd_XXi_swap_scnhdr_out): Use strnlen to avoid
+	false positive gcc-8 warning.
+	* cofflink.c (_bfd_coff_link_input_bfd): Likewise.
+
+2018-05-04  Tulio Magno Quites Machado Filho  <tuliom@linux.ibm.com>
+
+	* elf32-ppc.c (_bfd_elf_ppc_merge_fp_attributes): Fix the order
+	of arguments when warning about different long double types.
+
+2018-05-03  Simon Atanasyan  <simon@atanasyan.com>
+
+	* elf32-mips.c: (elf32_mips_fixup_symbol): New function.
+	(elf_backend_fixup_symbol): New macro.
+	* elfxx-mips.c: (mips_elf_output_extsym): Discard _gp_disp
+	handling.
+	(_bfd_mips_elf_finish_dynamic_symbol): Likewise.
+
+2018-04-30  Francois H. Theron <francois.theron@netronome.com>
+
+	* Makefile.am: Added NFP files to build.
+	* archures.c: Added bfd_arch_nfp
+	* config.bfd: Added NFP support.
+	* configure.ac: Added NFP support.
+	* cpu-nfp.c: New, for NFP support.
+	* elf-bfd.h: Added elf_section_info()
+	* elf64-nfp.c: New, for NFP support.
+	* po/SRC-POTFILES.in: Added NFP source files.
+	* targets.c: Added nfp_elf64_vec
+	* bfd-in2.h: Regenerate.
+	* Makefile.in: Regenerate.
+	* configure: Regenerate.
+
 2018-04-27  Alan Modra  <amodra@gmail.com>
 
 	* bfd-in2.h: Regenerate.

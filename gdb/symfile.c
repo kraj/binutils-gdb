@@ -863,7 +863,7 @@ init_entry_point_info (struct objfile *objfile)
       entry_point
 	= gdbarch_convert_from_func_ptr_addr (get_objfile_arch (objfile),
 					      entry_point,
-					      &current_target);
+					      target_stack);
 
       /* Remove any ISA markers, so that this matches entries in the
 	 symbol table.  */
@@ -2901,7 +2901,7 @@ section_is_mapped (struct obj_section *osect)
 	  if (osect->ovly_mapped == -1)
 	    gdbarch_overlay_update (gdbarch, osect);
 	}
-      /* fall thru to manual case */
+      /* fall thru */
     case ovly_on:		/* overlay debugging manual */
       return osect->ovly_mapped == 1;
     }

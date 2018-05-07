@@ -1329,7 +1329,7 @@ install_new_value (struct varobj *var, struct value *value, bool initial)
      code that might release it.  */
   value_ref_ptr value_holder;
   if (value != NULL)
-    value_holder.reset (value_incref (value));
+    value_holder = value_ref_ptr::new_reference (value);
 
   /* Below, we'll be comparing string rendering of old and new
      values.  Don't get string rendering if the value is
@@ -1455,9 +1455,8 @@ varobj_set_visualizer (struct varobj *var, const char *visualizer)
   gdbpy_enter_varobj enter_py (var);
 
   mainmod = PyImport_AddModule ("__main__");
-  gdbpy_ref<> globals (PyModule_GetDict (mainmod));
-  Py_INCREF (globals.get ());
-
+  gdbpy_ref<> globals
+    = gdbpy_ref<>::new_reference (PyModule_GetDict (mainmod));
   gdbpy_ref<> constructor (PyRun_String (visualizer, Py_eval_input,
 					 globals.get (), globals.get ()));
 

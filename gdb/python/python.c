@@ -385,12 +385,12 @@ gdbpy_eval_from_control_command (const struct extension_language_defn *extlang,
 {
   int ret;
 
-  if (cmd->body_count != 1)
+  if (cmd->body_list_1 != nullptr)
     error (_("Invalid \"python\" block structure."));
 
   gdbpy_enter enter_py (get_current_arch (), current_language);
 
-  std::string script = compute_python_string (cmd->body_list[0]);
+  std::string script = compute_python_string (cmd->body_list_0.get ());
   ret = PyRun_SimpleString (script.c_str ());
   if (ret)
     error (_("Error while executing Python code."));
@@ -413,7 +413,7 @@ python_command (const char *arg, int from_tty)
     }
   else
     {
-      command_line_up l = get_command_line (python_control, "");
+      counted_command_line l = get_command_line (python_control, "");
 
       execute_control_command_untraced (l.get ());
     }
@@ -467,6 +467,7 @@ gdbpy_parameter_value (enum var_types type, void *var)
 	Py_RETURN_NONE;
       /* Fall through.  */
     case var_zinteger:
+    case var_zuinteger_unlimited:
       return PyLong_FromLong (* (int *) var);
 
     case var_uinteger:
@@ -475,6 +476,12 @@ gdbpy_parameter_value (enum var_types type, void *var)
 
 	if (val == UINT_MAX)
 	  Py_RETURN_NONE;
+	return PyLong_FromUnsignedLong (val);
+      }
+
+    case var_zuinteger:
+      {
+	unsigned int val = * (unsigned int *) var;
 	return PyLong_FromUnsignedLong (val);
       }
     }
@@ -581,6 +588,20 @@ execute_gdb_command (PyObject *self, PyObject *args, PyObject *kw)
     {
       struct interp *interp;
 
+      std::string arg_copy = arg;
+      bool first = true;
+      char *save_ptr = nullptr;
+      auto reader
+	= [&] ()
+	  {
+	    const char *result = strtok_r (first ? &arg_copy[0] : nullptr,
+					   "\n", &save_ptr);
+	    first = false;
+	    return result;
+	  };
+
+      counted_command_line lines = read_command_lines_1 (reader, 1, nullptr);
+
       scoped_restore save_async = make_scoped_restore (&current_ui->async, 0);
 
       scoped_restore save_uiout = make_scoped_restore (&current_uiout);
@@ -592,9 +613,10 @@ execute_gdb_command (PyObject *self, PyObject *args, PyObject *kw)
 
       scoped_restore preventer = prevent_dont_repeat ();
       if (to_string)
-	to_string_res = execute_command_to_string (arg, from_tty);
+	to_string_res = execute_control_commands_to_string (lines.get (),
+							    from_tty);
       else
-	execute_command (arg, from_tty);
+	execute_control_commands (lines.get (), from_tty);
     }
   CATCH (except, RETURN_MASK_ALL)
     {
@@ -876,10 +898,7 @@ gdbpy_decode_line (PyObject *self, PyObject *args)
 	}
     }
   else
-    {
-      result.reset (Py_None);
-      Py_INCREF (Py_None);
-    }
+    result = gdbpy_ref<>::new_reference (Py_None);
 
   gdbpy_ref<> return_result (PyTuple_New (2));
   if (return_result == NULL)
@@ -892,10 +911,7 @@ gdbpy_decode_line (PyObject *self, PyObject *args)
 	return NULL;
     }
   else
-    {
-      unparsed.reset (Py_None);
-      Py_INCREF (Py_None);
-    }
+    unparsed = gdbpy_ref<>::new_reference (Py_None);
 
   PyTuple_SetItem (return_result.get (), 0, unparsed.release ());
   PyTuple_SetItem (return_result.get (), 1, result.release ());
@@ -1582,7 +1598,7 @@ python_interactive_command (const char *arg, int from_tty)
     error (_("Python scripting is not supported in this copy of GDB."));
   else
     {
-      command_line_up l = get_command_line (python_control, "");
+      counted_command_line l = get_command_line (python_control, "");
 
       execute_control_command_untraced (l.get ());
     }

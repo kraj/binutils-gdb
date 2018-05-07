@@ -9,6 +9,9 @@
 * 'info proc' now works on running processes on FreeBSD systems and core
   files created on FreeBSD systems.
 
+* C expressions can now use _Alignof, and C++ expressions can now use
+  alignof.
+
 * New commands
 
 set debug fbsd-nat
@@ -24,6 +27,15 @@ set|show record btrace cpu
   Controls the processor to be used for enabling errata workarounds for
   branch trace decode.
 
+* Python API
+
+  ** Type alignment is now exposed via the "align" attribute of a gdb.Type.
+
+  ** The commands attached to a breakpoint can be set by assigning to
+     the breakpoint's "commands" field.
+
+  ** gdb.execute can now execute multi-line gdb commands.
+
 * New targets
 
 RiscV ELF			riscv*-*-elf
@@ -34,6 +46,16 @@ m88k running OpenBSD  		m88*-*-openbsd*
 SH-5/SH64 ELF			sh64-*-elf*, SH-5/SH64 support in sh*
 SH-5/SH64 running GNU/Linux	SH-5/SH64 support in sh*-*-linux*
 SH-5/SH64 running OpenBSD 	SH-5/SH64 support in sh*-*-openbsd*
+
+* Aarch64/Linux hardware watchpoints improvements
+
+  Hardware watchpoints on unaligned addresses are now properly
+  supported when running Linux kernel 4.10 or higher: read and access
+  watchpoints are no longer spuriously missed, and all watchpoints
+  lengths between 1 and 8 bytes are supported.  On older kernels,
+  watchpoints set on unaligned addresses are no longer missed, with
+  the tradeoff that there is a possibility of false hits being
+  reported.
 
 *** Changes in GDB 8.1
 

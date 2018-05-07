@@ -86,53 +86,88 @@
 
 /* This module defines the GDB target vector and its methods.  */
 
-static void procfs_attach (struct target_ops *, const char *, int);
-static void procfs_detach (struct target_ops *, inferior *, int);
-static void procfs_resume (struct target_ops *,
-			   ptid_t, int, enum gdb_signal);
-static void procfs_files_info (struct target_ops *);
-static void procfs_fetch_registers (struct target_ops *,
-				    struct regcache *, int);
-static void procfs_store_registers (struct target_ops *,
-				    struct regcache *, int);
-static void procfs_pass_signals (struct target_ops *self,
-				 int, unsigned char *);
-static void procfs_kill_inferior (struct target_ops *ops);
-static void procfs_mourn_inferior (struct target_ops *ops);
-static void procfs_create_inferior (struct target_ops *, const char *,
-				    const std::string &, char **, int);
-static ptid_t procfs_wait (struct target_ops *,
-			   ptid_t, struct target_waitstatus *, int);
+
 static enum target_xfer_status procfs_xfer_memory (gdb_byte *,
 						   const gdb_byte *,
 						   ULONGEST, ULONGEST,
 						   ULONGEST *);
-static target_xfer_partial_ftype procfs_xfer_partial;
 
-static int procfs_thread_alive (struct target_ops *ops, ptid_t);
+class procfs_target final : public inf_child_target
+{
+public:
+  void create_inferior (const char *, const std::string &,
+			char **, int) override;
 
-static void procfs_update_thread_list (struct target_ops *ops);
-static const char *procfs_pid_to_str (struct target_ops *, ptid_t);
+  void kill () override;
 
-static int proc_find_memory_regions (struct target_ops *self,
-				     find_memory_region_ftype, void *);
+  void mourn_inferior () override;
 
-static char *procfs_make_note_section (struct target_ops *self,
-				       bfd *, int *);
+  void attach (const char *, int) override;
+  void detach (inferior *inf, int) override;
 
-static int procfs_can_use_hw_breakpoint (struct target_ops *self,
-					 enum bptype, int, int);
+  void resume (ptid_t, int, enum gdb_signal) override;
+  ptid_t wait (ptid_t, struct target_waitstatus *, int) override;
 
-static void procfs_info_proc (struct target_ops *, const char *,
-			      enum info_proc_what);
+  void fetch_registers (struct regcache *, int) override;
+  void store_registers (struct regcache *, int) override;
+
+  enum target_xfer_status xfer_partial (enum target_object object,
+					const char *annex,
+					gdb_byte *readbuf,
+					const gdb_byte *writebuf,
+					ULONGEST offset, ULONGEST len,
+					ULONGEST *xfered_len) override;
+
+  void pass_signals (int, unsigned char *) override;
+
+  void files_info () override;
+
+  void update_thread_list () override;
+
+  bool thread_alive (ptid_t ptid) override;
+
+  const char *pid_to_str (ptid_t) override;
+
+  thread_control_capabilities get_thread_control_capabilities () override
+  { return tc_schedlock; }
+
+  /* find_memory_regions support method for gcore */
+  int find_memory_regions (find_memory_region_ftype func, void *data)
+    override;
+
+  char *make_corefile_notes (bfd *, int *) override;
+
+  bool info_proc (const char *, enum info_proc_what) override;
+
+#if defined(PR_MODEL_NATIVE) && (PR_MODEL_NATIVE == PR_MODEL_LP64)
+  int auxv_parse (gdb_byte **readptr,
+		  gdb_byte *endptr, CORE_ADDR *typep, CORE_ADDR *valp)
+    override;
+#endif
+
+  bool stopped_by_watchpoint () override;
+
+  int insert_watchpoint (CORE_ADDR, int, enum target_hw_bp_type,
+			 struct expression *) override;
+
+  int remove_watchpoint (CORE_ADDR, int, enum target_hw_bp_type,
+			 struct expression *) override;
+
+  int region_ok_for_hw_watchpoint (CORE_ADDR, int) override;
+
+  int can_use_hw_breakpoint (enum bptype, int, int) override;
+  bool stopped_data_address (CORE_ADDR *) override;
+};
+
+static procfs_target the_procfs_target;
 
 #if defined (PR_MODEL_NATIVE) && (PR_MODEL_NATIVE == PR_MODEL_LP64)
 /* When GDB is built as 64-bit application on Solaris, the auxv data
    is presented in 64-bit format.  We need to provide a custom parser
    to handle that.  */
-static int
-procfs_auxv_parse (struct target_ops *ops, gdb_byte **readptr,
-		   gdb_byte *endptr, CORE_ADDR *typep, CORE_ADDR *valp)
+int
+procfs_target::auxv_parse (gdb_byte **readptr,
+			   gdb_byte *endptr, CORE_ADDR *typep, CORE_ADDR *valp)
 {
   enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch ());
   gdb_byte *ptr = *readptr;
@@ -154,42 +189,6 @@ procfs_auxv_parse (struct target_ops *ops, gdb_byte **readptr,
   return 1;
 }
 #endif
-
-struct target_ops *
-procfs_target (void)
-{
-  struct target_ops *t = inf_child_target ();
-
-  t->to_create_inferior = procfs_create_inferior;
-  t->to_kill = procfs_kill_inferior;
-  t->to_mourn_inferior = procfs_mourn_inferior;
-  t->to_attach = procfs_attach;
-  t->to_detach = procfs_detach;
-  t->to_wait = procfs_wait;
-  t->to_resume = procfs_resume;
-  t->to_fetch_registers = procfs_fetch_registers;
-  t->to_store_registers = procfs_store_registers;
-  t->to_xfer_partial = procfs_xfer_partial;
-  t->to_pass_signals = procfs_pass_signals;
-  t->to_files_info = procfs_files_info;
-
-  t->to_update_thread_list = procfs_update_thread_list;
-  t->to_thread_alive = procfs_thread_alive;
-  t->to_pid_to_str = procfs_pid_to_str;
-
-  t->to_has_thread_control = tc_schedlock;
-  t->to_find_memory_regions = proc_find_memory_regions;
-  t->to_make_corefile_notes = procfs_make_note_section;
-  t->to_info_proc = procfs_info_proc;
-
-#if defined(PR_MODEL_NATIVE) && (PR_MODEL_NATIVE == PR_MODEL_LP64)
-  t->to_auxv_parse = procfs_auxv_parse;
-#endif
-
-  t->to_magic = OPS_MAGIC;
-
-  return t;
-}
 
 /* =================== END, TARGET_OPS "MODULE" =================== */
 
@@ -1723,20 +1722,13 @@ proc_delete_dead_threads (procinfo *parent, procinfo *thread, void *ignore)
   return 0;	/* keep iterating */
 }
 
-static void
-do_closedir_cleanup (void *dir)
-{
-  closedir ((DIR *) dir);
-}
-
 static int
 proc_update_threads (procinfo *pi)
 {
   char pathname[MAX_PROC_NAME_SIZE + 16];
   struct dirent *direntry;
-  struct cleanup *old_chain = NULL;
   procinfo *thread;
-  DIR *dirp;
+  gdb_dir_up dirp;
   int lwpid;
 
   /* We should never have to apply this operation to any procinfo
@@ -1757,11 +1749,11 @@ proc_update_threads (procinfo *pi)
 
   strcpy (pathname, pi->pathname);
   strcat (pathname, "/lwp");
-  if ((dirp = opendir (pathname)) == NULL)
+  dirp.reset (opendir (pathname));
+  if (dirp == NULL)
     proc_error (pi, "update_threads, opendir", __LINE__);
 
-  old_chain = make_cleanup (do_closedir_cleanup, dirp);
-  while ((direntry = readdir (dirp)) != NULL)
+  while ((direntry = readdir (dirp.get ())) != NULL)
     if (direntry->d_name[0] != '.')		/* skip '.' and '..' */
       {
 	lwpid = atoi (&direntry->d_name[0]);
@@ -1769,7 +1761,6 @@ proc_update_threads (procinfo *pi)
 	  proc_error (pi, "update_threads, create_procinfo", __LINE__);
       }
   pi->threads_valid = 1;
-  do_cleanups (old_chain);
   return 1;
 }
 
@@ -1887,8 +1878,8 @@ procfs_debug_inferior (procinfo *pi)
   return 0;
 }
 
-static void
-procfs_attach (struct target_ops *ops, const char *args, int from_tty)
+void
+procfs_target::attach (const char *args, int from_tty)
 {
   char *exec_file;
   int   pid;
@@ -1912,12 +1903,12 @@ procfs_attach (struct target_ops *ops, const char *args, int from_tty)
       fflush (stdout);
     }
   inferior_ptid = do_attach (pid_to_ptid (pid));
-  if (!target_is_pushed (ops))
-    push_target (ops);
+  if (!target_is_pushed (this))
+    push_target (this);
 }
 
-static void
-procfs_detach (struct target_ops *ops, inferior *inf, int from_tty)
+void
+procfs_target::detach (inferior *inf, int from_tty)
 {
   int pid = ptid_get_pid (inferior_ptid);
 
@@ -1938,7 +1929,7 @@ procfs_detach (struct target_ops *ops, inferior *inf, int from_tty)
 
   inferior_ptid = null_ptid;
   detach_inferior (pid);
-  inf_child_maybe_unpush_target (ops);
+  maybe_unpush_target ();
 }
 
 static ptid_t
@@ -2067,9 +2058,8 @@ do_detach ()
    registers.  So we cache the results, and mark the cache invalid
    when the process is resumed.  */
 
-static void
-procfs_fetch_registers (struct target_ops *ops,
-			struct regcache *regcache, int regnum)
+void
+procfs_target::fetch_registers (struct regcache *regcache, int regnum)
 {
   gdb_gregset_t *gregs;
   procinfo *pi;
@@ -2117,9 +2107,8 @@ procfs_fetch_registers (struct target_ops *ops,
    FIXME: is that a really bad idea?  Have to think about cases where
    writing one register might affect the value of others, etc.  */
 
-static void
-procfs_store_registers (struct target_ops *ops,
-			struct regcache *regcache, int regnum)
+void
+procfs_target::store_registers (struct regcache *regcache, int regnum)
 {
   gdb_gregset_t *gregs;
   procinfo *pi;
@@ -2203,9 +2192,9 @@ syscall_is_lwp_create (procinfo *pi, int scall)
    Returns the id of process (and possibly thread) that incurred the
    event.  Event codes are returned through a pointer parameter.  */
 
-static ptid_t
-procfs_wait (struct target_ops *ops,
-	     ptid_t ptid, struct target_waitstatus *status, int options)
+ptid_t
+procfs_target::wait (ptid_t ptid, struct target_waitstatus *status,
+		     int options)
 {
   /* First cut: loosely based on original version 2.1.  */
   procinfo *pi;
@@ -2246,7 +2235,7 @@ wait_again:
 	      int wait_retval;
 
 	      /* /proc file not found; presumably child has terminated.  */
-	      wait_retval = wait (&wstat); /* "wait" for the child's exit.  */
+	      wait_retval = ::wait (&wstat); /* "wait" for the child's exit.  */
 
 	      /* Wrong child?  */
 	      if (wait_retval != ptid_get_pid (inferior_ptid))
@@ -2339,7 +2328,7 @@ wait_again:
 		      }
 		    else
 		      {
-			int temp = wait (&wstat);
+			int temp = ::wait (&wstat);
 
 			/* FIXME: shouldn't I make sure I get the right
 			   event from the right process?  If (for
@@ -2569,11 +2558,11 @@ wait_again:
 /* Perform a partial transfer to/from the specified object.  For
    memory transfers, fall back to the old memory xfer functions.  */
 
-static enum target_xfer_status
-procfs_xfer_partial (struct target_ops *ops, enum target_object object,
-		     const char *annex, gdb_byte *readbuf,
-		     const gdb_byte *writebuf, ULONGEST offset, ULONGEST len,
-		     ULONGEST *xfered_len)
+enum target_xfer_status
+procfs_target::xfer_partial (enum target_object object,
+			     const char *annex, gdb_byte *readbuf,
+			     const gdb_byte *writebuf, ULONGEST offset,
+			     ULONGEST len, ULONGEST *xfered_len)
 {
   switch (object)
     {
@@ -2581,13 +2570,13 @@ procfs_xfer_partial (struct target_ops *ops, enum target_object object,
       return procfs_xfer_memory (readbuf, writebuf, offset, len, xfered_len);
 
     case TARGET_OBJECT_AUXV:
-      return memory_xfer_auxv (ops, object, annex, readbuf, writebuf,
+      return memory_xfer_auxv (this, object, annex, readbuf, writebuf,
 			       offset, len, xfered_len);
 
     default:
-      return ops->beneath->to_xfer_partial (ops->beneath, object, annex,
-					    readbuf, writebuf, offset, len,
-					    xfered_len);
+      return this->beneath->xfer_partial (object, annex,
+					  readbuf, writebuf, offset, len,
+					  xfered_len);
     }
 }
 
@@ -2716,9 +2705,8 @@ make_signal_thread_runnable (procinfo *process, procinfo *pi, void *ptr)
    allow any child thread to run; if non-zero, then allow only the
    indicated thread to run.  (not implemented yet).  */
 
-static void
-procfs_resume (struct target_ops *ops,
-	       ptid_t ptid, int step, enum gdb_signal signo)
+void
+procfs_target::resume (ptid_t ptid, int step, enum gdb_signal signo)
 {
   procinfo *pi, *thread;
   int native_signo;
@@ -2796,9 +2784,8 @@ procfs_resume (struct target_ops *ops,
 
 /* Set up to trace signals in the child process.  */
 
-static void
-procfs_pass_signals (struct target_ops *self,
-		     int numsigs, unsigned char *pass_signals)
+void
+procfs_target::pass_signals (int numsigs, unsigned char *pass_signals)
 {
   sigset_t signals;
   procinfo *pi = find_procinfo_or_die (ptid_get_pid (inferior_ptid), 0);
@@ -2819,8 +2806,8 @@ procfs_pass_signals (struct target_ops *self,
 
 /* Print status information about the child process.  */
 
-static void
-procfs_files_info (struct target_ops *ignore)
+void
+procfs_target::files_info ()
 {
   struct inferior *inf = current_inferior ();
 
@@ -2862,8 +2849,8 @@ unconditionally_kill_inferior (procinfo *pi)
 /* We're done debugging it, and we want it to go away.  Then we want
    GDB to forget all about it.  */
 
-static void
-procfs_kill_inferior (struct target_ops *ops)
+void
+procfs_target::kill ()
 {
   if (!ptid_equal (inferior_ptid, null_ptid)) /* ? */
     {
@@ -2878,8 +2865,8 @@ procfs_kill_inferior (struct target_ops *ops)
 
 /* Forget we ever debugged this thing!  */
 
-static void
-procfs_mourn_inferior (struct target_ops *ops)
+void
+procfs_target::mourn_inferior ()
 {
   procinfo *pi;
 
@@ -2893,7 +2880,7 @@ procfs_mourn_inferior (struct target_ops *ops)
 
   generic_mourn_inferior ();
 
-  inf_child_maybe_unpush_target (ops);
+  maybe_unpush_target ();
 }
 
 /* When GDB forks to create a runnable inferior process, this function
@@ -3056,9 +3043,10 @@ procfs_set_exec_trap (void)
    abstracted out and shared with other unix targets such as
    inf-ptrace?  */
 
-static void
-procfs_create_inferior (struct target_ops *ops, const char *exec_file,
-			const std::string &allargs, char **env, int from_tty)
+void
+procfs_target::create_inferior (const char *exec_file,
+				const std::string &allargs,
+				char **env, int from_tty)
 {
   char *shell_file = getenv ("SHELL");
   char *tryname;
@@ -3140,7 +3128,7 @@ procfs_create_inferior (struct target_ops *ops, const char *exec_file,
      pid shouldn't change.  */
   add_thread_silent (pid_to_ptid (pid));
 
-  procfs_init_inferior (ops, pid);
+  procfs_init_inferior (this, pid);
 }
 
 /* An observer for the "inferior_created" event.  */
@@ -3166,8 +3154,8 @@ procfs_notice_thread (procinfo *pi, procinfo *thread, void *ptr)
 /* Query all the threads that the target knows about, and give them
    back to GDB to add to its list.  */
 
-static void
-procfs_update_thread_list (struct target_ops *ops)
+void
+procfs_target::update_thread_list ()
 {
   procinfo *pi;
 
@@ -3183,8 +3171,8 @@ procfs_update_thread_list (struct target_ops *ops)
    really seem to be doing his job.  Got to investigate how to tell
    when a thread is really gone.  */
 
-static int
-procfs_thread_alive (struct target_ops *ops, ptid_t ptid)
+bool
+procfs_target::thread_alive (ptid_t ptid)
 {
   int proc, thread;
   procinfo *pi;
@@ -3193,25 +3181,25 @@ procfs_thread_alive (struct target_ops *ops, ptid_t ptid)
   thread  = ptid_get_lwp (ptid);
   /* If I don't know it, it ain't alive!  */
   if ((pi = find_procinfo (proc, thread)) == NULL)
-    return 0;
+    return false;
 
   /* If I can't get its status, it ain't alive!
      What's more, I need to forget about it!  */
   if (!proc_get_status (pi))
     {
       destroy_procinfo (pi);
-      return 0;
+      return false;
     }
   /* I couldn't have got its status if it weren't alive, so it's
      alive.  */
-  return 1;
+  return true;
 }
 
 /* Convert PTID to a string.  Returns the string in a static
    buffer.  */
 
-static const char *
-procfs_pid_to_str (struct target_ops *ops, ptid_t ptid)
+const char *
+procfs_target::pid_to_str (ptid_t ptid)
 {
   static char buf[80];
 
@@ -3281,10 +3269,8 @@ procfs_set_watchpoint (ptid_t ptid, CORE_ADDR addr, int len, int rwflag,
    procfs.c targets due to the fact that some of them still define
    target_can_use_hardware_watchpoint.  */
 
-static int
-procfs_can_use_hw_breakpoint (struct target_ops *self,
-			      enum bptype type,
-			      int cnt, int othertype)
+int
+procfs_target::can_use_hw_breakpoint (enum bptype type, int cnt, int othertype)
 {
   /* Due to the way that proc_set_watchpoint() is implemented, host
      and target pointers must be of the same size.  If they are not,
@@ -3307,8 +3293,8 @@ procfs_can_use_hw_breakpoint (struct target_ops *self,
 /* Returns non-zero if process is stopped on a hardware watchpoint
    fault, else returns zero.  */
 
-static int
-procfs_stopped_by_watchpoint (struct target_ops *ops)
+bool
+procfs_target::stopped_by_watchpoint ()
 {
   procinfo *pi;
 
@@ -3319,10 +3305,10 @@ procfs_stopped_by_watchpoint (struct target_ops *ops)
       if (proc_why (pi) == PR_FAULTED)
 	{
 	  if (proc_what (pi) == FLTWATCH)
-	    return 1;
+	    return true;
 	}
     }
-  return 0;
+  return false;
 }
 
 /* Returns 1 if the OS knows the position of the triggered watchpoint,
@@ -3331,8 +3317,8 @@ procfs_stopped_by_watchpoint (struct target_ops *ops)
    procfs_stopped_by_watchpoint returned 1, thus no further checks are
    done.  The function also assumes that ADDR is not NULL.  */
 
-static int
-procfs_stopped_data_address (struct target_ops *targ, CORE_ADDR *addr)
+bool
+procfs_target::stopped_data_address (CORE_ADDR *addr)
 {
   procinfo *pi;
 
@@ -3340,11 +3326,10 @@ procfs_stopped_data_address (struct target_ops *targ, CORE_ADDR *addr)
   return proc_watchpoint_address (pi, addr);
 }
 
-static int
-procfs_insert_watchpoint (struct target_ops *self,
-			  CORE_ADDR addr, int len,
-			  enum target_hw_bp_type type,
-			  struct expression *cond)
+int
+procfs_target::insert_watchpoint (CORE_ADDR addr, int len,
+				  enum target_hw_bp_type type,
+				  struct expression *cond)
 {
   if (!target_have_steppable_watchpoint
       && !gdbarch_have_nonsteppable_watchpoint (target_gdbarch ()))
@@ -3364,18 +3349,16 @@ procfs_insert_watchpoint (struct target_ops *self,
     }
 }
 
-static int
-procfs_remove_watchpoint (struct target_ops *self,
-			  CORE_ADDR addr, int len,
-			  enum target_hw_bp_type type,
-			  struct expression *cond)
+int
+procfs_target::remove_watchpoint (CORE_ADDR addr, int len,
+				  enum target_hw_bp_type type,
+				  struct expression *cond)
 {
   return procfs_set_watchpoint (inferior_ptid, addr, 0, 0, 0);
 }
 
-static int
-procfs_region_ok_for_hw_watchpoint (struct target_ops *self,
-				    CORE_ADDR addr, int len)
+int
+procfs_target::region_ok_for_hw_watchpoint (CORE_ADDR addr, int len)
 {
   /* The man page for proc(4) on Solaris 2.6 and up says that the
      system can support "thousands" of hardware watchpoints, but gives
@@ -3383,17 +3366,6 @@ procfs_region_ok_for_hw_watchpoint (struct target_ops *self,
      the allowed size for the watched area either.  So we just tell
      GDB 'yes'.  */
   return 1;
-}
-
-void
-procfs_use_watchpoints (struct target_ops *t)
-{
-  t->to_stopped_by_watchpoint = procfs_stopped_by_watchpoint;
-  t->to_insert_watchpoint = procfs_insert_watchpoint;
-  t->to_remove_watchpoint = procfs_remove_watchpoint;
-  t->to_region_ok_for_hw_watchpoint = procfs_region_ok_for_hw_watchpoint;
-  t->to_can_use_hw_breakpoint = procfs_can_use_hw_breakpoint;
-  t->to_stopped_data_address = procfs_stopped_data_address;
 }
 
 /* Memory Mappings Functions: */
@@ -3480,9 +3452,8 @@ find_memory_regions_callback (struct prmap *map,
    Stops iterating and returns the first non-zero value returned by
    the callback.  */
 
-static int
-proc_find_memory_regions (struct target_ops *self,
-			  find_memory_region_ftype func, void *data)
+int
+procfs_target::find_memory_regions (find_memory_region_ftype func, void *data)
 {
   procinfo *pi = find_procinfo_or_die (ptid_get_pid (inferior_ptid), 0);
 
@@ -3572,9 +3543,8 @@ info_proc_mappings (procinfo *pi, int summary)
 
 /* Implement the "info proc" command.  */
 
-static void
-procfs_info_proc (struct target_ops *ops, const char *args,
-		  enum info_proc_what what)
+bool
+procfs_target::info_proc (const char *args, enum info_proc_what what)
 {
   struct cleanup *old_chain;
   procinfo *process  = NULL;
@@ -3659,6 +3629,8 @@ procfs_info_proc (struct target_ops *ops, const char *args,
     }
 
   do_cleanups (old_chain);
+
+  return true;
 }
 
 /* Modify the status of the system call identified by SYSCALLNUM in
@@ -3758,6 +3730,8 @@ _initialize_procfs (void)
 	   _("Cancel a trace of entries into the syscall."));
   add_com ("proc-untrace-exit", no_class, proc_untrace_sysexit_cmd,
 	   _("Cancel a trace of exits from the syscall."));
+
+  add_target (&the_procfs_target);
 }
 
 /* =================== END, GDB  "MODULE" =================== */
@@ -3865,8 +3839,8 @@ find_stop_signal (void)
     return GDB_SIGNAL_0;
 }
 
-static char *
-procfs_make_note_section (struct target_ops *self, bfd *obfd, int *note_size)
+char *
+procfs_target::make_corefile_notes (bfd *obfd, int *note_size)
 {
   struct cleanup *old_chain;
   gdb_gregset_t gregs;
@@ -3920,7 +3894,7 @@ procfs_make_note_section (struct target_ops *self, bfd *obfd, int *note_size)
 			     &thread_args);
   note_data = thread_args.note_data;
 
-  auxv_len = target_read_alloc (&current_target, TARGET_OBJECT_AUXV,
+  auxv_len = target_read_alloc (target_stack, TARGET_OBJECT_AUXV,
 				NULL, &auxv);
   if (auxv_len > 0)
     {

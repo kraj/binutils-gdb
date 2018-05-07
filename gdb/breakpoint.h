@@ -669,10 +669,6 @@ enum watchpoint_triggered
 typedef struct bp_location *bp_location_p;
 DEF_VEC_P(bp_location_p);
 
-/* A reference-counted struct command_line. This is an implementation
-   detail to the breakpoints module.  */
-typedef std::shared_ptr<command_line> counted_command_line;
-
 /* Some targets (e.g., embedded PowerPC) need two debug registers to set
    a watchpoint over a memory region.  If this flag is true, GDB will use
    only one register per watchpoint, thus assuming that all acesses that
@@ -1487,7 +1483,7 @@ extern void disable_breakpoint (struct breakpoint *);
 extern void enable_breakpoint (struct breakpoint *);
 
 extern void breakpoint_set_commands (struct breakpoint *b, 
-				     command_line_up &&commands);
+				     counted_command_line &&commands);
 
 extern void breakpoint_set_silent (struct breakpoint *b, int silent);
 
@@ -1611,10 +1607,6 @@ extern int is_tracepoint (const struct breakpoint *b);
    vector is newly allocated; the caller should free when done with
    it.  */
 extern VEC(breakpoint_p) *static_tracepoints_here (CORE_ADDR addr);
-
-/* Function that can be passed to read_command_line to validate
-   that each command is suitable for tracepoint command list.  */
-extern void check_tracepoint_command (char *line, void *closure);
 
 /* Create an instance of this to start registering breakpoint numbers
    for a later "commands" command.  */

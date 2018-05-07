@@ -3969,6 +3969,7 @@ ppc_process_record_op4 (struct gdbarch *gdbarch, struct regcache *regcache,
 	  && vra != 7	/* Decimal Convert From National */
 	  && vra != 31)	/* Decimal Set Sign */
 	break;
+      /* Fall through.  */
 			/* 5.16 Decimal Integer Arithmetic Instructions */
     case 1:		/* Decimal Add Modulo */
     case 65:		/* Decimal Subtract Modulo */
@@ -4885,7 +4886,7 @@ ppc_process_record_op31 (struct gdbarch *gdbarch, struct regcache *regcache,
       return 0;
 
     case 1014:		/* Data Cache Block set to Zero */
-      if (target_auxv_search (&current_target, AT_DCACHEBSIZE, &at_dcsz) <= 0
+      if (target_auxv_search (target_stack, AT_DCACHEBSIZE, &at_dcsz) <= 0
 	  || at_dcsz == 0)
 	at_dcsz = 128; /* Assume 128-byte cache line size (POWER8)  */
 
@@ -5565,6 +5566,7 @@ ppc_process_record_op63 (struct gdbarch *gdbarch, struct regcache *regcache,
 	  case 22:	/* Move From FPSCR Control & set RN */
 	  case 23:	/* Move From FPSCR Control & set RN Immediate */
 	    record_full_arch_list_add_reg (regcache, tdep->ppc_fpscr_regnum);
+	    /* Fall through.  */
 	  case 0:	/* Move From FPSCR */
 	  case 24:	/* Move From FPSCR Lightweight */
 	    if (PPC_FIELD (insn, 11, 5) == 0 && PPC_RC (insn))

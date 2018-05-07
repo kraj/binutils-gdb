@@ -5180,9 +5180,9 @@ remove_extra_symbols (struct block_symbol *syms, int nsyms)
 /* Given a type that corresponds to a renaming entity, use the type name
    to extract the scope (package name or function name, fully qualified,
    and following the GNAT encoding convention) where this renaming has been
-   defined.  The string returned needs to be deallocated after use.  */
+   defined.  */
 
-static char *
+static std::string
 xget_renaming_scope (struct type *renaming_type)
 {
   /* The renaming types adhere to the following convention:
@@ -5193,8 +5193,6 @@ xget_renaming_scope (struct type *renaming_type)
   const char *name = type_name_no_tag (renaming_type);
   const char *suffix = strstr (name, "___XR");
   const char *last;
-  int scope_len;
-  char *scope;
 
   /* Now, backtrack a bit until we find the first "__".  Start looking
      at suffix - 3, as the <rename> part is at least one character long.  */
@@ -5204,14 +5202,7 @@ xget_renaming_scope (struct type *renaming_type)
       break;
 
   /* Make a copy of scope and return it.  */
-
-  scope_len = last - name;
-  scope = (char *) xmalloc ((scope_len + 1) * sizeof (char));
-
-  strncpy (scope, name, scope_len);
-  scope[scope_len] = '\0';
-
-  return scope;
+  return std::string (name, last);
 }
 
 /* Return nonzero if NAME corresponds to a package name.  */
@@ -5251,21 +5242,14 @@ is_package_name (const char *name)
 static int
 old_renaming_is_invisible (const struct symbol *sym, const char *function_name)
 {
-  char *scope;
-  struct cleanup *old_chain;
-
   if (SYMBOL_CLASS (sym) != LOC_TYPEDEF)
     return 0;
 
-  scope = xget_renaming_scope (SYMBOL_TYPE (sym));
-  old_chain = make_cleanup (xfree, scope);
+  std::string scope = xget_renaming_scope (SYMBOL_TYPE (sym));
 
   /* If the rename has been defined in a package, then it is visible.  */
-  if (is_package_name (scope))
-    {
-      do_cleanups (old_chain);
-      return 0;
-    }
+  if (is_package_name (scope.c_str ()))
+    return 0;
 
   /* Check that the rename is in the current function scope by checking
      that its name starts with SCOPE.  */
@@ -5277,12 +5261,7 @@ old_renaming_is_invisible (const struct symbol *sym, const char *function_name)
   if (startswith (function_name, "_ada_"))
     function_name += 5;
 
-  {
-    int is_invisible = !startswith (function_name, scope);
-
-    do_cleanups (old_chain);
-    return is_invisible;
-  }
+  return !startswith (function_name, scope.c_str ());
 }
 
 /* Remove entries from SYMS that corresponds to a renaming entity that
@@ -12452,7 +12431,7 @@ ada_exception_name_addr (enum ada_exception_catchpoint_kind ex,
   return result;
 }
 
-static char *ada_exception_catchpoint_cond_string
+static std::string ada_exception_catchpoint_cond_string
   (const char *excep_string,
    enum ada_exception_catchpoint_kind ex);
 
@@ -12520,9 +12499,7 @@ static void
 create_excep_cond_exprs (struct ada_catchpoint *c,
                          enum ada_exception_catchpoint_kind ex)
 {
-  struct cleanup *old_chain;
   struct bp_location *bl;
-  char *cond_string;
 
   /* Nothing to do if there's no specific exception to catch.  */
   if (c->excep_string == NULL)
@@ -12534,8 +12511,8 @@ create_excep_cond_exprs (struct ada_catchpoint *c,
 
   /* Compute the condition expression in text form, from the specific
      expection we want to catch.  */
-  cond_string = ada_exception_catchpoint_cond_string (c->excep_string, ex);
-  old_chain = make_cleanup (xfree, cond_string);
+  std::string cond_string
+    = ada_exception_catchpoint_cond_string (c->excep_string, ex);
 
   /* Iterate over all the catchpoint's locations, and parse an
      expression for each.  */
@@ -12549,7 +12526,7 @@ create_excep_cond_exprs (struct ada_catchpoint *c,
 	{
 	  const char *s;
 
-	  s = cond_string;
+	  s = cond_string.c_str ();
 	  TRY
 	    {
 	      exp = parse_exp_1 (&s, bl->address,
@@ -12567,8 +12544,6 @@ create_excep_cond_exprs (struct ada_catchpoint *c,
 
       ada_loc->excep_cond_expr = std::move (exp);
     }
-
-  do_cleanups (old_chain);
 }
 
 /* ada_catchpoint destructor.  */
@@ -12830,11 +12805,9 @@ print_mention_exception (enum ada_exception_catchpoint_kind ex,
       case ada_catch_exception:
         if (c->excep_string != NULL)
 	  {
-	    char *info = xstrprintf (_("`%s' Ada exception"), c->excep_string);
-	    struct cleanup *old_chain = make_cleanup (xfree, info);
-
-	    uiout->text (info);
-	    do_cleanups (old_chain);
+	    std::string info = string_printf (_("`%s' Ada exception"),
+					      c->excep_string);
+	    uiout->text (info.c_str ());
 	  }
         else
           uiout->text (_("all Ada exceptions"));
@@ -13269,29 +13242,25 @@ ada_exception_breakpoint_ops (enum ada_exception_catchpoint_kind ex)
    being raised with the exception that the user wants to catch.  This
    assumes that this condition is used when the inferior just triggered
    an exception catchpoint.
-   EX: the type of catchpoints used for catching Ada exceptions.
-   
-   The string returned is a newly allocated string that needs to be
-   deallocated later.  */
+   EX: the type of catchpoints used for catching Ada exceptions.  */
 
-static char *
+static std::string
 ada_exception_catchpoint_cond_string (const char *excep_string,
                                       enum ada_exception_catchpoint_kind ex)
 {
   int i;
   bool is_standard_exc = false;
-  const char *actual_exc_expr;
-  char *ref_exc_expr;
+  std::string result;
 
   if (ex == ada_catch_handlers)
     {
       /* For exception handlers catchpoints, the condition string does
          not use the same parameter as for the other exceptions.  */
-      actual_exc_expr = ("long_integer (GNAT_GCC_exception_Access"
-			 "(gcc_exception).all.occurrence.id)");
+      result = ("long_integer (GNAT_GCC_exception_Access"
+		"(gcc_exception).all.occurrence.id)");
     }
   else
-    actual_exc_expr = "long_integer (e)";
+    result = "long_integer (e)";
 
   /* The standard exceptions are a special case.  They are defined in
      runtime units that have been compiled without debugging info; if
@@ -13321,13 +13290,13 @@ ada_exception_catchpoint_cond_string (const char *excep_string,
 	}
     }
 
-  if (is_standard_exc)
-    ref_exc_expr = xstrprintf ("long_integer (&standard.%s)", excep_string);
-  else
-    ref_exc_expr = xstrprintf ("long_integer (&%s)", excep_string);
+  result += " = ";
 
-  char *result =  xstrprintf ("%s = %s", actual_exc_expr, ref_exc_expr);
-  xfree (ref_exc_expr);
+  if (is_standard_exc)
+    string_appendf (result, "long_integer (&standard.%s)", excep_string);
+  else
+    string_appendf (result, "long_integer (&%s)", excep_string);
+
   return result;
 }
 
