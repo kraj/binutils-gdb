@@ -1,3 +1,73 @@
+2018-05-11  Tom Tromey  <tom@tromey.com>
+
+	* mdebugread.c (parse_partial_symbols, psymtab_to_symtab_1): Use
+	gdb::def_vector.
+
+2018-05-10  Tom Tromey  <tom@tromey.com>
+
+	* configure: Rebuild.
+	* warning.m4 (AM_GDB_WARNINGS): Use -Wimplicit-fallthrough=3.
+
+2018-05-10  Joel Brobecker  <brobecker@adacore.com>
+
+	PR server/23158:
+	* regformats/regdat.sh: Adjust script, following the addition
+	of the new expedite_regs parameter to init_target_desc.
+
+2018-05-10  Omair Javaid  <omair.javaid@linaro.org>
+    
+	PR gdb/23127
+	* aarch64-linux-tdep.c (aarch64_linux_init_abi): Add call to
+	set_gdbarch_significant_addr_bit.
+	* aarch64-tdep.c (aarch64_gdbarch_init): Remove call to
+	set_gdbarch_significant_addr_bit.
+	* utils.c (address_significant): Update to sign extend addr.
+
+2018-05-09  Max Filippov  <jcmvbkbc@gmail.com>
+
+	* xtensa-linux-tdep.c (xtensa-tdep.h): New include.
+	(xtensa_linux_init_abi): Limit tdep->num_regs by
+	tdep->num_nopriv_regs.
+	* xtensa-tdep.c (xtensa_derive_tdep): Calculate
+	tdep->num_nopriv_regs and only copy it to tdep->num_regs if it's
+	not initialized.
+
+2018-05-08  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* unittests/string_view-selftests.c: Define GNULIB_NAMESPACE.
+
+2018-05-08  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* common/x86-xstate.h (I387_FCTRL_INIT_VAL): New constant.
+	(I387_MXCSR_INIT_VAL): New constant.
+	* amd64-tdep.c (amd64_supply_xsave): Only read state from xsave
+	buffer if it was supplied by the inferior.
+	* i387-tdep.c (i387_supply_fsave): Use I387_MXCSR_INIT_VAL.
+	(i387_xsave_get_clear_bv): New function.
+	(i387_supply_xsave): Only read x87 control registers from the
+	xsave buffer if the feature is enabled, and the state will have
+	been written, otherwise, provide a suitable default.
+	(i387_collect_xsave): Pre-clear all registers in xsave buffer,
+	including x87 control registers.  Update control registers if they
+	have changed from the default value, and mark features as enabled
+	as required.
+	* i387-tdep.h (i387_xsave_get_clear_bv): Declare.
+
+2018-05-08  Ulrich Weigand  <uweigand@de.ibm.com>
+
+	* spu-tdep.c (info_spu_event_command): Fix output formatting.
+
+2018-05-07  Tom Tromey  <tom@tromey.com>
+
+	* configure: Rebuild.
+	* warning.m4 (AM_GDB_WARNINGS): Add -Wduplicated-cond.
+
+2018-05-07  Tom Tromey  <tom@tromey.com>
+
+	PR tdep/20362:
+	* arm-tdep.c (arm_record_vfp_data_proc_insn): Properly mask off D
+	bit.  Use correct value for VDIV.
+
 2018-05-04  Tom Tromey  <tom@tromey.com>
 
 	* configure: Rebuild.

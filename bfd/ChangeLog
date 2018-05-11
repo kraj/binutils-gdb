@@ -1,3 +1,35 @@
+2018-05-09  Dimitar Dimitrov  <dimitar@dinux.eu>
+
+	* elf32-pru.c (pru_elf32_do_ldi32_relocate): Make LDI32 relocation
+	conformant to TI ABI.
+	(pru_elf32_relax_section): Likewise.
+	(pru_elf_relax_delete_bytes): Fix offsets for new LDI32 code.
+	* elf32-pru.c (pru_elf32_do_ldi32_relocate): Ignore addend.
+	(pru_elf32_pmem_relocate): Trap - should not get here.
+	(pru_elf32_relocate_section): Add support for REL relocations.
+	(elf_info_to_howto_rel): Enable REL.
+	(elf_backend_may_use_rel_p): Likewise.
+	(elf_backend_may_use_rela_p): Likewise.
+	(elf_backend_default_use_rela_p): Likewise.
+
+2018-05-09  Alan Modra  <amodra@gmail.com>
+
+	PR 23148
+	* peXXigen.c (pe_print_edata): Correct minimum size.
+
+2018-05-09  Alan Modra  <amodra@gmail.com>
+
+	PR 23147
+	* peXXigen.c (pe_print_idata): Bound check hint_addr.
+
+2018-05-08  Nick Clifton  <nickc@redhat.com>
+
+	PR 22809
+	* elf.c (bfd_elf_get_str_section): Check for an excessively large
+	string section.
+	* elf-attrs.c (_bfd_elf_parse_attributes): Issue an error if the
+	attribute section is larger than the size of the file.
+
 2018-05-07  Alan Modra  <amodra@gmail.com>
 
 	* cofflink.c (_bfd_coff_link_input_bfd): Use memcmp rather than

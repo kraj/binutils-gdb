@@ -231,6 +231,10 @@ enum
   CpuWAITPKG,
   /* CLDEMOTE instruction required */
   CpuCLDEMOTE,
+  /* MOVDIRI instruction support required */
+  CpuMOVDIRI,
+  /* MOVDIRR64B instruction required */
+  CpuMOVDIR64B,
   /* 64bit support required  */
   Cpu64,
   /* Not supported in the 64bit mode  */
@@ -354,6 +358,8 @@ typedef union i386_cpu_flags
       unsigned int cpupconfig:1;
       unsigned int cpuwaitpkg:1;
       unsigned int cpucldemote:1;
+      unsigned int cpumovdiri:1;
+      unsigned int cpumovdir64b:1;
       unsigned int cpu64:1;
       unsigned int cpuno64:1;
 #ifdef CpuUnused
@@ -445,8 +451,8 @@ enum
   ToDword,
   /* Convert to QWORD */
   ToQword,
-  /* Address prefix changes operand 0 */
-  AddrPrefixOp0,
+  /* Address prefix changes register operand */
+  AddrPrefixOpReg,
   /* opcode is a prefix */
   IsPrefix,
   /* instruction has extension in 8 bit imm */
@@ -627,7 +633,7 @@ typedef struct i386_opcode_modifier
   unsigned int repprefixok:1;
   unsigned int todword:1;
   unsigned int toqword:1;
-  unsigned int addrprefixop0:1;
+  unsigned int addrprefixopreg:1;
   unsigned int isprefix:1;
   unsigned int immext:1;
   unsigned int norex64:1;

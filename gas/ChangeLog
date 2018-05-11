@@ -1,3 +1,90 @@
+2018-05-10  Tamar Christina  <tamar.christina@arm.com>
+
+	* config/tc-aarch64.c (parse_aarch64_imm_float): Remove restrictions.
+	* testsuite/gas/aarch64/diagnostic.s: Move fmov int test to..
+	* testsuite/gas/aarch64/fpmov.s: Here.
+	* testsuite/gas/aarch64/fpmov.d: Update results with fmov.
+	* testsuite/gas/aarch64/diagnostic.l: Remove fmov values.
+	* testsuite/gas/aarch64/sve-invalid.s: Update test files.
+	* testsuite/gas/aarch64/sve-invalid.l: Likewise
+
+2018-05-10  Tamar Christina  <tamar.christina@arm.com>
+
+	* gas/config/tc-arm.c (do_neon_mov): Allow integer literal for float
+	immediate.
+	* testsuite/gas/arm/vfp-mov-enc.s: New.
+	* testsuite/gas/arm/vfp-mov-enc.d: New.
+
+2018-05-09  Max Filippov  <jcmvbkbc@gmail.com>
+
+	* config/tc-xtensa.c (xtensa_is_init_fini): New function.
+	(xtensa_move_literals): Only attempt to assign literal pool to
+	literals with tc_frag_data.is_literal mark and not in .init or
+	.fini sections.
+	Join nested 'if' conditions to simplify function structure.
+	(xtensa_switch_to_non_abs_literal_fragment): Use
+	xtensa_is_init_fini to test for .init/.fini sections.
+	* testsuite/gas/xtensa/all.exp (auto-litpools-3)
+	(auto-litpools-4, text-section-literals-1): New tests.
+	* testsuite/gas/xtensa/auto-litpools-3.d: New test results.
+	* testsuite/gas/xtensa/auto-litpools-3.s: New test source.
+	* testsuite/gas/xtensa/auto-litpools-4.d: New test results.
+	* testsuite/gas/xtensa/auto-litpools-4.s: New test source.
+	* testsuite/gas/xtensa/text-section-literals-1.d: New test results.
+	* testsuite/gas/xtensa/text-section-literals-1.s: New test source.
+
+2018-05-09  Dimitar Dimitrov  <dimitar@dinux.eu>
+
+	* config/tc-pru.c (md_apply_fix): Make LDI32 relocation conformant
+	to TI ABI.
+	(pru_assemble_arg_i): Likewise.
+	(output_insn_ldi32): Likewise.
+	* testsuite/gas/pru/ldi.d: Update test for the now fixed LDI32.
+	* gas/config/tc-pru.c (pru_assemble_arg_b): Check imm8 operand range.
+	* gas/testsuite/gas/pru/illegal2.l: New test.
+	* gas/testsuite/gas/pru/illegal2.s: New test.
+	* gas/testsuite/gas/pru/pru.exp: Register new illegal2 test.
+
+2018-05-08  Jim Wilson  <jimw@sifive.com>
+
+	* testsuite/gas/riscv/c-zero-imm.d: Add more tests.
+	* testsuite/gas/riscv/c-zero-imm.s: Likewise.
+	* testsuite/gas/riscv/c-zero-reg.d: Fix typo in test.  Add disabled
+	future test for RV128 support.
+	* testsuite/gas/riscv/c-zero-reg.s: Likewise.
+
+2018-05-07  Igor Tsimbalist  <igor.v.tsimbalist@intel.com>
+	    H.J. Lu  <hongjiu.lu@intel.com>
+
+	* config/tc-i386.c (cpu_arch): Add .movdir, .movdir64b.
+	(cpu_noarch): Likewise.
+	(process_suffix): Add check for register size.
+	* doc/c-i386.texi: Document movdiri, movdir64b.
+	* testsuite/gas/i386/i386.exp: Run MOVDIR{I,64B} tests.
+	* testsuite/gas/i386/movdir-intel.d: New file.
+	* testsuite/gas/i386/movdir.d: Likewise.
+	* testsuite/gas/i386/movdir.s: Likewise.
+	* testsuite/gas/i386/movdir64b-reg.s: Likewise.
+	* testsuite/gas/i386/movdir64b-reg.l: Likewise.
+	* testsuite/gas/i386/x86-64-movdir-intel.d: Likewise.
+	* testsuite/gas/i386/x86-64-movdir.d: Likewise.
+	* testsuite/gas/i386/x86-64-movdir.s: Likewise.
+	* testsuite/gas/i386/x86-64-movdir64b-reg.s: Likewise.
+	* testsuite/gas/i386/x86-64-movdir64b-reg.l: Likewise.
+
+2018-05-07  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* config/tc-i386.c (process_suffix): Check addrprefixopreg
+	instead of addrprefixop0.
+
+2018-05-07  Peter Bergner  <bergner@vnet.ibm.com.com>
+
+	* config/tc-ppc.c (ppc_setup_opcodes) <powerpc_opcodes>: Rewrite code
+	to dump the entire opcode table.
+	(ppc_setup_opcodes) <spe2_opcodes>: Likewise.
+	(ppc_setup_opcodes) <vle_opcodes>: Likewise.  Fix calculation of
+	opcode index.
+
 2018-05-06  H.J. Lu  <hongjiu.lu@intel.com>
 
 	* testsuite/gas/i386/xmmhi32.d: Also allow dir32 relocation.

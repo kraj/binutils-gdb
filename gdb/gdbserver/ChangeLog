@@ -1,3 +1,67 @@
+2018-05-10  Joel Brobecker  <brobecker@adacore.com>
+
+	* lynx-i386-low.c (LYNXOS_178): New macro.
+	[LYNXOS_178] (usr_fcontext_t): Provide a definition that matches
+	the layout on LynxOS-178.
+	(lynx_i386_fill_fpregset, lynx_i386_store_fpregset): Do not
+	handle floating point registers that are not supported by
+	LynxOS-178.
+
+2018-05-10  Tom Tromey  <tom@tromey.com>
+
+	* configure: Rebuild.
+
+2018-05-10  Joel Brobecker  <brobecker@adacore.com>
+
+	PR server/23158:
+	* tdesc.h (init_target_desc) <expedite_regs>: New parameter.
+	* tdesc.c (init_target_desc) <expedite_regs>: New parameter.
+	Use it to set the expedite_regs field in the given tdesc.
+	* x86-tdesc.h: New file.
+	* linux-aarch64-tdesc.c (aarch64_linux_read_description):
+	Adjust following the addition of the new expedite_regs parameter
+	to init_target_desc.
+	* linux-tic6x-low.c (tic6x_read_description): Likewise.
+	* linux-x86-tdesc.c: #include "x86-tdesc.h".
+	(i386_linux_read_description, amd64_linux_read_description):
+	Adjust following the addition of the new expedite_regs parameter
+	to init_target_desc.
+	* lynx-i386-low.c: #include "x86-tdesc.h".
+	(lynx_i386_arch_setup): Adjust following the addition of the new
+	expedite_regs parameter to init_target_desc.
+	* nto-x86-low.c: #include "x86-tdesc.h".
+	(nto_x86_arch_setup): Adjust following the addition of the new
+	expedite_regs parameter to init_target_desc.
+	* win32-i386-low.c: #include "x86-tdesc.h".
+	(i386_arch_setup): Adjust following the addition of the new
+	expedite_regs parameter to init_target_desc.
+
+2018-05-10  Joel Brobecker  <brobecker@adacore.com>
+
+	PR server/23158:
+	* win32-low.c (win32_create_inferior): Add call to my_wait
+	setting last_status global.
+
+2018-05-10  Joel Brobecker  <brobecker@adacore.com>
+
+	PR server/23158:
+	* win32-low.c (create_process): Only call gdb_tilde_expand if
+	inferior_cwd is not NULL.
+
+2018-05-08  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* i387-fp.c (i387_cache_to_xsave): Only write x87 control
+	registers to the cache if their values have changed.
+	(i387_xsave_to_cache): Provide default values for x87 control
+	registers when these features are available, but disabled.
+	* regcache.c (supply_register_by_name_zeroed): New function.
+	* regcache.h (supply_register_by_name_zeroed): Declare new
+	function.
+
+2018-05-07  Tom Tromey  <tom@tromey.com>
+
+	* configure: Rebuild.
+
 2018-05-04  Tom Tromey  <tom@tromey.com>
 
 	* configure: Rebuild.

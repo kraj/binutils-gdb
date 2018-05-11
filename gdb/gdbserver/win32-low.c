@@ -556,7 +556,6 @@ create_process (const char *program, char *args,
 		DWORD flags, PROCESS_INFORMATION *pi)
 {
   const char *inferior_cwd = get_inferior_cwd ();
-  std::string expanded_infcwd = gdb_tilde_expand (inferior_cwd);
   BOOL ret;
 
 #ifdef _WIN32_WCE
@@ -576,6 +575,7 @@ create_process (const char *program, char *args,
 
   if (inferior_cwd != NULL)
     {
+      std::string expanded_infcwd = gdb_tilde_expand (inferior_cwd);
       std::replace (expanded_infcwd.begin (), expanded_infcwd.end (),
 		    '/', '\\');
       wcwd = alloca ((expanded_infcwd.size () + 1) * sizeof (wchar_t));
@@ -607,7 +607,10 @@ Could not convert the expanded inferior cwd to wide-char."));
 			TRUE,     /* inherit handles */
 			flags,    /* start flags */
 			NULL,     /* environment */
-			expanded_infcwd.c_str (), /* current directory */
+			/* current directory */
+			(inferior_cwd == NULL
+			 ? NULL
+			 : gdb_tilde_expand (inferior_cwd).c_str()),
 			&si,      /* start info */
 			pi);      /* proc info */
 #endif
@@ -700,6 +703,10 @@ win32_create_inferior (const char *program,
 #endif
 
   do_initial_child_stuff (pi.hProcess, pi.dwProcessId, 0);
+
+  /* Wait till we are at 1st instruction in program, return new pid
+     (assuming success).  */
+  last_ptid = win32_wait (pid_to_ptid (current_process_id), &last_status, 0);
 
   return current_process_id;
 }

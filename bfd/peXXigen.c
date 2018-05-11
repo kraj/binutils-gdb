@@ -1438,7 +1438,7 @@ pe_print_idata (bfd * abfd, void * vfile)
       if (hint_addr == 0)
 	hint_addr = first_thunk;
 
-      if (hint_addr != 0)
+      if (hint_addr != 0 && hint_addr - adj < datasize)
 	{
 	  bfd_byte *ft_data;
 	  asection *ft_section;
@@ -1671,7 +1671,7 @@ pe_print_edata (bfd * abfd, void * vfile)
     }
 
   /* PR 17512: Handle corrupt PE binaries.  */
-  if (datasize < 36)
+  if (datasize < 40)
     {
       fprintf (file,
 	       /* xgettext:c-format */

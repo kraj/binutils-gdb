@@ -1,3 +1,12 @@
+2018-05-08  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.arch/amd64-init-x87-values.S: New file.
+	* gdb.arch/amd64-init-x87-values.exp: New file.
+
+2018-05-08  Jan Kratochvil  <jan.kratochvil@redhat.com>
+
+	* gdb.base/watchpoint-unaligned.exp: Use skip_hw_watchpoint_tests.
+
 2018-05-04  Tom Tromey  <tom@tromey.com>
 
 	PR python/22730:

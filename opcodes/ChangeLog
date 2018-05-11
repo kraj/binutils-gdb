@@ -1,3 +1,71 @@
+2018-05-09  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* i386-opc.tbl: Remove Disp<N> from movidir{i,64b}.
+
+2018-05-09  Sebastian Rasmussen  <sebras@gmail.com>
+
+	* cr16-opc.c (cr16_instruction): Comment typo fix.
+	* hppa-dis.c (print_insn_hppa): Likewise.
+
+2018-05-08  Jim Wilson  <jimw@sifive.com>
+
+	* riscv-opc.c (match_c_slli, match_slli_as_c_slli): New.
+	(match_c_slli64, match_srxi_as_c_srxi): New.
+	(riscv_opcodes) <slli, sll>: Use match_slli_as_c_slli.
+	<srli, srl, srai, sra>: Use match_srxi_as_c_srxi.
+	<c.slli, c.srli, c.srai>: Use match_s_slli.
+	<c.slli64, c.srli64, c.srai64>: New.
+
+2018-05-08  Alan Modra  <amodra@gmail.com>
+
+	* ppc-dis.c (PPC_OPCD_SEGS): Define using PPC_OP.
+	(VLE_OPCD_SEGS, SPE2_OPCD_SEGS): Similarly, using macros used to
+	partition opcode space for index lookup.
+
+2018-05-07  Peter Bergner  <bergner@vnet.ibm.com.com>
+
+	* ppc-dis.c (print_insn_powerpc) <insn_is_short>: Replace this...
+	<insn_length>: ...with this.  Update usage.
+	Remove duplicate call to *info->memory_error_func.
+
+2018-05-07  Igor Tsimbalist  <igor.v.tsimbalist@intel.com>
+	    H.J. Lu  <hongjiu.lu@intel.com>
+
+	* i386-dis.c (Gva): New.
+	(enum): Add PREFIX_0F38F8, PREFIX_0F38F9,
+	MOD_0F38F8_PREFIX_2, MOD_0F38F9_PREFIX_0.
+	(prefix_table): New instructions (see prefix above).
+	(mod_table): New instructions (see prefix above).
+	(OP_G): Handle va_mode.
+	* i386-gen.c (cpu_flag_init): Add CPU_MOVDIRI_FLAGS,
+	CPU_MOVDIR64B_FLAGS.
+	(cpu_flags): Add CpuMOVDIRI and CpuMOVDIR64B.
+	* i386-opc.h (enum): Add CpuMOVDIRI, CpuMOVDIR64B.
+	(i386_cpu_flags): Add cpumovdiri and cpumovdir64b.
+	* i386-opc.tbl: Add movidir{i,64b}.
+	* i386-init.h: Regenerated.
+	* i386-tbl.h: Likewise.
+
+2018-05-07  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* i386-gen.c (opcode_modifiers): Replace AddrPrefixOp0 with
+	AddrPrefixOpReg.
+	* i386-opc.h (AddrPrefixOp0): Renamed to ...
+	(AddrPrefixOpReg): This.
+	(i386_opcode_modifier): Rename addrprefixop0 to addrprefixopreg.
+	* i386-opc.tbl: Replace AddrPrefixOp0 with AddrPrefixOpReg.
+
+2018-05-07  Peter Bergner  <bergner@vnet.ibm.com.com>
+
+	* ppc-opc.c (powerpc_num_opcodes): Change type to unsigned.
+	(vle_num_opcodes): Likewise.
+	(spe2_num_opcodes): Likewise.
+	* ppc-dis.c (disassemble_init_powerpc) <powerpc_opcd_indices>: Rewrite
+	initialization loop.
+	(disassemble_init_powerpc) <vle_opcd_indices>: Likewise.
+	(disassemble_init_powerpc) <spe2_opcd_indices>: Likewise.  Initialize
+	only once.
+
 2018-05-01  Tamar Christina  <tamar.christina@arm.com>
 
 	* aarch64-dis.c (aarch64_opcode_decode): Moved memory clear code.
