@@ -1,4 +1,4 @@
-From a79b25e7c0a88f1f08c283ec917639e92750d7a0 Mon Sep 17 00:00:00 2001
+From cf1212bd893ad813c3eb28f4118763934994796f Mon Sep 17 00:00:00 2001
 From: "H.J. Lu" <hjl.tools@gmail.com>
 Date: Mon, 4 Nov 2013 09:17:45 -0800
 Subject: [PATCH 1/3] Add lto and none-lto input support for ld -r
@@ -297,14 +297,14 @@ ld/testsuite/
 	Build liblto-4.a.  Run "lto-4r-[abcd]" tests.
 ---
  bfd/bfd-in2.h                     |   22 +
- bfd/bfd.c                         |   53 ++
+ bfd/bfd.c                         |   52 ++
  bfd/elf.c                         |    1 +
  bfd/format.c                      |   34 +-
- bfd/opncls.c                      |   66 +++
- bfd/plugin.c                      |  169 +++++-
+ bfd/opncls.c                      |   66 ++
+ bfd/plugin.c                      |  169 ++++-
  bfd/plugin.h                      |    2 +
  bfd/section.c                     |    3 +
- binutils/objcopy.c                |   33 +-
+ binutils/objcopy.c                |   32 +-
  binutils/readelf.c                |    1 +
  gas/testsuite/gas/elf/section9.d  |    1 +
  gas/testsuite/gas/elf/section9.s  |    2 +
@@ -321,10 +321,10 @@ ld/testsuite/
  ld/ldexp.c                        |   16 +-
  ld/ldexp.h                        |    4 +-
  ld/ldfile.c                       |    2 +
- ld/ldlang.c                       | 1018 ++++++++++++++++++++++++++++++++++++-
+ ld/ldlang.c                       | 1018 ++++++++++++++++++++++++++++-
  ld/ldlang.h                       |   43 +-
  ld/ldlex.h                        |    1 +
- ld/ldmain.c                       |   80 +--
+ ld/ldmain.c                       |   80 ++-
  ld/ldmain.h                       |    2 +
  ld/lexsup.c                       |    6 +
  ld/plugin.c                       |   25 +-
@@ -349,7 +349,7 @@ ld/testsuite/
  ld/testsuite/ld-plugin/lto-4r-c.d |    7 +
  ld/testsuite/ld-plugin/lto-4r-d.d |    7 +
  ld/testsuite/ld-plugin/lto.exp    |   46 ++
- 53 files changed, 1674 insertions(+), 120 deletions(-)
+ 53 files changed, 1673 insertions(+), 119 deletions(-)
  create mode 100644 ld/testsuite/ld-plugin/lto-10.out
  create mode 100644 ld/testsuite/ld-plugin/lto-10a.c
  create mode 100644 ld/testsuite/ld-plugin/lto-10b.c
@@ -364,7 +364,7 @@ ld/testsuite/
  create mode 100644 ld/testsuite/ld-plugin/lto-4r-d.d
 
 diff --git a/bfd/bfd-in2.h b/bfd/bfd-in2.h
-index 97c37a07af..bcdfe44f4a 100644
+index 48226860c7..b890ac0644 100644
 --- a/bfd/bfd-in2.h
 +++ b/bfd/bfd-in2.h
 @@ -1135,6 +1135,9 @@ bfd_boolean bfd_fill_in_gnu_debuglink_section
@@ -387,7 +387,7 @@ index 97c37a07af..bcdfe44f4a 100644
  /* Pointer to the common section.  */
  #define bfd_com_section_ptr (&_bfd_std_section[0])
  /* Pointer to the undefined section.  */
-@@ -6752,6 +6758,14 @@ struct bfd_build_id
+@@ -6764,6 +6770,14 @@ struct bfd_build_id
      bfd_byte data[1];
    };
  
@@ -402,7 +402,7 @@ index 97c37a07af..bcdfe44f4a 100644
  struct bfd
  {
    /* The filename the application opened the BFD with.  */
-@@ -6930,6 +6944,9 @@ struct bfd
+@@ -6942,6 +6956,9 @@ struct bfd
    /* Set if this is a plugin output file.  */
    unsigned int lto_output : 1;
  
@@ -412,7 +412,7 @@ index 97c37a07af..bcdfe44f4a 100644
    /* Set to dummy BFD created when claimed by a compiler plug-in
       library.  */
    bfd *plugin_dummy_bfd;
-@@ -6955,6 +6972,9 @@ struct bfd
+@@ -6967,6 +6984,9 @@ struct bfd
    /* The last section on the section list.  */
    struct bfd_section *section_last;
  
@@ -422,7 +422,7 @@ index 97c37a07af..bcdfe44f4a 100644
    /* The number of sections.  */
    unsigned int section_count;
  
-@@ -7264,6 +7284,8 @@ bfd_boolean bfd_convert_section_contents
+@@ -7276,6 +7296,8 @@ bfd_boolean bfd_convert_section_contents
     (bfd *ibfd, asection *isec, bfd *obfd,
      bfd_byte **ptr, bfd_size_type *ptr_size);
  
@@ -432,7 +432,7 @@ index 97c37a07af..bcdfe44f4a 100644
  symindex bfd_get_next_mapent
     (bfd *abfd, symindex previous, carsym **sym);
 diff --git a/bfd/bfd.c b/bfd/bfd.c
-index 3bf56a6219..35f5a55a23 100644
+index 3bf56a6219..d06bc5de78 100644
 --- a/bfd/bfd.c
 +++ b/bfd/bfd.c
 @@ -57,6 +57,14 @@ CODE_FRAGMENT
@@ -470,7 +470,7 @@ index 3bf56a6219..35f5a55a23 100644
  .  {* The number of sections.  *}
  .  unsigned int section_count;
  .
-@@ -2594,3 +2608,42 @@ bfd_convert_section_contents (bfd *ibfd, sec_ptr isec, bfd *obfd,
+@@ -2594,3 +2608,41 @@ bfd_convert_section_contents (bfd *ibfd, sec_ptr isec, bfd *obfd,
    *ptr_size = size;
    return TRUE;
  }
@@ -501,23 +501,22 @@ index 3bf56a6219..35f5a55a23 100644
 +    return NULL;
 +
 +  ghdr = &elf_section_data (group)->this_hdr;
-+  if (ghdr->sh_link < elf_numsections (abfd))
++  if (ghdr->sh_link == elf_onesymtab (abfd))
 +    {
 +      const struct elf_backend_data *bed = get_elf_backend_data (abfd);
-+      Elf_Internal_Shdr *symhdr = elf_elfsections (abfd) [ghdr->sh_link];
++      Elf_Internal_Shdr *symhdr = &elf_symtab_hdr (abfd);
 +
-+      if (symhdr->sh_type == SHT_SYMTAB
-+	  && ghdr->sh_info > 0
++      if (ghdr->sh_info > 0
 +	  && ghdr->sh_info < symhdr->sh_size / bed->s->sizeof_sym)
 +	return isympp[ghdr->sh_info - 1];
 +    }
 +  return NULL;
 +}
 diff --git a/bfd/elf.c b/bfd/elf.c
-index 8ea5a81cbe..36388565b3 100644
+index 3e8d5103e4..dd95e57cb0 100644
 --- a/bfd/elf.c
 +++ b/bfd/elf.c
-@@ -2621,6 +2621,7 @@ static const struct bfd_elf_special_section special_sections_g[] =
+@@ -2622,6 +2622,7 @@ static const struct bfd_elf_special_section special_sections_g[] =
    { STRING_COMMA_LEN (".gnu.linkonce.b"), -2, SHT_NOBITS,      SHF_ALLOC + SHF_WRITE },
    { STRING_COMMA_LEN (".gnu.lto_"),	  -1, SHT_PROGBITS,    SHF_EXCLUDE },
    { STRING_COMMA_LEN (".got"),		   0, SHT_PROGBITS,    SHF_ALLOC + SHF_WRITE },
@@ -912,10 +911,10 @@ index 752f291cb1..0b875399dd 100644
  .#define bfd_com_section_ptr (&_bfd_std_section[0])
  .{* Pointer to the undefined section.  *}
 diff --git a/binutils/objcopy.c b/binutils/objcopy.c
-index 61c513b482..4ae3630574 100644
+index 3563792304..ca96806be1 100644
 --- a/binutils/objcopy.c
 +++ b/binutils/objcopy.c
-@@ -1195,35 +1195,6 @@ is_specified_symbol (const char *name, htab_t htab)
+@@ -1195,34 +1195,6 @@ is_specified_symbol (const char *name, htab_t htab)
    return htab_find (htab, name) != NULL;
  }
  
@@ -935,14 +934,13 @@ index 61c513b482..4ae3630574 100644
 -    return NULL;
 -
 -  ghdr = &elf_section_data (group)->this_hdr;
--  if (ghdr->sh_link < elf_numsections (abfd))
+-  if (ghdr->sh_link == elf_onesymtab (abfd))
 -    {
 -      const struct elf_backend_data *bed = get_elf_backend_data (abfd);
--      Elf_Internal_Shdr *symhdr = elf_elfsections (abfd) [ghdr->sh_link];
+-      Elf_Internal_Shdr *symhdr = &elf_symtab_hdr (abfd);
 -
--      if (symhdr->sh_type == SHT_SYMTAB
--	  && ghdr->sh_info > 0
--	  && ghdr->sh_info < (symhdr->sh_size / bed->s->sizeof_sym))
+-      if (ghdr->sh_info > 0
+-	  && ghdr->sh_info < symhdr->sh_size / bed->s->sizeof_sym)
 -	return isympp[ghdr->sh_info - 1];
 -    }
 -  return NULL;
@@ -951,16 +949,16 @@ index 61c513b482..4ae3630574 100644
  /* Return TRUE if the section is a DWO section.  */
  
  static bfd_boolean
-@@ -1347,7 +1318,7 @@ is_strip_section (bfd *abfd ATTRIBUTE_UNUSED, asection *sec)
-       /* PR binutils/3181
- 	 If we are going to strip the group signature symbol, then
- 	 strip the group section too.  */
+@@ -1343,7 +1315,7 @@ is_strip_section (bfd *abfd ATTRIBUTE_UNUSED, asection *sec)
+       const char *gname;
+       asection *elt, *first;
+ 
 -      gsym = group_signature (sec);
 +      gsym = bfd_group_signature (sec, isympp);
-       if (gsym != NULL)
- 	gname = gsym->name;
-       else
-@@ -3803,7 +3774,7 @@ setup_section (bfd *ibfd, sec_ptr isection, void *obfdarg)
+       /* Strip groups without a valid signature.  */
+       if (gsym == NULL)
+ 	return TRUE;
+@@ -3803,7 +3775,7 @@ setup_section (bfd *ibfd, sec_ptr isection, void *obfdarg)
  
    if ((isection->flags & SEC_GROUP) != 0)
      {
@@ -970,10 +968,10 @@ index 61c513b482..4ae3630574 100644
        if (gsym != NULL)
  	{
 diff --git a/binutils/readelf.c b/binutils/readelf.c
-index 528954cc6e..d95bd6880b 100644
+index 6a9c51d4bb..d0a1a74669 100644
 --- a/binutils/readelf.c
 +++ b/binutils/readelf.c
-@@ -4176,6 +4176,7 @@ get_section_type_name (Filedata * filedata, unsigned int sh_type)
+@@ -4218,6 +4218,7 @@ get_section_type_name (Filedata * filedata, unsigned int sh_type)
      case 0x7ffffffd:		return "AUXILIARY";
      case 0x7fffffff:		return "FILTER";
      case SHT_GNU_LIBLIST:	return "GNU_LIBLIST";
@@ -1019,10 +1017,10 @@ index 773407f861..925770d422 100644
    unsigned int allow_undefined_version: 1;
  
 diff --git a/include/elf/common.h b/include/elf/common.h
-index f4354721bf..77e391e707 100644
+index 773f378fde..769f904f2a 100644
 --- a/include/elf/common.h
 +++ b/include/elf/common.h
-@@ -502,6 +502,7 @@
+@@ -507,6 +507,7 @@
  #define SHT_GNU_ATTRIBUTES 0x6ffffff5	/* Object attributes */
  #define SHT_GNU_HASH	0x6ffffff6	/* GNU style symbol hash table */
  #define SHT_GNU_LIBLIST	0x6ffffff7	/* List of prelink dependencies */
@@ -2758,7 +2756,7 @@ index a12cd3d234..3487b67700 100644
    SBSS=".sbss         ${RELOCATING-0} :
    {
 diff --git a/ld/scripttempl/elf.sc b/ld/scripttempl/elf.sc
-index 9787ab5dac..317b5b7e55 100644
+index 5ccdd415f3..0d275b177b 100644
 --- a/ld/scripttempl/elf.sc
 +++ b/ld/scripttempl/elf.sc
 @@ -173,7 +173,7 @@ RELA_IPLT=".rela.iplt    ${RELOCATING-0} :
@@ -3069,5 +3067,5 @@ index c0b7b1c764..ae4b53ad60 100644
  run_cc_link_tests $lto_link_symbol_tests
  
 -- 
-2.14.3
+2.17.0
 
