@@ -1,3 +1,33 @@
+2018-05-14  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/23169
+	* elf-ifunc.c (_bfd_elf_allocate_ifunc_dyn_relocs): Don't issue
+	an error on IFUNC pointer defined in PDE.
+	* elf32-i386.c (elf_i386_finish_dynamic_symbol): Call
+	_bfd_x86_elf_link_fixup_ifunc_symbol.
+	* elf64-x86-64.c (elf_x86_64_finish_dynamic_symbol): Likewise.
+	* elfxx-x86.c (_bfd_x86_elf_link_fixup_ifunc_symbol): New
+	function.
+	* elfxx-x86.h (_bfd_x86_elf_link_fixup_ifunc_symbol): New.
+
+2018-05-14  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/23162
+	* elfxx-x86.c (elf_x86_linker_defined): New function.
+	(_bfd_x86_elf_link_check_relocs): Use it to mark __bss_start,
+	_end and _edata locally defined within executables.
+
+2018-05-12  Alan Modra  <amodra@gmail.com>
+
+	PR 20659
+	* elf.c (rewrite_elf_program_header): Use segment_mark only for
+	PT_LOAD headers.  Delete first_matching_lma and first_suggested_lma.
+	Instead make matching_lma and suggested_lma pointers to the
+	sections.  Align section vma and lma calculated from segment.
+	Don't clear includes_phdrs or includes_filehdr based on p_paddr
+	test.  Try to handle alignment padding before first section by
+	adjusting new segment lma down.  Adjust PT_PHDR map p_paddr.
+
 2018-05-09  Dimitar Dimitrov  <dimitar@dinux.eu>
 
 	* elf32-pru.c (pru_elf32_do_ldi32_relocate): Make LDI32 relocation

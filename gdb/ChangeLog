@@ -1,3 +1,59 @@
+2018-05-11  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* i387-tdep.c (i387_collect_xsave): Use FXSAVE_MXCSR_ADDR not
+	FXSAVE_ADDR for the mxcsr register.
+
+2018-05-11  Max Filippov  <jcmvbkbc@gmail.com>
+
+	* configure.tgt (xtensa*-*-linux*): Drop gdb_target definition.
+
+2018-05-11  Pedro Alves  <palves@redhat.com>
+
+	* corelow.c (core_target) <core_target>: No longer inline.
+	Initialize m_core_gdbarch, m_core_vec and build the section table
+	here.
+	<~core_target>: New.
+	<core_gdbarch, get_core_register_section>: New methods.
+	<m_core_section_table, m_core_vec, m_core_gdbarch>: New fields,
+	factored out from ...
+	<core_data, core_vec, core_gdbarch>: ... these deleted globals.
+	(core_ops): Delete.
+	(sniff_core_bfd): Add gdbarch parameter.
+	(core_close): Delete, merged into ...
+	(core_target::close): ... here.  Delete self.
+	(core_close_cleanup): Delete.
+	(core_target_open): Allocate a core_target on the heap.  Use a
+	unique_ptr instead of a cleanup.  Bits moved into the core_target
+	ctor.  Adjust to use core_target methods instead of globals.
+	(get_core_register_section): Rename to ...
+	(core_target::get_core_register_section): ... this and adjust.
+	(struct get_core_registers_cb_data): New.
+	(get_core_registers_cb): Use it.  Use bool.
+	(core_target::fetch_registers, core_target::files_info)
+	(core_target::xfer_partial, core_target::read_description)
+	(core_target::pid_to, core_target::thread_name): Adjust to
+	reference class fields instead of globals.
+	* target.h (struct target_ops_deleter, target_ops_up): New.
+
+2018-05-11  Pedro Alves  <palves@redhat.com>
+
+	* corefile.c (core_file_command): Move to corelow.c.
+	* corelow.c (the_core_target): Delete.
+	(core_file_command): Moved from corefile.c.  Check exec_bfd
+	instead of the_core_target.  Use target_detach instead of calling
+	into the_core_target directly.
+	(maybe_say_no_core_file_now): New.
+	(core_target::detach): Use it.
+	(_initialize_corelow): Remove references to the_core_target.
+	* gdbcore.h (the_core_target): Delete.
+
+2018-05-11  Tom Tromey  <tromey@redhat.com>
+	    Pedro Alves  <palves@redhat.com>
+
+	* corefile.c (core_bfd): Remove.
+	* gdbcore.h (core_bfd): Now a macro.
+	* progspace.h (struct program_space) <cbfd>: New field.
+
 2018-05-11  Tom Tromey  <tom@tromey.com>
 
 	* mdebugread.c (parse_partial_symbols, psymtab_to_symtab_1): Use
