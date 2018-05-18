@@ -167,7 +167,7 @@ bfd_default_target_size=32
 
 # host stuff:
 
-ALL_LINGUAS="da es fi fr hr id ja ro ru rw sr sv tr uk vi zh_CN"
+ALL_LINGUAS="da es fi fr hr id ja ro ru rw sr sv tr uk vi zh_CN pt"
 ZW_GNU_GETTEXT_SISTER_DIR
 AM_PO_SUBDIRS
 
@@ -255,6 +255,17 @@ AC_CHECK_DECLS(strnlen)
 # Link in zlib if we can.  This allows us to read compressed debug sections.
 # This is used only by compress.c.
 AM_ZLIB
+
+AC_CACHE_CHECK([compiler support for hidden visibility], bfd_cv_hidden,
+[AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+const char hw[] __attribute__ ((__visibility__ ("hidden"))) = "Hello, World\n";
+extern void print (const char *) __attribute__ ((__visibility__ ("hidden")));]],
+	[[print (hw);]])],
+  [bfd_cv_hidden=yes], [bfd_cv_hidden=no])])
+if test $bfd_cv_hidden = yes; then
+  AC_DEFINE(HAVE_HIDDEN, 1,
+	    [Define if your compiler supports hidden visibility.])
+fi
 
 # Check if linker supports --as-needed and --no-as-needed options
 AC_CACHE_CHECK(linker --as-needed support, bfd_cv_ld_as_needed,

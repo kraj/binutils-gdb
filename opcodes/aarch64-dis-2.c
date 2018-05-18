@@ -18448,13 +18448,13 @@ aarch64_opcode_lookup_1 (uint32_t word)
                     {
                       if (((word >> 28) & 0x1) == 0)
                         {
-                          if (((word >> 14) & 0x1) == 0)
+                          if (((word >> 10) & 0x1) == 0)
                             {
-                              if (((word >> 10) & 0x1) == 0)
+                              if (((word >> 12) & 0x1) == 0)
                                 {
-                                  if (((word >> 12) & 0x1) == 0)
+                                  if (((word >> 13) & 0x1) == 0)
                                     {
-                                      if (((word >> 13) & 0x1) == 0)
+                                      if (((word >> 14) & 0x1) == 0)
                                         {
                                           if (((word >> 29) & 0x1) == 0)
                                             {
@@ -18485,6 +18485,39 @@ aarch64_opcode_lookup_1 (uint32_t word)
                                             }
                                         }
                                       else
+                                        {
+                                          if (((word >> 29) & 0x1) == 0)
+                                            {
+                                              /* 33222222222211111111110000000000
+                                                 10987654321098765432109876543210
+                                                 xx001111xxxxxxxx1100x0xxxxxxxxxx
+                                                 sqdmulh.  */
+                                              return 109;
+                                            }
+                                          else
+                                            {
+                                              if (((word >> 30) & 0x1) == 0)
+                                                {
+                                                  /* 33222222222211111111110000000000
+                                                     10987654321098765432109876543210
+                                                     x0101111xxxxxxxx1100x0xxxxxxxxxx
+                                                     fmlsl2.  */
+                                                  return 2035;
+                                                }
+                                              else
+                                                {
+                                                  /* 33222222222211111111110000000000
+                                                     10987654321098765432109876543210
+                                                     x1101111xxxxxxxx1100x0xxxxxxxxxx
+                                                     fmlsl2.  */
+                                                  return 2039;
+                                                }
+                                            }
+                                        }
+                                    }
+                                  else
+                                    {
+                                      if (((word >> 14) & 0x1) == 0)
                                         {
                                           if (((word >> 29) & 0x1) == 0)
                                             {
@@ -18525,10 +18558,32 @@ aarch64_opcode_lookup_1 (uint32_t word)
                                                 }
                                             }
                                         }
+                                      else
+                                        {
+                                          if (((word >> 29) & 0x1) == 0)
+                                            {
+                                              /* 33222222222211111111110000000000
+                                                 10987654321098765432109876543210
+                                                 xx001111xxxxxxxx1110x0xxxxxxxxxx
+                                                 sdot.  */
+                                              return 2006;
+                                            }
+                                          else
+                                            {
+                                              /* 33222222222211111111110000000000
+                                                 10987654321098765432109876543210
+                                                 xx101111xxxxxxxx1110x0xxxxxxxxxx
+                                                 udot.  */
+                                              return 2005;
+                                            }
+                                        }
                                     }
-                                  else
+                                }
+                              else
+                                {
+                                  if (((word >> 13) & 0x1) == 0)
                                     {
-                                      if (((word >> 13) & 0x1) == 0)
+                                      if (((word >> 14) & 0x1) == 0)
                                         {
                                           if (((word >> 23) & 0x1) == 0)
                                             {
@@ -18571,6 +18626,28 @@ aarch64_opcode_lookup_1 (uint32_t word)
                                         }
                                       else
                                         {
+                                          if (((word >> 29) & 0x1) == 0)
+                                            {
+                                              /* 33222222222211111111110000000000
+                                                 10987654321098765432109876543210
+                                                 xx001111xxxxxxxx1101x0xxxxxxxxxx
+                                                 sqrdmulh.  */
+                                              return 110;
+                                            }
+                                          else
+                                            {
+                                              /* 33222222222211111111110000000000
+                                                 10987654321098765432109876543210
+                                                 xx101111xxxxxxxx1101x0xxxxxxxxxx
+                                                 sqrdmlah.  */
+                                              return 127;
+                                            }
+                                        }
+                                    }
+                                  else
+                                    {
+                                      if (((word >> 14) & 0x1) == 0)
+                                        {
                                           if (((word >> 30) & 0x1) == 0)
                                             {
                                               /* 33222222222211111111110000000000
@@ -18588,11 +18665,22 @@ aarch64_opcode_lookup_1 (uint32_t word)
                                               return 108;
                                             }
                                         }
+                                      else
+                                        {
+                                          /* 33222222222211111111110000000000
+                                             10987654321098765432109876543210
+                                             xxx01111xxxxxxxx1111x0xxxxxxxxxx
+                                             sqrdmlsh.  */
+                                          return 128;
+                                        }
                                     }
                                 }
-                              else
+                            }
+                          else
+                            {
+                              if (((word >> 11) & 0x1) == 0)
                                 {
-                                  if (((word >> 11) & 0x1) == 0)
+                                  if (((word >> 14) & 0x1) == 0)
                                     {
                                       if (((word >> 12) & 0x1) == 0)
                                         {
@@ -18635,201 +18723,47 @@ aarch64_opcode_lookup_1 (uint32_t word)
                                     }
                                   else
                                     {
-                                      if (((word >> 12) & 0x1) == 0)
-                                        {
-                                          if (((word >> 29) & 0x1) == 0)
-                                            {
-                                              if (((word >> 30) & 0x1) == 0)
-                                                {
-                                                  /* 33222222222211111111110000000000
-                                                     10987654321098765432109876543210
-                                                     x0001111xxxxxxxx10x011xxxxxxxxxx
-                                                     rshrn.  */
-                                                  return 376;
-                                                }
-                                              else
-                                                {
-                                                  /* 33222222222211111111110000000000
-                                                     10987654321098765432109876543210
-                                                     x1001111xxxxxxxx10x011xxxxxxxxxx
-                                                     rshrn2.  */
-                                                  return 377;
-                                                }
-                                            }
-                                          else
-                                            {
-                                              if (((word >> 30) & 0x1) == 0)
-                                                {
-                                                  /* 33222222222211111111110000000000
-                                                     10987654321098765432109876543210
-                                                     x0101111xxxxxxxx10x011xxxxxxxxxx
-                                                     sqrshrun.  */
-                                                  return 400;
-                                                }
-                                              else
-                                                {
-                                                  /* 33222222222211111111110000000000
-                                                     10987654321098765432109876543210
-                                                     x1101111xxxxxxxx10x011xxxxxxxxxx
-                                                     sqrshrun2.  */
-                                                  return 401;
-                                                }
-                                            }
-                                        }
-                                      else
-                                        {
-                                          if (((word >> 29) & 0x1) == 0)
-                                            {
-                                              if (((word >> 30) & 0x1) == 0)
-                                                {
-                                                  /* 33222222222211111111110000000000
-                                                     10987654321098765432109876543210
-                                                     x0001111xxxxxxxx10x111xxxxxxxxxx
-                                                     sqrshrn.  */
-                                                  return 380;
-                                                }
-                                              else
-                                                {
-                                                  /* 33222222222211111111110000000000
-                                                     10987654321098765432109876543210
-                                                     x1001111xxxxxxxx10x111xxxxxxxxxx
-                                                     sqrshrn2.  */
-                                                  return 381;
-                                                }
-                                            }
-                                          else
-                                            {
-                                              if (((word >> 30) & 0x1) == 0)
-                                                {
-                                                  /* 33222222222211111111110000000000
-                                                     10987654321098765432109876543210
-                                                     x0101111xxxxxxxx10x111xxxxxxxxxx
-                                                     uqrshrn.  */
-                                                  return 404;
-                                                }
-                                              else
-                                                {
-                                                  /* 33222222222211111111110000000000
-                                                     10987654321098765432109876543210
-                                                     x1101111xxxxxxxx10x111xxxxxxxxxx
-                                                     uqrshrn2.  */
-                                                  return 405;
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                          else
-                            {
-                              if (((word >> 13) & 0x1) == 0)
-                                {
-                                  if (((word >> 10) & 0x1) == 0)
-                                    {
-                                      if (((word >> 12) & 0x1) == 0)
+                                      if (((word >> 13) & 0x1) == 0)
                                         {
                                           if (((word >> 29) & 0x1) == 0)
                                             {
                                               /* 33222222222211111111110000000000
                                                  10987654321098765432109876543210
-                                                 xx001111xxxxxxxx1100x0xxxxxxxxxx
-                                                 sqdmulh.  */
-                                              return 109;
+                                                 xx001111xxxxxxxx110x01xxxxxxxxxx
+                                                 movi.  */
+                                              return 135;
                                             }
                                           else
                                             {
-                                              if (((word >> 30) & 0x1) == 0)
+                                              /* 33222222222211111111110000000000
+                                                 10987654321098765432109876543210
+                                                 xx101111xxxxxxxx110x01xxxxxxxxxx
+                                                 mvni.  */
+                                              return 143;
+                                            }
+                                        }
+                                      else
+                                        {
+                                          if (((word >> 12) & 0x1) == 0)
+                                            {
+                                              if (((word >> 29) & 0x1) == 0)
                                                 {
                                                   /* 33222222222211111111110000000000
                                                      10987654321098765432109876543210
-                                                     x0101111xxxxxxxx1100x0xxxxxxxxxx
-                                                     fmlsl2.  */
-                                                  return 2035;
+                                                     xx001111xxxxxxxx111001xxxxxxxxxx
+                                                     movi.  */
+                                                  return 136;
                                                 }
                                               else
                                                 {
                                                   /* 33222222222211111111110000000000
                                                      10987654321098765432109876543210
-                                                     x1101111xxxxxxxx1100x0xxxxxxxxxx
-                                                     fmlsl2.  */
-                                                  return 2039;
+                                                     xx101111xxxxxxxx111001xxxxxxxxxx
+                                                     movi.  */
+                                                  return 144;
                                                 }
                                             }
-                                        }
-                                      else
-                                        {
-                                          if (((word >> 29) & 0x1) == 0)
-                                            {
-                                              /* 33222222222211111111110000000000
-                                                 10987654321098765432109876543210
-                                                 xx001111xxxxxxxx1101x0xxxxxxxxxx
-                                                 sqrdmulh.  */
-                                              return 110;
-                                            }
                                           else
-                                            {
-                                              /* 33222222222211111111110000000000
-                                                 10987654321098765432109876543210
-                                                 xx101111xxxxxxxx1101x0xxxxxxxxxx
-                                                 sqrdmlah.  */
-                                              return 127;
-                                            }
-                                        }
-                                    }
-                                  else
-                                    {
-                                      if (((word >> 29) & 0x1) == 0)
-                                        {
-                                          /* 33222222222211111111110000000000
-                                             10987654321098765432109876543210
-                                             xx001111xxxxxxxx110xx1xxxxxxxxxx
-                                             movi.  */
-                                          return 135;
-                                        }
-                                      else
-                                        {
-                                          /* 33222222222211111111110000000000
-                                             10987654321098765432109876543210
-                                             xx101111xxxxxxxx110xx1xxxxxxxxxx
-                                             mvni.  */
-                                          return 143;
-                                        }
-                                    }
-                                }
-                              else
-                                {
-                                  if (((word >> 12) & 0x1) == 0)
-                                    {
-                                      if (((word >> 29) & 0x1) == 0)
-                                        {
-                                          /* 33222222222211111111110000000000
-                                             10987654321098765432109876543210
-                                             xx001111xxxxxxxx1110xxxxxxxxxxxx
-                                             movi.  */
-                                          return 136;
-                                        }
-                                      else
-                                        {
-                                          /* 33222222222211111111110000000000
-                                             10987654321098765432109876543210
-                                             xx101111xxxxxxxx1110xxxxxxxxxxxx
-                                             movi.  */
-                                          return 144;
-                                        }
-                                    }
-                                  else
-                                    {
-                                      if (((word >> 10) & 0x1) == 0)
-                                        {
-                                          /* 33222222222211111111110000000000
-                                             10987654321098765432109876543210
-                                             xxx01111xxxxxxxx1111x0xxxxxxxxxx
-                                             sqrdmlsh.  */
-                                          return 128;
-                                        }
-                                      else
-                                        {
-                                          if (((word >> 11) & 0x1) == 0)
                                             {
                                               if (((word >> 29) & 0x1) == 0)
                                                 {
@@ -18848,24 +18782,112 @@ aarch64_opcode_lookup_1 (uint32_t word)
                                                   return 146;
                                                 }
                                             }
+                                        }
+                                    }
+                                }
+                              else
+                                {
+                                  if (((word >> 12) & 0x1) == 0)
+                                    {
+                                      if (((word >> 29) & 0x1) == 0)
+                                        {
+                                          if (((word >> 30) & 0x1) == 0)
+                                            {
+                                              /* 33222222222211111111110000000000
+                                                 10987654321098765432109876543210
+                                                 x0001111xxxxxxxx1xx011xxxxxxxxxx
+                                                 rshrn.  */
+                                              return 376;
+                                            }
                                           else
                                             {
-                                              if (((word >> 29) & 0x1) == 0)
+                                              /* 33222222222211111111110000000000
+                                                 10987654321098765432109876543210
+                                                 x1001111xxxxxxxx1xx011xxxxxxxxxx
+                                                 rshrn2.  */
+                                              return 377;
+                                            }
+                                        }
+                                      else
+                                        {
+                                          if (((word >> 30) & 0x1) == 0)
+                                            {
+                                              /* 33222222222211111111110000000000
+                                                 10987654321098765432109876543210
+                                                 x0101111xxxxxxxx1xx011xxxxxxxxxx
+                                                 sqrshrun.  */
+                                              return 400;
+                                            }
+                                          else
+                                            {
+                                              /* 33222222222211111111110000000000
+                                                 10987654321098765432109876543210
+                                                 x1101111xxxxxxxx1xx011xxxxxxxxxx
+                                                 sqrshrun2.  */
+                                              return 401;
+                                            }
+                                        }
+                                    }
+                                  else
+                                    {
+                                      if (((word >> 13) & 0x1) == 0)
+                                        {
+                                          if (((word >> 29) & 0x1) == 0)
+                                            {
+                                              if (((word >> 30) & 0x1) == 0)
                                                 {
                                                   /* 33222222222211111111110000000000
                                                      10987654321098765432109876543210
-                                                     xx001111xxxxxxxx111111xxxxxxxxxx
-                                                     fmov.  */
-                                                  return 138;
+                                                     x0001111xxxxxxxx1x0111xxxxxxxxxx
+                                                     sqrshrn.  */
+                                                  return 380;
                                                 }
                                               else
                                                 {
                                                   /* 33222222222211111111110000000000
                                                      10987654321098765432109876543210
-                                                     xx101111xxxxxxxx111111xxxxxxxxxx
-                                                     fcvtzu.  */
-                                                  return 412;
+                                                     x1001111xxxxxxxx1x0111xxxxxxxxxx
+                                                     sqrshrn2.  */
+                                                  return 381;
                                                 }
+                                            }
+                                          else
+                                            {
+                                              if (((word >> 30) & 0x1) == 0)
+                                                {
+                                                  /* 33222222222211111111110000000000
+                                                     10987654321098765432109876543210
+                                                     x0101111xxxxxxxx1x0111xxxxxxxxxx
+                                                     uqrshrn.  */
+                                                  return 404;
+                                                }
+                                              else
+                                                {
+                                                  /* 33222222222211111111110000000000
+                                                     10987654321098765432109876543210
+                                                     x1101111xxxxxxxx1x0111xxxxxxxxxx
+                                                     uqrshrn2.  */
+                                                  return 405;
+                                                }
+                                            }
+                                        }
+                                      else
+                                        {
+                                          if (((word >> 29) & 0x1) == 0)
+                                            {
+                                              /* 33222222222211111111110000000000
+                                                 10987654321098765432109876543210
+                                                 xx001111xxxxxxxx1x1111xxxxxxxxxx
+                                                 fmov.  */
+                                              return 138;
+                                            }
+                                          else
+                                            {
+                                              /* 33222222222211111111110000000000
+                                                 10987654321098765432109876543210
+                                                 xx101111xxxxxxxx1x1111xxxxxxxxxx
+                                                 fcvtzu.  */
+                                              return 412;
                                             }
                                         }
                                     }
@@ -19337,13 +19359,11 @@ aarch64_find_next_opcode (const aarch64_opcode *opcode)
     case 403: return NULL;		/* uqshrn2 --> NULL.  */
     case 136: value = 386; break;	/* movi --> scvtf.  */
     case 386: value = 387; break;	/* scvtf --> scvtf.  */
-    case 387: value = 2006; break;	/* scvtf --> sdot.  */
-    case 2006: return NULL;		/* sdot --> NULL.  */
+    case 387: return NULL;		/* scvtf --> NULL.  */
     case 144: value = 145; break;	/* movi --> movi.  */
     case 145: value = 410; break;	/* movi --> ucvtf.  */
     case 410: value = 411; break;	/* ucvtf --> ucvtf.  */
-    case 411: value = 2005; break;	/* ucvtf --> udot.  */
-    case 2005: return NULL;		/* udot --> NULL.  */
+    case 411: return NULL;		/* ucvtf --> NULL.  */
     case 138: value = 388; break;	/* fmov --> fcvtzs.  */
     case 388: value = 389; break;	/* fcvtzs --> fcvtzs.  */
     case 389: return NULL;		/* fcvtzs --> NULL.  */
@@ -19688,10 +19708,11 @@ aarch64_find_next_alias_opcode (const aarch64_opcode *opcode)
   return aarch64_opcode_table + value;
 }
 
-int
+bfd_boolean
 aarch64_extract_operand (const aarch64_operand *self,
 			   aarch64_opnd_info *info,
-			   aarch64_insn code, const aarch64_inst *inst)
+			   aarch64_insn code, const aarch64_inst *inst,
+			   aarch64_operand_error *errors)
 {
   /* Use the index as the key.  */
   int key = self - aarch64_operands;
@@ -19742,30 +19763,30 @@ aarch64_extract_operand (const aarch64_operand *self,
     case 182:
     case 186:
     case 189:
-      return aarch64_ext_regno (self, info, code, inst);
+      return aarch64_ext_regno (self, info, code, inst, errors);
     case 8:
-      return aarch64_ext_regrt_sysins (self, info, code, inst);
+      return aarch64_ext_regrt_sysins (self, info, code, inst, errors);
     case 12:
-      return aarch64_ext_regno_pair (self, info, code, inst);
+      return aarch64_ext_regno_pair (self, info, code, inst, errors);
     case 13:
-      return aarch64_ext_reg_extended (self, info, code, inst);
+      return aarch64_ext_reg_extended (self, info, code, inst, errors);
     case 14:
-      return aarch64_ext_reg_shifted (self, info, code, inst);
+      return aarch64_ext_reg_shifted (self, info, code, inst, errors);
     case 19:
-      return aarch64_ext_ft (self, info, code, inst);
+      return aarch64_ext_ft (self, info, code, inst, errors);
     case 30:
     case 31:
     case 32:
     case 191:
-      return aarch64_ext_reglane (self, info, code, inst);
+      return aarch64_ext_reglane (self, info, code, inst, errors);
     case 33:
-      return aarch64_ext_reglist (self, info, code, inst);
+      return aarch64_ext_reglist (self, info, code, inst, errors);
     case 34:
-      return aarch64_ext_ldst_reglist (self, info, code, inst);
+      return aarch64_ext_ldst_reglist (self, info, code, inst, errors);
     case 35:
-      return aarch64_ext_ldst_reglist_r (self, info, code, inst);
+      return aarch64_ext_ldst_reglist_r (self, info, code, inst, errors);
     case 36:
-      return aarch64_ext_ldst_elemlist (self, info, code, inst);
+      return aarch64_ext_ldst_elemlist (self, info, code, inst, errors);
     case 37:
     case 38:
     case 39:
@@ -19799,87 +19820,87 @@ aarch64_extract_operand (const aarch64_operand *self,
     case 171:
     case 172:
     case 173:
-      return aarch64_ext_imm (self, info, code, inst);
+      return aarch64_ext_imm (self, info, code, inst, errors);
     case 41:
     case 42:
-      return aarch64_ext_advsimd_imm_shift (self, info, code, inst);
+      return aarch64_ext_advsimd_imm_shift (self, info, code, inst, errors);
     case 43:
     case 44:
     case 45:
-      return aarch64_ext_advsimd_imm_modified (self, info, code, inst);
+      return aarch64_ext_advsimd_imm_modified (self, info, code, inst, errors);
     case 46:
-      return aarch64_ext_shll_imm (self, info, code, inst);
+      return aarch64_ext_shll_imm (self, info, code, inst, errors);
     case 49:
     case 140:
-      return aarch64_ext_fpimm (self, info, code, inst);
+      return aarch64_ext_fpimm (self, info, code, inst, errors);
     case 64:
     case 147:
-      return aarch64_ext_limm (self, info, code, inst);
+      return aarch64_ext_limm (self, info, code, inst, errors);
     case 65:
-      return aarch64_ext_aimm (self, info, code, inst);
+      return aarch64_ext_aimm (self, info, code, inst, errors);
     case 66:
-      return aarch64_ext_imm_half (self, info, code, inst);
+      return aarch64_ext_imm_half (self, info, code, inst, errors);
     case 67:
-      return aarch64_ext_fbits (self, info, code, inst);
+      return aarch64_ext_fbits (self, info, code, inst, errors);
     case 69:
     case 70:
     case 145:
-      return aarch64_ext_imm_rotate2 (self, info, code, inst);
+      return aarch64_ext_imm_rotate2 (self, info, code, inst, errors);
     case 71:
     case 144:
-      return aarch64_ext_imm_rotate1 (self, info, code, inst);
+      return aarch64_ext_imm_rotate1 (self, info, code, inst, errors);
     case 72:
     case 73:
-      return aarch64_ext_cond (self, info, code, inst);
+      return aarch64_ext_cond (self, info, code, inst, errors);
     case 79:
     case 86:
-      return aarch64_ext_addr_simple (self, info, code, inst);
+      return aarch64_ext_addr_simple (self, info, code, inst, errors);
     case 80:
-      return aarch64_ext_addr_regoff (self, info, code, inst);
+      return aarch64_ext_addr_regoff (self, info, code, inst, errors);
     case 81:
     case 82:
     case 83:
-      return aarch64_ext_addr_simm (self, info, code, inst);
+      return aarch64_ext_addr_simm (self, info, code, inst, errors);
     case 84:
-      return aarch64_ext_addr_simm10 (self, info, code, inst);
+      return aarch64_ext_addr_simm10 (self, info, code, inst, errors);
     case 85:
-      return aarch64_ext_addr_uimm12 (self, info, code, inst);
+      return aarch64_ext_addr_uimm12 (self, info, code, inst, errors);
     case 87:
-      return aarch64_ext_addr_offset (self, info, code, inst);
+      return aarch64_ext_addr_offset (self, info, code, inst, errors);
     case 88:
-      return aarch64_ext_simd_addr_post (self, info, code, inst);
+      return aarch64_ext_simd_addr_post (self, info, code, inst, errors);
     case 89:
-      return aarch64_ext_sysreg (self, info, code, inst);
+      return aarch64_ext_sysreg (self, info, code, inst, errors);
     case 90:
-      return aarch64_ext_pstatefield (self, info, code, inst);
+      return aarch64_ext_pstatefield (self, info, code, inst, errors);
     case 91:
     case 92:
     case 93:
     case 94:
-      return aarch64_ext_sysins_op (self, info, code, inst);
+      return aarch64_ext_sysins_op (self, info, code, inst, errors);
     case 95:
     case 96:
-      return aarch64_ext_barrier (self, info, code, inst);
+      return aarch64_ext_barrier (self, info, code, inst, errors);
     case 97:
-      return aarch64_ext_prfop (self, info, code, inst);
+      return aarch64_ext_prfop (self, info, code, inst, errors);
     case 98:
-      return aarch64_ext_hint (self, info, code, inst);
+      return aarch64_ext_hint (self, info, code, inst, errors);
     case 99:
-      return aarch64_ext_sve_addr_ri_s4 (self, info, code, inst);
+      return aarch64_ext_sve_addr_ri_s4 (self, info, code, inst, errors);
     case 100:
     case 101:
     case 102:
     case 103:
-      return aarch64_ext_sve_addr_ri_s4xvl (self, info, code, inst);
+      return aarch64_ext_sve_addr_ri_s4xvl (self, info, code, inst, errors);
     case 104:
-      return aarch64_ext_sve_addr_ri_s6xvl (self, info, code, inst);
+      return aarch64_ext_sve_addr_ri_s6xvl (self, info, code, inst, errors);
     case 105:
-      return aarch64_ext_sve_addr_ri_s9xvl (self, info, code, inst);
+      return aarch64_ext_sve_addr_ri_s9xvl (self, info, code, inst, errors);
     case 106:
     case 107:
     case 108:
     case 109:
-      return aarch64_ext_sve_addr_ri_u6 (self, info, code, inst);
+      return aarch64_ext_sve_addr_ri_u6 (self, info, code, inst, errors);
     case 110:
     case 111:
     case 112:
@@ -19893,7 +19914,7 @@ aarch64_extract_operand (const aarch64_operand *self,
     case 120:
     case 121:
     case 122:
-      return aarch64_ext_sve_addr_rr_lsl (self, info, code, inst);
+      return aarch64_ext_sve_addr_rr_lsl (self, info, code, inst, errors);
     case 123:
     case 124:
     case 125:
@@ -19902,49 +19923,49 @@ aarch64_extract_operand (const aarch64_operand *self,
     case 128:
     case 129:
     case 130:
-      return aarch64_ext_sve_addr_rz_xtw (self, info, code, inst);
+      return aarch64_ext_sve_addr_rz_xtw (self, info, code, inst, errors);
     case 131:
     case 132:
     case 133:
     case 134:
-      return aarch64_ext_sve_addr_zi_u5 (self, info, code, inst);
+      return aarch64_ext_sve_addr_zi_u5 (self, info, code, inst, errors);
     case 135:
-      return aarch64_ext_sve_addr_zz_lsl (self, info, code, inst);
+      return aarch64_ext_sve_addr_zz_lsl (self, info, code, inst, errors);
     case 136:
-      return aarch64_ext_sve_addr_zz_sxtw (self, info, code, inst);
+      return aarch64_ext_sve_addr_zz_sxtw (self, info, code, inst, errors);
     case 137:
-      return aarch64_ext_sve_addr_zz_uxtw (self, info, code, inst);
+      return aarch64_ext_sve_addr_zz_uxtw (self, info, code, inst, errors);
     case 138:
-      return aarch64_ext_sve_aimm (self, info, code, inst);
+      return aarch64_ext_sve_aimm (self, info, code, inst, errors);
     case 139:
-      return aarch64_ext_sve_asimm (self, info, code, inst);
+      return aarch64_ext_sve_asimm (self, info, code, inst, errors);
     case 141:
-      return aarch64_ext_sve_float_half_one (self, info, code, inst);
+      return aarch64_ext_sve_float_half_one (self, info, code, inst, errors);
     case 142:
-      return aarch64_ext_sve_float_half_two (self, info, code, inst);
+      return aarch64_ext_sve_float_half_two (self, info, code, inst, errors);
     case 143:
-      return aarch64_ext_sve_float_zero_one (self, info, code, inst);
+      return aarch64_ext_sve_float_zero_one (self, info, code, inst, errors);
     case 146:
-      return aarch64_ext_inv_limm (self, info, code, inst);
+      return aarch64_ext_inv_limm (self, info, code, inst, errors);
     case 148:
-      return aarch64_ext_sve_limm_mov (self, info, code, inst);
+      return aarch64_ext_sve_limm_mov (self, info, code, inst, errors);
     case 150:
-      return aarch64_ext_sve_scale (self, info, code, inst);
+      return aarch64_ext_sve_scale (self, info, code, inst, errors);
     case 162:
     case 163:
-      return aarch64_ext_sve_shlimm (self, info, code, inst);
+      return aarch64_ext_sve_shlimm (self, info, code, inst, errors);
     case 164:
     case 165:
-      return aarch64_ext_sve_shrimm (self, info, code, inst);
+      return aarch64_ext_sve_shrimm (self, info, code, inst, errors);
     case 183:
     case 184:
     case 185:
-      return aarch64_ext_sve_quad_index (self, info, code, inst);
+      return aarch64_ext_sve_quad_index (self, info, code, inst, errors);
     case 187:
-      return aarch64_ext_sve_index (self, info, code, inst);
+      return aarch64_ext_sve_index (self, info, code, inst, errors);
     case 188:
     case 190:
-      return aarch64_ext_sve_reglist (self, info, code, inst);
+      return aarch64_ext_sve_reglist (self, info, code, inst, errors);
     default: assert (0); abort ();
     }
 }

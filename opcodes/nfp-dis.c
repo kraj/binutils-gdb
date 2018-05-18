@@ -34,19 +34,13 @@
 #include "elf-bfd.h"
 #include "bfd.h"
 #include "bfd_stdint.h"
-#include "libbfd.h"
 
 #define _NFP_ERR_STOP -1
 #define _NFP_ERR_CONT -8
 
-/* The bfd_vma type has the description below, so we use that and BFD_VMA_FMT
-   instead of uint64_t or bfd_uint64_t.
-   "Represent a target address.  Also used as a generic unsigned type
-   which is guaranteed to be big enough to hold any arithmetic types
-   we need to deal with."  */
-
 #define _BTST(v, b)               (((v) >> b) & 1)
-#define _BF(v, msb, lsb)          (((v) >> (lsb)) & ((1U << ((msb) - (lsb) + 1)) - 1))
+#define _BF(v, msb, lsb)          (((v) >> (lsb)) & \
+				   ((1U << ((msb) - (lsb) + 1)) - 1))
 #define _BFS(v, msb, lsb, lshift) (_BF(v, msb, lsb) << (lshift))
 
 #define _NFP_ME27_28_CSR_CTX_ENABLES     0x18
@@ -928,10 +922,10 @@ static const nfp_cmd_mnemonic nfp_me28_mnemonics[] =
 };
 
 static int
-nfp_me_print_invalid (bfd_vma instr, struct disassemble_info *dinfo)
+nfp_me_print_invalid (uint64_t instr, struct disassemble_info *dinfo)
 {
   const char * err_msg = N_("<invalid_instruction>:");
-  dinfo->fprintf_func (dinfo->stream, "%s 0x%" BFD_VMA_FMT "x", err_msg, instr);
+  dinfo->fprintf_func (dinfo->stream, "%s 0x%" PRIx64, err_msg, instr);
   return _NFP_ERR_CONT;
 }
 
@@ -1101,7 +1095,7 @@ nfp_me_print_opnd8 (unsigned int opnd, char bank, int num_ctx, int lmem_ext,
 }
 
 static int
-nfp_me27_28_print_alu_shf (bfd_vma instr, unsigned int pred_cc,
+nfp_me27_28_print_alu_shf (uint64_t instr, unsigned int pred_cc,
 			   unsigned int dst_lmext, unsigned int src_lmext,
 			   unsigned int gpr_wrboth,
 			   int num_ctx, struct disassemble_info *dinfo)
@@ -1225,7 +1219,7 @@ nfp_me27_28_print_alu_shf (bfd_vma instr, unsigned int pred_cc,
 }
 
 static int
-nfp_me27_28_print_alu (bfd_vma instr, unsigned int pred_cc,
+nfp_me27_28_print_alu (uint64_t instr, unsigned int pred_cc,
 		       unsigned int dst_lmext, unsigned int src_lmext,
 		       unsigned int gpr_wrboth,
 		       int num_ctx, struct disassemble_info *dinfo)
@@ -1416,7 +1410,7 @@ nfp_me27_28_print_alu (bfd_vma instr, unsigned int pred_cc,
 }
 
 static int
-nfp_me27_28_print_immed (bfd_vma instr, unsigned int pred_cc,
+nfp_me27_28_print_immed (uint64_t instr, unsigned int pred_cc,
 			 unsigned int dst_lmext,
 			 unsigned int gpr_wrboth,
 			 int num_ctx, struct disassemble_info *dinfo)
@@ -1486,7 +1480,7 @@ nfp_me27_28_print_immed (bfd_vma instr, unsigned int pred_cc,
 }
 
 static int
-nfp_me27_28_print_ld_field (bfd_vma instr, unsigned int pred_cc,
+nfp_me27_28_print_ld_field (uint64_t instr, unsigned int pred_cc,
 			    unsigned int dst_lmext, unsigned int src_lmext,
 			    unsigned int gpr_wrboth,
 			    int num_ctx, struct disassemble_info *dinfo)
@@ -1557,7 +1551,7 @@ nfp_me27_28_print_ld_field (bfd_vma instr, unsigned int pred_cc,
 }
 
 static int
-nfp_me27_28_print_ctx_arb (bfd_vma instr, struct disassemble_info *dinfo)
+nfp_me27_28_print_ctx_arb (uint64_t instr, struct disassemble_info *dinfo)
 {
   unsigned int resume_addr = _BFS (instr, 40, 40, 13) | _BF (instr, 34, 22);
   unsigned int defer = _BF (instr, 21, 20);
@@ -1607,7 +1601,7 @@ nfp_me27_28_print_ctx_arb (bfd_vma instr, struct disassemble_info *dinfo)
 }
 
 static int
-nfp_me27_28_print_local_csr (bfd_vma instr,
+nfp_me27_28_print_local_csr (uint64_t instr,
 			     unsigned int src_lmext,
 			     int num_ctx, struct disassemble_info *dinfo)
 {
@@ -1674,7 +1668,7 @@ nfp_me27_28_print_local_csr (bfd_vma instr,
 }
 
 static int
-nfp_me27_28_print_branch (bfd_vma instr,
+nfp_me27_28_print_branch (uint64_t instr,
 			  const char *br_inpstates[16],
 			  struct disassemble_info *dinfo)
 {
@@ -1723,7 +1717,7 @@ nfp_me27_28_print_branch (bfd_vma instr,
 }
 
 static int
-nfp_me27_28_print_br_byte (bfd_vma instr,
+nfp_me27_28_print_br_byte (uint64_t instr,
 			   unsigned int src_lmext, int num_ctx,
 			   struct disassemble_info *dinfo)
 {
@@ -1768,7 +1762,7 @@ nfp_me27_28_print_br_byte (bfd_vma instr,
 }
 
 static int
-nfp_me27_28_print_br_bit (bfd_vma instr, unsigned int src_lmext,
+nfp_me27_28_print_br_bit (uint64_t instr, unsigned int src_lmext,
 			  int num_ctx, struct disassemble_info *dinfo)
 {
   unsigned int srcA = _BF (instr, 7, 0);
@@ -1807,7 +1801,7 @@ nfp_me27_28_print_br_bit (bfd_vma instr, unsigned int src_lmext,
 }
 
 static int
-nfp_me27_28_print_br_alu (bfd_vma instr, unsigned int src_lmext,
+nfp_me27_28_print_br_alu (uint64_t instr, unsigned int src_lmext,
 			  int num_ctx, struct disassemble_info *dinfo)
 {
   unsigned int srcA = _BF (instr, 9, 0);
@@ -1845,7 +1839,7 @@ nfp_me27_28_print_br_alu (bfd_vma instr, unsigned int src_lmext,
 }
 
 static int
-nfp_me27_28_print_mult (bfd_vma instr, unsigned int pred_cc,
+nfp_me27_28_print_mult (uint64_t instr, unsigned int pred_cc,
 			unsigned int dst_lmext, unsigned int src_lmext,
 			unsigned int gpr_wrboth,
 			int num_ctx, struct disassemble_info *dinfo)
@@ -1956,7 +1950,7 @@ nfp_me_find_mnemonic (unsigned int cpp_tgt, unsigned int cpp_act,
 /* NFP-32xx (ME Version 2.7).  */
 
 static int
-nfp_me27_print_cmd (bfd_vma instr, int third_party_32bit,
+nfp_me27_print_cmd (uint64_t instr, int third_party_32bit,
 		    int num_ctx, struct disassemble_info *dinfo)
 {
   unsigned int srcA = _BF (instr, 7, 0);
@@ -2158,75 +2152,75 @@ nfp_me27_print_cmd (bfd_vma instr, int third_party_32bit,
 }
 
 static int
-nfp_me27_print_alu_shf (bfd_vma instr, int num_ctx,
+nfp_me27_print_alu_shf (uint64_t instr, int num_ctx,
 			struct disassemble_info *dinfo)
 {
   return nfp_me27_28_print_alu_shf (instr, 0, 0, 0, 0, num_ctx, dinfo);
 }
 
 static int
-nfp_me27_print_alu (bfd_vma instr, int num_ctx,
+nfp_me27_print_alu (uint64_t instr, int num_ctx,
 		    struct disassemble_info *dinfo)
 {
   return nfp_me27_28_print_alu_shf (instr, 0, 0, 0, 0, num_ctx, dinfo);
 }
 
 static int
-nfp_me27_print_immed (bfd_vma instr, int num_ctx,
+nfp_me27_print_immed (uint64_t instr, int num_ctx,
 		      struct disassemble_info *dinfo)
 {
   return nfp_me27_28_print_immed (instr, 0, 0, 0, num_ctx, dinfo);
 }
 
 static int
-nfp_me27_print_ld_field (bfd_vma instr, int num_ctx,
+nfp_me27_print_ld_field (uint64_t instr, int num_ctx,
 			 struct disassemble_info *dinfo)
 {
   return nfp_me27_28_print_ld_field (instr, 0, 0, 0, 0, num_ctx, dinfo);
 }
 
 static int
-nfp_me27_print_ctx_arb (bfd_vma instr, struct disassemble_info *dinfo)
+nfp_me27_print_ctx_arb (uint64_t instr, struct disassemble_info *dinfo)
 {
   return nfp_me27_28_print_ctx_arb (instr, dinfo);
 }
 
 static int
-nfp_me27_print_local_csr (bfd_vma instr, int num_ctx,
+nfp_me27_print_local_csr (uint64_t instr, int num_ctx,
 			  struct disassemble_info *dinfo)
 {
   return nfp_me27_28_print_local_csr (instr, 0, num_ctx, dinfo);
 }
 
 static int
-nfp_me27_print_branch (bfd_vma instr, struct disassemble_info *dinfo)
+nfp_me27_print_branch (uint64_t instr, struct disassemble_info *dinfo)
 {
   return nfp_me27_28_print_branch (instr, nfp_me27_br_inpstates, dinfo);
 }
 
 static int
-nfp_me27_print_br_byte (bfd_vma instr, int num_ctx,
+nfp_me27_print_br_byte (uint64_t instr, int num_ctx,
 			struct disassemble_info *dinfo)
 {
   return nfp_me27_28_print_br_byte (instr, 0, num_ctx, dinfo);
 }
 
 static int
-nfp_me27_print_br_bit (bfd_vma instr, int num_ctx,
+nfp_me27_print_br_bit (uint64_t instr, int num_ctx,
 		       struct disassemble_info *dinfo)
 {
   return nfp_me27_28_print_br_bit (instr, 0, num_ctx, dinfo);
 }
 
 static int
-nfp_me27_print_br_alu (bfd_vma instr, int num_ctx,
+nfp_me27_print_br_alu (uint64_t instr, int num_ctx,
 		       struct disassemble_info *dinfo)
 {
   return nfp_me27_28_print_br_alu (instr, 0, num_ctx, dinfo);
 }
 
 static int
-nfp_me27_print_mult (bfd_vma instr, int num_ctx,
+nfp_me27_print_mult (uint64_t instr, int num_ctx,
 		     struct disassemble_info *dinfo)
 {
   return nfp_me27_28_print_mult (instr, 0, 0, 0, 0, num_ctx, dinfo);
@@ -2235,7 +2229,7 @@ nfp_me27_print_mult (bfd_vma instr, int num_ctx,
 /*NFP-6xxx/4xxx (ME Version 2.8).  */
 
 static int
-nfp_me28_print_cmd (bfd_vma instr, int third_party_32bit,
+nfp_me28_print_cmd (uint64_t instr, int third_party_32bit,
 		    int num_ctx, struct disassemble_info *dinfo)
 {
   unsigned int srcA = _BF (instr, 7, 0);
@@ -2421,7 +2415,7 @@ nfp_me28_print_cmd (bfd_vma instr, int third_party_32bit,
 }
 
 static int
-nfp_me28_print_alu_shf (bfd_vma instr, int num_ctx,
+nfp_me28_print_alu_shf (uint64_t instr, int num_ctx,
 			struct disassemble_info *dinfo)
 {
   unsigned int gpr_wrboth = _BTST (instr, 41);
@@ -2434,7 +2428,7 @@ nfp_me28_print_alu_shf (bfd_vma instr, int num_ctx,
 }
 
 static int
-nfp_me28_print_alu (bfd_vma instr, int num_ctx,
+nfp_me28_print_alu (uint64_t instr, int num_ctx,
 		    struct disassemble_info *dinfo)
 {
   unsigned int gpr_wrboth = _BTST (instr, 41);
@@ -2447,7 +2441,7 @@ nfp_me28_print_alu (bfd_vma instr, int num_ctx,
 }
 
 static int
-nfp_me28_print_immed (bfd_vma instr, int num_ctx,
+nfp_me28_print_immed (uint64_t instr, int num_ctx,
 		      struct disassemble_info *dinfo)
 {
   unsigned int gpr_wrboth = _BTST (instr, 41);
@@ -2459,7 +2453,7 @@ nfp_me28_print_immed (bfd_vma instr, int num_ctx,
 }
 
 static int
-nfp_me28_print_ld_field (bfd_vma instr, int num_ctx,
+nfp_me28_print_ld_field (uint64_t instr, int num_ctx,
 			 struct disassemble_info *dinfo)
 {
   unsigned int gpr_wrboth = _BTST (instr, 41);
@@ -2472,13 +2466,13 @@ nfp_me28_print_ld_field (bfd_vma instr, int num_ctx,
 }
 
 static int
-nfp_me28_print_ctx_arb (bfd_vma instr, struct disassemble_info *dinfo)
+nfp_me28_print_ctx_arb (uint64_t instr, struct disassemble_info *dinfo)
 {
   return nfp_me27_28_print_ctx_arb (instr, dinfo);
 }
 
 static int
-nfp_me28_print_local_csr (bfd_vma instr, int num_ctx,
+nfp_me28_print_local_csr (uint64_t instr, int num_ctx,
 			  struct disassemble_info *dinfo)
 {
   unsigned int src_lmext = _BTST (instr, 42);
@@ -2487,13 +2481,13 @@ nfp_me28_print_local_csr (bfd_vma instr, int num_ctx,
 }
 
 static int
-nfp_me28_print_branch (bfd_vma instr, struct disassemble_info *dinfo)
+nfp_me28_print_branch (uint64_t instr, struct disassemble_info *dinfo)
 {
   return nfp_me27_28_print_branch (instr, nfp_me28_br_inpstates, dinfo);
 }
 
 static int
-nfp_me28_print_br_byte (bfd_vma instr, int num_ctx,
+nfp_me28_print_br_byte (uint64_t instr, int num_ctx,
 			struct disassemble_info *dinfo)
 {
   unsigned int src_lmext = _BTST (instr, 42);
@@ -2501,7 +2495,7 @@ nfp_me28_print_br_byte (bfd_vma instr, int num_ctx,
 }
 
 static int
-nfp_me28_print_br_bit (bfd_vma instr, int num_ctx,
+nfp_me28_print_br_bit (uint64_t instr, int num_ctx,
 		       struct disassemble_info *dinfo)
 {
   unsigned int src_lmext = _BTST (instr, 42);
@@ -2509,7 +2503,7 @@ nfp_me28_print_br_bit (bfd_vma instr, int num_ctx,
 }
 
 static int
-nfp_me28_print_br_alu (bfd_vma instr, int num_ctx,
+nfp_me28_print_br_alu (uint64_t instr, int num_ctx,
 		       struct disassemble_info *dinfo)
 {
   unsigned int src_lmext = _BTST (instr, 42);
@@ -2517,7 +2511,7 @@ nfp_me28_print_br_alu (bfd_vma instr, int num_ctx,
 }
 
 static int
-nfp_me28_print_mult (bfd_vma instr, int num_ctx,
+nfp_me28_print_mult (uint64_t instr, int num_ctx,
 		     struct disassemble_info *dinfo)
 {
   unsigned int gpr_wrboth = _BTST (instr, 41);
@@ -2578,9 +2572,8 @@ init_nfp3200_priv (nfp_priv_data * priv, struct disassemble_info *dinfo)
 
       mecfg = &priv->mecfgs[isl][menum][1];
 
-      if (!_bfd_generic_get_section_contents (dinfo->section->owner,
-					      sec->bfd_section, buffer,
-					      roff, sizeof (buffer)))
+      if (!bfd_get_section_contents (dinfo->section->owner, sec->bfd_section,
+				     buffer, roff, sizeof (buffer)))
 	return FALSE;
 
       mecfg_ent.ctx_enables = bfd_getl32 (buffer + offsetof (Elf_Nfp_MeConfig,
@@ -2627,9 +2620,8 @@ init_nfp6000_mecsr_sec (nfp_priv_data * priv, Elf_Internal_Shdr * sec,
       uint32_t csr_off;
       nfp_priv_mecfg *mecfg;
 
-      if (!_bfd_generic_get_section_contents (dinfo->section->owner,
-					      sec->bfd_section, buffer,
-					      ireg_off, sizeof (buffer)))
+      if (!bfd_get_section_contents (dinfo->section->owner, sec->bfd_section,
+				     buffer, ireg_off, sizeof (buffer)))
 	return FALSE;
 
       ireg.cpp_offset_lo = bfd_getl32 (buffer
@@ -2803,7 +2795,7 @@ _print_instrs (bfd_vma addr, struct disassemble_info *dinfo, nfp_opts * opts)
   nfp_priv_data *priv = init_nfp_priv (dinfo);
   bfd_byte buffer[8];
   int err;
-  bfd_vma instr = 0;
+  uint64_t instr = 0;
   size_t island, menum;
   int num_ctx, scs_cnt, addr_3rdparty32, pc, tmpi, tmpj;
   int is_text = 1;

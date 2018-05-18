@@ -1,3 +1,68 @@
+2018-05-18  Alan Modra  <amodra@gmail.com>
+
+	PR 23199
+	* elf.c (setup_group): Formatting.  Check that SHT_GROUP entries
+	don't point at other SHT_GROUP sections.  Set shdr corresponding
+	to invalid entry, to NULL rather than section 0.  Identify
+	SHT_GROUP section index when reporting an error.  Cope with NULL
+	shdr pointer.
+
+2018-05-18  Alan Modra  <amodra@gmail.com>
+
+	* libbfd-in.h (ATTRIBUTE_HIDDEN): Define and use throughout.
+	* configure.ac (HAVE_HIDDEN): Check compiler support for hidden
+	visibility.
+	* libbfd.h: Regenerate.
+	* configure: Regenerate.
+	* config.in: Regenerate.
+
+2018-05-18  Alan Modra  <amodra@gmail.com>
+
+	* libbfd-in.h: Add include guard.
+	* libcoff-in.h: Likewise.
+	* doc/Makefile.am (libbfd.h, libcoff.h): Append another #endif.
+	* doc/Makefile.in: Regenerate.
+	* libbfd.h: Regenerate.
+	* libcoff.h: Regenerate.
+
+2018-05-16  Maciej W. Rozycki  <macro@mips.com>
+
+	* elf32-nds32.c (nds32_convert_32_to_16): Preset `insn_type'.
+
+2018-05-16  Alan Modra  <amodra@gmail.com>
+
+	PR 22458
+	* format.c (struct bfd_preserve): Add section_id.
+	(bfd_preserve_save, bfd_preserve_restore): Save and restore
+	_bfd_section_id.
+	(bfd_reinit): Set _bfd_section_id.
+	(bfd_check_format_matches): Put all matches of any priority into
+	matching_vector.  Save initial section id and start each attempted
+	match at that section id.
+	* libbfd-in.h (_bfd_section_id): Declare.
+	* section.c (_bfd_section_id): Rename from section_id and make
+	global.  Adjust uses.
+	(bfd_get_next_section_id): Delete.
+	* elf64-ppc.c (ppc64_elf_setup_section_lists): Replace use of
+	bfd_get_section_id with _bfd_section_id.
+	* libbfd.h: Regenerate.
+	* bfd-in2.h: Regenerate.
+
+2018-05-15  Christophe Guillon  <christophe.guillon@st.com>
+
+	* coffcode.h (coff_bigobj_swap_aux_in): Make sure that all fields
+	of the aux structure are initialised.
+
+2018-05-15  Francois H. Theron  <francois.theron@netronome.com>
+
+	* targets.c: Wrap nfp_elf64_vec in BFD64 ifdef.
+
+2018-05-15  Nick Clifton  <nickc@redhat.com>
+
+	* po/pt.po: New Portuguese translation.
+	* configure.ac (ALL_LINGUAS): Add pt.
+	* configure: Regenerate.
+
 2018-05-14  H.J. Lu  <hongjiu.lu@intel.com>
 
 	PR ld/23169

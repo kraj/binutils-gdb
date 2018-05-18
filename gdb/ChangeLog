@@ -1,3 +1,119 @@
+2018-05-17  Keith Seitz  <keiths@redhat.com>
+
+	* breakpoint.c (build_bpstat_chain): New function, moved from
+	bpstat_stop_status.
+	(bpstat_stop_status): Add optional parameter, `stop_chain'.
+	If no stop chain is passed, call build_bpstat_chain to build it.
+	* breakpoint.h (build_bpstat_chain): Declare.
+	(bpstat_stop_status): Move documentation here from breakpoint.c.
+	* infrun.c (handle_signal_stop): Before eliding inlined frames,
+	build the stop chain and pass it to skip_inline_frames.
+	Pass this stop chain to bpstat_stop_status.
+	* inline-frame.c: Include breakpoint.h.
+	(stopped_by_user_bp_inline_frame): New function.
+	(skip_inline_frames): Add parameter `stop_chain'.
+	Move documention to inline-frame.h.
+	If non-NULL, use stopped_by_user_bp_inline_frame to determine
+	whether the frame should be elided.
+	* inline-frame.h (skip_inline_frames): Add parameter `stop_chain'.
+	Add moved documentation and update for new parameter.
+
+2018-05-17  Simon Marchi  <simon.marchi@ericsson.com>
+
+	PR cli/14975
+	* Makefile.in (SUBDIR_UNITTESTS_SRCS): Add
+	unittests/format_pieces-selftests.c.
+	* common/format.h (format_piece) <operator==>: New.
+	(format_pieces) <operator[]>: Remove.
+	* common/format.c (format_pieces::format_pieces): Handle \e.
+	* unittests/format_pieces-selftests.c: New.
+
+2018-05-17  Tom Tromey  <tom@tromey.com>
+
+	PR symtab/23010:
+	* dwarf2read.c (load_cu, dw2_do_instantiate_symtab)
+	(dw2_instantiate_symtab): Add skip_partial parameter.
+	(dw2_find_last_source_symtab, dw2_map_expand_apply)
+	(dw2_lookup_symbol, dw2_expand_symtabs_for_function)
+	(dw2_expand_all_symtabs, dw2_expand_symtabs_with_fullname)
+	(dw2_expand_symtabs_matching_one)
+	(dw2_find_pc_sect_compunit_symtab)
+	(dw2_debug_names_lookup_symbol)
+	(dw2_debug_names_expand_symtabs_for_function): Update.
+	(init_cutu_and_read_dies): Add skip_partial parameter.
+	(process_psymtab_comp_unit, build_type_psymtabs_1)
+	(process_skeletonless_type_unit, load_partial_comp_unit)
+	(psymtab_to_symtab_1): Update.
+	(load_full_comp_unit): Add skip_partial parameter.
+	(process_imported_unit_die, dwarf2_read_addr_index)
+	(follow_die_offset, dwarf2_fetch_die_loc_sect_off)
+	(dwarf2_fetch_constant_bytes, dwarf2_fetch_die_type_sect_off)
+	(read_signatured_type): Update.
+
+2018-05-17  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* value.c (release_value): Remove unused variable.
+	(record_latest_value): Likewise.
+	(access_value_history): Likewise.
+	(preserve_values): Likewise.
+
+2018-05-17  Tom Tromey  <tom@tromey.com>
+
+	* extension.h (struct ext_lang_type_printers) <py_type_printers>:
+	Initialize.
+
+2018-05-16  Maciej W. Rozycki  <macro@mips.com>
+
+	PR gdb/22286
+	* linux-nat-trad.c (linux_nat_trad_target::fetch_register):
+	Also handle registers whose width is not a multiple of
+	PTRACE_TYPE_RET.
+	(linux_nat_trad_target::store_register): Likewise.
+
+2018-05-16  Tom Tromey  <tom@tromey.com>
+
+	* gdbcore.h (core_bfd): Redefine.
+	* corelow.c (core_target::close): Update.
+	(core_target_open): Update.
+	* progspace.h (struct program_space) <cbfd>: Now a
+	gdb_bfd_ref_ptr.
+
+2018-05-16  Tom Tromey  <tom@tromey.com>
+
+	PR cli/19551:
+	* symfile-add-flags.h (enum symfile_add_flags)
+	<SYMFILE_NOT_FILENAME>: New constant.
+	* symfile.c (read_symbols): Use SYMFILE_NOT_FILENAME.  Get
+	objfile name from BFD.
+	(symbol_file_add_with_addrs): Check SYMFILE_NOT_FILENAME.
+	* minidebug.c (find_separate_debug_file_in_section): Put
+	".gnu_debugdata" into BFD's file name.
+
+2018-05-16  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* regcache.c (regcache_read_ftype, regcache_write_ftype):
+	Remove.
+
+2018-05-15  Tamar Christina  <tamar.christina@arm.com>
+
+	PR binutils/21446
+	* aarch64-tdep.c (aarch64_analyze_prologue,
+	aarch64_software_single_step, aarch64_displaced_step_copy_insn):
+	Indicate not interested in errors.
+
+2018-05-15  Maciej W. Rozycki  <macro@mips.com>
+
+	* mips-linux-nat.c (mips_linux_nat_target::fetch_registers):
+	Supply the MIPS_ZERO_REGNUM register.
+
+2018-05-15  Maciej W. Rozycki  <macro@mips.com>
+
+	* mips-tdep.c (mask_address_var): Make variable static.
+
+2018-05-14  Tom Tromey  <tom@tromey.com>
+
+	* dwarf2read.c (rust_union_quirks): Clear rust_unions.
+
 2018-05-11  Andrew Burgess  <andrew.burgess@embecosm.com>
 
 	* i387-tdep.c (i387_collect_xsave): Use FXSAVE_MXCSR_ADDR not
