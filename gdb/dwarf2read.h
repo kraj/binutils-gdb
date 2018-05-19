@@ -194,11 +194,11 @@ public:
   bool dwp_checked = false;
 
   /* The DWP file if there is one, or NULL.  */
-  struct dwp_file *dwp_file = NULL;
+  std::unique_ptr<struct dwp_file> dwp_file;
 
   /* The shared '.dwz' file, if one exists.  This is used when the
      original data was compressed using 'dwz -m'.  */
-  struct dwz_file *dwz_file = NULL;
+  std::unique_ptr<struct dwz_file> dwz_file;
 
   /* A flag indicating whether this objfile has a section loaded at a
      VMA of 0.  */
@@ -209,7 +209,7 @@ public:
   bool using_index = false;
 
   /* The mapped index, or NULL if .gdb_index is missing or not being used.  */
-  mapped_index *index_table = NULL;
+  std::unique_ptr<mapped_index> index_table;
 
   /* The mapped index, or NULL if .debug_names is missing or not being used.  */
   std::unique_ptr<mapped_debug_names> debug_names_table;

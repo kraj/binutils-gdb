@@ -1,3 +1,56 @@
+2018-05-19  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* stack.c (backtrace_command_1): Remove useless variable int i.
+
+2018-05-19  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* stack.c (print_frame_info): Fix comment.
+
+2018-05-18  Tom Tromey  <tom@tromey.com>
+
+	* dwarf2read.c (struct dwz_file): Add constructor, initializers.
+	<dwz_bfd>: Now a gdb_bfd_ref_ptr.
+	(~dwarf2_per_objfile): Update
+	(dwarf2_get_dwz_file): Use new.
+	* dwarf2read.h (struct dwarf2_per_objfile) <dwz_file>: Now a
+	unique_ptr.
+
+2018-05-18  Tom Tromey  <tom@tromey.com>
+
+	* dwarf2read.h (struct dwarf2_per_objfile) <dwp_file>: Now a
+	unique_ptr.
+	* dwarf2read.c (struct dwp_file): Add constructor and
+	initializers.
+	(open_and_init_dwp_file): Return a unique_ptr.
+	(dwarf2_per_objfile, create_dwp_hash_table)
+	(create_dwo_unit_in_dwp_v1, create_dwo_unit_in_dwp_v2)
+	(lookup_dwo_unit_in_dwp): Update.
+	(open_and_init_dwp_file, get_dwp_file): Update.
+
+2018-05-18  Tom Tromey  <tom@tromey.com>
+
+	* dwarf2read.c (dwarf2_per_objfile): Update.
+	(struct mapped_index): Add initializers.
+	(dwarf2_read_index): Use new.
+	(dw2_symtab_iter_init): Update.
+	* dwarf2read.h (struct dwarf2_per_objfile) <index_table>: Now a
+	unique_ptr.
+
+2018-05-18  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* dwarf2read.c (mapped_index) <total_size>: Remove.
+
+2018-05-18  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* unittests/format_pieces-selftests.c (test_format_specifier):
+	Add ARI comments.
+
+2018-05-18  Tom Tromey  <tom@tromey.com>
+
+	* c-typeprint.c (maybe_print_hole): New function.
+	(c_print_type_struct_field_offset): Update.
+	(c_type_print_base_struct_union): Call maybe_print_hole.
+
 2018-05-17  Keith Seitz  <keiths@redhat.com>
 
 	* breakpoint.c (build_bpstat_chain): New function, moved from
