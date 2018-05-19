@@ -27,6 +27,7 @@ patches="
 	binutils-x86-64-gold-thunk.patch
 	binutils-x86-gpoff.patch
 	binutils-x86-optimize-option.patch
+0001-ld-Hide-symbols-defined-by-HIDDEN-PROVIDE_HIDDEN.patch
 "
 
 for p in $patches
