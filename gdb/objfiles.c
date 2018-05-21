@@ -144,18 +144,14 @@ get_objfile_bfd_data (struct objfile *objfile, struct bfd *abfd)
 	  storage
 	    = ((struct objfile_per_bfd_storage *)
 	       bfd_alloc (abfd, sizeof (struct objfile_per_bfd_storage)));
+	  /* objfile_per_bfd_storage is not trivially constructible, must
+	     call the ctor manually.  */
+	  storage = new (storage) objfile_per_bfd_storage ();
 	  set_bfd_data (abfd, objfiles_bfd_data, storage);
 	}
       else
-	{
-	  storage = (objfile_per_bfd_storage *)
-	    obstack_alloc (&objfile->objfile_obstack,
-			   sizeof (objfile_per_bfd_storage));
-	}
-
-      /* objfile_per_bfd_storage is not trivially constructible, must
-	 call the ctor manually.  */
-      storage = new (storage) objfile_per_bfd_storage ();
+	storage
+	  = obstack_new<objfile_per_bfd_storage> (&objfile->objfile_obstack);
 
       /* Look up the gdbarch associated with the BFD.  */
       if (abfd != NULL)
@@ -269,8 +265,7 @@ objfile_register_static_link (struct objfile *objfile,
   slot = htab_find_slot (objfile->static_links, &lookup_entry, INSERT);
   gdb_assert (*slot == NULL);
 
-  entry = (struct static_link_htab_entry *) obstack_alloc
-	    (&objfile->objfile_obstack, sizeof (*entry));
+  entry = XOBNEW (&objfile->objfile_obstack, static_link_htab_entry);
   entry->block = block;
   entry->static_link = static_link;
   *slot = (void *) entry;
