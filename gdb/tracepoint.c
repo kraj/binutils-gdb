@@ -2679,9 +2679,6 @@ trace_dump_actions (struct command_line *action,
 	     STEPPING_ACTIONS should be equal.  */
 	  if (stepping_frame == stepping_actions)
 	    {
-	      char *cmd = NULL;
-	      struct cleanup *old_chain
-		= make_cleanup (free_current_contents, &cmd);
 	      int trace_string = 0;
 
 	      if (*action_exp == '/')
@@ -2706,31 +2703,22 @@ trace_dump_actions (struct command_line *action,
 		    info_args_command (NULL, from_tty);
 		  else
 		    {		/* variable */
+		      std::string contents;
+		      const char *exp = action_exp;
 		      if (next_comma != NULL)
 			{
 			  size_t len = next_comma - action_exp;
-
-			  cmd = (char *) xrealloc (cmd, len + 1);
-			  memcpy (cmd, action_exp, len);
-			  cmd[len] = 0;
-			}
-		      else
-			{
-			  size_t len = strlen (action_exp);
-
-			  cmd = (char *) xrealloc (cmd, len + 1);
-			  memcpy (cmd, action_exp, len + 1);
+			  contents = std::string (action_exp, len);
+			  exp = contents.c_str ();
 			}
 
-		      printf_filtered ("%s = ", cmd);
-		      output_command_const (cmd, from_tty);
+		      printf_filtered ("%s = ", exp);
+		      output_command (exp, from_tty);
 		      printf_filtered ("\n");
 		    }
 		  action_exp = next_comma;
 		}
 	      while (action_exp && *action_exp == ',');
-
-	      do_cleanups (old_chain);
 	    }
 	}
     }
@@ -4079,13 +4067,13 @@ De-select any trace frame and resume 'live' debugging."),
 
   add_com ("tstop", class_trace, tstop_command, _("\
 Stop trace data collection.\n\
-Usage: tstop [ <notes> ... ]\n\
+Usage: tstop [NOTES]...\n\
 Any arguments supplied are recorded with the trace as a stop reason and\n\
 reported by tstatus (if the target supports trace notes)."));
 
   add_com ("tstart", class_trace, tstart_command, _("\
 Start trace data collection.\n\
-Usage: tstart [ <notes> ... ]\n\
+Usage: tstart [NOTES]...\n\
 Any arguments supplied are recorded with the trace as a note and\n\
 reported by tstatus (if the target supports trace notes)."));
 

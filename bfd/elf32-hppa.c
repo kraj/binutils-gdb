@@ -503,6 +503,8 @@ hppa_get_stub_entry (const asection *input_section,
      more than one stub used to reach say, printf, and we need to
      distinguish between them.  */
   id_sec = htab->stub_group[input_section->id].link_sec;
+  if (id_sec == NULL)
+    return NULL;
 
   if (hh != NULL && hh->hsh_cache != NULL
       && hh->hsh_cache->hh == hh
@@ -2795,6 +2797,9 @@ elf32_hppa_size_stubs
 	      /* If there aren't any relocs, then there's nothing more
 		 to do.  */
 	      if ((section->flags & SEC_RELOC) == 0
+		  || (section->flags & SEC_ALLOC) == 0
+		  || (section->flags & SEC_LOAD) == 0
+		  || (section->flags & SEC_CODE) == 0
 		  || section->reloc_count == 0)
 		continue;
 
@@ -3278,7 +3283,7 @@ final_link_relocate (asection *input_section,
 		  || hh->eh.root.type == bfd_link_hash_defweak)))
 	{
 	  hsh = hppa_get_stub_entry (input_section, sym_sec,
-					    hh, rela, htab);
+				     hh, rela, htab);
 	  if (hsh != NULL)
 	    {
 	      value = (hsh->stub_offset
@@ -3478,7 +3483,7 @@ final_link_relocate (asection *input_section,
       if (value + addend + max_branch_offset >= 2*max_branch_offset)
 	{
 	  hsh = hppa_get_stub_entry (input_section, sym_sec,
-					    hh, rela, htab);
+				     hh, rela, htab);
 	  if (hsh == NULL)
 	    return bfd_reloc_undefined;
 

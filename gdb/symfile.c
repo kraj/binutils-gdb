@@ -986,7 +986,7 @@ syms_from_objfile_1 (struct objfile *objfile,
      initial symbol reading for this file.  */
 
   (*objfile->sf->sym_init) (objfile);
-  clear_complaints (&symfile_complaints, 1, add_flags & SYMFILE_VERBOSE);
+  clear_complaints (1);
 
   (*objfile->sf->sym_offsets) (objfile, *addrs);
 
@@ -1033,7 +1033,7 @@ finish_new_objfile (struct objfile *objfile, symfile_add_flags add_flags)
     }
 
   /* We're done reading the symbol file; finish off complaints.  */
-  clear_complaints (&symfile_complaints, 0, add_flags & SYMFILE_VERBOSE);
+  clear_complaints (0);
 }
 
 /* Process a symbol file, as either the main file or as a dynamically
@@ -2316,7 +2316,6 @@ reread_symbols (void)
 	  struct cleanup *old_cleanups;
 	  struct section_offsets *offsets;
 	  int num_offsets;
-	  char *original_name;
 
 	  printf_unfiltered (_("`%s' has changed; re-reading symbols.\n"),
 			     objfile_name (objfile));
@@ -2382,8 +2381,7 @@ reread_symbols (void)
 	      error (_("Can't open %s to read symbols."), obfd_filename);
 	  }
 
-	  original_name = xstrdup (objfile->original_name);
-	  make_cleanup (xfree, original_name);
+	  std::string original_name = objfile->original_name;
 
 	  /* bfd_openr sets cacheable to true, which is what we want.  */
 	  if (!bfd_check_format (objfile->obfd, bfd_object))
@@ -2429,8 +2427,9 @@ reread_symbols (void)
 	  set_objfile_per_bfd (objfile);
 
 	  objfile->original_name
-	    = (char *) obstack_copy0 (&objfile->objfile_obstack, original_name,
-				      strlen (original_name));
+	    = (char *) obstack_copy0 (&objfile->objfile_obstack,
+				      original_name.c_str (),
+				      original_name.size ());
 
 	  /* Reset the sym_fns pointer.  The ELF reader can change it
 	     based on whether .gdb_index is present, and we need it to
@@ -2458,7 +2457,7 @@ reread_symbols (void)
 	    }
 
 	  (*objfile->sf->sym_init) (objfile);
-	  clear_complaints (&symfile_complaints, 1, 1);
+	  clear_complaints (1);
 
 	  objfile->flags &= ~OBJF_PSYMTABS_READ;
 
@@ -2488,7 +2487,7 @@ reread_symbols (void)
 	    }
 
 	  /* We're done reading the symbol file; finish off complaints.  */
-	  clear_complaints (&symfile_complaints, 0, 1);
+	  clear_complaints (0);
 
 	  /* Getting new symbols may change our opinion about what is
 	     frameless.  */

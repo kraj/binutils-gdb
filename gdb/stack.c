@@ -2018,7 +2018,6 @@ print_frame_local_vars (struct frame_info *frame, int num_tabs,
   struct print_variable_and_value_data cb_data;
   const struct block *block;
   CORE_ADDR pc;
-  struct gdb_exception except = exception_none;
 
   if (!get_frame_pc_if_available (frame, &pc))
     {
@@ -2042,27 +2041,12 @@ print_frame_local_vars (struct frame_info *frame, int num_tabs,
   /* Temporarily change the selected frame to the given FRAME.
      This allows routines that rely on the selected frame instead
      of being given a frame as parameter to use the correct frame.  */
+  scoped_restore_selected_frame restore_selected_frame;
   select_frame (frame);
 
-  TRY
-    {
-      iterate_over_block_local_vars (block,
-				     do_print_variable_and_value,
-				     &cb_data);
-    }
-  CATCH (ex, RETURN_MASK_ALL)
-    {
-      except = ex;
-    }
-  END_CATCH
-
-  /* Restore the selected frame, and then rethrow if there was a problem.  */
-  select_frame (frame_find_by_id (cb_data.frame_id));
-  if (except.reason < 0)
-    throw_exception (except);
-
-  /* do_print_variable_and_value invalidates FRAME.  */
-  frame = NULL;
+  iterate_over_block_local_vars (block,
+				 do_print_variable_and_value,
+				 &cb_data);
 
   if (!cb_data.values_printed)
     fprintf_filtered (stream, _("No locals.\n"));
@@ -2075,9 +2059,7 @@ info_locals_command (const char *args, int from_tty)
 			  0, gdb_stdout);
 }
 
-/* Iterate over all the argument variables in block B.
-
-   Returns 1 if any argument was walked; 0 otherwise.  */
+/* Iterate over all the argument variables in block B.  */
 
 void
 iterate_over_block_arg_vars (const struct block *b,
@@ -2137,7 +2119,7 @@ print_frame_arg_vars (struct frame_info *frame, struct ui_file *stream)
 
   cb_data.frame_id = get_frame_id (frame);
   cb_data.num_tabs = 0;
-  cb_data.stream = gdb_stdout;
+  cb_data.stream = stream;
   cb_data.values_printed = 0;
 
   iterate_over_block_arg_vars (SYMBOL_BLOCK_VALUE (func),
@@ -2155,16 +2137,6 @@ info_args_command (const char *ignore, int from_tty)
 {
   print_frame_arg_vars (get_selected_frame (_("No frame selected.")),
 			gdb_stdout);
-}
-
-/* Select frame FRAME.  Also print the stack frame and show the source
-   if this is the tui version.  */
-static void
-select_and_print_frame (struct frame_info *frame)
-{
-  select_frame (frame);
-  if (frame)
-    print_stack_frame (frame, 1, SRC_AND_LOC, 1);
 }
 
 /* Return the symbol-block in which the selected frame is executing.
@@ -2451,29 +2423,30 @@ return_command (const char *retval_exp, int from_tty)
     print_stack_frame (get_selected_frame (NULL), 1, SRC_AND_LOC, 1);
 }
 
-/* Sets the scope to input function name, provided that the function
-   is within the current stack frame.  */
+/* Find the most inner frame in the current stack for a function called
+   FUNCTION_NAME.  If no matching frame is found return NULL.  */
 
-struct function_bounds
+static struct frame_info *
+find_frame_for_function (const char *function_name)
 {
-  CORE_ADDR low, high;
-};
-
-static void
-func_command (const char *arg, int from_tty)
-{
+  /* Used to hold the lower and upper addresses for each of the
+     SYMTAB_AND_LINEs found for functions matching FUNCTION_NAME.  */
+  struct function_bounds
+  {
+    CORE_ADDR low, high;
+  };
   struct frame_info *frame;
-  int found = 0;
+  bool found = false;
   int level = 1;
 
-  if (arg == NULL)
-    return;
+  gdb_assert (function_name != NULL);
 
   frame = get_current_frame ();
   std::vector<symtab_and_line> sals
-    = decode_line_with_current_source (arg, DECODE_LINE_FUNFIRSTLINE);
+    = decode_line_with_current_source (function_name,
+				       DECODE_LINE_FUNFIRSTLINE);
   gdb::def_vector<function_bounds> func_bounds (sals.size ());
-  for (size_t i = 0; (i < sals.size () && !found); i++)
+  for (size_t i = 0; i < sals.size (); i++)
     {
       if (sals[i].pspace != current_program_space)
 	func_bounds[i].low = func_bounds[i].high = 0;
@@ -2481,9 +2454,7 @@ func_command (const char *arg, int from_tty)
 	       || find_pc_partial_function (sals[i].pc, NULL,
 					    &func_bounds[i].low,
 					    &func_bounds[i].high) == 0)
-	{
-	  func_bounds[i].low = func_bounds[i].high = 0;
-	}
+	func_bounds[i].low = func_bounds[i].high = 0;
     }
 
   do
@@ -2500,9 +2471,27 @@ func_command (const char *arg, int from_tty)
   while (!found && level == 0);
 
   if (!found)
-    printf_filtered (_("'%s' not within current stack frame.\n"), arg);
-  else if (frame != get_selected_frame (NULL))
-    select_and_print_frame (frame);
+    frame = NULL;
+
+  return frame;
+}
+
+/* Implements the dbx 'func' command.  */
+
+static void
+func_command (const char *arg, int from_tty)
+{
+  if (arg == NULL)
+    return;
+
+  struct frame_info *frame = find_frame_for_function (arg);
+  if (frame == NULL)
+    error (_("'%s' not within current stack frame.\n"), arg);
+  if (frame != get_selected_frame (NULL))
+    {
+      select_frame (frame);
+      print_stack_frame (get_selected_frame (NULL), 1, SRC_AND_LOC, 1);
+    }
 }
 
 void

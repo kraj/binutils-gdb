@@ -198,8 +198,8 @@ struct arch_lwp_info
 
 /* Pseudo registers can not be read.  ptrace does not provide a way to
    read (or set) PS_REGNUM, and there's no point in reading or setting
-   ZERO_REGNUM.  We also can not set BADVADDR, CAUSE, or FCRIR via
-   ptrace().  */
+   ZERO_REGNUM, it's always 0.  We also can not set BADVADDR, CAUSE,
+   or FCRIR via ptrace().  */
 
 static int
 mips_cannot_fetch_register (int regno)
@@ -210,6 +210,10 @@ mips_cannot_fetch_register (int regno)
     return 1;
 
   tdesc = current_process ()->tdesc;
+
+  /* On n32 we can't access 64-bit registers via PTRACE_PEEKUSR.  */
+  if (register_size (tdesc, regno) > sizeof (PTRACE_XFER_TYPE))
+    return 1;
 
   if (find_regno (tdesc, "r0") == regno)
     return 1;
@@ -227,6 +231,10 @@ mips_cannot_store_register (int regno)
 
   tdesc = current_process ()->tdesc;
 
+  /* On n32 we can't access 64-bit registers via PTRACE_POKEUSR.  */
+  if (register_size (tdesc, regno) > sizeof (PTRACE_XFER_TYPE))
+    return 1;
+
   if (find_regno (tdesc, "r0") == regno)
     return 1;
 
@@ -238,6 +246,20 @@ mips_cannot_store_register (int regno)
 
   if (find_regno (tdesc, "fir") == regno)
     return 1;
+
+  return 0;
+}
+
+static int
+mips_fetch_register (struct regcache *regcache, int regno)
+{
+  const struct target_desc *tdesc = current_process ()->tdesc;
+
+  if (find_regno (tdesc, "r0") == regno)
+    {
+      supply_register_zeroed (regcache, regno);
+      return 1;
+    }
 
   return 0;
 }
@@ -655,8 +677,6 @@ ps_get_thread_area (struct ps_prochandle *ph,
   return PS_OK;
 }
 
-#ifdef HAVE_PTRACE_GETREGS
-
 static void
 mips_collect_register (struct regcache *regcache,
 		       int use_64bit, int regno, union mips_register *reg)
@@ -688,6 +708,8 @@ mips_supply_register (struct regcache *regcache,
 
   supply_register (regcache, regno, reg->buf + offset);
 }
+
+#ifdef HAVE_PTRACE_GETREGS
 
 static void
 mips_collect_register_32bit (struct regcache *regcache,
@@ -750,7 +772,9 @@ mips_store_gregset (struct regcache *regcache, const void *buf)
 
   use_64bit = (register_size (regcache->tdesc, 0) == 8);
 
-  for (i = 0; i < 32; i++)
+  supply_register_by_name_zeroed (regcache, "r0");
+
+  for (i = 1; i < 32; i++)
     mips_supply_register (regcache, use_64bit, i, regset + i);
 
   mips_supply_register (regcache, use_64bit,
@@ -822,6 +846,46 @@ mips_store_fpregset (struct regcache *regcache, const void *buf)
 }
 #endif /* HAVE_PTRACE_GETREGS */
 
+/* Take care of 32-bit registers with 64-bit ptrace, POKEUSER side.  */
+
+static void
+mips_collect_ptrace_register (struct regcache *regcache,
+			      int regno, char *buf)
+{
+  const struct target_desc *tdesc = current_process ()->tdesc;
+  int use_64bit = sizeof (PTRACE_XFER_TYPE) == 8;
+
+  if (use_64bit && register_size (regcache->tdesc, regno) == 4)
+    {
+      union mips_register reg;
+
+      mips_collect_register (regcache, 0, regno, &reg);
+      memcpy (buf, &reg, sizeof (reg));
+    }
+  else
+    collect_register (regcache, regno, buf);
+}
+
+/* Take care of 32-bit registers with 64-bit ptrace, PEEKUSER side.  */
+
+static void
+mips_supply_ptrace_register (struct regcache *regcache,
+			     int regno, const char *buf)
+{
+  const struct target_desc *tdesc = current_process ()->tdesc;
+  int use_64bit = sizeof (PTRACE_XFER_TYPE) == 8;
+
+  if (use_64bit && register_size (regcache->tdesc, regno) == 4)
+    {
+      union mips_register reg;
+
+      memcpy (&reg, buf, sizeof (reg));
+      mips_supply_register (regcache, 0, regno, &reg);
+    }
+  else
+    supply_register (regcache, regno, buf);
+}
+
 static struct regset_info mips_regsets[] = {
 #ifdef HAVE_PTRACE_GETREGS
   { PTRACE_GETREGS, PTRACE_SETREGS, 0, 38 * 8, GENERAL_REGS,
@@ -879,7 +943,7 @@ struct linux_target_ops the_low_target = {
   mips_regs_info,
   mips_cannot_fetch_register,
   mips_cannot_store_register,
-  NULL, /* fetch_register */
+  mips_fetch_register,
   mips_get_pc,
   mips_set_pc,
   NULL, /* breakpoint_kind_from_pc */
@@ -892,8 +956,8 @@ struct linux_target_ops the_low_target = {
   mips_remove_point,
   mips_stopped_by_watchpoint,
   mips_stopped_data_address,
-  NULL,
-  NULL,
+  mips_collect_ptrace_register,
+  mips_supply_ptrace_register,
   NULL, /* siginfo_fixup */
   mips_linux_new_process,
   mips_linux_delete_process,

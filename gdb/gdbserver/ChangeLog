@@ -1,3 +1,91 @@
+2018-05-25  Maciej W. Rozycki  <macro@mips.com>
+
+	* gdb.arch/mips-fpregset-core.exp: New test.
+	* gdb.arch/mips-fpregset-core.c: New test source.
+
+2018-05-23  Erik Kurzinger  <ekurzinger@nvidia.com>
+
+	PR server/23198
+	* hostio.c (require_int): Do not report overflow for integers
+	between 0xfffffff and 0x7fffffff.
+
+2018-05-22  Maciej W. Rozycki  <macro@mips.com>
+
+	* linux-mips-low.c [HAVE_PTRACE_GETREGS] (mips_collect_register)
+	(mips_supply_register): Move outside HAVE_PTRACE_GETREGS.
+	(mips_collect_ptrace_register, mips_supply_ptrace_register): New
+	functions.
+	(the_low_target): Wire them.
+
+2018-05-22  Pedro Franco de Carvalho  <pedromfc@linux.vnet.ibm.com>
+
+	* linux-ppc-low.c (ppc_fill_vrregset): Add vscr_offset variable.
+	Set vscr_offset to 0 in little-endian mode and 12 in big-endian
+	mode. Call collect_register_by_name with vscr using
+	vscr_offset. Zero-pad vscr and vrsave fields in collector buffer.
+	(ppc_store_vrregset): Add and set vscr_offset variable as in
+	ppc_fill_vrregset. Call supply_register_by_name with vscr using
+	vscr_offset.
+
+2018-05-22  Pedro Franco de Carvalho  <pedromfc@linux.vnet.ibm.com>
+
+	* linux-ppc-low.c (SIZEOF_VSXREGS, SIZEOF_VRREGS): Remove.
+	(ppc_arch_setup): Change SIZEOF_VRREGS and SIZEOF_VSXREGS to
+	PPC_LINUX_SIZEOF_VRREGSET and PPC_LINUX_SIZEOF_VSXREGSET.
+
+2018-05-22  Pedro Franco de Carvalho  <pedromfc@linux.vnet.ibm.com>
+
+	* linux-ppc-low.c (ppc_fill_vsxregset): Remove ppc_hwcap check.
+	(ppc_store_vsxregset): Likewise.
+	(ppc_fill_vrregset): Likewise.
+	(ppc_store_vrregset): Likewise.
+	(ppc_fill_evrregset): Likewise.
+	(ppc_store_evrregset): Likewise.
+	(ppc_regsets): Set VSX/VR/EVR regset sizes to 0.
+	(ppc_arch_setup): Iterate through ppc_regsets and set sizes when
+	needed.
+
+2018-05-22  Pedro Franco de Carvalho  <pedromfc@linux.vnet.ibm.com>
+
+	* linux-ppc-low.c (ppc_arch_setup): Remove code for getting the
+	wordsize of the inferior. Call ppc_linux_target_wordsize.
+
+2018-05-22  Pedro Franco de Carvalho  <pedromfc@linux.vnet.ibm.com>
+
+	* configure.srv (srv_tgtobj): Add arch/ppc-linux-common.o.
+	* Makefile.in (SFILES): Add arch/ppc-linux-common.c.
+	* linux-ppc-tdesc.h: Rename to linux-ppc-tdesc-init.h.
+	* linux-ppc-tdesc-init.h (tdesc_powerpc_32l, tdesc_powerpc_64l)
+	(tdesc_powerpc_altivec32l, tdesc_powerpc_altivec64l)
+	(tdesc_powerpc_cell32l, tdesc_powerpc_cell64l)
+	(tdesc_powerpc_vsx32l, tdesc_powerpc_vsx64l)
+	(tdesc_powerpc_isa205_32l, tdesc_powerpc_isa205_64l)
+	(tdesc_powerpc_isa205_altivec32l, tdesc_powerpc_isa205_altivec64l)
+	(tdesc_powerpc_isa205_vsx32l, tdesc_powerpc_isa205_vsx64l)
+	(tdesc_powerpc_e500l): Remove.
+	* linux-ppc-ipa.c: Include arch/ppc-linux-tdesc.h and
+	linux-ppc-tdesc-init.h. Don't include linux-ppc-tdesc.h.
+	* linux-ppc-low.c: Include arch/ppc-linux-common.h,
+	arch/ppc-linux-tdesc.h, and linux-ppc-tdesc-init.h. Don't include
+	linux-ppc-tdesc.h.
+	(ppc_arch_setup): Remove target description matching code. Fill a
+	ppc_linux_features struct and call ppc_linux_match_description
+	with it.
+
+2018-05-22  Maciej W. Rozycki  <macro@mips.com>
+
+	* linux-mips-low.c (mips_cannot_fetch_register): Return 1 if the
+	width of the requested register exceeds the width of the
+	`ptrace' data type.
+	(mips_cannot_store_register): Likewise.
+
+2018-05-21  Maciej W. Rozycki  <macro@mips.com>
+
+	* linux-mips-low.c (mips_fetch_register): New function.  Update
+	preceding comment.
+	(mips_store_gregset): Supply 0 rather than $restart for $zero.
+	(the_low_target): Wire `mips_fetch_register'.
+
 2018-05-10  Joel Brobecker  <brobecker@adacore.com>
 
 	* lynx-i386-low.c (LYNXOS_178): New macro.

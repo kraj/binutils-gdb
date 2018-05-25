@@ -1,3 +1,67 @@
+2018-05-24  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	PR gdb/23203
+	* gdb.base/bt-selected-frame.c: New file.
+	* gdb.base/bt-selected-frame.exp: New file.
+	* lib/gdb.exp (get_current_frame_number): New function.
+
+2018-05-24  Maciej W. Rozycki  <macro@mips.com>
+	    Pedro Alves  <palves@redhat.com>
+
+	* gdb.threads/tls-core.c: Include <stdlib.h>
+	(thread_proc): Call `abort'.
+	* gdb.threads/tls-core.exp: Generate a core with core_find too.
+	(tls_core_test): New procedure, bits factored out from ...
+	(top level): ... here.  Test both native cores and gcore cores.
+
+2018-05-23  Tom Tromey  <tom@tromey.com>
+
+	* gdb.gdb/complaints.exp (test_initial_complaints): Simplify.
+
+2018-05-23  Tom Tromey  <tom@tromey.com>
+
+	* gdb.gdb/complaints.exp (test_initial_complaints): Don't mention
+	symfile_complaints.
+	(test_short_complaints): Likewise.
+	(test_empty_complaints): Likewise.
+	(test_initial_complaints): Update.
+
+2018-05-23  Tom Tromey  <tom@tromey.com>
+
+	* gdb.gdb/complaints.exp (test_empty_complaints): Update.
+
+2018-05-23  Tom Tromey  <tom@tromey.com>
+
+	* gdb.gdb/complaints.exp (test_serial_complaints): Remove.
+	(test_short_complaints): Update.
+
+2018-05-22  Pedro Alves  <palves@redhat.com>
+
+	* gdb.base/remote.exp: Only gdb_start after compiling the
+	testcase.  Issue "disconnect" before testing "set remote" command
+	defaults.  Issue clean_restart before running to main.
+
+2018-05-22  Pedro Alves  <palves@redhat.com>
+
+	* gdb.base/remote.exp: Adjust expected output of "show remote
+	memory-write-packet-size".  Add tests for "set remote
+	memory-write-packet-size 0" and "set remote
+	memory-write-packet-size fixed/limit".
+
+2018-05-22  Pedro Alves  <palves@redhat.com>
+
+	PR gdb/22973
+	* gdb.base/utf8-identifiers.c: New file.
+	* gdb.base/utf8-identifiers.exp: New file.
+
+2018-05-22  Pedro Franco de Carvalho  <pedromfc@linux.vnet.ibm.com>
+
+	* gdb.arch/powerpc-fpscr-gcore.exp: New file.
+
+2018-05-22  Pedro Franco de Carvalho  <pedromfc@linux.vnet.ibm.com>
+
+	* gdb.arch/powerpc-vsx-gcore.exp: New file.
+
 2018-05-18  Tom Tromey  <tom@tromey.com>
 
 	* gdb.base/ptype-offsets.exp: Update.

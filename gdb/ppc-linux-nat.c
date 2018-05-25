@@ -24,6 +24,7 @@
 #include "gdbthread.h"
 #include "gdbcore.h"
 #include "regcache.h"
+#include "regset.h"
 #include "target.h"
 #include "linux-nat.h"
 #include <sys/types.h>
@@ -45,6 +46,8 @@
 #include "elf/common.h"
 #include "auxv.h"
 
+#include "arch/ppc-linux-common.h"
+#include "arch/ppc-linux-tdesc.h"
 #include "nat/ppc-linux.h"
 
 /* Similarly for the hardware watchpoint support.  These requests are used
@@ -158,23 +161,22 @@ struct ppc_hw_breakpoint
    Even though this vrsave register is not included in the regset
    typedef, it is handled by the ptrace requests.
 
-   Note that GNU/Linux doesn't support little endian PPC hardware,
-   therefore the offset at which the real value of the VSCR register
-   is located will be always 12 bytes.
-
    The layout is like this (where x is the actual value of the vscr reg): */
 
 /* *INDENT-OFF* */
 /*
+Big-Endian:
    |.|.|.|.|.....|.|.|.|.||.|.|.|x||.|
+   <------->     <-------><-------><->
+     VR0           VR31     VSCR    VRSAVE
+Little-Endian:
+   |.|.|.|.|.....|.|.|.|.||X|.|.|.||.|
    <------->     <-------><-------><->
      VR0           VR31     VSCR    VRSAVE
 */
 /* *INDENT-ON* */
 
-#define SIZEOF_VRREGS 33*16+4
-
-typedef char gdb_vrregset_t[SIZEOF_VRREGS];
+typedef char gdb_vrregset_t[PPC_LINUX_SIZEOF_VRREGSET];
 
 /* This is the layout of the POWER7 VSX registers and the way they overlap
    with the existing FPR and VMX registers.
@@ -208,9 +210,7 @@ typedef char gdb_vrregset_t[SIZEOF_VRREGS];
    the FP registers (doubleword 0) and hence extend them with additional
    64 bits (doubleword 1).  The other 32 regs overlap with the VMX
    registers.  */
-#define SIZEOF_VSXREGS 32*8
-
-typedef char gdb_vsxregset_t[SIZEOF_VSXREGS];
+typedef char gdb_vsxregset_t[PPC_LINUX_SIZEOF_VSXREGSET];
 
 /* On PPC processors that support the Signal Processing Extension
    (SPE) APU, the general-purpose registers are 64 bits long.
@@ -409,13 +409,11 @@ ppc_register_u_addr (struct gdbarch *gdbarch, int regno)
    registers set mechanism, as opposed to the interface for all the
    other registers, that stores/fetches each register individually.  */
 static void
-fetch_vsx_register (struct regcache *regcache, int tid, int regno)
+fetch_vsx_registers (struct regcache *regcache, int tid, int regno)
 {
   int ret;
   gdb_vsxregset_t regs;
-  struct gdbarch *gdbarch = regcache->arch ();
-  struct gdbarch_tdep *tdep = gdbarch_tdep (gdbarch);
-  int vsxregsize = register_size (gdbarch, tdep->ppc_vsr0_upper_regnum);
+  const struct regset *vsxregset = ppc_linux_vsxregset ();
 
   ret = ptrace (PTRACE_GETVSXREGS, tid, 0, &regs);
   if (ret < 0)
@@ -425,26 +423,24 @@ fetch_vsx_register (struct regcache *regcache, int tid, int regno)
 	  have_ptrace_getsetvsxregs = 0;
 	  return;
 	}
-      perror_with_name (_("Unable to fetch VSX register"));
+      perror_with_name (_("Unable to fetch VSX registers"));
     }
 
-  regcache_raw_supply (regcache, regno,
-		       regs + (regno - tdep->ppc_vsr0_upper_regnum)
-		       * vsxregsize);
+  vsxregset->supply_regset (vsxregset, regcache, regno, &regs,
+			    PPC_LINUX_SIZEOF_VSXREGSET);
 }
 
 /* The Linux kernel ptrace interface for AltiVec registers uses the
    registers set mechanism, as opposed to the interface for all the
    other registers, that stores/fetches each register individually.  */
 static void
-fetch_altivec_register (struct regcache *regcache, int tid, int regno)
+fetch_altivec_registers (struct regcache *regcache, int tid,
+			 int regno)
 {
   int ret;
-  int offset = 0;
   gdb_vrregset_t regs;
   struct gdbarch *gdbarch = regcache->arch ();
-  struct gdbarch_tdep *tdep = gdbarch_tdep (gdbarch);
-  int vrregsize = register_size (gdbarch, tdep->ppc_vr0_regnum);
+  const struct regset *vrregset = ppc_linux_vrregset (gdbarch);
 
   ret = ptrace (PTRACE_GETVRREGS, tid, 0, &regs);
   if (ret < 0)
@@ -454,19 +450,11 @@ fetch_altivec_register (struct regcache *regcache, int tid, int regno)
           have_ptrace_getvrregs = 0;
           return;
         }
-      perror_with_name (_("Unable to fetch AltiVec register"));
+      perror_with_name (_("Unable to fetch AltiVec registers"));
     }
- 
-  /* VSCR is fetched as a 16 bytes quantity, but it is really 4 bytes
-     long on the hardware.  We deal only with the lower 4 bytes of the
-     vector.  VRSAVE is at the end of the array in a 4 bytes slot, so
-     there is no need to define an offset for it.  */
-  if (regno == (tdep->ppc_vrsave_regnum - 1))
-    offset = vrregsize - register_size (gdbarch, tdep->ppc_vrsave_regnum);
-  
-  regcache_raw_supply (regcache, regno,
-		       regs + (regno
-			       - tdep->ppc_vr0_regnum) * vrregsize + offset);
+
+  vrregset->supply_regset (vrregset, regcache, regno, &regs,
+			   PPC_LINUX_SIZEOF_VRREGSET);
 }
 
 /* Fetch the top 32 bits of TID's general-purpose registers and the
@@ -561,7 +549,7 @@ fetch_register (struct regcache *regcache, int tid, int regno)
          register.  */
       if (have_ptrace_getvrregs)
        {
-         fetch_altivec_register (regcache, tid, regno);
+         fetch_altivec_registers (regcache, tid, regno);
          return;
        }
      /* If we have discovered that there is no ptrace support for
@@ -572,7 +560,7 @@ fetch_register (struct regcache *regcache, int tid, int regno)
     {
       if (have_ptrace_getsetvsxregs)
 	{
-	  fetch_vsx_register (regcache, tid, regno);
+	  fetch_vsx_registers (regcache, tid, regno);
 	  return;
 	}
     }
@@ -631,84 +619,6 @@ fetch_register (struct regcache *regcache, int tid, int regno)
     internal_error (__FILE__, __LINE__,
                     _("fetch_register: unexpected byte order: %d"),
                     gdbarch_byte_order (gdbarch));
-}
-
-static void
-supply_vsxregset (struct regcache *regcache, gdb_vsxregset_t *vsxregsetp)
-{
-  int i;
-  struct gdbarch *gdbarch = regcache->arch ();
-  struct gdbarch_tdep *tdep = gdbarch_tdep (gdbarch);
-  int vsxregsize = register_size (gdbarch, tdep->ppc_vsr0_upper_regnum);
-
-  for (i = 0; i < ppc_num_vshrs; i++)
-    {
-	regcache_raw_supply (regcache, tdep->ppc_vsr0_upper_regnum + i,
-			     *vsxregsetp + i * vsxregsize);
-    }
-}
-
-static void
-supply_vrregset (struct regcache *regcache, gdb_vrregset_t *vrregsetp)
-{
-  int i;
-  struct gdbarch *gdbarch = regcache->arch ();
-  struct gdbarch_tdep *tdep = gdbarch_tdep (gdbarch);
-  int num_of_vrregs = tdep->ppc_vrsave_regnum - tdep->ppc_vr0_regnum + 1;
-  int vrregsize = register_size (gdbarch, tdep->ppc_vr0_regnum);
-  int offset = vrregsize - register_size (gdbarch, tdep->ppc_vrsave_regnum);
-
-  for (i = 0; i < num_of_vrregs; i++)
-    {
-      /* The last 2 registers of this set are only 32 bit long, not
-         128.  However an offset is necessary only for VSCR because it
-         occupies a whole vector, while VRSAVE occupies a full 4 bytes
-         slot.  */
-      if (i == (num_of_vrregs - 2))
-        regcache_raw_supply (regcache, tdep->ppc_vr0_regnum + i,
-			     *vrregsetp + i * vrregsize + offset);
-      else
-        regcache_raw_supply (regcache, tdep->ppc_vr0_regnum + i,
-			     *vrregsetp + i * vrregsize);
-    }
-}
-
-static void
-fetch_vsx_registers (struct regcache *regcache, int tid)
-{
-  int ret;
-  gdb_vsxregset_t regs;
-
-  ret = ptrace (PTRACE_GETVSXREGS, tid, 0, &regs);
-  if (ret < 0)
-    {
-      if (errno == EIO)
-	{
-	  have_ptrace_getsetvsxregs = 0;
-	  return;
-	}
-      perror_with_name (_("Unable to fetch VSX registers"));
-    }
-  supply_vsxregset (regcache, &regs);
-}
-
-static void
-fetch_altivec_registers (struct regcache *regcache, int tid)
-{
-  int ret;
-  gdb_vrregset_t regs;
-  
-  ret = ptrace (PTRACE_GETVRREGS, tid, 0, &regs);
-  if (ret < 0)
-    {
-      if (errno == EIO)
-	{
-          have_ptrace_getvrregs = 0;
-	  return;
-	}
-      perror_with_name (_("Unable to fetch AltiVec registers"));
-    }
-  supply_vrregset (regcache, &regs);
 }
 
 /* This function actually issues the request to ptrace, telling
@@ -849,10 +759,10 @@ fetch_ppc_registers (struct regcache *regcache, int tid)
     fetch_register (regcache, tid, tdep->ppc_fpscr_regnum);
   if (have_ptrace_getvrregs)
     if (tdep->ppc_vr0_regnum != -1 && tdep->ppc_vrsave_regnum != -1)
-      fetch_altivec_registers (regcache, tid);
+      fetch_altivec_registers (regcache, tid, -1);
   if (have_ptrace_getsetvsxregs)
     if (tdep->ppc_vsr0_upper_regnum != -1)
-      fetch_vsx_registers (regcache, tid);
+      fetch_vsx_registers (regcache, tid, -1);
   if (tdep->ppc_ev0_upper_regnum >= 0)
     fetch_spe_register (regcache, tid, -1);
 }
@@ -871,15 +781,12 @@ ppc_linux_nat_target::fetch_registers (struct regcache *regcache, int regno)
     fetch_register (regcache, tid, regno);
 }
 
-/* Store one VSX register.  */
 static void
-store_vsx_register (const struct regcache *regcache, int tid, int regno)
+store_vsx_registers (const struct regcache *regcache, int tid, int regno)
 {
   int ret;
   gdb_vsxregset_t regs;
-  struct gdbarch *gdbarch = regcache->arch ();
-  struct gdbarch_tdep *tdep = gdbarch_tdep (gdbarch);
-  int vsxregsize = register_size (gdbarch, tdep->ppc_vsr0_upper_regnum);
+  const struct regset *vsxregset = ppc_linux_vsxregset ();
 
   ret = ptrace (PTRACE_GETVSXREGS, tid, 0, &regs);
   if (ret < 0)
@@ -889,27 +796,25 @@ store_vsx_register (const struct regcache *regcache, int tid, int regno)
 	  have_ptrace_getsetvsxregs = 0;
 	  return;
 	}
-      perror_with_name (_("Unable to fetch VSX register"));
+      perror_with_name (_("Unable to fetch VSX registers"));
     }
 
-  regcache_raw_collect (regcache, regno, regs +
-			(regno - tdep->ppc_vsr0_upper_regnum) * vsxregsize);
+  vsxregset->collect_regset (vsxregset, regcache, regno, &regs,
+			     PPC_LINUX_SIZEOF_VSXREGSET);
 
   ret = ptrace (PTRACE_SETVSXREGS, tid, 0, &regs);
   if (ret < 0)
-    perror_with_name (_("Unable to store VSX register"));
+    perror_with_name (_("Unable to store VSX registers"));
 }
 
-/* Store one register.  */
 static void
-store_altivec_register (const struct regcache *regcache, int tid, int regno)
+store_altivec_registers (const struct regcache *regcache, int tid,
+			 int regno)
 {
   int ret;
-  int offset = 0;
   gdb_vrregset_t regs;
   struct gdbarch *gdbarch = regcache->arch ();
-  struct gdbarch_tdep *tdep = gdbarch_tdep (gdbarch);
-  int vrregsize = register_size (gdbarch, tdep->ppc_vr0_regnum);
+  const struct regset *vrregset = ppc_linux_vrregset (gdbarch);
 
   ret = ptrace (PTRACE_GETVRREGS, tid, 0, &regs);
   if (ret < 0)
@@ -919,21 +824,15 @@ store_altivec_register (const struct regcache *regcache, int tid, int regno)
           have_ptrace_getvrregs = 0;
           return;
         }
-      perror_with_name (_("Unable to fetch AltiVec register"));
+      perror_with_name (_("Unable to fetch AltiVec registers"));
     }
 
-  /* VSCR is fetched as a 16 bytes quantity, but it is really 4 bytes
-     long on the hardware.  */
-  if (regno == (tdep->ppc_vrsave_regnum - 1))
-    offset = vrregsize - register_size (gdbarch, tdep->ppc_vrsave_regnum);
-
-  regcache_raw_collect (regcache, regno,
-			regs + (regno
-				- tdep->ppc_vr0_regnum) * vrregsize + offset);
+  vrregset->collect_regset (vrregset, regcache, regno, &regs,
+			    PPC_LINUX_SIZEOF_VRREGSET);
 
   ret = ptrace (PTRACE_SETVRREGS, tid, 0, &regs);
   if (ret < 0)
-    perror_with_name (_("Unable to store AltiVec register"));
+    perror_with_name (_("Unable to store AltiVec registers"));
 }
 
 /* Assuming TID referrs to an SPE process, set the top halves of TID's
@@ -1036,12 +935,12 @@ store_register (const struct regcache *regcache, int tid, int regno)
 
   if (altivec_register_p (gdbarch, regno))
     {
-      store_altivec_register (regcache, tid, regno);
+      store_altivec_registers (regcache, tid, regno);
       return;
     }
   if (vsx_register_p (gdbarch, regno))
     {
-      store_vsx_register (regcache, tid, regno);
+      store_vsx_registers (regcache, tid, regno);
       return;
     }
   else if (spe_register_p (gdbarch, regno))
@@ -1097,88 +996,6 @@ store_register (const struct regcache *regcache, int tid, int regno)
 	  perror_with_name (message);
 	}
     }
-}
-
-static void
-fill_vsxregset (const struct regcache *regcache, gdb_vsxregset_t *vsxregsetp)
-{
-  int i;
-  struct gdbarch *gdbarch = regcache->arch ();
-  struct gdbarch_tdep *tdep = gdbarch_tdep (gdbarch);
-  int vsxregsize = register_size (gdbarch, tdep->ppc_vsr0_upper_regnum);
-
-  for (i = 0; i < ppc_num_vshrs; i++)
-    regcache_raw_collect (regcache, tdep->ppc_vsr0_upper_regnum + i,
-			  *vsxregsetp + i * vsxregsize);
-}
-
-static void
-fill_vrregset (const struct regcache *regcache, gdb_vrregset_t *vrregsetp)
-{
-  int i;
-  struct gdbarch *gdbarch = regcache->arch ();
-  struct gdbarch_tdep *tdep = gdbarch_tdep (gdbarch);
-  int num_of_vrregs = tdep->ppc_vrsave_regnum - tdep->ppc_vr0_regnum + 1;
-  int vrregsize = register_size (gdbarch, tdep->ppc_vr0_regnum);
-  int offset = vrregsize - register_size (gdbarch, tdep->ppc_vrsave_regnum);
-
-  for (i = 0; i < num_of_vrregs; i++)
-    {
-      /* The last 2 registers of this set are only 32 bit long, not
-         128, but only VSCR is fetched as a 16 bytes quantity.  */
-      if (i == (num_of_vrregs - 2))
-        regcache_raw_collect (regcache, tdep->ppc_vr0_regnum + i,
-			      *vrregsetp + i * vrregsize + offset);
-      else
-        regcache_raw_collect (regcache, tdep->ppc_vr0_regnum + i,
-			      *vrregsetp + i * vrregsize);
-    }
-}
-
-static void
-store_vsx_registers (const struct regcache *regcache, int tid)
-{
-  int ret;
-  gdb_vsxregset_t regs;
-
-  ret = ptrace (PTRACE_GETVSXREGS, tid, 0, &regs);
-  if (ret < 0)
-    {
-      if (errno == EIO)
-	{
-	  have_ptrace_getsetvsxregs = 0;
-	  return;
-	}
-      perror_with_name (_("Couldn't get VSX registers"));
-    }
-
-  fill_vsxregset (regcache, &regs);
-
-  if (ptrace (PTRACE_SETVSXREGS, tid, 0, &regs) < 0)
-    perror_with_name (_("Couldn't write VSX registers"));
-}
-
-static void
-store_altivec_registers (const struct regcache *regcache, int tid)
-{
-  int ret;
-  gdb_vrregset_t regs;
-
-  ret = ptrace (PTRACE_GETVRREGS, tid, 0, &regs);
-  if (ret < 0)
-    {
-      if (errno == EIO)
-        {
-          have_ptrace_getvrregs = 0;
-          return;
-        }
-      perror_with_name (_("Couldn't get AltiVec registers"));
-    }
-
-  fill_vrregset (regcache, &regs);
-  
-  if (ptrace (PTRACE_SETVRREGS, tid, 0, &regs) < 0)
-    perror_with_name (_("Couldn't write AltiVec registers"));
 }
 
 /* This function actually issues the request to ptrace, telling
@@ -1339,24 +1156,24 @@ store_ppc_registers (const struct regcache *regcache, int tid)
     }
   if (have_ptrace_getvrregs)
     if (tdep->ppc_vr0_regnum != -1 && tdep->ppc_vrsave_regnum != -1)
-      store_altivec_registers (regcache, tid);
+      store_altivec_registers (regcache, tid, -1);
   if (have_ptrace_getsetvsxregs)
     if (tdep->ppc_vsr0_upper_regnum != -1)
-      store_vsx_registers (regcache, tid);
+      store_vsx_registers (regcache, tid, -1);
   if (tdep->ppc_ev0_upper_regnum >= 0)
     store_spe_register (regcache, tid, -1);
 }
 
 /* Fetch the AT_HWCAP entry from the aux vector.  */
-static unsigned long
+static CORE_ADDR
 ppc_linux_get_hwcap (void)
 {
   CORE_ADDR field;
 
-  if (target_auxv_search (target_stack, AT_HWCAP, &field))
-    return (unsigned long) field;
+  if (target_auxv_search (target_stack, AT_HWCAP, &field) != 1)
+    return 0;
 
-  return 0;
+  return field;
 }
 
 /* The cached DABR value, to install in new threads.
@@ -2366,35 +2183,17 @@ fill_fpregset (const struct regcache *regcache,
 			fpregsetp, sizeof (*fpregsetp));
 }
 
-static int
-ppc_linux_target_wordsize (void)
-{
-  int wordsize = 4;
-
-  /* Check for 64-bit inferior process.  This is the case when the host is
-     64-bit, and in addition the top bit of the MSR register is set.  */
-#ifdef __powerpc64__
-  long msr;
-
-  int tid = ptid_get_lwp (inferior_ptid);
-  if (tid == 0)
-    tid = ptid_get_pid (inferior_ptid);
-
-  errno = 0;
-  msr = (long) ptrace (PTRACE_PEEKUSER, tid, PT_MSR * 8, 0);
-  if (errno == 0 && ppc64_64bit_inferior_p (msr))
-    wordsize = 8;
-#endif
-
-  return wordsize;
-}
-
 int
 ppc_linux_nat_target::auxv_parse (gdb_byte **readptr,
 				  gdb_byte *endptr, CORE_ADDR *typep,
 				  CORE_ADDR *valp)
 {
-  int sizeof_auxv_field = ppc_linux_target_wordsize ();
+  int tid = ptid_get_lwp (inferior_ptid);
+  if (tid == 0)
+    tid = ptid_get_pid (inferior_ptid);
+
+  int sizeof_auxv_field = ppc_linux_target_wordsize (tid);
+
   enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch ());
   gdb_byte *ptr = *readptr;
 
@@ -2416,11 +2215,6 @@ ppc_linux_nat_target::auxv_parse (gdb_byte **readptr,
 const struct target_desc *
 ppc_linux_nat_target::read_description ()
 {
-  int altivec = 0;
-  int vsx = 0;
-  int isa205 = 0;
-  int cell = 0;
-
   int tid = ptid_get_lwp (inferior_ptid);
   if (tid == 0)
     tid = ptid_get_pid (inferior_ptid);
@@ -2438,13 +2232,19 @@ ppc_linux_nat_target::read_description ()
 	perror_with_name (_("Unable to fetch SPE registers"));
     }
 
+  struct ppc_linux_features features = ppc_linux_no_features;
+
+  features.wordsize = ppc_linux_target_wordsize (tid);
+
+  CORE_ADDR hwcap = ppc_linux_get_hwcap ();
+
   if (have_ptrace_getsetvsxregs
-      && (ppc_linux_get_hwcap () & PPC_FEATURE_HAS_VSX))
+      && (hwcap & PPC_FEATURE_HAS_VSX))
     {
       gdb_vsxregset_t vsxregset;
 
       if (ptrace (PTRACE_GETVSXREGS, tid, 0, &vsxregset) >= 0)
-	vsx = 1;
+	features.vsx = true;
 
       /* EIO means that the PTRACE_GETVSXREGS request isn't supported.
 	 Anything else needs to be reported.  */
@@ -2453,12 +2253,12 @@ ppc_linux_nat_target::read_description ()
     }
 
   if (have_ptrace_getvrregs
-      && (ppc_linux_get_hwcap () & PPC_FEATURE_HAS_ALTIVEC))
+      && (hwcap & PPC_FEATURE_HAS_ALTIVEC))
     {
       gdb_vrregset_t vrregset;
 
       if (ptrace (PTRACE_GETVRREGS, tid, 0, &vrregset) >= 0)
-        altivec = 1;
+        features.altivec = true;
 
       /* EIO means that the PTRACE_GETVRREGS request isn't supported.
 	 Anything else needs to be reported.  */
@@ -2466,39 +2266,12 @@ ppc_linux_nat_target::read_description ()
 	perror_with_name (_("Unable to fetch AltiVec registers"));
     }
 
-  /* Power ISA 2.05 (implemented by Power 6 and newer processors) increases
-     the FPSCR from 32 bits to 64 bits.  Even though Power 7 supports this
-     ISA version, it doesn't have PPC_FEATURE_ARCH_2_05 set, only
-     PPC_FEATURE_ARCH_2_06.  Since for now the only bits used in the higher
-     half of the register are for Decimal Floating Point, we check if that
-     feature is available to decide the size of the FPSCR.  */
-  if (ppc_linux_get_hwcap () & PPC_FEATURE_HAS_DFP)
-    isa205 = 1;
+  if (hwcap & PPC_FEATURE_CELL)
+    features.cell = true;
 
-  if (ppc_linux_get_hwcap () & PPC_FEATURE_CELL)
-    cell = 1;
+  features.isa205 = ppc_linux_has_isa205 (hwcap);
 
-  if (ppc_linux_target_wordsize () == 8)
-    {
-      if (cell)
-	return tdesc_powerpc_cell64l;
-      else if (vsx)
-	return isa205? tdesc_powerpc_isa205_vsx64l : tdesc_powerpc_vsx64l;
-      else if (altivec)
-	return isa205
-	  ? tdesc_powerpc_isa205_altivec64l : tdesc_powerpc_altivec64l;
-
-      return isa205? tdesc_powerpc_isa205_64l : tdesc_powerpc_64l;
-    }
-
-  if (cell)
-    return tdesc_powerpc_cell32l;
-  else if (vsx)
-    return isa205? tdesc_powerpc_isa205_vsx32l : tdesc_powerpc_vsx32l;
-  else if (altivec)
-    return isa205? tdesc_powerpc_isa205_altivec32l : tdesc_powerpc_altivec32l;
-
-  return isa205? tdesc_powerpc_isa205_32l : tdesc_powerpc_32l;
+  return ppc_linux_match_description (features);
 }
 
 void

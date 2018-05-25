@@ -23,8 +23,10 @@
 #include <elf.h>
 #include <asm/ptrace.h>
 
+#include "arch/ppc-linux-common.h"
+#include "arch/ppc-linux-tdesc.h"
 #include "nat/ppc-linux.h"
-#include "linux-ppc-tdesc.h"
+#include "linux-ppc-tdesc-init.h"
 #include "ax.h"
 #include "tracepoint.h"
 
@@ -457,16 +459,11 @@ static void ppc_fill_gregset (struct regcache *regcache, void *buf)
     ppc_collect_ptrace_register (regcache, i, (char *) buf + ppc_regmap[i]);
 }
 
-#define SIZEOF_VSXREGS 32*8
-
 static void
 ppc_fill_vsxregset (struct regcache *regcache, void *buf)
 {
   int i, base;
   char *regset = (char *) buf;
-
-  if (!(ppc_hwcap & PPC_FEATURE_HAS_VSX))
-    return;
 
   base = find_regno (regcache->tdesc, "vs0h");
   for (i = 0; i < 32; i++)
@@ -479,30 +476,32 @@ ppc_store_vsxregset (struct regcache *regcache, const void *buf)
   int i, base;
   const char *regset = (const char *) buf;
 
-  if (!(ppc_hwcap & PPC_FEATURE_HAS_VSX))
-    return;
-
   base = find_regno (regcache->tdesc, "vs0h");
   for (i = 0; i < 32; i++)
     supply_register (regcache, base + i, &regset[i * 8]);
 }
-
-#define SIZEOF_VRREGS 33*16+4
 
 static void
 ppc_fill_vrregset (struct regcache *regcache, void *buf)
 {
   int i, base;
   char *regset = (char *) buf;
-
-  if (!(ppc_hwcap & PPC_FEATURE_HAS_ALTIVEC))
-    return;
+  int vscr_offset = 0;
 
   base = find_regno (regcache->tdesc, "vr0");
   for (i = 0; i < 32; i++)
     collect_register (regcache, base + i, &regset[i * 16]);
 
-  collect_register_by_name (regcache, "vscr", &regset[32 * 16 + 12]);
+  if (__BYTE_ORDER == __BIG_ENDIAN)
+    vscr_offset = 12;
+
+  /* Zero-pad the unused bytes in the fields for vscr and vrsave in
+     case they get displayed somewhere.  */
+  memset (&regset[32 * 16], 0, 16);
+  collect_register_by_name (regcache, "vscr",
+			    &regset[32 * 16 + vscr_offset]);
+
+  memset (&regset[33 * 16], 0, 16);
   collect_register_by_name (regcache, "vrsave", &regset[33 * 16]);
 }
 
@@ -511,15 +510,17 @@ ppc_store_vrregset (struct regcache *regcache, const void *buf)
 {
   int i, base;
   const char *regset = (const char *) buf;
-
-  if (!(ppc_hwcap & PPC_FEATURE_HAS_ALTIVEC))
-    return;
+  int vscr_offset = 0;
 
   base = find_regno (regcache->tdesc, "vr0");
   for (i = 0; i < 32; i++)
     supply_register (regcache, base + i, &regset[i * 16]);
 
-  supply_register_by_name (regcache, "vscr", &regset[32 * 16 + 12]);
+  if (__BYTE_ORDER == __BIG_ENDIAN)
+    vscr_offset = 12;
+
+  supply_register_by_name (regcache, "vscr",
+			   &regset[32 * 16 + vscr_offset]);
   supply_register_by_name (regcache, "vrsave", &regset[33 * 16]);
 }
 
@@ -536,9 +537,6 @@ ppc_fill_evrregset (struct regcache *regcache, void *buf)
   int i, ev0;
   struct gdb_evrregset_t *regset = (struct gdb_evrregset_t *) buf;
 
-  if (!(ppc_hwcap & PPC_FEATURE_HAS_SPE))
-    return;
-
   ev0 = find_regno (regcache->tdesc, "ev0h");
   for (i = 0; i < 32; i++)
     collect_register (regcache, ev0 + i, &regset->evr[i]);
@@ -552,9 +550,6 @@ ppc_store_evrregset (struct regcache *regcache, const void *buf)
 {
   int i, ev0;
   const struct gdb_evrregset_t *regset = (const struct gdb_evrregset_t *) buf;
-
-  if (!(ppc_hwcap & PPC_FEATURE_HAS_SPE))
-    return;
 
   ev0 = find_regno (regcache->tdesc, "ev0h");
   for (i = 0; i < 32; i++)
@@ -577,11 +572,11 @@ static struct regset_info ppc_regsets[] = {
      fetch them every time, but still fall back to PTRACE_PEEKUSER for the
      general registers.  Some kernels support these, but not the newer
      PPC_PTRACE_GETREGS.  */
-  { PTRACE_GETVSXREGS, PTRACE_SETVSXREGS, 0, SIZEOF_VSXREGS, EXTENDED_REGS,
+  { PTRACE_GETVSXREGS, PTRACE_SETVSXREGS, 0, 0, EXTENDED_REGS,
   ppc_fill_vsxregset, ppc_store_vsxregset },
-  { PTRACE_GETVRREGS, PTRACE_SETVRREGS, 0, SIZEOF_VRREGS, EXTENDED_REGS,
+  { PTRACE_GETVRREGS, PTRACE_SETVRREGS, 0, 0, EXTENDED_REGS,
     ppc_fill_vrregset, ppc_store_vrregset },
-  { PTRACE_GETEVRREGS, PTRACE_SETEVRREGS, 0, 32 * 4 + 8 + 4, EXTENDED_REGS,
+  { PTRACE_GETEVRREGS, PTRACE_SETEVRREGS, 0, 0, EXTENDED_REGS,
     ppc_fill_evrregset, ppc_store_evrregset },
   { 0, 0, 0, 0, GENERAL_REGS, ppc_fill_gregset, NULL },
   NULL_REGSET
@@ -617,74 +612,36 @@ static void
 ppc_arch_setup (void)
 {
   const struct target_desc *tdesc;
-#ifdef __powerpc64__
-  long msr;
-  struct regcache *regcache;
+  struct regset_info *regset;
+  struct ppc_linux_features features = ppc_linux_no_features;
 
-  /* On a 64-bit host, assume 64-bit inferior process with no
-     AltiVec registers.  Reset ppc_hwcap to ensure that the
-     collect_register call below does not fail.  */
-  tdesc = tdesc_powerpc_64l;
-  current_process ()->tdesc = tdesc;
-  ppc_hwcap = 0;
+  int tid = lwpid_of (current_thread);
 
-  regcache = new_register_cache (tdesc);
-  fetch_inferior_registers (regcache, find_regno (tdesc, "msr"));
-  collect_register_by_name (regcache, "msr", &msr);
-  free_register_cache (regcache);
-  if (ppc64_64bit_inferior_p (msr))
-    {
-      ppc_get_auxv (AT_HWCAP, &ppc_hwcap);
-      if (ppc_hwcap & PPC_FEATURE_CELL)
-	tdesc = tdesc_powerpc_cell64l;
-      else if (ppc_hwcap & PPC_FEATURE_HAS_VSX)
-	{
-	  /* Power ISA 2.05 (implemented by Power 6 and newer processors)
-	     increases the FPSCR from 32 bits to 64 bits. Even though Power 7
-	     supports this ISA version, it doesn't have PPC_FEATURE_ARCH_2_05
-	     set, only PPC_FEATURE_ARCH_2_06.  Since for now the only bits
-	     used in the higher half of the register are for Decimal Floating
-	     Point, we check if that feature is available to decide the size
-	     of the FPSCR.  */
-	  if (ppc_hwcap & PPC_FEATURE_HAS_DFP)
-	    tdesc = tdesc_powerpc_isa205_vsx64l;
-	  else
-	    tdesc = tdesc_powerpc_vsx64l;
-	}
-      else if (ppc_hwcap & PPC_FEATURE_HAS_ALTIVEC)
-	{
-	  if (ppc_hwcap & PPC_FEATURE_HAS_DFP)
-	    tdesc = tdesc_powerpc_isa205_altivec64l;
-	  else
-	    tdesc = tdesc_powerpc_altivec64l;
-	}
+  features.wordsize = ppc_linux_target_wordsize (tid);
 
-      current_process ()->tdesc = tdesc;
-      return;
-    }
-#endif
+  if (features.wordsize == 4)
+      tdesc = tdesc_powerpc_32l;
+  else
+      tdesc = tdesc_powerpc_64l;
 
-  /* OK, we have a 32-bit inferior.  */
-  tdesc = tdesc_powerpc_32l;
   current_process ()->tdesc = tdesc;
 
+  /* The value of current_process ()->tdesc needs to be set for this
+     call.  */
   ppc_get_auxv (AT_HWCAP, &ppc_hwcap);
+
+  features.isa205 = ppc_linux_has_isa205 (ppc_hwcap);
+
+  if (ppc_hwcap & PPC_FEATURE_HAS_VSX)
+    features.vsx = true;
+
+  if (ppc_hwcap & PPC_FEATURE_HAS_ALTIVEC)
+    features.altivec = true;
+
   if (ppc_hwcap & PPC_FEATURE_CELL)
-    tdesc = tdesc_powerpc_cell32l;
-  else if (ppc_hwcap & PPC_FEATURE_HAS_VSX)
-    {
-      if (ppc_hwcap & PPC_FEATURE_HAS_DFP)
-	tdesc = tdesc_powerpc_isa205_vsx32l;
-      else
-	tdesc = tdesc_powerpc_vsx32l;
-    }
-  else if (ppc_hwcap & PPC_FEATURE_HAS_ALTIVEC)
-    {
-      if (ppc_hwcap & PPC_FEATURE_HAS_DFP)
-	tdesc = tdesc_powerpc_isa205_altivec32l;
-      else
-	tdesc = tdesc_powerpc_altivec32l;
-    }
+    features.cell = true;
+
+  tdesc = ppc_linux_match_description (features);
 
   /* On 32-bit machines, check for SPE registers.
      Set the low target's regmap field as appropriately.  */
@@ -707,7 +664,27 @@ ppc_arch_setup (void)
       ppc_regmap_adjusted = 1;
    }
 #endif
+
   current_process ()->tdesc = tdesc;
+
+  for (regset = ppc_regsets; regset->size >= 0; regset++)
+    switch (regset->get_request)
+      {
+      case PTRACE_GETVRREGS:
+	regset->size = features.altivec ? PPC_LINUX_SIZEOF_VRREGSET : 0;
+	break;
+      case PTRACE_GETVSXREGS:
+	regset->size = features.vsx ? PPC_LINUX_SIZEOF_VSXREGSET : 0;
+	break;
+      case PTRACE_GETEVRREGS:
+	if (ppc_hwcap & PPC_FEATURE_HAS_SPE)
+	  regset->size = 32 * 4 + 8 + 4;
+	else
+	  regset->size = 0;
+	break;
+      default:
+	break;
+      }
 }
 
 /* Implementation of linux_target_ops method "supports_tracepoints".  */
