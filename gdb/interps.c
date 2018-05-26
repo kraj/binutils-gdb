@@ -78,8 +78,8 @@ static struct interp *interp_lookup_existing (struct ui *ui,
 					      const char *name);
 
 interp::interp (const char *name)
+  : m_name (xstrdup (name))
 {
-  this->name = xstrdup (name);
   this->inited = false;
 }
 
@@ -129,7 +129,7 @@ interp_add (struct ui *ui, struct interp *interp)
 {
   struct ui_interp_info *ui_interp = get_interp_info (ui);
 
-  gdb_assert (interp_lookup_existing (ui, interp->name) == NULL);
+  gdb_assert (interp_lookup_existing (ui, interp->name ()) == NULL);
 
   interp->next = ui_interp->interp_list;
   ui_interp->interp_list = interp;
@@ -170,11 +170,11 @@ interp_set (struct interp *interp, bool top_level)
   /* We use interpreter_p for the "set interpreter" variable, so we need
      to make sure we have a malloc'ed copy for the set command to free.  */
   if (interpreter_p != NULL
-      && strcmp (interp->name, interpreter_p) != 0)
+      && strcmp (interp->name (), interpreter_p) != 0)
     {
       xfree (interpreter_p);
 
-      interpreter_p = xstrdup (interp->name);
+      interpreter_p = xstrdup (interp->name ());
     }
 
   /* Run the init proc.  */
@@ -206,7 +206,7 @@ interp_lookup_existing (struct ui *ui, const char *name)
        interp != NULL;
        interp = interp->next)
     {
-      if (strcmp (interp->name, name) == 0)
+      if (strcmp (interp->name (), name) == 0)
 	return interp;
     }
 
@@ -251,18 +251,6 @@ set_top_level_interpreter (const char *name)
   interp_set (interp, true);
 }
 
-/* Returns the current interpreter.  */
-
-struct ui_out *
-interp_ui_out (struct interp *interp)
-{
-  struct ui_interp_info *ui_interp = get_current_interp_info ();
-
-  if (interp == NULL)
-    interp = ui_interp->current_interpreter;
-  return interp->interp_ui_out ();
-}
-
 void
 current_interp_set_logging (ui_file_up logfile,
 			    bool logging_redirect)
@@ -286,14 +274,6 @@ scoped_restore_interp::set_interp (const char *name)
   return old_interp;
 }
 
-/* Returns the interpreter's name.  */
-
-const char *
-interp_name (struct interp *interp)
-{
-  return interp->name;
-}
-
 /* Returns true if the current interp is the passed in name.  */
 int
 current_interp_named_p (const char *interp_name)
@@ -302,7 +282,7 @@ current_interp_named_p (const char *interp_name)
   struct interp *interp = ui_interp->current_interpreter;
 
   if (interp != NULL)
-    return (strcmp (interp->name, interp_name) == 0);
+    return (strcmp (interp->name (), interp_name) == 0);
 
   return 0;
 }
@@ -354,18 +334,11 @@ interp_exec (struct interp *interp, const char *command_str)
 {
   struct ui_interp_info *ui_interp = get_current_interp_info ();
 
-  struct gdb_exception ex;
-  struct interp *save_command_interp;
-
   /* See `command_interp' for why we do this.  */
-  save_command_interp = ui_interp->command_interpreter;
-  ui_interp->command_interpreter = interp;
+  scoped_restore save_command_interp
+    = make_scoped_restore (&ui_interp->command_interpreter, interp);
 
-  ex = interp->exec (command_str);
-
-  ui_interp->command_interpreter = save_command_interp;
-
-  return ex;
+  return interp->exec (command_str);
 }
 
 /* A convenience routine that nulls out all the common command hooks.

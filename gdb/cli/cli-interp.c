@@ -73,9 +73,7 @@ struct cli_suppress_notification cli_suppress_notification =
 static struct cli_interp *
 as_cli_interp (struct interp *interp)
 {
-  if (strcmp (interp_name (interp), INTERP_CONSOLE) == 0)
-    return (struct cli_interp *) interp;
-  return NULL;
+  return dynamic_cast<cli_interp *> (interp);
 }
 
 /* Longjmp-safe wrapper for "execute_command".  */
@@ -356,11 +354,10 @@ safe_execute_command (struct ui_out *command_uiout, const char *command,
 		      int from_tty)
 {
   struct gdb_exception e = exception_none;
-  struct ui_out *saved_uiout;
 
   /* Save and override the global ``struct ui_out'' builder.  */
-  saved_uiout = current_uiout;
-  current_uiout = command_uiout;
+  scoped_restore saved_uiout = make_scoped_restore (&current_uiout,
+						    command_uiout);
 
   TRY
     {
@@ -371,9 +368,6 @@ safe_execute_command (struct ui_out *command_uiout, const char *command,
       e = exception;
     }
   END_CATCH
-
-  /* Restore the global builder.  */
-  current_uiout = saved_uiout;
 
   /* FIXME: cagney/2005-01-13: This shouldn't be needed.  Instead the
      caller should print the exception.  */

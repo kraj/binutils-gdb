@@ -74,8 +74,13 @@ public:
   virtual bool supports_command_editing ()
   { return false; }
 
+  const char *name () const
+  {
+    return m_name;
+  }
+
   /* This is the name in "-i=" and "set interpreter".  */
-  const char *name;
+  const char *m_name;
 
   /* Interpreters are stored in a linked list, this is the next
      one...  */
@@ -98,9 +103,6 @@ extern struct interp *interp_lookup (struct ui *ui, const char *name);
    interpreter fails to initialize.  */
 extern void set_top_level_interpreter (const char *name);
 
-extern struct ui_out *interp_ui_out (struct interp *interp);
-extern const char *interp_name (struct interp *interp);
-
 /* Temporarily set the current interpreter, and reset it on
    destruction.  */
 class scoped_restore_interp
@@ -114,7 +116,7 @@ public:
 
   ~scoped_restore_interp ()
   {
-    set_interp (interp_name (m_interp));
+    set_interp (m_interp->name ());
   }
 
   scoped_restore_interp (const scoped_restore_interp &) = delete;

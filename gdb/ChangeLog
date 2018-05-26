@@ -1,5 +1,67 @@
 2018-05-25  Tom Tromey  <tom@tromey.com>
 
+	* value.c (value::location): Initialize.
+
+2018-05-25  Tom Tromey  <tom@tromey.com>
+
+	* dbxread.c (init_bincl_list): Remove.
+	(bincl_list): Now a std::vector.
+	(bincls_allocated, next_bincl): Remove.
+	(free_bincl_list, do_free_bincl_list_cleanup)
+	(make_cleanup_free_bincl_list): Remove.
+	(dbx_read_symtab, elfstab_build_psymtabs): Use scoped_restore,
+	unique_xmalloc_ptr.
+	(find_corresponding_bincl_psymtab, read_dbx_symtab): Update.
+	(struct header_file_location): Add constructor.
+	(add_bincl_to_list): Remove.
+
+2018-05-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui.c (tui_enable): Update.
+	* mi/mi-interp.c (mi_interp::init): Update.
+	* interps.h (class interp) <name>: New method.
+	<m_name>: Rename from name.
+	(~scoped_restore_interp): Update.
+	* interps.c (interp::interp): Update.
+	(interp_add, interp_set, interp_lookup_existing)
+	(current_interp_named_p): Update.
+
+2018-05-25  Tom Tromey	<tom@tromey.com>
+
+	* interps.c (interp_name): Remove.
+	* mi/mi-interp.c (mi_interp::init): Update.
+	* interps.h (interp_name): Remove.
+	(~scoped_restore_interp): Update.
+	* tui/tui.c (tui_enable): Update.
+
+2018-05-25  Tom Tromey	<tom@tromey.com>
+
+	* utils.c (fputs_maybe_filtered): Update.
+	* linespec.c (decode_line_full): Update.
+	* mi/mi-interp.c (mi_on_normal_stop_1, mi_tsv_modified)
+	(mi_print_breakpoint_for_event, mi_solib_loaded)
+	(mi_solib_unloaded, mi_command_param_changed, mi_memory_changed)
+	(mi_user_selected_context_changed): Update.
+	* mi/mi-main.c (mi_execute_command): Update.
+	* cli/cli-script.c (execute_control_command): Update.
+	* python/python.c (execute_gdb_command): Update.
+	* solib.c (info_sharedlibrary_command): Update.
+	* interps.c (interp_ui_out): Remove.
+	* interps.h (interp_ui_out): Remove.
+
+2018-05-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-interp.c (as_tui_interp): Use dynamic_cast.
+	* mi/mi-interp.c (as_mi_interp): Use dynamic_cast.
+	* cli/cli-interp.c (as_cli_interp): Use dynamic_cast.
+
+2018-05-25  Tom Tromey  <tom@tromey.com>
+
+	* cli/cli-interp.c (safe_execute_command): Use scoped_restore.
+	* interps.c (interp_exec): Use scoped_restore.
+
+2018-05-25  Tom Tromey  <tom@tromey.com>
+
 	* remote.c (remote_target::remote_file_get): Use
 	gdb::byte_vector.
 	(remote_target::remote_file_put): Likewise.

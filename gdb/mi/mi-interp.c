@@ -106,16 +106,13 @@ display_mi_prompt (struct mi_interp *mi)
 static struct mi_interp *
 as_mi_interp (struct interp *interp)
 {
-  if (interp_ui_out (interp)->is_mi_like_p ())
-    return (struct mi_interp *) interp;
-  return NULL;
+  return dynamic_cast<mi_interp *> (interp);
 }
 
 void
 mi_interp::init (bool top_level)
 {
   mi_interp *mi = this;
-  const char *name;
   int mi_version;
 
   /* Store the current output channel, so that we can create a console
@@ -131,16 +128,15 @@ mi_interp::init (bool top_level)
   mi->targ = new mi_console_file (mi->raw_stdout, "@", '"');
   mi->event_channel = new mi_console_file (mi->raw_stdout, "=", 0);
 
-  name = interp_name (this);
   /* INTERP_MI selects the most recent released version.  "mi2" was
      released as part of GDB 6.0.  */
-  if (strcmp (name, INTERP_MI) == 0)
+  if (strcmp (name (), INTERP_MI) == 0)
     mi_version = 2;
-  else if (strcmp (name, INTERP_MI1) == 0)
+  else if (strcmp (name (), INTERP_MI1) == 0)
     mi_version = 1;
-  else if (strcmp (name, INTERP_MI2) == 0)
+  else if (strcmp (name (), INTERP_MI2) == 0)
     mi_version = 2;
-  else if (strcmp (name, INTERP_MI3) == 0)
+  else if (strcmp (name (), INTERP_MI3) == 0)
     mi_version = 3;
   else
     gdb_assert_not_reached ("unhandled MI version");
@@ -627,7 +623,7 @@ mi_on_normal_stop_1 (struct bpstats *bs, int print_frame)
   /* Since this can be called when CLI command is executing,
      using cli interpreter, be sure to use MI uiout for output,
      not the current one.  */
-  struct ui_out *mi_uiout = interp_ui_out (top_level_interpreter ());
+  struct ui_out *mi_uiout = top_level_interpreter ()->interp_ui_out ();
   struct mi_interp *mi = (struct mi_interp *) top_level_interpreter ();
 
   if (print_frame)
@@ -804,7 +800,7 @@ mi_tsv_modified (const struct trace_state_variable *tsv)
       if (mi == NULL)
 	continue;
 
-      mi_uiout = interp_ui_out (top_level_interpreter ());
+      mi_uiout = top_level_interpreter ()->interp_ui_out ();
 
       target_terminal::scoped_restore_terminal_state term_state;
       target_terminal::ours_for_output ();
@@ -831,7 +827,7 @@ mi_tsv_modified (const struct trace_state_variable *tsv)
 static void
 mi_print_breakpoint_for_event (struct mi_interp *mi, breakpoint *bp)
 {
-  ui_out *mi_uiout = interp_ui_out (mi);
+  ui_out *mi_uiout = mi->interp_ui_out ();
 
   /* We want the output from print_breakpoint to go to
      mi->event_channel.  One approach would be to just call
@@ -1092,7 +1088,7 @@ mi_solib_loaded (struct so_list *solib)
       if (mi == NULL)
 	continue;
 
-      uiout = interp_ui_out (top_level_interpreter ());
+      uiout = top_level_interpreter ()->interp_ui_out ();
 
       target_terminal::scoped_restore_terminal_state term_state;
       target_terminal::ours_for_output ();
@@ -1120,7 +1116,7 @@ mi_solib_unloaded (struct so_list *solib)
       if (mi == NULL)
 	continue;
 
-      uiout = interp_ui_out (top_level_interpreter ());
+      uiout = top_level_interpreter ()->interp_ui_out ();
 
       target_terminal::scoped_restore_terminal_state term_state;
       target_terminal::ours_for_output ();
@@ -1159,7 +1155,7 @@ mi_command_param_changed (const char *param, const char *value)
       if (mi == NULL)
 	continue;
 
-      mi_uiout = interp_ui_out (top_level_interpreter ());
+      mi_uiout = top_level_interpreter ()->interp_ui_out ();
 
       target_terminal::scoped_restore_terminal_state term_state;
       target_terminal::ours_for_output ();
@@ -1195,7 +1191,7 @@ mi_memory_changed (struct inferior *inferior, CORE_ADDR memaddr,
       if (mi == NULL)
 	continue;
 
-      mi_uiout = interp_ui_out (top_level_interpreter ());
+      mi_uiout = top_level_interpreter ()->interp_ui_out ();
 
       target_terminal::scoped_restore_terminal_state term_state;
       target_terminal::ours_for_output ();
@@ -1248,7 +1244,7 @@ mi_user_selected_context_changed (user_selected_what selection)
       if (mi == NULL)
 	continue;
 
-      mi_uiout = interp_ui_out (top_level_interpreter ());
+      mi_uiout = top_level_interpreter ()->interp_ui_out ();
 
       mi_uiout->redirect (mi->event_channel);
       ui_out_redirect_pop redirect_popper (mi_uiout);
