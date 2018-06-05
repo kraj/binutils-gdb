@@ -22,9 +22,15 @@
 
 #include "common/tdesc.h"
 
-target_desc *aarch64_create_target_description ();
+/* Create the aarch64 target description.  A non zero VQ value indicates both
+   the presence of SVE and the Vector Quotient - the number of 128bit chunks in
+   an SVE Z register.  */
 
-/* Register numbers of various important registers.  */
+target_desc *aarch64_create_target_description (uint64_t vq);
+
+/* Register numbers of various important registers.
+   Note that on SVE, the Z registers reuse the V register numbers and the V
+   registers become pseudo registers.  */
 enum aarch64_regnum
 {
   AARCH64_X0_REGNUM,		/* First integer register.  */
@@ -35,8 +41,15 @@ enum aarch64_regnum
   AARCH64_CPSR_REGNUM,		/* Current Program Status Register.  */
   AARCH64_V0_REGNUM,		/* First fp/vec register.  */
   AARCH64_V31_REGNUM = AARCH64_V0_REGNUM + 31,	/* Last fp/vec register.  */
+  AARCH64_SVE_Z0_REGNUM = AARCH64_V0_REGNUM,	/* First SVE Z register.  */
+  AARCH64_SVE_Z31_REGNUM = AARCH64_V31_REGNUM,  /* Last SVE Z register.  */
   AARCH64_FPSR_REGNUM,		/* Floating Point Status Register.  */
   AARCH64_FPCR_REGNUM,		/* Floating Point Control Register.  */
+  AARCH64_SVE_P0_REGNUM,	/* First SVE predicate register.  */
+  AARCH64_SVE_P15_REGNUM = AARCH64_SVE_P0_REGNUM + 15,	/* Last SVE predicate
+							   register.  */
+  AARCH64_SVE_FFR_REGNUM,	/* SVE First Fault Register.  */
+  AARCH64_SVE_VG_REGNUM,	/* SVE Vector Gradient.  */
 
   /* Other useful registers.  */
   AARCH64_LAST_X_ARG_REGNUM = AARCH64_X0_REGNUM + 7,
@@ -46,6 +59,30 @@ enum aarch64_regnum
 
 #define AARCH64_X_REGS_NUM 31
 #define AARCH64_V_REGS_NUM 32
+#define AARCH64_SVE_Z_REGS_NUM AARCH64_V_REGS_NUM
+#define AARCH64_SVE_P_REGS_NUM 16
 #define AARCH64_NUM_REGS AARCH64_FPCR_REGNUM + 1
+#define AARCH64_SVE_NUM_REGS AARCH64_SVE_VG_REGNUM + 1
+
+
+/* There are a number of ways of expressing the current SVE vector size:
+
+   VL : Vector Length.
+	The number of bytes in an SVE Z register.
+   VQ : Vector Quotient.
+	The number of 128bit chunks in an SVE Z register.
+   VG : Vector Gradient.
+	The number of 64bit chunks in an SVE Z register.  */
+
+#define sve_vg_from_vl(vl)	((vl) / 8)
+#define sve_vl_from_vg(vg)	((vg) * 8)
+#define sve_vq_from_vl(vl)	((vl) / 0x10)
+#define sve_vl_from_vq(vq)	((vq) * 0x10)
+#define sve_vq_from_vg(vg)	(sve_vq_from_vl (sve_vl_from_vg (vg)))
+#define sve_vg_from_vq(vq)	(sve_vg_from_vl (sve_vl_from_vq (vq)))
+
+
+/* Maximum supported VQ value.  Increase if required.  */
+#define AARCH64_MAX_SVE_VQ  16
 
 #endif /* ARCH_AARCH64_H */

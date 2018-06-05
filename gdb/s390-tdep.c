@@ -1074,10 +1074,10 @@ s390_guess_tracepoint_registers (struct gdbarch *gdbarch,
     }
 
   store_unsigned_integer (reg, sz, gdbarch_byte_order (gdbarch), pswa);
-  regcache_raw_supply (regcache, S390_PSWA_REGNUM, reg);
+  regcache->raw_supply (S390_PSWA_REGNUM, reg);
 
   store_unsigned_integer (reg, sz, gdbarch_byte_order (gdbarch), pswm);
-  regcache_raw_supply (regcache, S390_PSWM_REGNUM, reg);
+  regcache->raw_supply (S390_PSWM_REGNUM, reg);
 }
 
 /* Return the name of register REGNO.  Return the empty string for
@@ -1402,8 +1402,8 @@ s390_pseudo_register_write (struct gdbarch *gdbarch, struct regcache *regcache,
   if (regnum_is_vxr_full (tdep, regnum))
     {
       regnum -= tdep->v0_full_regnum;
-      regcache_raw_write (regcache, S390_F0_REGNUM + regnum, buf);
-      regcache_raw_write (regcache, S390_V0_LOWER_REGNUM + regnum, buf + 8);
+      regcache->raw_write (S390_F0_REGNUM + regnum, buf);
+      regcache->raw_write (S390_V0_LOWER_REGNUM + regnum, buf + 8);
       return;
     }
 
@@ -1723,10 +1723,8 @@ s390_handle_arg (struct s390_arg_state *as, struct value *arg,
 	  /* When we store a single-precision value in an FP register,
 	     it occupies the leftmost bits.  */
 	  if (write_mode)
-	    regcache_cooked_write_part (as->regcache,
-					S390_F0_REGNUM + as->fr,
-					0, length,
-					value_contents (arg));
+	    as->regcache->cooked_write_part (S390_F0_REGNUM + as->fr, 0, length,
+					     value_contents (arg));
 	  as->fr += 2;
 	}
       else
@@ -1749,9 +1747,8 @@ s390_handle_arg (struct s390_arg_state *as, struct value *arg,
 	  int regnum = S390_V24_REGNUM + use_vr[as->vr] - 24;
 
 	  if (write_mode)
-	    regcache_cooked_write_part (as->regcache, regnum,
-					0, length,
-					value_contents (arg));
+	    as->regcache->cooked_write_part (regnum, 0, length,
+					     value_contents (arg));
 	  as->vr++;
 	}
       else
@@ -1800,12 +1797,10 @@ s390_handle_arg (struct s390_arg_state *as, struct value *arg,
 	{
 	  if (write_mode)
 	    {
-	      regcache_cooked_write (as->regcache,
-				     S390_R0_REGNUM + as->gr,
-				     value_contents (arg));
-	      regcache_cooked_write (as->regcache,
-				     S390_R0_REGNUM + as->gr + 1,
-				     value_contents (arg) + word_size);
+	      as->regcache->cooked_write (S390_R0_REGNUM + as->gr,
+					  value_contents (arg));
+	      as->regcache->cooked_write (S390_R0_REGNUM + as->gr + 1,
+					  value_contents (arg) + word_size);
 	    }
 	  as->gr += 2;
 	}
@@ -1982,28 +1977,24 @@ s390_register_return_value (struct gdbarch *gdbarch, struct type *type,
     {
       /* Float-like value: left-aligned in f0.  */
       if (in != NULL)
-	regcache_cooked_write_part (regcache, S390_F0_REGNUM,
-				    0, length, in);
+	regcache->cooked_write_part (S390_F0_REGNUM, 0, length, in);
       else
-	regcache_cooked_read_part (regcache, S390_F0_REGNUM,
-				   0, length, out);
+	regcache->cooked_read_part (S390_F0_REGNUM, 0, length, out);
     }
   else if (code == TYPE_CODE_ARRAY)
     {
       /* Vector: left-aligned in v24.  */
       if (in != NULL)
-	regcache_cooked_write_part (regcache, S390_V24_REGNUM,
-				    0, length, in);
+	regcache->cooked_write_part (S390_V24_REGNUM, 0, length, in);
       else
-	regcache_cooked_read_part (regcache, S390_V24_REGNUM,
-				   0, length, out);
+	regcache->cooked_read_part (S390_V24_REGNUM, 0, length, out);
     }
   else if (length <= word_size)
     {
       /* Integer: zero- or sign-extended in r2.  */
       if (out != NULL)
-	regcache_cooked_read_part (regcache, S390_R2_REGNUM,
-				   word_size - length, length, out);
+	regcache->cooked_read_part (S390_R2_REGNUM, word_size - length, length,
+				    out);
       else if (TYPE_UNSIGNED (type))
 	regcache_cooked_write_unsigned
 	  (regcache, S390_R2_REGNUM,
@@ -2018,15 +2009,13 @@ s390_register_return_value (struct gdbarch *gdbarch, struct type *type,
       /* Double word: in r2 and r3.  */
       if (in != NULL)
 	{
-	  regcache_cooked_write (regcache, S390_R2_REGNUM, in);
-	  regcache_cooked_write (regcache, S390_R3_REGNUM,
-				 in + word_size);
+	  regcache->cooked_write (S390_R2_REGNUM, in);
+	  regcache->cooked_write (S390_R3_REGNUM, in + word_size);
 	}
       else
 	{
-	  regcache_cooked_read (regcache, S390_R2_REGNUM, out);
-	  regcache_cooked_read (regcache, S390_R3_REGNUM,
-				out + word_size);
+	  regcache->cooked_read (S390_R2_REGNUM, out);
+	  regcache->cooked_read (S390_R3_REGNUM, out + word_size);
 	}
     }
   else
@@ -2814,9 +2803,9 @@ s390_record_calc_disp_vsce (struct gdbarch *gdbarch, struct regcache *regcache,
   if (tdep->v0_full_regnum == -1 || el * es >= 16)
     return -1;
   if (vx < 16)
-    regcache_cooked_read (regcache, tdep->v0_full_regnum + vx, buf);
+    regcache->cooked_read (tdep->v0_full_regnum + vx, buf);
   else
-    regcache_raw_read (regcache, S390_V16_REGNUM + vx - 16, buf);
+    regcache->raw_read (S390_V16_REGNUM + vx - 16, buf);
   x = extract_unsigned_integer (buf + el * es, es, byte_order);
   *res = s390_record_calc_disp_common (gdbarch, regcache, x, bd, dh);
   return 0;

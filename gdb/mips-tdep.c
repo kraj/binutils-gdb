@@ -510,11 +510,9 @@ mips_xfer_register (struct gdbarch *gdbarch, struct regcache *regcache,
 	fprintf_unfiltered (gdb_stdlog, "%02x", out[buf_offset + i]);
     }
   if (in != NULL)
-    regcache_cooked_read_part (regcache, reg_num, reg_offset, length,
-			       in + buf_offset);
+    regcache->cooked_read_part (reg_num, reg_offset, length, in + buf_offset);
   if (out != NULL)
-    regcache_cooked_write_part (regcache, reg_num, reg_offset, length,
-				out + buf_offset);
+    regcache->cooked_write_part (reg_num, reg_offset, length, out + buf_offset);
   if (mips_debug && in != NULL)
     {
       int i;
@@ -775,12 +773,12 @@ mips_pseudo_register_write (struct gdbarch *gdbarch,
   gdb_assert (cookednum >= gdbarch_num_regs (gdbarch)
 	      && cookednum < 2 * gdbarch_num_regs (gdbarch));
   if (register_size (gdbarch, rawnum) == register_size (gdbarch, cookednum))
-    regcache_raw_write (regcache, rawnum, buf);
+    regcache->raw_write (rawnum, buf);
   else if (register_size (gdbarch, rawnum) >
 	   register_size (gdbarch, cookednum))
     {
       if (gdbarch_tdep (gdbarch)->mips64_transfers_32bit_regs_p)
-	regcache_raw_write_part (regcache, rawnum, 0, 4, buf);
+	regcache->raw_write_part (rawnum, 0, 4, buf);
       else
 	{
 	  /* Sign extend the shortened version of the register prior

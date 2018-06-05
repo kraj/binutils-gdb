@@ -453,10 +453,10 @@ alpha_push_dummy_call (struct gdbarch *gdbarch, struct value *function,
   /* Load the argument registers.  */
   for (i = 0; i < required_arg_regs; i++)
     {
-      regcache_cooked_write (regcache, ALPHA_A0_REGNUM + i,
-			     arg_reg_buffer + i*ALPHA_REGISTER_SIZE);
-      regcache_cooked_write (regcache, ALPHA_FPA0_REGNUM + i,
-			     arg_reg_buffer + i*ALPHA_REGISTER_SIZE);
+      regcache->cooked_write (ALPHA_A0_REGNUM + i,
+			      arg_reg_buffer + i * ALPHA_REGISTER_SIZE);
+      regcache->cooked_write (ALPHA_FPA0_REGNUM + i,
+			      arg_reg_buffer + i * ALPHA_REGISTER_SIZE);
     }
 
   /* Finally, update the stack pointer.  */
@@ -483,12 +483,12 @@ alpha_extract_return_value (struct type *valtype, struct regcache *regcache,
       switch (TYPE_LENGTH (valtype))
 	{
 	case 4:
-	  regcache_cooked_read (regcache, ALPHA_FP0_REGNUM, raw_buffer);
+	  regcache->cooked_read (ALPHA_FP0_REGNUM, raw_buffer);
 	  alpha_sts (gdbarch, valbuf, raw_buffer);
 	  break;
 
 	case 8:
-	  regcache_cooked_read (regcache, ALPHA_FP0_REGNUM, valbuf);
+	  regcache->cooked_read (ALPHA_FP0_REGNUM, valbuf);
 	  break;
 
 	case 16:
@@ -507,12 +507,12 @@ alpha_extract_return_value (struct type *valtype, struct regcache *regcache,
 	{
 	case 8:
 	  /* ??? This isn't correct wrt the ABI, but it's what GCC does.  */
-	  regcache_cooked_read (regcache, ALPHA_FP0_REGNUM, valbuf);
+	  regcache->cooked_read (ALPHA_FP0_REGNUM, valbuf);
 	  break;
 
 	case 16:
-	  regcache_cooked_read (regcache, ALPHA_FP0_REGNUM, valbuf);
-	  regcache_cooked_read (regcache, ALPHA_FP0_REGNUM + 1, valbuf + 8);
+	  regcache->cooked_read (ALPHA_FP0_REGNUM, valbuf);
+	  regcache->cooked_read (ALPHA_FP0_REGNUM + 1, valbuf + 8);
 	  break;
 
 	case 32:
@@ -552,11 +552,11 @@ alpha_store_return_value (struct type *valtype, struct regcache *regcache,
 	{
 	case 4:
 	  alpha_lds (gdbarch, raw_buffer, valbuf);
-	  regcache_cooked_write (regcache, ALPHA_FP0_REGNUM, raw_buffer);
+	  regcache->cooked_write (ALPHA_FP0_REGNUM, raw_buffer);
 	  break;
 
 	case 8:
-	  regcache_cooked_write (regcache, ALPHA_FP0_REGNUM, valbuf);
+	  regcache->cooked_write (ALPHA_FP0_REGNUM, valbuf);
 	  break;
 
 	case 16:
@@ -576,12 +576,12 @@ alpha_store_return_value (struct type *valtype, struct regcache *regcache,
 	{
 	case 8:
 	  /* ??? This isn't correct wrt the ABI, but it's what GCC does.  */
-	  regcache_cooked_write (regcache, ALPHA_FP0_REGNUM, valbuf);
+	  regcache->cooked_write (ALPHA_FP0_REGNUM, valbuf);
 	  break;
 
 	case 16:
-	  regcache_cooked_write (regcache, ALPHA_FP0_REGNUM, valbuf);
-	  regcache_cooked_write (regcache, ALPHA_FP0_REGNUM + 1, valbuf + 8);
+	  regcache->cooked_write (ALPHA_FP0_REGNUM, valbuf);
+	  regcache->cooked_write (ALPHA_FP0_REGNUM + 1, valbuf + 8);
 	  break;
 
 	case 32:
@@ -1499,20 +1499,20 @@ alpha_supply_int_regs (struct regcache *regcache, int regno,
 
   for (i = 0; i < 31; ++i)
     if (regno == i || regno == -1)
-      regcache_raw_supply (regcache, i, regs + i * 8);
+      regcache->raw_supply (i, regs + i * 8);
 
   if (regno == ALPHA_ZERO_REGNUM || regno == -1)
     {
       const gdb_byte zero[8] = { 0 };
 
-      regcache_raw_supply (regcache, ALPHA_ZERO_REGNUM, zero);
+      regcache->raw_supply (ALPHA_ZERO_REGNUM, zero);
     }
 
   if (regno == ALPHA_PC_REGNUM || regno == -1)
-    regcache_raw_supply (regcache, ALPHA_PC_REGNUM, pc);
+    regcache->raw_supply (ALPHA_PC_REGNUM, pc);
 
   if (regno == ALPHA_UNIQUE_REGNUM || regno == -1)
-    regcache_raw_supply (regcache, ALPHA_UNIQUE_REGNUM, unique);
+    regcache->raw_supply (ALPHA_UNIQUE_REGNUM, unique);
 }
 
 void
@@ -1524,13 +1524,13 @@ alpha_fill_int_regs (const struct regcache *regcache,
 
   for (i = 0; i < 31; ++i)
     if (regno == i || regno == -1)
-      regcache_raw_collect (regcache, i, regs + i * 8);
+      regcache->raw_collect (i, regs + i * 8);
 
   if (regno == ALPHA_PC_REGNUM || regno == -1)
-    regcache_raw_collect (regcache, ALPHA_PC_REGNUM, pc);
+    regcache->raw_collect (ALPHA_PC_REGNUM, pc);
 
   if (unique && (regno == ALPHA_UNIQUE_REGNUM || regno == -1))
-    regcache_raw_collect (regcache, ALPHA_UNIQUE_REGNUM, unique);
+    regcache->raw_collect (ALPHA_UNIQUE_REGNUM, unique);
 }
 
 void
@@ -1542,11 +1542,10 @@ alpha_supply_fp_regs (struct regcache *regcache, int regno,
 
   for (i = ALPHA_FP0_REGNUM; i < ALPHA_FP0_REGNUM + 31; ++i)
     if (regno == i || regno == -1)
-      regcache_raw_supply (regcache, i,
-			   regs + (i - ALPHA_FP0_REGNUM) * 8);
+      regcache->raw_supply (i, regs + (i - ALPHA_FP0_REGNUM) * 8);
 
   if (regno == ALPHA_FPCR_REGNUM || regno == -1)
-    regcache_raw_supply (regcache, ALPHA_FPCR_REGNUM, fpcr);
+    regcache->raw_supply (ALPHA_FPCR_REGNUM, fpcr);
 }
 
 void
@@ -1558,11 +1557,10 @@ alpha_fill_fp_regs (const struct regcache *regcache,
 
   for (i = ALPHA_FP0_REGNUM; i < ALPHA_FP0_REGNUM + 31; ++i)
     if (regno == i || regno == -1)
-      regcache_raw_collect (regcache, i,
-			    regs + (i - ALPHA_FP0_REGNUM) * 8);
+      regcache->raw_collect (i, regs + (i - ALPHA_FP0_REGNUM) * 8);
 
   if (regno == ALPHA_FPCR_REGNUM || regno == -1)
-    regcache_raw_collect (regcache, ALPHA_FPCR_REGNUM, fpcr);
+    regcache->raw_collect (ALPHA_FPCR_REGNUM, fpcr);
 }
 
 

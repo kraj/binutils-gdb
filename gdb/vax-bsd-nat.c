@@ -46,7 +46,7 @@ vaxbsd_supply_gregset (struct regcache *regcache, const void *gregs)
   int regnum;
 
   for (regnum = 0; regnum < VAX_NUM_REGS; regnum++)
-    regcache_raw_supply (regcache, regnum, regs + regnum * 4);
+    regcache->raw_supply (regnum, regs + regnum * 4);
 }
 
 /* Collect the general-purpose registers from REGCACHE and store them
@@ -62,7 +62,7 @@ vaxbsd_collect_gregset (const struct regcache *regcache,
   for (i = 0; i <= VAX_NUM_REGS; i++)
     {
       if (regnum == -1 || regnum == i)
-	regcache_raw_collect (regcache, i, regs + i * 4);
+	regcache->raw_collect (i, regs + i * 4);
     }
 }
 
@@ -74,7 +74,7 @@ void
 vax_bsd_nat_target::fetch_registers (struct regcache *regcache, int regnum)
 {
   struct reg regs;
-  pid_t pid = ptid_get_pid (regcache_get_ptid (regcache));
+  pid_t pid = ptid_get_pid (regcache->ptid ());
 
   if (ptrace (PT_GETREGS, pid, (PTRACE_TYPE_ARG3) &regs, 0) == -1)
     perror_with_name (_("Couldn't get registers"));
@@ -89,7 +89,7 @@ void
 vax_bsd_nat_target::store_registers (struct regcache *regcache, int regnum)
 {
   struct reg regs;
-  pid_t pid = ptid_get_pid (regcache_get_ptid (regcache));
+  pid_t pid = ptid_get_pid (regcache->ptid ());
 
   if (ptrace (PT_GETREGS, pid, (PTRACE_TYPE_ARG3) &regs, 0) == -1)
     perror_with_name (_("Couldn't get registers"));
@@ -122,12 +122,12 @@ vaxbsd_supply_pcb (struct regcache *regcache, struct pcb *pcb)
     return 0;
 
   for (regnum = VAX_R0_REGNUM; regnum < VAX_AP_REGNUM; regnum++)
-    regcache_raw_supply (regcache, regnum, &pcb->R[regnum - VAX_R0_REGNUM]);
-  regcache_raw_supply (regcache, VAX_AP_REGNUM, &pcb->AP);
-  regcache_raw_supply (regcache, VAX_FP_REGNUM, &pcb->FP);
-  regcache_raw_supply (regcache, VAX_SP_REGNUM, &pcb->KSP);
-  regcache_raw_supply (regcache, VAX_PC_REGNUM, &pcb->PC);
-  regcache_raw_supply (regcache, VAX_PS_REGNUM, &pcb->PSL);
+    regcache->raw_supply (regnum, &pcb->R[regnum - VAX_R0_REGNUM]);
+  regcache->raw_supply (VAX_AP_REGNUM, &pcb->AP);
+  regcache->raw_supply (VAX_FP_REGNUM, &pcb->FP);
+  regcache->raw_supply (VAX_SP_REGNUM, &pcb->KSP);
+  regcache->raw_supply (VAX_PC_REGNUM, &pcb->PC);
+  regcache->raw_supply (VAX_PS_REGNUM, &pcb->PSL);
 
   return 1;
 }

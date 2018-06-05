@@ -52,10 +52,10 @@ mips64obsd_supply_gregset (struct regcache *regcache, const void *gregs)
   int regnum;
 
   for (regnum = MIPS_ZERO_REGNUM; regnum <= MIPS_PC_REGNUM; regnum++)
-    regcache_raw_supply (regcache, regnum, regs + regnum * 8);
+    regcache->raw_supply (regnum, regs + regnum * 8);
 
   for (regnum = MIPS_FP0_REGNUM; regnum <= MIPS_FSR_REGNUM; regnum++)
-    regcache_raw_supply (regcache, regnum, regs + (regnum + 2) * 8);
+    regcache->raw_supply (regnum, regs + (regnum + 2) * 8);
 }
 
 /* Collect the general-purpose registers from REGCACHE and store them
@@ -71,13 +71,13 @@ mips64obsd_collect_gregset (const struct regcache *regcache,
   for (i = MIPS_ZERO_REGNUM; i <= MIPS_PC_REGNUM; i++)
     {
       if (regnum == -1 || regnum == i)
-	regcache_raw_collect (regcache, i, regs + i * 8);
+	regcache->raw_collect (i, regs + i * 8);
     }
 
   for (i = MIPS_FP0_REGNUM; i <= MIPS_FSR_REGNUM; i++)
     {
       if (regnum == -1 || regnum == i)
-	regcache_raw_collect (regcache, i, regs + (i + 2) * 8);
+	regcache->raw_collect (i, regs + (i + 2) * 8);
     }
 }
 
@@ -89,7 +89,7 @@ void
 mips64_obsd_nat_target::fetch_registers (struct regcache *regcache, int regnum)
 {
   struct reg regs;
-  pid_t pid = ptid_get_pid (regcache_get_ptid (regcache));
+  pid_t pid = ptid_get_pid (regcache->ptid ());
 
   if (ptrace (PT_GETREGS, pid, (PTRACE_TYPE_ARG3) &regs, 0) == -1)
     perror_with_name (_("Couldn't get registers"));
@@ -104,7 +104,7 @@ static void
 mips64_obsd_nat_target::store_registers (struct regcache *regcache, int regnum)
 {
   struct reg regs;
-  pid_t pid = ptid_get_pid (regcache_get_ptid (regcache));
+  pid_t pid = ptid_get_pid (regcache->ptid ());
 
   if (ptrace (PT_GETREGS, pid, (PTRACE_TYPE_ARG3) &regs, 0) == -1)
     perror_with_name (_("Couldn't get registers"));

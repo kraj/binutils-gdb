@@ -1262,16 +1262,16 @@ ctf_target::fetch_registers (struct regcache *regcache, int regno)
 	  /* Make sure we stay within block bounds.  */
 	  if (offset + regsize >= trace_regblock_size)
 	    break;
-	  if (regcache_register_status (regcache, regn) == REG_UNKNOWN)
+	  if (regcache->get_register_status (regn) == REG_UNKNOWN)
 	    {
 	      if (regno == regn)
 		{
-		  regcache_raw_supply (regcache, regno, regs + offset);
+		  regcache->raw_supply (regno, regs + offset);
 		  break;
 		}
 	      else if (regno == -1)
 		{
-		  regcache_raw_supply (regcache, regn, regs + offset);
+		  regcache->raw_supply (regn, regs + offset);
 		}
 	    }
 	  offset += regsize;

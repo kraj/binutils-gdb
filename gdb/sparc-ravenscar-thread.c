@@ -68,7 +68,7 @@ supply_register_at_address (struct regcache *regcache, int regnum,
 
   buf = (gdb_byte *) alloca (buf_size);
   read_memory (register_addr, buf, buf_size);
-  regcache_raw_supply (regcache, regnum, buf);
+  regcache->raw_supply (regnum, buf);
 }
 
 /* Return true if, for a non-running thread, REGNUM has been saved on the
@@ -172,7 +172,7 @@ sparc_ravenscar_store_registers (struct regcache *regcache, int regnum)
   else
     return;
 
-  regcache_raw_collect (regcache, regnum, buf);
+  regcache->raw_collect (regnum, buf);
   write_memory (register_address,
                 buf,
                 buf_size);

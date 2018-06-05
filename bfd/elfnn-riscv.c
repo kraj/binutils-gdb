@@ -1931,8 +1931,24 @@ riscv_elf_relocate_section (bfd *output_bfd,
 	  }
 	  break;
 
-	case R_RISCV_CALL_PLT:
 	case R_RISCV_CALL:
+	  /* Handle a call to an undefined weak function.  This won't be
+	     relaxed, so we have to handle it here.  */
+	  if (h != NULL && h->root.type == bfd_link_hash_undefweak
+	      && h->plt.offset == MINUS_ONE)
+	    {
+	      /* We can use x0 as the base register.  */
+	      bfd_vma insn = bfd_get_32 (input_bfd,
+					 contents + rel->r_offset + 4);
+	      insn &= ~(OP_MASK_RS1 << OP_SH_RS1);
+	      bfd_put_32 (input_bfd, insn, contents + rel->r_offset + 4);
+	      /* Set the relocation value so that we get 0 after the pc
+		 relative adjustment.  */
+	      relocation = sec_addr (input_section) + rel->r_offset;
+	    }
+	  /* Fall through.  */
+
+	case R_RISCV_CALL_PLT:
 	case R_RISCV_JAL:
 	case R_RISCV_RVC_JUMP:
 	  if (bfd_link_pic (info) && h != NULL && h->plt.offset != MINUS_ONE)
@@ -2708,9 +2724,12 @@ riscv_relax_delete_bytes (bfd *abfd, asection *sec, bfd_vma addr, size_t count,
 	 call to SYMBOL as well. Since both __wrap_SYMBOL and SYMBOL reference
 	 the same symbol (which is __wrap_SYMBOL), but still exist as two
 	 different symbols in 'sym_hashes', we don't want to adjust
-	 the global symbol __wrap_SYMBOL twice.
-	 This check is only relevant when symbols are being wrapped.  */
-      if (link_info->wrap_hash != NULL)
+	 the global symbol __wrap_SYMBOL twice.  */
+      /* The same problem occurs with symbols that are versioned_hidden, as
+	 foo becomes an alias for foo@BAR, and hence they need the same
+	 treatment.  */
+      if (link_info->wrap_hash != NULL
+	  || sym_hash->versioned == versioned_hidden)
 	{
 	  struct elf_link_hash_entry **cur_sym_hashes;
 

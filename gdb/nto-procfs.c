@@ -917,7 +917,7 @@ nto_procfs_target::fetch_registers (struct regcache *regcache, int regno)
   reg;
   int regsize;
 
-  procfs_set_thread (regcache_get_ptid (regcache));
+  procfs_set_thread (regcache->ptid ());
   if (devctl (ctl_fd, DCMD_PROC_GETGREG, &reg, sizeof (reg), &regsize) == EOK)
     nto_supply_gregset (regcache, (char *) &reg.greg);
   if (devctl (ctl_fd, DCMD_PROC_GETFPREG, &reg, sizeof (reg), &regsize)
@@ -1393,7 +1393,7 @@ nto_procfs_target::store_registers (struct regcache *regcache, int regno)
   unsigned off;
   int len, regset, regsize, dev_set, err;
   char *data;
-  ptid_t ptid = regcache_get_ptid (regcache);
+  ptid_t ptid = regcache->ptid ();
 
   if (ptid_equal (ptid, null_ptid))
     return;
@@ -1434,7 +1434,7 @@ nto_procfs_target::store_registers (struct regcache *regcache, int regno)
       if (len < 1)
 	return;
 
-      regcache_raw_collect (regcache, regno, (char *) &reg + off);
+      regcache->raw_collect (regno, (char *) &reg + off);
 
       err = devctl (ctl_fd, dev_set, &reg, regsize, 0);
       if (err != EOK)

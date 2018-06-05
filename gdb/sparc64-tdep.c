@@ -988,27 +988,27 @@ sparc64_pseudo_register_write (struct gdbarch *gdbarch,
   if (regnum >= SPARC64_D0_REGNUM && regnum <= SPARC64_D30_REGNUM)
     {
       regnum = SPARC_F0_REGNUM + 2 * (regnum - SPARC64_D0_REGNUM);
-      regcache_raw_write (regcache, regnum, buf);
-      regcache_raw_write (regcache, regnum + 1, buf + 4);
+      regcache->raw_write (regnum, buf);
+      regcache->raw_write (regnum + 1, buf + 4);
     }
   else if (regnum >= SPARC64_D32_REGNUM && regnum <= SPARC64_D62_REGNUM)
     {
       regnum = SPARC64_F32_REGNUM + (regnum - SPARC64_D32_REGNUM);
-      regcache_raw_write (regcache, regnum, buf);
+      regcache->raw_write (regnum, buf);
     }
   else if (regnum >= SPARC64_Q0_REGNUM && regnum <= SPARC64_Q28_REGNUM)
     {
       regnum = SPARC_F0_REGNUM + 4 * (regnum - SPARC64_Q0_REGNUM);
-      regcache_raw_write (regcache, regnum, buf);
-      regcache_raw_write (regcache, regnum + 1, buf + 4);
-      regcache_raw_write (regcache, regnum + 2, buf + 8);
-      regcache_raw_write (regcache, regnum + 3, buf + 12);
+      regcache->raw_write (regnum, buf);
+      regcache->raw_write (regnum + 1, buf + 4);
+      regcache->raw_write (regnum + 2, buf + 8);
+      regcache->raw_write (regnum + 3, buf + 12);
     }
   else if (regnum >= SPARC64_Q32_REGNUM && regnum <= SPARC64_Q60_REGNUM)
     {
       regnum = SPARC64_F32_REGNUM + 2 * (regnum - SPARC64_Q32_REGNUM);
-      regcache_raw_write (regcache, regnum, buf);
-      regcache_raw_write (regcache, regnum + 1, buf + 8);
+      regcache->raw_write (regnum, buf);
+      regcache->raw_write (regnum + 1, buf + 8);
     }
   else if (regnum == SPARC64_CWP_REGNUM
 	   || regnum == SPARC64_PSTATE_REGNUM
@@ -1226,7 +1226,7 @@ sparc64_store_floating_fields (struct regcache *regcache, struct type *type,
           len = 8;
         }
       for (int n = 0; n < (len + 3) / 4; n++)
-        regcache_cooked_write (regcache, regnum + n, valbuf + n * 4);
+        regcache->cooked_write (regnum + n, valbuf + n * 4);
     }
   else if (sparc64_floating_p (type)
       || (sparc64_complex_floating_p (type) && len <= 16))
@@ -1239,7 +1239,7 @@ sparc64_store_floating_fields (struct regcache *regcache, struct type *type,
 	  gdb_assert ((element % 2) == 0);
 
 	  regnum = gdbarch_num_regs (gdbarch) + SPARC64_Q0_REGNUM + element / 2;
-	  regcache_cooked_write (regcache, regnum, valbuf);
+	  regcache->cooked_write (regnum, valbuf);
 	}
       else if (len == 8)
 	{
@@ -1247,7 +1247,7 @@ sparc64_store_floating_fields (struct regcache *regcache, struct type *type,
 
 	  regnum = gdbarch_num_regs (gdbarch) + SPARC64_D0_REGNUM
                    + element + bitpos / 64;
-	  regcache_cooked_write (regcache, regnum, valbuf + (bitpos / 8));
+	  regcache->cooked_write (regnum, valbuf + (bitpos / 8));
 	}
       else
 	{
@@ -1255,7 +1255,7 @@ sparc64_store_floating_fields (struct regcache *regcache, struct type *type,
 	  gdb_assert (bitpos % 32 == 0 && bitpos >= 0 && bitpos < 128);
 
 	  regnum = SPARC_F0_REGNUM + element * 2 + bitpos / 32;
-	  regcache_cooked_write (regcache, regnum, valbuf + (bitpos / 8));
+	  regcache->cooked_write (regnum, valbuf + (bitpos / 8));
 	}
     }
   else if (sparc64_structure_or_union_p (type))
@@ -1285,7 +1285,7 @@ sparc64_store_floating_fields (struct regcache *regcache, struct type *type,
 	  struct type *subtype = check_typedef (TYPE_FIELD_TYPE (type, 0));
 
 	  if (sparc64_floating_p (subtype) && TYPE_LENGTH (subtype) == 4)
-	    regcache_cooked_write (regcache, SPARC_F1_REGNUM, valbuf);
+	    regcache->cooked_write (SPARC_F1_REGNUM, valbuf);
 	}
     }
 }
@@ -1310,12 +1310,12 @@ sparc64_extract_floating_fields (struct regcache *regcache, struct type *type,
       if (len < 4)
         {
           gdb_byte buf[4];
-          regcache_cooked_read (regcache, regnum, buf);
+          regcache->cooked_read (regnum, buf);
           memcpy (valbuf, buf + 4 - len, len);
         }
       else
         for (int i = 0; i < (len + 3) / 4; i++)
-          regcache_cooked_read (regcache, regnum + i, valbuf + i * 4);
+          regcache->cooked_read (regnum + i, valbuf + i * 4);
     }
   else if (sparc64_floating_p (type))
     {
@@ -1328,14 +1328,14 @@ sparc64_extract_floating_fields (struct regcache *regcache, struct type *type,
 
 	  regnum = gdbarch_num_regs (gdbarch) + SPARC64_Q0_REGNUM
                    + bitpos / 128;
-	  regcache_cooked_read (regcache, regnum, valbuf + (bitpos / 8));
+	  regcache->cooked_read (regnum, valbuf + (bitpos / 8));
 	}
       else if (len == 8)
 	{
 	  gdb_assert (bitpos % 64 == 0 && bitpos >= 0 && bitpos < 256);
 
 	  regnum = gdbarch_num_regs (gdbarch) + SPARC64_D0_REGNUM + bitpos / 64;
-	  regcache_cooked_read (regcache, regnum, valbuf + (bitpos / 8));
+	  regcache->cooked_read (regnum, valbuf + (bitpos / 8));
 	}
       else
 	{
@@ -1343,7 +1343,7 @@ sparc64_extract_floating_fields (struct regcache *regcache, struct type *type,
 	  gdb_assert (bitpos % 32 == 0 && bitpos >= 0 && bitpos < 256);
 
 	  regnum = SPARC_F0_REGNUM + bitpos / 32;
-	  regcache_cooked_read (regcache, regnum, valbuf + (bitpos / 8));
+	  regcache->cooked_read (regnum, valbuf + (bitpos / 8));
 	}
     }
   else if (sparc64_structure_or_union_p (type))
@@ -1506,7 +1506,7 @@ sparc64_store_arguments (struct regcache *regcache, int nargs,
 	    {
 	      regnum = SPARC_O0_REGNUM + element;
 	      if (len > 8 && element < 5)
-		regcache_cooked_write (regcache, regnum + 1, valbuf + 8);
+		regcache->cooked_write (regnum + 1, valbuf + 8);
 	    }
 
 	  if (element < 16)
@@ -1522,11 +1522,10 @@ sparc64_store_arguments (struct regcache *regcache, int nargs,
 	      if (len == 16)
 		{
 		  if (regnum < gdbarch_num_regs (gdbarch) + SPARC64_D30_REGNUM)
-		    regcache_cooked_write (regcache, regnum + 1, valbuf + 8);
+		    regcache->cooked_write (regnum + 1, valbuf + 8);
 		  if (regnum < gdbarch_num_regs (gdbarch) + SPARC64_D10_REGNUM)
-		    regcache_cooked_write (regcache,
-					   SPARC_O0_REGNUM + element + 1,
-					   valbuf + 8);
+		    regcache->cooked_write (SPARC_O0_REGNUM + element + 1,
+					    valbuf + 8);
 		}
 	    }
 	}
@@ -1574,7 +1573,7 @@ sparc64_store_arguments (struct regcache *regcache, int nargs,
 
       if (regnum != -1)
 	{
-	  regcache_cooked_write (regcache, regnum, valbuf);
+	  regcache->cooked_write (regnum, valbuf);
 
 	  /* If we're storing the value in a floating-point register,
              also store it in the corresponding %0 register(s).  */
@@ -1586,14 +1585,14 @@ sparc64_store_arguments (struct regcache *regcache, int nargs,
 	        {
 	          gdb_assert (element < 6);
 	          regnum = SPARC_O0_REGNUM + element;
-	          regcache_cooked_write (regcache, regnum, valbuf);
+	          regcache->cooked_write (regnum, valbuf);
                 }
               else if (regnum >= SPARC64_Q0_REGNUM && regnum <= SPARC64_Q8_REGNUM)
                 {
                   gdb_assert (element < 5);
                   regnum = SPARC_O0_REGNUM + element;
-                  regcache_cooked_write (regcache, regnum, valbuf);
-                  regcache_cooked_write (regcache, regnum + 1, valbuf + 8);
+                  regcache->cooked_write (regnum, valbuf);
+                  regcache->cooked_write (regnum + 1, valbuf + 8);
 	        }
             }
 	}
@@ -1660,7 +1659,7 @@ sparc64_extract_return_value (struct type *type, struct regcache *regcache,
       gdb_assert (len <= 32);
 
       for (i = 0; i < ((len + 7) / 8); i++)
-	regcache_cooked_read (regcache, SPARC_O0_REGNUM + i, buf + i * 8);
+	regcache->cooked_read (SPARC_O0_REGNUM + i, buf + i * 8);
       if (TYPE_CODE (type) != TYPE_CODE_UNION)
 	sparc64_extract_floating_fields (regcache, type, buf, 0);
       memcpy (valbuf, buf, len);
@@ -1669,7 +1668,7 @@ sparc64_extract_return_value (struct type *type, struct regcache *regcache,
     {
       /* Floating return values.  */
       for (i = 0; i < len / 4; i++)
-	regcache_cooked_read (regcache, SPARC_F0_REGNUM + i, buf + i * 4);
+	regcache->cooked_read (SPARC_F0_REGNUM + i, buf + i * 4);
       memcpy (valbuf, buf, len);
     }
   else if (TYPE_CODE (type) == TYPE_CODE_ARRAY)
@@ -1678,7 +1677,7 @@ sparc64_extract_return_value (struct type *type, struct regcache *regcache,
       gdb_assert (len <= 32);
 
       for (i = 0; i < ((len + 7) / 8); i++)
-	regcache_cooked_read (regcache, SPARC_O0_REGNUM + i, buf + i * 8);
+	regcache->cooked_read (SPARC_O0_REGNUM + i, buf + i * 8);
       memcpy (valbuf, buf, len);
     }
   else
@@ -1688,7 +1687,7 @@ sparc64_extract_return_value (struct type *type, struct regcache *regcache,
 
       /* Just stripping off any unused bytes should preserve the
          signed-ness just fine.  */
-      regcache_cooked_read (regcache, SPARC_O0_REGNUM, buf);
+      regcache->cooked_read (SPARC_O0_REGNUM, buf);
       memcpy (valbuf, buf + 8 - len, len);
     }
 }
@@ -1715,7 +1714,7 @@ sparc64_store_return_value (struct type *type, struct regcache *regcache,
       memset (buf, 0, sizeof (buf));
       memcpy (buf, valbuf, len);
       for (i = 0; i < ((len + 7) / 8); i++)
-	regcache_cooked_write (regcache, SPARC_O0_REGNUM + i, buf + i * 8);
+	regcache->cooked_write (SPARC_O0_REGNUM + i, buf + i * 8);
       if (TYPE_CODE (type) != TYPE_CODE_UNION)
 	sparc64_store_floating_fields (regcache, type, buf, 0, 0);
     }
@@ -1724,7 +1723,7 @@ sparc64_store_return_value (struct type *type, struct regcache *regcache,
       /* Floating return values.  */
       memcpy (buf, valbuf, len);
       for (i = 0; i < len / 4; i++)
-	regcache_cooked_write (regcache, SPARC_F0_REGNUM + i, buf + i * 4);
+	regcache->cooked_write (SPARC_F0_REGNUM + i, buf + i * 4);
     }
   else if (TYPE_CODE (type) == TYPE_CODE_ARRAY)
     {
@@ -1734,7 +1733,7 @@ sparc64_store_return_value (struct type *type, struct regcache *regcache,
       memset (buf, 0, sizeof (buf));
       memcpy (buf, valbuf, len);
       for (i = 0; i < ((len + 7) / 8); i++)
-	regcache_cooked_write (regcache, SPARC_O0_REGNUM + i, buf + i * 8);
+	regcache->cooked_write (SPARC_O0_REGNUM + i, buf + i * 8);
     }
   else
     {
@@ -1744,7 +1743,7 @@ sparc64_store_return_value (struct type *type, struct regcache *regcache,
       /* ??? Do we need to do any sign-extension here?  */
       memset (buf, 0, 8);
       memcpy (buf + 8 - len, valbuf, len);
-      regcache_cooked_write (regcache, SPARC_O0_REGNUM, buf);
+      regcache->cooked_write (SPARC_O0_REGNUM, buf);
     }
 }
 
@@ -1898,36 +1897,36 @@ sparc64_supply_gregset (const struct sparc_gregmap *gregmap,
 	  psr = ((tstate & TSTATE_CWP) | PSR_S | ((tstate & TSTATE_ICC) >> 12)
 		 | ((tstate & TSTATE_XCC) >> 20) | PSR_V8PLUS);
 	  store_unsigned_integer (buf, 4, byte_order, psr);
-	  regcache_raw_supply (regcache, SPARC32_PSR_REGNUM, buf);
+	  regcache->raw_supply (SPARC32_PSR_REGNUM, buf);
 	}
 
       if (regnum == SPARC32_PC_REGNUM || regnum == -1)
-	regcache_raw_supply (regcache, SPARC32_PC_REGNUM,
-			     regs + gregmap->r_pc_offset + 4);
+	regcache->raw_supply (SPARC32_PC_REGNUM,
+			      regs + gregmap->r_pc_offset + 4);
 
       if (regnum == SPARC32_NPC_REGNUM || regnum == -1)
-	regcache_raw_supply (regcache, SPARC32_NPC_REGNUM,
-			     regs + gregmap->r_npc_offset + 4);
+	regcache->raw_supply (SPARC32_NPC_REGNUM,
+			      regs + gregmap->r_npc_offset + 4);
 
       if (regnum == SPARC32_Y_REGNUM || regnum == -1)
 	{
 	  int offset = gregmap->r_y_offset + 8 - gregmap->r_y_size;
-	  regcache_raw_supply (regcache, SPARC32_Y_REGNUM, regs + offset);
+	  regcache->raw_supply (SPARC32_Y_REGNUM, regs + offset);
 	}
     }
   else
     {
       if (regnum == SPARC64_STATE_REGNUM || regnum == -1)
-	regcache_raw_supply (regcache, SPARC64_STATE_REGNUM,
-			     regs + gregmap->r_tstate_offset);
+	regcache->raw_supply (SPARC64_STATE_REGNUM,
+			      regs + gregmap->r_tstate_offset);
 
       if (regnum == SPARC64_PC_REGNUM || regnum == -1)
-	regcache_raw_supply (regcache, SPARC64_PC_REGNUM,
-			     regs + gregmap->r_pc_offset);
+	regcache->raw_supply (SPARC64_PC_REGNUM,
+			      regs + gregmap->r_pc_offset);
 
       if (regnum == SPARC64_NPC_REGNUM || regnum == -1)
-	regcache_raw_supply (regcache, SPARC64_NPC_REGNUM,
-			     regs + gregmap->r_npc_offset);
+	regcache->raw_supply (SPARC64_NPC_REGNUM,
+			      regs + gregmap->r_npc_offset);
 
       if (regnum == SPARC64_Y_REGNUM || regnum == -1)
 	{
@@ -1936,17 +1935,17 @@ sparc64_supply_gregset (const struct sparc_gregmap *gregmap,
 	  memset (buf, 0, 8);
 	  memcpy (buf + 8 - gregmap->r_y_size,
 		  regs + gregmap->r_y_offset, gregmap->r_y_size);
-	  regcache_raw_supply (regcache, SPARC64_Y_REGNUM, buf);
+	  regcache->raw_supply (SPARC64_Y_REGNUM, buf);
 	}
 
       if ((regnum == SPARC64_FPRS_REGNUM || regnum == -1)
 	  && gregmap->r_fprs_offset != -1)
-	regcache_raw_supply (regcache, SPARC64_FPRS_REGNUM,
-			     regs + gregmap->r_fprs_offset);
+	regcache->raw_supply (SPARC64_FPRS_REGNUM,
+			      regs + gregmap->r_fprs_offset);
     }
 
   if (regnum == SPARC_G0_REGNUM || regnum == -1)
-    regcache_raw_supply (regcache, SPARC_G0_REGNUM, &zero);
+    regcache->raw_supply (SPARC_G0_REGNUM, &zero);
 
   if ((regnum >= SPARC_G1_REGNUM && regnum <= SPARC_O7_REGNUM) || regnum == -1)
     {
@@ -1958,7 +1957,7 @@ sparc64_supply_gregset (const struct sparc_gregmap *gregmap,
       for (i = SPARC_G1_REGNUM; i <= SPARC_O7_REGNUM; i++)
 	{
 	  if (regnum == i || regnum == -1)
-	    regcache_raw_supply (regcache, i, regs + offset);
+	    regcache->raw_supply (i, regs + offset);
 	  offset += 8;
 	}
     }
@@ -1984,7 +1983,7 @@ sparc64_supply_gregset (const struct sparc_gregmap *gregmap,
 	  for (i = SPARC_L0_REGNUM; i <= SPARC_I7_REGNUM; i++)
 	    {
 	      if (regnum == i || regnum == -1)
-		regcache_raw_supply (regcache, i, regs + offset);
+		regcache->raw_supply (i, regs + offset);
 	      offset += 8;
 	    }
 	}
@@ -2011,7 +2010,7 @@ sparc64_collect_gregset (const struct sparc_gregmap *gregmap,
 	  gdb_byte buf[8];
 
 	  tstate = extract_unsigned_integer (regs + offset, 8, byte_order);
-	  regcache_raw_collect (regcache, SPARC32_PSR_REGNUM, buf);
+	  regcache->raw_collect (SPARC32_PSR_REGNUM, buf);
 	  psr = extract_unsigned_integer (buf, 4, byte_order);
 	  tstate |= (psr & PSR_ICC) << 12;
 	  if ((psr & (PSR_VERS | PSR_IMPL)) == PSR_V8PLUS)
@@ -2021,46 +2020,46 @@ sparc64_collect_gregset (const struct sparc_gregmap *gregmap,
 	}
 
       if (regnum == SPARC32_PC_REGNUM || regnum == -1)
-	regcache_raw_collect (regcache, SPARC32_PC_REGNUM,
-			      regs + gregmap->r_pc_offset + 4);
+	regcache->raw_collect (SPARC32_PC_REGNUM,
+			       regs + gregmap->r_pc_offset + 4);
 
       if (regnum == SPARC32_NPC_REGNUM || regnum == -1)
-	regcache_raw_collect (regcache, SPARC32_NPC_REGNUM,
-			      regs + gregmap->r_npc_offset + 4);
+	regcache->raw_collect (SPARC32_NPC_REGNUM,
+			       regs + gregmap->r_npc_offset + 4);
 
       if (regnum == SPARC32_Y_REGNUM || regnum == -1)
 	{
 	  int offset = gregmap->r_y_offset + 8 - gregmap->r_y_size;
-	  regcache_raw_collect (regcache, SPARC32_Y_REGNUM, regs + offset);
+	  regcache->raw_collect (SPARC32_Y_REGNUM, regs + offset);
 	}
     }
   else
     {
       if (regnum == SPARC64_STATE_REGNUM || regnum == -1)
-	regcache_raw_collect (regcache, SPARC64_STATE_REGNUM,
-			      regs + gregmap->r_tstate_offset);
+	regcache->raw_collect (SPARC64_STATE_REGNUM,
+			       regs + gregmap->r_tstate_offset);
 
       if (regnum == SPARC64_PC_REGNUM || regnum == -1)
-	regcache_raw_collect (regcache, SPARC64_PC_REGNUM,
-			      regs + gregmap->r_pc_offset);
+	regcache->raw_collect (SPARC64_PC_REGNUM,
+			       regs + gregmap->r_pc_offset);
 
       if (regnum == SPARC64_NPC_REGNUM || regnum == -1)
-	regcache_raw_collect (regcache, SPARC64_NPC_REGNUM,
-			      regs + gregmap->r_npc_offset);
+	regcache->raw_collect (SPARC64_NPC_REGNUM,
+			       regs + gregmap->r_npc_offset);
 
       if (regnum == SPARC64_Y_REGNUM || regnum == -1)
 	{
 	  gdb_byte buf[8];
 
-	  regcache_raw_collect (regcache, SPARC64_Y_REGNUM, buf);
+	  regcache->raw_collect (SPARC64_Y_REGNUM, buf);
 	  memcpy (regs + gregmap->r_y_offset,
 		  buf + 8 - gregmap->r_y_size, gregmap->r_y_size);
 	}
 
       if ((regnum == SPARC64_FPRS_REGNUM || regnum == -1)
 	  && gregmap->r_fprs_offset != -1)
-	regcache_raw_collect (regcache, SPARC64_FPRS_REGNUM,
-			      regs + gregmap->r_fprs_offset);
+	regcache->raw_collect (SPARC64_FPRS_REGNUM,
+			       regs + gregmap->r_fprs_offset);
 
     }
 
@@ -2075,7 +2074,7 @@ sparc64_collect_gregset (const struct sparc_gregmap *gregmap,
       for (i = SPARC_G1_REGNUM; i <= SPARC_O7_REGNUM; i++)
 	{
 	  if (regnum == i || regnum == -1)
-	    regcache_raw_collect (regcache, i, regs + offset);
+	    regcache->raw_collect (i, regs + offset);
 	  offset += 8;
 	}
     }
@@ -2094,7 +2093,7 @@ sparc64_collect_gregset (const struct sparc_gregmap *gregmap,
 	  for (i = SPARC_L0_REGNUM; i <= SPARC_I7_REGNUM; i++)
 	    {
 	      if (regnum == i || regnum == -1)
-		regcache_raw_collect (regcache, i, regs + offset);
+		regcache->raw_collect (i, regs + offset);
 	      offset += 8;
 	    }
 	}
@@ -2113,14 +2112,14 @@ sparc64_supply_fpregset (const struct sparc_fpregmap *fpregmap,
   for (i = 0; i < 32; i++)
     {
       if (regnum == (SPARC_F0_REGNUM + i) || regnum == -1)
-	regcache_raw_supply (regcache, SPARC_F0_REGNUM + i,
-			     regs + fpregmap->r_f0_offset + (i * 4));
+	regcache->raw_supply (SPARC_F0_REGNUM + i,
+			      regs + fpregmap->r_f0_offset + (i * 4));
     }
 
   if (sparc32)
     {
       if (regnum == SPARC32_FSR_REGNUM || regnum == -1)
-	regcache_raw_supply (regcache, SPARC32_FSR_REGNUM,
+	regcache->raw_supply (SPARC32_FSR_REGNUM,
 			     regs + fpregmap->r_fsr_offset);
     }
   else
@@ -2128,14 +2127,14 @@ sparc64_supply_fpregset (const struct sparc_fpregmap *fpregmap,
       for (i = 0; i < 16; i++)
 	{
 	  if (regnum == (SPARC64_F32_REGNUM + i) || regnum == -1)
-	    regcache_raw_supply (regcache, SPARC64_F32_REGNUM + i,
-				 (regs + fpregmap->r_f0_offset
-				  + (32 * 4) + (i * 8)));
+	    regcache->raw_supply
+	      (SPARC64_F32_REGNUM + i,
+	       regs + fpregmap->r_f0_offset + (32 * 4) + (i * 8));
 	}
 
       if (regnum == SPARC64_FSR_REGNUM || regnum == -1)
-	regcache_raw_supply (regcache, SPARC64_FSR_REGNUM,
-			     regs + fpregmap->r_fsr_offset);
+	regcache->raw_supply (SPARC64_FSR_REGNUM,
+			      regs + fpregmap->r_fsr_offset);
     }
 }
 
@@ -2151,29 +2150,29 @@ sparc64_collect_fpregset (const struct sparc_fpregmap *fpregmap,
   for (i = 0; i < 32; i++)
     {
       if (regnum == (SPARC_F0_REGNUM + i) || regnum == -1)
-	regcache_raw_collect (regcache, SPARC_F0_REGNUM + i,
-			      regs + fpregmap->r_f0_offset + (i * 4));
+	regcache->raw_collect (SPARC_F0_REGNUM + i,
+			       regs + fpregmap->r_f0_offset + (i * 4));
     }
 
   if (sparc32)
     {
       if (regnum == SPARC32_FSR_REGNUM || regnum == -1)
-	regcache_raw_collect (regcache, SPARC32_FSR_REGNUM,
-			      regs + fpregmap->r_fsr_offset);
+	regcache->raw_collect (SPARC32_FSR_REGNUM,
+			       regs + fpregmap->r_fsr_offset);
     }
   else
     {
       for (i = 0; i < 16; i++)
 	{
 	  if (regnum == (SPARC64_F32_REGNUM + i) || regnum == -1)
-	    regcache_raw_collect (regcache, SPARC64_F32_REGNUM + i,
-				  (regs + fpregmap->r_f0_offset
-				   + (32 * 4) + (i * 8)));
+	    regcache->raw_collect (SPARC64_F32_REGNUM + i,
+				   (regs + fpregmap->r_f0_offset
+				    + (32 * 4) + (i * 8)));
 	}
 
       if (regnum == SPARC64_FSR_REGNUM || regnum == -1)
-	regcache_raw_collect (regcache, SPARC64_FSR_REGNUM,
-			      regs + fpregmap->r_fsr_offset);
+	regcache->raw_collect (SPARC64_FSR_REGNUM,
+			       regs + fpregmap->r_fsr_offset);
     }
 }
 

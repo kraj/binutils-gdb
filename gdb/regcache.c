@@ -209,7 +209,7 @@ do_cooked_read (void *src, int regnum, gdb_byte *buf)
 {
   struct regcache *regcache = (struct regcache *) src;
 
-  return regcache_cooked_read (regcache, regnum, buf);
+  return regcache->cooked_read (regnum, buf);
 }
 
 readonly_detached_regcache::readonly_detached_regcache (const regcache &src)
@@ -221,16 +221,6 @@ gdbarch *
 reg_buffer::arch () const
 {
   return m_descr->gdbarch;
-}
-
-/* See regcache.h.  */
-
-ptid_t
-regcache_get_ptid (const struct regcache *regcache)
-{
-  gdb_assert (!ptid_equal (regcache->ptid (), minus_one_ptid));
-
-  return regcache->ptid ();
 }
 
 /* Cleanup class for invalidating a register.  */
@@ -248,7 +238,7 @@ public:
   ~regcache_invalidator ()
   {
     if (m_regcache != nullptr)
-      regcache_invalidate (m_regcache, m_regnum);
+      m_regcache->invalidate (m_regnum);
   }
 
   DISABLE_COPY_AND_ASSIGN (regcache_invalidator);
@@ -331,25 +321,11 @@ regcache::restore (readonly_detached_regcache *src)
 }
 
 enum register_status
-regcache_register_status (const struct regcache *regcache, int regnum)
-{
-  gdb_assert (regcache != NULL);
-  return regcache->get_register_status (regnum);
-}
-
-enum register_status
 reg_buffer::get_register_status (int regnum) const
 {
   assert_regnum (regnum);
 
   return (enum register_status) m_register_status[regnum];
-}
-
-void
-regcache_invalidate (struct regcache *regcache, int regnum)
-{
-  gdb_assert (regcache != NULL);
-  regcache->invalidate (regnum);
 }
 
 void
@@ -506,14 +482,6 @@ registers_changed (void)
 }
 
 void
-regcache_raw_update (struct regcache *regcache, int regnum)
-{
-  gdb_assert (regcache != NULL);
-
-  regcache->raw_update (regnum);
-}
-
-void
 regcache::raw_update (int regnum)
 {
   assert_regnum (regnum);
@@ -533,12 +501,6 @@ regcache::raw_update (int regnum)
       if (m_register_status[regnum] == REG_UNKNOWN)
 	m_register_status[regnum] = REG_UNAVAILABLE;
     }
-}
-
-enum register_status
-regcache_raw_read (struct regcache *regcache, int regnum, gdb_byte *buf)
-{
-  return regcache->raw_read (regnum, buf);
 }
 
 enum register_status
@@ -632,12 +594,6 @@ regcache_raw_get_signed (struct regcache *regcache, int regnum)
 }
 
 enum register_status
-regcache_cooked_read (struct regcache *regcache, int regnum, gdb_byte *buf)
-{
-  return regcache->cooked_read (regnum, buf);
-}
-
-enum register_status
 readable_regcache::cooked_read (int regnum, gdb_byte *buf)
 {
   gdb_assert (regnum >= 0);
@@ -680,12 +636,6 @@ readable_regcache::cooked_read (int regnum, gdb_byte *buf)
   else
     return gdbarch_pseudo_register_read (m_descr->gdbarch, this,
 					 regnum, buf);
-}
-
-struct value *
-regcache_cooked_read_value (struct regcache *regcache, int regnum)
-{
-  return regcache->cooked_read_value (regnum);
 }
 
 struct value *
@@ -783,14 +733,6 @@ regcache_cooked_write_unsigned (struct regcache *regcache, int regnum,
 }
 
 void
-regcache_raw_write (struct regcache *regcache, int regnum,
-		    const gdb_byte *buf)
-{
-  gdb_assert (regcache != NULL && buf != NULL);
-  regcache->raw_write (regnum, buf);
-}
-
-void
 regcache::raw_write (int regnum, const gdb_byte *buf)
 {
 
@@ -821,13 +763,6 @@ regcache::raw_write (int regnum, const gdb_byte *buf)
   /* The target did not throw an error so we can discard invalidating
      the register.  */
   invalidator.release ();
-}
-
-void
-regcache_cooked_write (struct regcache *regcache, int regnum,
-		       const gdb_byte *buf)
-{
-  regcache->cooked_write (regnum, buf);
 }
 
 void
@@ -912,25 +847,13 @@ regcache::write_part (int regnum, int offset, int len,
 }
 
 enum register_status
-regcache_raw_read_part (struct regcache *regcache, int regnum,
-			int offset, int len, gdb_byte *buf)
-{
-  return regcache->raw_read_part (regnum, offset, len, buf);
-}
-
-enum register_status
 readable_regcache::raw_read_part (int regnum, int offset, int len, gdb_byte *buf)
 {
   assert_regnum (regnum);
   return read_part (regnum, offset, len, buf, true);
 }
 
-void
-regcache_raw_write_part (struct regcache *regcache, int regnum,
-			 int offset, int len, const gdb_byte *buf)
-{
-  regcache->raw_write_part (regnum, offset, len, buf);
-}
+/* See regcache.h.  */
 
 void
 regcache::raw_write_part (int regnum, int offset, int len,
@@ -941,14 +864,6 @@ regcache::raw_write_part (int regnum, int offset, int len,
 }
 
 enum register_status
-regcache_cooked_read_part (struct regcache *regcache, int regnum,
-			   int offset, int len, gdb_byte *buf)
-{
-  return regcache->cooked_read_part (regnum, offset, len, buf);
-}
-
-
-enum register_status
 readable_regcache::cooked_read_part (int regnum, int offset, int len,
 				     gdb_byte *buf)
 {
@@ -957,27 +872,11 @@ readable_regcache::cooked_read_part (int regnum, int offset, int len,
 }
 
 void
-regcache_cooked_write_part (struct regcache *regcache, int regnum,
-			    int offset, int len, const gdb_byte *buf)
-{
-  regcache->cooked_write_part (regnum, offset, len, buf);
-}
-
-void
 regcache::cooked_write_part (int regnum, int offset, int len,
 			     const gdb_byte *buf)
 {
   gdb_assert (regnum >= 0 && regnum < m_descr->nr_cooked_registers);
   write_part (regnum, offset, len, buf, false);
-}
-
-/* Supply register REGNUM, whose contents are stored in BUF, to REGCACHE.  */
-
-void
-regcache_raw_supply (struct regcache *regcache, int regnum, const void *buf)
-{
-  gdb_assert (regcache != NULL);
-  regcache->raw_supply (regnum, buf);
 }
 
 void
@@ -1047,15 +946,6 @@ detached_regcache::raw_supply_zeroed (int regnum)
 
   memset (regbuf, 0, size);
   m_register_status[regnum] = REG_VALID;
-}
-
-/* Collect register REGNUM from REGCACHE and store its contents in BUF.  */
-
-void
-regcache_raw_collect (const struct regcache *regcache, int regnum, void *buf)
-{
-  gdb_assert (regcache != NULL && buf != NULL);
-  regcache->raw_collect (regnum, buf);
 }
 
 void

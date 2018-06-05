@@ -1,3 +1,12 @@
+2018-06-05  Nick Clifton  <nickc@redhat.com>
+
+	* po/eo.po: Updated Esperanto translation.
+	* po/ms.po: Updated Malay translation.
+
+2018-06-01  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* configure: Regenerated.
+
 2018-04-18  Nick Clifton  <nickc@redhat.com>
 
 	* po/es.po: Updated Spanish translation.

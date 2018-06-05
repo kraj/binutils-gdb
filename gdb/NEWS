@@ -3,6 +3,12 @@
 
 *** Changes since GDB 8.1
 
+* The endianness used with the 'set endian auto' mode in the absence of
+  an executable selected for debugging is now the last endianness chosen
+  either by one of the 'set endian big' and 'set endian little' commands
+  or by inferring from the last executable used, rather than the startup
+  default.
+
 * The commands 'info variables/functions/types' now show the source line
   numbers of symbol definitions when available.
 
@@ -35,6 +41,14 @@ set|show record btrace cpu
      the breakpoint's "commands" field.
 
   ** gdb.execute can now execute multi-line gdb commands.
+
+  ** The new functions gdb.convenience_variable and
+     gdb.set_convenience_variable can be used to get and set the value
+     of convenience variables.
+
+  ** A gdb.Parameter will no longer print the "set" help text on an
+     ordinary "set"; instead by default a "set" will be silent unless
+     the get_set_string method returns a non-empty string.
 
 * New targets
 

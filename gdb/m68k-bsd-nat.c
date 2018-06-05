@@ -58,7 +58,7 @@ m68kbsd_supply_gregset (struct regcache *regcache, const void *gregs)
   int regnum;
 
   for (regnum = M68K_D0_REGNUM; regnum <= M68K_PC_REGNUM; regnum++)
-    regcache_raw_supply (regcache, regnum, regs + regnum * 4);
+    regcache->raw_supply (regnum, regs + regnum * 4);
 }
 
 /* Supply the floating-point registers stored in FPREGS to REGCACHE.  */
@@ -71,8 +71,8 @@ m68kbsd_supply_fpregset (struct regcache *regcache, const void *fpregs)
   int regnum;
 
   for (regnum = M68K_FP0_REGNUM; regnum <= M68K_FPI_REGNUM; regnum++)
-    regcache_raw_supply (regcache, regnum,
-			 regs + m68kbsd_fpreg_offset (gdbarch, regnum));
+    regcache->raw_supply (regnum,
+			  regs + m68kbsd_fpreg_offset (gdbarch, regnum));
 }
 
 /* Collect the general-purpose registers from REGCACHE and store them
@@ -88,7 +88,7 @@ m68kbsd_collect_gregset (const struct regcache *regcache,
   for (i = M68K_D0_REGNUM; i <= M68K_PC_REGNUM; i++)
     {
       if (regnum == -1 || regnum == i)
-	regcache_raw_collect (regcache, i, regs + i * 4);
+	regcache->raw_collect (i, regs + i * 4);
     }
 }
 
@@ -106,8 +106,7 @@ m68kbsd_collect_fpregset (struct regcache *regcache,
   for (i = M68K_FP0_REGNUM; i <= M68K_FPI_REGNUM; i++)
     {
       if (regnum == -1 || regnum == i)
-	regcache_raw_collect (regcache, i,
-			      regs + m68kbsd_fpreg_offset (gdbarch, i));
+	regcache->raw_collect (i, regs + m68kbsd_fpreg_offset (gdbarch, i));
     }
 }
 
@@ -118,7 +117,7 @@ m68kbsd_collect_fpregset (struct regcache *regcache,
 void
 m68k_bsd_nat_target::fetch_registers (struct regcache *regcache, int regnum)
 {
-  pid_t pid = ptid_get_pid (regcache_get_ptid (regcache));
+  pid_t pid = ptid_get_pid (regcache->ptid ());
 
   if (regnum == -1 || m68kbsd_gregset_supplies_p (regnum))
     {
@@ -147,7 +146,7 @@ m68k_bsd_nat_target::fetch_registers (struct regcache *regcache, int regnum)
 void
 m68k_bsd_nat_target::store_registers (struct regcache *regcache, int regnum)
 {
-  pid_t pid = ptid_get_pid (regcache_get_ptid (regcache));
+  pid_t pid = ptid_get_pid (regcache->ptid ());
 
   if (regnum == -1 || m68kbsd_gregset_supplies_p (regnum))
     {
@@ -209,15 +208,15 @@ m68kbsd_supply_pcb (struct regcache *regcache, struct pcb *pcb)
     return 0;
 
   for (regnum = M68K_D2_REGNUM; regnum <= M68K_D7_REGNUM; regnum++)
-    regcache_raw_supply (regcache, regnum, &pcb->pcb_regs[i++]);
+    regcache->raw_supply (regnum, &pcb->pcb_regs[i++]);
   for (regnum = M68K_A2_REGNUM; regnum <= M68K_SP_REGNUM; regnum++)
-    regcache_raw_supply (regcache, regnum, &pcb->pcb_regs[i++]);
+    regcache->raw_supply (regnum, &pcb->pcb_regs[i++]);
 
   tmp = pcb->pcb_ps & 0xffff;
-  regcache_raw_supply (regcache, M68K_PS_REGNUM, &tmp);
+  regcache->raw_supply (M68K_PS_REGNUM, &tmp);
 
   read_memory (pcb->pcb_regs[PCB_REGS_FP] + 4, (char *) &tmp, sizeof tmp);
-  regcache_raw_supply (regcache, M68K_PC_REGNUM, &tmp);
+  regcache->raw_supply (M68K_PC_REGNUM, &tmp);
 
   return 1;
 }

@@ -194,7 +194,7 @@ mips_fill_gregset (const struct regcache *regcache,
   if (regno > 0 && regno < 32)
     {
       dst = regp + regno + EF_REG0;
-      regcache_raw_collect (regcache, regno, dst);
+      regcache->raw_collect (regno, dst);
       return;
     }
 
@@ -219,7 +219,7 @@ mips_fill_gregset (const struct regcache *regcache,
   if (regaddr != -1)
     {
       dst = regp + regaddr;
-      regcache_raw_collect (regcache, regno, dst);
+      regcache->raw_collect (regno, dst);
     }
 }
 
@@ -282,9 +282,9 @@ supply_64bit_reg (struct regcache *regcache, int regnum,
   struct gdbarch *gdbarch = regcache->arch ();
   if (gdbarch_byte_order (gdbarch) == BFD_ENDIAN_BIG
       && register_size (gdbarch, regnum) == 4)
-    regcache_raw_supply (regcache, regnum, buf + 4);
+    regcache->raw_supply (regnum, buf + 4);
   else
-    regcache_raw_supply (regcache, regnum, buf);
+    regcache->raw_supply (regnum, buf);
 }
 
 /* Unpack a 64-bit elf_gregset_t into GDB's register cache.  */
@@ -422,15 +422,12 @@ mips64_supply_fpregset (struct regcache *regcache,
 	  = (const gdb_byte *) (*fpregsetp + (regi & ~1));
 	if ((gdbarch_byte_order (gdbarch) == BFD_ENDIAN_BIG) != (regi & 1))
 	  reg_ptr += 4;
-	regcache_raw_supply (regcache,
-			     gdbarch_fp0_regnum (gdbarch) + regi,
-			     reg_ptr);
+	regcache->raw_supply (gdbarch_fp0_regnum (gdbarch) + regi, reg_ptr);
       }
   else
     for (regi = 0; regi < 32; regi++)
-      regcache_raw_supply (regcache,
-			   gdbarch_fp0_regnum (gdbarch) + regi,
-			   (const char *) (*fpregsetp + regi));
+      regcache->raw_supply (gdbarch_fp0_regnum (gdbarch) + regi,
+			    (const char *) (*fpregsetp + regi));
 
   supply_32bit_reg (regcache, mips_regnum (gdbarch)->fp_control_status,
 		    (const gdb_byte *) (*fpregsetp + 32));
@@ -474,13 +471,13 @@ mips64_fill_fpregset (const struct regcache *regcache,
 	  to = (gdb_byte *) (*fpregsetp + (regi & ~1));
 	  if ((gdbarch_byte_order (gdbarch) == BFD_ENDIAN_BIG) != (regi & 1))
 	    to += 4;
-	  regcache_raw_collect (regcache, regno, to);
+	  regcache->raw_collect (regno, to);
 	}
       else
 	{
 	  to = (gdb_byte *) (*fpregsetp + regno
 			     - gdbarch_fp0_regnum (gdbarch));
-	  regcache_raw_collect (regcache, regno, to);
+	  regcache->raw_collect (regno, to);
 	}
     }
   else if (regno == mips_regnum (gdbarch)->fp_control_status)
@@ -1337,7 +1334,7 @@ mips_linux_get_syscall_number (struct gdbarch *gdbarch,
 
   /* Getting the system call number from the register.
      syscall number is in v0 or $2.  */
-  regcache_cooked_read (regcache, MIPS_V0_REGNUM, buf);
+  regcache->cooked_read (MIPS_V0_REGNUM, buf);
 
   ret = extract_signed_integer (buf, regsize, byte_order);
 

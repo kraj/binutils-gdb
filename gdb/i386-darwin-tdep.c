@@ -189,8 +189,7 @@ i386_darwin_push_dummy_call (struct gdbarch *gdbarch, struct value *function,
               if (write_pass)
                 {
                   const gdb_byte *val = value_contents_all (args[i]);
-                  regcache_raw_write
-                    (regcache, I387_MM0_REGNUM(tdep) + num_m128, val);
+                  regcache->raw_write (I387_MM0_REGNUM(tdep) + num_m128, val);
                 }
               num_m128++;
             }
@@ -228,10 +227,10 @@ i386_darwin_push_dummy_call (struct gdbarch *gdbarch, struct value *function,
 
   /* Finally, update the stack pointer...  */
   store_unsigned_integer (buf, 4, byte_order, sp);
-  regcache_cooked_write (regcache, I386_ESP_REGNUM, buf);
+  regcache->cooked_write (I386_ESP_REGNUM, buf);
 
   /* ...and fake a frame pointer.  */
-  regcache_cooked_write (regcache, I386_EBP_REGNUM, buf);
+  regcache->cooked_write (I386_EBP_REGNUM, buf);
 
   /* MarkK wrote: This "+ 8" is all over the place:
      (i386_frame_this_id, i386_sigtramp_frame_this_id,

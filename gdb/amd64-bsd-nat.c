@@ -42,7 +42,7 @@ void
 amd64bsd_fetch_inferior_registers (struct regcache *regcache, int regnum)
 {
   struct gdbarch *gdbarch = regcache->arch ();
-  pid_t pid = get_ptrace_pid (regcache_get_ptid (regcache));
+  pid_t pid = get_ptrace_pid (regcache->ptid ());
 
   if (regnum == -1 || amd64_native_gregset_supplies_p (gdbarch, regnum))
     {
@@ -64,7 +64,7 @@ amd64bsd_fetch_inferior_registers (struct regcache *regcache, int regnum)
       if (ptrace (PT_GETFSBASE, pid, (PTRACE_TYPE_ARG3) &base, 0) == -1)
 	perror_with_name (_("Couldn't get segment register fs_base"));
 
-      regcache_raw_supply (regcache, AMD64_FSBASE_REGNUM, &base);
+      regcache->raw_supply (AMD64_FSBASE_REGNUM, &base);
       if (regnum != -1)
 	return;
     }
@@ -77,7 +77,7 @@ amd64bsd_fetch_inferior_registers (struct regcache *regcache, int regnum)
       if (ptrace (PT_GETGSBASE, pid, (PTRACE_TYPE_ARG3) &base, 0) == -1)
 	perror_with_name (_("Couldn't get segment register gs_base"));
 
-      regcache_raw_supply (regcache, AMD64_GSBASE_REGNUM, &base);
+      regcache->raw_supply (AMD64_GSBASE_REGNUM, &base);
       if (regnum != -1)
 	return;
     }
@@ -115,7 +115,7 @@ void
 amd64bsd_store_inferior_registers (struct regcache *regcache, int regnum)
 {
   struct gdbarch *gdbarch = regcache->arch ();
-  pid_t pid = get_ptrace_pid (regcache_get_ptid (regcache));
+  pid_t pid = get_ptrace_pid (regcache->ptid ());
 
   if (regnum == -1 || amd64_native_gregset_supplies_p (gdbarch, regnum))
     {
@@ -138,7 +138,7 @@ amd64bsd_store_inferior_registers (struct regcache *regcache, int regnum)
     {
       register_t base;
 
-      regcache_raw_collect (regcache, AMD64_FSBASE_REGNUM, &base);
+      regcache->raw_collect (AMD64_FSBASE_REGNUM, &base);
 
       if (ptrace (PT_SETFSBASE, pid, (PTRACE_TYPE_ARG3) &base, 0) == -1)
 	perror_with_name (_("Couldn't write segment register fs_base"));
@@ -151,7 +151,7 @@ amd64bsd_store_inferior_registers (struct regcache *regcache, int regnum)
     {
       register_t base;
 
-      regcache_raw_collect (regcache, AMD64_GSBASE_REGNUM, &base);
+      regcache->raw_collect (AMD64_GSBASE_REGNUM, &base);
 
       if (ptrace (PT_SETGSBASE, pid, (PTRACE_TYPE_ARG3) &base, 0) == -1)
 	perror_with_name (_("Couldn't write segment register gs_base"));

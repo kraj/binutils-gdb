@@ -229,11 +229,11 @@ fetch_register (struct regcache *regcache, int regno)
 
   if (gdbarch_cannot_fetch_register (gdbarch, regno))
     {
-      regcache_raw_supply (regcache, regno, NULL);
+      regcache->raw_supply (regno, NULL);
       return;
     }
 
-  tid = get_ptrace_pid (regcache_get_ptid (regcache));
+  tid = get_ptrace_pid (regcache->ptid ());
 
   errno = 0;
   val = ptrace (PTRACE_PEEKUSER, tid, hppa_linux_register_addr (regno, 0), 0);
@@ -242,7 +242,7 @@ fetch_register (struct regcache *regcache, int regno)
 	   gdbarch_register_name (gdbarch, regno),
 	   regno, safe_strerror (errno));
 
-  regcache_raw_supply (regcache, regno, &val);
+  regcache->raw_supply (regno, &val);
 }
 
 /* Store one register.  */
@@ -257,10 +257,10 @@ store_register (const struct regcache *regcache, int regno)
   if (gdbarch_cannot_store_register (gdbarch, regno))
     return;
 
-  tid = get_ptrace_pid (regcache_get_ptid (regcache));
+  tid = get_ptrace_pid (regcache->ptid ());
 
   errno = 0;
-  regcache_raw_collect (regcache, regno, &val);
+  regcache->raw_collect (regno, &val);
   ptrace (PTRACE_POKEUSER, tid, hppa_linux_register_addr (regno, 0), val);
   if (errno != 0)
     error (_("Couldn't write register %s (#%d): %s."),
@@ -321,7 +321,7 @@ supply_gregset (struct regcache *regcache, const gdb_gregset_t *gregsetp)
   for (i = 0; i < sizeof (greg_map) / sizeof (greg_map[0]); i++, regp++)
     {
       int regno = greg_map[i];
-      regcache_raw_supply (regcache, regno, regp);
+      regcache->raw_supply (regno, regp);
     }
 }
 
@@ -340,9 +340,7 @@ fill_gregset (const struct regcache *regcache,
       int mregno = greg_map[i];
 
       if (regno == -1 || regno == mregno)
-	{
-          regcache_raw_collect(regcache, mregno, &(*gregsetp)[i]);
-	}
+	regcache->raw_collect (mregno, &(*gregsetp)[i]);
     }
 }
 
@@ -359,8 +357,8 @@ supply_fpregset (struct regcache *regcache, const gdb_fpregset_t *fpregsetp)
   for (regi = 0; regi <= 31; regi++)
     {
       from = (const char *) &((*fpregsetp)[regi]);
-      regcache_raw_supply (regcache, 2*regi + HPPA_FP0_REGNUM, from);
-      regcache_raw_supply (regcache, 2*regi + HPPA_FP0_REGNUM + 1, from + 4);
+      regcache->raw_supply (2*regi + HPPA_FP0_REGNUM, from);
+      regcache->raw_supply (2*regi + HPPA_FP0_REGNUM + 1, from + 4);
     }
 }
 
@@ -382,7 +380,7 @@ fill_fpregset (const struct regcache *regcache,
       char *to = (char *) &((*fpregsetp)[(i - HPPA_FP0_REGNUM) / 2]);
       if ((i - HPPA_FP0_REGNUM) & 1)
 	to += 4;
-      regcache_raw_collect (regcache, i, to);
+      regcache->raw_collect (i, to);
    }
 }
 

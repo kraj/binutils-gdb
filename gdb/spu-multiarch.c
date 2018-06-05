@@ -189,7 +189,7 @@ spu_multiarch_target::fetch_registers (struct regcache *regcache, int regno)
   /* Since we use functions that rely on inferior_ptid, we need to set and
      restore it.  */
   scoped_restore save_ptid
-    = make_scoped_restore (&inferior_ptid, regcache_get_ptid (regcache));
+    = make_scoped_restore (&inferior_ptid, regcache->ptid ());
 
   /* This version applies only if we're currently in spu_run.  */
   if (gdbarch_bfd_arch_info (gdbarch)->arch != bfd_arch_spu)
@@ -207,7 +207,7 @@ spu_multiarch_target::fetch_registers (struct regcache *regcache, int regno)
     {
       gdb_byte buf[4];
       store_unsigned_integer (buf, 4, byte_order, spufs_fd);
-      regcache_raw_supply (regcache, SPU_ID_REGNUM, buf);
+      regcache->raw_supply (SPU_ID_REGNUM, buf);
     }
 
   /* The NPC register is found in PPC memory at SPUFS_ADDR.  */
@@ -217,7 +217,7 @@ spu_multiarch_target::fetch_registers (struct regcache *regcache, int regno)
 
       if (target_read (ops_beneath, TARGET_OBJECT_MEMORY, NULL,
 		       buf, spufs_addr, sizeof buf) == sizeof buf)
-	regcache_raw_supply (regcache, SPU_PC_REGNUM, buf);
+	regcache->raw_supply (SPU_PC_REGNUM, buf);
     }
 
   /* The GPRs are found in the "regs" spufs file.  */
@@ -231,7 +231,7 @@ spu_multiarch_target::fetch_registers (struct regcache *regcache, int regno)
       if (target_read (ops_beneath, TARGET_OBJECT_SPU, annex,
 		       buf, 0, sizeof buf) == sizeof buf)
 	for (i = 0; i < SPU_NUM_GPRS; i++)
-	  regcache_raw_supply (regcache, i, buf + i*16);
+	  regcache->raw_supply (i, buf + i*16);
     }
 }
 
@@ -248,7 +248,7 @@ spu_multiarch_target::store_registers (struct regcache *regcache, int regno)
   /* Since we use functions that rely on inferior_ptid, we need to set and
      restore it.  */
   scoped_restore save_ptid
-    = make_scoped_restore (&inferior_ptid, regcache_get_ptid (regcache));
+    = make_scoped_restore (&inferior_ptid, regcache->ptid ());
 
   /* This version applies only if we're currently in spu_run.  */
   if (gdbarch_bfd_arch_info (gdbarch)->arch != bfd_arch_spu)
@@ -265,7 +265,7 @@ spu_multiarch_target::store_registers (struct regcache *regcache, int regno)
   if (regno == -1 || regno == SPU_PC_REGNUM)
     {
       gdb_byte buf[4];
-      regcache_raw_collect (regcache, SPU_PC_REGNUM, buf);
+      regcache->raw_collect (SPU_PC_REGNUM, buf);
 
       target_write (ops_beneath, TARGET_OBJECT_MEMORY, NULL,
 		    buf, spufs_addr, sizeof buf);
@@ -279,7 +279,7 @@ spu_multiarch_target::store_registers (struct regcache *regcache, int regno)
       int i;
 
       for (i = 0; i < SPU_NUM_GPRS; i++)
-	regcache_raw_collect (regcache, i, buf + i*16);
+	regcache->raw_collect (i, buf + i*16);
 
       xsnprintf (annex, sizeof annex, "%d/regs", spufs_fd);
       target_write (ops_beneath, TARGET_OBJECT_SPU, annex,

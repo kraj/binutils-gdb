@@ -286,14 +286,14 @@ m68k_extract_return_value (struct type *type, struct regcache *regcache,
 
   if (len <= 4)
     {
-      regcache_raw_read (regcache, M68K_D0_REGNUM, buf);
+      regcache->raw_read (M68K_D0_REGNUM, buf);
       memcpy (valbuf, buf + (4 - len), len);
     }
   else if (len <= 8)
     {
-      regcache_raw_read (regcache, M68K_D0_REGNUM, buf);
+      regcache->raw_read (M68K_D0_REGNUM, buf);
       memcpy (valbuf, buf + (8 - len), len - 4);
-      regcache_raw_read (regcache, M68K_D1_REGNUM, valbuf + (len - 4));
+      regcache->raw_read (M68K_D1_REGNUM, valbuf + (len - 4));
     }
   else
     internal_error (__FILE__, __LINE__,
@@ -311,11 +311,11 @@ m68k_svr4_extract_return_value (struct type *type, struct regcache *regcache,
   if (tdep->float_return && TYPE_CODE (type) == TYPE_CODE_FLT)
     {
       struct type *fpreg_type = register_type (gdbarch, M68K_FP0_REGNUM);
-      regcache_raw_read (regcache, M68K_FP0_REGNUM, buf);
+      regcache->raw_read (M68K_FP0_REGNUM, buf);
       target_float_convert (buf, fpreg_type, valbuf, type);
     }
   else if (TYPE_CODE (type) == TYPE_CODE_PTR && TYPE_LENGTH (type) == 4)
-    regcache_raw_read (regcache, M68K_A0_REGNUM, valbuf);
+    regcache->raw_read (M68K_A0_REGNUM, valbuf);
   else
     m68k_extract_return_value (type, regcache, valbuf);
 }
@@ -329,12 +329,11 @@ m68k_store_return_value (struct type *type, struct regcache *regcache,
   int len = TYPE_LENGTH (type);
 
   if (len <= 4)
-    regcache_raw_write_part (regcache, M68K_D0_REGNUM, 4 - len, len, valbuf);
+    regcache->raw_write_part (M68K_D0_REGNUM, 4 - len, len, valbuf);
   else if (len <= 8)
     {
-      regcache_raw_write_part (regcache, M68K_D0_REGNUM, 8 - len,
-			       len - 4, valbuf);
-      regcache_raw_write (regcache, M68K_D1_REGNUM, valbuf + (len - 4));
+      regcache->raw_write_part (M68K_D0_REGNUM, 8 - len, len - 4, valbuf);
+      regcache->raw_write (M68K_D1_REGNUM, valbuf + (len - 4));
     }
   else
     internal_error (__FILE__, __LINE__,
@@ -353,12 +352,12 @@ m68k_svr4_store_return_value (struct type *type, struct regcache *regcache,
       struct type *fpreg_type = register_type (gdbarch, M68K_FP0_REGNUM);
       gdb_byte buf[M68K_MAX_REGISTER_SIZE];
       target_float_convert (valbuf, type, buf, fpreg_type);
-      regcache_raw_write (regcache, M68K_FP0_REGNUM, buf);
+      regcache->raw_write (M68K_FP0_REGNUM, buf);
     }
   else if (TYPE_CODE (type) == TYPE_CODE_PTR && TYPE_LENGTH (type) == 4)
     {
-      regcache_raw_write (regcache, M68K_A0_REGNUM, valbuf);
-      regcache_raw_write (regcache, M68K_D0_REGNUM, valbuf);
+      regcache->raw_write (M68K_A0_REGNUM, valbuf);
+      regcache->raw_write (M68K_D0_REGNUM, valbuf);
     }
   else
     m68k_store_return_value (type, regcache, valbuf);
@@ -526,7 +525,7 @@ m68k_push_dummy_call (struct gdbarch *gdbarch, struct value *function,
   if (struct_return)
     {
       store_unsigned_integer (buf, 4, byte_order, struct_addr);
-      regcache_cooked_write (regcache, tdep->struct_value_regnum, buf);
+      regcache->cooked_write (tdep->struct_value_regnum, buf);
     }
 
   /* Store return address.  */
@@ -536,10 +535,10 @@ m68k_push_dummy_call (struct gdbarch *gdbarch, struct value *function,
 
   /* Finally, update the stack pointer...  */
   store_unsigned_integer (buf, 4, byte_order, sp);
-  regcache_cooked_write (regcache, M68K_SP_REGNUM, buf);
+  regcache->cooked_write (M68K_SP_REGNUM, buf);
 
   /* ...and fake a frame pointer.  */
-  regcache_cooked_write (regcache, M68K_FP_REGNUM, buf);
+  regcache->cooked_write (M68K_FP_REGNUM, buf);
 
   /* DWARF2/GCC uses the stack address *before* the function call as a
      frame's CFA.  */

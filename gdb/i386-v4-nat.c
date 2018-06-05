@@ -107,7 +107,7 @@ supply_gregset (struct regcache *regcache, const gregset_t *gregsetp)
   int regnum;
 
   for (regnum = 0; regnum < I386_NUM_GREGS; regnum++)
-    regcache_raw_supply (regcache, regnum, regp + regmap[regnum]);
+    regcache->raw_supply (regnum, regp + regmap[regnum]);
 }
 
 /* Fill register REGNUM (if it is a general-purpose register) in
@@ -123,7 +123,7 @@ fill_gregset (const struct regcache *regcache,
 
   for (i = 0; i < I386_NUM_GREGS; i++)
     if (regnum == -1 || regnum == i)
-      regcache_raw_collect (regcache, i, regp + regmap[i]);
+      regcache->raw_collect (i, regp + regmap[i]);
 }
 
 #endif /* HAVE_GREGSET_T */

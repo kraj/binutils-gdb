@@ -647,7 +647,7 @@ bfin_store_return_value (struct type *type,
 
   while (len > 0)
     {
-      regcache_cooked_write (regs, regno++, valbuf);
+      regs->cooked_write (regno++, valbuf);
       len -= 4;
       valbuf += 4;
     }
@@ -719,9 +719,9 @@ bfin_pseudo_register_write (struct gdbarch *gdbarch, struct regcache *regcache,
 		    _("invalid register number %d"), regnum);
 
   /* Overlay the CC bit in the ASTAT register.  */
-  regcache_raw_read (regcache, BFIN_ASTAT_REGNUM, buf);
+  regcache->raw_read (BFIN_ASTAT_REGNUM, buf);
   buf[0] = (buf[0] & ~ASTAT_CC) | ((buffer[0] & 1) << ASTAT_CC_POS);
-  regcache_raw_write (regcache, BFIN_ASTAT_REGNUM, buf);
+  regcache->raw_write (BFIN_ASTAT_REGNUM, buf);
 }
 
 static CORE_ADDR

@@ -119,7 +119,7 @@ fetch_fpregs (struct regcache *regcache)
   gdb_byte fp[ARM_LINUX_SIZEOF_NWFPE];
 
   /* Get the thread id for the ptrace call.  */
-  tid = ptid_get_lwp (regcache_get_ptid (regcache));
+  tid = ptid_get_lwp (regcache->ptid ());
 
   /* Read the floating point state.  */
   if (have_ptrace_getregset == TRIBOOL_TRUE)
@@ -138,8 +138,7 @@ fetch_fpregs (struct regcache *regcache)
     perror_with_name (_("Unable to fetch the floating point registers."));
 
   /* Fetch fpsr.  */
-  regcache_raw_supply (regcache, ARM_FPS_REGNUM,
-		       fp + NWFPE_FPSR_OFFSET);
+  regcache->raw_supply (ARM_FPS_REGNUM, fp + NWFPE_FPSR_OFFSET);
 
   /* Fetch the floating point registers.  */
   for (regno = ARM_F0_REGNUM; regno <= ARM_F7_REGNUM; regno++)
@@ -156,7 +155,7 @@ store_fpregs (const struct regcache *regcache)
   gdb_byte fp[ARM_LINUX_SIZEOF_NWFPE];
 
   /* Get the thread id for the ptrace call.  */
-  tid = ptid_get_lwp (regcache_get_ptid (regcache));
+  tid = ptid_get_lwp (regcache->ptid ());
 
   /* Read the floating point state.  */
   if (have_ptrace_getregset == TRIBOOL_TRUE)
@@ -176,12 +175,12 @@ store_fpregs (const struct regcache *regcache)
     perror_with_name (_("Unable to fetch the floating point registers."));
 
   /* Store fpsr.  */
-  if (REG_VALID == regcache_register_status (regcache, ARM_FPS_REGNUM))
-    regcache_raw_collect (regcache, ARM_FPS_REGNUM, fp + NWFPE_FPSR_OFFSET);
+  if (REG_VALID == regcache->get_register_status (ARM_FPS_REGNUM))
+    regcache->raw_collect (ARM_FPS_REGNUM, fp + NWFPE_FPSR_OFFSET);
 
   /* Store the floating point registers.  */
   for (regno = ARM_F0_REGNUM; regno <= ARM_F7_REGNUM; regno++)
-    if (REG_VALID == regcache_register_status (regcache, regno))
+    if (REG_VALID == regcache->get_register_status (regno))
       collect_nwfpe_register (regcache, regno, fp);
 
   if (have_ptrace_getregset == TRIBOOL_TRUE)
@@ -210,7 +209,7 @@ fetch_regs (struct regcache *regcache)
   elf_gregset_t regs;
 
   /* Get the thread id for the ptrace call.  */
-  tid = ptid_get_lwp (regcache_get_ptid (regcache));
+  tid = ptid_get_lwp (regcache->ptid ());
 
   if (have_ptrace_getregset == TRIBOOL_TRUE)
     {
@@ -237,7 +236,7 @@ store_regs (const struct regcache *regcache)
   elf_gregset_t regs;
 
   /* Get the thread id for the ptrace call.  */
-  tid = ptid_get_lwp (regcache_get_ptid (regcache));
+  tid = ptid_get_lwp (regcache->ptid ());
 
   /* Fetch the general registers.  */
   if (have_ptrace_getregset == TRIBOOL_TRUE)
@@ -285,23 +284,22 @@ fetch_wmmx_regs (struct regcache *regcache)
   int ret, regno, tid;
 
   /* Get the thread id for the ptrace call.  */
-  tid = ptid_get_lwp (regcache_get_ptid (regcache));
+  tid = ptid_get_lwp (regcache->ptid ());
 
   ret = ptrace (PTRACE_GETWMMXREGS, tid, 0, regbuf);
   if (ret < 0)
     perror_with_name (_("Unable to fetch WMMX registers."));
 
   for (regno = 0; regno < 16; regno++)
-    regcache_raw_supply (regcache, regno + ARM_WR0_REGNUM,
-			 &regbuf[regno * 8]);
+    regcache->raw_supply (regno + ARM_WR0_REGNUM, &regbuf[regno * 8]);
 
   for (regno = 0; regno < 2; regno++)
-    regcache_raw_supply (regcache, regno + ARM_WCSSF_REGNUM,
-			 &regbuf[16 * 8 + regno * 4]);
+    regcache->raw_supply (regno + ARM_WCSSF_REGNUM,
+			  &regbuf[16 * 8 + regno * 4]);
 
   for (regno = 0; regno < 4; regno++)
-    regcache_raw_supply (regcache, regno + ARM_WCGR0_REGNUM,
-			 &regbuf[16 * 8 + 2 * 4 + regno * 4]);
+    regcache->raw_supply (regno + ARM_WCGR0_REGNUM,
+			  &regbuf[16 * 8 + 2 * 4 + regno * 4]);
 }
 
 static void
@@ -311,29 +309,25 @@ store_wmmx_regs (const struct regcache *regcache)
   int ret, regno, tid;
 
   /* Get the thread id for the ptrace call.  */
-  tid = ptid_get_lwp (regcache_get_ptid (regcache));
+  tid = ptid_get_lwp (regcache->ptid ());
 
   ret = ptrace (PTRACE_GETWMMXREGS, tid, 0, regbuf);
   if (ret < 0)
     perror_with_name (_("Unable to fetch WMMX registers."));
 
   for (regno = 0; regno < 16; regno++)
-    if (REG_VALID == regcache_register_status (regcache,
-					       regno + ARM_WR0_REGNUM))
-      regcache_raw_collect (regcache, regno + ARM_WR0_REGNUM,
-			    &regbuf[regno * 8]);
+    if (REG_VALID == regcache->get_register_status (regno + ARM_WR0_REGNUM))
+      regcache->raw_collect (regno + ARM_WR0_REGNUM, &regbuf[regno * 8]);
 
   for (regno = 0; regno < 2; regno++)
-    if (REG_VALID == regcache_register_status (regcache,
-					       regno + ARM_WCSSF_REGNUM))
-      regcache_raw_collect (regcache, regno + ARM_WCSSF_REGNUM,
-			    &regbuf[16 * 8 + regno * 4]);
+    if (REG_VALID == regcache->get_register_status (regno + ARM_WCSSF_REGNUM))
+      regcache->raw_collect (regno + ARM_WCSSF_REGNUM,
+			     &regbuf[16 * 8 + regno * 4]);
 
   for (regno = 0; regno < 4; regno++)
-    if (REG_VALID == regcache_register_status (regcache,
-					       regno + ARM_WCGR0_REGNUM))
-      regcache_raw_collect (regcache, regno + ARM_WCGR0_REGNUM,
-			    &regbuf[16 * 8 + 2 * 4 + regno * 4]);
+    if (REG_VALID == regcache->get_register_status (regno + ARM_WCGR0_REGNUM))
+      regcache->raw_collect (regno + ARM_WCGR0_REGNUM,
+			     &regbuf[16 * 8 + 2 * 4 + regno * 4]);
 
   ret = ptrace (PTRACE_SETWMMXREGS, tid, 0, regbuf);
 
@@ -350,7 +344,7 @@ fetch_vfp_regs (struct regcache *regcache)
   struct gdbarch_tdep *tdep = gdbarch_tdep (gdbarch);
 
   /* Get the thread id for the ptrace call.  */
-  tid = ptid_get_lwp (regcache_get_ptid (regcache));
+  tid = ptid_get_lwp (regcache->ptid ());
 
   if (have_ptrace_getregset == TRIBOOL_TRUE)
     {
@@ -379,7 +373,7 @@ store_vfp_regs (const struct regcache *regcache)
   struct gdbarch_tdep *tdep = gdbarch_tdep (gdbarch);
 
   /* Get the thread id for the ptrace call.  */
-  tid = ptid_get_lwp (regcache_get_ptid (regcache));
+  tid = ptid_get_lwp (regcache->ptid ());
 
   if (have_ptrace_getregset == TRIBOOL_TRUE)
     {

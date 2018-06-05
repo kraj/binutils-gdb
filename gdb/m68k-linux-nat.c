@@ -119,7 +119,7 @@ fetch_register (struct regcache *regcache, int regno)
   long regaddr, val;
   int i;
   gdb_byte buf[M68K_MAX_REGISTER_SIZE];
-  pid_t tid = get_ptrace_pid (regcache_get_ptid (regcache));
+  pid_t tid = get_ptrace_pid (regcache->ptid ());
 
   regaddr = 4 * regmap[regno];
   for (i = 0; i < register_size (gdbarch, regno); i += sizeof (long))
@@ -133,7 +133,7 @@ fetch_register (struct regcache *regcache, int regno)
 	       gdbarch_register_name (gdbarch, regno),
 	       regno, safe_strerror (errno));
     }
-  regcache_raw_supply (regcache, regno, buf);
+  regcache->raw_supply (regno, buf);
 }
 
 /* Fetch register values from the inferior.
@@ -167,12 +167,12 @@ store_register (const struct regcache *regcache, int regno)
   long regaddr, val;
   int i;
   gdb_byte buf[M68K_MAX_REGISTER_SIZE];
-  pid_t tid = get_ptrace_pid (regcache_get_ptid (regcache));
+  pid_t tid = get_ptrace_pid (regcache->ptid ());
 
   regaddr = 4 * regmap[regno];
 
   /* Put the contents of regno into a local buffer.  */
-  regcache_raw_collect (regcache, regno, buf);
+  regcache->raw_collect (regno, buf);
 
   /* Store the local buffer into the inferior a chunk at the time.  */
   for (i = 0; i < register_size (gdbarch, regno); i += sizeof (long))
@@ -224,11 +224,9 @@ supply_gregset (struct regcache *regcache, const elf_gregset_t *gregsetp)
   for (regi = M68K_D0_REGNUM;
        regi <= gdbarch_sp_regnum (gdbarch);
        regi++)
-    regcache_raw_supply (regcache, regi, &regp[regmap[regi]]);
-  regcache_raw_supply (regcache, gdbarch_ps_regnum (gdbarch),
-		       &regp[PT_SR]);
-  regcache_raw_supply (regcache,
-		       gdbarch_pc_regnum (gdbarch), &regp[PT_PC]);
+    regcache->raw_supply (regi, &regp[regmap[regi]]);
+  regcache->raw_supply (gdbarch_ps_regnum (gdbarch), &regp[PT_SR]);
+  regcache->raw_supply (gdbarch_pc_regnum (gdbarch), &regp[PT_PC]);
 }
 
 /* Fill register REGNO (if it is a general-purpose register) in
@@ -243,7 +241,7 @@ fill_gregset (const struct regcache *regcache,
 
   for (i = 0; i < NUM_GREGS; i++)
     if (regno == -1 || regno == i)
-      regcache_raw_collect (regcache, i, regp + regmap[i]);
+      regcache->raw_collect (i, regp + regmap[i]);
 }
 
 #ifdef HAVE_PTRACE_GETREGS
@@ -318,12 +316,11 @@ supply_fpregset (struct regcache *regcache, const elf_fpregset_t *fpregsetp)
 
   for (regi = gdbarch_fp0_regnum (gdbarch);
        regi < gdbarch_fp0_regnum (gdbarch) + 8; regi++)
-    regcache_raw_supply (regcache, regi,
-			 FPREG_ADDR (fpregsetp,
-				     regi - gdbarch_fp0_regnum (gdbarch)));
-  regcache_raw_supply (regcache, M68K_FPC_REGNUM, &fpregsetp->fpcntl[0]);
-  regcache_raw_supply (regcache, M68K_FPS_REGNUM, &fpregsetp->fpcntl[1]);
-  regcache_raw_supply (regcache, M68K_FPI_REGNUM, &fpregsetp->fpcntl[2]);
+    regcache->raw_supply
+      (regi, FPREG_ADDR (fpregsetp, regi - gdbarch_fp0_regnum (gdbarch)));
+  regcache->raw_supply (M68K_FPC_REGNUM, &fpregsetp->fpcntl[0]);
+  regcache->raw_supply (M68K_FPS_REGNUM, &fpregsetp->fpcntl[1]);
+  regcache->raw_supply (M68K_FPI_REGNUM, &fpregsetp->fpcntl[2]);
 }
 
 /* Fill register REGNO (if it is a floating-point register) in
@@ -341,15 +338,13 @@ fill_fpregset (const struct regcache *regcache,
   for (i = gdbarch_fp0_regnum (gdbarch);
        i < gdbarch_fp0_regnum (gdbarch) + 8; i++)
     if (regno == -1 || regno == i)
-      regcache_raw_collect (regcache, i,
-			    FPREG_ADDR (fpregsetp,
-				        i - gdbarch_fp0_regnum (gdbarch)));
+      regcache->raw_collect
+	(i, FPREG_ADDR (fpregsetp, i - gdbarch_fp0_regnum (gdbarch)));
 
   /* Fill in the floating-point control registers.  */
   for (i = M68K_FPC_REGNUM; i <= M68K_FPI_REGNUM; i++)
     if (regno == -1 || regno == i)
-      regcache_raw_collect (regcache, i,
-			    &fpregsetp->fpcntl[i - M68K_FPC_REGNUM]);
+      regcache->raw_collect (i, &fpregsetp->fpcntl[i - M68K_FPC_REGNUM]);
 }
 
 #ifdef HAVE_PTRACE_GETREGS
@@ -416,7 +411,7 @@ m68k_linux_nat_target::fetch_registers (struct regcache *regcache, int regno)
       return;
     }
 
-  tid = get_ptrace_pid (regcache_get_ptid (regcache));
+  tid = get_ptrace_pid (regcache->ptid ());
 
   /* Use the PTRACE_GETFPXREGS request whenever possible, since it
      transfers more registers in one system call, and we'll cache the
@@ -469,7 +464,7 @@ m68k_linux_nat_target::store_registers (struct regcache *regcache, int regno)
       return;
     }
 
-  tid = get_ptrace_pid (regcache_get_ptid (regcache));
+  tid = get_ptrace_pid (regcache->ptid ());
 
   /* Use the PTRACE_SETFPREGS requests whenever possible, since it
      transfers more registers in one system call.  But remember that

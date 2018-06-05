@@ -41,11 +41,11 @@ linux_nat_trad_target::fetch_register (struct regcache *regcache, int regnum)
   if (addr == (CORE_ADDR)-1
       || gdbarch_cannot_fetch_register (gdbarch, regnum))
     {
-      regcache_raw_supply (regcache, regnum, NULL);
+      regcache->raw_supply (regnum, NULL);
       return;
     }
 
-  pid = get_ptrace_pid (regcache_get_ptid (regcache));
+  pid = get_ptrace_pid (regcache->ptid ());
 
   size = register_size (gdbarch, regnum);
   buf = (gdb_byte *) alloca (size);
@@ -66,7 +66,7 @@ linux_nat_trad_target::fetch_register (struct regcache *regcache, int regnum)
 
       addr += sizeof (PTRACE_TYPE_RET);
     }
-  regcache_raw_supply (regcache, regnum, buf);
+  regcache->raw_supply (regnum, buf);
 }
 
 /* Fetch register REGNUM from the inferior.  If REGNUM is -1, do this
@@ -104,13 +104,13 @@ linux_nat_trad_target::store_register (const struct regcache *regcache,
       || gdbarch_cannot_store_register (gdbarch, regnum))
     return;
 
-  pid = get_ptrace_pid (regcache_get_ptid (regcache));
+  pid = get_ptrace_pid (regcache->ptid ());
 
   size = register_size (gdbarch, regnum);
   buf = (gdb_byte *) alloca (size);
 
   /* Write the register contents into the inferior a chunk at a time.  */
-  regcache_raw_collect (regcache, regnum, buf);
+  regcache->raw_collect (regnum, buf);
   for (i = 0; i < size; i += sizeof (PTRACE_TYPE_RET))
     {
       size_t chunk = std::min (sizeof (PTRACE_TYPE_RET), size - i);

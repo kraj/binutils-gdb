@@ -278,9 +278,9 @@ spu_pseudo_register_write (struct gdbarch *gdbarch, struct regcache *regcache,
   switch (regnum)
     {
     case SPU_SP_REGNUM:
-      regcache_raw_read (regcache, SPU_RAW_SP_REGNUM, reg);
+      regcache->raw_read (SPU_RAW_SP_REGNUM, reg);
       memcpy (reg, buf, 4);
-      regcache_raw_write (regcache, SPU_RAW_SP_REGNUM, reg);
+      regcache->raw_write (SPU_RAW_SP_REGNUM, reg);
       break;
 
     case SPU_FPSCR_REGNUM:
@@ -1356,19 +1356,19 @@ spu_value_to_regcache (struct regcache *regcache, int regnum,
   if (spu_scalar_value_p (type))
     {
       int preferred_slot = len < 4 ? 4 - len : 0;
-      regcache_cooked_write_part (regcache, regnum, preferred_slot, len, in);
+      regcache->cooked_write_part (regnum, preferred_slot, len, in);
     }
   else
     {
       while (len >= 16)
 	{
-	  regcache_cooked_write (regcache, regnum++, in);
+	  regcache->cooked_write (regnum++, in);
 	  in += 16;
 	  len -= 16;
 	}
 
       if (len > 0)
-	regcache_cooked_write_part (regcache, regnum, 0, len, in);
+	regcache->cooked_write_part (regnum, 0, len, in);
     }
 }
 
@@ -1381,19 +1381,19 @@ spu_regcache_to_value (struct regcache *regcache, int regnum,
   if (spu_scalar_value_p (type))
     {
       int preferred_slot = len < 4 ? 4 - len : 0;
-      regcache_cooked_read_part (regcache, regnum, preferred_slot, len, out);
+      regcache->cooked_read_part (regnum, preferred_slot, len, out);
     }
   else
     {
       while (len >= 16)
 	{
-	  regcache_cooked_read (regcache, regnum++, out);
+	  regcache->cooked_read (regnum++, out);
 	  out += 16;
 	  len -= 16;
 	}
 
       if (len > 0)
-	regcache_cooked_read_part (regcache, regnum, 0, len, out);
+	regcache->cooked_read_part (regnum, 0, len, out);
     }
 }
 
@@ -1413,7 +1413,7 @@ spu_push_dummy_call (struct gdbarch *gdbarch, struct value *function,
   /* Set the return address.  */
   memset (buf, 0, sizeof buf);
   store_unsigned_integer (buf, 4, byte_order, SPUADDR_ADDR (bp_addr));
-  regcache_cooked_write (regcache, SPU_LR_REGNUM, buf);
+  regcache->cooked_write (SPU_LR_REGNUM, buf);
 
   /* If STRUCT_RETURN is true, then the struct return address (in
      STRUCT_ADDR) will consume the first argument-passing register.
@@ -1422,7 +1422,7 @@ spu_push_dummy_call (struct gdbarch *gdbarch, struct value *function,
     {
       memset (buf, 0, sizeof buf);
       store_unsigned_integer (buf, 4, byte_order, SPUADDR_ADDR (struct_addr));
-      regcache_cooked_write (regcache, regnum++, buf);
+      regcache->cooked_write (regnum++, buf);
     }
 
   /* Fill in argument registers.  */
@@ -1480,7 +1480,7 @@ spu_push_dummy_call (struct gdbarch *gdbarch, struct value *function,
   sp -= 32;
 
   /* Store stack back chain.  */
-  regcache_cooked_read (regcache, SPU_RAW_SP_REGNUM, buf);
+  regcache->cooked_read (SPU_RAW_SP_REGNUM, buf);
   target_write_memory (sp, buf, 16);
 
   /* Finally, update all slots of the SP register.  */
@@ -1490,7 +1490,7 @@ spu_push_dummy_call (struct gdbarch *gdbarch, struct value *function,
       CORE_ADDR sp_slot = extract_unsigned_integer (buf + 4*i, 4, byte_order);
       store_unsigned_integer (buf + 4*i, 4, byte_order, sp_slot + sp_delta);
     }
-  regcache_cooked_write (regcache, SPU_RAW_SP_REGNUM, buf);
+  regcache->cooked_write (SPU_RAW_SP_REGNUM, buf);
 
   return sp;
 }
@@ -1540,7 +1540,7 @@ spu_return_value (struct gdbarch *gdbarch, struct value *function,
 	{
 	case RETURN_VALUE_REGISTER_CONVENTION:
 	  if (opencl_vector && TYPE_LENGTH (type) == 2)
-	    regcache_cooked_write_part (regcache, SPU_ARG1_REGNUM, 2, 2, in);
+	    regcache->cooked_write_part (SPU_ARG1_REGNUM, 2, 2, in);
 	  else
 	    spu_value_to_regcache (regcache, SPU_ARG1_REGNUM, type, in);
 	  break;
@@ -1556,7 +1556,7 @@ spu_return_value (struct gdbarch *gdbarch, struct value *function,
 	{
 	case RETURN_VALUE_REGISTER_CONVENTION:
 	  if (opencl_vector && TYPE_LENGTH (type) == 2)
-	    regcache_cooked_read_part (regcache, SPU_ARG1_REGNUM, 2, 2, out);
+	    regcache->cooked_read_part (SPU_ARG1_REGNUM, 2, 2, out);
 	  else
 	    spu_regcache_to_value (regcache, SPU_ARG1_REGNUM, type, out);
 	  break;
@@ -1655,7 +1655,7 @@ spu_software_single_step (struct regcache *regcache)
 	target += SPUADDR_ADDR (pc);
       else if (reg != -1)
       {
-	regcache_raw_read_part (regcache, reg, 0, 4, buf);
+	regcache->raw_read_part (reg, 0, 4, buf);
 	target += extract_unsigned_integer (buf, 4, byte_order) & -4;
       }
 

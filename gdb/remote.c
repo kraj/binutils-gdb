@@ -7786,7 +7786,7 @@ remote_target::process_stop_reply (struct stop_reply *stop_reply,
 	       VEC_iterate (cached_reg_t, stop_reply->regcache, ix, reg);
 	       ix++)
 	  {
-	    regcache_raw_supply (regcache, reg->num, reg->data);
+	    regcache->raw_supply (reg->num, reg->data);
 	    xfree (reg->data);
 	  }
 
@@ -8080,7 +8080,7 @@ remote_target::fetch_register_using_p (struct regcache *regcache,
   /* If this register is unfetchable, tell the regcache.  */
   if (buf[0] == 'x')
     {
-      regcache_raw_supply (regcache, reg->regnum, NULL);
+      regcache->raw_supply (reg->regnum, NULL);
       return 1;
     }
 
@@ -8095,7 +8095,7 @@ remote_target::fetch_register_using_p (struct regcache *regcache,
       regp[i++] = fromhex (p[0]) * 16 + fromhex (p[1]);
       p += 2;
     }
-  regcache_raw_supply (regcache, reg->regnum, regp);
+  regcache->raw_supply (reg->regnum, regp);
   return 1;
 }
 
@@ -8233,11 +8233,10 @@ remote_target::process_g_packet (struct regcache *regcache)
 	      gdb_assert (r->offset * 2 < strlen (rs->buf));
 	      /* The register isn't available, mark it as such (at
 		 the same time setting the value to zero).  */
-	      regcache_raw_supply (regcache, r->regnum, NULL);
+	      regcache->raw_supply (r->regnum, NULL);
 	    }
 	  else
-	    regcache_raw_supply (regcache, r->regnum,
-				 regs + r->offset);
+	    regcache->raw_supply (r->regnum, regs + r->offset);
 	}
     }
 }
@@ -8281,7 +8280,7 @@ remote_target::fetch_registers (struct regcache *regcache, int regnum)
   int i;
 
   set_remote_traceframe ();
-  set_general_thread (regcache_get_ptid (regcache));
+  set_general_thread (regcache->ptid ());
 
   if (regnum >= 0)
     {
@@ -8304,7 +8303,7 @@ remote_target::fetch_registers (struct regcache *regcache, int regnum)
 	return;
 
       /* This register is not available.  */
-      regcache_raw_supply (regcache, reg->regnum, NULL);
+      regcache->raw_supply (reg->regnum, NULL);
 
       return;
     }
@@ -8316,7 +8315,7 @@ remote_target::fetch_registers (struct regcache *regcache, int regnum)
       if (!fetch_register_using_p (regcache, &rsa->regs[i]))
 	{
 	  /* This register is not available.  */
-	  regcache_raw_supply (regcache, i, NULL);
+	  regcache->raw_supply (i, NULL);
 	}
 }
 
@@ -8339,7 +8338,7 @@ remote_target::prepare_to_store (struct regcache *regcache)
       /* Make sure all the necessary registers are cached.  */
       for (i = 0; i < gdbarch_num_regs (regcache->arch ()); i++)
 	if (rsa->regs[i].in_g_packet)
-	  regcache_raw_update (regcache, rsa->regs[i].regnum);
+	  regcache->raw_update (rsa->regs[i].regnum);
       break;
     case PACKET_ENABLE:
       break;
@@ -8368,7 +8367,7 @@ remote_target::store_register_using_P (const struct regcache *regcache,
 
   xsnprintf (buf, get_remote_packet_size (), "P%s=", phex_nz (reg->pnum, 0));
   p = buf + strlen (buf);
-  regcache_raw_collect (regcache, reg->regnum, regp);
+  regcache->raw_collect (reg->regnum, regp);
   bin2hex (regp, p, register_size (gdbarch, reg->regnum));
   putpkt (rs->buf);
   getpkt (&rs->buf, &rs->buf_size, 0);
@@ -8410,7 +8409,7 @@ remote_target::store_registers_using_G (const struct regcache *regcache)
 	struct packet_reg *r = &rsa->regs[i];
 
 	if (r->in_g_packet)
-	  regcache_raw_collect (regcache, r->regnum, regs + r->offset);
+	  regcache->raw_collect (r->regnum, regs + r->offset);
       }
   }
 
@@ -8438,7 +8437,7 @@ remote_target::store_registers (struct regcache *regcache, int regnum)
   int i;
 
   set_remote_traceframe ();
-  set_general_thread (regcache_get_ptid (regcache));
+  set_general_thread (regcache->ptid ());
 
   if (regnum >= 0)
     {

@@ -288,6 +288,26 @@ If no exception is raised, the return value is always an instance of
 @code{gdb.Value} (@pxref{Values From Inferior}).
 @end defun
 
+@findex gdb.convenience_variable
+@defun gdb.convenience_variable (name)
+Return the value of the convenience variable (@pxref{Convenience
+Vars}) named @var{name}.  @var{name} must be a string.  The name
+should not include the @samp{$} that is used to mark a convenience
+variable in an expression.  If the convenience variable does not
+exist, then @code{None} is returned.
+@end defun
+
+@findex gdb.set_convenience_variable
+@defun gdb.set_convenience_variable (name, value)
+Set the value of the convenience variable (@pxref{Convenience Vars})
+named @var{name}.  @var{name} must be a string.  The name should not
+include the @samp{$} that is used to mark a convenience variable in an
+expression.  If @var{value} is @code{None}, then the convenience
+variable is removed.  Otherwise, if @var{value} is not a
+@code{gdb.Value} (@pxref{Values From Inferior}), it is is converted
+using the @code{gdb.Value} constructor.
+@end defun
+
 @findex gdb.parse_and_eval
 @defun gdb.parse_and_eval (expression)
 Parse @var{expression}, which must be a string, as an expression in
@@ -297,8 +317,7 @@ the current language, evaluate it, and return the result as a
 This function can be useful when implementing a new command
 (@pxref{Commands In Python}), as it provides a way to parse the
 command's argument as an expression.  It is also useful simply to
-compute values, for example, it is the only way to get the value of a
-convenience variable (@pxref{Convenience Vars}) as a @code{gdb.Value}.
+compute values.
 @end defun
 
 @findex gdb.find_pc_line
@@ -3729,14 +3748,16 @@ parameter.  It can be read and assigned to just as any other
 attribute.  @value{GDBN} does validation when assignments are made.
 @end defvar
 
-There are two methods that should be implemented in any
-@code{Parameter} class.  These are:
+There are two methods that may be implemented in any @code{Parameter}
+class.  These are:
 
 @defun Parameter.get_set_string (self)
-@value{GDBN} will call this method when a @var{parameter}'s value has
-been changed via the @code{set} API (for example, @kbd{set foo off}).
-The @code{value} attribute has already been populated with the new
-value and may be used in output.  This method must return a string.
+If this method exists, @value{GDBN} will call it when a
+@var{parameter}'s value has been changed via the @code{set} API (for
+example, @kbd{set foo off}).  The @code{value} attribute has already
+been populated with the new value and may be used in output.  This
+method must return a string.  If the returned string is not empty,
+@value{GDBN} will present it to the user.
 @end defun
 
 @defun Parameter.get_show_string (self, svalue)

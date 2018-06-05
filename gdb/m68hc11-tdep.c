@@ -1259,12 +1259,11 @@ m68hc11_store_return_value (struct type *type, struct regcache *regcache,
 
   /* First argument is passed in D and X registers.  */
   if (len <= 2)
-    regcache_raw_write_part (regcache, HARD_D_REGNUM, 2 - len, len, valbuf);
+    regcache->raw_write_part (HARD_D_REGNUM, 2 - len, len, valbuf);
   else if (len <= 4)
     {
-      regcache_raw_write_part (regcache, HARD_X_REGNUM, 4 - len,
-                               len - 2, valbuf);
-      regcache_raw_write (regcache, HARD_D_REGNUM, valbuf + (len - 2));
+      regcache->raw_write_part (HARD_X_REGNUM, 4 - len, len - 2, valbuf);
+      regcache->raw_write (HARD_D_REGNUM, valbuf + (len - 2));
     }
   else
     error (_("return of value > 4 is not supported."));
@@ -1280,7 +1279,7 @@ m68hc11_extract_return_value (struct type *type, struct regcache *regcache,
 {
   gdb_byte buf[M68HC11_REG_SIZE];
 
-  regcache_raw_read (regcache, HARD_D_REGNUM, buf);
+  regcache->raw_read (HARD_D_REGNUM, buf);
   switch (TYPE_LENGTH (type))
     {
     case 1:
@@ -1293,13 +1292,13 @@ m68hc11_extract_return_value (struct type *type, struct regcache *regcache,
 
     case 3:
       memcpy ((char*) valbuf + 1, buf, 2);
-      regcache_raw_read (regcache, HARD_X_REGNUM, buf);
+      regcache->raw_read (HARD_X_REGNUM, buf);
       memcpy (valbuf, buf + 1, 1);
       break;
 
     case 4:
       memcpy ((char*) valbuf + 2, buf, 2);
-      regcache_raw_read (regcache, HARD_X_REGNUM, buf);
+      regcache->raw_read (HARD_X_REGNUM, buf);
       memcpy (valbuf, buf, 2);
       break;
 

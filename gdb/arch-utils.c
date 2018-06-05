@@ -768,6 +768,8 @@ gdbarch_info_fill (struct gdbarch_info *info)
   if (info->byte_order == BFD_ENDIAN_UNKNOWN)
     info->byte_order = default_byte_order;
   info->byte_order_for_code = info->byte_order;
+  /* Wire the default to the last selected byte order.  */
+  default_byte_order = info->byte_order;
 
   /* "(gdb) set osabi ...".  Handled by gdbarch_lookup_osabi.  */
   /* From the manual override, or from file.  */
@@ -946,7 +948,7 @@ default_guess_tracepoint_registers (struct gdbarch *gdbarch,
   regs = (gdb_byte *) alloca (register_size (gdbarch, pc_regno));
   store_unsigned_integer (regs, register_size (gdbarch, pc_regno),
 			  gdbarch_byte_order (gdbarch), addr);
-  regcache_raw_supply (regcache, pc_regno, regs);
+  regcache->raw_supply (pc_regno, regs);
 }
 
 int

@@ -1,3 +1,31 @@
+2018-06-01  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* configure: Regenerated.
+
+2018-05-31  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/binutils-all/compress.exp (test_gnu_debuglink): Don't
+	set CC_FOR_TARGET.  Run test non-native.
+	* testsuite/binutils-all/objdump.exp (test_build_id_debuglink):
+	Likewise.
+	(test_follow_debuglink): Run test non-native.
+
+2018-05-30  Ant Bikeneev  <ant.bikineev@gmail.com>
+
+	PR 23107
+	* ar.c (display_offsets): New variable.
+	(usage): Add description of 'O' operator.
+	(decode_option): Handle 'O' operator.
+	(print_descr): Pass display_offsets to print_arelt_descr.
+	* arsup.c: Update call to printy_arelt_descr.
+	* objdump.c: Likewise.
+	* bucomm.c (print_arelt_descr): If offsets parameter is true then
+	display offset of archive element within the archive.
+	* bucomm.h: Update prototype for print_arelt_descr.
+	* doc/binutils.texi: Update description of ar command.
+	* NEWS: Mention the new feature.
+	* testsuite/binutils-all/ar.exp: Add text of new feature.
+
 2018-05-28  Alan Modra  <amodra@gmail.com>
 
 	PR 23235

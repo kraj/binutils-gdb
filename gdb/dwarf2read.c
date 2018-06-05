@@ -9667,7 +9667,7 @@ compute_delayed_physnames (struct dwarf2_cu *cu)
     return;
   gdb_assert (cu->language == language_cplus);
 
-  for (struct delayed_method_info &mi : cu->method_list)
+  for (const delayed_method_info &mi : cu->method_list)
     {
       const char *physname;
       struct fn_fieldlist *fn_flp
@@ -9761,8 +9761,6 @@ fixup_go_packaging (struct dwarf2_cu *cu)
       struct type *type = init_type (objfile, TYPE_CODE_MODULE, 0,
 				     saved_package_name);
       struct symbol *sym;
-
-      TYPE_TAG_NAME (type) = TYPE_NAME (type);
 
       sym = allocate_symbol (objfile);
       SYMBOL_SET_LANGUAGE (sym, language_go, &objfile->objfile_obstack);
@@ -10086,8 +10084,8 @@ static void
 rust_union_quirks (struct dwarf2_cu *cu)
 {
   gdb_assert (cu->language == language_rust);
-  for (struct type *type : cu->rust_unions)
-    quirk_rust_enum (type, cu->per_cu->dwarf2_per_objfile->objfile);
+  for (type *type_ : cu->rust_unions)
+    quirk_rust_enum (type_, cu->per_cu->dwarf2_per_objfile->objfile);
   /* We don't need this any more.  */
   cu->rust_unions.clear ();
 }
@@ -10811,7 +10809,8 @@ dwarf2_compute_name (const char *name,
 
 		  if (child->tag == DW_TAG_template_type_param)
 		    {
-		      c_print_type (type, "", &buf, -1, 0, &type_print_raw_options);
+		      c_print_type (type, "", &buf, -1, 0, cu->language,
+				    &type_print_raw_options);
 		      continue;
 		    }
 
@@ -15035,7 +15034,7 @@ dwarf2_add_field (struct field_info *fip, struct die_info *die,
 	SET_FIELD_BITPOS (*fp, offset * bits_per_byte);
       FIELD_BITSIZE (*fp) = 0;
       FIELD_TYPE (*fp) = die_type (die, cu);
-      FIELD_NAME (*fp) = type_name_no_tag (fp->type);
+      FIELD_NAME (*fp) = TYPE_NAME (fp->type);
     }
   else if (die->tag == DW_TAG_variant_part)
     {
@@ -15652,18 +15651,13 @@ read_structure_type (struct die_info *die, struct dwarf2_cu *cu)
 	  if (get_die_type (die, cu) != NULL)
 	    return get_die_type (die, cu);
 
-	  TYPE_TAG_NAME (type) = full_name;
-	  if (die->tag == DW_TAG_structure_type
-	      || die->tag == DW_TAG_class_type)
-	    TYPE_NAME (type) = TYPE_TAG_NAME (type);
+	  TYPE_NAME (type) = full_name;
 	}
       else
 	{
 	  /* The name is already allocated along with this objfile, so
 	     we don't need to duplicate it for the type.  */
-	  TYPE_TAG_NAME (type) = name;
-	  if (die->tag == DW_TAG_class_type)
-	    TYPE_NAME (type) = TYPE_TAG_NAME (type);
+	  TYPE_NAME (type) = name;
 	}
     }
 
@@ -15943,8 +15937,7 @@ process_structure_scope (struct die_info *die, struct dwarf2_cu *cu)
 		  if (i < TYPE_N_BASECLASSES (t))
 		    complaint (_("virtual function table pointer "
 				 "not found when defining class '%s'"),
-			       TYPE_TAG_NAME (type) ? TYPE_TAG_NAME (type) :
-			       "");
+			       TYPE_NAME (type) ? TYPE_NAME (type) : "");
 		}
 	      else
 		{
@@ -16134,7 +16127,7 @@ read_enumeration_type (struct die_info *die, struct dwarf2_cu *cu)
   TYPE_CODE (type) = TYPE_CODE_ENUM;
   name = dwarf2_full_name (NULL, die, cu);
   if (name != NULL)
-    TYPE_TAG_NAME (type) = name;
+    TYPE_NAME (type) = name;
 
   attr = dwarf2_attr (die, DW_AT_type, cu);
   if (attr != NULL)
@@ -16685,7 +16678,6 @@ read_namespace_type (struct die_info *die, struct dwarf2_cu *cu)
 
   /* Create the type.  */
   type = init_type (objfile, TYPE_CODE_NAMESPACE, 0, name);
-  TYPE_TAG_NAME (type) = TYPE_NAME (type);
 
   return set_die_type (die, type, cu);
 }
@@ -16749,9 +16741,6 @@ read_module_type (struct die_info *die, struct dwarf2_cu *cu)
     complaint (_("DW_TAG_module has no name, offset %s"),
                sect_offset_str (die->sect_off));
   type = init_type (objfile, TYPE_CODE_MODULE, 0, module_name);
-
-  /* determine_prefix uses TYPE_TAG_NAME.  */
-  TYPE_TAG_NAME (type) = TYPE_NAME (type);
 
   return set_die_type (die, type, cu);
 }
@@ -18235,7 +18224,7 @@ load_partial_dies (const struct die_reader_specs *reader,
 
       /* The exception for DW_TAG_typedef with has_children above is
 	 a workaround of GCC PR debug/47510.  In the case of this complaint
-	 type_name_no_tag_or_error will error on such types later.
+	 type_name_or_error will error on such types later.
 
 	 GDB skipped children of DW_TAG_typedef by the shortcut above and then
 	 it could not find the child DIEs referenced later, this is checked
@@ -22182,18 +22171,18 @@ determine_prefix (struct die_info *die, struct dwarf2_cu *cu)
 	   DW_TAG_namespace DIEs with a name of "::" for the global namespace.
 	   Work around this problem here.  */
 	if (cu->language == language_cplus
-	    && strcmp (TYPE_TAG_NAME (parent_type), "::") == 0)
+	    && strcmp (TYPE_NAME (parent_type), "::") == 0)
 	  return "";
 	/* We give a name to even anonymous namespaces.  */
-	return TYPE_TAG_NAME (parent_type);
+	return TYPE_NAME (parent_type);
       case DW_TAG_class_type:
       case DW_TAG_interface_type:
       case DW_TAG_structure_type:
       case DW_TAG_union_type:
       case DW_TAG_module:
 	parent_type = read_type_die (parent, cu);
-	if (TYPE_TAG_NAME (parent_type) != NULL)
-	  return TYPE_TAG_NAME (parent_type);
+	if (TYPE_NAME (parent_type) != NULL)
+	  return TYPE_NAME (parent_type);
 	else
 	  /* An anonymous structure is only allowed non-static data
 	     members; no typedefs, no member functions, et cetera.
@@ -22218,8 +22207,8 @@ determine_prefix (struct die_info *die, struct dwarf2_cu *cu)
 	parent_type = read_type_die (parent, cu);
 	if (TYPE_DECLARED_CLASS (parent_type))
 	  {
-	    if (TYPE_TAG_NAME (parent_type) != NULL)
-	      return TYPE_TAG_NAME (parent_type);
+	    if (TYPE_NAME (parent_type) != NULL)
+	      return TYPE_NAME (parent_type);
 	    return "";
 	  }
 	/* Fall through.  */

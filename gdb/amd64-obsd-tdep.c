@@ -241,7 +241,7 @@ amd64obsd_supply_uthread (struct regcache *regcache,
          returned from _thread_machdep_switch.  */
       offset = amd64obsd_uthread_reg_offset[AMD64_RIP_REGNUM] + 8;
       store_unsigned_integer (buf, 8, byte_order, sp + offset);
-      regcache_raw_supply (regcache, AMD64_RSP_REGNUM, buf);
+      regcache->raw_supply (AMD64_RSP_REGNUM, buf);
     }
 
   for (i = 0; i < ARRAY_SIZE (amd64obsd_uthread_reg_offset); i++)
@@ -256,7 +256,7 @@ amd64obsd_supply_uthread (struct regcache *regcache,
 
 	  /* Read the saved register from the stack frame.  */
 	  read_memory (sp + amd64obsd_uthread_reg_offset[i], buf, 8);
-	  regcache_raw_supply (regcache, i, buf);
+	  regcache->raw_supply (i, buf);
 	}
     }
 }
@@ -281,7 +281,7 @@ amd64obsd_collect_uthread (const struct regcache *regcache,
       /* Calculate the stack pointer (frame pointer) that will be
          stored into the thread structure.  */
       offset = amd64obsd_uthread_reg_offset[AMD64_RIP_REGNUM] + 8;
-      regcache_raw_collect (regcache, AMD64_RSP_REGNUM, buf);
+      regcache->raw_collect (AMD64_RSP_REGNUM, buf);
       sp = extract_unsigned_integer (buf, 8, byte_order) - offset;
 
       /* Store the stack pointer.  */
@@ -303,7 +303,7 @@ amd64obsd_collect_uthread (const struct regcache *regcache,
 	    sp = read_memory_unsigned_integer (sp_addr, 8, byte_order);
 
 	  /* Write the register into the stack frame.  */
-	  regcache_raw_collect (regcache, i, buf);
+	  regcache->raw_collect (i, buf);
 	  write_memory (sp + amd64obsd_uthread_reg_offset[i], buf, 8);
 	}
     }

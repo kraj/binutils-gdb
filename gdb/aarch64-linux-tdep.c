@@ -233,7 +233,8 @@ aarch64_linux_iterate_over_regset_sections (struct gdbarch *gdbarch,
       NULL, cb_data);
 }
 
-/* Implement the "core_read_description" gdbarch method.  */
+/* Implement the "core_read_description" gdbarch method.  SVE not yet
+   supported.  */
 
 static const struct target_desc *
 aarch64_linux_core_read_description (struct gdbarch *gdbarch,
@@ -244,7 +245,7 @@ aarch64_linux_core_read_description (struct gdbarch *gdbarch,
   if (target_auxv_search (target, AT_HWCAP, &aarch64_hwcap) != 1)
     return NULL;
 
-  return aarch64_read_description ();
+  return aarch64_read_description (0);
 }
 
 /* Implementation of `gdbarch_stap_is_single_operand', as defined in
@@ -376,7 +377,7 @@ aarch64_linux_get_syscall_number (struct gdbarch *gdbarch,
   LONGEST ret;
 
   /* Getting the system call number from the register x8.  */
-  regcache_cooked_read (regs, AARCH64_DWARF_X0 + 8, buf);
+  regs->cooked_read (AARCH64_DWARF_X0 + 8, buf);
 
   ret = extract_signed_integer (buf, X_REGISTER_SIZE, byte_order);
 

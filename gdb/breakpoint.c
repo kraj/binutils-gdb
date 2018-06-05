@@ -4580,8 +4580,7 @@ static void
 print_solib_event (int is_catchpoint)
 {
   bool any_deleted = !current_program_space->deleted_solibs.empty ();
-  int any_added
-    = !VEC_empty (so_list_ptr, current_program_space->added_solibs);
+  bool any_added = !current_program_space->added_solibs.empty ();
 
   if (!is_catchpoint)
     {
@@ -4613,18 +4612,14 @@ print_solib_event (int is_catchpoint)
 
   if (any_added)
     {
-      struct so_list *iter;
-      int ix;
-
       current_uiout->text (_("  Inferior loaded "));
       ui_out_emit_list list_emitter (current_uiout, "added");
-      for (ix = 0;
-	   VEC_iterate (so_list_ptr, current_program_space->added_solibs,
-			ix, iter);
-	   ++ix)
+      bool first = true;
+      for (so_list *iter : current_program_space->added_solibs)
 	{
-	  if (ix > 0)
+	  if (!first)
 	    current_uiout->text ("    ");
+	  first = false;
 	  current_uiout->field_string ("library", iter->so_name);
 	  current_uiout->text ("\n");
 	}
@@ -8009,12 +8004,7 @@ check_status_catch_solib (struct bpstats *bs)
 
   if (self->is_load)
     {
-      struct so_list *iter;
-
-      for (int ix = 0;
-	   VEC_iterate (so_list_ptr, current_program_space->added_solibs,
-			ix, iter);
-	   ++ix)
+      for (so_list *iter : current_program_space->added_solibs)
 	{
 	  if (!self->regex
 	      || self->compiled->exec (iter->so_name, 0, NULL, 0) == 0)
@@ -13877,6 +13867,19 @@ breakpoint_re_set (void)
     scoped_restore_current_language save_language;
     scoped_restore save_input_radix = make_scoped_restore (&input_radix);
     scoped_restore_current_pspace_and_thread restore_pspace_thread;
+
+    /* breakpoint_re_set_one sets the current_language to the language
+       of the breakpoint it is resetting (see prepare_re_set_context)
+       before re-evaluating the breakpoint's location.  This change can
+       unfortunately get undone by accident if the language_mode is set
+       to auto, and we either switch frames, or more likely in this context,
+       we select the current frame.
+
+       We prevent this by temporarily turning the language_mode to
+       language_mode_manual.  We restore it once all breakpoints
+       have been reset.  */
+    scoped_restore save_language_mode = make_scoped_restore (&language_mode);
+    language_mode = language_mode_manual;
 
     /* Note: we must not try to insert locations until after all
        breakpoints have been re-set.  Otherwise, e.g., when re-setting

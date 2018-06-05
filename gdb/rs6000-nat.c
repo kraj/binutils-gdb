@@ -191,7 +191,7 @@ fetch_register (struct regcache *regcache, int regno)
   struct gdbarch *gdbarch = regcache->arch ();
   int addr[PPC_MAX_REGISTER_SIZE];
   int nr, isfloat;
-  pid_t pid = ptid_get_pid (regcache_get_ptid (regcache));
+  pid_t pid = ptid_get_pid (regcache->ptid ());
 
   /* Retrieved values may be -1, so infer errors from errno.  */
   errno = 0;
@@ -231,7 +231,7 @@ fetch_register (struct regcache *regcache, int regno)
     }
 
   if (!errno)
-    regcache_raw_supply (regcache, regno, (char *) addr);
+    regcache->raw_supply (regno, (char *) addr);
   else
     {
 #if 0
@@ -250,10 +250,10 @@ store_register (struct regcache *regcache, int regno)
   struct gdbarch *gdbarch = regcache->arch ();
   int addr[PPC_MAX_REGISTER_SIZE];
   int nr, isfloat;
-  pid_t pid = ptid_get_pid (regcache_get_ptid (regcache));
+  pid_t pid = ptid_get_pid (regcache->ptid ());
 
   /* Fetch the register's value from the register cache.  */
-  regcache_raw_collect (regcache, regno, addr);
+  regcache->raw_collect (regno, addr);
 
   /* -1 can be a successful return value, so infer errors from errno.  */
   errno = 0;

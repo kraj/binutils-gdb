@@ -704,8 +704,8 @@ core_target::fetch_registers (struct regcache *regcache, int regno)
 
   /* Mark all registers not found in the core as unavailable.  */
   for (i = 0; i < gdbarch_num_regs (regcache->arch ()); i++)
-    if (regcache_register_status (regcache, i) == REG_UNKNOWN)
-      regcache_raw_supply (regcache, i, NULL);
+    if (regcache->get_register_status (i) == REG_UNKNOWN)
+      regcache->raw_supply (i, NULL);
 }
 
 void

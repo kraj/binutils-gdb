@@ -512,22 +512,20 @@ fetch_spe_register (struct regcache *regcache, int tid, int regno)
       int i;
 
       for (i = 0; i < ppc_num_gprs; i++)
-        regcache_raw_supply (regcache, tdep->ppc_ev0_upper_regnum + i,
-                             &evrregs.evr[i]);
+        regcache->raw_supply (tdep->ppc_ev0_upper_regnum + i, &evrregs.evr[i]);
     }
   else if (tdep->ppc_ev0_upper_regnum <= regno
            && regno < tdep->ppc_ev0_upper_regnum + ppc_num_gprs)
-    regcache_raw_supply (regcache, regno,
-                         &evrregs.evr[regno - tdep->ppc_ev0_upper_regnum]);
+    regcache->raw_supply (regno,
+			  &evrregs.evr[regno - tdep->ppc_ev0_upper_regnum]);
 
   if (regno == -1
       || regno == tdep->ppc_acc_regnum)
-    regcache_raw_supply (regcache, tdep->ppc_acc_regnum, &evrregs.acc);
+    regcache->raw_supply (tdep->ppc_acc_regnum, &evrregs.acc);
 
   if (regno == -1
       || regno == tdep->ppc_spefscr_regnum)
-    regcache_raw_supply (regcache, tdep->ppc_spefscr_regnum,
-                         &evrregs.spefscr);
+    regcache->raw_supply (tdep->ppc_spefscr_regnum, &evrregs.spefscr);
 }
 
 static void
@@ -573,7 +571,7 @@ fetch_register (struct regcache *regcache, int tid, int regno)
   if (regaddr == -1)
     {
       memset (buf, '\0', register_size (gdbarch, regno));   /* Supply zeroes */
-      regcache_raw_supply (regcache, regno, buf);
+      regcache->raw_supply (regno, buf);
       return;
     }
 
@@ -606,14 +604,14 @@ fetch_register (struct regcache *regcache, int tid, int regno)
     {
       /* Little-endian values are always found at the left end of the
          bytes transferred.  */
-      regcache_raw_supply (regcache, regno, buf);
+      regcache->raw_supply (regno, buf);
     }
   else if (gdbarch_byte_order (gdbarch) == BFD_ENDIAN_BIG)
     {
       /* Big-endian values are found at the right end of the bytes
          transferred.  */
       size_t padding = (bytes_transferred - register_size (gdbarch, regno));
-      regcache_raw_supply (regcache, regno, buf + padding);
+      regcache->raw_supply (regno, buf + padding);
     }
   else 
     internal_error (__FILE__, __LINE__,
@@ -773,7 +771,7 @@ fetch_ppc_registers (struct regcache *regcache, int tid)
 void
 ppc_linux_nat_target::fetch_registers (struct regcache *regcache, int regno)
 {
-  pid_t tid = get_ptrace_pid (regcache_get_ptid (regcache));
+  pid_t tid = get_ptrace_pid (regcache->ptid ());
 
   if (regno == -1)
     fetch_ppc_registers (regcache, tid);
@@ -897,26 +895,23 @@ store_spe_register (const struct regcache *regcache, int tid, int regno)
       int i;
 
       for (i = 0; i < ppc_num_gprs; i++)
-        regcache_raw_collect (regcache,
-                              tdep->ppc_ev0_upper_regnum + i,
-                              &evrregs.evr[i]);
+	regcache->raw_collect (tdep->ppc_ev0_upper_regnum + i,
+			       &evrregs.evr[i]);
     }
   else if (tdep->ppc_ev0_upper_regnum <= regno
            && regno < tdep->ppc_ev0_upper_regnum + ppc_num_gprs)
-    regcache_raw_collect (regcache, regno,
-                          &evrregs.evr[regno - tdep->ppc_ev0_upper_regnum]);
+    regcache->raw_collect (regno,
+			   &evrregs.evr[regno - tdep->ppc_ev0_upper_regnum]);
 
   if (regno == -1
       || regno == tdep->ppc_acc_regnum)
-    regcache_raw_collect (regcache,
-                          tdep->ppc_acc_regnum,
-                          &evrregs.acc);
+    regcache->raw_collect (tdep->ppc_acc_regnum,
+			   &evrregs.acc);
 
   if (regno == -1
       || regno == tdep->ppc_spefscr_regnum)
-    regcache_raw_collect (regcache,
-                          tdep->ppc_spefscr_regnum,
-                          &evrregs.spefscr);
+    regcache->raw_collect (tdep->ppc_spefscr_regnum,
+			   &evrregs.spefscr);
 
   /* Write back the modified register set.  */
   set_spe_registers (tid, &evrregs);
@@ -960,13 +955,13 @@ store_register (const struct regcache *regcache, int tid, int regno)
   if (gdbarch_byte_order (gdbarch) == BFD_ENDIAN_LITTLE)
     {
       /* Little-endian values always sit at the left end of the buffer.  */
-      regcache_raw_collect (regcache, regno, buf);
+      regcache->raw_collect (regno, buf);
     }
   else if (gdbarch_byte_order (gdbarch) == BFD_ENDIAN_BIG)
     {
       /* Big-endian values sit at the right end of the buffer.  */
       size_t padding = (bytes_to_transfer - register_size (gdbarch, regno));
-      regcache_raw_collect (regcache, regno, buf + padding);
+      regcache->raw_collect (regno, buf + padding);
     }
 
   for (i = 0; i < bytes_to_transfer; i += sizeof (long))
@@ -2131,7 +2126,7 @@ ppc_linux_nat_target::masked_watch_num_registers (CORE_ADDR addr, CORE_ADDR mask
 void
 ppc_linux_nat_target::store_registers (struct regcache *regcache, int regno)
 {
-  pid_t tid = get_ptrace_pid (regcache_get_ptid (regcache));
+  pid_t tid = get_ptrace_pid (regcache->ptid ());
 
   if (regno >= 0)
     store_register (regcache, tid, regno);

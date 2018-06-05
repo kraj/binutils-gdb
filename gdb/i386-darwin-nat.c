@@ -59,7 +59,7 @@ static struct i386_darwin_nat_target darwin_target;
 void
 i386_darwin_nat_target::fetch_registers (struct regcache *regcache, int regno)
 {
-  thread_t current_thread = ptid_get_tid (regcache_get_ptid (regcache));
+  thread_t current_thread = ptid_get_tid (regcache->ptid ());
   int fetched = 0;
   struct gdbarch *gdbarch = regcache->arch ();
 
@@ -132,9 +132,8 @@ i386_darwin_nat_target::fetch_registers (struct regcache *regcache, int regno)
 	      MACH_CHECK_ERROR (ret);
 	    }
 	  for (i = 0; i < I386_NUM_GREGS; i++)
-	    regcache_raw_supply
-	      (regcache, i,
-	       (char *)&gp_regs + i386_darwin_thread_state_reg_offset[i]);
+	    regcache->raw_supply
+	      (i, (char *) &gp_regs + i386_darwin_thread_state_reg_offset[i]);
 
           fetched++;
         }
@@ -164,7 +163,7 @@ i386_darwin_nat_target::fetch_registers (struct regcache *regcache, int regno)
   if (! fetched)
     {
       warning (_("unknown register %d"), regno);
-      regcache_raw_supply (regcache, regno, NULL);
+      regcache->raw_supply (regno, NULL);
     }
 }
 
@@ -176,7 +175,7 @@ void
 i386_darwin_nat_target::store_registers (struct regcache *regcache,
 					 int regno)
 {
-  thread_t current_thread = ptid_get_tid (regcache_get_ptid (regcache));
+  thread_t current_thread = ptid_get_tid (regcache->ptid ());
   struct gdbarch *gdbarch = regcache->arch ();
 
 #ifdef BFD64
@@ -245,9 +244,8 @@ i386_darwin_nat_target::store_registers (struct regcache *regcache,
 
 	  for (i = 0; i < I386_NUM_GREGS; i++)
 	    if (regno == -1 || regno == i)
-	      regcache_raw_collect
-		(regcache, i,
-		 (char *)&gp_regs + i386_darwin_thread_state_reg_offset[i]);
+	      regcache->raw_collect
+		(i, (char *) &gp_regs + i386_darwin_thread_state_reg_offset[i]);
 
           ret = thread_set_state (current_thread, x86_THREAD_STATE32,
                                   (thread_state_t) &gp_regs,

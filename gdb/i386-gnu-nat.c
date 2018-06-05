@@ -108,7 +108,7 @@ gnu_fetch_registers (struct target_ops *ops,
 		     struct regcache *regcache, int regno)
 {
   struct proc *thread;
-  ptid_t ptid = regcache_get_ptid (regcache);
+  ptid_t ptid = regcache->ptid ();
 
   /* Make sure we know about new threads.  */
   inf_update_procs (gnu_current_inf);
@@ -138,7 +138,7 @@ gnu_fetch_registers (struct target_ops *ops,
 	  proc_debug (thread, "fetching all register");
 
 	  for (i = 0; i < I386_NUM_GREGS; i++)
-	    regcache_raw_supply (regcache, i, REG_ADDR (state, i));
+	    regcache->raw_supply (i, REG_ADDR (state, i));
 	  thread->fetched_regs = ~0;
 	}
       else
@@ -147,8 +147,7 @@ gnu_fetch_registers (struct target_ops *ops,
 		      gdbarch_register_name (regcache->arch (),
 					     regno));
 
-	  regcache_raw_supply (regcache, regno,
-			       REG_ADDR (state, regno));
+	  regcache->raw_supply (regno, REG_ADDR (state, regno));
 	  thread->fetched_regs |= (1 << regno);
 	}
     }
@@ -201,7 +200,7 @@ gnu_store_registers (struct target_ops *ops,
 {
   struct proc *thread;
   struct gdbarch *gdbarch = regcache->arch ();
-  ptid_t ptid = regcache_get_ptid (regcache);
+  ptid_t ptid = regcache->ptid ();
 
   /* Make sure we know about new threads.  */
   inf_update_procs (gnu_current_inf);
@@ -250,8 +249,8 @@ gnu_store_registers (struct target_ops *ops,
 			 gdbarch_register_name (gdbarch, check_regno));
 		if (regno >= 0 && regno != check_regno)
 		  /* Update GDB's copy of the register.  */
-		  regcache_raw_supply (regcache, check_regno,
-				       REG_ADDR (state, check_regno));
+		  regcache->raw_supply (check_regno,
+					REG_ADDR (state, check_regno));
 		else
 		  warning (_("... also writing this register!  "
 			     "Suspicious..."));
@@ -265,16 +264,16 @@ gnu_store_registers (struct target_ops *ops,
 	  proc_debug (thread, "storing all registers");
 
 	  for (i = 0; i < I386_NUM_GREGS; i++)
-	    if (REG_VALID == regcache_register_status (regcache, i))
-	      regcache_raw_collect (regcache, i, REG_ADDR (state, i));
+	    if (REG_VALID == regcache->get_register_status (i))
+	      regcache->raw_collect (i, REG_ADDR (state, i));
 	}
       else
 	{
 	  proc_debug (thread, "storing register %s",
 		      gdbarch_register_name (gdbarch, regno));
 
-	  gdb_assert (REG_VALID == regcache_register_status (regcache, regno));
-	  regcache_raw_collect (regcache, regno, REG_ADDR (state, regno));
+	  gdb_assert (REG_VALID == regcache->get_register_status (regno));
+	  regcache->raw_collect (regno, REG_ADDR (state, regno));
 	}
 
       /* Restore the T bit.  */

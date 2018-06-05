@@ -1,7 +1,5 @@
 /* Copyright (C) 2017-2018 Free Software Foundation, Inc.
 
-   This file is part of GDB.
-
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation; either version 3 of the License, or
@@ -15,16 +13,19 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#ifndef COMMON_DIAGNOSTICS_H
-#define COMMON_DIAGNOSTICS_H
-
-#include "common/preprocessor.h"
+#ifndef DIAGNOSTICS_H
+#define DIAGNOSTICS_H
 
 #ifdef __GNUC__
 # define DIAGNOSTIC_PUSH _Pragma ("GCC diagnostic push")
 # define DIAGNOSTIC_POP _Pragma ("GCC diagnostic pop")
+
+/* Stringification.  */
+# define DIAGNOSTIC_STRINGIFY_1(x) #x
+# define DIAGNOSTIC_STRINGIFY(x) DIAGNOSTIC_STRINGIFY_1 (x)
+
 # define DIAGNOSTIC_IGNORE(option) \
-  _Pragma (STRINGIFY (GCC diagnostic ignored option))
+  _Pragma (DIAGNOSTIC_STRINGIFY (GCC diagnostic ignored option))
 #else
 # define DIAGNOSTIC_PUSH
 # define DIAGNOSTIC_POP
@@ -41,24 +42,34 @@
 # if __has_warning ("-Wenum-compare-switch")
 #  define DIAGNOSTIC_IGNORE_SWITCH_DIFFERENT_ENUM_TYPES \
    DIAGNOSTIC_IGNORE ("-Wenum-compare-switch")
-# else
-#  define DIAGNOSTIC_IGNORE_SWITCH_DIFFERENT_ENUM_TYPES
 # endif
 #elif defined (__GNUC__) /* GCC */
 
-# define DIAGNOSTIC_IGNORE_SELF_MOVE
-# define DIAGNOSTIC_IGNORE_DEPRECATED_REGISTER
 # define DIAGNOSTIC_IGNORE_UNUSED_FUNCTION \
   DIAGNOSTIC_IGNORE ("-Wunused-function")
-# define DIAGNOSTIC_IGNORE_SWITCH_DIFFERENT_ENUM_TYPES
 
-#else /* Other compilers */
-
-# define DIAGNOSTIC_IGNORE_SELF_MOVE
-# define DIAGNOSTIC_IGNORE_DEPRECATED_REGISTER
-# define DIAGNOSTIC_IGNORE_UNUSED_FUNCTION
-# define DIAGNOSTIC_IGNORE_SWITCH_DIFFERENT_ENUM_TYPES
-
+# define DIAGNOSTIC_IGNORE_STRINGOP_TRUNCATION \
+  DIAGNOSTIC_IGNORE ("-Wstringop-truncation")
 #endif
 
-#endif /* COMMON_DIAGNOSTICS_H */
+#ifndef DIAGNOSTIC_IGNORE_SELF_MOVE
+# define DIAGNOSTIC_IGNORE_SELF_MOVE
+#endif
+
+#ifndef DIAGNOSTIC_IGNORE_DEPRECATED_REGISTER
+# define DIAGNOSTIC_IGNORE_DEPRECATED_REGISTER
+#endif
+
+#ifndef DIAGNOSTIC_IGNORE_UNUSED_FUNCTION
+# define DIAGNOSTIC_IGNORE_UNUSED_FUNCTION
+#endif
+
+#ifndef DIAGNOSTIC_IGNORE_SWITCH_DIFFERENT_ENUM_TYPES
+# define DIAGNOSTIC_IGNORE_SWITCH_DIFFERENT_ENUM_TYPES
+#endif
+
+#ifndef DIAGNOSTIC_IGNORE_STRINGOP_TRUNCATION
+# define DIAGNOSTIC_IGNORE_STRINGOP_TRUNCATION
+#endif
+
+#endif /* DIAGNOSTICS_H */

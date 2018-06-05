@@ -244,7 +244,7 @@ value_cast_structs (struct type *type, struct value *v2)
      offset the pointer rather than just change its type.  */
   if (TYPE_NAME (t1) != NULL)
     {
-      v = search_struct_field (type_name_no_tag (t1),
+      v = search_struct_field (TYPE_NAME (t1),
 			       v2, t2, 1);
       if (v)
 	return v;
@@ -273,7 +273,7 @@ value_cast_structs (struct type *type, struct value *v2)
 	      && !strcmp (TYPE_NAME (real_type), TYPE_NAME (t1)))
 	    return v;
 
-	  v = search_struct_field (type_name_no_tag (t2), v, real_type, 1);
+	  v = search_struct_field (TYPE_NAME (t2), v, real_type, 1);
 	  if (v)
 	    return v;
 	}
@@ -281,7 +281,7 @@ value_cast_structs (struct type *type, struct value *v2)
       /* Try downcasting using information from the destination type
 	 T2.  This wouldn't work properly for classes with virtual
 	 bases, but those were handled above.  */
-      v = search_struct_field (type_name_no_tag (t2),
+      v = search_struct_field (TYPE_NAME (t2),
 			       value_zero (t1, not_lval), t1, 1);
       if (v)
 	{
@@ -3193,7 +3193,7 @@ destructor_name_p (const char *name, struct type *type)
 {
   if (name[0] == '~')
     {
-      const char *dname = type_name_no_tag_or_error (type);
+      const char *dname = type_name_or_error (type);
       const char *cp = strchr (dname, '<');
       unsigned int len;
 
@@ -3243,7 +3243,7 @@ enum_constant_from_type (struct type *type, const char *name)
     }
 
   error (_("no constant named \"%s\" in enum \"%s\""),
-	 name, TYPE_TAG_NAME (type));
+	 name, TYPE_NAME (type));
 }
 
 /* C++: Given an aggregate type CURTYPE, and a member name NAME,
@@ -3581,7 +3581,7 @@ value_namespace_elt (const struct type *curtype,
 
   if (retval == NULL)
     error (_("No symbol \"%s\" in namespace \"%s\"."), 
-	   name, TYPE_TAG_NAME (curtype));
+	   name, TYPE_NAME (curtype));
 
   return retval;
 }
@@ -3597,7 +3597,7 @@ value_maybe_namespace_elt (const struct type *curtype,
 			   const char *name, int want_address,
 			   enum noside noside)
 {
-  const char *namespace_name = TYPE_TAG_NAME (curtype);
+  const char *namespace_name = TYPE_NAME (curtype);
   struct block_symbol sym;
   struct value *result;
 

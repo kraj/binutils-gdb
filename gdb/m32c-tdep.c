@@ -321,7 +321,7 @@ static enum register_status
 m32c_raw_write (struct m32c_reg *reg, struct regcache *cache,
 		const gdb_byte *buf)
 {
-  regcache_raw_write (cache, reg->num, buf);
+  cache->raw_write (reg->num, buf);
 
   return REG_VALID;
 }
@@ -368,7 +368,7 @@ m32c_banked_write (struct m32c_reg *reg, struct regcache *cache,
 		   const gdb_byte *buf)
 {
   struct m32c_reg *bank_reg = m32c_banked_register (reg, cache);
-  regcache_raw_write (cache, bank_reg->num, buf);
+  cache->raw_write (bank_reg->num, buf);
 
   return REG_VALID;
 }
@@ -463,7 +463,7 @@ m32c_part_write (struct m32c_reg *reg, struct regcache *cache,
   int offset, len;
 
   m32c_find_part (reg, &offset, &len);
-  regcache_cooked_write_part (cache, reg->rx->num, offset, len, buf);
+  cache->cooked_write_part (reg->rx->num, offset, len, buf);
 
   return REG_VALID;
 }
@@ -511,13 +511,13 @@ m32c_cat_write (struct m32c_reg *reg, struct regcache *cache,
 
   if (gdbarch_byte_order (reg->arch) == BFD_ENDIAN_BIG)
     {
-      regcache_cooked_write (cache, reg->rx->num, buf);
-      regcache_cooked_write (cache, reg->ry->num, buf + high_bytes);
+      cache->cooked_write (reg->rx->num, buf);
+      cache->cooked_write (reg->ry->num, buf + high_bytes);
     }
   else
     {
-      regcache_cooked_write (cache, reg->rx->num, buf + low_bytes);
-      regcache_cooked_write (cache, reg->ry->num, buf);
+      cache->cooked_write (reg->rx->num, buf + low_bytes);
+      cache->cooked_write (reg->ry->num, buf);
     }
 
   return REG_VALID;
@@ -571,17 +571,17 @@ m32c_r3r2r1r0_write (struct m32c_reg *reg, struct regcache *cache,
 
   if (gdbarch_byte_order (reg->arch) == BFD_ENDIAN_BIG)
     {
-      regcache_cooked_write (cache, tdep->r0->num, buf + len * 3);
-      regcache_cooked_write (cache, tdep->r1->num, buf + len * 2);
-      regcache_cooked_write (cache, tdep->r2->num, buf + len * 1);
-      regcache_cooked_write (cache, tdep->r3->num, buf);
+      cache->cooked_write (tdep->r0->num, buf + len * 3);
+      cache->cooked_write (tdep->r1->num, buf + len * 2);
+      cache->cooked_write (tdep->r2->num, buf + len * 1);
+      cache->cooked_write (tdep->r3->num, buf);
     }
   else
     {
-      regcache_cooked_write (cache, tdep->r0->num, buf);
-      regcache_cooked_write (cache, tdep->r1->num, buf + len * 1);
-      regcache_cooked_write (cache, tdep->r2->num, buf + len * 2);
-      regcache_cooked_write (cache, tdep->r3->num, buf + len * 3);
+      cache->cooked_write (tdep->r0->num, buf);
+      cache->cooked_write (tdep->r1->num, buf + len * 1);
+      cache->cooked_write (tdep->r2->num, buf + len * 2);
+      cache->cooked_write (tdep->r3->num, buf + len * 3);
     }
 
   return REG_VALID;
@@ -2092,7 +2092,7 @@ m32c_push_dummy_call (struct gdbarch *gdbarch, struct value *function,
 	       && arg_size == 2
 	       && i < num_prototyped_args
 	       && m32c_reg_arg_type (arg_type))
-	regcache_cooked_write (regcache, tdep->r2->num, arg_bits);
+	regcache->cooked_write (tdep->r2->num, arg_bits);
 
       /* Everything else goes on the stack.  */
       else

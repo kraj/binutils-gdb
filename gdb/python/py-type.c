@@ -416,10 +416,16 @@ static PyObject *
 typy_get_tag (PyObject *self, void *closure)
 {
   struct type *type = ((type_object *) self)->type;
+  const char *tagname = nullptr;
 
-  if (!TYPE_TAG_NAME (type))
+  if (TYPE_CODE (type) == TYPE_CODE_STRUCT
+      || TYPE_CODE (type) == TYPE_CODE_UNION
+      || TYPE_CODE (type) == TYPE_CODE_ENUM)
+    tagname = TYPE_NAME (type);
+
+  if (tagname == nullptr)
     Py_RETURN_NONE;
-  return PyString_FromString (TYPE_TAG_NAME (type));
+  return PyString_FromString (tagname);
 }
 
 /* Return the type, stripped of typedefs. */
@@ -853,7 +859,7 @@ typy_legacy_template_argument (struct type *type, const struct block *block,
   int i;
   struct demangle_component *demangled;
   std::unique_ptr<demangle_parse_info> info;
-  const char *err;
+  std::string err;
   struct type *argtype;
 
   if (TYPE_NAME (type) == NULL)
@@ -875,7 +881,7 @@ typy_legacy_template_argument (struct type *type, const struct block *block,
 
   if (! info)
     {
-      PyErr_SetString (PyExc_RuntimeError, err);
+      PyErr_SetString (PyExc_RuntimeError, err.c_str ());
       return NULL;
     }
   demangled = info->tree;
@@ -1008,7 +1014,7 @@ typy_str (PyObject *self)
 static PyObject *
 typy_richcompare (PyObject *self, PyObject *other, int op)
 {
-  int result = Py_NE;
+  bool result = false;
   struct type *type1 = type_object_to_type (self);
   struct type *type2 = type_object_to_type (other);
 
@@ -1021,7 +1027,7 @@ typy_richcompare (PyObject *self, PyObject *other, int op)
     }
 
   if (type1 == type2)
-    result = Py_EQ;
+    result = true;
   else
     {
       TRY

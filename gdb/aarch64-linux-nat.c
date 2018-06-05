@@ -32,6 +32,7 @@
 #include "aarch32-linux-nat.h"
 #include "nat/aarch64-linux.h"
 #include "nat/aarch64-linux-hw-point.h"
+#include "nat/aarch64-sve-linux-ptrace.h"
 
 #include "elf/external.h"
 #include "elf/common.h"
@@ -208,7 +209,7 @@ fetch_gregs_from_thread (struct regcache *regcache)
      and arm.  */
   gdb_static_assert (sizeof (regs) >= 18 * 4);
 
-  tid = ptid_get_lwp (regcache_get_ptid (regcache));
+  tid = ptid_get_lwp (regcache->ptid ());
 
   iovec.iov_base = &regs;
   if (gdbarch_bfd_arch_info (gdbarch)->bits_per_word == 32)
@@ -227,7 +228,7 @@ fetch_gregs_from_thread (struct regcache *regcache)
       int regno;
 
       for (regno = AARCH64_X0_REGNUM; regno <= AARCH64_CPSR_REGNUM; regno++)
-	regcache_raw_supply (regcache, regno, &regs[regno - AARCH64_X0_REGNUM]);
+	regcache->raw_supply (regno, &regs[regno - AARCH64_X0_REGNUM]);
     }
 }
 
@@ -245,7 +246,7 @@ store_gregs_to_thread (const struct regcache *regcache)
   /* Make sure REGS can hold all registers contents on both aarch64
      and arm.  */
   gdb_static_assert (sizeof (regs) >= 18 * 4);
-  tid = ptid_get_lwp (regcache_get_ptid (regcache));
+  tid = ptid_get_lwp (regcache->ptid ());
 
   iovec.iov_base = &regs;
   if (gdbarch_bfd_arch_info (gdbarch)->bits_per_word == 32)
@@ -264,9 +265,8 @@ store_gregs_to_thread (const struct regcache *regcache)
       int regno;
 
       for (regno = AARCH64_X0_REGNUM; regno <= AARCH64_CPSR_REGNUM; regno++)
-	if (REG_VALID == regcache_register_status (regcache, regno))
-	  regcache_raw_collect (regcache, regno,
-				&regs[regno - AARCH64_X0_REGNUM]);
+	if (REG_VALID == regcache->get_register_status (regno))
+	  regcache->raw_collect (regno, &regs[regno - AARCH64_X0_REGNUM]);
     }
 
   ret = ptrace (PTRACE_SETREGSET, tid, NT_PRSTATUS, &iovec);
@@ -289,7 +289,7 @@ fetch_fpregs_from_thread (struct regcache *regcache)
      and arm.  */
   gdb_static_assert (sizeof regs >= VFP_REGS_SIZE);
 
-  tid = ptid_get_lwp (regcache_get_ptid (regcache));
+  tid = ptid_get_lwp (regcache->ptid ());
 
   iovec.iov_base = &regs;
 
@@ -314,11 +314,10 @@ fetch_fpregs_from_thread (struct regcache *regcache)
 	perror_with_name (_("Unable to fetch vFP/SIMD registers."));
 
       for (regno = AARCH64_V0_REGNUM; regno <= AARCH64_V31_REGNUM; regno++)
-	regcache_raw_supply (regcache, regno,
-			     &regs.vregs[regno - AARCH64_V0_REGNUM]);
+	regcache->raw_supply (regno, &regs.vregs[regno - AARCH64_V0_REGNUM]);
 
-      regcache_raw_supply (regcache, AARCH64_FPSR_REGNUM, &regs.fpsr);
-      regcache_raw_supply (regcache, AARCH64_FPCR_REGNUM, &regs.fpcr);
+      regcache->raw_supply (AARCH64_FPSR_REGNUM, &regs.fpsr);
+      regcache->raw_supply (AARCH64_FPCR_REGNUM, &regs.fpcr);
     }
 }
 
@@ -336,7 +335,7 @@ store_fpregs_to_thread (const struct regcache *regcache)
   /* Make sure REGS can hold all VFP registers contents on both aarch64
      and arm.  */
   gdb_static_assert (sizeof regs >= VFP_REGS_SIZE);
-  tid = ptid_get_lwp (regcache_get_ptid (regcache));
+  tid = ptid_get_lwp (regcache->ptid ());
 
   iovec.iov_base = &regs;
 
@@ -361,16 +360,14 @@ store_fpregs_to_thread (const struct regcache *regcache)
 	perror_with_name (_("Unable to fetch FP/SIMD registers."));
 
       for (regno = AARCH64_V0_REGNUM; regno <= AARCH64_V31_REGNUM; regno++)
-	if (REG_VALID == regcache_register_status (regcache, regno))
-	  regcache_raw_collect (regcache, regno,
-				(char *) &regs.vregs[regno - AARCH64_V0_REGNUM]);
+	if (REG_VALID == regcache->get_register_status (regno))
+	  regcache->raw_collect
+	    (regno, (char *) &regs.vregs[regno - AARCH64_V0_REGNUM]);
 
-      if (REG_VALID == regcache_register_status (regcache, AARCH64_FPSR_REGNUM))
-	regcache_raw_collect (regcache, AARCH64_FPSR_REGNUM,
-			      (char *) &regs.fpsr);
-      if (REG_VALID == regcache_register_status (regcache, AARCH64_FPCR_REGNUM))
-	regcache_raw_collect (regcache, AARCH64_FPCR_REGNUM,
-			      (char *) &regs.fpcr);
+      if (REG_VALID == regcache->get_register_status (AARCH64_FPSR_REGNUM))
+	regcache->raw_collect (AARCH64_FPSR_REGNUM, (char *) &regs.fpsr);
+      if (REG_VALID == regcache->get_register_status (AARCH64_FPCR_REGNUM))
+	regcache->raw_collect (AARCH64_FPCR_REGNUM, (char *) &regs.fpcr);
     }
 
   if (gdbarch_bfd_arch_info (gdbarch)->bits_per_word == 32)
@@ -541,7 +538,7 @@ aarch64_linux_nat_target::read_description ()
   if (ret == 0)
     return tdesc_arm_with_neon;
   else
-    return aarch64_read_description ();
+    return aarch64_read_description (aarch64_sve_get_vq (tid));
 }
 
 /* Convert a native/host siginfo object, into/from the siginfo in the

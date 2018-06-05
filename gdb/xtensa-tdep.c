@@ -661,7 +661,7 @@ xtensa_pseudo_register_write (struct gdbarch *gdbarch,
   /* We can always write 'core' registers.
      Note: We might have converted Ax->ARy.  */
   if (regnum >= 0 && regnum < gdbarch_num_regs (gdbarch))
-    regcache_raw_write (regcache, regnum, buffer);
+    regcache->raw_write (regnum, buffer);
 
   /* We have to find out how to deal with priveleged registers.
      Let's treat them as pseudo-registers, but we cannot read/write them.  */
@@ -718,7 +718,7 @@ xtensa_pseudo_register_write (struct gdbarch *gdbarch,
 	}
 
       /* Assume that we can write the register.  */
-      regcache_raw_write (regcache, regnum, buffer);
+      regcache->raw_write (regnum, buffer);
     }
   else
     internal_error (__FILE__, __LINE__,
@@ -848,38 +848,37 @@ xtensa_supply_gregset (const struct regset *regset,
   DEBUGTRACE ("xtensa_supply_gregset (..., regnum==%d, ...)\n", regnum);
 
   if (regnum == gdbarch_pc_regnum (gdbarch) || regnum == -1)
-    regcache_raw_supply (rc, gdbarch_pc_regnum (gdbarch), (char *) &regs->pc);
+    rc->raw_supply (gdbarch_pc_regnum (gdbarch), (char *) &regs->pc);
   if (regnum == gdbarch_ps_regnum (gdbarch) || regnum == -1)
-    regcache_raw_supply (rc, gdbarch_ps_regnum (gdbarch), (char *) &regs->ps);
+    rc->raw_supply (gdbarch_ps_regnum (gdbarch), (char *) &regs->ps);
   if (regnum == gdbarch_tdep (gdbarch)->wb_regnum || regnum == -1)
-    regcache_raw_supply (rc, gdbarch_tdep (gdbarch)->wb_regnum,
-			 (char *) &regs->windowbase);
+    rc->raw_supply (gdbarch_tdep (gdbarch)->wb_regnum,
+		    (char *) &regs->windowbase);
   if (regnum == gdbarch_tdep (gdbarch)->ws_regnum || regnum == -1)
-    regcache_raw_supply (rc, gdbarch_tdep (gdbarch)->ws_regnum,
-			 (char *) &regs->windowstart);
+    rc->raw_supply (gdbarch_tdep (gdbarch)->ws_regnum,
+		    (char *) &regs->windowstart);
   if (regnum == gdbarch_tdep (gdbarch)->lbeg_regnum || regnum == -1)
-    regcache_raw_supply (rc, gdbarch_tdep (gdbarch)->lbeg_regnum,
-			 (char *) &regs->lbeg);
+    rc->raw_supply (gdbarch_tdep (gdbarch)->lbeg_regnum,
+		    (char *) &regs->lbeg);
   if (regnum == gdbarch_tdep (gdbarch)->lend_regnum || regnum == -1)
-    regcache_raw_supply (rc, gdbarch_tdep (gdbarch)->lend_regnum,
-			 (char *) &regs->lend);
+    rc->raw_supply (gdbarch_tdep (gdbarch)->lend_regnum,
+		    (char *) &regs->lend);
   if (regnum == gdbarch_tdep (gdbarch)->lcount_regnum || regnum == -1)
-    regcache_raw_supply (rc, gdbarch_tdep (gdbarch)->lcount_regnum,
-			 (char *) &regs->lcount);
+    rc->raw_supply (gdbarch_tdep (gdbarch)->lcount_regnum,
+		    (char *) &regs->lcount);
   if (regnum == gdbarch_tdep (gdbarch)->sar_regnum || regnum == -1)
-    regcache_raw_supply (rc, gdbarch_tdep (gdbarch)->sar_regnum,
-			 (char *) &regs->sar);
+    rc->raw_supply (gdbarch_tdep (gdbarch)->sar_regnum,
+		    (char *) &regs->sar);
   if (regnum >=gdbarch_tdep (gdbarch)->ar_base
       && regnum < gdbarch_tdep (gdbarch)->ar_base
 		    + gdbarch_tdep (gdbarch)->num_aregs)
-    regcache_raw_supply (rc, regnum,
-			 (char *) &regs->ar[regnum - gdbarch_tdep
-			   (gdbarch)->ar_base]);
+    rc->raw_supply
+      (regnum, (char *) &regs->ar[regnum - gdbarch_tdep (gdbarch)->ar_base]);
   else if (regnum == -1)
     {
       for (i = 0; i < gdbarch_tdep (gdbarch)->num_aregs; ++i)
-	regcache_raw_supply (rc, gdbarch_tdep (gdbarch)->ar_base + i,
-			     (char *) &regs->ar[i]);
+	rc->raw_supply (gdbarch_tdep (gdbarch)->ar_base + i,
+			(char *) &regs->ar[i]);
     }
 }
 
@@ -1596,9 +1595,9 @@ xtensa_extract_return_value (struct type *type,
   for (; len > 0; len -= 4, areg++, valbuf += 4)
     {
       if (len < 4)
-	regcache_raw_read_part (regcache, areg, offset, len, valbuf);
+	regcache->raw_read_part (areg, offset, len, valbuf);
       else
-	regcache_raw_read (regcache, areg, valbuf);
+	regcache->raw_read (areg, valbuf);
     }
 }
 
@@ -1646,9 +1645,9 @@ xtensa_store_return_value (struct type *type,
   for (; len > 0; len -= 4, areg++, valbuf += 4)
     {
       if (len < 4)
-	regcache_raw_write_part (regcache, areg, offset, len, valbuf);
+	regcache->raw_write_part (areg, offset, len, valbuf);
       else
-	regcache_raw_write (regcache, areg, valbuf);
+	regcache->raw_write (areg, valbuf);
     }
 }
 
@@ -1846,7 +1845,7 @@ xtensa_push_dummy_call (struct gdbarch *gdbarch,
   if (struct_return)
     {
       store_unsigned_integer (buf, REGISTER_SIZE, byte_order, struct_addr);
-      regcache_cooked_write (regcache, ARG_1ST (gdbarch), buf);
+      regcache->cooked_write (ARG_1ST (gdbarch), buf);
     }
 
   for (i = 0; i < nargs; i++)
@@ -1888,7 +1887,7 @@ xtensa_push_dummy_call (struct gdbarch *gdbarch,
 	      v = v >> ((REGISTER_SIZE - n) * TARGET_CHAR_BIT);
 
 	      store_unsigned_integer (buf, REGISTER_SIZE, byte_order, v);
-	      regcache_cooked_write (regcache, r, buf);
+	      regcache->cooked_write (r, buf);
 
 	      cp += REGISTER_SIZE;
 	      n -= REGISTER_SIZE;
@@ -1897,7 +1896,7 @@ xtensa_push_dummy_call (struct gdbarch *gdbarch,
 	  else
 	    while (n > 0)
 	      {
-		regcache_cooked_write (regcache, r, cp);
+		regcache->cooked_write (r, cp);
 
 		cp += REGISTER_SIZE;
 		n -= REGISTER_SIZE;
@@ -1928,7 +1927,7 @@ xtensa_push_dummy_call (struct gdbarch *gdbarch,
 	 to modify WINDOWSTART register to make it look like there
 	 is only one register window corresponding to WINDOWEBASE.  */
 
-      regcache_raw_read (regcache, gdbarch_tdep (gdbarch)->wb_regnum, buf);
+      regcache->raw_read (gdbarch_tdep (gdbarch)->wb_regnum, buf);
       regcache_cooked_write_unsigned
 	(regcache, gdbarch_tdep (gdbarch)->ws_regnum,
 	 1 << extract_unsigned_integer (buf, 4, byte_order));

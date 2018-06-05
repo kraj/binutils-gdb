@@ -749,6 +749,7 @@ ALL_TARGET_OBS = \
 	nios2-tdep.o \
 	nto-tdep.o \
 	obsd-tdep.o \
+	or1k-tdep.o \
 	ppc-fbsd-tdep.o \
 	ppc-linux-tdep.o \
 	ppc-nbsd-tdep.o \
@@ -1482,6 +1483,7 @@ HFILES_NO_SRCDIR = \
 	mi/mi-parse.h \
 	nat/aarch64-linux.h \
 	nat/aarch64-linux-hw-point.h \
+	nat/aarch64-sve-linux-ptrace.h \
 	nat/amd64-linux-siginfo.h \
 	nat/gdb_ptrace.h \
 	nat/gdb_thread_db.h \
@@ -2066,7 +2068,7 @@ stamp-h: $(srcdir)/config.in config.status
 	  CONFIG_LINKS= \
 	  $(SHELL) config.status
 
-config.status: $(srcdir)/configure configure.tgt configure.host ../bfd/development.sh
+config.status: $(srcdir)/configure configure.nat configure.tgt configure.host ../bfd/development.sh
 	$(SHELL) config.status --recheck
 
 ACLOCAL = aclocal

@@ -843,6 +843,8 @@ static const arch_entry cpu_arch[] =
     CPU_BDVER4_FLAGS, 0 },
   { STRING_COMMA_LEN ("znver1"), PROCESSOR_ZNVER,
     CPU_ZNVER1_FLAGS, 0 },
+  { STRING_COMMA_LEN ("znver2"), PROCESSOR_ZNVER,
+    CPU_ZNVER2_FLAGS, 0 },
   { STRING_COMMA_LEN ("btver1"), PROCESSOR_BT,
     CPU_BTVER1_FLAGS, 0 },
   { STRING_COMMA_LEN ("btver2"), PROCESSOR_BT,
@@ -1830,7 +1832,6 @@ operand_type_xor (i386_operand_type x, i386_operand_type y)
 
 static const i386_operand_type acc32 = OPERAND_TYPE_ACC32;
 static const i386_operand_type acc64 = OPERAND_TYPE_ACC64;
-static const i386_operand_type control = OPERAND_TYPE_CONTROL;
 static const i386_operand_type inoutportreg
   = OPERAND_TYPE_INOUTPORTREG;
 static const i386_operand_type reg16_inoutportreg
@@ -2329,8 +2330,9 @@ add_prefix (unsigned int prefix)
       && flag_code == CODE_64BIT)
     {
       if ((i.prefix[REX_PREFIX] & prefix & REX_W)
-	  || ((i.prefix[REX_PREFIX] & (REX_R | REX_X | REX_B))
-	      && (prefix & (REX_R | REX_X | REX_B))))
+	  || (i.prefix[REX_PREFIX] & prefix & REX_R)
+	  || (i.prefix[REX_PREFIX] & prefix & REX_X)
+	  || (i.prefix[REX_PREFIX] & prefix & REX_B))
 	ret = PREFIX_EXIST;
       q = REX_PREFIX;
     }
@@ -6892,12 +6894,11 @@ build_modrm_byte (void)
 	  if ((i.op[source].regs->reg_flags & RegVRex) != 0)
 	    i.vrex |= REX_R;
 	}
-      if (flag_code != CODE_64BIT && (i.rex & (REX_R | REX_B)))
+      if (flag_code != CODE_64BIT && (i.rex & REX_R))
 	{
-	  if (!i.types[0].bitfield.control
-	      && !i.types[1].bitfield.control)
+	  if (!i.types[i.tm.operand_types[0].bitfield.regmem].bitfield.control)
 	    abort ();
-	  i.rex &= ~(REX_R | REX_B);
+	  i.rex &= ~REX_R;
 	  add_prefix (LOCK_PREFIX_OPCODE);
 	}
     }
@@ -10273,10 +10274,8 @@ parse_real_register (char *reg_string, char **end_op)
       i.vec_encoding = vex_encoding_evex;
     }
 
-  if (((r->reg_flags & (RegRex64 | RegRex))
-       || r->reg_type.bitfield.qword)
-      && (!cpu_arch_flags.bitfield.cpulm
-	  || !operand_type_equal (&r->reg_type, &control))
+  if (((r->reg_flags & (RegRex64 | RegRex)) || r->reg_type.bitfield.qword)
+      && (!cpu_arch_flags.bitfield.cpulm || !r->reg_type.bitfield.control)
       && flag_code != CODE_64BIT)
     return (const reg_entry *) NULL;
 

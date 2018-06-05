@@ -82,7 +82,7 @@ void
 ppc_obsd_nat_target::fetch_registers (struct regcache *regcache, int regnum)
 {
   struct reg regs;
-  pid_t pid = ptid_get_pid (regcache_get_ptid (regcache));
+  pid_t pid = ptid_get_pid (regcache->ptid ());
 
   if (ptrace (PT_GETREGS, pid, (PTRACE_TYPE_ARG3) &regs, 0) == -1)
     perror_with_name (_("Couldn't get registers"));
@@ -116,7 +116,7 @@ void
 ppc_obsd_nat_target::store_registers (struct regcache *regcache, int regnum)
 {
   struct reg regs;
-  pid_t pid = ptid_get_pid (regcache_get_ptid (regcache));
+  pid_t pid = ptid_get_pid (regcache->ptid ());
 
   if (ptrace (PT_GETREGS, pid, (PTRACE_TYPE_ARG3) &regs, 0) == -1)
     perror_with_name (_("Couldn't get registers"));
@@ -173,16 +173,16 @@ ppcobsd_supply_pcb (struct regcache *regcache, struct pcb *pcb)
     return 0;
 
   read_memory (pcb->pcb_sp, (gdb_byte *)&sf, sizeof sf);
-  regcache_raw_supply (regcache, gdbarch_sp_regnum (gdbarch), &sf.sp);
-  regcache_raw_supply (regcache, tdep->ppc_cr_regnum, &sf.cr);
-  regcache_raw_supply (regcache, tdep->ppc_gp0_regnum + 2, &sf.fixreg2);
+  regcache->raw_supply (gdbarch_sp_regnum (gdbarch), &sf.sp);
+  regcache->raw_supply (tdep->ppc_cr_regnum, &sf.cr);
+  regcache->raw_supply (tdep->ppc_gp0_regnum + 2, &sf.fixreg2);
   for (i = 0, regnum = tdep->ppc_gp0_regnum + 13; i < 19; i++, regnum++)
-    regcache_raw_supply (regcache, regnum, &sf.fixreg[i]);
+    regcache->raw_supply (regnum, &sf.fixreg[i]);
 
   read_memory (sf.sp, (gdb_byte *)&cf, sizeof cf);
-  regcache_raw_supply (regcache, gdbarch_pc_regnum (gdbarch), &cf.lr);
-  regcache_raw_supply (regcache, tdep->ppc_gp0_regnum + 30, &cf.r30);
-  regcache_raw_supply (regcache, tdep->ppc_gp0_regnum + 31, &cf.r31);
+  regcache->raw_supply (gdbarch_pc_regnum (gdbarch), &cf.lr);
+  regcache->raw_supply (tdep->ppc_gp0_regnum + 30, &cf.r30);
+  regcache->raw_supply (tdep->ppc_gp0_regnum + 31, &cf.r31);
 
   return 1;
 }

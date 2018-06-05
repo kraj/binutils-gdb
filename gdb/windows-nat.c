@@ -555,12 +555,12 @@ do_windows_fetch_inferior_registers (struct regcache *regcache,
   if (r == I387_FISEG_REGNUM (tdep))
     {
       l = *((long *) context_offset) & 0xffff;
-      regcache_raw_supply (regcache, r, (char *) &l);
+      regcache->raw_supply (r, (char *) &l);
     }
   else if (r == I387_FOP_REGNUM (tdep))
     {
       l = (*((long *) context_offset) >> 16) & ((1 << 11) - 1);
-      regcache_raw_supply (regcache, r, (char *) &l);
+      regcache->raw_supply (r, (char *) &l);
     }
   else if (segment_register_p (r))
     {
@@ -568,10 +568,10 @@ do_windows_fetch_inferior_registers (struct regcache *regcache,
 	 in fact only 16 bits long.  Make sure we do not read extra
 	 bits from our source buffer.  */
       l = *((long *) context_offset) & 0xffff;
-      regcache_raw_supply (regcache, r, (char *) &l);
+      regcache->raw_supply (r, (char *) &l);
     }
   else if (r >= 0)
-    regcache_raw_supply (regcache, r, context_offset);
+    regcache->raw_supply (r, context_offset);
   else
     {
       for (r = 0; r < gdbarch_num_regs (gdbarch); r++)
@@ -582,7 +582,7 @@ do_windows_fetch_inferior_registers (struct regcache *regcache,
 void
 windows_nat_target::fetch_registers (struct regcache *regcache, int r)
 {
-  DWORD pid = ptid_get_tid (regcache_get_ptid (regcache));
+  DWORD pid = ptid_get_tid (regcache->ptid ());
   windows_thread_info *th = thread_rec (pid, TRUE);
 
   /* Check if TH exists.  Windows sometimes uses a non-existent
@@ -596,8 +596,7 @@ do_windows_store_inferior_registers (const struct regcache *regcache,
 				     windows_thread_info *th, int r)
 {
   if (r >= 0)
-    regcache_raw_collect (regcache, r,
-			  ((char *) &th->context) + mappings[r]);
+    regcache->raw_collect (r, ((char *) &th->context) + mappings[r]);
   else
     {
       for (r = 0; r < gdbarch_num_regs (regcache->arch ()); r++)
@@ -611,7 +610,7 @@ do_windows_store_inferior_registers (const struct regcache *regcache,
 void
 windows_nat_target::store_registers (struct regcache *regcache, int r)
 {
-  DWORD pid = ptid_get_tid (regcache_get_ptid (regcache));
+  DWORD pid = ptid_get_tid (regcache->ptid ());
   windows_thread_info *th = thread_rec (pid, TRUE);
 
   /* Check if TH exists.  Windows sometimes uses a non-existent
@@ -1253,7 +1252,8 @@ handle_exception (struct target_waitstatus *ourstatus)
 	  result = HANDLE_EXCEPTION_IGNORED;
 	  break;
 	}
-	/* treat improperly formed exception as unknown, fallthrough */
+	/* treat improperly formed exception as unknown */
+	/* FALLTHROUGH */
     default:
       /* Treat unhandled first chance exceptions specially.  */
       if (current_event.u.Exception.dwFirstChance)
@@ -2966,6 +2966,13 @@ windows_nat_target::xfer_partial (enum target_object object,
 					    writebuf, offset, len, xfered_len);
 
     default:
+      if (beneath == NULL)
+	{
+	  /* This can happen when requesting the transfer of unsupported
+	     objects before a program has been started (and therefore
+	     with the current_target having no target beneath).  */
+	  return TARGET_XFER_E_IO;
+	}
       return beneath->xfer_partial (object, annex,
 				    readbuf, writebuf, offset, len,
 				    xfered_len);

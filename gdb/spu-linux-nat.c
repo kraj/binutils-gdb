@@ -516,7 +516,7 @@ spu_linux_nat_target::fetch_registers (struct regcache *regcache, int regno)
   /* Since we use functions that rely on inferior_ptid, we need to set and
      restore it.  */
   scoped_restore save_ptid
-    = make_scoped_restore (&inferior_ptid, regcache_get_ptid (regcache));
+    = make_scoped_restore (&inferior_ptid, regcache->ptid ());
 
   /* We must be stopped on a spu_run system call.  */
   if (!parse_spufs_run (&fd, &addr))
@@ -529,7 +529,7 @@ spu_linux_nat_target::fetch_registers (struct regcache *regcache, int regno)
       enum bfd_endian byte_order = gdbarch_byte_order (gdbarch);
       gdb_byte buf[4];
       store_unsigned_integer (buf, 4, byte_order, fd);
-      regcache_raw_supply (regcache, SPU_ID_REGNUM, buf);
+      regcache->raw_supply (SPU_ID_REGNUM, buf);
     }
 
   /* The NPC register is found at ADDR.  */
@@ -537,7 +537,7 @@ spu_linux_nat_target::fetch_registers (struct regcache *regcache, int regno)
     {
       gdb_byte buf[4];
       if (fetch_ppc_memory (addr, buf, 4) == 0)
-	regcache_raw_supply (regcache, SPU_PC_REGNUM, buf);
+	regcache->raw_supply (SPU_PC_REGNUM, buf);
     }
 
   /* The GPRs are found in the "regs" spufs file.  */
@@ -553,7 +553,7 @@ spu_linux_nat_target::fetch_registers (struct regcache *regcache, int regno)
 	   == TARGET_XFER_OK)
 	  && len == sizeof buf)
 	for (i = 0; i < SPU_NUM_GPRS; i++)
-	  regcache_raw_supply (regcache, i, buf + i*16);
+	  regcache->raw_supply (i, buf + i*16);
     }
 }
 
@@ -567,7 +567,7 @@ spu_linux_nat_target::store_registers (struct regcache *regcache, int regno)
   /* Since we use functions that rely on inferior_ptid, we need to set and
      restore it.  */
   scoped_restore save_ptid
-    = make_scoped_restore (&inferior_ptid, regcache_get_ptid (regcache));
+    = make_scoped_restore (&inferior_ptid, regcache->ptid ());
 
   /* We must be stopped on a spu_run system call.  */
   if (!parse_spufs_run (&fd, &addr))
@@ -577,7 +577,7 @@ spu_linux_nat_target::store_registers (struct regcache *regcache, int regno)
   if (regno == -1 || regno == SPU_PC_REGNUM)
     {
       gdb_byte buf[4];
-      regcache_raw_collect (regcache, SPU_PC_REGNUM, buf);
+      regcache->raw_collect (SPU_PC_REGNUM, buf);
       store_ppc_memory (addr, buf, 4);
     }
 
@@ -590,7 +590,7 @@ spu_linux_nat_target::store_registers (struct regcache *regcache, int regno)
       ULONGEST len;
 
       for (i = 0; i < SPU_NUM_GPRS; i++)
-	regcache_raw_collect (regcache, i, buf + i*16);
+	regcache->raw_collect (i, buf + i*16);
 
       xsnprintf (annex, sizeof annex, "%d/regs", fd);
       spu_proc_xfer_spu (annex, NULL, buf, 0, sizeof buf, &len);

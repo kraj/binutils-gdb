@@ -337,8 +337,8 @@ frv_pseudo_register_write (struct gdbarch *gdbarch, struct regcache *regcache,
 {
   if (reg == iacc0_regnum)
     {
-      regcache_raw_write (regcache, iacc0h_regnum, buffer);
-      regcache_raw_write (regcache, iacc0l_regnum, (bfd_byte *) buffer + 4);
+      regcache->raw_write (iacc0h_regnum, buffer);
+      regcache->raw_write (iacc0l_regnum, (bfd_byte *) buffer + 4);
     }
   else if (accg0_regnum <= reg && reg <= accg7_regnum)
     {
@@ -349,9 +349,9 @@ frv_pseudo_register_write (struct gdbarch *gdbarch, struct regcache *regcache,
       int byte_num = (reg - accg0_regnum) % 4;
       gdb_byte buf[4];
 
-      regcache_raw_read (regcache, raw_regnum, buf);
+      regcache->raw_read (raw_regnum, buf);
       buf[byte_num] = ((bfd_byte *) buffer)[0];
-      regcache_raw_write (regcache, raw_regnum, buf);
+      regcache->raw_write (raw_regnum, buf);
     }
 }
 
@@ -1327,12 +1327,12 @@ frv_store_return_value (struct type *type, struct regcache *regcache,
       bfd_byte val[4];
       memset (val, 0, sizeof (val));
       memcpy (val + (4 - len), valbuf, len);
-      regcache_cooked_write (regcache, 8, val);
+      regcache->cooked_write (8, val);
     }
   else if (len == 8)
     {
-      regcache_cooked_write (regcache, 8, valbuf);
-      regcache_cooked_write (regcache, 9, (bfd_byte *) valbuf + 4);
+      regcache->cooked_write (8, valbuf);
+      regcache->cooked_write (9, (bfd_byte *) valbuf + 4);
     }
   else
     internal_error (__FILE__, __LINE__,

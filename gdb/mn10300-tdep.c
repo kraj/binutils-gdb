@@ -182,13 +182,12 @@ mn10300_store_return_value (struct gdbarch *gdbarch, struct type *type,
   regsz = register_size (gdbarch, reg);
 
   if (len <= regsz)
-    regcache_raw_write_part (regcache, reg, 0, len, valbuf);
+    regcache->raw_write_part (reg, 0, len, valbuf);
   else if (len <= 2 * regsz)
     {
-      regcache_raw_write (regcache, reg, valbuf);
+      regcache->raw_write (reg, valbuf);
       gdb_assert (regsz == register_size (gdbarch, reg + 1));
-      regcache_raw_write_part (regcache, reg+1, 0,
-			       len - regsz, valbuf + regsz);
+      regcache->raw_write_part (reg + 1, 0, len - regsz, valbuf + regsz);
     }
   else
     internal_error (__FILE__, __LINE__,
@@ -212,15 +211,15 @@ mn10300_extract_return_value (struct gdbarch *gdbarch, struct type *type,
   gdb_assert (regsz <= MN10300_MAX_REGISTER_SIZE);
   if (len <= regsz)
     {
-      regcache_raw_read (regcache, reg, buf);
+      regcache->raw_read (reg, buf);
       memcpy (valbuf, buf, len);
     }
   else if (len <= 2 * regsz)
     {
-      regcache_raw_read (regcache, reg, buf);
+      regcache->raw_read (reg, buf);
       memcpy (valbuf, buf, regsz);
       gdb_assert (regsz == register_size (gdbarch, reg + 1));
-      regcache_raw_read (regcache, reg + 1, buf);
+      regcache->raw_read (reg + 1, buf);
       memcpy ((char *) valbuf + regsz, buf, len - regsz);
     }
   else

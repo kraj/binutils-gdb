@@ -820,17 +820,15 @@ hppa32_push_dummy_call (struct gdbarch *gdbarch, struct value *function,
 		  int fpLreg = 72 + (param_ptr - 36) / 4 * 2;
 		  int fpreg = 74 + (param_ptr - 32) / 8 * 4;
 
-		  regcache_cooked_write (regcache, grreg, param_val);
-		  regcache_cooked_write (regcache, fpLreg, param_val);
+		  regcache->cooked_write (grreg, param_val);
+		  regcache->cooked_write (fpLreg, param_val);
 
 		  if (param_len > 4)
 		    {
-		      regcache_cooked_write (regcache, grreg + 1, 
-					     param_val + 4);
+		      regcache->cooked_write (grreg + 1, param_val + 4);
 
-		      regcache_cooked_write (regcache, fpreg, param_val);
-		      regcache_cooked_write (regcache, fpreg + 1, 
-					     param_val + 4);
+		      regcache->cooked_write (fpreg, param_val);
+		      regcache->cooked_write (fpreg + 1, param_val + 4);
 		    }
 		}
 	    }
@@ -1046,8 +1044,8 @@ hppa64_push_dummy_call (struct gdbarch *gdbarch, struct value *function,
 		     passed in floating-point registers, are passed in
 		     the right halves of the floating point registers;
 		     the left halves are unused."  */
-		  regcache_cooked_write_part (regcache, regnum, offset % 8,
-					      len, value_contents (arg));
+		  regcache->cooked_write_part (regnum, offset % 8, len,
+					       value_contents (arg));
 		}
 	    }
 	}
@@ -1088,8 +1086,8 @@ hppa64_push_dummy_call (struct gdbarch *gdbarch, struct value *function,
       regnum = HPPA_ARG0_REGNUM - offset / 8;
       while (regnum > HPPA_ARG0_REGNUM - 8 && len > 0)
 	{
-	  regcache_cooked_write_part (regcache, regnum,
-				      offset % 8, std::min (len, 8), valbuf);
+	  regcache->cooked_write_part (regnum, offset % 8, std::min (len, 8),
+				       valbuf);
 	  offset += std::min (len, 8);
 	  valbuf += std::min (len, 8);
 	  len -= std::min (len, 8);
@@ -1154,20 +1152,18 @@ hppa32_return_value (struct gdbarch *gdbarch, struct value *function,
       if (part > 0)
 	{
 	  if (readbuf != NULL)
-	    regcache_cooked_read_part (regcache, reg, 4 - part,
-				       part, readbuf);
+	    regcache->cooked_read_part (reg, 4 - part, part, readbuf);
 	  if (writebuf != NULL)
-	    regcache_cooked_write_part (regcache, reg, 4 - part,
-					part, writebuf);
+	    regcache->cooked_write_part (reg, 4 - part, part, writebuf);
 	  reg++;
 	}
       /* Now transfer the remaining register values.  */
       for (b = part; b < TYPE_LENGTH (type); b += 4)
 	{
 	  if (readbuf != NULL)
-	    regcache_cooked_read (regcache, reg, readbuf + b);
+	    regcache->cooked_read (reg, readbuf + b);
 	  if (writebuf != NULL)
-	    regcache_cooked_write (regcache, reg, writebuf + b);
+	    regcache->cooked_write (reg, writebuf + b);
 	  reg++;
 	}
       return RETURN_VALUE_REGISTER_CONVENTION;
@@ -1245,8 +1241,8 @@ hppa64_return_value (struct gdbarch *gdbarch, struct value *function,
     {
       while (len > 0)
 	{
-	  regcache_cooked_read_part (regcache, regnum, offset,
-				     std::min (len, 8), readbuf);
+	  regcache->cooked_read_part (regnum, offset, std::min (len, 8),
+				      readbuf);
 	  readbuf += std::min (len, 8);
 	  len -= std::min (len, 8);
 	  regnum++;
@@ -1257,8 +1253,8 @@ hppa64_return_value (struct gdbarch *gdbarch, struct value *function,
     {
       while (len > 0)
 	{
-	  regcache_cooked_write_part (regcache, regnum, offset,
-				      std::min (len, 8), writebuf);
+	  regcache->cooked_write_part (regnum, offset, std::min (len, 8),
+				       writebuf);
 	  writebuf += std::min (len, 8);
 	  len -= std::min (len, 8);
 	  regnum++;

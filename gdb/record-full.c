@@ -620,7 +620,7 @@ record_full_arch_list_add_reg (struct regcache *regcache, int regnum)
 
   rec = record_full_reg_alloc (regcache, regnum);
 
-  regcache_raw_read (regcache, regnum, record_full_get_loc (rec));
+  regcache->raw_read (regnum, record_full_get_loc (rec));
 
   record_full_arch_list_add (rec);
 
@@ -833,9 +833,8 @@ record_full_exec_insn (struct regcache *regcache,
                               host_address_to_string (entry),
                               entry->u.reg.num);
 
-        regcache_cooked_read (regcache, entry->u.reg.num, reg.data ());
-        regcache_cooked_write (regcache, entry->u.reg.num, 
-			       record_full_get_loc (entry));
+        regcache->cooked_read (entry->u.reg.num, reg.data ());
+        regcache->cooked_write (entry->u.reg.num, record_full_get_loc (entry));
         memcpy (record_full_get_loc (entry), reg.data (), entry->u.reg.len);
       }
       break;
@@ -1609,10 +1608,10 @@ record_full_target::store_registers (struct regcache *regcache, int regno)
 		  for (i = 0;
 		       i < gdbarch_num_regs (regcache->arch ());
 		       i++)
-		    regcache_invalidate (regcache, i);
+		    regcache->invalidate (i);
 		}
 	      else
-		regcache_invalidate (regcache, regno);
+		regcache->invalidate (regno);
 
 	      error (_("Process record canceled the operation."));
 	    }

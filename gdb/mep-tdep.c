@@ -1216,7 +1216,7 @@ mep_pseudo_cr32_write (struct gdbarch *gdbarch,
   /* Slow, but legible.  */
   store_unsigned_integer (buf64, 8, byte_order,
 			  extract_unsigned_integer (buf, 4, byte_order));
-  regcache_raw_write (regcache, rawnum, buf64);
+  regcache->raw_write (rawnum, buf64);
 }
 
 
@@ -1226,7 +1226,7 @@ mep_pseudo_cr64_write (struct gdbarch *gdbarch,
                      int cookednum,
                      const gdb_byte *buf)
 {
-  regcache_raw_write (regcache, mep_pseudo_to_raw[cookednum], buf);
+  regcache->raw_write (mep_pseudo_to_raw[cookednum], buf);
 }
 
 
@@ -1245,7 +1245,7 @@ mep_pseudo_register_write (struct gdbarch *gdbarch,
            || IS_FP_CR64_REGNUM (cookednum))
     mep_pseudo_cr64_write (gdbarch, regcache, cookednum, buf);
   else if (IS_CCR_REGNUM (cookednum))
-    regcache_raw_write (regcache, mep_pseudo_to_raw[cookednum], buf);
+    regcache->raw_write (mep_pseudo_to_raw[cookednum], buf);
   else
     gdb_assert_not_reached ("unexpected pseudo register");
 }
@@ -2113,9 +2113,8 @@ mep_extract_return_value (struct gdbarch *arch,
     offset = 0;
 
   /* Return values that do fit in a single register are returned in R0.  */
-  regcache_cooked_read_part (regcache, MEP_R0_REGNUM,
-                             offset, TYPE_LENGTH (type),
-                             valbuf);
+  regcache->cooked_read_part (MEP_R0_REGNUM, offset, TYPE_LENGTH (type),
+			      valbuf);
 }
 
 
@@ -2140,9 +2139,8 @@ mep_store_return_value (struct gdbarch *arch,
       else
         offset = 0;
 
-      regcache_cooked_write_part (regcache, MEP_R0_REGNUM,
-                                  offset, TYPE_LENGTH (type),
-                                  valbuf);
+      regcache->cooked_write_part (MEP_R0_REGNUM, offset, TYPE_LENGTH (type),
+				   valbuf);
     }
 
   /* Return values larger than a single register are returned in

@@ -224,7 +224,7 @@ tyscm_equal_p_type_smob (SCM type1_scm, SCM type2_scm)
 {
   type_smob *type1_smob, *type2_smob;
   struct type *type1, *type2;
-  int result = 0;
+  bool result = false;
 
   SCM_ASSERT_TYPE (tyscm_is_type (type1_scm), type1_scm, SCM_ARG1, FUNC_NAME,
 		   type_smob_name);
@@ -576,10 +576,16 @@ gdbscm_type_tag (SCM self)
   type_smob *t_smob
     = tyscm_get_type_smob_arg_unsafe (self, SCM_ARG1, FUNC_NAME);
   struct type *type = t_smob->type;
+  const char *tagname = nullptr;
 
-  if (!TYPE_TAG_NAME (type))
+  if (TYPE_CODE (type) == TYPE_CODE_STRUCT
+      || TYPE_CODE (type) == TYPE_CODE_UNION
+      || TYPE_CODE (type) == TYPE_CODE_ENUM)
+    tagname = TYPE_NAME (type);
+
+  if (tagname == nullptr)
     return SCM_BOOL_F;
-  return gdbscm_scm_from_c_string (TYPE_TAG_NAME (type));
+  return gdbscm_scm_from_c_string (tagname);
 }
 
 /* (type-name <gdb:type>) -> string

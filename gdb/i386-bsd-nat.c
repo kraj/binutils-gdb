@@ -97,7 +97,7 @@ i386bsd_supply_gregset (struct regcache *regcache, const void *gregs)
       int offset = i386bsd_r_reg_offset[regnum];
 
       if (offset != -1)
-	regcache_raw_supply (regcache, regnum, regs + offset);
+	regcache->raw_supply (regnum, regs + offset);
     }
 }
 
@@ -119,7 +119,7 @@ i386bsd_collect_gregset (const struct regcache *regcache,
 	  int offset = i386bsd_r_reg_offset[i];
 
 	  if (offset != -1)
-	    regcache_raw_collect (regcache, i, regs + offset);
+	    regcache->raw_collect (i, regs + offset);
 	}
     }
 }
@@ -130,7 +130,7 @@ i386bsd_collect_gregset (const struct regcache *regcache,
 void
 i386bsd_fetch_inferior_registers (struct regcache *regcache, int regnum)
 {
-  pid_t pid = get_ptrace_pid (regcache_get_ptid (regcache));
+  pid_t pid = get_ptrace_pid (regcache->ptid ());
 
   if (regnum == -1 || GETREGS_SUPPLIES (regnum))
     {
@@ -193,7 +193,7 @@ i386bsd_fetch_inferior_registers (struct regcache *regcache, int regnum)
 void
 i386bsd_store_inferior_registers (struct regcache *regcache, int regnum)
 {
-  pid_t pid = get_ptrace_pid (regcache_get_ptid (regcache));
+  pid_t pid = get_ptrace_pid (regcache->ptid ());
 
   if (regnum == -1 || GETREGS_SUPPLIES (regnum))
     {

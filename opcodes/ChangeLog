@@ -1,3 +1,47 @@
+2018-06-04  Max Filippov  <jcmvbkbc@gmail.com>
+
+	* xtensa-dis.c (bfd.h, elf/xtensa.h): New includes.
+	(dis_private): Add new fields for property section tracking.
+	(xtensa_coalesce_insn_tables, xtensa_find_table_entry)
+	(xtensa_instruction_fits): New functions.
+	(fetch_data): Bump minimal fetch size to 4.
+	(print_insn_xtensa): Make struct dis_private static.
+	Load and prepare property table on section change.
+	Don't disassemble literals. Don't disassemble instructions that
+	cross property table boundaries.
+
+2018-06-01  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* configure: Regenerated.
+
+2018-06-01  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-opc.tbl (mov, movq): Fold to/from SReg* forms.
+	* i386-tbl.h: Re-generate.
+
+2018-06-01  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-opc.tbl (sldt, str): Add NoRex64.
+	* i386-tbl.h: Re-generate.
+
+2018-06-01  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-opc.tbl (invpcid): Add Oword.
+	* i386-tbl.h: Re-generate.
+
+2018-06-01  Alan Modra  <amodra@gmail.com>
+
+	* sysdep.h (_bfd_error_handler): Don't declare.
+	* msp430-decode.opc: Include bfd.h.  Don't include ansidecl.h here.
+	* rl78-decode.opc: Likewise.
+	* msp430-decode.c: Regenerate.
+	* rl78-decode.c: Regenerate.
+
+2018-05-30  Amit Pawar <Amit.Pawar@amd.com>
+
+	* i386-gen.c (cpu_flag_init): Add CPU_ZNVER2_FLAGS.
+	* i386-init.h : Regenerated.
+
 2018-05-25  Alan Modra  <amodra@gmail.com>
 
 	* Makefile.in: Regenerate.

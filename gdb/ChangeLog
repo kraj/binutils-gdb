@@ -1,3 +1,461 @@
+2018-06-04  Tom Tromey  <tom@tromey.com>
+
+	* ada-lang.h (ada_lookup_symbol_list): Update.
+	* ada-lang.c (resolve_subexp): Update.
+	(symbols_are_identical_enums): Change type of syms.  Remove nsyms
+	parameter.
+	(remove_extra_symbols, remove_irrelevant_renamings): Likewise.
+	(ada_lookup_symbol_list_worker, ada_lookup_symbol_list): Change
+	results parameter to std::vector.
+	(ada_iterate_over_symbols, ada_lookup_symbol, get_var_value):
+	Update.
+	* ada-exp.y (block_lookup): Update.
+	(select_possible_type_sym): Change type of syms.  Remove nsyms
+	parameter.
+	(write_var_or_type, write_name_assoc): Update.
+
+2018-06-04  Joel Brobecker  <brobecker@adacore.com>
+
+	* windows-nat.c (windows_nat_target::xfer_partial): Return
+	TARGET_XFER_E_IO if we need to delegate to the target beneath
+	but BENEATH is NULL.
+
+2018-06-04  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* Makefile.in (config.status): Add configure.nat as a
+	dependency.
+
+2018-06-04  Tom Tromey  <tom@tromey.com>
+
+	* cp-name-parser.y (cpname_state): Add method declarations.
+	(HANDLE_QUAL): Update.
+	(cpname_state::d_grab, cpname_state::fill_comp)
+	(cpname_state::make_operator, cpname_state::make_dtor)
+	(cpname_state::make_builtin_type, cpname_state::make_name)
+	(cpname_state::d_qualify, cpname_state::d_int_type)
+	(cpname_state::d_unary, cpname_state::d_binary): Now methods.
+	(%union): Move earlier.
+
+2018-06-04  Alan Hayward  <alan.hayward@arm.com>
+
+	* elfread.c (elf_symfile_segments): Use ELF_SECTION_IN_SEGMENT.
+
+2018-06-04  Alan Hayward  <alan.hayward@arm.com>
+
+	* aarch64-tdep.c (aarch64_pseudo_read_value_1): New helper func.
+	(aarch64_pseudo_write_1): Likewise.
+	(aarch64_pseudo_read_value): Use helper.
+	(aarch64_pseudo_write): Likewise.
+
+2018-06-04  Pedro Alves  <palves@redhat.com>
+
+	* darwin-nat.c (darwin_ops): Delete.
+	(darwin_attach_pid): Use get_native_target.
+
+2018-06-04  Alan Hayward  <alan.hayward@arm.com>
+
+	* aarch64-tdep.c (aarch64_get_tdesc_vq): Use uint64_t for VQ.
+	* aarch64-tdep.h (struct gdbarch_tdep): Likewise.
+
+2018-06-04  Alan Hayward  <alan.hayward@arm.com>
+
+	* aarch64-linux-nat.c (aarch64_linux_read_description): Support SVE.
+	* aarch64-tdep.c (aarch64_get_tdesc_vq): New function.
+	(aarch64_gdbarch_init): Check for SVE.
+	* aarch64-tdep.h (gdbarch_tdep::has_sve): New function.
+
+2018-06-04  Alan Hayward  <alan.hayward@arm.com>
+
+	* aarch64-tdep.c (aarch64_read_description): Use uint64_t for VQ.
+	* aarch64-tdep.h (aarch64_read_description): Likewise.
+	* arch/aarch64.c (aarch64_create_target_description): Likewise.
+	* arch/aarch64.h (aarch64_create_target_description): Likewise.
+	* features/aarch64-sve.c (create_feature_aarch64_sve): Likewise.
+	* nat/aarch64-sve-linux-ptrace.c(aarch64_sve_get_vq): Likewise.
+	* nat/aarch64-sve-linux-ptrace.h (aarch64_sve_get_vq): Likewise.
+
+2018-06-02  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* value.c (value_fetch_lazy_bitfield): New.
+	(value_fetch_lazy_memory): New.
+	(value_fetch_lazy_register): New.
+	(value_fetch_lazy): Factor out to smaller functions.
+
+2018-06-01  Tom Tromey  <tom@tromey.com>
+
+	* cp-name-parser.y (backslashable, represented): Now const.
+
+2018-06-01  Tom Tromey  <tom@tromey.com>
+
+	* cp-name-parser.y: Include parser-defs.h.
+	(parser_fprintf): Remove declaration.
+
+2018-06-01  Tom Tromey  <tom@tromey.com>
+
+	* cp-name-parser.y: Use %pure-parser, %lex-param, and
+	%parse-param.
+	(lexptr, prev_lexptr, error_lexptr, global_errmsg, demangle_info)
+	(global_result): Remove globals.
+	(struct cpname_state): New.
+	(yyparse): Don't declare.
+	(yylex, yyerror): Move declarations after %union.
+	(d_grab, fill_comp, make_operator, make_dtor, make_builtin_type)
+	(make_name): Add state parameter.
+	Update all callers.
+	(d_qualify, d_int_type, d_unary, d_binary, parse_number) Add state
+	parameter.
+	(HANDLE_QUAL, HANDLE_SPECIAL, HANDLE_TOKEN2, HANDLE_TOKEN3):
+	Update.
+	(yylex): Add lvalp, state parameters.
+	(yyerror): Add state parameter.
+	(cp_demangled_name_to_comp): Update.
+
+2018-06-01  Tom Tromey  <tom@tromey.com>
+
+	* cp-name-parser.y (parser_fprintf): Declare.
+	(GDB_YY_REMAP_PREFIX): Define.
+	Include yy-remap.h.  Don't redefine yy* identifiers.
+
+2018-06-01  Tom Tromey  <tom@tromey.com>
+
+	* python/py-type.c (typy_legacy_template_argument): Update.
+	* cp-support.h (cp_demangled_name_to_comp): Update.
+	* cp-name-parser.y (cp_demangled_name_to_comp): Change errmsg
+	parameter to be a "std::string *".
+	(main): Update.
+
+2018-06-01  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* ada-lex.l: Include "diagnostics.h" instead of
+	"common/diagnostics.h".
+	* unittests/environ-selftests.c: Likewise.
+	* common/diagnostics.h: Moved to ../include.
+
+2018-06-01  Joel Brobecker  <brobecker@adacore.com>
+
+	* breakpoint.c (breakpoint_re_set): Temporarily force language_mode
+	to language_mode_manual while calling breakpoint_re_set_one.
+
+2018-06-01  Tom Tromey  <tom@tromey.com>
+
+	* valops.c (value_cast_structs, destructor_name_p): Update.
+	* symtab.c (gdb_mangle_name): Update.
+	* stabsread.c (define_symbol, read_cpp_abbrev, read_baseclasses):
+	Update.
+	* p-valprint.c (pascal_object_is_vtbl_ptr_type)
+	(pascal_object_print_value_fields, pascal_object_print_value):
+	Update.
+	* p-typeprint.c (pascal_type_print_derivation_info): Update.
+	* linespec.c (find_methods): Update.
+	* gdbtypes.h (type_name_no_tag): Remove.
+	(type_name_or_error): Rename from type_name_no_tag_or_error.
+	* gdbtypes.c (type_name_no_tag): Remove.
+	(type_name_or_error): Rename from type_name_no_tag_or_error.
+	(lookup_struct_elt_type, check_typedef): Update.
+	* expprint.c (print_subexp_standard): Update.
+	* dwarf2read.c (dwarf2_add_field, load_partial_dies): Update.
+	* d-namespace.c (d_lookup_nested_symbol): Update.
+	* cp-valprint.c (cp_is_vtbl_ptr_type, cp_print_value_fields)
+	(cp_print_class_member): Update.
+	* cp-namespace.c (cp_lookup_nested_symbol): Update.
+	* completer.c (add_struct_fields): Update.
+	* c-typeprint.c (cp_type_print_derivation_info)
+	(c_type_print_varspec_prefix, c_type_print_base_struct_union):
+	Update.
+	* ada-lang.c (parse_old_style_renaming, xget_renaming_scope)
+	(ada_prefer_type, ada_is_exception_sym): Update.
+
+2018-06-01  Tom Tromey  <tom@tromey.com>
+
+	* valops.c (enum_constant_from_type, value_namespace_elt)
+	(value_maybe_namespace_elt): Update.
+	* valarith.c (find_size_for_pointer_math): Update.
+	* target-descriptions.c (make_gdb_type): Update.
+	* symmisc.c (print_symbol): Update.
+	* stabsread.c (define_symbol, read_type)
+	(complain_about_struct_wipeout, add_undefined_type)
+	(cleanup_undefined_types_1): Update.
+	* rust-lang.c (rust_tuple_type_p, rust_slice_type_p)
+	(rust_range_type_p, val_print_struct, rust_print_struct_def)
+	(rust_internal_print_type, rust_composite_type)
+	(rust_evaluate_funcall, rust_evaluate_subexp)
+	(rust_inclusive_range_type_p): Update.
+	* python/py-type.c (typy_get_tag): Update.
+	* p-typeprint.c (pascal_type_print_base): Update.
+	* mdebugread.c (parse_symbol, parse_type): Update.
+	* m2-typeprint.c (m2_long_set, m2_record_fields, m2_enum):
+	Update.
+	* guile/scm-type.c (gdbscm_type_tag): Update.
+	* go-lang.c (sixg_string_p): Update.
+	* gnu-v3-abi.c (build_gdb_vtable_type, build_std_type_info_type):
+	Update.
+	* gdbtypes.h (struct main_type) <tag_name>: Remove.
+	(TYPE_TAG_NAME): Remove.
+	* gdbtypes.c (type_name_no_tag): Simplify.
+	(check_typedef, check_types_equal, recursive_dump_type)
+	(copy_type_recursive, arch_composite_type): Update.
+	* f-typeprint.c (f_type_print_base): Update.  Print "Type" prefix
+	in summary mode when needed.
+	* eval.c (evaluate_funcall): Update.
+	* dwarf2read.c (fixup_go_packaging, read_structure_type)
+	(process_structure_scope, read_enumeration_type)
+	(read_namespace_type, read_module_type, determine_prefix): Update.
+	* cp-support.c (inspect_type): Update.
+	* coffread.c (process_coff_symbol, decode_base_type): Update.
+	* c-varobj.c (c_is_path_expr_parent): Update.
+	* c-typeprint.c (c_type_print_base_struct_union): Update.
+	(c_type_print_base_1): Update.  Print struct/class/union/enum in
+	summary when using C language.
+	* ax-gdb.c (gen_struct_ref, gen_namespace_elt)
+	(gen_maybe_namespace_elt): Update.
+	* ada-lang.c (ada_type_name): Simplify.
+	(empty_record, ada_template_to_fixed_record_type_1)
+	(template_to_static_fixed_type)
+	(to_record_with_fixed_variant_part, ada_check_typedef): Update.
+
+2018-06-01  Tom Tromey  <tom@tromey.com>
+
+	* dwarf2read.c (dwarf2_compute_name): Pass CU's language to
+	c_print_type.
+	* c-typeprint.c (c_print_type_1): Add "language" parameter.
+	(c_print_type): Update.
+	(c_print_type): New overload.
+	(c_type_print_varspec_prefix, c_type_print_args)
+	(c_type_print_varspec_suffix, c_print_type_no_offsets)
+	(c_type_print_base_struct_union, c_type_print_base_1)
+	(cp_type_print_method_args): Add "language" parameter.
+	(c_type_print_base): Update.
+	* c-lang.h (c_print_type): Add new overload.
+
+2018-06-01  Tom Tromey  <tom@tromey.com>
+
+	* typeprint.h (c_type_print_varspec_suffix): Don't declare.
+	* c-typeprint.c (c_type_print_varspec_suffix): Now static.
+
+2018-06-01  Alan Hayward  <alan.hayward@arm.com>
+
+	* aarch64-tdep.c (aarch64_sve_register_names): New const
+	var.
+	* arch/aarch64.h (enum aarch64_regnum): Add SVE entries.
+	(AARCH64_SVE_Z_REGS_NUM): New define.
+	(AARCH64_SVE_P_REGS_NUM): Likewise.
+	(AARCH64_SVE_NUM_REGS): Likewise.
+
+2018-05-31  Uros Bizjak  <ubizjak@gmail.com>
+
+	* nat/linux-ptrace.h [__alpha__]
+	(GDB_ARCH_IS_TRAP_BRKPT, GDB_ARCH_IS_TRAP_HWBKPT): Remove
+	definitions.
+
+2018-05-31  Maciej W. Rozycki  <macro@mips.com>
+
+	* arch-utils.c (gdbarch_info_fill): Set `default_byte_order' to
+	the endianness selected.
+	* NEWS: Document `set endian auto' mode operation update.
+
+2018-05-31  Alan Hayward  <alan.hayward@arm.com>
+
+	* Makefile.in: Add new header.
+	* gdb/arch/aarch64.h (sve_vg_from_vl): New macro.
+	(sve_vl_from_vg): Likewise.
+	(sve_vq_from_vl): Likewise.
+	(sve_vl_from_vq): Likewise.
+	(sve_vq_from_vg): Likewise.
+	(sve_vg_from_vq): Likewise.
+	* configure.nat: Add new c file.
+	* nat/aarch64-sve-linux-ptrace.c: New file.
+	* nat/aarch64-sve-linux-ptrace.h: New file.
+
+2018-05-31  Alan Hayward  <alan.hayward@arm.com>
+
+	* aarch64-linux-nat.c (aarch64_linux_read_description):
+	Add parmeter zero.
+	* aarch64-linux-tdep.c (aarch64_linux_core_read_description):
+	Likewise.
+	* aarch64-tdep.c (tdesc_aarch64_list): Add.
+	(aarch64_read_description): Use VQ to index tdesc_aarch64_list.
+	(aarch64_gdbarch_init): Add parmeter zero.
+	* aarch64-tdep.h (aarch64_read_description): Add VQ parmeter.
+	* arch/aarch64.c (aarch64_create_target_description): Check VQ.
+	* arch/aarch64.h (aarch64_create_target_description): Add VQ.
+	parmeter.
+	* doc/gdb.texinfo: Describe SVE feature
+	* features/aarch64-sve.c: New file.
+
+2018-05-31  Omair Javaid  <omair.javaid@linaro.org>
+
+	PR gdb/23210
+	* gdbarch.sh (significant_addr_bit): Default to zero when
+	not set by target architecture.
+	* gdbarch.c: Re-generated.
+	* utils.c (address_significant): Update.
+
+2018-05-30  Joel Brobecker  <brobecker@adacore.com>
+
+	* stack.c (func_command): Remove trailing newline in call to error.
+
+2018-05-30  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* regcache.h (regcache_raw_collect): Remove, update callers to
+	use regcache::raw_collect.
+	* regcache.c (regcache_raw_collect): Remove.
+
+2018-05-30  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* regcache.h (regcache_raw_supply): Remove, update callers to
+	use detached_regcache::raw_supply.
+	* regcache.c (regcache_raw_supply): Remove.
+
+2018-05-30  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* regcache.h (regcache_cooked_write_part): Remove, update
+	callers to use regcache::cooked_write_part.
+	* regcache.c (regcache_cooked_write_part): Remove.
+
+2018-05-30  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* regcache.h (regcache_cooked_read_part): Remove, update callers
+	to use readable_regcache::cooked_read_part.
+	* regcache.c (regcache_cooked_read_part): Remove.
+
+2018-05-30  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* regcache.h (regcache_cooked_read_value): Remove, update
+	callers to use readable_regcache::cooked_read_value.
+	* regcache.c (regcache_cooked_read_value): Remove.
+
+2018-05-30  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* regcache.h (regcache_cooked_write): Remove, update callers to
+	use regcache::cooked_write.
+	* regcache.c (regcache_cooked_write): Remove.
+
+2018-05-30  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* regcache.h (regcache_invalidate): Remove, update callers to
+	use detached_regcache::invalidate instead.
+	* regcache.c (regcache_invalidate): Remove.
+
+2018-05-30  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* regcache.h (regcache_raw_write_part): Remove, update callers
+	to use regcache::raw_write_part instead.
+	* regcache.c (regcache_raw_write_part): Remove.
+
+2018-05-30  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* regcache.h (regcache_raw_read_part): Remove, update callers to
+	use readable_regcache::raw_read_part instead.
+	* regcache.c (regcache_raw_read_part): Remove.
+
+2018-05-30  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* regcache.h (regcache_cooked_read): Remove, update callers to
+	use readable_regcache::cooked_read instead.
+	* regcache.c (regcache_cooked_read): Remove.
+
+2018-05-30  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* regcache.h (regcache_raw_write): Remove, update callers to use
+	regcache::raw_write instead.
+	* regcache.c (regcache_raw_write): Remove.
+
+2018-05-30  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* regcache.h (regcache_raw_read): Remove, update callers to use
+	readable_regcache::raw_read instead.
+	* regcache.c (regcache_raw_read): Remove.
+
+2018-05-30  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* regcache.h (regcache_raw_update): Remove, update callers to
+	use readable_regcache::raw_update instead.
+	* regcache.c (regcache_raw_update): Remove.
+
+2018-05-30  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* regcache.h (regcache_register_status): Remove, update callers
+	to use reg_buffer::get_register_status directly instead.
+	* regcache.c (regcache_register_status): Remove.
+
+2018-05-30  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* regcache.h (regcache_get_ptid): Remove, update all callers to
+	call regcache::ptid instead.
+	* regcache.c (regcache_get_ptid): Remove.
+
+2018-05-30  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* Makefile.in (ALL_TARGET_OBS): Add or1k-tdep.o.
+
+2018-05-30  Pedro Alves  <palves@redhat.com>
+
+	* common/common-exceptions.h (exception_rethrow): Use
+	ATTRIBUTE_NORETURN.
+
+2018-05-29  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* breakpoint.c (print_solib_event, check_status_catch_solib):
+	Remove struct keyword in range-based for loops.
+	* dbxread.c (find_corresponding_bincl_psymtab): Likewise.
+	* dwarf2read.c (compute_delayed_physnames, rust_union_quirks);
+	Likewise.
+	* linespec.c (find_superclass_methods, search_minsyms_for_name):
+	Likewise.
+	* symfile.c (addr_info_make_relative): Likewise.
+	* thread.c (value_in_thread_stack_temporaries): Likewise.
+
+2018-05-29  Weimin Pan  <weimin.pan@oracle.com>
+
+	* minsyms.h (lookup_minimal_symbol_and_objfile): Remove declaration.
+	* minsyms.c (lookup_minimal_symbol_and_objfile): Remove definition.
+	* coff-pe-read.c (add_pe_forwarded_sym): Replace
+	lookup_minimal_symbol_and_objfile with lookup_bound_minimal_symbol.
+	* glibc-tdep.c (glibc_skip_solib_resolver): Likewise.
+	* jit.c (jit_breakpoint_re_set_internal): Likewise.
+	* printcmd.c (info_address_command): Likewise.
+
+2018-05-29  Tom Tromey  <tom@tromey.com>
+
+	* windows-nat.c (handle_exception): Update fall-through comment.
+
+2018-05-29  Tom Tromey  <tom@tromey.com>
+
+	* progspace.h (so_list_ptr): Remove typedef.  Don't declare VEC.
+	(struct program_space) <added_solibs>: Now a std::vector.
+	* breakpoint.c (print_solib_event): Update.
+	(check_status_catch_solib): Update.
+	* progspace.c (clear_program_space_solib_cache): Update.
+	* solib.c (update_solib_list): Update.
+
+2018-05-29  Tom Tromey  <tom@tromey.com>
+
+	* python/py-type.c (typy_richcompare): Update.
+	* guile/scm-type.c (tyscm_equal_p_type_smob): Update.
+	* gdbtypes.h (types_deeply_equal): Return bool.
+	(types_equal): Likewise.
+	* gdbtypes.c (type_equality_entry_d): Remove typedef.  Don't
+	declare VEC.
+	(check_types_equal): Change worklist to std::vector.  Return
+	bool.
+	(struct type_equality_entry): Add constructor.
+	(compare_maybe_null_strings): Return bool.
+	(check_types_worklist): Return bool.  Change worklist to
+	std::vector.
+	(types_deeply_equal): Use std::vector.
+	(types_equal): Return bool.
+	(compare_maybe_null_strings): Simplify.
+
+2018-05-29  Tom Tromey  <tom@tromey.com>
+
+	* record-btrace.c (tp_t): Remove typedef.  Don't declare VEC.
+
+2018-05-29  Tom Tromey  <tom@tromey.com>
+
+	* objc-lang.h: Don't include cp-support.h.
+	* common/gdb_vecs.h (const_char_ptr): Remove typedef.  Don't
+	declare VEC.
+
 2018-05-27  Tom Tromey  <tom@tromey.com>
 
 	* Makefile.in (DEPFILES): Don't reference REMOTE_OBS.

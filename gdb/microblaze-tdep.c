@@ -529,17 +529,17 @@ microblaze_extract_return_value (struct type *type, struct regcache *regcache,
   switch (TYPE_LENGTH (type))
     {
       case 1:	/* return last byte in the register.  */
-	regcache_cooked_read (regcache, MICROBLAZE_RETVAL_REGNUM, buf);
+	regcache->cooked_read (MICROBLAZE_RETVAL_REGNUM, buf);
 	memcpy(valbuf, buf + MICROBLAZE_REGISTER_SIZE - 1, 1);
 	return;
       case 2:	/* return last 2 bytes in register.  */
-	regcache_cooked_read (regcache, MICROBLAZE_RETVAL_REGNUM, buf);
+	regcache->cooked_read (MICROBLAZE_RETVAL_REGNUM, buf);
 	memcpy(valbuf, buf + MICROBLAZE_REGISTER_SIZE - 2, 2);
 	return;
       case 4:	/* for sizes 4 or 8, copy the required length.  */
       case 8:
-	regcache_cooked_read (regcache, MICROBLAZE_RETVAL_REGNUM, buf);
-	regcache_cooked_read (regcache, MICROBLAZE_RETVAL_REGNUM+1, buf+4);
+	regcache->cooked_read (MICROBLAZE_RETVAL_REGNUM, buf);
+	regcache->cooked_read (MICROBLAZE_RETVAL_REGNUM + 1, buf+4);
 	memcpy (valbuf, buf, TYPE_LENGTH (type));
 	return;
       default:
@@ -573,13 +573,13 @@ microblaze_store_return_value (struct type *type, struct regcache *regcache,
     {
        gdb_assert (len == 8);
        memcpy (buf, valbuf, 8);
-       regcache_cooked_write (regcache, MICROBLAZE_RETVAL_REGNUM+1, buf + 4);
+       regcache->cooked_write (MICROBLAZE_RETVAL_REGNUM+1, buf + 4);
     }
   else
     /* ??? Do we need to do any sign-extension here?  */
     memcpy (buf + 4 - len, valbuf, len);
 
-  regcache_cooked_write (regcache, MICROBLAZE_RETVAL_REGNUM, buf);
+  regcache->cooked_write (MICROBLAZE_RETVAL_REGNUM, buf);
 }
 
 static enum return_value_convention
