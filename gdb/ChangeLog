@@ -1,3 +1,128 @@
+2018-06-07  Pedro Alves  <palves@redhat.com>
+
+	* target.h (target_ops) <beneath>: Now a method.  All references
+	updated.
+	(class target_stack): New.
+	* target.c (g_target_stack): New.
+	(g_current_top_target): Delete.
+	(current_top_target): Get the top target out of g_target_stack.
+	(target_stack::push, target_stack::unpush): New.
+	(push_target, unpush_target): Reimplement.
+	(target_is_pushed): Reimplement in terms of g_target_stack.
+	(target_ops::beneath, target_stack::find_beneath): New.
+
+2018-06-07  Pedro Alves  <palves@redhat.com>
+
+	* target.h (find_target_beneath): Delete declaration.
+	* target.c (find_target_beneath): Delete definition.
+	* aix-thread.c: All callers of find_target_beneath adjusted to
+	call target_ops::beneath instead.
+	* bsd-uthread.c: Likewise.
+	* linux-thread-db.c: Likewise.
+	* ravenscar-thread.c: Likewise.
+	* sol-thread.c: Likewise.
+	* spu-multiarch.c: Likewise.
+
+2018-06-07  Pedro Alves  <palves@redhat.com>
+
+	* target.h (target_ops) <beneath>: Now a method.  All references
+	updated.
+	(target_ops) <m_beneath>: New.
+	* target.c (target_ops::beneath): New.
+	* corelow.c: Adjust all references to target_ops::beneath.
+	* linux-thread-db.c: Likewise.
+	* make-target-delegates: Likewise.
+	* record-btrace.c: Likewise.
+	* record-full.c: Likewise.
+	* remote.c: Likewise.
+	* target.c: Likewise.
+	* target-delegates.c: Regenerate.
+
+2018-06-07  Pedro Alves  <palves@redhat.com>
+
+	* target.h (target_stack): Delete.
+	(current_top_target): Declare function.
+	* target.c (target_stack): Delete.
+	(g_current_top_target): New.
+	(current_top_target): New function.
+	* auxv.c: Use current_top_target instead of target_stack
+	throughout.
+	* avr-tdep.c: Likewise.
+	* breakpoint.c: Likewise.
+	* corefile.c: Likewise.
+	* elfread.c: Likewise.
+	* eval.c: Likewise.
+	* exceptions.c: Likewise.
+	* frame.c: Likewise.
+	* gdbarch-selftests.c: Likewise.
+	* gnu-v3-abi.c: Likewise.
+	* ia64-tdep.c: Likewise.
+	* ia64-vms-tdep.c: Likewise.
+	* infcall.c: Likewise.
+	* infcmd.c: Likewise.
+	* infrun.c: Likewise.
+	* linespec.c: Likewise.
+	* linux-tdep.c: Likewise.
+	* minsyms.c: Likewise.
+	* ppc-linux-nat.c: Likewise.
+	* ppc-linux-tdep.c: Likewise.
+	* procfs.c: Likewise.
+	* regcache.c: Likewise.
+	* remote.c: Likewise.
+	* rs6000-tdep.c: Likewise.
+	* s390-linux-nat.c: Likewise.
+	* s390-tdep.c: Likewise.
+	* solib-aix.c: Likewise.
+	* solib-darwin.c: Likewise.
+	* solib-dsbt.c: Likewise.
+	* solib-spu.c: Likewise.
+	* solib-svr4.c: Likewise.
+	* solib-target.c: Likewise.
+	* sparc-tdep.c: Likewise.
+	* sparc64-tdep.c: Likewise.
+	* spu-tdep.c: Likewise.
+	* symfile.c: Likewise.
+	* symtab.c: Likewise.
+	* target-descriptions.c: Likewise.
+	* target-memory.c: Likewise.
+	* target.c: Likewise.
+	* target.h: Likewise.
+	* tracefile-tfile.c: Likewise.
+	* tracepoint.c: Likewise.
+	* valops.c: Likewise.
+	* valprint.c: Likewise.
+	* value.c: Likewise.
+	* windows-tdep.c: Likewise.
+	* mi/mi-main.c: Likewise.
+
+2018-06-07  Tom Tromey  <tom@tromey.com>
+
+	* valprint.h (build_address_symbolic): Declare.
+	* printcmd.c (print_address_symbolic): Update.
+	(build_address_symbolic): Change "name" and "filename" to
+	std::string.
+	* disasm.c (gdb_pretty_print_disassembler::pretty_print_insn):
+	Update.
+	* defs.h (build_address_symbolic): Remove declaration.
+
+2018-06-07  Alan Hayward  <alan.hayward@arm.com>
+
+        * aarch64-tdep.c (AARCH64_SVE_V0_REGNUM): Add define.
+        (aarch64_vnv_type): Add function.
+        (aarch64_pseudo_register_name): Add V regs for SVE.
+        (aarch64_pseudo_register_type): Likewise.
+        (aarch64_pseudo_register_reggroup_p): Likewise.
+        (aarch64_pseudo_read_value_2): Use V0 offset for SVE
+        (aarch64_pseudo_read_value): Add V regs for SVE.
+        (aarch64_pseudo_write_2): Use V0 offset for SVE
+        (aarch64_pseudo_write): Add V regs for SVE.
+        * aarch64-tdep.h (struct gdbarch_tdep): Add vnv_type.
+
+2018-06-06  Sergio Durigan Junior  <sergiodj@redhat.com>
+
+        * arch/aarch64.h (sve_vq_from_vl): Guard with #ifndef.
+        (sve_vl_from_vq): Likewise.
+
 2018-06-05  Tom Tromey  <tom@tromey.com>
 
 	* cli/cli-cmds.c (show_version): Update.
