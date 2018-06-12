@@ -696,12 +696,6 @@ record_full_check_insn_num (void)
     }
 }
 
-static void
-record_full_arch_list_cleanups (void *ignore)
-{
-  record_full_list_release (record_full_arch_list_tail);
-}
-
 /* Before inferior step (when GDB record the running message, inferior
    only can step), GDB will call this function to record the values to
    record_full_list.  This function will call gdbarch_process_record to
@@ -713,60 +707,66 @@ record_full_message (struct regcache *regcache, enum gdb_signal signal)
 {
   int ret;
   struct gdbarch *gdbarch = regcache->arch ();
-  struct cleanup *old_cleanups
-    = make_cleanup (record_full_arch_list_cleanups, 0);
 
-  record_full_arch_list_head = NULL;
-  record_full_arch_list_tail = NULL;
-
-  /* Check record_full_insn_num.  */
-  record_full_check_insn_num ();
-
-  /* If gdb sends a signal value to target_resume,
-     save it in the 'end' field of the previous instruction.
-
-     Maybe process record should record what really happened,
-     rather than what gdb pretends has happened.
-
-     So if Linux delivered the signal to the child process during
-     the record mode, we will record it and deliver it again in
-     the replay mode.
-
-     If user says "ignore this signal" during the record mode, then
-     it will be ignored again during the replay mode (no matter if
-     the user says something different, like "deliver this signal"
-     during the replay mode).
-
-     User should understand that nothing he does during the replay
-     mode will change the behavior of the child.  If he tries,
-     then that is a user error.
-
-     But we should still deliver the signal to gdb during the replay,
-     if we delivered it during the recording.  Therefore we should
-     record the signal during record_full_wait, not
-     record_full_resume.  */
-  if (record_full_list != &record_full_first)  /* FIXME better way to check */
+  TRY
     {
-      gdb_assert (record_full_list->type == record_full_end);
-      record_full_list->u.end.sigval = signal;
+      record_full_arch_list_head = NULL;
+      record_full_arch_list_tail = NULL;
+
+      /* Check record_full_insn_num.  */
+      record_full_check_insn_num ();
+
+      /* If gdb sends a signal value to target_resume,
+	 save it in the 'end' field of the previous instruction.
+
+	 Maybe process record should record what really happened,
+	 rather than what gdb pretends has happened.
+
+	 So if Linux delivered the signal to the child process during
+	 the record mode, we will record it and deliver it again in
+	 the replay mode.
+
+	 If user says "ignore this signal" during the record mode, then
+	 it will be ignored again during the replay mode (no matter if
+	 the user says something different, like "deliver this signal"
+	 during the replay mode).
+
+	 User should understand that nothing he does during the replay
+	 mode will change the behavior of the child.  If he tries,
+	 then that is a user error.
+
+	 But we should still deliver the signal to gdb during the replay,
+	 if we delivered it during the recording.  Therefore we should
+	 record the signal during record_full_wait, not
+	 record_full_resume.  */
+      if (record_full_list != &record_full_first)  /* FIXME better way
+						      to check */
+	{
+	  gdb_assert (record_full_list->type == record_full_end);
+	  record_full_list->u.end.sigval = signal;
+	}
+
+      if (signal == GDB_SIGNAL_0
+	  || !gdbarch_process_record_signal_p (gdbarch))
+	ret = gdbarch_process_record (gdbarch,
+				      regcache,
+				      regcache_read_pc (regcache));
+      else
+	ret = gdbarch_process_record_signal (gdbarch,
+					     regcache,
+					     signal);
+
+      if (ret > 0)
+	error (_("Process record: inferior program stopped."));
+      if (ret < 0)
+	error (_("Process record: failed to record execution log."));
     }
-
-  if (signal == GDB_SIGNAL_0
-      || !gdbarch_process_record_signal_p (gdbarch))
-    ret = gdbarch_process_record (gdbarch,
-				  regcache,
-				  regcache_read_pc (regcache));
-  else
-    ret = gdbarch_process_record_signal (gdbarch,
-					 regcache,
-					 signal);
-
-  if (ret > 0)
-    error (_("Process record: inferior program stopped."));
-  if (ret < 0)
-    error (_("Process record: failed to record execution log."));
-
-  discard_cleanups (old_cleanups);
+  CATCH (ex, RETURN_MASK_ALL)
+    {
+      record_full_list_release (record_full_arch_list_tail);
+      throw_exception (ex);
+    }
+  END_CATCH
 
   record_full_list->next = record_full_arch_list_head;
   record_full_arch_list_head->prev = record_full_list;
@@ -1140,18 +1140,6 @@ record_full_sig_handler (int signo)
   record_full_get_sig = 1;
 }
 
-static void
-record_full_wait_cleanups (void *ignore)
-{
-  if (execution_direction == EXEC_REVERSE)
-    {
-      if (record_full_list->next)
-	record_full_list = record_full_list->next;
-    }
-  else
-    record_full_list = record_full_list->prev;
-}
-
 /* "wait" target method for process record target.
 
    In record mode, the target is always run in singlestep mode
@@ -1310,144 +1298,163 @@ record_full_wait_1 (struct target_ops *ops,
       const struct address_space *aspace = regcache->aspace ();
       int continue_flag = 1;
       int first_record_full_end = 1;
-      struct cleanup *old_cleanups
-	= make_cleanup (record_full_wait_cleanups, 0);
-      CORE_ADDR tmp_pc;
 
-      record_full_stop_reason = TARGET_STOPPED_BY_NO_REASON;
-      status->kind = TARGET_WAITKIND_STOPPED;
-
-      /* Check breakpoint when forward execute.  */
-      if (execution_direction == EXEC_FORWARD)
+      TRY
 	{
-	  tmp_pc = regcache_read_pc (regcache);
-	  if (record_check_stopped_by_breakpoint (aspace, tmp_pc,
-						  &record_full_stop_reason))
+	  CORE_ADDR tmp_pc;
+
+	  record_full_stop_reason = TARGET_STOPPED_BY_NO_REASON;
+	  status->kind = TARGET_WAITKIND_STOPPED;
+
+	  /* Check breakpoint when forward execute.  */
+	  if (execution_direction == EXEC_FORWARD)
 	    {
-	      if (record_debug)
-		fprintf_unfiltered (gdb_stdlog,
-				    "Process record: break at %s.\n",
-				    paddress (gdbarch, tmp_pc));
-	      goto replay_out;
+	      tmp_pc = regcache_read_pc (regcache);
+	      if (record_check_stopped_by_breakpoint (aspace, tmp_pc,
+						      &record_full_stop_reason))
+		{
+		  if (record_debug)
+		    fprintf_unfiltered (gdb_stdlog,
+					"Process record: break at %s.\n",
+					paddress (gdbarch, tmp_pc));
+		  goto replay_out;
+		}
 	    }
+
+	  /* If GDB is in terminal_inferior mode, it will not get the
+	     signal.  And in GDB replay mode, GDB doesn't need to be
+	     in terminal_inferior mode, because inferior will not
+	     executed.  Then set it to terminal_ours to make GDB get
+	     the signal.  */
+	  target_terminal::ours ();
+
+	  /* In EXEC_FORWARD mode, record_full_list points to the tail of prev
+	     instruction.  */
+	  if (execution_direction == EXEC_FORWARD && record_full_list->next)
+	    record_full_list = record_full_list->next;
+
+	  /* Loop over the record_full_list, looking for the next place to
+	     stop.  */
+	  do
+	    {
+	      /* Check for beginning and end of log.  */
+	      if (execution_direction == EXEC_REVERSE
+		  && record_full_list == &record_full_first)
+		{
+		  /* Hit beginning of record log in reverse.  */
+		  status->kind = TARGET_WAITKIND_NO_HISTORY;
+		  break;
+		}
+	      if (execution_direction != EXEC_REVERSE
+		  && !record_full_list->next)
+		{
+		  /* Hit end of record log going forward.  */
+		  status->kind = TARGET_WAITKIND_NO_HISTORY;
+		  break;
+		}
+
+	      record_full_exec_insn (regcache, gdbarch, record_full_list);
+
+	      if (record_full_list->type == record_full_end)
+		{
+		  if (record_debug > 1)
+		    fprintf_unfiltered
+		      (gdb_stdlog,
+		       "Process record: record_full_end %s to "
+		       "inferior.\n",
+		       host_address_to_string (record_full_list));
+
+		  if (first_record_full_end
+		      && execution_direction == EXEC_REVERSE)
+		    {
+		      /* When reverse excute, the first
+			 record_full_end is the part of current
+			 instruction.  */
+		      first_record_full_end = 0;
+		    }
+		  else
+		    {
+		      /* In EXEC_REVERSE mode, this is the
+			 record_full_end of prev instruction.  In
+			 EXEC_FORWARD mode, this is the
+			 record_full_end of current instruction.  */
+		      /* step */
+		      if (record_full_resume_step)
+			{
+			  if (record_debug > 1)
+			    fprintf_unfiltered (gdb_stdlog,
+						"Process record: step.\n");
+			  continue_flag = 0;
+			}
+
+		      /* check breakpoint */
+		      tmp_pc = regcache_read_pc (regcache);
+		      if (record_check_stopped_by_breakpoint
+			  (aspace, tmp_pc, &record_full_stop_reason))
+			{
+			  if (record_debug)
+			    fprintf_unfiltered (gdb_stdlog,
+						"Process record: break "
+						"at %s.\n",
+						paddress (gdbarch, tmp_pc));
+
+			  continue_flag = 0;
+			}
+
+		      if (record_full_stop_reason
+			  == TARGET_STOPPED_BY_WATCHPOINT)
+			{
+			  if (record_debug)
+			    fprintf_unfiltered (gdb_stdlog,
+						"Process record: hit hw "
+						"watchpoint.\n");
+			  continue_flag = 0;
+			}
+		      /* Check target signal */
+		      if (record_full_list->u.end.sigval != GDB_SIGNAL_0)
+			/* FIXME: better way to check */
+			continue_flag = 0;
+		    }
+		}
+
+	      if (continue_flag)
+		{
+		  if (execution_direction == EXEC_REVERSE)
+		    {
+		      if (record_full_list->prev)
+			record_full_list = record_full_list->prev;
+		    }
+		  else
+		    {
+		      if (record_full_list->next)
+			record_full_list = record_full_list->next;
+		    }
+		}
+	    }
+	  while (continue_flag);
+
+	replay_out:
+	  if (record_full_get_sig)
+	    status->value.sig = GDB_SIGNAL_INT;
+	  else if (record_full_list->u.end.sigval != GDB_SIGNAL_0)
+	    /* FIXME: better way to check */
+	    status->value.sig = record_full_list->u.end.sigval;
+	  else
+	    status->value.sig = GDB_SIGNAL_TRAP;
 	}
-
-      /* If GDB is in terminal_inferior mode, it will not get the signal.
-         And in GDB replay mode, GDB doesn't need to be in terminal_inferior
-         mode, because inferior will not executed.
-         Then set it to terminal_ours to make GDB get the signal.  */
-      target_terminal::ours ();
-
-      /* In EXEC_FORWARD mode, record_full_list points to the tail of prev
-         instruction.  */
-      if (execution_direction == EXEC_FORWARD && record_full_list->next)
-	record_full_list = record_full_list->next;
-
-      /* Loop over the record_full_list, looking for the next place to
-	 stop.  */
-      do
+      CATCH (ex, RETURN_MASK_ALL)
 	{
-	  /* Check for beginning and end of log.  */
-	  if (execution_direction == EXEC_REVERSE
-	      && record_full_list == &record_full_first)
+	  if (execution_direction == EXEC_REVERSE)
 	    {
-	      /* Hit beginning of record log in reverse.  */
-	      status->kind = TARGET_WAITKIND_NO_HISTORY;
-	      break;
+	      if (record_full_list->next)
+		record_full_list = record_full_list->next;
 	    }
-	  if (execution_direction != EXEC_REVERSE && !record_full_list->next)
-	    {
-	      /* Hit end of record log going forward.  */
-	      status->kind = TARGET_WAITKIND_NO_HISTORY;
-	      break;
-	    }
+	  else
+	    record_full_list = record_full_list->prev;
 
-          record_full_exec_insn (regcache, gdbarch, record_full_list);
-
-	  if (record_full_list->type == record_full_end)
-	    {
-	      if (record_debug > 1)
-		fprintf_unfiltered (gdb_stdlog,
-				    "Process record: record_full_end %s to "
-				    "inferior.\n",
-				    host_address_to_string (record_full_list));
-
-	      if (first_record_full_end && execution_direction == EXEC_REVERSE)
-		{
-		  /* When reverse excute, the first record_full_end is the
-		     part of current instruction.  */
-		  first_record_full_end = 0;
-		}
-	      else
-		{
-		  /* In EXEC_REVERSE mode, this is the record_full_end of prev
-		     instruction.
-		     In EXEC_FORWARD mode, this is the record_full_end of
-		     current instruction.  */
-		  /* step */
-		  if (record_full_resume_step)
-		    {
-		      if (record_debug > 1)
-			fprintf_unfiltered (gdb_stdlog,
-					    "Process record: step.\n");
-		      continue_flag = 0;
-		    }
-
-		  /* check breakpoint */
-		  tmp_pc = regcache_read_pc (regcache);
-		  if (record_check_stopped_by_breakpoint (aspace, tmp_pc,
-							  &record_full_stop_reason))
-		    {
-		      if (record_debug)
-			fprintf_unfiltered (gdb_stdlog,
-					    "Process record: break "
-					    "at %s.\n",
-					    paddress (gdbarch, tmp_pc));
-
-		      continue_flag = 0;
-		    }
-
-		  if (record_full_stop_reason == TARGET_STOPPED_BY_WATCHPOINT)
-		    {
-		      if (record_debug)
-			fprintf_unfiltered (gdb_stdlog,
-					    "Process record: hit hw "
-					    "watchpoint.\n");
-		      continue_flag = 0;
-		    }
-		  /* Check target signal */
-		  if (record_full_list->u.end.sigval != GDB_SIGNAL_0)
-		    /* FIXME: better way to check */
-		    continue_flag = 0;
-		}
-	    }
-
-	  if (continue_flag)
-	    {
-	      if (execution_direction == EXEC_REVERSE)
-		{
-		  if (record_full_list->prev)
-		    record_full_list = record_full_list->prev;
-		}
-	      else
-		{
-		  if (record_full_list->next)
-		    record_full_list = record_full_list->next;
-		}
-	    }
+	  throw_exception (ex);
 	}
-      while (continue_flag);
-
-replay_out:
-      if (record_full_get_sig)
-	status->value.sig = GDB_SIGNAL_INT;
-      else if (record_full_list->u.end.sigval != GDB_SIGNAL_0)
-	/* FIXME: better way to check */
-	status->value.sig = record_full_list->u.end.sigval;
-      else
-	status->value.sig = GDB_SIGNAL_TRAP;
-
-      discard_cleanups (old_cleanups);
+      END_CATCH
     }
 
   signal (SIGINT, handle_sigint);
@@ -1700,6 +1707,15 @@ record_full_target::xfer_partial (enum target_object object,
 
 struct record_full_breakpoint
 {
+  record_full_breakpoint (struct address_space *address_space_,
+			  CORE_ADDR addr_,
+			  bool in_target_beneath_)
+    : address_space (address_space_),
+      addr (addr_),
+      in_target_beneath (in_target_beneath_)
+  {
+  }
+
   /* The address and address space the breakpoint was set at.  */
   struct address_space *address_space;
   CORE_ADDR addr;
@@ -1707,15 +1723,12 @@ struct record_full_breakpoint
   /* True when the breakpoint has been also installed in the target
      beneath.  This will be false for breakpoints set during replay or
      when recording.  */
-  int in_target_beneath;
+  bool in_target_beneath;
 };
-
-typedef struct record_full_breakpoint *record_full_breakpoint_p;
-DEF_VEC_P(record_full_breakpoint_p);
 
 /* The list of breakpoints inserted while the record target is
    active.  */
-VEC(record_full_breakpoint_p) *record_full_breakpoints = NULL;
+static std::vector<record_full_breakpoint> record_full_breakpoints;
 
 static void
 record_full_sync_record_breakpoints (struct bp_location *loc, void *data)
@@ -1725,14 +1738,10 @@ record_full_sync_record_breakpoints (struct bp_location *loc, void *data)
 
   if (loc->inserted)
     {
-      struct record_full_breakpoint *bp = XNEW (struct record_full_breakpoint);
-
-      bp->addr = loc->target_info.placed_address;
-      bp->address_space = loc->target_info.placed_address_space;
-
-      bp->in_target_beneath = 1;
-
-      VEC_safe_push (record_full_breakpoint_p, record_full_breakpoints, bp);
+      record_full_breakpoints.emplace_back
+	(loc->target_info.placed_address_space,
+	 loc->target_info.placed_address,
+	 1);
     }
 }
 
@@ -1741,7 +1750,7 @@ record_full_sync_record_breakpoints (struct bp_location *loc, void *data)
 static void
 record_full_init_record_breakpoints (void)
 {
-  VEC_free (record_full_breakpoint_p, record_full_breakpoints);
+  record_full_breakpoints.clear ();
 
   iterate_over_bp_locations (record_full_sync_record_breakpoints);
 }
@@ -1754,9 +1763,7 @@ int
 record_full_target::insert_breakpoint (struct gdbarch *gdbarch,
 				       struct bp_target_info *bp_tgt)
 {
-  struct record_full_breakpoint *bp;
-  int in_target_beneath = 0;
-  int ix;
+  bool in_target_beneath = false;
 
   if (!RECORD_FULL_IS_REPLAY)
     {
@@ -1773,30 +1780,25 @@ record_full_target::insert_breakpoint (struct gdbarch *gdbarch,
       if (ret != 0)
 	return ret;
 
-      in_target_beneath = 1;
+      in_target_beneath = true;
     }
 
   /* Use the existing entries if found in order to avoid duplication
      in record_full_breakpoints.  */
 
-  for (ix = 0;
-       VEC_iterate (record_full_breakpoint_p,
-		    record_full_breakpoints, ix, bp);
-       ++ix)
+  for (struct record_full_breakpoint &bp : record_full_breakpoints)
     {
-      if (bp->addr == bp_tgt->placed_address
-	  && bp->address_space == bp_tgt->placed_address_space)
+      if (bp.addr == bp_tgt->placed_address
+	  && bp.address_space == bp_tgt->placed_address_space)
 	{
-	  gdb_assert (bp->in_target_beneath == in_target_beneath);
+	  gdb_assert (bp.in_target_beneath == in_target_beneath);
 	  return 0;
 	}
     }
 
-  bp = XNEW (struct record_full_breakpoint);
-  bp->addr = bp_tgt->placed_address;
-  bp->address_space = bp_tgt->placed_address_space;
-  bp->in_target_beneath = in_target_beneath;
-  VEC_safe_push (record_full_breakpoint_p, record_full_breakpoints, bp);
+  record_full_breakpoints.emplace_back (bp_tgt->placed_address_space,
+					bp_tgt->placed_address,
+					in_target_beneath);
   return 0;
 }
 
@@ -1807,18 +1809,16 @@ record_full_target::remove_breakpoint (struct gdbarch *gdbarch,
 				       struct bp_target_info *bp_tgt,
 				       enum remove_bp_reason reason)
 {
-  struct record_full_breakpoint *bp;
-  int ix;
-
-  for (ix = 0;
-       VEC_iterate (record_full_breakpoint_p,
-		    record_full_breakpoints, ix, bp);
-       ++ix)
+  for (auto iter = record_full_breakpoints.begin ();
+       iter != record_full_breakpoints.end ();
+       ++iter)
     {
-      if (bp->addr == bp_tgt->placed_address
-	  && bp->address_space == bp_tgt->placed_address_space)
+      struct record_full_breakpoint &bp = *iter;
+
+      if (bp.addr == bp_tgt->placed_address
+	  && bp.address_space == bp_tgt->placed_address_space)
 	{
-	  if (bp->in_target_beneath)
+	  if (bp.in_target_beneath)
 	    {
 	      scoped_restore restore_operation_disable
 		= record_full_gdb_operation_disable_set ();
@@ -1830,10 +1830,7 @@ record_full_target::remove_breakpoint (struct gdbarch *gdbarch,
 	    }
 
 	  if (reason == REMOVE_BREAKPOINT)
-	    {
-	      VEC_unordered_remove (record_full_breakpoint_p,
-				    record_full_breakpoints, ix);
-	    }
+	    unordered_remove (record_full_breakpoints, iter);
 	  return 0;
 	}
     }
@@ -2337,7 +2334,6 @@ static void
 record_full_restore (void)
 {
   uint32_t magic;
-  struct cleanup *old_cleanups;
   struct record_full_entry *rec;
   asection *osec;
   uint32_t osec_size;
@@ -2382,108 +2378,115 @@ record_full_restore (void)
   record_full_arch_list_head = NULL;
   record_full_arch_list_tail = NULL;
   record_full_insn_num = 0;
-  old_cleanups = make_cleanup (record_full_arch_list_cleanups, 0);
-  regcache = get_current_regcache ();
 
-  while (1)
+  TRY
     {
-      uint8_t rectype;
-      uint32_t regnum, len, signal, count;
-      uint64_t addr;
+      regcache = get_current_regcache ();
 
-      /* We are finished when offset reaches osec_size.  */
-      if (bfd_offset >= osec_size)
-	break;
-      bfdcore_read (core_bfd, osec, &rectype, sizeof (rectype), &bfd_offset);
+      while (1)
+	{
+	  uint8_t rectype;
+	  uint32_t regnum, len, signal, count;
+	  uint64_t addr;
 
-      switch (rectype)
-        {
-        case record_full_reg: /* reg */
-          /* Get register number to regnum.  */
-          bfdcore_read (core_bfd, osec, &regnum,
-			sizeof (regnum), &bfd_offset);
-	  regnum = netorder32 (regnum);
+	  /* We are finished when offset reaches osec_size.  */
+	  if (bfd_offset >= osec_size)
+	    break;
+	  bfdcore_read (core_bfd, osec, &rectype, sizeof (rectype), &bfd_offset);
 
-          rec = record_full_reg_alloc (regcache, regnum);
+	  switch (rectype)
+	    {
+	    case record_full_reg: /* reg */
+	      /* Get register number to regnum.  */
+	      bfdcore_read (core_bfd, osec, &regnum,
+			    sizeof (regnum), &bfd_offset);
+	      regnum = netorder32 (regnum);
 
-          /* Get val.  */
-          bfdcore_read (core_bfd, osec, record_full_get_loc (rec),
-			rec->u.reg.len, &bfd_offset);
+	      rec = record_full_reg_alloc (regcache, regnum);
 
-	  if (record_debug)
-	    fprintf_unfiltered (gdb_stdlog,
-				"  Reading register %d (1 "
-				"plus %lu plus %d bytes)\n",
-				rec->u.reg.num,
-				(unsigned long) sizeof (regnum),
-				rec->u.reg.len);
-          break;
+	      /* Get val.  */
+	      bfdcore_read (core_bfd, osec, record_full_get_loc (rec),
+			    rec->u.reg.len, &bfd_offset);
 
-        case record_full_mem: /* mem */
-          /* Get len.  */
-          bfdcore_read (core_bfd, osec, &len, 
-			sizeof (len), &bfd_offset);
-	  len = netorder32 (len);
+	      if (record_debug)
+		fprintf_unfiltered (gdb_stdlog,
+				    "  Reading register %d (1 "
+				    "plus %lu plus %d bytes)\n",
+				    rec->u.reg.num,
+				    (unsigned long) sizeof (regnum),
+				    rec->u.reg.len);
+	      break;
 
-          /* Get addr.  */
-          bfdcore_read (core_bfd, osec, &addr,
-			sizeof (addr), &bfd_offset);
-	  addr = netorder64 (addr);
+	    case record_full_mem: /* mem */
+	      /* Get len.  */
+	      bfdcore_read (core_bfd, osec, &len,
+			    sizeof (len), &bfd_offset);
+	      len = netorder32 (len);
 
-          rec = record_full_mem_alloc (addr, len);
+	      /* Get addr.  */
+	      bfdcore_read (core_bfd, osec, &addr,
+			    sizeof (addr), &bfd_offset);
+	      addr = netorder64 (addr);
 
-          /* Get val.  */
-          bfdcore_read (core_bfd, osec, record_full_get_loc (rec),
-			rec->u.mem.len, &bfd_offset);
+	      rec = record_full_mem_alloc (addr, len);
 
-	  if (record_debug)
-	    fprintf_unfiltered (gdb_stdlog,
-				"  Reading memory %s (1 plus "
-				"%lu plus %lu plus %d bytes)\n",
-				paddress (get_current_arch (),
-					  rec->u.mem.addr),
-				(unsigned long) sizeof (addr),
-				(unsigned long) sizeof (len),
-				rec->u.mem.len);
-          break;
+	      /* Get val.  */
+	      bfdcore_read (core_bfd, osec, record_full_get_loc (rec),
+			    rec->u.mem.len, &bfd_offset);
 
-        case record_full_end: /* end */
-          rec = record_full_end_alloc ();
-          record_full_insn_num ++;
+	      if (record_debug)
+		fprintf_unfiltered (gdb_stdlog,
+				    "  Reading memory %s (1 plus "
+				    "%lu plus %lu plus %d bytes)\n",
+				    paddress (get_current_arch (),
+					      rec->u.mem.addr),
+				    (unsigned long) sizeof (addr),
+				    (unsigned long) sizeof (len),
+				    rec->u.mem.len);
+	      break;
 
-	  /* Get signal value.  */
-	  bfdcore_read (core_bfd, osec, &signal, 
-			sizeof (signal), &bfd_offset);
-	  signal = netorder32 (signal);
-	  rec->u.end.sigval = (enum gdb_signal) signal;
+	    case record_full_end: /* end */
+	      rec = record_full_end_alloc ();
+	      record_full_insn_num ++;
 
-	  /* Get insn count.  */
-	  bfdcore_read (core_bfd, osec, &count, 
-			sizeof (count), &bfd_offset);
-	  count = netorder32 (count);
-	  rec->u.end.insn_num = count;
-	  record_full_insn_count = count + 1;
-	  if (record_debug)
-	    fprintf_unfiltered (gdb_stdlog,
-				"  Reading record_full_end (1 + "
-				"%lu + %lu bytes), offset == %s\n",
-				(unsigned long) sizeof (signal),
-				(unsigned long) sizeof (count),
-				paddress (get_current_arch (),
-					  bfd_offset));
-          break;
+	      /* Get signal value.  */
+	      bfdcore_read (core_bfd, osec, &signal,
+			    sizeof (signal), &bfd_offset);
+	      signal = netorder32 (signal);
+	      rec->u.end.sigval = (enum gdb_signal) signal;
 
-        default:
-          error (_("Bad entry type in core file %s."),
-		 bfd_get_filename (core_bfd));
-          break;
-        }
+	      /* Get insn count.  */
+	      bfdcore_read (core_bfd, osec, &count,
+			    sizeof (count), &bfd_offset);
+	      count = netorder32 (count);
+	      rec->u.end.insn_num = count;
+	      record_full_insn_count = count + 1;
+	      if (record_debug)
+		fprintf_unfiltered (gdb_stdlog,
+				    "  Reading record_full_end (1 + "
+				    "%lu + %lu bytes), offset == %s\n",
+				    (unsigned long) sizeof (signal),
+				    (unsigned long) sizeof (count),
+				    paddress (get_current_arch (),
+					      bfd_offset));
+	      break;
 
-      /* Add rec to record arch list.  */
-      record_full_arch_list_add (rec);
+	    default:
+	      error (_("Bad entry type in core file %s."),
+		     bfd_get_filename (core_bfd));
+	      break;
+	    }
+
+	  /* Add rec to record arch list.  */
+	  record_full_arch_list_add (rec);
+	}
     }
-
-  discard_cleanups (old_cleanups);
+  CATCH (ex, RETURN_MASK_ALL)
+    {
+      record_full_list_release (record_full_arch_list_tail);
+      throw_exception (ex);
+    }
+  END_CATCH
 
   /* Add record_full_arch_list_head to the end of record list.  */
   record_full_first.next = record_full_arch_list_head;

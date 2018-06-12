@@ -185,14 +185,15 @@ reg_buffer::reg_buffer (gdbarch *gdbarch, bool has_pseudo)
 
   if (has_pseudo)
     {
-      m_registers = XCNEWVEC (gdb_byte, m_descr->sizeof_cooked_registers);
-      m_register_status = XCNEWVEC (signed char,
-				    m_descr->nr_cooked_registers);
+      m_registers.reset (new gdb_byte[m_descr->sizeof_cooked_registers] ());
+      m_register_status.reset
+	(new register_status[m_descr->nr_cooked_registers] ());
     }
   else
     {
-      m_registers = XCNEWVEC (gdb_byte, m_descr->sizeof_raw_registers);
-      m_register_status = XCNEWVEC (signed char, gdbarch_num_regs (gdbarch));
+      m_registers.reset (new gdb_byte[m_descr->sizeof_raw_registers] ());
+      m_register_status.reset
+	(new register_status[gdbarch_num_regs (gdbarch)] ());
     }
 }
 
@@ -259,7 +260,7 @@ private:
 gdb_byte *
 reg_buffer::register_buffer (int regnum) const
 {
-  return m_registers + m_descr->register_offset[regnum];
+  return m_registers.get () + m_descr->register_offset[regnum];
 }
 
 void
@@ -272,8 +273,8 @@ reg_buffer::save (regcache_cooked_read_ftype *cooked_read,
   /* It should have pseudo registers.  */
   gdb_assert (m_has_pseudo);
   /* Clear the dest.  */
-  memset (m_registers, 0, m_descr->sizeof_cooked_registers);
-  memset (m_register_status, 0, m_descr->nr_cooked_registers);
+  memset (m_registers.get (), 0, m_descr->sizeof_cooked_registers);
+  memset (m_register_status.get (), REG_UNKNOWN, m_descr->nr_cooked_registers);
   /* Copy over any registers (identified by their membership in the
      save_reggroup) and mark them as valid.  The full [0 .. gdbarch_num_regs +
      gdbarch_num_pseudo_regs) range is checked since some architectures need
@@ -320,16 +321,18 @@ regcache::restore (readonly_detached_regcache *src)
     }
 }
 
+/* See common/common-regcache.h.  */
+
 enum register_status
 reg_buffer::get_register_status (int regnum) const
 {
   assert_regnum (regnum);
 
-  return (enum register_status) m_register_status[regnum];
+  return m_register_status[regnum];
 }
 
 void
-detached_regcache::invalidate (int regnum)
+reg_buffer::invalidate (int regnum)
 {
   assert_regnum (regnum);
   m_register_status[regnum] = REG_UNKNOWN;
@@ -515,7 +518,7 @@ readable_regcache::raw_read (int regnum, gdb_byte *buf)
     memcpy (buf, register_buffer (regnum),
 	    m_descr->sizeof_register[regnum]);
 
-  return (enum register_status) m_register_status[regnum];
+  return m_register_status[regnum];
 }
 
 enum register_status
@@ -609,7 +612,7 @@ readable_regcache::cooked_read (int regnum, gdb_byte *buf)
       else
 	memset (buf, 0, m_descr->sizeof_register[regnum]);
 
-      return (enum register_status) m_register_status[regnum];
+      return m_register_status[regnum];
     }
   else if (gdbarch_pseudo_register_read_value_p (m_descr->gdbarch))
     {
@@ -879,8 +882,10 @@ regcache::cooked_write_part (int regnum, int offset, int len,
   write_part (regnum, offset, len, buf, false);
 }
 
+/* See common/common-regcache.h.  */
+
 void
-detached_regcache::raw_supply (int regnum, const void *buf)
+reg_buffer::raw_supply (int regnum, const void *buf)
 {
   void *regbuf;
   size_t size;
@@ -905,15 +910,11 @@ detached_regcache::raw_supply (int regnum, const void *buf)
     }
 }
 
-/* Supply register REGNUM to REGCACHE.  Value to supply is an integer stored at
-   address ADDR, in target endian, with length ADDR_LEN and sign IS_SIGNED.  If
-   the register size is greater than ADDR_LEN, then the integer will be sign or
-   zero extended.  If the register size is smaller than the integer, then the
-   most significant bytes of the integer will be truncated.  */
+/* See regcache.h.  */
 
 void
-detached_regcache::raw_supply_integer (int regnum, const gdb_byte *addr,
-				   int addr_len, bool is_signed)
+reg_buffer::raw_supply_integer (int regnum, const gdb_byte *addr,
+				int addr_len, bool is_signed)
 {
   enum bfd_endian byte_order = gdbarch_byte_order (m_descr->gdbarch);
   gdb_byte *regbuf;
@@ -929,12 +930,10 @@ detached_regcache::raw_supply_integer (int regnum, const gdb_byte *addr,
   m_register_status[regnum] = REG_VALID;
 }
 
-/* Supply register REGNUM with zeroed value to REGCACHE.  This is not the same
-   as calling raw_supply with NULL (which will set the state to
-   unavailable).  */
+/* See regcache.h.  */
 
 void
-detached_regcache::raw_supply_zeroed (int regnum)
+reg_buffer::raw_supply_zeroed (int regnum)
 {
   void *regbuf;
   size_t size;
@@ -948,8 +947,10 @@ detached_regcache::raw_supply_zeroed (int regnum)
   m_register_status[regnum] = REG_VALID;
 }
 
+/* See common/common-regcache.h.  */
+
 void
-regcache::raw_collect (int regnum, void *buf) const
+reg_buffer::raw_collect (int regnum, void *buf) const
 {
   const void *regbuf;
   size_t size;
@@ -962,19 +963,11 @@ regcache::raw_collect (int regnum, void *buf) const
   memcpy (buf, regbuf, size);
 }
 
-/* Transfer a single or all registers belonging to a certain register
-   set to or from a buffer.  This is the main worker function for
-   regcache_supply_regset and regcache_collect_regset.  */
-
-/* Collect register REGNUM from REGCACHE.  Store collected value as an integer
-   at address ADDR, in target endian, with length ADDR_LEN and sign IS_SIGNED.
-   If ADDR_LEN is greater than the register size, then the integer will be sign
-   or zero extended.  If ADDR_LEN is smaller than the register size, then the
-   most significant bytes of the integer will be truncated.  */
+/* See regcache.h.  */
 
 void
-regcache::raw_collect_integer (int regnum, gdb_byte *addr, int addr_len,
-			       bool is_signed) const
+reg_buffer::raw_collect_integer (int regnum, gdb_byte *addr, int addr_len,
+				 bool is_signed) const
 {
   enum bfd_endian byte_order = gdbarch_byte_order (m_descr->gdbarch);
   const gdb_byte *regbuf;
@@ -988,6 +981,10 @@ regcache::raw_collect_integer (int regnum, gdb_byte *addr, int addr_len,
   copy_integer_to_size (addr, addr_len, regbuf, regsize, is_signed,
 			byte_order);
 }
+
+/* Transfer a single or all registers belonging to a certain register
+   set to or from a buffer.  This is the main worker function for
+   regcache_supply_regset and regcache_collect_regset.  */
 
 void
 regcache::transfer_regset (const struct regset *regset,
@@ -1082,6 +1079,20 @@ regcache::collect_regset (const struct regset *regset,
   transfer_regset (regset, NULL, regnum, NULL, buf, size);
 }
 
+/* See common/common-regcache.h.  */
+
+bool
+reg_buffer::raw_compare (int regnum, const void *buf, int offset) const
+{
+  gdb_assert (buf != NULL);
+  assert_regnum (regnum);
+
+  const char *regbuf = (const char *) register_buffer (regnum);
+  size_t size = m_descr->sizeof_register[regnum];
+  gdb_assert (size >= offset);
+
+  return (memcmp (buf, regbuf + offset, size - offset) == 0);
+}
 
 /* Special handling for register PC.  */
 

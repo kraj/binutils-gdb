@@ -1,3 +1,12 @@
+2018-06-11  Eli Zaretskii  <eliz@gnu.org>
+
+	* gdb.texinfo (Maintenance Commands): Add a missing @anchor.
+
+2018-06-08  Gary Benson <gbenson@redhat.com>
+
+	* gdb.texinfo (Maintenance Commands): Document "maint check
+	libthread-db" and "maint set/show check-libthread-db".
+
 2018-06-05  Tom Tromey	<tom@tromey.com>
 
 	PR cli/12326:

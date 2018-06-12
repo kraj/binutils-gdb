@@ -1,3 +1,48 @@
+2018-06-11  Nick Clifton  <nickc@redhat.com>
+
+	* po/es.po: Updated Spanish translation.
+
+2018-06-09  Maciej W. Rozycki  <macro@mips.com>
+
+	* testsuite/ld-mips-elf/stub-dynsym-micromips-1-7fff.d: New
+	test.
+	* testsuite/ld-mips-elf/stub-dynsym-micromips-1-8000.d: New
+	test.
+	* testsuite/ld-mips-elf/stub-dynsym-micromips-1-fff0.d: New
+	test.
+	* testsuite/ld-mips-elf/stub-dynsym-micromips-1-10000.d: New
+	test.
+	* testsuite/ld-mips-elf/stub-dynsym-micromips-1-2fe80.d: New
+	test.
+	* testsuite/ld-mips-elf/stub-dynsym-micromips-insn32-1-7fff.d:
+	New test.
+	* testsuite/ld-mips-elf/stub-dynsym-micromips-insn32-1-8000.d:
+	New test.
+	* testsuite/ld-mips-elf/stub-dynsym-micromips-insn32-1-fff0.d:
+	New test.
+	* testsuite/ld-mips-elf/stub-dynsym-micromips-insn32-1-10000.d:
+	New test.
+	* testsuite/ld-mips-elf/stub-dynsym-micromips-insn32-1-2fe80.d:
+	New test.
+	* testsuite/ld-mips-elf/mips-elf.exp: Run the new tests.  Fix
+	indentation.
+
+2018-06-09  Maciej W. Rozycki  <macro@mips.com>
+
+	* testsuite/ld-mips-elf/mips-elf.exp: Update symbol count in the
+	comment associated with lazy binding stub tests.
+
+2018-06-09  Maciej W. Rozycki  <macro@mips.com>
+
+	* Makefile.am (eelf32mipswindiss.c): Add `mipself.em' dependency.
+	* Makefile.in: Regenerate.
+
+2018-06-08  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/23161
+	* testsuite/ld-elf/pr23161d.rd: Remove local _edata, __bss_start,
+	and _end from dynamic symbol table.
+
 2018-06-08  H.J. Lu  <hongjiu.lu@intel.com>
 	    Alan Modra  <amodra@gmail.com>
 

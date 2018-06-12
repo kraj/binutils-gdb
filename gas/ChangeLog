@@ -1,3 +1,29 @@
+2018-06-11  Maciej W. Rozycki  <macro@mips.com>
+
+	* config/tc-mips.c (md_show_usage): Correct help text for `-O0'
+	and `-O'.  Mention `-O1'.  Add `-O2' and its description.
+
+2018-06-08  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/tc-arm.c (arm_cpus): Add Cortex-A76 entry.
+	* doc/c-arm.texi (-mcpu): Document cortex-a76.
+
+2018-06-08  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/tc-aarch64.c (aarch64_cpus): Add Cortex-A76 entry.
+	* doc/c-aarch64.texi (-mcpu): Document cortex-a76.
+
+2018-06-08  Egeyar Bagcioglu  <egeyar.bagcioglu@oracle.com>
+
+	PR 20319
+	* testsuite/gas/aarch64/illegal-3.s: Test if unallocated FMOV encodings
+	are detected as undefined.
+	* testsuite/gas/aarch64/illegal-3.d: Likewise.
+	* testsuite/gas/aarch64/illegal.s: Test if FMOV instructions that are
+	changing the size from 32 bits to 64 bits and vice versa trigger an
+	error.
+	* testsuite/gas/aarch64/illegal.l: Likewise.
+
 2018-06-08  Tamar Christina  <tamar.christina@arm.com>
 
 	PR binutils/21446

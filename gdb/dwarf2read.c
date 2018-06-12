@@ -3415,15 +3415,15 @@ find_slot_in_mapped_hash (struct mapped_index *index, const char *name,
    Returns 1 if all went well, 0 otherwise.  */
 
 static bool
-read_index_from_section (struct objfile *objfile,
-			 const char *filename,
-			 bool deprecated_ok,
-			 struct dwarf2_section_info *section,
-			 struct mapped_index *map,
-			 const gdb_byte **cu_list,
-			 offset_type *cu_list_elements,
-			 const gdb_byte **types_list,
-			 offset_type *types_list_elements)
+read_gdb_index_from_section (struct objfile *objfile,
+			     const char *filename,
+			     bool deprecated_ok,
+			     struct dwarf2_section_info *section,
+			     struct mapped_index *map,
+			     const gdb_byte **cu_list,
+			     offset_type *cu_list_elements,
+			     const gdb_byte **types_list,
+			     offset_type *types_list_elements)
 {
   const gdb_byte *addr;
   offset_type version;
@@ -3532,7 +3532,7 @@ to use the section anyway."),
    elements of all the CUs and return 1.  Otherwise, return 0.  */
 
 static int
-dwarf2_read_index (struct dwarf2_per_objfile *dwarf2_per_objfile)
+dwarf2_read_gdb_index (struct dwarf2_per_objfile *dwarf2_per_objfile)
 {
   const gdb_byte *cu_list, *types_list, *dwz_list = NULL;
   offset_type cu_list_elements, types_list_elements, dwz_list_elements = 0;
@@ -3540,11 +3540,11 @@ dwarf2_read_index (struct dwarf2_per_objfile *dwarf2_per_objfile)
   struct objfile *objfile = dwarf2_per_objfile->objfile;
 
   std::unique_ptr<struct mapped_index> map (new struct mapped_index);
-  if (!read_index_from_section (objfile, objfile_name (objfile),
-				use_deprecated_index_sections,
-				&dwarf2_per_objfile->gdb_index, map.get (),
-				&cu_list, &cu_list_elements,
-				&types_list, &types_list_elements))
+  if (!read_gdb_index_from_section (objfile, objfile_name (objfile),
+				    use_deprecated_index_sections,
+				    &dwarf2_per_objfile->gdb_index, map.get (),
+				    &cu_list, &cu_list_elements,
+				    &types_list, &types_list_elements))
     return 0;
 
   /* Don't use the index if it's empty.  */
@@ -3560,12 +3560,12 @@ dwarf2_read_index (struct dwarf2_per_objfile *dwarf2_per_objfile)
       const gdb_byte *dwz_types_ignore;
       offset_type dwz_types_elements_ignore;
 
-      if (!read_index_from_section (objfile, bfd_get_filename (dwz->dwz_bfd),
-				    1,
-				    &dwz->gdb_index, &dwz_map,
-				    &dwz_list, &dwz_list_elements,
-				    &dwz_types_ignore,
-				    &dwz_types_elements_ignore))
+      if (!read_gdb_index_from_section (objfile,
+					bfd_get_filename (dwz->dwz_bfd), 1,
+					&dwz->gdb_index, &dwz_map,
+					&dwz_list, &dwz_list_elements,
+					&dwz_types_ignore,
+					&dwz_types_elements_ignore))
 	{
 	  warning (_("could not read '.gdb_index' section from %s; skipping"),
 		   bfd_get_filename (dwz->dwz_bfd));
@@ -6198,7 +6198,7 @@ dwarf2_initialize_objfile (struct objfile *objfile, dw_index_kind *index_kind)
       return true;
     }
 
-  if (dwarf2_read_index (dwarf2_per_objfile))
+  if (dwarf2_read_gdb_index (dwarf2_per_objfile))
     {
       *index_kind = dw_index_kind::GDB_INDEX;
       return true;
@@ -10217,19 +10217,13 @@ compute_compunit_symtab_includes (struct dwarf2_per_cu_data *per_cu)
 static void
 process_cu_includes (struct dwarf2_per_objfile *dwarf2_per_objfile)
 {
-  int ix;
-  struct dwarf2_per_cu_data *iter;
-
-  for (ix = 0;
-       VEC_iterate (dwarf2_per_cu_ptr, dwarf2_per_objfile->just_read_cus,
-		    ix, iter);
-       ++ix)
+  for (dwarf2_per_cu_data *iter : dwarf2_per_objfile->just_read_cus)
     {
       if (! iter->is_debug_types)
 	compute_compunit_symtab_includes (iter);
     }
 
-  VEC_free (dwarf2_per_cu_ptr, dwarf2_per_objfile->just_read_cus);
+  dwarf2_per_objfile->just_read_cus.clear ();
 }
 
 /* Generate full symbol information for PER_CU, whose DIEs have
@@ -10337,7 +10331,7 @@ process_full_comp_unit (struct dwarf2_per_cu_data *per_cu,
     }
 
   /* Push it for inclusion processing later.  */
-  VEC_safe_push (dwarf2_per_cu_ptr, dwarf2_per_objfile->just_read_cus, per_cu);
+  dwarf2_per_objfile->just_read_cus.push_back (per_cu);
 }
 
 /* Generate full symbol information for type unit PER_CU, whose DIEs have

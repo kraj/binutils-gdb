@@ -1,3 +1,66 @@
+2018-06-11  Alan Hayward  <alan.hayward@arm.com>
+
+	* linux-aarch64-ipa.c (get_ipa_tdesc): Add null VQ param.
+	(initialize_low_tracepoint): Likewise
+	* linux-aarch64-low.c (aarch64_arch_setup): Get VQ.
+	* linux-aarch64-tdesc-selftest.c (aarch64_tdesc_test): Add null VQ
+	param.
+	* linux-aarch64-tdesc.c (aarch64_linux_read_description): Add VQ
+	checks.
+	* linux-aarch64-tdesc.h (aarch64_linux_read_description): Add VQ.
+
+2018-06-11  Alan Hayward  <alan.hayward@arm.com>
+
+	* server.h (PBUFSIZ): Increase size
+
+2018-06-11  Alan Hayward  <alan.hayward@arm.com>
+
+	* regcache.c (regcache::raw_compare): New function.
+	* regcache.h (regcache::raw_compare): New declaration.
+
+2018-06-11  Alan Hayward  <alan.hayward@arm.com>
+
+	* regcache.c (new_register_cache): Use new.
+	(free_register_cache): Use delete.
+	(register_data): Use const.
+	(supply_register): Move body inside regcache.
+	(regcache::raw_supply): New override function.
+	(collect_register): Move body inside regcache.
+	(regcache::raw_collect): New override function.
+	(regcache::get_register_status): New override function.
+	* regcache.h (struct regcache): Inherit from reg_buffer_common.
+
+2018-06-09  Tom Tromey  <tom@tromey.com>
+
+	* event-loop.c (gdb_event, gdb_event_p): Remove typedefs.  Don't
+	declare queue.
+	(event_queue): Use std::queue.
+	(gdb_event_xfree): Remove.
+	(initialize_event_loop, process_event, wait_for_event): Update.
+
+2018-06-08  Stan Cox  <scox@redhat.com>
+
+	* win32-low.c (win32_create_inferior):  last_ptid and last_status
+	moved to client_state.
+
+2018-06-08  Pedro Alves  <palves@redhat.com>
+
+	* Makefile.in (GDBREPLAY_OBS): Add common/cleanups.o,
+	common/common-exceptions.o, common/common-utils.o,
+	common/errors.o, common/print-utils.o and utils.o.
+	* gdbreplay.c: Include "common-defs.h" instead of the two
+	'config.h's here.  Don't include stdio.h, errno.h, stdlib.h,
+	string.h or alloca.h.
+	(perror_with_name): Delete.
+	(remote_open): Use xstrdup instead of strdup.
+	(main): Rename to ...
+	(captured_main): ... this.
+	(main): New.
+
+2018-06-08  Tom Tromey  <tom@tromey.com>
+
+	* linux-low.c (linux_low_read_btrace): Update.
+
 2018-06-04  Stan Cox  <scox@redhat.com>
 
 	* server.h (struct client_state): New.

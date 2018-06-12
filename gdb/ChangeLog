@@ -1,3 +1,201 @@
+2018-06-11  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* dwarf2read.c (read_index_from_section): Rename to...
+	(read_gdb_index_from_section): ... this, update all callers.
+	(dwarf2_read_index): Rename to...
+	(dwarf2_read_gdb_index): ... this, update all callers.
+
+2018-06-11  John David Anglin  <danglin@gcc.gnu.org>
+
+	* gdb/hppa-linux-nat.c
+	(hppa_linux_nat_target::fetch_inferior_registers): Rename to
+	hppa_linux_nat_target::fetch_registers.
+
+2018-06-11  Alan Hayward  <alan.hayward@arm.com>
+
+	* aarch64-tdep.c (aarch64_dwarf_reg_to_regnum): Add mappings.
+	* aarch64-tdep.h (AARCH64_DWARF_SVE_VG): Add define.
+	(AARCH64_DWARF_SVE_FFR): Likewise.
+	(AARCH64_DWARF_SVE_P0): Likewise.
+	(AARCH64_DWARF_SVE_Z0): Likewise.
+
+2018-06-11  Alan Hayward  <alan.hayward@arm.com>
+
+	* common/common-regcache.h (raw_compare): New function.
+	* regcache.c (regcache::raw_compare): Likewise.
+	* regcache.h (regcache::raw_compare): New declaration.
+
+2018-06-11  Alan Hayward  <alan.hayward@arm.com>
+
+	* common/common-regcache.h (reg_buffer_common): New structure.
+	* regcache.c (reg_buffer::invalidate): Move from detached_regcache.
+	(reg_buffer::raw_supply): Likewise.
+	(reg_buffer::raw_supply_integer): Likewise.
+	(reg_buffer::raw_supply_zeroed): Likewise.
+	(reg_buffer::raw_collect): Likewise.
+	(reg_buffer::raw_collect_integer): Likewise.
+	* regcache.h (reg_buffer::invalidate): Move from detached_regcache.
+	(reg_buffer::raw_supply): Likewise.
+	(reg_buffer::raw_supply_integer): Likewise.
+	(reg_buffer::raw_supply_zeroed): Likewise.
+	(reg_buffer::raw_collect): Likewise.
+	(reg_buffer::raw_collect_integer): Likewise.
+
+2018-06-10  Tom Tromey  <tom@tromey.com>
+
+	* remote.c (stop_reply_p): Remove typedef.  Don't declare queue.
+	(class remote_state) <stop_reply_queue>: Now std::vector.
+	(remote_state::~remote_state)
+	(remote_target::stop_reply_queue_length): Update.
+	(struct queue_iter_param, remove_child_of_pending_fork)
+	(struct check_pending_event_prevents_wildcard_vcont_callback_data)
+	(check_pending_event_prevents_wildcard_vcont_callback)
+	(remove_stop_reply_for_inferior)
+	(remove_stop_reply_of_remote_state)
+	(remote_notif_remove_once_on_match)
+	(stop_reply_match_ptid_and_ws)
+	(remote_kill_child_of_pending_fork): Remove.
+	(remote_target::remove_new_fork_children)
+	(remote_target::check_pending_events_prevent_wildcard_vcont)
+	(remote_target::discard_pending_stop_replies)
+	(remote_target::discard_pending_stop_replies_in_queue)
+	(remote_target::remote_notif_remove_queued_reply)
+	(remote_target::queued_stop_reply)
+	(remote_target::push_stop_reply, remote_target::peek_stop_reply)
+	(remote_target::wait, remote_target::kill_new_fork_children)
+	(remote_target::async): Update.
+
+2018-06-10  Tom Tromey  <tom@tromey.com>
+
+	* record-full.c (record_full_arch_list_cleanups): Remove.
+	(record_full_message): Use try/catch.
+	(record_full_wait_cleanups): Remove.
+	(record_full_wait_1): Use try/catch.
+	(record_full_restore): Likewise.
+
+2018-06-10  Tom Tromey  <tom@tromey.com>
+
+	* record-full.c (record_full_breakpoint_p): Remove typedef.  Don't
+	declare VEC.  Add constructor.
+	<in_target_beneath>: Now bool.
+	(record_full_breakpoints): Now a std::vector, static.
+	(record_full_sync_record_breakpoints)
+	(record_full_init_record_breakpoints)
+	(record_full_target::insert_breakpoint)
+	(record_full_target::remove_breakpoint): Update.  Don't use XNEW.
+
+2018-06-10  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* dwarf2read.c (process_cu_includes): Remove struct keyword.
+	* serial.c (serial_interface_lookup): Remove struct keyword.
+
+2018-06-10  Tom Tromey  <tom@tromey.com>
+
+	* procfs.c (procfs_target::xfer_partial): Use "beneath" as a
+	method.
+	* nto-procfs.c (nto_procfs_target::xfer_partial): Use "beneath" as
+	a method.
+	* go32-nat.c (go32_nat_target::xfer_partial): Use "beneath" as a
+	method.
+	* arm-linux-nat.c (arm_linux_nat_target::read_description): Use
+	"beneath" as a method.
+	* arm-fbsd-nat.c (arm_fbsd_nat_target::read_description):
+	Use "beneath" as a method.
+
+2018-06-10  Tom Tromey  <tom@tromey.com>
+
+	* tracefile.c (struct trace_file_writer_deleter): New.
+	<operator()>: Rename from trace_file_writer_xfree.
+	(trace_file_writer_up): New typedef.
+	(tsave_command, trace_save_tfile, trace_save_ctf): Update.
+
+2018-06-09  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* regcache.h (reg_buffer) <~reg_buffer>: Use default destructor.
+	<m_registers, m_register_status>: Change type to
+	std::unique_ptr.
+	* regcache.c (reg_buffer::reg_buffer): Use new instead of
+	XCNEWVEC.
+
+2018-06-09  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* common/common-regcache.h (enum register_status): Add
+	underlying type "signed char".
+	* regcache.h (reg_buffer) <m_register_status>: Change type to
+	register_status *.
+	* regcache.c (reg_buffer::reg_buffer): Alocate arrays of
+	register_status instead of signed char.
+	(reg_buffer::save): Use REG_UNKNOWN instead of 0.
+	(reg_buffer::get_register_status): Remove cast.
+	(readable_regcache::raw_read): Remove cast.
+	(readable_regcache::cooked_read): Remove cast.
+
+2018-06-09  Tom Tromey  <tom@tromey.com>
+
+	* source.c (reverse_search_command, forward_search_command): Use
+	scoped_fd.
+
+2018-06-09  Tom Tromey  <tom@tromey.com>
+
+	* serial.c (serial_ops_p): Remove typedef.  Don't declare VEC.
+	(serial_ops_list): Now static, std::vector.
+	(serial_interface_lookup, serial_add_interface): Update.
+
+2018-06-09  Tom Tromey  <tom@tromey.com>
+
+	* dwarf2read.c (process_cu_includes): Update.
+	(process_full_comp_unit): Update.
+	* dwarf2read.h (struct dwarf2_per_objfile) <just_read_cus>: Now a
+	std::vector.
+
+2018-06-08  Paul Koning  <paul_koning@dell.com>
+
+	PR gdb/23252
+
+	* python/python.c (do_start_initialization):
+	Avoid call to internal Python API.
+	(init__gdb_module): New function.
+
+2018-06-08  Gary Benson <gbenson@redhat.com>
+
+	* linux-thread-db.c (valprint.h): New include.
+	(struct check_thread_db_info): New structure.
+	(check_thread_db_on_load, tdb_testinfo): New static globals.
+	(check_thread_db, check_thread_db_callback): New functions.
+	(try_thread_db_load_1): Run integrity checks if requested.
+	(maintenance_check_libthread_db): New function.
+	(_initialize_thread_db): Register "maint check libthread-db"
+	and "maint set/show check-libthread-db".
+	* NEWS: Mention the above new commands.
+
+2018-06-08  Tom Tromey  <tom@tromey.com>
+
+	* windows-nat.c (windows_nat_target::xfer_partial): "beneath" is
+	now a method.
+
+2018-06-08  Tom Tromey  <tom@tromey.com>
+
+	* btrace.c (parse_xml_raw): Use gdb::unique_xmalloc_ptr.
+
+2018-06-08  Tom Tromey  <tom@tromey.com>
+
+	* common/btrace-common.h (struct btrace_data): Add constructor,
+	destructor, move assignment operator.
+	<empty, clear, fini>: New methods.
+	<format>: Initialize.
+	(btrace_data_init, btrace_data_fini, btrace_data_clear)
+	(btrace_data_empty): Don't declare.
+	* common/btrace-common.c (btrace_data_init): Remove.
+	(btrace_data::fini): Rename from btrace_data_fini.
+	(btrace_data::empty): Rename from btrace_data_empty.
+	(btrace_data::clear): Rename from btrace_data_clear.  Return
+	bool.
+	* btrace.h (make_cleanup_btrace_data): Don't declare.
+	* btrace.c (btrace_add_pc, btrace_stitch_trace, btrace_clear)
+	(parse_xml_btrace): Update.
+	(do_btrace_data_cleanup, make_cleanup_btrace_data): Remove.
+	(maint_btrace_clear_packet_history_cmd): Update.
+
 2018-06-07  Pedro Alves  <palves@redhat.com>
 
 	* target.h (target_ops) <beneath>: Now a method.  All references
