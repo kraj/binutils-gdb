@@ -1,3 +1,37 @@
+2018-06-13  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* sparc-nat.h: Include target.h.
+	* sparc64-linux-nat.c (class sparc64_linux_nat_target)
+	<fetch_registers>: Remove this argument in function call.
+	<store_registers>: Remove this argument in function call, remove
+	extra semicolon.
+	<low_forget_process>: Call sparc64_forget_process instead of
+	sparc_forget_process.
+
+2018-06-13  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* procfs.c (_initialize_procfs): Use add_inf_child_target.
+	(procfs_target::make_corefile_notes): Adjust to new
+	target_read_alloc return type.
+
+2018-06-12  Andrew Burgess  <andrew.burgess@embecosm.com>
+	    Stephen Roberts  <stephen.roberts@arm.com>
+
+	PR gdb/22882
+	* infrun.c (fetch_inferior_event): If GDB is not proceeding then
+	run INF_EXEC_COMPLETE handler, even when not calling normal_stop.
+	Move should_notify_stop local into more inner scope.
+
+2018-06-12  Andrew Burgess  <andrew.burgess@embecosm.com>
+	    Stephen Roberts  <stephen.roberts@arm.com>
+
+	PR gdb/22882
+	* infrun.c (resume_1): Add call to mark_async_event_handler.
+
+2018-06-12  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* infrun.c (do_target_wait): Change old version of $pc printed.
+
 2018-06-11  Simon Marchi  <simon.marchi@ericsson.com>
 
 	* dwarf2read.c (read_index_from_section): Rename to...

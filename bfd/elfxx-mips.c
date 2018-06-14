@@ -3813,6 +3813,7 @@ count_section_dynsyms (bfd *output_bfd, struct bfd_link_info *info)
       for (p = output_bfd->sections; p ; p = p->next)
 	if ((p->flags & SEC_EXCLUDE) == 0
 	    && (p->flags & SEC_ALLOC) != 0
+	    && elf_hash_table (info)->dynamic_relocs
 	    && !(*bed->elf_backend_omit_section_dynsym) (output_bfd, info, p))
 	  ++count;
     }
@@ -15641,6 +15642,8 @@ print_mips_ases (FILE *file, unsigned int mask)
     fputs ("\n\tXPA ASE", file);
   if (mask & AFL_ASE_MIPS16E2)
     fputs ("\n\tMIPS16e2 ASE", file);
+  if (mask & AFL_ASE_CRC)
+    fputs ("\n\tCRC ASE", file);
   if (mask == 0)
     fprintf (file, "\n\t%s", _("None"));
   else if ((mask & ~AFL_ASE_MASK) != 0)

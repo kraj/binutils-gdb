@@ -2408,7 +2408,11 @@ resume_1 (enum gdb_signal sig)
       tp->suspend.stop_signal = GDB_SIGNAL_0;
 
       if (target_can_async_p ())
-	target_async (1);
+	{
+	  target_async (1);
+	  /* Tell the event loop we have an event to process. */
+	  mark_async_event_handler (infrun_async_inferior_event_token);
+	}
       return;
     }
 
@@ -3533,7 +3537,7 @@ do_target_wait (ptid_t ptid, struct target_waitstatus *status, int options)
 	    fprintf_unfiltered (gdb_stdlog,
 				"infrun: PC of %s changed.  was=%s, now=%s\n",
 				target_pid_to_str (tp->ptid),
-				paddress (gdbarch, tp->prev_pc),
+				paddress (gdbarch, tp->suspend.stop_pc),
 				paddress (gdbarch, pc));
 	  discard = 1;
 	}
@@ -3928,7 +3932,6 @@ fetch_inferior_event (void *client_data)
       struct inferior *inf = find_inferior_ptid (ecs->ptid);
       int should_stop = 1;
       struct thread_info *thr = ecs->event_thread;
-      int should_notify_stop = 1;
 
       delete_just_stopped_threads_infrun_breakpoints ();
 
@@ -3946,6 +3949,9 @@ fetch_inferior_event (void *client_data)
 	}
       else
 	{
+	  int should_notify_stop = 1;
+	  int proceeded = 0;
+
 	  clean_up_just_stopped_threads_fsms (ecs);
 
 	  if (thr != NULL && thr->thread_fsm != NULL)
@@ -3956,17 +3962,15 @@ fetch_inferior_event (void *client_data)
 
 	  if (should_notify_stop)
 	    {
-	      int proceeded = 0;
-
 	      /* We may not find an inferior if this was a process exit.  */
 	      if (inf == NULL || inf->control.stop_soon == NO_STOP_QUIETLY)
 		proceeded = normal_stop ();
+	    }
 
-	      if (!proceeded)
-		{
-		  inferior_event_handler (INF_EXEC_COMPLETE, NULL);
-		  cmd_done = 1;
-		}
+	  if (!proceeded)
+	    {
+	      inferior_event_handler (INF_EXEC_COMPLETE, NULL);
+	      cmd_done = 1;
 	    }
 	}
     }
