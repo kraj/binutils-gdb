@@ -1,3 +1,42 @@
+2018-06-29  Tamar Christina  <tamar.christina@arm.com>
+
+	PR binutils/23192
+	*opcode/aarch64.h (aarch64_opnd): Add AARCH64_OPND_Em16.
+
+2018-06-26  Alan Modra  <amodra@gmail.com>
+
+	* elf/internal.h (ELF_SECTION_IN_SEGMENT): Revert last change.
+
+2018-06-24  Nick Clifton  <nickc@redhat.com>
+
+	2.31 branch created.
+
+2018-06-21  Alan Hayward  <alan.hayward@arm.com>
+
+	* elf/internal.h (ELF_SECTION_IN_SEGMENT): Don’t check addresses
+	for non SHT_NOBITS.
+
+2018-06-19  Simon Marchi  <simon.marchi@ericsson.com>
+
+	Sync with GCC
+
+	2018-05-24  Tom Rix  <trix@juniper.net>
+
+	* dwarf2.def (DW_FORM_strx*, DW_FORM_addrx*): New.
+
+	2017-11-20  Kito Cheng  <kito.cheng@gmail.com>
+
+	* longlong.h [__riscv] (__umulsidi3): Define.
+	[__riscv] (umul_ppmm): Likewise.
+	[__riscv] (__muluw3): Likewise.
+
+2018-06-14  Faraz Shahbazker  <Faraz.Shahbazker@mips.com>
+
+	* elf/mips.h (AFL_ASE_GINV, AFL_ASE_RESERVED1): New macros.
+	(AFL_ASE_MASK): Update to include AFL_ASE_GINV.
+	* opcode/mips.h: Document "+\" operand format.
+	(ASE_GINV): New macro.
+
 2018-06-13  Scott Egerton  <scott.egerton@imgtec.com>
 	    Faraz Shahbazker  <Faraz.Shahbazker@mips.com>
 

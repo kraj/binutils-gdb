@@ -20,54 +20,39 @@
 #ifndef AARCH64_SVE_LINUX_PTRACE_H
 #define AARCH64_SVE_LINUX_PTRACE_H
 
-/* Where indicated, this file contains defines and macros lifted directly from
-   the Linux kernel headers, with no modification.
-   Refer to Linux kernel documentation for details.  */
-
 #include <asm/sigcontext.h>
 #include <sys/utsname.h>
 #include <sys/ptrace.h>
 #include <asm/ptrace.h>
+
+#ifndef SVE_SIG_ZREGS_SIZE
+#include "aarch64-sve-linux-sigcontext.h"
+#endif
+
+/* Indicates whether a SVE ptrace header is followed by SVE registers or a
+   fpsimd structure.  */
+
+#define HAS_SVE_STATE(header) ((header).flags & SVE_PT_REGS_SVE)
 
 /* Read VQ for the given tid using ptrace.  If SVE is not supported then zero
    is returned (on a system that supports SVE, then VQ cannot be zero).  */
 
 uint64_t aarch64_sve_get_vq (int tid);
 
-/* Structures and defines taken from sigcontext.h.  */
+/* Read the current SVE register set using ptrace, allocating space as
+   required.  */
 
-#ifndef SVE_SIG_ZREGS_SIZE
+extern std::unique_ptr<gdb_byte[]> aarch64_sve_get_sveregs (int tid);
 
-#define SVE_VQ_BYTES		16	/* number of bytes per quadword */
+/* Put the registers from linux structure buf into register buffer.  */
 
-#define SVE_VQ_MIN		1
-#define SVE_VQ_MAX		512
+extern void aarch64_sve_regs_copy_to_reg_buf (struct reg_buffer_common *reg_buf,
+					      const void *buf);
 
-#define SVE_VL_MIN		(SVE_VQ_MIN * SVE_VQ_BYTES)
-#define SVE_VL_MAX		(SVE_VQ_MAX * SVE_VQ_BYTES)
+/* Put the registers from register buffer into linux structure buf.  */
 
-#define SVE_NUM_ZREGS		32
-#define SVE_NUM_PREGS		16
-
-#define sve_vl_valid(vl) \
-	((vl) % SVE_VQ_BYTES == 0 && (vl) >= SVE_VL_MIN && (vl) <= SVE_VL_MAX)
-
-#endif /* SVE_SIG_ZREGS_SIZE.  */
-
-
-/* Structures and defines taken from ptrace.h.  */
-
-#ifndef SVE_PT_SVE_ZREG_SIZE
-
-struct user_sve_header {
-	__u32 size; /* total meaningful regset content in bytes */
-	__u32 max_size; /* maxmium possible size for this thread */
-	__u16 vl; /* current vector length */
-	__u16 max_vl; /* maximum possible vector length */
-	__u16 flags;
-	__u16 __reserved;
-};
-
-#endif /* SVE_PT_SVE_ZREG_SIZE.  */
+extern void
+aarch64_sve_regs_copy_from_reg_buf (const struct reg_buffer_common *reg_buf,
+				    void *buf);
 
 #endif /* aarch64-sve-linux-ptrace.h */

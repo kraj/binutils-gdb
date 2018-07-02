@@ -1,7 +1,178 @@
+2018-07-02  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	* config/tc-arm.c (cpu_arch_ver): Use symbolic TAG_CPU_ARCH macros
+	rather than hardcode their values.
+
+2018-07-02  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	* NEWS: Use command-line consistently when used in a compount word.
+	* doc/as.texi: Likewise.
+	* doc/c-aarch64.texi: Likewise.
+	* doc/c-alpha.texi: Likewise.
+	* doc/c-arc.texi: Likewise.
+	* doc/c-arm.texi: Likewise.
+	* doc/c-avr.texi: Likewise.
+	* doc/c-bfin.texi: Likewise.
+	* doc/c-cris.texi: Likewise.
+	* doc/c-epiphany.texi: Likewise.
+	* doc/c-i386.texi: Likewise.
+	* doc/c-ia64.texi: Likewise.
+	* doc/c-lm32.texi: Likewise.
+	* doc/c-m32r.texi: Likewise.
+	* doc/c-m68k.texi: Likewise.
+	* doc/c-mips.texi: Likewise.
+	* doc/c-mmix.texi: Likewise.
+	* doc/c-msp430.texi: Likewise.
+	* doc/c-mt.texi: Likewise.
+	* doc/c-nios2.texi: Likewise.
+	* doc/c-ppc.texi: Likewise.
+	* doc/c-pru.texi: Likewise.
+	* doc/c-rl78.texi: Likewise.
+	* doc/c-rx.texi: Likewise.
+	* doc/c-tic6x.texi: Likewise.
+	* doc/c-v850.texi: Likewise.
+	* doc/c-vax.texi: Likewise.
+	* doc/c-visium.texi: Likewise.
+	* doc/c-xstormy16.texi: Likewise.
+	* doc/c-xtensa.texi: Likewise.
+	* doc/c-z80.texi: Likewise.
+	* doc/c-z8k.texi: Likewise.
+	* doc/internals.texi: Likewise.
+
+2018-06-29  Jim Wilson  <jimw@sifive.com>
+
+	* config/tc-riscv.c (md_begin): Call hash_reg_name for "fp".
+
+2018-06-29  Ramana Radhakrishnan  <ramana.radhakrishnan@arm.com>
+
+	* config/tc-aarch64.c (warn_unpredictable_ldst): Add unpredictable
+        cases for ldxp, stlxrb, stlxrh, stlxr.
+        * testsuite/gas/aarch64/diagnostic.s: New tests.
+        * testsuite/gas/aarch64/diagnostic.l: Adjust.
+
+2018-06-29  Tamar Christina  <tamar.christina@arm.com>
+
+	PR binutils/23192
+	* config/tc-aarch64.c (process_omitted_operand, parse_operands): Add
+	AARCH64_OPND_Em16
+	* testsuite/gas/aarch64/advsimd-armv8_3.s: Expand tests to cover upper
+	16 registers.
+	* testsuite/gas/aarch64/advsimd-armv8_3.d: Likewise.
+	* testsuite/gas/aarch64/advsimd-compnum.s: Likewise.
+	* testsuite/gas/aarch64/advsimd-compnum.d: Likewise.
+	* testsuite/gas/aarch64/sve.d: Likewise.
+
+2018-06-27  Alan Modra  <amodra@gmail.com>
+
+	* configure.ac: Specify extra_objects with leading "config/"
+	for xtensa-relax.o and te-vms.o.  Use case statements to unique
+	extra_objects.  Formatting.
+	* configure: Regenerate.
+
+2018-06-26  Nick Clifton  <nickc@redhat.com>
+
+	* po/uk.po: Updated Ukranian translation.
+
+2018-06-26  Nick Clifton  <nickc@redhat.com>
+
+	PR 23335
+	* config/tc-msp430.c (check_reg): Only accept register name
+	strings that do not end in an alphanumeric character.
+	* testsuite/gas/msp430/msp430x.d: Update expected disassembly.
+
+2018-06-24  Nick Clifton  <nickc@redhat.com>
+
+	* configure: Regenerate.
+	* po/gas.pot: Regenerate.
+
+2018-06-24  Nick Clifton  <nickc@redhat.com>
+
+	2.31 branch created.
+	* NEWS: Add marker for 2.31.
+
+2018-06-22  Tamar Christina  <tamar.christina@arm.com>
+
+	* testsuite/gas/aarch64/addsub.s: Add negs to zero reg test.
+	* testsuite/gas/aarch64/addsub.d: Likewise.
+
+2018-06-21  Alan Modra  <amodra@gmail.com>
+
+	* doc/Makefile.am (AUTOMAKE_OPTIONS): Add "foreign".
+	* doc/Makefile.in: Regenerate.
+
+2018-06-20  Nick Clifton  <nickc@redhat.com>
+
+	PR 21458
+	* tc-arm.c (do_adr): Only set the bottom bit of an imported thumb
+	function symbol address if -mthumb-interwork is active.
+	(do_adrl): Likewise.
+	* doc/c-arm.texi: Update descriptions of the -mthumb-interwork
+	option and the ADR and ADRL pseudo-ops.
+	* NEWS: Mention the new behaviour of the ADR and ADRL pseudo-ops.
+	* testsuite/gas/arm/pr21458.d: Add -mthumb-interwork option to
+	assembler command line.
+	* testsuite/gas/arm/adr.d: Likewise.
+	* testsuite/gas/arm/adrl.d: Likewise.
+
+2018-06-20  Sebastian Huber  <sebastian.huber@embedded-brains.de>
+
+	PR gas/23305
+	* config/tc-riscv.c (riscv_ip): Add format specifier 'B' for
+	constants and symbols.
+	* testsuite/gas/riscv/lla32.d: New file.
+	* testsuite/gas/riscv/lla32.s: Likewise.
+	* testsuite/gas/riscv/lla64-fail.d: Likewise.
+	* testsuite/gas/riscv/lla64-fail.l: Likewise.
+	* testsuite/gas/riscv/lla64-fail.s: Likewise.
+	* testsuite/gas/riscv/lla64.d: Likewise.
+	* testsuite/gas/riscv/lla64.s: Likewise.
+
+2018-06-19  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* Makefile.am (AUTOMAKE_OPTIONS): Remove 1.11, add subdir-objects.
+	(TARG_CPU_O, OBJ_FORMAT_O, ATOF_TARG_O): Add config/ prefix.
+	* configure.ac (TARG_CPU_O, OBJ_FORMAT_O, ATOF_TARG_O, emfiles,
+	extra_objects): Add config/ prefix.
+	* doc/as.texinfo: Rename to...
+	* doc/as.texi: ... this.
+	* doc/Makefile.am: Rename as.texinfo to as.texi throughout.
+	Remove DISTCLEANFILES hack.
+	(AUTOMAKE_OPTIONS): Remove 1.8, cygnus, add no-texinfo.tex and
+	info-in-builddir.
+	* Makefile.in: Re-generate.
+	* aclocal.m4: Re-generate.
+	* config.in: Re-generate.
+	* configure: Re-generate.
+	* doc/Makefile.in: Re-generate.
+
+2018-06-14  Faraz Shahbazker  <Faraz.Shahbazker@mips.com>
+
+	* NEWS: Mention MIPS Global INValidate ASE support.
+	* config/tc-mips.c (options): Add OPTION_GINV and OPTION_NO_GINV.
+	(md_longopts): Likewise.
+	(mips_ases): Define availability for GINV.
+	(mips_convert_ase_flags): Map ASE_GINV to AFL_ASE_GINV.
+	(md_show_usage): Add help for -mginv and -mno-ginv.
+	* doc/as.texinfo: Document -mginv, -mno-ginv.
+	* doc/c-mips.texi: Document -mginv, -mno-ginv, .set ginv and
+	.set noginv.
+	* testsuite/gas/mips/ase-errors-1.s: Add error checks for GINV
+	ASE.
+	* testsuite/gas/mips/ase-errors-2.s: Likewise.
+	* testsuite/gas/mips/ase-errors-1.l: Likewise.
+	* testsuite/gas/mips/ase-errors-2.l: Likewise.
+	* testsuite/gas/mips/ginv.d: New test.
+	* testsuite/gas/mips/ginv-err.d: New test.
+	* testsuite/gas/mips/ginv-err.l: New test stderr output.
+	* testsuite/gas/mips/ginv.s: New test source.
+	* testsuite/gas/mips/ginv-err.s: New test source.
+	* testsuite/gas/mips/mips.exp: Run the new tests.
+
 2018-06-13  Scott Egerton  <scott.egerton@imgtec.com>
 	    Faraz Shahbazker  <Faraz.Shahbazker@mips.com>
 	    Maciej W. Rozycki  <macro@mips.com>
 
+	* NEWS: Mention CRC ASE support.
 	* config/tc-mips.c (options): Add OPTION_CRC and OPTION_NO_CRC.
 	(md_longopts): Likewise.
 	(md_show_usage): Add help for -mcrc and -mno-crc.

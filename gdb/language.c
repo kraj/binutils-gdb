@@ -46,8 +46,6 @@
 #include "c-lang.h"
 #include <algorithm>
 
-static void unk_lang_error (const char *);
-
 static int unk_lang_parser (struct parser_state *);
 
 static void set_range_case (void);
@@ -693,8 +691,9 @@ default_print_array_index (struct value *index_value, struct ui_file *stream,
 }
 
 void
-default_get_string (struct value *value, gdb_byte **buffer, int *length,
-		    struct type **char_type, const char **charset)
+default_get_string (struct value *value,
+		    gdb::unique_xmalloc_ptr<gdb_byte> *buffer,
+		    int *length, struct type **char_type, const char **charset)
 {
   error (_("Getting a string is unsupported in this language."));
 }
@@ -748,12 +747,6 @@ static int
 unk_lang_parser (struct parser_state *ps)
 {
   return 1;
-}
-
-static void
-unk_lang_error (const char *msg)
-{
-  error (_("Attempted to parse an expression with unknown language"));
 }
 
 static void
@@ -852,7 +845,6 @@ const struct language_defn unknown_language_defn =
   NULL,
   &exp_descriptor_standard,
   unk_lang_parser,
-  unk_lang_error,
   null_post_parser,
   unk_lang_printchar,		/* Print character constant */
   unk_lang_printstr,
@@ -904,7 +896,6 @@ const struct language_defn auto_language_defn =
   NULL,
   &exp_descriptor_standard,
   unk_lang_parser,
-  unk_lang_error,
   null_post_parser,
   unk_lang_printchar,		/* Print character constant */
   unk_lang_printstr,

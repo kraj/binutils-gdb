@@ -1,3 +1,112 @@
+2018-07-02  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/23324
+	* testsuite/ld-x86-64/pr23324.s: New file.
+	* testsuite/ld-x86-64/pr23324a.d: Likewise.
+	* testsuite/ld-x86-64/pr23324b.d: Likewise.
+
+2018-07-02  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	* arm-dis.c (select_arm_features): Fix typo in heading comment.  Allow
+	all FPU features and add mapping from new bfd_mach_arm values to
+	allowed CPU feature bits.
+
+2018-07-02  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	* NEWS: Use command-line consistently when used in a compount word.
+	* ld.texinfo: Likewise.
+	* ldint.texinfo: Likewise.
+
+2018-06-26  Nick Clifton  <nickc@redhat.com>
+
+	* po/uk.po: Updated Ukranian translation.
+
+2018-06-26  Alan Modra  <amodra@gmail.com>
+
+	PR 23169
+	* testsuite/ld-ifunc/ifunc.exp: Don't run pr23169 tests on
+	powerpc.  Comment.
+
+2018-06-26  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/ld-bootstrap/bootstrap.exp: Use parentheses rather
+	than curly braces in logical expression.
+
+2018-06-26  Nick Clifton  <nickc@redhat.com>
+
+	* emultempl/aarch64elf.em: Fix spelling mistake.
+	* emultempl/avrelf.em: Likewise.
+	* emultempl/elf32.em: Likewise.
+
+2018-06-24  Nick Clifton  <nickc@redhat.com>
+
+	* configure: Regenerate.
+	* po/ld.pot: Regenerate.
+
+2018-06-24  Nick Clifton  <nickc@redhat.com>
+
+	2.31 branch created.
+	* NEWS: Add marker for 2.31.
+
+2018-06-20 Renlin Li  <renlin.li@arm.com>
+
+	* testsuite/ld-aarch64/emit-relocs-115.d: Update test with new value.
+	* testsuite/ld-aarch64/emit-relocs-534.d: Likewise.
+	* testsuite/ld-aarch64/emit-relocs-555.d: Likewise.
+
+2018-06-19  Maciej W. Rozycki  <macro@mips.com>
+
+	PR ld/22966
+	* testsuite/ld-mips-elf/n64-plt-1.dd: New test.
+	* testsuite/ld-mips-elf/n64-plt-1.gd: New test.
+	* testsuite/ld-mips-elf/n64-plt-2.ed: New test.
+	* testsuite/ld-mips-elf/n64-plt-3.ed: New test.
+	* testsuite/ld-mips-elf/n64-plt-4.dd: New test.
+	* testsuite/ld-mips-elf/n64-plt-4.gd: New test.
+	* testsuite/ld-mips-elf/n64-plt-1.ld: New test linker script.
+	* testsuite/ld-mips-elf/n64-plt-2.ld: New test linker script.
+	* testsuite/ld-mips-elf/n64-plt-3.ld: New test linker script.
+	* testsuite/ld-mips-elf/n64-plt-4.ld: New test linker script.
+	* testsuite/ld-mips-elf/n64-plt.s: New test source.
+	* testsuite/ld-mips-elf/n64-plt-lib.s: New test source.
+	* testsuite/ld-mips-elf/mips-elf.exp: Run the new tests.
+
+2018-06-19  Maciej W. Rozycki  <macro@mips.com>
+
+	* testsuite/ld-elf/shared.exp: XFAIL DT_TEXTREL map file warning
+	test for `mips*-*-*'.
+
+2018-06-19  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* configure.ac: Remove AC_PREREQ.
+	* Makefile.am: Remove DISTCLEANFILES hack, rename ld.texinfo to
+	ld.texi, ldint.texinfo to ldint.texi throughout.
+	(AUTOMAKE_OPTIONS): Add info-in-builddir.
+	* README: Rename ld.texinfo to ld.texi, ldint.texinfo to
+	ldint.texi throughout.
+	* gen-doc.texi: Likewise.
+	* h8-doc.texi: Likewise.
+	* ld.texinfo: Rename to ...
+	* ld.texi: ... this.
+	* ldint.texinfo: Rename to ...
+	* ldint.texi: ... this.
+	* Makefile.in: Re-generate.
+	* aclocal.m4: Re-generate.
+	* config.in: Re-generate.
+	* configure: Re-generate.
+
+2018-06-18  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/lib/ld-lib.exp (check_ifunc_available): Pass without
+	running executable when non-native.
+	(check_ifunc_attribute_available): Likewise.
+	* testsuite/ld-ifunc/pr23169a.rd: Remove extraneous lines.  Match
+	st_other strings.  Pass when func is an ifunc.
+	* testsuite/ld-ifunc/pr23169b.rd: Remove extraneous lines.  Correct
+	reloc regexp.  Correct match-anything line.
+	* testsuite/ld-ifunc/pr23169c.rd: Remove extraneous lines.  Match
+	st_other strings.
+
 2018-06-14  Alan Modra  <amodra@gmail.com>
 
 	* testsuite/ld-elf/readelf.exp: Delete DUMP and selection of

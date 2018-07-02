@@ -77,6 +77,9 @@ public:
   /* Override the GNU/Linux inferior startup hook.  */
   void post_startup_inferior (ptid_t) override;
 
+  /* Override the GNU/Linux post attach hook.  */
+  void post_attach (int pid) override;
+
   /* These three defer to common nat/ code.  */
   void low_new_thread (struct lwp_info *lp) override
   { aarch64_linux_new_thread (lp); }
@@ -384,19 +387,62 @@ store_fpregs_to_thread (const struct regcache *regcache)
     }
 }
 
+/* Fill GDB's register array with the sve register values
+   from the current thread.  */
+
+static void
+fetch_sveregs_from_thread (struct regcache *regcache)
+{
+  std::unique_ptr<gdb_byte[]> base
+    = aarch64_sve_get_sveregs (ptid_get_lwp (regcache->ptid ()));
+  aarch64_sve_regs_copy_to_reg_buf (regcache, base.get ());
+}
+
+/* Store to the current thread the valid sve register
+   values in the GDB's register array.  */
+
+static void
+store_sveregs_to_thread (struct regcache *regcache)
+{
+  int ret;
+  struct iovec iovec;
+  int tid = ptid_get_lwp (regcache->ptid ());
+
+  /* Obtain a dump of SVE registers from ptrace.  */
+  std::unique_ptr<gdb_byte[]> base = aarch64_sve_get_sveregs (tid);
+
+  /* Overwrite with regcache state.  */
+  aarch64_sve_regs_copy_from_reg_buf (regcache, base.get ());
+
+  /* Write back to the kernel.  */
+  iovec.iov_base = base.get ();
+  iovec.iov_len = ((struct user_sve_header *) base.get ())->size;
+  ret = ptrace (PTRACE_SETREGSET, tid, NT_ARM_SVE, &iovec);
+
+  if (ret < 0)
+    perror_with_name (_("Unable to store sve registers"));
+}
+
 /* Implement the "fetch_registers" target_ops method.  */
 
 void
 aarch64_linux_nat_target::fetch_registers (struct regcache *regcache,
 					   int regno)
 {
+  struct gdbarch_tdep *tdep = gdbarch_tdep (regcache->arch ());
+
   if (regno == -1)
     {
       fetch_gregs_from_thread (regcache);
-      fetch_fpregs_from_thread (regcache);
+      if (tdep->has_sve ())
+	fetch_sveregs_from_thread (regcache);
+      else
+	fetch_fpregs_from_thread (regcache);
     }
   else if (regno < AARCH64_V0_REGNUM)
     fetch_gregs_from_thread (regcache);
+  else if (tdep->has_sve ())
+    fetch_sveregs_from_thread (regcache);
   else
     fetch_fpregs_from_thread (regcache);
 }
@@ -407,13 +453,20 @@ void
 aarch64_linux_nat_target::store_registers (struct regcache *regcache,
 					   int regno)
 {
+  struct gdbarch_tdep *tdep = gdbarch_tdep (regcache->arch ());
+
   if (regno == -1)
     {
       store_gregs_to_thread (regcache);
-      store_fpregs_to_thread (regcache);
+      if (tdep->has_sve ())
+	store_sveregs_to_thread (regcache);
+      else
+	store_fpregs_to_thread (regcache);
     }
   else if (regno < AARCH64_V0_REGNUM)
     store_gregs_to_thread (regcache);
+  else if (tdep->has_sve ())
+    store_sveregs_to_thread (regcache);
   else
     store_fpregs_to_thread (regcache);
 }
@@ -516,6 +569,21 @@ aarch64_linux_nat_target::post_startup_inferior (ptid_t ptid)
   low_forget_process (ptid_get_pid (ptid));
   aarch64_linux_get_debug_reg_capacity (ptid_get_pid (ptid));
   linux_nat_target::post_startup_inferior (ptid);
+}
+
+/* Implement the "post_attach" target_ops method.  */
+
+void
+aarch64_linux_nat_target::post_attach (int pid)
+{
+  low_forget_process (pid);
+  /* Set the hardware debug register capacity.  If
+     aarch64_linux_get_debug_reg_capacity is not called
+     (as it is in aarch64_linux_child_post_startup_inferior) then
+     software watchpoints will be used instead of hardware
+     watchpoints when attaching to a target.  */
+  aarch64_linux_get_debug_reg_capacity (pid);
+  linux_nat_target::post_attach (pid);
 }
 
 extern struct target_desc *tdesc_arm_with_neon;

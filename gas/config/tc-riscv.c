@@ -853,6 +853,9 @@ md_begin (void)
   hash_reg_names (RCLASS_FPR, riscv_fpr_names_numeric, NFPR);
   hash_reg_names (RCLASS_FPR, riscv_fpr_names_abi, NFPR);
 
+  /* Add "fp" as an alias for "s0".  */
+  hash_reg_name (RCLASS_GPR, "fp", 8);
+
   opcode_names_hash = hash_new ();
   init_opcode_names_hash ();
 
@@ -1932,6 +1935,17 @@ rvc_lui:
 	      if (imm_expr->X_op != O_symbol)
 	        break;
 	      *imm_reloc = BFD_RELOC_32;
+	      s = expr_end;
+	      continue;
+
+	    case 'B':
+	      my_getExpression (imm_expr, s);
+	      normalize_constant_expr (imm_expr);
+	      /* The 'B' format specifier must be a symbol or a constant.  */
+	      if (imm_expr->X_op != O_symbol && imm_expr->X_op != O_constant)
+	        break;
+	      if (imm_expr->X_op == O_symbol)
+	        *imm_reloc = BFD_RELOC_32;
 	      s = expr_end;
 	      continue;
 

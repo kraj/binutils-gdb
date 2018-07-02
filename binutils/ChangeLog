@@ -1,3 +1,70 @@
+2018-07-02  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	* NEWS: Use command-line consistently when used in a compount word.
+	* doc/binutils.texi: Likewise and fix trailing whitespace on same
+	line.
+
+2018-06-26  Nick Clifton  <nickc@redhat.com>
+
+	* po/sv.po: Updated Swedish translation.
+	* po/uk.po: Updated Ukranian translation.
+
+2018-06-26  Nick Clifton  <nickc@redhat.com>
+
+	* doc/binutils.texi: Fix spelling mistakes.
+	* README--how-to-make-a-release: Likewise.
+
+2018-06-25  Tom Tromey  <tom@tromey.com>
+
+	* dwarf-mode.el (dwarf-mode-syntax-table): New variable.
+	Bump version number.
+
+2018-06-24  Nick Clifton  <nickc@redhat.com>
+
+	* README-how-to-make-a-release: Update with experiences from
+	making 2.31 branch.
+	* po/binutils.pot: Regenerate.
+	* configure: Regenerate.
+
+2018-06-24  Nick Clifton  <nickc@redhat.com>
+
+	2.31 branch created.
+	* NEWS: Add marker for 2.31.
+
+2018-06-21  Alan Modra  <amodra@gmail.com>
+
+	* doc/Makefile.am (AUTOMAKE_OPTIONS): Add "foreign".
+	* doc/Makefile.in: Regenerate.
+
+2018-06-19  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* configure.ac: Remove AC_PREREQ.
+	* doc/Makefile.am (AUTOMAKE_OPTIONS): Remove cygnus, add
+	info-in-builddir no-texinfo.tex.
+	* Makefile.in: Re-generate.
+	* aclocal.m4: Re-generate.
+	* config.in: Re-generate.
+	* configure: Re-generate.
+	* doc/Makefile.in: Re-generate.
+
+2018-06-19  Andreas Schwab  <schwab@suse.de>
+
+	* readelf.c (is_16bit_abs_reloc): Handle R_RISCV_SET16.
+	(is_8bit_abs_reloc): New function.
+	(is_6bit_abs_reloc): New function.
+	(is_6bit_inplace_sub_reloc): New function.
+	(apply_relocations): Use them.  Handle 6-bit relocations.
+
+2018-06-14  Faraz Shahbazker  <Faraz.Shahbazker@mips.com>
+
+	* readelf.c (print_mips_ases): Add GINV extension.
+
+2018-06-14  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR binutils/23267
+	* readelf.c (get_symbol_version_string): Check if the first
+	symbol version is base version.
+
 2018-06-13  Scott Egerton  <scott.egerton@imgtec.com>
 	    Faraz Shahbazker  <Faraz.Shahbazker@mips.com>
 

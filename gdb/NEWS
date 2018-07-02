@@ -3,6 +3,16 @@
 
 *** Changes since GDB 8.1
 
+* The 'symbol-file' command now accepts an '-o' option to add a relative
+  offset to all sections.
+
+* Similarly, the 'add-symbol-file' command also accepts an '-o' option to add
+  a relative offset to all sections, but it allows to override the load
+  address of individual sections using '-s'.
+
+* The 'add-symbol-file' command no longer requires the second argument
+  (address of the text section).
+
 * The endianness used with the 'set endian auto' mode in the absence of
   an executable selected for debugging is now the last endianness chosen
   either by one of the 'set endian big' and 'set endian little' commands
@@ -83,6 +93,13 @@ SH-5/SH64 running OpenBSD 	SH-5/SH64 support in sh*-*-openbsd*
   watchpoints set on unaligned addresses are no longer missed, with
   the tradeoff that there is a possibility of false hits being
   reported.
+
+* New configure options
+
+--enable-codesign=CERT
+  This can be used to invoke "codesign -s CERT" after building gdb.
+  This option is useful on macOS, where code signing is required for
+  gdb to work properly.
 
 *** Changes in GDB 8.1
 

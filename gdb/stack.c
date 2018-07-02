@@ -134,7 +134,7 @@ frame_show_address (struct frame_info *frame,
   if (sal.line != 0 && sal.pc == 0 && sal.end == 0)
     {
       if (get_next_frame (frame) == NULL)
-	gdb_assert (inline_skipped_frames (inferior_ptid) > 0);
+	gdb_assert (inline_skipped_frames (inferior_thread ()) > 0);
       else
 	gdb_assert (get_frame_type (get_next_frame (frame)) == INLINE_FRAME);
       return 0;
@@ -2556,8 +2556,8 @@ on this backtrace."));
 
   if (dbx_commands)
     add_com ("func", class_stack, func_command, _("\
-Select the stack frame that contains <func>.\n\
-Usage: func <name>"));
+Select the stack frame that contains NAME.\n\
+Usage: func NAME"));
 
   add_setshow_enum_cmd ("frame-arguments", class_stack,
 			print_frame_arguments_choices, &print_frame_arguments,

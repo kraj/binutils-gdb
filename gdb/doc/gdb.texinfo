@@ -6319,6 +6319,7 @@ a command prompt so that you can issue other commands while your program runs.
 If the target doesn't support async mode, @value{GDBN} issues an error
 message if you attempt to use the background execution commands.
 
+@cindex @code{&}, background execution of commands
 To specify background execution, add a @code{&} to the command.  For example,
 the background form of the @code{continue} command is @code{continue&}, or
 just @code{c&}.  The execution commands that accept background execution
@@ -18822,10 +18823,15 @@ if necessary to locate your program.  Omitting @var{filename} means to
 discard information on the executable file.
 
 @kindex symbol-file
-@item symbol-file @r{[} @var{filename} @r{]}
+@item symbol-file @r{[} @var{filename} @r{[} -o @var{offset} @r{]]}
 Read symbol table information from file @var{filename}.  @code{PATH} is
 searched when necessary.  Use the @code{file} command to get both symbol
 table and program to run from the same file.
+
+If an optional @var{offset} is specified, it is added to the start
+address of each section in the symbol file.  This is useful if the
+program is relocated at runtime, such as the Linux kernel with kASLR
+enabled.
 
 @code{symbol-file} with no argument clears out @value{GDBN} information on your
 program's symbol table.
@@ -18912,18 +18918,21 @@ the program is running.  To do this, use the @code{kill} command
 
 @kindex add-symbol-file
 @cindex dynamic linking
-@item add-symbol-file @var{filename} @var{address}
-@itemx add-symbol-file @var{filename} @var{address} @r{[} -readnow @r{|} -readnever @r{]}
-@itemx add-symbol-file @var{filename} @var{address} -s @var{section} @var{address} @dots{}
+@item add-symbol-file @var{filename} @r{[} -readnow @r{|} -readnever @r{]} @r{[} -o @var{offset} @r{]} @r{[} @var{textaddress} @r{]} @r{[} -s @var{section} @var{address} @dots{} @r{]}
 The @code{add-symbol-file} command reads additional symbol table
 information from the file @var{filename}.  You would use this command
 when @var{filename} has been dynamically loaded (by some other means)
-into the program that is running.  The @var{address} should give the memory
-address at which the file has been loaded; @value{GDBN} cannot figure
-this out for itself.  You can additionally specify an arbitrary number
-of @samp{-s @var{section} @var{address}} pairs, to give an explicit
-section name and base address for that section.  You can specify any
-@var{address} as an expression.
+into the program that is running.  The @var{textaddress} parameter gives
+the memory address at which the file's text section has been loaded.
+You can additionally specify the base address of other sections using
+an arbitrary number of @samp{-s @var{section} @var{address}} pairs.
+If a section is omitted, @value{GDBN} will use its default addresses
+as found in @var{filename}.  Any @var{address} or @var{textaddress}
+can be given as an expression.
+
+If an optional @var{offset} is specified, it is added to the start
+address of each section, except those for which the address was
+specified explicitly.
 
 The symbol table of the file @var{filename} is added to the symbol table
 originally read with the @code{symbol-file} command.  You can use the

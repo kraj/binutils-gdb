@@ -32,6 +32,7 @@ struct terminal_info;
 struct target_desc_info;
 struct continuation;
 struct inferior;
+struct thread_info;
 
 /* For bpstat.  */
 #include "breakpoint.h"
@@ -176,7 +177,7 @@ extern void delete_longjmp_breakpoint_cleanup (void *arg);
 
 extern void detach_command (const char *, int);
 
-extern void notice_new_inferior (ptid_t, int, int);
+extern void notice_new_inferior (struct thread_info *, int, int);
 
 extern struct value *get_return_value (struct value *function,
 				       struct type *value_type);
@@ -206,10 +207,6 @@ extern void prepare_execution_command (struct target_ops *target,
    The catch-exec traps expected during start-up will be one more if
    the target is started up with a shell.  */
 extern int startup_with_shell;
-
-/* Address at which inferior stopped.  */
-
-extern CORE_ADDR stop_pc;
 
 /* Nonzero if stopped due to completion of a stack dummy routine.  */
 
@@ -474,12 +471,9 @@ extern void delete_inferior (struct inferior *todel);
 /* Delete an existing inferior list entry, due to inferior detaching.  */
 extern void detach_inferior (inferior *inf);
 
-/* Same as the above, but with the inferior specified by PID.  */
-extern void detach_inferior (int pid);
+extern void exit_inferior (inferior *inf);
 
-extern void exit_inferior (int pid);
-
-extern void exit_inferior_silent (int pid);
+extern void exit_inferior_silent (inferior *inf);
 
 extern void exit_inferior_num_silent (int num);
 
@@ -487,21 +481,6 @@ extern void inferior_appeared (struct inferior *inf, int pid);
 
 /* Get rid of all inferiors.  */
 extern void discard_all_inferiors (void);
-
-/* Translate the integer inferior id (GDB's homegrown id, not the system's)
-   into a "pid" (which may be overloaded with extra inferior information).  */
-extern int gdb_inferior_id_to_pid (int);
-
-/* Translate a target 'pid' into the integer inferior id (GDB's
-   homegrown id, not the system's).  */
-extern int pid_to_gdb_inferior_id (int pid);
-
-/* Boolean test for an already-known pid.  */
-extern int in_inferior_list (int pid);
-
-/* Boolean test for an already-known inferior id (GDB's homegrown id,
-   not the system's).  */
-extern int valid_gdb_inferior_id (int num);
 
 /* Search function to lookup an inferior by target 'pid'.  */
 extern struct inferior *find_inferior_pid (int pid);

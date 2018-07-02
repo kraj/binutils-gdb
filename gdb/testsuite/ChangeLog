@@ -1,3 +1,139 @@
+2018-06-29  Pedro Alves  <palves@redhat.com>
+
+	* gdb.threads/names.exp: Adjust expected "info threads" output.
+
+2018-06-29  Pedro Alves  <palves@redhat.com>
+
+	* gdb.opt/inline-break.exp (line number, address): Add "info
+	break" tests.
+
+2018-06-29  Pedro Alves  <palves@redhat.com>
+
+	* gdb.opt/inline-break.c (func1): Add "break here" marker.
+	* gdb.opt/inline-break.exp: Test setting breakpoints by line
+	number and address and running to them.
+
+2018-06-29  Richard Bunt  <richard.bunt@arm.com>
+
+	* gdb.base/watchpoint-hw-attach.exp: Remove unstable output.
+
+2018-06-28  Jan Kratochvil  <jan.kratochvil@redhat.com>
+
+	* lib/compiler.c: Remove executable permission flag.
+
+2018-06-28  Richard Bunt  <richard.bunt@arm.com>
+
+	* gdb.base/watchpoint-hw-attach.c (main): Remove unneeded
+	code.
+	* gdb.base/watchpoint-hw-attach.exp: Break in outermost frame.
+
+2018-06-28  Petr Tesarik  <ptesarik@suse.cz>
+
+	* gdb.base/relocate.exp: Add test for "add-symbol-file -o ".
+
+2018-06-28  Petr Tesarik  <ptesarik@suse.cz>
+
+	* gdb.base/relocate.exp: Test add-symbol-file behavior when the
+	address argument is omitted.
+
+2018-06-28  Petr Tesarik  <ptesarik@suse.cz>
+
+	* gdb.base/relocate.exp: Add test for "symbol-file -o ".
+
+2018-06-27  Omair Javaid  <omair.javaid@linaro.org>
+
+	PR gdb/21695
+	* gdb.base/infoline-reloc-main-from-zero.exp: New test.
+	* gdb.base/infoline-reloc-main-from-zero.c: New file.
+
+2018-06-26  Tom Tromey  <tom@tromey.com>
+
+	PR rust/22574:
+	* gdb.rust/simple.exp (test_one_slice): Add ptype/o tests.
+	* gdb.rust/simple.rs (struct SimpleLayout): New.
+
+2018-06-22  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* gdb.base/jit-reader.exp (jit_reader_test): Expect spaces in
+	"info registers" output.
+
+2018-06-21  Richard Bunt  <richard.bunt@arm.com>
+
+	* gdb.base/watchpoint-hw-attach.c: New test.
+	* gdb.base/watchpoint-hw-attach.exp: New file.
+
+2018-06-20  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* boards/cc-with-tweaks.exp: Don't call cc-with-tweaks.sh
+	through /bin/sh.
+	* boards/dwarf4-gdb-index.exp: Likewise.
+	* boards/fission-dwp.exp: Likewise.
+
+2018-06-20  Ulrich Weigand  <uweigand@de.ibm.com>
+
+	* gdb.base/float128.exp: Add comment and improved fail message
+	to the failure case of "print large128" test.
+
+2018-06-19  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* configure.ac: Remove AC_PREREQ.
+	* configure: Re-generate.
+
+2018-06-19  Pedro Alves  <palves@redhat.com>
+
+	* gdb.opt/inline-break.c (func_inline_callee, func_inline_caller)
+	(func_extern_caller): New.
+	(main): Call func_extern_caller.
+	* gdb.opt/inline-break.exp: Add tests for inline frame skipping
+	logic change.
+
+2018-06-18  Weimin Pan  <weimin.pan@oracle.com>
+
+	PR gdb/16841
+	* gdb.cp/typedef-base.cc: New file.
+	* gdb.cp/typedef-base.exp: New file.
+
+2018-06-18  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.ada/bp_inlined_func.exp: Allow 5 breakpoint locations.
+
+2018-06-16  Andrew Burgess  <andrew.burgess@embecosm.com>
+	    Richard Bunt <Richard.Bunt@arm.com>
+
+	* gdb.threads/attach-slow-waitpid.c: New file.
+	* gdb.threads/attach-slow-waitpid.exp: New file.
+	* gdb.threads/slow-waitpid.c: New file.
+
+2018-06-14  Pedro Alves  <palves@redhat.com>
+
+	* gdb.base/fork-running-state.c: Include <errno.h>.
+	(exit_if_relative_exits): New.
+	(fork_child): If 'exit_if_relative_exits' is true, exit if the parent
+	exits.
+	(fork_parent): If 'exit_if_relative_exits' is true, exit if the
+	child exits.
+
+2018-06-14  Tom de Vries  <tdevries@suse.de>
+
+	PR cli/22573
+	* gdb.base/finish-pretty.c: New test.
+	* gdb.base/finish-pretty.exp: New file.
+
+2018-06-14  Pedro Alves  <palves@redhat.com>
+
+	* gdb.gdb/selftest.exp (test_with_self): Use multi_line to build
+	gdb's expected startup output.
+
+2018-06-14  Pedro Alves  <palves@redhat.com>
+
+	* lib/selftest-support.exp (selftest_setup): Remove inlined
+	function handling.
+
+2018-06-14  Tom de Vries  <tdevries@suse.de>
+
+	* lib/selftest-support.exp (selftest_setup): Allow function arguments in
+	matching of breakpoint printing.
+
 2018-06-13  Tom de Vries  <tdevries@suse.de>
 
 	PR testsuite/23269

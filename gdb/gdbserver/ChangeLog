@@ -1,3 +1,35 @@
+2018-06-29  Joel Brobecker  <brobecker@adacore.com>
+
+	* linux-x86-tdesc.c (amd64_linux_read_description): Add missing
+	parameter in call to 'amd64_create_target_description'.
+
+2018-06-28  Jan Kratochvil  <jan.kratochvil@redhat.com>
+
+	* x86-tdesc.h: Remove executable permission flag.
+
+2018-06-19  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* configure.ac: Remove AC_PREREQ, add missing quoting.
+	* configure: Re-generate.
+	* config.in: Re-generate.
+	* aclocal.m4: Re-generate.
+
+2018-06-18  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* tracepoint.h (current_traceframe): Remove declaration.
+
+2018-06-18  Alan Hayward  <alan.hayward@arm.com>
+
+	* linux-aarch64-low.c (is_sve_tdesc): New function.
+	(aarch64_sve_regs_copy_to_regcache): Likewise.
+	(aarch64_sve_regs_copy_from_regcache): Likewise.
+	(aarch64_regs_info): Add SVE checks.
+	(initialize_low_arch): Initialize SVE.
+
+2018-06-18  Alan Hayward  <alan.hayward@arm.com>
+
+	* Makefile.in: Add aarch64-sve-linux-ptrace.c.
+
 2018-06-11  Alan Hayward  <alan.hayward@arm.com>
 
 	* linux-aarch64-ipa.c (get_ipa_tdesc): Add null VQ param.

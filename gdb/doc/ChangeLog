@@ -1,3 +1,20 @@
+2018-06-28  Petr Tesarik  <ptesarik@suse.cz>
+
+	* gdb.texinfo (Files): Document "add-symbol-file -o offset".
+
+2018-06-28  Petr Tesarik  <ptesarik@suse.cz>
+
+	* gdb.texinfo (Files): The address argument for "add-symbol-file"
+	is no longer mandatory.
+
+2018-06-28  Petr Tesarik  <ptesarik@suse.cz>
+
+	* gdb.texinfo (Files): Document "symbol-file -o offset".
+
+2018-06-14  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.texinfo (Background Execution): Add @cindex for '&'.
+
 2018-06-11  Eli Zaretskii  <eliz@gnu.org>
 
 	* gdb.texinfo (Maintenance Commands): Add a missing @anchor.

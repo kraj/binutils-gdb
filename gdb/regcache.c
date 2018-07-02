@@ -19,6 +19,7 @@
 
 #include "defs.h"
 #include "inferior.h"
+#include "gdbthread.h"
 #include "target.h"
 #include "gdbarch.h"
 #include "gdbcmd.h"
@@ -205,16 +206,12 @@ regcache::regcache (gdbarch *gdbarch, const address_space *aspace_)
   m_ptid = minus_one_ptid;
 }
 
-static enum register_status
-do_cooked_read (void *src, int regnum, gdb_byte *buf)
-{
-  struct regcache *regcache = (struct regcache *) src;
-
-  return regcache->cooked_read (regnum, buf);
-}
-
-readonly_detached_regcache::readonly_detached_regcache (const regcache &src)
-  : readonly_detached_regcache (src.arch (), do_cooked_read, (void *) &src)
+readonly_detached_regcache::readonly_detached_regcache (regcache &src)
+  : readonly_detached_regcache (src.arch (),
+				[&src] (int regnum, gdb_byte *buf)
+				  {
+				    return src.cooked_read (regnum, buf);
+				  })
 {
 }
 
@@ -264,8 +261,7 @@ reg_buffer::register_buffer (int regnum) const
 }
 
 void
-reg_buffer::save (regcache_cooked_read_ftype *cooked_read,
-		  void *src)
+reg_buffer::save (register_read_ftype cooked_read)
 {
   struct gdbarch *gdbarch = m_descr->gdbarch;
   int regnum;
@@ -284,7 +280,7 @@ reg_buffer::save (regcache_cooked_read_ftype *cooked_read,
       if (gdbarch_register_reggroup_p (gdbarch, regnum, save_reggroup))
 	{
 	  gdb_byte *dst_buf = register_buffer (regnum);
-	  enum register_status status = cooked_read (src, regnum, dst_buf);
+	  enum register_status status = cooked_read (regnum, dst_buf);
 
 	  gdb_assert (status != REG_UNKNOWN);
 
@@ -395,10 +391,18 @@ get_thread_regcache (ptid_t ptid)
   return get_thread_arch_regcache (ptid, current_thread_arch);
 }
 
+/* See regcache.h.  */
+
+struct regcache *
+get_thread_regcache (thread_info *thread)
+{
+  return get_thread_regcache (thread->ptid);
+}
+
 struct regcache *
 get_current_regcache (void)
 {
-  return get_thread_regcache (inferior_ptid);
+  return get_thread_regcache (inferior_thread ());
 }
 
 /* See common/common-regcache.h.  */
@@ -469,6 +473,14 @@ registers_changed_ptid (ptid_t ptid)
 	 forget about any frames we have cached, too.  */
       reinit_frame_cache ();
     }
+}
+
+/* See regcache.h.  */
+
+void
+registers_changed_thread (thread_info *thread)
+{
+  registers_changed_ptid (thread->ptid);
 }
 
 void
@@ -780,77 +792,149 @@ regcache::cooked_write (int regnum, const gdb_byte *buf)
 				   regnum, buf);
 }
 
-/* Perform a partial register transfer using a read, modify, write
-   operation.  */
+/* See regcache.h.  */
 
 enum register_status
-readable_regcache::read_part (int regnum, int offset, int len, void *in,
-			      bool is_raw)
+readable_regcache::read_part (int regnum, int offset, int len,
+			      gdb_byte *out, bool is_raw)
 {
-  struct gdbarch *gdbarch = arch ();
-  gdb_byte *reg = (gdb_byte *) alloca (register_size (gdbarch, regnum));
+  int reg_size = register_size (arch (), regnum);
 
-  gdb_assert (in != NULL);
-  gdb_assert (offset >= 0 && offset <= m_descr->sizeof_register[regnum]);
-  gdb_assert (len >= 0 && offset + len <= m_descr->sizeof_register[regnum]);
-  /* Something to do?  */
-  if (offset + len == 0)
-    return REG_VALID;
-  /* Read (when needed) ...  */
+  gdb_assert (out != NULL);
+  gdb_assert (offset >= 0 && offset <= reg_size);
+  gdb_assert (len >= 0 && offset + len <= reg_size);
+
+  if (offset == 0 && len == 0)
+    {
+      /* Nothing to do.  */
+      return REG_VALID;
+    }
+
+  if (offset == 0 && len == reg_size)
+    {
+      /* Read the full register.  */
+      return (is_raw) ? raw_read (regnum, out) : cooked_read (regnum, out);
+    }
+
   enum register_status status;
+  gdb_byte *reg = (gdb_byte *) alloca (reg_size);
 
-  if (is_raw)
-    status = raw_read (regnum, reg);
-  else
-    status = cooked_read (regnum, reg);
+  /* Read full register to buffer.  */
+  status = (is_raw) ? raw_read (regnum, reg) : cooked_read (regnum, reg);
   if (status != REG_VALID)
     return status;
 
-  /* ... modify ...  */
-  memcpy (in, reg + offset, len);
-
+  /* Copy out.  */
+  memcpy (out, reg + offset, len);
   return REG_VALID;
 }
+
+/* See regcache.h.  */
+
+void
+reg_buffer::raw_collect_part (int regnum, int offset, int len,
+			      gdb_byte *out) const
+{
+  int reg_size = register_size (arch (), regnum);
+
+  gdb_assert (out != nullptr);
+  gdb_assert (offset >= 0 && offset <= reg_size);
+  gdb_assert (len >= 0 && offset + len <= reg_size);
+
+  if (offset == 0 && len == 0)
+    {
+      /* Nothing to do.  */
+      return;
+    }
+
+  if (offset == 0 && len == reg_size)
+    {
+      /* Collect the full register.  */
+      return raw_collect (regnum, out);
+    }
+
+  /* Read to buffer, then write out.  */
+  gdb_byte *reg = (gdb_byte *) alloca (reg_size);
+  raw_collect (regnum, reg);
+  memcpy (out, reg + offset, len);
+}
+
+/* See regcache.h.  */
 
 enum register_status
 regcache::write_part (int regnum, int offset, int len,
-		     const void *out, bool is_raw)
+		      const gdb_byte *in, bool is_raw)
 {
-  struct gdbarch *gdbarch = arch ();
-  gdb_byte *reg = (gdb_byte *) alloca (register_size (gdbarch, regnum));
+  int reg_size = register_size (arch (), regnum);
 
-  gdb_assert (out != NULL);
-  gdb_assert (offset >= 0 && offset <= m_descr->sizeof_register[regnum]);
-  gdb_assert (len >= 0 && offset + len <= m_descr->sizeof_register[regnum]);
-  /* Something to do?  */
-  if (offset + len == 0)
-    return REG_VALID;
-  /* Read (when needed) ...  */
-  if (offset > 0
-      || offset + len < m_descr->sizeof_register[regnum])
+  gdb_assert (in != NULL);
+  gdb_assert (offset >= 0 && offset <= reg_size);
+  gdb_assert (len >= 0 && offset + len <= reg_size);
+
+  if (offset == 0 && len == 0)
     {
-      enum register_status status;
-
-      if (is_raw)
-	status = raw_read (regnum, reg);
-      else
-	status = cooked_read (regnum, reg);
-      if (status != REG_VALID)
-	return status;
+      /* Nothing to do.  */
+      return REG_VALID;
     }
 
-  memcpy (reg + offset, out, len);
-  /* ... write (when needed).  */
-  if (is_raw)
-    raw_write (regnum, reg);
-  else
-    cooked_write (regnum, reg);
+  if (offset == 0 && len == reg_size)
+    {
+      /* Write the full register.  */
+      (is_raw) ? raw_write (regnum, in) : cooked_write (regnum, in);
+      return REG_VALID;
+    }
 
+  enum register_status status;
+  gdb_byte *reg = (gdb_byte *) alloca (reg_size);
+
+  /* Read existing register to buffer.  */
+  status = (is_raw) ? raw_read (regnum, reg) : cooked_read (regnum, reg);
+  if (status != REG_VALID)
+    return status;
+
+  /* Update buffer, then write back to regcache.  */
+  memcpy (reg + offset, in, len);
+  is_raw ? raw_write (regnum, reg) : cooked_write (regnum, reg);
   return REG_VALID;
 }
 
+/* See regcache.h.  */
+
+void
+reg_buffer::raw_supply_part (int regnum, int offset, int len,
+			     const gdb_byte *in)
+{
+  int reg_size = register_size (arch (), regnum);
+
+  gdb_assert (in != nullptr);
+  gdb_assert (offset >= 0 && offset <= reg_size);
+  gdb_assert (len >= 0 && offset + len <= reg_size);
+
+  if (offset == 0 && len == 0)
+    {
+      /* Nothing to do.  */
+      return;
+    }
+
+  if (offset == 0 && len == reg_size)
+    {
+      /* Supply the full register.  */
+      return raw_supply (regnum, in);
+    }
+
+  gdb_byte *reg = (gdb_byte *) alloca (reg_size);
+
+  /* Read existing value to buffer.  */
+  raw_collect (regnum, reg);
+
+  /* Write to buffer, then write out.  */
+  memcpy (reg + offset, in, len);
+  raw_supply (regnum, reg);
+}
+
 enum register_status
-readable_regcache::raw_read_part (int regnum, int offset, int len, gdb_byte *buf)
+readable_regcache::raw_read_part (int regnum, int offset, int len,
+				  gdb_byte *buf)
 {
   assert_regnum (regnum);
   return read_part (regnum, offset, len, buf, true);
@@ -866,6 +950,8 @@ regcache::raw_write_part (int regnum, int offset, int len,
   write_part (regnum, offset, len, buf, true);
 }
 
+/* See regcache.h.  */
+
 enum register_status
 readable_regcache::cooked_read_part (int regnum, int offset, int len,
 				     gdb_byte *buf)
@@ -873,6 +959,8 @@ readable_regcache::cooked_read_part (int regnum, int offset, int len,
   gdb_assert (regnum >= 0 && regnum < m_descr->nr_cooked_registers);
   return read_part (regnum, offset, len, buf, false);
 }
+
+/* See regcache.h.  */
 
 void
 regcache::cooked_write_part (int regnum, int offset, int len,
@@ -982,15 +1070,43 @@ reg_buffer::raw_collect_integer (int regnum, gdb_byte *addr, int addr_len,
 			byte_order);
 }
 
-/* Transfer a single or all registers belonging to a certain register
-   set to or from a buffer.  This is the main worker function for
-   regcache_supply_regset and regcache_collect_regset.  */
+/* See regcache.h.  */
+
+void
+regcache::transfer_regset_register (struct regcache *out_regcache, int regnum,
+				    const gdb_byte *in_buf, gdb_byte *out_buf,
+				    int slot_size, int offs) const
+{
+  struct gdbarch *gdbarch = arch ();
+  int reg_size = std::min (register_size (gdbarch, regnum), slot_size);
+
+  /* Use part versions and reg_size to prevent possible buffer overflows when
+     accessing the regcache.  */
+
+  if (out_buf != nullptr)
+    {
+      raw_collect_part (regnum, 0, reg_size, out_buf + offs);
+
+      /* Ensure any additional space is cleared.  */
+      if (slot_size > reg_size)
+	memset (out_buf + offs + reg_size, 0, slot_size - reg_size);
+    }
+  else if (in_buf != nullptr)
+    out_regcache->raw_supply_part (regnum, 0, reg_size, in_buf + offs);
+  else
+    {
+      /* Invalidate the register.  */
+      out_regcache->raw_supply (regnum, nullptr);
+    }
+}
+
+/* See regcache.h.  */
 
 void
 regcache::transfer_regset (const struct regset *regset,
 			   struct regcache *out_regcache,
-			   int regnum, const void *in_buf,
-			   void *out_buf, size_t size) const
+			   int regnum, const gdb_byte *in_buf,
+			   gdb_byte *out_buf, size_t size) const
 {
   const struct regcache_map_entry *map;
   int offs = 0, count;
@@ -1016,12 +1132,8 @@ regcache::transfer_regset (const struct regset *regset,
 	    if (offs + slot_size > size)
 	      break;
 
-	    if (out_buf)
-	      raw_collect (regno, (gdb_byte *) out_buf + offs);
-	    else
-	      out_regcache->raw_supply (regno, in_buf
-					? (const gdb_byte *) in_buf + offs
-					: NULL);
+	    transfer_regset_register (out_regcache, regno, in_buf, out_buf,
+				      slot_size, offs);
 	  }
       else
 	{
@@ -1030,12 +1142,8 @@ regcache::transfer_regset (const struct regset *regset,
 	  if (offs + slot_size > size)
 	    return;
 
-	  if (out_buf)
-	    raw_collect (regnum, (gdb_byte *) out_buf + offs);
-	  else
-	    out_regcache->raw_supply (regnum, in_buf
-				      ? (const gdb_byte *) in_buf + offs
-				      : NULL);
+	  transfer_regset_register (out_regcache, regnum, in_buf, out_buf,
+				    slot_size, offs);
 	  return;
 	}
     }
@@ -1050,14 +1158,14 @@ regcache_supply_regset (const struct regset *regset,
 			struct regcache *regcache,
 			int regnum, const void *buf, size_t size)
 {
-  regcache->supply_regset (regset, regnum, buf, size);
+  regcache->supply_regset (regset, regnum, (const gdb_byte *) buf, size);
 }
 
 void
 regcache::supply_regset (const struct regset *regset,
 			 int regnum, const void *buf, size_t size)
 {
-  transfer_regset (regset, this, regnum, buf, NULL, size);
+  transfer_regset (regset, this, regnum, (const gdb_byte *) buf, nullptr, size);
 }
 
 /* Collect register REGNUM from REGCACHE to BUF, using the register
@@ -1069,14 +1177,14 @@ regcache_collect_regset (const struct regset *regset,
 			 const struct regcache *regcache,
 			 int regnum, void *buf, size_t size)
 {
-  regcache->collect_regset (regset, regnum, buf, size);
+  regcache->collect_regset (regset, regnum, (gdb_byte *) buf, size);
 }
 
 void
 regcache::collect_regset (const struct regset *regset,
 			 int regnum, void *buf, size_t size) const
 {
-  transfer_regset (regset, NULL, regnum, NULL, buf, size);
+  transfer_regset (regset, nullptr, regnum, nullptr, (gdb_byte *) buf, size);
 }
 
 /* See common/common-regcache.h.  */

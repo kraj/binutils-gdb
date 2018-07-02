@@ -222,9 +222,9 @@ amd64_linux_sigcontext_addr (struct frame_info *this_frame)
 
 static LONGEST
 amd64_linux_get_syscall_number (struct gdbarch *gdbarch,
-                                ptid_t ptid)
+				thread_info *thread)
 {
-  struct regcache *regcache = get_thread_regcache (ptid);
+  struct regcache *regcache = get_thread_regcache (thread);
   enum bfd_endian byte_order = gdbarch_byte_order (gdbarch);
   /* The content of a register.  */
   gdb_byte buf[8];
@@ -1594,7 +1594,8 @@ amd64_linux_read_description (uint64_t xcr0_features_bit, bool is_x32)
     }
 
   if (*tdesc == NULL)
-    *tdesc = amd64_create_target_description (xcr0_features_bit, is_x32, true);
+    *tdesc = amd64_create_target_description (xcr0_features_bit, is_x32,
+					      true, true);
 
   return *tdesc;
 }

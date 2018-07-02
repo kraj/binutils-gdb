@@ -234,7 +234,7 @@ c_printstr (struct ui_file *stream, struct type *type,
    target charset.  */
 
 void
-c_get_string (struct value *value, gdb_byte **buffer,
+c_get_string (struct value *value, gdb::unique_xmalloc_ptr<gdb_byte> *buffer,
 	      int *length, struct type **char_type,
 	      const char **charset)
 {
@@ -300,8 +300,8 @@ c_get_string (struct value *value, gdb_byte **buffer,
       /* I is now either a user-defined length, the number of non-null
  	 characters, or FETCHLIMIT.  */
       *length = i * width;
-      *buffer = (gdb_byte *) xmalloc (*length);
-      memcpy (*buffer, contents, *length);
+      buffer->reset ((gdb_byte *) xmalloc (*length));
+      memcpy (buffer->get (), contents, *length);
       err = 0;
     }
   else
@@ -326,10 +326,7 @@ c_get_string (struct value *value, gdb_byte **buffer,
       err = read_string (addr, *length, width, fetchlimit,
 			 byte_order, buffer, length);
       if (err != 0)
-	{
-	  xfree (*buffer);
-	  memory_error (TARGET_XFER_E_IO, addr);
-	}
+	memory_error (TARGET_XFER_E_IO, addr);
     }
 
   /* If the LENGTH is specified at -1, we want to return the string
@@ -339,7 +336,7 @@ c_get_string (struct value *value, gdb_byte **buffer,
   if (req_length == -1)
     /* If the last character is null, subtract it from LENGTH.  */
     if (*length > 0
- 	&& extract_unsigned_integer (*buffer + *length - width,
+	&& extract_unsigned_integer (buffer->get () + *length - width,
 				     width, byte_order) == 0)
       *length -= width;
   
@@ -843,7 +840,6 @@ extern const struct language_defn c_language_defn =
   c_extensions,
   &exp_descriptor_c,
   c_parse,
-  c_yyerror,
   null_post_parser,
   c_printchar,			/* Print a character constant */
   c_printstr,			/* Function to print string constant */
@@ -989,7 +985,6 @@ extern const struct language_defn cplus_language_defn =
   cplus_extensions,
   &exp_descriptor_c,
   c_parse,
-  c_yyerror,
   null_post_parser,
   c_printchar,			/* Print a character constant */
   c_printstr,			/* Function to print string constant */
@@ -1044,7 +1039,6 @@ extern const struct language_defn asm_language_defn =
   asm_extensions,
   &exp_descriptor_c,
   c_parse,
-  c_yyerror,
   null_post_parser,
   c_printchar,			/* Print a character constant */
   c_printstr,			/* Function to print string constant */
@@ -1099,7 +1093,6 @@ extern const struct language_defn minimal_language_defn =
   NULL,
   &exp_descriptor_c,
   c_parse,
-  c_yyerror,
   null_post_parser,
   c_printchar,			/* Print a character constant */
   c_printstr,			/* Function to print string constant */

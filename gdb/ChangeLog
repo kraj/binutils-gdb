@@ -1,3 +1,875 @@
+2018-07-02  Sebastian Huber  <sebastian.huber@embedded-brains.de>
+
+	* riscv-tdep.c (riscv_register_aliases): Swap "fp" and "s0" entries.
+
+2018-06-29  Joel Brobecker  <brobecker@adacore.com>
+
+	* amd64-darwin-tdep.c (x86_darwin_init_abi_64): Add missing
+	parameter in call to amd64_target_description.
+	* amd64-dicos-tdep.c (amd64_dicos_init_abi): Likewise.
+	* amd64-fbsd-tdep.c (amd64fbsd_core_read_description)
+	(amd64fbsd_init_abi): Likewise.
+	* amd64-nbsd-tdep.c (amd64nbsd_init_abi): Likewise.
+	* amd64-obsd-tdep.c (amd64obsd_init_abi): Likewise.
+	* amd64-sol2-tdep.c (amd64_sol2_init_abi): Likewise.
+	* amd64-fbsd-nat.c (amd64_fbsd_nat_target): Likewise.
+
+2018-06-29  Pedro Alves  <palves@redhat.com>
+
+	* gdb/amd64-tdep.h (amd64_create_target_description): Add
+	"segments" parameter.
+	* gdb/amd64-tdep.c (amd64_none_init_abi, amd64_x32_none_init_abi)
+	(_initialize_amd64_tdep): Update call to
+	amd64_create_target_description.
+	(amd64_target_description): Add "segments" parameter.  Adjust
+	the implementation to use it.
+	* gdb/amd64-linux-tdep.c (amd64_linux_read_description): Update
+	call to amd64_create_target_description.
+	* gdb/amd64-windows-tdep.c (amd64_windows_init_abi): Likewise.
+	* gdb/arch/amd64.h (amd64_create_target_description): Add
+	"segments" register.
+	* gdb/arch/amd64.c (amd64_create_target_description): Add
+	"segments" parameter.  Call create_feature_i386_64bit_segments
+	only if SEGMENTS is true.
+	* gdb/gdbserver/win32-i386-low.c (i386_arch_setup): Update
+	call to amd64_create_target_description.
+
+2018-06-29  Pedro Alves  <palves@redhat.com>
+
+	* thread.c (thread_target_id_str): New, factored out from ...
+	(print_thread_info_1): ... here.  Use it to compute the max
+	"Target Id" column width.
+
+2018-06-29  Pedro Alves  <palves@redhat.com>
+
+	* remote.c (remote_target::extra_thread_info): Delete
+	'display_buf' and 'n' locals.  from the cache, regardless of
+	packet mechanims is in use.  Use cache for qThreadExtra and qP
+	methods too.
+
+2018-06-29  Pedro Alves  <palves@redhat.com>
+
+	* blockframe.c (find_pc_sect_containing_function): New function.
+	* breakpoint.c (print_breakpoint_location): Don't call
+	find_pc_sect_function.
+	* linespec.c (create_sals_line_offset): Record the location's
+	symbol in the sal.
+	* linespec.c (convert_address_location_to_sals): Fill in sal's
+	symbol with find_pc_sect_containing_function.
+	* symtab.c (find_function_start_sal): Rename to ...
+	(find_function_start_sal_1): ... this.
+	(find_function_start_sal): Reimplement as wrapper around
+	find_function_start_sal_1, and use
+	find_pc_sect_containing_function to fill in the sal's symbol.
+	(find_function_start_sal(symbol*, bool)): Adjust.
+	* symtab.h (find_pc_function, find_pc_sect_function): Adjust
+	comments.
+	(find_pc_sect_containing_function): Declare.
+
+2018-06-29  Pedro Alves  <palves@redhat.com>
+
+	* inline-frame.c (stopped_by_user_bp_inline_frame): Return
+	true if the the location has no symbol.
+
+2018-06-28  Tom Tromey  <tom@tromey.com>
+
+	* NEWS: Mention --enable-codesign.
+	* silent-rules.mk (ECHO_SIGN): New variable.
+	* configure.ac: Add --enable-codesign.
+	* configure: Rebuild.
+	* Makefile.in (CODESIGN, CODESIGN_CERT): New variables.
+	(gdb$(EXEEXT)): Optionally invoke codesign.
+
+2018-06-28  Pedro Alves  <palves@redhat.com>
+
+	* gdbthread.h (struct thread_suspend_state) <stop_pc>: Extend
+	comments.
+	(switch_to_thread_no_regs): Adjust comment.
+	* infcmd.c (stop_pc): Delete.
+	(post_create_inferior, info_program_command): Replace references
+	to stop_pc with references to thread_info->suspend.stop_pc.
+	* inferior.h (stop_pc): Delete declaration.
+	* infrun.c (proceed, handle_syscall_event, fill_in_stop_func)
+	(handle_inferior_event_1, handle_signal_stop)
+	(process_event_stop_test, keep_going_stepped_thread)
+	(handle_step_into_function, handle_step_into_function_backward)
+	(print_stop_location): Replace references to stop_pc with
+	references to thread_info->suspend.stop_pc.
+	(struct infcall_suspend_state) <stop_pc>: Delete field.
+	(save_infcall_suspend_state, restore_infcall_suspend_state):
+	Remove references to inf_stat->stop_pc.
+	* linux-fork.c (fork_load_infrun_state): Likewise.
+	* record-btrace.c (record_btrace_set_replay): Likewise.
+	* record-full.c (record_full_goto_entry): Likewise.
+	* remote.c (print_one_stopped_thread): Likewise.
+	* target.c (target_resume): Extend comment.
+	* thread.c (set_executing_thread): New.
+	(set_executing): Use it.
+	(switch_to_thread_no_regs, switch_to_no_thread, switch_to_thread):
+	Remove references to stop_pc.
+
+2018-06-28  Pedro Alves  <palves@redhat.com>
+
+	* infrun.c (handle_inferior_event_1) <TARGET_WAITKIND_EXECD>:
+	Moving fetching stop_pc until after ecs->event_thread is refreshed.
+
+2018-06-28  Tom Tromey  <tom@tromey.com>
+
+	* coffread.c (coff_symfile_finish): Update.
+	* xcoffread.c (xcoff_symfile_finish): Update.
+	* elfread.c (elf_symfile_finish): Update.
+	* symfile.h (dwarf2_free_objfile): Don't declare.
+	* dwarf2read.c (_initialize_dwarf2_read): Use
+	register_objfile_data_with_cleanup.
+	(dwarf2_free_objfile): Now static.  Change signature.
+
+2018-06-28  Petr Tesarik  <ptesarik@suse.cz>
+
+	* symfile.c (add_symbol_file_command, _initialize_symfile): Add
+	option "-o" to add-symbol-file-load to add an offset to each
+	section's load address.
+	* symfile.c (set_objfile_default_section_offset): New function.
+
+2018-06-28  Petr Tesarik  <ptesarik@suse.cz>
+
+	* symfile.c (add_symbol_file_command): Make sure that sections
+	with the same name are sorted in the same order.
+
+2018-06-28  Petr Tesarik  <ptesarik@suse.cz>
+
+	* symfile.c (add_symbol_file_command, _initialize_symfile): Do not
+	require the second argument.  If omitted, load sections at the
+	addresses specified in the file.
+
+2018-06-28  Petr Tesarik  <ptesarik@suse.cz>
+
+	* symfile.c (symbol_file_command, symbol_file_add_main_1)
+	(_initialize_symfile): Add option "-o" to symbol-file to add an
+	offset to each section of the symbol file.
+
+2018-06-28  Petr Tesarik  <ptesarik@suse.cz>
+
+	* MAINTAINERS (Write After Approval): Add Petr Tesarik.
+
+2018-06-27  Tom Tromey  <tom@tromey.com>
+
+	* stack.c (_initialize_stack): Update "func" help text.
+
+2018-06-27  Tom Tromey  <tom@tromey.com>
+
+	* python/py-unwind.c (unwind_info_object) <saved_regs>: Now a
+	std::vector.
+	(unwind_infopy_str, pyuw_create_unwind_info)
+	(unwind_infopy_add_saved_register, pyuw_sniffer)
+	(unwind_infopy_dealloc, unwind_infopy_add_saved_register):
+	Update.
+	(struct saved_reg): Add constructor.
+	<value>: Now a gdbpy_ref<>.
+
+2018-06-27  Tom Tromey  <tom@tromey.com>
+
+	* machoread.c (macho_symfile_read): Define "symbol_table" earlier.
+
+2018-06-27  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* gdb-gdb.py.in: Format using autopep8.
+
+2018-06-27  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* gdb-gdb.py.in (CoreAddrPrettyPrinter): New class.
+	(type_lookup_function): Recognize CORE_ADDR values.
+
+2018-06-27  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* gdb-gdb.py.in (StructMainTypePrettyPrinter) <to_string>: Don't
+	print tag_name.
+
+2018-06-27  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* gdb-gdb.py.in (TypeFlag) <__cmp__>: Remove.
+	<__lt__>: Add.
+
+2018-06-27  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* gdb-gdb.py: Move to...
+	* gdb-gdb.py.in: ... here.
+	* configure.ac (AC_CONFIG_FILES): Add gdb-gdb.py.
+	* Makefile.in (all): Add gdb-gdb.gdb and gdb-gdb.py as
+	dependencies.
+	(distclean): Remove gdb-gdb.py when cleaning.
+	(gdb-gdb.py, gdb-gdb.gdb): New rules.
+	* configure: Re-generate.
+
+2018-06-27  Pedro Alves  <palves@redhat.com>
+
+	* proc-service.c (get_ps_regcache): New.
+	(ps_lgetregs, ps_lsetregs, ps_lgetfpregs)
+	(ps_lsetfpregs): Use it.
+
+2018-06-27  Omair Javaid  <omair.javaid@linaro.org>
+
+	PR gdb/21695
+	* dwarf2read.c (lnp_state_machine::check_line_address): Update declaration.
+	(dwarf_decode_lines_1): Adjust.
+
+2018-06-27  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* fbsd-nat.h (class fbsd_nat_target) <find_memory_regions>: Add
+	override.
+	<info_proc>: Likewise.
+
+2018-06-26  Joel Brobecker  <brobecker@adacore.com>
+
+	* windows-nat.c (do_windows_fetch_inferior_registers): Rename
+	to windows_fetch_one_register, and only handle the case of
+	fetching one register.  Move the code that reloads the context
+	and iterates over all registers if R is negative to...
+	(windows_nat_target::fetch_registers): ... here.
+	(do_windows_store_inferior_registers): Rename to
+	windows_store_one_register, and only handle the case of storing
+	one register.  Move the code that handles the case where r is
+	negative to...
+	(windows_nat_target::store_registers) ... here.
+
+2018-06-26  Tom Tromey  <tom@tromey.com>
+
+	PR rust/22574:
+	* typeprint.c (whatis_exp): Allow ptype/o for Rust.
+	* rust-lang.c (rust_print_struct_def): Add podata parameter.
+	Update.
+	(rust_internal_print_type): Add podata parameter.
+	(rust_print_type): Update.
+
+2018-06-26  Tom Tromey  <tom@tromey.com>
+
+	* typeprint.h (struct print_offset_data) <update, finish,
+	maybe_print_hole>: New methods.
+	<indentation>: New constant.
+	* typeprint.c (print_offset_data::indentation): Define.
+	(print_offset_data::maybe_print_hole, print_offset_data::update)
+	(print_offset_data::finish): Move from c-typeprint.c and rename.
+	* c-typeprint.c (OFFSET_SPC_LEN): Remove.
+	(print_spaces_filtered_with_print_options): Update.
+	(c_print_type_union_field_offset, maybe_print_hole)
+	(c_print_type_struct_field_offset): Move to typeprint.c and
+	rename.
+	(c_type_print_base_struct_union): Update.
+
+2018-06-25  Pedro Alves  <palves@redhat.com>
+
+	* gdbthread.h (thread_info_ref, delete_thread)
+	(delete_thread_silent, first_thread_of_inferior)
+	(any_thread_of_inferior, switch_to_thread)
+	(enable_thread_stack_temporaries)
+	(thread_stack_temporaries_enabled_p, push_thread_stack_temporary)
+	(get_last_thread_stack_temporary)
+	(value_in_thread_stack_temporaries, can_access_registers_thread):
+	Spell out "struct thread_info" instead of just "thread_info".
+	* inferior.h (notice_new_inferior): Likewise.
+
+2018-06-25  Pedro Alves  <palves@redhat.com>
+
+	* windows-nat.c (windows_delete_thread): Use find_thread_ptid and
+	pass thread_info pointer to delete_thread.
+	(windows_nat_target::detach): Pass inferior pointer to
+	detach_inferior.
+	* aix-thread.c (sync_threadlists): Pass thread_info pointer to
+	delete_thread.
+	* bsd-kvm.c (bsd_kvm_target::close): Use discard_all_inferiors.
+	* darwin-nat.c (darwin_check_new_threads): Use find_thread_ptid
+	and pass a thread_info pointer to delete_thread.
+	* fbsd-nat.c (fbsd_nat_target::wait): Use find_thread_ptid and
+	pass thread_info pointer to delete_thread.
+	* go32-nat.c (go32_nat_target::mourn_inferior): Remove
+	delete_thread_silent call.
+	* procfs.c (procfs_target::detach): Pass inferior pointer to
+	detach_inferior.
+	(procfs_target::wait): Pass thread_info pointer to delete_thread.
+	* remote-sim.c (gdbsim_target::mourn_inferior): Remove
+	delete_thread_silent call.
+	* windows-nat.c (windows_delete_thread): Use find_thread_ptid and
+	pass thread_info pointer to delete_thread.
+	(windows_nat_target::detach): Pass inferior pointer to
+	delete_inferior.
+
+2018-06-22  Alan Hayward  <alan.hayward@arm.com>
+
+	* regcache.c (readable_regcache::read_part): Fix asserts.
+	(reg_buffer::raw_collect_part): New function.
+	(regcache::write_part): Fix asserts.
+	(reg_buffer::raw_supply_part): New function.
+	(regcache::transfer_regset_register): New helper function.
+	(regcache::transfer_regset): Call new functions.
+	(regcache_supply_regset): Use gdb_byte*.
+	(regcache::supply_regset): Likewise.
+	(regcache_collect_regset): Likewise.
+	(regcache::collect_regset): Likewise.
+	* regcache.h (reg_buffer::raw_collect_part): New declaration.
+	(reg_buffer::raw_supply_part): Likewise.
+	(regcache::transfer_regset_register): Likewise.
+	(regcache::transfer_regset): Use gdb_byte*.
+
+2018-06-22  Alan Hayward  <alan.hayward@arm.com>
+
+	* nat/aarch64-sve-linux-ptrace.h (HAS_SVE_STATE): Use &.
+
+2018-06-21  Pedro Alves  <palves@redhat.com>
+
+	* ada-lang.h (ada_get_task_number): Take a thread_info pointer
+	instead of a ptid_t.  All callers adjusted.
+	* ada-tasks.c (ada_get_task_number): Likewise.  All callers
+	adjusted.
+	(print_ada_task_info, display_current_task_id, task_command_1):
+	Adjust.
+	* breakpoint.c (watchpoint_in_thread_scope): Adjust to use
+	inferior_thread.
+	(breakpoint_kind): Adjust.
+	(remove_breakpoints_pid): Rename to ...
+	(remove_breakpoints_inf): ... this.  Adjust to take an inferior
+	pointer.  All callers adjusted.
+	(bpstat_clear_actions): Use inferior_thread.
+	(get_bpstat_thread): New.
+	(bpstat_do_actions): Use it.
+	(bpstat_check_breakpoint_conditions, bpstat_stop_status): Adjust
+	to take a thread_info pointer.  All callers adjusted.
+	(set_longjmp_breakpoint_for_call_dummy, set_momentary_breakpoint)
+	(breakpoint_re_set_thread): Use inferior_thread.
+	* breakpoint.h (struct inferior): Forward declare.
+	(bpstat_stop_status): Update.
+	(remove_breakpoints_pid): Delete.
+	(remove_breakpoints_inf): New.
+	* bsd-uthread.c (bsd_uthread_target::wait)
+	(bsd_uthread_target::update_thread_list): Use find_thread_ptid.
+	* btrace.c (btrace_add_pc, btrace_enable, btrace_fetch)
+	(maint_btrace_packet_history_cmd)
+	(maint_btrace_clear_packet_history_cmd): Adjust.
+	(maint_btrace_clear_cmd, maint_info_btrace_cmd): Adjust to use
+	inferior_thread.
+	* cli/cli-interp.c: Include "inferior.h".
+	* common/refcounted-object.h (struct
+	refcounted_object_ref_policy): New.
+	* compile/compile-object-load.c: Include gdbthread.h.
+	(store_regs): Use inferior_thread.
+	* corelow.c (core_target::close): Use current_inferior.
+	(core_target_open): Adjust to use first_thread_of_inferior and use
+	the current inferior.
+	* ctf.c (ctf_target::close): Adjust to use current_inferior.
+	* dummy-frame.c (dummy_frame_id) <ptid>: Delete, replaced by ...
+	<thread>: ... this new field.  All references adjusted.
+	(dummy_frame_pop, dummy_frame_discard, register_dummy_frame_dtor):
+	Take a thread_info pointer instead of a ptid_t.
+	* dummy-frame.h (dummy_frame_push, dummy_frame_pop)
+	(dummy_frame_discard, register_dummy_frame_dtor): Take a
+	thread_info pointer instead of a ptid_t.
+	* elfread.c: Include "inferior.h".
+	(elf_gnu_ifunc_resolver_stop, elf_gnu_ifunc_resolver_return_stop):
+	Use inferior_thread.
+	* eval.c (evaluate_subexp): Likewise.
+	* frame.c (frame_pop, has_stack_frames, find_frame_sal): Use
+	inferior_thread.
+	* gdb_proc_service.h (struct thread_info): Forward declare.
+	(struct ps_prochandle) <ptid>: Delete, replaced by ...
+	<thread>: ... this new field.  All references adjusted.
+	* gdbarch.h, gdbarch.c: Regenerate.
+	* gdbarch.sh (get_syscall_number): Replace 'ptid' parameter with a
+	'thread' parameter.  All implementations and callers adjusted.
+	* gdbthread.h (thread_info) <set_running>: New method.
+	(delete_thread, delete_thread_silent): Take a thread_info pointer
+	instead of a ptid.
+	(global_thread_id_to_ptid, ptid_to_global_thread_id): Delete.
+	(first_thread_of_process): Delete, replaced by ...
+	(first_thread_of_inferior): ... this new function.  All callers
+	adjusted.
+	(any_live_thread_of_process): Delete, replaced by ...
+	(any_live_thread_of_inferior): ... this new function.  All callers
+	adjusted.
+	(switch_to_thread, switch_to_no_thread): Declare.
+	(is_executing): Delete.
+	(enable_thread_stack_temporaries): Update comment.
+	<enable_thread_stack_temporaries>: Take a thread_info pointer
+	instead of a ptid_t.  Incref the thread.
+	<~enable_thread_stack_temporaries>: Decref the thread.
+	<m_ptid>: Delete
+	<m_thr>: New.
+	(thread_stack_temporaries_enabled_p, push_thread_stack_temporary)
+	(get_last_thread_stack_temporary)
+	(value_in_thread_stack_temporaries, can_access_registers_thread):
+	Take a thread_info pointer instead of a ptid_t.  All callers
+	adjusted.
+	* infcall.c (get_call_return_value): Use inferior_thread.
+	(run_inferior_call): Work with thread pointers instead of ptid_t.
+	(call_function_by_hand_dummy): Work with thread pointers instead
+	of ptid_t.  Use thread_info_ref.
+	* infcmd.c (proceed_thread_callback): Access thread's state
+	directly.
+	(ensure_valid_thread, ensure_not_running): Use inferior_thread,
+	access thread's state directly.
+	(continue_command): Use inferior_thread.
+	(info_program_command): Use find_thread_ptid and access thread
+	state directly.
+	(proceed_after_attach_callback): Use thread state directly.
+	(notice_new_inferior): Take a thread_info pointer instead of a
+	ptid_t.  All callers adjusted.
+	(exit_inferior): Take an inferior pointer instead of a pid.  All
+	callers adjusted.
+	(exit_inferior_silent): New.
+	(detach_inferior): Delete.
+	(valid_gdb_inferior_id, pid_to_gdb_inferior_id)
+	(gdb_inferior_id_to_pid, in_inferior_list): Delete.
+	(detach_inferior_command, kill_inferior_command): Use
+	find_inferior_id instead of valid_gdb_inferior_id and
+	gdb_inferior_id_to_pid.
+	(inferior_command): Use inferior and thread pointers.
+	* inferior.h (struct thread_info): Forward declare.
+	(notice_new_inferior): Take a thread_info pointer instead of a
+	ptid_t.  All callers adjusted.
+	(detach_inferior): Delete declaration.
+	(exit_inferior, exit_inferior_silent): Take an inferior pointer
+	instead of a pid.  All callers adjusted.
+	(gdb_inferior_id_to_pid, pid_to_gdb_inferior_id, in_inferior_list)
+	(valid_gdb_inferior_id): Delete.
+	* infrun.c (follow_fork_inferior, proceed_after_vfork_done)
+	(handle_vfork_child_exec_or_exit, follow_exec): Adjust.
+	(struct displaced_step_inferior_state) <pid>: Delete, replaced by
+	...
+	<inf>: ... this new field.
+	<step_ptid>: Delete, replaced by ...
+	<step_thread>: ... this new field.
+	(get_displaced_stepping_state): Take an inferior pointer instead
+	of a pid.  All callers adjusted.
+	(displaced_step_in_progress_any_inferior): Adjust.
+	(displaced_step_in_progress_thread): Take a thread pointer instead
+	of a ptid_t.  All callers adjusted.
+	(displaced_step_in_progress, add_displaced_stepping_state): Take
+	an inferior pointer instead of a pid.  All callers adjusted.
+	(get_displaced_step_closure_by_addr): Adjust.
+	(remove_displaced_stepping_state): Take an inferior pointer
+	instead of a pid.  All callers adjusted.
+	(displaced_step_prepare_throw, displaced_step_prepare)
+	(displaced_step_fixup): Take a thread pointer instead of a ptid_t.
+	All callers adjusted.
+	(start_step_over): Adjust.
+	(infrun_thread_ptid_changed): Remove bit updating ptids in the
+	displaced step queue.
+	(do_target_resume): Adjust.
+	(fetch_inferior_event): Use inferior_thread.
+	(context_switch, get_inferior_stop_soon): Take an
+	execution_control_state pointer instead of a ptid_t.  All callers
+	adjusted.
+	(switch_to_thread_cleanup): Delete.
+	(stop_all_threads): Use scoped_restore_current_thread.
+	* inline-frame.c: Include "gdbthread.h".
+	(inline_state) <inline_state>: Take a thread pointer instead of a
+	ptid_t.  All callers adjusted.
+	<ptid>: Delete, replaced by ...
+	<thread>: ... this new field.
+	(find_inline_frame_state): Take a thread pointer instead of a
+	ptid_t.  All callers adjusted.
+	(skip_inline_frames, step_into_inline_frame)
+	(inline_skipped_frames, inline_skipped_symbol): Take a thread
+	pointer instead of a ptid_t.  All callers adjusted.
+	* inline-frame.h (skip_inline_frames, step_into_inline_frame)
+	(inline_skipped_frames, inline_skipped_symbol): Likewise.
+	* linux-fork.c (delete_checkpoint_command): Adjust to use thread
+	pointers directly.
+	* linux-nat.c (get_detach_signal): Likewise.
+	* linux-thread-db.c (thread_from_lwp): New 'stopped' parameter.
+	(thread_db_notice_clone): Adjust.
+	(thread_db_find_new_threads_silently)
+	(thread_db_find_new_threads_2, thread_db_find_new_threads_1): Take
+	a thread pointer instead of a ptid_t.  All callers adjusted.
+	* mi/mi-cmd-var.c: Include "inferior.h".
+	(mi_cmd_var_update_iter): Update to use thread pointers.
+	* mi/mi-interp.c (mi_new_thread): Update to use the thread's
+	inferior directly.
+	(mi_output_running_pid, mi_inferior_count): Delete, bits factored
+	out to ...
+	(mi_output_running): ... this new function.
+	(mi_on_resume_1): Adjust to use it.
+	(mi_user_selected_context_changed): Adjust to use inferior_thread.
+	* mi/mi-main.c (proceed_thread): Adjust to use thread pointers
+	directly.
+	(interrupt_thread_callback): : Adjust to use thread and inferior
+	pointers.
+	* proc-service.c: Include "gdbthread.h".
+	(ps_pglobal_lookup): Adjust to use the thread's inferior directly.
+	* progspace-and-thread.c: Include "inferior.h".
+	* progspace.c: Include "inferior.h".
+	* python/py-exitedevent.c (create_exited_event_object): Adjust to
+	hold a reference to an inferior_object.
+	* python/py-finishbreakpoint.c (bpfinishpy_init): Adjust to use
+	inferior_thread.
+	* python/py-inferior.c (struct inferior_object): Give the type a
+	tag name instead of a typedef.
+	(python_on_normal_stop): No need to check if the current thread is
+	listed.
+	(inferior_to_inferior_object): Change return type to
+	inferior_object.  All callers adjusted.
+	(find_thread_object): Delete, bits factored out to ...
+	(thread_to_thread_object): ... this new function.
+	* python/py-infthread.c (create_thread_object): Use
+	inferior_to_inferior_object.
+	(thpy_is_stopped): Use thread pointer directly.
+	(gdbpy_selected_thread): Use inferior_thread.
+	* python/py-record-btrace.c (btpy_list_object) <ptid>: Delete
+	field, replaced with ...
+	<thread>: ... this new field.  All users adjusted.
+	(btpy_insn_or_gap_new): Drop const.
+	(btpy_list_new): Take a thread pointer instead of a ptid_t.  All
+	callers adjusted.
+	* python/py-record.c: Include "gdbthread.h".
+	(recpy_insn_new, recpy_func_new): Take a thread pointer instead of
+	a ptid_t.  All callers adjusted.
+	(gdbpy_current_recording): Use inferior_thread.
+	* python/py-record.h (recpy_record_object) <ptid>: Delete
+	field, replaced with ...
+	<thread>: ... this new field.  All users adjusted.
+	(recpy_element_object) <ptid>: Delete
+	field, replaced with ...
+	<thread>: ... this new field.  All users adjusted.
+	(recpy_insn_new, recpy_func_new): Take a thread pointer instead of
+	a ptid_t.  All callers adjusted.
+	* python/py-threadevent.c: Include "gdbthread.h".
+	(get_event_thread): Use thread_to_thread_object.
+	* python/python-internal.h (struct inferior_object): Forward
+	declare.
+	(find_thread_object, find_inferior_object): Delete declarations.
+	(thread_to_thread_object, inferior_to_inferior_object): New
+	declarations.
+	* record-btrace.c: Include "inferior.h".
+	(require_btrace_thread): Use inferior_thread.
+	(record_btrace_frame_sniffer)
+	(record_btrace_tailcall_frame_sniffer): Use inferior_thread.
+	(get_thread_current_frame): Use scoped_restore_current_thread and
+	switch_to_thread.
+	(get_thread_current_frame): Use thread pointer directly.
+	(record_btrace_replay_at_breakpoint): Use thread's inferior
+	pointer directly.
+	* record-full.c: Include "inferior.h".
+	* regcache.c: Include "gdbthread.h".
+	(get_thread_arch_regcache): Use the inferior's address space
+	directly.
+	(get_thread_regcache, registers_changed_thread): New.
+	* regcache.h (get_thread_regcache(thread_info *thread)): New
+	overload.
+	(registers_changed_thread): New.
+	(remote_target) <remote_detach_1>: Swap order of parameters.
+	(remote_add_thread): <remote_add_thread>: Return the new thread.
+	(get_remote_thread_info(ptid_t)): New overload.
+	(remote_target::remote_notice_new_inferior): Use thread pointers
+	directly.
+	(remote_target::process_initial_stop_replies): Use
+	thread_info::set_running.
+	(remote_target::remote_detach_1, remote_target::detach)
+	(extended_remote_target::detach): Adjust.
+	* stack.c (frame_show_address): Use inferior_thread.
+	* target-debug.h (target_debug_print_thread_info_pp): New.
+	* target-delegates.c: Regenerate.
+	* target.c (default_thread_address_space): Delete.
+	(memory_xfer_partial_1): Use current_inferior.
+	(target_detach): Use current_inferior.
+	(target_thread_address_space): Delete.
+	(generic_mourn_inferior): Use current_inferior.
+	* target.h (struct target_ops) <thread_address_space>: Delete.
+	(target_thread_address_space): Delete.
+	* thread.c (init_thread_list): Use ALL_THREADS_SAFE.  Use thread
+	pointers directly.
+	(delete_thread_1, delete_thread, delete_thread_silent): Take a
+	thread pointer instead of a ptid_t.  Adjust all callers.
+	(ptid_to_global_thread_id, global_thread_id_to_ptid): Delete.
+	(first_thread_of_process): Delete, replaced by ...
+	(first_thread_of_inferior): ... this new function.  All callers
+	adjusted.
+	(any_thread_of_process): Rename to ...
+	(any_thread_of_inferior): ... this, and take an inferior pointer.
+	(any_live_thread_of_process): Rename to ...
+	(any_live_thread_of_inferior): ... this, and take an inferior
+	pointer.
+	(thread_stack_temporaries_enabled_p, push_thread_stack_temporary)
+	(value_in_thread_stack_temporaries)
+	(get_last_thread_stack_temporary): Take a thread pointer instead
+	of a ptid_t.  Adjust all callers.
+	(thread_info::set_running): New.
+	(validate_registers_access): Use inferior_thread.
+	(can_access_registers_ptid): Rename to ...
+	(can_access_registers_thread): ... this, and take a thread
+	pointer.
+	(print_thread_info_1): Adjust to compare thread pointers instead
+	of ptids.
+	(switch_to_no_thread, switch_to_thread): Make extern.
+	(scoped_restore_current_thread::~scoped_restore_current_thread):
+	Use m_thread pointer directly.
+	(scoped_restore_current_thread::scoped_restore_current_thread):
+	Use inferior_thread.
+	(thread_command): Use thread pointer directly.
+	(thread_num_make_value_helper): Use inferior_thread.
+	* top.c (execute_command): Use inferior_thread.
+	* tui/tui-interp.c: Include "inferior.h".
+	* varobj.c (varobj_create): Use inferior_thread.
+	(value_of_root_1): Use find_thread_global_id instead of
+	global_thread_id_to_ptid.
+
+2018-06-21  Alan Hayward  <alan.hayward@arm.com>
+
+        * regcache.c (readable_regcache::read_part): Avoid memcpy when
+        possible.
+        (regcache::write_part): Likewise.
+        (readable_regcache::cooked_read_part): Update comment.
+        (readable_regcache::cooked_write_part): Likewise.
+        * regcache.h: (readable_regcache::read_part): Likewise.
+        (regcache::write_part): Likewise.
+
+2018-06-21  Richard Bunt  <richard.bunt@arm.com>
+	    Dirk Schubert  <dirk.schubert@arm.com>
+
+	* aarch64-linux-nat.c (post_attach): New.
+	(aarch64_linux_nat_target::post_attach): Override post_attach to
+	record the number of hardware debug registers.
+
+2018-06-20  Tom Tromey  <tom@tromey.com>
+
+	* python/py-param.c (add_setshow_generic): Make parameters const.
+	(parmpy_init): Update.
+
+2018-06-20  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* regcache.h (regcache_cooked_read_ftype): Rename to...
+	(register_read_ftype): ...this, change type to function_view.
+	(class reg_buffer) <save>: Remove src parameter.
+	(readonly_detached_regcache) <readonly_detached_regcache>: Make
+	parameter non-const in first overload.  Remove src parameter in
+	second overload.
+	* regcache.c (do_cooked_read): Remove.
+	(readonly_detached_regcache::readonly_detached_regcache): Make
+	parameter non-const, adjust call to other constructor.
+	(reg_buffer::save): Remove src parameter.
+	* frame.c (do_frame_register_read): Remove.
+	(frame_save_as_regcache): Use lambda function.
+	* ppc-linux-tdep.c (ppu2spu_unwind_register): Change type of src
+	parameter to ppu2spu_data *.
+	(ppu2spu_sniffer): Use lambda function.
+
+2018-06-20  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* record-full.c (record_full_target::insert_breakpoint): Remove
+	"struct" keyword, add const.
+
+2018-06-19  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* common/common-defs.h (PACKAGE_NAME, PACKAGE_VERSION,
+	PACKAGE_STRING, PACKAGE_TARNAME): Undefine.
+	* configure.ac: Remove AC_PREREQ, add missing quoting.
+	* gnulib/configure.ac: Modernize usage of
+	AC_INIT/AM_INIT_AUTOMAKE.  Remove AC_PREREQ.
+	* gnulib/update-gnulib.sh (AUTOCONF_VERSION): Bump to 2.69.
+	(AUTOMAKE_VERSION): Bump to 1.15.1.
+	* configure: Re-generate.
+	* config.in: Re-generate.
+	* aclocal.m4: Re-generate.
+	* gnulib/aclocal.m4: Re-generate.
+	* gnulib/config.in: Re-generate.
+	* gnulib/configure: Re-generate.
+	* gnulib/import/Makefile.in: Re-generate.
+
+2018-06-19  Pedro Alves  <palves@redhat.com>
+
+	* minsyms.c (msym_prefer_to_msym_type): New, factored out from ...
+	(lookup_minimal_symbol_by_pc_section): ... here with
+	gdb_assert_not_reached added.
+
+2018-06-19  Pedro Alves  <palves@redhat.com>
+
+	* inline-frame.c (stopped_by_user_bp_inline_frame): Replace PC
+	parameter with a block parameter.  Compare location's block symbol
+	with the frame's block instead of addresses.
+	(skip_inline_frames): Pass the current block instead of the
+	frame's address.  Break out as soon as we determine the frame
+	should not be skipped.
+
+2018-06-18  Tom Tromey  <tom@tromey.com>
+
+	* solib-aix.c (solib_aix_get_section_offsets): Return
+	unique_xmalloc_ptr.
+	(solib_aix_solib_create_inferior_hook): Update.
+
+2018-06-18  Tom Tromey  <tom@tromey.com>
+
+	* solib-darwin.c (darwin_current_sos): Use unique_xmalloc_ptr.
+
+2018-06-18  Tom Tromey  <tom@tromey.com>
+
+	* solib-frv.c (frv_relocate_main_executable): Use
+	unique_xmalloc_ptr.
+	* solib-dsbt.c (dsbt_relocate_main_executable): Use
+	unique_xmalloc_ptr.
+
+2018-06-18  Tom Tromey  <tom@tromey.com>
+
+	* objfiles.h (inhibit_section_map_updates): Update.
+	(resume_section_map_updates, resume_section_map_updates_cleanup):
+	Remove.
+	* solib-svr4.c (svr4_handle_solib_event): Update.
+	* objfiles.c (inhibit_section_map_updates): Return
+	scoped_restore_tmpl<int>.
+	(resume_section_map_updates, resume_section_map_updates_cleanup):
+	Remove.
+
+2018-06-18  Tom Tromey  <tom@tromey.com>
+
+	* valprint.h (read_string): Update.
+	* valprint.c (read_string): Change type of "buffer".
+	(val_print_string): Update.
+	* python/py-value.c (valpy_string): Update.
+	* language.h (struct language_defn) <la_get_string>: Change
+	type of "buffer".
+	(default_get_string, c_get_string): Update.
+	* language.c (default_get_string): Change type of "buffer".
+	* guile/scm-value.c (gdbscm_value_to_string): Update.
+	* c-lang.c (c_get_string): Change type of "buffer".
+
+2018-06-18  Tom Tromey  <tom@tromey.com>
+
+	* ser-mingw.c (struct pipe_state_destroyer): New.
+	(pipe_state_up): New typedef.
+	(cleanup_pipe_state): Remove.
+	(pipe_windows_open): Use pipe_state_up.  Don't release argv.
+
+2018-06-18  Tom Tromey  <tom@tromey.com>
+
+	* rust-lang.h (rust_yyerror): Don't declare.
+	* rust-lang.c (rust_language_defn): Update.
+	* rust-exp.y (yyerror): Now static.
+	* parse.c (parse_exp_in_context_1): Update.
+	* p-lang.h (p_yyerror): Don't declare.
+	* p-lang.c (p_language_defn): Update.
+	* p-exp.y (yyerror): Now static.
+	* opencl-lang.c (opencl_language_defn): Update.
+	* objc-lang.c (objc_language_defn): Update.
+	* m2-lang.h (m2_yyerror): Don't declare.
+	* m2-lang.c (m2_language_defn): Update.
+	* m2-exp.y (yyerror): Now static.
+	* language.h (struct language_defn) <la_error>: Remove.
+	* language.c (unk_lang_error): Remove.
+	(unknown_language_defn, auto_language_defn): Remove.
+	* go-lang.h (go_yyerror): Don't declare.
+	* go-lang.c (go_language_defn): Update.
+	* go-exp.y (yyerror): Now static.
+	* f-lang.h (f_yyerror): Don't declare.
+	* f-lang.c (f_language_defn): Update.
+	* f-exp.y (yyerror): Now static.
+	* d-lang.h (d_yyerror): Don't declare.
+	* d-lang.c (d_language_defn): Update.
+	* d-exp.y (yyerror): Now static.
+	* c-lang.h (c_yyerror): Don't declare.
+	* c-lang.c (c_language_defn, cplus_language_defn)
+	(asm_language_defn, minimal_language_defn): Update.
+	* c-exp.y (yyerror): Now static.
+	* ada-lang.h (ada_yyerror): Don't declare.
+	* ada-lang.c (ada_language_defn): Update.
+	* ada-exp.y (yyerror): Now static.
+
+2018-06-18  Alan Hayward  <alan.hayward@arm.com>
+
+	* aarch64-linux-nat.c (fetch_sveregs_from_thread): New function.
+	(store_sveregs_to_thread): Likewise.
+	(aarch64_linux_fetch_inferior_registers): Check for SVE.
+	(aarch64_linux_store_inferior_registers): Likewise.
+	* nat/aarch64-sve-linux-ptrace.c (aarch64_sve_get_sveregs): New
+	function.
+	(aarch64_sve_regs_copy_to_regcache): Likewise.
+	(aarch64_sve_regs_copy_from_regcache): Likewise.
+	* nat/aarch64-sve-linux-ptrace.h (aarch64_sve_get_sveregs): New
+	declaration.
+	(aarch64_sve_regs_copy_to_regcache): Likewise.
+	(aarch64_sve_regs_copy_from_regcache): Likewise.
+	(sve_context): Structure from Linux headers.
+	(SVE_SIG_ZREGS_SIZE): Define from Linux headers.
+	(SVE_SIG_ZREG_SIZE): Likewise.
+	(SVE_SIG_PREG_SIZE): Likewise.
+	(SVE_SIG_FFR_SIZE): Likewise.
+	(SVE_SIG_REGS_OFFSET): Likewise.
+	(SVE_SIG_ZREGS_OFFSET): Likewise.
+	(SVE_SIG_ZREG_OFFSET): Likewise.
+	(SVE_SIG_ZREGS_SIZE): Likewise.
+	(SVE_SIG_PREGS_OFFSET): Likewise.
+	(SVE_SIG_PREG_OFFSET): Likewise.
+	(SVE_SIG_PREGS_SIZE): Likewise.
+	(SVE_SIG_FFR_OFFSET): Likewise.
+	(SVE_SIG_REGS_SIZE): Likewise.
+	(SVE_SIG_CONTEXT_SIZE): Likewise.
+	(SVE_PT_REGS_MASK): Likewise.
+	(SVE_PT_REGS_FPSIMD): Likewise.
+	(SVE_PT_REGS_SVE): Likewise.
+	(SVE_PT_VL_INHERIT): Likewise.
+	(SVE_PT_VL_ONEXEC): Likewise.
+	(SVE_PT_REGS_OFFSET): Likewise.
+	(SVE_PT_FPSIMD_OFFSET): Likewise.
+	(SVE_PT_FPSIMD_SIZE): Likewise.
+	(SVE_PT_SVE_ZREG_SIZE): Likewise.
+	(SVE_PT_SVE_PREG_SIZE): Likewise.
+	(SVE_PT_SVE_FFR_SIZE): Likewise.
+	(SVE_PT_SVE_FPSR_SIZE): Likewise.
+	(SVE_PT_SVE_FPCR_SIZE): Likewise.
+	(__SVE_SIG_TO_PT): Likewise.
+	(SVE_PT_SVE_OFFSET): Likewise.
+	(SVE_PT_SVE_ZREGS_OFFSET): Likewise.
+	(SVE_PT_SVE_ZREG_OFFSET): Likewise.
+	(SVE_PT_SVE_ZREGS_SIZE): Likewise.
+	(SVE_PT_SVE_PREGS_OFFSET): Likewise.
+	(SVE_PT_SVE_PREG_OFFSET): Likewise.
+	(SVE_PT_SVE_PREGS_SIZE): Likewise.
+	(SVE_PT_SVE_FFR_OFFSET): Likewise.
+	(SVE_PT_SVE_FPSR_OFFSET): Likewise.
+	(SVE_PT_SVE_FPCR_OFFSET): Likewise.
+	(SVE_PT_SVE_SIZE): Likewise.
+	(SVE_PT_SIZE): Likewise.
+	(HAS_SVE_STATE): New define.
+
+2018-06-18  Alan Hayward  <alan.hayward@arm.com>
+
+	* nat/aarch64-sve-linux-sigcontext.h: New file.
+	* nat/aarch64-sve-linux-ptrace.h (SVE_VQ_BYTES): Move to
+	new files.
+	(SVE_VQ_MIN): Likewise.
+	(SVE_VQ_MAX): Likewise.
+	(SVE_VL_MIN): Likewise.
+	(SVE_VL_MAX): Likewise.
+	(SVE_NUM_ZREGS): Likewise.
+	(SVE_NUM_PREGS): Likewise.
+	(sve_vl_valid): Likewise.
+	(struct user_sve_header): Likewise.
+
+2018-06-16  Andrew Burgess  <andrew.burgess@embecosm.com>
+	    Richard Bunt <Richard.Bunt@arm.com>
+
+	* linux-nat.c (stop_wait_callback): Don't discard SIGSTOP if it
+	was requested by GDB.
+
+2018-06-15  Tom de Vries  <tdevries@suse.de>
+
+	* MAINTAINERS (Write After Approval): Add Tom de Vries.
+
+2018-06-14  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* gnulib/update-gnulib.sh: Print expected versions of
+	autoconf/aclocal.
+
+2018-06-14  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* arch-utils.c (default_type_align): Use type_length_units.
+	* gdbtypes.c (type_align): Use type_length_units.
+
+2018-06-14  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* cli/cli-script.c (_initialize_cli_script): Fix online documentation
+	of 'define' command.
+
+2018-06-14  Tom de Vries  <tdevries@suse.de>
+
+	PR cli/22573
+	* infcmd.c (print_return_value_1): Use get_user_print_options instead of
+	get_no_prettyformat_print_options.
+
 2018-06-13  Simon Marchi  <simon.marchi@ericsson.com>
 
 	* sparc-nat.h: Include target.h.
@@ -785,6 +1657,12 @@
 	Likewise.
 	* symfile.c (addr_info_make_relative): Likewise.
 	* thread.c (value_in_thread_stack_temporaries): Likewise.
+
+2018-06-12  Weimin Pan  <weimin.pan@oracle.com>
+
+	PR gdb/16841
+	* valops.c (value_struct_elt_for_reference): Call check_typedef on
+	aggregate type to get its real type before accessing it.
 
 2018-05-29  Weimin Pan  <weimin.pan@oracle.com>
 

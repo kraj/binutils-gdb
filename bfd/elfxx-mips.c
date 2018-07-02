@@ -8951,10 +8951,9 @@ allocate_dynrelocs (struct elf_link_hash_entry *h, void *inf)
 
       if (h->root.type == bfd_link_hash_undefweak)
 	{
-	  /* Do not copy relocations for undefined weak symbols with
-	     non-default visibility.  */
-	  if (ELF_ST_VISIBILITY (h->other) != STV_DEFAULT
-	      || UNDEFWEAK_NO_DYNAMIC_RELOC (info, h))
+	  /* Do not copy relocations for undefined weak symbols that
+	     we are not going to export.  */
+	  if (UNDEFWEAK_NO_DYNAMIC_RELOC (info, h))
 	    do_copy = FALSE;
 
 	  /* Make sure undefined weak symbols are output as a dynamic
@@ -10602,8 +10601,25 @@ _bfd_mips_elf_finish_dynamic_symbol (bfd *output_bfd,
       got_address_high = ((got_address + 0x8000) >> 16) & 0xffff;
       got_address_low = got_address & 0xffff;
 
+      /* The PLT sequence is not safe for N64 if .got.plt entry's address
+	 cannot be loaded in two instructions.  */
+      if (ABI_64_P (output_bfd)
+	  && ((got_address + 0x80008000) & ~(bfd_vma) 0xffffffff) != 0)
+	{
+	  _bfd_error_handler
+	    /* xgettext:c-format */
+	    (_("%pB: `%pA' entry VMA of %#" PRIx64 " outside the 32-bit range "
+	       "supported; consider using `-Ttext-segment=...'"),
+	     output_bfd,
+	     htab->root.sgotplt->output_section,
+	     (int64_t) got_address);
+	  bfd_set_error (bfd_error_no_error);
+	  return FALSE;
+	}
+
       /* Initially point the .got.plt entry at the PLT header.  */
-      loc = (htab->root.sgotplt->contents + got_index * MIPS_ELF_GOT_SIZE (dynobj));
+      loc = (htab->root.sgotplt->contents
+	     + got_index * MIPS_ELF_GOT_SIZE (dynobj));
       if (ABI_64_P (output_bfd))
 	bfd_put_64 (output_bfd, header_address, loc);
       else
@@ -11245,8 +11261,19 @@ mips_finish_exec_plt (bfd *output_bfd, struct bfd_link_info *info)
 
   /* The PLT sequence is not safe for N64 if .got.plt's address can
      not be loaded in two instructions.  */
-  BFD_ASSERT ((gotplt_value & ~(bfd_vma) 0x7fffffff) == 0
-	      || ~(gotplt_value | 0x7fffffff) == 0);
+  if (ABI_64_P (output_bfd)
+      && ((gotplt_value + 0x80008000) & ~(bfd_vma) 0xffffffff) != 0)
+    {
+      _bfd_error_handler
+	/* xgettext:c-format */
+	(_("%pB: `%pA' start VMA of %#" PRIx64 " outside the 32-bit range "
+	   "supported; consider using `-Ttext-segment=...'"),
+	 output_bfd,
+	 htab->root.sgotplt->output_section,
+	 (int64_t) gotplt_value);
+      bfd_set_error (bfd_error_no_error);
+      return FALSE;
+    }
 
   /* Install the PLT header.  */
   loc = htab->root.splt->contents;
@@ -15644,6 +15671,8 @@ print_mips_ases (FILE *file, unsigned int mask)
     fputs ("\n\tMIPS16e2 ASE", file);
   if (mask & AFL_ASE_CRC)
     fputs ("\n\tCRC ASE", file);
+  if (mask & AFL_ASE_GINV)
+    fputs ("\n\tGINV ASE", file);
   if (mask == 0)
     fprintf (file, "\n\t%s", _("None"));
   else if ((mask & ~AFL_ASE_MASK) != 0)
@@ -16200,6 +16229,18 @@ bfd_mips_elf_get_abiflags (bfd *abfd)
   return tdata->abiflags_valid ? &tdata->abiflags : NULL;
 }
 
+/* MIPS libc ABI versions, used with the EI_ABIVERSION ELF file header
+   field.  Taken from `libc-abis.h' generated at GNU libc build time.
+   Using a MIPS_ prefix as other libc targets use different values.  */
+enum
+{
+  MIPS_LIBC_ABI_DEFAULT = 0,
+  MIPS_LIBC_ABI_MIPS_PLT,
+  MIPS_LIBC_ABI_UNIQUE,
+  MIPS_LIBC_ABI_MIPS_O32_FP64,
+  MIPS_LIBC_ABI_MAX
+};
+
 void
 _bfd_mips_post_process_headers (bfd *abfd, struct bfd_link_info *link_info)
 {
@@ -16213,18 +16254,19 @@ _bfd_mips_post_process_headers (bfd *abfd, struct bfd_link_info *link_info)
       BFD_ASSERT (htab != NULL);
 
       if (htab->use_plts_and_copy_relocs && !htab->is_vxworks)
-	i_ehdrp->e_ident[EI_ABIVERSION] = 1;
+	i_ehdrp->e_ident[EI_ABIVERSION] = MIPS_LIBC_ABI_MIPS_PLT;
     }
-
-  _bfd_elf_post_process_headers (abfd, link_info);
 
   if (mips_elf_tdata (abfd)->abiflags.fp_abi == Val_GNU_MIPS_ABI_FP_64
       || mips_elf_tdata (abfd)->abiflags.fp_abi == Val_GNU_MIPS_ABI_FP_64A)
-    i_ehdrp->e_ident[EI_ABIVERSION] = 3;
+    i_ehdrp->e_ident[EI_ABIVERSION] = MIPS_LIBC_ABI_MIPS_O32_FP64;
+
+  _bfd_elf_post_process_headers (abfd, link_info);
 }
 
 int
-_bfd_mips_elf_compact_eh_encoding (struct bfd_link_info *link_info ATTRIBUTE_UNUSED)
+_bfd_mips_elf_compact_eh_encoding
+  (struct bfd_link_info *link_info ATTRIBUTE_UNUSED)
 {
   return DW_EH_PE_pcrel | DW_EH_PE_sdata4;
 }
@@ -16232,7 +16274,8 @@ _bfd_mips_elf_compact_eh_encoding (struct bfd_link_info *link_info ATTRIBUTE_UNU
 /* Return the opcode for can't unwind.  */
 
 int
-_bfd_mips_elf_cant_unwind_opcode (struct bfd_link_info *link_info ATTRIBUTE_UNUSED)
+_bfd_mips_elf_cant_unwind_opcode
+  (struct bfd_link_info *link_info ATTRIBUTE_UNUSED)
 {
   return COMPACT_EH_CANT_UNWIND_OPCODE;
 }

@@ -70,7 +70,8 @@ LIBDL = -ldl
 endif
 
 if THREADS
-THREADSLIB = -lpthread
+THREADFLAGS = @PTHREAD_CFLAGS@
+THREADLIBS = @PTHREAD_LIBS@
 endif
 
 if OMP_SUPPORT
@@ -81,7 +82,7 @@ endif
 # .o's), but not all of them (such as .so's and .err files).  We
 # improve on that here.  automake-1.9 info docs say "mostlyclean" is
 # the right choice for files 'make' builds that people rebuild.
-MOSTLYCLEANFILES = *.so *.syms *.stdout
+MOSTLYCLEANFILES = *.so *.syms *.stdout *.stderr
 
 # Export make variables to the shell scripts so that they can see
 # (for example) DEFAULT_TARGET.
@@ -106,9 +107,6 @@ libgoldtest_a_SOURCES = test.cc testmain.cc testfile.cc
 
 DEPENDENCIES = \
 	libgoldtest.a ../libgold.a ../../libiberty/libiberty.a $(LIBINTL_DEP)
-LDADD = libgoldtest.a ../libgold.a ../../libiberty/libiberty.a $(LIBINTL) \
-	$(THREADSLIB) $(LIBDL) $(ZLIB)
-
 
 # The unittests themselves
 if NATIVE_OR_CROSS_LINKER
@@ -131,15 +129,27 @@ endif GCC
 
 check_PROGRAMS += object_unittest
 object_unittest_SOURCES = object_unittest.cc
+object_unittest_LDFLAGS = $(THREADFLAGS)
+object_unittest_LDADD = libgoldtest.a ../libgold.a ../../libiberty/libiberty.a $(LIBINTL) \
+	$(THREADLIBS) $(LIBDL) $(ZLIB)
 
 check_PROGRAMS += binary_unittest
 binary_unittest_SOURCES = binary_unittest.cc
+binary_unittest_LDFLAGS = $(THREADFLAGS)
+binary_unittest_LDADD = libgoldtest.a ../libgold.a ../../libiberty/libiberty.a $(LIBINTL) \
+	$(THREADLIBS) $(LIBDL) $(ZLIB)
 
 check_PROGRAMS += leb128_unittest
 leb128_unittest_SOURCES = leb128_unittest.cc
+leb128_unittest_LDFLAGS = $(THREADFLAGS)
+leb128_unittest_LDADD = libgoldtest.a ../libgold.a ../../libiberty/libiberty.a $(LIBINTL) \
+	$(THREADLIBS) $(LIBDL) $(ZLIB)
 
 check_PROGRAMS += overflow_unittest
 overflow_unittest_SOURCES = overflow_unittest.cc
+overflow_unittest_LDFLAGS = $(THREADFLAGS)
+overflow_unittest_LDADD = libgoldtest.a ../libgold.a ../../libiberty/libiberty.a $(LIBINTL) \
+	$(THREADLIBS) $(LIBDL) $(ZLIB)
 overflow_unittest.o: overflow_unittest.cc
 	$(CXXCOMPILE) -O3 -c -o $@ $<
 
@@ -953,17 +963,17 @@ tls_test_ie_shared.so: tls_test_pic_ie.o tls_test_file2_pic_ie.o tls_test_c_pic_
 
 tls_test_SOURCES = tls_test.cc tls_test_file2.cc tls_test_main.cc tls_test.h
 tls_test_DEPENDENCIES = gcctestdir/ld tls_test_c.o
-tls_test_LDFLAGS = -Bgcctestdir/
-tls_test_LDADD = tls_test_c.o -lpthread
+tls_test_LDFLAGS = -Bgcctestdir/ $(THREADFLAGS)
+tls_test_LDADD = tls_test_c.o $(THREADLIBS)
 tls_test_c.o: tls_test_c.c
 	$(COMPILE) -c $(TLS_TEST_C_CFLAGS) -o $@ $<
 
 tls_pic_test_SOURCES = tls_test_main.cc
 tls_pic_test_DEPENDENCIES = gcctestdir/ld tls_test_pic.o tls_test_file2_pic.o \
 	tls_test_c_pic.o
-tls_pic_test_LDFLAGS = -Bgcctestdir/
+tls_pic_test_LDFLAGS = -Bgcctestdir/ $(THREADFLAGS)
 tls_pic_test_LDADD = tls_test_pic.o tls_test_file2_pic.o tls_test_c_pic.o \
-	-lpthread
+	$(THREADLIBS)
 
 tls_test_main_pie.o: tls_test_main.cc tls_test.h
 	$(CXXCOMPILE) -c -fpie -o $@ $<
@@ -975,7 +985,7 @@ tls_test_c_pie.o: tls_test_c.c
 	$(COMPILE) -c -fpic $(TLS_TEST_C_CFLAGS) -o $@ $<
 tls_pie_test: tls_test_main_pie.o tls_test_pie.o tls_test_file2_pie.o \
 		tls_test_c_pie.o gcctestdir/ld
-	$(CXXLINK) -Bgcctestdir/ -pie tls_test_main_pie.o tls_test_pie.o tls_test_file2_pie.o tls_test_c_pie.o -lpthread
+	$(CXXLINK) -Bgcctestdir/ $(THREADFLAGS) -pie tls_test_main_pie.o tls_test_pie.o tls_test_file2_pie.o tls_test_c_pie.o $(THREADLIBS)
 
 check_SCRIPTS += tls_pie_test.sh
 check_DATA += tls_pie_test.stdout
@@ -984,24 +994,24 @@ tls_pie_test.stdout: tls_pie_test
 
 tls_pie_pic_test: tls_test_main_pie.o tls_test_pic.o tls_test_file2_pic.o \
 		tls_test_c_pic.o gcctestdir/ld
-	$(CXXLINK) -Bgcctestdir/ -pie tls_test_main_pie.o tls_test_pic.o tls_test_file2_pic.o tls_test_c_pic.o -lpthread
+	$(CXXLINK) -Bgcctestdir/ $(THREADFLAGS) -pie tls_test_main_pie.o tls_test_pic.o tls_test_file2_pic.o tls_test_c_pic.o $(THREADLIBS)
 
 tls_shared_test_SOURCES = tls_test_main.cc
 tls_shared_test_DEPENDENCIES = gcctestdir/ld tls_test_shared.so
-tls_shared_test_LDFLAGS = -Bgcctestdir/ -Wl,-R,.
-tls_shared_test_LDADD = tls_test_shared.so -lpthread
+tls_shared_test_LDFLAGS = -Bgcctestdir/ -Wl,-R,. $(THREADFLAGS)
+tls_shared_test_LDADD = tls_test_shared.so $(THREADLIBS)
 
 tls_shared_ie_test_SOURCES = tls_test_main.cc
 tls_shared_ie_test_DEPENDENCIES = gcctestdir/ld tls_test_ie_shared.so
-tls_shared_ie_test_LDFLAGS = -Bgcctestdir/ -Wl,-R,.
-tls_shared_ie_test_LDADD = tls_test_ie_shared.so -lpthread
+tls_shared_ie_test_LDFLAGS = -Bgcctestdir/ -Wl,-R,. $(THREADFLAGS)
+tls_shared_ie_test_LDADD = tls_test_ie_shared.so $(THREADLIBS)
 
 tls_shared_gd_to_ie_test_SOURCES = tls_test_main.cc
 tls_shared_gd_to_ie_test_DEPENDENCIES = gcctestdir/ld tls_test_pic.o \
 	tls_test_c_pic.o tls_test_shared2.so
-tls_shared_gd_to_ie_test_LDFLAGS = -Bgcctestdir/ -Wl,-R,.
+tls_shared_gd_to_ie_test_LDFLAGS = -Bgcctestdir/ -Wl,-R,. $(THREADFLAGS)
 tls_shared_gd_to_ie_test_LDADD = tls_test_pic.o tls_test_c_pic.o \
-	tls_test_shared2.so -lpthread
+	tls_test_shared2.so $(THREADLIBS)
 
 if TLS_GNU2_DIALECT
 
@@ -1019,9 +1029,9 @@ tls_test_gnu2_shared2.so: tls_test_file2_gnu2.o gcctestdir/ld
 tls_shared_gnu2_gd_to_ie_test_SOURCES = tls_test_main.cc
 tls_shared_gnu2_gd_to_ie_test_DEPENDENCIES = gcctestdir/ld tls_test_gnu2.o \
 	tls_test_c_gnu2.o tls_test_gnu2_shared2.so
-tls_shared_gnu2_gd_to_ie_test_LDFLAGS = -Bgcctestdir/ -Wl,-R,.
+tls_shared_gnu2_gd_to_ie_test_LDFLAGS = -Bgcctestdir/ -Wl,-R,. $(THREADFLAGS)
 tls_shared_gnu2_gd_to_ie_test_LDADD = tls_test_gnu2.o tls_test_c_gnu2.o \
-	tls_test_gnu2_shared2.so -lpthread
+	tls_test_gnu2_shared2.so $(THREADLIBS)
 
 if TLS_DESCRIPTORS
 
@@ -1032,8 +1042,8 @@ tls_test_gnu2_shared.so: tls_test_gnu2.o tls_test_file2_gnu2.o tls_test_c_gnu2.o
 
 tls_shared_gnu2_test_SOURCES = tls_test_main.cc
 tls_shared_gnu2_test_DEPENDENCIES = gcctestdir/ld tls_test_gnu2_shared.so
-tls_shared_gnu2_test_LDFLAGS = -Bgcctestdir/ -Wl,-R,.
-tls_shared_gnu2_test_LDADD = tls_test_gnu2_shared.so -lpthread
+tls_shared_gnu2_test_LDFLAGS = -Bgcctestdir/ -Wl,-R,. $(THREADFLAGS)
+tls_shared_gnu2_test_LDADD = tls_test_gnu2_shared.so $(THREADLIBS)
 
 endif TLS_DESCRIPTORS
 
@@ -1063,8 +1073,8 @@ tls_test_shared_nonpic.so: tls_test.o tls_test_file2.o tls_test_c.o gcctestdir/l
 
 tls_shared_nonpic_test_SOURCES = tls_test_main.cc
 tls_shared_nonpic_test_DEPENDENCIES = gcctestdir/ld tls_test_shared_nonpic.so
-tls_shared_nonpic_test_LDFLAGS = -Bgcctestdir/ -Wl,-R,.
-tls_shared_nonpic_test_LDADD = tls_test_shared_nonpic.so -lpthread
+tls_shared_nonpic_test_LDFLAGS = -Bgcctestdir/ -Wl,-R,. $(THREADFLAGS)
+tls_shared_nonpic_test_LDADD = tls_test_shared_nonpic.so $(THREADLIBS)
 endif FN_PTRS_IN_SO_WITHOUT_PIC
 
 endif TLS
@@ -1861,6 +1871,30 @@ ver_test_13.syms: ver_test_13.so
 ver_test_13.so: gcctestdir/ld ver_test_13.o ver_test_13.script
 	$(LINK) -Bgcctestdir/ -shared -Wl,--version-script,$(srcdir)/ver_test_13.script ver_test_13.o
 ver_test_13.o: ver_test_13.c
+	$(COMPILE) -c -fpic -o $@ $<
+
+check_SCRIPTS += ver_test_14.sh
+check_DATA += ver_test_14.syms
+ver_test_14.syms: ver_test_14
+	$(TEST_OBJDUMP) -T $< | $(TEST_CXXFILT) >$@
+ver_test_14: gcctestdir/ld ver_test_main.o ver_test_1.so ver_test_2.so ver_test_4.so ver_test_14.script
+	$(CXXLINK) -Bgcctestdir/ -Wl,--version-script,$(srcdir)/ver_test_14.script -Wl,-E -Wl,-R,. ver_test_main.o ver_test_1.so ver_test_2.so ver_test_4.so
+
+check_SCRIPTS += weak_as_needed.sh
+check_DATA += weak_as_needed.stdout
+weak_as_needed.stdout: weak_as_needed_a.so
+	$(TEST_READELF) -dW --dyn-syms $< >$@
+weak_as_needed_a.so: gcctestdir/ld weak_as_needed_a.o weak_as_needed_b.so weak_as_needed_c.so
+	gcctestdir/ld -shared -rpath . -o $@ weak_as_needed_a.o --as-needed weak_as_needed_b.so weak_as_needed_c.so
+weak_as_needed_b.so: gcctestdir/ld weak_as_needed_b.o weak_as_needed_b.script
+	gcctestdir/ld -shared -rpath . -o $@ --version-script $(srcdir)/weak_as_needed_b.script weak_as_needed_b.o
+weak_as_needed_c.so: gcctestdir/ld weak_as_needed_c.o weak_as_needed_c.script
+	gcctestdir/ld -shared -rpath . -o $@ --version-script $(srcdir)/weak_as_needed_c.script weak_as_needed_c.o
+weak_as_needed_a.o: weak_as_needed_a.c
+	$(COMPILE) -c -fpic -o $@ $<
+weak_as_needed_b.o: weak_as_needed_b.c
+	$(COMPILE) -c -fpic -o $@ $<
+weak_as_needed_c.o: weak_as_needed_c.c
 	$(COMPILE) -c -fpic -o $@ $<
 
 check_PROGRAMS += protected_1
@@ -3219,6 +3253,23 @@ exception_x86_64_bnd_1.o: exception_test_1.cc gcctestdir/as
 	$(CXXCOMPILE) -c -fpic -Bgcctestdir/ -Wa,-madd-bnd-prefix -o $@ $<
 exception_x86_64_bnd_2.o: exception_test_2.cc gcctestdir/as
 	$(CXXCOMPILE) -c -Bgcctestdir/ -Wa,-madd-bnd-prefix -o $@ $<
+endif DEFAULT_TARGET_X86_64
+
+if DEFAULT_TARGET_X86_64
+check_SCRIPTS += gnu_property_test.sh
+check_DATA += gnu_property_test.stdout
+gnu_property_test.stdout: gnu_property_test
+	$(TEST_READELF) -n $< >$@
+gnu_property_test: gcctestdir/ld gnu_property_a.o gnu_property_b.o gnu_property_c.o
+	gcctestdir/ld -o $@ gnu_property_a.o gnu_property_b.o gnu_property_c.o
+gnu_property_main.o: gnu_property_main.c
+	$(COMPILE) -c -o $@ $<
+gnu_property_a.o: gnu_property_a.S
+	$(COMPILE) -c -o $@ $<
+gnu_property_b.o: gnu_property_b.S
+	$(COMPILE) -c -o $@ $<
+gnu_property_c.o: gnu_property_c.S
+	$(COMPILE) -c -o $@ $<
 endif DEFAULT_TARGET_X86_64
 
 check_PROGRAMS += pr22266

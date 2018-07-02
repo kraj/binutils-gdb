@@ -11266,7 +11266,7 @@ get_symbol_version_string (Filedata *                   filedata,
 
   vers_data = byte_get (data, 2);
 
-  if ((vers_data & VERSYM_HIDDEN) == 0 && vers_data <= 1)
+  if ((vers_data & VERSYM_HIDDEN) == 0 && vers_data == 0)
     return NULL;
 
   /* Usually we'd only see verdef for defined symbols, and verneed for
@@ -11301,12 +11301,14 @@ get_symbol_version_string (Filedata *                   filedata,
 	      ivd.vd_ndx = 0;
 	      ivd.vd_aux = 0;
 	      ivd.vd_next = 0;
+	      ivd.vd_flags = 0;
 	    }
 	  else
 	    {
 	      ivd.vd_ndx = BYTE_GET (evd.vd_ndx);
 	      ivd.vd_aux = BYTE_GET (evd.vd_aux);
 	      ivd.vd_next = BYTE_GET (evd.vd_next);
+	      ivd.vd_flags = BYTE_GET (evd.vd_flags);
 	    }
 
 	  off += ivd.vd_next;
@@ -11315,6 +11317,9 @@ get_symbol_version_string (Filedata *                   filedata,
 
       if (ivd.vd_ndx == (vers_data & VERSYM_VERSION))
 	{
+	  if (ivd.vd_ndx == 1 && ivd.vd_flags == VER_FLG_BASE) 
+	    return NULL;
+
 	  off -= ivd.vd_next;
 	  off += ivd.vd_aux;
 
@@ -12654,6 +12659,8 @@ is_16bit_abs_reloc (Filedata * filedata, unsigned int reloc_type)
       return reloc_type == 9; /* R_NIOS_16.  */
     case EM_OR1K:
       return reloc_type == 2; /* R_OR1K_16.  */
+    case EM_RISCV:
+      return reloc_type == 55; /* R_RISCV_SET16.  */
     case EM_TI_PRU:
       return reloc_type == 8; /* R_PRU_BFD_RELOC_16.  */
     case EM_TI_C6000:
@@ -12665,6 +12672,36 @@ is_16bit_abs_reloc (Filedata * filedata, unsigned int reloc_type)
       return reloc_type == 2; /* R_XC16C_ABS_16.  */
     case EM_XGATE:
       return reloc_type == 3; /* R_XGATE_16.  */
+    default:
+      return FALSE;
+    }
+}
+
+/* Like is_32bit_abs_reloc except that it returns TRUE iff RELOC_TYPE is
+   a 8-bit absolute RELA relocation used in DWARF debug sections.  */
+
+static bfd_boolean
+is_8bit_abs_reloc (Filedata * filedata, unsigned int reloc_type)
+{
+  switch (filedata->file_header.e_machine)
+    {
+    case EM_RISCV:
+      return reloc_type == 54; /* R_RISCV_SET8.  */
+    default:
+      return FALSE;
+    }
+}
+
+/* Like is_32bit_abs_reloc except that it returns TRUE iff RELOC_TYPE is
+   a 6-bit absolute RELA relocation used in DWARF debug sections.  */
+
+static bfd_boolean
+is_6bit_abs_reloc (Filedata * filedata, unsigned int reloc_type)
+{
+  switch (filedata->file_header.e_machine)
+    {
+    case EM_RISCV:
+      return reloc_type == 53; /* R_RISCV_SET6.  */
     default:
       return FALSE;
     }
@@ -12793,6 +12830,21 @@ is_8bit_inplace_sub_reloc (Filedata * filedata, unsigned int reloc_type)
     {
     case EM_RISCV:
       return reloc_type == 37; /* R_RISCV_SUB8.  */
+    default:
+      return FALSE;
+    }
+}
+
+/* Like is_32bit_abs_reloc except that it returns TRUE iff RELOC_TYPE is
+   a 6-bit inplace sub RELA relocation used in DWARF debug sections.  */
+
+static bfd_boolean
+is_6bit_inplace_sub_reloc (Filedata * filedata, unsigned int reloc_type)
+{
+  switch (filedata->file_header.e_machine)
+    {
+    case EM_RISCV:
+      return reloc_type == 52; /* R_RISCV_SUB6.  */
     default:
       return FALSE;
     }
@@ -13001,6 +13053,9 @@ apply_relocations (Filedata *                 filedata,
 	    reloc_size = 3;
 	  else if (is_16bit_abs_reloc (filedata, reloc_type))
 	    reloc_size = 2;
+	  else if (is_8bit_abs_reloc (filedata, reloc_type)
+		   || is_6bit_abs_reloc (filedata, reloc_type))
+	    reloc_size = 1;
 	  else if ((reloc_subtract = is_32bit_inplace_sub_reloc (filedata,
 								 reloc_type))
 		   || is_32bit_inplace_add_reloc (filedata, reloc_type))
@@ -13025,6 +13080,12 @@ apply_relocations (Filedata *                 filedata,
 	  else if ((reloc_subtract = is_8bit_inplace_sub_reloc (filedata,
 								reloc_type))
 		   || is_8bit_inplace_add_reloc (filedata, reloc_type))
+	    {
+	      reloc_size = 1;
+	      reloc_inplace = TRUE;
+	    }
+	  else if ((reloc_subtract = is_6bit_inplace_sub_reloc (filedata,
+								reloc_type)))
 	    {
 	      reloc_size = 1;
 	      reloc_inplace = TRUE;
@@ -13101,7 +13162,12 @@ apply_relocations (Filedata *                 filedata,
 		   || filedata->file_header.e_machine == EM_CYGNUS_D30V)
 		  && reloc_type == 12)
 	      || reloc_inplace)
-	    addend += byte_get (rloc, reloc_size);
+	    {
+	      if (is_6bit_inplace_sub_reloc (filedata, reloc_type))
+		addend += byte_get (rloc, reloc_size) & 0x3f;
+	      else
+		addend += byte_get (rloc, reloc_size);
+	    }
 
 	  if (is_32bit_pcrel_reloc (filedata, reloc_type)
 	      || is_64bit_pcrel_reloc (filedata, reloc_type))
@@ -13111,6 +13177,16 @@ apply_relocations (Filedata *                 filedata,
 		addend -= 8;
 	      byte_put (rloc, (addend + sym->st_value) - rp->r_offset,
 		        reloc_size);
+	    }
+	  else if (is_6bit_abs_reloc (filedata, reloc_type)
+		   || is_6bit_inplace_sub_reloc (filedata, reloc_type))
+	    {
+	      if (reloc_subtract)
+		addend -= sym->st_value;
+	      else
+		addend += sym->st_value;
+	      addend = (addend & 0x3f) | (byte_get (rloc, reloc_size) & 0xc0);
+	      byte_put (rloc, addend, reloc_size);
 	    }
 	  else if (reloc_subtract)
 	    byte_put (rloc, addend - sym->st_value, reloc_size);
@@ -15506,6 +15582,8 @@ print_mips_ases (unsigned int mask)
     fputs ("\n\tMIPS16e2 ASE", stdout);
   if (mask & AFL_ASE_CRC)
     fputs ("\n\tCRC ASE", stdout);
+  if (mask & AFL_ASE_GINV)
+    fputs ("\n\tGINV ASE", stdout);
   if (mask == 0)
     fprintf (stdout, "\n\t%s", _("None"));
   else if ((mask & ~AFL_ASE_MASK) != 0)

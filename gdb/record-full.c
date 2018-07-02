@@ -21,6 +21,7 @@
 #include "gdbcmd.h"
 #include "regcache.h"
 #include "gdbthread.h"
+#include "inferior.h"
 #include "event-top.h"
 #include "completer.h"
 #include "arch-utils.h"
@@ -1786,7 +1787,7 @@ record_full_target::insert_breakpoint (struct gdbarch *gdbarch,
   /* Use the existing entries if found in order to avoid duplication
      in record_full_breakpoints.  */
 
-  for (struct record_full_breakpoint &bp : record_full_breakpoints)
+  for (const record_full_breakpoint &bp : record_full_breakpoints)
     {
       if (bp.addr == bp_tgt->placed_address
 	  && bp.address_space == bp_tgt->placed_address_space)
@@ -2010,7 +2011,8 @@ record_full_goto_entry (struct record_full_entry *p)
 
   registers_changed ();
   reinit_frame_cache ();
-  stop_pc = regcache_read_pc (get_current_regcache ());
+  inferior_thread ()->suspend.stop_pc
+    = regcache_read_pc (get_current_regcache ());
   print_stack_frame (get_selected_frame (NULL), 1, SRC_AND_LOC, 1);
 }
 

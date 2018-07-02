@@ -1,3 +1,183 @@
+2018-07-02  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/23324
+	* elf64-x86-64.c (elf_x86_64_relocate_section): Clear the
+	R_X86_64_converted_reloc_bit bit.
+
+2018-07-02  Jeff Muizelaar  <jrmuizel@gmail.com>
+	    Tom Tromey  <tom@tromey.com>
+
+	PR 13157
+	PR 21787
+	* mach-o.c (bfd_mach_o_fat_close_and_cleanup): New function.
+	(bfd_mach_o_close_and_cleanup): Redefine.
+	* archive.c (_bfd_unlink_from_archive_parent): New function,
+	extracted from..
+	(_bfd_archive_close_and_cleanup): ..here.
+	(bfd_generic_archive_p): Do not clear archive's format.
+	* libbfd-in.h (_bfd_unlink_from_archive_parent): Declare.
+	* libbfd.h: Regenerate.
+
+2018-07-02  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	* archures.c (bfd_mach_arm_5TEJ, bfd_mach_arm_6, bfd_mach_arm_6KZ,
+	bfd_mach_arm_6T2, bfd_mach_arm_6K, bfd_mach_arm_7, bfd_mach_arm_6M,
+	bfd_mach_arm_6SM, bfd_mach_arm_7EM, bfd_mach_arm_8, bfd_mach_arm_8R,
+	bfd_mach_arm_8M_BASE, bfd_mach_arm_8M_MAIN): Define.
+	* bfd-in2.h: Regenerate.
+	* cpu-arm.c (arch_info_struct): Add entries for above new
+	bfd_mach_arm values.
+	* elf32-arm.c (bfd_arm_get_mach_from_attributes): Add Tag_CPU_arch to
+	bfd_mach_arm mapping logic for pre Armv4 and Armv5TEJ and later
+	architectures.  Force assert failure for any new Tag_CPU_arch value.
+
+2018-07-02  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	* doc/bfdint.texi: Use command-line consistently when used in a
+	compount word.
+	* doc/bfdsumm.texi: Likewise.
+
+2018-06-29  Maciej W. Rozycki  <macro@mips.com>
+
+	* elfxx-mips.c (allocate_dynrelocs): Remove extraneous symbol
+	visibility check made for undefined weak symbols.
+
+2018-06-26  Nick Clifton  <nickc@redhat.com>
+
+	* po/uk.po: Updated Ukranian translation.
+
+2018-06-25  Nick Clifton  <nickc@redhat.com>
+
+	* elfnn-aarch64.c (_bfd_aarch64_erratum_835769_stub_name): Check
+	for malloc returning NULL.
+	(_bfd_aarch64_erratum_843419_fixup): Check for
+	_bfd_aarch64_erratum_835769_stub_name returning NULL.
+
+2018-06-24  Nick Clifton  <nickc@redhat.com>
+
+	* po/bfd.pot: Regenerate.
+
+2018-06-24  Nick Clifton  <nickc@redhat.com>
+
+	* version.m4: Update version string to 2.31.51.
+	* configure: Regenerate.
+
+2018-06-24  Nick Clifton  <nickc@redhat.com>
+
+	2.31 branch created.
+
+2018-06-21  Maciej W. Rozycki  <macro@mips.com>
+
+	* elfxx-mips.c (_bfd_mips_elf_compact_eh_encoding)
+	(_bfd_mips_elf_cant_unwind_opcode): Correct formatting.
+
+2018-06-21  Maciej W. Rozycki  <macro@mips.com>
+
+	* elfxx-mips.c (_bfd_mips_post_process_headers): Keep
+	EI_ABIVERSION setting together.
+
+2018-06-21  Maciej W. Rozycki  <macro@mips.com>
+
+	* elfxx-mips.c (MIPS_LIBC_ABI_DEFAULT, MIPS_LIBC_ABI_MIPS_PLT)
+	(MIPS_LIBC_ABI_UNIQUE, MIPS_LIBC_ABI_MIPS_O32_FP64)
+	(MIPS_LIBC_ABI_MAX): New enumeration constants.
+	(_bfd_mips_post_process_headers): Use them in place of magic
+	numbers.
+
+2018-06-21  Jim Wilson  <jimw@sifive.com>
+
+	* elfnn-riscv.c (riscv_elf_finish_dynamic_symbol): Update comment.
+	Use SYMBOL_REFERENCES_LOCAL.  Add asserts for h->got.offset.
+
+2018-06-21  Alan Modra  <amodra@gmail.com>
+
+	* doc/Makefile.am (AUTOMAKE_OPTIONS): Add "foreign".
+	* doc/Makefile.in: Regenerate.
+
+2018-06-20  Renlin Li  <renlin.li@arm.com>
+
+	* elfxx-aarch64.c (_bfd_aarch64_elf_resolve_relocation): Use PG_OFFSET
+	to resolve BFD_RELOC_AARCH64_TLSLD_LDST16_DTPREL_LO12_NC,
+	BFD_RELOC_AARCH64_TLSLD_LDST32_DTPREL_LO12_NC,
+	BFD_RELOC_AARCH64_TLSLD_LDST64_DTPREL_LO12_NC,
+	BFD_RELOC_AARCH64_TLSLD_LDST8_DTPREL_LO12_NC,
+	BFD_RELOC_AARCH64_TLSLE_LDST16_TPREL_LO12_NC,
+	BFD_RELOC_AARCH64_TLSLE_LDST32_TPREL_LO12_NC,
+	BFD_RELOC_AARCH64_TLSLE_LDST64_TPREL_LO12_NC,
+	BFD_RELOC_AARCH64_TLSLE_LDST8_TPREL_LO12_NC.
+
+2018-06-20  Nick Clifton  <nickc@redhat.com>
+
+	PR 23316
+	* opncls.c (get_build_id): Check for a negative or excessive data
+	size in the build-id note.
+
+2018-06-20  Nick Clifton  <nickc@redhat.com>
+
+	PR 23299
+	* mach-o.c (cputype): New function.
+	(cpusubtype): New function.
+	(bfd_mach_o_bfd_print_private_data): New function.  Dispalys the
+	values in the MACH-O file header.
+	(bfd_mach_o_bfd_copy_private_header_data): Copy the cputype and
+	cpusubtype fields from the input bfd's mach-o header to the output
+	bfd.
+	* mach-o-target.c (bfd_mach_o_bfd_print_private_bfd_data):
+	Redefine to bfd_mach_o_bfd_print_private_data.
+	* mach-o.h (bfd_mach_o_bfd_print_private_bfd_data): Prototype.
+
+2018-06-19  Maciej W. Rozycki  <macro@mips.com>
+
+	PR ld/22966
+	* elfxx-mips.c (_bfd_mips_elf_finish_dynamic_symbol): Verify the
+	`.got.plt' entry referred is in range.
+	(mips_finish_exec_plt): Correct the range check for `.got.plt'
+	start.  Replace the assertion used for that with a proper error
+	message.
+
+2018-06-19  Maciej W. Rozycki  <macro@mips.com>
+
+	* elfxx-mips.c (_bfd_mips_elf_finish_dynamic_symbol): Fix
+	formatting.
+
+2018-06-19  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* Makefile.am (AUTOMAKE_OPTIONS): Remove 1.11.
+	(INCLUDES): Rename to ...
+	(AM_CPPFLAGS): ... this.
+	* configure.ac: Remove AC_PREREQ.
+	* doc/Makefile.am (AUTOMAKE_OPTIONS): Remove 1.9, cygnus, add
+	info-in-builddir no-texinfo.tex.
+	(info_TEXINFOS): Rename bfd.texinfo to bfd.texi.
+	* doc/bfd.texinfo: Rename to ...
+	* doc/bfd.texi: ... this.
+	* Makefile.in: Re-generate.
+	* aclocal.m4: Re-generate.
+	* config.in: Re-generate.
+	* configure: Re-generate.
+	* doc/Makefile.in: Re-generate.
+
+2018-06-18  Mephi  <mephi42@gmail.com>
+
+	PR 23297
+	* mach-o-x86-64.c (x86_64_howto_table): Add entry for
+	BFD_RELOC_MACH_O_X86_64_RELOC_TLV.
+	(bfd_mach_o_x86_64_canonicalize_one_reloc): Handle the new reloc.
+	(bfd_mach_o_x86_64_swap_reloc_out): Likewise.
+	* reloc.c (BFD_RELOC_MACH_O_X86_64_TV): New entry.
+	* bfd-in2.h: Regenerate.
+	* libbfd.h: Regenerate.
+
+2018-06-14  Faraz Shahbazker  <Faraz.Shahbazker@mips.com>
+
+	* elfxx-mips.c (print_mips_ases): Add GINV extension.
+
+2018-06-14  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR binutils/23267
+	* elf.c (_bfd_elf_get_symbol_version_string): Check if the first
+	symbol version is base version.
+
 2018-06-14  Alan Modra  <amodra@gmail.com>
 
 	* elf-bfd.h (struct elf_link_hash_table): Add "dynamic_relocs".

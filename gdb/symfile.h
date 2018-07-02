@@ -61,7 +61,9 @@ struct other_sections
   CORE_ADDR addr;
   std::string name;
 
-  /* SECTINDEX must be valid for associated BFD or set to -1.  */
+  /* SECTINDEX must be valid for associated BFD or set to -1.
+     See syms_from_objfile_1 for an exception to this rule.
+   */
   int sectindex;
 };
 
@@ -613,8 +615,6 @@ extern bool dwarf2_initialize_objfile (struct objfile *objfile,
 
 extern void dwarf2_build_psymtabs (struct objfile *);
 extern void dwarf2_build_frame_info (struct objfile *);
-
-void dwarf2_free_objfile (struct objfile *);
 
 /* From mdebugread.c */
 

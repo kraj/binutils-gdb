@@ -21,6 +21,7 @@
 
 #include "gdbcore.h"
 #include "inferior.h"
+#include "gdbthread.h"
 #include "symtab.h"
 #include "target.h"
 #include "regcache.h"
@@ -73,7 +74,7 @@ ps_xfer_memory (const struct ps_prochandle *ph, psaddr_t addr,
   int ret;
   CORE_ADDR core_addr = ps_addr_to_core_addr (addr);
 
-  inferior_ptid = ph->ptid;
+  inferior_ptid = ph->thread->ptid;
 
   if (write)
     ret = target_write_memory (core_addr, buf, len);
@@ -92,7 +93,7 @@ ps_err_e
 ps_pglobal_lookup (struct ps_prochandle *ph, const char *obj,
 		   const char *name, psaddr_t *sym_addr)
 {
-  struct inferior *inf = find_inferior_ptid (ph->ptid);
+  inferior *inf = ph->thread->inf;
 
   scoped_restore_current_program_space restore_pspace;
 
@@ -125,15 +126,28 @@ ps_pdwrite (struct ps_prochandle *ph, psaddr_t addr,
   return ps_xfer_memory (ph, addr, (gdb_byte *) buf, size, 1);
 }
 
+/* Get a regcache for LWPID using its inferior's "main" architecture,
+   which is the register set libthread_db expects to be using.  In
+   multi-arch debugging scenarios, the thread's architecture may
+   differ from the inferior's "main" architecture.  E.g., in the Cell
+   combined debugger, if GDB happens to interrupt SPU code, the
+   thread's architecture is SPU, and the main architecture is
+   PowerPC.  */
+
+static struct regcache *
+get_ps_regcache (struct ps_prochandle *ph, lwpid_t lwpid)
+{
+  inferior *inf = ph->thread->inf;
+  return get_thread_arch_regcache (ptid_t (inf->pid, lwpid), inf->gdbarch);
+}
+
 /* Get the general registers of LWP LWPID within the target process PH
    and store them in GREGSET.  */
 
 ps_err_e
 ps_lgetregs (struct ps_prochandle *ph, lwpid_t lwpid, prgregset_t gregset)
 {
-  ptid_t ptid = ptid_build (ptid_get_pid (ph->ptid), lwpid, 0);
-  struct regcache *regcache
-    = get_thread_arch_regcache (ptid, target_gdbarch ());
+  struct regcache *regcache = get_ps_regcache (ph, lwpid);
 
   target_fetch_registers (regcache, -1);
   fill_gregset (regcache, (gdb_gregset_t *) gregset, -1);
@@ -147,9 +161,7 @@ ps_lgetregs (struct ps_prochandle *ph, lwpid_t lwpid, prgregset_t gregset)
 ps_err_e
 ps_lsetregs (struct ps_prochandle *ph, lwpid_t lwpid, const prgregset_t gregset)
 {
-  ptid_t ptid = ptid_build (ptid_get_pid (ph->ptid), lwpid, 0);
-  struct regcache *regcache
-    = get_thread_arch_regcache (ptid, target_gdbarch ());
+  struct regcache *regcache = get_ps_regcache (ph, lwpid);
 
   supply_gregset (regcache, (const gdb_gregset_t *) gregset);
   target_store_registers (regcache, -1);
@@ -163,9 +175,7 @@ ps_lsetregs (struct ps_prochandle *ph, lwpid_t lwpid, const prgregset_t gregset)
 ps_err_e
 ps_lgetfpregs (struct ps_prochandle *ph, lwpid_t lwpid, gdb_prfpregset_t *fpregset)
 {
-  ptid_t ptid = ptid_build (ptid_get_pid (ph->ptid), lwpid, 0);
-  struct regcache *regcache
-    = get_thread_arch_regcache (ptid, target_gdbarch ());
+  struct regcache *regcache = get_ps_regcache (ph, lwpid);
 
   target_fetch_registers (regcache, -1);
   fill_fpregset (regcache, (gdb_fpregset_t *) fpregset, -1);
@@ -180,9 +190,7 @@ ps_err_e
 ps_lsetfpregs (struct ps_prochandle *ph, lwpid_t lwpid,
 	       const gdb_prfpregset_t *fpregset)
 {
-  ptid_t ptid = ptid_build (ptid_get_pid (ph->ptid), lwpid, 0);
-  struct regcache *regcache
-    = get_thread_arch_regcache (ptid, target_gdbarch ());
+  struct regcache *regcache = get_ps_regcache (ph, lwpid);
 
   supply_fpregset (regcache, (const gdb_fpregset_t *) fpregset);
   target_store_registers (regcache, -1);
@@ -196,7 +204,7 @@ ps_lsetfpregs (struct ps_prochandle *ph, lwpid_t lwpid,
 pid_t
 ps_getpid (struct ps_prochandle *ph)
 {
-  return ptid_get_pid (ph->ptid);
+  return ptid_get_pid (ph->thread->ptid);
 }
 
 void
