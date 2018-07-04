@@ -419,9 +419,9 @@ linux_core_pid_to_str (struct gdbarch *gdbarch, ptid_t ptid)
 {
   static char buf[80];
 
-  if (ptid_get_lwp (ptid) != 0)
+  if (ptid.lwp () != 0)
     {
-      snprintf (buf, sizeof (buf), "LWP %ld", ptid_get_lwp (ptid));
+      snprintf (buf, sizeof (buf), "LWP %ld", ptid.lwp ());
       return buf;
     }
 
@@ -1386,7 +1386,7 @@ static int
 find_signalled_thread (struct thread_info *info, void *data)
 {
   if (info->suspend.stop_signal != GDB_SIGNAL_0
-      && ptid_get_pid (info->ptid) == ptid_get_pid (inferior_ptid))
+      && info->ptid.pid () == inferior_ptid.pid ())
     return 1;
 
   return 0;
@@ -1632,9 +1632,9 @@ linux_collect_thread_registers (const struct regcache *regcache,
   data.abort_iteration = 0;
 
   /* For remote targets the LWP may not be available, so use the TID.  */
-  data.lwp = ptid_get_lwp (ptid);
+  data.lwp = ptid.lwp ();
   if (!data.lwp)
-    data.lwp = ptid_get_tid (ptid);
+    data.lwp = ptid.tid ();
 
   gdbarch_iterate_over_regset_sections (gdbarch,
 					linux_collect_regset_section_cb,
@@ -1745,7 +1745,7 @@ linux_fill_prpsinfo (struct elf_internal_linux_prpsinfo *p)
   gdb_assert (p != NULL);
 
   /* Obtaining PID and filename.  */
-  pid = ptid_get_pid (inferior_ptid);
+  pid = inferior_ptid.pid ();
   xsnprintf (filename, sizeof (filename), "/proc/%d/cmdline", (int) pid);
   /* The full name of the program which generated the corefile.  */
   gdb::unique_xmalloc_ptr<char> fname
@@ -1959,7 +1959,7 @@ linux_make_corefile_notes (struct gdbarch *gdbarch, bfd *obfd, int *note_size)
     {
       if (thr == signalled_thr)
 	continue;
-      if (ptid_get_pid (thr->ptid) != ptid_get_pid (inferior_ptid))
+      if (thr->ptid.pid () != inferior_ptid.pid ())
 	continue;
 
       linux_corefile_thread (thr, &thread_args);

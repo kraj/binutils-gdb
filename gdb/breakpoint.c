@@ -1145,11 +1145,11 @@ validate_commands_for_breakpoint (struct breakpoint *b,
 /* Return a vector of all the static tracepoints set at ADDR.  The
    caller is responsible for releasing the vector.  */
 
-VEC(breakpoint_p) *
+std::vector<breakpoint *>
 static_tracepoints_here (CORE_ADDR addr)
 {
   struct breakpoint *b;
-  VEC(breakpoint_p) *found = 0;
+  std::vector<breakpoint *> found;
   struct bp_location *loc;
 
   ALL_BREAKPOINTS (b)
@@ -1157,7 +1157,7 @@ static_tracepoints_here (CORE_ADDR addr)
       {
 	for (loc = b->loc; loc; loc = loc->next)
 	  if (loc->address == addr)
-	    VEC_safe_push(breakpoint_p, found, b);
+	    found.push_back (b);
       }
 
   return found;
@@ -1546,8 +1546,8 @@ static int
 watchpoint_in_thread_scope (struct watchpoint *b)
 {
   return (b->pspace == current_program_space
-	  && (ptid_equal (b->watchpoint_thread, null_ptid)
-	      || (ptid_equal (inferior_ptid, b->watchpoint_thread)
+	  && (b->watchpoint_thread == null_ptid
+	      || (inferior_ptid == b->watchpoint_thread
 		  && !inferior_thread ()->executing)));
 }
 
@@ -2904,7 +2904,7 @@ update_inserted_breakpoint_locations (void)
 	 if we aren't attached to any process yet, we should still
 	 insert breakpoints.  */
       if (!gdbarch_has_global_breakpoints (target_gdbarch ())
-	  && ptid_equal (inferior_ptid, null_ptid))
+	  && inferior_ptid == null_ptid)
 	continue;
 
       val = insert_bp_location (bl, &tmp_error_stream, &disabled_breaks,
@@ -2960,7 +2960,7 @@ insert_breakpoint_locations (void)
 	 if we aren't attached to any process yet, we should still
 	 insert breakpoints.  */
       if (!gdbarch_has_global_breakpoints (target_gdbarch ())
-	  && ptid_equal (inferior_ptid, null_ptid))
+	  && inferior_ptid == null_ptid)
 	continue;
 
       val = insert_bp_location (bl, &tmp_error_stream, &disabled_breaks,
@@ -3637,7 +3637,7 @@ detach_breakpoints (ptid_t ptid)
   scoped_restore save_inferior_ptid = make_scoped_restore (&inferior_ptid);
   struct inferior *inf = current_inferior ();
 
-  if (ptid_get_pid (ptid) == ptid_get_pid (inferior_ptid))
+  if (ptid.pid () == inferior_ptid.pid ())
     error (_("Cannot detach breakpoints of inferior_ptid"));
 
   /* Set inferior_ptid; remove_breakpoint_1 uses this global.  */
@@ -4346,7 +4346,7 @@ bpstat_clear_actions (void)
 static void
 breakpoint_about_to_proceed (void)
 {
-  if (!ptid_equal (inferior_ptid, null_ptid))
+  if (inferior_ptid != null_ptid)
     {
       struct thread_info *tp = inferior_thread ();
 
@@ -7709,7 +7709,7 @@ struct fork_catchpoint : public breakpoint
 static int
 insert_catch_fork (struct bp_location *bl)
 {
-  return target_insert_fork_catchpoint (ptid_get_pid (inferior_ptid));
+  return target_insert_fork_catchpoint (inferior_ptid.pid ());
 }
 
 /* Implement the "remove" breakpoint_ops method for fork
@@ -7718,7 +7718,7 @@ insert_catch_fork (struct bp_location *bl)
 static int
 remove_catch_fork (struct bp_location *bl, enum remove_bp_reason reason)
 {
-  return target_remove_fork_catchpoint (ptid_get_pid (inferior_ptid));
+  return target_remove_fork_catchpoint (inferior_ptid.pid ());
 }
 
 /* Implement the "breakpoint_hit" breakpoint_ops method for fork
@@ -7761,7 +7761,7 @@ print_it_catch_fork (bpstat bs)
     }
   uiout->field_int ("bkptno", b->number);
   uiout->text (" (forked process ");
-  uiout->field_int ("newpid", ptid_get_pid (c->forked_inferior_pid));
+  uiout->field_int ("newpid", c->forked_inferior_pid.pid ());
   uiout->text ("), ");
   return PRINT_SRC_AND_LOC;
 }
@@ -7785,10 +7785,10 @@ print_one_catch_fork (struct breakpoint *b, struct bp_location **last_loc)
     uiout->field_skip ("addr");
   annotate_field (5);
   uiout->text ("fork");
-  if (!ptid_equal (c->forked_inferior_pid, null_ptid))
+  if (c->forked_inferior_pid != null_ptid)
     {
       uiout->text (", process ");
-      uiout->field_int ("what", ptid_get_pid (c->forked_inferior_pid));
+      uiout->field_int ("what", c->forked_inferior_pid.pid ());
       uiout->spaces (1);
     }
 
@@ -7825,7 +7825,7 @@ static struct breakpoint_ops catch_fork_breakpoint_ops;
 static int
 insert_catch_vfork (struct bp_location *bl)
 {
-  return target_insert_vfork_catchpoint (ptid_get_pid (inferior_ptid));
+  return target_insert_vfork_catchpoint (inferior_ptid.pid ());
 }
 
 /* Implement the "remove" breakpoint_ops method for vfork
@@ -7834,7 +7834,7 @@ insert_catch_vfork (struct bp_location *bl)
 static int
 remove_catch_vfork (struct bp_location *bl, enum remove_bp_reason reason)
 {
-  return target_remove_vfork_catchpoint (ptid_get_pid (inferior_ptid));
+  return target_remove_vfork_catchpoint (inferior_ptid.pid ());
 }
 
 /* Implement the "breakpoint_hit" breakpoint_ops method for vfork
@@ -7877,7 +7877,7 @@ print_it_catch_vfork (bpstat bs)
     }
   uiout->field_int ("bkptno", b->number);
   uiout->text (" (vforked process ");
-  uiout->field_int ("newpid", ptid_get_pid (c->forked_inferior_pid));
+  uiout->field_int ("newpid", c->forked_inferior_pid.pid ());
   uiout->text ("), ");
   return PRINT_SRC_AND_LOC;
 }
@@ -7900,10 +7900,10 @@ print_one_catch_vfork (struct breakpoint *b, struct bp_location **last_loc)
     uiout->field_skip ("addr");
   annotate_field (5);
   uiout->text ("vfork");
-  if (!ptid_equal (c->forked_inferior_pid, null_ptid))
+  if (c->forked_inferior_pid != null_ptid)
     {
       uiout->text (", process ");
-      uiout->field_int ("what", ptid_get_pid (c->forked_inferior_pid));
+      uiout->field_int ("what", c->forked_inferior_pid.pid ());
       uiout->spaces (1);
     }
 
@@ -8254,13 +8254,13 @@ exec_catchpoint::~exec_catchpoint ()
 static int
 insert_catch_exec (struct bp_location *bl)
 {
-  return target_insert_exec_catchpoint (ptid_get_pid (inferior_ptid));
+  return target_insert_exec_catchpoint (inferior_ptid.pid ());
 }
 
 static int
 remove_catch_exec (struct bp_location *bl, enum remove_bp_reason reason)
 {
-  return target_remove_exec_catchpoint (ptid_get_pid (inferior_ptid));
+  return target_remove_exec_catchpoint (inferior_ptid.pid ());
 }
 
 static int
@@ -15166,15 +15166,15 @@ save_tracepoints_command (const char *args, int from_tty)
 
 /* Create a vector of all tracepoints.  */
 
-VEC(breakpoint_p) *
+std::vector<breakpoint *>
 all_tracepoints (void)
 {
-  VEC(breakpoint_p) *tp_vec = 0;
+  std::vector<breakpoint *> tp_vec;
   struct breakpoint *tp;
 
   ALL_TRACEPOINTS (tp)
   {
-    VEC_safe_push (breakpoint_p, tp_vec, tp);
+    tp_vec.push_back (tp);
   }
 
   return tp_vec;

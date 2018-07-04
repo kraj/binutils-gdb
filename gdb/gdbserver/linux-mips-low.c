@@ -440,7 +440,7 @@ static void
 mips_linux_prepare_to_resume (struct lwp_info *lwp)
 {
   ptid_t ptid = ptid_of (get_lwp_thread (lwp));
-  struct process_info *proc = find_process_pid (ptid_get_pid (ptid));
+  struct process_info *proc = find_process_pid (ptid.pid ());
   struct arch_process_info *priv = proc->priv->arch_private;
 
   if (lwp->arch_private->watch_registers_changed)
@@ -450,7 +450,7 @@ mips_linux_prepare_to_resume (struct lwp_info *lwp)
       if (mips_linux_watch_get_num_valid (&priv->watch_mirror) > 0)
 	{
 	  /* Write the mirrored watch register values.  */
-	  int tid = ptid_get_lwp (ptid);
+	  int tid = ptid.lwp ();
 
 	  if (-1 == ptrace (PTRACE_SET_WATCH_REGS, tid,
 			    &priv->watch_mirror, NULL))

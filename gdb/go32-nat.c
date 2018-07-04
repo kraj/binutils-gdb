@@ -533,7 +533,7 @@ go32_nat_target::wait (ptid_t ptid, struct target_waitstatus *status,
 	    }
 	}
     }
-  return pid_to_ptid (SOME_PID);
+  return ptid_t (SOME_PID);
 }
 
 static void
@@ -752,7 +752,7 @@ go32_nat_target::create_inferior (const char *exec_file,
   save_npx ();
 #endif
 
-  inferior_ptid = pid_to_ptid (SOME_PID);
+  inferior_ptid = ptid_t (SOME_PID);
   inf = current_inferior ();
   inferior_appeared (inf, SOME_PID);
 
@@ -989,7 +989,7 @@ go32_nat_target::pass_ctrlc ()
 bool
 go32_nat_target::thread_alive (ptid_t ptid)
 {
-  return !ptid_equal (ptid, null_ptid);
+  return ptid != null_ptid;
 }
 
 const char *

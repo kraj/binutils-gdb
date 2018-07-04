@@ -427,9 +427,9 @@ windows_add_thread (ptid_t ptid, HANDLE h, void *tlb)
   windows_thread_info *th;
   DWORD id;
 
-  gdb_assert (ptid_get_tid (ptid) != 0);
+  gdb_assert (ptid.tid () != 0);
 
-  id = ptid_get_tid (ptid);
+  id = ptid.tid ();
 
   if ((th = thread_rec (id, FALSE)))
     return th;
@@ -484,9 +484,9 @@ windows_delete_thread (ptid_t ptid, DWORD exit_code)
   windows_thread_info *th;
   DWORD id;
 
-  gdb_assert (ptid_get_tid (ptid) != 0);
+  gdb_assert (ptid.tid () != 0);
 
-  id = ptid_get_tid (ptid);
+  id = ptid.tid ();
 
   if (info_verbose)
     printf_unfiltered ("[Deleting %s]\n", target_pid_to_str (ptid));
@@ -555,7 +555,7 @@ windows_fetch_one_register (struct regcache *regcache,
 void
 windows_nat_target::fetch_registers (struct regcache *regcache, int r)
 {
-  DWORD pid = ptid_get_tid (regcache->ptid ());
+  DWORD pid = regcache->ptid ().tid ();
   windows_thread_info *th = thread_rec (pid, TRUE);
 
   /* Check if TH exists.  Windows sometimes uses a non-existent
@@ -625,7 +625,7 @@ windows_store_one_register (const struct regcache *regcache,
 void
 windows_nat_target::store_registers (struct regcache *regcache, int r)
 {
-  DWORD pid = ptid_get_tid (regcache->ptid ());
+  DWORD pid = regcache->ptid ().tid ();
   windows_thread_info *th = thread_rec (pid, TRUE);
 
   /* Check if TH exists.  Windows sometimes uses a non-existent
@@ -1371,8 +1371,8 @@ fake_create_process (void)
     }
   main_thread_id = current_event.dwThreadId;
   current_thread = windows_add_thread (
-		     ptid_build (current_event.dwProcessId, 0,
-				 current_event.dwThreadId),
+		     ptid_t (current_event.dwProcessId, 0,
+			     current_event.dwThreadId),
 		     current_event.u.CreateThread.hThread,
 		     current_event.u.CreateThread.lpThreadLocalBase);
   return main_thread_id;
@@ -1385,7 +1385,7 @@ windows_nat_target::resume (ptid_t ptid, int step, enum gdb_signal sig)
   DWORD continue_status = DBG_CONTINUE;
 
   /* A specific PTID means `step only this thread id'.  */
-  int resume_all = ptid_equal (ptid, minus_one_ptid);
+  int resume_all = ptid == minus_one_ptid;
 
   /* If we're continuing all threads, it's the current inferior that
      should be handled specially.  */
@@ -1429,10 +1429,10 @@ windows_nat_target::resume (ptid_t ptid, int step, enum gdb_signal sig)
   last_sig = GDB_SIGNAL_0;
 
   DEBUG_EXEC (("gdb: windows_resume (pid=%d, tid=%ld, step=%d, sig=%d);\n",
-	       ptid_get_pid (ptid), ptid_get_tid (ptid), step, sig));
+	       ptid.pid (), ptid.tid (), step, sig));
 
   /* Get context for currently selected thread.  */
-  th = thread_rec (ptid_get_tid (inferior_ptid), FALSE);
+  th = thread_rec (inferior_ptid.tid (), FALSE);
   if (th)
     {
       if (step)
@@ -1466,7 +1466,7 @@ windows_nat_target::resume (ptid_t ptid, int step, enum gdb_signal sig)
   if (resume_all)
     windows_continue (continue_status, -1, 0);
   else
-    windows_continue (continue_status, ptid_get_tid (ptid), 0);
+    windows_continue (continue_status, ptid.tid (), 0);
 }
 
 /* Ctrl-C handler used when the inferior is not run in the same console.  The
@@ -1544,8 +1544,8 @@ get_windows_debug_event (struct target_ops *ops,
 	}
       /* Record the existence of this thread.  */
       thread_id = current_event.dwThreadId;
-      th = windows_add_thread (ptid_build (current_event.dwProcessId, 0,
-					 current_event.dwThreadId),
+      th = windows_add_thread (ptid_t (current_event.dwProcessId, 0,
+				       current_event.dwThreadId),
 			     current_event.u.CreateThread.hThread,
 			     current_event.u.CreateThread.lpThreadLocalBase);
 
@@ -1559,8 +1559,8 @@ get_windows_debug_event (struct target_ops *ops,
 
       if (current_event.dwThreadId != main_thread_id)
 	{
-	  windows_delete_thread (ptid_build (current_event.dwProcessId, 0,
-					     current_event.dwThreadId),
+	  windows_delete_thread (ptid_t (current_event.dwProcessId, 0,
+					 current_event.dwThreadId),
 				 current_event.u.ExitThread.dwExitCode);
 	  th = &dummy_thread_info;
 	}
@@ -1577,13 +1577,13 @@ get_windows_debug_event (struct target_ops *ops,
 
       current_process_handle = current_event.u.CreateProcessInfo.hProcess;
       if (main_thread_id)
-	windows_delete_thread (ptid_build (current_event.dwProcessId, 0,
-					   main_thread_id),
+	windows_delete_thread (ptid_t (current_event.dwProcessId, 0,
+				       main_thread_id),
 			       0);
       main_thread_id = current_event.dwThreadId;
       /* Add the main thread.  */
-      th = windows_add_thread (ptid_build (current_event.dwProcessId, 0,
-					   current_event.dwThreadId),
+      th = windows_add_thread (ptid_t (current_event.dwProcessId, 0,
+				       current_event.dwThreadId),
 	     current_event.u.CreateProcessInfo.hThread,
 	     current_event.u.CreateProcessInfo.lpThreadLocalBase);
       thread_id = current_event.dwThreadId;
@@ -1685,8 +1685,7 @@ get_windows_debug_event (struct target_ops *ops,
     }
   else
     {
-      inferior_ptid = ptid_build (current_event.dwProcessId, 0,
-				  thread_id);
+      inferior_ptid = ptid_t (current_event.dwProcessId, 0, thread_id);
       current_thread = th;
       if (!current_thread)
 	current_thread = thread_rec (thread_id, TRUE);
@@ -1746,7 +1745,7 @@ windows_nat_target::wait (ptid_t ptid, struct target_waitstatus *ourstatus,
       SetConsoleCtrlHandler (&ctrl_c_handler, FALSE);
 
       if (retval)
-	return ptid_build (current_event.dwProcessId, 0, retval);
+	return ptid_t (current_event.dwProcessId, 0, retval);
       else
 	{
 	  int detach = 0;
@@ -1846,7 +1845,7 @@ do_initial_windows_stuff (struct target_ops *ops, DWORD pid, int attaching)
      can rely on it.  When attaching, we don't know about any thread
      id here, but that's OK --- nothing should be referencing the
      current thread until we report an event out of windows_wait.  */
-  inferior_ptid = pid_to_ptid (pid);
+  inferior_ptid = ptid_t (pid);
 
   target_terminal::init ();
   target_terminal::inferior ();
@@ -1981,10 +1980,10 @@ windows_nat_target::attach (const char *args, int from_tty)
 
       if (exec_file)
 	printf_unfiltered ("Attaching to program `%s', %s\n", exec_file,
-			   target_pid_to_str (pid_to_ptid (pid)));
+			   target_pid_to_str (ptid_t (pid)));
       else
 	printf_unfiltered ("Attaching to %s\n",
-			   target_pid_to_str (pid_to_ptid (pid)));
+			   target_pid_to_str (ptid_t (pid)));
 
       gdb_flush (gdb_stdout);
     }
@@ -2909,7 +2908,7 @@ void
 windows_nat_target::close ()
 {
   DEBUG_EVENTS (("gdb: windows_close, inferior_ptid=%d\n",
-		ptid_get_pid (inferior_ptid)));
+		inferior_ptid.pid ()));
 }
 
 /* Convert pid to printable format.  */
@@ -2918,10 +2917,10 @@ windows_nat_target::pid_to_str (ptid_t ptid)
 {
   static char buf[80];
 
-  if (ptid_get_tid (ptid) != 0)
+  if (ptid.tid () != 0)
     {
       snprintf (buf, sizeof (buf), "Thread %d.0x%lx",
-		ptid_get_pid (ptid), ptid_get_tid (ptid));
+		ptid.pid (), ptid.tid ());
       return buf;
     }
 
@@ -3008,7 +3007,7 @@ windows_nat_target::get_tib_address (ptid_t ptid, CORE_ADDR *addr)
 {
   windows_thread_info *th;
 
-  th = thread_rec (ptid_get_tid (ptid), 0);
+  th = thread_rec (ptid.tid (), 0);
   if (th == NULL)
     return false;
 
@@ -3021,7 +3020,7 @@ windows_nat_target::get_tib_address (ptid_t ptid, CORE_ADDR *addr)
 ptid_t
 windows_nat_target::get_ada_task_ptid (long lwp, long thread)
 {
-  return ptid_build (ptid_get_pid (inferior_ptid), 0, lwp);
+  return ptid_t (inferior_ptid.pid (), 0, lwp);
 }
 
 /* Implementation of the to_thread_name method.  */
@@ -3029,7 +3028,7 @@ windows_nat_target::get_ada_task_ptid (long lwp, long thread)
 const char *
 windows_nat_target::thread_name (struct thread_info *thr)
 {
-  return thread_rec (ptid_get_tid (thr->ptid), 0)->name;
+  return thread_rec (thr->ptid.tid (), 0)->name;
 }
 
 
@@ -3189,8 +3188,8 @@ windows_nat_target::thread_alive (ptid_t ptid)
 {
   int tid;
 
-  gdb_assert (ptid_get_tid (ptid) != 0);
-  tid = ptid_get_tid (ptid);
+  gdb_assert (ptid.tid () != 0);
+  tid = ptid.tid ();
 
   return WaitForSingleObject (thread_rec (tid, FALSE)->h, 0) != WAIT_OBJECT_0;
 }

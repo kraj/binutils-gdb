@@ -357,7 +357,7 @@ get_thread_arch_aspace_regcache (ptid_t ptid, struct gdbarch *gdbarch,
 				 struct address_space *aspace)
 {
   for (const auto &regcache : regcache::current_regcache)
-    if (ptid_equal (regcache->ptid (), ptid) && regcache->arch () == gdbarch)
+    if (regcache->ptid () == ptid && regcache->arch () == gdbarch)
       return regcache;
 
   regcache *new_regcache = new regcache (gdbarch, aspace);
@@ -382,7 +382,7 @@ static struct gdbarch *current_thread_arch;
 struct regcache *
 get_thread_regcache (ptid_t ptid)
 {
-  if (!current_thread_arch || !ptid_equal (current_thread_ptid, ptid))
+  if (!current_thread_arch || current_thread_ptid != ptid)
     {
       current_thread_ptid = ptid;
       current_thread_arch = target_thread_architecture (ptid);
@@ -428,7 +428,7 @@ regcache::regcache_thread_ptid_changed (ptid_t old_ptid, ptid_t new_ptid)
 {
   for (auto &regcache : regcache::current_regcache)
     {
-      if (ptid_equal (regcache->ptid (), old_ptid))
+      if (regcache->ptid () == old_ptid)
 	regcache->set_ptid (new_ptid);
     }
 }
@@ -452,7 +452,7 @@ registers_changed_ptid (ptid_t ptid)
        it != regcache::current_regcache.end ();
        )
     {
-      if (ptid_match ((*it)->ptid (), ptid))
+      if ((*it)->ptid ().matches (ptid))
 	{
 	  delete *it;
 	  it = regcache::current_regcache.erase_after (oit);
@@ -461,13 +461,13 @@ registers_changed_ptid (ptid_t ptid)
 	oit = it++;
     }
 
-  if (ptid_match (current_thread_ptid, ptid))
+  if (current_thread_ptid.matches (ptid))
     {
       current_thread_ptid = null_ptid;
       current_thread_arch = NULL;
     }
 
-  if (ptid_match (inferior_ptid, ptid))
+  if (inferior_ptid.matches (ptid))
     {
       /* We just deleted the regcache of the current thread.  Need to
 	 forget about any frames we have cached, too.  */

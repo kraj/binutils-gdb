@@ -120,7 +120,7 @@ current_thread_ptid (void)
 static ptid_t
 debug_event_ptid (DEBUG_EVENT *event)
 {
-  return ptid_build (event->dwProcessId, event->dwThreadId, 0);
+  return ptid_t (event->dwProcessId, event->dwThreadId, 0);
 }
 
 /* Get the thread context of the thread associated with TH.  */
@@ -208,7 +208,7 @@ static win32_thread_info *
 child_add_thread (DWORD pid, DWORD tid, HANDLE h, void *tlb)
 {
   win32_thread_info *th;
-  ptid_t ptid = ptid_build (pid, tid, 0);
+  ptid_t ptid = ptid_t (pid, tid, 0);
 
   if ((th = thread_rec (ptid, FALSE)))
     return th;
@@ -707,7 +707,7 @@ win32_create_inferior (const char *program,
 
   /* Wait till we are at 1st instruction in program, return new pid
      (assuming success).  */
-  cs.last_ptid = win32_wait (pid_to_ptid (current_process_id), &cs.last_status, 0);
+  cs.last_ptid = win32_wait (ptid_t (current_process_id), &cs.last_status, 0);
 
   return current_process_id;
 }
@@ -914,7 +914,7 @@ win32_resume (struct thread_resume *resume_info, size_t n)
   /* This handles the very limited set of resume packets that GDB can
      currently produce.  */
 
-  if (n == 1 && ptid_equal (resume_info[0].thread, minus_one_ptid))
+  if (n == 1 && resume_info[0].thread == minus_one_ptid)
     tid = -1;
   else if (n > 1)
     tid = -1;
@@ -923,7 +923,7 @@ win32_resume (struct thread_resume *resume_info, size_t n)
        the Windows resume code do the right thing for thread switching.  */
     tid = current_event.dwThreadId;
 
-  if (!ptid_equal (resume_info[0].thread, minus_one_ptid))
+  if (resume_info[0].thread != minus_one_ptid)
     {
       sig = gdb_signal_from_host (resume_info[0].sig);
       step = resume_info[0].kind == resume_step;
@@ -1612,7 +1612,7 @@ win32_wait (ptid_t ptid, struct target_waitstatus *ourstatus, int options)
 	  OUTMSG2 (("Child exited with retcode = %x\n",
 		    ourstatus->value.integer));
 	  win32_clear_inferiors ();
-	  return pid_to_ptid (current_event.dwProcessId);
+	  return ptid_t (current_event.dwProcessId);
 	case TARGET_WAITKIND_STOPPED:
 	case TARGET_WAITKIND_LOADED:
 	  OUTMSG2 (("Child Stopped with signal = %d \n",

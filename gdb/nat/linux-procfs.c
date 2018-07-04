@@ -239,8 +239,8 @@ linux_proc_tid_get_name (ptid_t ptid)
   static char comm_buf[TASK_COMM_LEN];
   char comm_path[100];
   const char *comm_val;
-  pid_t pid = ptid_get_pid (ptid);
-  pid_t tid = ptid_lwp_p (ptid) ? ptid_get_lwp (ptid) : ptid_get_pid (ptid);
+  pid_t pid = ptid.pid ();
+  pid_t tid = ptid.lwp_p () ? ptid.lwp () : ptid.pid ();
 
   xsnprintf (comm_path, sizeof (comm_path),
 	     "/proc/%ld/task/%ld/comm", (long) pid, (long) tid);
@@ -308,7 +308,7 @@ linux_proc_attach_tgid_threads (pid_t pid,
 	  lwp = strtoul (dp->d_name, NULL, 10);
 	  if (lwp != 0)
 	    {
-	      ptid_t ptid = ptid_build (pid, lwp, 0);
+	      ptid_t ptid = ptid_t (pid, lwp, 0);
 
 	      if (attach_lwp (ptid))
 		new_threads_found = 1;

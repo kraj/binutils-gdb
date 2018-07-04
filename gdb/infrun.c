@@ -462,7 +462,7 @@ holding the child stopped.  Try \"set detach-on-fork\" or \
 	  if (print_inferior_events)
 	    {
 	      /* Ensure that we have a process ptid.  */
-	      ptid_t process_ptid = pid_to_ptid (ptid_get_pid (child_ptid));
+	      ptid_t process_ptid = ptid_t (child_ptid.pid ());
 
 	      target_terminal::ours_for_output ();
 	      fprintf_filtered (gdb_stdlog,
@@ -476,7 +476,7 @@ holding the child stopped.  Try \"set detach-on-fork\" or \
 	  struct inferior *parent_inf, *child_inf;
 
 	  /* Add process to GDB's tables.  */
-	  child_inf = add_inferior (ptid_get_pid (child_ptid));
+	  child_inf = add_inferior (child_ptid.pid ());
 
 	  parent_inf = current_inferior ();
 	  child_inf->attach_flag = parent_inf->attach_flag;
@@ -563,7 +563,7 @@ holding the child stopped.  Try \"set detach-on-fork\" or \
       /* Add the new inferior first, so that the target_detach below
 	 doesn't unpush the target.  */
 
-      child_inf = add_inferior (ptid_get_pid (child_ptid));
+      child_inf = add_inferior (child_ptid.pid ());
 
       parent_inf = current_inferior ();
       child_inf->attach_flag = parent_inf->attach_flag;
@@ -598,7 +598,7 @@ holding the child stopped.  Try \"set detach-on-fork\" or \
 	  if (print_inferior_events)
 	    {
 	      /* Ensure that we have a process ptid.  */
-	      ptid_t process_ptid = pid_to_ptid (ptid_get_pid (parent_ptid));
+	      ptid_t process_ptid = ptid_t (parent_ptid.pid ());
 
 	      target_terminal::ours_for_output ();
 	      fprintf_filtered (gdb_stdlog,
@@ -961,7 +961,7 @@ handle_vfork_child_exec_or_exit (int exec)
 	  if (print_inferior_events)
 	    {
 	      const char *pidstr
-		= target_pid_to_str (pid_to_ptid (inf->vfork_parent->pid));
+		= target_pid_to_str (ptid_t (inf->vfork_parent->pid));
 
 	      target_terminal::ours_for_output ();
 
@@ -1082,7 +1082,7 @@ follow_exec (ptid_t ptid, char *exec_file_target)
 {
   struct thread_info *th, *tmp;
   struct inferior *inf = current_inferior ();
-  int pid = ptid_get_pid (ptid);
+  int pid = ptid.pid ();
   ptid_t process_ptid;
 
   /* This is an exec event that we actually wish to pay attention to.
@@ -1128,7 +1128,7 @@ follow_exec (ptid_t ptid, char *exec_file_target)
      stop provides a nicer sequence of events for user and MI
      notifications.  */
   ALL_THREADS_SAFE (th, tmp)
-    if (ptid_get_pid (th->ptid) == pid && !ptid_equal (th->ptid, ptid))
+    if (th->ptid.pid () == pid && th->ptid != ptid)
       delete_thread (th);
 
   /* We also need to clear any left over stale state for the
@@ -1150,7 +1150,7 @@ follow_exec (ptid_t ptid, char *exec_file_target)
   update_breakpoints_after_exec ();
 
   /* What is this a.out's name?  */
-  process_ptid = pid_to_ptid (pid);
+  process_ptid = ptid_t (pid);
   printf_unfiltered (_("%s is executing new program: %s\n"),
 		     target_pid_to_str (process_ptid),
 		     exec_file_target);
@@ -1190,7 +1190,7 @@ follow_exec (ptid_t ptid, char *exec_file_target)
       /* Do exit processing for the original inferior before adding
 	 the new inferior so we don't have two active inferiors with
 	 the same ptid, which can confuse find_inferior_ptid.  */
-      exit_inferior_num_silent (current_inferior ()->num);
+      exit_inferior_silent (current_inferior ());
 
       inf = add_inferior_with_spaces ();
       inf->pid = pid;
@@ -2176,7 +2176,7 @@ infrun_thread_ptid_changed (ptid_t old_ptid, ptid_t new_ptid)
 {
   struct displaced_step_inferior_state *displaced;
 
-  if (ptid_equal (inferior_ptid, old_ptid))
+  if (inferior_ptid == old_ptid)
     inferior_ptid = new_ptid;
 }
 
@@ -2268,7 +2268,7 @@ user_visible_resume_ptid (int step)
     {
       /* Resume all threads of the current process (and none of other
 	 processes).  */
-      resume_ptid = pid_to_ptid (ptid_get_pid (inferior_ptid));
+      resume_ptid = ptid_t (inferior_ptid.pid ());
     }
   else
     {
@@ -2877,13 +2877,13 @@ clear_proceed_status (int step)
 	 we're about to resume, implicitly and explicitly.  */
       ALL_NON_EXITED_THREADS (tp)
         {
-	  if (!ptid_match (tp->ptid, resume_ptid))
+	  if (!tp->ptid.matches (resume_ptid))
 	    continue;
 	  clear_proceed_status_thread (tp);
 	}
     }
 
-  if (!ptid_equal (inferior_ptid, null_ptid))
+  if (inferior_ptid != null_ptid)
     {
       struct inferior *inferior;
 
@@ -3095,7 +3095,7 @@ proceed (CORE_ADDR addr, enum gdb_signal siggnal)
 	    continue;
 
 	  /* Ignore threads of processes we're not resuming.  */
-	  if (!ptid_match (tp->ptid, resume_ptid))
+	  if (!tp->ptid.matches (resume_ptid))
 	    continue;
 
 	  if (!thread_still_needs_step_over (tp))
@@ -3149,7 +3149,7 @@ proceed (CORE_ADDR addr, enum gdb_signal siggnal)
 	ALL_NON_EXITED_THREADS (tp)
         {
 	  /* Ignore threads of processes we're not resuming.  */
-	  if (!ptid_match (tp->ptid, resume_ptid))
+	  if (!tp->ptid.matches (resume_ptid))
 	    continue;
 
 	  if (tp->resumed)
@@ -3291,7 +3291,7 @@ infrun_thread_stop_requested (ptid_t ptid)
      thread had been temporarily paused for some step-over), set up
      for reporting the stop now.  */
   ALL_NON_EXITED_THREADS (tp)
-    if (ptid_match (tp->ptid, ptid))
+    if (tp->ptid.matches (ptid))
       {
 	if (tp->state != THREAD_RUNNING)
 	  continue;
@@ -3336,7 +3336,7 @@ infrun_thread_stop_requested (ptid_t ptid)
 static void
 infrun_thread_thread_exit (struct thread_info *tp, int silent)
 {
-  if (ptid_equal (target_last_wait_ptid, tp->ptid))
+  if (target_last_wait_ptid == tp->ptid)
     nullify_last_target_wait_ptid ();
 }
 
@@ -3361,7 +3361,7 @@ typedef void (*for_each_just_stopped_thread_callback_func)
 static void
 for_each_just_stopped_thread (for_each_just_stopped_thread_callback_func func)
 {
-  if (!target_has_execution || ptid_equal (inferior_ptid, null_ptid))
+  if (!target_has_execution || inferior_ptid == null_ptid)
     return;
 
   if (target_is_non_stop_p ())
@@ -3422,16 +3422,16 @@ print_target_wait_results (ptid_t waiton_ptid, ptid_t result_ptid,
      is set.  */
 
   stb.printf ("infrun: target_wait (%d.%ld.%ld",
-	      ptid_get_pid (waiton_ptid),
-	      ptid_get_lwp (waiton_ptid),
-	      ptid_get_tid (waiton_ptid));
-  if (ptid_get_pid (waiton_ptid) != -1)
+	      waiton_ptid.pid (),
+	      waiton_ptid.lwp (),
+	      waiton_ptid.tid ());
+  if (waiton_ptid.pid () != -1)
     stb.printf (" [%s]", target_pid_to_str (waiton_ptid));
   stb.printf (", status) =\n");
   stb.printf ("infrun:   %d.%ld.%ld [%s],\n",
-	      ptid_get_pid (result_ptid),
-	      ptid_get_lwp (result_ptid),
-	      ptid_get_tid (result_ptid),
+	      result_ptid.pid (),
+	      result_ptid.lwp (),
+	      result_ptid.tid (),
 	      target_pid_to_str (result_ptid));
   stb.printf ("infrun:   %s\n", status_string.c_str ());
 
@@ -3453,7 +3453,7 @@ random_pending_event_thread (ptid_t waiton_ptid)
   /* First see how many events we have.  Count only resumed threads
      that have an event pending.  */
   ALL_NON_EXITED_THREADS (event_tp)
-    if (ptid_match (event_tp->ptid, waiton_ptid)
+    if (event_tp->ptid.matches (waiton_ptid)
 	&& event_tp->resumed
 	&& event_tp->suspend.waitstatus_pending_p)
       num_events++;
@@ -3472,7 +3472,7 @@ random_pending_event_thread (ptid_t waiton_ptid)
 
   /* Select the Nth thread that has had an event.  */
   ALL_NON_EXITED_THREADS (event_tp)
-    if (ptid_match (event_tp->ptid, waiton_ptid)
+    if (event_tp->ptid.matches (waiton_ptid)
 	&& event_tp->resumed
 	&& event_tp->suspend.waitstatus_pending_p)
       if (random_selector-- == 0)
@@ -3493,7 +3493,7 @@ do_target_wait (ptid_t ptid, struct target_waitstatus *status, int options)
 
   /* First check if there is a resumed thread with a wait status
      pending.  */
-  if (ptid_equal (ptid, minus_one_ptid) || ptid_is_pid (ptid))
+  if (ptid == minus_one_ptid || ptid.is_pid ())
     {
       tp = random_pending_event_thread (ptid);
     }
@@ -3621,7 +3621,7 @@ void
 prepare_for_detach (void)
 {
   struct inferior *inf = current_inferior ();
-  ptid_t pid_ptid = pid_to_ptid (inf->pid);
+  ptid_t pid_ptid = ptid_t (inf->pid);
 
   displaced_step_inferior_state *displaced = get_displaced_stepping_state (inf);
 
@@ -4376,9 +4376,9 @@ save_waitstatus (struct thread_info *tp, struct target_waitstatus *ws)
       fprintf_unfiltered (gdb_stdlog,
 			  "infrun: saving status %s for %d.%ld.%ld\n",
 			  statstr.c_str (),
-			  ptid_get_pid (tp->ptid),
-			  ptid_get_lwp (tp->ptid),
-			  ptid_get_tid (tp->ptid));
+			  tp->ptid.pid (),
+			  tp->ptid.lwp (),
+			  tp->ptid.tid ());
     }
 
   /* Record for later.  */
@@ -4547,7 +4547,7 @@ stop_all_threads (void)
 	    {
 	      if (debug_infrun)
 		{
-		  ptid_t ptid = pid_to_ptid (ws.value.integer);
+		  ptid_t ptid = ptid_t (ws.value.integer);
 
 		  fprintf_unfiltered (gdb_stdlog,
 				      "infrun: %s exited while "
@@ -4613,9 +4613,9 @@ stop_all_threads (void)
 					  "infrun: target_wait %s, saving "
 					  "status for %d.%ld.%ld\n",
 					  statstr.c_str (),
-					  ptid_get_pid (t->ptid),
-					  ptid_get_lwp (t->ptid),
-					  ptid_get_tid (t->ptid));
+					  t->ptid.pid (),
+					  t->ptid.lwp (),
+					  t->ptid.tid ());
 		    }
 
 		  /* Record for later.  */
@@ -4904,7 +4904,7 @@ handle_inferior_event_1 (struct execution_control_state *ecs)
 	   process as not-executing so that finish_thread_state marks
 	   them stopped (in the user's perspective) if/when we present
 	   the stop to the user.  */
-	mark_ptid = pid_to_ptid (ptid_get_pid (ecs->ptid));
+	mark_ptid = ptid_t (ecs->ptid.pid ());
       }
     else
       mark_ptid = ecs->ptid;
@@ -5735,7 +5735,7 @@ handle_signal_stop (struct execution_control_state *ecs)
 
   /* See if something interesting happened to the non-current thread.  If
      so, then switch to that thread.  */
-  if (!ptid_equal (ecs->ptid, inferior_ptid))
+  if (ecs->ptid != inferior_ptid)
     {
       if (debug_infrun)
 	fprintf_unfiltered (gdb_stdlog, "infrun: context switch\n");
@@ -7106,7 +7106,7 @@ switch_back_to_stepped_thread (struct execution_control_state *ecs)
 	  /* Ignore threads of processes the caller is not
 	     resuming.  */
 	  if (!sched_multi
-	      && ptid_get_pid (tp->ptid) != ptid_get_pid (ecs->ptid))
+	      && tp->ptid.pid () != ecs->ptid.pid ())
 	    continue;
 
 	  /* When stepping over a breakpoint, we lock all threads
@@ -7673,7 +7673,7 @@ stop_waiting (struct execution_control_state *ecs)
 static void
 keep_going_pass_signal (struct execution_control_state *ecs)
 {
-  gdb_assert (ptid_equal (ecs->event_thread->ptid, inferior_ptid));
+  gdb_assert (ecs->event_thread->ptid == inferior_ptid);
   gdb_assert (!ecs->event_thread->resumed);
 
   /* Save the pc before execution, to compare with pc after stop.  */
@@ -7887,7 +7887,7 @@ void
 print_exited_reason (struct ui_out *uiout, int exitstatus)
 {
   struct inferior *inf = current_inferior ();
-  const char *pidstr = target_pid_to_str (pid_to_ptid (inf->pid));
+  const char *pidstr = target_pid_to_str (ptid_t (inf->pid));
 
   annotate_exited (exitstatus);
   if (exitstatus)
@@ -8125,7 +8125,7 @@ save_stop_context (void)
   sc->ptid = inferior_ptid;
   sc->inf_num = current_inferior ()->num;
 
-  if (!ptid_equal (inferior_ptid, null_ptid))
+  if (inferior_ptid != null_ptid)
     {
       /* Take a strong reference so that the thread can't be deleted
 	 yet.  */
@@ -8157,7 +8157,7 @@ release_stop_context_cleanup (void *arg)
 static int
 stop_context_changed (struct stop_context *prev)
 {
-  if (!ptid_equal (prev->ptid, inferior_ptid))
+  if (prev->ptid != inferior_ptid)
     return 1;
   if (prev->inf_num != current_inferior ()->num)
     return 1;
@@ -8338,7 +8338,7 @@ normal_stop (void)
 
   /* Notify observers about the stop.  This is where the interpreters
      print the stop event.  */
-  if (!ptid_equal (inferior_ptid, null_ptid))
+  if (inferior_ptid != null_ptid)
     gdb::observers::normal_stop.notify (inferior_thread ()->control.stop_bpstat,
 				 stop_print_frame);
   else
@@ -8790,7 +8790,7 @@ siginfo_make_value (struct gdbarch *gdbarch, struct internalvar *var,
 		    void *ignore)
 {
   if (target_has_stack
-      && !ptid_equal (inferior_ptid, null_ptid)
+      && inferior_ptid != null_ptid
       && gdbarch_get_siginfo_type_p (gdbarch))
     {
       struct type *type = gdbarch_get_siginfo_type (gdbarch);

@@ -1,3 +1,368 @@
+2018-07-04  Tom de Vries  <tdevries@suse.de>
+
+	* dwarf2read.c (error_check_comp_unit_head): Move dwarf version
+	check ...
+	(read_comp_unit_head): ... here.
+
+2018-07-03  Tom Tromey  <tom@tromey.com>
+
+	* tracepoint.c (process_tracepoint_on_disconnect, start_tracing)
+	(stop_tracing, tstatus_command)
+	(find_matching_tracepoint_location, merge_uploaded_tracepoints)
+	(print_one_static_tracepoint_marker): Update.
+	* breakpoint.c (static_tracepoints_here, all_tracepoints): Return
+	std::vector.
+	* breakpoint.h (breakpoint_p): Remove typedef.  Don't declare
+	VEC.
+	(all_tracepoints, static_tracepoints_here): Return std::vector.
+
+2018-07-03  Tom Tromey  <tom@tromey.com>
+
+	* common/ptid.c (ptid_equal): Remove.
+	* common/ptid.h (ptid_equal): Don't declare.
+	* ada-tasks.c: Update.
+	* breakpoint.c: Update.
+	* common/agent.c: Update.
+	* corelow.c: Update.
+	* darwin-nat-info.c: Update.
+	* darwin-nat.c: Update.
+	* dcache.c: Update.
+	* dtrace-probe.c: Update.
+	* dummy-frame.c: Update.
+	* fbsd-nat.c: Update.
+	* frame.c: Update.
+	* gdbthread.h: Update.
+	* gnu-nat.c: Update.
+	* go32-nat.c: Update.
+	* inf-loop.c: Update.
+	* inf-ptrace.c: Update.
+	* infcall.c: Update.
+	* infcmd.c: Update.
+	* inflow.c: Update.
+	* infrun.c: Update.
+	* linux-fork.c: Update.
+	* linux-nat.c: Update.
+	* linux-thread-db.c: Update.
+	* mi/mi-cmd-var.c: Update.
+	* mi/mi-interp.c: Update.
+	* mi/mi-main.c: Update.
+	* nto-procfs.c: Update.
+	* ppc-linux-tdep.c: Update.
+	* procfs.c: Update.
+	* python/py-inferior.c: Update.
+	* python/py-record-btrace.c: Update.
+	* python/py-record.c: Update.
+	* ravenscar-thread.c: Update.
+	* regcache.c: Update.
+	* remote-sim.c: Update.
+	* remote.c: Update.
+	* sol-thread.c: Update.
+	* solib.c: Update.
+	* target.c: Update.
+	* tui/tui-stack.c: Update.
+	* varobj.c: Update.
+	* windows-nat.c: Update.
+	* windows-tdep.c: Update.
+
+2018-07-03  Tom Tromey  <tom@tromey.com>
+
+	* common/ptid.c (ptid_match): Remove.
+	* common/ptid.h (ptid_match): Don't declare.
+	* fbsd-nat.c: Update.
+	* infcmd.c: Update.
+	* infrun.c: Update.
+	* linux-nat.c: Update.
+	* record-btrace.c: Update.
+	* regcache.c: Update.
+	* remote.c: Update.
+
+2018-07-03  Tom Tromey  <tom@tromey.com>
+
+	* common/ptid.c (ptid_tid_p): Remove.
+	* common/ptid.h (ptid_tid_p): Don't declare.
+	* sol-thread.c: Update.
+
+2018-07-03  Tom Tromey  <tom@tromey.com>
+
+	* common/ptid.c (ptid_lwp_p): Remove.
+	* common/ptid.h (ptid_lwp_p): Don't declare.
+	* fbsd-nat.c: Update.
+	* linux-nat.c: Update.
+	* nat/linux-procfs.c: Update.
+	* nat/x86-linux-dregs.c: Update.
+	* sol-thread.c: Update.
+
+2018-07-03  Tom Tromey  <tom@tromey.com>
+
+	* common/ptid.c (ptid_is_pid): Remove.
+	* common/ptid.h (ptid_is_pid): Don't declare.
+	* infrun.c: Update.
+	* linux-nat.c: Update.
+	* mi/mi-interp.c: Update.
+	* remote.c: Update.
+	* thread.c: Update.
+
+2018-07-03  Tom Tromey  <tom@tromey.com>
+
+	* common/ptid.c (ptid_get_tid): Remove.
+	* common/ptid.h (ptid_get_tid): Don't declare.
+	* ada-tasks.c: Update.
+	* aix-thread.c: Update.
+	* bsd-uthread.c: Update.
+	* darwin-nat.c: Update.
+	* fbsd-nat.c: Update.
+	* i386-darwin-nat.c: Update.
+	* infrun.c: Update.
+	* linux-tdep.c: Update.
+	* nto-procfs.c: Update.
+	* ppc-ravenscar-thread.c: Update.
+	* python/py-infthread.c: Update.
+	* ravenscar-thread.c: Update.
+	* sol-thread.c: Update.
+	* sparc-ravenscar-thread.c: Update.
+	* windows-nat.c: Update.
+
+2018-07-03  Tom Tromey  <tom@tromey.com>
+
+	* common/ptid.c (ptid_get_lwp): Remove.
+	* common/ptid.h (ptid_get_lwp): Don't declare.
+	* aarch64-linux-nat.c: Update.
+	* ada-tasks.c: Update.
+	* aix-thread.c: Update.
+	* amd64-linux-nat.c: Update.
+	* arm-linux-nat.c: Update.
+	* corelow.c: Update.
+	* fbsd-nat.c: Update.
+	* fbsd-tdep.c: Update.
+	* gnu-nat.c: Update.
+	* i386-cygwin-tdep.c: Update.
+	* i386-gnu-nat.c: Update.
+	* i386-linux-nat.c: Update.
+	* ia64-linux-nat.c: Update.
+	* inf-ptrace.c: Update.
+	* infrun.c: Update.
+	* linux-fork.c: Update.
+	* linux-nat.c: Update.
+	* linux-tdep.c: Update.
+	* linux-thread-db.c: Update.
+	* mips-linux-nat.c: Update.
+	* nat/aarch64-linux-hw-point.c: Update.
+	* nat/aarch64-linux.c: Update.
+	* nat/linux-btrace.c: Update.
+	* nat/linux-osdata.c: Update.
+	* nat/linux-procfs.c: Update.
+	* nat/x86-linux-dregs.c: Update.
+	* obsd-nat.c: Update.
+	* ppc-fbsd-nat.c: Update.
+	* ppc-linux-nat.c: Update.
+	* procfs.c: Update.
+	* python/py-infthread.c: Update.
+	* ravenscar-thread.c: Update.
+	* remote.c: Update.
+	* s390-linux-nat.c: Update.
+	* sol-thread.c: Update.
+	* sol2-tdep.c: Update.
+	* spu-linux-nat.c: Update.
+	* x86-linux-nat.c: Update.
+	* xtensa-linux-nat.c: Update.
+
+2018-07-03  Tom Tromey  <tom@tromey.com>
+
+	* common/ptid.c (ptid_get_pid): Remove.
+	* common/ptid.h (ptid_get_pid): Don't declare.
+	* aarch64-linux-nat.c: Update.
+	* ada-lang.c: Update.
+	* aix-thread.c: Update.
+	* alpha-bsd-nat.c: Update.
+	* amd64-fbsd-nat.c: Update.
+	* amd64-linux-nat.c: Update.
+	* arm-linux-nat.c: Update.
+	* arm-nbsd-nat.c: Update.
+	* auxv.c: Update.
+	* break-catch-syscall.c: Update.
+	* breakpoint.c: Update.
+	* bsd-uthread.c: Update.
+	* corelow.c: Update.
+	* ctf.c: Update.
+	* darwin-nat.c: Update.
+	* fbsd-nat.c: Update.
+	* fbsd-tdep.c: Update.
+	* gcore.c: Update.
+	* gnu-nat.c: Update.
+	* hppa-nbsd-nat.c: Update.
+	* hppa-obsd-nat.c: Update.
+	* i386-fbsd-nat.c: Update.
+	* ia64-linux-nat.c: Update.
+	* inf-ptrace.c: Update.
+	* infcmd.c: Update.
+	* inferior.c: Update.
+	* inferior.h: Update.
+	* inflow.c: Update.
+	* infrun.c: Update.
+	* linux-fork.c: Update.
+	* linux-nat.c: Update.
+	* linux-tdep.c: Update.
+	* linux-thread-db.c: Update.
+	* m68k-bsd-nat.c: Update.
+	* mi/mi-interp.c: Update.
+	* mi/mi-main.c: Update.
+	* mips-linux-nat.c: Update.
+	* mips-nbsd-nat.c: Update.
+	* mips64-obsd-nat.c: Update.
+	* nat/aarch64-linux-hw-point.c: Update.
+	* nat/aarch64-linux.c: Update.
+	* nat/linux-btrace.c: Update.
+	* nat/linux-osdata.c: Update.
+	* nat/linux-procfs.c: Update.
+	* nat/x86-linux-dregs.c: Update.
+	* nto-procfs.c: Update.
+	* obsd-nat.c: Update.
+	* ppc-linux-nat.c: Update.
+	* ppc-nbsd-nat.c: Update.
+	* ppc-obsd-nat.c: Update.
+	* proc-service.c: Update.
+	* procfs.c: Update.
+	* python/py-inferior.c: Update.
+	* python/py-infthread.c: Update.
+	* ravenscar-thread.c: Update.
+	* record.c: Update.
+	* remote-sim.c: Update.
+	* remote.c: Update.
+	* rs6000-nat.c: Update.
+	* s390-linux-nat.c: Update.
+	* sh-nbsd-nat.c: Update.
+	* sol-thread.c: Update.
+	* sparc-nat.c: Update.
+	* sparc64-tdep.c: Update.
+	* spu-linux-nat.c: Update.
+	* spu-tdep.c: Update.
+	* target-debug.h: Update.
+	* target.c: Update.
+	* thread.c: Update.
+	* tid-parse.c: Update.
+	* tracefile-tfile.c: Update.
+	* vax-bsd-nat.c: Update.
+	* windows-nat.c: Update.
+	* x86-linux-nat.c: Update.
+	* x86-nat.c: Update.
+
+2018-07-03  Tom Tromey  <tom@tromey.com>
+
+	* common/ptid.c (pid_to_ptid): Remove.
+	* common/ptid.h (pid_to_ptid): Don't declare.
+	* aix-thread.c: Update.
+	* arm-linux-nat.c: Update.
+	* common/ptid.c: Update.
+	* common/ptid.h: Update.
+	* corelow.c: Update.
+	* ctf.c: Update.
+	* darwin-nat.c: Update.
+	* fbsd-nat.c: Update.
+	* fork-child.c: Update.
+	* gnu-nat.c: Update.
+	* go32-nat.c: Update.
+	* inf-ptrace.c: Update.
+	* infcmd.c: Update.
+	* inferior.c: Update.
+	* infrun.c: Update.
+	* linux-fork.c: Update.
+	* linux-nat.c: Update.
+	* nat/aarch64-linux-hw-point.c: Update.
+	* nat/fork-inferior.c: Update.
+	* nat/x86-linux-dregs.c: Update.
+	* nto-procfs.c: Update.
+	* obsd-nat.c: Update.
+	* procfs.c: Update.
+	* progspace.c: Update.
+	* remote.c: Update.
+	* rs6000-nat.c: Update.
+	* s390-linux-nat.c: Update.
+	* sol-thread.c: Update.
+	* spu-linux-nat.c: Update.
+	* target.c: Update.
+	* top.c: Update.
+	* tracefile-tfile.c: Update.
+	* windows-nat.c: Update.
+
+2018-07-03  Tom Tromey  <tom@tromey.com>
+
+	* common/ptid.h (ptid_build): Don't declare.
+	* common/ptid.c (ptid_build): Remove.
+	* aix-thread.c: Update.
+	* bsd-kvm.c: Update.
+	* bsd-uthread.c: Update.
+	* common/agent.c: Update.
+	* common/ptid.c: Update.
+	* common/ptid.h: Update.
+	* corelow.c: Update.
+	* darwin-nat.c: Update.
+	* fbsd-nat.c: Update.
+	* gnu-nat.c: Update.
+	* linux-fork.c: Update.
+	* linux-nat.c: Update.
+	* linux-thread-db.c: Update.
+	* nat/linux-osdata.c: Update.
+	* nat/linux-procfs.c: Update.
+	* nto-procfs.c: Update.
+	* obsd-nat.c: Update.
+	* proc-service.c: Update.
+	* procfs.c: Update.
+	* ravenscar-thread.c: Update.
+	* remote-sim.c: Update.
+	* remote.c: Update.
+	* sol-thread.c: Update.
+	* target.c: Update.
+	* windows-nat.c: Update.
+
+2018-07-03  Tom Tromey  <tom@tromey.com>
+
+	* infrun.c (follow_exec): Use exit_inferior_silent.
+	* inferior.c (exit_inferior_num_silent): Remove.
+	* inferior.h (exit_inferior_num_silent): Don't declare.
+
+2018-07-03  Tom Tromey  <tom@tromey.com>
+
+	PR cli/23340:
+	* darwin-nat.c (darwin_attach_pid): Reset inferior and
+	inferior_ptid on error.
+
+2018-07-02  Maciej W. Rozycki  <macro@mips.com>
+	    Simon Marchi  <simon.marchi@polymtl.ca>
+
+	PR tdep/8282
+	* disasm.h (gdb_disassembler): Add
+	`m_disassembler_options_holder'. member
+	* disasm.c (get_all_disassembler_options): New function.
+	(gdb_disassembler::gdb_disassembler): Use it.
+	(gdb_buffered_insn_length_init_dis): Likewise.
+	(gdb_buffered_insn_length): Adjust accordingly.
+	(set_disassembler_options): Handle options with arguments.
+	(show_disassembler_options_sfunc): Likewise.  Add a leading new
+	line if showing options with descriptions.
+	(disassembler_options_completer): Adapt to using the
+	`disasm_options_and_args_t' structure.
+	* mips-tdep.c (mips_disassembler_options): New variable.
+	(mips_disassembler_options_o32): Likewise.
+	(mips_disassembler_options_n32): Likewise.
+	(mips_disassembler_options_n64): Likewise.
+	(gdb_print_insn_mips): Don't set `disassembler_options'.
+	(gdb_print_insn_mips_n32, gdb_print_insn_mips_n64): Remove
+	functions.
+	(mips_gdbarch_init): Always set `gdbarch_print_insn' to
+	`gdb_print_insn_mips'.  Set `gdbarch_disassembler_options',
+	`gdbarch_disassembler_options_implicit' and
+	`gdbarch_valid_disassembler_options'.
+	* arm-tdep.c (_initialize_arm_tdep): Adapt to using the
+	`disasm_options_and_args_t' structure.
+	* gdbarch.sh (disassembler_options_implicit): New `gdbarch'
+	method.
+	(valid_disassembler_options): Switch from `disasm_options_t' to
+	the `disasm_options_and_args_t' structure.
+	* NEWS: Document `set disassembler-options' support for the MIPS
+	target.
+	* gdbarch.h: Regenerate.
+	* gdbarch.c: Regenerate.
+
 2018-07-02  Sebastian Huber  <sebastian.huber@embedded-brains.de>
 
 	* riscv-tdep.c (riscv_register_aliases): Swap "fp" and "s0" entries.

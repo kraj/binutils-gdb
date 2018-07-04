@@ -783,7 +783,7 @@ thread_change_ptid (ptid_t old_ptid, ptid_t new_ptid)
      changes.  E.g, target remote may only discover the remote process
      pid after adding the inferior to GDB's list.  */
   inf = find_inferior_ptid (old_ptid);
-  inf->pid = ptid_get_pid (new_ptid);
+  inf->pid = new_ptid.pid ();
 
   tp = find_thread_ptid (old_ptid);
   tp->ptid = new_ptid;
@@ -799,10 +799,10 @@ set_resumed (ptid_t ptid, int resumed)
   struct thread_info *tp;
   int all = ptid == minus_one_ptid;
 
-  if (all || ptid_is_pid (ptid))
+  if (all || ptid.is_pid ())
     {
       for (tp = thread_list; tp; tp = tp->next)
-	if (all || ptid_get_pid (tp->ptid) == ptid_get_pid (ptid))
+	if (all || tp->ptid.pid () == ptid.pid ())
 	  tp->resumed = resumed;
     }
   else
@@ -856,10 +856,10 @@ set_running (ptid_t ptid, int running)
   /* We try not to notify the observer if no thread has actually changed
      the running state -- merely to reduce the number of messages to
      frontend.  Frontend is supposed to handle multiple *running just fine.  */
-  if (all || ptid_is_pid (ptid))
+  if (all || ptid.is_pid ())
     {
       for (tp = thread_list; tp; tp = tp->next)
-	if (all || ptid_get_pid (tp->ptid) == ptid_get_pid (ptid))
+	if (all || tp->ptid.pid () == ptid.pid ())
 	  {
 	    if (tp->state == THREAD_EXITED)
 	      continue;
@@ -936,10 +936,10 @@ set_executing (ptid_t ptid, int executing)
   struct thread_info *tp;
   int all = ptid == minus_one_ptid;
 
-  if (all || ptid_is_pid (ptid))
+  if (all || ptid.is_pid ())
     {
       for (tp = thread_list; tp; tp = tp->next)
-	if (all || ptid_get_pid (tp->ptid) == ptid_get_pid (ptid))
+	if (all || tp->ptid.pid () == ptid.pid ())
 	  set_executing_thread (tp, executing);
     }
   else
@@ -972,10 +972,10 @@ set_stop_requested (ptid_t ptid, int stop)
   struct thread_info *tp;
   int all = ptid == minus_one_ptid;
 
-  if (all || ptid_is_pid (ptid))
+  if (all || ptid.is_pid ())
     {
       for (tp = thread_list; tp; tp = tp->next)
-	if (all || ptid_get_pid (tp->ptid) == ptid_get_pid (ptid))
+	if (all || tp->ptid.pid () == ptid.pid ())
 	  tp->stop_requested = stop;
     }
   else
@@ -1000,13 +1000,13 @@ finish_thread_state (ptid_t ptid)
 
   all = ptid == minus_one_ptid;
 
-  if (all || ptid_is_pid (ptid))
+  if (all || ptid.is_pid ())
     {
       for (tp = thread_list; tp; tp = tp->next)
 	{
 	  if (tp->state == THREAD_EXITED)
 	    continue;
-	  if (all || ptid_get_pid (ptid) == ptid_get_pid (tp->ptid))
+	  if (all || ptid.pid () == tp->ptid.pid ())
 	    {
 	      if (set_running_thread (tp, tp->executing))
 		any_started = 1;
@@ -1106,7 +1106,7 @@ should_print_thread (const char *requested_threads, int default_inf_num,
 	return 0;
     }
 
-  if (pid != -1 && ptid_get_pid (thr->ptid) != pid)
+  if (pid != -1 && thr->ptid.pid () != pid)
     {
       if (requested_threads != NULL && *requested_threads != '\0')
 	error (_("Requested thread not found in requested process"));

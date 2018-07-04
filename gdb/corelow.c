@@ -310,7 +310,7 @@ add_to_thread_list (bfd *abfd, asection *asect, void *reg_sect_arg)
       inf->fake_pid_p = fake_pid_p;
     }
 
-  ptid = ptid_build (pid, lwpid, 0);
+  ptid = ptid_t (pid, lwpid, 0);
 
   add_thread (ptid);
 
@@ -444,7 +444,7 @@ core_target_open (const char *arg, int from_tty)
   bfd_map_over_sections (core_bfd, add_to_thread_list,
 			 bfd_get_section_by_name (core_bfd, ".reg"));
 
-  if (ptid_equal (inferior_ptid, null_ptid))
+  if (inferior_ptid == null_ptid)
     {
       /* Either we found no .reg/NN section, and hence we have a
 	 non-threaded core (single-threaded, from gdb's perspective),
@@ -457,7 +457,7 @@ core_target_open (const char *arg, int from_tty)
       if (thread == NULL)
 	{
 	  inferior_appeared (current_inferior (), CORELOW_PID);
-	  inferior_ptid = pid_to_ptid (CORELOW_PID);
+	  inferior_ptid = ptid_t (CORELOW_PID);
 	  add_thread_silent (inferior_ptid);
 	}
       else
@@ -1005,9 +1005,9 @@ core_target::pid_to_str (ptid_t ptid)
      "process", with normal_pid_to_str.  */
 
   /* Try the LWPID field first.  */
-  pid = ptid_get_lwp (ptid);
+  pid = ptid.lwp ();
   if (pid != 0)
-    return normal_pid_to_str (pid_to_ptid (pid));
+    return normal_pid_to_str (ptid_t (pid));
 
   /* Otherwise, this isn't a "threaded" core -- use the PID field, but
      only if it isn't a fake PID.  */

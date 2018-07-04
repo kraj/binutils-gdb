@@ -486,13 +486,13 @@ write_ptid (char *buf, ptid_t ptid)
 
   if (cs.multi_process)
     {
-      pid = ptid_get_pid (ptid);
+      pid = ptid.pid ();
       if (pid < 0)
 	buf += sprintf (buf, "p-%x.", -pid);
       else
 	buf += sprintf (buf, "p%x.", pid);
     }
-  tid = ptid_get_lwp (ptid);
+  tid = ptid.lwp ();
   if (tid < 0)
     buf += sprintf (buf, "-%x", -tid);
   else
@@ -542,7 +542,7 @@ read_ptid (const char *buf, const char **obuf)
 
       if (obuf)
 	*obuf = pp;
-      return ptid_build (pid, tid, 0);
+      return ptid_t (pid, tid, 0);
     }
 
   /* No multi-process.  Just a tid.  */
@@ -555,7 +555,7 @@ read_ptid (const char *buf, const char **obuf)
 
   if (obuf)
     *obuf = pp;
-  return ptid_build (pid, tid, 0);
+  return ptid_t (pid, tid, 0);
 }
 
 /* Write COUNT bytes in BUF to the client.
@@ -1222,7 +1222,7 @@ prepare_resume_reply (char *buf, ptid_t ptid,
 	       in GDB will claim this event belongs to inferior_ptid
 	       if we do not specify a thread, and there's no way for
 	       gdbserver to know what inferior_ptid is.  */
-	    if (1 || !ptid_equal (cs.general_thread, ptid))
+	    if (1 || cs.general_thread != ptid)
 	      {
 		int core = -1;
 		/* In non-stop, don't change the general thread behind
@@ -1261,14 +1261,14 @@ prepare_resume_reply (char *buf, ptid_t ptid,
     case TARGET_WAITKIND_EXITED:
       if (cs.multi_process)
 	sprintf (buf, "W%x;process:%x",
-		 status->value.integer, ptid_get_pid (ptid));
+		 status->value.integer, ptid.pid ());
       else
 	sprintf (buf, "W%02x", status->value.integer);
       break;
     case TARGET_WAITKIND_SIGNALLED:
       if (cs.multi_process)
 	sprintf (buf, "X%x;process:%x",
-		 status->value.sig, ptid_get_pid (ptid));
+		 status->value.sig, ptid.pid ());
       else
 	sprintf (buf, "X%02x", status->value.sig);
       break;

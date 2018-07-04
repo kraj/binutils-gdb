@@ -1,3 +1,51 @@
+2018-07-04  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* Makefile.am (bfdinclude_HEADERS): Add $(INCDIR)/diagnostics.h.
+	* Makefile.in: Regenerated.
+
+2018-07-03  Alan Modra  <amodra@gmail.com>
+
+	* elflink.c (bfd_elf_final_link): Remove zero size .gnu.attributes
+	sections.
+
+2018-07-03  Alan Modra  <amodra@gmail.com>
+
+	* elf-bfd.h (ATTR_TYPE_FLAG_ERROR, ATTR_TYPE_HAS_ERROR): Define.
+	* elf-attrs.c (is_default_attr): Handle ATTR_TYPE_HAS_ERROR.
+	* elf32-ppc.c (_bfd_elf_ppc_merge_fp_attributes): Use
+	ATTR_TYPE_FLAG_INT_VAL.  Set ATTR_TYPE_HAS_ERROR on finding
+	incompatible attribute.
+	(ppc_elf_merge_obj_attributes): Likewise.  Return
+	_bfd_elf_merge_object_attributes result.
+	* elf64-ppc.c (ppc64_elf_merge_private_bfd_data): Return
+	_bfd_elf_merge_object_attributes result.
+
+2018-07-03  Alan Modra  <amodra@gmail.com>
+
+	PR 17550
+	* elflink.c (_bfd_elf_fix_symbol_flags): Hide dynamic symbols
+	in discarded sections.
+
+2018-07-02  Maciej W. Rozycki  <macro@mips.com>
+
+	* elfxx-mips.c (_bfd_mips_elf_create_dynamic_sections): Set
+	`mark' for symbols created from `mips_elf_dynsym_rtproc_names'
+	list.
+
+2018-07-02  Maciej W. Rozycki  <macro@mips.com>
+
+	* elf64-mips.c (micromips_elf64_howto_table_rel): Add
+	R_MICROMIPS_HI0_LO16, R_MICROMIPS_TLS_GD, R_MICROMIPS_TLS_LDM,
+	R_MICROMIPS_TLS_DTPREL_HI16, R_MICROMIPS_TLS_DTPREL_LO16,
+	R_MICROMIPS_TLS_GOTTPREL, R_MICROMIPS_TLS_TPREL_HI16,
+	R_MICROMIPS_TLS_TPREL_LO16, R_MICROMIPS_GPREL7_S2 and
+	R_MICROMIPS_PC23_S2 relocation entries.
+	(micromips_elf64_howto_table_rela): Likewise.
+	(micromips_reloc_map): Likewise.
+	* elfn32-mips.c (elf_micromips_howto_table_rel): Likewise.
+	(elf_micromips_howto_table_rela): Likewise.
+	(micromips_reloc_map): Likewise.
+
 2018-07-02  H.J. Lu  <hongjiu.lu@intel.com>
 
 	PR ld/23324

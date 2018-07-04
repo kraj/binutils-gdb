@@ -342,7 +342,7 @@ darwin_check_new_threads (struct inferior *inf)
 	  pti->msg_state = DARWIN_RUNNING;
 
 	  /* Add the new thread.  */
-	  add_thread_with_info (ptid_build (inf->pid, 0, new_id), pti);
+	  add_thread_with_info (ptid_t (inf->pid, 0, new_id), pti);
 	  new_thread_vec.push_back (pti);
 	  new_ix++;
 	  continue;
@@ -351,7 +351,7 @@ darwin_check_new_threads (struct inferior *inf)
 	{
 	  /* A thread was removed.  */
 	  struct thread_info *thr
-	    = find_thread_ptid (ptid_build (inf->pid, 0, old_id));
+	    = find_thread_ptid (ptid_t (inf->pid, 0, old_id));
 	  delete_thread (thr);
 	  kret = mach_port_deallocate (gdb_task, old_id);
 	  MACH_CHECK_ERROR (kret);
@@ -930,7 +930,7 @@ darwin_nat_target::resume (ptid_t ptid, int step, enum gdb_signal signal)
 
   inferior_debug
     (2, _("darwin_resume: pid=%d, tid=0x%lx, step=%d, signal=%d\n"),
-     ptid_get_pid (ptid), ptid_get_tid (ptid), step, signal);
+     ptid.pid (), ptid.tid (), step, signal);
 
   if (signal == GDB_SIGNAL_0)
     nsignal = 0;
@@ -942,7 +942,7 @@ darwin_nat_target::resume (ptid_t ptid, int step, enum gdb_signal signal)
     ptid = inferior_ptid;
 
   /* minus_one_ptid is RESUME_ALL.  */
-  if (ptid_equal (ptid, minus_one_ptid))
+  if (ptid == minus_one_ptid)
     {
       struct resume_inferior_threads_param param;
 
@@ -957,7 +957,7 @@ darwin_nat_target::resume (ptid_t ptid, int step, enum gdb_signal signal)
   else
     {
       struct inferior *inf = find_inferior_ptid (ptid);
-      long tid = ptid_get_tid (ptid);
+      long tid = ptid.tid ();
 
       /* Stop the inferior (should be useless).  */
       darwin_suspend_inferior (inf);
@@ -1074,7 +1074,7 @@ darwin_decode_message (mach_msg_header_t *hdr,
 	  break;
 	}
 
-      return ptid_build (inf->pid, 0, thread->gdb_port);
+      return ptid_t (inf->pid, 0, thread->gdb_port);
     }
   else if (hdr->msgh_id == 0x48)
     {
@@ -1134,7 +1134,7 @@ darwin_decode_message (mach_msg_header_t *hdr,
 	      /* Looks necessary on Leopard and harmless...  */
 	      wait4 (inf->pid, &wstatus, 0, NULL);
 
-	      inferior_ptid = ptid_build (inf->pid, 0, 0);
+	      inferior_ptid = ptid_t (inf->pid, 0, 0);
 	      return inferior_ptid;
 	    }
 	  else
@@ -1142,7 +1142,7 @@ darwin_decode_message (mach_msg_header_t *hdr,
 	      inferior_debug (4, _("darwin_wait: pid=%d\n"), inf->pid);
 	      status->kind = TARGET_WAITKIND_EXITED;
 	      status->value.integer = 0; /* Don't know.  */
-	      return ptid_build (inf->pid, 0, 0);
+	      return ptid_t (inf->pid, 0, 0);
 	    }
 	}
     }
@@ -1172,7 +1172,7 @@ cancel_breakpoint (ptid_t ptid)
   if (breakpoint_inserted_here_p (regcache->aspace (), pc))
     {
       inferior_debug (4, "cancel_breakpoint for thread 0x%lx\n",
-		      (unsigned long) ptid_get_tid (ptid));
+		      (unsigned long) ptid.tid ());
 
       /* Back up the PC if necessary.  */
       if (gdbarch_decr_pc_after_break (gdbarch))
@@ -1199,7 +1199,7 @@ darwin_wait (ptid_t ptid, struct target_waitstatus *status)
 
   inferior_debug
     (2, _("darwin_wait: waiting for a message pid=%d thread=%lx\n"),
-     ptid_get_pid (ptid), ptid_get_tid (ptid));
+     ptid.pid (), ptid.tid ());
 
   /* Handle fake stop events at first.  */
   if (darwin_inf_fake_stop != NULL)
@@ -1213,7 +1213,7 @@ darwin_wait (ptid_t ptid, struct target_waitstatus *status)
       status->value.sig = GDB_SIGNAL_TRAP;
       thread = priv->threads[0];
       thread->msg_state = DARWIN_STOPPED;
-      return ptid_build (inf->pid, 0, thread->gdb_port);
+      return ptid_t (inf->pid, 0, thread->gdb_port);
     }
 
   do
@@ -1244,7 +1244,7 @@ darwin_wait (ptid_t ptid, struct target_waitstatus *status)
 	darwin_dump_message (hdr, darwin_debug_flag > 11);
 
       res = darwin_decode_message (hdr, &thread, &inf, status);
-      if (ptid_equal (res, minus_one_ptid))
+      if (res == minus_one_ptid)
 	continue;
 
       /* Early return in case an inferior has exited.  */
@@ -1285,7 +1285,7 @@ darwin_wait (ptid_t ptid, struct target_waitstatus *status)
 	  && thread->event.ex_type == EXC_BREAKPOINT)
 	{
 	  if (thread->single_step
-	      || cancel_breakpoint (ptid_build (inf->pid, 0, thread->gdb_port)))
+	      || cancel_breakpoint (ptid_t (inf->pid, 0, thread->gdb_port)))
 	    {
 	      gdb_assert (thread->msg_state == DARWIN_MESSAGE);
 	      darwin_send_reply (inf, thread);
@@ -1517,7 +1517,7 @@ darwin_nat_target::kill ()
   int status;
   int res;
 
-  if (ptid_equal (inferior_ptid, null_ptid))
+  if (inferior_ptid == null_ptid)
     return;
 
   gdb_assert (inf != NULL);
@@ -1583,77 +1583,92 @@ darwin_attach_pid (struct inferior *inf)
   darwin_inferior *priv = new darwin_inferior;
   inf->priv.reset (priv);
 
-  kret = task_for_pid (gdb_task, inf->pid, &priv->task);
-  if (kret != KERN_SUCCESS)
+  TRY
     {
-      int status;
-
-      if (!inf->attach_flag)
+      kret = task_for_pid (gdb_task, inf->pid, &priv->task);
+      if (kret != KERN_SUCCESS)
 	{
-	  kill (inf->pid, 9);
-	  waitpid (inf->pid, &status, 0);
+	  int status;
+
+	  if (!inf->attach_flag)
+	    {
+	      kill (inf->pid, 9);
+	      waitpid (inf->pid, &status, 0);
+	    }
+
+	  error
+	    (_("Unable to find Mach task port for process-id %d: %s (0x%lx).\n"
+	       " (please check gdb is codesigned - see taskgated(8))"),
+	     inf->pid, mach_error_string (kret), (unsigned long) kret);
 	}
 
-      error (_("Unable to find Mach task port for process-id %d: %s (0x%lx).\n"
-	       " (please check gdb is codesigned - see taskgated(8))"),
-             inf->pid, mach_error_string (kret), (unsigned long) kret);
-    }
+      inferior_debug (2, _("inferior task: 0x%x, pid: %d\n"),
+		      priv->task, inf->pid);
 
-  inferior_debug (2, _("inferior task: 0x%x, pid: %d\n"),
-		  priv->task, inf->pid);
+      if (darwin_ex_port == MACH_PORT_NULL)
+	{
+	  /* Create a port to get exceptions.  */
+	  kret = mach_port_allocate (gdb_task, MACH_PORT_RIGHT_RECEIVE,
+				     &darwin_ex_port);
+	  if (kret != KERN_SUCCESS)
+	    error (_("Unable to create exception port, mach_port_allocate "
+		     "returned: %d"),
+		   kret);
 
-  if (darwin_ex_port == MACH_PORT_NULL)
-    {
-      /* Create a port to get exceptions.  */
+	  kret = mach_port_insert_right (gdb_task, darwin_ex_port,
+					 darwin_ex_port,
+					 MACH_MSG_TYPE_MAKE_SEND);
+	  if (kret != KERN_SUCCESS)
+	    error (_("Unable to create exception port, mach_port_insert_right "
+		     "returned: %d"),
+		   kret);
+
+	  /* Create a port set and put ex_port in it.  */
+	  kret = mach_port_allocate (gdb_task, MACH_PORT_RIGHT_PORT_SET,
+				     &darwin_port_set);
+	  if (kret != KERN_SUCCESS)
+	    error (_("Unable to create port set, mach_port_allocate "
+		     "returned: %d"),
+		   kret);
+
+	  kret = mach_port_move_member (gdb_task, darwin_ex_port,
+					darwin_port_set);
+	  if (kret != KERN_SUCCESS)
+	    error (_("Unable to move exception port into new port set, "
+		     "mach_port_move_member\n"
+		     "returned: %d"),
+		   kret);
+	}
+
+      /* Create a port to be notified when the child task terminates.  */
       kret = mach_port_allocate (gdb_task, MACH_PORT_RIGHT_RECEIVE,
-				 &darwin_ex_port);
+				 &priv->notify_port);
       if (kret != KERN_SUCCESS)
-	error (_("Unable to create exception port, mach_port_allocate "
+	error (_("Unable to create notification port, mach_port_allocate "
 		 "returned: %d"),
 	       kret);
 
-      kret = mach_port_insert_right (gdb_task, darwin_ex_port, darwin_ex_port,
-				     MACH_MSG_TYPE_MAKE_SEND);
+      kret = mach_port_move_member (gdb_task,
+				    priv->notify_port, darwin_port_set);
       if (kret != KERN_SUCCESS)
-	error (_("Unable to create exception port, mach_port_insert_right "
-		 "returned: %d"),
-	       kret);
-
-      /* Create a port set and put ex_port in it.  */
-      kret = mach_port_allocate (gdb_task, MACH_PORT_RIGHT_PORT_SET,
-				 &darwin_port_set);
-      if (kret != KERN_SUCCESS)
-	error (_("Unable to create port set, mach_port_allocate "
-		 "returned: %d"),
-	       kret);
-
-      kret = mach_port_move_member (gdb_task, darwin_ex_port, darwin_port_set);
-      if (kret != KERN_SUCCESS)
-	error (_("Unable to move exception port into new port set, "
+	error (_("Unable to move notification port into new port set, "
 		 "mach_port_move_member\n"
 		 "returned: %d"),
 	       kret);
+
+      darwin_setup_request_notification (inf);
+
+      darwin_setup_exceptions (inf);
     }
+  CATCH (ex, RETURN_MASK_ALL)
+    {
+      inf->pid = 0;
+      inf->priv.reset ();
+      inferior_ptid = null_ptid;
 
-  /* Create a port to be notified when the child task terminates.  */
-  kret = mach_port_allocate (gdb_task, MACH_PORT_RIGHT_RECEIVE,
-			     &priv->notify_port);
-  if (kret != KERN_SUCCESS)
-    error (_("Unable to create notification port, mach_port_allocate "
-	     "returned: %d"),
-	   kret);
-
-  kret = mach_port_move_member (gdb_task,
-				priv->notify_port, darwin_port_set);
-  if (kret != KERN_SUCCESS)
-    error (_("Unable to move notification port into new port set, "
-	     "mach_port_move_member\n"
-	     "returned: %d"),
-	   kret);
-
-  darwin_setup_request_notification (inf);
-
-  darwin_setup_exceptions (inf);
+      throw_exception (ex);
+    }
+  END_CATCH
 
   target_ops *darwin_ops = get_native_target ();
   if (!target_is_pushed (darwin_ops))
@@ -1866,10 +1881,10 @@ darwin_nat_target::attach (const char *args, int from_tty)
 
       if (exec_file)
 	printf_unfiltered (_("Attaching to program: %s, %s\n"), exec_file,
-			   target_pid_to_str (pid_to_ptid (pid)));
+			   target_pid_to_str (ptid_t (pid)));
       else
 	printf_unfiltered (_("Attaching to %s\n"),
-			   target_pid_to_str (pid_to_ptid (pid)));
+			   target_pid_to_str (ptid_t (pid)));
 
       gdb_flush (gdb_stdout);
     }
@@ -1878,7 +1893,7 @@ darwin_nat_target::attach (const char *args, int from_tty)
     error (_("Can't attach to process %d: %s (%d)"),
            pid, safe_strerror (errno), errno);
 
-  inferior_ptid = pid_to_ptid (pid);
+  inferior_ptid = ptid_t (pid);
   inf = current_inferior ();
   inferior_appeared (inf, pid);
   inf->attach_flag = 1;
@@ -1891,7 +1906,7 @@ darwin_nat_target::attach (const char *args, int from_tty)
 
   darwin_inferior *priv = get_darwin_inferior (inf);
 
-  darwin_check_osabi (priv, ptid_get_tid (inferior_ptid));
+  darwin_check_osabi (priv, inferior_ptid.tid ());
 
   darwin_setup_fake_stop_event (inf);
 
@@ -1909,7 +1924,7 @@ darwin_nat_target::attach (const char *args, int from_tty)
 void
 darwin_nat_target::detach (inferior *inf, int from_tty)
 {
-  pid_t pid = ptid_get_pid (inferior_ptid);
+  pid_t pid = inferior_ptid.pid ();
   darwin_inferior *priv = get_darwin_inferior (inf);
   kern_return_t kret;
   int res;
@@ -1947,12 +1962,12 @@ const char *
 darwin_nat_target::pid_to_str (ptid_t ptid)
 {
   static char buf[80];
-  long tid = ptid_get_tid (ptid);
+  long tid = ptid.tid ();
 
   if (tid != 0)
     {
       snprintf (buf, sizeof (buf), _("Thread 0x%lx of process %u"),
-		tid, ptid_get_pid (ptid));
+		tid, ptid.pid ());
       return buf;
     }
 
@@ -2208,7 +2223,7 @@ static void
 set_enable_mach_exceptions (const char *args, int from_tty,
 			    struct cmd_list_element *c)
 {
-  if (!ptid_equal (inferior_ptid, null_ptid))
+  if (inferior_ptid != null_ptid)
     {
       struct inferior *inf = current_inferior ();
       darwin_inferior *priv = get_darwin_inferior (inf);
@@ -2257,7 +2272,7 @@ darwin_nat_target::get_ada_task_ptid (long lwp, long thread)
   for (darwin_thread_t *t : priv->threads)
     {
       if (t->inf_port == lwp)
-	return ptid_build (ptid_get_pid (inferior_ptid), 0, t->gdb_port);
+	return ptid_t (inferior_ptid.pid (), 0, t->gdb_port);
     }
 
   /* Maybe the port was never extract.  Do it now.  */
@@ -2301,7 +2316,7 @@ darwin_nat_target::get_ada_task_ptid (long lwp, long thread)
                  names_count * sizeof (mach_port_t));
 
   if (res)
-    return ptid_build (ptid_get_pid (inferior_ptid), 0, res);
+    return ptid_t (inferior_ptid.pid (), 0, res);
   else
     return null_ptid;
 }
