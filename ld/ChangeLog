@@ -1,3 +1,38 @@
+2018-07-05  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/23372
+	* testsuite/ld-i386/i386.exp: Run pr23372a and pr23372b.
+	* testsuite/ld-i386/pr23372a.d: New file.
+	* testsuite/ld-i386/pr23372a.s: Likewise.
+	* testsuite/ld-i386/pr23372b.d: Likewise.
+	* testsuite/ld-i386/pr23372b.s: Likewise.
+	* testsuite/ld-i386/pr23372c.s: Likewise.
+	* testsuite/ld-x86-64/pr23372a-x32.d: Likewise.
+	* testsuite/ld-x86-64/pr23372a.d: Likewise.
+	* testsuite/ld-x86-64/pr23372a.s: Likewise.
+	* testsuite/ld-x86-64/pr23372b-x32.d: Likewise.
+	* testsuite/ld-x86-64/pr23372b.d: Likewise.
+	* testsuite/ld-x86-64/pr23372b.s: Likewise.
+	* testsuite/ld-x86-64/pr23372c.s: Likewise.
+	* testsuite/ld-x86-64/x86-64.exp: Run pr23372a, pr23372a-x32,
+	pr23372b and pr23372b-x32.
+
+2018-07-05  Nick Clifton  <nickc@redhat.com>
+
+	* po/bg.po: Updated Bulgarian translation.
+	* po/pt_BR.po: Updated Brazilian Portuguese translation.
+
+2018-07-05  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/ld-powerpc/attr-gnu-4-12.d: Update expected output.
+	* testsuite/ld-powerpc/attr-gnu-4-13.d: Likewise.
+	* testsuite/ld-powerpc/attr-gnu-4-21.d: Likewise.
+	* testsuite/ld-powerpc/attr-gnu-4-23.d: Likewise.
+	* testsuite/ld-powerpc/attr-gnu-4-31.d: Likewise.
+	* testsuite/ld-powerpc/attr-gnu-4-32.d: Likewise.
+	* testsuite/ld-powerpc/attr-gnu-8-23.d: Likewise.
+	* testsuite/ld-powerpc/attr-gnu-12-21.d: Likewise.
+
 2018-07-04  H.J. Lu  <hongjiu.lu@intel.com>
 
 	PR ld/23309

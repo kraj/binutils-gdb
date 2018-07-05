@@ -1,3 +1,24 @@
+2018-07-05  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/23372
+	* elfxx-x86.c (_bfd_x86_elf_merge_gnu_properties): Remove x86
+	ISA properties with empty bits.
+
+2018-07-05  Nick Clifton  <nickc@redhat.com>
+
+	* po/ru.po: Updated Russian translation.
+
+2018-07-05  Alan Modra  <amodra@gmail.com>
+
+	* elf-bfd.h (_bfd_elf_ppc_merge_fp_attributes): Update prototype.
+	* elf32-ppc.c (_bfd_elf_ppc_merge_fp_attributes): Return error
+	on mismatch.  Remove "warning: " from messages.  Track last bfd
+	used to set tags.
+	(ppc_elf_merge_obj_attributes): Likewise.  Handle status from
+	_bfd_elf_ppc_merge_fp_attributes.
+	* elf64-ppc.c (ppc64_elf_merge_private_bfd_data): Handle status
+	from _bfd_elf_ppc_merge_fp_attributes.
+
 2018-07-04  H.J. Lu  <hongjiu.lu@intel.com>
 
 	* Makefile.am (bfdinclude_HEADERS): Add $(INCDIR)/diagnostics.h.
