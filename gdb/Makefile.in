@@ -420,6 +420,7 @@ SUBDIR_PYTHON_CFLAGS =
 
 SUBDIR_UNITTESTS_SRCS = \
 	unittests/array-view-selftests.c \
+	unittests/cli-utils-selftests.c \
 	unittests/common-utils-selftests.c \
 	unittests/environ-selftests.c \
 	unittests/format_pieces-selftests.c \
@@ -430,6 +431,7 @@ SUBDIR_UNITTESTS_SRCS = \
 	unittests/offset-type-selftests.c \
 	unittests/observable-selftests.c \
 	unittests/optional-selftests.c \
+	unittests/parse-connection-spec-selftests.c \
 	unittests/ptid-selftests.c \
 	unittests/rsp-low-selftests.c \
 	unittests/scoped_fd-selftests.c \
@@ -596,22 +598,14 @@ INTERNAL_LDFLAGS = \
 # XM_CLIBS, defined in *config files, have host-dependent libs.
 # LIBIBERTY appears twice on purpose.
 CLIBS = $(SIM) $(READLINE) $(OPCODES) $(BFD) $(ZLIB) $(INTL) $(LIBIBERTY) $(LIBDECNUMBER) \
-	$(XM_CLIBS) $(NAT_CLIBS) $(GDBTKLIBS) \
+	$(XM_CLIBS) $(GDBTKLIBS) \
 	@LIBS@ @GUILE_LIBS@ @PYTHON_LIBS@ \
 	$(LIBEXPAT) $(LIBLZMA) $(LIBBABELTRACE) $(LIBIPT) \
 	$(LIBIBERTY) $(WIN32LIBS) $(LIBGNU) $(LIBICONV) $(LIBMPFR)
-CDEPS = $(XM_CDEPS) $(NAT_CDEPS) $(SIM) $(BFD) $(READLINE_DEPS) \
+CDEPS = $(NAT_CDEPS) $(SIM) $(BFD) $(READLINE_DEPS) \
 	$(OPCODES) $(INTL_DEPS) $(LIBIBERTY) $(CONFIG_DEPS) $(LIBGNU)
 
-ADD_FILES = $(XM_ADD_FILES) $(TM_ADD_FILES) $(NAT_ADD_FILES)
-ADD_DEPS = $(XM_ADD_FILES) $(TM_ADD_FILES) $(NAT_ADD_FILES)
-
 DIST = gdb
-
-LINT = /usr/5bin/lint
-LINTFLAGS = $(GDB_CFLAGS) $(OPCODES_CFLAGS) $(READLINE_CFLAGS) \
-	$(BFD_CFLAGS) $(INCLUDE_CFLAGS) \
-	$(INTL_CFLAGS)
 
 RUNTEST = runtest
 RUNTESTFLAGS =
@@ -967,6 +961,7 @@ COMMON_SFILES = \
 	common/job-control.c \
 	common/gdb_tilde_expand.c \
 	common/gdb_vecs.c \
+	common/netstuff.c \
 	common/new-op.c \
 	common/pathstuff.c \
 	common/print-utils.c \
@@ -1011,6 +1006,7 @@ COMMON_SFILES = \
 	event-loop.c \
 	event-top.c \
 	exceptions.c \
+	exec.c \
 	expprint.c \
 	extension.c \
 	f-lang.c \
@@ -1042,6 +1038,7 @@ COMMON_SFILES = \
 	infcall.c \
 	infcmd.c \
 	inferior.c \
+	inflow.c \
 	infrun.c \
 	inline-frame.c \
 	interps.c \
@@ -1151,7 +1148,6 @@ SFILES = \
 	f-exp.y \
 	gdb.c \
 	go-exp.y \
-	inflow.c \
 	m2-exp.y \
 	p-exp.y \
 	proc-service.list \
@@ -1167,8 +1163,6 @@ SFILES = \
 	$(SUBDIR_TARGET_SRCS) \
 	$(COMMON_SFILES) \
 	$(SUBDIR_GCC_COMPILE_SRCS)
-
-LINTFILES = $(SFILES) $(YYFILES) $(CONFIG_SRCS) init.c
 
 # Header files that need to have srcdir added.  Note that in the cases
 # where we use a macro like $(gdbcmd_h), things are carefully arranged
@@ -1448,6 +1442,7 @@ HFILES_NO_SRCDIR = \
 	common/gdb_vecs.h \
 	common/gdb_wait.h \
 	common/common-inferior.h \
+	common/netstuff.h \
 	common/host-defs.h \
 	common/pathstuff.h \
 	common/print-utils.h \
@@ -1558,15 +1553,12 @@ TAGFILES_NO_SRCDIR = $(SFILES) $(HFILES_NO_SRCDIR) $(ALLDEPFILES) \
 TAGFILES_WITH_SRCDIR = $(HFILES_WITH_SRCDIR)
 
 COMMON_OBS = $(DEPFILES) $(CONFIG_OBS) $(YYOBJ) \
-	exec.o \
 	mi/mi-common.o \
 	version.o \
 	xml-builtin.o \
 	$(patsubst %.c,%.o,$(COMMON_SFILES)) \
 	$(SUBDIR_TARGET_OBS) \
 	$(SUBDIR_GCC_COMPILE_OBS)
-
-TSOBS = inflow.o
 
 SUBDIRS = doc @subdirs@ data-directory $(GNULIB_BUILDDIR)
 CLEANDIRS = $(SUBDIRS)
@@ -1850,12 +1842,9 @@ test-cp-name-parser$(EXEEXT): test-cp-name-parser.o $(LIBIBERTY)
 # automatically adds the $(srcdir) prefixes when it encounters files
 # in sub-directories such as cli/ and mi/.
 
-# NOTE: cagney/2004-02-08: The ``case "$$fs" in'' eliminates
-# duplicates.  Files in the gdb/ directory can end up appearing in
-# COMMON_OBS (as a .o file) and CONFIG_SRCS (as a .c file).
-
-INIT_FILES = $(COMMON_OBS) $(TSOBS) $(CONFIG_SRCS) $(SUBDIR_GCC_COMPILE_SRCS)
-init.c: $(INIT_FILES)
+INIT_FILES = $(COMMON_OBS)
+init.c: stamp-init; @true
+stamp-init: $(INIT_FILES)
 	@$(ECHO_INIT_C) echo "Making init.c"
 	@rm -f init.c-tmp init.l-tmp
 	@touch init.c-tmp
@@ -1867,27 +1856,13 @@ init.c: $(INIT_FILES)
 	sed \
 	    -e '/^gdbtypes.[co]$$/d' \
 	    -e '/^init.[co]$$/d' \
-	    -e '/xdr_ld.[co]$$/d' \
-	    -e '/xdr_ptrace.[co]$$/d' \
-	    -e '/xdr_rdb.[co]$$/d' \
-	    -e '/udr.[co]$$/d' \
-	    -e '/udip2soc.[co]$$/d' \
-	    -e '/udi2go32.[co]$$/d' \
 	    -e '/version.[co]$$/d' \
 	    -e '/^[a-z0-9A-Z_]*_[SU].[co]$$/d' \
-	    -e '/[a-z0-9A-Z_]*-exp.tab.[co]$$/d' \
 	    -e 's/-exp\.o$$/-exp.y/' \
-	    -e 's/\.[co]$$/.c/' \
-	    -e 's,signals\.c,common/signals\.c,' \
+	    -e 's/\.o$$/.c/' \
 	    -e 's|^\([^  /][^     ]*\)|$(srcdir)/\1|g' | \
 	while read f; do \
 	    sed -n -e 's/^_initialize_\([a-z_0-9A-Z]*\).*/\1/p' $$f 2>/dev/null; \
-	done | \
-	while read f; do \
-	    case " $$fs " in \
-	        *" $$f "* ) ;; \
-	        * ) echo $$f ; fs="$$fs $$f";; \
-            esac; \
 	done >> init.l-tmp
 	@echo '/* Do not modify this file.  */' >>init.c-tmp
 	@echo '/* It is created automatically by the Makefile.  */'>>init.c-tmp
@@ -1899,8 +1874,8 @@ init.c: $(INIT_FILES)
 	@echo '{' >>init.c-tmp
 	@sed -e 's/\(.*\)/  _initialize_\1 ();/' <init.l-tmp >>init.c-tmp
 	@echo '}' >>init.c-tmp
-	@rm init.l-tmp
-	@mv init.c-tmp init.c
+	@$(SHELL) $(srcdir)/../move-if-change init.c-tmp init.c
+	@echo stamp > stamp-init
 
 .PRECIOUS: init.c
 
@@ -1908,14 +1883,14 @@ init.c: $(INIT_FILES)
 # against that.
 #
 # init.o is very important.  It pulls in the rest of GDB.
-LIBGDB_OBS = $(COMMON_OBS) $(TSOBS) $(ADD_FILES) init.o
+LIBGDB_OBS = $(COMMON_OBS) init.o
 libgdb.a: $(LIBGDB_OBS)
 	-rm -f libgdb.a
 	$(AR) q libgdb.a $(LIBGDB_OBS)
 	$(RANLIB) libgdb.a
 
 # Removing the old gdb first works better if it is running, at least on SunOS.
-gdb$(EXEEXT): gdb.o $(LIBGDB_OBS) $(ADD_DEPS) $(CDEPS) $(TDEPLIBS)
+gdb$(EXEEXT): gdb.o $(LIBGDB_OBS) $(CDEPS) $(TDEPLIBS)
 	$(SILENCE) rm -f gdb$(EXEEXT)
 	$(ECHO_CXXLD) $(CC_LD) $(INTERNAL_LDFLAGS) $(WIN32LDAPP) \
 		-o gdb$(EXEEXT) gdb.o $(LIBGDB_OBS) \
@@ -1966,8 +1941,8 @@ tags: TAGS
 
 clean mostlyclean: $(CONFIG_CLEAN)
 	@$(MAKE) $(FLAGS_TO_PASS) DO=clean "DODIRS=$(CLEANDIRS)" subdir_do
-	rm -f *.o *.a $(ADD_FILES) *~ init.c-tmp init.l-tmp version.c-tmp
-	rm -f init.c version.c
+	rm -f *.o *.a *~ init.c-tmp init.l-tmp version.c-tmp
+	rm -f init.c stamp-init version.c stamp-version
 	rm -f gdb$(EXEEXT) core make.log
 	rm -f gdb[0-9]$(EXEEXT)
 	rm -f test-cp-name-parser$(EXEEXT)
@@ -2157,13 +2132,15 @@ $(srcdir)/copying.c: @MAINTAINER_MODE_TRUE@ $(srcdir)/../COPYING3 $(srcdir)/copy
 		< $(srcdir)/../COPYING3 > $(srcdir)/copying.tmp
 	mv $(srcdir)/copying.tmp $(srcdir)/copying.c
 
-version.c: Makefile version.in $(srcdir)/../bfd/version.h $(srcdir)/common/create-version.sh
+version.c: stamp-version; @true
+# Note that the obvious names for the temp file are taken by
+# create-version.sh.
+stamp-version: Makefile version.in $(srcdir)/../bfd/version.h $(srcdir)/common/create-version.sh
 	$(ECHO_GEN) $(SHELL) $(srcdir)/common/create-version.sh $(srcdir) \
-	    $(host_alias) $(target_alias) version.c
+	    $(host_alias) $(target_alias) version-t.t
+	@$(SHELL) $(srcdir)/../move-if-change version-t.t version.c
+	@echo stamp > stamp-version
 
-lint: $(LINTFILES)
-	$(LINT) $(INCLUDE_CFLAGS) $(LINTFLAGS) $(LINTFILES) \
-	   `echo $(DEPFILES) $(CONFIG_OBS) | sed 's/\.o /\.c /g'`
 
 gdb.cxref: $(SFILES)
 	cxref -I. $(SFILES) >gdb.cxref
@@ -2232,7 +2209,6 @@ ALLDEPFILES = \
 	bsd-uthread.c \
 	darwin-nat.c \
 	dicos-tdep.c \
-	exec.c \
 	fbsd-nat.c \
 	fbsd-tdep.c \
 	fork-child.c \
@@ -2502,9 +2478,9 @@ po/$(PACKAGE).pot: force
 # Makefile.in, but that was a pretty big annoyance.
 
 %.c: %.y
-	$(SHELL) $(YLWRAP) $< y.tab.c $@.tmp -- $(YACC) $(YFLAGS) \
-		|| (rm -f $@.tmp; false)
-	sed -e '/extern.*malloc/d' \
+	$(ECHO_YACC) $(SHELL) $(YLWRAP) $< y.tab.c $@.tmp -- \
+		$(YACC) $(YFLAGS) || (rm -f $@.tmp; false)
+	@sed -e '/extern.*malloc/d' \
 	     -e '/extern.*realloc/d' \
 	     -e '/extern.*free/d' \
 	     -e '/include.*malloc.h/d' \
@@ -2518,8 +2494,7 @@ po/$(PACKAGE).pot: force
 	  rm -f $@.tmp && \
 	  mv $@.new $@
 %.c: %.l
-	if [ "$(FLEX)" ] && $(FLEX) --version >/dev/null 2>&1; then \
-	    $(FLEX) -t $<  \
+	$(ECHO_LEX) $(FLEX) -t $<  \
 	    | sed -e '/extern.*malloc/d' \
 	        -e '/extern.*realloc/d' \
 	        -e '/extern.*free/d' \
@@ -2530,13 +2505,7 @@ po/$(PACKAGE).pot: force
 	        -e 's/\([ \t;,(]\)free$$/\1xfree/g' \
 		-e 's/yy_flex_xrealloc/yyxrealloc/g' \
 	      > $@.new && \
-	    mv $@.new $@; \
-	elif [ -f $@ ]; then \
-	    echo "Warning: $*.c older than $*.l and flex not available."; \
-	else \
-	    echo "$@ missing and flex not available."; \
-	    false; \
-	fi
+	    mv $@.new $@
 
 .PRECIOUS: ada-lex.c
 
@@ -2604,8 +2573,7 @@ clean-gdbtk:
 	rm -f insight$(EXEEXT)
 
 # Removing the old gdb first works better if it is running, at least on SunOS.
-insight$(EXEEXT): gdbtk-main.o libgdb.a $(ADD_DEPS) \
-		$(CDEPS) $(TDEPLIBS)
+insight$(EXEEXT): gdbtk-main.o libgdb.a $(CDEPS) $(TDEPLIBS)
 	rm -f insight$(EXEEXT)
 	$(ECHO_CXXLD) $(CC_LD) $(INTERNAL_LDFLAGS) $(WIN32LDAPP) \
 		-o insight$(EXEEXT) gdbtk-main.o libgdb.a \

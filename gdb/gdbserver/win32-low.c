@@ -805,15 +805,11 @@ win32_clear_inferiors (void)
   clear_inferiors ();
 }
 
-/* Kill all inferiors.  */
+/* Implementation of target_ops::kill.  */
+
 static int
-win32_kill (int pid)
+win32_kill (process_info *process)
 {
-  struct process_info *process;
-
-  if (current_process_handle == NULL)
-    return -1;
-
   TerminateProcess (current_process_handle, 0);
   for (;;)
     {
@@ -829,16 +825,15 @@ win32_kill (int pid)
 
   win32_clear_inferiors ();
 
-  process = find_process_pid (pid);
   remove_process (process);
   return 0;
 }
 
-/* Detach from inferior PID.  */
+/* Implementation of target_ops::detach.  */
+
 static int
-win32_detach (int pid)
+win32_detach (process_info *process)
 {
-  struct process_info *process;
   winapi_DebugActiveProcessStop DebugActiveProcessStop = NULL;
   winapi_DebugSetProcessKillOnExit DebugSetProcessKillOnExit = NULL;
 #ifdef _WIN32_WCE
@@ -865,7 +860,6 @@ win32_detach (int pid)
     return -1;
 
   DebugSetProcessKillOnExit (FALSE);
-  process = find_process_pid (pid);
   remove_process (process);
 
   win32_clear_inferiors ();
@@ -878,11 +872,12 @@ win32_mourn (struct process_info *process)
   remove_process (process);
 }
 
-/* Wait for inferiors to end.  */
+/* Implementation of target_ops::join.  */
+
 static void
-win32_join (int pid)
+win32_join (process_info *proc)
 {
-  HANDLE h = OpenProcess (PROCESS_ALL_ACCESS, FALSE, pid);
+  HANDLE h = OpenProcess (PROCESS_ALL_ACCESS, FALSE, proc->pid);
   if (h != NULL)
     {
       WaitForSingleObject (h, INFINITE);

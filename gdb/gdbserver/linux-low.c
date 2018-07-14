@@ -1385,14 +1385,9 @@ kill_one_lwp_callback (thread_info *thread, int pid)
 }
 
 static int
-linux_kill (int pid)
+linux_kill (process_info *process)
 {
-  struct process_info *process;
-  struct lwp_info *lwp;
-
-  process = find_process_pid (pid);
-  if (process == NULL)
-    return -1;
+  int pid = process->pid;
 
   /* If we're killing a running inferior, make sure it is stopped
      first, as PTRACE_KILL will not work otherwise.  */
@@ -1405,7 +1400,7 @@ linux_kill (int pid)
 
   /* See the comment in linux_kill_one_lwp.  We did not kill the first
      thread in the list, so do so now.  */
-  lwp = find_lwp_pid (ptid_t (pid));
+  lwp_info *lwp = find_lwp_pid (ptid_t (pid));
 
   if (lwp == NULL)
     {
@@ -1608,14 +1603,9 @@ linux_detach_lwp_callback (thread_info *thread)
 }
 
 static int
-linux_detach (int pid)
+linux_detach (process_info *process)
 {
-  struct process_info *process;
   struct lwp_info *main_lwp;
-
-  process = find_process_pid (pid);
-  if (process == NULL)
-    return -1;
 
   /* As there's a step over already in progress, let it finish first,
      otherwise nesting a stabilize_threads operation on top gets real
@@ -1638,9 +1628,9 @@ linux_detach (int pid)
   /* Detach from the clone lwps first.  If the thread group exits just
      while we're detaching, we must reap the clone lwps before we're
      able to reap the leader.  */
-  for_each_thread (pid, linux_detach_lwp_callback);
+  for_each_thread (process->pid, linux_detach_lwp_callback);
 
-  main_lwp = find_lwp_pid (ptid_t (pid));
+  main_lwp = find_lwp_pid (ptid_t (process->pid));
   linux_detach_one_lwp (main_lwp);
 
   the_target->mourn (process);
@@ -1680,12 +1670,12 @@ linux_mourn (struct process_info *process)
 }
 
 static void
-linux_join (int pid)
+linux_join (process_info *proc)
 {
   int status, ret;
 
   do {
-    ret = my_waitpid (pid, &status, 0);
+    ret = my_waitpid (proc->pid, &status, 0);
     if (WIFEXITED (status) || WIFSIGNALED (status))
       break;
   } while (ret != -1 || errno != ECHILD);

@@ -2088,7 +2088,7 @@ set_objfile_default_section_offset (struct objfile *objf,
 {
   /* Add OFFSET to all sections by default.  */
   std::vector<struct section_offsets> offsets (objf->num_sections,
-					       { offset });
+					       { { offset } });
 
   /* Create sorted lists of all sections in ADDRS as well as all
      sections in OBJF.  */
@@ -2111,7 +2111,7 @@ set_objfile_default_section_offset (struct objfile *objf,
 
   std::vector<const struct other_sections *>::iterator addrs_sorted_iter
     = addrs_sorted.begin ();
-  for (const struct other_sections *objf_sect : objf_addrs_sorted)
+  for (const other_sections *objf_sect : objf_addrs_sorted)
     {
       const char *objf_name = addr_section_name (objf_sect->name.c_str ());
       int cmp = -1;

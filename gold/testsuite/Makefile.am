@@ -1880,6 +1880,15 @@ ver_test_14.syms: ver_test_14
 ver_test_14: gcctestdir/ld ver_test_main.o ver_test_1.so ver_test_2.so ver_test_4.so ver_test_14.script
 	$(CXXLINK) -Bgcctestdir/ -Wl,--version-script,$(srcdir)/ver_test_14.script -Wl,-E -Wl,-R,. ver_test_main.o ver_test_1.so ver_test_2.so ver_test_4.so
 
+check_SCRIPTS += ver_test_pr23409.sh
+check_DATA += ver_test_pr23409.syms
+ver_test_pr23409.syms: ver_test_pr23409_1.so
+	$(TEST_READELF) --dyn-syms -W $< >$@
+ver_test_pr23409_1.so: gcctestdir/ld ver_test_1.o $(srcdir)/ver_test_pr23409_1.script ver_test_pr23409_2.so
+	gcctestdir/ld -shared -o $@ ver_test_1.o ver_test_pr23409_2.so --version-script $(srcdir)/ver_test_pr23409_1.script
+ver_test_pr23409_2.so: gcctestdir/ld ver_test_1.o $(srcdir)/ver_test_pr23409_2.script
+	gcctestdir/ld -shared -o $@ ver_test_1.o --version-script $(srcdir)/ver_test_pr23409_2.script
+
 check_SCRIPTS += weak_as_needed.sh
 check_DATA += weak_as_needed.stdout
 weak_as_needed.stdout: weak_as_needed_a.so
@@ -2247,7 +2256,7 @@ check_SCRIPTS += plugin_test_1.sh
 check_DATA += plugin_test_1.err
 MOSTLYCLEANFILES += plugin_test_1.err
 plugin_test_1: two_file_test_main.o two_file_test_1.o.syms two_file_test_1b.o.syms two_file_test_2.o.syms empty.o.syms gcctestdir/ld plugin_test.so
-	$(CXXLINK) -Bgcctestdir/ -Wl,--no-demangle,--plugin,"./plugin_test.so",--plugin-opt,"_Z4f13iv" two_file_test_main.o two_file_test_1.o.syms two_file_test_1b.o.syms two_file_test_2.o.syms empty.o.syms 2>plugin_test_1.err
+	$(CXXLINK) -Bgcctestdir/ -Wl,--no-demangle,--emit-relocs,--plugin,"./plugin_test.so",--plugin-opt,"_Z4f13iv" two_file_test_main.o two_file_test_1.o.syms two_file_test_1b.o.syms two_file_test_2.o.syms empty.o.syms 2>plugin_test_1.err
 plugin_test_1.err: plugin_test_1
 	@touch plugin_test_1.err
 

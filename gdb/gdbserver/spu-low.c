@@ -326,12 +326,10 @@ spu_attach (unsigned long  pid)
 
 /* Kill the inferior process.  */
 static int
-spu_kill (int pid)
+spu_kill (process_info *process)
 {
   int status, ret;
-  struct process_info *process = find_process_pid (pid);
-  if (process == NULL)
-    return -1;
+  int pid = process->pid;
 
   ptrace (PTRACE_KILL, pid, 0, 0);
 
@@ -348,13 +346,9 @@ spu_kill (int pid)
 
 /* Detach from inferior process.  */
 static int
-spu_detach (int pid)
+spu_detach (process_info *process)
 {
-  struct process_info *process = find_process_pid (pid);
-  if (process == NULL)
-    return -1;
-
-  ptrace (PTRACE_DETACH, pid, 0, 0);
+  ptrace (PTRACE_DETACH, process->pid, 0, 0);
 
   clear_inferiors ();
   remove_process (process);
@@ -368,12 +362,12 @@ spu_mourn (struct process_info *process)
 }
 
 static void
-spu_join (int pid)
+spu_join (process_info *proc)
 {
   int status, ret;
 
   do {
-    ret = waitpid (pid, &status, 0);
+    ret = waitpid (proc->pid, &status, 0);
     if (WIFEXITED (status) || WIFSIGNALED (status))
       break;
   } while (ret != -1 || errno != ECHILD);

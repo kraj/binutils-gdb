@@ -1,3 +1,24 @@
+2018-07-14  Nick Clifton  <nickc@redhat.com>
+
+	* README-how-to-make-a-release: Updated with corrections based on
+	the 2.31 release experience.
+
+2018-07-12  Francois H. Theron  <francois.theron@netronome.com>
+
+	* readelf.c (process_section_headers): Don't print section type
+	twice for --section-details.
+
+2018-07-10  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/lib/binutils-common.exp (supports_gnu_unique): Return
+	zero for xgate.
+
+2018-07-06  Nick Clifton  <nickc@redhat.com>
+
+	* readelf.c (same_section): New function.
+	(print_gnu_build_attribute_description): Do not complain about
+	gaps that cross a section boundary.
+
 2018-07-05  Nick Clifton  <nickc@redhat.com>
 
 	* po/bg.po: Updated Bulgarian translation.

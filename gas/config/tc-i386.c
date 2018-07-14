@@ -1832,10 +1832,6 @@ operand_type_xor (i386_operand_type x, i386_operand_type y)
 
 static const i386_operand_type acc32 = OPERAND_TYPE_ACC32;
 static const i386_operand_type acc64 = OPERAND_TYPE_ACC64;
-static const i386_operand_type inoutportreg
-  = OPERAND_TYPE_INOUTPORTREG;
-static const i386_operand_type reg16_inoutportreg
-  = OPERAND_TYPE_REG16_INOUTPORTREG;
 static const i386_operand_type disp16 = OPERAND_TYPE_DISP16;
 static const i386_operand_type disp32 = OPERAND_TYPE_DISP32;
 static const i386_operand_type disp32s = OPERAND_TYPE_DISP32S;
@@ -4112,10 +4108,16 @@ md_assemble (char *line)
     }
 
   /* Insert BND prefix.  */
-  if (add_bnd_prefix
-      && i.tm.opcode_modifier.bndprefixok
-      && !i.prefix[BND_PREFIX])
-    add_prefix (BND_PREFIX_OPCODE);
+  if (add_bnd_prefix && i.tm.opcode_modifier.bndprefixok)
+    {
+      if (!i.prefix[BND_PREFIX])
+	add_prefix (BND_PREFIX_OPCODE);
+      else if (i.prefix[BND_PREFIX] != BND_PREFIX_OPCODE)
+	{
+	  as_warn (_("replacing `rep'/`repe' prefix by `bnd'"));
+	  i.prefix[BND_PREFIX] = BND_PREFIX_OPCODE;
+	}
+    }
 
   /* Check string instruction segment overrides.  */
   if (i.tm.opcode_modifier.isstring && i.mem_operands != 0)
@@ -7670,22 +7672,16 @@ output_insn (void)
 	      if (i.tm.base_opcode & 0xff000000)
 		{
 		  prefix = (i.tm.base_opcode >> 24) & 0xff;
-		  goto check_prefix;
+		  add_prefix (prefix);
 		}
 	      break;
 	    case 2:
 	      if ((i.tm.base_opcode & 0xff0000) != 0)
 		{
 		  prefix = (i.tm.base_opcode >> 16) & 0xff;
-		  if (i.tm.cpu_flags.bitfield.cpupadlock)
-		    {
-check_prefix:
-		      if (prefix != REPE_PREFIX_OPCODE
-			  || (i.prefix[REP_PREFIX]
-			      != REPE_PREFIX_OPCODE))
-			add_prefix (prefix);
-		    }
-		  else
+		  if (!i.tm.cpu_flags.bitfield.cpupadlock
+		      || prefix != REPE_PREFIX_OPCODE
+		      || (i.prefix[REP_PREFIX] != REPE_PREFIX_OPCODE))
 		    add_prefix (prefix);
 		}
 	      break;
@@ -9637,14 +9633,13 @@ i386_att_operand (char *operand_string)
 
       /* Special case for (%dx) while doing input/output op.  */
       if (i.base_reg
-	  && operand_type_equal (&i.base_reg->reg_type,
-				 &reg16_inoutportreg)
+	  && i.base_reg->reg_type.bitfield.inoutportreg
 	  && i.index_reg == 0
 	  && i.log2_scale_factor == 0
 	  && i.seg[i.mem_operands] == 0
 	  && !operand_type_check (i.types[this_operand], disp))
 	{
-	  i.types[this_operand] = inoutportreg;
+	  i.types[this_operand] = i.base_reg->reg_type;
 	  return 1;
 	}
 

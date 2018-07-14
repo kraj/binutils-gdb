@@ -397,8 +397,10 @@ nto_attach (unsigned long pid)
 /* Send signal to process PID.  */
 
 static int
-nto_kill (int pid)
+nto_kill (process_info *proc)
 {
+  int pid = proc->pid;
+
   TRACE ("%s %d\n", __func__, pid);
   kill (pid, SIGKILL);
   do_detach ();
@@ -408,9 +410,9 @@ nto_kill (int pid)
 /* Detach from process PID.  */
 
 static int
-nto_detach (int pid)
+nto_detach (process_info *proc)
 {
-  TRACE ("%s %d\n", __func__, pid);
+  TRACE ("%s %d\n", __func__, proc->pid);
   do_detach ();
   return 0;
 }

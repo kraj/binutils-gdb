@@ -1,3 +1,24 @@
+2018-07-12  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* gdb.texinfo (Debugging Programs with Multiple Threads):
+	Document changes to 'thread apply'.  Document 'taas'.
+	Document 'tfaas'.
+	(Examining the Stack): Document 'frame apply'.  Document 'faas'.
+
+2018-07-11  Sergio Durigan Junior  <sergiodj@redhat.com>
+	    Jan Kratochvil  <jan.kratochvil@redhat.com>
+	    Paul Fertser  <fercerpav@gmail.com>
+	    Tsutomu Seki  <sekiriki@gmail.com>
+
+	* gdb.texinfo (Remote Connection Commands): Add explanation
+	about new IPv6 support.  Add new connection prefixes.
+
+2018-07-09  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.texinfo (Remote Configuration): Update descriptions for
+	set/show of hardware-watchpoint-limit, hardware-breakpoint-limit,
+	and hardware-watchpoint-length-limit variables.
+
 2018-07-02  Maciej W. Rozycki  <macro@mips.com>
 
 	PR tdep/8282

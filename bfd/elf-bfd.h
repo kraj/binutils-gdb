@@ -515,7 +515,6 @@ enum elf_target_id
   TIC6X_ELF_DATA,
   X86_64_ELF_DATA,
   XTENSA_ELF_DATA,
-  XGATE_ELF_DATA,
   TILEGX_ELF_DATA,
   TILEPRO_ELF_DATA,
   RISCV_ELF_DATA,
@@ -2601,6 +2600,8 @@ extern char *elfcore_write_aarch_tls
 extern char *elfcore_write_aarch_hw_break
   (bfd *, char *, int *, const void *, int);
 extern char *elfcore_write_aarch_hw_watch
+  (bfd *, char *, int *, const void *, int);
+extern char *elfcore_write_aarch_sve
   (bfd *, char *, int *, const void *, int);
 extern char *elfcore_write_lwpstatus
   (bfd *, char *, int *, long, int, const void *);

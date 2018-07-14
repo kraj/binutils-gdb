@@ -1,3 +1,224 @@
+2018-07-13  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* symfile.c (set_objfile_default_section_offset): Remove struct
+	keyword.
+
+2018-07-14  Stafford Horne  <shorne@gmail.com>
+
+	* (Responsible Maintainers): Add myself as or1k maintainer.
+
+2018-07-13  Tom Tromey  <tom@tromey.com>
+
+	* symfile.c (set_objfile_default_section_offset): Use extra braces
+	around initializer.
+
+2018-07-13  Andreas Arnez  <arnez@linux.vnet.ibm.com>
+
+	* s390-tdep.c (s390_displaced_step_fixup): Adjust PC for a
+	non-branching basr.
+
+2018-07-12  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* Makefile.in (SUBDIR_UNITTESTS_SRCS): Add
+	unittests/cli-utils-selftests.c
+	* unittests/cli-utils-selftests.c: New file.
+
+2018-07-12  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* NEWS: Mention new commands. Mention change to 'thread apply'.
+
+2018-07-12  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* thread.c (thr_try_catch_cmd): New function.
+	(thread_apply_all_command): Handle qcs flags.
+	(thread_apply_command): Handle qcs flags.
+	(taas_command): New function.
+	(tfaas_command): New function.
+	(_initialize_thread): Update to setup the new commands 'taas
+	and 'tfaas'. Change doc string for 'thread apply'.
+
+2018-07-12  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* stack.c: (trailing_outermost_frame): New function, mostly
+	extracted from backtrace_command_1.
+	(leading_innermost_frame): New function.
+	(backtrace_command_1): Update to call trailing_outermost_frame.
+	(frame_apply_command_count): New function.
+	(frame_apply_level_command): New function.
+	(frame_apply_all_command): New function.
+	(frame_apply_command): New function.
+	(faas_command): New function.
+	(frame_cmd_list): New variable.
+	(_initialize_stack): Update to setup the new commands 'frame apply'
+	and 'faas'.
+
+2018-07-12  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* cli-utils.c (number_or_range_parser::get_number): Only handle
+	numbers or convenience var as numbers.
+	(parse_flags): New function.
+	(parse_flags_qcs): New function.
+	(number_or_range_parser::finished): Ensure parsing end is detected
+	before end of string.
+	* cli-utils.h (parse_flags): New function.
+	(parse_flags_qcs): New function.
+	(number_or_range_parser): Remove m_finished bool.
+	(number_or_range_parser::skip_range): Set m_in_range to false.
+
+2018-07-12  Sergio Durigan Junior  <sergiodj@redhat.com>
+
+	* ser-tcp.c (try_connect): Declare 'ioarg' as 'u_long' if building
+	on Windows.
+
+2018-07-11  Sergio Durigan Junior  <sergiodj@redhat.com>
+	    Jan Kratochvil  <jan.kratochvil@redhat.com>
+	    Paul Fertser  <fercerpav@gmail.com>
+	    Tsutomu Seki  <sekiriki@gmail.com>
+	    Pedro Alves  <palves@redhat.com>
+
+	* Makefile.in (SUBDIR_UNITTESTS_SRCS): Add
+	'unittests/parse-connection-spec-selftests.c'.
+	(COMMON_SFILES): Add 'common/netstuff.c'.
+	(HFILES_NO_SRCDIR): Add 'common/netstuff.h'.
+	* NEWS (Changes since GDB 8.2): Mention IPv6 support.
+	* common/netstuff.c: New file.
+	* common/netstuff.h: New file.
+	* ser-tcp.c: Include 'netstuff.h' and 'wspiapi.h'.
+	(wait_for_connect): Update comment.  New parameter
+	'gdb::optional<int> sock' instead of 'struct serial *scb'.
+	Use 'sock' directly instead of 'scb->fd'.
+	(try_connect): New function, with code from 'net_open'.
+	(net_open): Rewrite main loop to deal with multiple
+	sockets/addresses.  Handle IPv6-style hostnames; implement
+	support for IPv6 connections.
+	* unittests/parse-connection-spec-selftests.c: New file.
+
+2018-07-11  Pedro Alves  <palves@redhat.com>
+
+	PR gdb/23377
+	* remote.c (remote_target::remote_detach_pid): Call
+	set_current_process.
+
+2018-07-11  Pedro Alves  <palves@redhat.com>
+
+	* h8300-tdep.c (h8300_gdbarch_init): Remove
+	set_gdbarch_ecoff_reg_to_regnum calls.
+
+2018-07-11  Sergio Durigan Junior  <sergiodj@redhat.com>
+
+	PR c++/23373
+	* c-typeprint.c (c_type_print_base_struct_union): Don't print
+	offsets/sizes for static members of a class/struct.
+
+2018-07-11  Alan Hayward  <alan.hayward@arm.com>
+
+	* target-descriptions.c (tdesc_register_bitsize): Rename.
+	* target-descriptions.h (tdesc_register_bitsize): Likewise.
+	* rs6000-tdep.c (rs6000_gdbarch_init): Use new name.
+	* aarch64-tdep.c (aarch64_get_tdesc_vq): Convert size.
+
+2018-07-10  Tom Tromey  <tom@tromey.com>
+
+	* breakpoint.c (moribund_locations): Now static and a
+	std::vector.
+	(breakpoint_init_inferior, moribund_breakpoint_here_p)
+	(build_bpstat_chain, update_global_location_list)
+	(breakpoint_retire_moribund): Update.
+	* breakpoint.h (bp_location_p): Remove typedef.  Don't declare
+	VEC.
+
+2018-07-10  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* riscv-tdep.c (riscv_is_fp_regno_p): New function.
+	(riscv_register_reggroup_p): Use new function, remove unneeded
+	parenthesis.
+	(riscv_push_dummy_call): Extend assert to compare against xlen or
+	flen based on register type.
+
+2018-07-10  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* riscv-tdep.c (riscv_print_arg_location): Use TYPE_SAFE_NAME.
+
+2018-07-09  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* remote.c (show_hardware_watchpoint_limit): New function.
+	(show_hardware_watchpoint_length_limit): New function.
+	(show_hardware_breakpoint_limit): New function.
+	(_initialize_remote): Use add_setshow_zuinteger_unlimited_cmd
+	where appropriate, update help text.
+
+2018-07-09  Tom Tromey  <tom@tromey.com>
+
+	* Makefile.in (CDEPS): Don't mention XM_CDEPS.
+	(CLIBS): Don't mention NAT_CLIBS.
+
+2018-07-09  Tom Tromey  <tom@tromey.com>
+
+	* Makefile.in (ADD_FILES, ADD_DEPS): Remove.
+	(LIBGDB_OBS, clean mostlyclean): Update.
+	(gdb$(EXEEXT), insight$(EXEEXT)): Update.
+
+2018-07-09  Tom Tromey  <tom@tromey.com>
+
+	* Makefile.in (%.c: %.y): Use ECHO_YACC.
+	(%.c: %.l): Use ECHO_LEX.  Just fail if flex not available.
+	* silent-rules.mk (ECHO_YACC, ECHO_LEX): New variables.
+
+2018-07-09  Tom Tromey  <tom@tromey.com>
+
+	* Makefile.in (ALLDEPFILES): Remove exec.c.
+	(COMMON_OBS): Remove exec.o.
+	(COMMON_SFILES): Add exec.c.
+
+2018-07-09  Tom Tromey  <tom@tromey.com>
+
+	* Makefile.in (LINT, LINTFLAGS, LINTFILES, lint): Remove.
+
+2018-07-09  Tom Tromey  <tom@tromey.com>
+
+	* Makefile.in (clean mostlyclean): Remove stamp-version.
+	(version.c): Depend on stamp-version.
+	(stamp-version): New rule, from version.c rule.
+
+2018-07-09  Tom Tromey  <tom@tromey.com>
+
+	* Makefile.in (init.c): Depend on stamp-init.
+	(stamp-init): New rule, from init.c rule.
+	(clean mostlyclean): Remove stamp-init.
+
+2018-07-09  Tom Tromey  <tom@tromey.com>
+
+	* Makefile.in (INIT_FILES): Remove CONFIG_SRCS,
+	SUBDIR_GCC_COMPILE_SRCS.
+
+2018-07-09  Tom Tromey  <tom@tromey.com>
+
+	* Makefile.in (init.c): Remove some unused sed rules.
+
+2018-07-09  Tom Tromey  <tom@tromey.com>
+
+	* Makefile.in (TSOBS): Remove.
+	(INIT_FILES): Update.
+	(LIBGDB_OBS): Update.
+	(COMMON_SFILES): Add inflow.c.
+	(SFILES): Remove inflow.c.
+
+2018-07-07  Jan Kratochvil  <jan.kratochvil@redhat.com>
+
+	* contrib/gdb-add-index.sh ($dwarf5): New, use it.
+
+2018-07-07  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* ia64-tdep.c (get_reg_name, get_fpreg_name, get_saveloc_name,
+	is_signal_frame_name, step_name, init_remote_name,
+	create_addr_space_name, destroy_addr_space_name,
+	search_unwind_table_name, find_dyn_list_name): Constify.
+
+2018-07-05  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* darwin-nat.c (darwin_pthread_kill): New function.
+	(darwin_resume_thread): Use darwin_pthread_kill.
+
 2018-07-05  Tom de Vries  <tdevries@suse.de>
 
 	* macroexp.c (macro_buffer) <operator=>: New member function.

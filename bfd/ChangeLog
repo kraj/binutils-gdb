@@ -1,3 +1,101 @@
+2018-07-11  Maciej W. Rozycki  <macro@mips.com>
+
+	* elfxx-mips.c (mips_tls_got_relocs): Use `bfd_link_dll' rather
+	than `!bfd_link_pic' in determining the dynamic symbol index.
+	Avoid the index of -1.
+	(mips_elf_initialize_tls_slots): Likewise.  Flatten code by
+	moving `dyn' to the beginning of the function block.
+
+2018-07-11  Maciej W. Rozycki  <macro@mips.com>
+	    Rich Felker  <bugdal@aerifal.cx>
+
+	PR ld/22570
+	* elfxx-mips.c (mips_tls_got_relocs): Use `bfd_link_dll' rather
+	than `bfd_link_pic' to determine whether dynamic relocations are
+	to be produced.
+	(mips_elf_initialize_tls_slots): Likewise.
+
+2018-07-10  Maciej W. Rozycki  <macro@mips.com>
+
+	* elflink.c (bfd_elf_final_link): Rename `remove' local variable
+	to `remove_section'.
+
+2018-07-10  Alan Modra  <amodra@gmail.com>
+
+	* elf32-xgate.h: Delete.
+	* elf32-xgate.c: Delete unnecessary forward declarations, add two
+	that are now needed.
+	(xgate_elf_bfd_link_hash_table_create)
+	(xgate_elf_bfd_link_hash_table_free)
+	(xgate_elf_set_mach_from_flags, struct xgate_scan_param)
+	(stub_hash_newfunc, elf32_xgate_add_symbol_hook)
+	(elf32_xgate_setup_section_lists, elf32_xgate_size_stubs)
+	(elf32_xgate_build_stubs, elf32_xgate_check_relocs)
+	(elf32_xgate_relocate_section, _bfd_xgate_elf_set_private_flags)
+	(elf32_xgate_post_process_headers): Delete.
+	(elf32_xgate_backend_symbol_processing): New function.
+	(xgate_elf_ignore_reloc, xgate_elf_special_reloc)
+	(_bfd_xgate_elf_print_private_bfd_data): Make static.
+	(ELF_TARGET_ID, elf_info_to_howto, elf_backend_check_relocs)
+	(elf_backend_relocate_section, elf_backend_object_p)
+	(elf_backend_final_write_processing, elf_backend_can_gc_sections)
+	(elf_backend_post_process_headers, elf_backend_add_symbol_hook)
+	(bfd_elf32_bfd_link_hash_table_create)
+	(bfd_elf32_bfd_set_private_flags)
+	(xgate_stub_hash_lookup): Don't define.
+	(elf_backend_symbol_processing): Define.
+	* elf-bfd.h (elf_target_id): Delete XGATE_ELF_DATA.
+
+2018-07-09  Maciej W. Rozycki  <macro@mips.com>
+
+	* elfxx-mips.c (_bfd_mips_elf_adjust_dynamic_symbol): Don't set
+	`->needs_lazy_stub' if the stubs output section is the absolute
+	section.
+
+2018-07-09  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/23388
+	* configure.ac: Use changequote for "i[3-7]86-*-linux-*".
+	* configure: Regenerated.
+
+2018-07-09  Alan Modra  <amodra@gmail.com>
+
+	* elf32-m68hc1x.c (elf32_m68hc11_post_process_headers): Call
+	_bfd_elf_post_process_headers.
+
+2018-07-06  Max Filippov  <jcmvbkbc@gmail.com>
+
+	* elf32-xtensa.c (elf_xtensa_allocate_dynrelocs): Don't allocate
+	space for dynamic relocation for undefined weak symbol.
+	(elf_xtensa_relocate_section): Don't emit R_XTENSA_RELATIVE
+	relocation for undefined weak symbols.
+	(shrink_dynamic_reloc_sections): Don't shrink dynamic relocation
+	section for relocations against undefined weak symbols.
+
+2018-07-06  Alan Hayward  <alan.hayward@arm.com>
+
+	* elf.c (elfcore_grok_aarch_sve): New function.
+	(elfcore_grok_note): Check for Aarch64 SVE.
+	(elfcore_write_aarch_sve): New function.
+	(elfcore_write_register_note): Check for Aarch64 SVE.
+	* elf-bfd.h(elfcore_grok_aarch_sve): New declaration.
+
+2018-07-06  Alan Modra  <amodra@gmail.com>
+
+	* elf32-arm.c (elf32_arm_nabi_write_core_note): Don't use
+	DIAGNOTIC_PUSH and DIAGNOSTIC_POP unconditionally.
+	* elf32-ppc.c (ppc_elf_write_core_note): Likewise.
+	* elf32-s390.c (elf_s390_write_core_note): Likewise.
+	* elf64-ppc.c (ppc64_elf_write_core_note): Likewise.
+	* elf64-s390.c (elf_s390_write_core_note): Likewise.
+	* elfxx-aarch64.c (_bfd_aarch64_elf_write_core_note): Likewise.
+
+2018-07-05  Jim Wilson  <jimw@sifive.com>
+
+	* config.bfd (riscv32*-*-*): Renamed from riscv32-*-*.
+	(riscv64*-*-*): Likewise.
+	(riscv-*-*): Add as an alias for riscv32*-*-*.
+
 2018-07-05  H.J. Lu  <hongjiu.lu@intel.com>
 
 	PR ld/23372

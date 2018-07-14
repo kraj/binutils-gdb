@@ -1,3 +1,68 @@
+2018-07-13  Sergio Durigan Junior  <sergiodj@redhat.com>
+
+	* lib/gdbserver-support.exp (gdbserver_start): Expect for the
+	message "No address associated with hostname" when gdbserver
+	cannot resolve the hostname.
+
+2018-07-12  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* gdb.threads/pthreads.exp: Test qcs FLAG arguments.
+	Add some test prefixes to make tests unique.
+
+2018-07-12  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* gdb.base/frameapply.c: New file.
+	* gdb.base/frameapply.exp: New file.
+
+2018-07-12  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* gdb.base/skip.exp: Update expected error message.
+
+2018-07-11  Sergio Durigan Junior  <sergiodj@redhat.com>
+	    Jan Kratochvil  <jan.kratochvil@redhat.com>
+	    Paul Fertser  <fercerpav@gmail.com>
+	    Tsutomu Seki  <sekiriki@gmail.com>
+
+	* README (Testsuite Parameters): Mention new 'GDB_TEST_SOCKETHOST'
+	parameter.
+	* boards/native-extended-gdbserver.exp: Do not set 'sockethost'
+	by default.
+	* boards/native-gdbserver.exp: Likewise.
+	* gdb.server/run-without-local-binary.exp: Improve regexp used
+	for detecting when a remote debugging connection succeeds.
+	* gdb.server/server-connect.exp: New file.
+	* lib/gdbserver-support.exp (gdbserver_default_get_comm_port):
+	Do not prefix the port number with ":".
+	(gdbserver_start): New global GDB_TEST_SOCKETHOST.  Implement
+	support for detecting and using it.  Add '$debughost_gdbserver'
+	to the list of arguments used to start gdbserver.  Handle case
+	when gdbserver cannot resolve a network name.
+
+2018-07-11  Sergio Durigan Junior  <sergiodj@redhat.com>
+
+	PR c++/23373
+	* gdb.base/ptype-offsets.cc (struct static_member): New
+	struct.
+	(main) <stmember>: New variable.
+	* gdb.base/ptype-offsets.exp: Add test for printing a struct
+	with a static member in it.
+
+2018-07-10  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.base/watchpoint-reuse-slot.exp: Test with hardware
+	watchpoints enabled and disabled.
+
+2018-07-09  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.base/examine-backward.exp: Still run tests around address
+	0x0, even if address 0x0 is not readable.  Update the pattern for
+	matching address 0x0 in expected output.
+
+2018-07-06  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.base/share-env-with-gdbserver.c (main): Add call to
+	malloc/free.
+
 2018-07-04  Tom de Vries  <tdevries@suse.de>
 
 	* gdb.dwarf2/dw2-error.exp: Update expected error message.

@@ -3251,11 +3251,13 @@ mips_tls_got_relocs (struct bfd_link_info *info, unsigned char tls_type,
   bfd_boolean need_relocs = FALSE;
   bfd_boolean dyn = elf_hash_table (info)->dynamic_sections_created;
 
-  if (h && WILL_CALL_FINISH_DYNAMIC_SYMBOL (dyn, bfd_link_pic (info), h)
-      && (!bfd_link_pic (info) || !SYMBOL_REFERENCES_LOCAL (info, h)))
+  if (h != NULL
+      && h->dynindx != -1
+      && WILL_CALL_FINISH_DYNAMIC_SYMBOL (dyn, bfd_link_pic (info), h)
+      && (bfd_link_dll (info) || !SYMBOL_REFERENCES_LOCAL (info, h)))
     indx = h->dynindx;
 
-  if ((bfd_link_pic (info) || indx != 0)
+  if ((bfd_link_dll (info) || indx != 0)
       && (h == NULL
 	  || ELF_ST_VISIBILITY (h->other) == STV_DEFAULT
 	  || h->root.type != bfd_link_hash_undefweak))
@@ -3273,7 +3275,7 @@ mips_tls_got_relocs (struct bfd_link_info *info, unsigned char tls_type,
       return 1;
 
     case GOT_TLS_LDM:
-      return bfd_link_pic (info) ? 1 : 0;
+      return bfd_link_dll (info) ? 1 : 0;
 
     default:
       return 0;
@@ -3340,6 +3342,7 @@ mips_elf_initialize_tls_slots (bfd *abfd, struct bfd_link_info *info,
 			       struct mips_elf_link_hash_entry *h,
 			       bfd_vma value)
 {
+  bfd_boolean dyn = elf_hash_table (info)->dynamic_sections_created;
   struct mips_elf_link_hash_table *htab;
   int indx;
   asection *sreloc, *sgot;
@@ -3353,21 +3356,16 @@ mips_elf_initialize_tls_slots (bfd *abfd, struct bfd_link_info *info,
   sgot = htab->root.sgot;
 
   indx = 0;
-  if (h != NULL)
-    {
-      bfd_boolean dyn = elf_hash_table (info)->dynamic_sections_created;
-
-      if (WILL_CALL_FINISH_DYNAMIC_SYMBOL (dyn, bfd_link_pic (info),
-					   &h->root)
-	  && (!bfd_link_pic (info)
-	      || !SYMBOL_REFERENCES_LOCAL (info, &h->root)))
-	indx = h->root.dynindx;
-    }
+  if (h != NULL
+      && h->root.dynindx != -1
+      && WILL_CALL_FINISH_DYNAMIC_SYMBOL (dyn, bfd_link_pic (info), &h->root)
+      && (bfd_link_dll (info) || !SYMBOL_REFERENCES_LOCAL (info, &h->root)))
+    indx = h->root.dynindx;
 
   if (entry->tls_initialized)
     return;
 
-  if ((bfd_link_pic (info) || indx != 0)
+  if ((bfd_link_dll (info) || indx != 0)
       && (h == NULL
 	  || ELF_ST_VISIBILITY (h->root.other) == STV_DEFAULT
 	  || h->root.type != bfd_link_hash_undefweak))
@@ -3442,7 +3440,7 @@ mips_elf_initialize_tls_slots (bfd *abfd, struct bfd_link_info *info,
 			 sgot->contents + got_offset
 			 + MIPS_ELF_GOT_SIZE (abfd));
 
-      if (!bfd_link_pic (info))
+      if (!bfd_link_dll (info))
 	MIPS_ELF_PUT_WORD (abfd, 1,
 			   sgot->contents + got_offset);
       else
@@ -9043,7 +9041,8 @@ _bfd_mips_elf_adjust_dynamic_symbol (struct bfd_link_info *info,
 	 the symbol to the stub location.  This is required to make
 	 function pointers compare as equal between the normal
 	 executable and the shared library.  */
-      if (!h->def_regular)
+      if (!h->def_regular
+	  && !bfd_is_abs_section (htab->sstubs->output_section))
 	{
 	  hmips->needs_lazy_stub = TRUE;
 	  htab->lazy_stub_count++;

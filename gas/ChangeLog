@@ -1,3 +1,94 @@
+2018-07-13  Nick Clifton  <nickc@redhat.com>
+
+	* testsuite/gas/elf/missing-build-notes.s: New test.  Checks that
+	relocs are correctly generated for missing build notes.
+	* testsuite/gas/elf/missing-build-notes.d: New file.  Expected
+	output from objdump.
+	* testsuite/gas/elf/elf.exp: Run the new test.
+
+2018-07-13  Nick Clifton  <nickc@redhat.com>
+
+	* config/tc-arm.c (do_neon_mov): When converting an integer
+	immediate into a floating point value, check that the conversion
+	is valid.  Also warn if the immediate is valid as both a floating
+	point value and a bit pattern.
+	* testsuite/gas/arm/vfp-mov-enc.s: Add instructions that use
+	floating point bit patterns.
+	* testsuite/gas/arm/vfp-mov-enc.d: Add regexps for the disassembly
+	of the new insns.
+
+2018-07-12  Sudakshina Das  <sudi.das@arm.com>
+
+	* testsuite/gas/aarch64/system.s: Add test for ssbb
+	and pssbb.
+	* testsuite/gas/aarch64/system.d: Update accordingly
+	and remove explicit addresses.
+
+2018-07-11  Tamar Christina  <tamar.christina@arm.com>
+
+	PR binutils/23192
+	* testsuite/gas/aarch64/illegal-by-element.s: New.
+	* testsuite/gas/aarch64/illegal-by-element.d: New.
+	* testsuite/gas/aarch64/illegal-by-element.l: New.
+
+2018-07-11  Sudakshina Das  <sudi.das@arm.com>
+
+	* config/tc-arm.c (insns): Add new ssbb and pssbb instructions.
+	* testsuite/gas/arm/csdb.s: Add new tests for ssbb and pssbb.
+	* testsuite/gas/arm/csdb.d: Likewise
+	* testsuite/gas/arm/thumb2_it_bad.s: Likewise.
+	* testsuite/gas/arm/thumb2_it_bad.l: Likewise.
+	* testsuite/gas/arm/barrier.d: Update with ssbb.
+	* testsuite/gas/arm/barrier-thumb.d: Likewise.
+
+2018-07-11  Jan Beulich  <jbeulich@suse.com>
+
+	* config/tc-i386.c (inoutportreg, reg16_inoutportreg): Delete.
+	(i386_att_operand): Replace uses of reg16_inoutportreg and
+	inoutportreg.
+
+2018-07-11  Jan Beulich  <jbeulich@suse.com>
+
+	* config/tc-i386.c (output_insn): Remove check_prefix label and
+	fold remaining expression.
+
+2018-07-11  Jan Beulich  <jbeulich@suse.com>
+
+	* testsuite/gas/i386/cet.s, testsuite/gas/i386/x86-64-cet.s:
+	Add Intel cases with operand size specifiers.
+	* testsuite/gas/i386/cet-intel.d, testsuite/gas/i386/cet.d,
+	testsuite/gas/i386/x86-64-cet-intel.d,
+	testsuite/gas/i386/x86-64-cet.d: Adjust expectations.
+
+2018-07-11  Jan Beulich  <jbeulich@suse.com>
+
+	* config/tc-i386.c (md_assemble): Also replace an already
+	present REP prefix.
+	* testsuite/gas/i386/mpx-add-bnd-prefix.s,
+	testsuite/gas/i386/x86-64-mpx-add-bnd-prefix.s: Test RET with
+	all REP flavors.
+	* testsuite/gas/i386/mpx-add-bnd-prefix.d,
+	testsuite/gas/i386/x86-64-mpx-add-bnd-prefix.d: Adjust
+	expectations.
+	* testsuite/gas/i386/mpx-add-bnd-prefix.e,
+	testsuite/gas/i386/x86-64-mpx-add-bnd-prefix.e: New.
+
+2018-07-09  Jeff Law  <law@redhat.com>
+
+	* testsuite/nds32/ji-jr.d: Fix name tag.
+
+2018-07-06  Tamar Christina  <tamar.christina@arm.com>
+
+	PR binutils/23369
+	* testsuite/gas/aarch64/msr.d (csselr_el1,
+	vsesr_el2, osdtrrx_el1, osdtrtx_el1, pmsidr_el1): New.
+	* testsuite/gas/aarch64/msr.s: Likewise.
+
+2018-07-06  Nick Clifton  <nickc@redhat.com>
+
+	* write.c (maybe_generate_build_notes): Bias reloc offsets by the
+	number of notes already generated.
+
 2018-07-05  Nick Clifton  <nickc@redhat.com>
 
 	* po/ru.po: Updated Russian translation.

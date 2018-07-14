@@ -1195,34 +1195,37 @@ static void
 handle_detach (char *own_buf)
 {
   client_state &cs = get_client_state ();
-  require_running_or_return (own_buf);
 
-  int pid;
+  process_info *process;
 
   if (cs.multi_process)
     {
       /* skip 'D;' */
-      pid = strtol (&own_buf[2], NULL, 16);
+      int pid = strtol (&own_buf[2], NULL, 16);
+
+      process = find_process_pid (pid);
     }
   else
-    pid = current_ptid.pid ();
-
-  if ((tracing && disconnected_tracing) || any_persistent_commands ())
     {
-      struct process_info *process = find_process_pid (pid);
+      process = (current_thread != nullptr
+		 ? get_thread_process (current_thread)
+		 : nullptr);
+    }
 
-      if (process == NULL)
-	{
-	  write_enn (own_buf);
-	  return;
-	}
+  if (process == NULL)
+    {
+      write_enn (own_buf);
+      return;
+    }
 
+  if ((tracing && disconnected_tracing) || any_persistent_commands (process))
+    {
       if (tracing && disconnected_tracing)
 	fprintf (stderr,
 		 "Disconnected tracing in effect, "
 		 "leaving gdbserver attached to the process\n");
 
-      if (any_persistent_commands ())
+      if (any_persistent_commands (process))
 	fprintf (stderr,
 		 "Persistent commands are present, "
 		 "leaving gdbserver attached to the process\n");
@@ -1250,13 +1253,13 @@ handle_detach (char *own_buf)
       return;
     }
 
-  fprintf (stderr, "Detaching from process %d\n", pid);
+  fprintf (stderr, "Detaching from process %d\n", process->pid);
   stop_tracing ();
-  if (detach_inferior (pid) != 0)
+  if (detach_inferior (process) != 0)
     write_enn (own_buf);
   else
     {
-      discard_queued_stop_replies (ptid_t (pid));
+      discard_queued_stop_replies (ptid_t (process->pid));
       write_ok (own_buf);
 
       if (extended_protocol || target_running ())
@@ -1266,7 +1269,7 @@ handle_detach (char *own_buf)
 	     and instead treat this like a normal program exit.  */
 	  cs.last_status.kind = TARGET_WAITKIND_EXITED;
 	  cs.last_status.value.integer = 0;
-	  cs.last_ptid = ptid_t (pid);
+	  cs.last_ptid = ptid_t (process->pid);
 
 	  current_thread = NULL;
 	}
@@ -1278,7 +1281,7 @@ handle_detach (char *own_buf)
 	  /* If we are attached, then we can exit.  Otherwise, we
 	     need to hang around doing nothing, until the child is
 	     gone.  */
-	  join_inferior (pid);
+	  join_inferior (process);
 	  exit (0);
 	}
     }
@@ -3077,7 +3080,10 @@ handle_v_kill (char *own_buf)
     pid = strtol (p, NULL, 16);
   else
     pid = signal_pid;
-  if (pid != 0 && kill_inferior (pid) == 0)
+
+  process_info *proc = find_process_pid (pid);
+
+  if (proc != nullptr && kill_inferior (proc) == 0)
     {
       cs.last_status.kind = TARGET_WAITKIND_SIGNALLED;
       cs.last_status.value.sig = GDB_SIGNAL_KILL;
@@ -3478,10 +3484,8 @@ gdbserver_show_disableable (FILE *stream)
 static void
 kill_inferior_callback (process_info *process)
 {
-  int pid = process->pid;
-
-  kill_inferior (pid);
-  discard_queued_stop_replies (ptid_t (pid));
+  kill_inferior (process);
+  discard_queued_stop_replies (ptid_t (process->pid));
 }
 
 /* Call this when exiting gdbserver with possible inferiors that need
@@ -3523,9 +3527,9 @@ detach_or_kill_for_exit (void)
     int pid = process->pid;
 
     if (process->attached)
-      detach_inferior (pid);
+      detach_inferior (process);
     else
-      kill_inferior (pid);
+      kill_inferior (process);
 
     discard_queued_stop_replies (ptid_t (pid));
   });
