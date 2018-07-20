@@ -145,6 +145,14 @@ static unsigned int next_file_string_table_offset;
 
 static int symfile_relocatable = 0;
 
+/* When set, we are processing a .o file compiled by sun acc.  This is
+   misnamed; it refers to all stabs-in-elf implementations which use
+   N_UNDF the way Sun does, including Solaris gcc.  Hopefully all
+   stabs-in-elf implementations ever invented will choose to be
+   compatible.  */
+
+static unsigned char processing_acc_compilation;
+
 
 /* The lowest text address we have yet encountered.  This is needed
    because in an a.out file, there is no header field which tells us
@@ -537,7 +545,6 @@ dbx_symfile_read (struct objfile *objfile, symfile_add_flags symfile_flags)
   symbol_size = DBX_SYMBOL_SIZE (objfile);
   symbol_table_offset = DBX_SYMTAB_OFFSET (objfile);
 
-  free_pending_blocks ();
   scoped_free_pendings free_pending;
 
   minimal_symbol_reader reader (objfile);
@@ -560,7 +567,7 @@ static void
 dbx_new_init (struct objfile *ignore)
 {
   stabsread_new_init ();
-  buildsym_new_init ();
+  buildsym_init ();
   init_header_files ();
 }
 
@@ -2371,14 +2378,14 @@ read_ofile_symtab (struct objfile *objfile, struct partial_symtab *pst)
   /* In a Solaris elf file, this variable, which comes from the
      value of the N_SO symbol, will still be 0.  Luckily, text_offset,
      which comes from pst->textlow is correct.  */
-  if (last_source_start_addr == 0)
-    last_source_start_addr = text_offset;
+  if (get_last_source_start_addr () == 0)
+    set_last_source_start_addr (text_offset);
 
   /* In reordered executables last_source_start_addr may not be the
      lower bound for this symtab, instead use text_offset which comes
      from pst->textlow which is correct.  */
-  if (last_source_start_addr > text_offset)
-    last_source_start_addr = text_offset;
+  if (get_last_source_start_addr () > text_offset)
+    set_last_source_start_addr (text_offset);
 
   pst->compunit_symtab = end_symtab (text_offset + text_size,
 				     SECT_OFF_TEXT (objfile));
@@ -2486,7 +2493,7 @@ process_one_symbol (int type, int desc, CORE_ADDR valu, const char *name,
 	     the current block.  */
 	  struct block *block;
 
- 	  if (context_stack_depth <= 0)
+	  if (outermost_context_p ())
  	    {
 	      lbrac_mismatch_complaint (symnum);
  	      break;
@@ -2555,7 +2562,7 @@ process_one_symbol (int type, int desc, CORE_ADDR valu, const char *name,
 
       valu += function_start_offset;
 
-      if (context_stack_depth <= 0)
+      if (outermost_context_p ())
 	{
 	  lbrac_mismatch_complaint (symnum);
 	  break;
@@ -2876,7 +2883,7 @@ process_one_symbol (int type, int desc, CORE_ADDR valu, const char *name,
 		  break;
 		}
 
-	      if (context_stack_depth > 0)
+	      if (!outermost_context_p ())
 		{
 		  struct block *block;
 
@@ -3029,7 +3036,7 @@ coffstab_build_psymtabs (struct objfile *objfile,
     perror_with_name (name);
 
   stabsread_new_init ();
-  buildsym_new_init ();
+  buildsym_init ();
   free_header_files ();
   init_header_files ();
 
@@ -3117,7 +3124,7 @@ elfstab_build_psymtabs (struct objfile *objfile, asection *stabsect,
     perror_with_name (name);
 
   stabsread_new_init ();
-  buildsym_new_init ();
+  buildsym_init ();
   free_header_files ();
   init_header_files ();
 
@@ -3219,7 +3226,7 @@ stabsect_build_psymtabs (struct objfile *objfile, char *stab_name,
     perror_with_name (name);
 
   stabsread_new_init ();
-  buildsym_new_init ();
+  buildsym_init ();
   free_header_files ();
   init_header_files ();
 

@@ -1901,70 +1901,74 @@ operand_type_check (i386_operand_type t, enum operand_type c)
    operand J for instruction template T.  */
 
 static INLINE int
-match_reg_size (const insn_template *t, unsigned int j)
+match_reg_size (const insn_template *t, unsigned int wanted, unsigned int given)
 {
-  return !((i.types[j].bitfield.byte
-	    && !t->operand_types[j].bitfield.byte)
-	   || (i.types[j].bitfield.word
-	       && !t->operand_types[j].bitfield.word)
-	   || (i.types[j].bitfield.dword
-	       && !t->operand_types[j].bitfield.dword)
-	   || (i.types[j].bitfield.qword
-	       && !t->operand_types[j].bitfield.qword)
-	   || (i.types[j].bitfield.tbyte
-	       && !t->operand_types[j].bitfield.tbyte));
+  return !((i.types[given].bitfield.byte
+	    && !t->operand_types[wanted].bitfield.byte)
+	   || (i.types[given].bitfield.word
+	       && !t->operand_types[wanted].bitfield.word)
+	   || (i.types[given].bitfield.dword
+	       && !t->operand_types[wanted].bitfield.dword)
+	   || (i.types[given].bitfield.qword
+	       && !t->operand_types[wanted].bitfield.qword)
+	   || (i.types[given].bitfield.tbyte
+	       && !t->operand_types[wanted].bitfield.tbyte));
 }
 
 /* Return 1 if there is no conflict in SIMD register on
    operand J for instruction template T.  */
 
 static INLINE int
-match_simd_size (const insn_template *t, unsigned int j)
+match_simd_size (const insn_template *t, unsigned int wanted, unsigned int given)
 {
-  return !((i.types[j].bitfield.xmmword
-	    && !t->operand_types[j].bitfield.xmmword)
-	   || (i.types[j].bitfield.ymmword
-	       && !t->operand_types[j].bitfield.ymmword)
-	   || (i.types[j].bitfield.zmmword
-	       && !t->operand_types[j].bitfield.zmmword));
+  return !((i.types[given].bitfield.xmmword
+	    && !t->operand_types[wanted].bitfield.xmmword)
+	   || (i.types[given].bitfield.ymmword
+	       && !t->operand_types[wanted].bitfield.ymmword)
+	   || (i.types[given].bitfield.zmmword
+	       && !t->operand_types[wanted].bitfield.zmmword));
 }
 
 /* Return 1 if there is no conflict in any size on operand J for
    instruction template T.  */
 
 static INLINE int
-match_mem_size (const insn_template *t, unsigned int j)
+match_mem_size (const insn_template *t, unsigned int wanted, unsigned int given)
 {
-  return (match_reg_size (t, j)
-	  && !((i.types[j].bitfield.unspecified
+  return (match_reg_size (t, wanted, given)
+	  && !((i.types[given].bitfield.unspecified
 		&& !i.broadcast
-		&& !t->operand_types[j].bitfield.unspecified)
-	       || (i.types[j].bitfield.fword
-		   && !t->operand_types[j].bitfield.fword)
+		&& !t->operand_types[wanted].bitfield.unspecified)
+	       || (i.types[given].bitfield.fword
+		   && !t->operand_types[wanted].bitfield.fword)
 	       /* For scalar opcode templates to allow register and memory
 		  operands at the same time, some special casing is needed
 		  here.  Also for v{,p}broadcast*, {,v}pmov{s,z}*, and
 		  down-conversion vpmov*.  */
-	       || ((t->operand_types[j].bitfield.regsimd
+	       || ((t->operand_types[wanted].bitfield.regsimd
 		    && !t->opcode_modifier.broadcast
-		    && (t->operand_types[j].bitfield.byte
-			|| t->operand_types[j].bitfield.word
-			|| t->operand_types[j].bitfield.dword
-			|| t->operand_types[j].bitfield.qword))
-		   ? (i.types[j].bitfield.xmmword
-		      || i.types[j].bitfield.ymmword
-		      || i.types[j].bitfield.zmmword)
-		   : !match_simd_size(t, j))));
+		    && (t->operand_types[wanted].bitfield.byte
+			|| t->operand_types[wanted].bitfield.word
+			|| t->operand_types[wanted].bitfield.dword
+			|| t->operand_types[wanted].bitfield.qword))
+		   ? (i.types[given].bitfield.xmmword
+		      || i.types[given].bitfield.ymmword
+		      || i.types[given].bitfield.zmmword)
+		   : !match_simd_size(t, wanted, given))));
 }
 
-/* Return 1 if there is no size conflict on any operands for
-   instruction template T.  */
+/* Return value has MATCH_STRAIGHT set if there is no size conflict on any
+   operands for instruction template T, and it has MATCH_REVERSE set if there
+   is no size conflict on any operands for the template with operands reversed
+   (and the template allows for reversing in the first place).  */
 
-static INLINE int
+#define MATCH_STRAIGHT 1
+#define MATCH_REVERSE  2
+
+static INLINE unsigned int
 operand_size_match (const insn_template *t)
 {
-  unsigned int j;
-  int match = 1;
+  unsigned int j, match = MATCH_STRAIGHT;
 
   /* Don't check jump instructions.  */
   if (t->opcode_modifier.jump
@@ -1981,59 +1985,57 @@ operand_size_match (const insn_template *t)
 	continue;
 
       if (t->operand_types[j].bitfield.reg
-	  && !match_reg_size (t, j))
+	  && !match_reg_size (t, j, j))
 	{
 	  match = 0;
 	  break;
 	}
 
       if (t->operand_types[j].bitfield.regsimd
-	  && !match_simd_size (t, j))
+	  && !match_simd_size (t, j, j))
 	{
 	  match = 0;
 	  break;
 	}
 
       if (t->operand_types[j].bitfield.acc
-	  && (!match_reg_size (t, j) || !match_simd_size (t, j)))
+	  && (!match_reg_size (t, j, j) || !match_simd_size (t, j, j)))
 	{
 	  match = 0;
 	  break;
 	}
 
-      if (i.types[j].bitfield.mem && !match_mem_size (t, j))
+      if (i.types[j].bitfield.mem && !match_mem_size (t, j, j))
 	{
 	  match = 0;
 	  break;
 	}
     }
 
-  if (match)
-    return match;
-  else if (!t->opcode_modifier.d)
+  if (!t->opcode_modifier.d)
     {
 mismatch:
-      i.error = operand_size_mismatch;
-      return 0;
+      if (!match)
+	i.error = operand_size_mismatch;
+      return match;
     }
 
   /* Check reverse.  */
   gas_assert (i.operands == 2);
 
-  match = 1;
   for (j = 0; j < 2; j++)
     {
       if ((t->operand_types[j].bitfield.reg
 	   || t->operand_types[j].bitfield.acc)
-	  && !match_reg_size (t, j ? 0 : 1))
+	  && !match_reg_size (t, j, !j))
 	goto mismatch;
 
-      if (i.types[j].bitfield.mem
-	  && !match_mem_size (t, j ? 0 : 1))
+      if (i.types[!j].bitfield.mem
+	  && !match_mem_size (t, j, !j))
 	goto mismatch;
     }
 
-  return match;
+  return match | MATCH_REVERSE;
 }
 
 static INLINE int
@@ -3464,7 +3466,7 @@ build_vex_prefix (const insn_template *t)
 static INLINE bfd_boolean
 is_evex_encoding (const insn_template *t)
 {
-  return t->opcode_modifier.evex
+  return t->opcode_modifier.evex || t->opcode_modifier.disp8memshift
 	 || t->opcode_modifier.broadcast || t->opcode_modifier.masking
 	 || t->opcode_modifier.staticrounding || t->opcode_modifier.sae;
 }
@@ -3620,7 +3622,24 @@ build_evex_prefix (void)
 		  i.tm.opcode_modifier.evex = EVEX256;
 		else if (i.types[op].bitfield.xmmword)
 		  i.tm.opcode_modifier.evex = EVEX128;
-		else
+		else if (i.broadcast && (int) op == i.broadcast->operand)
+		  {
+		    switch ((i.tm.operand_types[op].bitfield.dword ? 4 : 8)
+			    * i.broadcast->type)
+		      {
+			case 64:
+			  i.tm.opcode_modifier.evex = EVEX512;
+			  break;
+			case 32:
+			  i.tm.opcode_modifier.evex = EVEX256;
+			  break;
+			case 16:
+			  i.tm.opcode_modifier.evex = EVEX128;
+			  break;
+			default:
+			  continue;
+		      }
+		  }
 		  continue;
 		break;
 	      }
@@ -3887,6 +3906,8 @@ optimize_encoding (void)
 		   && is_evex_encoding (&i.tm)
 		   && (i.vec_encoding != vex_encoding_evex
 		       || i.tm.cpu_flags.bitfield.cpuavx512vl
+		       || (i.tm.operand_types[2].bitfield.zmmword
+			   && i.types[2].bitfield.ymmword)
 		       || cpu_arch_isa_flags.bitfield.cpuavx512vl)))
 	   && ((i.tm.base_opcode == 0x55
 		|| i.tm.base_opcode == 0x6655
@@ -5208,8 +5229,47 @@ check_VecOperands (const insn_template *t)
     {
       if (i.broadcast)
 	i.memshift = t->operand_types[op].bitfield.dword ? 2 : 3;
-      else
+      else if (t->opcode_modifier.disp8memshift != DISP8_SHIFT_VL)
 	i.memshift = t->opcode_modifier.disp8memshift;
+      else
+	{
+	  const i386_operand_type *type = NULL;
+
+	  i.memshift = 0;
+	  for (op = 0; op < i.operands; op++)
+	    if (operand_type_check (i.types[op], anymem))
+	      {
+		if (t->operand_types[op].bitfield.xmmword
+		    + t->operand_types[op].bitfield.ymmword
+		    + t->operand_types[op].bitfield.zmmword <= 1)
+		  type = &t->operand_types[op];
+		else if (!i.types[op].bitfield.unspecified)
+		  type = &i.types[op];
+	      }
+	    else if (i.types[op].bitfield.regsimd)
+	      {
+		if (i.types[op].bitfield.zmmword)
+		  i.memshift = 6;
+		else if (i.types[op].bitfield.ymmword && i.memshift < 5)
+		  i.memshift = 5;
+		else if (i.types[op].bitfield.xmmword && i.memshift < 4)
+		  i.memshift = 4;
+	      }
+
+	  if (type)
+	    {
+	      if (type->bitfield.zmmword)
+		i.memshift = 6;
+	      else if (type->bitfield.ymmword)
+		i.memshift = 5;
+	      else if (type->bitfield.xmmword)
+		i.memshift = 4;
+	    }
+
+	  /* For the check in fits_in_disp8().  */
+	  if (i.memshift == 0)
+	    i.memshift = -1;
+	}
 
       for (op = 0; op < i.operands; op++)
 	if (operand_type_check (i.types[op], disp)
@@ -5286,7 +5346,7 @@ match_template (char mnem_suffix)
   i386_operand_type operand_types [MAX_OPERANDS];
   int addr_prefix_disp;
   unsigned int j;
-  unsigned int found_cpu_match;
+  unsigned int found_cpu_match, size_match;
   unsigned int check_register;
   enum i386_error specific_error = 0;
 
@@ -5375,7 +5435,8 @@ match_template (char mnem_suffix)
 	  || (t->opcode_modifier.no_ldsuf && mnemsuf_check.no_ldsuf))
 	continue;
 
-      if (!operand_size_match (t))
+      size_match = operand_size_match (t);
+      if (!size_match)
 	continue;
 
       for (j = 0; j < MAX_OPERANDS; j++)
@@ -5386,6 +5447,7 @@ match_template (char mnem_suffix)
 	  && flag_code != CODE_64BIT
 	  && (intel_syntax
 	      ? (!t->opcode_modifier.ignoresize
+	         && !t->opcode_modifier.broadcast
 		 && !intel_float_operand (t->name))
 	      : intel_float_operand (t->name) != 2)
 	  && ((!operand_types[0].bitfield.regmmx
@@ -5502,6 +5564,8 @@ match_template (char mnem_suffix)
 	      && i.types[0].bitfield.acc
 	      && operand_type_check (i.types[1], anymem))
 	    continue;
+	  if (!(size_match & MATCH_STRAIGHT))
+	    goto check_reverse;
 	  /* If we want store form, we reverse direction of operands.  */
 	  if (i.dir_encoding == dir_encoding_store
 	      && t->opcode_modifier.d)
@@ -5531,6 +5595,8 @@ match_template (char mnem_suffix)
 		continue;
 
 check_reverse:
+	      if (!(size_match & MATCH_REVERSE))
+		continue;
 	      /* Try reversing direction of operands.  */
 	      overlap0 = operand_type_and (i.types[0], operand_types[1]);
 	      overlap1 = operand_type_and (i.types[1], operand_types[0]);

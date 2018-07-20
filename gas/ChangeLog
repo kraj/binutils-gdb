@@ -1,3 +1,96 @@
+2018-07-20  Chenghua Xu  <paul.hua.gm@gmail.com>
+	    Maciej W. Rozycki  <macro@mips.com>
+
+	* NEWS: Mention MultiMedia extensions Instructions (MMI)
+	support.
+	* config/tc-mips.c (options): Add OPTION_LOONGSON_MMI and
+	OPTION_NO_LOONGSON_MMI.
+	(md_longopts): Likewise.
+	(mips_ases): Define availability for MMI.
+	(mips_convert_ase_flags): Map ASE_LOONGSON_MMI to
+	AFL_ASE_LOONGSON_MMI.
+	(mips_cpu_info_table): Add ASE_LOONGSON_MMI for loongson2f/3a.
+	(md_show_usage): Add help for -mloongson-mmi and
+	-mno-loongson-mmi.
+	* doc/as.texi: Document -mloongson-mmi, -mno-loongson-mmi.
+	* doc/c-mips.texi: Document -mloongson-mmi, -mno-loongson-mmi,
+	.set loongson-mmi and .set noloongson-mmi.
+	* testsuite/gas/mips/loongson-2f.d: Move mmi test to ...
+	* testsuite/gas/mips/loongson-2f-mmi.d: Here.  Add ISA/ASE
+	flag verification.
+	* testsuite/gas/mips/loongson-2f.s: Move mmi test to ...
+	* testsuite/gas/mips/loongson-2f-mmi.s: Here.
+	* testsuite/gas/mips/loongson-3a.d: Move mmi test to ...
+	* testsuite/gas/mips/loongson-3a-mmi.d: Here.  Add ISA/ASE
+	flag verification.
+	* testsuite/gas/mips/loongson-3a.s: Move mmi test to ...
+	* testsuite/gas/mips/loongson-3a-mmi.s: Here.
+	* testsuite/gas/mips/mips.exp: Run loongson-2f-mmi and
+	loongson-3a-mmi tests.
+
+2018-07-20  Jose E. Marchesi  <jose.marchesi@oracle.com>
+	    Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* testsuite/gas/sparc/sparc.exp (set_tests_arch): New proc.
+	Prefix v9c, v9d, v9v, v9m, v9m8 tests with corresponding
+	set_tests_arch.
+
+2018-07-19  Jan Beulich  <jbeulich@suse.com>
+
+	* config/tc-i386.c (build_evex_prefix): Derive vector length
+	from broadcast specification if necessary.
+	(match_template): Also exclude broadcast when checking whether
+	to reject 32-bit operands on pre-386.
+
+2018-07-19  Jan Beulich  <jbeulich@suse.com>
+
+	* testsuite/gas/i386/noavx512-2.l: Adjust expectations.
+
+2018-07-19  Jan Beulich  <jbeulich@suse.com>
+
+	* config/tc-i386.c (is_evex_encoding): Also check disp8memshift.
+	(optimize_encoding): Also cover templates without cpuavx512vl
+	allowing for zmmword and having a ymmword actual.
+	(check_VecOperands): Handle DISP8_SHIFT_VL.
+	* testsuite/gas/i386/noavx512-2.l: Adjust expectations.
+
+2018-07-18  Maciej W. Rozycki  <macro@mips.com>
+
+	* testsuite/gas/mips/loongson-2e.d: Correct whitespace issues.
+	* testsuite/gas/mips/loongson-2f.d: Likewise.
+	* testsuite/gas/mips/loongson-2f-2.d: Likewise.
+	* testsuite/gas/mips/loongson-2f-3.d: Likewise.
+	* testsuite/gas/mips/loongson-3a.d: Likewise.
+	* testsuite/gas/mips/loongson-3a-2.d: Likewise.
+	* testsuite/gas/mips/loongson-2e.s: Likewise.
+	* testsuite/gas/mips/loongson-2f.s: Likewise.
+	* testsuite/gas/mips/loongson-2f-3.s: Likewise.
+	* testsuite/gas/mips/loongson-3a.s: Likewise.
+	* testsuite/gas/mips/loongson-3a-2.s: Likewise.
+
+2018-07-18  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR gas/23418
+	* testsuite/gas/i386/xmmword.s: Add tests for vcvtps2qq,
+	vcvtps2uqq, vcvttps2qq and vcvttps2uqq.
+	* testsuite/gas/i386/xmmword.l: Updated.
+
+2018-07-16  Jan Beulich  <jbeulich@suse.com>
+
+	* config/tc-i386.c (match_reg_size): Split second parameter
+	into two.
+	(match_simd_size): Likewise.
+	(match_mem_size): Likewise.
+	(MATCH_STRAIGHT, MATCH_REVERSE): Define.
+	(operand_size_match): Change return type. New local variable
+	"match". Always check for reverse match when opcode_modifier.d
+	is set.
+	(match_template) New local variable "size_match". Skip further
+	matching if operand_size_match() did not report a respective
+	match.
+	* testsuite/gas/i386/inval.s: Add control register reads/writes.
+	* testsuite/gas/i386/inval.l: Adjust expectations.
+
 2018-07-13  Nick Clifton  <nickc@redhat.com>
 
 	* testsuite/gas/elf/missing-build-notes.s: New test.  Checks that

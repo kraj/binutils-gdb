@@ -15583,6 +15583,8 @@ print_mips_ases (unsigned int mask)
     fputs ("\n\tCRC ASE", stdout);
   if (mask & AFL_ASE_GINV)
     fputs ("\n\tGINV ASE", stdout);
+  if (mask & AFL_ASE_LOONGSON_MMI)
+    fputs ("\n\tLoongson MMI ASE", stdout);
   if (mask == 0)
     fprintf (stdout, "\n\t%s", _("None"));
   else if ((mask & ~AFL_ASE_MASK) != 0)
@@ -16679,7 +16681,7 @@ get_note_type (Filedata * filedata, unsigned e_type)
       case NT_PPC_TM_CVMX:
 	return _("NT_PPC_TM_CVMX (ppc checkpointed Altivec registers)");
       case NT_PPC_TM_CVSX:
-	return _("NT_PPC_TM_VSX (ppc checkpointed VSX registers)");
+	return _("NT_PPC_TM_CVSX (ppc checkpointed VSX registers)");
       case NT_PPC_TM_SPR:
 	return _("NT_PPC_TM_SPR (ppc TM special purpose registers)");
       case NT_PPC_TM_CTAR:

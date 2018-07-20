@@ -1,3 +1,361 @@
+2018-07-19  Pedro Alves  <palves@redhat.com>
+
+	* guile/guile-internal.h (gdbscm_scm_to_c_string): Now returns a
+	gdb::unique_xmalloc_ptr.
+	* guile/scm-breakpoint.c (gdbscm_set_breakpoint_condition_x):
+	Adjust to use dbscm_wrap and gdb::unique_xmalloc_ptr.
+	* guile/scm-exception.c (gdbscm_exception_message_to_string): Use
+	copy-initialization.
+	* guile/scm-pretty-print.c (ppscm_print_children): Use
+	gdb::unique_xmalloc_ptr instead of cleanups.
+	(gdbscm_apply_val_pretty_printer): Remove cleanups.
+	* guile/scm-string.c (gdbscm_scm_to_c_string): Now returns a
+	gdb::unique_xmalloc_ptr.
+	* guile/scm-type.c (gdbscm_type_field, gdbscm_type_has_field_p):
+	Adjust to use gdb::unique_xmalloc_ptr.
+	* guile/scm-utils.c (extract_arg): Adjust.
+	* guile/scm-value.c (gdbscm_value_field): Adjust to use
+	gdb::unique_xmalloc_ptr instead of a cleanup.
+
+2018-07-19  Tom Tromey  <tom@tromey.com>
+
+	* utils.c (do_value_free_to_mark)
+	(make_cleanup_value_free_to_mark): Remove.
+	* utils.h (make_cleanup_value_free_to_mark): Remove.
+
+2018-07-19  Pedro Alves  <palves@redhat.com>
+
+	* guile/guile-internal.h (gdbscm_wrap): Really make 'args' a
+	forwarding reference.
+
+2018-07-18  Pedro Alves  <palves@redhat.com>
+
+	* guile/guile.c (gdbscm_execute_gdb_command): Adjust to use
+	gdbscm_wrap.  Use gdb::unique_xmalloc_ptr<char> instead of a
+	cleanup.
+
+2018-07-18  Pedro Alves  <palves@redhat.com>
+
+	* guile/guile-internal.h: Add comment about mixing GDB and Scheme
+	exceptions.
+	(GDBSCM_HANDLE_GDB_EXCEPTION_WITH_CLEANUPS): Delete.
+	(gdbscm_wrap): New.
+	* guile/scm-frame.c (gdbscm_frame_read_register): Use xfree
+	directly instead of a cleanup.
+	* guile/scm-math.c (vlscm_unop_gdbthrow): New, factored out from ...
+	(vlscm_unop): ... this.  Reimplement using gdbscm_wrap.
+	(vlscm_binop_gdbthrow): New, factored out from ...
+	(vlscm_binop): ... this.  Reimplement using gdbscm_wrap.
+	(vlscm_rich_compare): Use gdbscm_wrap.
+	* guile/scm-symbol.c (gdbscm_lookup_symbol): Use xfree directly
+	instead of a cleanup.
+	(gdbscm_lookup_global_symbol): Use xfree directly instead of a
+	cleanup.
+	* guile/scm-type.c (gdbscm_type_field, gdbscm_type_has_field_p):
+	Use xfree directly instead of a cleanup.
+	* guile/scm-value.c (gdbscm_make_value, gdbscm_make_lazy_value):
+	Adjust to use gdbscm_wrap and scoped_value_mark.
+	(gdbscm_value_optimized_out_p): Adjust to use gdbscm_wrap.
+	(gdbscm_value_address, gdbscm_value_dereference)
+	(gdbscm_value_referenced_value): Adjust to use gdbscm_wrap and
+	scoped_value_mark.
+	(gdbscm_value_dynamic_type): Use scoped_value_mark.
+	(vlscm_do_cast, gdbscm_value_field): Adjust to use gdbscm_wrap and
+	scoped_value_mark.
+	(gdbscm_value_subscript, gdbscm_value_call): Adjust to use
+	gdbscm_wrap and scoped_value_mark.
+	(gdbscm_value_to_string): Use xfree directly instead of a
+	cleanup.  Move 'buffer' unique_ptr to TRY scope.
+	(gdbscm_value_to_lazy_string): Use xfree directly instead of a
+	cleanup.  Move 'buffer' unique_ptr to TRY scope.  Use
+	scoped_value_mark.
+	(gdbscm_value_fetch_lazy_x): Use gdbscm_wrap.
+	(gdbscm_parse_and_eval): Adjust to use gdbscm_wrap and
+	scoped_value_mark.
+	(gdbscm_history_ref, gdbscm_history_append_x): Adjust to use
+	gdbscm_wrap.
+
+2018-07-18  Tom de Vries  <tdevries@suse.de>
+
+	* findvar.c (default_read_var_value): Also resolve dynamic type for
+	LOC_OPTIMIZED_OUT vars.
+
+2018-07-18  Maciej W. Rozycki  <macro@mips.com>
+
+	* mips-tdep.c (micromips_next_pc): Add SYSCALL instruction
+	decoding.
+
+2018-07-17  Tom Tromey  <tom@tromey.com>
+
+	* guile/scm-param.c (pascm_set_func, pascm_show_func)
+	(compute_enum_list, pascm_set_param_value_x)
+	(gdbscm_parameter_value): Update.
+	* guile/guile-internal.h (gdbscm_scm_to_string): Update.
+	(gdbscm_scm_to_host_string): Update.
+	* guile/scm-math.c (vlscm_convert_typed_value_from_scheme):
+	Update.
+	* guile/scm-cmd.c (cmdscm_add_completion): Update.
+	* guile/scm-pretty-print.c (ppscm_print_string_repr): Update.
+	* guile/scm-string.c (gdbscm_scm_to_string): Return
+	unique_xmalloc_ptr.
+	(gdbscm_scm_to_host_string): Likewise.
+
+2018-07-17  Tom Tromey  <tom@tromey.com>
+
+	* guile/guile.c (gdbscm_eval_from_control_command): Update.
+	* guile/guile-internal.h (gdbscm_safe_eval_string): Update.
+	* guile/scm-objfile.c (gdbscm_execute_objfile_script): Update.
+	* guile/scm-safe-call.c (gdbscm_safe_eval_string): Return
+	unique_xmalloc_ptr.
+
+2018-07-17  Tom Tromey  <tom@tromey.com>
+
+	* guile/scm-param.c (pascm_signal_setshow_error): Update.
+	* guile/guile-internal.h (gdbscm_exception_message_to_string):
+	Update.
+	* guile/scm-cmd.c (cmdscm_function): Update.
+	* guile/scm-pretty-print.c
+	(ppscm_print_exception_unless_memory_error): Update.
+	* guile/scm-exception.c (gdbscm_exception_message_to_string):
+	Return unique_xmalloc_ptr.
+
+2018-07-17  Tom Tromey  <tom@tromey.com>
+
+	* guile/scm-pretty-print.c (ppscm_make_pp_type_error_exception):
+	Use string_printf.
+
+2018-07-17  Jim Wilson  <jimw@sifive.com>
+
+	* riscv-tdep.c (riscv_has_feature): Delete comment that refers to
+	set_gdbarch_decr_pc_after_break.  Call riscv_read_misa_reg always.
+	(riscv_gdbarch_init): Delete local has_compressed_isa.  Delete now
+	unecessary braces after EF_RISCV_RVC test.  Delete call to
+	set_gdbarch_decr_pc_after_break.
+
+	* riscv-tdep.h (DECLARE_CSR): Use RISCV_FIRST_CSR_REGNUM instead of
+	RISCV_LAST_FP_REGNUM + 1.
+	(RSICV_CSR_LEGACY_MISA_REGNUM): Add RISCV_FIRST_CSR_REGNUM.
+
+2018-07-17  Tom Tromey  <tom@tromey.com>
+
+	* configure.ac: Remove --disable-gdbcli.
+	* configure: Rebuild.
+	* Makefile.in (SUBDIR_CLI_DEPS, SUBDIR_CLI_LDFLAGS)
+	(SUBDIR_CLI_CFLAGS): Remove.
+	(SFILES): Use SUBDIR_CLI_SRCS.
+	(COMMON_OBS): Use SUBDIR_CLI_OBS.
+
+2018-07-17  Tom Tromey  <tom@tromey.com>
+
+	PR gdb/18624:
+	* coffread.c (coff_symtab_read): Use scoped_free_pendings.
+
+2018-07-16  Jim Wilson  <jimw@sifive.com>
+
+	* riscv-tdep.c (riscv_gdbarch_init): Call gdbarch_init_osabi.
+
+2018-07-16  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* ia64-libunwind-tdep.c (libunwind_frame_cache): Remove unused
+	variable.
+	(libunwind_frame_sniffer): Likewise.
+	(libunwind_frame_prev_register): Likewise.
+	(libunwind_sigtramp_frame_sniffer): Likewise.
+	* ia64-tdep.c (ia64_access_reg): Likewise.
+	(ia64_access_rse_reg): Likewise.
+	(ia64_libunwind_sigtramp_frame_this_id): Likewise.
+	* ia64-vms-tdep.c (ia64_vms_find_proc_info_x): Likewise.
+
+2018-07-16  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* ia64-vms-tdep.c (ia64_vms_find_proc_info_x): Add cast.
+
+2018-07-16  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* remote-sim.c (gdbsim_target::close,
+	gdbsim_target::mourn_inferior): Remove unused variables.
+
+2018-07-16  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* ia64-tdep.c (ktab_buf): New global.
+	(getunwind_table): Return a gdb::optional<gdb::byte_vector>.
+	(get_kernel_table): Adjust.
+
+2018-07-16  Tom Tromey  <tom@tromey.com>
+
+	* xcoffread.c (read_xcoff_symtab): Use outermost_context_p.
+	* dwarf2read.c (using_directives, new_symbol): Use
+	outermost_context_p.
+	* dbxread.c (process_one_symbol): Use outermost_context_p.
+	* coffread.c (coff_symtab_read): Use outermost_context_p.
+
+2018-07-16  Tom Tromey  <tom@tromey.com>
+
+	* dwarf2read.c (using_directives, read_func_scope)
+	(read_lexical_block_scope): Update.
+	* cp-namespace.c (cp_scan_for_anonymous_namespaces): Update.
+	* buildsym.h (local_using_directives, global_using_directives):
+	Don't declare.
+	(get_local_using_directives, set_local_using_directives)
+	(get_global_using_directives): Declare.
+	* buildsym.c (struct buildsym_compunit) <m_local_using_directives,
+	m_global_using_directives>: New members.
+	(finish_block_internal, prepare_for_building)
+	(reset_symtab_globals, end_symtab_get_static_block)
+	(push_context): Update.
+	(get_local_using_directives, set_local_using_directives)
+	(get_global_using_directives): New functions.
+	(buildsym_init): Update.
+
+2018-07-16  Tom Tromey  <tom@tromey.com>
+
+	* xcoffread.c (xcoff_initial_scan): Don't call
+	free_pending_blocks.
+	* dbxread.c (dbx_symfile_read): Don't call free_pending_blocks.
+	* buildsym.h (class scoped_free_pendings): Add constructor.
+	(free_pending_blocks): Don't declare.
+	* buildsym.c (scoped_free_pendings::scoped_free_pendings): New.
+	(free_pending_blocks): Now static.
+
+2018-07-16  Tom Tromey  <tom@tromey.com>
+
+	* buildsym.h (push_subfile, pop_subfile): Update declarations.
+	* buildsym.c (struct buildsym_compunit) <m_subfile_stack>: New
+	member.
+	(struct subfile_stack): Remove.
+	(subfile_stack): Remove.
+	(push_subfile, pop_subfile, buildsym_init): Update.
+
+2018-07-16  Tom Tromey  <tom@tromey.com>
+
+	* buildsym.c (push_subfile): Use gdb_assert.
+	(pop_subfile): Use gdb_assert.
+
+2018-07-16  Tom Tromey  <tom@tromey.com>
+
+	* buildsym.h (merge_symbol_lists): Remove.
+	* buildsym.c (merge_symbol_lists): Remove.
+
+2018-07-16  Tom Tromey  <tom@tromey.com>
+
+	* stabsread.c (scan_file_globals): Update comment.
+	* stabsread.h (scan_file_globals): Move from buildsym.h.
+	* buildsym.h (scan_file_globals): Move to stabsread.h.
+
+2018-07-16  Tom Tromey  <tom@tromey.com>
+
+	* xcoffread.c (xcoff_new_init): Update.
+	* mipsread.c (mipscoff_new_init): Update.
+	* mdebugread.c (mdebug_build_psymtabs): Update.
+	* elfread.c (elf_new_init): Update.
+	* dbxread.c (dbx_new_init, coffstab_build_psymtabs)
+	(elfstab_build_psymtabs, stabsect_build_psymtabs): Update.
+	* buildsym.h (buildsym_new_init): Don't declare.
+	* buildsym.c (buildsym_new_init): Remove.
+
+2018-07-16  Tom Tromey  <tom@tromey.com>
+
+	* stabsread.h (within_function): Move from buildsym.h.
+	* stabsread.c (start_stabs): Clear within_function.
+	* coffread.c (coff_start_symtab): Clear within_function.
+	* buildsym.h (within_function): Move to stabsread.h.
+	* buildsym.c (prepare_for_building): Update.
+
+2018-07-16  Tom Tromey  <tom@tromey.com>
+
+	* stabsread.h (processing_gcc_compilation): Move from buildsym.h.
+	* dwarf2read.c (dwarf2_start_symtab): Don't set
+	processing_gcc_compilation.
+	* buildsym.h (processing_gcc_compilation): Move to stabsread.h.
+
+2018-07-16  Tom Tromey  <tom@tromey.com>
+
+	* stabsread.h (HASHSIZE, hashname, symnum, next_symbol_text)
+	(next_symbol_text_func): Move from buildsym.h.
+	* stabsread.c (hashname): Move from buildsym.c.
+	* buildsym.h (HASHSIZE, symnum, next_symbol_text)
+	(next_symbol_text_func, hashname): Move to stabsread.h.
+	* buildsym.c: Don't include bcache.h
+	(hashname): Move to stasbread.c.
+
+2018-07-16  Tom Tromey  <tom@tromey.com>
+
+	* buildsym.h (context_stack_size): Don't declare.
+	* buildsym.c (context_stack_size): New global.
+
+2018-07-16  Tom Tromey  <tom@tromey.com>
+
+	* dbxread.c (processing_acc_compilation): New global.
+	* buildsym.h (processing_acc_compilation): Don't declare.
+
+2018-07-16  Tom Tromey  <tom@tromey.com>
+
+	* xcoffread.c (aix_process_linenos, complete_symtab): Update.
+	* dbxread.c (read_ofile_symtab): Update.
+	* coffread.c (coff_start_symtab, coff_end_symtab): Update.
+	* buildsym.h (last_source_start_addr): Remove.
+	(set_last_source_start_addr, get_last_source_start_addr):
+	Declare.
+	* buildsym.c (buildsym_compunit::buildsym_compunit): Add last_addr
+	parameter.
+	(struct buildsym_compunit) <m_last_source_start_addr>: New
+	member.
+	(prepare_for_building): Remove start_addr parameter.
+	(start_symtab, restart_symtab, end_symtab_get_static_block)
+	(end_symtab_with_blockvector): Update.
+	(set_last_source_start_addr, get_last_source_start_addr): New
+	functions.
+
+2018-07-16  Tom Tromey  <tom@tromey.com>
+
+	* buildsym.c (struct buildsym_compunit) <m_have_line_numbers>: New
+	member.
+	(have_line_numbers): Remove.
+	(record_line, prepare_for_building, end_symtab_get_static_block)
+	(augment_type_symtab): Update.
+
+2018-07-16  Tom Tromey  <tom@tromey.com>
+
+	* buildsym.c (~buildsym_compunit): Free the macro table.
+	(struct buildsym_compunit) <get_macro_table, release_macros>: New
+	methods.
+	<m_pending_macros>: New member.
+	(pending_macros): Remove.
+	(~scoped_free_pendings, get_macro_table, prepare_for_building)
+	(reset_symtab_globals, end_symtab_get_static_block)
+	(end_symtab_with_blockvector, augment_type_symtab)
+	(buildsym_init): Update.
+
+2018-07-16  Tom Tromey  <tom@tromey.com>
+
+	* buildsym.c (buildsym_compunit::buildsym_compunit): Add name
+	parameter.
+	(buildsym_compunit::set_last_source_file): New method.
+	<m_last_source_file>: New member.
+	(prepare_for_building): Remove "name" parameter.
+	(start_symtab, restart_symtab, reset_symtab_globals): Update.
+	(last_source_file): Remove.
+	(set_last_source_file, get_last_source_file): Update.
+
+2018-07-16  Tom Tromey  <tom@tromey.com>
+
+	* buildsym.c (prepare_for_building): Add assert.
+
+2018-07-16  Tom Tromey  <tom@tromey.com>
+
+	* buildsym.c (~buildsym_compunit): Update.
+	(struct buildsym_compunit) <comp_unit>: Now a unique_xmalloc_ptr.
+	(start_subfile, patch_subfile_names)
+	(end_symtab_with_blockvector): Update.
+
+2018-07-16  Tom Tromey  <tom@tromey.com>
+
+	* buildsym.c (struct buildsym_compunit): Add constructor,
+	destructor, initializers.
+	(start_buildsym_compunit): Remove.
+	(free_buildsym_compunit): Use "delete".
+	(start_symtab, restart_symtab): Use "new".
+
 2018-07-13  Simon Marchi  <simon.marchi@polymtl.ca>
 
 	* symfile.c (set_objfile_default_section_offset): Remove struct
@@ -209,10 +567,11 @@
 
 2018-07-07  Simon Marchi  <simon.marchi@polymtl.ca>
 
-	* ia64-tdep.c (get_reg_name, get_fpreg_name, get_saveloc_name,
-	is_signal_frame_name, step_name, init_remote_name,
-	create_addr_space_name, destroy_addr_space_name,
-	search_unwind_table_name, find_dyn_list_name): Constify.
+	* ia64-libunwind-tdep.c (get_reg_name, get_fpreg_name,
+	get_saveloc_name, is_signal_frame_name, step_name,
+	init_remote_name, create_addr_space_name,
+	destroy_addr_space_name, search_unwind_table_name,
+	find_dyn_list_name): Constify.
 
 2018-07-05  Simon Marchi  <simon.marchi@polymtl.ca>
 

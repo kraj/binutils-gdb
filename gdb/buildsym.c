@@ -74,7 +74,6 @@
 #include "gdbtypes.h"
 #include "complaints.h"
 #include "expression.h"		/* For "enum exp_opcode" used by...  */
-#include "bcache.h"
 #include "filenames.h"		/* For DOSish file names.  */
 #include "macrotab.h"
 #include "demangle.h"		/* Needed by SYMBOL_INIT_DEMANGLED_NAME.  */
@@ -100,6 +99,62 @@
 
 struct buildsym_compunit
 {
+  /* Start recording information about a primary source file (IOW, not an
+     included source file).
+     COMP_DIR is the directory in which the compilation unit was compiled
+     (or NULL if not known).  */
+
+  buildsym_compunit (struct objfile *objfile_, const char *name,
+		     const char *comp_dir_, enum language language_,
+		     CORE_ADDR last_addr)
+    : objfile (objfile_),
+      m_last_source_file (name == nullptr ? nullptr : xstrdup (name)),
+      comp_dir (comp_dir_ == nullptr ? nullptr : xstrdup (comp_dir_)),
+      language (language_),
+      m_last_source_start_addr (last_addr)
+  {
+  }
+
+  ~buildsym_compunit ()
+  {
+    struct subfile *subfile, *nextsub;
+
+    if (m_pending_macros != nullptr)
+      free_macro_table (m_pending_macros);
+
+    for (subfile = subfiles;
+	 subfile != NULL;
+	 subfile = nextsub)
+      {
+	nextsub = subfile->next;
+	xfree (subfile->name);
+	xfree (subfile->line_vector);
+	xfree (subfile);
+      }
+  }
+
+  void set_last_source_file (const char *name)
+  {
+    char *new_name = name == NULL ? NULL : xstrdup (name);
+    m_last_source_file.reset (new_name);
+  }
+
+  struct macro_table *get_macro_table ()
+  {
+    if (m_pending_macros == nullptr)
+      m_pending_macros = new_macro_table (&objfile->per_bfd->storage_obstack,
+					  objfile->per_bfd->macro_cache,
+					  compunit_symtab);
+    return m_pending_macros;
+  }
+
+  struct macro_table *release_macros ()
+  {
+    struct macro_table *result = m_pending_macros;
+    m_pending_macros = nullptr;
+    return result;
+  }
+
   /* The objfile we're reading debug info from.  */
   struct objfile *objfile;
 
@@ -107,27 +162,54 @@ struct buildsym_compunit
      Files are added to the front of the list.
      This is important mostly for the language determination hacks we use,
      which iterate over previously added files.  */
-  struct subfile *subfiles;
+  struct subfile *subfiles = nullptr;
 
   /* The subfile of the main source file.  */
-  struct subfile *main_subfile;
+  struct subfile *main_subfile = nullptr;
+
+  /* Name of source file whose symbol data we are now processing.  This
+     comes from a symbol of type N_SO for stabs.  For DWARF it comes
+     from the DW_AT_name attribute of a DW_TAG_compile_unit DIE.  */
+  gdb::unique_xmalloc_ptr<char> m_last_source_file;
 
   /* E.g., DW_AT_comp_dir if DWARF.  Space for this is malloc'd.  */
-  char *comp_dir;
+  gdb::unique_xmalloc_ptr<char> comp_dir;
 
   /* Space for this is not malloc'd, and is assumed to have at least
      the same lifetime as objfile.  */
-  const char *producer;
+  const char *producer = nullptr;
 
   /* Space for this is not malloc'd, and is assumed to have at least
      the same lifetime as objfile.  */
-  const char *debugformat;
+  const char *debugformat = nullptr;
 
   /* The compunit we are building.  */
-  struct compunit_symtab *compunit_symtab;
+  struct compunit_symtab *compunit_symtab = nullptr;
 
   /* Language of this compunit_symtab.  */
   enum language language;
+
+  /* The macro table for the compilation unit whose symbols we're
+     currently reading.  */
+  struct macro_table *m_pending_macros = nullptr;
+
+  /* True if symtab has line number info.  This prevents an otherwise
+     empty symtab from being tossed.  */
+  bool m_have_line_numbers = false;
+
+  /* Core address of start of text of current source file.  This too
+     comes from the N_SO symbol.  For Dwarf it typically comes from the
+     DW_AT_low_pc attribute of a DW_TAG_compile_unit DIE.  */
+  CORE_ADDR m_last_source_start_addr;
+
+  /* Stack of subfile names.  */
+  std::vector<const char *> m_subfile_stack;
+
+  /* The "using" directives local to lexical context.  */
+  struct using_direct *m_local_using_directives = nullptr;
+
+  /* Global "using" directives.  */
+  struct using_direct *m_global_using_directives = nullptr;
 };
 
 /* The work-in-progress of the compunit we are building.
@@ -138,11 +220,6 @@ static struct buildsym_compunit *buildsym_compunit;
 /* List of free `struct pending' structures for reuse.  */
 
 static struct pending *free_pendings;
-
-/* Non-zero if symtab has line number info.  This prevents an
-   otherwise empty symtab from being tossed.  */
-
-static int have_line_numbers;
 
 /* The mutable address map for the compilation unit whose symbols
    we're currently reading.  The symtabs' shared blockvector will
@@ -180,17 +257,9 @@ struct pending_block
 
 static struct pending_block *pending_blocks;
 
-struct subfile_stack
-  {
-    struct subfile_stack *next;
-    char *name;
-  };
+/* Currently allocated size of context stack.  */
 
-static struct subfile_stack *subfile_stack;
-
-/* The macro table for the compilation unit whose symbols we're
-   currently reading.  */
-static struct macro_table *pending_macros;
+static int context_stack_size;
 
 static void free_buildsym_compunit (void);
 
@@ -199,6 +268,8 @@ static int compare_line_numbers (const void *ln1p, const void *ln2p);
 static void record_pending_block (struct objfile *objfile,
 				  struct block *block,
 				  struct pending_block *opblock);
+
+static void free_pending_blocks ();
 
 /* Initial sizes of data structures.  These are realloc'd larger if
    needed, and realloc'd down to the size actually used, when
@@ -268,6 +339,11 @@ find_symbol_in_list (struct pending *list, char *name, int length)
   return (NULL);
 }
 
+scoped_free_pendings::scoped_free_pendings ()
+{
+  gdb_assert (pending_blocks == nullptr);
+}
+
 /* At end of reading syms, or in case of quit, ensure everything
    associated with building symtabs is freed.
 
@@ -301,10 +377,6 @@ scoped_free_pendings::~scoped_free_pendings ()
     }
   global_symbols = NULL;
 
-  if (pending_macros)
-    free_macro_table (pending_macros);
-  pending_macros = NULL;
-
   if (pending_addrmap)
     obstack_free (&pending_addrmap_obstack, NULL);
   pending_addrmap = NULL;
@@ -314,8 +386,8 @@ scoped_free_pendings::~scoped_free_pendings ()
 
 /* This function is called to discard any pending blocks.  */
 
-void
-free_pending_blocks (void)
+static void
+free_pending_blocks ()
 {
   if (pending_blocks != NULL)
     {
@@ -507,13 +579,13 @@ finish_block_internal (struct symbol *symbol,
 
   block_set_using (block,
 		   (is_global
-		    ? global_using_directives
-		    : local_using_directives),
+		    ? buildsym_compunit->m_global_using_directives
+		    : buildsym_compunit->m_local_using_directives),
 		   &objfile->objfile_obstack);
   if (is_global)
-    global_using_directives = NULL;
+    buildsym_compunit->m_global_using_directives = NULL;
   else
-    local_using_directives = NULL;
+    buildsym_compunit->m_local_using_directives = NULL;
 
   record_pending_block (objfile, block, opblock);
 
@@ -670,7 +742,7 @@ start_subfile (const char *name)
 
   gdb_assert (buildsym_compunit != NULL);
 
-  subfile_dirname = buildsym_compunit->comp_dir;
+  subfile_dirname = buildsym_compunit->comp_dir.get ();
 
   /* See if this subfile is already registered.  */
 
@@ -759,54 +831,14 @@ start_subfile (const char *name)
     }
 }
 
-/* Start recording information about a primary source file (IOW, not an
-   included source file).
-   COMP_DIR is the directory in which the compilation unit was compiled
-   (or NULL if not known).  */
-
-static struct buildsym_compunit *
-start_buildsym_compunit (struct objfile *objfile, const char *comp_dir,
-			 enum language language)
-{
-  struct buildsym_compunit *bscu;
-
-  bscu = XNEW (struct buildsym_compunit);
-  memset (bscu, 0, sizeof (struct buildsym_compunit));
-
-  bscu->objfile = objfile;
-  bscu->comp_dir = (comp_dir == NULL) ? NULL : xstrdup (comp_dir);
-  bscu->language = language;
-
-  /* Initialize the debug format string to NULL.  We may supply it
-     later via a call to record_debugformat.  */
-  bscu->debugformat = NULL;
-
-  /* Similarly for the producer.  */
-  bscu->producer = NULL;
-
-  return bscu;
-}
-
 /* Delete the buildsym compunit.  */
 
 static void
 free_buildsym_compunit (void)
 {
-  struct subfile *subfile, *nextsub;
-
   if (buildsym_compunit == NULL)
     return;
-  for (subfile = buildsym_compunit->subfiles;
-       subfile != NULL;
-       subfile = nextsub)
-    {
-      nextsub = subfile->next;
-      xfree (subfile->name);
-      xfree (subfile->line_vector);
-      xfree (subfile);
-    }
-  xfree (buildsym_compunit->comp_dir);
-  xfree (buildsym_compunit);
+  delete buildsym_compunit;
   buildsym_compunit = NULL;
   current_subfile = NULL;
 }
@@ -831,7 +863,7 @@ patch_subfile_names (struct subfile *subfile, const char *name)
       && subfile->name != NULL
       && IS_DIR_SEPARATOR (subfile->name[strlen (subfile->name) - 1]))
     {
-      buildsym_compunit->comp_dir = subfile->name;
+      buildsym_compunit->comp_dir.reset (subfile->name);
       subfile->name = xstrdup (name);
       set_last_source_file (name);
 
@@ -861,35 +893,21 @@ patch_subfile_names (struct subfile *subfile, const char *name)
    order.  */
 
 void
-push_subfile (void)
+push_subfile ()
 {
-  struct subfile_stack *tem = XNEW (struct subfile_stack);
-
-  tem->next = subfile_stack;
-  subfile_stack = tem;
-  if (current_subfile == NULL || current_subfile->name == NULL)
-    {
-      internal_error (__FILE__, __LINE__, 
-		      _("failed internal consistency check"));
-    }
-  tem->name = current_subfile->name;
+  gdb_assert (buildsym_compunit != nullptr);
+  gdb_assert (current_subfile != NULL && current_subfile->name != NULL);
+  buildsym_compunit->m_subfile_stack.push_back (current_subfile->name);
 }
 
-char *
-pop_subfile (void)
+const char *
+pop_subfile ()
 {
-  char *name;
-  struct subfile_stack *link = subfile_stack;
-
-  if (link == NULL)
-    {
-      internal_error (__FILE__, __LINE__,
-		      _("failed internal consistency check"));
-    }
-  name = link->name;
-  subfile_stack = link->next;
-  xfree ((void *) link);
-  return (name);
+  gdb_assert (buildsym_compunit != nullptr);
+  gdb_assert (!buildsym_compunit->m_subfile_stack.empty ());
+  const char *name = buildsym_compunit->m_subfile_stack.back ();
+  buildsym_compunit->m_subfile_stack.pop_back ();
+  return name;
 }
 
 /* Add a linetable entry for line number LINE and address PC to the
@@ -914,7 +932,7 @@ record_line (struct subfile *subfile, int line, CORE_ADDR pc)
 	xmalloc (sizeof (struct linetable)
 	   + subfile->line_vector_length * sizeof (struct linetable_entry));
       subfile->line_vector->nitems = 0;
-      have_line_numbers = 1;
+      buildsym_compunit->m_have_line_numbers = true;
     }
 
   if (subfile->line_vector->nitems + 1 >= subfile->line_vector_length)
@@ -994,17 +1012,7 @@ get_macro_table (void)
   struct objfile *objfile;
 
   gdb_assert (buildsym_compunit != NULL);
-
-  objfile = buildsym_compunit->objfile;
-
-  if (! pending_macros)
-    {
-      pending_macros = new_macro_table (&objfile->per_bfd->storage_obstack,
-					objfile->per_bfd->macro_cache,
-					buildsym_compunit->compunit_symtab);
-    }
-
-  return pending_macros;
+  return buildsym_compunit->get_macro_table ();
 }
 
 /* Init state to prepare for building a symtab.
@@ -1013,15 +1021,9 @@ get_macro_table (void)
    buildsym_init.  */
 
 static void
-prepare_for_building (const char *name, CORE_ADDR start_addr)
+prepare_for_building ()
 {
-  set_last_source_file (name);
-  last_source_start_addr = start_addr;
-
   local_symbols = NULL;
-  local_using_directives = NULL;
-  within_function = 0;
-  have_line_numbers = 0;
 
   context_stack_depth = 0;
 
@@ -1029,10 +1031,9 @@ prepare_for_building (const char *name, CORE_ADDR start_addr)
      a symtab, or by the scoped_free_pendings destructor.  */
   gdb_assert (file_symbols == NULL);
   gdb_assert (global_symbols == NULL);
-  gdb_assert (global_using_directives == NULL);
-  gdb_assert (pending_macros == NULL);
   gdb_assert (pending_addrmap == NULL);
   gdb_assert (current_subfile == NULL);
+  gdb_assert (buildsym_compunit == nullptr);
 }
 
 /* Start a new symtab for a new source file in OBJFILE.  Called, for example,
@@ -1051,9 +1052,10 @@ struct compunit_symtab *
 start_symtab (struct objfile *objfile, const char *name, const char *comp_dir,
 	      CORE_ADDR start_addr, enum language language)
 {
-  prepare_for_building (name, start_addr);
+  prepare_for_building ();
 
-  buildsym_compunit = start_buildsym_compunit (objfile, comp_dir, language);
+  buildsym_compunit = new struct buildsym_compunit (objfile, name, comp_dir,
+						    language, start_addr);
 
   /* Allocate the compunit symtab now.  The caller needs it to allocate
      non-primary symtabs.  It is also needed by get_macro_table.  */
@@ -1087,11 +1089,14 @@ void
 restart_symtab (struct compunit_symtab *cust,
 		const char *name, CORE_ADDR start_addr)
 {
-  prepare_for_building (name, start_addr);
+  prepare_for_building ();
 
-  buildsym_compunit = start_buildsym_compunit (COMPUNIT_OBJFILE (cust),
-					       COMPUNIT_DIRNAME (cust),
-					       compunit_language (cust));
+  buildsym_compunit
+    = new struct buildsym_compunit (COMPUNIT_OBJFILE (cust),
+				    name,
+				    COMPUNIT_DIRNAME (cust),
+				    compunit_language (cust),
+				    start_addr);
   buildsym_compunit->compunit_symtab = cust;
 }
 
@@ -1177,17 +1182,9 @@ watch_main_source_file_lossage (void)
 static void
 reset_symtab_globals (void)
 {
-  set_last_source_file (NULL);
-
   local_symbols = NULL;
-  local_using_directives = NULL;
   file_symbols = NULL;
   global_symbols = NULL;
-  global_using_directives = NULL;
-
-  /* We don't free pending_macros here because if the symtab was successfully
-     built then ownership was transferred to the symtab.  */
-  pending_macros = NULL;
 
   if (pending_addrmap)
     obstack_free (&pending_addrmap_obstack, NULL);
@@ -1281,9 +1278,9 @@ end_symtab_get_static_block (CORE_ADDR end_addr, int expandable, int required)
       && pending_blocks == NULL
       && file_symbols == NULL
       && global_symbols == NULL
-      && have_line_numbers == 0
-      && pending_macros == NULL
-      && global_using_directives == NULL)
+      && !buildsym_compunit->m_have_line_numbers
+      && buildsym_compunit->m_pending_macros == NULL
+      && buildsym_compunit->m_global_using_directives == NULL)
     {
       /* Ignore symtabs that have no functions with real debugging info.  */
       return NULL;
@@ -1292,8 +1289,8 @@ end_symtab_get_static_block (CORE_ADDR end_addr, int expandable, int required)
     {
       /* Define the STATIC_BLOCK.  */
       return finish_block_internal (NULL, &file_symbols, NULL, NULL,
-				    last_source_start_addr, end_addr,
-				    0, expandable);
+				    buildsym_compunit->m_last_source_start_addr,
+				    end_addr, 0, expandable);
     }
 }
 
@@ -1320,7 +1317,7 @@ end_symtab_with_blockvector (struct block *static_block,
 
   /* Create the GLOBAL_BLOCK and build the blockvector.  */
   finish_block_internal (NULL, &global_symbols, NULL, NULL,
-			 last_source_start_addr, end_addr,
+			 buildsym_compunit->m_last_source_start_addr, end_addr,
 			 1, expandable);
   blockvector = make_blockvector ();
 
@@ -1414,10 +1411,10 @@ end_symtab_with_blockvector (struct block *static_block,
   if (buildsym_compunit->comp_dir != NULL)
     {
       /* Reallocate the dirname on the symbol obstack.  */
+      const char *comp_dir = buildsym_compunit->comp_dir.get ();
       COMPUNIT_DIRNAME (cu)
 	= (const char *) obstack_copy0 (&objfile->objfile_obstack,
-					buildsym_compunit->comp_dir,
-					strlen (buildsym_compunit->comp_dir));
+					comp_dir, strlen (comp_dir));
     }
 
   /* Save the debug format string (if any) in the symtab.  */
@@ -1435,7 +1432,7 @@ end_symtab_with_blockvector (struct block *static_block,
 
   COMPUNIT_BLOCK_LINE_SECTION (cu) = section;
 
-  COMPUNIT_MACRO_TABLE (cu) = pending_macros;
+  COMPUNIT_MACRO_TABLE (cu) = buildsym_compunit->release_macros ();
 
   /* Default any symbols without a specified symtab to the primary symtab.  */
   {
@@ -1585,9 +1582,9 @@ augment_type_symtab (void)
     }
   if (pending_blocks != NULL)
     complaint (_("Blocks in a type symtab"));
-  if (pending_macros != NULL)
+  if (buildsym_compunit->m_pending_macros != NULL)
     complaint (_("Macro in a type symtab"));
-  if (have_line_numbers)
+  if (buildsym_compunit->m_have_line_numbers)
     complaint (_("Line numbers recorded in a type symtab"));
 
   if (file_symbols != NULL)
@@ -1637,11 +1634,12 @@ push_context (int desc, CORE_ADDR valu)
   newobj->locals = local_symbols;
   newobj->old_blocks = pending_blocks;
   newobj->start_addr = valu;
-  newobj->local_using_directives = local_using_directives;
+  newobj->local_using_directives
+    = buildsym_compunit->m_local_using_directives;
   newobj->name = NULL;
 
   local_symbols = NULL;
-  local_using_directives = NULL;
+  buildsym_compunit->m_local_using_directives = NULL;
 
   return newobj;
 }
@@ -1658,15 +1656,6 @@ pop_context (void)
 
 
 
-/* Compute a small integer hash code for the given name.  */
-
-int
-hashname (const char *name)
-{
-    return (hash(name,strlen(name)) % HASHSIZE);
-}
-
-
 void
 record_debugformat (const char *format)
 {
@@ -1679,48 +1668,16 @@ record_producer (const char *producer)
   buildsym_compunit->producer = producer;
 }
 
-/* Merge the first symbol list SRCLIST into the second symbol list
-   TARGETLIST by repeated calls to add_symbol_to_list().  This
-   procedure "frees" each link of SRCLIST by adding it to the
-   free_pendings list.  Caller must set SRCLIST to a null list after
-   calling this function.
-
-   Void return.  */
-
-void
-merge_symbol_lists (struct pending **srclist, struct pending **targetlist)
-{
-  int i;
-
-  if (!srclist || !*srclist)
-    return;
-
-  /* Merge in elements from current link.  */
-  for (i = 0; i < (*srclist)->nsyms; i++)
-    add_symbol_to_list ((*srclist)->symbol[i], targetlist);
-
-  /* Recurse on next.  */
-  merge_symbol_lists (&(*srclist)->next, targetlist);
-
-  /* "Free" the current link.  */
-  (*srclist)->next = free_pendings;
-  free_pendings = (*srclist);
-}
 
-
-/* Name of source file whose symbol data we are now processing.  This
-   comes from a symbol of type N_SO for stabs.  For Dwarf it comes
-   from the DW_AT_name attribute of a DW_TAG_compile_unit DIE.  */
-
-static char *last_source_file;
 
 /* See buildsym.h.  */
 
 void
 set_last_source_file (const char *name)
 {
-  xfree (last_source_file);
-  last_source_file = name == NULL ? NULL : xstrdup (name);
+  gdb_assert (buildsym_compunit != nullptr || name == nullptr);
+  if (buildsym_compunit != nullptr)
+    buildsym_compunit->set_last_source_file (name);
 }
 
 /* See buildsym.h.  */
@@ -1728,7 +1685,54 @@ set_last_source_file (const char *name)
 const char *
 get_last_source_file (void)
 {
-  return last_source_file;
+  if (buildsym_compunit == nullptr)
+    return nullptr;
+  return buildsym_compunit->m_last_source_file.get ();
+}
+
+/* See buildsym.h.  */
+
+void
+set_last_source_start_addr (CORE_ADDR addr)
+{
+  gdb_assert (buildsym_compunit != nullptr);
+  buildsym_compunit->m_last_source_start_addr = addr;
+}
+
+/* See buildsym.h.  */
+
+CORE_ADDR
+get_last_source_start_addr ()
+{
+  gdb_assert (buildsym_compunit != nullptr);
+  return buildsym_compunit->m_last_source_start_addr;
+}
+
+/* See buildsym.h.  */
+
+struct using_direct **
+get_local_using_directives ()
+{
+  gdb_assert (buildsym_compunit != nullptr);
+  return &buildsym_compunit->m_local_using_directives;
+}
+
+/* See buildsym.h.  */
+
+void
+set_local_using_directives (struct using_direct *new_local)
+{
+  gdb_assert (buildsym_compunit != nullptr);
+  buildsym_compunit->m_local_using_directives = new_local;
+}
+
+/* See buildsym.h.  */
+
+struct using_direct **
+get_global_using_directives ()
+{
+  gdb_assert (buildsym_compunit != nullptr);
+  return &buildsym_compunit->m_global_using_directives;
 }
 
 
@@ -1738,10 +1742,8 @@ get_last_source_file (void)
    corresponding to a psymtab.  */
 
 void
-buildsym_init (void)
+buildsym_init ()
 {
-  subfile_stack = NULL;
-
   pending_addrmap_interesting = 0;
 
   /* Context stack is initially empty.  Allocate first one with room
@@ -1758,18 +1760,6 @@ buildsym_init (void)
   gdb_assert (pending_blocks == NULL);
   gdb_assert (file_symbols == NULL);
   gdb_assert (global_symbols == NULL);
-  gdb_assert (global_using_directives == NULL);
-  gdb_assert (pending_macros == NULL);
   gdb_assert (pending_addrmap == NULL);
   gdb_assert (buildsym_compunit == NULL);
-}
-
-/* Initialize anything that needs initializing when a completely new
-   symbol file is specified (not just adding some symbols from another
-   file, e.g. a shared library).  */
-
-void
-buildsym_new_init (void)
-{
-  buildsym_init ();
 }

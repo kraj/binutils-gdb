@@ -180,7 +180,12 @@ When the time comes to actually make the release....
 
             % find . -depth -name autom4te.cache -exec rm -r {} \;
 
-  23. Create the release tarballs:
+  23. Note - check to see if any new files have been added to the top
+      level of the source directory, but which are not in the
+      DEVO_SUPPORT variable in the src-release.sh script.  If they are
+      needed then add them.
+
+       Create the release tarballs:
   
             ./src-release.sh -b -g -l -x binutils
 
@@ -226,7 +231,9 @@ When the time comes to actually make the release....
       Create a new documentation folder on the sourceware.org web
       pages as /sourceware/www/sourceware/htdocs/binutils/docs-X.XX.
       Make the html documentation locally with the "make html" command
-      and then upload and rename the directories as needed.  Create an
+      and then upload and rename the directories as needed.  (sftp
+      does not appear to support recursive uploads however, so the
+      directories will have to be made by hand).  Create an
       index.html file and then edit the docs link to point to the new
       docs-X.XX directory.
       
@@ -245,7 +252,7 @@ When the time comes to actually make the release....
       ------------------------------------------------------------------------
         Hi Everyone,
 
-        We are pleased to announce that version 2.XX of the Binutils project
+        We are pleased to announce that version 2.XX of the GNU Binutils project
         sources have been released and are now available for download at:
 
           https://ftp.gnu.org/gnu/binutils
@@ -308,6 +315,10 @@ looks like this:
        a. Update the minor release number in bfd/version.m4.
        b. Edit bfd/development.sh and set "development=false".
        c. Regenerate the configure files.
+       c.1. Remove spurious autom4te.cache files:
+
+          find . -depth -name autom4te.cache -exec rm -r {} \;
+	  
        d. Commit the updates along with a "this-is-the-2.XX.X-release"
           note in all of the changelogs.
        e. Tag the branch with the new release number:
@@ -332,9 +343,6 @@ looks like this:
        k. Clean up the source tree.  (Use "git status" to find new
            files, and remove them).
 
-     FIXME: The tarballs will contain spurious autom4te.cache
-     directories which could be removed to reduce their size.
-
   4. [If paranoid - upload the tarballs to one of the FTP servers and
       ask people to test it before going on to step 5].
 
@@ -347,18 +355,17 @@ looks like this:
   6. Upload the tarballs to sourceware.org:
 
        sftp sourceware.org
-         cd /ftp/pub/binutils/releases
+         cd /sourceware/ftp/pub/binutils/releases
  	 put binutils-X.XX.X.tar.*
  	 chmod 644 binutils-X.XX.X.tar.*
 	 quit
 
-    FIXME: Should the signatures (created by the gnupload script in
-    step 5) be uploaded as well ?
+    It is OK to upload the signatures as well.
 
   7. Update web pages.  For sourceware.org:
 
       * Log on to sourceware.org
-      * Go /www/htdocs/binutils
+      * Go to /sourceware/www/sourceware/htdocs/binutils
       * Edit index.html
 
       For the www.gnu.org site you have to email webmasters@gnu.org
@@ -371,8 +378,8 @@ looks like this:
 ------------------------------------------------------------------------
 Hi Everyone,
 
-  We are pleased to announce that version 2.XX.X of the Binutils project
-  sources have been released and are now available for download at:
+  We are pleased to announce that version 2.XX.X of the GNU Binutils
+  project sources have been released and are now available for download at:
 
     https://ftp.gnu.org/gnu/binutils
     https://sourceware.org/pub/binutils/releases/

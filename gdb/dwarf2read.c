@@ -11103,10 +11103,10 @@ read_namespace_alias (struct die_info *die, struct dwarf2_cu *cu)
 static struct using_direct **
 using_directives (enum language language)
 {
-  if (language == language_ada && context_stack_depth == 0)
-    return &global_using_directives;
+  if (language == language_ada && outermost_context_p ())
+    return get_global_using_directives ();
   else
-    return &local_using_directives;
+    return get_local_using_directives ();
 }
 
 /* Read the import statement specified by the given die and record it.  */
@@ -13721,7 +13721,7 @@ read_func_scope (struct die_info *die, struct dwarf2_cu *cu)
      when we finish processing a function scope, we may need to go
      back to building a containing block's symbol lists.  */
   local_symbols = newobj->locals;
-  local_using_directives = newobj->local_using_directives;
+  set_local_using_directives (newobj->local_using_directives);
 
   /* If we've finished processing a top-level function, subsequent
      symbols go in the file symbol list.  */
@@ -13779,7 +13779,7 @@ read_lexical_block_scope (struct die_info *die, struct dwarf2_cu *cu)
   inherit_abstract_dies (die, cu);
   newobj = pop_context ();
 
-  if (local_symbols != NULL || local_using_directives != NULL)
+  if (local_symbols != NULL || (*get_local_using_directives ()) != NULL)
     {
       struct block *block
         = finish_block (0, &local_symbols, newobj->old_blocks, NULL,
@@ -13798,7 +13798,7 @@ read_lexical_block_scope (struct die_info *die, struct dwarf2_cu *cu)
       dwarf2_record_block_ranges (die, block, baseaddr, cu);
     }
   local_symbols = newobj->locals;
-  local_using_directives = newobj->local_using_directives;
+  set_local_using_directives (newobj->local_using_directives);
 }
 
 /* Read in DW_TAG_call_site and insert it to CU->call_site_htab.  */
@@ -21026,9 +21026,6 @@ dwarf2_start_symtab (struct dwarf2_cu *cu,
   record_debugformat ("DWARF 2");
   record_producer (cu->producer);
 
-  /* We assume that we're processing GCC output.  */
-  processing_gcc_compilation = 2;
-
   cu->processing_has_namespace_info = 0;
 
   return cust;
@@ -21356,7 +21353,7 @@ new_symbol (struct die_info *die, struct type *type, struct dwarf2_cu *cu,
 	     when we do not have enough information to show inlined frames;
 	     pretend it's a local variable in that case so that the user can
 	     still see it.  */
-	  if (context_stack_depth > 0
+	  if (!outermost_context_p ()
 	      && context_stack[context_stack_depth - 1].name != NULL)
 	    SYMBOL_IS_ARGUMENT (sym) = 1;
 	  attr = dwarf2_attr (die, DW_AT_location, cu);

@@ -1,3 +1,13 @@
+2018-07-19  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.mi/list-thread-groups-available.exp (cores_re): Fix quoting in
+	regular	expression.
+
+2018-07-18  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.base/vla-optimized-out.c: New test.
+	* gdb.base/vla-optimized-out.exp: New file.
+
 2018-07-13  Sergio Durigan Junior  <sergiodj@redhat.com>
 
 	* lib/gdbserver-support.exp (gdbserver_start): Expect for the

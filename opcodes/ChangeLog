@@ -1,3 +1,100 @@
+2018-07-20  Chenghua Xu  <paul.hua.gm@gmail.com>
+	    Maciej W. Rozycki  <macro@mips.com>
+
+	* mips-dis.c (mips_arch_choices): Add MMI to loongson2f and
+	loongson3a descriptors.
+	(parse_mips_ase_option): Handle -M loongson-mmi option.
+	(print_mips_disassembler_options): Document -M loongson-mmi.
+	* mips-opc.c (LMMI): New macro.
+	(mips_opcodes): Replace IL2F|IL3A marking with LMMI for MMI
+	instructions.
+
+2018-07-19  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-opc.tbl (vcvtpd2dq, vcvtpd2ps, vcvttpd2dq, vcvtpd2udq,
+	vcvtqq2ps, vcvtuqq2ps): Fold 128- and 256-bit templates. Drop
+	IgnoreSize and [XYZ]MMword where applicable.
+	* i386-tbl.h: Re-generate.
+
+2018-07-19  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-opc.tbl (vfpclasspd, vfpclassps): Fold.
+	(vfpclasspdz, vfpclasspsz): Drop IgnoreSize and ZmmWord.
+	(vfpclasspdx, vfpclasspsx): Drop IgnoreSize and XmmWord.
+	(vfpclasspdy, vfpclasspsy): Drop IgnoreSize and YmmWord.
+	* i386-tbl.h: Re-generate.
+
+2018-07-19  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-opc.tbl: Fold AVX512IFMA, AVX512VBMI, AVX512_VPOPCNTDQ,
+	AVX512_VBMI2, AVX512_VNNI, AVX512_BITALG, GFNI, VAES, and
+	VPCLMULQDQ templates into their respective AVX512VL counterparts
+	where possible, using Disp8ShiftVL and CheckRegSize instead of
+	Evex= plus Disp8MemShift= (plus often IgnoreSize) as appropriate.
+	* i386-tbl.h: Re-generate.
+
+2018-07-19  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-opc.tbl: Fold AVX512DQ templates into their respective
+	AVX512VL counterparts where possible, using Disp8ShiftVL and
+	CheckRegSize instead of Evex= plus Disp8MemShift= (plus often
+	IgnoreSize) as appropriate.
+	* i386-tbl.h: Re-generate.
+
+2018-07-19  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-opc.tbl: Fold AVX512BW templates into their respective
+	AVX512VL counterparts where possible, using Disp8ShiftVL and
+	CheckRegSize instead of Evex= plus Disp8MemShift= (plus often
+	IgnoreSize) as appropriate.
+	* i386-tbl.h: Re-generate.
+
+2018-07-19  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-opc.tbl: Fold AVX512CD templates into their respective
+	AVX512VL counterparts where possible, using Disp8ShiftVL and
+	CheckRegSize instead of Evex= plus Disp8MemShift= (plus often
+	IgnoreSize) as appropriate.
+	* i386-tbl.h: Re-generate.
+
+2018-07-19  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-opc.h (DISP8_SHIFT_VL): New.
+	* i386-opc.tbl (Disp8ShiftVL):  Define.
+	(various): Fold AVX512VL templates into their respective
+	AVX512F counterparts where possible, using Disp8ShiftVL and
+	CheckRegSize instead of Evex= plus Disp8MemShift= (plus often
+	IgnoreSize) as appropriate.
+	* i386-tbl.h: Re-generate.
+
+2018-07-19  Jan Beulich  <jbeulich@suse.com>
+
+	* Makefile.am: Change dependencies and rule for
+	$(srcdir)/i386-init.h.
+	* Makefile.in: Re-generate.
+	* i386-gen.c (process_i386_opcodes): New local variable
+	"marker". Drop opening of input file. Recognize marker and line
+	number directives.
+	* i386-opc.tbl (OPCODE_I386_H): Define.
+	(i386-opc.h): Include it.
+	(None): Undefine.
+
+2018-07-18  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR gas/23418
+	* i386-opc.h (Byte): Update comments.
+	(Word): Likewise.
+	(Dword): Likewise.
+	(Fword): Likewise.
+	(Qword): Likewise.
+	(Tbyte): Likewise.
+	(Xmmword): Likewise.
+	(Ymmword): Likewise.
+	(Zmmword): Likewise.
+	* i386-opc.tbl: Split vcvtps2qq, vcvtps2uqq, vcvttps2qq and
+	vcvttps2uqq.
+	* i386-tbl.h: Regenerated.
+
 2018-07-12  Sudakshina Das  <sudi.das@arm.com>
 
 	* aarch64-tbl.h (aarch64_opcode_table): Add entry for

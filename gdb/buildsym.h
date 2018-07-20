@@ -46,15 +46,6 @@ struct dynamic_prop;
 #define	EXTERN extern
 #endif
 
-#define HASHSIZE 127		/* Size of things hashed via
-				   hashname().  */
-
-/* Core address of start of text of current source file.  This too
-   comes from the N_SO symbol.  For Dwarf it typically comes from the
-   DW_AT_low_pc attribute of a DW_TAG_compile_unit DIE.  */
-
-EXTERN CORE_ADDR last_source_start_addr;
-
 /* The list of sub-source-files within the current individual
    compilation.  Each file gets its own symtab with its own linetable
    and associated info, but they all share one blockvector.  */
@@ -74,23 +65,6 @@ struct subfile
 };
 
 EXTERN struct subfile *current_subfile;
-
-/* Global variable which, when set, indicates that we are processing a
-   .o file compiled with gcc */
-
-EXTERN unsigned char processing_gcc_compilation;
-
-/* When set, we are processing a .o file compiled by sun acc.  This is
-   misnamed; it refers to all stabs-in-elf implementations which use
-   N_UNDF the way Sun does, including Solaris gcc.  Hopefully all
-   stabs-in-elf implementations ever invented will choose to be
-   compatible.  */
-
-EXTERN unsigned char processing_acc_compilation;
-
-/* Count symbols as they are processed, for error messages.  */
-
-EXTERN unsigned int symnum;
 
 /* Record the symbols defined for each context in a list.  We don't
    create a struct block for the context until we know how long to
@@ -118,14 +92,6 @@ EXTERN struct pending *global_symbols;
 /* everything local to lexical context */
 
 EXTERN struct pending *local_symbols;
-
-/* "using" directives local to lexical context.  */
-
-EXTERN struct using_direct *local_using_directives;
-
-/* global "using" directives.  */
-
-EXTERN struct using_direct *global_using_directives;
 
 /* Stack representing unclosed lexical contexts (that will become
    blocks, eventually).  */
@@ -173,29 +139,14 @@ EXTERN struct context_stack *context_stack;
 
 EXTERN int context_stack_depth;
 
-/* Currently allocated size of context stack.  */
-
-EXTERN int context_stack_size;
-
 /* Non-zero if the context stack is empty.  */
 #define outermost_context_p() (context_stack_depth == 0)
-
-/* Nonzero if within a function (so symbols should be local, if
-   nothing says specifically).  */
-
-EXTERN int within_function;
 
 /* The type of the record_line function.  */
 typedef void (record_line_ftype) (struct subfile *subfile, int line,
 				  CORE_ADDR pc);
 
 
-
-#define next_symbol_text(objfile) (*next_symbol_text_func)(objfile)
-
-/* Function to invoke get the next symbol.  Return the symbol name.  */
-
-EXTERN const char *(*next_symbol_text_func) (struct objfile *);
 
 extern void add_symbol_to_list (struct symbol *symbol,
 				struct pending **listhead);
@@ -217,7 +168,7 @@ class scoped_free_pendings
 {
 public:
 
-  scoped_free_pendings () = default;
+  scoped_free_pendings ();
   ~scoped_free_pendings ();
 
   DISABLE_COPY_AND_ASSIGN (scoped_free_pendings);
@@ -227,9 +178,9 @@ extern void start_subfile (const char *name);
 
 extern void patch_subfile_names (struct subfile *subfile, const char *name);
 
-extern void push_subfile (void);
+extern void push_subfile ();
 
-extern char *pop_subfile (void);
+extern const char *pop_subfile ();
 
 extern struct block *end_symtab_get_static_block (CORE_ADDR end_addr,
 						  int expandable,
@@ -246,13 +197,7 @@ extern struct compunit_symtab *end_expandable_symtab (CORE_ADDR end_addr,
 
 extern void augment_type_symtab (void);
 
-/* Defined in stabsread.c.  */
-
-extern void scan_file_globals (struct objfile *objfile);
-
-extern void buildsym_new_init (void);
-
-extern void buildsym_init (void);
+extern void buildsym_init ();
 
 extern struct context_stack *push_context (int desc, CORE_ADDR valu);
 
@@ -269,10 +214,6 @@ extern struct compunit_symtab *start_symtab (struct objfile *objfile,
 extern void restart_symtab (struct compunit_symtab *cust,
 			    const char *name, CORE_ADDR start_addr);
 
-extern int hashname (const char *name);
-
-extern void free_pending_blocks (void);
-
 /* Record the name of the debug format in the current pending symbol
    table.  FORMAT must be a string with a lifetime at least as long as
    the symtab's objfile.  */
@@ -284,9 +225,6 @@ extern void record_debugformat (const char *format);
    lifetime at least as long as the symtab's objfile.  */
 
 extern void record_producer (const char *producer);
-
-extern void merge_symbol_lists (struct pending **srclist,
-				struct pending **targetlist);
 
 /* Set the name of the last source file.  NAME is copied by this
    function.  */
@@ -309,6 +247,28 @@ extern struct compunit_symtab *buildsym_compunit_symtab (void);
    end_symtab* functions.  */
 
 extern struct macro_table *get_macro_table (void);
+
+/* Set the last source start address.  Can only be used between
+   start_symtab and end_symtab* calls.  */
+
+extern void set_last_source_start_addr (CORE_ADDR addr);
+
+/* Get the last source start address.  Can only be used between
+   start_symtab and end_symtab* calls.  */
+
+extern CORE_ADDR get_last_source_start_addr ();
+
+/* Return the local using directives.  */
+
+extern struct using_direct **get_local_using_directives ();
+
+/* Set the list of local using directives.  */
+
+extern void set_local_using_directives (struct using_direct *new_local);
+
+/* Return the global using directives.  */
+
+extern struct using_direct **get_global_using_directives ();
 
 #undef EXTERN
 
