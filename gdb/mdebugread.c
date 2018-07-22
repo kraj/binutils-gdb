@@ -46,7 +46,7 @@
 #include "filenames.h"
 #include "objfiles.h"
 #include "gdb_obstack.h"
-#include "buildsym.h"
+#include "buildsym-legacy.h"
 #include "stabsread.h"
 #include "complaints.h"
 #include "demangle.h"
@@ -344,7 +344,6 @@ mdebug_build_psymtabs (minimal_symbol_reader &reader,
   debug_info = info;
 
   stabsread_new_init ();
-  buildsym_init ();
   free_header_files ();
   init_header_files ();
         
@@ -4040,7 +4039,7 @@ psymtab_to_symtab_1 (struct objfile *objfile,
 		  SYMBOL_TYPE (s) = objfile_type (objfile)->builtin_void;
 		  SYMBOL_VALUE_BYTES (s) = (gdb_byte *) e;
 		  e->pdr.framereg = -1;
-		  add_symbol_to_list (s, &local_symbols);
+		  add_symbol_to_list (s, get_local_symbols ());
 		}
 	    }
 	  else if (sh.st == stLabel)
@@ -4056,7 +4055,7 @@ psymtab_to_symtab_1 (struct objfile *objfile,
 		  /* Handle encoded stab line number.  */
 		  valu += ANOFFSET (section_offsets,
 				    SECT_OFF_TEXT (objfile));
-		  record_line (current_subfile, sh.index,
+		  record_line (get_current_subfile (), sh.index,
 			       gdbarch_addr_bits_remove (gdbarch, valu));
 		}
 	    }

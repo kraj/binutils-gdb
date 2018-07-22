@@ -44,7 +44,7 @@
 #endif
 #include <algorithm>
 
-#include "buildsym.h"
+#include "buildsym-legacy.h"
 #include "filenames.h"
 #include "symfile.h"
 #include "objfiles.h"
@@ -146,8 +146,10 @@ static GetConsoleFontSize_ftype *GetConsoleFontSize;
 
 static int have_saved_context;	/* True if we've saved context from a
 				   cygwin signal.  */
+#ifdef __CYGWIN__
 static CONTEXT saved_context;	/* Containes the saved context from a
 				   cygwin signal.  */
+#endif
 
 /* If we're not using the old Cygwin header file set, define the
    following which never should have been in the generic Win32 API
@@ -1298,7 +1300,6 @@ handle_exception (struct target_waitstatus *ourstatus)
 static BOOL
 windows_continue (DWORD continue_status, int id, int killed)
 {
-  int i;
   windows_thread_info *th;
   BOOL res;
 
@@ -1765,7 +1766,6 @@ windows_nat_target::wait (ptid_t ptid, struct target_waitstatus *ourstatus,
 static void
 windows_add_all_dlls (void)
 {
-  struct so_list *so;
   HMODULE dummy_hmodule;
   DWORD cb_needed;
   HMODULE *hmodules;
@@ -1815,7 +1815,6 @@ do_initial_windows_stuff (struct target_ops *ops, DWORD pid, int attaching)
 {
   int i;
   struct inferior *inf;
-  struct thread_info *tp;
 
   last_sig = GDB_SIGNAL_0;
   event_count = 0;
@@ -2516,16 +2515,12 @@ windows_nat_target::create_inferior (const char *exec_file,
   int tty;
   int ostdin, ostdout, ostderr;
 #else  /* !__CYGWIN__ */
-  char real_path[__PMAX];
   char shell[__PMAX]; /* Path to shell */
   const char *toexec;
   char *args, *allargs_copy;
   size_t args_len, allargs_len;
   int fd_inp = -1, fd_out = -1, fd_err = -1;
   HANDLE tty = INVALID_HANDLE_VALUE;
-  HANDLE inf_stdin = INVALID_HANDLE_VALUE;
-  HANDLE inf_stdout = INVALID_HANDLE_VALUE;
-  HANDLE inf_stderr = INVALID_HANDLE_VALUE;
   bool redirected = false;
   char *w32env;
   char *temp;

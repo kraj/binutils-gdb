@@ -36,7 +36,7 @@
 #include "libaout.h"
 #include "aout/aout64.h"
 #include "gdb-stabs.h"
-#include "buildsym.h"
+#include "buildsym-legacy.h"
 #include "complaints.h"
 #include "demangle.h"
 #include "gdb-demangle.h"
@@ -432,7 +432,7 @@ patch_block_stabs (struct pending *symbols, struct pending_stabs *stabs,
 		{
 		  SYMBOL_TYPE (sym) = read_type (&pp, objfile);
 		}
-	      add_symbol_to_list (sym, &global_symbols);
+	      add_symbol_to_list (sym, get_global_symbols ());
 	    }
 	  else
 	    {
@@ -695,7 +695,7 @@ define_symbol (CORE_ADDR valu, const char *string, int desc, int type,
       SYMBOL_LINE (sym) = 0;	/* unknown */
     }
 
-  SYMBOL_SET_LANGUAGE (sym, current_subfile->language,
+  SYMBOL_SET_LANGUAGE (sym, get_current_subfile ()->language,
 		       &objfile->objfile_obstack);
 
   if (is_cplus_marker (string[0]))
@@ -753,7 +753,8 @@ define_symbol (CORE_ADDR valu, const char *string, int desc, int type,
 	SYMBOL_SET_NAMES (sym, string, p - string, 1, objfile);
 
       if (SYMBOL_LANGUAGE (sym) == language_cplus)
-	cp_scan_for_anonymous_namespaces (sym, objfile);
+	cp_scan_for_anonymous_namespaces (get_buildsym_compunit (), sym,
+					  objfile);
 
     }
   p++;
@@ -789,7 +790,7 @@ define_symbol (CORE_ADDR valu, const char *string, int desc, int type,
 	  SYMBOL_ACLASS_INDEX (sym) = LOC_CONST;
 	  SYMBOL_TYPE (sym) = error_type (&p, objfile);
 	  SYMBOL_DOMAIN (sym) = VAR_DOMAIN;
-	  add_symbol_to_list (sym, &file_symbols);
+	  add_symbol_to_list (sym, get_file_symbols ());
 	  return sym;
 	}
       ++p;
@@ -848,7 +849,7 @@ define_symbol (CORE_ADDR valu, const char *string, int desc, int type,
 		SYMBOL_ACLASS_INDEX (sym) = LOC_CONST;
 		SYMBOL_TYPE (sym) = error_type (&p, objfile);
 		SYMBOL_DOMAIN (sym) = VAR_DOMAIN;
-		add_symbol_to_list (sym, &file_symbols);
+		add_symbol_to_list (sym, get_file_symbols ());
 		return sym;
 	      }
 
@@ -873,7 +874,7 @@ define_symbol (CORE_ADDR valu, const char *string, int desc, int type,
 		SYMBOL_ACLASS_INDEX (sym) = LOC_CONST;
 		SYMBOL_TYPE (sym) = error_type (&p, objfile);
 		SYMBOL_DOMAIN (sym) = VAR_DOMAIN;
-		add_symbol_to_list (sym, &file_symbols);
+		add_symbol_to_list (sym, get_file_symbols ());
 		return sym;
 	      }
 
@@ -928,7 +929,7 @@ define_symbol (CORE_ADDR valu, const char *string, int desc, int type,
 	  }
 	}
       SYMBOL_DOMAIN (sym) = VAR_DOMAIN;
-      add_symbol_to_list (sym, &file_symbols);
+      add_symbol_to_list (sym, get_file_symbols ());
       return sym;
 
     case 'C':
@@ -937,7 +938,7 @@ define_symbol (CORE_ADDR valu, const char *string, int desc, int type,
       SYMBOL_ACLASS_INDEX (sym) = LOC_LABEL;
       SYMBOL_DOMAIN (sym) = VAR_DOMAIN;
       SYMBOL_VALUE_ADDRESS (sym) = valu;
-      add_symbol_to_list (sym, &local_symbols);
+      add_symbol_to_list (sym, get_local_symbols ());
       break;
 
     case 'f':
@@ -945,7 +946,7 @@ define_symbol (CORE_ADDR valu, const char *string, int desc, int type,
       SYMBOL_TYPE (sym) = read_type (&p, objfile);
       SYMBOL_ACLASS_INDEX (sym) = LOC_BLOCK;
       SYMBOL_DOMAIN (sym) = VAR_DOMAIN;
-      add_symbol_to_list (sym, &file_symbols);
+      add_symbol_to_list (sym, get_file_symbols ());
       /* fall into process_function_types.  */
 
     process_function_types:
@@ -1016,7 +1017,7 @@ define_symbol (CORE_ADDR valu, const char *string, int desc, int type,
       SYMBOL_TYPE (sym) = read_type (&p, objfile);
       SYMBOL_ACLASS_INDEX (sym) = LOC_BLOCK;
       SYMBOL_DOMAIN (sym) = VAR_DOMAIN;
-      add_symbol_to_list (sym, &global_symbols);
+      add_symbol_to_list (sym, get_global_symbols ());
       goto process_function_types;
 
     case 'G':
@@ -1037,7 +1038,7 @@ define_symbol (CORE_ADDR valu, const char *string, int desc, int type,
 	  SYMBOL_VALUE_CHAIN (sym) = global_sym_chain[i];
 	  global_sym_chain[i] = sym;
 	}
-      add_symbol_to_list (sym, &global_symbols);
+      add_symbol_to_list (sym, get_global_symbols ());
       break;
 
       /* This case is faked by a conditional above,
@@ -1049,7 +1050,7 @@ define_symbol (CORE_ADDR valu, const char *string, int desc, int type,
       SYMBOL_ACLASS_INDEX (sym) = LOC_LOCAL;
       SYMBOL_VALUE (sym) = valu;
       SYMBOL_DOMAIN (sym) = VAR_DOMAIN;
-      add_symbol_to_list (sym, &local_symbols);
+      add_symbol_to_list (sym, get_local_symbols ());
       break;
 
     case 'p':
@@ -1070,7 +1071,7 @@ define_symbol (CORE_ADDR valu, const char *string, int desc, int type,
       SYMBOL_VALUE (sym) = valu;
       SYMBOL_DOMAIN (sym) = VAR_DOMAIN;
       SYMBOL_IS_ARGUMENT (sym) = 1;
-      add_symbol_to_list (sym, &local_symbols);
+      add_symbol_to_list (sym, get_local_symbols ());
 
       if (gdbarch_byte_order (gdbarch) != BFD_ENDIAN_BIG)
 	{
@@ -1119,7 +1120,7 @@ define_symbol (CORE_ADDR valu, const char *string, int desc, int type,
       SYMBOL_IS_ARGUMENT (sym) = 1;
       SYMBOL_VALUE (sym) = valu;
       SYMBOL_DOMAIN (sym) = VAR_DOMAIN;
-      add_symbol_to_list (sym, &local_symbols);
+      add_symbol_to_list (sym, get_local_symbols ());
       break;
 
     case 'r':
@@ -1150,6 +1151,7 @@ define_symbol (CORE_ADDR valu, const char *string, int desc, int type,
 	     but this case is considered pathological and causes a warning
 	     from a decent compiler.  */
 
+	  struct pending *local_symbols = *get_local_symbols ();
 	  if (local_symbols
 	      && local_symbols->nsyms > 0
 	      && gdbarch_stabs_argument_has_addr (gdbarch, SYMBOL_TYPE (sym)))
@@ -1171,10 +1173,10 @@ define_symbol (CORE_ADDR valu, const char *string, int desc, int type,
 		  break;
 		}
 	    }
-	  add_symbol_to_list (sym, &local_symbols);
+	  add_symbol_to_list (sym, get_local_symbols ());
 	}
       else
-	add_symbol_to_list (sym, &file_symbols);
+	add_symbol_to_list (sym, get_file_symbols ());
       break;
 
     case 'S':
@@ -1201,7 +1203,7 @@ define_symbol (CORE_ADDR valu, const char *string, int desc, int type,
 	    }
 	}
       SYMBOL_DOMAIN (sym) = VAR_DOMAIN;
-      add_symbol_to_list (sym, &file_symbols);
+      add_symbol_to_list (sym, get_file_symbols ());
       break;
 
     case 't':
@@ -1296,7 +1298,7 @@ define_symbol (CORE_ADDR valu, const char *string, int desc, int type,
 		 */
 
 	      /* Pascal accepts names for pointer types.  */
-	      if (current_subfile->language == language_pascal)
+	      if (get_current_subfile ()->language == language_pascal)
 		{
 		  TYPE_NAME (SYMBOL_TYPE (sym)) = SYMBOL_LINKAGE_NAME (sym);
           	}
@@ -1305,7 +1307,7 @@ define_symbol (CORE_ADDR valu, const char *string, int desc, int type,
 	    TYPE_NAME (SYMBOL_TYPE (sym)) = SYMBOL_LINKAGE_NAME (sym);
 	}
 
-      add_symbol_to_list (sym, &file_symbols);
+      add_symbol_to_list (sym, get_file_symbols ());
 
       if (synonym)
         {
@@ -1321,7 +1323,7 @@ define_symbol (CORE_ADDR valu, const char *string, int desc, int type,
 	      = obconcat (&objfile->objfile_obstack,
 			  SYMBOL_LINKAGE_NAME (sym),
 			  (char *) NULL);
-          add_symbol_to_list (struct_sym, &file_symbols);
+          add_symbol_to_list (struct_sym, get_file_symbols ());
         }
       
       break;
@@ -1349,7 +1351,7 @@ define_symbol (CORE_ADDR valu, const char *string, int desc, int type,
 	  = obconcat (&objfile->objfile_obstack,
 		      SYMBOL_LINKAGE_NAME (sym),
 		      (char *) NULL);
-      add_symbol_to_list (sym, &file_symbols);
+      add_symbol_to_list (sym, get_file_symbols ());
 
       if (synonym)
 	{
@@ -1365,7 +1367,7 @@ define_symbol (CORE_ADDR valu, const char *string, int desc, int type,
 	      = obconcat (&objfile->objfile_obstack,
 			  SYMBOL_LINKAGE_NAME (sym),
 			  (char *) NULL);
-	  add_symbol_to_list (typedef_sym, &file_symbols);
+	  add_symbol_to_list (typedef_sym, get_file_symbols ());
 	}
       break;
 
@@ -1393,7 +1395,7 @@ define_symbol (CORE_ADDR valu, const char *string, int desc, int type,
 	    }
 	}
       SYMBOL_DOMAIN (sym) = VAR_DOMAIN;
-	add_symbol_to_list (sym, &local_symbols);
+	add_symbol_to_list (sym, get_local_symbols ());
       break;
 
     case 'v':
@@ -1403,7 +1405,7 @@ define_symbol (CORE_ADDR valu, const char *string, int desc, int type,
       SYMBOL_IS_ARGUMENT (sym) = 1;
       SYMBOL_VALUE (sym) = valu;
       SYMBOL_DOMAIN (sym) = VAR_DOMAIN;
-      add_symbol_to_list (sym, &local_symbols);
+      add_symbol_to_list (sym, get_local_symbols ());
       break;
 
     case 'a':
@@ -1413,7 +1415,7 @@ define_symbol (CORE_ADDR valu, const char *string, int desc, int type,
       SYMBOL_IS_ARGUMENT (sym) = 1;
       SYMBOL_VALUE (sym) = valu;
       SYMBOL_DOMAIN (sym) = VAR_DOMAIN;
-      add_symbol_to_list (sym, &local_symbols);
+      add_symbol_to_list (sym, get_local_symbols ());
       break;
 
     case 'X':
@@ -1425,7 +1427,7 @@ define_symbol (CORE_ADDR valu, const char *string, int desc, int type,
       SYMBOL_ACLASS_INDEX (sym) = LOC_LOCAL;
       SYMBOL_VALUE (sym) = valu;
       SYMBOL_DOMAIN (sym) = VAR_DOMAIN;
-      add_symbol_to_list (sym, &local_symbols);
+      add_symbol_to_list (sym, get_local_symbols ());
       break;
 
     default:
@@ -1433,7 +1435,7 @@ define_symbol (CORE_ADDR valu, const char *string, int desc, int type,
       SYMBOL_ACLASS_INDEX (sym) = LOC_CONST;
       SYMBOL_VALUE (sym) = 0;
       SYMBOL_DOMAIN (sym) = VAR_DOMAIN;
-      add_symbol_to_list (sym, &file_symbols);
+      add_symbol_to_list (sym, get_file_symbols ());
       break;
     }
 
@@ -1638,7 +1640,7 @@ again:
 		return error_type (pp, objfile);
 	    }
 	  type_name = NULL;
-	  if (current_subfile->language == language_cplus)
+	  if (get_current_subfile ()->language == language_cplus)
 	    {
 	      char *name = (char *) alloca (p - *pp + 1);
 
@@ -1675,7 +1677,7 @@ again:
            type, rather than allocating a new one.  This saves some
            memory.  */
 
-	for (ppt = file_symbols; ppt; ppt = ppt->next)
+	for (ppt = *get_file_symbols (); ppt; ppt = ppt->next)
 	  for (i = 0; i < ppt->nsyms; i++)
 	    {
 	      struct symbol *sym = ppt->symbol[i];
@@ -3642,10 +3644,10 @@ read_enum_type (const char **pp, struct type *type,
      to be file-scope, between N_FN entries, using N_LSYM.  What's a mother
      to do?  For now, force all enum values to file scope.  */
   if (within_function)
-    symlist = &local_symbols;
+    symlist = get_local_symbols ();
   else
 #endif
-    symlist = &file_symbols;
+    symlist = get_file_symbols ();
   osyms = *symlist;
   o_nsyms = osyms ? osyms->nsyms : 0;
 
@@ -3678,7 +3680,7 @@ read_enum_type (const char **pp, struct type *type,
 
       sym = allocate_symbol (objfile);
       SYMBOL_SET_LINKAGE_NAME (sym, name);
-      SYMBOL_SET_LANGUAGE (sym, current_subfile->language,
+      SYMBOL_SET_LANGUAGE (sym, get_current_subfile ()->language,
 			   &objfile->objfile_obstack);
       SYMBOL_ACLASS_INDEX (sym) = LOC_CONST;
       SYMBOL_DOMAIN (sym) = VAR_DOMAIN;
@@ -4316,8 +4318,8 @@ common_block_start (const char *name, struct objfile *objfile)
     {
       complaint (_("Invalid symbol data: common block within common block"));
     }
-  common_block = local_symbols;
-  common_block_i = local_symbols ? local_symbols->nsyms : 0;
+  common_block = *get_local_symbols ();
+  common_block_i = common_block ? common_block->nsyms : 0;
   common_block_name = (char *) obstack_copy0 (&objfile->objfile_obstack, name,
 					      strlen (name));
 }
@@ -4352,7 +4354,7 @@ common_block_end (struct objfile *objfile)
   /* Now we copy all the symbols which have been defined since the BCOMM.  */
 
   /* Copy all the struct pendings before common_block.  */
-  for (next = local_symbols;
+  for (next = *get_local_symbols ();
        next != NULL && next != common_block;
        next = next->next)
     {
@@ -4545,7 +4547,7 @@ cleanup_undefined_types_1 (void)
 		    complaint (_("need a type name"));
 		    break;
 		  }
-		for (ppt = file_symbols; ppt; ppt = ppt->next)
+		for (ppt = *get_file_symbols (); ppt; ppt = ppt->next)
 		  {
 		    for (i = 0; i < ppt->nsyms; i++)
 		      {
@@ -4781,7 +4783,7 @@ finish_global_stabs (struct objfile *objfile)
 {
   if (global_stabs)
     {
-      patch_block_stabs (global_symbols, global_stabs, objfile);
+      patch_block_stabs (*get_global_symbols (), global_stabs, objfile);
       xfree (global_stabs);
       global_stabs = NULL;
     }

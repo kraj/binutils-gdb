@@ -45,7 +45,7 @@
 #include "libaout.h"		/* FIXME Secret internal BFD stuff for a.out */
 #include "filenames.h"
 #include "objfiles.h"
-#include "buildsym.h"
+#include "buildsym-legacy.h"
 #include "stabsread.h"
 #include "gdb-stabs.h"
 #include "demangle.h"
@@ -567,7 +567,6 @@ static void
 dbx_new_init (struct objfile *ignore)
 {
   stabsread_new_init ();
-  buildsym_init ();
   init_header_files ();
 }
 
@@ -2164,7 +2163,6 @@ dbx_psymtab_to_symtab_1 (struct objfile *objfile, struct partial_symtab *pst)
     {
       /* Init stuff necessary for reading in symbols */
       stabsread_init ();
-      buildsym_init ();
       scoped_free_pendings free_pending;
       file_string_table_offset = FILE_STRING_OFFSET (pst);
       symbol_size = SYMBOL_SIZE (pst);
@@ -2448,6 +2446,7 @@ process_one_symbol (int type, int desc, CORE_ADDR valu, const char *name,
 {
   struct gdbarch *gdbarch = get_objfile_arch (objfile);
   struct context_stack *newobj;
+  struct context_stack cstk;
   /* This remembers the address of the start of a function.  It is
      used because in Solaris 2, N_LBRAC, N_RBRAC, and N_SLINE entries
      are relative to the current function's start address.  On systems
@@ -2507,21 +2506,21 @@ process_one_symbol (int type, int desc, CORE_ADDR valu, const char *name,
 	    {
 	      CORE_ADDR addr = last_function_start + valu;
 
-	      record_line (current_subfile, 0,
+	      record_line (get_current_subfile (), 0,
 			   gdbarch_addr_bits_remove (gdbarch, addr));
 	    }
 
 	  within_function = 0;
-	  newobj = pop_context ();
+	  cstk = pop_context ();
 
 	  /* Make a block for the local symbols within.  */
-	  block = finish_block (newobj->name, &local_symbols,
-				newobj->old_blocks, NULL,
-				newobj->start_addr, newobj->start_addr + valu);
+	  block = finish_block (cstk.name,
+				cstk.old_blocks, NULL,
+				cstk.start_addr, cstk.start_addr + valu);
 
 	  /* For C++, set the block's scope.  */
-	  if (SYMBOL_LANGUAGE (newobj->name) == language_cplus)
-	    cp_set_block_scope (newobj->name, block, &objfile->objfile_obstack);
+	  if (SYMBOL_LANGUAGE (cstk.name) == language_cplus)
+	    cp_set_block_scope (cstk.name, block, &objfile->objfile_obstack);
 
 	  /* May be switching to an assembler file which may not be using
 	     block relative stabs, so reset the offset.  */
@@ -2568,11 +2567,11 @@ process_one_symbol (int type, int desc, CORE_ADDR valu, const char *name,
 	  break;
 	}
 
-      newobj = pop_context ();
-      if (desc != newobj->depth)
+      cstk = pop_context ();
+      if (desc != cstk.depth)
 	lbrac_mismatch_complaint (symnum);
 
-      if (local_symbols != NULL)
+      if (*get_local_symbols () != NULL)
 	{
 	  /* GCC development snapshots from March to December of
 	     2000 would output N_LSYM entries after N_LBRAC
@@ -2581,9 +2580,9 @@ process_one_symbol (int type, int desc, CORE_ADDR valu, const char *name,
 	  complaint (_("misplaced N_LBRAC entry; discarding local "
 		       "symbols which have no enclosing block"));
 	}
-      local_symbols = newobj->locals;
+      *get_local_symbols () = cstk.locals;
 
-      if (context_stack_depth > 1)
+      if (get_context_stack_depth () > 1)
 	{
 	  /* This is not the outermost LBRAC...RBRAC pair in the
 	     function, its local symbols preceded it, and are the ones
@@ -2591,19 +2590,19 @@ process_one_symbol (int type, int desc, CORE_ADDR valu, const char *name,
 	     for them (but don't bother if the block contains no
 	     symbols.  Should we complain on blocks without symbols?
 	     I can't think of any useful purpose for them).  */
-	  if (local_symbols != NULL)
+	  if (*get_local_symbols () != NULL)
 	    {
 	      /* Muzzle a compiler bug that makes end < start.
 
 		 ??? Which compilers?  Is this ever harmful?.  */
-	      if (newobj->start_addr > valu)
+	      if (cstk.start_addr > valu)
 		{
 		  complaint (_("block start larger than block end"));
-		  newobj->start_addr = valu;
+		  cstk.start_addr = valu;
 		}
 	      /* Make a block for the local symbols within.  */
-	      finish_block (0, &local_symbols, newobj->old_blocks, NULL,
-			    newobj->start_addr, valu);
+	      finish_block (0, cstk.old_blocks, NULL,
+			    cstk.start_addr, valu);
 	    }
 	}
       else
@@ -2641,7 +2640,7 @@ process_one_symbol (int type, int desc, CORE_ADDR valu, const char *name,
 	     name.  Patch things up.  */
 	  if (previous_stab_code == (unsigned char) N_SO)
 	    {
-	      patch_subfile_names (current_subfile, name);
+	      patch_subfile_names (get_current_subfile (), name);
 	      break;		/* Ignore repeated SOs.  */
 	    }
 	  end_symtab (valu, SECT_OFF_TEXT (objfile));
@@ -2711,12 +2710,12 @@ process_one_symbol (int type, int desc, CORE_ADDR valu, const char *name,
 	  CORE_ADDR addr = processing_gcc_compilation == 2 ?
 			   last_function_start : valu;
 
-	  record_line (current_subfile, desc,
+	  record_line (get_current_subfile (), desc,
 		       gdbarch_addr_bits_remove (gdbarch, addr));
 	  sline_found_in_function = 1;
 	}
       else
-	record_line (current_subfile, desc,
+	record_line (get_current_subfile (), desc,
 		     gdbarch_addr_bits_remove (gdbarch, valu));
       break;
 
@@ -2876,7 +2875,7 @@ process_one_symbol (int type, int desc, CORE_ADDR valu, const char *name,
 
 	      within_function = 1;
 
-	      if (context_stack_depth > 1)
+	      if (get_context_stack_depth () > 1)
 		{
 		  complaint (_("unmatched N_LBRAC before symtab pos %d"),
 			     symnum);
@@ -2887,15 +2886,15 @@ process_one_symbol (int type, int desc, CORE_ADDR valu, const char *name,
 		{
 		  struct block *block;
 
-		  newobj = pop_context ();
+		  cstk = pop_context ();
 		  /* Make a block for the local symbols within.  */
-		  block = finish_block (newobj->name, &local_symbols,
-					newobj->old_blocks, NULL,
-					newobj->start_addr, valu);
+		  block = finish_block (cstk.name,
+					cstk.old_blocks, NULL,
+					cstk.start_addr, valu);
 
 		  /* For C++, set the block's scope.  */
-		  if (SYMBOL_LANGUAGE (newobj->name) == language_cplus)
-		    cp_set_block_scope (newobj->name, block,
+		  if (SYMBOL_LANGUAGE (cstk.name) == language_cplus)
+		    cp_set_block_scope (cstk.name, block,
 					&objfile->objfile_obstack);
 		}
 
@@ -3036,7 +3035,6 @@ coffstab_build_psymtabs (struct objfile *objfile,
     perror_with_name (name);
 
   stabsread_new_init ();
-  buildsym_init ();
   free_header_files ();
   init_header_files ();
 
@@ -3124,7 +3122,6 @@ elfstab_build_psymtabs (struct objfile *objfile, asection *stabsect,
     perror_with_name (name);
 
   stabsread_new_init ();
-  buildsym_init ();
   free_header_files ();
   init_header_files ();
 
@@ -3226,7 +3223,6 @@ stabsect_build_psymtabs (struct objfile *objfile, char *stab_name,
     perror_with_name (name);
 
   stabsread_new_init ();
-  buildsym_init ();
   free_header_files ();
   init_header_files ();
 

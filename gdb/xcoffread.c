@@ -41,7 +41,7 @@
 /* FIXME: ezannoni/2004-02-13 Verify if the include below is really needed.  */
 #include "symfile.h"
 #include "objfiles.h"
-#include "buildsym.h"
+#include "buildsym-legacy.h"
 #include "stabsread.h"
 #include "expression.h"
 #include "complaints.h"
@@ -713,6 +713,7 @@ process_linenos (CORE_ADDR start, CORE_ADDR end)
       /* Line numbers are not necessarily ordered.  xlc compilation will
          put static function to the end.  */
 
+      struct subfile *current_subfile = get_current_subfile ();
       lineTb = arrange_linetable (lv);
       if (lv == lineTb)
 	{
@@ -775,8 +776,9 @@ process_linenos (CORE_ADDR start, CORE_ADDR end)
 	    if (fakename == NULL)
 	      fakename = " ?";
 	    start_subfile (fakename);
-	    xfree (current_subfile->name);
+	    xfree (get_current_subfile ()->name);
 	  }
+	  struct subfile *current_subfile = get_current_subfile ();
 	  current_subfile->name = xstrdup (inclTable[ii].name);
 #endif
 
@@ -1397,17 +1399,17 @@ read_xcoff_symtab (struct objfile *objfile, struct partial_symtab *pst)
 		  within_function = 0;
 		  break;
 		}
-	      newobj = pop_context ();
+	      struct context_stack cstk = pop_context ();
 	      /* Stack must be empty now.  */
-	      if (!outermost_context_p () || newobj == NULL)
+	      if (!outermost_context_p ())
 		{
 		  ef_complaint (cs->c_symnum);
 		  within_function = 0;
 		  break;
 		}
 
-	      finish_block (newobj->name, &local_symbols, newobj->old_blocks,
-			    NULL, newobj->start_addr,
+	      finish_block (cstk.name, cstk.old_blocks,
+			    NULL, cstk.start_addr,
 			    (fcn_cs_saved.c_value
 			     + fcn_aux_saved.x_sym.x_misc.x_fsize
 			     + ANOFFSET (objfile->section_offsets,
@@ -1488,23 +1490,23 @@ read_xcoff_symtab (struct objfile *objfile, struct partial_symtab *pst)
 		  eb_complaint (cs->c_symnum);
 		  break;
 		}
-	      newobj = pop_context ();
-	      if (depth-- != newobj->depth)
+	      struct context_stack cstk = pop_context ();
+	      if (depth-- != cstk.depth)
 		{
 		  eb_complaint (cs->c_symnum);
 		  break;
 		}
-	      if (local_symbols && !outermost_context_p ())
+	      if (*get_local_symbols () && !outermost_context_p ())
 		{
 		  /* Make a block for the local symbols within.  */
-		  finish_block (newobj->name, &local_symbols,
-				newobj->old_blocks, NULL,
-				newobj->start_addr,
+		  finish_block (cstk.name,
+				cstk.old_blocks, NULL,
+				cstk.start_addr,
 				(cs->c_value
 				 + ANOFFSET (objfile->section_offsets,
 					     SECT_OFF_TEXT (objfile))));
 		}
-	      local_symbols = newobj->locals;
+	      *get_local_symbols () = cstk.locals;
 	    }
 	  break;
 
@@ -1592,9 +1594,9 @@ process_xcoff_symbol (struct coff_symbol *cs, struct objfile *objfile)
       SYMBOL_DUP (sym, sym2);
 
       if (cs->c_sclass == C_EXT || C_WEAKEXT)
-	add_symbol_to_list (sym2, &global_symbols);
+	add_symbol_to_list (sym2, get_global_symbols ());
       else if (cs->c_sclass == C_HIDEXT || cs->c_sclass == C_STAT)
-	add_symbol_to_list (sym2, &file_symbols);
+	add_symbol_to_list (sym2, get_file_symbols ());
     }
   else
     {
@@ -1868,7 +1870,6 @@ xcoff_psymtab_to_symtab_1 (struct objfile *objfile, struct partial_symtab *pst)
     {
       /* Init stuff necessary for reading in symbols.  */
       stabsread_init ();
-      buildsym_init ();
 
       scoped_free_pendings free_pending;
       read_xcoff_symtab (objfile, pst);
@@ -1920,7 +1921,6 @@ static void
 xcoff_new_init (struct objfile *objfile)
 {
   stabsread_new_init ();
-  buildsym_init ();
 }
 
 /* Do initialization in preparation for reading symbols from OBJFILE.

@@ -28,7 +28,6 @@
 #include "symtab.h"
 #include "symfile.h"
 #include "objfiles.h"
-#include "buildsym.h"
 #include "stabsread.h"
 #include "gdb-stabs.h"
 #include "complaints.h"
@@ -1325,7 +1324,6 @@ static void
 elf_new_init (struct objfile *ignore)
 {
   stabsread_new_init ();
-  buildsym_init ();
 }
 
 /* Perform any local cleanups required when we are done with a particular

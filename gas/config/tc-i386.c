@@ -1897,11 +1897,12 @@ operand_type_check (i386_operand_type t, enum operand_type c)
   return 0;
 }
 
-/* Return 1 if there is no conflict in 8bit/16bit/32bit/64bit/80bit on
-   operand J for instruction template T.  */
+/* Return 1 if there is no conflict in 8bit/16bit/32bit/64bit/80bit size
+   between operand GIVEN and opeand WANTED for instruction template T.  */
 
 static INLINE int
-match_reg_size (const insn_template *t, unsigned int wanted, unsigned int given)
+match_operand_size (const insn_template *t, unsigned int wanted,
+		    unsigned int given)
 {
   return !((i.types[given].bitfield.byte
 	    && !t->operand_types[wanted].bitfield.byte)
@@ -1915,11 +1916,12 @@ match_reg_size (const insn_template *t, unsigned int wanted, unsigned int given)
 	       && !t->operand_types[wanted].bitfield.tbyte));
 }
 
-/* Return 1 if there is no conflict in SIMD register on
-   operand J for instruction template T.  */
+/* Return 1 if there is no conflict in SIMD register between operand
+   GIVEN and opeand WANTED for instruction template T.  */
 
 static INLINE int
-match_simd_size (const insn_template *t, unsigned int wanted, unsigned int given)
+match_simd_size (const insn_template *t, unsigned int wanted,
+		 unsigned int given)
 {
   return !((i.types[given].bitfield.xmmword
 	    && !t->operand_types[wanted].bitfield.xmmword)
@@ -1929,13 +1931,14 @@ match_simd_size (const insn_template *t, unsigned int wanted, unsigned int given
 	       && !t->operand_types[wanted].bitfield.zmmword));
 }
 
-/* Return 1 if there is no conflict in any size on operand J for
-   instruction template T.  */
+/* Return 1 if there is no conflict in any size between operand GIVEN
+   and opeand WANTED for instruction template T.  */
 
 static INLINE int
-match_mem_size (const insn_template *t, unsigned int wanted, unsigned int given)
+match_mem_size (const insn_template *t, unsigned int wanted,
+		unsigned int given)
 {
-  return (match_reg_size (t, wanted, given)
+  return (match_operand_size (t, wanted, given)
 	  && !((i.types[given].bitfield.unspecified
 		&& !i.broadcast
 		&& !t->operand_types[wanted].bitfield.unspecified)
@@ -1985,7 +1988,7 @@ operand_size_match (const insn_template *t)
 	continue;
 
       if (t->operand_types[j].bitfield.reg
-	  && !match_reg_size (t, j, j))
+	  && !match_operand_size (t, j, j))
 	{
 	  match = 0;
 	  break;
@@ -1999,7 +2002,7 @@ operand_size_match (const insn_template *t)
 	}
 
       if (t->operand_types[j].bitfield.acc
-	  && (!match_reg_size (t, j, j) || !match_simd_size (t, j, j)))
+	  && (!match_operand_size (t, j, j) || !match_simd_size (t, j, j)))
 	{
 	  match = 0;
 	  break;
@@ -2027,7 +2030,7 @@ mismatch:
     {
       if ((t->operand_types[j].bitfield.reg
 	   || t->operand_types[j].bitfield.acc)
-	  && !match_reg_size (t, j, !j))
+	  && !match_operand_size (t, j, !j))
 	goto mismatch;
 
       if (i.types[!j].bitfield.mem
@@ -3360,10 +3363,12 @@ build_vex_prefix (const insn_template *t)
     vector_length = 1;
   else
     {
-      unsigned int op;
+      int op;
 
+      /* Determine vector length from the last multi-length vector
+	 operand.  */
       vector_length = 0;
-      for (op = 0; op < t->operands; ++op)
+      for (op = t->operands - 1; op >= 0; op--)
 	if (t->operand_types[op].bitfield.xmmword
 	    && t->operand_types[op].bitfield.ymmword
 	    && i.types[op].bitfield.ymmword)
@@ -3608,20 +3613,31 @@ build_evex_prefix (void)
       if (!i.tm.opcode_modifier.evex
 	  || i.tm.opcode_modifier.evex == EVEXDYN)
 	{
-	  unsigned int op;
+	  int op;
 
+	  /* Determine vector length from the last multi-length vector
+	     operand.  */
 	  vec_length = 0;
-	  for (op = 0; op < i.tm.operands; ++op)
+	  for (op = i.operands - 1; op >= 0; op--)
 	    if (i.tm.operand_types[op].bitfield.xmmword
 		+ i.tm.operand_types[op].bitfield.ymmword
 		+ i.tm.operand_types[op].bitfield.zmmword > 1)
 	      {
 		if (i.types[op].bitfield.zmmword)
-		  i.tm.opcode_modifier.evex = EVEX512;
+		  {
+		    i.tm.opcode_modifier.evex = EVEX512;
+		    break;
+		  }
 		else if (i.types[op].bitfield.ymmword)
-		  i.tm.opcode_modifier.evex = EVEX256;
+		  {
+		    i.tm.opcode_modifier.evex = EVEX256;
+		    break;
+		  }
 		else if (i.types[op].bitfield.xmmword)
-		  i.tm.opcode_modifier.evex = EVEX128;
+		  {
+		    i.tm.opcode_modifier.evex = EVEX128;
+		    break;
+		  }
 		else if (i.broadcast && (int) op == i.broadcast->operand)
 		  {
 		    switch ((i.tm.operand_types[op].bitfield.dword ? 4 : 8)
@@ -3637,12 +3653,14 @@ build_evex_prefix (void)
 			  i.tm.opcode_modifier.evex = EVEX128;
 			  break;
 			default:
-			  continue;
+			  abort ();
 		      }
+		    break;
 		  }
-		  continue;
-		break;
 	      }
+
+	  if (op < 0)
+	    abort ();
 	}
 
       switch (i.tm.opcode_modifier.evex)
