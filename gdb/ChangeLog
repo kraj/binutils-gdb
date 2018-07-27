@@ -1,3 +1,213 @@
+2018-07-14  Jon Turney  <jon.turney@dronecode.org.uk>
+
+	* windows-nat.c (windows_nat_target::create_inferior): Update to
+	call close() in global namespace.
+
+2018-07-26  Tom Tromey  <tom@tromey.com>
+
+	* dwarf-index-write.c (add_address_entry): Don't add objfile
+	offsets.
+	* dbxread.c (find_stab_function): Rename from
+	find_stab_function_addr.  Return a bound_minimal_symbol.
+	(read_dbx_symtab): Use raw_text_low, raw_text_high.
+	Don't add objfile offsets.
+	(end_psymtab): Use raw_text_low, raw_text_high,
+	MSYMBOL_VALUE_RAW_ADDRESS.
+	(read_ofile_symtab): Update.
+	(process_one_symbol): Update.
+	* dwarf2read.c (create_addrmap_from_index): Don't add objfile
+	offsets.
+	(dw2_relocate): Remove.
+	(dw2_find_pc_sect_symtab): Bias PC by the text offset before
+	searching addrmap.
+	(dwarf2_gdb_index_functions, dwarf2_debug_names_functions):
+	Update.
+	(process_psymtab_comp_unit_reader, add_partial_symbol)
+	(add_partial_subprogram, dwarf2_ranges_read): Update.
+	(load_partial_dies): Update.
+	(add_address_entry): Don't add objfile offsets.
+	(dwarf2_build_include_psymtabs): Update.
+	(create_addrmap_from_aranges): Don't add objfile offsets.
+	(dw2_find_pc_sect_compunit_symtab): Update.
+	* mdebugread.c (parse_symbol): Don't add objfile offsets.
+	(parse_lines): Remove 'pst' parameter, replace with 'textlow'.
+	Update.
+	(parse_partial_symbols): Don't add objfile offsets.  Use
+	raw_text_low, raw_text_high.  Update.
+	(handle_psymbol_enumerators, psymtab_to_symtab_1): Update.
+	* objfiles.c (objfile_relocate1): Don't relocate psymtabs_addrmap
+	or call 'relocate' quick function.  Clear psymbol_map.
+	* psympriv.h (struct partial_symbol) <address>: Add section
+	offset.
+	<set_unrelocated_address>: Rename from set_address.
+	<raw_text_low, raw_text_high>: New methods.
+	<text_low, text_high>: Add objfile parameter.
+	(add_psymbol_to_bcache): Add 'section' parameter.  Call
+	set_unrelocated_address.
+	* psymtab.c (find_pc_sect_psymtab_closer, find_pc_sect_psymtab)
+	(find_pc_psymbol): Update.
+	(fixup_psymbol_section, relocate_psymtabs): Remove.
+	(dump_psymtab, psym_functions): Update.
+	(add_psymbol_to_bcache, add_psymbol_to_list): Add 'section'
+	parameter.
+	(maintenance_info_psymtabs, maintenance_check_psymtabs): Update.
+	(start_psymtab_common): Update.
+	* symfile-debug.c (debug_qf_relocate): Remove.
+	(debug_sym_quick_functions): Update.
+	* symfile.h (struct quick_symbol_functions) <relocate>: Remove.
+	* xcoffread.c (scan_xcoff_symtab): Don't add objfile offsets.
+	Update.
+
+2018-07-26  Tom Tromey  <tromey@redhat.com>
+
+	* dbxread.c (end_psymtab): Use text_high_valid and
+	text_low_valid.
+	* mdebugread.c (parse_partial_symbols): Use text_low_valid.
+	(psymtab_to_symtab_1): Use text_high_valid and text_low_valid.
+	* psympriv.h (struct partial_symtab) <m_text_low, m_text_high>:
+	Update comment.
+	<text_low_valid, text_high_valid>: New fields.
+	<set_text_low, set_text_high>: Update.
+	* xcoffread.c (scan_xcoff_symtab): Use text_low_valid.
+
+2018-07-26  Tom Tromey  <tom@tromey.com>
+
+	* dbxread.c (read_dbx_symtab, end_psymtab, read_ofile_symtab):
+	Update.
+	* dwarf2read.c (dwarf2_create_include_psymtab): Don't initialize
+	textlow and texthigh fields.
+	(process_psymtab_comp_unit_reader, dwarf2_build_include_psymtabs):
+	Update.
+	* mdebugread.c (parse_lines, parse_partial_symbols)
+	(psymtab_to_symtab_1): Update.
+	* psympriv.h (struct partial_symtab) <m_text_low, m_text_high>:
+	Rename fields.  Update comment.  Now private.
+	<text_low, text_high, set_text_low, set_text_high>: New methods.
+	* psymtab.c (find_pc_sect_psymtab_closer, find_pc_sect_psymtab)
+	(find_pc_sect_psymbol, relocate_psymtabs, dump_psymtab)
+	(start_psymtab_common, maintenance_info_psymtabs)
+	(maintenance_check_psymtabs): Update.
+	* xcoffread.c (xcoff_end_psymtab): Don't initialize textlow and
+	texthigh fields.
+	(scan_xcoff_symtab): Update.
+
+2018-07-26  Tom Tromey  <tromey@redhat.com>
+
+	* psympriv.h (struct partial_symbol) <unrelocated_address,
+	address, set_address>: New methods.
+	* psymtab.c (find_pc_sect_psymtab_closer, find_pc_sect_psymbol)
+	(fixup_psymbol_section, relocate_psymtabs): Update.
+	(print_partial_symbols): Add 'objfile' parameter.  Update.
+	(dump_psymtab, add_psymbol_to_bcache, psym_fill_psymbol_map):
+	Update.
+
+2018-07-26  Tom Tromey  <tom@tromey.com>
+
+	* dwarf-index-write.c (write_psymbols, debug_names::insert)
+	(debug_names::write_psymbols): Update.
+	* psympriv.h (struct partial_symbol): Derive from
+	general_symbol_info.
+	<obj_section>: New method.
+	(PSYMBOL_DOMAIN, PSYMBOL_CLASS): Remove.n
+	* psymtab.c (find_pc_sect_psymtab_closer, find_pc_sect_psymtab)
+	(find_pc_sect_psymbol, fixup_psymbol_section)
+	(match_partial_symbol, lookup_partial_symbol, relocate_psymtabs)
+	(print_partial_symbols, recursively_search_psymtabs)
+	(compare_psymbols, psymbol_hash, psymbol_compare)
+	(add_psymbol_to_bcache, maintenance_check_psymtabs)
+	(psymbol_name_matches, psym_fill_psymbol_map): Update.
+
+2018-07-26  Tom Tromey  <tromey@redhat.com>
+
+	* dbxread.c (end_psymtab): Remove dead code.
+
+2018-07-26  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* dwarf2-frame-tailcall.c (tailcall_frame_sniffer): Exit early if
+	DWARF unwinders are disabled.
+	* dwarf2-frame.c: Add dwarf2read.h include.
+	(dwarf2_frame_sniffer): Exit early if DWARF unwinders are
+	disabled.
+	(dwarf2_frame_unwinders_enabled_p): Define.
+	(show_dwarf_unwinders_enabled_p): New function.
+	(_initialize_dwarf2_frame): Register switch to control DWARF
+	unwinder use.
+	* dwarf2-frame.h (dwarf2_frame_unwinders_enabled_p): Declare.
+	* dwarf2read.c (set_dwarf_cmdlist): Remove static keyword.
+	(show_dwarf_cmdlist): Remove static keyword.
+	* dwarf2read.h (set_dwarf_cmdlist): Declare.
+	(show_dwarf_cmdlist): Declare.
+	* NEWS: Document new feature.
+
+2018-07-26  Tom de Vries  <tdevries@suse.de>
+
+	PR breakpoints/23366
+	* infcmd.c (info_program_command): Handle ptid == minus_one_ptid.
+
+2018-07-26  Tom de Vries  <tdevries@suse.de>
+
+	* dwarf2read.c (read_subrange_type): Warn if DW_AT_upper_bound or
+	DW_AT_count can't be translated to a dynamic prop.
+
+2018-07-25  Tom de Vries  <tdevries@suse.de>
+
+	* dwarf2loc.c (dwarf2_locexpr_baton_eval): Wrap ctx.eval call in
+	try/catch.
+
+2018-07-25  Jan Vrany  <jan.vrany@fit.cvut.cz>
+
+	* breakpoint.c (enable_disable_bp_num_loc): Notify observers.
+
+2018-07-25  Joel Brobecker  <brobecker@adacore.com>
+
+	* MAINTAINERS (Global Maintainers): Add Tom Tromey.
+
+2018-07-24  Keith Seitz  <keiths@redhat.comt
+
+	PR symtab/23010
+	* dwarf2read.c (dw2_add_symbol_to_list): New function.
+	(fixup_go_packaging, new_symbol): Use dw2_add_symbol_to_list
+	instead of add_symbol_to_list.
+	(read_file_scope): Call prepare_one_comp_unit before reading
+	any other DIEs.
+
+2018-07-24  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* common/scoped_mmap.h (class scoped_mmap): Fix indentation.
+
+2018-07-24  Tom Tromey  <tom@tromey.com>
+
+	* utils.c (malloc, realloc, free): Don't declare.
+	* configure, config.in: Rebuild.
+	* configure.ac: Don't check for declarations of free, malloc, or
+	realloc.
+
+2018-07-22  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* aarch64-linux-nat.c
+	(aarch64_linux_nat_target::stopped_data_address): Remove unused
+	variable.
+	* arm-linux-nat.c (fetch_regs): Likewise.
+	(store_regs): Likewise.
+	(fetch_vfp_regs): Likewise.
+	(store_vfp_regs): Likewise.
+	(arm_linux_nat_target::insert_hw_breakpoint): Likewise.
+	(arm_linux_nat_target::remove_hw_breakpoint): Likewise.
+	(arm_linux_nat_target::insert_watchpoint): Likewise.
+	(arm_linux_nat_target::remove_watchpoint): Likewise.
+	* mips-linux-nat.c (mips_linux_nat_target::insert_watchpoint):
+	Likewise.
+	* nat/aarch64-sve-linux-ptrace.c (aarch64_sve_get_sveregs):
+	Likewise.
+	* ppc-linux-nat.c (fetch_register): Likewise.
+	(fetch_all_gp_regs): Likewise.
+	(fetch_ppc_registers): Likewise.
+	(store_all_gp_regs): Likewise.
+	(store_ppc_registers): Likewise.
+	(hwdebug_insert_point): Likewise.
+	(can_use_watchpoint_cond_accel): Likewise.
+	* remote-sim.c (gdb_os_write_stdout): Likewise.
+
 2018-07-22  Simon Marchi  <simon.marchi@polymtl.ca>
 	    Tom Tromey  <tom@tromey.com>
 

@@ -230,6 +230,9 @@ struct Broadcast_Operation
 
   /* Index of broadcasted operand.  */
   int operand;
+
+  /* Number of bytes to broadcast.  */
+  int bytes;
 };
 
 static struct Broadcast_Operation broadcast_op;
@@ -269,7 +272,6 @@ enum i386_error
     invalid_vector_register_set,
     unsupported_vector_index_register,
     unsupported_broadcast,
-    broadcast_not_on_src_operand,
     broadcast_needed,
     unsupported_masking,
     mask_not_on_destination,
@@ -3363,12 +3365,12 @@ build_vex_prefix (const insn_template *t)
     vector_length = 1;
   else
     {
-      int op;
+      unsigned int op;
 
       /* Determine vector length from the last multi-length vector
 	 operand.  */
       vector_length = 0;
-      for (op = t->operands - 1; op >= 0; op--)
+      for (op = t->operands; op--;)
 	if (t->operand_types[op].bitfield.xmmword
 	    && t->operand_types[op].bitfield.ymmword
 	    && i.types[op].bitfield.ymmword)
@@ -3613,12 +3615,12 @@ build_evex_prefix (void)
       if (!i.tm.opcode_modifier.evex
 	  || i.tm.opcode_modifier.evex == EVEXDYN)
 	{
-	  int op;
+	  unsigned int op;
 
 	  /* Determine vector length from the last multi-length vector
 	     operand.  */
 	  vec_length = 0;
-	  for (op = i.operands - 1; op >= 0; op--)
+	  for (op = i.operands; op--;)
 	    if (i.tm.operand_types[op].bitfield.xmmword
 		+ i.tm.operand_types[op].bitfield.ymmword
 		+ i.tm.operand_types[op].bitfield.zmmword > 1)
@@ -3640,8 +3642,7 @@ build_evex_prefix (void)
 		  }
 		else if (i.broadcast && (int) op == i.broadcast->operand)
 		  {
-		    switch ((i.tm.operand_types[op].bitfield.dword ? 4 : 8)
-			    * i.broadcast->type)
+		    switch (i.broadcast->bytes)
 		      {
 			case 64:
 			  i.tm.opcode_modifier.evex = EVEX512;
@@ -3659,7 +3660,7 @@ build_evex_prefix (void)
 		  }
 	      }
 
-	  if (op < 0)
+	  if (op >= MAX_OPERANDS)
 	    abort ();
 	}
 
@@ -4674,6 +4675,13 @@ parse_operands (char *l, const char *mnemonic)
 	  /* Now parse operand adding info to 'i' as we go along.  */
 	  END_STRING_AND_SAVE (l);
 
+	  if (i.mem_operands > 1)
+	    {
+	      as_bad (_("too many memory references for `%s'"),
+		      mnemonic);
+	      return 0;
+	    }
+
 	  if (intel_syntax)
 	    operand_ok =
 	      i386_intel_operand (token_start,
@@ -5009,6 +5017,22 @@ optimize_disp (void)
       }
 }
 
+/* Return 1 if there is a match in broadcast bytes between operand
+   GIVEN and instruction template T.   */
+
+static INLINE int
+match_broadcast_size (const insn_template *t, unsigned int given)
+{
+  return ((t->opcode_modifier.broadcast == BYTE_BROADCAST
+	   && i.types[given].bitfield.byte)
+	  || (t->opcode_modifier.broadcast == WORD_BROADCAST
+	      && i.types[given].bitfield.word)
+	  || (t->opcode_modifier.broadcast == DWORD_BROADCAST
+	      && i.types[given].bitfield.dword)
+	  || (t->opcode_modifier.broadcast == QWORD_BROADCAST
+	      && i.types[given].bitfield.qword));
+}
+
 /* Check if operands are valid for the instruction.  */
 
 static int
@@ -5127,23 +5151,29 @@ check_VecOperands (const insn_template *t)
       i386_operand_type type, overlap;
 
       /* Check if specified broadcast is supported in this instruction,
-	 and it's applied to memory operand of DWORD or QWORD type.  */
+	 and its broadcast bytes match the memory operand.  */
       op = i.broadcast->operand;
       if (!t->opcode_modifier.broadcast
 	  || !i.types[op].bitfield.mem
 	  || (!i.types[op].bitfield.unspecified
-	      && (t->operand_types[op].bitfield.dword
-		  ? !i.types[op].bitfield.dword
-		  : !i.types[op].bitfield.qword)))
+	      && !match_broadcast_size (t, op)))
 	{
 	bad_broadcast:
 	  i.error = unsupported_broadcast;
 	  return 1;
 	}
 
+      i.broadcast->bytes = ((1 << (t->opcode_modifier.broadcast - 1))
+			    * i.broadcast->type);
       operand_type_set (&type, 0);
-      switch ((t->operand_types[op].bitfield.dword ? 4 : 8) * i.broadcast->type)
+      switch (i.broadcast->bytes)
 	{
+	case 2:
+	  type.bitfield.word = 1;
+	  break;
+	case 4:
+	  type.bitfield.dword = 1;
+	  break;
 	case 8:
 	  type.bitfield.qword = 1;
 	  break;
@@ -5190,9 +5220,7 @@ check_VecOperands (const insn_template *t)
 	  break;
       gas_assert (op < i.operands);
       /* Check size of the memory operand.  */
-      if (t->operand_types[op].bitfield.dword
-	  ? i.types[op].bitfield.dword
-	  : i.types[op].bitfield.qword)
+      if (match_broadcast_size (t, op))
 	{
 	  i.error = broadcast_needed;
 	  return 1;
@@ -5246,7 +5274,7 @@ check_VecOperands (const insn_template *t)
       && i.disp_encoding != disp_encoding_32bit)
     {
       if (i.broadcast)
-	i.memshift = t->operand_types[op].bitfield.dword ? 2 : 3;
+	i.memshift = t->opcode_modifier.broadcast - 1;
       else if (t->opcode_modifier.disp8memshift != DISP8_SHIFT_VL)
 	i.memshift = t->opcode_modifier.disp8memshift;
       else
@@ -5257,14 +5285,17 @@ check_VecOperands (const insn_template *t)
 	  for (op = 0; op < i.operands; op++)
 	    if (operand_type_check (i.types[op], anymem))
 	      {
-		if (t->operand_types[op].bitfield.xmmword
-		    + t->operand_types[op].bitfield.ymmword
-		    + t->operand_types[op].bitfield.zmmword <= 1)
+		if (t->opcode_modifier.evex == EVEXLIG)
+		  i.memshift = 2 + (i.suffix == QWORD_MNEM_SUFFIX);
+		else if (t->operand_types[op].bitfield.xmmword
+			 + t->operand_types[op].bitfield.ymmword
+			 + t->operand_types[op].bitfield.zmmword <= 1)
 		  type = &t->operand_types[op];
 		else if (!i.types[op].bitfield.unspecified)
 		  type = &i.types[op];
 	      }
-	    else if (i.types[op].bitfield.regsimd)
+	    else if (i.types[op].bitfield.regsimd
+		     && t->opcode_modifier.evex != EVEXLIG)
 	      {
 		if (i.types[op].bitfield.zmmword)
 		  i.memshift = 6;
@@ -5768,9 +5799,6 @@ check_reverse:
 	  break;
 	case unsupported_broadcast:
 	  err_msg = _("unsupported broadcast");
-	  break;
-	case broadcast_not_on_src_operand:
-	  err_msg = _("broadcast not on source memory operand");
 	  break;
 	case broadcast_needed:
 	  err_msg = _("broadcast is needed for operand of such type");
@@ -8613,6 +8641,7 @@ check_VecOperations (char *op_string, char *op_end)
 
 	      broadcast_op.type = bcst_type;
 	      broadcast_op.operand = this_operand;
+	      broadcast_op.bytes = 0;
 	      i.broadcast = &broadcast_op;
 	    }
 	  /* Check masking operation.  */

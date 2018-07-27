@@ -1,3 +1,62 @@
+2018-07-27  John Darrington  <john@darrington.wattle.id.au>
+
+	* elf32-s12z.c (ELF_TARGET_ID): Don't define.
+
+2018-07-27  John Darrington  <john@darrington.wattle.id.au>
+
+	* libbfd.c (bfd_getb24, bfd_getl24): New functions.
+	(bfd_get_24, bfd_put_24): New macros.
+	* bfd-in2.h: Regenerate.
+
+2018-07-27  John Darrington  <john@darrington.wattle.id.au>
+
+	* elf32-s12z.c (s12z_elf_set_mach_from_flags): Remove comment.
+
+2018-07-26  Alan Modra  <amodra@gmail.com>
+
+	* elf64-ppc.c (ppc64_elf_size_stubs): Use a ppc_stub_long_branch_r2off
+	for calls to symbols with STO_PPC64_LOCAL_MASK bits set to 1.
+
+2018-07-25  Alan Modra  <amodra@gmail.com>
+
+	* elf32-ppc.c (ppc_elf_relax_section): Ignore common or undef locals.
+	Avoid trashing toff with added when used as a symbol index.
+	Ignore R_PPC_PLTREL24 addends in unused example code.  Avoid
+	creating unnecessary fixups when relocatable.
+
+2018-07-25  Alan Modra  <amodra@gmail.com>
+
+	* elf32-arm.c (elf32_arm_nabi_write_core_note): Disable
+	-Wstringop-truncation warning for gcc-8.0 too.
+	* elf32-ppc.c (ppc_elf_write_core_note): Likewise.
+	* elf64-ppc.c (ppc64_elf_write_core_note): Likewise.
+	* elfxx-aarch64.c (_bfd_aarch64_elf_write_core_note): Likewise.
+	* elf32-s390.c (elf_s390_write_core_note): Comment fix.
+	* elf64-s390.c (elf_s390_write_core_note): Likewise.
+
+2018-07-24  Alan Modra  <amodra@gmail.com>
+
+	PR 23430
+	* dwarf2.c (dwarf_debug_section_enum): Fix comment typo.
+	* elf.c (bfd_section_from_shdr, elf_sort_sections): Likewise.
+
+2018-07-23  Max Filippov  <jcmvbkbc@gmail.com>
+
+	* elf32-xtensa.c (elf_xtensa_finish_dynamic_sections): Move
+	relocation sections consistency check to always check both
+	.rela.dyn and .rela.plt when they exist. Rearrange variable
+	definition and assignment places.
+
+2018-07-23  Max Filippov  <jcmvbkbc@gmail.com>
+
+	* elf32-xtensa.c (shrink_dynamic_reloc_sections): Shrink dynamic
+	relocations section for dynamic undefined weak symbols when
+	linking a shared object.
+
+2018-07-23  Tom Tromey  <tom@tromey.com>
+
+	* elf.c (bfd_get_elf_phdrs): Don't call memcpy with size 0.
+
 2018-07-21  Eric Botcazou  <ebotcazou@adacore.com>
 
 	* elf32-arm.c (elf32_arm_final_link_relocate) <R_ARM_GOT32>: Small

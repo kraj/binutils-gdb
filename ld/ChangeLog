@@ -1,3 +1,71 @@
+2018-07-27  John Darrington  <john@darrington.wattle.id.au>
+
+	* scripttempl/elfm9s12z.sc: Put input sections called .common
+	into the .bss segment.
+
+2018-07-27  John Darrington  <john@darrington.wattle.id.au>
+
+	* scripttempl/elfm9s12z.sc: Emit the data_section at the end of text.
+
+2018-07-26  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/ld-powerpc/vxworks-relax-2.rd: Update for 2018-07-25
+	ppc_elf_relax_section changes.
+
+2018-07-26  Alan Modra  <amodra@gmail.com>
+
+	* ld-powerpc/elfv2.s: Add .localentry f5,1 testcase.
+	* ld-powerpc/elfv2exe.d: Update.
+	* ld-powerpc/elfv2so.d: Update.
+
+2018-07-25  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/ld-powerpc/big.s: New file.
+	* testsuite/ld-powerpc/relaxrl.d: New test.
+	* testsuite/ld-powerpc/powerpc.exp: Run new test.
+	* testsuite/ld-powerpc/relaxr.d: Adjust.
+
+2018-07-24  Nick Clifton  <nickc@redhat.com>
+
+	* po/fr.po: Updated French translation.
+
+2018-07-23  Max Filippov  <jcmvbkbc@gmail.com>
+
+	* testsuite/ld-xtensa/coalesce.d: New file.
+	* testsuite/ld-xtensa/coalesce.exp: Remove file.
+	* testsuite/ld-xtensa/diff_overflow.d: New file.
+	* testsuite/ld-xtensa/diff_overflow.exp: Remove file.
+	* testsuite/ld-xtensa/lcall.d: New file.
+	* testsuite/ld-xtensa/lcall.exp: Remove file.
+	* testsuite/ld-xtensa/xtensa.exp (coalesce, diff_overflow)
+	(lcall): New tests.
+
+2018-07-23  Max Filippov  <jcmvbkbc@gmail.com>
+
+	* testsuite/ld-xtensa/relax-static-defs.s: New file.
+	* testsuite/ld-xtensa/relax-static-local-pie.d: New file.
+	* testsuite/ld-xtensa/relax-static-local-shared.d: New file.
+	* testsuite/ld-xtensa/relax-static-local.s: New file.
+	* testsuite/ld-xtensa/relax-static-pie.d: New file.
+	* testsuite/ld-xtensa/relax-static-shared.d: New file.
+	* testsuite/ld-xtensa/relax-static.s: New file.
+	* testsuite/ld-xtensa/relax-undef-weak-local-pie.d: New file.
+	* testsuite/ld-xtensa/relax-undef-weak-local-shared.d: New file.
+	* testsuite/ld-xtensa/relax-undef-weak-local.s: New file.
+	* testsuite/ld-xtensa/relax-undef-weak-pie.d: New file.
+	* testsuite/ld-xtensa/relax-undef-weak-shared.d: New file.
+	* testsuite/ld-xtensa/relax-undef-weak.s: New file.
+	* testsuite/ld-xtensa/xtensa.exp: New file.
+
+2018-07-23  Max Filippov  <jcmvbkbc@gmail.com>
+
+	* testsuite/ld-xtensa/xtensa.exp: Rename to xtensa-linux.exp.
+
+2018-07-23  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/ld-elf/reloc-discard-warn.d: New.
+	* testsuite/ld-elf/reloc-discard.d: Skip test on PowerPC64.
+
 2018-07-20  H.J. Lu  <hongjiu.lu@intel.com>
 
 	* testsuite/ld-elf/reloc-discard.ld: Discard .rel.* and .rela.*

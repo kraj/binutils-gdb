@@ -2011,7 +2011,7 @@ bfd_section_from_shdr (bfd *abfd, unsigned int shindex)
   if (++ nesting > 3)
     {
       /* PR17512: A corrupt ELF binary might contain a recursive group of
-	 sections, with each the string indicies pointing to the next in the
+	 sections, with each the string indices pointing to the next in the
 	 loop.  Detect this here, by refusing to load a section that we are
 	 already in the process of loading.  We only trigger this test if
 	 we have nested at least three sections deep as normal ELF binaries
@@ -5140,7 +5140,7 @@ elf_sort_sections (const void *arg1, const void *arg2)
     {
       if (TOEND (sec2))
 	{
-	  /* If the indicies are the same, do not return 0
+	  /* If the indices are the same, do not return 0
 	     here, but continue to try the next comparison.  */
 	  if (sec1->target_index - sec2->target_index != 0)
 	    return sec1->target_index - sec2->target_index;
@@ -11629,8 +11629,9 @@ bfd_get_elf_phdrs (bfd *abfd, void *phdrs)
     }
 
   num_phdrs = elf_elfheader (abfd)->e_phnum;
-  memcpy (phdrs, elf_tdata (abfd)->phdr,
-	  num_phdrs * sizeof (Elf_Internal_Phdr));
+  if (num_phdrs != 0)
+    memcpy (phdrs, elf_tdata (abfd)->phdr,
+	    num_phdrs * sizeof (Elf_Internal_Phdr));
 
   return num_phdrs;
 }

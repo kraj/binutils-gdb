@@ -3177,8 +3177,8 @@ create_addrmap_from_index (struct dwarf2_per_objfile *dwarf2_per_objfile,
 	  continue;
 	}
 
-      lo = gdbarch_adjust_dwarf2_addr (gdbarch, lo + baseaddr);
-      hi = gdbarch_adjust_dwarf2_addr (gdbarch, hi + baseaddr);
+      lo = gdbarch_adjust_dwarf2_addr (gdbarch, lo + baseaddr) - baseaddr;
+      hi = gdbarch_adjust_dwarf2_addr (gdbarch, hi + baseaddr) - baseaddr;
       addrmap_set_empty (mutable_map, lo, hi - 1,
 			 dwarf2_per_objfile->get_cu (cu_index));
     }
@@ -3336,8 +3336,10 @@ create_addrmap_from_aranges (struct dwarf2_per_objfile *dwarf2_per_objfile,
 	      continue;
 	    }
 	  ULONGEST end = start + length;
-	  start = gdbarch_adjust_dwarf2_addr (gdbarch, start + baseaddr);
-	  end = gdbarch_adjust_dwarf2_addr (gdbarch, end + baseaddr);
+	  start = (gdbarch_adjust_dwarf2_addr (gdbarch, start + baseaddr)
+		   - baseaddr);
+	  end = (gdbarch_adjust_dwarf2_addr (gdbarch, end + baseaddr)
+		 - baseaddr);
 	  addrmap_set_empty (mutable_map, start, end - 1, per_cu);
 	}
     }
@@ -4096,14 +4098,6 @@ dw2_dump (struct objfile *objfile)
   else
     printf_filtered (" faked for \"readnow\"\n");
   printf_filtered ("\n");
-}
-
-static void
-dw2_relocate (struct objfile *objfile,
-	      const struct section_offsets *new_offsets,
-	      const struct section_offsets *delta)
-{
-  /* There's nothing to relocate here.  */
 }
 
 static void
@@ -5237,8 +5231,10 @@ dw2_find_pc_sect_compunit_symtab (struct objfile *objfile,
   if (!objfile->psymtabs_addrmap)
     return NULL;
 
+  CORE_ADDR baseaddr = ANOFFSET (objfile->section_offsets,
+				 SECT_OFF_TEXT (objfile));
   data = (struct dwarf2_per_cu_data *) addrmap_find (objfile->psymtabs_addrmap,
-						     pc);
+						     pc - baseaddr);
   if (!data)
     return NULL;
 
@@ -5336,7 +5332,6 @@ const struct quick_symbol_functions dwarf2_gdb_index_functions =
   dw2_lookup_symbol,
   dw2_print_stats,
   dw2_dump,
-  dw2_relocate,
   dw2_expand_symtabs_for_function,
   dw2_expand_all_symtabs,
   dw2_expand_symtabs_with_fullname,
@@ -6149,7 +6144,6 @@ const struct quick_symbol_functions dwarf2_debug_names_functions =
   dw2_debug_names_lookup_symbol,
   dw2_print_stats,
   dw2_debug_names_dump,
-  dw2_relocate,
   dw2_debug_names_expand_symtabs_for_function,
   dw2_expand_all_symtabs,
   dw2_expand_symtabs_with_fullname,
@@ -6507,9 +6501,6 @@ dwarf2_create_include_psymtab (const char *name, struct partial_symtab *pst,
       subpst->dirname = pst->dirname;
     }
 
-  subpst->textlow = 0;
-  subpst->texthigh = 0;
-
   subpst->dependencies
     = XOBNEW (&objfile->objfile_obstack, struct partial_symtab *);
   subpst->dependencies[0] = pst;
@@ -6547,8 +6538,12 @@ dwarf2_build_include_psymtabs (struct dwarf2_cu *cu,
   if (lh == NULL)
     return;  /* No linetable, so no includes.  */
 
-  /* NOTE: pst->dirname is DW_AT_comp_dir (if present).  */
-  dwarf_decode_lines (lh.get (), pst->dirname, cu, pst, pst->textlow, 1);
+  /* NOTE: pst->dirname is DW_AT_comp_dir (if present).  Also note
+     that we pass in the raw text_low here; that is ok because we're
+     only decoding the line table to make include partial symtabs, and
+     so the addresses aren't really used.  */
+  dwarf_decode_lines (lh.get (), pst->dirname, cu, pst,
+		      pst->raw_text_low (), 1);
 }
 
 static hashval_t
@@ -7932,14 +7927,17 @@ process_psymtab_comp_unit_reader (const struct die_reader_specs *reader,
   cu_bounds_kind = dwarf2_get_pc_bounds (comp_unit_die, &best_lowpc,
 					 &best_highpc, cu, pst);
   if (cu_bounds_kind == PC_BOUNDS_HIGH_LOW && best_lowpc < best_highpc)
-    /* Store the contiguous range if it is not empty; it can be empty for
-       CUs with no code.  */
-    addrmap_set_empty (objfile->psymtabs_addrmap,
-		       gdbarch_adjust_dwarf2_addr (gdbarch,
-						   best_lowpc + baseaddr),
-		       gdbarch_adjust_dwarf2_addr (gdbarch,
-						   best_highpc + baseaddr) - 1,
-		       pst);
+    {
+      CORE_ADDR low
+	= (gdbarch_adjust_dwarf2_addr (gdbarch, best_lowpc + baseaddr)
+	   - baseaddr);
+      CORE_ADDR high
+	= (gdbarch_adjust_dwarf2_addr (gdbarch, best_highpc + baseaddr)
+	   - baseaddr - 1);
+      /* Store the contiguous range if it is not empty; it can be
+	 empty for CUs with no code.  */
+      addrmap_set_empty (objfile->psymtabs_addrmap, low, high, pst);
+    }
 
   /* Check if comp unit has_children.
      If so, read the rest of the partial symbols from this comp unit.
@@ -7970,8 +7968,12 @@ process_psymtab_comp_unit_reader (const struct die_reader_specs *reader,
 	  best_highpc = highpc;
 	}
     }
-  pst->textlow = gdbarch_adjust_dwarf2_addr (gdbarch, best_lowpc + baseaddr);
-  pst->texthigh = gdbarch_adjust_dwarf2_addr (gdbarch, best_highpc + baseaddr);
+  pst->set_text_low (gdbarch_adjust_dwarf2_addr (gdbarch,
+						 best_lowpc + baseaddr)
+		     - baseaddr);
+  pst->set_text_high (gdbarch_adjust_dwarf2_addr (gdbarch,
+						  best_highpc + baseaddr)
+		      - baseaddr);
 
   end_psymtab_common (objfile, pst);
 
@@ -8008,8 +8010,8 @@ process_psymtab_comp_unit_reader (const struct die_reader_specs *reader,
 			  ", %d global, %d static syms\n",
 			  per_cu->is_debug_types ? "type" : "comp",
 			  sect_offset_str (per_cu->sect_off),
-			  paddress (gdbarch, pst->textlow),
-			  paddress (gdbarch, pst->texthigh),
+			  paddress (gdbarch, pst->text_low (objfile)),
+			  paddress (gdbarch, pst->text_high (objfile)),
 			  pst->n_global_syms, pst->n_static_syms);
     }
 }
@@ -8802,7 +8804,8 @@ add_partial_symbol (struct partial_die_info *pdi, struct dwarf2_cu *cu)
     {
     case DW_TAG_inlined_subroutine:
     case DW_TAG_subprogram:
-      addr = gdbarch_adjust_dwarf2_addr (gdbarch, pdi->lowpc + baseaddr);
+      addr = (gdbarch_adjust_dwarf2_addr (gdbarch, pdi->lowpc + baseaddr)
+	      - baseaddr);
       if (pdi->is_external || cu->language == language_ada)
 	{
           /* brobecker/2007-12-26: Normally, only "external" DIEs are part
@@ -8812,14 +8815,17 @@ add_partial_symbol (struct partial_die_info *pdi, struct dwarf2_cu *cu)
 	  add_psymbol_to_list (actual_name, strlen (actual_name),
 			       built_actual_name != NULL,
 			       VAR_DOMAIN, LOC_BLOCK,
+			       SECT_OFF_TEXT (objfile),
 			       &objfile->global_psymbols,
-			       addr, cu->language, objfile);
+			       addr,
+			       cu->language, objfile);
 	}
       else
 	{
 	  add_psymbol_to_list (actual_name, strlen (actual_name),
 			       built_actual_name != NULL,
 			       VAR_DOMAIN, LOC_BLOCK,
+			       SECT_OFF_TEXT (objfile),
 			       &objfile->static_psymbols,
 			       addr, cu->language, objfile);
 	}
@@ -8837,7 +8843,7 @@ add_partial_symbol (struct partial_die_info *pdi, struct dwarf2_cu *cu)
 	  list = &objfile->static_psymbols;
 	add_psymbol_to_list (actual_name, strlen (actual_name),
 			     built_actual_name != NULL, VAR_DOMAIN, LOC_STATIC,
-			     list, 0, cu->language, objfile);
+			     -1, list, 0, cu->language, objfile);
       }
       break;
     case DW_TAG_variable:
@@ -8872,9 +8878,9 @@ add_partial_symbol (struct partial_die_info *pdi, struct dwarf2_cu *cu)
 	    add_psymbol_to_list (actual_name, strlen (actual_name),
 				 built_actual_name != NULL,
 				 VAR_DOMAIN, LOC_STATIC,
+				 SECT_OFF_TEXT (objfile),
 				 &objfile->global_psymbols,
-				 addr + baseaddr,
-				 cu->language, objfile);
+				 addr, cu->language, objfile);
 	}
       else
 	{
@@ -8891,8 +8897,9 @@ add_partial_symbol (struct partial_die_info *pdi, struct dwarf2_cu *cu)
 	  add_psymbol_to_list (actual_name, strlen (actual_name),
 			       built_actual_name != NULL,
 			       VAR_DOMAIN, LOC_STATIC,
+			       SECT_OFF_TEXT (objfile),
 			       &objfile->static_psymbols,
-			       has_loc ? addr + baseaddr : (CORE_ADDR) 0,
+			       has_loc ? addr : 0,
 			       cu->language, objfile);
 	}
       break;
@@ -8901,7 +8908,7 @@ add_partial_symbol (struct partial_die_info *pdi, struct dwarf2_cu *cu)
     case DW_TAG_subrange_type:
       add_psymbol_to_list (actual_name, strlen (actual_name),
 			   built_actual_name != NULL,
-			   VAR_DOMAIN, LOC_TYPEDEF,
+			   VAR_DOMAIN, LOC_TYPEDEF, -1,
 			   &objfile->static_psymbols,
 			   0, cu->language, objfile);
       break;
@@ -8909,14 +8916,14 @@ add_partial_symbol (struct partial_die_info *pdi, struct dwarf2_cu *cu)
     case DW_TAG_namespace:
       add_psymbol_to_list (actual_name, strlen (actual_name),
 			   built_actual_name != NULL,
-			   VAR_DOMAIN, LOC_TYPEDEF,
+			   VAR_DOMAIN, LOC_TYPEDEF, -1,
 			   &objfile->global_psymbols,
 			   0, cu->language, objfile);
       break;
     case DW_TAG_module:
       add_psymbol_to_list (actual_name, strlen (actual_name),
 			   built_actual_name != NULL,
-			   MODULE_DOMAIN, LOC_TYPEDEF,
+			   MODULE_DOMAIN, LOC_TYPEDEF, -1,
 			   &objfile->global_psymbols,
 			   0, cu->language, objfile);
       break;
@@ -8940,7 +8947,7 @@ add_partial_symbol (struct partial_die_info *pdi, struct dwarf2_cu *cu)
 	 static vs. global.  */
       add_psymbol_to_list (actual_name, strlen (actual_name),
 			   built_actual_name != NULL,
-			   STRUCT_DOMAIN, LOC_TYPEDEF,
+			   STRUCT_DOMAIN, LOC_TYPEDEF, -1,
 			   cu->language == language_cplus
 			   ? &objfile->global_psymbols
 			   : &objfile->static_psymbols,
@@ -8950,7 +8957,7 @@ add_partial_symbol (struct partial_die_info *pdi, struct dwarf2_cu *cu)
     case DW_TAG_enumerator:
       add_psymbol_to_list (actual_name, strlen (actual_name),
 			   built_actual_name != NULL,
-			   VAR_DOMAIN, LOC_CONST,
+			   VAR_DOMAIN, LOC_CONST, -1,
 			   cu->language == language_cplus
 			   ? &objfile->global_psymbols
 			   : &objfile->static_psymbols,
@@ -9033,10 +9040,12 @@ add_partial_subprogram (struct partial_die_info *pdi,
 
 	      baseaddr = ANOFFSET (objfile->section_offsets,
 				   SECT_OFF_TEXT (objfile));
-	      lowpc = gdbarch_adjust_dwarf2_addr (gdbarch,
-						  pdi->lowpc + baseaddr);
-	      highpc = gdbarch_adjust_dwarf2_addr (gdbarch,
-						   pdi->highpc + baseaddr);
+	      lowpc = (gdbarch_adjust_dwarf2_addr (gdbarch,
+						   pdi->lowpc + baseaddr)
+		       - baseaddr);
+	      highpc = (gdbarch_adjust_dwarf2_addr (gdbarch,
+						    pdi->highpc + baseaddr)
+			- baseaddr);
 	      addrmap_set_empty (objfile->psymtabs_addrmap, lowpc, highpc - 1,
 				 cu->per_cu->v.psymtab);
 	    }
@@ -9702,6 +9711,23 @@ compute_delayed_physnames (struct dwarf2_cu *cu)
   cu->method_list.clear ();
 }
 
+/* A wrapper for add_symbol_to_list to ensure that SYMBOL's language is
+   the same as all other symbols in LISTHEAD.  If a new symbol is added
+   with a different language, this function asserts.  */
+
+static inline void
+dw2_add_symbol_to_list (struct symbol *symbol, struct pending **listhead)
+{
+  /* Only assert if LISTHEAD already contains symbols of a different
+     language (dict_create_hashed/insert_symbol_hashed requires that all
+     symbols in this list are of the same language).  */
+  gdb_assert ((*listhead) == NULL
+	      || (SYMBOL_LANGUAGE ((*listhead)->symbol[0])
+		  == SYMBOL_LANGUAGE (symbol)));
+
+  add_symbol_to_list (symbol, listhead);
+}
+
 /* Go objects should be embedded in a DW_TAG_module DIE,
    and it's not clear if/how imported objects will appear.
    To keep Go support simple until that's worked out,
@@ -9775,7 +9801,7 @@ fixup_go_packaging (struct dwarf2_cu *cu)
       SYMBOL_ACLASS_INDEX (sym) = LOC_TYPEDEF;
       SYMBOL_TYPE (sym) = type;
 
-      add_symbol_to_list (sym, cu->builder->get_global_symbols ());
+      dw2_add_symbol_to_list (sym, cu->builder->get_global_symbols ());
 
       xfree (package_name);
     }
@@ -11432,6 +11458,7 @@ read_file_scope (struct die_info *die, struct dwarf2_cu *cu)
   struct die_info *child_die;
   CORE_ADDR baseaddr;
 
+  prepare_one_comp_unit (cu, die, cu->language);
   baseaddr = ANOFFSET (objfile->section_offsets, SECT_OFF_TEXT (objfile));
 
   get_scope_pc_bounds (die, &lowpc, &highpc, cu);
@@ -11443,8 +11470,6 @@ read_file_scope (struct die_info *die, struct dwarf2_cu *cu)
   lowpc = gdbarch_adjust_dwarf2_addr (gdbarch, lowpc + baseaddr);
 
   file_and_directory fnd = find_file_and_directory (die, cu);
-
-  prepare_one_comp_unit (cu, die, cu->language);
 
   /* The XLCL doesn't generate DW_LANG_OpenCL because this attribute is not
      standardised yet.  As a workaround for the language detection we fall
@@ -14473,10 +14498,12 @@ dwarf2_ranges_read (unsigned offset, CORE_ADDR *low_return,
 	  CORE_ADDR lowpc;
 	  CORE_ADDR highpc;
 
-	  lowpc = gdbarch_adjust_dwarf2_addr (gdbarch,
-					      range_beginning + baseaddr);
-	  highpc = gdbarch_adjust_dwarf2_addr (gdbarch,
-					       range_end + baseaddr);
+	  lowpc = (gdbarch_adjust_dwarf2_addr (gdbarch,
+					       range_beginning + baseaddr)
+		   - baseaddr);
+	  highpc = (gdbarch_adjust_dwarf2_addr (gdbarch,
+						range_end + baseaddr)
+		    - baseaddr);
 	  addrmap_set_empty (objfile->psymtabs_addrmap, lowpc, highpc - 1,
 			     ranges_pst);
 	}
@@ -17610,10 +17637,11 @@ read_subrange_type (struct die_info *die, struct dwarf2_cu *cu)
 	       sect_offset_str (die->sect_off),
 	       objfile_name (cu->per_cu->dwarf2_per_objfile->objfile));
 
-  attr = dwarf2_attr (die, DW_AT_upper_bound, cu);
+  struct attribute *attr_ub, *attr_count;
+  attr = attr_ub = dwarf2_attr (die, DW_AT_upper_bound, cu);
   if (!attr_to_dynamic_prop (attr, die, cu, &high))
     {
-      attr = dwarf2_attr (die, DW_AT_count, cu);
+      attr = attr_count = dwarf2_attr (die, DW_AT_count, cu);
       if (attr_to_dynamic_prop (attr, die, cu, &high))
 	{
 	  /* If bounds are constant do the final calculation here.  */
@@ -17622,6 +17650,20 @@ read_subrange_type (struct die_info *die, struct dwarf2_cu *cu)
 	  else
 	    high_bound_is_count = 1;
 	}
+      else
+	{
+	  if (attr_ub != NULL)
+	    complaint (_("Unresolved DW_AT_upper_bound "
+			 "- DIE at %s [in module %s]"),
+		       sect_offset_str (die->sect_off),
+		       objfile_name (cu->per_cu->dwarf2_per_objfile->objfile));
+	  if (attr_count != NULL)
+	    complaint (_("Unresolved DW_AT_count "
+			 "- DIE at %s [in module %s]"),
+		       sect_offset_str (die->sect_off),
+		       objfile_name (cu->per_cu->dwarf2_per_objfile->objfile));
+	}
+	
     }
 
   /* Dwarf-2 specifications explicitly allows to create subrange types
@@ -18222,7 +18264,7 @@ load_partial_dies (const struct die_reader_specs *reader,
 	{
 	  if (building_psymtab && pdi.name != NULL)
 	    add_psymbol_to_list (pdi.name, strlen (pdi.name), 0,
-				 VAR_DOMAIN, LOC_TYPEDEF,
+				 VAR_DOMAIN, LOC_TYPEDEF, -1,
 				 &objfile->static_psymbols,
 				 0, cu->language, objfile);
 	  info_ptr = locate_pdi_sibling (reader, &pdi, info_ptr);
@@ -18256,7 +18298,7 @@ load_partial_dies (const struct die_reader_specs *reader,
 	    complaint (_("malformed enumerator DIE ignored"));
 	  else if (building_psymtab)
 	    add_psymbol_to_list (pdi.name, strlen (pdi.name), 0,
-				 VAR_DOMAIN, LOC_CONST,
+				 VAR_DOMAIN, LOC_CONST, -1,
 				 cu->language == language_cplus
 				 ? &objfile->global_psymbols
 				 : &objfile->static_psymbols,
@@ -21218,7 +21260,7 @@ new_symbol (struct die_info *die, struct type *type, struct dwarf2_cu *cu,
 	  SYMBOL_TYPE (sym) = objfile_type (objfile)->builtin_core_addr;
 	  SYMBOL_DOMAIN (sym) = LABEL_DOMAIN;
 	  SYMBOL_ACLASS_INDEX (sym) = LOC_LABEL;
-	  add_symbol_to_list (sym, cu->list_in_scope);
+	  dw2_add_symbol_to_list (sym, cu->list_in_scope);
 	  break;
 	case DW_TAG_subprogram:
 	  /* SYMBOL_BLOCK_VALUE (sym) will be filled in later by
@@ -21487,7 +21529,7 @@ new_symbol (struct die_info *die, struct type *type, struct dwarf2_cu *cu,
 	case DW_TAG_common_block:
 	  SYMBOL_ACLASS_INDEX (sym) = LOC_COMMON_BLOCK;
 	  SYMBOL_DOMAIN (sym) = COMMON_BLOCK_DOMAIN;
-	  add_symbol_to_list (sym, cu->list_in_scope);
+	  dw2_add_symbol_to_list (sym, cu->list_in_scope);
 	  break;
 	default:
 	  /* Not a tag we recognize.  Hopefully we aren't processing
@@ -21507,7 +21549,7 @@ new_symbol (struct die_info *die, struct type *type, struct dwarf2_cu *cu,
 	}
 
       if (list_to_add != NULL)
-	add_symbol_to_list (sym, list_to_add);
+	dw2_add_symbol_to_list (sym, list_to_add);
 
       /* For the benefit of old versions of GCC, check for anonymous
 	 namespaces based on the demangled name.  */
@@ -25314,8 +25356,8 @@ partial_die_eq (const void *item_lhs, const void *item_rhs)
   return part_die_lhs->sect_off == part_die_rhs->sect_off;
 }
 
-static struct cmd_list_element *set_dwarf_cmdlist;
-static struct cmd_list_element *show_dwarf_cmdlist;
+struct cmd_list_element *set_dwarf_cmdlist;
+struct cmd_list_element *show_dwarf_cmdlist;
 
 static void
 set_dwarf_cmd (const char *args, int from_tty)

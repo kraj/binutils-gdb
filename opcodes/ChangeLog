@@ -1,3 +1,64 @@
+2018-07-27  Alan Modra  <amodra@gmail.com>
+
+	* ppc-opc.c (insert_sprbat): Correct function parameter and
+	return type.
+	(extract_sprbat): Likewise, variable too.
+
+2018-07-26  Alex Chadwick  <Alex.Chadwick@cl.cam.ac.uk>
+	    Alan Modra  <amodra@gmail.com>
+
+	* ppc-dis.c (ppc_opts): Add -mgekko and -mbroadway.
+	(powerpc_init_dialect): Handle bfd_mach_ppc_750.
+	* ppc-opc.c (insert_sprbat, extract_sprbat): New functions to
+	support disjointed BAT.
+	(powerpc_operands): Allow extra bit in SPRBAT_MASK.  Add SPRGQR.
+	(XSPRGQR_MASK, GEKKO, BROADWAY): Define.
+	(powerpc_opcodes): Add 750cl extended mnemonics for spr access.
+
+2018-07-25  H.J. Lu  <hongjiu.lu@intel.com>
+	    Igor Tsimbalist  <igor.v.tsimbalist@intel.com>
+
+	* i386-gen.c (adjust_broadcast_modifier): New function.
+	(process_i386_opcode_modifier): Add an argument for operands.
+	Adjust the Broadcast value based on operands.
+	(output_i386_opcode): Pass operand_types to
+	process_i386_opcode_modifier.
+	(process_i386_opcodes): Pass NULL as operands to
+	process_i386_opcode_modifier.
+	* i386-opc.h (BYTE_BROADCAST): New.
+	(WORD_BROADCAST): Likewise.
+	(DWORD_BROADCAST): Likewise.
+	(QWORD_BROADCAST): Likewise.
+	(i386_opcode_modifier): Expand broadcast to 3 bits.
+	* i386-tbl.h: Regenerated.
+
+2018-07-24  Alan Modra  <amodra@gmail.com>
+
+	PR 23430
+	* or1k-desc.h: Regenerate.
+
+2018-07-24  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-dis-evex.h (evex_table): Add %LQ to vcvtsi2ss, vcvtsi2sd,
+	vcvtusi2ss, and vcvtusi2sd.
+	* i386-opc.tbl (vcvtsi2sd, vcvtusi2sd, vcvtsi2ss, vcvtusi2ss):
+	Convert AVX512F variants to distinct CpuNo64 and Cpu64 forms.
+	* i386-tbl.h: Re-generate.
+
+2018-07-23  Claudiu Zissulescu <claziss@synopsys.com>
+
+	* arc-opc.c (extract_w6): Fix extending the sign.
+
+2018-07-23  Claudiu Zissulescu <claziss@synopsys.com>
+
+	* arc-tbl.h (vewt): Allow it for ARC EM family.
+
+2018-07-23  Alan Modra  <amodra@gmail.com>
+
+	PR 23419
+	* ppc-opc.c (powerpc_opcodes): Add mtupmc/mfupmc/mfpmc extended
+	opcode variants for mtspr/mfspr encodings.
+
 2018-07-20  Chenghua Xu  <paul.hua.gm@gmail.com>
 	    Maciej W. Rozycki  <macro@mips.com>
 

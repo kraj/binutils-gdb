@@ -427,12 +427,8 @@ static void
 add_address_entry (struct objfile *objfile, data_buf &addr_vec,
 		   CORE_ADDR start, CORE_ADDR end, unsigned int cu_index)
 {
-  CORE_ADDR baseaddr;
-
-  baseaddr = ANOFFSET (objfile->section_offsets, SECT_OFF_TEXT (objfile));
-
-  addr_vec.append_uint (8, BFD_ENDIAN_LITTLE, start - baseaddr);
-  addr_vec.append_uint (8, BFD_ENDIAN_LITTLE, end - baseaddr);
+  addr_vec.append_uint (8, BFD_ENDIAN_LITTLE, start);
+  addr_vec.append_uint (8, BFD_ENDIAN_LITTLE, end);
   addr_vec.append_data (MAYBE_SWAP (cu_index));
 }
 
@@ -499,8 +495,8 @@ write_address_map (struct objfile *objfile, data_buf &addr_vec,
 static gdb_index_symbol_kind
 symbol_kind (struct partial_symbol *psym)
 {
-  domain_enum domain = PSYMBOL_DOMAIN (psym);
-  enum address_class aclass = PSYMBOL_CLASS (psym);
+  domain_enum domain = psym->domain;
+  enum address_class aclass = psym->aclass;
 
   switch (domain)
     {
@@ -546,7 +542,7 @@ write_psymbols (struct mapped_symtab *symtab,
     {
       struct partial_symbol *psym = *psymp;
 
-      if (SYMBOL_LANGUAGE (psym) == language_ada)
+      if (psym->language == language_ada)
 	error (_("Ada is not currently supported by the index"));
 
       /* Only add a given psymbol once.  */
@@ -554,7 +550,7 @@ write_psymbols (struct mapped_symtab *symtab,
 	{
 	  gdb_index_symbol_kind kind = symbol_kind (psym);
 
-	  add_index_entry (symtab, SYMBOL_SEARCH_NAME (psym),
+	  add_index_entry (symtab, symbol_search_name (psym),
 			   is_static, kind, cu_index);
 	}
     }
@@ -688,7 +684,7 @@ public:
     const int dwarf_tag = psymbol_tag (psym);
     if (dwarf_tag == 0)
       return;
-    const char *const name = SYMBOL_SEARCH_NAME (psym);
+    const char *const name = symbol_search_name (psym);
     const auto insertpair
       = m_name_to_value_set.emplace (c_str_view (name),
 				     std::set<symbol_value> ());
@@ -1141,8 +1137,8 @@ private:
      GDB as a DWARF-5 index consumer.  */
   static int psymbol_tag (const struct partial_symbol *psym)
   {
-    domain_enum domain = PSYMBOL_DOMAIN (psym);
-    enum address_class aclass = PSYMBOL_CLASS (psym);
+    domain_enum domain = psym->domain;
+    enum address_class aclass = psym->aclass;
 
     switch (domain)
       {
@@ -1183,7 +1179,7 @@ private:
       {
 	struct partial_symbol *psym = *psymp;
 
-	if (SYMBOL_LANGUAGE (psym) == language_ada)
+	if (psym->language == language_ada)
 	  error (_("Ada is not currently supported by the index"));
 
 	/* Only add a given psymbol once.  */
