@@ -1,3 +1,63 @@
+2018-08-01  Alan Modra  <amodra@gmail.com>
+
+	* po/POTFILES.in: Regenerate.
+
+2018-07-31  Nick Clifton  <nickc@redhat.com>
+
+	* po/sv.po: Updated Swedish translation.
+
+2018-07-31  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-opc.tbl (kandnd, kandnq, kxord, kxorq): Add Optimize.
+	* i386-init.h, i386-tbl.h: Re-generate.
+
+2018-07-31  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-opc.h (ZEROING_MASKING) Rename to ...
+	(DYNAMIC_MASKING): ... this. Adjust comment.
+	* i386-opc.tbl (MaskingMorZ): Define.
+	(vcompresspd, vcompressps, vcvtps2ph, vextractf32x4,
+	vextractf32x8, vextractf64x2, vextractf64x4, vextracti32x4,
+	vextracti32x8, vextracti64x2, vextracti64x4, vmovapd, vmovaps,
+	vmovdqa32, vmovdqa64, vmovdqu8, vmovdqu16, vmovdqu32, vmovdqu64,
+	vmovupd, vmovups, vpcompressb, vpcompressw, vpcompressd,
+	vpcompressq, vpmovdb, vpmovdw, vpmovqb, vpmovqd, vpmovqw,
+	vpmovsdb, vpmovsdw, vpmovsqb, vpmovsqd, vpmovsqw, vpmovswb,
+	vpmovusdb, vpmovusdw, vpmovusqb, vpmovusqd, vpmovusqw,
+	vpmovuswb, vpmovwb): Fold AVX512 register and memory forms.
+
+2018-07-31  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-opc.tbl: Use element rather than vector size for AVX512*
+	scatter/gather insns.
+	* i386-tbl.h: Re-generate.
+
+2018-07-31  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-gen.c (cpu_flag_init): Drop CpuVREX uses.
+	(cpu_flags): Drop CpuVREX.
+	* i386-opc.h (CpuVREX): Delete.
+	(union i386_cpu_flags): Remove cpuvrex.
+	* i386-init.h, i386-tbl.h: Re-generate.
+
+2018-07-30  Jim Wilson  <jimw@sifive.com>
+
+	* riscv-dis.c (riscv_disassemble_insn): Set insn_type and data_size
+	fields.
+	* riscv-opc.c (riscv_opcodes): Use new INSN_* flags to annotate insns.
+
+2018-07-30  Andrew Jenner  <andrew@codesourcery.com>
+
+	* Makefile.am (TARGET_LIBOPCODES_CFILES): Add csky-dis.c.
+	* Makefile.in: Regenerated.
+	* configure.ac: Add C-SKY.
+	* configure: Regenerated.
+	* csky-dis.c: New file.
+	* csky-opc.h: New file.
+	* disassemble.c (ARCH_csky): Define.
+	(disassembler, disassemble_init_for_target): Add case for ARCH_csky.
+	* disassemble.h (print_insn_csky, csky_get_disassembler): Declare.
+
 2018-07-27  Alan Modra  <amodra@gmail.com>
 
 	* ppc-opc.c (insert_sprbat): Correct function parameter and

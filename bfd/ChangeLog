@@ -1,3 +1,69 @@
+2018-08-01  Nick Clifton  <nickc@redhat.com>
+
+	* coff-rs6000.c (_bfd_xcoff_put_ldsymbol_name): Suppress warnings
+	about potentially truncated strncpy operations.
+	(_bfd_xcoff_put_symbol_name): Likewise.
+
+	* elf32-avr.c (avr_stub_name): Check for a NULL return from
+	bfd_malloc.
+
+2018-08-01  Zenith  <zenith432@users.sourceforge.net>
+
+	PR 23460
+	* plugin.c (bfd_plugin_open_input): Close file descriptor if the
+	call to fstat fails.
+	(try_claim): Always close the file descriptor at the end of the
+	function.
+	(try_load_plugin): If a plugin has already been registered, then
+	skip the dlopen and onload steps and go straight to claiming the
+	file.  If these is an error, close the plugin.
+
+2018-08-01  Alan Modra  <amodra@gmail.com>
+
+	* elf64-ppc.c (plt_stub_pad): Delay plt_stub_size call until needed.
+	(ppc_build_one_stub): Don't set stub_offset, instead assert that
+	it is sane.  Don't adjust stub_offset for alignment.  Adjust size
+	calculation.  Use "targ" temp when calculating offsets.
+	(ppc_size_one_stub): Set stub_offset here.  Use "targ" temp when
+	calculating offsets.  Adjust for alignment before setting
+	tls_get_addr_opt_bctrl.
+
+2018-08-01  Alan Modra  <amodra@gmail.com>
+
+	* po/SRC-POTFILES.in: Regenerate.
+
+2018-07-30  Nick Clifton  <nickc@redhat.com>
+
+	PR 22706
+	* elf32-sh.c (sh_elf_relocate_section): When processing
+	translation relocs, fail if the relocation offset is too small.
+	Replace BFD_ASSERTs with more helpful error messages.
+
+2018-07-30  Andrew Jenner  <andrew@codesourcery.com>
+
+	* Makefile.am (ALL_MACHINES, ALL_MACHINES_CFILES): Add C-SKY.
+	(BFD32_BACKENDS, BFD_BACKENDS_CFILES): Likewise.
+	* Makefile.in: Regenerated.
+	* archures.c (enum bfd_architecture): Add bfd_arch_csky and
+	related bfd_mach defines.
+	(bfd_csky_arch): Declare.
+	(bfd_archures_list): Add C-SKY.
+	* bfd-in.h (elf32_csky_build_stubs): Declare.
+	(elf32_csky_size_stubs): Declare.
+	(elf32_csky_next_input_section: Declare.
+	(elf32_csky_setup_section_lists): Declare.
+	* bfd-in2.h: Regenerated.
+	* config.bfd: Add C-SKY.
+	* configure.ac: Likewise.
+	* configure: Regenerated.
+	* cpu-csky.c: New file.
+	* elf-bfd.h (enum elf_target_id): Add C-SKY.
+	* elf32-csky.c: New file.
+	* libbfd.h: Regenerated.
+	* reloc.c: Add C-SKY relocations.
+	* targets.c (csky_elf32_be_vec, csky_elf32_le_vec): Declare.
+	(_bfd_target_vector): Add C-SKY target vector entries.
+
 2018-07-27  John Darrington  <john@darrington.wattle.id.au>
 
 	* elf32-s12z.c (ELF_TARGET_ID): Don't define.

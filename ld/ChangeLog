@@ -1,3 +1,50 @@
+2018-08-01  Nick Clifton  <nickc@redhat.com>
+
+	PR 23463
+	* testsuite/ld-plugin/pr12982.d: Skip thios test for the HPPA
+	target.
+
+2018-08-01  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/ld-powerpc/powerpc.exp: Run tlsopt5 with hash-style
+	specified.
+
+2018-08-01  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/ld-powerpc/powerpc.exp: Run tlsopt5 with plt alignment.
+	* testsuite/ld-powerpc/tlsopt5.s: Add extra call.
+	* testsuite/ld-powerpc/tlsopt5.wf: Adjust expected output.
+	* testsuite/ld-powerpc/tlsopt5.d: Likewise.
+
+2018-08-01  Alan Modra  <amodra@gmail.com>
+
+	* po/BLD-POTFILES.in: Regenerate.
+
+2018-07-30  Nick Clifton  <nickc@redhat.com>
+
+	* scripttempl/elf.sc: Move the .gnu.build.attributes section to
+	after the .comment section.
+
+2018-07-30  Andrew Jenner  <andrew@codesourcery.com>
+
+	* Makefile.am (ALL_EMULATION_SOURCES): Add C-SKY emulations.
+	(ecskyelf.c, ecskyelf_linux.c): New rules.
+	* Makefile.in: Regenerated.
+	* configure.tgt: Add C-SKY.
+	* emulparams/cskyelf.sh: New file.
+	* emulparams/cskyelf_linux.sh: New file.
+	* emultempl/cskyelf.em: New file.
+	* gen-doc.texi: Add C-SKY.
+	* ld.texi: Likewise.
+	(Options specific to C-SKY targets): New section.
+	* testsuite/ld-csky/*: New tests.
+	* NEWS: Mention the support.
+
+2018-07-30  Nick Clifton  <nickc@redhat.com>
+
+	* scripttempl/elf.sc: Place .gnu.build.attributes sections with
+	other read-only sections.
+
 2018-07-27  John Darrington  <john@darrington.wattle.id.au>
 
 	* scripttempl/elfm9s12z.sc: Put input sections called .common

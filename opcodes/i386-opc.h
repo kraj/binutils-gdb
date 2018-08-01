@@ -174,8 +174,6 @@ enum
   CpuSMAP,
   /* SHA instructions required.  */
   CpuSHA,
-  /* VREX support required  */
-  CpuVREX,
   /* CLFLUSHOPT instruction required */
   CpuClflushOpt,
   /* XSAVES/XRSTORS instruction required */
@@ -329,7 +327,6 @@ typedef union i386_cpu_flags
       unsigned int cpuprfchw:1;
       unsigned int cpusmap:1;
       unsigned int cpusha:1;
-      unsigned int cpuvrex:1;
       unsigned int cpuclflushopt:1;
       unsigned int cpuxsaves:1;
       unsigned int cpuxsavec:1;
@@ -552,11 +549,11 @@ enum
   EVex,
 
   /* AVX512 masking support:
-	1: Zeroing-masking.
+	1: Zeroing or merging masking depending on operands.
 	2: Merging-masking.
 	3: Both zeroing and merging masking.
    */
-#define ZEROING_MASKING 1
+#define DYNAMIC_MASKING 1
 #define MERGING_MASKING 2
 #define BOTH_MASKING    3
   Masking,

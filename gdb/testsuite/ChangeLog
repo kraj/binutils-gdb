@@ -1,3 +1,24 @@
+2018-07-31  Jan Vrany  <jan.vrany@fit.cvut.cz>
+
+	* gdb.python/py-mi-var-info-path-expression.c: New file.
+	* gdb.python/py-mi-var-info-path-expression.py: New file.
+	* gdb.python/py-mi-var-info-path-expression.exp: New file.
+
+2018-07-30  Sergio Durigan Junior  <sergiodj@redhat.com>
+
+	* lib/gdbserver-support.exp (gdbserver_start): Match any kind of
+	error after "cannot resolve name" string.
+
+2018-07-28  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.trace/tspeed.exp: Only call gdb_load_shlib after gdb has
+	started.
+	* lib/gdb.exp (gdb_load_shlib): Call perror if GDB is not running.
+
+2018-07-28  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.base/vla-optimized-out-o3-strict.exp: New file.
+
 2018-07-26  Tom de Vries  <tdevries@suse.de>
 
 	* gdb.base/vla-optimized-out.c: Add comment about origin of test-case.

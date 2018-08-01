@@ -3478,6 +3478,13 @@ is_evex_encoding (const insn_template *t)
 	 || t->opcode_modifier.staticrounding || t->opcode_modifier.sae;
 }
 
+static INLINE bfd_boolean
+is_any_vex_encoding (const insn_template *t)
+{
+  return t->opcode_modifier.vex || t->opcode_modifier.vexopcode
+	 || is_evex_encoding (t);
+}
+
 /* Build the EVEX prefix.  */
 
 static void
@@ -3760,9 +3767,7 @@ bad_register_operand:
 
   gas_assert (i.imm_operands <= 1
 	      && (i.operands <= 2
-		  || ((i.tm.opcode_modifier.vex
-		       || i.tm.opcode_modifier.vexopcode
-		       || is_evex_encoding (&i.tm))
+		  || (is_any_vex_encoding (&i.tm)
 		      && i.operands <= 4)));
 
   exp = &im_expressions[i.imm_operands++];
@@ -3937,7 +3942,11 @@ optimize_encoding (void)
 		|| i.tm.base_opcode == 0x66f8
 		|| i.tm.base_opcode == 0x66f9
 		|| i.tm.base_opcode == 0x66fa
-		|| i.tm.base_opcode == 0x66fb)
+		|| i.tm.base_opcode == 0x66fb
+		|| i.tm.base_opcode == 0x42
+		|| i.tm.base_opcode == 0x6642
+		|| i.tm.base_opcode == 0x47
+		|| i.tm.base_opcode == 0x6647)
 	       && i.tm.extension_opcode == None))
     {
       /* Optimize: -O2:
@@ -3968,6 +3977,12 @@ optimize_encoding (void)
 	     EVEX VOP %ymmM, %ymmM, %ymmN
 	       -> VEX vpxor %xmmM, %xmmM, %xmmN (M and N < 16)
 	       -> EVEX VOP %xmmM, %xmmM, %xmmN (M || N >= 16)
+	   VOP, one of kxord and kxorq:
+	     VEX VOP %kM, %kM, %kN
+	       -> VEX kxorw %kM, %kM, %kN
+	   VOP, one of kandnd and kandnq:
+	     VEX VOP %kM, %kM, %kN
+	       -> VEX kandnw %kM, %kM, %kN
        */
       if (is_evex_encoding (&i.tm))
 	{
@@ -3979,6 +3994,11 @@ optimize_encoding (void)
 	      i.tm.opcode_modifier.vexw = VEXW0;
 	      i.tm.opcode_modifier.evex = 0;
 	    }
+	}
+      else if (i.tm.operand_types[0].bitfield.regmask)
+	{
+	  i.tm.base_opcode &= 0xff;
+	  i.tm.opcode_modifier.vexw = VEXW0;
 	}
       else
 	i.tm.opcode_modifier.vex = VEX128;
@@ -4125,6 +4145,13 @@ md_assemble (char *line)
       return;
     }
 
+  /* Check for data size prefix on VEX/XOP/EVEX encoded insns.  */
+  if (i.prefix[DATA_PREFIX] && is_any_vex_encoding (&i.tm))
+    {
+      as_bad (_("data size prefix invalid with `%s'"), i.tm.name);
+      return;
+    }
+
   /* Check if HLE prefix is OK.  */
   if (i.hle_prefix && !check_hle ())
     return;
@@ -4211,8 +4238,7 @@ md_assemble (char *line)
       as_warn (_("translating to `%sp'"), i.tm.name);
     }
 
-  if (i.tm.opcode_modifier.vex || i.tm.opcode_modifier.vexopcode
-      || is_evex_encoding (&i.tm))
+  if (is_any_vex_encoding (&i.tm))
     {
       if (flag_code == CODE_16BIT)
 	{
@@ -5230,13 +5256,39 @@ check_VecOperands (const insn_template *t)
     op = MAX_OPERANDS - 1; /* Avoid uninitialized variable warning.  */
 
   /* Check if requested masking is supported.  */
-  if (i.mask
-      && (!t->opcode_modifier.masking
-	  || (i.mask->zeroing
-	      && t->opcode_modifier.masking == MERGING_MASKING)))
+  if (i.mask)
     {
-      i.error = unsupported_masking;
-      return 1;
+      switch (t->opcode_modifier.masking)
+	{
+	case BOTH_MASKING:
+	  break;
+	case MERGING_MASKING:
+	  if (i.mask->zeroing)
+	    {
+	case 0:
+	      i.error = unsupported_masking;
+	      return 1;
+	    }
+	  break;
+	case DYNAMIC_MASKING:
+	  /* Memory destinations allow only merging masking.  */
+	  if (i.mask->zeroing && i.mem_operands)
+	    {
+	      /* Find memory operand.  */
+	      for (op = 0; op < i.operands; op++)
+		if (i.types[op].bitfield.mem)
+		  break;
+	      gas_assert (op < i.operands);
+	      if (op == i.operands - 1)
+		{
+		  i.error = unsupported_masking;
+		  return 1;
+		}
+	    }
+	  break;
+	default:
+	  abort ();
+	}
     }
 
   /* Check if masking is applied to dest operand.  */
@@ -6137,6 +6189,9 @@ process_suffix (void)
       else if (i.suffix != QWORD_MNEM_SUFFIX
 	       && !i.tm.opcode_modifier.ignoresize
 	       && !i.tm.opcode_modifier.floatmf
+	       && !i.tm.opcode_modifier.vex
+	       && !i.tm.opcode_modifier.vexopcode
+	       && !is_evex_encoding (&i.tm)
 	       && ((i.suffix == LONG_MNEM_SUFFIX) == (flag_code == CODE_16BIT)
 		   || (flag_code == CODE_64BIT
 		       && i.tm.opcode_modifier.jumpbyte)))
@@ -7965,7 +8020,8 @@ output_disp (fragS *insn_start_frag, offsetT insn_start_off)
 	      int size = disp_size (n);
 	      offsetT val = i.op[n].disps->X_add_number;
 
-	      val = offset_in_range (val >> i.memshift, size);
+	      val = offset_in_range (val >> (size == 1 ? i.memshift : 0),
+				     size);
 	      p = frag_more (size);
 	      md_number_to_chars (p, val, size);
 	    }
@@ -10375,7 +10431,7 @@ parse_real_register (char *reg_string, char **end_op)
      mode, and require EVEX encoding.  */
   if (r->reg_flags & RegVRex)
     {
-      if (!cpu_arch_flags.bitfield.cpuvrex
+      if (!cpu_arch_flags.bitfield.cpuavx512f
 	  || flag_code != CODE_64BIT)
 	return (const reg_entry *) NULL;
 
