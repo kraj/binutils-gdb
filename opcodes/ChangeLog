@@ -1,3 +1,31 @@
+2018-08-06  Claudiu Zissulescu  <claziss@synopsys.com>
+
+	* arc-regs.h: Update auxiliary registers.
+
+2018-08-06  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-opc.h (RegRip, RegEip, RegEiz, RegRiz): Drop defines.
+	(RegIP, RegIZ): Define.
+	* i386-reg.tbl: Adjust comments.
+	(rip): Use Qword instead of BaseIndex. Use RegIP.
+	(eip): Use Dword instead of BaseIndex. Use RegIP.
+	(riz): Add Qword. Use RegIZ.
+	(eiz): Add Dword. Use RegIZ.
+	* i386-tbl.h: Re-generate.
+
+2018-08-03  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-opc.tbl (pmovsxbw, pmovsxdq, pmovsxwd, pmovzxbw,
+	pmovzxdq, pmovzxwd, vpmovsxbw, vpmovsxdq, vpmovsxwd, vpmovzxbw,
+	vpmovzxdq, vpmovzxwd): Remove NoRex64.
+	* i386-tbl.h: Re-generate.
+
+2018-08-03  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-gen.c (operand_types): Remove Mem field.
+	* i386-opc.h (union i386_operand_type): Remove mem field.
+	* i386-init.h, i386-tbl.h: Re-generate.
+
 2018-08-01  Alan Modra  <amodra@gmail.com>
 
 	* po/POTFILES.in: Regenerate.

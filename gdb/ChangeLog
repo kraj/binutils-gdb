@@ -1,3 +1,266 @@
+2018-08-09  Tom Tromey  <tom@tromey.com>
+
+	* riscv-tdep.h: Minor formatting fixes.
+
+2018-08-09  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* common/scoped_mmap.c (mmap_file): Silence ARI warning.
+	* dwarf-index-cache.c (create_dir_and_check): Likewise.
+	(test_mkdir_recursive): Likewise.
+	* dwarf-index-write.c (write_psymtabs_to_index): Likewise.
+
+2018-08-09  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* valarith.c (value_subscripted_rvalue): If an array is not in
+	memory, and we don't know the upper bound, then we can't know that
+	the requested element exists or not.
+
+2018-08-08  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* target.c (str_comma_list_concat_elem): Fix typo in comment.
+	(target_options_to_string): Add comment.
+
+2018-08-08  Tom Tromey  <tom@tromey.com>
+
+	* unittests/scoped_mmap-selftests.c: Check result of "write".
+
+2018-08-08  Jim Wilson  <jimw@sifive.com>
+
+	* riscv-tdep.c (enum opcode): Add jump, branch, lr, and sc opcodes.
+	(decode_register_index_short): New.
+	(decode_j_type_insn, decode_cj_type_insn): New.
+	(decode_b_type_insn, decode_cb_type_insn): New.
+	(riscv_insn::decode): Add support for jumps, branches, lr, and sc.  New
+	local xlen.  Check xlen when decoding ambiguous compressed insns.  In
+	compressed decode, use is_c_lui_insn instead of is_lui_insn, and
+	is_c_sw_insn instead of is_sw_insn.
+	(riscv_next_pc, riscv_next_pc_atomic_sequence): New.
+	(riscv_software_single_step): New.
+	* riscv-tdep.h (riscv_software_single_step): Declare.
+
+	* riscv-tdep.c (riscv_isa_xlen): Drop static.
+	* riscv-tdep.h (riscv_isa_xlen): Add extern declaration.
+
+2018-08-08  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	PR gdb/18050:
+	* target.c (dispose_inferior): Don't dispose of inferiors that are
+	already killed.
+
+2018-08-08  Szabolcs Nagy  <szabolcs.nagy@arm.com>
+
+	* remote.c (remote_target::download_tracepoint): Change char* to
+	const char*.
+
+2018-08-07  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* target.h (target_options_to_string): Return an std::string.
+	* target.c (str_comma_list_concat_elem): Return void, use
+	std::string.
+	(do_option): Likewise.
+	(target_options_to_string): Return an std::string.
+	* linux-nat.c (linux_nat_target::wait): Adjust.
+	* target-debug.h (target_debug_print_options): Adjust.
+
+2018-08-07  Tom Tromey  <tom@tromey.com>
+
+	* Makefile.in (CPPFLAGS): New variable.
+	(INTERNAL_CPPFLAGS): Use it.
+
+2018-08-07  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* NEWS: Mention the index cache.
+
+2018-08-07  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* common/pathstuff.h (get_standard_cache_dir): New.
+	* common/pathstuff.c (get_standard_cache_dir): New.
+	* build-id.h (build_id_to_string): New.
+	* dwarf-index-common.h (INDEX4_SUFFIX, INDEX5_SUFFIX,
+	DEBUG_STR_SUFFIX): Move to here.
+	* dwarf-index-write.c (INDEX4_SUFFIX, INDEX5_SUFFIX,
+	DEBUG_STR_SUFFIX): Move from there.
+	(write_psymtabs_to_index): Make non-static, add basename
+	parameter.  Write to temporary files, rename when done.
+	(save_gdb_index_command): Adjust call to
+	write_psymtabs_to_index.
+	* dwarf2read.h (dwarf2_per_objfile) <index_cache_res>: New
+	field.
+	* dwarf2read.c (dwz_file) <index_cache_res>: New field.
+	(get_gdb_index_contents_from_cache): New.
+	(get_gdb_index_contents_from_cache_dwz): New.
+	(dwarf2_initialize_objfile): Read index from cache.
+	(dwarf2_build_psymtabs): Save to index.
+	* dwarf-index-cache.h: New file.
+	* dwarf-index-cache.c: New file.
+	* dwarf-index-write.h: New file.
+
+2018-08-07  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* gnulib/aclocal.m4: Re-generate.
+	* gnulib/config.in: Re-generate.
+	* gnulib/configure: Re-generate.
+	* gnulib/import/Makefile.am: Re-generate.
+	* gnulib/import/Makefile.in: Re-generate.
+	* gnulib/import/m4/gnulib-cache.m4: Re-generate.
+	* gnulib/import/m4/gnulib-comp.m4: Re-generate.
+	* gnulib/import/m4/mkdir.m4: New file.
+	* gnulib/import/mkdir.c: New file.
+	* gnulib/update-gnulib.sh (IMPORTED_GNULIB_MODULES): Add mkdir
+	module.
+
+2018-08-07  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* Makefile.in (COMMON_SFILES): Add common/scoped_mmap.c.
+	* common/scoped_mmap.c: New file.
+	* common/scoped_mmap.h (destroy): New method.
+	(~scoped_mmap, reset): Use destroy.
+	(scoped_mmap): New move constructor.
+	(mmap_file): New declaration.
+	* unittests/scoped_mmap-selftests.c (test_normal,
+	test_invalid_filename, run_tests): New functions.
+	(_initialize_scoped_mmap_selftests): Register selftest.
+
+2018-08-07  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* dwarf2read.c (read_gdb_index_from_section): Rename to...
+	(read_gdb_index_from_buffer): ... this.  Remove section
+	parameter, add buffer parameter.
+	(get_gdb_index_contents_ftype,
+	get_gdb_index_contents_dwz_ftype): New typedefs.
+	(dwarf2_read_gdb_index): Add callback parameters to get the
+	index contents.
+	(get_gdb_index_contents_from_section): New.
+	(dwarf2_initialize_objfile): Update call to
+	dwarf2_read_gdb_index.
+
+2018-08-07  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* common/filestuff.h (gdb_fopen_cloexec): New overload.
+	(gdb_open_cloexec): Likewise.
+	* nat/linux-osdata.c (command_from_pid): Use string_printf.
+	(commandline_from_pid): Likewise.
+	(linux_xfer_osdata_threads): Likewise.
+	(linux_xfer_osdata_fds): Likewise.
+	* ada-lang.c (is_package_name): Likewise.
+	* auxv.c (procfs_xfer_auxv): Likewise.
+	* breakpoint.c (print_one_breakpoint_location): Use
+	uiout::field_fmt.
+	(print_one_catch_solib): Use string_printf.
+	* coff-pe-read.c (add_pe_exported_sym): Likewise.
+	(add_pe_forwarded_sym): Likewise.
+	* dwarf2read.c (create_type_unit_group): Likewise.
+	(build_error_marker_type): Likewise.
+	* infcall.c (get_function_name): Likewise.
+	* valprint.c (print_converted_chars_to_obstack): Likewise.
+	* xtensa-tdep.c (xtensa_register_type): Likewise.
+
+2018-08-06  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* remote.c (remote_target::download_tracepoint): Fix format
+	string errors.
+
+2018-08-06  Pedro Franco de Carvalho  <pedromfc@linux.ibm.com>
+
+	* tracefile.c: Include common/byte-vector.h.
+	(trace_save): Change type of buf to gdb::byte_vector.  Initialize
+	with trace_regblock_size if needed.  Update uses of buf.
+
+2018-08-06  Pedro Franco de Carvalho  <pedromfc@linux.ibm.com>
+
+	* tracepoint.h (collection_list) <m_regs_mask>: Change type to
+	std::vector<unsigned char>.
+	* tracepoint.c (collection_list::collection_list): Remove
+	m_regs_mask initializer from initializer list.  Resize
+	m_regs_mask using the largest remote register number.
+	(collection_list::add_remote_register): Remove size check on
+	m_regs_mask.  Use at to access element.
+	(collection_list::stringify): Change type of temp_buf to
+	gdb::char_vector.  Update uses of temp_buf.  Resize if needed to
+	stringify the register mask.  Use pack_hex_byte for the register
+	mask.
+
+2018-08-06  Pedro Franco de Carvalho  <pedromfc@linux.ibm.com>
+
+	* tracepoint.h (class collection_list) <add_register>: Remove.
+	<add_remote_register, add_ax_registers, add_local_register>:
+	Declare.
+	<add_memrange>: Add scope parameter.
+	* tracepoint.c (encode_actions_1): Likewise.
+	(collection_list::add_register): Rename to ...
+	(collection_list::add_remote_register): ... this.  Update
+	comment.
+	(collection_list::add_ax_registers, add_local_register): New
+	methods.
+	(collection_list::add_memrange): Add scope parameter.  Call
+	add_local_register instead of add_register.
+	(finalize_tracepoint_aexpr): New function.
+	(collection_list::collect_symbol): Update calls to add_memrange.
+	Call add_local_register instead of add_register.  Call
+	add_ax_registers.  Call finalize_tracepoint_aexpr.
+	(encode_actions_1): Get remote regnos for $reg action.  Call
+	add_remote_register, add_ax_registers, and add_local_register.
+	Update call to add_memrange.  Call finalize_tracepoint_aexpr.
+	(validate_actionline): Call finalize_tracepoint_aexpr.
+
+2018-08-06  Pedro Franco de Carvalho  <pedromfc@linux.ibm.com>
+
+	* remote.c (remote_target::download_tracepoint): Remove BUF_SIZE.
+	Replace array buf with gdb::char_vector buf, of size
+	get_remote_packet_size ().  Replace references to buf and
+	BUF_SIZE to buf.data () and buf.size ().  Replace strcpy, strcat
+	and xsnprintf with snprintf.  Raise errors if the buffer is too
+	small.
+
+2018-08-06  Pedro Franco de Carvalho  <pedromfc@linux.ibm.com>
+
+	* remote.c (remote_target::download_tracepoint): Fix the has_more
+	predicate in the QTDP action list iteration.
+
+2018-08-06  Pedro Franco de Carvalho  <pedromfc@linux.ibm.com>
+
+	* remote.c (remote_target::download_tracepoint): Fix indentation
+	in for block.
+
+2018-08-06  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* proc-api.c (_initialize_proc_api): Remove c, unused.
+	* procfs.c (procfs_init_inferior): Remove signals, unused.
+	(procfs_target::make_corefile_notes): Remove old_chain, fpregs,
+	unused.
+
+2018-08-06  Sergey Korolev  <s.korolev@ndmsystems.com>
+	    Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* linux-nat.c (linux_nat_target::follow_fork): Avoid using
+	'W_STOPCODE (0)' as this could be ambiguous.
+
+2018-08-03  Sergio Durigan Junior  <sergiodj@redhat.com>
+
+	* ser-tcp.c (net_open): Fix thinko when deciding whether to
+	disable TCP's Nagle algorithm (use "ai_protocol" instead of
+	"ai_socktype").
+
+2018-08-02  Tom Tromey  <tom@tromey.com>
+
+	PR symtab/16842.
+	* dwarf2read.c (read_func_scope): Set symtab on template parameter
+	symbols.
+	(process_structure_scope): Likewise.
+
+2018-08-02  Xavier Roirand  <roirand@adacore.com>
+
+	PR gdb/22629:
+        * darwin-nat.c (darwin_kill_inferior): Fix handling of
+        kill inferior.
+
+2018-08-02  Tom Tromey  <tom@tromey.com>
+
+	* darwin-nat.c (find_inferior_task_it, darwin_find_thread)
+	(darwin_suspend_inferior, darwin_resume_inferior)
+	(darwin_decode_notify_message, darwin_resume_inferior_threads)
+	(darwin_check_new_threads): Check result of get_darwin_inferior.
+
 2018-07-31  Joel Brobecker  <brobecker@adacore.com>
 
 	GDB 8.1.1 released.

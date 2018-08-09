@@ -557,6 +557,7 @@ PROFILE_CFLAGS = @PROFILE_CFLAGS@
 # when running make.  I.E.: "make CFLAGS=-Wmissing-prototypes".
 CFLAGS = @CFLAGS@
 CXXFLAGS = @CXXFLAGS@
+CPPFLAGS = @CPPFLAGS@
 
 # Set by configure, for e.g. expat.  Python installations are such that
 # C headers are included using their basename (for example, we #include
@@ -564,7 +565,7 @@ CXXFLAGS = @CXXFLAGS@
 # are sometimes a little generic, we think that the risk of collision
 # with other header files is high.  If that happens, we try to mitigate
 # a bit the consequences by putting the Python includes last in the list.
-INTERNAL_CPPFLAGS = @CPPFLAGS@ @GUILE_CPPFLAGS@ @PYTHON_CPPFLAGS@
+INTERNAL_CPPFLAGS = $(CPPFLAGS) @GUILE_CPPFLAGS@ @PYTHON_CPPFLAGS@
 
 # INTERNAL_CFLAGS is the aggregate of all other *CFLAGS macros.
 INTERNAL_CFLAGS_BASE = \
@@ -965,6 +966,7 @@ COMMON_SFILES = \
 	common/ptid.c \
 	common/rsp-low.c \
 	common/run-time-clock.c \
+	common/scoped_mmap.c \
 	common/signals.c \
 	common/signals-state-save-restore.c \
 	common/tdesc.c \
@@ -992,6 +994,7 @@ COMMON_SFILES = \
 	disasm.c \
 	disasm-selftests.c \
 	dummy-frame.c \
+	dwarf-index-cache.c \
 	dwarf-index-common.c \
 	dwarf-index-write.c \
 	dwarf2-frame.c \
@@ -1216,6 +1219,7 @@ HFILES_NO_SRCDIR = \
 	dictionary.h \
 	disasm.h \
 	dummy-frame.h \
+	dwarf-index-cache.h \
 	dwarf-index-common.h \
 	dwarf2-frame.h \
 	dwarf2-frame-tailcall.h \

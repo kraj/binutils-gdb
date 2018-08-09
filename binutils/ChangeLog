@@ -1,3 +1,31 @@
+2018-08-08  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR binutils/23494
+	* testsuite/binutils-all/x86-64/pr23494a-x32.d: New file.
+	* testsuite/binutils-all/x86-64/pr23494a.d: Likewise.
+	* testsuite/binutils-all/x86-64/pr23494a.s: Likewise.
+	* testsuite/binutils-all/x86-64/pr23494b-x32.d: Likewise.
+	* testsuite/binutils-all/x86-64/pr23494b.d: Likewise.
+	* testsuite/binutils-all/x86-64/pr23494b.s: Likewise.
+	* testsuite/binutils-all/x86-64/pr23494c-x32.d: Likewise.
+	* testsuite/binutils-all/x86-64/pr23494c.d: Likewise.
+	* testsuite/binutils-all/x86-64/pr23494d-x32.d: Likewise.
+	* testsuite/binutils-all/x86-64/pr23494d.d: Likewise.
+
+2018-08-08  Kevin Buettner  <kevinb@redhat.com>
+
+    	* dwarf.c (decode_location_expresion): Add case for
+    	DW_OP_GNU_variable_value.
+
+2018-08-06  Claudiu Zissulescu  <claziss@synopsys.com>
+
+	* readelf.c (display_arc_attribute): Print Tag_ARC_ATR_version.
+
+2018-08-03  Nick Clifton  <nickc@redhat.com>
+
+	* objcopy.c (merge_gnu_build_notes): Delete empty notes.  Merge
+	identical function notes.
+
 2018-08-01  Nick Clifton  <nickc@redhat.com>
 
 	* README-how-to-make-a-release: Add note about regenerating the

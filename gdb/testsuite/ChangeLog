@@ -1,3 +1,59 @@
+2018-08-09  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.base/vla-optimized-out.exp: Add new test.
+
+2018-08-09  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.base/vla-optimized-out-o3.exp: Delete.
+	* gdb.base/vla-optimized-out-o3-strict.exp: Delete.
+	* gdb.base/vla-optimized-out.exp: Extend to cover all of the
+	deleted tests.
+
+2018-08-08  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	PR gdb/18050:
+	* gdb.server/extended-remote-restart.c: New file.
+	* gdb.server/extended-remote-restart.exp: New file.
+
+2018-08-07  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* gdb.fortran/nested-funcs.exp: Replace "set index = 42" with
+	"set variable index = 42".
+
+2018-08-07  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* boards/index-cache-gdb.exp: New file.
+	* gdb.dwarf2/index-cache.exp: New file.
+	* gdb.dwarf2/index-cache.c: New file.
+	* gdb.base/maint.exp: Check if we are using the index cache.
+
+2018-08-07  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* Makefile.in (saw_dash_j): Allow for GNU make 4.2+ passing -jN in
+	MAKEFLAGS.
+
+2018-08-06  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* dg-extract-results.sh: Move to toplevel contrib.
+	* Makefile.in (check-parallel): Reflect dg-extract-results.sh move.
+	* Makefile.in (check-parallel-racy): Likewise.
+
+2018-08-06  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* lib/gdb.exp (target_supports_scheduler_locking): New proc.
+	* gdb.mi/mi-cmd-param-changed.exp: Only run scheduler locking
+	tests if the target supports scheduler locking.
+
+2018-08-04  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.python/py-rbreak.exp: Fix rbreak regexp.
+
+2018-08-02  Tom Tromey  <tom@tromey.com>
+
+	PR symtab/16842.
+	* gdb.cp/temargs.exp: Test "info address" of a template
+	parameter.
+
 2018-07-31  Jan Vrany  <jan.vrany@fit.cvut.cz>
 
 	* gdb.python/py-mi-var-info-path-expression.c: New file.
