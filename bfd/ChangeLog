@@ -1,3 +1,25 @@
+2018-08-11  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/23428
+	* elfxx-x86.c (_bfd_x86_elf_link_setup_gnu_properties): Don't
+	add X86_ISA_1_NEEDED property only if existing properties won't
+	be removed.
+
+2018-08-11  Alan Modra  <amodra@gmail.com>
+
+	* reloc.c (bfd_get_reloc_size): Sort switch.
+	(read_reloc, write_reloc, apply_reloc): New functions.
+	(bfd_perform_relocation, bfd_install_relocation): Use apply_reloc.
+	(_bfd_relocate_contents): Use read_reloc and write_reloc.
+	(_bfd_clear_contents): Likewise.
+
+2018-08-11  John Darrington  <john@darrington.wattle.id.au>
+
+	* reloc.c (_bfd_relocate_contents): Handle 3 byte relocs.
+	(_bfd_clear_contents): Likewise.
+	(bfd_perform_relocation): Likewise.
+	(bfd_install_relocation): Likewise.
+
 2018-08-10  H.J. Lu  <hongjiu.lu@intel.com>
 
 	PR ld/23499
