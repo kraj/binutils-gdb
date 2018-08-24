@@ -1,3 +1,59 @@
+2018-08-23  Kito Cheng  <kito@andestech.com>
+
+	* config/tc-riscv.c (arg_lookup): Checking
+	length before look up.
+	* testsuite/gas/riscv/fence-fail.d: New file.
+	* testsuite/gas/riscv/fence-fail.l: Likewise.
+	* testsuite/gas/riscv/fence-fail.s: Likewise.
+	* testsuite/gas/riscv/rouding-fail.d: Likewise.
+	* testsuite/gas/riscv/rouding-fail.l: Likewise.
+	* testsuite/gas/riscv/rouding-fail.s: Likewise.
+
+2018-08-23  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/23536
+	* Makefile.am (development.exp): New target.
+	(EXTRA_DEJAGNU_SITE_CONFIG): New.
+	(DISTCLEANFILES): Add development.exp.
+	* Makefile.in: Regenerated.
+
+2018-08-22  Alan Modra  <amodra@gmail.com>
+
+	* dw2gencfi.c (emit_expr_encoded, output_fde): Warning fixes.
+
+2018-08-21  Arnold Metselaar  <arnold.metsel@gmail.com>
+
+	* config/tc-z80.c: Correct treatment of undocumented instruction
+	sli/sll.
+	(emit_mr): Add argument unportable.
+	(emit_bit): Adapt call to emit_mr.
+	(emit_mr_z80): New function.
+	(emit_mr_unport): New function.
+	(instab[]): Replace emit_mr with emit_mr_z80 or emit_mr_unportable
+	as appropriate.
+
+2018-08-21  Andreas Schwab  <schwab@suse.de>
+
+	* read.c (do_repeat_with_expander): Use memmove instead of strcpy
+	on unterminated string buffer.
+
+2018-08-21  Alan Modra  <amodra@gmail.com>
+
+	* config/tc-ppc.c (md_assemble): Delay counting of optional
+	operands until one is encountered.  Allow for the possibility
+	of optional base regs, ie. PPC_OPERAND_PARENS.  Call
+	ppc_optional_operand_value with extra args.
+
+2018-08-21  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/gas/s12z/bit-manip-invalid.d: Correct regexps.
+
+2018-08-18  John Darrington  <john@darrington.wattle.id.au>
+
+	* testsuite/gas/s12z/bit-manip-invalid.d: New file.
+	* testsuite/gas/s12z/bit-manip-invalid.s: New file.
+	* testsuite/gas/s12z/s12z.exp: Add them.
+
 2018-08-14  H.J. Lu  <hongjiu.lu@intel.com>
 
 	* testsuite/gas/i386/evex-no-scale-64.d: Updated.
@@ -626,9 +682,9 @@
 2018-06-29  Ramana Radhakrishnan  <ramana.radhakrishnan@arm.com>
 
 	* config/tc-aarch64.c (warn_unpredictable_ldst): Add unpredictable
-        cases for ldxp, stlxrb, stlxrh, stlxr.
-        * testsuite/gas/aarch64/diagnostic.s: New tests.
-        * testsuite/gas/aarch64/diagnostic.l: Adjust.
+	cases for ldxp, stlxrb, stlxrh, stlxr.
+	* testsuite/gas/aarch64/diagnostic.s: New tests.
+	* testsuite/gas/aarch64/diagnostic.l: Adjust.
 
 2018-06-29  Tamar Christina  <tamar.christina@arm.com>
 

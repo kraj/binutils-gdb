@@ -111,15 +111,16 @@ proc is_elf64 { binary_file } {
     global READELF
     global READELFFLAGS
 
+    set tmpfile [file dirname $binary_file]/readelf.out
     set readelf_size ""
-    catch "exec $READELF $READELFFLAGS -h $binary_file > readelf.out" got
+    catch "exec $READELF $READELFFLAGS -h $binary_file > $tmpfile" got
 
     if ![string match "" $got] then {
 	return 0
     }
 
     if { ![regexp "\n\[ \]*Class:\[ \]*ELF(\[0-9\]+)\n" \
-	   [file_contents readelf.out] nil readelf_size] } {
+	   [file_contents $tmpfile] nil readelf_size] } {
 	return 0
     }
 
@@ -128,6 +129,26 @@ proc is_elf64 { binary_file } {
     }
 
     return 0
+}
+
+# True if the object format is known to use RELA relocations.
+#
+proc is_rela { binary_file } {
+    global READELF
+    global READELFFLAGS
+
+    set tmpfile [file dirname $binary_file]/readelf.out
+    catch "exec $READELF $READELFFLAGS -S $binary_file > $tmpfile" got
+
+    if ![string match "" $got] then {
+	return 0
+    }
+
+    if { ![regexp "RELA" [file_contents $tmpfile]] } {
+	return 0
+    }
+
+    return 1
 }
 
 # True if the target matches TARGET, specified as a TCL procedure if
@@ -375,4 +396,51 @@ proc regexp_diff { file_1 file_2 args } {
     close $file_b
 
     return $differences
+}
+
+# prune_warnings_extra -- delete extra warnings from TEXT.
+#
+# An example is:
+# ld: warning: /lib64/ld-linux-x86-64.so.2: unsupported GNU_PROPERTY_TYPE (5) type : 0xc0010001
+proc prune_warnings_extra { text } {
+    global experimental
+    # Warnings are only pruned from non-experimental code (ie code not
+    # on a release branch).  For experimental code we want the warnings
+    # as they indicate that the sources need to be updated to recognise
+    # the new properties.
+    if { "$experimental" == "false" } {
+	# The "\\1" is to try to preserve a "\n" but only if necessary.
+	regsub -all "(^|\n)(\[^\n\]*: warning:\[^\n\]*unsupported GNU_PROPERTY_TYPE\[^\n\]*\n?)+" $text "\\1" text
+    }
+    return $text
+}
+
+# This definition is taken from an unreleased version of DejaGnu.  Once
+# that version gets released, and has been out in the world for a few
+# months at least, it may be safe to delete this copy.
+if ![string length [info proc prune_warnings]] {
+    #
+    # prune_warnings -- delete various system verbosities from TEXT
+    #
+    # An example is:
+    # ld.so: warning: /usr/lib/libc.so.1.8.1 has older revision than expected 9
+    #
+    # Sites with particular verbose os's may wish to override this in site.exp.
+    #
+    proc prune_warnings { text } {
+	# This is from sun4's.  Do it for all machines for now.
+	# The "\\1" is to try to preserve a "\n" but only if necessary.
+	regsub -all "(^|\n)(ld.so: warning:\[^\n\]*\n?)+" $text "\\1" text
+	# It might be tempting to get carried away and delete blank lines, etc.
+	# Just delete *exactly* what we're ask to, and that's it.
+	set text [prune_warnings_extra $text]
+	return $text
+    }
+} elseif { [info procs saved-prune_warnings] == [list] } {
+    rename prune_warnings saved-prune_warnings
+    proc prune_warnings { text } {
+	set text [saved-prune_warnings $text]
+	set text [prune_warnings_extra $text]
+	return $text
+    }
 }

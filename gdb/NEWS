@@ -49,6 +49,9 @@ thread apply [all | COUNT | -COUNT] [FLAG]... COMMAND
      verified by using the "-list-features" command, which should
      contain "data-disassemble-a-option".
 
+  ** Command responses and notifications that include a frame now include
+     the frame's architecture in a new "arch" attribute.
+
 * New native configurations
 
 GNU/Linux/RISC-V		riscv*-*-linux*
@@ -89,6 +92,9 @@ GNU/Linux/RISC-V		riscv*-*-linux*
 
 * C expressions can now use _Alignof, and C++ expressions can now use
   alignof.
+
+* Support for SVE on AArch64 Linux.  Note that GDB does not detect changes to
+  the vector length while the process is running.
 
 * New commands
 

@@ -1,3 +1,107 @@
+2018-08-24  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* testsuite/ld-i386/i386.exp: Run pr23372c, pr23372d, pr23486c
+	and pr23486d.
+	* testsuite/ld-i386/pr23372a.s: Update comments.
+	* testsuite/ld-i386/pr23372b.s: Likewise.
+	* testsuite/ld-i386/pr23372c.s: Likewise.
+	* testsuite/ld-x86-64/pr23372a.s: Likewise.
+	* testsuite/ld-x86-64/pr23372b.s: Likewise.
+	* testsuite/ld-x86-64/pr23372c.s: Likewise.
+	* testsuite/ld-x86-64/pr23486a.s: Likewise.
+	* testsuite/ld-x86-64/pr23486b.s: Likewise.
+	* testsuite/ld-i386/pr23372c.d: New file.
+	* testsuite/ld-i386/pr23372d.d: Likewise.
+	* testsuite/ld-i386/pr23486c.d: Likewise.
+	* testsuite/ld-i386/pr23486d.d: Likewise.
+	* testsuite/ld-x86-64/pr23372c-x32.d: Likewise.
+	* testsuite/ld-x86-64/pr23372c.d: Likewise.
+	* testsuite/ld-x86-64/pr23372d-x32.d: Likewise.
+	* testsuite/ld-x86-64/pr23372d.d: Likewise.
+	* testsuite/ld-x86-64/pr23372d.s: Likewise.
+	* testsuite/ld-x86-64/pr23372e.s: Likewise.
+	* testsuite/ld-x86-64/pr23372f.s: Likewise.
+	* testsuite/ld-x86-64/pr23486c-x32.d: Likewise.
+	* testsuite/ld-x86-64/pr23486c.d: Likewise.
+	* testsuite/ld-x86-64/pr23486c.s: Likewise.
+	* testsuite/ld-x86-64/pr23486d-x32.d: Likewise.
+	* testsuite/ld-x86-64/pr23486d.d: Likewise.
+	* testsuite/ld-x86-64/pr23486d.s: Likewise.
+	* testsuite/ld-i386/property-3.r: Updated.
+	* testsuite/ld-i386/property-4.r: Likewise.
+	* testsuite/ld-i386/property-5.r: Likewise.
+	* testsuite/ld-i386/property-x86-3.d: Likewise.
+	* testsuite/ld-i386/property-x86-ibt3a.d: Likewise.
+	* testsuite/ld-i386/property-x86-shstk3a.d: Likewise.
+	* testsuite/ld-i386/property-x86-shstk3b.d: Likewise.
+	* testsuite/ld-x86-64/property-3.r: Likewise.
+	* testsuite/ld-x86-64/property-4.r: Likewise.
+	* testsuite/ld-x86-64/property-5.r: Likewise.
+	* testsuite/ld-x86-64/property-x86-3-x32.d: Likewise.
+	* testsuite/ld-x86-64/property-x86-3.d: Likewise.
+	* testsuite/ld-x86-64/property-x86-ibt3a-x32.d: Likewise.
+	* testsuite/ld-x86-64/property-x86-ibt3a.d: Likewise.
+	* testsuite/ld-x86-64/property-x86-ibt3b-x32.d: Likewise.
+	* testsuite/ld-x86-64/property-x86-ibt3b.d: Likewise.
+	* testsuite/ld-x86-64/property-x86-shstk3a-x32.d: Likewise.
+	* testsuite/ld-x86-64/property-x86-shstk3a.d: Likewise.
+	* testsuite/ld-x86-64/property-x86-shstk3b-x32.d: Likewise.
+	* testsuite/ld-x86-64/property-x86-shstk3b.d: Likewise.
+	* testsuite/ld-i386/property-x86-1.S: Updated to the current
+	GNU_PROPERTY_X86_ISA_1_USED and GNU_PROPERTY_X86_ISA_1_NEEDED
+	values.
+	* testsuite/ld-i386/property-x86-2.S: Likewise.
+	* testsuite/ld-i386/property-x86-3.s: Likewise.
+	* testsuite/ld-x86-64/property-x86-1.S: Likewise.
+	* testsuite/ld-x86-64/property-x86-2.S: Likewise.
+	* testsuite/ld-x86-64/property-x86-3.s: Likewise.
+	* ld/testsuite/ld-x86-64/x86-64.exp: Run pr23372c, pr23372c-x32,
+	pr23372d, pr23372d-x32, pr23486c, pr23486c-x32, pr23486d and
+	pr23486d-x32.
+
+2018-08-24  Alan Modra  <amodra@gmail.com>
+
+	* emultempl/elf32.em (before_allocation): Don't restore
+	__ehdr_start u.*.next pointer.
+
+2018-08-23  Alan Modra  <amodra@gmail.com>
+
+	PR 23566
+	* emultempl/elf32.em (before_allocation): Warning fix.
+
+2018-08-23  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/23536
+	* Makefile.am (development.exp): New target.
+	(EXTRA_DEJAGNU_SITE_CONFIG): New.
+	(DISTCLEANFILES): Add development.exp.
+	* Makefile.in: Regenerated.
+	* testsuite/ld-bootstrap/bootstrap.exp: Call prune_warnings to
+	prune BFD output.
+	* testsuite/ld-plugin/lto.exp: Likewise.
+	* testsuite/lib/ld-lib.exp (prune_warnings): Removed.
+	* testsuite/ld-elf/shared.exp: Allow "\n" in linker warnings.
+
+2018-08-21  Nick Clifton  <nickc@redhat.com>
+
+	PR 23426
+	* ld.texi (--hash-style): Note that the default is configurable
+	and that for most Linux based systems it will be "both".
+
+2018-08-18  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/ld-elf/elf.exp (is_elf64): Delete.
+
+2018-08-17  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/23515
+	* testsuite/ld-i386/ibt-plt-2a.d: Updated.
+	* testsuite/ld-i386/ibt-plt-2b.d: Likewise.
+	* testsuite/ld-x86-64/ibt-plt-2a-x32.d: Likewise.
+	* testsuite/ld-x86-64/ibt-plt-2a.d: Likewise.
+	* testsuite/ld-x86-64/ibt-plt-2b-x32.d: Likewise.
+	* testsuite/ld-x86-64/ibt-plt-2b.d: Likewise.
+
 2018-08-12  H.J. Lu  <hongjiu.lu@intel.com>
 
 	* testsuite/ld-x86-64/pr23486b.d: Swap pr23486a.s and pr23486a.s.

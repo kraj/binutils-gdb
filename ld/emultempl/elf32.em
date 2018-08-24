@@ -1680,11 +1680,6 @@ gld${EMULATION_NAME}_append_to_separated_string (char **to, char *op_arg)
     }
 }
 
-#if defined(__GNUC__) && GCC_VERSION < 4006
-  /* Work around a GCC uninitialized warning bug fixed in GCC 4.6.  */
-static struct bfd_link_hash_entry ehdr_start_empty;
-#endif
-
 /* This is called after the sections have been attached to output
    sections, but before any sizes or addresses have been set.  */
 
@@ -1694,13 +1689,10 @@ gld${EMULATION_NAME}_before_allocation (void)
   const char *rpath;
   asection *sinterp;
   bfd *abfd;
-  struct elf_link_hash_entry *ehdr_start = NULL;
-#if defined(__GNUC__) && GCC_VERSION < 4006
-  /* Work around a GCC uninitialized warning bug fixed in GCC 4.6.  */
-  struct bfd_link_hash_entry ehdr_start_save = ehdr_start_empty;
-#else
-  struct bfd_link_hash_entry ehdr_start_save;
-#endif
+  struct bfd_link_hash_entry *ehdr_start = NULL;
+  unsigned char ehdr_start_save_type = 0;
+  char ehdr_start_save_u[sizeof ehdr_start->u
+			 - sizeof ehdr_start->u.def.next] = "";
 
   if (is_elf_hash_table (link_info.hash))
     {
@@ -1732,11 +1724,14 @@ gld${EMULATION_NAME}_before_allocation (void)
 		 we most likely will need dynamic relocations for
 		 __ehdr_start if we are building a PIE or shared
 		 library.  */
-	      ehdr_start = h;
-	      ehdr_start_save = h->root;
-	      h->root.type = bfd_link_hash_defined;
-	      h->root.u.def.section = bfd_abs_section_ptr;
-	      h->root.u.def.value = 0;
+	      ehdr_start = &h->root;
+	      ehdr_start_save_type = ehdr_start->type;
+	      memcpy (ehdr_start_save_u,
+		      (char *) &ehdr_start->u + sizeof ehdr_start->u.def.next,
+		      sizeof ehdr_start_save_u);
+	      ehdr_start->type = bfd_link_hash_defined;
+	      ehdr_start->u.def.section = bfd_abs_section_ptr;
+	      ehdr_start->u.def.value = 0;
 	    }
 	}
 
@@ -1855,8 +1850,10 @@ ${ELF_INTERPRETER_SET_DEFAULT}
     {
       /* If we twiddled __ehdr_start to defined earlier, put it back
 	 as it was.  */
-      ehdr_start->root.type = ehdr_start_save.type;
-      ehdr_start->root.u = ehdr_start_save.u;
+      ehdr_start->type = ehdr_start_save_type;
+      memcpy ((char *) &ehdr_start->u + sizeof ehdr_start->u.def.next,
+	      ehdr_start_save_u,
+	      sizeof ehdr_start_save_u);
     }
 }
 

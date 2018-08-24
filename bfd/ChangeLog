@@ -1,3 +1,168 @@
+2018-08-24  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* elfxx-x86.c (_bfd_x86_elf_parse_gnu_properties): Handle
+	X86_COMPAT_ISA_1_USED, X86_COMPAT_ISA_1_NEEDED,
+	X86_UINT32_AND_LO, X86_UINT32_AND_HI, X86_UINT32_OR_LO,
+	X86_UINT32_OR_HI, X86_UINT32_OR_AND_LO and X86_UINT32_OR_AND_HI
+	instead of X86_ISA_1_USED, X86_ISA_1_NEEDED and X86_FEATURE_1_AND.
+	(_bfd_x86_elf_merge_gnu_properties): Likewise.
+	(_bfd_x86_elf_link_setup_gnu_properties): Add X86_FEATURE_2_NEEDED
+	instead of X86_ISA_1_NEEDED.
+	(_bfd_x86_elf_link_fixup_gnu_properties): Handle
+	X86_COMPAT_ISA_1_USED, X86_COMPAT_ISA_1_NEEDED, X86_UINT32_AND_LO,
+	X86_UINT32_AND_HI, X86_UINT32_OR_LO, X86_UINT32_OR_HI,
+	X86_UINT32_OR_AND_LO and X86_UINT32_OR_AND_HI instead of
+	X86_ISA_1_USED, X86_ISA_1_NEEDED and X86_FEATURE_1_AND.
+
+2018-08-24  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* elfxx-x86.c (_bfd_x86_elf_parse_gnu_properties): Mask out the
+	GNU_PROPERTY_X86_UINT32_VALID bit.
+	(_bfd_x86_elf_link_fixup_gnu_properties): Set the
+	GNU_PROPERTY_X86_UINT32_VALID bit for non-relocatable output.
+
+2018-08-23  Zenith423  <zenith432@users.sourceforge.net>
+
+	PR 23460
+	* plugin.c (struct plugin_list_entry): New structure.
+	(plugin_list): New variable.
+	(try_load_plugin): Place opened plugins on a list.  Ensure that
+	the refcount in the dynamic loader is kept at 1.
+
+2018-08-23  Alan Modra  <amodra@gmail.com>
+
+	* elf64-ppc.c (ppc64_elf_relocate_section): Revise "call lacks
+	nop" error message.
+
+2018-08-23  Nick Clifton  <nickc@redhat.com>
+
+	* elf64-hppa.c (elf_hppa_final_link_relocate): Replace unworkable
+	code with an assertion.
+
+2018-08-23  Nick Clifton  <nickc@redhat.com>
+
+	PR 23061
+	* coffgen.c (coff_pointerize_aux): Add table_end parameter.  Use
+	it to prevent walking off the end of the table.
+	(coff_get_normalized_symtab): Pass internal_end pointer to
+	coff_pointerize_aux.
+
+2018-08-23  Alan Modra  <amodra@gmail.com>
+
+	* elf64-ppc.c (ppc64_elf_relocate_section): Don't miss clearing
+	unresolved_reloc on ppc_stub_plt_call_notoc.
+
+2018-08-22  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/23536
+	* development.sh (experimental): New.
+
+2018-08-22  Helge Deller  <deller@gmx.de>
+	Nick Clifton  <nickc@redhat.com>
+
+	* elf-hppa.h (elf_hppa_fake_sections): Use SHT_PARISC_UNWIND as
+	the section type of the .PARISC.unwind section on 64-bit binaries
+	and SHT_PROGBITS for 32-bit binaries.  Add a comment about it.
+	Add comment about the sh_entsize value.
+
+2018-08-22  Rafeal Auler  <rafaelauler@gmail.com>
+
+	PR 23560
+	* elfnn-aarch64.c (elfNN_aarch64_size_stubs): Always update the
+	stub's target, since it may have been changed after the layout.
+
+2018-08-21  John Darington  <john@darrington.wattle.id.au>
+
+	* elf32-s12z.c (opru18_reloc): New function.
+	(elf_s12z_howto_table): Adjust Howto according to new knowledge.
+
+2018-08-21  mephi42  <mephi42@gmail.com>
+
+	PR binutils/23315
+	* mach-o.c (bfd_mach_o_mangle_symbols): Update n_type even if
+	data is already considered filled.
+
+2018-08-21  Alan Modra  <amodra@gmail.com>
+
+	* elf64-ppc.c (HOW): Define.
+	(ONES): Delete.
+	(ppc64_elf_howto_raw): Use HOW to initialize entries.
+	* elf32-ppc.c (HOW): Define.
+	(ppc_elf_howto_raw): Use HOW to initialize entries, updating
+	R_PPC_VLE_REL15 and R_PPC_VLE_REL24 to use bitpos=0.
+
+2018-08-21  Alan Modra  <amodra@gmail.com>
+
+	* reloc.c (reloc_howto_type): Typedef.
+	(bfd_symbol): Delete forward declaration.
+	(struct reloc_howto_struct): Add "negate" field.  Make "size",
+	"bitsize", "rightshift", "bitpos", "complain_on_overflow",
+	"pc_relative", "partial_inplace", and "pcrel_offset" bitfields.
+	Rearrange for better packing.  Revise comments.
+	(HOWTO): Map to rearranged reloc_howto_struct.
+	(bfd_get_reloc_size): Delete now unused cases.
+	(read_reloc, write_reloc): Likewise.
+	(apply_reloc, _bfd_relocate_contents): Test howto->negate
+	rather than howto->size < 0 for negated relocation values.
+	* coff-rs6000.c (xcoff_complain_overflow_bitfield_func): Avoid
+	signed/unsigned warning.
+	(xcoff_ppc_relocate_section): Delete "condition is always false"
+	code.
+	* coff64-rs6000.c (xcoff64_ppc_relocate_section): Likewise.
+	* cpu-ns32k.c (do_ns32k_reloc): Adjust to suit reloc_howto_struct
+	changes.
+	* vms-alpha.c (_bfd_vms_write_etir, alpha_vms_slurp_relocs): Use
+	size 16 for ALPHA_R_LINKAGE.
+	(alpha_howto_table <ALPHA_R_LINKAGE>): Set encoded size and
+	bitsize to zero.
+	* bfd-in.h (reloc_howto_type): Delete.
+	* bfd-in2.h: Regenerate.
+
+2018-08-21  Alan Modra  <amodra@gmail.com>
+
+	* reloc.c (HOWTO): Revise comment.
+	(NEWHOWTO, HOWTO_PREPARE): Delete.
+	* coff-arm.c (coff_arm_reloc_type_lookup): Replace const struc
+	reloc_howto_struct with reloc_howto_type.
+	* ns32knetbsd.c (MY_bfd_reloc_type_lookup): Likewise.
+	* vms-alpha.c (alpha_vms_bfd_reloc_type_lookup): Likewise.
+	* elf-hppa.h (HOW): Define.
+	(elf_hppa_howto_table): Use it to simplify this table, correcting
+	name of R_PARISC_LTOFF16WF, R_PARISC_LTOFF_FPTR64, and
+	R_PARISC_LTOFF_FPTR16DF.
+	* elf32-mep.c (MEPREL): Use HOWTO.
+	* bfd-in2.h: Regenerate.
+
+2018-08-20  Alan Modra  <amodra@gmail.com>
+
+	* mmo.c (valid_mmo_symbol_character_set): Initialize and make
+	array const.
+	(mmo_init): Don't init valid_mmo_symbol_character_set.
+
+2018-08-20  Alan Modra  <amodra@gmail.com>
+
+	* rs6000-core.c (CORE_COMMONSZ): Balance parentheses in expression.
+
+2018-08-17  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/23515
+	* elf-bfd.h (elf_backend_data): Add fixup_gnu_properties.
+	* elf-properties.c (_bfd_elf_link_setup_gnu_properties): Call
+	backend fixup_gnu_properties if it isn't NULL.  Discard
+	.note.gnu.property section if all properties have been removed.
+	* elfxx-target.h (elf_backend_fixup_gnu_properties): New.
+	(elfNN_bed): Initialize fixup_gnu_properties.
+	* elfxx-x86.c (_bfd_x86_elf_link_fixup_gnu_properties): New
+	function.
+	* elfxx-x86.h (_bfd_x86_elf_link_fixup_gnu_properties): New
+	prototype.
+	(elf_backend_fixup_gnu_properties): New.
+
+2018-08-16  Alan Modra  <amodra@gmail.com>
+
+	* elf64-ppc.c: Correct ppc_stub_long_branch_notoc example.
+	Formatting.
+
 2018-08-12  H.J. Lu  <hongjiu.lu@intel.com>
 
 	PR binutils/23494

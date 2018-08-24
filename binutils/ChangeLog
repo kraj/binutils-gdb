@@ -1,3 +1,101 @@
+2018-08-24  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* readelf.c (decode_x86_compat_isa): New function.
+	(decode_x86_feature_2): Likewise.
+	(decode_x86_isa): Updated for new X86_ISA_1_XXX bits.
+	(decode_x86_feature): Renamed to ...
+	(decode_x86_feature_1): This.  Remove the type argument.
+	(print_gnu_property_note): Handle X86_COMPAT_ISA_1_USED,
+	X86_COMPAT_ISA_1_NEEDED, X86_UINT32_AND_LO, X86_UINT32_AND_HI,
+	X86_UINT32_OR_LO, X86_UINT32_OR_HI, X86_UINT32_OR_AND_LO and
+	X86_UINT32_OR_AND_HI instead of X86_ISA_1_USED, X86_ISA_1_NEEDED
+	and X86_FEATURE_1_AND.
+	* testsuite/binutils-all/i386/pr21231b.s: Updated to the current
+	GNU_PROPERTY_X86_ISA_1_USED and GNU_PROPERTY_X86_ISA_1_NEEDED
+	values.
+	* testsuite/binutils-all/x86-64/pr21231b.s: Likewise.
+	* testsuite/binutils-all/x86-64/pr23494a.s: Likewise.
+	* testsuite/binutils-all/x86-64/pr23494b.s: Likewise.
+	* testsuite/binutils-all/x86-64/pr23494c.s: Likewise.
+	* testsuite/binutils-all/i386/pr21231b.d: Updated.
+	* testsuite/binutils-all/x86-64/pr21231b.d: Likewise.
+	* testsuite/binutils-all/x86-64/pr23494a-x32.d: Likewise.
+	* testsuite/binutils-all/x86-64/pr23494a.d: Likewise.
+	* testsuite/binutils-all/x86-64/pr23494c-x32.d: Likewise.
+	* testsuite/binutils-all/x86-64/pr23494c.d: Likewise.
+	* testsuite/binutils-all/x86-64/pr23494d-x32.d: Likewise.
+	* testsuite/binutils-all/x86-64/pr23494d.d: Likewise.
+	* testsuite/binutils-all/x86-64/pr23494e-x32.d: Likewise.
+	* testsuite/binutils-all/x86-64/pr23494e.d: Likewise.
+
+2018-08-24  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* readelf.c (print_gnu_property_note): Check the
+	GNU_PROPERTY_X86_UINT32_VALID bit for invalid GNU property note.
+
+2018-08-23  Alan Modra  <amodra@gmail.com>
+
+	* readelf.c (get_ppc64_symbol_other): Return NULL if st_other
+	field contains unrecognised or reserved values.  Handle
+	localentry:1 value.
+
+2018-08-23  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/23536
+	* Makefile.am (development.exp): New target.
+	(EXTRA_DEJAGNU_SITE_CONFIG): New.
+	(DISTCLEANFILES): Add development.exp.
+	* Makefile.in: Regenerated.
+	* testsuite/binutils-all/objcopy.exp (strip_test): Call
+	prune_warnings to prune BFD output.
+	(strip_test_with_saving_a_symbol): Likewise.
+	(objcopy_test_without_global_symbol): Likewise.
+	* testsuite/lib/binutils-common.exp (prune_warnings_extra):
+	New proc.
+	(prune_warnings): Likewise.
+
+2018-08-23  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* README-how-to-make-a-release: Document setting "experimental"
+	to false.
+
+2018-08-22  Alan Modra  <amodra@gmail.com>
+
+	* readelf.c (process_file_header): Assign updated values from
+	section_header[0] fields to e_phnum, e_shnum and e_shstrndx
+	during printing of header.  Correct e_shstrndx range check.
+	Remove unnecessary casts and use %u rather than %ld for
+	unsigned int header fields.  Don't print a random %lx when
+	reporting an unknown EI_VERSION.
+
+2018-08-21  Nick Clifton  <nickc@redhat.com>
+
+	* MAINTAINERS: Note that Arnold Metselaar has retired as the z80
+	maintainer.
+
+2018-08-21  L. Simon  <l.simon@samsung.com>
+
+	PR 23531
+	* readelf.c (hppa_process_unwind): Only dump the unwind table if
+	the data was successfully read in.
+
+2018-08-18  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/lib/binutils-common.exp (is_elf64): Use directory of
+	input file for readelf.out.
+	(is_rela): New proc.
+	* testsuite/binutils-all/objcopy.exp (elf64): Set new variable
+	from first result of is_elf64 test.
+	(reloc_format): Set using is_rela.
+	(strip-13): Pass RELOC and ELF64 to assembler.
+	(strip-14, strip-15): Use elf64 rather than calling is_elf64 again.
+	* testsuite/binutils-all/strip-13.d: Run for more targets.
+	* testsuite/binutils-all/strip-13mips64.s: Use RELOC and set
+	addend to zero.
+	* testsuite/binutils-all/strip-13rel.s: Use RELOC and ELF64.
+	Don't add _NONE reloc.
+	* testsuite/binutils-all/strip-13rela.s: Likewise.
+
 2018-08-10  H.J. Lu  <hongjiu.lu@intel.com>
 
 	PR binutils/23494

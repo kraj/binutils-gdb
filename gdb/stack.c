@@ -1079,7 +1079,7 @@ find_frame_funname (struct frame_info *frame, enum language *funlang,
 
       if (msymbol.minsym != NULL
 	  && (BMSYMBOL_VALUE_ADDRESS (msymbol)
-	      > BLOCK_START (SYMBOL_BLOCK_VALUE (func))))
+	      > BLOCK_ENTRY_PC (SYMBOL_BLOCK_VALUE (func))))
 	{
 	  /* We also don't know anything about the function besides
 	     its address and name.  */
@@ -1249,6 +1249,9 @@ print_frame (struct frame_info *frame, int print_level,
 	    uiout->field_string ("from", lib);
 	  }
       }
+    if (uiout->is_mi_like_p ())
+      uiout->field_string ("arch",
+			   (gdbarch_bfd_arch_info (gdbarch))->printable_name);
   }
 
   uiout->text ("\n");

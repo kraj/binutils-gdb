@@ -4765,12 +4765,12 @@ process_file_header (Filedata * filedata)
 	      get_elf_class (header->e_ident[EI_CLASS]));
       printf (_("  Data:                              %s\n"),
 	      get_data_encoding (header->e_ident[EI_DATA]));
-      printf (_("  Version:                           %d %s\n"),
+      printf (_("  Version:                           %d%s\n"),
 	      header->e_ident[EI_VERSION],
 	      (header->e_ident[EI_VERSION] == EV_CURRENT
-	       ? "(current)"
+	       ? _(" (current)")
 	       : (header->e_ident[EI_VERSION] != EV_NONE
-		  ? _("<unknown: %lx>")
+		  ? _(" <unknown>")
 		  : "")));
       printf (_("  OS/ABI:                            %s\n"),
 	      get_osabi_name (filedata, header->e_ident[EI_OSABI]));
@@ -4781,45 +4781,57 @@ process_file_header (Filedata * filedata)
       printf (_("  Machine:                           %s\n"),
 	      get_machine_name (header->e_machine));
       printf (_("  Version:                           0x%lx\n"),
-	      (unsigned long) header->e_version);
+	      header->e_version);
 
       printf (_("  Entry point address:               "));
-      print_vma ((bfd_vma) header->e_entry, PREFIX_HEX);
+      print_vma (header->e_entry, PREFIX_HEX);
       printf (_("\n  Start of program headers:          "));
-      print_vma ((bfd_vma) header->e_phoff, DEC);
+      print_vma (header->e_phoff, DEC);
       printf (_(" (bytes into file)\n  Start of section headers:          "));
-      print_vma ((bfd_vma) header->e_shoff, DEC);
+      print_vma (header->e_shoff, DEC);
       printf (_(" (bytes into file)\n"));
 
       printf (_("  Flags:                             0x%lx%s\n"),
-	      (unsigned long) header->e_flags,
+	      header->e_flags,
 	      get_machine_flags (filedata, header->e_flags, header->e_machine));
-      printf (_("  Size of this header:               %ld (bytes)\n"),
-	      (long) header->e_ehsize);
-      printf (_("  Size of program headers:           %ld (bytes)\n"),
-	      (long) header->e_phentsize);
-      printf (_("  Number of program headers:         %ld"),
-	      (long) header->e_phnum);
+      printf (_("  Size of this header:               %u (bytes)\n"),
+	      header->e_ehsize);
+      printf (_("  Size of program headers:           %u (bytes)\n"),
+	      header->e_phentsize);
+      printf (_("  Number of program headers:         %u"),
+	      header->e_phnum);
       if (filedata->section_headers != NULL
 	  && header->e_phnum == PN_XNUM
 	  && filedata->section_headers[0].sh_info != 0)
-	printf (" (%ld)", (long) filedata->section_headers[0].sh_info);
+	{
+	  header->e_phnum = filedata->section_headers[0].sh_info;
+	  printf (" (%u)", header->e_phnum);
+	}
       putc ('\n', stdout);
-      printf (_("  Size of section headers:           %ld (bytes)\n"),
-	      (long) header->e_shentsize);
-      printf (_("  Number of section headers:         %ld"),
-	      (long) header->e_shnum);
+      printf (_("  Size of section headers:           %u (bytes)\n"),
+	      header->e_shentsize);
+      printf (_("  Number of section headers:         %u"),
+	      header->e_shnum);
       if (filedata->section_headers != NULL && header->e_shnum == SHN_UNDEF)
-	printf (" (%ld)", (long) filedata->section_headers[0].sh_size);
+	{
+	  header->e_shnum = filedata->section_headers[0].sh_size;
+	  printf (" (%u)", header->e_shnum);
+	}
       putc ('\n', stdout);
-      printf (_("  Section header string table index: %ld"),
-	      (long) header->e_shstrndx);
+      printf (_("  Section header string table index: %u"),
+	      header->e_shstrndx);
       if (filedata->section_headers != NULL
 	  && header->e_shstrndx == (SHN_XINDEX & 0xffff))
-	printf (" (%u)", filedata->section_headers[0].sh_link);
-      else if (header->e_shstrndx != SHN_UNDEF
-	       && header->e_shstrndx >= header->e_shnum)
-	printf (_(" <corrupt: out of range>"));
+	{
+	  header->e_shstrndx = filedata->section_headers[0].sh_link;
+	  printf (" (%u)", header->e_shstrndx);
+	}
+      if (header->e_shstrndx != SHN_UNDEF
+	  && header->e_shstrndx >= header->e_shnum)
+	{
+	  header->e_shstrndx = SHN_UNDEF;
+	  printf (_(" <corrupt: out of range>"));
+	}
       putc ('\n', stdout);
     }
 
@@ -8130,8 +8142,8 @@ hppa_process_unwind (Filedata * filedata)
 
           if (! slurp_hppa_unwind_table (filedata, &aux, sec))
 	    res = FALSE;
-	
-	  if (aux.table_len > 0)
+
+	  if (res && aux.table_len > 0)
 	    {
 	      if (! dump_hppa_unwind (filedata, &aux))
 		res = FALSE;
@@ -11076,11 +11088,16 @@ get_ia64_symbol_other (Filedata * filedata, unsigned int other)
 static const char *
 get_ppc64_symbol_other (unsigned int other)
 {
-  if (PPC64_LOCAL_ENTRY_OFFSET (other) != 0)
+  if ((other & ~STO_PPC64_LOCAL_MASK) != 0)
+    return NULL;
+
+  other >>= STO_PPC64_LOCAL_BIT;
+  if (other <= 6)
     {
       static char buf[32];
-      snprintf (buf, sizeof buf, _("<localentry>: %d"),
-		PPC64_LOCAL_ENTRY_OFFSET (other));
+      if (other >= 2)
+	other = ppc64_decode_local_entry (other);
+      snprintf (buf, sizeof buf, _("<localentry>: %d"), other);
       return buf;
     }
   return NULL;
@@ -16930,6 +16947,77 @@ get_gnu_elf_note_type (unsigned e_type)
 }
 
 static void
+decode_x86_compat_isa (unsigned int bitmask)
+{
+  while (bitmask)
+    {
+      unsigned int bit = bitmask & (- bitmask);
+
+      bitmask &= ~ bit;
+      switch (bit)
+	{
+	case GNU_PROPERTY_X86_COMPAT_ISA_1_486:
+	  printf ("i486");
+	  break;
+	case GNU_PROPERTY_X86_COMPAT_ISA_1_586:
+	  printf ("586");
+	  break;
+	case GNU_PROPERTY_X86_COMPAT_ISA_1_686:
+	  printf ("686");
+	  break;
+	case GNU_PROPERTY_X86_COMPAT_ISA_1_SSE:
+	  printf ("SSE");
+	  break;
+	case GNU_PROPERTY_X86_COMPAT_ISA_1_SSE2:
+	  printf ("SSE2");
+	  break;
+	case GNU_PROPERTY_X86_COMPAT_ISA_1_SSE3:
+	  printf ("SSE3");
+	  break;
+	case GNU_PROPERTY_X86_COMPAT_ISA_1_SSSE3:
+	  printf ("SSSE3");
+	  break;
+	case GNU_PROPERTY_X86_COMPAT_ISA_1_SSE4_1:
+	  printf ("SSE4_1");
+	  break;
+	case GNU_PROPERTY_X86_COMPAT_ISA_1_SSE4_2:
+	  printf ("SSE4_2");
+	  break;
+	case GNU_PROPERTY_X86_COMPAT_ISA_1_AVX:
+	  printf ("AVX");
+	  break;
+	case GNU_PROPERTY_X86_COMPAT_ISA_1_AVX2:
+	  printf ("AVX2");
+	  break;
+	case GNU_PROPERTY_X86_COMPAT_ISA_1_AVX512F:
+	  printf ("AVX512F");
+	  break;
+	case GNU_PROPERTY_X86_COMPAT_ISA_1_AVX512CD:
+	  printf ("AVX512CD");
+	  break;
+	case GNU_PROPERTY_X86_COMPAT_ISA_1_AVX512ER:
+	  printf ("AVX512ER");
+	  break;
+	case GNU_PROPERTY_X86_COMPAT_ISA_1_AVX512PF:
+	  printf ("AVX512PF");
+	  break;
+	case GNU_PROPERTY_X86_COMPAT_ISA_1_AVX512VL:
+	  printf ("AVX512VL");
+	  break;
+	case GNU_PROPERTY_X86_COMPAT_ISA_1_AVX512DQ:
+	  printf ("AVX512DQ");
+	  break;
+	case GNU_PROPERTY_X86_COMPAT_ISA_1_AVX512BW:
+	  printf ("AVX512BW");
+	  break;
+	default: printf (_("<unknown: %x>"), bit); break;
+	}
+      if (bitmask)
+	printf (", ");
+    }
+}
+
+static void
 decode_x86_isa (unsigned int bitmask)
 {
   while (bitmask)
@@ -16939,24 +17027,78 @@ decode_x86_isa (unsigned int bitmask)
       bitmask &= ~ bit;
       switch (bit)
 	{
-	case GNU_PROPERTY_X86_ISA_1_486: printf ("i486"); break;
-	case GNU_PROPERTY_X86_ISA_1_586: printf ("586"); break;
-	case GNU_PROPERTY_X86_ISA_1_686: printf ("686"); break;
-	case GNU_PROPERTY_X86_ISA_1_SSE: printf ("SSE"); break;
-	case GNU_PROPERTY_X86_ISA_1_SSE2: printf ("SSE2"); break;
-	case GNU_PROPERTY_X86_ISA_1_SSE3: printf ("SSE3"); break;
-	case GNU_PROPERTY_X86_ISA_1_SSSE3: printf ("SSSE3"); break;
-	case GNU_PROPERTY_X86_ISA_1_SSE4_1: printf ("SSE4_1"); break;
-	case GNU_PROPERTY_X86_ISA_1_SSE4_2: printf ("SSE4_2"); break;
-	case GNU_PROPERTY_X86_ISA_1_AVX: printf ("AVX"); break;
-	case GNU_PROPERTY_X86_ISA_1_AVX2: printf ("AVX2"); break;
-	case GNU_PROPERTY_X86_ISA_1_AVX512F: printf ("AVX512F"); break;
-	case GNU_PROPERTY_X86_ISA_1_AVX512CD: printf ("AVX512CD"); break;
-	case GNU_PROPERTY_X86_ISA_1_AVX512ER: printf ("AVX512ER"); break;
-	case GNU_PROPERTY_X86_ISA_1_AVX512PF: printf ("AVX512PF"); break;
-	case GNU_PROPERTY_X86_ISA_1_AVX512VL: printf ("AVX512VL"); break;
-	case GNU_PROPERTY_X86_ISA_1_AVX512DQ: printf ("AVX512DQ"); break;
-	case GNU_PROPERTY_X86_ISA_1_AVX512BW: printf ("AVX512BW"); break;
+	case GNU_PROPERTY_X86_ISA_1_CMOV:
+	  printf ("CMOV");
+	  break;
+	case GNU_PROPERTY_X86_ISA_1_SSE:
+	  printf ("SSE");
+	  break;
+	case GNU_PROPERTY_X86_ISA_1_SSE2:
+	  printf ("SSE2");
+	  break;
+	case GNU_PROPERTY_X86_ISA_1_SSE3:
+	  printf ("SSE3");
+	  break;
+	case GNU_PROPERTY_X86_ISA_1_SSSE3:
+	  printf ("SSSE3");
+	  break;
+	case GNU_PROPERTY_X86_ISA_1_SSE4_1:
+	  printf ("SSE4_1");
+	  break;
+	case GNU_PROPERTY_X86_ISA_1_SSE4_2:
+	  printf ("SSE4_2");
+	  break;
+	case GNU_PROPERTY_X86_ISA_1_AVX:
+	  printf ("AVX");
+	  break;
+	case GNU_PROPERTY_X86_ISA_1_AVX2:
+	  printf ("AVX2");
+	  break;
+	case GNU_PROPERTY_X86_ISA_1_FMA:
+	  printf ("FMA");
+	  break;
+	case GNU_PROPERTY_X86_ISA_1_AVX512F:
+	  printf ("AVX512F");
+	  break;
+	case GNU_PROPERTY_X86_ISA_1_AVX512CD:
+	  printf ("AVX512CD");
+	  break;
+	case GNU_PROPERTY_X86_ISA_1_AVX512ER:
+	  printf ("AVX512ER");
+	  break;
+	case GNU_PROPERTY_X86_ISA_1_AVX512PF:
+	  printf ("AVX512PF");
+	  break;
+	case GNU_PROPERTY_X86_ISA_1_AVX512VL:
+	  printf ("AVX512VL");
+	  break;
+	case GNU_PROPERTY_X86_ISA_1_AVX512DQ:
+	  printf ("AVX512DQ");
+	  break;
+	case GNU_PROPERTY_X86_ISA_1_AVX512BW:
+	  printf ("AVX512BW");
+	  break;
+	case GNU_PROPERTY_X86_ISA_1_AVX512_4FMAPS:
+	  printf ("AVX512_4FMAPS");
+	  break;
+	case GNU_PROPERTY_X86_ISA_1_AVX512_4VNNIW:
+	  printf ("AVX512_4VNNIW");
+	  break;
+	case GNU_PROPERTY_X86_ISA_1_AVX512_BITALG:
+	  printf ("AVX512_BITALG");
+	  break;
+	case GNU_PROPERTY_X86_ISA_1_AVX512_IFMA:
+	  printf ("AVX512_IFMA");
+	  break;
+	case GNU_PROPERTY_X86_ISA_1_AVX512_VBMI:
+	  printf ("AVX512_VBMI");
+	  break;
+	case GNU_PROPERTY_X86_ISA_1_AVX512_VBMI2:
+	  printf ("AVX512_VBMI2");
+	  break;
+	case GNU_PROPERTY_X86_ISA_1_AVX512_VNNI:
+	  printf ("AVX512_VNNI");
+	  break;
 	default: printf (_("<unknown: %x>"), bit); break;
 	}
       if (bitmask)
@@ -16965,7 +17107,7 @@ decode_x86_isa (unsigned int bitmask)
 }
 
 static void
-decode_x86_feature (unsigned int type, unsigned int bitmask)
+decode_x86_feature_1 (unsigned int bitmask)
 {
   while (bitmask)
     {
@@ -16975,30 +17117,61 @@ decode_x86_feature (unsigned int type, unsigned int bitmask)
       switch (bit)
 	{
 	case GNU_PROPERTY_X86_FEATURE_1_IBT:
-	  switch (type)
-	    {
-	    case GNU_PROPERTY_X86_FEATURE_1_AND:
-	      printf ("IBT");
-	      break;
-	    default:
-	      /* This should never happen.  */
-	      abort ();
-	    }
+	  printf ("IBT");
 	  break;
 	case GNU_PROPERTY_X86_FEATURE_1_SHSTK:
-	  switch (type)
-	    {
-	    case GNU_PROPERTY_X86_FEATURE_1_AND:
-	      printf ("SHSTK");
-	      break;
-	    default:
-	      /* This should never happen.  */
-	      abort ();
-	    }
+	  printf ("SHSTK");
 	  break;
 	default:
 	  printf (_("<unknown: %x>"), bit);
 	  break;
+	}
+      if (bitmask)
+	printf (", ");
+    }
+}
+
+static void
+decode_x86_feature_2 (unsigned int bitmask)
+{
+  while (bitmask)
+    {
+      unsigned int bit = bitmask & (- bitmask);
+
+      bitmask &= ~ bit;
+      switch (bit)
+	{
+	case GNU_PROPERTY_X86_FEATURE_2_X86:
+	  printf ("x86");
+	  break;
+	case GNU_PROPERTY_X86_FEATURE_2_X87:
+	  printf ("x87");
+	  break;
+	case GNU_PROPERTY_X86_FEATURE_2_MMX:
+	  printf ("MMX");
+	  break;
+	case GNU_PROPERTY_X86_FEATURE_2_XMM:
+	  printf ("XMM");
+	  break;
+	case GNU_PROPERTY_X86_FEATURE_2_YMM:
+	  printf ("YMM");
+	  break;
+	case GNU_PROPERTY_X86_FEATURE_2_ZMM:
+	  printf ("ZMM");
+	  break;
+	case GNU_PROPERTY_X86_FEATURE_2_FXSR:
+	  printf ("FXSR");
+	  break;
+	case GNU_PROPERTY_X86_FEATURE_2_XSAVE:
+	  printf ("XSAVE");
+	  break;
+	case GNU_PROPERTY_X86_FEATURE_2_XSAVEOPT:
+	  printf ("XSAVEOPT");
+	  break;
+	case GNU_PROPERTY_X86_FEATURE_2_XSAVEC:
+	  printf ("XSAVEC");
+	  break;
+	default: printf (_("<unknown: %x>"), bit); break;
 	}
       if (bitmask)
 	printf (", ");
@@ -17050,30 +17223,99 @@ print_gnu_property_note (Filedata * filedata, Elf_Internal_Note * pnote)
 	      || filedata->file_header.e_machine == EM_IAMCU
 	      || filedata->file_header.e_machine == EM_386)
 	    {
+	      unsigned int bitmask;
+
+	      if (datasz == 4)
+		{
+		  bitmask = byte_get (ptr, 4);
+		  if (filedata->file_header.e_type == ET_EXEC
+		      || filedata->file_header.e_type == ET_DYN)
+		    {
+		      if ((bitmask & GNU_PROPERTY_X86_UINT32_VALID))
+			bitmask &= ~GNU_PROPERTY_X86_UINT32_VALID;
+		      else
+			printf ("Invalid ");
+		    }
+		}
+	      else
+		bitmask = 0;
+
 	      switch (type)
 		{
 		case GNU_PROPERTY_X86_ISA_1_USED:
-		  printf ("x86 ISA used: ");
 		  if (datasz != 4)
-		    printf (_("<corrupt length: %#x> "), datasz);
+		    printf (_("x86 ISA used: <corrupt length: %#x> "),
+			    datasz);
 		  else
-		    decode_x86_isa (byte_get (ptr, 4));
+		    {
+		      printf ("x86 ISA used: ");
+		      decode_x86_isa (bitmask);
+		    }
 		  goto next;
 
 		case GNU_PROPERTY_X86_ISA_1_NEEDED:
-		  printf ("x86 ISA needed: ");
 		  if (datasz != 4)
-		    printf (_("<corrupt length: %#x> "), datasz);
+		    printf (_("x86 ISA needed: <corrupt length: %#x> "),
+			    datasz);
 		  else
-		    decode_x86_isa (byte_get (ptr, 4));
+		    {
+		      printf ("x86 ISA needed: ");
+		      decode_x86_isa (bitmask);
+		    }
 		  goto next;
 
 		case GNU_PROPERTY_X86_FEATURE_1_AND:
-		  printf ("x86 feature: ");
 		  if (datasz != 4)
-		    printf (_("<corrupt length: %#x> "), datasz);
+		    printf (_("x86 feature: <corrupt length: %#x> "),
+			    datasz);
 		  else
-		    decode_x86_feature (type, byte_get (ptr, 4));
+		    {
+		      printf ("x86 feature: ");
+		      decode_x86_feature_1 (bitmask);
+		    }
+		  goto next;
+
+		case GNU_PROPERTY_X86_FEATURE_2_USED:
+		  if (datasz != 4)
+		    printf (_("x86 feature used: <corrupt length: %#x> "),
+			    datasz);
+		  else
+		    {
+		      printf ("x86 feature used: ");
+		      decode_x86_feature_2 (bitmask);
+		    }
+		  goto next;
+
+		case GNU_PROPERTY_X86_FEATURE_2_NEEDED:
+		  if (datasz != 4)
+		    printf (_("x86 feature needed: <corrupt length: %#x> "), datasz);
+		  else
+		    {
+		      printf ("x86 feature needed: ");
+		      decode_x86_feature_2 (bitmask);
+		    }
+		  goto next;
+
+		case GNU_PROPERTY_X86_COMPAT_ISA_1_USED:
+		  if (datasz != 4)
+		    printf (_("x86 ISA used: <corrupt length: %#x> "),
+			    datasz);
+		  else
+		    {
+		      printf ("x86 ISA used: ");
+		      decode_x86_compat_isa (bitmask);
+		    }
+		  goto next;
+
+		case GNU_PROPERTY_X86_COMPAT_ISA_1_NEEDED:
+		  if (datasz != 4)
+		    printf (_("x86 ISA needed: <corrupt length: %#x> "),
+			    datasz);
+		  else
+		    {
+		      printf ("x86 ISA needed: ");
+		      decode_x86_compat_isa (bitmask);
+		    }
 		  goto next;
 
 		default:

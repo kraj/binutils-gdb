@@ -1,3 +1,166 @@
+2018-08-23  Kevin Buettner  <kevinb@redhat.com>
+
+	* block.h (blockrange, blockranges): New struct declarations.
+	(struct block): Add new field named `ranges'.
+	(BLOCK_RANGES, BLOCK_NRANGES, BLOCK_RANGE, BLOCK_CONTIGUOUS_P)
+	(BLOCK_RANGE_START, BLOCK_RANGE_END, BLOCK_ENTRY_PC): New
+	macros for accessing ranges in struct block.
+	(make_blockranges): New declaration.
+	block.c (make_blockranges): New function.
+	* dwarf2read.c (dwarf2_record_block_ranges): Fill in BLOCK_RANGES
+	for block.
+	* symtab.h (find_pc_partial_function): Add new parameter `block'.
+	* blockframe.c (cache_pc_function_block): New static global.
+	(clear_pc_function_cache): Clear cache_pc_function_block.
+	(find_pc_partial_function): Move comment to symtab.h.  Add
+	support for non-contiguous blocks.
+	* cli/cli-cmds.c (block.h): Include.
+	(print_disassembly): Handle printing of non-contiguous blocks.
+	(disassemble_current_function): Likewise.
+	(disassemble_command): Likewise.
+
+	* ax-gdb.c (gen_var_ref): Use BLOCK_ENTRY_PC in place of
+	BLOCK_START.
+	* blockframe.c (get_pc_function_start): Likewise.
+	* compile/compile-c-symbols.c (convert_one_symbol): Likewise.
+	(gcc_symbol_address): Likewise.
+	* compile/compile-object-run.c (compile_object_run): Likewise.
+	* compile/compile.c (get_expr_block_and_pc): Likewise.
+	* dwarf2loc.c (dwarf2_find_location_expression): Likewise.
+	(func_addr_to_tail_call_list): Likewise.
+	* findvar.c (default_read_var_value): Likewise.
+	* inline-frame.c (inline_frame_this_id): Likewise.
+	(skip-inline_frames): Likewise.
+	* infcmd.c (until_next_command): Likewise.
+	* linespec.c (convert_linespec_to_sals): Likewise.
+	* parse.c (parse_exp_in_context_1): Likewise.
+	* printcmd.c (build_address_symbolic): likewise.
+	(info_address_command): Likewise.
+	symtab.c (find_function_start_sal): Likewise.
+	(skip_prologue_sal): Likewise.
+	(find_function_alias_target): Likewise.
+	(find_gnu_ifunc): Likewise.
+	* stack.c (find_frame_funname): Likewise.
+	* symtab.c (fixup_symbol_section): Likewise.
+	(find_function_start_sal): Likewise.
+	(skip_prologue_sal): Likewsie.
+	(find_function_alias_target): Likewise.
+	(find_gnu_ifunc): Likewise.
+	* tracepoint.c (info_scope_command): Likewise.
+	* value.c (value_fn_field): Likewise.
+
+	* infrun.c (fill_in_stop_func): Use find_function_entry_range_from_pc
+	in place of find_pc_partial_function.
+	* blockframe.c (find_function_entry_range_from_pc): New function.
+	* symtab.h (find_function_entry_range_from_pc): Declare and document.
+	* objfiles.c (objfile_relocate1): Relocate start and end addresses
+	for each range in a block.
+
+
+2018-08-23  Xavier Roirand  <roirand@adacore.com>
+
+	* machoread.c (macho_symfile_read_all_oso): Remove uneeded
+	incrementation.
+
+2018-08-22  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* solib-svr4.c (read_program_headers_from_bfd): Return
+	gdb::optional<gdb::byte_vector>.
+	(svr4_exec_displacement): Adjust.
+
+2018-08-22  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* solib-svr4.c (read_program_header): Return
+	gdb::optional<gdb::byte_vector>, remove p_sect_size param.
+	(find_program_interpreter): Return
+	gdb::optional<gdb::byte_vector>.
+	(scan_dyntag_auxv): Adjust.
+	(enable_break): Adjust.
+	(svr4_exec_displacement): Adjust.
+
+2018-08-22  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* inf-child.h (inf_child_target) <terminal_save_inferior>: New.
+	* inf-child.c (inf_child_target::terminal_save_inferior): New.
+
+2018-08-22  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* guile/scm-string.c (gdbscm_scm_from_printf): Use
+	string_vprintf.
+	* guile/scm-utils.c (gdbscm_printf): Likewise.
+	* serial.c (serial_printf): Likewise.
+	* xml-support.c (gdb_xml_parser::vdebug): Likewise.
+
+2018-08-22  Jan Vrany  <jan.vrany@fit.cvut.cz>
+
+	* stack.c (print_frame): Print frame architecture when printing on
+	an MI output.
+	* NEWS: Mention new "arch" attribute in frame output.
+
+2018-08-21  Alan Hayward  <alan.hayward@arm.com>
+
+	* arch/aarch64.h (aarch64_regnum): Update comment.
+
+2018-08-21  Alan Hayward  <alan.hayward@arm.com>
+
+	* NEWS: Add SVE to 8.2 section.
+
+2018-08-21  Pedro Alves  <palves@redhat.com>
+
+	* guile/scm-utils.c (gdbscm_parse_function_args_1): New, factored
+	out from gdbscm_parse_function_args.
+	(gdbscm_parse_function_args): Rework to use gdbscm_wrap and
+	gdbscm_parse_function_args_1.
+
+2018-08-21  Simon Marchi  <simon.marchi@ericsson.com>
+
+	PR gdb/17816
+	* m32c-tdep.c (m32c_decode_srcdest4): Remove unnecessary ternary
+	operator.
+
+2018-08-19  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* solib-svr4.c (svr4_exec_displacement): Fix formatting.
+
+2018-08-19  Michael Spang  <spang@google.com>
+
+	PR gdb/11786
+	* solib-svr4.c (svr4_exec_displacement): Ignore memsz fields
+	for PT_TLS segments.
+
+2018-08-18  Kevin Buettner  <kevinb@redhat.com>
+
+	* dwarf2expr.h (struct dwarf_expr_context): Add virtual method
+	dwarf_variable_value.
+	* dwarf2-frame.c (class dwarf_expr_executor):
+	Add override for dwarf_variable_value.
+	* dwarf2loc.c (class dwarf_evaluate_loc_desc): Likewise.
+	(class symbol_needs_eval_context): Likewise.
+	(indirect_synthetic_pointer): Add forward declaration.
+	(sect_variable_value): New function.
+	(dwarf2_compile_expr_to_ax): Add case for DW_OP_GNU_variable_value.
+	* dwarf2expr.c (dwarf_expr_context::execute_stack_op): Add case
+	for DW_OP_GNU_variable_value.
+
+2018-08-16  Tom Tromey  <tom@tromey.com>
+
+	* top.c (read_command_file): Update.
+	(command_line_input): Remove "repeat" argument.
+	* ada-lang.c (get_selections): Update.
+	* linespec.c (decode_line_2): Update.
+	* defs.h (command_line_input): Remove argument.
+	* cli/cli-script.c (read_next_line): Update.
+	* python/py-gdb-readline.c: Update.
+
+2018-08-17  Tom Tromey  <tom@tromey.com>
+
+	* cli/cli-script.c (read_next_line): Pass 0 as repeat argument to
+	command_line_input.
+
+2018-08-15  Tom Tromey  <tom@tromey.com>
+
+	* aarch64-linux-tdep.c (aarch64_linux_core_read_vq): Use pulongest.
+
 2018-08-14  Jan Vrany  <jan.vrany@fit.cvut.cz>
 
 	* mi/mi-cmd-disas.c (mi_cmd_disassemble): Add -a option.

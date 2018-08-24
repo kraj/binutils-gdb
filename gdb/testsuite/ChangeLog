@@ -1,3 +1,45 @@
+2018-08-23  Kevin Buettner  <kevinb@redhat.com>
+
+	* gdb.dwarf2/dw2-ranges-func.c: New file.
+	* gdb.dwarf2/dw2-ranges-func.exp: New file.
+
+2018-08-22  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* gdb.base/term.exp: Compare terminal settings with values from
+	the inferior.
+	* gdb.base/term.c: Get and set terminal settings.
+
+2018-08-22  Jan Vrany  <jan.vrany@fit.cvut.cz>
+
+	* lib/mi-support.exp (mi_expect_stop): Update regexp to
+	accommodate new "arch" field in frame output.
+	* gdb.mi/mi-return.exp: Likewise.
+	* gdb.mi/mi-stack.exp: Likewise.
+	* gdb.mi/mi-syn-frame.exp: Likewise.
+	* gdb.mi/user-selected-context-sync.exp: Likewise.
+
+2018-08-19  Michael Spang  <spang@google.com>
+
+	PR gdb/11786
+	* gdb.base/gcore-tls-pie.c: New file.
+	* gdb.base/gcore-tls-pie.exp: New file.
+
+2018-08-18  Kevin Buettner  <kevinb@redhat.com>
+
+	* lib/dwarf.exp: Add support for DW_OP_GNU_variable_value.
+	* gdb.dwarf2/varval.c: New file.
+	* gdb.dwarf2/varval.exp: New file.
+
+2018-08-17  Alan Hayward  <alan.hayward@arm.com>
+
+	PR gdb/18931
+	* gdb.arch/aarch64-fp.c (main): Fix asm registers.
+
+2018-08-16  Keith Seitz  <keiths@redhat.com>
+
+	* gdb.compile/compile.exp: Use gdb_test_no_output for "compile code"
+	tests expected to pass.
+
 2018-08-14  Jan Vrany  <jan.vrany@fit.cvut.cz>
 
 	* gdb.mi/mi-disassemble.exp (test_disassembly_only): Add tests for
