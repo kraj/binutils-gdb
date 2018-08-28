@@ -11300,6 +11300,7 @@ get_symbol_version_string (Filedata *                   filedata,
   unsigned char data[2];
   unsigned short vers_data;
   unsigned long offset;
+  unsigned short max_vd_ndx;
 
   if (!is_dynsym
       || version_info[DT_VERSIONTAGIDX (DT_VERSYM)] == 0)
@@ -11316,6 +11317,8 @@ get_symbol_version_string (Filedata *                   filedata,
 
   if ((vers_data & VERSYM_HIDDEN) == 0 && vers_data == 0)
     return NULL;
+
+  max_vd_ndx = 0;
 
   /* Usually we'd only see verdef for defined symbols, and verneed for
      undefined symbols.  However, symbols defined by the linker in
@@ -11358,6 +11361,9 @@ get_symbol_version_string (Filedata *                   filedata,
 	      ivd.vd_next = BYTE_GET (evd.vd_next);
 	      ivd.vd_flags = BYTE_GET (evd.vd_flags);
 	    }
+
+	  if ((ivd.vd_ndx & VERSYM_VERSION) > max_vd_ndx)
+	    max_vd_ndx = ivd.vd_ndx & VERSYM_VERSION;
 
 	  off += ivd.vd_next;
 	}
@@ -11450,6 +11456,9 @@ get_symbol_version_string (Filedata *                   filedata,
 	  return (ivna.vna_name < strtab_size
 		  ? strtab + ivna.vna_name : _("<corrupt>"));
 	}
+      else if ((max_vd_ndx || (vers_data & VERSYM_VERSION) != 1)
+	       && (vers_data & VERSYM_VERSION) > max_vd_ndx)
+	return _("<corrupt>");
     }
   return NULL;
 }
@@ -17010,7 +17019,9 @@ decode_x86_compat_isa (unsigned int bitmask)
 	case GNU_PROPERTY_X86_COMPAT_ISA_1_AVX512BW:
 	  printf ("AVX512BW");
 	  break;
-	default: printf (_("<unknown: %x>"), bit); break;
+	default:
+	  printf (_("<unknown: %x>"), bit);
+	  break;
 	}
       if (bitmask)
 	printf (", ");
@@ -17020,6 +17031,14 @@ decode_x86_compat_isa (unsigned int bitmask)
 static void
 decode_x86_isa (unsigned int bitmask)
 {
+  if (bitmask == GNU_PROPERTY_X86_UINT32_VALID)
+    {
+      printf (_("<None>"));
+      return;
+    }
+  else
+    bitmask &= ~GNU_PROPERTY_X86_UINT32_VALID;
+
   while (bitmask)
     {
       unsigned int bit = bitmask & (- bitmask);
@@ -17099,7 +17118,9 @@ decode_x86_isa (unsigned int bitmask)
 	case GNU_PROPERTY_X86_ISA_1_AVX512_VNNI:
 	  printf ("AVX512_VNNI");
 	  break;
-	default: printf (_("<unknown: %x>"), bit); break;
+	default:
+	  printf (_("<unknown: %x>"), bit);
+	  break;
 	}
       if (bitmask)
 	printf (", ");
@@ -17109,6 +17130,14 @@ decode_x86_isa (unsigned int bitmask)
 static void
 decode_x86_feature_1 (unsigned int bitmask)
 {
+  if (bitmask == GNU_PROPERTY_X86_UINT32_VALID)
+    {
+      printf (_("<None>"));
+      return;
+    }
+  else
+    bitmask &= ~GNU_PROPERTY_X86_UINT32_VALID;
+
   while (bitmask)
     {
       unsigned int bit = bitmask & (- bitmask);
@@ -17134,6 +17163,14 @@ decode_x86_feature_1 (unsigned int bitmask)
 static void
 decode_x86_feature_2 (unsigned int bitmask)
 {
+  if (bitmask == GNU_PROPERTY_X86_UINT32_VALID)
+    {
+      printf (_("<None>"));
+      return;
+    }
+  else
+    bitmask &= ~GNU_PROPERTY_X86_UINT32_VALID;
+
   while (bitmask)
     {
       unsigned int bit = bitmask & (- bitmask);
@@ -17171,7 +17208,9 @@ decode_x86_feature_2 (unsigned int bitmask)
 	case GNU_PROPERTY_X86_FEATURE_2_XSAVEC:
 	  printf ("XSAVEC");
 	  break;
-	default: printf (_("<unknown: %x>"), bit); break;
+	default:
+	  printf (_("<unknown: %x>"), bit);
+	  break;
 	}
       if (bitmask)
 	printf (", ");
@@ -17228,14 +17267,10 @@ print_gnu_property_note (Filedata * filedata, Elf_Internal_Note * pnote)
 	      if (datasz == 4)
 		{
 		  bitmask = byte_get (ptr, 4);
-		  if (filedata->file_header.e_type == ET_EXEC
-		      || filedata->file_header.e_type == ET_DYN)
-		    {
-		      if ((bitmask & GNU_PROPERTY_X86_UINT32_VALID))
-			bitmask &= ~GNU_PROPERTY_X86_UINT32_VALID;
-		      else
-			printf ("Invalid ");
-		    }
+		  if ((filedata->file_header.e_type == ET_EXEC
+		       || filedata->file_header.e_type == ET_DYN)
+		      && !(bitmask & GNU_PROPERTY_X86_UINT32_VALID))
+		    printf ("Invalid ");
 		}
 	      else
 		bitmask = 0;

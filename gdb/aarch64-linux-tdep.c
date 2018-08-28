@@ -176,12 +176,12 @@ static const struct tramp_frame aarch64_linux_rt_sigframe =
   {
     /* movz x8, 0x8b (S=1,o=10,h=0,i=0x8b,r=8)
        Soo1 0010 1hhi iiii iiii iiii iiir rrrr  */
-    {0xd2801168, -1},
+    {0xd2801168, ULONGEST_MAX},
 
     /* svc  0x0      (o=0, l=1)
        1101 0100 oooi iiii iiii iiii iii0 00ll  */
-    {0xd4000001, -1},
-    {TRAMP_SENTINEL_INSN, -1}
+    {0xd4000001, ULONGEST_MAX},
+    {TRAMP_SENTINEL_INSN, ULONGEST_MAX}
   },
   aarch64_linux_sigframe_init
 };
@@ -411,8 +411,8 @@ aarch64_linux_iterate_over_regset_sections (struct gdbarch *gdbarch,
       /* Create this on the fly in order to handle vector register sizes.  */
       const struct regcache_map_entry sve_regmap[] =
 	{
-	  { 32, AARCH64_SVE_Z0_REGNUM, tdep->vq * 16 },
-	  { 16, AARCH64_SVE_P0_REGNUM, tdep->vq * 16 / 8 },
+	  { 32, AARCH64_SVE_Z0_REGNUM, (int) (tdep->vq * 16) },
+	  { 16, AARCH64_SVE_P0_REGNUM, (int) (tdep->vq * 16 / 8) },
 	  { 1, AARCH64_SVE_FFR_REGNUM, 4 },
 	  { 1, AARCH64_FPSR_REGNUM, 4 },
 	  { 1, AARCH64_FPCR_REGNUM, 4 },

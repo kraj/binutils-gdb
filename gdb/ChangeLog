@@ -1,3 +1,204 @@
+2018-08-28  Hafiz Abid Qadeer  <abidh@codesourcery.com>
+
+	* NEWS: Mention csky target.
+
+2018-08-28  Jiangshuai Li  <jiangshuai_li@c-sky.com>
+	    Hafiz Abid Qadeer  <abidh@codesourcery.com>
+	    Don Breazeal  <donb@codesourcery.com>
+
+	* csky-linux-tdep.c: New file.
+	* csky-tdep.c: Likewise.
+	* csky-tdep.h: Likewise.
+	* Makefile.in (ALL_TARGET_OBS): Add csky-linux-tdep.o and
+	csky-tdep.o.
+	(HFILES_NO_SRCDIR): Add csky-tdep.h.
+	(ALLDEPFILES): Add csky-linux-tdep.c and csky-tdep.c
+	* configure.tgt: Add csky support.
+
+2018-08-27  Jan Vrany  <jan.vrany@fit.cvut.cz>
+
+	* python/py-framefilter.c (py_print_frame): Print frame architecture
+	when printing on an MI output.
+
+2018-08-27  Tom Tromey  <tom@tromey.com>
+
+	PR build/23087:
+	* configure: Rebuild.
+	* warning.m4 (AM_GDB_WARNINGS): Remove -Wno-narrowing.
+
+2018-08-27  Tom Tromey  <tom@tromey.com>
+
+	* aarch64-linux-tdep.c
+	(aarch64_linux_iterate_over_regset_sections) <sve_regmap>: Add
+	casts to int.
+
+2018-08-27  Tom Tromey  <tom@tromey.com>
+
+	* ppc64-tdep.c (insn_d, insn_ds, insn_xfx): Add casts to
+	unsigned.
+	(ppc64_standard_linkage1, ppc64_standard_linkage2)
+	(ppc64_standard_linkage3, ppc64_standard_linkage4)
+	(ppc64_standard_linkage5, ppc64_standard_linkage6)
+	(ppc64_standard_linkage7, ppc64_standard_linkage8): Add casts to
+	unsigned.
+
+2018-08-27  Tom Tromey  <tom@tromey.com>
+
+	* xtensa-tdep.h (XTREG_END): Add cast to unsigned.
+	(XTENSA_GDBARCH_TDEP_INSTANTIATE): Likewise.
+
+2018-08-27  Tom Tromey  <tom@tromey.com>
+
+	* tramp-frame.h (TRAMP_SENTINEL_INSN): Redefine.
+	* tilegx-linux-tdep.c (tilegx_linux_rt_sigframe): Use
+	ULONGEST_MAX.
+	* tic6x-linux-tdep.c (tic6x_linux_rt_sigreturn_tramp_frame): Use
+	ULONGEST_MAX.
+	* sparc64-linux-tdep.c (sparc64_linux_rt_sigframe): Use
+	ULONGEST_MAX.
+	* sparc-linux-tdep.c (sparc32_linux_sigframe)
+	(sparc32_linux_rt_sigframe): Use ULONGEST_MAX.
+	* ppc-nbsd-tdep.c (ppcnbsd_sigtramp, ppcnbsd2_sigtramp): Use
+	ULONGEST_MAX.
+	* ppc-linux-tdep.c (ppc32_linux_sigaction_tramp_frame)
+	(ppc64_linux_sigaction_tramp_frame)
+	(ppc32_linux_sighandler_tramp_frame)
+	(ppc64_linux_sighandler_tramp_frame): Use ULONGEST_MAX.
+	* nios2-linux-tdep.c (nios2_r1_linux_rt_sigreturn_tramp_frame)
+	(nios2_r2_linux_rt_sigreturn_tramp_frame): Use ULONGEST_MAX.
+	* mn10300-linux-tdep.c (am33_linux_sigframe)
+	(am33_linux_rt_sigframe): Use ULONGEST_MAX.
+	* mips64-obsd-tdep.c (mips64obsd_sigframe): Use ULONGEST_MAX.
+	* mips-linux-tdep.c (mips_linux_o32_sigframe)
+	(mips_linux_o32_rt_sigframe, mips_linux_n32_rt_sigframe)
+	(mips_linux_n64_rt_sigframe, micromips_linux_o32_sigframe)
+	(micromips_linux_o32_rt_sigframe, micromips_linux_n32_rt_sigframe)
+	(micromips_linux_n64_rt_sigframe): Use ULONGEST_MAX.
+	* mips-fbsd-tdep.c (mips_fbsd_sigframe, mipsn32_fbsd_sigframe)
+	(mips64_fbsd_sigframe): Use ULONGEST_MAX.
+	* microblaze-linux-tdep.c
+	(microblaze_linux_sighandler_tramp_frame): Use ULONGEST_MAX.
+	* i386-nbsd-tdep.c (i386nbsd_sigtramp_sc16, i386nbsd_sigtramp_sc2)
+	(i386nbsd_sigtramp_si2, i386nbsd_sigtramp_si31)
+	(i386nbsd_sigtramp_si4): Use ULONGEST_MAX.
+	* hppa-nbsd-tdep.c (hppanbsd_sigtramp_si4): Use ULONGEST_MAX.
+	* common/common-types.h (ULONGEST_MAX): New define.
+	(CORE_ADDR_MAX): Fix formatting.
+	* bfin-linux-tdep.c (bfin_linux_sigframe): Use ULONGEST_MAX.
+	* arm-obsd-tdep.c (armobsd_sigframe): Use ULONGEST_MAX.
+	* arm-linux-tdep.c (arm_linux_sigreturn_tramp_frame)
+	(arm_linux_rt_sigreturn_tramp_frame)
+	(arm_eabi_linux_sigreturn_tramp_frame)
+	(arm_eabi_linux_rt_sigreturn_tramp_frame)
+	(thumb2_eabi_linux_sigreturn_tramp_frame)
+	(thumb2_eabi_linux_rt_sigreturn_tramp_frame)
+	(arm_linux_restart_syscall_tramp_frame)
+	(arm_kernel_linux_restart_syscall_tramp_frame): Use ULONGEST_MAX.
+	* arm-fbsd-tdep.c (arm_fbsd_sigframe): Use ULONGEST_MAX.
+	* aarch64-linux-tdep.c (aarch64_linux_rt_sigframe): Use
+	ULONGEST_MAX.
+	* aarch64-fbsd-tdep.c (aarch64_fbsd_sigframe): Use ULONGEST_MAX.
+
+2018-08-27  Tom Tromey  <tom@tromey.com>
+
+	* rs6000-tdep.c (ppc_deal_with_atomic_sequence): Use
+	CORE_ADDR_MAX.
+	* mips-tdep.c (mips_deal_with_atomic_sequence)
+	(micromips_deal_with_atomic_sequence): Use CORE_ADDR_MAX.
+	* arch/arm-get-next-pcs.c (thumb_deal_with_atomic_sequence_raw)
+	(arm_deal_with_atomic_sequence_raw): Use CORE_ADDR_MAX.
+	* alpha-tdep.c (alpha_deal_with_atomic_sequence): Use
+	CORE_ADDR_MAX.
+	* aarch64-tdep.c (aarch64_software_single_step): Use
+	CORE_ADDR_MAX.
+
+2018-08-27  Tom Tromey  <tom@tromey.com>
+
+	* linespec.c (complete_linespec_component): Add cast to "char".
+	* completer.c (completion_tracker::build_completion_result): Add
+	cast to "char".
+
+2018-08-26  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* solist.h (struct solist, struct target_so_ops): Fix
+	indentation.
+
+2018-08-26  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* ada-tasks.c (ada_task_info_s): Remove typedef.
+	(DEF_VEC_O(ada_task_info_s)): Remove.
+	(struct ada_tasks_inferior_data): Initialize fields.
+	<task_list>: Make an std::vector.
+	(get_ada_tasks_inferior_data): Allocate with new.
+	(ada_get_task_number): Adjust.
+	(get_task_number_from_id): Likewise.
+	(valid_task_id): Likewise.
+	(ada_get_task_info_from_ptid): Likewise.
+	(iterate_over_live_ada_tasks): Likewise.
+	(add_ada_task): Likewise.
+	(read_known_tasks): Likewise.
+	(ada_build_task_list): Likewise.
+	(print_ada_task_info): Likewise.
+	(info_task): Likewise.
+	(task_command_1): Likewise.
+
+2018-08-26  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* ada-lang.c (add_angle_brackets): Return std::string.
+
+2018-08-25  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* python/py-threadevent.c (py_get_event_thread): Initialize
+	pythread.
+
+2018-08-24  Pedro Alves  <palves@redhat.com>
+
+	* python/py-bpevent.c (create_breakpoint_event_object): Use
+	copy-initialization.
+	* python/py-continueevent.c (emit_continue_event): Use
+	copy-initialization.
+	* python/py-exitedevent.c (create_exited_event_object): Return a
+	gdbpy_ref<>.
+	(emit_exited_event): Use copy-initialization.
+	* python/py-inferior.c (python_new_inferior)
+	(python_inferior_deleted, add_thread_object): Use
+	copy-initialization.
+	* python/py-infevents.c (create_inferior_call_event_object)
+	(create_register_changed_event_object)
+	(create_memory_changed_event_object): Return a gdbpy_ref<>.
+	(emit_inferior_call_event, emit_memory_changed_event)
+	(emit_register_changed_event): Use copy-initialization.
+	* python/py-newobjfileevent.c (create_new_objfile_event_object):
+	Return a gdbpy_ref<>.
+	(emit_new_objfile_event): Use copy-initialization.
+	(create_clear_objfiles_event_object): Return a gdbpy_ref<>.
+	(emit_clear_objfiles_event): Use copy-initialization.
+	* python/py-signalevent.c (create_signal_event_object): Use
+	copy-initialization.
+	* python/py-threadevent.c (create_thread_event_object): Use
+	copy-initialization.
+
+2018-08-24  Pedro Alves  <palves@redhat.com>
+	    Simon Marchi  <simon.marchi@ericsson.com>
+
+	PR gdb/23379
+	* python/py-continueevent.c: Include "gdbthread.h".
+	(create_continue_event_object): Add intro comment.  Add 'ptid'
+	parameter.  Use it to find thread to pass to
+	create_thread_event_object.
+	(emit_continue_event): Pass PTID down to
+	create_continue_event_object.
+	* python/py-event.h (py_get_event_thread): Declare.
+	(create_thread_event_object): Remove default from 'thread'
+	parameter.
+	* python/py-stopevent.c (create_stop_event_object): Use
+	py_get_event_thread.
+	* python/py-threadevent.c (get_event_thread): Rename to ...
+	(py_get_event_thread): ... this, make extern, add 'ptid' parameter
+	and use it to find the thread.
+	(create_thread_event_object): Assert that THREAD isn't null.
+	Don't find the event thread here.
+
 2018-08-23  Kevin Buettner  <kevinb@redhat.com>
 
 	* block.h (blockrange, blockranges): New struct declarations.
