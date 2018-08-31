@@ -820,6 +820,24 @@ static reloc_howto_type ppc64_elf_howto_raw[] =
   HOW (R_PPC64_REL16_HA, 1, 16, 0xffff, 16, TRUE, signed,
        ppc64_elf_ha_reloc),
 
+  HOW (R_PPC64_REL16_HIGH, 1, 16, 0xffff, 16, TRUE, dont,
+       bfd_elf_generic_reloc),
+
+  HOW (R_PPC64_REL16_HIGHA, 1, 16, 0xffff, 16, TRUE, dont,
+       ppc64_elf_ha_reloc),
+
+  HOW (R_PPC64_REL16_HIGHER, 1, 16, 0xffff, 32, TRUE, dont,
+       bfd_elf_generic_reloc),
+
+  HOW (R_PPC64_REL16_HIGHERA, 1, 16, 0xffff, 32, TRUE, dont,
+       ppc64_elf_ha_reloc),
+
+  HOW (R_PPC64_REL16_HIGHEST, 1, 16, 0xffff, 48, TRUE, dont,
+       bfd_elf_generic_reloc),
+
+  HOW (R_PPC64_REL16_HIGHESTA, 1, 16, 0xffff, 48, TRUE, dont,
+       ppc64_elf_ha_reloc),
+
   /* Like R_PPC64_REL16_HA but for split field in addpcis.  */
   HOW (R_PPC64_REL16DX_HA, 2, 16, 0x1fffc1, 16, TRUE, signed,
        ppc64_elf_ha_reloc),
@@ -1128,6 +1146,18 @@ ppc64_elf_reloc_type_lookup (bfd *abfd,
     case BFD_RELOC_HI16_PCREL:			r = R_PPC64_REL16_HI;
       break;
     case BFD_RELOC_HI16_S_PCREL:		r = R_PPC64_REL16_HA;
+      break;
+    case BFD_RELOC_PPC64_REL16_HIGH:		r = R_PPC64_REL16_HIGH;
+      break;
+    case BFD_RELOC_PPC64_REL16_HIGHA:		r = R_PPC64_REL16_HIGHA;
+      break;
+    case BFD_RELOC_PPC64_REL16_HIGHER:		r = R_PPC64_REL16_HIGHER;
+      break;
+    case BFD_RELOC_PPC64_REL16_HIGHERA:		r = R_PPC64_REL16_HIGHERA;
+      break;
+    case BFD_RELOC_PPC64_REL16_HIGHEST:		r = R_PPC64_REL16_HIGHEST;
+      break;
+    case BFD_RELOC_PPC64_REL16_HIGHESTA:	r = R_PPC64_REL16_HIGHESTA;
       break;
     case BFD_RELOC_PPC_16DX_HA:			r = R_PPC64_16DX_HA;
       break;
@@ -2634,9 +2664,9 @@ must_be_dyn_reloc (struct bfd_link_info *info,
    .	mflr	%r11
    .	mtlr	%r12
    .	lis	%r12,xxx-1b@highest
-   .	ori	%r12,xxx-1b@higher
+   .	ori	%r12,%r12,xxx-1b@higher
    .	sldi	%r12,%r12,32
-   .	oris	%r12,%r12,xxx-1b@hi
+   .	oris	%r12,%r12,xxx-1b@high
    .	ori	%r12,%r12,xxx-1b@l
    .	add	%r12,%r11,%r12
    .	mtctr	%r12
@@ -2649,9 +2679,9 @@ must_be_dyn_reloc (struct bfd_link_info *info,
    .	mflr	%r11
    .	mtlr	%r12
    .	lis	%r12,xxx-1b@highest
-   .	ori	%r12,xxx-1b@higher
+   .	ori	%r12,%r12,xxx-1b@higher
    .	sldi	%r12,%r12,32
-   .	oris	%r12,%r12,xxx-1b@hi
+   .	oris	%r12,%r12,xxx-1b@high
    .	ori	%r12,%r12,xxx-1b@l
    .	ldx	%r12,%r11,%r12
    .	mtctr	%r12
@@ -4474,6 +4504,12 @@ ppc64_elf_check_relocs (bfd *abfd, struct bfd_link_info *info,
 	case R_PPC64_REL16_LO:
 	case R_PPC64_REL16_HI:
 	case R_PPC64_REL16_HA:
+	case R_PPC64_REL16_HIGH:
+	case R_PPC64_REL16_HIGHA:
+	case R_PPC64_REL16_HIGHER:
+	case R_PPC64_REL16_HIGHERA:
+	case R_PPC64_REL16_HIGHEST:
+	case R_PPC64_REL16_HIGHESTA:
 	case R_PPC64_REL16DX_HA:
 	  break;
 
@@ -9478,18 +9514,30 @@ ppc_type_of_stub (asection *input_sec,
   return ppc_stub_none;
 }
 
-/* Builds a 64-bit offset in r12 then adds it to r11 (LOAD false) or
-   loads r12 from r11+r12 (LOAD true).
+/* Gets the address of a label (1:) in r11 and builds an offset in r12,
+   then adds it to r11 (LOAD false) or loads r12 from r11+r12 (LOAD true).
+   .	mflr	%r12
+   .	bcl	20,31,1f
+   .1:	mflr	%r11
+   .	mtlr	%r12
    .	lis	%r12,xxx-1b@highest
-   .	ori	%r12,xxx-1b@higher
+   .	ori	%r12,%r12,xxx-1b@higher
    .	sldi	%r12,%r12,32
-   .	oris	%r12,%r12,xxx-1b@hi
+   .	oris	%r12,%r12,xxx-1b@high
    .	ori	%r12,%r12,xxx-1b@l
-   .	add	%r12,%r11,%r12  */
+   .	add/ldx	%r12,%r11,%r12  */
 
 static bfd_byte *
 build_offset (bfd *abfd, bfd_byte *p, bfd_vma off, bfd_boolean load)
 {
+  bfd_put_32 (abfd, MFLR_R12, p);
+  p += 4;
+  bfd_put_32 (abfd, BCL_20_31, p);
+  p += 4;
+  bfd_put_32 (abfd, MFLR_R11, p);
+  p += 4;
+  bfd_put_32 (abfd, MTLR_R12, p);
+  p += 4;
   if (off + 0x8000 < 0x10000)
     {
       if (load)
@@ -9575,7 +9623,87 @@ size_offset (bfd_vma off)
 	size += 4;
       size += 4;
     }
-  return size;
+  return size + 16;
+}
+
+static unsigned int
+num_relocs_for_offset (bfd_vma off)
+{
+  unsigned int num_rel;
+  if (off + 0x8000 < 0x10000)
+    num_rel = 1;
+  else if (off + 0x80008000ULL < 0x100000000ULL)
+    num_rel = 2;
+  else
+    {
+      num_rel = 1;
+      if (off + 0x800000000000ULL >= 0x1000000000000ULL
+	  && ((off >> 32) & 0xffff) != 0)
+	num_rel += 1;
+      if (PPC_HI (off) != 0)
+	num_rel += 1;
+      if (PPC_LO (off) != 0)
+	num_rel += 1;
+    }
+  return num_rel;
+}
+
+static Elf_Internal_Rela *
+emit_relocs_for_offset (struct bfd_link_info *info, Elf_Internal_Rela *r,
+			bfd_vma roff, bfd_vma targ, bfd_vma off)
+{
+  bfd_vma relative_targ = targ - (roff - 8);
+  if (bfd_big_endian (info->output_bfd))
+    roff += 2;
+  r->r_offset = roff;
+  r->r_addend = relative_targ + roff;
+  if (off + 0x8000 < 0x10000)
+    r->r_info = ELF64_R_INFO (0, R_PPC64_REL16);
+  else if (off + 0x80008000ULL < 0x100000000ULL)
+    {
+      r->r_info = ELF64_R_INFO (0, R_PPC64_REL16_HA);
+      ++r;
+      roff += 4;
+      r->r_offset = roff;
+      r->r_info = ELF64_R_INFO (0, R_PPC64_REL16_LO);
+      r->r_addend = relative_targ + roff;
+    }
+  else
+    {
+      if (off + 0x800000000000ULL < 0x1000000000000ULL)
+	r->r_info = ELF64_R_INFO (0, R_PPC64_REL16_HIGHER);
+      else
+	{
+	  r->r_info = ELF64_R_INFO (0, R_PPC64_REL16_HIGHEST);
+	  if (((off >> 32) & 0xffff) != 0)
+	    {
+	      ++r;
+	      roff += 4;
+	      r->r_offset = roff;
+	      r->r_info = ELF64_R_INFO (0, R_PPC64_REL16_HIGHER);
+	      r->r_addend = relative_targ + roff;
+	    }
+	}
+      if (((off >> 32) & 0xffffffffULL) != 0)
+	roff += 4;
+      if (PPC_HI (off) != 0)
+	{
+	  ++r;
+	  roff += 4;
+	  r->r_offset = roff;
+	  r->r_info = ELF64_R_INFO (0, R_PPC64_REL16_HIGH);
+	  r->r_addend = relative_targ + roff;
+	}
+      if (PPC_LO (off) != 0)
+	{
+	  ++r;
+	  roff += 4;
+	  r->r_offset = roff;
+	  r->r_info = ELF64_R_INFO (0, R_PPC64_REL16_LO);
+	  r->r_addend = relative_targ + roff;
+	}
+    }
+  return r;
 }
 
 /* Emit .eh_frame opcode to advance pc by DELTA.  */
@@ -9655,7 +9783,7 @@ plt_stub_size (struct ppc_link_hash_table *htab,
 
   if (stub_entry->stub_type >= ppc_stub_plt_call_notoc)
     {
-      size = 24 + size_offset (off);
+      size = 8 + size_offset (off - 8);
       if (stub_entry->stub_type > ppc_stub_plt_call_notoc)
 	size += 4;
       return size;
@@ -10001,6 +10129,65 @@ get_relocs (asection *sec, int count)
   return relocs;
 }
 
+/* Convert the relocs R[0] thru R[-NUM_REL+1], which are all no-symbol
+   forms, to the equivalent relocs against the global symbol given by
+   STUB_ENTRY->H.  */
+
+static bfd_boolean
+use_global_in_relocs (struct ppc_link_hash_table *htab,
+		      struct ppc_stub_hash_entry *stub_entry,
+		      Elf_Internal_Rela *r, unsigned int num_rel)
+{
+  struct elf_link_hash_entry **hashes;
+  unsigned long symndx;
+  struct ppc_link_hash_entry *h;
+  bfd_vma symval;
+
+  /* Relocs are always against symbols in their own object file.  Fake
+     up global sym hashes for the stub bfd (which has no symbols).  */
+  hashes = elf_sym_hashes (htab->params->stub_bfd);
+  if (hashes == NULL)
+    {
+      bfd_size_type hsize;
+
+      /* When called the first time, stub_globals will contain the
+	 total number of symbols seen during stub sizing.  After
+	 allocating, stub_globals is used as an index to fill the
+	 hashes array.  */
+      hsize = (htab->stub_globals + 1) * sizeof (*hashes);
+      hashes = bfd_zalloc (htab->params->stub_bfd, hsize);
+      if (hashes == NULL)
+	return FALSE;
+      elf_sym_hashes (htab->params->stub_bfd) = hashes;
+      htab->stub_globals = 1;
+    }
+  symndx = htab->stub_globals++;
+  h = stub_entry->h;
+  hashes[symndx] = &h->elf;
+  if (h->oh != NULL && h->oh->is_func)
+    h = ppc_follow_link (h->oh);
+  BFD_ASSERT (h->elf.root.type == bfd_link_hash_defined
+	      || h->elf.root.type == bfd_link_hash_defweak);
+  symval = (h->elf.root.u.def.value
+	    + h->elf.root.u.def.section->output_offset
+	    + h->elf.root.u.def.section->output_section->vma);
+  while (num_rel-- != 0)
+    {
+      r->r_info = ELF64_R_INFO (symndx, ELF64_R_TYPE (r->r_info));
+      if (h->elf.root.u.def.section != stub_entry->target_section)
+	{
+	  /* H is an opd symbol.  The addend must be zero, and the
+	     branch reloc is the only one we can convert.  */
+	  r->r_addend = 0;
+	  break;
+	}
+      else
+	r->r_addend -= symval;
+      --r;
+    }
+  return TRUE;
+}
+
 static bfd_vma
 get_r2off (struct bfd_link_info *info,
 	   struct ppc_stub_hash_entry *stub_entry)
@@ -10044,10 +10231,11 @@ ppc_build_one_stub (struct bfd_hash_entry *gen_entry, void *in_arg)
   struct bfd_link_info *info;
   struct ppc_link_hash_table *htab;
   bfd_byte *loc;
-  bfd_byte *p;
+  bfd_byte *p, *relp;
   bfd_vma targ, off;
   Elf_Internal_Rela *r;
   asection *plt;
+  int num_rel;
 
   /* Massage our args to the form they really have.  */
   stub_entry = (struct ppc_stub_hash_entry *) gen_entry;
@@ -10123,41 +10311,9 @@ ppc_build_one_stub (struct bfd_hash_entry *gen_entry, void *in_arg)
 	  r->r_offset = p - 4 - stub_entry->group->stub_sec->contents;
 	  r->r_info = ELF64_R_INFO (0, R_PPC64_REL24);
 	  r->r_addend = targ;
-	  if (stub_entry->h != NULL)
-	    {
-	      struct elf_link_hash_entry **hashes;
-	      unsigned long symndx;
-	      struct ppc_link_hash_entry *h;
-
-	      hashes = elf_sym_hashes (htab->params->stub_bfd);
-	      if (hashes == NULL)
-		{
-		  bfd_size_type hsize;
-
-		  hsize = (htab->stub_globals + 1) * sizeof (*hashes);
-		  hashes = bfd_zalloc (htab->params->stub_bfd, hsize);
-		  if (hashes == NULL)
-		    return FALSE;
-		  elf_sym_hashes (htab->params->stub_bfd) = hashes;
-		  htab->stub_globals = 1;
-		}
-	      symndx = htab->stub_globals++;
-	      h = stub_entry->h;
-	      hashes[symndx] = &h->elf;
-	      r->r_info = ELF64_R_INFO (symndx, R_PPC64_REL24);
-	      if (h->oh != NULL && h->oh->is_func)
-		h = ppc_follow_link (h->oh);
-	      if (h->elf.root.u.def.section != stub_entry->target_section)
-		/* H is an opd symbol.  The addend must be zero.  */
-		r->r_addend = 0;
-	      else
-		{
-		  off = (h->elf.root.u.def.value
-			 + h->elf.root.u.def.section->output_offset
-			 + h->elf.root.u.def.section->output_section->vma);
-		  r->r_addend -= off;
-		}
-	    }
+	  if (stub_entry->h != NULL
+	      && !use_global_in_relocs (htab, stub_entry, r, 1))
+	    return FALSE;
 	}
       break;
 
@@ -10325,7 +10481,7 @@ ppc_build_one_stub (struct bfd_hash_entry *gen_entry, void *in_arg)
     case ppc_stub_plt_call_notoc:
     case ppc_stub_plt_call_both:
       p = loc;
-      off = (8 + stub_entry->stub_offset
+      off = (stub_entry->stub_offset
 	     + stub_entry->group->stub_sec->output_offset
 	     + stub_entry->group->stub_sec->output_section->vma);
       if (stub_entry->stub_type == ppc_stub_long_branch_both
@@ -10359,27 +10515,27 @@ ppc_build_one_stub (struct bfd_hash_entry *gen_entry, void *in_arg)
 		+ stub_entry->target_section->output_offset
 		+ stub_entry->target_section->output_section->vma);
       off = targ - off;
-      bfd_put_32 (htab->params->stub_bfd, MFLR_R12, p);
-      p += 4;
-      bfd_put_32 (htab->params->stub_bfd, BCL_20_31, p);
-      p += 4;
-      bfd_put_32 (htab->params->stub_bfd, MFLR_R11, p);
-      p += 4;
-      bfd_put_32 (htab->params->stub_bfd, MTLR_R12, p);
-      p += 4;
+
+      relp = p;
+      num_rel = 0;
+      /* The notoc stubs calculate their target (either a PLT entry or
+	 the global entry point of a function) relative to the PC
+	 returned by the "bcl" two instructions past the start of the
+	 sequence emitted by build_offset.  The offset is therefore 8
+	 less than calculated from the start of the sequence.  */
+      off -= 8;
       p = build_offset (htab->params->stub_bfd, p, off,
 			stub_entry->stub_type >= ppc_stub_plt_call_notoc);
-      if (stub_entry->stub_type == ppc_stub_long_branch_notoc)
+      if (stub_entry->stub_type <= ppc_stub_long_branch_both)
 	{
-	  off += 8;
+	  bfd_vma from;
+	  num_rel = 1;
+	  from = (stub_entry->stub_offset
+		  + stub_entry->group->stub_sec->output_offset
+		  + stub_entry->group->stub_sec->output_section->vma
+		  + (p - loc));
 	  bfd_put_32 (htab->params->stub_bfd,
-		      B_DOT | ((off - (p - loc)) & 0x3fffffc), p);
-	}
-      else if (stub_entry->stub_type == ppc_stub_long_branch_both)
-	{
-	  off += 12;
-	  bfd_put_32 (htab->params->stub_bfd,
-		      B_DOT | ((off - (p - loc)) & 0x3fffffc), p);
+		      B_DOT | ((targ - from) & 0x3fffffc), p);
 	}
       else
 	{
@@ -10388,6 +10544,29 @@ ppc_build_one_stub (struct bfd_hash_entry *gen_entry, void *in_arg)
 	  bfd_put_32 (htab->params->stub_bfd, BCTR, p);
 	}
       p += 4;
+
+      if (info->emitrelocations)
+	{
+	  bfd_vma roff;
+	  num_rel += num_relocs_for_offset (off);
+	  r = get_relocs (stub_entry->group->stub_sec, num_rel);
+	  if (r == NULL)
+	    return FALSE;
+	  roff = relp + 16 - stub_entry->group->stub_sec->contents;
+	  r = emit_relocs_for_offset (info, r, roff, targ, off);
+	  if (stub_entry->stub_type == ppc_stub_long_branch_notoc
+	      || stub_entry->stub_type == ppc_stub_long_branch_both)
+	    {
+	      ++r;
+	      roff = p - 4 - stub_entry->group->stub_sec->contents;
+	      r->r_offset = roff;
+	      r->r_info = ELF64_R_INFO (0, R_PPC64_REL24);
+	      r->r_addend = targ;
+	      if (stub_entry->h != NULL
+		  && !use_global_in_relocs (htab, stub_entry, r, num_rel))
+		return FALSE;
+	    }
+	}
 
       if (htab->glink_eh_frame != NULL
 	&& htab->glink_eh_frame->size != 0)
@@ -10557,8 +10736,9 @@ ppc_size_one_stub (struct bfd_hash_entry *gen_entry, void *in_arg)
   struct ppc_stub_hash_entry *stub_entry;
   struct bfd_link_info *info;
   struct ppc_link_hash_table *htab;
-  bfd_vma targ, off;
-  int size;
+  asection *plt;
+  bfd_vma targ, off, r2off;
+  unsigned int size, extra, lr_used, delta;
 
   /* Massage our args to the form they really have.  */
   stub_entry = (struct ppc_stub_hash_entry *) gen_entry;
@@ -10583,122 +10763,26 @@ ppc_size_one_stub (struct bfd_hash_entry *gen_entry, void *in_arg)
       return TRUE;
     }
 
-  if (stub_entry->stub_type >= ppc_stub_plt_call
-      && stub_entry->stub_type <= ppc_stub_plt_call_both)
+  switch (stub_entry->stub_type)
     {
-      asection *plt;
-      targ = stub_entry->plt_ent->plt.offset & ~(bfd_vma) 1;
-      if (targ >= (bfd_vma) -2)
-	abort ();
-      plt = htab->elf.splt;
-      if (!htab->elf.dynamic_sections_created
-	  || stub_entry->h == NULL
-	  || stub_entry->h->elf.dynindx == -1)
-	{
-	  if (stub_entry->symtype == STT_GNU_IFUNC)
-	    plt = htab->elf.iplt;
-	  else
-	    plt = htab->pltlocal;
-	}
-      targ += plt->output_offset + plt->output_section->vma;
-
-      if (stub_entry->stub_type >= ppc_stub_plt_call_notoc)
-	{
-	  off = (8 + stub_entry->stub_offset
-		 + stub_entry->group->stub_sec->output_offset
-		 + stub_entry->group->stub_sec->output_section->vma);
-	  if (stub_entry->stub_type > ppc_stub_plt_call_notoc)
-	    off += 4;
-	}
-      else
-	off = (elf_gp (info->output_bfd)
-	       + htab->sec_info[stub_entry->group->link_sec->id].toc_off);
-
-      if (htab->params->plt_stub_align != 0)
-	{
-	  unsigned pad = plt_stub_pad (htab, stub_entry, targ - off);
-
-	  stub_entry->group->stub_sec->size += pad;
-	  stub_entry->stub_offset = stub_entry->group->stub_sec->size;
-	  if (stub_entry->stub_type >= ppc_stub_plt_call_notoc)
-	    off += pad;
-	}
-
-      off = targ - off;
-      size = plt_stub_size (htab, stub_entry, off);
-
-      if (stub_entry->stub_type >= ppc_stub_plt_call_notoc)
-	{
-	  /* After the bcl, lr has been modified so we need to emit
-	     .eh_frame info saying the return address is in r12.  */
-	  unsigned int lr_used = stub_entry->stub_offset + 8;
-	  unsigned int delta;
-	  if (stub_entry->stub_type > ppc_stub_plt_call_notoc)
-	    lr_used += 4;
-	  /* The eh_frame info will consist of a DW_CFA_advance_loc or
-	     variant, DW_CFA_register, 65, 12, DW_CFA_advance_loc+2,
-	     DW_CFA_restore_extended 65.  */
-	  delta = lr_used - stub_entry->group->lr_restore;
-	  stub_entry->group->eh_size += eh_advance_size (delta) + 6;
-	  stub_entry->group->lr_restore = lr_used + 8;
-	}
-      else
-	{
-	  if (stub_entry->h != NULL
-	      && (stub_entry->h == htab->tls_get_addr_fd
-		  || stub_entry->h == htab->tls_get_addr)
-	      && htab->params->tls_get_addr_opt
-	      && stub_entry->stub_type == ppc_stub_plt_call_r2save)
-	    {
-	      /* After the bctrl, lr has been modified so we need to
-		 emit .eh_frame info saying the return address is
-		 on the stack.  In fact we put the EH info specifying
-		 that the return address is on the stack *at* the
-		 call rather than after it, because the EH info for a
-		 call needs to be specified by that point.
-		 See libgcc/unwind-dw2.c execute_cfa_program.  */
-	      unsigned int lr_used = stub_entry->stub_offset + size - 20;
-	      unsigned int delta;
-	      /* The eh_frame info will consist of a DW_CFA_advance_loc
-		 or variant, DW_CFA_offset_externed_sf, 65, -stackoff,
-		 DW_CFA_advance_loc+4, DW_CFA_restore_extended, 65.  */
-	      delta = lr_used - stub_entry->group->lr_restore;
-	      stub_entry->group->eh_size += eh_advance_size (delta) + 6;
-	      stub_entry->group->lr_restore = size - 4;
-	    }
-
-	  if (info->emitrelocations)
-	    {
-	      stub_entry->group->stub_sec->reloc_count
-		+= ((PPC_HA (off) != 0)
-		    + (htab->opd_abi
-		       ? 2 + (htab->params->plt_static_chain
-			      && PPC_HA (off + 16) == PPC_HA (off))
-		       : 1));
-	      stub_entry->group->stub_sec->flags |= SEC_RELOC;
-	    }
-	}
-    }
-  else
-    {
-      /* ppc_stub_long_branch or ppc_stub_plt_branch, or their r2off
-	 variants.  */
-      bfd_vma r2off = 0;
-      bfd_vma local_off = 0;
-
+    case ppc_stub_plt_branch:
+    case ppc_stub_plt_branch_r2off:
+      /* Reset the stub type from the plt branch variant in case we now
+	 can reach with a shorter stub.  */
+      stub_entry->stub_type += ppc_stub_long_branch - ppc_stub_plt_branch;
+      /* Fall through.  */
+    case ppc_stub_long_branch:
+    case ppc_stub_long_branch_r2off:
       targ = (stub_entry->target_value
 	      + stub_entry->target_section->output_offset
 	      + stub_entry->target_section->output_section->vma);
+      targ += PPC64_LOCAL_ENTRY_OFFSET (stub_entry->other);
       off = (stub_entry->stub_offset
 	     + stub_entry->group->stub_sec->output_offset
 	     + stub_entry->group->stub_sec->output_section->vma);
 
-      /* Reset the stub type from the plt variant in case we now
-	 can reach with a shorter stub.  */
-      if (stub_entry->stub_type >= ppc_stub_plt_branch)
-	stub_entry->stub_type += ppc_stub_long_branch - ppc_stub_plt_branch;
-
       size = 4;
+      r2off = 0;
       if (stub_entry->stub_type == ppc_stub_long_branch_r2off)
 	{
 	  r2off = get_r2off (info, stub_entry);
@@ -10714,116 +10798,262 @@ ppc_size_one_stub (struct bfd_hash_entry *gen_entry, void *in_arg)
 	    size += 4;
 	  off += size - 4;
 	}
-      else if (stub_entry->stub_type >= ppc_stub_long_branch_notoc)
-	{
-	  size = 20 + size_offset (targ - (off + 8));
-	  if (stub_entry->stub_type > ppc_stub_long_branch_notoc)
-	    size += 4;
-	  off += size - 4;
-	}
       off = targ - off;
 
-      if (stub_entry->stub_type >= ppc_stub_long_branch_notoc)
+      /* If the branch offset is too big, use a ppc_stub_plt_branch.
+	 Do the same for -R objects without function descriptors.  */
+      if ((stub_entry->stub_type == ppc_stub_long_branch_r2off
+	   && r2off == 0
+	   && htab->sec_info[stub_entry->target_section->id].toc_off == 0)
+	  || off + (1 << 25) >= (bfd_vma) (1 << 26))
 	{
-	  /* After the bcl, lr has been modified so we need to emit
-	     .eh_frame info saying the return address is in r12.  */
-	  unsigned int lr_used = stub_entry->stub_offset + 8;
-	  unsigned int delta;
-	  if (stub_entry->stub_type > ppc_stub_long_branch_notoc)
-	    lr_used += 4;
-	  /* The eh_frame info will consist of a DW_CFA_advance_loc or
-	     variant, DW_CFA_register, 65, 12, DW_CFA_advance_loc+2,
-	     DW_CFA_restore_extended 65.  */
-	  delta = lr_used - stub_entry->group->lr_restore;
-	  stub_entry->group->eh_size += eh_advance_size (delta) + 6;
-	  stub_entry->group->lr_restore = lr_used + 8;
+	  struct ppc_branch_hash_entry *br_entry;
 
-	  if (off + (1 << 25) >= (bfd_vma) (1 << 26))
+	  br_entry = ppc_branch_hash_lookup (&htab->branch_hash_table,
+					     stub_entry->root.string + 9,
+					     TRUE, FALSE);
+	  if (br_entry == NULL)
 	    {
-	      stub_entry->stub_type += (ppc_stub_plt_branch_notoc
-					- ppc_stub_long_branch_notoc);
-	      size += 4;
+	      _bfd_error_handler (_("can't build branch stub `%s'"),
+				  stub_entry->root.string);
+	      htab->stub_error = TRUE;
+	      return FALSE;
 	    }
-	}
-      else
-	{
-	  local_off = PPC64_LOCAL_ENTRY_OFFSET (stub_entry->other);
 
-	  /* If the branch offset is too big, use a ppc_stub_plt_branch.
-	     Do the same for -R objects without function descriptors.  */
-	  if ((stub_entry->stub_type == ppc_stub_long_branch_r2off
-	       && r2off == 0
-	       && htab->sec_info[stub_entry->target_section->id].toc_off == 0)
-	      || off + (1 << 25) >= (bfd_vma) (1 << 26) - local_off)
+	  if (br_entry->iter != htab->stub_iteration)
 	    {
-	      struct ppc_branch_hash_entry *br_entry;
+	      br_entry->iter = htab->stub_iteration;
+	      br_entry->offset = htab->brlt->size;
+	      htab->brlt->size += 8;
 
-	      br_entry = ppc_branch_hash_lookup (&htab->branch_hash_table,
-						 stub_entry->root.string + 9,
-						 TRUE, FALSE);
-	      if (br_entry == NULL)
+	      if (htab->relbrlt != NULL)
+		htab->relbrlt->size += sizeof (Elf64_External_Rela);
+	      else if (info->emitrelocations)
 		{
-		  _bfd_error_handler (_("can't build branch stub `%s'"),
-				      stub_entry->root.string);
-		  htab->stub_error = TRUE;
-		  return FALSE;
-		}
-
-	      if (br_entry->iter != htab->stub_iteration)
-		{
-		  br_entry->iter = htab->stub_iteration;
-		  br_entry->offset = htab->brlt->size;
-		  htab->brlt->size += 8;
-
-		  if (htab->relbrlt != NULL)
-		    htab->relbrlt->size += sizeof (Elf64_External_Rela);
-		  else if (info->emitrelocations)
-		    {
-		      htab->brlt->reloc_count += 1;
-		      htab->brlt->flags |= SEC_RELOC;
-		    }
-		}
-
-	      targ = (br_entry->offset
-		      + htab->brlt->output_offset
-		      + htab->brlt->output_section->vma);
-	      off = (elf_gp (info->output_bfd)
-		     + htab->sec_info[stub_entry->group->link_sec->id].toc_off);
-	      off = targ - off;
-
-	      if (info->emitrelocations)
-		{
-		  stub_entry->group->stub_sec->reloc_count
-		    += 1 + (PPC_HA (off) != 0);
-		  stub_entry->group->stub_sec->flags |= SEC_RELOC;
-		}
-
-	      stub_entry->stub_type
-		+= ppc_stub_plt_branch - ppc_stub_long_branch;
-	      if (stub_entry->stub_type != ppc_stub_plt_branch_r2off)
-		{
-		  size = 12;
-		  if (PPC_HA (off) != 0)
-		    size = 16;
-		}
-	      else
-		{
-		  size = 16;
-		  if (PPC_HA (off) != 0)
-		    size += 4;
-
-		  if (PPC_HA (r2off) != 0)
-		    size += 4;
-		  if (PPC_LO (r2off) != 0)
-		    size += 4;
+		  htab->brlt->reloc_count += 1;
+		  htab->brlt->flags |= SEC_RELOC;
 		}
 	    }
-	  else if (info->emitrelocations)
+
+	  targ = (br_entry->offset
+		  + htab->brlt->output_offset
+		  + htab->brlt->output_section->vma);
+	  off = (elf_gp (info->output_bfd)
+		 + htab->sec_info[stub_entry->group->link_sec->id].toc_off);
+	  off = targ - off;
+
+	  if (info->emitrelocations)
 	    {
-	      stub_entry->group->stub_sec->reloc_count += 1;
+	      stub_entry->group->stub_sec->reloc_count
+		+= 1 + (PPC_HA (off) != 0);
 	      stub_entry->group->stub_sec->flags |= SEC_RELOC;
 	    }
+
+	  stub_entry->stub_type += ppc_stub_plt_branch - ppc_stub_long_branch;
+	  if (stub_entry->stub_type != ppc_stub_plt_branch_r2off)
+	    {
+	      size = 12;
+	      if (PPC_HA (off) != 0)
+		size = 16;
+	    }
+	  else
+	    {
+	      size = 16;
+	      if (PPC_HA (off) != 0)
+		size += 4;
+
+	      if (PPC_HA (r2off) != 0)
+		size += 4;
+	      if (PPC_LO (r2off) != 0)
+		size += 4;
+	    }
 	}
+      else if (info->emitrelocations)
+	{
+	  stub_entry->group->stub_sec->reloc_count += 1;
+	  stub_entry->group->stub_sec->flags |= SEC_RELOC;
+	}
+      break;
+
+    case ppc_stub_plt_branch_notoc:
+    case ppc_stub_plt_branch_both:
+      stub_entry->stub_type += ppc_stub_long_branch - ppc_stub_plt_branch;
+      /* Fall through.  */
+    case ppc_stub_long_branch_notoc:
+    case ppc_stub_long_branch_both:
+      off = (stub_entry->stub_offset
+	     + stub_entry->group->stub_sec->output_offset
+	     + stub_entry->group->stub_sec->output_section->vma);
+      size = 0;
+      if (stub_entry->stub_type == ppc_stub_long_branch_both)
+	size = 4;
+      off += size;
+      targ = (stub_entry->target_value
+	      + stub_entry->target_section->output_offset
+	      + stub_entry->target_section->output_section->vma);
+      off = targ - off;
+
+      if (info->emitrelocations)
+	{
+	  stub_entry->group->stub_sec->reloc_count
+	    += num_relocs_for_offset (off);
+	  stub_entry->group->stub_sec->flags |= SEC_RELOC;
+	}
+
+      extra = size_offset (off - 8);
+      /* Include branch insn plus those in the offset sequence.  */
+      size += 4 + extra;
+      /* The branch insn is at the end, or "extra" bytes along.  So
+	 its offset will be "extra" bytes less that that already
+	 calculated.  */
+      off -= extra;
+
+      /* After the bcl, lr has been modified so we need to emit
+	 .eh_frame info saying the return address is in r12.  */
+      lr_used = stub_entry->stub_offset + 8;
+      if (stub_entry->stub_type == ppc_stub_long_branch_both)
+	lr_used += 4;
+      /* The eh_frame info will consist of a DW_CFA_advance_loc or
+	 variant, DW_CFA_register, 65, 12, DW_CFA_advance_loc+2,
+	 DW_CFA_restore_extended 65.  */
+      delta = lr_used - stub_entry->group->lr_restore;
+      stub_entry->group->eh_size += eh_advance_size (delta) + 6;
+      stub_entry->group->lr_restore = lr_used + 8;
+
+      /* If the branch can't reach, use a plt_branch.  */
+      if (off + (1 << 25) >= (bfd_vma) (1 << 26))
+	{
+	  stub_entry->stub_type += (ppc_stub_plt_branch_notoc
+				    - ppc_stub_long_branch_notoc);
+	  size += 4;
+	}
+      else if (info->emitrelocations)
+	stub_entry->group->stub_sec->reloc_count +=1;
+      break;
+
+    case ppc_stub_plt_call_notoc:
+    case ppc_stub_plt_call_both:
+      off = (stub_entry->stub_offset
+	     + stub_entry->group->stub_sec->output_offset
+	     + stub_entry->group->stub_sec->output_section->vma);
+      if (stub_entry->stub_type == ppc_stub_plt_call_both)
+	off += 4;
+      targ = stub_entry->plt_ent->plt.offset & ~1;
+      if (targ >= (bfd_vma) -2)
+	abort ();
+
+      plt = htab->elf.splt;
+      if (!htab->elf.dynamic_sections_created
+	  || stub_entry->h == NULL
+	  || stub_entry->h->elf.dynindx == -1)
+	{
+	  if (stub_entry->symtype == STT_GNU_IFUNC)
+	    plt = htab->elf.iplt;
+	  else
+	    plt = htab->pltlocal;
+	}
+      targ += plt->output_offset + plt->output_section->vma;
+      off = targ - off;
+
+      if (htab->params->plt_stub_align != 0)
+	{
+	  unsigned pad = plt_stub_pad (htab, stub_entry, off);
+
+	  stub_entry->group->stub_sec->size += pad;
+	  stub_entry->stub_offset = stub_entry->group->stub_sec->size;
+	  off -= pad;
+	}
+
+      if (info->emitrelocations)
+	{
+	  stub_entry->group->stub_sec->reloc_count
+	    += num_relocs_for_offset (off - 8);
+	  stub_entry->group->stub_sec->flags |= SEC_RELOC;
+	}
+
+      size = plt_stub_size (htab, stub_entry, off);
+
+      /* After the bcl, lr has been modified so we need to emit
+	 .eh_frame info saying the return address is in r12.  */
+      lr_used = stub_entry->stub_offset + 8;
+      if (stub_entry->stub_type == ppc_stub_plt_call_both)
+	lr_used += 4;
+      /* The eh_frame info will consist of a DW_CFA_advance_loc or
+	 variant, DW_CFA_register, 65, 12, DW_CFA_advance_loc+2,
+	 DW_CFA_restore_extended 65.  */
+      delta = lr_used - stub_entry->group->lr_restore;
+      stub_entry->group->eh_size += eh_advance_size (delta) + 6;
+      stub_entry->group->lr_restore = lr_used + 8;
+      break;
+
+    case ppc_stub_plt_call:
+    case ppc_stub_plt_call_r2save:
+      targ = stub_entry->plt_ent->plt.offset & ~(bfd_vma) 1;
+      if (targ >= (bfd_vma) -2)
+	abort ();
+      plt = htab->elf.splt;
+      if (!htab->elf.dynamic_sections_created
+	  || stub_entry->h == NULL
+	  || stub_entry->h->elf.dynindx == -1)
+	{
+	  if (stub_entry->symtype == STT_GNU_IFUNC)
+	    plt = htab->elf.iplt;
+	  else
+	    plt = htab->pltlocal;
+	}
+      targ += plt->output_offset + plt->output_section->vma;
+
+      off = (elf_gp (info->output_bfd)
+	     + htab->sec_info[stub_entry->group->link_sec->id].toc_off);
+      off = targ - off;
+
+      if (htab->params->plt_stub_align != 0)
+	{
+	  unsigned pad = plt_stub_pad (htab, stub_entry, off);
+
+	  stub_entry->group->stub_sec->size += pad;
+	  stub_entry->stub_offset = stub_entry->group->stub_sec->size;
+	}
+
+      if (info->emitrelocations)
+	{
+	  stub_entry->group->stub_sec->reloc_count
+	    += ((PPC_HA (off) != 0)
+		+ (htab->opd_abi
+		   ? 2 + (htab->params->plt_static_chain
+			  && PPC_HA (off + 16) == PPC_HA (off))
+		   : 1));
+	  stub_entry->group->stub_sec->flags |= SEC_RELOC;
+	}
+
+      size = plt_stub_size (htab, stub_entry, off);
+
+      if (stub_entry->h != NULL
+	  && (stub_entry->h == htab->tls_get_addr_fd
+	      || stub_entry->h == htab->tls_get_addr)
+	  && htab->params->tls_get_addr_opt
+	  && stub_entry->stub_type == ppc_stub_plt_call_r2save)
+	{
+	  /* After the bctrl, lr has been modified so we need to
+	     emit .eh_frame info saying the return address is
+	     on the stack.  In fact we put the EH info specifying
+	     that the return address is on the stack *at* the
+	     call rather than after it, because the EH info for a
+	     call needs to be specified by that point.
+	     See libgcc/unwind-dw2.c execute_cfa_program.  */
+	  lr_used = stub_entry->stub_offset + size - 20;
+	  /* The eh_frame info will consist of a DW_CFA_advance_loc
+	     or variant, DW_CFA_offset_externed_sf, 65, -stackoff,
+	     DW_CFA_advance_loc+4, DW_CFA_restore_extended, 65.  */
+	  delta = lr_used - stub_entry->group->lr_restore;
+	  stub_entry->group->eh_size += eh_advance_size (delta) + 6;
+	  stub_entry->group->lr_restore = size - 4;
+	}
+      break;
+
+    default:
+      BFD_FAIL ();
+      return FALSE;
     }
 
   stub_entry->group->stub_sec->size += size;
@@ -12104,7 +12334,9 @@ ppc64_elf_size_stubs (struct bfd_link_info *info)
 		    = hash ? hash->elf.type : ELF_ST_TYPE (sym->st_info);
 		  stub_entry->other = hash ? hash->elf.other : sym->st_other;
 
-		  if (stub_entry->h != NULL)
+		  if (hash != NULL
+		      && (hash->elf.root.type == bfd_link_hash_defined
+			  || hash->elf.root.type == bfd_link_hash_defweak))
 		    htab->stub_globals += 1;
 		}
 
@@ -14513,6 +14745,12 @@ ppc64_elf_relocate_section (bfd *output_bfd,
 	case R_PPC64_REL16_LO:
 	case R_PPC64_REL16_HI:
 	case R_PPC64_REL16_HA:
+	case R_PPC64_REL16_HIGH:
+	case R_PPC64_REL16_HIGHA:
+	case R_PPC64_REL16_HIGHER:
+	case R_PPC64_REL16_HIGHERA:
+	case R_PPC64_REL16_HIGHEST:
+	case R_PPC64_REL16_HIGHESTA:
 	case R_PPC64_REL16DX_HA:
 	  break;
 
@@ -14994,6 +15232,9 @@ ppc64_elf_relocate_section (bfd *output_bfd,
 	  break;
 
 	case R_PPC64_REL16_HA:
+	case R_PPC64_REL16_HIGHA:
+	case R_PPC64_REL16_HIGHERA:
+	case R_PPC64_REL16_HIGHESTA:
 	case R_PPC64_REL16DX_HA:
 	case R_PPC64_ADDR16_HA:
 	case R_PPC64_ADDR16_HIGHA:
