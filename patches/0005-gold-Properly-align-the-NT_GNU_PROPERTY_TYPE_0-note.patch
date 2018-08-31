@@ -1,0 +1,207 @@
+From c6ea4d3e5db955b6015eb28e28da7de00ab0448e Mon Sep 17 00:00:00 2001
+From: "H.J. Lu" <hjl.tools@gmail.com>
+Date: Thu, 16 Aug 2018 10:40:26 -0700
+Subject: [PATCH 5/5] gold: Properly align the NT_GNU_PROPERTY_TYPE_0 note
+
+The NT_GNU_PROPERTY_TYPE_0 note should be aligned to 8 bytes for 64-bit
+ELF as specified by gABI.  A note section can be only placed in a PT_NOTE
+segment with the same alignment.
+
+	PR gold/22914
+	PR gold/23535
+	* layout.cc (Layout::attach_allocated_section_to_segment): Place
+	a note section in a PT_NOTE segment with the same alignment.  Set
+	the alignment of the PT_NOTE segment from the alignment of the
+	note section.
+	(Layout::create_note): Align the NT_GNU_PROPERTY_TYPE_0 note to 8
+	bytes for 64-bit ELF.
+	(Layout::segment_precedes): Place segments with larger alignments
+	first.
+	* output.cc (Output_segment::Output_segment): Initialize align_.
+	* output.h (Output_segment): Add align, set_align and align_.
+	* testsuite/Makefile.am (gnu_property_test.stdout): Pass -lhSWn
+	to $(TEST_READELF).
+	(gnu_property_test): Pass --build-id to ld.
+	* testsuite/Makefile.in: Regenerated.
+	* testsuite/gnu_property_test.sh (check_alignment): New.
+	Use check_alignment to check the NT_GNU_PROPERTY_TYPE_0 note
+	alignment.  Verify that there are 2 PT_NOTE segments.
+---
+ gold/layout.cc                      | 15 ++++++++++++++-
+ gold/output.cc                      |  1 +
+ gold/output.h                       | 12 ++++++++++++
+ gold/testsuite/Makefile.am          |  4 ++--
+ gold/testsuite/Makefile.in          |  4 ++--
+ gold/testsuite/gnu_property_test.sh | 20 ++++++++++++++++++++
+ 6 files changed, 51 insertions(+), 5 deletions(-)
+
+diff --git a/gold/layout.cc b/gold/layout.cc
+index 66162a253d..ee7e2d1b77 100644
+--- a/gold/layout.cc
++++ b/gold/layout.cc
+@@ -2063,12 +2063,15 @@ Layout::attach_allocated_section_to_segment(const Target* target,
+   // segment.
+   if (os->type() == elfcpp::SHT_NOTE)
+     {
++      uint64_t os_align = os->addralign();
++
+       // See if we already have an equivalent PT_NOTE segment.
+       for (p = this->segment_list_.begin();
+ 	   p != segment_list_.end();
+ 	   ++p)
+ 	{
+ 	  if ((*p)->type() == elfcpp::PT_NOTE
++	      && (*p)->align() == os_align
+ 	      && (((*p)->flags() & elfcpp::PF_W)
+ 		  == (seg_flags & elfcpp::PF_W)))
+ 	    {
+@@ -2082,6 +2085,7 @@ Layout::attach_allocated_section_to_segment(const Target* target,
+ 	  Output_segment* oseg = this->make_output_segment(elfcpp::PT_NOTE,
+ 							   seg_flags);
+ 	  oseg->add_output_section_to_nonload(os, seg_flags);
++	  oseg->set_align(os_align);
+ 	}
+     }
+ 
+@@ -3182,6 +3186,10 @@ Layout::create_note(const char* name, int note_type,
+ #else
+   const int size = 32;
+ #endif
++  // The NT_GNU_PROPERTY_TYPE_0 note conforms to gABI.
++  const int addralign = ((note_type == elfcpp::NT_GNU_PROPERTY_TYPE_0
++			 ? parameters->target().get_size()
++			 : size) / 8);
+ 
+   // The contents of the .note section.
+   size_t namesz = strlen(name) + 1;
+@@ -3245,7 +3253,7 @@ Layout::create_note(const char* name, int note_type,
+     return NULL;
+ 
+   Output_section_data* posd = new Output_data_const_buffer(buffer, notehdrsz,
+-							   size / 8,
++							   addralign,
+ 							   "** note header");
+   os->add_output_section_data(posd);
+ 
+@@ -3703,6 +3711,11 @@ Layout::segment_precedes(const Output_segment* seg1,
+     {
+       if (type1 != type2)
+ 	return type1 < type2;
++      uint64_t align1 = seg1->align();
++      uint64_t align2 = seg2->align();
++      // Place segments with larger alignments first.
++      if (align1 != align2)
++	return align1 > align2;
+       gold_assert(flags1 != flags2
+ 		  || this->script_options_->saw_phdrs_clause());
+       return flags1 < flags2;
+diff --git a/gold/output.cc b/gold/output.cc
+index 1701db1c99..8c71f0217c 100644
+--- a/gold/output.cc
++++ b/gold/output.cc
+@@ -4108,6 +4108,7 @@ Output_segment::Output_segment(elfcpp::Elf_Word type, elfcpp::Elf_Word flags)
+   : vaddr_(0),
+     paddr_(0),
+     memsz_(0),
++    align_(0),
+     max_align_(0),
+     min_p_align_(0),
+     offset_(0),
+diff --git a/gold/output.h b/gold/output.h
+index c2458831e3..dbed757806 100644
+--- a/gold/output.h
++++ b/gold/output.h
+@@ -4688,6 +4688,16 @@ class Output_segment
+   offset() const
+   { return this->offset_; }
+ 
++  // Return the segment alignment.
++  uint64_t
++  align() const
++  { return this->align_; }
++
++  // Set the segment alignment.
++  void
++  set_align(uint64_t align)
++  { this->align_ = align; }
++
+   // Whether this is a segment created to hold large data sections.
+   bool
+   is_large_data_segment() const
+@@ -4910,6 +4920,8 @@ class Output_segment
+   uint64_t paddr_;
+   // The size of the segment in memory.
+   uint64_t memsz_;
++  // The segment alignment.
++  uint64_t align_;
+   // The maximum section alignment.  The is_max_align_known_ field
+   // indicates whether this has been finalized.
+   uint64_t max_align_;
+diff --git a/gold/testsuite/Makefile.am b/gold/testsuite/Makefile.am
+index 79eb736ca2..b3635a0580 100644
+--- a/gold/testsuite/Makefile.am
++++ b/gold/testsuite/Makefile.am
+@@ -3270,9 +3270,9 @@ if DEFAULT_TARGET_X86_64
+ check_SCRIPTS += gnu_property_test.sh
+ check_DATA += gnu_property_test.stdout
+ gnu_property_test.stdout: gnu_property_test
+-	$(TEST_READELF) -n $< >$@
++	$(TEST_READELF) -lhSWn $< >$@
+ gnu_property_test: gcctestdir/ld gnu_property_a.o gnu_property_b.o gnu_property_c.o
+-	gcctestdir/ld -o $@ gnu_property_a.o gnu_property_b.o gnu_property_c.o
++	gcctestdir/ld --build-id -o $@ gnu_property_a.o gnu_property_b.o gnu_property_c.o
+ gnu_property_main.o: gnu_property_main.c
+ 	$(COMPILE) -c -o $@ $<
+ gnu_property_a.o: gnu_property_a.S
+diff --git a/gold/testsuite/Makefile.in b/gold/testsuite/Makefile.in
+index 2eead0c820..1b39743f21 100644
+--- a/gold/testsuite/Makefile.in
++++ b/gold/testsuite/Makefile.in
+@@ -9483,9 +9483,9 @@ uninstall-am:
+ @DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@exception_x86_64_bnd_2.o: exception_test_2.cc gcctestdir/as
+ @DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	$(CXXCOMPILE) -c -Bgcctestdir/ -Wa,-madd-bnd-prefix -o $@ $<
+ @DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@gnu_property_test.stdout: gnu_property_test
+-@DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	$(TEST_READELF) -n $< >$@
++@DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	$(TEST_READELF) -lhSWn $< >$@
+ @DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@gnu_property_test: gcctestdir/ld gnu_property_a.o gnu_property_b.o gnu_property_c.o
+-@DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	gcctestdir/ld -o $@ gnu_property_a.o gnu_property_b.o gnu_property_c.o
++@DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	gcctestdir/ld --build-id -o $@ gnu_property_a.o gnu_property_b.o gnu_property_c.o
+ @DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@gnu_property_main.o: gnu_property_main.c
+ @DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	$(COMPILE) -c -o $@ $<
+ @DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@gnu_property_a.o: gnu_property_a.S
+diff --git a/gold/testsuite/gnu_property_test.sh b/gold/testsuite/gnu_property_test.sh
+index 79286d4721..e98b09d84e 100755
+--- a/gold/testsuite/gnu_property_test.sh
++++ b/gold/testsuite/gnu_property_test.sh
+@@ -53,8 +53,28 @@ check_count()
+     fi
+ }
+ 
++check_alignment ()
++{
++    if egrep -q "Class:[ \t]+ELF64" "$1"
++    then
++	align=8
++    else
++	align=4
++    fi
++    if ! egrep -q ".note.gnu.property[ \t]+NOTE.*$align$" "$1"
++    then
++	echo "Wrong .note.gnu.property alignment in $1:"
++	egrep ".note.gnu.property[ \t]+NOTE.*$align" "$1"
++	exit 1
++    fi
++}
++
++check_alignment gnu_property_test.stdout
++
+ check_count gnu_property_test.stdout "GNU\s*0x[0-9a-f]*\s*NT_GNU_PROPERTY_TYPE_0" 1
+ 
++check_count gnu_property_test.stdout "^  NOTE" 2
++
+ check gnu_property_test.stdout "stack size: 0x111100"
+ check gnu_property_test.stdout "no copy on protected"
+ check gnu_property_test.stdout "x86 ISA used: CMOV, SSSE3, AVX2, AVX512ER"
+-- 
+2.17.1
+

@@ -17,6 +17,11 @@ clean=$1
 
 patches="
 0001-Linux-x86-Configure-gas-with-enable-x86-used-note-by.patch
+0001-gold-Discard-.note.gnu.property-section.patch
+0002-gold-Support-GNU_PROPERTY_X86_FEATURE_2_-USED-NEEDED.patch
+0003-gold-Discard-.note.gnu.property-for-PR-gold-23503.patch
+0004-gold-Pass-Wa-mx86-used-note-no-to-COMPILE-CXXCOMPILE.patch
+0005-gold-Properly-align-the-NT_GNU_PROPERTY_TYPE_0-note.patch
 	binutils-lto-mixed.patch
 	binutils-lto-mixed-test.patch
 	binutils-lto-mixed-plugin.patch

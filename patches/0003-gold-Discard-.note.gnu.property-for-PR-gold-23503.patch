@@ -1,0 +1,79 @@
+From 3330a13ed2330a0785d0ed1b7bc3bdb0513ff93d Mon Sep 17 00:00:00 2001
+From: "H.J. Lu" <hjl.tools@gmail.com>
+Date: Fri, 10 Aug 2018 06:39:28 -0700
+Subject: [PATCH 3/5] gold: Discard .note.gnu.property for PR gold/23503
+
+	* testsuite/Makefile.am (justsyms_lib): Pass
+	-T $(srcdir)/justsyms_lib.t to gold.
+	* testsuite/Makefile.in: Regenerated.
+	* testsuite/justsyms_lib.t: New file.
+---
+ gold/testsuite/Makefile.am    |  2 +-
+ gold/testsuite/Makefile.in    |  2 +-
+ gold/testsuite/justsyms_lib.t | 28 ++++++++++++++++++++++++++++
+ 3 files changed, 30 insertions(+), 2 deletions(-)
+ create mode 100644 gold/testsuite/justsyms_lib.t
+
+diff --git a/gold/testsuite/Makefile.am b/gold/testsuite/Makefile.am
+index c1c5539cdb..ede706442a 100644
+--- a/gold/testsuite/Makefile.am
++++ b/gold/testsuite/Makefile.am
+@@ -2009,7 +2009,7 @@ MOSTLYCLEANFILES += justsyms_lib
+ justsyms_lib.o: justsyms_lib.c
+ 	$(COMPILE) -c -o $@ $<
+ justsyms_lib: justsyms_lib.o gcctestdir/ld
+-	gcctestdir/ld -o $@ -Ttext=0x1000200 -Tdata=0x2000000 -e exported_func justsyms_lib.o
++	gcctestdir/ld -o $@ -T $(srcdir)/justsyms_lib.t -Ttext=0x1000200 -Tdata=0x2000000 -e exported_func justsyms_lib.o
+ 
+ check_PROGRAMS += binary_test
+ MOSTLYCLEANFILES += binary.txt
+diff --git a/gold/testsuite/Makefile.in b/gold/testsuite/Makefile.in
+index 08b5c07a67..52e8f5421b 100644
+--- a/gold/testsuite/Makefile.in
++++ b/gold/testsuite/Makefile.in
+@@ -8797,7 +8797,7 @@ uninstall-am:
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@justsyms_lib.o: justsyms_lib.c
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@	$(COMPILE) -c -o $@ $<
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@justsyms_lib: justsyms_lib.o gcctestdir/ld
+-@GCC_TRUE@@NATIVE_LINKER_TRUE@	gcctestdir/ld -o $@ -Ttext=0x1000200 -Tdata=0x2000000 -e exported_func justsyms_lib.o
++@GCC_TRUE@@NATIVE_LINKER_TRUE@	gcctestdir/ld -o $@ -T $(srcdir)/justsyms_lib.t -Ttext=0x1000200 -Tdata=0x2000000 -e exported_func justsyms_lib.o
+ # Copy the file to the build directory to avoid worrying about the
+ # full pathname in the generated symbols.
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@binary.txt: $(srcdir)/binary.in
+diff --git a/gold/testsuite/justsyms_lib.t b/gold/testsuite/justsyms_lib.t
+new file mode 100644
+index 0000000000..632f7cde24
+--- /dev/null
++++ b/gold/testsuite/justsyms_lib.t
+@@ -0,0 +1,28 @@
++/* justsyms_lib.t -- test --just-symbols for gold.
++
++   Copyright (C) 2018 Free Software Foundation, Inc.
++
++   This file is part of gold.
++
++   This program is free software; you can redistribute it and/or modify
++   it under the terms of the GNU General Public License as published by
++   the Free Software Foundation; either version 3 of the License, or
++   (at your option) any later version.
++
++   This program is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU General Public License for more details.
++
++   You should have received a copy of the GNU General Public License
++   along with this program; if not, write to the Free Software
++   Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston,
++   MA 02110-1301, USA.  */
++
++SECTIONS
++{
++  .text : { *(.text) }
++  .data : { *(.data) }
++  .bss : { *(.bss) }
++  /DISCARD/ : { *(.note.gnu.property) }
++}
+-- 
+2.17.1
+

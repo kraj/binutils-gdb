@@ -1,0 +1,27 @@
+From f3e76ea129069747d9ce2b7a6f2a5012ad0549f0 Mon Sep 17 00:00:00 2001
+From: "H.J. Lu" <hjl.tools@gmail.com>
+Date: Thu, 9 Aug 2018 13:01:25 -0700
+Subject: [PATCH 1/5] gold: Discard .note.gnu.property section
+
+Discard .note.gnu.property section since it changes the expected section
+order.
+
+	* testsuite/script_test_10.t: Discard .note.gnu.property section.
+---
+ gold/testsuite/script_test_10.t | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/gold/testsuite/script_test_10.t b/gold/testsuite/script_test_10.t
+index 249a1e1827..6a470497bb 100644
+--- a/gold/testsuite/script_test_10.t
++++ b/gold/testsuite/script_test_10.t
+@@ -30,5 +30,6 @@ SECTIONS
+   .sec3 : { *(.sec3) }
+   .data : { *(.data) }
+   .bss : { *(.bss) }
++  /DISCARD/ : { *(.note.gnu.property) }
+ }
+ 
+-- 
+2.17.1
+
