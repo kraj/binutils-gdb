@@ -16,6 +16,7 @@ dir=`dirname $0`
 clean=$1
 
 patches="
+0001-Linux-x86-Configure-gas-with-enable-x86-used-note-by.patch
 	binutils-lto-mixed.patch
 	binutils-lto-mixed-test.patch
 	binutils-lto-mixed-plugin.patch

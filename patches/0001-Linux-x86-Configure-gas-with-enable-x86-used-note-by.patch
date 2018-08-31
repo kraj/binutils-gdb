@@ -1,0 +1,53 @@
+From 412c059734be3472ca20dfd44f8785b8a070d8c8 Mon Sep 17 00:00:00 2001
+From: "H.J. Lu" <hjl.tools@gmail.com>
+Date: Mon, 13 Aug 2018 15:18:26 -0700
+Subject: [PATCH] Linux/x86: Configure gas with --enable-x86-used-note by
+ default
+
+	* configure.ac: Configure with --enable-x86-used-note by default
+	for Linux/x86.
+	* configure: Regenerated.
+---
+ gas/configure    | 7 +++++++
+ gas/configure.ac | 7 +++++++
+ 2 files changed, 14 insertions(+)
+
+diff --git a/gas/configure b/gas/configure
+index 35effb4006..c47d882b2f 100755
+--- a/gas/configure
++++ b/gas/configure
+@@ -12610,6 +12610,13 @@ $as_echo "#define STRICTCOFF 1" >>confdefs.h
+ 
+ 	;;
+ 
++      i386-*-linux-* | x86_64-*-linux-*)
++	if test ${this_target} = $target \
++	   && test ${ac_default_generate_x86_used_note} = unset; then
++	  ac_default_generate_x86_used_note=1
++	fi
++	;;
++
+       i386-*-solaris2 \
+       | x86_64-*-solaris2 \
+       | i386-*-solaris2.[0-9] \
+diff --git a/gas/configure.ac b/gas/configure.ac
+index d8fddfb19e..331950f4b1 100644
+--- a/gas/configure.ac
++++ b/gas/configure.ac
+@@ -222,6 +222,13 @@ for this_target in $target $canon_targets ; do
+ 	AC_DEFINE(STRICTCOFF, 1, [Using strict COFF?])
+ 	;;
+ 
++      i386-*-linux-* | x86_64-*-linux-*)
++	if test ${this_target} = $target \
++	   && test ${ac_default_generate_x86_used_note} = unset; then
++	  ac_default_generate_x86_used_note=1
++	fi
++	;;
++
+       i386-*-solaris2 \
+       | x86_64-*-solaris2 \
+       | i386-*-solaris2.[[0-9]] \
+-- 
+2.17.1
+
