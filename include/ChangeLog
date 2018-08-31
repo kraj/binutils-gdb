@@ -1,3 +1,46 @@
+2018-08-30  Kito Cheng  <kito@andestech.com>
+
+	* opcode/riscv.h (MAX_SUBSET_NUM): New.
+	(riscv_opcode): Add xlen_requirement field and change type of
+	subset.
+
+2018-08-29  Chenghua Xu  <paul.hua.gm@gmail.com>
+
+	* elf/mips.h (E_MIPS_MACH_XXX): New E_MIPS_MACH_GS264E.
+	* opcode/mips.h (CPU_XXX): New CPU_GS264E.
+
+2018-08-29  Chenghua Xu  <paul.hua.gm@gmail.com>
+
+	* elf/mips.h (E_MIPS_MACH_XXX): New E_MIPS_MACH_GS464E.
+	* opcode/mips.h (CPU_XXX): New CPU_GS464E.
+
+2018-08-29  Chenghua Xu  <paul.hua.gm@gmail.com>
+
+	* elf/mips.h (E_MIPS_MACH_XXX): Rename E_MIPS_MACH_LS3A to
+	E_MIPS_MACH_GS464.
+	(AFL_EXT_XXX): Delete AFL_EXT_LOONGSON_3A.
+	* opcode/mips.h (INSN_XXX): Delete INSN_LOONGSON_3A.
+	(CPU_XXX): Rename CPU_LOONGSON_3A to CPU_GS464.
+	* opcode/mips.h (mips_isa_table): Delete CPU_LOONGSON_3A case.
+
+2018-08-29  Chenghua Xu  <paul.hua.gm@gmail.com>
+
+	* elf/mips.h (AFL_ASE_LOONGSON_EXT2): New macro.
+	(AFL_ASE_MASK): Update to include AFL_ASE_LOONGSON_EXT2.
+	* opcode/mips.h (ASE_LOONGSON_EXT2): New macro.
+
+2018-08-29  Chenghua Xu  <paul.hua.gm@gmail.com>
+
+	 * elf/mips.h (AFL_ASE_LOONGSON_EXT): New macro.
+	 (AFL_ASE_MASK): Update to include AFL_ASE_LOONGSON_EXT.
+	 * opcode/mips.h (ASE_LOONGSON_EXT): New macro.
+
+2018-08-29  Chenghua Xu  <paul.hua.gm@gmail.com>
+
+	* elf/mips.h (AFL_ASE_LOONGSON_CAM): New macro.
+	(AFL_ASE_MASK): Update to include AFL_ASE_LOONGSON_CAM.
+	* opcode/mips.h (ASE_LOONGSON_CAM): New macro.
+
 2018-08-24  H.J. Lu  <hongjiu.lu@intel.com>
 
 	* elf/common.h (GNU_PROPERTY_X86_ISA_1_USED): Renamed to ...

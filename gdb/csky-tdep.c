@@ -1103,8 +1103,8 @@ csky_analyze_prologue (struct gdbarch *gdbarch,
 					  "csky: found stack adjustment of"
 					  " 0x%x bytes.\n", adjust);
 		      fprintf_unfiltered (gdb_stdlog,
-					  "csky: skipping to new address "
-					  "0x%lx\n", addr);
+					  "csky: skipping to new address %s\n",
+					  core_addr_to_string_nz (addr));
 		      fprintf_unfiltered (gdb_stdlog,
 					  "csky: continuing\n");
 		    }
@@ -1415,8 +1415,8 @@ csky_analyze_prologue (struct gdbarch *gdbarch,
 					  "found stack adjustment of 0x%x"
 					  " bytes.\n", adjust);
 		      fprintf_unfiltered (gdb_stdlog, "csky: "
-					  "skipping to new address 0x%lx\n",
-					  addr);
+					  "skipping to new address %s\n",
+					  core_addr_to_string_nz (addr));
 		      fprintf_unfiltered (gdb_stdlog, "csky: continuing\n");
 		    }
 		  continue;
@@ -1609,7 +1609,7 @@ csky_memory_insert_breakpoint (struct gdbarch *gdbarch,
 
   /* Sanity-check bp_address.  */
   if (bp_tgt->reqstd_address % 2)
-    warning (_("Invalid breakpoint address 0x%x is an odd number.\n"),
+    warning (_("Invalid breakpoint address 0x%x is an odd number."),
 	     (unsigned int) bp_tgt->reqstd_address);
   scoped_restore restore_memory
     = make_scoped_restore_show_memory_breakpoints (1);

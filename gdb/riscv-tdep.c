@@ -60,8 +60,6 @@
 
 /* Forward declarations.  */
 static bool riscv_has_feature (struct gdbarch *gdbarch, char feature);
-struct riscv_inferior_data;
-struct riscv_inferior_data * riscv_inferior_data (struct inferior *const inf);
 
 /* Define a series of is_XXX_insn functions to check if the value INSN
    is an instance of instruction XXX.  */
@@ -72,22 +70,6 @@ static inline bool is_ ## INSN_NAME ## _insn (long insn) \
 }
 #include "opcode/riscv-opc.h"
 #undef DECLARE_INSN
-
-/* Per inferior information for RiscV.  */
-
-struct riscv_inferior_data
-{
-  /* True when MISA_VALUE is valid, otherwise false.  */
-  bool misa_read;
-
-  /* If MISA_READ is true then MISA_VALUE holds the value of the MISA
-     register read from the target.  */
-  uint32_t misa_value;
-};
-
-/* Key created when the RiscV per-inferior data is registered.  */
-
-static const struct inferior_data *riscv_inferior_data_reg;
 
 /* Architectural name for core registers.  */
 
@@ -293,17 +275,16 @@ static unsigned int riscv_debug_infcall = 0;
 static uint32_t
 riscv_read_misa_reg (bool *read_p)
 {
-  struct riscv_inferior_data *inf_data
-    = riscv_inferior_data (current_inferior ());
+  uint32_t value = 0;
 
-  if (!inf_data->misa_read && target_has_registers)
+  if (target_has_registers)
     {
-      uint32_t value = 0;
       struct frame_info *frame = get_current_frame ();
 
       TRY
 	{
-	  value = get_frame_register_unsigned (frame, RISCV_CSR_MISA_REGNUM);
+	  value = get_frame_register_unsigned (frame,
+					       RISCV_CSR_MISA_REGNUM);
 	}
       CATCH (ex, RETURN_MASK_ERROR)
 	{
@@ -312,15 +293,9 @@ riscv_read_misa_reg (bool *read_p)
 					       RISCV_CSR_LEGACY_MISA_REGNUM);
 	}
       END_CATCH
-
-      inf_data->misa_read = true;
-      inf_data->misa_value = value;
     }
 
-  if (read_p != nullptr)
-    *read_p = inf_data->misa_read;
-
-  return inf_data->misa_value;
+  return value;
 }
 
 /* Return true if FEATURE is available for the architecture GDBARCH.  The
@@ -997,6 +972,31 @@ private:
     m_imm.s = EXTRACT_STYPE_IMM (ival);
   }
 
+  /* Helper for DECODE, decode 16-bit CS-type instruction.  The immediate
+     encoding is different for each CS format instruction, so extracting
+     the immediate is left up to the caller, who should pass the extracted
+     immediate value through in IMM.  */
+  void decode_cs_type_insn (enum opcode opcode, ULONGEST ival, int imm)
+  {
+    m_opcode = opcode;
+    m_imm.s = imm;
+    m_rs1 = decode_register_index_short (ival, OP_SH_CRS1S);
+    m_rs2 = decode_register_index_short (ival, OP_SH_CRS2S);
+  }
+
+  /* Helper for DECODE, decode 16-bit CSS-type instruction.  The immediate
+     encoding is different for each CSS format instruction, so extracting
+     the immediate is left up to the caller, who should pass the extracted
+     immediate value through in IMM.  */
+  void decode_css_type_insn (enum opcode opcode, ULONGEST ival, int imm)
+  {
+    m_opcode = opcode;
+    m_imm.s = imm;
+    m_rs1 = RISCV_SP_REGNUM;
+    /* Not a compressed register number in this case.  */
+    m_rs2 = decode_register_index (ival, OP_SH_CRS2);
+  }
+
   /* Helper for DECODE, decode 32-bit U-type instruction.  */
   void decode_u_type_insn (enum opcode opcode, ULONGEST ival)
   {
@@ -1190,14 +1190,25 @@ riscv_insn::decode (struct gdbarch *gdbarch, CORE_ADDR pc)
 	  m_rd = m_rs1 = decode_register_index (ival, OP_SH_RD);
 	  m_imm.s = EXTRACT_RVC_ADDI16SP_IMM (ival);
 	}
+      else if (is_c_addi4spn_insn (ival))
+	{
+	  m_opcode = ADDI;
+	  m_rd = decode_register_index_short (ival, OP_SH_CRS2S);
+	  m_rs1 = RISCV_SP_REGNUM;
+	  m_imm.s = EXTRACT_RVC_ADDI4SPN_IMM (ival);
+	}
       else if (is_c_lui_insn (ival))
 	m_opcode = OTHER;
       /* C_SD and C_FSW have the same opcode.  C_SD is RV64 and RV128 only,
 	 and C_FSW is RV32 only.  */
       else if (xlen != 4 && is_c_sd_insn (ival))
-	m_opcode = OTHER;
+	decode_cs_type_insn (SD, ival, EXTRACT_RVC_LD_IMM (ival));
       else if (is_c_sw_insn (ival))
-	m_opcode = OTHER;
+	decode_cs_type_insn (SW, ival, EXTRACT_RVC_LW_IMM (ival));
+      else if (is_c_swsp_insn (ival))
+	decode_css_type_insn (SW, ival, EXTRACT_RVC_SWSP_IMM (ival));
+      else if (xlen != 4 && is_c_sdsp_insn (ival))
+	decode_css_type_insn (SW, ival, EXTRACT_RVC_SDSP_IMM (ival));
       /* C_JR and C_MV have the same opcode.  If RS2 is 0, then this is a C_JR.
 	 So must try to match C_JR first as it ahs more bits in mask.  */
       else if (is_c_jr_insn (ival))
@@ -2646,69 +2657,6 @@ riscv_gdbarch_init (struct gdbarch_info info,
   return gdbarch;
 }
 
-
-/* Allocate new riscv_inferior_data object.  */
-
-static struct riscv_inferior_data *
-riscv_new_inferior_data (void)
-{
-  struct riscv_inferior_data *inf_data
-    = new (struct riscv_inferior_data);
-  inf_data->misa_read = false;
-  return inf_data;
-}
-
-/* Free inferior data.  */
-
-static void
-riscv_inferior_data_cleanup (struct inferior *inf, void *data)
-{
-  struct riscv_inferior_data *inf_data =
-    static_cast <struct riscv_inferior_data *> (data);
-  delete (inf_data);
-}
-
-/* Return riscv_inferior_data for the given INFERIOR.  If not yet created,
-   construct it.  */
-
-struct riscv_inferior_data *
-riscv_inferior_data (struct inferior *const inf)
-{
-  struct riscv_inferior_data *inf_data;
-
-  gdb_assert (inf != NULL);
-
-  inf_data
-    = (struct riscv_inferior_data *) inferior_data (inf, riscv_inferior_data_reg);
-  if (inf_data == NULL)
-    {
-      inf_data = riscv_new_inferior_data ();
-      set_inferior_data (inf, riscv_inferior_data_reg, inf_data);
-    }
-
-  return inf_data;
-}
-
-/* Free the inferior data when an inferior exits.  */
-
-static void
-riscv_invalidate_inferior_data (struct inferior *inf)
-{
-  struct riscv_inferior_data *inf_data;
-
-  gdb_assert (inf != NULL);
-
-  /* Don't call RISCV_INFERIOR_DATA as we don't want to create the data if
-     we've not already created it by this point.  */
-  inf_data
-    = (struct riscv_inferior_data *) inferior_data (inf, riscv_inferior_data_reg);
-  if (inf_data != NULL)
-    {
-      delete (inf_data);
-      set_inferior_data (inf, riscv_inferior_data_reg, NULL);
-    }
-}
-
 /* This decodes the current instruction and determines the address of the
    next instruction.  */
 
@@ -2852,14 +2800,6 @@ void
 _initialize_riscv_tdep (void)
 {
   gdbarch_register (bfd_arch_riscv, riscv_gdbarch_init, NULL);
-
-  /* Register per-inferior data.  */
-  riscv_inferior_data_reg
-    = register_inferior_data_with_cleanup (NULL, riscv_inferior_data_cleanup);
-
-  /* Observers used to invalidate the inferior data when needed.  */
-  gdb::observers::inferior_exit.attach (riscv_invalidate_inferior_data);
-  gdb::observers::inferior_appeared.attach (riscv_invalidate_inferior_data);
 
   /* Add root prefix command for all "set debug riscv" and "show debug
      riscv" commands.  */

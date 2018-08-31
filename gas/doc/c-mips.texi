@@ -253,6 +253,27 @@ Application Specific Extension.  This tells the assembler to accept MMI
 instructions.
 @samp{-mno-loongson-mmi} turns off this option.
 
+@item -mloongson-cam
+@itemx -mno-loongson-cam
+Generate code for the Loongson Content Address Memory (CAM)
+Application Specific Extension.  This tells the assembler to accept CAM
+instructions.
+@samp{-mno-loongson-cam} turns off this option.
+
+@item -mloongson-ext
+@itemx -mno-loongson-ext
+Generate code for the Loongson EXTensions (EXT) instructions
+Application Specific Extension.  This tells the assembler to accept EXT
+instructions.
+@samp{-mno-loongson-ext} turns off this option.
+
+@item -mloongson-ext2
+@itemx -mno-loongson-ext2
+Generate code for the Loongson EXTensions R2 (EXT2) instructions
+Application Specific Extension.  This tells the assembler to accept EXT2
+instructions.
+@samp{-mno-loongson-ext2} turns off this option.
+
 @item -minsn32
 @itemx -mno-insn32
 Only use 32-bit instruction encodings when generating code for the
@@ -416,7 +437,9 @@ i6400,
 p6600,
 loongson2e,
 loongson2f,
-loongson3a,
+gs464,
+gs464e,
+gs264e,
 octeon,
 octeon+,
 octeon2,
@@ -1151,6 +1174,31 @@ The directive @code{.set loongson-mmi} makes the assembler accept
 instructions from the MMI Extension from that point on in the assembly.
 The @code{.set noloongson-mmi} directive prevents MMI instructions from
 being accepted.
+
+@cindex Loongson Content Address Memory (CAM) generation override
+@kindex @code{.set loongson-cam}
+@kindex @code{.set noloongson-cam}
+The directive @code{.set loongson-cam} makes the assembler accept
+instructions from the Loongson CAM from that point on in the assembly.
+The @code{.set noloongson-cam} directive prevents Loongson CAM instructions
+from being accepted.
+
+@cindex Loongson EXTensions (EXT) instructions generation override
+@kindex @code{.set loongson-ext}
+@kindex @code{.set noloongson-ext}
+The directive @code{.set loongson-ext} makes the assembler accept
+instructions from the Loongson EXT from that point on in the assembly.
+The @code{.set noloongson-ext} directive prevents Loongson EXT instructions
+from being accepted.
+
+@cindex Loongson EXTensions R2 (EXT2) instructions generation override
+@kindex @code{.set loongson-ext2}
+@kindex @code{.set noloongson-ext2}
+The directive @code{.set loongson-ext2} makes the assembler accept
+instructions from the Loongson EXT2 from that point on in the assembly.
+This directive implies @code{.set loognson-ext}.
+The @code{.set noloongson-ext2} directive prevents Loongson EXT2 instructions
+from being accepted.
 
 Traditional MIPS assemblers do not support these directives.
 

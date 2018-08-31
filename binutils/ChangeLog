@@ -1,3 +1,79 @@
+2018-08-31  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* testsuite/binutils-all/readelf.s-64: Adjusted for
+	.note.gnu.property section.
+	* testsuite/binutils-all/strip-3.d: Also strip
+	.note.gnu.property section.
+
+2018-08-31  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* testsuite/binutils-all/i386/compressed-1b.d: Pass
+	-mx86-used-note=no to assembler.
+	* testsuite/binutils-all/i386/compressed-1c.d: Likewise.
+	* testsuite/binutils-all/x86-64/compressed-1b.d: Likewise.
+	* testsuite/binutils-all/x86-64/compressed-1c.d: Likewise.
+	* testsuite/binutils-all/i386/empty.d: Pass -mx86-used-note=yes
+	to assembler and update expected output from "readelf -n".
+	* testsuite/binutils-all/i386/ibt.d: Likewise.
+	* testsuite/binutils-all/i386/pr21231a.d: Likewise.
+	* testsuite/binutils-all/i386/pr21231b.d: Likewise.
+	* testsuite/binutils-all/i386/shstk.d: Likewise.
+	* testsuite/binutils-all/x86-64/empty-x32.d: Likewise.
+	* testsuite/binutils-all/x86-64/empty.d: Likewise.
+	* testsuite/binutils-all/x86-64/ibt-x32.d: Likewise.
+	* testsuite/binutils-all/x86-64/ibt.d: Likewise.
+	* testsuite/binutils-all/x86-64/pr21231a.d: Likewise.
+	* testsuite/binutils-all/x86-64/pr21231b.d: Likewise.
+	* testsuite/binutils-all/x86-64/pr23494a-x32.d: Likewise.
+	* testsuite/binutils-all/x86-64/pr23494a.d: Likewise.
+	* testsuite/binutils-all/x86-64/pr23494b-x32.d: Likewise.
+	* testsuite/binutils-all/x86-64/pr23494b.d: Likewise.
+	* testsuite/binutils-all/x86-64/pr23494c-x32.d: Likewise.
+	* testsuite/binutils-all/x86-64/pr23494c.d: Likewise.
+	* testsuite/binutils-all/x86-64/pr23494d-x32.d: Likewise.
+	* testsuite/binutils-all/x86-64/pr23494d.d: Likewise.
+	* testsuite/binutils-all/x86-64/pr23494e-x32.d: Likewise.
+	* testsuite/binutils-all/x86-64/pr23494e.d: Likewise.
+	* testsuite/binutils-all/x86-64/shstk-x32.d: Likewise.
+	* testsuite/binutils-all/x86-64/shstk.d: Likewise.
+
+2018-08-30  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* readelf.c (process_section_headers): Treat SHT_FINI_ARRAY and
+	SHT_PREINIT_ARRAY as relocatable sections.
+
+2018-08-30  Chenghua Xu  <paul.hua.gm@gmail.com>
+
+	* MAINTAINERS: Add myself as a MIPS port maintainer.
+
+2018-08-29  Chenghua Xu  <paul.hua.gm@gmail.com>
+
+	* NEWS: Mention Loongson 2K1000 proccessor support.
+	* readelf.c (get_machine_flags): Handle gs264e.
+
+2018-08-29  Chenghua Xu  <paul.hua.gm@gmail.com>
+
+	* NEWS: Mention Loongson 3A2000/3A3000 proccessor support.
+	* readelf.c (get_machine_flags): Handle gs464e.
+
+2018-08-29  Chenghua Xu  <paul.hua.gm@gmail.com>
+
+	* NEWS: Mention Loongson 3A1000 proccessor support.
+	* readelf.c (get_machine_flags): Rename loongson-3a to gs464.
+	(print_mips_isa_ext): Delete AFL_EXT_LOONGSON_3A.
+
+2018-08-29  Chenghua Xu  <paul.hua.gm@gmail.com>
+
+	* readelf.c (print_mips_ases): Add Loongson EXT2 extension.
+
+2018-08-29  Chenghua Xu  <paul.hua.gm@gmail.com>
+
+	 * readelf.c (print_mips_ases): Add Loongson EXT extension.
+
+2018-08-29  Chenghua Xu  <paul.hua.gm@gmail.com>
+
+	* readelf.c (print_mips_ases): Add CAM extension.
+
 2018-08-27  H.J. Lu  <hongjiu.lu@intel.com>
 
 	* readelf.c (decode_x86_isa): Print <None> if bitmask only

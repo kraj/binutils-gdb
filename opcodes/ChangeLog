@@ -1,3 +1,57 @@
+2018-08-30  Kito Cheng  <kito@andestech.com>
+
+	* riscv-dis.c (riscv_disassemble_insn): Check XLEN by
+	riscv_opcode.xlen_requirement.
+	* riscv-opc.c (riscv_opcodes): Update for struct change.
+
+2018-08-29  Martin Aberg  <maberg@gaisler.com>
+
+	* sparc-opc.c (sparc_opcodes): Add Leon specific partial write
+        psr (PWRPSR) instruction.
+
+2018-08-29  Chenghua Xu  <paul.hua.gm@gmail.com>
+
+	* mips-dis.c (mips_arch_choices): Add gs264e descriptors.
+
+2018-08-29  Chenghua Xu  <paul.hua.gm@gmail.com>
+
+	* mips-dis.c (mips_arch_choices): Add gs464e descriptors.
+
+2018-08-29  Chenghua Xu  <paul.hua.gm@gmail.com>
+
+	* mips-dis.c (mips_arch_choices): Add gs464 descriptors, Keep
+	loongson3a as an alias of gs464 for compatibility.
+	* mips-opc.c (mips_opcodes): Change Comments.
+
+2018-08-29  Chenghua Xu  <paul.hua.gm@gmail.com>
+
+	* mips-dis.c (parse_mips_ase_option): Handle -M loongson-ext
+	option.
+	(print_mips_disassembler_options): Document -M loongson-ext.
+	* mips-opc.c (LEXT2): New macro.
+	(mips_opcodes): Add cto, ctz, dcto, dctz instructions.
+
+2018-08-29  Chenghua Xu  <paul.hua.gm@gmail.com>
+
+	 * mips-dis.c (mips_arch_choices): Add EXT to loongson3a
+	 descriptors.
+	 (parse_mips_ase_option): Handle -M loongson-ext option.
+	 (print_mips_disassembler_options): Document -M loongson-ext.
+	 * mips-opc.c (IL3A): Delete.
+	 * mips-opc.c (LEXT): New macro.
+	 (mips_opcodes): Replace IL2F|IL3A marking with LEXT for EXT
+	 instructions.
+
+2018-08-29  Chenghua Xu  <paul.hua.gm@gmail.com>
+
+	* mips-dis.c (mips_arch_choices): Add CAM to loongson3a
+	descriptors.
+	(parse_mips_ase_option): Handle -M loongson-cam option.
+	(print_mips_disassembler_options): Document -M loongson-cam.
+	* mips-opc.c (LCAM): New macro.
+	(mips_opcodes): Replace IL2F|IL3A marking with LCAM for CAM
+	instructions.
+
 2018-08-21  Alan Modra  <amodra@gmail.com>
 
 	* ppc-dis.c (operand_value_powerpc): Init "invalid".

@@ -1,5 +1,21 @@
 -*- text -*-
 
+* The MIPS port now supports the Loongson 2K1000 processor which implements
+  the MIPS64r2 ISA, the Loongson-mmi ASE, Loongson-cam ASE, Loongson-ext ASE,
+  Loongson-ext2 ASE and MSA ASE instructions. Add -march=gs264e option for
+  Loongson 2K1000 processor.
+
+* The MIPS port now supports the Loongson 3A2000/3A3000 processor which
+  implements the MIPS64r2 ISA, the Loongson-mmi ASE, Loongson-cam ASE,
+  Loongson-ext ASE and Loongson-ext2 ASE instructions. Add -march=gs464e
+  option for Loongson 3A2000/3A3000 processor.
+
+* The MIPS port now supports the Loongson 3A1000 processor, aka Loongson3a,
+  which implements the MIPS64r2 ISA, the Loongson-mmi ASE, Loongson-cam ASE
+  and Loongson-ext ASE instructions. Add -march=gs464 option for Loongson
+  3A1000 processor, The -march=loongson3a is an alias of -march=gs464 for
+  compatibility.
+
 Changes in 2.31:
 
 * Add support for disassembling netronome Flow Processor (NFP) firmware files.
