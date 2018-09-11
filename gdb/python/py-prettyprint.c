@@ -187,7 +187,7 @@ find_pretty_printer (PyObject *value)
    is returned.  On error, *OUT_VALUE is set to NULL, NULL is
    returned, with a python exception set.  */
 
-static PyObject *
+static gdbpy_ref<>
 pretty_print_one_value (PyObject *printer, struct value **out_value)
 {
   gdbpy_ref<> result;
@@ -195,18 +195,23 @@ pretty_print_one_value (PyObject *printer, struct value **out_value)
   *out_value = NULL;
   TRY
     {
-      result.reset (PyObject_CallMethodObjArgs (printer, gdbpy_to_string_cst,
-						NULL));
-      if (result != NULL)
+      if (!PyObject_HasAttr (printer, gdbpy_to_string_cst))
+	result = gdbpy_ref<>::new_reference (Py_None);
+      else
 	{
-	  if (! gdbpy_is_string (result.get ())
-	      && ! gdbpy_is_lazy_string (result.get ())
-	      && result != Py_None)
+	  result.reset (PyObject_CallMethodObjArgs (printer, gdbpy_to_string_cst,
+						    NULL));
+	  if (result != NULL)
 	    {
-	      *out_value = convert_value_from_python (result.get ());
-	      if (PyErr_Occurred ())
-		*out_value = NULL;
-	      result = NULL;
+	      if (! gdbpy_is_string (result.get ())
+		  && ! gdbpy_is_lazy_string (result.get ())
+		  && result != Py_None)
+		{
+		  *out_value = convert_value_from_python (result.get ());
+		  if (PyErr_Occurred ())
+		    *out_value = NULL;
+		  result = NULL;
+		}
 	    }
 	}
     }
@@ -215,7 +220,7 @@ pretty_print_one_value (PyObject *printer, struct value **out_value)
     }
   END_CATCH
 
-  return result.release ();
+  return result;
 }
 
 /* Return the display hint for the object printer, PRINTER.  Return
@@ -288,7 +293,7 @@ print_string_repr (PyObject *printer, const char *hint,
   struct value *replacement = NULL;
   enum string_repr_result result = string_repr_ok;
 
-  gdbpy_ref<> py_str (pretty_print_one_value (printer, &replacement));
+  gdbpy_ref<> py_str = pretty_print_one_value (printer, &replacement);
   if (py_str != NULL)
     {
       if (py_str == Py_None)
@@ -721,15 +726,13 @@ gdbpy_apply_val_pretty_printer (const struct extension_language_defn *extlang,
    set to the replacement value and this function returns NULL.  On
    error, *REPLACEMENT is set to NULL and this function also returns
    NULL.  */
-PyObject *
+gdbpy_ref<>
 apply_varobj_pretty_printer (PyObject *printer_obj,
 			     struct value **replacement,
 			     struct ui_file *stream)
 {
-  PyObject *py_str = NULL;
-
   *replacement = NULL;
-  py_str = pretty_print_one_value (printer_obj, replacement);
+  gdbpy_ref<> py_str = pretty_print_one_value (printer_obj, replacement);
 
   if (*replacement == NULL && py_str == NULL)
     print_stack_unless_memory_error (stream);

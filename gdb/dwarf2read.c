@@ -14283,7 +14283,22 @@ read_variable (struct die_info *die, struct dwarf2_cu *cu)
 	}
     }
 
-  new_symbol (die, NULL, cu, storage);
+  struct symbol *res = new_symbol (die, NULL, cu, storage);
+  struct attribute *abstract_origin
+    = dwarf2_attr (die, DW_AT_abstract_origin, cu);
+  struct attribute *loc = dwarf2_attr (die, DW_AT_location, cu);
+  if (res == NULL && loc && abstract_origin)
+    {
+      /* We have a variable without a name, but with a location and an abstract
+	 origin.  This may be a concrete instance of an abstract variable
+	 referenced from an DW_OP_GNU_variable_value, so save it to find it back
+	 later.  */
+      struct dwarf2_cu *origin_cu = cu;
+      struct die_info *origin_die
+	= follow_die_ref (die, abstract_origin, &origin_cu);
+      dwarf2_per_objfile *dpo = cu->per_cu->dwarf2_per_objfile;
+      dpo->abstract_to_concrete[origin_die].push_back (die);
+    }
 }
 
 /* Call CALLBACK from DW_AT_ranges attribute value OFFSET
@@ -15169,6 +15184,18 @@ dwarf2_add_field (struct field_info *fip, struct die_info *die,
       fp->type = get_die_type (die, cu);
       fp->artificial = 1;
       fp->name = "<<variant>>";
+
+      /* Normally a DW_TAG_variant_part won't have a size, but our
+	 representation requires one, so set it to the maximum of the
+	 child sizes.  */
+      if (TYPE_LENGTH (fp->type) == 0)
+	{
+	  unsigned max = 0;
+	  for (int i = 0; i < TYPE_NFIELDS (fp->type); ++i)
+	    if (TYPE_LENGTH (TYPE_FIELD_TYPE (fp->type, i)) > max)
+	      max = TYPE_LENGTH (TYPE_FIELD_TYPE (fp->type, i));
+	  TYPE_LENGTH (fp->type) = max;
+	}
     }
   else
     gdb_assert_not_reached ("missing case in dwarf2_add_field");
@@ -22998,7 +23025,7 @@ struct dwarf2_locexpr_baton
 dwarf2_fetch_die_loc_sect_off (sect_offset sect_off,
 			       struct dwarf2_per_cu_data *per_cu,
 			       CORE_ADDR (*get_frame_pc) (void *baton),
-			       void *baton)
+			       void *baton, bool resolve_abstract_p)
 {
   struct dwarf2_cu *cu;
   struct die_info *die;
@@ -23024,6 +23051,30 @@ dwarf2_fetch_die_loc_sect_off (sect_offset sect_off,
 	   sect_offset_str (sect_off), objfile_name (objfile));
 
   attr = dwarf2_attr (die, DW_AT_location, cu);
+  if (!attr && resolve_abstract_p
+      && (dwarf2_per_objfile->abstract_to_concrete.find (die)
+	  != dwarf2_per_objfile->abstract_to_concrete.end ()))
+    {
+      CORE_ADDR pc = (*get_frame_pc) (baton);
+
+      for (const auto &cand : dwarf2_per_objfile->abstract_to_concrete[die])
+	{
+	  if (!cand->parent
+	      || cand->parent->tag != DW_TAG_subprogram)
+	    continue;
+
+	  CORE_ADDR pc_low, pc_high;
+	  get_scope_pc_bounds (cand->parent, &pc_low, &pc_high, cu);
+	  if (pc_low == ((CORE_ADDR) -1)
+	      || !(pc_low <= pc && pc < pc_high))
+	    continue;
+
+	  die = cand;
+	  attr = dwarf2_attr (die, DW_AT_location, cu);
+	  break;
+	}
+    }
+
   if (!attr)
     {
       /* DWARF: "If there is no such attribute, then there is no effect.".

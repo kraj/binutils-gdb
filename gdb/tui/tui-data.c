@@ -472,7 +472,6 @@ static void
 init_content_element (struct tui_win_element *element, 
 		      enum tui_win_type type)
 {
-  element->highlight = FALSE;
   switch (type)
     {
     case SRC_WIN:
@@ -545,9 +544,6 @@ init_win_info (struct tui_win_info *win_info)
       win_info->detail.data_display_info.current_group = 0;
       break;
     case CMD_WIN:
-      break;
-    default:
-      win_info->detail.opaque = NULL;
       break;
     }
 }

@@ -1,3 +1,29 @@
+2018-09-06  Alan Modra  <amodra@gmail.com>
+
+	PR 23570
+	* config/tc-avr.c: Revert 2018-09-03 change.
+
+2018-09-04  Daniel Cederman  <cederman@gaisler.com>
+
+	* config/tc-sparc.c (md_assemble): Allow non-fpop2 instructions
+            before floating point branches for Sparc V8 and earlier.
+	* testsuite/gas/sparc/sparc.exp: Execute the new test.
+	* testsuite/gas/sparc/v8branch.d: New test.
+	* testsuite/gas/sparc/v8branch.s: New test.
+
+2018-09-03  Nick Clifton  <nickc@redhat.com>
+
+	PR gas/23570
+	* config/tc-avr.c (md_pseudo_table): Add entry for "secction".
+	(avr_set_section): New function.  Ensures that the .noinit section
+	gets the NOBITS ELF section type.
+
+2018-08-31  Kito Cheng  <kito@andestech.com>
+
+	* testsuite/gas/riscv/c-fld-fsd-fail.d: New.
+	* testsuite/gas/riscv/c-fld-fsd-fail.l: Likewise.
+	* testsuite/gas/riscv/c-fld-fsd-fail.s: Likewise.
+
 2018-08-31  H.J. Lu  <hongjiu.lu@intel.com>
 
 	* testsuite/gas/elf/section14.d: Change skip to xfail.

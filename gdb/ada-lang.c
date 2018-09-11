@@ -1164,6 +1164,11 @@ ada_decode (const char *encoded)
   static char *decoding_buffer = NULL;
   static size_t decoding_buffer_size = 0;
 
+  /* With function descriptors on PPC64, the value of a symbol named
+     ".FN", if it exists, is the entry point of the function "FN".  */
+  if (encoded[0] == '.')
+    encoded += 1;
+
   /* The name of the Ada main procedure starts with "_ada_".
      This prefix is not part of the decoded name, so skip this part
      if we see this prefix.  */
@@ -2809,15 +2814,31 @@ value_assign_to_component (struct value *container, struct value *component,
     bits = value_bitsize (component);
 
   if (gdbarch_bits_big_endian (get_type_arch (value_type (container))))
-    move_bits (value_contents_writeable (container) + offset_in_container,
-	       value_bitpos (container) + bit_offset_in_container,
-	       value_contents (val),
-	       TYPE_LENGTH (value_type (component)) * TARGET_CHAR_BIT - bits,
-	       bits, 1);
+    {
+      int src_offset;
+
+      if (is_scalar_type (check_typedef (value_type (component))))
+        src_offset
+	  = TYPE_LENGTH (value_type (component)) * TARGET_CHAR_BIT - bits;
+      else
+	src_offset = 0;
+      move_bits (value_contents_writeable (container) + offset_in_container,
+		 value_bitpos (container) + bit_offset_in_container,
+		 value_contents (val), src_offset, bits, 1);
+    }
   else
     move_bits (value_contents_writeable (container) + offset_in_container,
 	       value_bitpos (container) + bit_offset_in_container,
 	       value_contents (val), 0, bits, 0);
+}
+
+/* Determine if TYPE is an access to an unconstrained array.  */
+
+bool
+ada_is_access_to_unconstrained_array (struct type *type)
+{
+  return (TYPE_CODE (type) == TYPE_CODE_TYPEDEF
+	  && is_thick_pntr (ada_typedef_target_type (type)));
 }
 
 /* The value of the element of array ARR at the ARITY indices given in IND.
@@ -2840,10 +2861,34 @@ ada_value_subscript (struct value *arr, int arity, struct value **ind)
 
   for (k = 0; k < arity; k += 1)
     {
+      struct type *saved_elt_type = TYPE_TARGET_TYPE (elt_type);
+
       if (TYPE_CODE (elt_type) != TYPE_CODE_ARRAY)
         error (_("too many subscripts (%d expected)"), k);
+
       elt = value_subscript (elt, pos_atr (ind[k]));
+
+      if (ada_is_access_to_unconstrained_array (saved_elt_type)
+	  && TYPE_CODE (value_type (elt)) != TYPE_CODE_TYPEDEF)
+	{
+	  /* The element is a typedef to an unconstrained array,
+	     except that the value_subscript call stripped the
+	     typedef layer.  The typedef layer is GNAT's way to
+	     specify that the element is, at the source level, an
+	     access to the unconstrained array, rather than the
+	     unconstrained array.  So, we need to restore that
+	     typedef layer, which we can do by forcing the element's
+	     type back to its original type. Otherwise, the returned
+	     value is going to be printed as the array, rather
+	     than as an access.  Another symptom of the same issue
+	     would be that an expression trying to dereference the
+	     element would also be improperly rejected.  */
+	  deprecated_set_value_type (elt, saved_elt_type);
+	}
+
+      elt_type = ada_check_typedef (value_type (elt));
     }
+
   return elt;
 }
 
@@ -3503,7 +3548,7 @@ resolve_subexp (expression_up *expp, int *pos, int deprocedure_p,
           && (TYPE_CODE (SYMBOL_TYPE (exp->elts[pc + 2].symbol))
               == TYPE_CODE_FUNC))
         {
-          replace_operator_with_call (expp, pc, 0, 0,
+          replace_operator_with_call (expp, pc, 0, 4,
                                       exp->elts[pc + 2].symbol,
                                       exp->elts[pc + 1].block);
           exp = expp->get ();
@@ -7509,6 +7554,7 @@ ada_value_struct_elt (struct value *arg, const char *name, int no_err)
 {
   struct type *t, *t1;
   struct value *v;
+  int check_tag;
 
   v = NULL;
   t1 = t = ada_check_typedef (value_type (arg));
@@ -7572,12 +7618,17 @@ ada_value_struct_elt (struct value *arg, const char *name, int no_err)
           if (!find_struct_field (name, t1, 0,
                                   &field_type, &byte_offset, &bit_offset,
                                   &bit_size, NULL))
-	    t1 = ada_to_fixed_type (ada_get_base_type (t1), NULL,
-                                    address, NULL, 1);
+	    check_tag = 1;
+	  else
+	    check_tag = 0;
         }
       else
-        t1 = ada_to_fixed_type (ada_get_base_type (t1), NULL,
-                                address, NULL, 1);
+	check_tag = 0;
+
+      /* Convert to fixed type in all cases, so that we have proper
+	 offsets to each field in unconstrained record types.  */
+      t1 = ada_to_fixed_type (ada_get_base_type (t1), NULL,
+			      address, NULL, check_tag);
 
       if (find_struct_field (name, t1, 0,
                              &field_type, &byte_offset, &bit_offset,
@@ -9233,13 +9284,13 @@ ada_check_typedef (struct type *type)
   if (type == NULL)
     return NULL;
 
-  /* If our type is a typedef type of a fat pointer, then we're done.
+  /* If our type is an access to an unconstrained array, which is encoded
+     as a TYPE_CODE_TYPEDEF of a fat pointer, then we're done.
      We don't want to strip the TYPE_CODE_TYPDEF layer, because this is
      what allows us to distinguish between fat pointers that represent
      array types, and fat pointers that represent array access types
      (in both cases, the compiler implements them as fat pointers).  */
-  if (TYPE_CODE (type) == TYPE_CODE_TYPEDEF
-      && is_thick_pntr (ada_typedef_target_type (type)))
+  if (ada_is_access_to_unconstrained_array (type))
     return type;
 
   type = check_typedef (type);
@@ -9300,9 +9351,7 @@ struct value *
 ada_to_fixed_value (struct value *val)
 {
   val = unwrap_value (val);
-  val = ada_to_fixed_value_create (value_type (val),
-				      value_address (val),
-				      val);
+  val = ada_to_fixed_value_create (value_type (val), value_address (val), val);
   return val;
 }
 
@@ -10223,7 +10272,7 @@ ada_value_cast (struct type *type, struct value *arg2)
     return arg2;
 
   if (ada_is_fixed_point_type (type))
-    return (cast_to_fixed (type, arg2));
+    return cast_to_fixed (type, arg2);
 
   if (ada_is_fixed_point_type (value_type (arg2)))
     return cast_from_fixed (type, arg2);
@@ -12235,8 +12284,8 @@ ada_unhandled_exception_name_addr_from_raise (void)
           if (strcmp (func_name.get (),
 		      data->exception_info->catch_exception_sym) == 0)
 	    break; /* We found the frame we were looking for...  */
-	  fi = get_prev_frame (fi);
 	}
+      fi = get_prev_frame (fi);
     }
 
   if (fi == NULL)
@@ -13208,14 +13257,11 @@ ada_exception_sal (enum ada_exception_catchpoint_kind ex,
   sym_name = ada_exception_sym_name (ex);
   sym = standard_lookup (sym_name, NULL, VAR_DOMAIN);
 
-  /* We can assume that SYM is not NULL at this stage.  If the symbol
-     did not exist, ada_exception_support_info_sniffer would have
-     raised an exception.
+  if (sym == NULL)
+    error (_("Catchpoint symbol not found: %s"), sym_name);
 
-     Also, ada_exception_support_info_sniffer should have already
-     verified that SYM is a function symbol.  */
-  gdb_assert (sym != NULL);
-  gdb_assert (SYMBOL_CLASS (sym) == LOC_BLOCK);
+  if (SYMBOL_CLASS (sym) != LOC_BLOCK)
+    error (_("Unable to insert catchpoint. %s is not a function."), sym_name);
 
   /* Set ADDR_STRING.  */
   *addr_string = xstrdup (sym_name);

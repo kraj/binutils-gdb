@@ -98,11 +98,6 @@ MSGMERGE = msgmerge
 PACKAGE = @PACKAGE@
 CATALOGS = @CATALOGS@
 
-# If you are compiling with GCC, make sure that either 1) You have the
-# fixed include files where GCC can reach them, or 2) You use the
-# -traditional flag.  Otherwise the ioctl calls in inflow.c
-# will be incorrectly compiled.  The "fixincludes" script in the gcc
-# distribution will fix your include files up.
 CC = @CC@
 CXX = @CXX@
 CXX_DIALECT = @CXX_DIALECT@
@@ -203,11 +198,6 @@ WARN_CFLAGS = @WARN_CFLAGS@
 WERROR_CFLAGS = @WERROR_CFLAGS@
 GDB_WARN_CFLAGS = $(WARN_CFLAGS)
 GDB_WERROR_CFLAGS = $(WERROR_CFLAGS)
-
-GDB_WARN_CFLAGS_NO_FORMAT = `echo " $(GDB_WARN_CFLAGS) " \
-		   | sed "s/ -Wformat-nonliteral / -Wno-format-nonliteral /g"`
-GDB_WARN_CFLAGS_NO_DEFS = `echo " $(GDB_WARN_CFLAGS) " \
-		   | sed "s/ -Wold-style-definition / -Wno-old-style-definition /g"`
 
 RDYNAMIC = @RDYNAMIC@
 
@@ -1775,8 +1765,8 @@ install-only: $(CONFIG_INSTALL)
 	else \
 	  true ; \
 	fi ; \
-	$(INSTALL_PROGRAM) $(srcdir)/contrib/gdb-add-index.sh \
-		$(DESTDIR)$(bindir)/$$transformed_name$(EXEEXT)
+	$(INSTALL_SCRIPT) $(srcdir)/contrib/gdb-add-index.sh \
+		$(DESTDIR)$(bindir)/$$transformed_name
 	@$(MAKE) DO=install "DODIRS=$(SUBDIRS)" $(FLAGS_TO_PASS) subdir_do
 
 install-strip:
@@ -2388,29 +2378,12 @@ ALLDEPFILES = \
 # Some files need explicit build rules (due to -Werror problems) or due
 # to sub-directory fun 'n' games.
 
-# Do not try to build "printcmd.c" with -Wformat-nonliteral.  It manually
-# checks format strings.
-printcmd.o: $(srcdir)/printcmd.c
-	$(ECHO_CXX) $(COMPILE.pre) $(INTERNAL_CFLAGS) \
-		$(GDB_WARN_CFLAGS_NO_FORMAT) $(COMPILE.post) \
-		$(srcdir)/printcmd.c
-	$(POSTCOMPILE)
-
-# Same for "target-float.c".
-target-float.o: $(srcdir)/target-float.c
-	$(ECHO_CXX) $(COMPILE.pre) $(INTERNAL_CFLAGS) \
-		$(GDB_WARN_CFLAGS_NO_FORMAT) $(COMPILE.post) \
-		$(srcdir)/target-float.c
-
 # ada-exp.c can appear in srcdir, for releases; or in ., for
 # development builds.
 ADA_EXP_C = `if test -f ada-exp.c; then echo ada-exp.c; else echo $(srcdir)/ada-exp.c; fi`
 
-# Some versions of flex give output that triggers
-# -Wold-style-definition.
 ada-exp.o: ada-exp.c
-	$(ECHO_CXX) $(COMPILE.pre) $(INTERNAL_CFLAGS) \
-		$(GDB_WARN_CFLAGS_NO_DEFS) $(COMPILE.post) $(ADA_EXP_C)
+	$(COMPILE) $(ADA_EXP_C)
 	$(POSTCOMPILE)
 
 # Message files.  Based on code in gcc/Makefile.in.

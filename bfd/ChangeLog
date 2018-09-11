@@ -1,3 +1,36 @@
+2018-09-06  Alan Modra  <amodra@gmail.com>
+
+	PR 23570
+	* elf32-avr.c (elf_avr_special_sections): New.
+	(elf_backend_special_sections): Define.
+
+2018-09-04  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* elfxx-sparc.c (_bfd_sparc_elf_info_to_howto): Do not issue an
+	error when an invalid relocation is passed;  this is already done
+	by `_bfd_sparc_elf_info_to_howto_ptr'.
+
+2018-09-04  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* elf64-sparc.c (elf64_sparc_slurp_one_reloc_table): Issue an
+	error when an invalid symbol index is retrieved in ELF64_R_SYM of
+	a relocation seen in an input file.
+
+2018-09-03  Jozef Lawrynowicz <jozef.l@mittosystems.com>
+	    Alan Modra  <amodra@gmail.com>
+
+	PR 23595
+	elf.c (copy_elf_program_header): When first segment contains
+	only the headers and SHT_NOBITS sections, use segment p_filesz
+	to calculate header and padding size.  Use filepos of the first
+	section otherwise.
+
+018-08-31  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/23600
+	* archures.c (bfd_arch_get_compatible): Allow an IR object with
+	unknown architecture.
+
 2018-08-31  Alan Modra  <amodra@gmail.com>
 
 	* elf64-ppc.c (num_relocs_for_offset): New function.

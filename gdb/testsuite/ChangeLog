@@ -1,3 +1,73 @@
+2018-09-11  Jan Kratochvil  <jan.kratochvil@redhat.com>
+
+	* Makefile.in (check-parallel-racy): Fix dg-extract-results.sh path.
+
+2018-09-10  Jerome Guitton  <guitton@adacore.com>
+
+	* gdb.ada/same_component_name: Add test for case of tagged record
+	with variable-length fields.
+
+2018-09-10  Xavier Roirand  <roirand@adacore.com>
+
+	* gdb.ada/access_to_unbounded_array.exp: New testcase.
+	* gdb.ada/access_to_unbounded_array/foo.adb: New file.
+	* gdb.ada/access_to_unbounded_array/pack.adb: New file.
+	* gdb.ada/access_to_unbounded_array/pack.ads: New file.
+
+2018-09-10  Xavier Roirand  <roirand@adacore.com>
+
+	* gdb.ada/mi_string_access.exp: New testcase.
+	* gdb.ada/mi_string_access/bar.adb: New file.
+	* gdb.ada/mi_string_access/pck.adb: New file.
+	* gdb.ada/mi_string_access/pck.asd: New file.
+
+2018-09-10  Xavier Roirand  <roirand@adacore.com>
+
+	* gdb.ada/mi_var_union.exp: New testcase.
+	* gdb.ada/mi_var_union/bar.adb: New file.
+	* gdb.ada/mi_var_union/pck.adb: New file.
+	* gdb.ada/mi_var_union/pck.asd: New file.
+
+2018-09-08  Tom Tromey  <tom@tromey.com>
+
+	* gdb.python/py-prettyprint.exp: Use with_test_prefix.
+
+2018-09-08  Tom Tromey  <tom@tromey.com>
+
+	PR python/16047:
+	* gdb.python/py-prettyprint.py (pp_int_typedef3): New class.
+	(register_pretty_printers): Register new printer.
+	* gdb.python/py-prettyprint.exp (run_lang_tests): Add int_type3
+	test.
+	* gdb.python/py-prettyprint.c (int_type3): New typedef.
+	(an_int_type3): New global.
+
+2018-09-08  Joel Brobecker  <brobecker@adacore.com>
+
+	* gdb.ada/expr_with_funcall: New testcase.
+
+2018-09-08  Joel Brobecker  <brobecker@adacore.com>
+
+	* gdb.ada/packed_array_assign: New testcase.
+
+2018-09-07  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.base/watchpoint.exp (test_complex_watchpoint): Extend test
+	names, and add test prefixes to make test names unique.
+
+2018-09-05  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.dwarf2/varval.exp: Add test.
+
+2018-09-04  Gary Benson <gbenson@redhat.com>
+
+	* gdb.base/batch-exit-status.exp: Use gdb_test_multiple and expect
+	'eof' before 'wait -i'.  Use remote_close and clear_gdb_spawn_id.
+
+2018-08-31  Tom Tromey  <tom@tromey.com>
+
+	* gdb.rust/simple.rs: Rename second variable "v".
+
 2018-08-30  Andrew Burgess  <andrew.burgess@embecosm.com>
 
 	* gdb.base/funcargs.c (use_a): New function.

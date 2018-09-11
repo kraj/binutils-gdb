@@ -1,3 +1,665 @@
+2018-09-11  Xavier Roirand  <roirand@adacore.com>
+
+	* darwin-nat.c (should_disable_startup_with_shell):
+	New function.
+	(darwin_nat_target::create_inferior): Add call.
+
+2018-09-11  Xavier Roirand  <roirand@adacore.com>
+
+	* darwin-nat.h (struct darwin_thread_info) <gdb_port,
+	inf_port, msg_state>: Initialize.
+	(struct darwin_thread_info) <signaled, single_step>: Change
+	type and initialize.
+	(struct darwin_thread_info) <event>: Initialize.
+
+2018-09-10  Sergio Durigan Junior  <sergiodj@redhat.com>
+
+	PR gdb/23555
+	PR gdb/23558
+	* gnulib/import/m4/getcwd-path-max.m4: Add cross-compilation
+	guesses.
+
+2018-09-10  Sergio Durigan Junior  <sergiodj@redhat.com>
+
+	Revert:
+	2018-08-29  Sergio Durigan Junior  <sergiodj@redhat.com>
+
+	PR gdb/23555
+	PR gdb/23558
+	* gnulib/aclocal.m4: Regenerate.
+	* gnulib/config.in: Regenerate.
+	* gnulib/configure: Regenerate.
+	* gnulib/import/Makefile.am: Update.
+	* gnulib/import/Makefile.in: Update.
+	* gnulib/import/extra/snippet/_Noreturn.h: Rename to...
+	* gnulib/import/_Noreturn.h: ... this.
+	* gnulib/import/alloca.in.h: Update.
+	* gnulib/import/extra/snippet/arg-nonnull.h: Rename to...
+	* gnulib/import/arg-nonnull.h: ... this.
+	* gnulib/import/assure.h: Update.
+	* gnulib/import/at-func.c: Update.
+	* gnulib/import/basename-lgpl.c: Update.
+	* gnulib/import/extra/snippet/c++defs.h: Rename to...
+	* gnulib/import/c++defs.h: ... this.
+	* gnulib/import/canonicalize-lgpl.c: Update.
+	* gnulib/import/cdefs.h: Update.
+	* gnulib/import/chdir-long.c: Update.
+	* gnulib/import/chdir-long.h: Update.
+	* gnulib/import/cloexec.c: Update.
+	* gnulib/import/cloexec.h: Update.
+	* gnulib/import/close.c: Update.
+	* gnulib/import/closedir.c: Update.
+	* gnulib/import/config.charset: Update.
+	* gnulib/import/dirent-private.h: Update.
+	* gnulib/import/dirent.in.h: Update.
+	* gnulib/import/dirfd.c: Update.
+	* gnulib/import/dirname-lgpl.c: Update.
+	* gnulib/import/dirname.h: Update.
+	* gnulib/import/dosname.h: Update.
+	* gnulib/import/dup-safer-flag.c: Update.
+	* gnulib/import/dup-safer.c: Update.
+	* gnulib/import/dup.c: Update.
+	* gnulib/import/dup2.c: Update.
+	* gnulib/import/errno.in.h: Update.
+	* gnulib/import/error.c: Update.
+	* gnulib/import/error.h: Update.
+	* gnulib/import/exitfail.c: Update.
+	* gnulib/import/exitfail.h: Update.
+	* gnulib/import/extra/update-copyright: Update.
+	* gnulib/import/fchdir.c: Update.
+	* gnulib/import/fcntl.c: Update.
+	* gnulib/import/fcntl.in.h: Update.
+	* gnulib/import/fd-hook.c: Update.
+	* gnulib/import/fd-hook.h: Update.
+	* gnulib/import/fd-safer-flag.c: Update.
+	* gnulib/import/fd-safer.c: Update.
+	* gnulib/import/fdopendir.c: Update.
+	* gnulib/import/filename.h: Update.
+	* gnulib/import/filenamecat-lgpl.c: Update.
+	* gnulib/import/filenamecat.h: Update.
+	* gnulib/import/flexmember.h: Update.
+	* gnulib/import/float+.h: Update.
+	* gnulib/import/float.c: Update.
+	* gnulib/import/float.in.h: Update.
+	* gnulib/import/fnmatch.c: Update.
+	* gnulib/import/fnmatch.in.h: Update.
+	* gnulib/import/fnmatch_loop.c: Update.
+	* gnulib/import/fpucw.h: Update.
+	* gnulib/import/frexp.c: Update.
+	* gnulib/import/frexpl.c: Update.
+	* gnulib/import/fstat.c: Update.
+	* gnulib/import/fstatat.c: Update.
+	* gnulib/import/getcwd-lgpl.c: Update.
+	* gnulib/import/getcwd.c: Update.
+	* gnulib/import/getdtablesize.c: Update.
+	* gnulib/import/getlogin_r.c: Update.
+	* gnulib/import/getprogname.c: Update.
+	* gnulib/import/getprogname.h: Update.
+	* gnulib/import/gettext.h: Update.
+	* gnulib/import/gettimeofday.c: Update.
+	* gnulib/import/glob-libc.h: Update.
+	* gnulib/import/glob.c: Update.
+	* gnulib/import/glob.in.h: Update.
+	* gnulib/import/glob_internal.h: Update.
+	* gnulib/import/glob_pattern_p.c: Update.
+	* gnulib/import/globfree.c: Update.
+	* gnulib/import/hard-locale.c: Update.
+	* gnulib/import/hard-locale.h: Update.
+	* gnulib/import/intprops.h: Update.
+	* gnulib/import/inttypes.in.h: Update.
+	* gnulib/import/isnan.c: Update.
+	* gnulib/import/isnand-nolibm.h: Update.
+	* gnulib/import/isnand.c: Update.
+	* gnulib/import/isnanl-nolibm.h: Update.
+	* gnulib/import/isnanl.c: Update.
+	* gnulib/import/itold.c: Update.
+	* gnulib/import/libc-config.h: Update.
+	* gnulib/import/limits.in.h: Update.
+	* gnulib/import/localcharset.c: Update.
+	* gnulib/import/localcharset.h: Update.
+	* gnulib/import/localtime-buffer.c: Update.
+	* gnulib/import/localtime-buffer.h: Update.
+	* gnulib/import/lstat.c: Update.
+	* gnulib/import/m4/00gnulib.m4: Update.
+	* gnulib/import/m4/__inline.m4: Update.
+	* gnulib/import/m4/absolute-header.m4: Update.
+	* gnulib/import/m4/alloca.m4: Update.
+	* gnulib/import/m4/builtin-expect.m4: Update.
+	* gnulib/import/m4/canonicalize.m4: Update.
+	* gnulib/import/m4/chdir-long.m4: Update.
+	* gnulib/import/m4/close.m4: Update.
+	* gnulib/import/m4/closedir.m4: Update.
+	* gnulib/import/m4/configmake.m4: Update.
+	* gnulib/import/m4/d-ino.m4: Update.
+	* gnulib/import/m4/d-type.m4: Update.
+	* gnulib/import/m4/dirent_h.m4: Update.
+	* gnulib/import/m4/dirfd.m4: Update.
+	* gnulib/import/m4/dirname.m4: Update.
+	* gnulib/import/m4/double-slash-root.m4: Update.
+	* gnulib/import/m4/dup.m4: Update.
+	* gnulib/import/m4/dup2.m4: Update.
+	* gnulib/import/m4/eealloc.m4: Update.
+	* gnulib/import/m4/environ.m4: Update.
+	* gnulib/import/m4/errno_h.m4: Update.
+	* gnulib/import/m4/error.m4: Update.
+	* gnulib/import/m4/exponentd.m4: Update.
+	* gnulib/import/m4/exponentl.m4: Update.
+	* gnulib/import/m4/extensions.m4: Update.
+	* gnulib/import/m4/extern-inline.m4: Update.
+	* gnulib/import/m4/fchdir.m4: Update.
+	* gnulib/import/m4/fcntl-o.m4: Update.
+	* gnulib/import/m4/fcntl.m4: Update.
+	* gnulib/import/m4/fcntl_h.m4: Update.
+	* gnulib/import/m4/fdopendir.m4: Update.
+	* gnulib/import/m4/filenamecat.m4: Update.
+	* gnulib/import/m4/flexmember.m4: Update.
+	* gnulib/import/m4/float_h.m4: Update.
+	* gnulib/import/m4/fnmatch.m4: Update.
+	* gnulib/import/m4/fnmatch_h.m4: Update.
+	* gnulib/import/m4/fpieee.m4: Update.
+	* gnulib/import/m4/frexp.m4: Update.
+	* gnulib/import/m4/frexpl.m4: Update.
+	* gnulib/import/m4/fstat.m4: Update.
+	* gnulib/import/m4/fstatat.m4: Update.
+	* gnulib/import/m4/getcwd-abort-bug.m4: Update.
+	* gnulib/import/m4/getcwd-path-max.m4: Update.
+	* gnulib/import/m4/getcwd.m4: Update.
+	* gnulib/import/m4/getdtablesize.m4: Update.
+	* gnulib/import/m4/getlogin.m4: Update.
+	* gnulib/import/m4/getlogin_r.m4: Update.
+	* gnulib/import/m4/getpagesize.m4: Update.
+	* gnulib/import/m4/getprogname.m4: Update.
+	* gnulib/import/m4/gettimeofday.m4: Update.
+	* gnulib/import/m4/glibc21.m4: Update.
+	* gnulib/import/m4/glob.m4: Update.
+	* gnulib/import/m4/glob_h.m4: Update.
+	* gnulib/import/m4/gnulib-cache.m4: Update.
+	* gnulib/import/m4/gnulib-common.m4: Update.
+	* gnulib/import/m4/gnulib-comp.m4: Update.
+	* gnulib/import/m4/gnulib-tool.m4: Update.
+	* gnulib/import/m4/hard-locale.m4: Update.
+	* gnulib/import/m4/include_next.m4: Update.
+	* gnulib/import/m4/inttypes-pri.m4: Update.
+	* gnulib/import/m4/inttypes.m4: Update.
+	* gnulib/import/m4/isnand.m4: Update.
+	* gnulib/import/m4/isnanl.m4: Update.
+	* gnulib/import/m4/largefile.m4: Update.
+	* gnulib/import/m4/limits-h.m4: Update.
+	* gnulib/import/m4/localcharset.m4: Update.
+	* gnulib/import/m4/locale-fr.m4: Update.
+	* gnulib/import/m4/locale-ja.m4: Update.
+	* gnulib/import/m4/locale-zh.m4: Update.
+	* gnulib/import/m4/localtime-buffer.m4: Update.
+	* gnulib/import/m4/longlong.m4: Update.
+	* gnulib/import/m4/lstat.m4: Update.
+	* gnulib/import/m4/malloc.m4: Update.
+	* gnulib/import/m4/malloca.m4: Update.
+	* gnulib/import/m4/math_h.m4: Update.
+	* gnulib/import/m4/mbrtowc.m4: Update.
+	* gnulib/import/m4/mbsinit.m4: Update.
+	* gnulib/import/m4/mbsrtowcs.m4: Update.
+	* gnulib/import/m4/mbstate_t.m4: Update.
+	* gnulib/import/m4/memchr.m4: Update.
+	* gnulib/import/m4/memmem.m4: Update.
+	* gnulib/import/m4/mempcpy.m4: Update.
+	* gnulib/import/m4/memrchr.m4: Update.
+	* gnulib/import/m4/mkdir.m4: Update.
+	* gnulib/import/m4/mkstemp.m4: Update.
+	* gnulib/import/m4/mmap-anon.m4: Update.
+	* gnulib/import/m4/mode_t.m4: Update.
+	* gnulib/import/m4/msvc-inval.m4: Update.
+	* gnulib/import/m4/msvc-nothrow.m4: Update.
+	* gnulib/import/m4/multiarch.m4: Update.
+	* gnulib/import/m4/nocrash.m4: Update.
+	* gnulib/import/m4/off_t.m4: Update.
+	* gnulib/import/m4/onceonly.m4: Update.
+	* gnulib/import/m4/open-cloexec.m4: Update.
+	* gnulib/import/m4/open.m4: Update.
+	* gnulib/import/m4/openat.m4: Update.
+	* gnulib/import/m4/opendir.m4: Update.
+	* gnulib/import/m4/pathmax.m4: Update.
+	* gnulib/import/m4/rawmemchr.m4: Update.
+	* gnulib/import/m4/readdir.m4: Update.
+	* gnulib/import/m4/readlink.m4: Update.
+	* gnulib/import/m4/realloc.m4: Update.
+	* gnulib/import/m4/rename.m4: Update.
+	* gnulib/import/m4/rewinddir.m4: Update.
+	* gnulib/import/m4/rmdir.m4: Update.
+	* gnulib/import/m4/save-cwd.m4: Update.
+	* gnulib/import/m4/secure_getenv.m4: Update.
+	* gnulib/import/m4/setenv.m4: Update.
+	* gnulib/import/m4/signal_h.m4: Update.
+	* gnulib/import/m4/ssize_t.m4: Update.
+	* gnulib/import/m4/stat-time.m4: Update.
+	* gnulib/import/m4/stat.m4: Update.
+	* gnulib/import/m4/std-gnu11.m4: Update.
+	* gnulib/import/m4/stdbool.m4: Update.
+	* gnulib/import/m4/stddef_h.m4: Update.
+	* gnulib/import/m4/stdint.m4: Update.
+	* gnulib/import/m4/stdio_h.m4: Update.
+	* gnulib/import/m4/stdlib_h.m4: Update.
+	* gnulib/import/m4/strchrnul.m4: Update.
+	* gnulib/import/m4/strdup.m4: Update.
+	* gnulib/import/m4/strerror.m4: Update.
+	* gnulib/import/m4/string_h.m4: Update.
+	* gnulib/import/m4/strstr.m4: Update.
+	* gnulib/import/m4/strtok_r.m4: Update.
+	* gnulib/import/m4/sys_socket_h.m4: Update.
+	* gnulib/import/m4/sys_stat_h.m4: Update.
+	* gnulib/import/m4/sys_time_h.m4: Update.
+	* gnulib/import/m4/sys_types_h.m4: Update.
+	* gnulib/import/m4/tempname.m4: Update.
+	* gnulib/import/m4/time_h.m4: Update.
+	* gnulib/import/m4/unistd-safer.m4: Update.
+	* gnulib/import/m4/unistd_h.m4: Update.
+	* gnulib/import/m4/warn-on-use.m4: Update.
+	* gnulib/import/m4/wchar_h.m4: Update.
+	* gnulib/import/m4/wchar_t.m4: Update.
+	* gnulib/import/m4/wctype_h.m4: Update.
+	* gnulib/import/m4/wint_t.m4: Update.
+	* gnulib/import/malloc.c: Update.
+	* gnulib/import/malloc/scratch_buffer.h: Update.
+	* gnulib/import/malloc/scratch_buffer_grow.c: Update.
+	* gnulib/import/malloc/scratch_buffer_grow_preserve.c: Update.
+	* gnulib/import/malloc/scratch_buffer_set_array_size.c: Update.
+	* gnulib/import/malloca.c: Update.
+	* gnulib/import/malloca.h: Update.
+	* gnulib/import/malloca.valgrind: Update.
+	* gnulib/import/math.in.h: Update.
+	* gnulib/import/mbrtowc.c: Update.
+	* gnulib/import/mbsinit.c: Update.
+	* gnulib/import/mbsrtowcs-impl.h: Update.
+	* gnulib/import/mbsrtowcs-state.c: Update.
+	* gnulib/import/mbsrtowcs.c: Update.
+	* gnulib/import/memchr.c: Update.
+	* gnulib/import/memmem.c: Update.
+	* gnulib/import/mempcpy.c: Update.
+	* gnulib/import/memrchr.c: Update.
+	* gnulib/import/mkdir.c: Update.
+	* gnulib/import/mkstemp.c: Update.
+	* gnulib/import/msvc-inval.c: Update.
+	* gnulib/import/msvc-inval.h: Update.
+	* gnulib/import/msvc-nothrow.c: Update.
+	* gnulib/import/msvc-nothrow.h: Update.
+	* gnulib/import/open.c: Update.
+	* gnulib/import/openat-die.c: Update.
+	* gnulib/import/openat-priv.h: Update.
+	* gnulib/import/openat-proc.c: Update.
+	* gnulib/import/openat.c: Update.
+	* gnulib/import/openat.h: Update.
+	* gnulib/import/opendir.c: Update.
+	* gnulib/import/pathmax.h: Update.
+	* gnulib/import/pipe-safer.c: Update.
+	* gnulib/import/rawmemchr.c: Update.
+	* gnulib/import/readdir.c: Update.
+	* gnulib/import/readlink.c: Update.
+	* gnulib/import/realloc.c: Update.
+	* gnulib/import/ref-add.sin: Update.
+	* gnulib/import/ref-del.sin: Update.
+	* gnulib/import/rename.c: Update.
+	* gnulib/import/rewinddir.c: Update.
+	* gnulib/import/rmdir.c: Update.
+	* gnulib/import/same-inode.h: Update.
+	* gnulib/import/save-cwd.c: Update.
+	* gnulib/import/save-cwd.h: Update.
+	* gnulib/import/scratch_buffer.h: Update.
+	* gnulib/import/secure_getenv.c: Update.
+	* gnulib/import/setenv.c: Update.
+	* gnulib/import/signal.in.h: Update.
+	* gnulib/import/stat-time.c: Update.
+	* gnulib/import/stat-time.h: Update.
+	* gnulib/import/stat-w32.c: Update.
+	* gnulib/import/stat-w32.h: Update.
+	* gnulib/import/stat.c: Update.
+	* gnulib/import/stdbool.in.h: Update.
+	* gnulib/import/stddef.in.h: Update.
+	* gnulib/import/stdint.in.h: Update.
+	* gnulib/import/stdio.in.h: Update.
+	* gnulib/import/stdlib.in.h: Update.
+	* gnulib/import/str-two-way.h: Update.
+	* gnulib/import/strchrnul.c: Update.
+	* gnulib/import/strdup.c: Update.
+	* gnulib/import/streq.h: Update.
+	* gnulib/import/strerror-override.c: Update.
+	* gnulib/import/strerror-override.h: Update.
+	* gnulib/import/strerror.c: Update.
+	* gnulib/import/string.in.h: Update.
+	* gnulib/import/stripslash.c: Update.
+	* gnulib/import/strnlen1.c: Update.
+	* gnulib/import/strnlen1.h: Update.
+	* gnulib/import/strstr.c: Update.
+	* gnulib/import/strtok_r.c: Update.
+	* gnulib/import/sys_stat.in.h: Update.
+	* gnulib/import/sys_time.in.h: Update.
+	* gnulib/import/sys_types.in.h: Update.
+	* gnulib/import/tempname.c: Update.
+	* gnulib/import/tempname.h: Update.
+	* gnulib/import/time.in.h: Update.
+	* gnulib/import/unistd--.h: Update.
+	* gnulib/import/unistd-safer.h: Update.
+	* gnulib/import/unistd.in.h: Update.
+	* gnulib/import/unsetenv.c: Update.
+	* gnulib/import/verify.h: Update.
+	* gnulib/import/extra/snippet/warn-on-use.h: Update.
+	* gnulib/import/wchar.in.h: Update.
+	* gnulib/import/wctype.in.h: Update.
+	* gnulib/import/xalloc-oversized.h: Update.
+	* gnulib/update-gnulib.sh (GNULIB_COMMIT_SHA1): Set to
+	"53e2c179f26a890fa6685af4b6c1397ee370433b".
+
+2018-09-10  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* record-btrace.c (get_thread_current_frame): Remove
+	old_inferior_ptid.
+
+2018-09-10  Jerome Guitton  <guitton@adacore.com>
+
+	* ada-lang.c (ada_value_struct_elt): Call ada_to_fixed_type
+	with check_tag to 1 if and only if the type is tagged and the
+	component being searched cannot been found in the current
+	view. Otherwise, always call ada_to_fixed_type with
+	check_tag to 0.
+
+2018-09-10  Xavier Roirand  <roirand@adacore.com>
+
+	* ada-lang.c (ada_is_access_to_unconstrained_array): Remove static
+	declaration.
+	* ada-lang.h: add ada_is_access_to_unconstrained_array prototype.
+	* ada-varobj.c (ada_varobj_get_number_of_children,
+	ada_varobj_describe_child, ada_value_is_changeable_p): Cleanup code.
+
+2018-09-10  Xavier Roirand  <roirand@adacore.com>
+
+	* ada-valprint.c (ada_value_print): Use type instead of
+	enclosing type.
+
+2018-09-10  Xavier Roirand  <roirand@adacore.com>
+
+	* ada-lang.c (ada_value_subscript): Handle case when parameter is
+	an array of access to unconstrained array.
+
+2018-09-10  Xavier Roirand  <roirand@adacore.com>
+
+	* ada-lang.c (ada_is_access_to_unconstrained_array): New function.
+	(ada_check_typedef): Use it.
+
+2018-09-10  Xavier Roirand  <roirand@adacore.com>
+
+	* ada-varobj.c (ada_varobj_describe_struct_child)
+	(ada_varobj_describe_child): Handle union case like struct one.
+
+2018-09-10  Tom Tromey  <tom@tromey.com>
+
+	PR python/18380:
+	* python/python.c (_initialize_python): Make example in "python"
+	help work in Python 3.
+
+2018-09-10  Eli Zaretskii  <eliz@gnu.org>
+
+	* Makefile.in (transformed_name): Use INSTALL_SCRIPT instead of
+	INSTALL_PROGRAM to install gdb-add-index.sh.  Don't append
+	$(EXEEXT) to the script, as it is not a program.
+
+2018-09-09  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* python/py-prettyprint.c (pretty_print_one_value): Return
+	gdbpy_ref<>.
+	(print_string_repr): Adjust.
+	(apply_varobj_pretty_printer): Return gdbpy_ref<>.
+	* python/python-internal.h (apply_varobj_pretty_printer): Return
+	gdbpy_ref<>.
+	* varobj.c (varobj_value_get_print_value): Adjust.
+
+2018-09-08  Tom Tromey  <tom@tromey.com>
+
+	PR python/16047:
+	* python/py-prettyprint.c (pretty_print_one_value): Check for
+	to_string method.
+
+2018-09-08  Joel Brobecker  <brobecker@adacore.com>
+
+	* ada-lang.c (resolve_subexp): Pass correct OPLEN in call to
+	replace_operator_with_call.
+
+2018-09-08  Joel Brobecker  <brobecker@adacore.com>
+
+	* ada-lang.c (ada_value_cast): Remove unnecessary parentheses.
+
+2018-09-08  Joel Brobecker  <brobecker@adacore.com>
+
+	* ada-typeprint.c (print_range): Print the bounds using TYPE
+	rather than its TYPE_TARGET_TYPE.
+
+2018-09-08  Joel Brobecker  <brobecker@adacore.com>
+
+	* ada-lang.c (ada_to_fixed_value): Minor reformatting in
+	call to ada_to_fixed_value_create.
+
+2018-09-08  Jerome Guitton  <guitton@adacore.com>
+
+	* ada-lang.c (ada_decode): strip dot prefix in symbol name.
+
+2018-09-08  Joel Brobecker  <brobecker@adacore.com>
+
+	* ada-lang.c (ada_exception_sal): Replace gdb_assert calls
+	by calls to error.
+
+2018-09-08  Joel Brobecker  <brobecker@adacore.com>
+
+	* ada-lang.c (ada_unhandled_exception_name_addr_from_raise):
+	Move update of loop variable "fi".
+
+2018-09-08  Joel Brobecker  <brobecker@adacore.com>
+
+	* ada-lang.c (value_assign_to_component): In the case of
+	big-endian targets, extract the bits of the given VAL
+	using an src_offset of zero if container is not a scalar.
+
+2018-09-06  Simon Ser  <contact@emersion.fr>
+
+	PR gdb/23105
+	* fbsd-nat.c (fbsd_nat_target::xfer_partial): Add support for
+	TARGET_OBJECT_FREEBSD_VMMAP and TARGET_OBJECT_FREEBSD_PS_STRINGS.
+	* fbsd-tdep.c (fbsd_make_note_desc): New.
+	(fbsd_make_corefile_notes): Write NT_PROCSTAT_AUXV,
+	NT_PROCSTAT_VMMAP and NT_PROCSTAT_PS_STRINGS notes.
+	* target.h (enum target_object) Add FreeBSD-specific
+	TARGET_OBJECT_FREEBSD_VMMAP and TARGET_OBJECT_FREEBSD_PS_STRINGS.
+
+2018-09-06  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* compile/compile-c.h (generate_c_for_variable_locations):
+	Change reference to pointer.
+	* compile/compile-c-support.c (compile_program) <compute>:
+	Likewise.
+	* compile/compile-c-symbols.c (generate_vla_size): Likewise.
+	(generate_c_for_for_one_variable): Likewise
+	(generate_c_for_variable_locations): Likewise
+	* compile/compile-c-types.c (compile_c_instance::convert_type):
+	Likewise
+	* compile/compile-cplus-symbols.c (convert_one_symbol):
+	std::move the scope passed to enter_scope.
+	* compile/compile-cplus-types.c
+	(compile_cplus_instance::enter_scope): Make parameter
+	rvalue-reference.
+	(compile_cplus_instance::new_scope): Change reference to
+	pointer.
+	(compile_cplus_instance::convert_type): Likewise
+	(compile_cplus_convert_typedef): std::move the scope passed to
+	enter_scope.
+	(compile_cplus_convert_struct_or_union): Likewise.
+	(compile_cplus_convert_enum): Likewise.
+	(compile_cplus_convert_namespace): Likewise.
+	* compile/compile-cplus.h (compile_cplus_instance)
+	<enter_scope>: Make parameter rvalue-reference.
+	* compile/compile-internal.h (compile_instance)
+	<get_cached_type>: Likewise
+	* compile/compile-loc2c.c (push): Likewise
+	(pushf): Likewise
+	(unary): Likewise
+	(binary): Likewise
+	(print_label): Likewise
+	(pushf_register_address): Likewise
+	(pushf_register): Likewise
+	(do_compile_dwarf_expr_to_c): Likewise
+	(compile_dwarf_expr_to_c): Likewise
+	(compile_dwarf_bounds_to_c): Likewise
+	* compile/compile.c (compile_instance::get_cached_type):
+	Likewise
+	* compile/compile.h (compile_dwarf_expr_to_c): Likewise.
+	(compile_dwarf_bounds_to_c): Likewise
+	* dwarf2loc.c (locexpr_generate_c_location): Likewise.
+	(dwarf2_compile_property_to_c): Likewise
+	* dwarf2loc.h (dwarf2_compile_property_to_c): Likewise
+	* symtab.h (struct symbol_computed_ops) <generate_c_location>:
+	Likewise
+
+2018-09-06  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* tui/tui-data.h (struct tui_win_element) <highlight>: Remove.
+	* tui/tui-data.c (init_content_element): Don't initialize it.
+
+2018-09-06  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* tui/tui-data.h (struct tui_win_info)
+	<detail::opaque>: Remove.
+	* tui/tui-data.c (init_win_info): Remove assignment.
+
+2018-09-05  Tom Tromey  <tom@tromey.com>
+
+	* warning.m4 (AM_GDB_WARNINGS): Add -Wformat when testing
+	-Wformat-nonliteral.
+	* target-float.c (host_float_ops<T>::to_string)
+	(host_float_ops<T>::from_string): Use
+	DIAGNOSTIC_IGNORE_FORMAT_NONLITERAL.
+	* configure: Rebuild.
+
+2018-09-05  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* printcmd.c (printf_c_string): Use
+	DIAGNOSTIC_IGNORE_FORMAT_NONLITERAL.
+	(printf_wide_c_string, printf_pointer, ui_printf): Likewise.
+
+2018-09-05  Tom Tromey  <tom@tromey.com>
+
+	* cli/cli-cmds.c (shell_escape, edit_command): Remove cast.
+
+2018-09-05  Tom de Vries  <tdevries@suse.de>
+
+	* dwarf2loc.c (sect_variable_value): Call indirect_synthetic_pointer
+	with resolve_abstract_p == true.
+	(indirect_synthetic_pointer): Add resolve_abstract_p parameter,
+	defaulting to false. Propagate resolve_abstract_p to
+	dwarf2_fetch_die_loc_sect_off.
+	* dwarf2loc.h (dwarf2_fetch_die_loc_sect_off): Add resolve_abstract_p
+	parameter, defaulting to false.
+	* dwarf2read.c (read_variable): Add variable to abstract_to_concrete.
+	(dwarf2_fetch_die_loc_sect_off): Add and handle resolve_abstract_p
+	parameter.
+	* dwarf2read.h (struct die_info): Forward-declare.
+	(die_info_ptr): New typedef.
+	(struct dwarf2_per_objfile): Add abstract_to_concrete field.
+
+2018-09-05  Joel Brobecker  <brobecker@adacore.com>
+
+	GDB 8.2 released.
+
+2018-09-04  Sergio Durigan Junior  <sergiodj@redhat.com>
+	    Pedro Alves  <palves@redhat.com>
+
+	* gnulib/Makefile.in (aclocal_m4_deps): Move to
+	"aclocal-m4-deps.mk".  Include file here.
+	$(srcdir)/aclocal.m4: Add "configure.ac".
+	* gnulib/aclocal-m4-deps.mk: New file.
+	* gnulib/update-gnulib.sh: Automatically update
+	"aclocal-m4-deps.mk".
+
+2018-09-04  Tom Tromey  <tom@tromey.com>
+
+	* configure: Rebuild.
+	* configure.ac: Remove multi-ice code.
+
+2018-09-04  Tom Tromey  <tom@tromey.com>
+
+	* Makefile.in (GDB_WARN_CFLAGS_NO_DEFS): Remove.
+	(ada-exp.o): Update.
+
+2018-09-04  Tom Tromey  <tom@tromey.com>
+
+	* Makefile.in (printcmd.o, target-float.o): Remove.
+	(GDB_WARN_CFLAGS_NO_FORMAT): Remove.
+
+2018-09-04  Tom Tromey  <tom@tromey.com>
+
+	* gnulib/Makefile.in: Remove obsolete comment.
+	* Makefile.in: Remove obsolete comment.
+
+2018-09-04  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* riscv-tdep.c (riscv_frame_cache): Fix ARI warning, don't end a
+	line with '+'.
+
+2018-09-03  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* riscv-tdep.c: Add 'prologue-value.h' include.
+	(struct riscv_unwind_cache): New struct.
+	(riscv_debug_unwinder): New global.
+	(riscv_scan_prologue): Update arguments, capture register details
+	from prologue scan.
+	(riscv_skip_prologue): Reformat arguments line, move end of
+	prologue calculation into riscv_scan_prologue.
+	(riscv_frame_cache): Update return type, create
+	riscv_unwind_cache, scan the prologue, and fill in remaining cache
+	details.
+	(riscv_frame_this_id): Use frame id computed in riscv_frame_cache.
+	(riscv_frame_prev_register): Use the trad_frame within the
+	riscv_unwind_cache.
+	(_initialize_riscv_tdep): Add 'set/show debug riscv unwinder'
+	flag.
+
+2018-09-03  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* trad-frame.h (trad_frame_set_realreg): Declare.
+	(trad_frame_set_addr): Declare.
+	* trad-frame.c (trad_frame_set_realreg): Define new function.
+	(trad_frame_set_addr): Define new function.
+	(trad_frame_set_reg_realreg): Use new function.
+	(trad_frame_set_reg_addr): Use new function.
+
+2018-09-01  Keith Seitz  <keiths@redhat.com>
+
+	* compile/compile-cplus-types.c (compile_cplus_debug_output_1): Use
+	pulongest instead of "%lld".
+	* compile/compile-cplus-symbols.c (gcc_cplus_convert_symbol): Remove
+	ATTRIBUTE_UNUSED.
+
+2018-08-31  Tom Tromey  <tom@tromey.com>
+
+	* dwarf2read.c (dwarf2_add_field): Set the TYPE_LENGTH of the
+	variant part type.
+
+2018-08-31  Pedro Alves  <palves@redhat.com>
+
+	* gdbarch.h: Regenerate.
+
+2018-08-31  Pedro Alves  <palves@redhat.com>
+
+	* gdbarch.sh (have_nonsteppable_watchpoint): Add comment.
+	* target.h (Hardware watchpoint interfaces): Describe
+	continuable/steppable/non-steppable watchpoints.
+	* gdbarch.h, gdbarch.c: Regenerate.
+
+2018-08-31  Pedro Alves  <palves@redhat.com>
+
+	* nto-procfs.c (nto_procfs_target::have_continuable_watchpoint):
+	Delete.
+	* s390-linux-nat.c
+	(s390_linux_nat_target::have_continuable_watchpoint): Delete.
+	* target.h (target_ops::have_continuable_watchpoint): Delete.
+	(target_have_continuable_watchpoint): Delete.
+	* x86-nat.h (x86_nat_target::have_continuable_watchpoint): Delete.
+	* target-delegates.c: Regenerate.
+
 2018-08-31  Sergio Durigan Junior  <sergiodj@redhat.com>
 
 	* gnulib/Makefile.in (aclocal_m4_deps): Update according to

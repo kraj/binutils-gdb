@@ -1,3 +1,80 @@
+2018-09-10  Tom Tromey  <tom@tromey.com>
+
+	* python.texi (Frames In Python, Blocks In Python)
+	(Symbols In Python, Symbol Tables In Python)
+	(Lazy Strings In Python): Remove periods from section titles.
+
+2018-09-10  Tom Tromey  <tom@tromey.com>
+
+	* python.texi (Pretty Printing API): Swap sentence order.
+
+2018-09-10  Tom Tromey  <tom@tromey.com>
+
+	PR python/16461:
+	* python.texi (Values From Inferior): Mention use of virtual
+	table.
+
+2018-09-10  Tom Tromey  <tom@tromey.com>
+
+	* python.texi (Basic Python): Parenthesize argument to
+	decode_line.
+
+2018-09-10  Tom Tromey  <tom@tromey.com>
+
+	* python.texi (Python): Mention Python versions.  Don't mention
+	execfile.
+
+2018-09-10  Tom Tromey  <tom@tromey.com>
+
+	PR python/19808:
+	* python.texi (Unwinding Frames in Python): Rewrite
+	create_unwind_info documentation.  Update read_register
+	documentation and add a note about unwinder caution.
+
+2018-09-10  Tom Tromey  <tom@tromey.com>
+
+	PR python/18909:
+	* python.texi (Events In Python): Fix inferior_call
+	documentation.
+
+2018-09-10  Tom Tromey  <tom@tromey.com>
+
+	PR python/17752:
+	* python.texi (Frame Filter API): Remove period from subsection
+	title.  Mention 100 as good default priority.
+	(Frame Decorator API): Remove period from subsection title.
+	Mention FrameDecorator module.
+
+2018-09-10  Tom Tromey  <tom@tromey.com>
+
+	PR python/23108:
+	* python.texi (Exception Handling): Rearrange gdb.GdbError text
+	and add a table.
+
+2018-09-10  Tom Tromey  <tom@tromey.com>
+
+	* gdb.texinfo (Compilation): Use "gcc", not "gcc.info", in @xref.
+	(Machine Code): Use "binutils", not "binutils.info", in @pxref.
+	(Separate Debug Files): Use "ld", not "ld.info", in @ref.
+	* python.texi (Objfiles In Python): Use "ld", not "ld.info", in @ref.
+
+2018-09-10  Tom Tromey  <tom@tromey.com>
+
+	PR python/16484:
+	* python.texi (Frames In Python): Document that Frame.block can
+	throw.
+
+2018-09-10  Tom Tromey  <tom@tromey.com>
+
+	PR python/23487:
+	* gdb.texinfo (Pretty-Printer Commands): Fix typo in example.
+
+2018-09-10  Tom Tromey  <tom@tromey.com>
+
+	PR python/16033:
+	* python.texi (Blocks In Python): Document that Block.end is
+	exclusive.
+
 2018-08-29  Keith Seitz  <keiths@redhat.com>
 
 	* gdb.texinfo (Compiling and injecting code in GDB): Document

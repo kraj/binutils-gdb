@@ -64,7 +64,7 @@ IMPORTED_GNULIB_MODULES="\
 "
 
 # The gnulib commit ID to use for the update.
-GNULIB_COMMIT_SHA1="53e2c179f26a890fa6685af4b6c1397ee370433b"
+GNULIB_COMMIT_SHA1="38237baf99386101934cd93278023aa4ae523ec0"
 
 # The expected version number for the various auto tools we will
 # use after the import.
@@ -167,3 +167,13 @@ if [ $? -ne 0 ]; then
    exit 1
 fi
 
+# Update aclocal-m4-deps.mk
+ACLOCAL_M4_DEPS_FILE=aclocal-m4-deps.mk
+cat > ${ACLOCAL_M4_DEPS_FILE}.tmp <<EOF
+# THIS FILE IS GENERATED.  -*- buffer-read-only: t -*- vi :set ro:
+aclocal_m4_deps = \\
+$(find import/m4 -type f -name "*.m4" | sed 's/^/\t/; s/$/ \\/; $s/ \\//g')
+EOF
+
+../../move-if-change ${ACLOCAL_M4_DEPS_FILE}.tmp ${ACLOCAL_M4_DEPS_FILE}
+rm -f ${ACLOCAL_M4_DEPS_FILE}.tmp
