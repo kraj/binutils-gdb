@@ -1,3 +1,67 @@
+2018-09-14  Alan Hayward  <alan.hayward@arm.com>
+
+	* lib/gdb.exp (gdb_simple_compile): Add proc.
+	(is_elf_target): Use gdb_simple_compile.
+	(skip_altivec_tests): Likewise.
+	(skip_vsx_tests): Likewise.
+	(skip_tsx_tests): Likewise.
+	(skip_btrace_tests): Likewise.
+	(skip_btrace_pt_tests): Likewise.
+	(gdb_can_simple_compile): Likewise.
+	(gdb_has_argv0): Likewise.
+	(gdb_target_symbol_prefix): Likewise.
+	(target_supports_scheduler_locking): Likewise.
+
+2018-09-13  Tom Tromey  <tom@tromey.com>
+
+	* Makefile.in (TAGS): Recognize proc_with_prefix and
+	gdb_caching_proc.
+
+2018-09-13  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* gdb.python/py-progspace.exp: Test the Progspace.objfiles
+	method.
+
+2018-09-13  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* gdb.python/py-inferior.exp: Add tests for Inferior.progspace
+	and a few other Inferior properties when the Inferior is no
+	longer valid.
+
+2018-09-13  Tom Tromey  <tom@tromey.com>
+
+	PR rust/23650:
+	* gdb.rust/simple.exp: Add test for enum field access error.
+
+2018-09-13  Tom Tromey  <tom@tromey.com>
+
+	PR rust/23626:
+	* gdb.rust/simple.rs (EmptyEnum): New type.
+	(main): Use it.
+	* gdb.rust/simple.exp (test_one_slice): Add empty enum test.
+
+2018-09-13  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* gdb.python/py-inferior.exp: Test repr() of gdb.Inferior.
+	* gdb.python/py-objfile.exp: Test repr() of gdb.Objfile.
+	* gdb.python/py-symtab.exp: Update test printing an objfile.
+
+2018-09-12  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* gdb.python/py-inferior.exp: Test using an invalid gdb.Inferior
+	object.
+
+2018-09-12  Alan Hayward  <alan.hayward@arm.com>
+
+	* lib/gdb.exp (gdb_can_simple_compile): Add proc.
+	(support_complex_tests): Use gdb_can_simple_compile.
+	(is_ilp32_target): Likewise.
+	(is_lp64_target): Likewise.
+	(is_64_target): Likewise.
+	(is_amd64_regs_target): Likewise.
+	(is_aarch32_target): Likewise.
+	(gdb_int128_helper): Likewise.
+
 2018-09-11  Jan Kratochvil  <jan.kratochvil@redhat.com>
 
 	* Makefile.in (check-parallel-racy): Fix dg-extract-results.sh path.

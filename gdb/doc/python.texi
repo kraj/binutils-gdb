@@ -207,6 +207,10 @@ methods and classes added by @value{GDBN} are placed in this module.
 @value{GDBN} automatically @code{import}s the @code{gdb} module for
 use in all scripts evaluated by the @code{python} command.
 
+Some types of the @code{gdb} module come with a textual representation
+(accessible through the @code{repr} or @code{str} functions).  These are
+offered for debugging purposes only, expect them to change over time.
+
 @findex gdb.PYTHONDIR
 @defvar gdb.PYTHONDIR
 A string containing the python directory (@pxref{Python}).
@@ -2832,6 +2836,10 @@ Boolean signaling whether the inferior was created using `attach', or
 started by @value{GDBN} itself.
 @end defvar
 
+@defvar Inferior.progspace
+The inferior's program space.  @xref{Progspaces In Python}.
+@end defvar
+
 A @code{gdb.Inferior} object has the following methods:
 
 @defun Inferior.is_valid ()
@@ -3991,7 +3999,9 @@ The following progspace-related functions are available in the
 @findex gdb.current_progspace
 @defun gdb.current_progspace ()
 This function returns the program space of the currently selected inferior.
-@xref{Inferiors and Programs}.
+@xref{Inferiors and Programs}.  This is identical to
+@code{gdb.selected_inferior().progspace} (@pxref{Inferiors In Python}) and is
+included for historical compatibility.
 @end defun
 
 @findex gdb.progspaces
@@ -4069,6 +4079,14 @@ Hello.
 [Inferior 1 (process 4242) exited normally]
 @end smallexample
 
+A @code{gdb.Progspace} object has the following methods:
+
+@findex Progspace.objfiles
+@defun Progspace.objfiles ()
+Return a sequence of all the objfiles referenced by this program
+space.  @xref{Objfiles In Python}.
+@end defun
+
 @node Objfiles In Python
 @subsubsection Objfiles In Python
 
@@ -4094,8 +4112,10 @@ this function returns @code{None}.
 
 @findex gdb.objfiles
 @defun gdb.objfiles ()
-Return a sequence of all the objfiles current known to @value{GDBN}.
-@xref{Objfiles In Python}.
+Return a sequence of objfiles referenced by the current program space.
+@xref{Objfiles In Python}, and @ref{Progspaces In Python}.  This is identical
+to @code{gdb.selected_inferior().progspace.objfiles()} and is included for
+historical compatibility.
 @end defun
 
 @findex gdb.lookup_objfile

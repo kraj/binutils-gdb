@@ -1,3 +1,104 @@
+2018-09-14  Tom Tromey  <tom@tromey.com>
+
+	* infcall.c (call_function_by_hand_dummy): Remove unnecessary
+	block.
+
+2018-09-14  Tom Tromey  <tom@tromey.com>
+
+	* nat/fork-inferior.c (get_startup_shell): Remove "static".
+
+2018-09-13  Tom Tromey  <tom@tromey.com>
+
+	* python/py-inferior.c (infpy_thread_from_thread_handle): Now
+	static.
+
+2018-09-13  Tom Tromey  <tom@tromey.com>
+
+	* exec.c (try_open_exec_file): Use std::string.
+
+2018-09-13  Tom Tromey  <tom@tromey.com>
+
+	* utils.h (gdb_bfd_errmsg): Return std::string.
+	* exec.c (exec_file_attach): Update.
+	* compile/compile-object-load.c (compile_object_load): Update.
+	* utils.c (gdb_bfd_errmsg): Return std::string.
+
+2018-09-13  Tom Tromey  <tom@tromey.com>
+
+	* procfs.c (struct procinfo_deleter): New.
+	(procinfo_up): New typedef.
+	(do_destroy_procinfo_cleanup): Remove.
+	(procfs_target::info_proc): Use procinfo_up.  Remove cleanups.
+
+2018-09-13  Tom Tromey  <tom@tromey.com>
+
+	* source.c (add_path): Use gdb::unique_xmalloc_ptr.
+
+2018-09-13  Simon Marchi  <simon.marchi@ericsson.com>
+2018-09-13  Tom Tromey  <tom@tromey.com>
+
+	* python/py-progspace.c (PSPY_REQUIRE_VALID): New macro.
+	(pspy_get_objfiles): New function.
+	(progspace_object_methods): New.
+	(pspace_object_type): Add tp_methods callback.
+	* python/python-internal.h (build_objfiles_list): New
+	declaration.
+	* python/python.c (build_objfiles_list): New function.
+	(gdbpy_objfiles): Implement using build_objfiles_list.
+	* NEWS: Mention the Progspace.objfiles method.
+
+2018-09-13  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* python/py-inferior.c (infpy_get_progspace): New function.
+	(inferior_object_getset): Add progspace property.
+	* NEWS: Mention the new property.
+
+2018-09-13  Tom Tromey  <tom@tromey.com>
+
+	PR rust/23650:
+	* rust-lang.c (rust_evaluate_subexp): Use field name, not "foo".
+
+2018-09-13  Tom Tromey  <tom@tromey.com>
+
+	PR rust/23626:
+	* rust-lang.c (rust_enum_variant): Now static.
+	(rust_empty_enum_p): New function.
+	(rust_print_enum, rust_evaluate_subexp, rust_print_struct_def):
+	Handle empty enum.
+
+2018-09-13  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* python/py-inferior.c (infpy_repr): New.
+	(inferior_object_type): Register infpy_repr.
+	* python/py-objfile.c (objfpy_repr): New.
+	(objfile_object_type): Register objfpy_repr.
+
+2018-09-12  John Baldwin  <jhb@FreeBSD.org>
+
+	* fbsd-nat.c (fbsd_nat_target::info_proc): Remove unused variable.
+
+2018-09-12  John Baldwin  <jhb@FreeBSD.org>
+
+	* aarch64-fbsd-tdep.h (AARCH64_FBSD_SIZEOF_GREGSET): Fix comment
+	typo.
+
+2018-09-12  Sergio Durigan Junior  <sergiodj@redhat.com>
+
+	* common/common-utils.c: Don't include '<sys/stat.h>'.
+	(is_regular_file): Move to...
+	* common/filestuff.c (is_regular_file): ... here.
+	* common/common-utils.h (is_regular_file): Move to...
+	* common/filestuff.h (is_regular_file): ... here.
+
+2018-09-12  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* skip.c (debug_skip): New variable.
+	(skiplist_entry::do_skip_file_p): Add debug output.
+	(skiplist_entry::do_skip_gfile_p): Likewise.
+	(skiplist_entry::skip_function_p): Likewise.
+	(_initialize_step_skip): Create debug command.
+	* NEWS: Mention set/show debug skip.
+
 2018-09-11  Xavier Roirand  <roirand@adacore.com>
 
 	* darwin-nat.c (should_disable_startup_with_shell):

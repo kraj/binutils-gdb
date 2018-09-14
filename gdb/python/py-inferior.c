@@ -459,6 +459,23 @@ infpy_get_was_attached (PyObject *self, void *closure)
   Py_RETURN_FALSE;
 }
 
+/* Getter of gdb.Inferior.progspace.  */
+
+static PyObject *
+infpy_get_progspace (PyObject *self, void *closure)
+{
+  inferior_object *inf = (inferior_object *) self;
+
+  INFPY_REQUIRE_VALID (inf);
+
+  program_space *pspace = inf->inferior->pspace;
+  gdb_assert (pspace != nullptr);
+
+  PyObject *py_pspace = pspace_to_pspace_object (pspace);
+  Py_XINCREF (py_pspace);
+  return py_pspace;
+}
+
 static int
 build_inferior_list (struct inferior *inf, void *arg)
 {
@@ -814,7 +831,7 @@ infpy_is_valid (PyObject *self, PyObject *args)
 /* Implementation of gdb.Inferior.thread_from_thread_handle (self, handle)
                         ->  gdb.InferiorThread.  */
 
-PyObject *
+static PyObject *
 infpy_thread_from_thread_handle (PyObject *self, PyObject *args, PyObject *kw)
 {
   PyObject *handle_obj, *result;
@@ -858,6 +875,21 @@ infpy_thread_from_thread_handle (PyObject *self, PyObject *args, PyObject *kw)
     }
 
   return result;
+}
+
+/* Implement repr() for gdb.Inferior.  */
+
+static PyObject *
+infpy_repr (PyObject *obj)
+{
+  inferior_object *self = (inferior_object *) obj;
+  inferior *inf = self->inferior;
+
+  if (inf == nullptr)
+    return PyString_FromString ("<gdb.Inferior (invalid)>");
+
+  return PyString_FromFormat ("<gdb.Inferior num=%d, pid=%d>",
+			      inf->num, inf->pid);
 }
 
 
@@ -951,6 +983,7 @@ static gdb_PyGetSetDef inferior_object_getset[] =
     NULL },
   { "was_attached", infpy_get_was_attached, NULL,
     "True if the inferior was created using 'attach'.", NULL },
+  { "progspace", infpy_get_progspace, NULL, "Program space of this inferior" },
   { NULL }
 };
 
@@ -991,7 +1024,7 @@ PyTypeObject inferior_object_type =
   0,				  /* tp_getattr */
   0,				  /* tp_setattr */
   0,				  /* tp_compare */
-  0,				  /* tp_repr */
+  infpy_repr,			  /* tp_repr */
   0,				  /* tp_as_number */
   0,				  /* tp_as_sequence */
   0,				  /* tp_as_mapping */

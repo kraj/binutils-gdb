@@ -376,7 +376,8 @@ struct _i386_insn
       {
 	dir_encoding_default = 0,
 	dir_encoding_load,
-	dir_encoding_store
+	dir_encoding_store,
+	dir_encoding_swap
       } dir_encoding;
 
     /* Prefer 8bit or 32bit displacement in encoding.  */
@@ -2052,16 +2053,26 @@ mismatch:
     }
 
   /* Check reverse.  */
-  gas_assert (i.operands == 2);
+  gas_assert (i.operands >= 2 && i.operands <= 3);
 
-  for (j = 0; j < 2; j++)
+  for (j = 0; j < i.operands; j++)
     {
-      if ((t->operand_types[j].bitfield.reg
-	   || t->operand_types[j].bitfield.acc)
-	  && !match_operand_size (t, j, !j))
+      unsigned int given = i.operands - j - 1;
+
+      if (t->operand_types[j].bitfield.reg
+	  && !match_operand_size (t, j, given))
 	goto mismatch;
 
-      if ((i.flags[!j] & Operand_Mem) && !match_mem_size (t, j, !j))
+      if (t->operand_types[j].bitfield.regsimd
+	  && !match_simd_size (t, j, given))
+	goto mismatch;
+
+      if (t->operand_types[j].bitfield.acc
+	  && (!match_operand_size (t, j, given)
+	      || !match_simd_size (t, j, given)))
+	goto mismatch;
+
+      if ((i.flags[given] & Operand_Mem) && !match_mem_size (t, j, given))
 	goto mismatch;
     }
 
@@ -3353,13 +3364,15 @@ build_vex_prefix (const insn_template *t)
   else
     register_specifier = 0xf;
 
-  /* Use 2-byte VEX prefix by swapping destination and source
-     operand.  */
-  if (i.vec_encoding != vex_encoding_vex3
+  /* Use 2-byte VEX prefix by swapping destination and source operand
+     if there are more than 1 register operand.  */
+  if (i.reg_operands > 1
+      && i.vec_encoding != vex_encoding_vex3
       && i.dir_encoding == dir_encoding_default
       && i.operands == i.reg_operands
+      && operand_type_equal (&i.types[0], &i.types[i.operands - 1])
       && i.tm.opcode_modifier.vexopcode == VEX0F
-      && i.tm.opcode_modifier.load
+      && (i.tm.opcode_modifier.load || i.tm.opcode_modifier.d)
       && i.rex == REX_B)
     {
       unsigned int xchg = i.operands - 1;
@@ -3380,8 +3393,11 @@ build_vex_prefix (const insn_template *t)
       i.rm.regmem = i.rm.reg;
       i.rm.reg = xchg;
 
-      /* Use the next insn.  */
-      i.tm = t[1];
+      if (i.tm.opcode_modifier.d)
+	i.tm.base_opcode ^= (i.tm.base_opcode & 0xee) != 0x6e
+			    ? Opcode_SIMD_FloatD : Opcode_SIMD_IntD;
+      else /* Use the next insn.  */
+	i.tm = t[1];
     }
 
   if (i.tm.opcode_modifier.vex == VEXScalar)
@@ -3483,10 +3499,13 @@ build_vex_prefix (const insn_template *t)
 	 of RXB bits from REX.  */
       i.vex.bytes[1] = (~i.rex & 0x7) << 5 | m;
 
-      /* Check the REX.W bit.  */
-      w = (i.rex & REX_W) ? 1 : 0;
-      if (i.tm.opcode_modifier.vexw == VEXW1)
-	w = 1;
+      /* Check the REX.W bit and VEXW.  */
+      if (i.tm.opcode_modifier.vexw == VEXWIG)
+	w = (i.rex & REX_W) ? 1 : 0;
+      else if (i.tm.opcode_modifier.vexw)
+	w = i.tm.opcode_modifier.vexw == VEXW1 ? 1 : 0;
+      else
+	w = (i.rex & REX_W) ? 1 : 0;
 
       i.vex.bytes[2] = (w << 7
 			| register_specifier << 3
@@ -3613,19 +3632,13 @@ build_evex_prefix (void)
   i.vrex &= ~vrex_used;
   gas_assert (i.vrex == 0);
 
-  /* Check the REX.W bit.  */
-  w = (i.rex & REX_W) ? 1 : 0;
-  if (i.tm.opcode_modifier.vexw)
-    {
-      if (i.tm.opcode_modifier.vexw == VEXW1)
-	w = 1;
-    }
-  /* If w is not set it means we are dealing with WIG instruction.  */
-  else if (!w)
-    {
-      if (evexwig == evexw1)
-        w = 1;
-    }
+  /* Check the REX.W bit and VEXW.  */
+  if (i.tm.opcode_modifier.vexw == VEXWIG)
+    w = (evexwig == evexw1 || (i.rex & REX_W)) ? 1 : 0;
+  else if (i.tm.opcode_modifier.vexw)
+    w = i.tm.opcode_modifier.vexw == VEXW1 ? 1 : 0;
+  else
+    w = (i.rex & REX_W) ? 1 : 0;
 
   /* Encode the U bit.  */
   implied_prefix |= 0x4;
@@ -4516,10 +4529,11 @@ parse_insn (char *line, char *mnemonic)
 
   if (!current_templates)
     {
-      /* Check if we should swap operand or force 32bit displacement in
+      /* Deprecated functionality (new code should use pseudo-prefixes instead):
+	 Check if we should swap operand or force 32bit displacement in
 	 encoding.  */
       if (mnem_p - 2 == dot_p && dot_p[1] == 's')
-	i.dir_encoding = dir_encoding_store;
+	i.dir_encoding = dir_encoding_swap;
       else if (mnem_p - 3 == dot_p
 	       && dot_p[1] == 'd'
 	       && dot_p[2] == '8')
@@ -5525,6 +5539,7 @@ match_template (char mnem_suffix)
   for (t = current_templates->start; t < current_templates->end; t++)
     {
       addr_prefix_disp = -1;
+      found_reverse_match = 0;
 
       if (i.operands != t->operands)
 	continue;
@@ -5697,17 +5712,42 @@ match_template (char mnem_suffix)
 	      && i.types[0].bitfield.acc
 	      && operand_type_check (i.types[1], anymem))
 	    continue;
-	  if (!(size_match & MATCH_STRAIGHT))
-	    goto check_reverse;
-	  /* If we want store form, we reverse direction of operands.  */
-	  if (i.dir_encoding == dir_encoding_store
-	      && t->opcode_modifier.d)
-	    goto check_reverse;
 	  /* Fall through.  */
 
 	case 3:
+	  if (!(size_match & MATCH_STRAIGHT))
+	    goto check_reverse;
+	  /* Reverse direction of operands if swapping is possible in the first
+	     place (operands need to be symmetric) and
+	     - the load form is requested, and the template is a store form,
+	     - the store form is requested, and the template is a load form,
+	     - the non-default (swapped) form is requested.  */
+	  overlap1 = operand_type_and (operand_types[0], operand_types[1]);
+	  if (t->opcode_modifier.d && i.reg_operands == i.operands
+	      && !operand_type_all_zero (&overlap1))
+	    switch (i.dir_encoding)
+	      {
+	      case dir_encoding_load:
+		if (operand_type_check (operand_types[i.operands - 1], anymem)
+		    || operand_types[i.operands - 1].bitfield.regmem)
+		  goto check_reverse;
+		break;
+
+	      case dir_encoding_store:
+		if (!operand_type_check (operand_types[i.operands - 1], anymem)
+		    && !operand_types[i.operands - 1].bitfield.regmem)
+		  goto check_reverse;
+		break;
+
+	      case dir_encoding_swap:
+		goto check_reverse;
+
+	      case dir_encoding_default:
+		break;
+	      }
 	  /* If we want store form, we skip the current load.  */
-	  if (i.dir_encoding == dir_encoding_store
+	  if ((i.dir_encoding == dir_encoding_store
+	       || i.dir_encoding == dir_encoding_swap)
 	      && i.mem_operands == 0
 	      && t->opcode_modifier.load)
 	    continue;
@@ -5731,14 +5771,14 @@ check_reverse:
 	      if (!(size_match & MATCH_REVERSE))
 		continue;
 	      /* Try reversing direction of operands.  */
-	      overlap0 = operand_type_and (i.types[0], operand_types[1]);
-	      overlap1 = operand_type_and (i.types[1], operand_types[0]);
+	      overlap0 = operand_type_and (i.types[0], operand_types[i.operands - 1]);
+	      overlap1 = operand_type_and (i.types[i.operands - 1], operand_types[0]);
 	      if (!operand_type_match (overlap0, i.types[0])
-		  || !operand_type_match (overlap1, i.types[1])
+		  || !operand_type_match (overlap1, i.types[i.operands - 1])
 		  || (check_register
 		      && !operand_type_register_match (i.types[0],
-						       operand_types[1],
-						       i.types[1],
+						       operand_types[i.operands - 1],
+						       i.types[i.operands - 1],
 						       operand_types[0])))
 		{
 		  /* Does not match either direction.  */
@@ -5750,6 +5790,13 @@ check_reverse:
 		found_reverse_match = 0;
 	      else if (operand_types[0].bitfield.tbyte)
 		found_reverse_match = Opcode_FloatD;
+	      else if (operand_types[0].bitfield.xmmword
+		       || operand_types[i.operands - 1].bitfield.xmmword
+		       || operand_types[0].bitfield.regmmx
+		       || operand_types[i.operands - 1].bitfield.regmmx
+		       || is_any_vex_encoding(t))
+		found_reverse_match = (t->base_opcode & 0xee) != 0x6e
+				      ? Opcode_SIMD_FloatD : Opcode_SIMD_IntD;
 	      else
 		found_reverse_match = Opcode_D;
 	      if (t->opcode_modifier.floatr)
@@ -5820,10 +5867,7 @@ check_reverse:
 	     slip through to break.  */
 	}
       if (!found_cpu_match)
-	{
-	  found_reverse_match = 0;
-	  continue;
-	}
+	continue;
 
       /* Check if vector and VEX operands are valid.  */
       if (check_VecOperands (t) || VEX_check_operands (t))
@@ -5947,8 +5991,8 @@ check_reverse:
 
       i.tm.base_opcode ^= found_reverse_match;
 
-      i.tm.operand_types[0] = operand_types[1];
-      i.tm.operand_types[1] = operand_types[0];
+      i.tm.operand_types[0] = operand_types[i.operands - 1];
+      i.tm.operand_types[i.operands - 1] = operand_types[0];
     }
 
   return t;
@@ -6009,27 +6053,23 @@ process_suffix (void)
 	     Destination register type is more significant than source
 	     register type.  crc32 in SSE4.2 prefers source register
 	     type. */
-	  if (i.tm.base_opcode == 0xf20f38f1)
+	  if (i.tm.base_opcode == 0xf20f38f0 && i.types[0].bitfield.reg)
 	    {
-	      if (i.types[0].bitfield.reg && i.types[0].bitfield.word)
-		i.suffix = WORD_MNEM_SUFFIX;
-	      else if (i.types[0].bitfield.reg && i.types[0].bitfield.dword)
-		i.suffix = LONG_MNEM_SUFFIX;
-	      else if (i.types[0].bitfield.reg && i.types[0].bitfield.qword)
-		i.suffix = QWORD_MNEM_SUFFIX;
-	    }
-	  else if (i.tm.base_opcode == 0xf20f38f0)
-	    {
-	      if (i.types[0].bitfield.reg && i.types[0].bitfield.byte)
+	      if (i.types[0].bitfield.byte)
 		i.suffix = BYTE_MNEM_SUFFIX;
+	      else if (i.types[0].bitfield.word)
+		i.suffix = WORD_MNEM_SUFFIX;
+	      else if (i.types[0].bitfield.dword)
+		i.suffix = LONG_MNEM_SUFFIX;
+	      else if (i.types[0].bitfield.qword)
+		i.suffix = QWORD_MNEM_SUFFIX;
 	    }
 
 	  if (!i.suffix)
 	    {
 	      int op;
 
-	      if (i.tm.base_opcode == 0xf20f38f1
-		  || i.tm.base_opcode == 0xf20f38f0)
+	      if (i.tm.base_opcode == 0xf20f38f0)
 		{
 		  /* We have to know the operand size for crc32.  */
 		  as_bad (_("ambiguous memory operand size for `%s`"),

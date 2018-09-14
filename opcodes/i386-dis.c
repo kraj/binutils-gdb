@@ -260,6 +260,7 @@ fetch_data (struct disassemble_info *info, bfd_byte *addr)
 #define Edb { OP_E, db_mode }
 #define Edw { OP_E, dw_mode }
 #define Edqd { OP_E, dqd_mode }
+#define Edqa { OP_E, dqa_mode }
 #define Eq { OP_E, q_mode }
 #define indirEv { OP_indirE, indir_v_mode }
 #define indirEp { OP_indirE, f_mode }
@@ -273,6 +274,7 @@ fetch_data (struct disassemble_info *info, bfd_byte *addr)
 #define Mo { OP_M, o_mode }
 #define Mp { OP_M, f_mode }		/* 32 or 48 bit memory operand for LDS, LES etc */
 #define Mq { OP_M, q_mode }
+#define Mv_bnd { OP_M, v_bndmk_mode }
 #define Mx { OP_M, x_mode }
 #define Mxmm { OP_M, xmm_mode }
 #define Gb { OP_G, b_mode }
@@ -446,6 +448,7 @@ fetch_data (struct disassemble_info *info, bfd_byte *addr)
 #define VPCOM { VPCOM_Fixup, 0 }
 
 #define EXxEVexR { OP_Rounding, evex_rounding_mode }
+#define EXxEVexR64 { OP_Rounding, evex_rounding_64_mode }
 #define EXxEVexS { OP_Rounding, evex_sae_mode }
 
 #define XMask { OP_Mask, mask_mode }
@@ -561,6 +564,8 @@ enum
   cond_jump_mode,
   loop_jcxz_mode,
   v_bnd_mode,
+  /* like v_bnd_mode in 32bit, no RIP-rel in 64bit mode.  */
+  v_bndmk_mode,
   /* operand size depends on REX prefixes.  */
   dq_mode,
   /* registers like dq_mode, memory like w_mode.  */
@@ -588,6 +593,8 @@ enum
   dw_mode,
   /* registers like dq_mode, memory like d_mode.  */
   dqd_mode,
+  /* operand size depends on the W bit as well as address mode.  */
+  dqa_mode,
   /* normal vex mode */
   vex_mode,
   /* 128bit vex mode */
@@ -627,6 +634,8 @@ enum
 
   /* Static rounding.  */
   evex_rounding_mode,
+  /* Static rounding, 64-bit mode only.  */
+  evex_rounding_64_mode,
   /* Supress all exceptions.  */
   evex_sae_mode,
 
@@ -11646,17 +11655,17 @@ static const struct dis386 mod_table[][2] = {
   },
   {
     /* MOD_0F1A_PREFIX_0 */
-    { "bndldx",		{ Gbnd, Ev_bnd }, 0 },
+    { "bndldx",		{ Gbnd, Mv_bnd }, 0 },
     { "nopQ",		{ Ev }, 0 },
   },
   {
     /* MOD_0F1B_PREFIX_0 */
-    { "bndstx",		{ Ev_bnd, Gbnd }, 0 },
+    { "bndstx",		{ Mv_bnd, Gbnd }, 0 },
     { "nopQ",		{ Ev }, 0 },
   },
   {
     /* MOD_0F1B_PREFIX_1 */
-    { "bndmk",		{ Gbnd, Ev_bnd }, 0 },
+    { "bndmk",		{ Gbnd, Mv_bnd }, 0 },
     { "nopQ",		{ Ev }, 0 },
   },
   {
@@ -14802,6 +14811,7 @@ intel_operand_size (int bytemode, int sizeflag)
     case q_swap_mode:
       oappend ("QWORD PTR ");
       break;
+    case dqa_mode:
     case m_mode:
       if (address_mode == mode_64bit)
 	oappend ("QWORD PTR ");
@@ -15083,6 +15093,7 @@ intel_operand_size (int bytemode, int sizeflag)
 	oappend ("WORD PTR ");
       break;
     case v_bnd_mode:
+    case v_bndmk_mode:
     default:
       break;
     }
@@ -15159,6 +15170,7 @@ OP_E_register (int bytemode, int sizeflag)
     case dqb_mode:
     case dqd_mode:
     case dqw_mode:
+    case dqa_mode:
       USED_REX (REX_W);
       if (rex & REX_W)
 	names = names64;
@@ -15293,13 +15305,16 @@ OP_E_memory (int bytemode, int sizeflag)
 	case d_scalar_swap_mode:
 	  shift = 2;
 	  break;
-    case w_scalar_mode:
+	case w_scalar_mode:
 	case xmm_mw_mode:
 	  shift = 1;
 	  break;
-    case b_scalar_mode:
+	case b_scalar_mode:
 	case xmm_mb_mode:
 	  shift = 0;
+	  break;
+	case dqa_mode:
+	  shift = address_mode == mode_64bit ? 3 : 2;
 	  break;
 	default:
 	  abort ();
@@ -15343,6 +15358,7 @@ OP_E_memory (int bytemode, int sizeflag)
       int scale = 0;
       int addr32flag = !((sizeflag & AFLAG)
 			 || bytemode == v_bnd_mode
+			 || bytemode == v_bndmk_mode
 			 || bytemode == bnd_mode
 			 || bytemode == bnd_swap_mode);
       const char **indexes64 = names64;
@@ -15419,6 +15435,11 @@ OP_E_memory (int bytemode, int sizeflag)
 	      if (address_mode == mode_64bit && !havesib)
 		riprel = 1;
 	      disp = get32s ();
+	      if (riprel && bytemode == v_bndmk_mode)
+		{
+		  oappend ("(bad)");
+		  return;
+		}
 	    }
 	  break;
 	case 1:
@@ -15476,6 +15497,7 @@ OP_E_memory (int bytemode, int sizeflag)
 
       if ((havebase || haveindex || needaddr32 || riprel)
 	  && (bytemode != v_bnd_mode)
+	  && (bytemode != v_bndmk_mode)
 	  && (bytemode != bnd_mode)
 	  && (bytemode != bnd_swap_mode))
 	used_prefixes |= PREFIX_ADDR;
@@ -17931,11 +17953,19 @@ OP_Rounding (int bytemode, int sizeflag ATTRIBUTE_UNUSED)
 {
   if (!vex.evex
       || (bytemode != evex_rounding_mode
+	  && bytemode != evex_rounding_64_mode
 	  && bytemode != evex_sae_mode))
     abort ();
   if (modrm.mod == 3 && vex.b)
     switch (bytemode)
       {
+      case evex_rounding_64_mode:
+	if (address_mode != mode_64bit)
+	  {
+	    oappend ("(bad)");
+	    break;
+	  }
+	/* Fall through.  */
       case evex_rounding_mode:
 	oappend (names_rounding[vex.ll]);
 	break;

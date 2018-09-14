@@ -1,3 +1,193 @@
+2018-09-14  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR gas/23642
+	* i386-opc.h (VEXWIG): New.
+	* i386-opc.tbl: Set VexW=3 on VEX/EVEX WIG instructions.
+	* i386-tbl.h: Regenerated.
+
+2018-09-14  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR binutils/23655
+	* i386-dis-evex.h: Replace EXxEVexR with EXxEVexR64 for
+	vcvtsi2sd%LQ and vcvtusi2sd%LQ.
+	* i386-dis.c (EXxEVexR64): New.
+	(evex_rounding_64_mode): Likewise.
+	(OP_Rounding): Handle evex_rounding_64_mode.
+
+2018-09-14  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR binutils/23655
+	* i386-dis-evex.h (evex_table): Replace Eq with Edqa for
+	vcvtsi2ss%LQ, vcvtsi2sd%LQ, vcvtusi2ss%LQ and vcvtusi2sd%LQ.
+	* i386-dis.c (Edqa): New.
+	(dqa_mode): Likewise.
+	(intel_operand_size): Handle dqa_mode as m_mode.
+	(OP_E_register): Handle dqa_mode as dq_mode.
+	(OP_E_memory): Set shift for dqa_mode based on address_mode.
+
+2018-09-14  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* i386-dis.c (OP_E_memory): Reformat.
+
+2018-09-14  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-opc.tbl (crc32): Fold byte and word forms.
+	* i386-tbl.h: Re-generate.
+
+2018-09-13  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* i386-opc.tbl: Add VexW=1 to VEX.W0 VEX movd, cvtsi2ss, cvtsi2sd,
+	pextrd, pinsrd, vcvtsi2sd, vcvtsi2ss, vmovd, vpextrd and vpinsrd.
+	Add VexW=2 to VEX.W1 VEX movq, pextrq, pinsrq, vmovq, vpextrq and
+	vpinsrq.  Remove VexW=1 from WIG VEX movq and vmovq.
+	* i386-tbl.h: Regenerated.
+
+2018-09-13  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-opc.tbl (mov, movq, movdir64b): Drop IgnoreSize where
+	meaningless.
+	(invept, invvpid, vcvtph2ps, vcvtps2ph, bndmov, xrstors,
+	xrstors64, xsaves, xsaves64, xsavec, xsavec64, rdpid, incsspq,
+	rdsspq, saveprevssp, setssbsy, endbr32, endbr64): Drop IgnoreSize.
+	* i386-tbl.h: Re-generate.
+
+2018-09-13  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-opc.tbl: Drop IgnoreSize from AVX512_4FMAPS and
+	AVX512_4VNNIW insns.
+	* i386-tbl.h: Re-generate.
+
+2018-09-13  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-opc.tbl: Drop IgnoreSize from AVX512DQ insns where
+	meaningless.
+	* i386-tbl.h: Re-generate.
+
+2018-09-13  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-opc.tbl: Drop IgnoreSize from AVX512BW insns where
+	meaningless.
+	* i386-tbl.h: Re-generate.
+
+2018-09-13  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-opc.tbl: Drop IgnoreSize from AVX512VL insns where
+	meaningless.
+	* i386-tbl.h: Re-generate.
+
+2018-09-13  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-opc.tbl: Drop IgnoreSize from AVX512ER insns where
+	meaningless.
+	* i386-tbl.h: Re-generate.
+
+2018-09-13  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-opc.tbl: Drop IgnoreSize from AVX512F insns where
+	meaningless.
+	* i386-tbl.h: Re-generate.
+
+2018-09-13  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-opc.tbl: Drop IgnoreSize from SHA insns.
+	* i386-tbl.h: Re-generate.
+
+2018-09-13  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-opc.tbl: Drop IgnoreSize from XOP and SSE4a insns.
+	* i386-tbl.h: Re-generate.
+
+2018-09-13  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-opc.tbl: Drop IgnoreSize from AVX2 insns where
+	meaningless.
+	* i386-tbl.h: Re-generate.
+
+2018-09-13  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-opc.tbl: Drop IgnoreSize from AVX insns where
+	meaningless.
+	* i386-tbl.h: Re-generate.
+
+2018-09-13  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-opc.tbl: Drop IgnoreSize from GNFI insns.
+	* i386-tbl.h: Re-generate.
+
+2018-09-13  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-opc.tbl: Drop IgnoreSize from PCLMUL/VPCLMUL insns.
+	* i386-tbl.h: Re-generate.
+
+2018-09-13  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-opc.tbl: Drop IgnoreSize from AES/VAES insns.
+	* i386-tbl.h: Re-generate.
+
+2018-09-13  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-opc.tbl: Drop IgnoreSize from SSE4.2 insns where
+	meaningless.
+	* i386-tbl.h: Re-generate.
+
+2018-09-13  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-opc.tbl: Drop IgnoreSize from SSE4.1 insns where
+	meaningless.
+	* i386-tbl.h: Re-generate.
+
+2018-09-13  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-opc.tbl: Drop IgnoreSize from SSSE3 insns where
+	meaningless.
+	* i386-tbl.h: Re-generate.
+
+2018-09-13  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-opc.tbl: Drop IgnoreSize from SSE3 insns where meaningless.
+	* i386-tbl.h: Re-generate.
+
+2018-09-13  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-opc.tbl: Drop IgnoreSize from SSE2 insns where meaningless.
+	* i386-tbl.h: Re-generate.
+
+2018-09-13  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-opc.tbl: Drop IgnoreSize from SSE insns where meaningless.
+	* i386-tbl.h: Re-generate.
+
+2018-09-13  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-opc.tbl (crc32, incsspq, rdsspq): Drop Rex64.
+	(vpbroadcastw, rdpid): Drop NoRex64.
+	* i386-tbl.h: Re-generate.
+
+2018-09-13  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-opc.tbl (vmovsd, vmovss): Fold register form load and
+	store templates, adding D.
+	* i386-tbl.h: Re-generate.
+
+2018-09-13  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-opc.tbl (bndmov, kmovb, kmovd, kmovq, kmovw, movapd,
+	movaps, movd, movdqa, movdqu, movhpd, movhps, movlpd, movlps,
+	movq, movsd, movss, movupd, movups, vmovapd, vmovaps, vmovd,
+	vmovdqa, vmovdqa32, vmovdqa64, vmovdqu, vmovdqu16, vmovdqu32,
+	vmovdqu64, vmovdqu8, vmovq, vmovsd, vmovss, vmovupd, vmovups):
+	Fold load and store templates where possible, adding D. Drop
+	IgnoreSize where it was pointlessly present. Drop redundant
+	*word.
+	* i386-tbl.h: Re-generate.
+
+2018-09-13  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-dis.c (Mv_bnd, v_bndmk_mode): New.
+	(mod_table): Use Mv_bnd for bndldx, bndstx, and bndmk.
+	(intel_operand_size): Handle v_bndmk_mode.
+	(OP_E_memory): Likewise. Produce (bad) when also riprel.
+
 2018-09-08  John Darrington  <john@darrington.wattle.id.au>
 
 	* disassemble.c (ARCH_s12z): Define if ARCH_all.

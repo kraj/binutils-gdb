@@ -1,3 +1,34 @@
+2018-09-13  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* python.texi (Objfiles In Python): Update gdb.objfiles() doc.
+
+2018-09-13  Simon Marchi  <simon.marchi@ericsson.com>
+2018-09-13  Tom Tromey  <tom@tromey.com>
+
+	* python.texi (Program Spaces In Python): Document the
+	Progspace.objfiles method.
+	(Objfiles In Python): Mention that gdb.objfiles() is identical
+	to gdb.selected_inferior().progspace.objfiles().
+
+2018-09-13  Simon Marchi  <simon.marchi@ericsson.com>
+2018-09-13  Tom Tromey  <tom@tromey.com>
+
+	* python.texi (Inferiors In Python): Document
+	Inferior.progspace.
+	(Program Spaces In Python): Document that
+	gdb.current_progspace() is the same as
+	gdb.selected_inferior().progspace.
+
+2018-09-13  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* python.texi (Basic Python): Mention the string representation
+	of GDB Python objects.
+
+2018-09-12  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* gdb.texinfo (Skipping Over Functions and Files): Document
+	set/show debug skip.
+
 2018-09-10  Tom Tromey  <tom@tromey.com>
 
 	* python.texi (Frames In Python, Blocks In Python)
