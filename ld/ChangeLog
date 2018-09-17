@@ -1,3 +1,61 @@
+2018-09-17  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/ld-elf/comm-data5.d: Remove notarget for hppa.
+	* testsuite/ld-scripts/defined6.d: Likewise.
+
+2018-09-17  Nick Clifton  <nickc@redhat.com>
+
+	* testuite/ld/ld-elf/audit.exp: Differentiate the names of the
+	two "Run with shared with --audit" tests.
+	* testuite/ld/ld-elf/compress.exp: Differentiate the zlib
+	compressed debug output test names.
+	* testuite/ld/ld-i386/tlspie1.d: Add extra details to the test
+	name.
+	* testuite/ld/ld-i386/tlspie2.d: Likewise.
+	* testuite/ld/ld-size/size.exp: Add missing escapes to the end
+	of lines in the size-3e test.
+	* testuite/ld/ld-unique/unique.exp: Differentiate the names of
+	the two "Checking unique PIC object" tests.
+	* testuite/ld/ld-x86-64/tlspie1.d: Add extra details to the test
+	name.
+
+2018-09-15  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/ld-d10v/reloc-007.d,
+	* testsuite/ld-d10v/reloc-008.d,
+	* testsuite/ld-d10v/reloc-015.d,
+	* testsuite/ld-d10v/reloc-016.d: Remove "error:".
+	* testsuite/ld-elf/eh-frame-hdr.d,
+	* testsuite/ld-elf/eh5.d,
+	* testsuite/ld-gc/personality.d: Replace "cfi" and "shared" in
+	target list with appropriate proc.
+	* testsuite/ld-elf/frame.exp: Use check_shared_lib_support rather
+	than "istarget shared".
+	* testsuite/lib/ld-lib.exp (proc big_or_little_endian): Delete.
+	(run_dump_test, slurp_options, file_contents): Delete.
+	(set_file_contents, istarget): Delete.
+
+2018-09-15  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/lib/ld-lib.exp (run_dump_test): Replace PROG
+	with DUMPPROG.
+
+2018-09-15  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/ld-elf/interleave-0.d,
+	* testsuite/ld-elf/interleave-4.d: Don't objcopy to srec,
+	objdump instead.
+	* testsuite/ld-gc/all-debug-sections.d,
+	* testsuite/ld-scripts/provide-4.d,
+	* testsuite/ld-scripts/provide-5.d,
+	* testsuite/ld-scripts/provide-6.d,
+	* testsuite/ld-scripts/provide-7.d,
+	* testsuite/ld-scripts/provide-8.d,
+	* testsuite/ld-scripts/segment-start.d: Remove PROG, specify
+	nm instead.
+	* testsuite/lib/ld-lib.exp (run_dump_test): Remove support
+	for objcopy as a dump tool.
+
 2018-09-14  Maciej W. Rozycki  <macro@mips.com>
 
 	PR ld/21375

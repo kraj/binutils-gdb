@@ -1,3 +1,256 @@
+2018-09-17  Tom Tromey  <tom@tromey.com>
+
+	* common/pathstuff.c (get_standard_cache_dir): Use
+	~/Library/Caches on macOS.
+	* common/pathstuff.h (get_standard_cache_dir): Update comment.
+
+2018-09-17  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	PR python/23669
+	* breakpoint.c (commands_cmd_element): New.
+	(_initialize_breakpoint): Assign commands_cmd_element.
+	* breakpoint.h (commands_cmd_element): New.
+	* cli/cli-script.c (while_cmd_element, if_command,
+	define_cmd_element): New.
+	(command_name_equals): Remove.
+	(process_next_line): Compare commands by pointer, not by name.
+	(_initialize_cli_script): Assign the various cmd_list_element
+	variables.
+	* compile/compile.c (compile_cmd_element): New.
+	(_initialize_compile): Assign compile_cmd_element.
+	* compile/compile.h (compile_cmd_element): New.
+	* guile/guile.c (guile_cmd_element): New.
+	(install_gdb_commands): Assign guile_cmd_element.
+	* guile/guile.h (guile_cmd_element): New.
+	* python/python.c (python_cmd_element): New.
+	(_initialize_python): Assign python_cmd_element.
+	* python/python.h (python_cmd_element): New.
+	* tracepoint.c (while_stepping_cmd_element): New.
+	(_initialize_tracepoint): Assign while_stepping_cmd_element.
+	* tracepoint.h (while_stepping_cmd_element): New.
+
+2018-09-17  Tom Tromey  <tom@tromey.com>
+
+	* infrun.c (save_infcall_suspend_state): Return
+	infcall_suspend_state_up.
+	(save_infcall_control_state): Return infcall_control_state_up.
+	* inferior.h (save_infcall_suspend_state)
+	(save_infcall_control_state): Declare later.  Return unique
+	pointers.
+
+2018-09-17  Tom Tromey  <tom@tromey.com>
+
+	* infrun.c (struct stop_context): Declare constructor,
+	destructor, "changed" method.
+	(stop_context::stop_context): Rename from save_stop_context.
+	(stop_context::~stop_context): Rename from
+	release_stop_context_cleanup.
+	(normal_stop): Update.
+	(stop_context::changed): Rename from stop_context_changed.  Return
+	bool.
+
+2018-09-17  Tom Tromey  <tom@tromey.com>
+
+	* inferior.h (struct infcall_suspend_state_deleter): New.
+	(infcall_suspend_state_up): New typedef.
+	(struct infcall_control_state_deleter): New.
+	(infcall_control_state_up): New typedef.
+	(make_cleanup_restore_infcall_suspend_state)
+	(make_cleanup_restore_infcall_control_state): Don't declare.
+	* infcall.c (call_function_by_hand_dummy): Update.
+	* infrun.c (do_restore_infcall_suspend_state_cleanup)
+	(make_cleanup_restore_infcall_suspend_state): Remove.
+	(do_restore_infcall_control_state_cleanup)
+	(make_cleanup_restore_infcall_control_state): Remove.
+
+2018-09-17  Tom Tromey  <tom@tromey.com>
+
+	* gdbthread.h (struct thread_control_state): Add initializer.
+	(class thread_info) <control>: Remove initializer.
+	* inferior.h (struct inferior_control_state): Add initializer.
+	(class inferior) <control>: Remove initializer.
+	(exit_inferior_1): Update.
+	* infrun.c (struct infcall_control_state): Add constructors.
+	(save_infcall_control_state): Use new.
+	(restore_infcall_control_state, discard_infcall_control_state):
+	Use delete.
+
+2018-09-17  Tom Tromey  <tom@tromey.com>
+
+	* infrun.c (struct infcall_suspend_state) <registers>: Now a
+	unique_ptr.
+	<siginfo_data>: Now a unique_xmalloc_ptr.
+	(save_infcall_suspend_state, restore_infcall_suspend_state)
+	(discard_infcall_suspend_state)
+	(get_infcall_suspend_state_regcache): Update.
+
+2018-09-17  Tom Tromey  <tom@tromey.com>
+
+	* gdbthread.h (struct thread_suspend_state): Add initializers.
+	(class thread_info) <suspend>: Remove initializer.
+	* infrun.c (struct infcall_suspend_state): Add initializers.
+	(save_infcall_suspend_state): Use new.
+	(discard_infcall_suspend_state): Use delete.
+
+2018-09-16  Tom Tromey  <tom@tromey.com>
+
+	* python/python-internal.h (CPYCHECKER_STEALS_REFERENCE_TO_ARG):
+	Remove.
+	* python/py-varobj.c (py_varobj_iter_ctor): Change pyiter to
+	rvalue reference.  Remove CPYCHECKER_STEALS_REFERENCE_TO_ARG.
+	(py_varobj_iter_new): Likewise.
+	(py_varobj_get_iterator): Use gdbpy_ref.
+
+2018-09-16  Tom Tromey  <tom@tromey.com>
+
+	* python/py-threadevent.c (py_get_event_thread): Simplify.
+	* python/py-inferior.c (infpy_thread_from_thread_handle):
+	Return immediately after calling thread_to_thread_object.  Use
+	Py_RETURN_NONE.
+	(thread_to_thread_object): Set the exception on a NULL return.
+
+2018-09-16  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* Makefile.in (LIBGDB_OBS): Sort COMMON_OBS.
+
+2018-09-16  Tom Tromey  <tom@tromey.com>
+
+	* python/python-internal.h (CPYCHECKER_RETURNS_BORROWED_REF):
+	Remove.
+
+2018-09-16  Tom Tromey  <tom@tromey.com>
+
+	* python/python-internal.h (thread_to_thread_object): Change
+	return type.
+	* python/py-inferior.c (thread_to_thread_object): Return a new
+	reference.
+	(infpy_thread_from_thread_handle): Update.
+	* python/py-infthread.c (gdbpy_selected_thread): Update.
+	* python/py-stopevent.c (create_stop_event_object): Update.
+	* python/py-threadevent.c (py_get_event_thread): Return a new
+	reference.
+	(py_get_event_thread): Update.
+	* python/py-event.h (py_get_event_thread): Change return type.
+	* python/py-continueevent.c (create_continue_event_object):
+	Update.
+
+2018-09-16  Tom Tromey  <tom@tromey.com>
+
+	* python/py-progspace.c (pspy_get_objfiles): Update.
+	* python/python-internal.h (objfile_to_objfile_object): Change
+	return type.
+	* python/py-newobjfileevent.c (create_new_objfile_event_object):
+	Update.
+	* python/py-xmethods.c (gdbpy_get_matching_xmethod_workers):
+	Update.
+	* python/python.c (gdbpy_get_current_objfile): Update.
+	(gdbpy_objfiles): Update.
+	* python/py-objfile.c (objfpy_get_owner, gdbpy_lookup_objfile):
+	Update.
+	(objfile_to_objfile_object): Return a new reference.
+	* python/py-symtab.c (stpy_get_objfile): Update.
+	* python/py-prettyprint.c (find_pretty_printer_from_objfiles):
+	Update.
+
+2018-09-16  Tom Tromey  <tom@tromey.com>
+
+	* python/py-inferior.c (infpy_get_progspace): Update.
+	* python/python-internal.h (pspace_to_pspace_object): Change
+	return type.
+	* python/py-newobjfileevent.c
+	(create_clear_objfiles_event_object): Update.
+	* python/py-xmethods.c (gdbpy_get_matching_xmethod_workers):
+	Update.
+	* python/python.c (gdbpy_get_current_progspace): Update.
+	(gdbpy_progspaces): Update.
+	* python/py-progspace.c (pspace_to_pspace_object): Return a new
+	reference.
+	* python/py-objfile.c (objfpy_get_progspace): Update.
+	* python/py-prettyprint.c (find_pretty_printer_from_progspace):
+	Update.
+
+2018-09-16  Tom Tromey  <tom@tromey.com>
+
+	* python/lib/gdb/__init__.py (current_progspace, objfiles)
+	(solib_name, block_for_pc, find_pc_line): New functions.
+	(execute_unwinders): Update.
+	* python/py-block.c (gdbpy_block_for_pc): Remove.
+	* python/py-inferior.c (infpy_get_progspace): New function.
+	(inferior_object_getset) <progspace>: Add.
+	* python/py-progspace.c (pspy_objfiles): Rewrite.
+	(pspy_solib_name, pspy_block_for_pc)
+	(pspy_find_pc_line, pspy_is_valid): New functions.
+	(progspace_object_methods): Add entries for solib_name,
+	block_for_pc, find_pc_line, is_valid.
+	* python/python-internal.h (gdbpy_block_for_pc)
+	(build_objfiles_list): Don't declare.
+	* python/python.c: Don't include solib.h.
+	(gdbpy_solib_name, gdbpy_find_pc_line)
+	(gdbpy_get_current_progspace, build_objfiles_list)
+	(gdbpy_objfiles): Remove.
+	(GdbMethods) <current_progspace, objfiles, block_for_pc,
+	solib_name, find_pc_line>: Remove entries.
+
+2018-09-16  Tom Tromey  <tom@tromey.com>
+
+	* top.c (new_ui_command): Use GNU style for metasyntactic
+	variables.
+	* breakpoint.c (stopat_command): Use GNU style for metasyntactic
+	variables.
+	* maint.c (maintenance_translate_address): Remove "<>" around
+	text.
+	* interps.c (interpreter_exec_cmd): Use GNU style for
+	metasyntactic variables.
+	* nto-procfs.c (nto_procfs_target_info): Use GNU style for
+	metasyntactic variables.
+	* tracepoint.c (tfind_range_command): Use GNU style for
+	metasyntactic variables.
+	(tfind_outside_command): Likewise.
+	(_initialize_tracepoint): Likewise.
+	* remote.c (extended_remote_target::create_inferior): Use GNU
+	style for metasyntactic variables.
+	* sparc64-tdep.c (adi_examine_command): Use GNU style for
+	metasyntactic variables.
+	(adi_assign_command): Likewise.
+
+2018-09-16  Tom Tromey  <tom@tromey.com>
+
+	* disasm.c (show_disassembler_options_sfunc): Use GNU style for
+	metasyntactic variables.  Print message if no disassembler options
+	are available.
+
+2018-09-15  Tom Tromey  <tom@tromey.com>
+
+	* infcmd.c (get_inferior_args): Return const char *.
+	* inferior.h (get_inferior_args): Return type now const.
+	* linux-tdep.c (linux_fill_prpsinfo): Update.
+	* procfs.c (procfs_target::make_corefile_notes): Update.
+
+2018-09-07  Tom Tromey  <tom@tromey.com>
+
+	* python/python.c (execute_gdb_command): Call bpstat_do_actions
+	inside the TRY.
+
+2018-09-14  Sandra Loosemore  <sandra@codesourcery.com>
+
+	* nios2-tdep.c (nios2_type_align): New.
+	(nios2_gdb_arch_init): Install type_align hook.
+
+2018-09-10  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* eval.c (fake_method::fake_method): Call xzalloc directly for a
+	type that is neither object file owned, nor gdbarch owned.
+	* gdbtypes.c (get_type_gdbarch): Add an assert that returned
+	gdbarch is non-NULL.
+	(alloc_type_instance): Allocate non-objfile owned types on the
+	gdbarch obstack.
+	(copy_type_recursive): Allocate TYPE_FIELDS and TYPE_RANGE_DATA
+	using TYPE_ALLOC to ensure memory is allocated on the correct
+	obstack.
+	* gdbtypes.h (TYPE_ALLOC): Allocate space on either the objfile
+	obstack, or the gdbarch obstack.
+	(TYPE_ZALLOC): Rewrite using TYPE_ALLOC.
+
 2018-09-14  Tom Tromey  <tom@tromey.com>
 
 	* infcall.c (call_function_by_hand_dummy): Remove unnecessary

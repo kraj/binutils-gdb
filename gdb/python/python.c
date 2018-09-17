@@ -90,7 +90,6 @@ const struct extension_language_defn extension_language_python =
 #include "cli/cli-decode.h"
 #include "charset.h"
 #include "top.h"
-#include "solib.h"
 #include "python-internal.h"
 #include "linespec.h"
 #include "source.h"
@@ -602,21 +601,27 @@ execute_gdb_command (PyObject *self, PyObject *args, PyObject *kw)
 
       counted_command_line lines = read_command_lines_1 (reader, 1, nullptr);
 
-      scoped_restore save_async = make_scoped_restore (&current_ui->async, 0);
+      {
+	scoped_restore save_async = make_scoped_restore (&current_ui->async,
+							 0);
 
-      scoped_restore save_uiout = make_scoped_restore (&current_uiout);
+	scoped_restore save_uiout = make_scoped_restore (&current_uiout);
 
-      /* Use the console interpreter uiout to have the same print format
-	for console or MI.  */
-      interp = interp_lookup (current_ui, "console");
-      current_uiout = interp->interp_ui_out ();
+	/* Use the console interpreter uiout to have the same print format
+	   for console or MI.  */
+	interp = interp_lookup (current_ui, "console");
+	current_uiout = interp->interp_ui_out ();
 
-      scoped_restore preventer = prevent_dont_repeat ();
-      if (to_string)
-	to_string_res = execute_control_commands_to_string (lines.get (),
-							    from_tty);
-      else
-	execute_control_commands (lines.get (), from_tty);
+	scoped_restore preventer = prevent_dont_repeat ();
+	if (to_string)
+	  to_string_res = execute_control_commands_to_string (lines.get (),
+							      from_tty);
+	else
+	  execute_control_commands (lines.get (), from_tty);
+      }
+
+      /* Do any commands attached to breakpoint we stopped at.  */
+      bpstat_do_actions ();
     }
   CATCH (except, RETURN_MASK_ALL)
     {
@@ -624,37 +629,9 @@ execute_gdb_command (PyObject *self, PyObject *args, PyObject *kw)
     }
   END_CATCH
 
-  /* Do any commands attached to breakpoint we stopped at.  */
-  bpstat_do_actions ();
-
   if (to_string)
     return PyString_FromString (to_string_res.c_str ());
   Py_RETURN_NONE;
-}
-
-/* Implementation of gdb.solib_name (Long) -> String.
-   Returns the name of the shared library holding a given address, or None.  */
-
-static PyObject *
-gdbpy_solib_name (PyObject *self, PyObject *args)
-{
-  char *soname;
-  PyObject *str_obj;
-  gdb_py_ulongest pc;
-
-  if (!PyArg_ParseTuple (args, GDB_PY_LLU_ARG, &pc))
-    return NULL;
-
-  soname = solib_name_from_address (current_program_space, pc);
-  if (soname)
-    str_obj = host_string_to_python_string (soname);
-  else
-    {
-      str_obj = Py_None;
-      Py_INCREF (Py_None);
-    }
-
-  return str_obj;
 }
 
 /* Implementation of Python rbreak command.  Take a REGEX and
@@ -940,36 +917,6 @@ gdbpy_parse_and_eval (PyObject *self, PyObject *args)
   END_CATCH
 
   return value_to_value_object (result);
-}
-
-/* Implementation of gdb.find_pc_line function.
-   Returns the gdb.Symtab_and_line object corresponding to a PC value.  */
-
-static PyObject *
-gdbpy_find_pc_line (PyObject *self, PyObject *args)
-{
-  gdb_py_ulongest pc_llu;
-  PyObject *result = NULL; /* init for gcc -Wall */
-
-  if (!PyArg_ParseTuple (args, GDB_PY_LLU_ARG, &pc_llu))
-    return NULL;
-
-  TRY
-    {
-      struct symtab_and_line sal;
-      CORE_ADDR pc;
-
-      pc = (CORE_ADDR) pc_llu;
-      sal = find_pc_line (pc, 0);
-      result = symtab_and_line_to_sal_object (sal);
-    }
-  CATCH (except, RETURN_MASK_ALL)
-    {
-      GDB_PY_HANDLE_EXCEPTION (except);
-    }
-  END_CATCH
-
-  return result;
 }
 
 /* Implementation of gdb.invalidate_cached_frames.  */
@@ -1333,20 +1280,6 @@ gdbpy_print_stack (void)
 
 
 
-/* Return the current Progspace.
-   There always is one.  */
-
-static PyObject *
-gdbpy_get_current_progspace (PyObject *unused1, PyObject *unused2)
-{
-  PyObject *result;
-
-  result = pspace_to_pspace_object (current_program_space);
-  if (result)
-    Py_INCREF (result);
-  return result;
-}
-
 /* Return a sequence holding all the Progspaces.  */
 
 static PyObject *
@@ -1360,9 +1293,9 @@ gdbpy_progspaces (PyObject *unused1, PyObject *unused2)
 
   ALL_PSPACES (ps)
   {
-    PyObject *item = pspace_to_pspace_object (ps);
+    gdbpy_ref<> item = pspace_to_pspace_object (ps);
 
-    if (!item || PyList_Append (list.get (), item) == -1)
+    if (item == NULL || PyList_Append (list.get (), item.get ()) == -1)
       return NULL;
   }
 
@@ -1426,45 +1359,10 @@ gdbpy_execute_objfile_script (const struct extension_language_defn *extlang,
 static PyObject *
 gdbpy_get_current_objfile (PyObject *unused1, PyObject *unused2)
 {
-  PyObject *result;
-
   if (! gdbpy_current_objfile)
     Py_RETURN_NONE;
 
-  result = objfile_to_objfile_object (gdbpy_current_objfile);
-  if (result)
-    Py_INCREF (result);
-  return result;
-}
-
-/* See python-internal.h.  */
-
-gdbpy_ref<>
-build_objfiles_list (program_space *pspace)
-{
-  struct objfile *objf;
-
-  gdbpy_ref<> list (PyList_New (0));
-  if (list == NULL)
-    return NULL;
-
-  ALL_PSPACE_OBJFILES (pspace, objf)
-    {
-      PyObject *item = objfile_to_objfile_object (objf);
-
-      if (item == nullptr || PyList_Append (list.get (), item) == -1)
-	return NULL;
-    }
-
-  return list;
-}
-
-/* Return a sequence holding all the Objfiles.  */
-
-static PyObject *
-gdbpy_objfiles (PyObject *unused1, PyObject *unused2)
-{
-  return build_objfiles_list (current_program_space).release ();
+  return objfile_to_objfile_object (gdbpy_current_objfile).release ();
 }
 
 /* Compute the list of active python type printers and store them in
@@ -1847,6 +1745,9 @@ do_start_initialization ()
 
 #endif /* HAVE_PYTHON */
 
+/* See python.h.  */
+cmd_list_element *python_cmd_element = nullptr;
+
 void
 _initialize_python (void)
 {
@@ -1876,7 +1777,7 @@ This command is only a placeholder.")
 	   );
   add_com_alias ("pi", "python-interactive", class_obscure, 1);
 
-  add_com ("python", class_obscure, python_command,
+  python_cmd_element = add_com ("python", class_obscure, python_command,
 #ifdef HAVE_PYTHON
 	   _("\
 Evaluate a Python command.\n\
@@ -2042,15 +1943,11 @@ set to True." },
   { "default_visualizer", gdbpy_default_visualizer, METH_VARARGS,
     "Find the default visualizer for a Value." },
 
-  { "current_progspace", gdbpy_get_current_progspace, METH_NOARGS,
-    "Return the current Progspace." },
   { "progspaces", gdbpy_progspaces, METH_NOARGS,
     "Return a sequence of all progspaces." },
 
   { "current_objfile", gdbpy_get_current_objfile, METH_NOARGS,
     "Return the current Objfile being loaded, or None." },
-  { "objfiles", gdbpy_objfiles, METH_NOARGS,
-    "Return a sequence of all loaded objfiles." },
 
   { "newest_frame", gdbpy_newest_frame, METH_NOARGS,
     "newest_frame () -> gdb.Frame.\n\
@@ -2096,11 +1993,6 @@ Look up the specified objfile.\n\
 If by_build_id is True, the objfile is looked up by using name\n\
 as its build id." },
 
-  { "block_for_pc", gdbpy_block_for_pc, METH_VARARGS,
-    "Return the block containing the given pc value, or None." },
-  { "solib_name", gdbpy_solib_name, METH_VARARGS,
-    "solib_name (Long) -> String.\n\
-Return the name of the shared library holding a given address, or None." },
   { "decode_line", gdbpy_decode_line, METH_VARARGS,
     "decode_line (String) -> Tuple.  Decode a string argument the way\n\
 that 'break' or 'edit' does.  Return a tuple containing two elements.\n\
@@ -2112,9 +2004,6 @@ gdb.Symtab_and_line objects (or None)."},
     "parse_and_eval (String) -> Value.\n\
 Parse String as an expression, evaluate it, and return the result as a Value."
   },
-  { "find_pc_line", gdbpy_find_pc_line, METH_VARARGS,
-    "find_pc_line (pc) -> Symtab_and_line.\n\
-Return the gdb.Symtab_and_line object corresponding to the pc value." },
 
   { "post_event", gdbpy_post_event, METH_VARARGS,
     "Post an event into gdb's event loop." },

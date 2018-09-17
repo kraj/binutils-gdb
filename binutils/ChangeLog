@@ -1,3 +1,121 @@
+2018-09-17  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* objcopy.c (strip_specific_buffer): New.
+	(strip_unneeded_buffer): Likewise.
+	(keep_specific_buffer): Likewise.
+	(localize_specific_buffer): Likewise.
+	(globalize_specific_buffer): Likewise.
+	(keepglobal_specific_buffer): Likewise.
+	(weaken_specific_buffer): Likewise.
+	(add_specific_symbols): Add an argument to return pointer to
+	allocated buffer.
+	(copy_main): Update add_specific_symbols to update pointers to
+	allocated buffer.  Free pointers to allocated buffer before
+	return.
+
+2018-09-17  Alan Modra  <amodra@gmail.com>
+
+	* objcopy.c (handle_remove_section_option): Don't require a dot
+	after .rela and .rel to handle a possible relocation section.
+	* testsuite/binutils-all/remove-relocs-07.s,
+	* testsuite/binutils-all/remove-relocs-07.d,
+	* testsuite/binutils-all/remove-relocs-08.d: New tests.
+	* testsuite/binutils-all/remove-relocs-01.d,
+	* testsuite/binutils-all/remove-relocs-04.d,
+	* testsuite/binutils-all/remove-relocs-05.d,
+	* testsuite/binutils-all/remove-relocs-06.d: Exclude mips64-openbsd.
+
+2018-09-17  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/lib/binutils-common.exp (is_som_format): New proc.
+	(run_dump_test): Correct target test for alternate .comm syntax.
+	(get_standard_section_names): Handle som format.
+	* testsuite/lib/utils-lib.exp (default_binutils_assemble_flags):
+	Correct target test for alternate .comm syntax.
+
+2018-09-17  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/binutils-all/strip-13mips64.s: Add section flags
+	for reloc section.
+	* testsuite/binutils-all/strip-13rel.s: Likewise.
+	* testsuite/binutils-all/strip-13rela.s: Likewise.
+	* testsuite/binutils-all/strip-14mips64.s: Likewise.
+	* testsuite/binutils-all/strip-14rel.s: Likewise.
+	* testsuite/binutils-all/strip-14rela.s: Likewise.
+	* testsuite/binutils-all/strip-15mips64.s: Likewise.
+	* testsuite/binutils-all/strip-15rel.s: Likewise.
+	* testsuite/binutils-all/strip-15rela.s: Likewise.
+
+2018-09-17  Nick Clifton  <nickc@redhat.com>
+
+	* testsuite/binutils-all/compress.exp: Rename second "objcopy
+	zlib-gnu compress debug sections 3" test to "objcopy zlib-gabi
+	compress debug sections 3" and use gabi object files instead
+	of gnu object files.
+	* testsuite/binutils-all/objcopy.exp: Add suffix to the names
+	of the "ELF group" tests.
+	* testsuite/binutils-all/readelf.exp (proc readelf_find_size):
+	Add an iteration parameter and include it in the name of the
+	test.  Update callers to include an iteration count.
+
+2018-09-15  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/binutils-all/add-symbol.d: Add "section_subst: no".
+	* testsuite/binutils-all/elfedit.exp: Don't set tempfile or copyfile.
+	* testsuite/binutils-all/symbols-1.d,
+	* testsuite/binutils-all/symbols-2.d,
+	* testsuite/binutils-all/symbols-3.d,
+	* testsuite/binutils-all/symbols-4.d: Quote '*' and '!'.
+	* testsuite/binutils-all/add-empty-section.d,
+	* testsuite/binutils-all/add-section.d,
+	* testsuite/binutils-all/elfedit.exp,
+	* testsuite/binutils-all/note-1.d,
+	* testsuite/binutils-all/pr23633.d: Add $subdir after $srcdir.
+	* testsuite/config/default.exp (AS, ASFLAGS): Define.
+	* testsuite/config/hppa.sed: Handle all common symbols.
+	* testsuite/lib/binutils-common.exp (run_dump_test): New proc,
+	merged from three other versions.
+	(slurp_options, file_contents, set_file_contents): Likewise.
+	(big_or_little_endian, get_standard_section_names): Likewise.
+	* testsuite/lib/utils-lib.exp (run_dump_test): Delete.
+	(slurp_options, proc file_contents): Delete.
+	(get_standard_section_names): Delete.
+
+2018-09-15  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/binutils-all/copy-2.d,
+	* testsuite/binutils-all/copy-3.d,
+	* testsuite/binutils-all/copy-4.d,
+	* testsuite/binutils-all/elfedit-1.d,
+	* testsuite/binutils-all/note-1.d,
+	* testsuite/binutils-all/note-2-64.d,
+	* testsuite/binutils-all/strip-11.d,
+	* testsuite/binutils-all/strip-13.d,
+	* testsuite/binutils-all/strip-14.d,
+	* testsuite/binutils-all/testranges.d,
+	* testsuite/binutils-all/x86-64/pr23494a-x32.d,
+	* testsuite/binutils-all/x86-64/pr23494a.d,
+	* testsuite/binutils-all/x86-64/pr23494b-x32.d,
+	* testsuite/binutils-all/x86-64/pr23494b.d,
+	* testsuite/binutils-all/x86-64/pr23494c-x32.d,
+	* testsuite/binutils-all/x86-64/pr23494c.d,
+	* testsuite/binutils-all/x86-64/pr23494d-x32.d,
+	* testsuite/binutils-all/x86-64/pr23494d.d,
+	* testsuite/binutils-all/x86-64/pr23494e-x32.d,
+	* testsuite/binutils-all/x86-64/pr23494e.d,
+	* testsuite/lib/utils-lib.exp (run_dump_test): Replace not-target
+	and not-skip with notarget and noskip.
+
+2018-09-15  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/binutils-all/group-7a.d,
+	* testsuite/binutils-all/group-7b.d,
+	* testsuite/binutils-all/group-7c.d,
+	* testsuite/binutils-all/symbols-1.d,
+	* testsuite/binutils-all/symbols-2.d,
+	* testsuite/binutils-all/symbols-3.d,
+	* testsuite/binutils-all/symbols-4.d: Remove DUMPPROG.
+
 2018-09-14  Alan Modra  <amodra@gmail.com>
 
 	PR binutils/23633

@@ -306,7 +306,7 @@ find_inferior_object (int pid)
   return NULL;
 }
 
-thread_object *
+gdbpy_ref<>
 thread_to_thread_object (thread_info *thr)
 {
   gdbpy_ref<inferior_object> inf_obj (inferior_to_inferior_object (thr->inf));
@@ -317,8 +317,10 @@ thread_to_thread_object (thread_info *thr)
        thread != NULL;
        thread = thread->next)
     if (thread->thread_obj->thread == thr)
-      return thread->thread_obj;
+      return gdbpy_ref<>::new_reference ((PyObject *) thread->thread_obj);
 
+  PyErr_SetString (PyExc_SystemError,
+		   _("could not find gdb thread object"));
   return NULL;
 }
 
@@ -471,9 +473,7 @@ infpy_get_progspace (PyObject *self, void *closure)
   program_space *pspace = inf->inferior->pspace;
   gdb_assert (pspace != nullptr);
 
-  PyObject *py_pspace = pspace_to_pspace_object (pspace);
-  Py_XINCREF (py_pspace);
-  return py_pspace;
+  return pspace_to_pspace_object (pspace).release ();
 }
 
 static int
@@ -834,7 +834,7 @@ infpy_is_valid (PyObject *self, PyObject *args)
 static PyObject *
 infpy_thread_from_thread_handle (PyObject *self, PyObject *args, PyObject *kw)
 {
-  PyObject *handle_obj, *result;
+  PyObject *handle_obj;
   inferior_object *inf_obj = (inferior_object *) self;
   static const char *keywords[] = { "thread_handle", NULL };
 
@@ -843,8 +843,6 @@ infpy_thread_from_thread_handle (PyObject *self, PyObject *args, PyObject *kw)
   if (! gdb_PyArg_ParseTupleAndKeywords (args, kw, "O", keywords, &handle_obj))
     return NULL;
 
-  result = Py_None;
-
   if (!gdbpy_is_value_object (handle_obj))
     {
       PyErr_SetString (PyExc_TypeError,
@@ -852,29 +850,23 @@ infpy_thread_from_thread_handle (PyObject *self, PyObject *args, PyObject *kw)
 
       return NULL;
     }
-  else
+
+  TRY
     {
-      TRY
-	{
-	  struct thread_info *thread_info;
-	  struct value *val = value_object_to_value (handle_obj);
+      struct thread_info *thread_info;
+      struct value *val = value_object_to_value (handle_obj);
 
-	  thread_info = find_thread_by_handle (val, inf_obj->inferior);
-	  if (thread_info != NULL)
-	    {
-	      result = (PyObject *) thread_to_thread_object (thread_info);
-	      if (result != NULL)
-		Py_INCREF (result);
-	    }
-	}
-      CATCH (except, RETURN_MASK_ALL)
-	{
-	  GDB_PY_HANDLE_EXCEPTION (except);
-	}
-      END_CATCH
+      thread_info = find_thread_by_handle (val, inf_obj->inferior);
+      if (thread_info != NULL)
+	return thread_to_thread_object (thread_info).release ();
     }
+  CATCH (except, RETURN_MASK_ALL)
+    {
+      GDB_PY_HANDLE_EXCEPTION (except);
+    }
+  END_CATCH
 
-  return result;
+  Py_RETURN_NONE;
 }
 
 /* Implement repr() for gdb.Inferior.  */

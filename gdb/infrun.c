@@ -8095,6 +8095,13 @@ maybe_remove_breakpoints (void)
 
 struct stop_context
 {
+  stop_context ();
+  ~stop_context ();
+
+  DISABLE_COPY_AND_ASSIGN (stop_context);
+
+  bool changed () const;
+
   /* The stop ID.  */
   ULONGEST stop_id;
 
@@ -8110,59 +8117,50 @@ struct stop_context
   int inf_num;
 };
 
-/* Returns a new stop context.  If stopped for a thread event, this
+/* Initializes a new stop context.  If stopped for a thread event, this
    takes a strong reference to the thread.  */
 
-static struct stop_context *
-save_stop_context (void)
+stop_context::stop_context ()
 {
-  struct stop_context *sc = XNEW (struct stop_context);
-
-  sc->stop_id = get_stop_id ();
-  sc->ptid = inferior_ptid;
-  sc->inf_num = current_inferior ()->num;
+  stop_id = get_stop_id ();
+  ptid = inferior_ptid;
+  inf_num = current_inferior ()->num;
 
   if (inferior_ptid != null_ptid)
     {
       /* Take a strong reference so that the thread can't be deleted
 	 yet.  */
-      sc->thread = inferior_thread ();
-      sc->thread->incref ();
+      thread = inferior_thread ();
+      thread->incref ();
     }
   else
-    sc->thread = NULL;
-
-  return sc;
+    thread = NULL;
 }
 
 /* Release a stop context previously created with save_stop_context.
    Releases the strong reference to the thread as well. */
 
-static void
-release_stop_context_cleanup (void *arg)
+stop_context::~stop_context ()
 {
-  struct stop_context *sc = (struct stop_context *) arg;
-
-  if (sc->thread != NULL)
-    sc->thread->decref ();
-  xfree (sc);
+  if (thread != NULL)
+    thread->decref ();
 }
 
 /* Return true if the current context no longer matches the saved stop
    context.  */
 
-static int
-stop_context_changed (struct stop_context *prev)
+bool
+stop_context::changed () const
 {
-  if (prev->ptid != inferior_ptid)
-    return 1;
-  if (prev->inf_num != current_inferior ()->num)
-    return 1;
-  if (prev->thread != NULL && prev->thread->state != THREAD_STOPPED)
-    return 1;
-  if (get_stop_id () != prev->stop_id)
-    return 1;
-  return 0;
+  if (ptid != inferior_ptid)
+    return true;
+  if (inf_num != current_inferior ()->num)
+    return true;
+  if (thread != NULL && thread->state != THREAD_STOPPED)
+    return true;
+  if (get_stop_id () != stop_id)
+    return true;
+  return false;
 }
 
 /* See infrun.h.  */
@@ -8305,9 +8303,7 @@ normal_stop (void)
      of stop_command's pre-hook not existing).  */
   if (stop_command != NULL)
     {
-      struct stop_context *saved_context = save_stop_context ();
-      struct cleanup *old_chain
-	= make_cleanup (release_stop_context_cleanup, saved_context);
+      stop_context saved_context;
 
       TRY
 	{
@@ -8325,12 +8321,8 @@ normal_stop (void)
 	 gone.  Likewise if the command switches thread or inferior --
 	 the observers would print a stop for the wrong
 	 thread/inferior.  */
-      if (stop_context_changed (saved_context))
-	{
-	  do_cleanups (old_chain);
-	  return 1;
-	}
-      do_cleanups (old_chain);
+      if (saved_context.changed ())
+	return 1;
     }
 
   /* Notify observers about the stop.  This is where the interpreters
@@ -8810,52 +8802,46 @@ struct infcall_suspend_state
   struct thread_suspend_state thread_suspend;
 
   /* Other fields:  */
-  readonly_detached_regcache *registers;
+  std::unique_ptr<readonly_detached_regcache> registers;
 
   /* Format of SIGINFO_DATA or NULL if it is not present.  */
-  struct gdbarch *siginfo_gdbarch;
+  struct gdbarch *siginfo_gdbarch = nullptr;
 
   /* The inferior format depends on SIGINFO_GDBARCH and it has a length of
      TYPE_LENGTH (gdbarch_get_siginfo_type ()).  For different gdbarch the
      content would be invalid.  */
-  gdb_byte *siginfo_data;
+  gdb::unique_xmalloc_ptr<gdb_byte> siginfo_data;
 };
 
-struct infcall_suspend_state *
-save_infcall_suspend_state (void)
+infcall_suspend_state_up
+save_infcall_suspend_state ()
 {
-  struct infcall_suspend_state *inf_state;
   struct thread_info *tp = inferior_thread ();
   struct regcache *regcache = get_current_regcache ();
   struct gdbarch *gdbarch = regcache->arch ();
-  gdb_byte *siginfo_data = NULL;
+  gdb::unique_xmalloc_ptr<gdb_byte> siginfo_data;
 
   if (gdbarch_get_siginfo_type_p (gdbarch))
     {
       struct type *type = gdbarch_get_siginfo_type (gdbarch);
       size_t len = TYPE_LENGTH (type);
-      struct cleanup *back_to;
 
-      siginfo_data = (gdb_byte *) xmalloc (len);
-      back_to = make_cleanup (xfree, siginfo_data);
+      siginfo_data.reset ((gdb_byte *) xmalloc (len));
 
       if (target_read (current_top_target (), TARGET_OBJECT_SIGNAL_INFO, NULL,
-		       siginfo_data, 0, len) == len)
-	discard_cleanups (back_to);
-      else
+		       siginfo_data.get (), 0, len) != len)
 	{
 	  /* Errors ignored.  */
-	  do_cleanups (back_to);
-	  siginfo_data = NULL;
+	  siginfo_data.reset (nullptr);
 	}
     }
 
-  inf_state = XCNEW (struct infcall_suspend_state);
+  infcall_suspend_state_up inf_state (new struct infcall_suspend_state);
 
   if (siginfo_data)
     {
       inf_state->siginfo_gdbarch = gdbarch;
-      inf_state->siginfo_data = siginfo_data;
+      inf_state->siginfo_data = std::move (siginfo_data);
     }
 
   inf_state->thread_suspend = tp->suspend;
@@ -8864,7 +8850,7 @@ save_infcall_suspend_state (void)
      GDB_SIGNAL_0 anyway.  */
   tp->suspend.stop_signal = GDB_SIGNAL_0;
 
-  inf_state->registers = new readonly_detached_regcache (*regcache);
+  inf_state->registers.reset (new readonly_detached_regcache (*regcache));
 
   return inf_state;
 }
@@ -8886,43 +8872,28 @@ restore_infcall_suspend_state (struct infcall_suspend_state *inf_state)
 
       /* Errors ignored.  */
       target_write (current_top_target (), TARGET_OBJECT_SIGNAL_INFO, NULL,
-		    inf_state->siginfo_data, 0, TYPE_LENGTH (type));
+		    inf_state->siginfo_data.get (), 0, TYPE_LENGTH (type));
     }
 
   /* The inferior can be gone if the user types "print exit(0)"
      (and perhaps other times).  */
   if (target_has_execution)
     /* NB: The register write goes through to the target.  */
-    regcache->restore (inf_state->registers);
+    regcache->restore (inf_state->registers.get ());
 
   discard_infcall_suspend_state (inf_state);
-}
-
-static void
-do_restore_infcall_suspend_state_cleanup (void *state)
-{
-  restore_infcall_suspend_state ((struct infcall_suspend_state *) state);
-}
-
-struct cleanup *
-make_cleanup_restore_infcall_suspend_state
-  (struct infcall_suspend_state *inf_state)
-{
-  return make_cleanup (do_restore_infcall_suspend_state_cleanup, inf_state);
 }
 
 void
 discard_infcall_suspend_state (struct infcall_suspend_state *inf_state)
 {
-  delete inf_state->registers;
-  xfree (inf_state->siginfo_data);
-  xfree (inf_state);
+  delete inf_state;
 }
 
 readonly_detached_regcache *
 get_infcall_suspend_state_regcache (struct infcall_suspend_state *inf_state)
 {
-  return inf_state->registers;
+  return inf_state->registers.get ();
 }
 
 /* infcall_control_state contains state regarding gdb's control of the
@@ -8935,21 +8906,20 @@ struct infcall_control_state
   struct inferior_control_state inferior_control;
 
   /* Other fields:  */
-  enum stop_stack_kind stop_stack_dummy;
-  int stopped_by_random_signal;
+  enum stop_stack_kind stop_stack_dummy = STOP_NONE;
+  int stopped_by_random_signal = 0;
 
   /* ID if the selected frame when the inferior function call was made.  */
-  struct frame_id selected_frame_id;
+  struct frame_id selected_frame_id {};
 };
 
 /* Save all of the information associated with the inferior<==>gdb
    connection.  */
 
-struct infcall_control_state *
-save_infcall_control_state (void)
+infcall_control_state_up
+save_infcall_control_state ()
 {
-  struct infcall_control_state *inf_status =
-    XNEW (struct infcall_control_state);
+  infcall_control_state_up inf_status (new struct infcall_control_state);
   struct thread_info *tp = inferior_thread ();
   struct inferior *inf = current_inferior ();
 
@@ -9035,20 +9005,7 @@ restore_infcall_control_state (struct infcall_control_state *inf_status)
       END_CATCH
     }
 
-  xfree (inf_status);
-}
-
-static void
-do_restore_infcall_control_state_cleanup (void *sts)
-{
-  restore_infcall_control_state ((struct infcall_control_state *) sts);
-}
-
-struct cleanup *
-make_cleanup_restore_infcall_control_state
-  (struct infcall_control_state *inf_status)
-{
-  return make_cleanup (do_restore_infcall_control_state_cleanup, inf_status);
+  delete inf_status;
 }
 
 void
@@ -9065,7 +9022,7 @@ discard_infcall_control_state (struct infcall_control_state *inf_status)
   /* See save_infcall_control_state for info on stop_bpstat.  */
   bpstat_clear (&inf_status->thread_control.stop_bpstat);
 
-  xfree (inf_status);
+  delete inf_status;
 }
 
 /* See infrun.h.  */

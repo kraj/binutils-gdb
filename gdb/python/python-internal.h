@@ -27,27 +27,15 @@
    comes with the Python plugin for GCC.  See:
    https://gcc-python-plugin.readthedocs.org/en/latest/cpychecker.html
    The checker defines a WITH_ macro for each attribute it
-   exposes.  */
-
-#ifdef WITH_CPYCHECKER_RETURNS_BORROWED_REF_ATTRIBUTE
-#define CPYCHECKER_RETURNS_BORROWED_REF			\
-  __attribute__ ((cpychecker_returns_borrowed_ref))
-#else
-#define CPYCHECKER_RETURNS_BORROWED_REF
-#endif
+   exposes.  Note that we intentionally do not use
+   'cpychecker_returns_borrowed_ref' -- that idiom is forbidden in
+   gdb.  */
 
 #ifdef WITH_CPYCHECKER_TYPE_OBJECT_FOR_TYPEDEF_ATTRIBUTE
 #define CPYCHECKER_TYPE_OBJECT_FOR_TYPEDEF(ARG)		\
   __attribute__ ((cpychecker_type_object_for_typedef (ARG)))
 #else
 #define CPYCHECKER_TYPE_OBJECT_FOR_TYPEDEF(ARG)
-#endif
-
-#ifdef WITH_CPYCHECKER_STEALS_REFERENCE_TO_ARG_ATTRIBUTE
-#define CPYCHECKER_STEALS_REFERENCE_TO_ARG(n) \
-   __attribute__ ((cpychecker_steals_reference_to_arg (n)))
-#else
-#define CPYCHECKER_STEALS_REFERENCE_TO_ARG(n)
 #endif
 
 #ifdef WITH_CPYCHECKER_SETS_EXCEPTION_ATTRIBUTE
@@ -492,7 +480,6 @@ PyObject *gdbpy_current_recording (PyObject *self, PyObject *args);
 PyObject *gdbpy_stop_recording (PyObject *self, PyObject *args);
 PyObject *gdbpy_newest_frame (PyObject *self, PyObject *args);
 PyObject *gdbpy_selected_frame (PyObject *self, PyObject *args);
-PyObject *gdbpy_block_for_pc (PyObject *self, PyObject *args);
 PyObject *gdbpy_lookup_type (PyObject *self, PyObject *args, PyObject *kw);
 int gdbpy_is_field (PyObject *obj);
 PyObject *gdbpy_create_lazy_string_object (CORE_ADDR address, long length,
@@ -517,15 +504,13 @@ PyObject *value_to_value_object (struct value *v);
 PyObject *type_to_type_object (struct type *);
 PyObject *frame_info_to_frame_object (struct frame_info *frame);
 PyObject *symtab_to_linetable_object (PyObject *symtab);
-PyObject *pspace_to_pspace_object (struct program_space *)
-    CPYCHECKER_RETURNS_BORROWED_REF;
+gdbpy_ref<> pspace_to_pspace_object (struct program_space *);
 PyObject *pspy_get_printers (PyObject *, void *);
 PyObject *pspy_get_frame_filters (PyObject *, void *);
 PyObject *pspy_get_frame_unwinders (PyObject *, void *);
 PyObject *pspy_get_xmethods (PyObject *, void *);
 
-PyObject *objfile_to_objfile_object (struct objfile *)
-    CPYCHECKER_RETURNS_BORROWED_REF;
+gdbpy_ref<> objfile_to_objfile_object (struct objfile *);
 PyObject *objfpy_get_printers (PyObject *, void *);
 PyObject *objfpy_get_frame_filters (PyObject *, void *);
 PyObject *objfpy_get_frame_unwinders (PyObject *, void *);
@@ -535,8 +520,7 @@ PyObject *gdbpy_lookup_objfile (PyObject *self, PyObject *args, PyObject *kw);
 PyObject *gdbarch_to_arch_object (struct gdbarch *gdbarch);
 
 thread_object *create_thread_object (struct thread_info *tp);
-thread_object *thread_to_thread_object (thread_info *thr)
-  CPYCHECKER_RETURNS_BORROWED_REF;
+gdbpy_ref<> thread_to_thread_object (thread_info *thr);;
 inferior_object *inferior_to_inferior_object (inferior *inf);
 
 const struct block *block_object_to_block (PyObject *obj);
@@ -548,10 +532,6 @@ struct symtab *symtab_object_to_symtab (PyObject *obj);
 struct symtab_and_line *sal_object_to_symtab_and_line (PyObject *obj);
 struct frame_info *frame_object_to_frame_info (PyObject *frame_obj);
 struct gdbarch *arch_object_to_gdbarch (PyObject *obj);
-
-/* Return a Python list containing an Objfile object for each objfile in
-   PSPACE.  */
-gdbpy_ref<> build_objfiles_list (program_space *pspace);
 
 void gdbpy_initialize_gdb_readline (void);
 int gdbpy_initialize_auto_load (void)

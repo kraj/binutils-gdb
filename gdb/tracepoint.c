@@ -2427,7 +2427,7 @@ tfind_range_command (const char *args, int from_tty)
 
   if (args == 0 || *args == 0)
     { /* XXX FIXME: what should default behavior be?  */
-      printf_filtered ("Usage: tfind range <startaddr>,<endaddr>\n");
+      printf_filtered ("Usage: tfind range STARTADDR, ENDADDR\n");
       return;
     }
 
@@ -2461,7 +2461,7 @@ tfind_outside_command (const char *args, int from_tty)
 
   if (args == 0 || *args == 0)
     { /* XXX FIXME: what should default behavior be?  */
-      printf_filtered ("Usage: tfind outside <startaddr>,<endaddr>\n");
+      printf_filtered ("Usage: tfind outside STARTADDR, ENDADDR\n");
       return;
     }
 
@@ -3977,6 +3977,9 @@ static const struct internalvar_funcs sdata_funcs =
   NULL
 };
 
+/* See tracepoint.h.  */
+cmd_list_element *while_stepping_cmd_element = nullptr;
+
 /* module initialization */
 void
 _initialize_tracepoint (void)
@@ -4031,12 +4034,12 @@ No argument means forward by one frame; '-' means backward by one frame."),
 
   add_cmd ("outside", class_trace, tfind_outside_command, _("\
 Select a trace frame whose PC is outside the given range (exclusive).\n\
-Usage: tfind outside addr1, addr2"),
+Usage: tfind outside ADDR1, ADDR2"),
 	   &tfindlist);
 
   add_cmd ("range", class_trace, tfind_range_command, _("\
 Select a trace frame whose PC is in the given range (inclusive).\n\
-Usage: tfind range addr1,addr2"),
+Usage: tfind range ADDR1, ADDR2"),
 	   &tfindlist);
 
   add_cmd ("line", class_trace, tfind_line_command, _("\
@@ -4088,7 +4091,8 @@ Entering \"end\" on a line by itself is the normal way to terminate\n\
 such a list.\n\n\
 Note: the \"end\" command cannot be used at the gdb prompt."));
 
-  add_com ("while-stepping", class_trace, while_stepping_pseudocommand, _("\
+  while_stepping_cmd_element = add_com ("while-stepping", class_trace,
+					while_stepping_pseudocommand, _("\
 Specify single-stepping behavior at a tracepoint.\n\
 Argument is number of instructions to trace in single-step mode\n\
 following the tracepoint.  This command is normally followed by\n\

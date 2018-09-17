@@ -52,17 +52,17 @@ struct thread_control_state
   /* User/external stepping state.  */
 
   /* Step-resume or longjmp-resume breakpoint.  */
-  struct breakpoint *step_resume_breakpoint;
+  struct breakpoint *step_resume_breakpoint = nullptr;
 
   /* Exception-resume breakpoint.  */
-  struct breakpoint *exception_resume_breakpoint;
+  struct breakpoint *exception_resume_breakpoint = nullptr;
 
   /* Breakpoints used for software single stepping.  Plural, because
      it may have multiple locations.  E.g., if stepping over a
      conditional branch instruction we can't decode the condition for,
      we'll need to put a breakpoint at the branch destination, and
      another at the instruction after the branch.  */
-  struct breakpoint *single_step_breakpoints;
+  struct breakpoint *single_step_breakpoints = nullptr;
 
   /* Range to single step within.
 
@@ -74,11 +74,11 @@ struct thread_control_state
      wait_for_inferior in a minor way if this were changed to the
      address of the instruction and that address plus one.  But maybe
      not).  */
-  CORE_ADDR step_range_start;	/* Inclusive */
-  CORE_ADDR step_range_end;	/* Exclusive */
+  CORE_ADDR step_range_start = 0;	/* Inclusive */
+  CORE_ADDR step_range_end = 0;		/* Exclusive */
 
   /* Function the thread was in as of last it started stepping.  */
-  struct symbol *step_start_function;
+  struct symbol *step_start_function = nullptr;
 
   /* If GDB issues a target step request, and this is nonzero, the
      target should single-step this thread once, and then continue
@@ -86,16 +86,16 @@ struct thread_control_state
      thread stops in the step range above.  If this is zero, the
      target should ignore the step range, and only issue one single
      step.  */
-  int may_range_step;
+  int may_range_step = 0;
 
   /* Stack frame address as of when stepping command was issued.
      This is how we know when we step into a subroutine call, and how
      to set the frame for the breakpoint used to step out.  */
-  struct frame_id step_frame_id;
+  struct frame_id step_frame_id {};
 
   /* Similarly, the frame ID of the underlying stack frame (skipping
      any inlined frames).  */
-  struct frame_id step_stack_frame_id;
+  struct frame_id step_stack_frame_id {};
 
   /* Nonzero if we are presently stepping over a breakpoint.
 
@@ -119,29 +119,29 @@ struct thread_control_state
      wait_for_inferior, which calls handle_inferior_event in a loop,
      and until wait_for_inferior exits, this variable is changed only
      by keep_going.  */
-  int trap_expected;
+  int trap_expected = 0;
 
   /* Nonzero if the thread is being proceeded for a "finish" command
      or a similar situation when return value should be printed.  */
-  int proceed_to_finish;
+  int proceed_to_finish = 0;
 
   /* Nonzero if the thread is being proceeded for an inferior function
      call.  */
-  int in_infcall;
+  int in_infcall = 0;
 
-  enum step_over_calls_kind step_over_calls;
+  enum step_over_calls_kind step_over_calls = STEP_OVER_NONE;
 
   /* Nonzero if stopped due to a step command.  */
-  int stop_step;
+  int stop_step = 0;
 
   /* Chain containing status of breakpoint(s) the thread stopped
      at.  */
-  bpstat stop_bpstat;
+  bpstat stop_bpstat = nullptr;
 
   /* Whether the command that started the thread was a stepping
      command.  This is used to decide whether "set scheduler-locking
      step" behaves like "on" or "off".  */
-  int stepping_command;
+  int stepping_command = 0;
 };
 
 /* Inferior thread specific part of `struct infcall_suspend_state'.  */
@@ -155,16 +155,16 @@ struct thread_suspend_state
      "signal" command, which overrides "handle nopass".  If the signal
      should be suppressed, the core will take care of clearing this
      before the target is resumed.  */
-  enum gdb_signal stop_signal;
+  enum gdb_signal stop_signal = GDB_SIGNAL_0;
 
   /* The reason the thread last stopped, if we need to track it
      (breakpoint, watchpoint, etc.)  */
-  enum target_stop_reason stop_reason;
+  enum target_stop_reason stop_reason = TARGET_STOPPED_BY_NO_REASON;
 
   /* The waitstatus for this thread's last event.  */
-  struct target_waitstatus waitstatus;
+  struct target_waitstatus waitstatus {};
   /* If true WAITSTATUS hasn't been handled yet.  */
-  int waitstatus_pending_p;
+  int waitstatus_pending_p = 0;
 
   /* Record the pc of the thread the last time it stopped.  (This is
      not the current thread's PC as that may have changed since the
@@ -181,7 +181,7 @@ struct thread_suspend_state
 
      - If the thread is running, this is set to -1, to avoid leaving
        it with a stale value, to make it easier to catch bugs.  */
-  CORE_ADDR stop_pc;
+  CORE_ADDR stop_pc = 0;
 };
 
 /* Base class for target-specific thread data.  */
@@ -296,11 +296,11 @@ public:
 
   /* State of GDB control of inferior thread execution.
      See `struct thread_control_state'.  */
-  thread_control_state control {};
+  thread_control_state control;
 
   /* State of inferior thread to restore after GDB is done with an inferior
      call.  See `struct thread_suspend_state'.  */
-  thread_suspend_state suspend {};
+  thread_suspend_state suspend;
 
   int current_line = 0;
   struct symtab *current_symtab = NULL;

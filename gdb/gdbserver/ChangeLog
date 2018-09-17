@@ -1,3 +1,20 @@
+2018-09-16  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* Makefile.in (gdbserver$(EXEEXT)): Sort OBS.
+	(gdbreplay$(EXEEXT)): Sort GDBREPLAY_OBS.
+	($(IPA_LIB)): Sort IPA_OBJS.
+
+2018-09-16  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* Makefile.in: Remove references to $(ADD_DEPS).
+
+2018-09-16  Tom Tromey  <tom@tromey.com>
+
+	* remote-utils.c (remote_open): Use GNU style for metasyntactic
+	variables.
+	* gdbreplay.c (gdbreplay_usage): Use GNU style for metasyntactic
+	variables.
+
 2018-09-05  Tom Tromey  <tom@tromey.com>
 
 	* configure: Rebuild.
