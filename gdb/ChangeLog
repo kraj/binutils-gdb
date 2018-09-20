@@ -1,3 +1,274 @@
+2018-09-20  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* proc-utils.h (PROC_CTL_WORD_TYPE): Remove.
+
+	* procfs.c: Don't check for PR_MODEL_NATIVE definition.
+	* sparc-sol2-nat.c: Likewise.  Remove Linux, __arch64__ references.
+	* sol-thread.c (ps_pdmodel): Don't guard definition.
+
+	* procfs.c: Fix formatting.
+
+	* procfs.c (sysset_t_alloc): Remove.
+	(create_procinfo): Use XNEW instead of sysset_t_alloc.
+	(procfs_debug_inferior): Likewise.
+	(procfs_set_exec_trap): Likewise.
+	(proc_set_traced_sysentry): Don't allocate argp dynamically.
+	(proc_set_traced_sysexit): Likewise.
+
+	* procfs.c (create_procinfo): Use xsnprintf to fix ARI warning.
+	(dead_procinfo): Likewise.
+	(proc_warn): Likewise.
+	(proc_error): Likewise.
+	(proc_get_LDT_entry): Likewise.
+	(do_attach): Likewise.
+	(procfs_target::pid_to_str): Likewise.
+	(iterate_over_mappings): Likewise.
+
+	* procfs.c (create_procinfo): Fix ARI warning.
+	(proc_get_status): Likewise.
+	(proc_stop_process): Likewise.
+	(proc_run_process): Likewise.
+	(proc_kill): Likewise.
+	(proc_get_LDT_entry): Likewise.
+	(procfs_find_LDT_entry): Likewise.
+	(proc_update_threads): Likewise.
+	(proc_iterate_over_threads): Likewise.
+	(do_attach): Likewise.
+	(procfs_xfer_memory): Likewise.
+	(invalidate_cache): Likewise.
+	(procfs_target::resume): Likewise.
+	(procfs_init_inferior): Likewise.
+	(procfs_set_exec_trap): Likewise.
+	(procfs_target::thread_alive): Likewise.
+	(procfs_target::pid_to_exec_file): Likewise.
+	(iterate_over_mappings): Likewise.
+	(procfs_target::make_corefile_notes): Likewise.
+	* sol-thread.c (sol_thread_target::thread_alive): Likewise.
+
+	* procfs.c (procfs_find_LDT_entry): Silence ARI warning.
+	(procfs_find_LDT_entry): Likewise.
+	* sol-thread.c (ps_lgetLDT): Likewise.
+
+2018-09-20  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	PR tdep/17903
+	* procfs.c (procfs_target): Declare pid_to_exec_file.
+	(procfs_target::pid_to_exec_file): New.
+
+2018-09-20  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* auxv.c (default_print_auxv_entry): Reflect AT_SUN_CAP_HW1
+	renaming.
+	Handle AT_SUN_EMULATOR, AT_SUN_BRANDNAME, AT_SUN_BRAND_AUX1,
+	AT_SUN_BRAND_AUX2, AT_SUN_BRAND_AUX3, AT_SUN_CAP_HW2.
+
+2018-09-20  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* i386-v4-nat.c (regmap, supply_gregset, fill_gregset)
+	(supply_fpregset, fill_fpregset): Move ...
+	* i386-sol2-nat.c [PR_MODEL_NATIVE != PR_MODEL_LP64]: ... here.
+	Remove HAVE_GREGSET_T, HAVE_FPREGET_T guards.
+	Remove references to ioctl-based procfs.
+	Include <sys/reg.h>.
+	Remove PR_MODEL_NATIVE guards.
+	* configure.nat <sol2, i386> (NATDEPFILES): Remove i386-v4-nat.o.
+	* Makefile.in (ALLDEPFILES): Remove i386-v4-nat.c.
+
+2018-09-19  Xavier Roirand  <roirand@adacore.com>
+
+	PR gdb/20981:
+	* solib-darwin.c (darwin_get_dyld_bfd): New function.
+	(darwin_solib_get_all_image_info_addr_at_init): Update call.
+	(darwin_solib_create_inferior_hook): Handle unrelocated dyld.
+
+2018-09-19  John Baldwin  <jhb@FreeBSD.org>
+
+	* fbsd-tdep.c (fbsd_print_sockaddr_in): Style fix.
+	(fbsd_print_sockaddr_in6): Likewise.
+
+2018-09-19  Richard Bunt  <richard.bunt@arm.com>
+	    Chris January  <chris.january@arm.com>
+
+	* eval.c (skip_undetermined_arglist): Skip argument list helper.
+	(evaluate_subexp_standard): Return a dummy type when
+	honoring EVAL_SKIP in OP_VAR_VALUE and handle skipping in the
+	OP_F77_UNDETERMINED_ARGLIST case.
+	* expression.h (enum noside): Update comment.
+
+2018-09-19  George Vasick <george.vasick@oracle.com>
+
+	* solib-svr4.c (svr4_same_1): Also handle amd64 ld.so.1.
+
+2018-09-19  Stefan Teleman <stefan.teleman@oracle.com>
+	    April Chin <april.chin@oracle.com>
+	    Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* procfs.c (MAX_PROC_NAME_SIZE): Allow for 6-digit PID_MAX and
+	uint_t lwpid_t.
+	(create_procinfo): Print pids in /proc without leading zeros.
+
+2018-09-18  Sandra Loosemore  <sandra@codesourcery.com>
+
+	* nios2-tdep.c (nios2_gcc_target_options): New.
+	(nios2_gdb_arch_init): Install new hook.
+
+2018-09-18  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* patches/0001-Fix-PR-gdb-23558-Use-system-s-getcwd-when-cross-comp.patch:
+	New file.
+	* update-gnulib.sh: Apply patch.
+	* configure: Re-generate.
+
+2018-09-18  John Baldwin  <jhb@FreeBSD.org>
+
+	* infcmd.c (_initialize_infcmd): Remove "running" from "info proc"
+	description.  Make "info proc" command descriptions more
+	consistent.
+
+2018-09-18  John Baldwin  <jhb@FreeBSD.org>
+
+	* NEWS: Mention 'info proc files' command.
+
+2018-09-18  John Baldwin  <jhb@FreeBSD.org>
+
+	* fbsd-nat.c (fbsd_nat_target::info_proc): List open file
+	descriptors for IP_FILES and IP_ALL.
+
+2018-09-18  John Baldwin  <jhb@FreeBSD.org>
+
+	* fbsd-tdep.c (KF_FLAGS, KF_OFFSET, KF_VNODE_TYPE, KF_SOCK_DOMAIN)
+	(KF_SOCK_TYPE, KF_SOCK_PROTOCOL, KF_SA_LOCAL, KF_SA_PEER)
+	(KINFO_FILE_TYPE_SOCKET, KINFO_FILE_TYPE_PIPE)
+	(KINFO_FILE_TYPE_FIFO, KINFO_FILE_TYPE_KQUEUE)
+	(KINFO_FILE_TYPE_CRYPTO, KINFO_FILE_TYPE_MQUEUE)
+	(KINFO_FILE_TYPE_SHM, KINFO_FILE_TYPE_SEM, KINFO_FILE_TYPE_PTS)
+	(KINFO_FILE_TYPE_PROCDESC, KINFO_FILE_FD_TYPE_ROOT)
+	(KINFO_FILE_FD_TYPE_JAIL, KINFO_FILE_FD_TYPE_TRACE)
+	(KINFO_FILE_FD_TYPE_CTTY, KINFO_FILE_FLAG_READ)
+	(KINFO_FILE_FLAG_WRITE, KINFO_FILE_FLAG_APPEND)
+	(KINFO_FILE_FLAG_ASYNC, KINFO_FILE_FLAG_FSYNC)
+	(KINFO_FILE_FLAG_NONBLOCK, KINFO_FILE_FLAG_DIRECT)
+	(KINFO_FILE_FLAG_HASLOCK, KINFO_FILE_FLAG_EXEC)
+	(KINFO_FILE_VTYPE_VREG, KINFO_FILE_VTYPE_VDIR)
+	(KINFO_FILE_VTYPE_VCHR, KINFO_FILE_VTYPE_VLNK)
+	(KINFO_FILE_VTYPE_VSOCK, KINFO_FILE_VTYPE_VFIFO, FBSD_AF_UNIX)
+	(FBSD_AF_INET, FBSD_AF_INET6, FBSD_SOCK_STREAM, FBSD_SOCK_DGRAM)
+	(FBSD_SOCK_SEQPACKET, FBSD_IPPROTO_ICMP, FBSD_IPPROTO_TCP)
+	(FBSD_IPPROTO_UDP, FBSD_IPPROTO_SCTP): New defines.
+	(struct fbsd_sockaddr_in, struct fbsd_sockaddr_in6)
+	(struct fbsd_sockaddr_un): New types.
+	(fbsd_file_fd, fbsd_file_type, fbsd_file_flags, fbsd_ipproto)
+	(fbsd_print_sockaddr_in, fbsd_print_sockaddr_in6)
+	(fbsd_info_proc_files_header, fbsd_info_proc_files_entry)
+	(fbsd_core_info_proc_files): New functions.
+	(fbsd_core_info_proc): List open file descriptors for IP_FILES and
+	IP_ALL.
+	* fbsd-tdep.h (fbsd_info_proc_files_header)
+	(fbsd_info_proc_files_entry): New.
+
+2018-09-18  John Baldwin  <jhb@FreeBSD.org>
+
+	* defs.h (enum info_proc_what) [IP_FILES]: New value.
+	* infcmd.c (info_proc_cmd_files): New function.
+	(_initialize_infcmd): Register 'info proc files' command.
+
+2018-09-18  John Baldwin  <jhb@FreeBSD.org>
+
+	* gnulib/aclocal-m4-deps.mk: Re-generate.
+	* gnulib/aclocal.m4: Re-generate.
+	* gnulib/config.in: Re-generate.
+	* gnulib/configure: Re-generate.
+	* gnulib/import/Makefile.am: Re-generate.
+	* gnulib/import/Makefile.in: Re-generate.
+	* gnulib/import/m4/gnulib-cache.m4: Re-generate.
+	* gnulib/import/m4/gnulib-comp.m4: Re-generate.
+	* gnulib/import/arpa_inet.in.h: New file.
+	* gnulib/import/inet_ntop.c: New file.
+	* gnulib/import/m4/arpa_inet_h.m4: New file.
+	* gnulib/import/m4/inet_ntop.m4: New file.
+	* gnulib/import/m4/netinet_in_h.m4: New file.
+	* gnulib/import/m4/socklen.m4: New file.
+	* gnulib/import/m4/sockpfaf.m4: New file.
+	* gnulib/import/m4/stdalign.m4: New file.
+	* gnulib/import/m4/sys_uio_h.m4: New file.
+	* gnulib/import/netinet_in.in.h: New file.
+	* gnulib/import/stdalign.in.h: New file.
+	* gnulib/import/sys_socket.c: New file.
+	* gnulib/import/sys_socket.in.h: New file.
+	* gnulib/import/sys_uio.in.h: New file.
+	* gnulib/update-gnulib.sh (IMPORTED_GNULIB_MODULES): Add inet_ntop
+	module.
+
+2018-09-18  John Baldwin  <jhb@FreeBSD.org>
+
+	* gnulib/aclocal-m4-deps.mk: New file.
+	* gnulib/update-gnulib.sh: Generate "aclocal-m4-deps.mk"
+	deterministically.
+
+2018-09-18  John Baldwin  <jhb@FreeBSD.org>
+
+	* fbsd-tdep.c (fbsd_core_vnode_path): Use KF_PATH instead of
+	KVE_PATH.
+
+2018-09-18  Tom Tromey  <tom@tromey.com>
+
+	* compile/compile-object-load.c (struct
+	link_hash_table_cleanup_data): Add constructor and destructor.
+	Use DISABLE_COPY_AND_ASSIGN.
+	(~link_hash_table_cleanup_data): Rename from
+	link_hash_table_free.  Now a destructor.
+	(copy_sections): Use gdb::unique_xmalloc_ptr.  Remove cleanups.
+
+2018-09-18  Tom Tromey  <tom@tromey.com>
+
+	* compile/compile-object-run.c (do_module_cleanup): Use delete.
+	* compile/compile-object-load.c (struct munmap_list): Move to
+	header file.
+	(munmap_list::add): Rename from munmap_list_add; rewrite.
+	(munmap_list::~munmap_list): Rename from munmap_list_free.
+	(munmap_listp_free_cleanup): Remove.
+	(compile_object_load): Update.
+	* compile/compile-object-load.h (struct munmap_list): Move from
+	compile-object-load.c.  Rewrite.
+
+2018-09-18  Alan Hayward  <alan.hayward@arm.com>
+
+	* aarch64-tdep.c (pass_in_v): Use register size.
+	(aarch64_extract_return_value): Likewise.
+	(aarch64_store_return_value): Likewise.
+
+2018-09-18  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* utils.c (dump_core) [HAVE_SETRLIMIT]: Cast RLIM_INFINITY to
+	rlim_t.
+
+2018-09-17  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* python/lib/gdb/command/frame_filters.py (EnableFrameFilter):
+	Fix short help line.
+
+2018-09-17  Tom Tromey  <tom@tromey.com>
+
+	PR python/20445:
+	* configure: Rebuild.
+	* configure.ac: Conditionally use -DNDEBUG for Python.
+
+2018-09-17  Tom Tromey  <tom@tromey.com>
+
+	* configure: Rebuild.
+	* configure.ac: Use gmp as a library dependency when checking for
+	mpfr.
+
+2018-09-17  Pedro Alves  <palves@redhat.com>
+
+	* python/py-inferior.c (find_inferior_object): Delete.
+
+2018-09-17  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* compile/compile-cplus-types.c
+	(compile_cplus_instance::enter_scope): Don't use new_scope after
+	std::move.
+
 2018-09-17  Tom Tromey  <tom@tromey.com>
 
 	* common/pathstuff.c (get_standard_cache_dir): Use

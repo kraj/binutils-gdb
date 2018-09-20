@@ -34,56 +34,33 @@
 #include "arch-utils.h"
 #include <algorithm>
 
-/* Track inferior memory reserved by inferior mmap.  */
-
-struct munmap_list
-{
-  struct munmap_list *next;
-  CORE_ADDR addr, size;
-};
-
-/* Add inferior mmap memory range ADDR..ADDR+SIZE (exclusive) to list
-   HEADP.  *HEADP needs to be initialized to NULL.  */
-
-static void
-munmap_list_add (struct munmap_list **headp, CORE_ADDR addr, CORE_ADDR size)
-{
-  struct munmap_list *head_new = XNEW (struct munmap_list);
-
-  head_new->next = *headp;
-  *headp = head_new;
-  head_new->addr = addr;
-  head_new->size = size;
-}
-
-/* Free list of inferior mmap memory ranges HEAD.  HEAD is the first
-   element of the list, it can be NULL.  After calling this function
-   HEAD pointer is invalid and the possible list needs to be
-   reinitialized by caller to NULL.  */
+/* Add inferior mmap memory range ADDR..ADDR+SIZE (exclusive) to the
+   list.  */
 
 void
-munmap_list_free (struct munmap_list *head)
+munmap_list::add (CORE_ADDR addr, CORE_ADDR size)
 {
-  while (head)
-    {
-      struct munmap_list *todo = head;
-
-      head = todo->next;
-      gdbarch_infcall_munmap (target_gdbarch (), todo->addr, todo->size);
-      xfree (todo);
-    }
+  struct munmap_item item = { addr, size };
+  items.push_back (item);
 }
 
-/* Stub for munmap_list_free suitable for make_cleanup.  Contrary to
-   munmap_list_free this function's parameter is a pointer to the first
-   list element pointer.  */
+/* Destroy an munmap_list.  */
 
-static void
-munmap_listp_free_cleanup (void *headp_voidp)
+munmap_list::~munmap_list ()
 {
-  struct munmap_list **headp = (struct munmap_list **) headp_voidp;
-
-  munmap_list_free (*headp);
+  for (auto &item : items)
+    {
+      TRY
+	{
+	  gdbarch_infcall_munmap (target_gdbarch (), item.addr, item.size);
+	}
+      CATCH (ex, RETURN_MASK_ERROR)
+	{
+	  /* There's not much the user can do, so just ignore
+	     this.  */
+	}
+      END_CATCH
+    }
 }
 
 /* Helper data for setup_sections.  */
@@ -105,7 +82,7 @@ struct setup_sections_data
 
   /* List of inferior mmap ranges where setup_sections should add its
      next range.  */
-  struct munmap_list **munmap_list_headp;
+  std::unique_ptr<struct munmap_list> munmap_list;
 };
 
 /* Place all ABFD sections next to each other obeying all constraints.  */
@@ -155,7 +132,7 @@ setup_sections (bfd *abfd, asection *sect, void *data_voidp)
 	{
 	  addr = gdbarch_infcall_mmap (target_gdbarch (), data->last_size,
 				       data->last_prot);
-	  munmap_list_add (data->munmap_list_headp, addr, data->last_size);
+	  data->munmap_list->add (addr, data->last_size);
 	  if (compile_debug)
 	    fprintf_unfiltered (gdb_stdlog,
 				"allocated %s bytes at %s prot %u\n",
@@ -316,22 +293,26 @@ static const struct bfd_link_callbacks link_callbacks =
 
 struct link_hash_table_cleanup_data
 {
+  explicit link_hash_table_cleanup_data (bfd *abfd_)
+    : abfd (abfd_),
+      link_next (abfd->link.next)
+  {
+  }
+
+  ~link_hash_table_cleanup_data ()
+  {
+    if (abfd->is_linker_output)
+      (*abfd->link.hash->hash_table_free) (abfd);
+    abfd->link.next = link_next;
+  }
+
+  DISABLE_COPY_AND_ASSIGN (link_hash_table_cleanup_data);
+
+private:
+
   bfd *abfd;
   bfd *link_next;
 };
-
-/* Cleanup callback for struct bfd_link_info.  */
-
-static void
-link_hash_table_free (void *d)
-{
-  struct link_hash_table_cleanup_data *data
-    = (struct link_hash_table_cleanup_data *) d;
-
-  if (data->abfd->is_linker_output)
-    (*data->abfd->link.hash->hash_table_free) (data->abfd);
-  data->abfd->link.next = data->link_next;
-}
 
 /* Relocate and store into inferior memory each section SECT of ABFD.  */
 
@@ -339,12 +320,10 @@ static void
 copy_sections (bfd *abfd, asection *sect, void *data)
 {
   asymbol **symbol_table = (asymbol **) data;
-  bfd_byte *sect_data, *sect_data_got;
-  struct cleanup *cleanups;
+  bfd_byte *sect_data_got;
   struct bfd_link_info link_info;
   struct bfd_link_order link_order;
   CORE_ADDR inferior_addr;
-  struct link_hash_table_cleanup_data cleanup_data;
 
   if ((bfd_get_section_flags (abfd, sect) & (SEC_ALLOC | SEC_LOAD))
       != (SEC_ALLOC | SEC_LOAD))
@@ -360,13 +339,11 @@ copy_sections (bfd *abfd, asection *sect, void *data)
   link_info.input_bfds = abfd;
   link_info.input_bfds_tail = &abfd->link.next;
 
-  cleanup_data.abfd = abfd;
-  cleanup_data.link_next = abfd->link.next;
+  struct link_hash_table_cleanup_data cleanup_data (abfd);
 
   abfd->link.next = NULL;
   link_info.hash = bfd_link_hash_table_create (abfd);
 
-  cleanups = make_cleanup (link_hash_table_free, &cleanup_data);
   link_info.callbacks = &link_callbacks;
 
   memset (&link_order, 0, sizeof (link_order));
@@ -376,21 +353,22 @@ copy_sections (bfd *abfd, asection *sect, void *data)
   link_order.size = bfd_get_section_size (sect);
   link_order.u.indirect.section = sect;
 
-  sect_data = (bfd_byte *) xmalloc (bfd_get_section_size (sect));
-  make_cleanup (xfree, sect_data);
+  gdb::unique_xmalloc_ptr<gdb_byte> sect_data
+    ((bfd_byte *) xmalloc (bfd_get_section_size (sect)));
 
   sect_data_got = bfd_get_relocated_section_contents (abfd, &link_info,
-						      &link_order, sect_data,
+						      &link_order,
+						      sect_data.get (),
 						      FALSE, symbol_table);
 
   if (sect_data_got == NULL)
     error (_("Cannot map compiled module \"%s\" section \"%s\": %s"),
 	   bfd_get_filename (abfd), bfd_get_section_name (abfd, sect),
 	   bfd_errmsg (bfd_get_error ()));
-  gdb_assert (sect_data_got == sect_data);
+  gdb_assert (sect_data_got == sect_data.get ());
 
   inferior_addr = bfd_get_section_vma (abfd, sect);
-  if (0 != target_write_memory (inferior_addr, sect_data,
+  if (0 != target_write_memory (inferior_addr, sect_data.get (),
 				bfd_get_section_size (sect)))
     error (_("Cannot write compiled module \"%s\" section \"%s\" "
 	     "to inferior memory range %s-%s."),
@@ -398,8 +376,6 @@ copy_sections (bfd *abfd, asection *sect, void *data)
 	   paddress (target_gdbarch (), inferior_addr),
 	   paddress (target_gdbarch (),
 		     inferior_addr + bfd_get_section_size (sect)));
-
-  do_cleanups (cleanups);
 }
 
 /* Fetch the type of COMPILE_I_EXPR_PTR_TYPE and COMPILE_I_EXPR_VAL
@@ -611,7 +587,6 @@ struct compile_module *
 compile_object_load (const compile_file_names &file_names,
 		     enum compile_i_scope_types scope, void *scope_data)
 {
-  struct cleanup *cleanups;
   struct setup_sections_data setup_sections_data;
   CORE_ADDR regs_addr, out_value_addr = 0;
   struct symbol *func_sym;
@@ -626,7 +601,6 @@ compile_object_load (const compile_file_names &file_names,
   struct objfile *objfile;
   int expect_parameters;
   struct type *expect_return_type;
-  struct munmap_list *munmap_list_head = NULL;
 
   gdb::unique_xmalloc_ptr<char> filename
     (tilde_expand (file_names.object_file ()));
@@ -648,15 +622,15 @@ compile_object_load (const compile_file_names &file_names,
   setup_sections_data.last_section_first = abfd->sections;
   setup_sections_data.last_prot = -1;
   setup_sections_data.last_max_alignment = 1;
-  setup_sections_data.munmap_list_headp = &munmap_list_head;
-  cleanups = make_cleanup (munmap_listp_free_cleanup, &munmap_list_head);
+  setup_sections_data.munmap_list.reset (new struct munmap_list);
+
   bfd_map_over_sections (abfd.get (), setup_sections, &setup_sections_data);
   setup_sections (abfd.get (), NULL, &setup_sections_data);
 
   storage_needed = bfd_get_symtab_upper_bound (abfd.get ());
   if (storage_needed < 0)
     error (_("Cannot read symbols of compiled module \"%s\": %s"),
-          filename.get (), bfd_errmsg (bfd_get_error ()));
+	   filename.get (), bfd_errmsg (bfd_get_error ()));
 
   /* SYMFILE_VERBOSE is not passed even if FROM_TTY, user is not interested in
      "Reading symbols from ..." message for automatically generated file.  */
@@ -703,8 +677,8 @@ compile_object_load (const compile_file_names &file_names,
 	   objfile_name (objfile));
   if (!types_deeply_equal (expect_return_type, TYPE_TARGET_TYPE (func_type)))
     error (_("Invalid return type of function \"%s\" in compiled "
-	    "module \"%s\"."),
-	  GCC_FE_WRAPPER_FUNCTION, objfile_name (objfile));
+	     "module \"%s\"."),
+	   GCC_FE_WRAPPER_FUNCTION, objfile_name (objfile));
 
   /* The memory may be later needed
      by bfd_generic_get_relocated_section_contents
@@ -714,7 +688,7 @@ compile_object_load (const compile_file_names &file_names,
   number_of_symbols = bfd_canonicalize_symtab (abfd.get (), symbol_table);
   if (number_of_symbols < 0)
     error (_("Cannot parse symbols of compiled module \"%s\": %s"),
-          filename.get (), bfd_errmsg (bfd_get_error ()));
+	   filename.get (), bfd_errmsg (bfd_get_error ()));
 
   missing_symbols = 0;
   for (symp = symbol_table; symp < symbol_table + number_of_symbols; symp++)
@@ -784,7 +758,7 @@ compile_object_load (const compile_file_names &file_names,
 					TYPE_LENGTH (regs_type),
 					GDB_MMAP_PROT_READ);
       gdb_assert (regs_addr != 0);
-      munmap_list_add (&munmap_list_head, regs_addr, TYPE_LENGTH (regs_type));
+      setup_sections_data.munmap_list->add (regs_addr, TYPE_LENGTH (regs_type));
       if (compile_debug)
 	fprintf_unfiltered (gdb_stdlog,
 			    "allocated %s bytes at %s for registers\n",
@@ -799,18 +773,15 @@ compile_object_load (const compile_file_names &file_names,
     {
       out_value_type = get_out_value_type (func_sym, objfile, scope);
       if (out_value_type == NULL)
-	{
-	  do_cleanups (cleanups);
-	  return NULL;
-	}
+	return NULL;
       check_typedef (out_value_type);
       out_value_addr = gdbarch_infcall_mmap (target_gdbarch (),
 					     TYPE_LENGTH (out_value_type),
 					     (GDB_MMAP_PROT_READ
 					      | GDB_MMAP_PROT_WRITE));
       gdb_assert (out_value_addr != 0);
-      munmap_list_add (&munmap_list_head, out_value_addr,
-		       TYPE_LENGTH (out_value_type));
+      setup_sections_data.munmap_list->add (out_value_addr,
+					    TYPE_LENGTH (out_value_type));
       if (compile_debug)
 	fprintf_unfiltered (gdb_stdlog,
 			    "allocated %s bytes at %s for printed value\n",
@@ -828,12 +799,7 @@ compile_object_load (const compile_file_names &file_names,
   retval->scope_data = scope_data;
   retval->out_value_type = out_value_type;
   retval->out_value_addr = out_value_addr;
-
-  /* CLEANUPS will free MUNMAP_LIST_HEAD.  */
-  retval->munmap_list_head = munmap_list_head;
-  munmap_list_head = NULL;
-
-  do_cleanups (cleanups);
+  retval->munmap_list_head = setup_sections_data.munmap_list.release ();
 
   return retval;
 }

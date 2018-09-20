@@ -39,6 +39,7 @@ IMPORTED_GNULIB_MODULES="\
     frexpl \
     getcwd \
     glob \
+    inet_ntop
     inttypes \
     lstat \
     limits-h \
@@ -157,6 +158,18 @@ if [ $? -ne 0 ]; then
    exit 1
 fi
 
+# Apply our local patches.
+apply_patches ()
+{
+    patch -p3 -f -i "$1"
+    if [ $? -ne 0 ]; then
+        echo "Failed to apply some patches.  Aborting."
+        exit 1
+    fi
+}
+
+apply_patches "patches/0001-Fix-PR-gdb-23558-Use-system-s-getcwd-when-cross-comp.patch"
+
 # Regenerate all necessary files...
 aclocal -Iimport/m4 &&
 autoconf &&
@@ -172,7 +185,8 @@ ACLOCAL_M4_DEPS_FILE=aclocal-m4-deps.mk
 cat > ${ACLOCAL_M4_DEPS_FILE}.tmp <<EOF
 # THIS FILE IS GENERATED.  -*- buffer-read-only: t -*- vi :set ro:
 aclocal_m4_deps = \\
-$(find import/m4 -type f -name "*.m4" | sed 's/^/\t/; s/$/ \\/; $s/ \\//g')
+$(find import/m4 -type f -name "*.m4" | LC_COLLATE=C sort | \
+  sed 's/^/	/; s/$/ \\/; $s/ \\//g')
 EOF
 
 ../../move-if-change ${ACLOCAL_M4_DEPS_FILE}.tmp ${ACLOCAL_M4_DEPS_FILE}
