@@ -7401,12 +7401,14 @@ address serves as the address of the frame.  Usually this address is kept
 in a register called the @dfn{frame pointer register}
 (@pxref{Registers, $fp}) while execution is going on in that frame.
 
+@cindex frame level
 @cindex frame number
-@value{GDBN} assigns numbers to all existing stack frames, starting with
-zero for the innermost frame, one for the frame that called it,
-and so on upward.  These numbers do not really exist in your program;
-they are assigned by @value{GDBN} to give you a way of designating stack
-frames in @value{GDBN} commands.
+@value{GDBN} labels each existing stack frame with a @dfn{level}, a
+number that is zero for the innermost frame, one for the frame that
+called it, and so on upward.  These level numbers give you a way of
+designating stack frames in @value{GDBN} commands.  The terms
+@dfn{frame number} and @dfn{frame level} can be used interchangeably to
+describe this number.
 
 @c The -fomit-frame-pointer below perennially causes hbox overflow
 @c underflow problems.
@@ -7639,21 +7641,75 @@ of the stack frame just selected.
 @table @code
 @kindex frame@r{, selecting}
 @kindex f @r{(@code{frame})}
-@item frame @var{n}
-@itemx f @var{n}
-Select frame number @var{n}.  Recall that frame zero is the innermost
-(currently executing) frame, frame one is the frame that called the
-innermost one, and so on.  The highest-numbered frame is the one for
-@code{main}.
+@item frame @r{[} @var{frame-selection-spec} @r{]}
+@item f @r{[} @var{frame-selection-spec} @r{]}
+The @command{frame} command allows different stack frames to be
+selected.  The @var{frame-selection-spec} can be any of the following:
 
-@item frame @var{stack-addr} [ @var{pc-addr} ]
-@itemx f @var{stack-addr} [ @var{pc-addr} ]
-Select the frame at address @var{stack-addr}.  This is useful mainly if the
-chaining of stack frames has been damaged by a bug, making it
-impossible for @value{GDBN} to assign numbers properly to all frames.  In
-addition, this can be useful when your program has multiple stacks and
-switches between them.  The optional @var{pc-addr} can also be given to
-specify the value of PC for the stack frame.
+@table @code
+@kindex frame level
+@item @var{num}
+@item level @var{num}
+Select frame level @var{num}.  Recall that frame zero is the innermost
+(currently executing) frame, frame one is the frame that called the
+innermost one, and so on.  The highest level frame is usually the one
+for @code{main}.
+
+As this is the most common method of navigating the frame stack, the
+string @command{level} can be omitted.  For example, the following two
+commands are equivalent:
+
+@smallexample
+(@value{GDBP}) frame 3
+(@value{GDBP}) frame level 3
+@end smallexample
+
+@kindex frame address
+@item address @var{stack-address}
+Select the frame with stack address @var{stack-address}.  The
+@var{stack-address} for a frame can be seen in the output of
+@command{info frame}, for example:
+
+@smallexample
+(gdb) info frame
+Stack level 1, frame at 0x7fffffffda30:
+ rip = 0x40066d in b (amd64-entry-value.cc:59); saved rip 0x4004c5
+ tail call frame, caller of frame at 0x7fffffffda30
+ source language c++.
+ Arglist at unknown address.
+ Locals at unknown address, Previous frame's sp is 0x7fffffffda30
+@end smallexample
+
+The @var{stack-address} for this frame is @code{0x7fffffffda30} as
+indicated by the line:
+
+@smallexample
+Stack level 1, frame at 0x7fffffffda30:
+@end smallexample
+
+@kindex frame function
+@item function @var{function-name}
+Select the stack frame for function @var{function-name}.  If there are
+multiple stack frames for function @var{function-name} then the inner
+most stack frame is selected.
+
+@kindex frame view
+@item view @var{stack-address} @r{[} @var{pc-addr} @r{]}
+View a frame that is not part of @value{GDBN}'s backtrace.  The frame
+viewed has stack address @var{stack-addr}, and optionally, a program
+counter address of @var{pc-addr}.
+
+This is useful mainly if the chaining of stack frames has been
+damaged by a bug, making it impossible for @value{GDBN} to assign
+numbers properly to all frames.  In addition, this can be useful
+when your program has multiple stacks and switches between them.
+
+When viewing a frame outside the current backtrace using
+@command{frame view} then you can always return to the original
+stack using one of the previous stack frame selection instructions,
+for example @command{frame level 0}.
+
+@end table
 
 @kindex up
 @item up @var{n}
@@ -7696,11 +7752,13 @@ for details.
 
 @table @code
 @kindex select-frame
-@item select-frame
+@item select-frame @r{[} @var{frame-selection-spec} @r{]}
 The @code{select-frame} command is a variant of @code{frame} that does
 not display the new frame after selecting it.  This command is
 intended primarily for use in @value{GDBN} command scripts, where the
-output might be unnecessary and distracting.
+output might be unnecessary and distracting.  The
+@var{frame-selection-spec} is as for the @command{frame} command
+described in @ref{Selection, ,Selecting a Frame}.
 
 @kindex down-silently
 @kindex up-silently
@@ -7758,13 +7816,12 @@ which registers were saved in the frame
 something has gone wrong that has made the stack format fail to fit
 the usual conventions.
 
-@item info frame @var{addr}
-@itemx info f @var{addr}
-Print a verbose description of the frame at address @var{addr}, without
-selecting that frame.  The selected frame remains unchanged by this
-command.  This requires the same kind of address (more than one for some
-architectures) that you specify in the @code{frame} command.
-@xref{Selection, ,Selecting a Frame}.
+@item info frame @r{[} @var{frame-selection-spec} @r{]}
+@itemx info f @r{[} @var{frame-selection-spec} @r{]}
+Print a verbose description of the frame selected by
+@var{frame-selection-spec}.  The @var{frame-selection-spec} is the
+same as for the @command{frame} command (@pxref{Selection, ,Selecting
+a Frame}).  The selected frame remains unchanged by this command.
 
 @kindex info args
 @item info args
@@ -35165,10 +35222,13 @@ Other packages will be used only if they are found.
 
 @heading Tools/Packages Necessary for Building @value{GDBN}
 @table @asis
-@item ISO C90 compiler
-@value{GDBN} is written in ISO C90.  It should be buildable with any
-working C90 compiler, e.g.@: GCC.
+@item C@t{++}11 compiler
+@value{GDBN} is written in C@t{++}11.  It should be buildable with any
+recent C@t{++}11 compiler, e.g.@: GCC.
 
+@item GNU make
+@value{GDBN}'s build system relies on features only found in the GNU
+make program.  Other variants of @code{make} will not work.
 @end table
 
 @heading Tools/Packages Optional for Building @value{GDBN}
@@ -35201,6 +35261,51 @@ Branch trace (@pxref{Branch Trace Format},
 @pxref{Branch Trace Configuration Format})
 @end itemize
 
+@item Guile
+@value{GDBN} can be scripted using GNU Guile.  @xref{Guile}.  By
+default, @value{GDBN} will be compiled if the Guile libraries are
+installed and are found by @file{configure}.  You can use the
+@code{--with-guile} option to request Guile, and pass either the Guile
+version number or the file name of the relevant @code{pkg-config}
+program to choose a particular version of Guile.
+
+@item iconv
+@value{GDBN}'s features related to character sets (@pxref{Character
+Sets}) require a functioning @code{iconv} implementation.  If you are
+on a GNU system, then this is provided by the GNU C Library.  Some
+other systems also provide a working @code{iconv}.
+
+If @value{GDBN} is using the @code{iconv} program which is installed
+in a non-standard place, you will need to tell @value{GDBN} where to
+find it.  This is done with @option{--with-iconv-bin} which specifies
+the directory that contains the @code{iconv} program.  This program is
+run in order to make a list of the available character sets.
+
+On systems without @code{iconv}, you can install GNU Libiconv.  If
+Libiconv is installed in a standard place, @value{GDBN} will
+automatically use it if it is needed.  If you have previously
+installed Libiconv in a non-standard place, you can use the
+@option{--with-libiconv-prefix} option to @file{configure}.
+
+@value{GDBN}'s top-level @file{configure} and @file{Makefile} will
+arrange to build Libiconv if a directory named @file{libiconv} appears
+in the top-most source directory.  If Libiconv is built this way, and
+if the operating system does not provide a suitable @code{iconv}
+implementation, then the just-built library will automatically be used
+by @value{GDBN}.  One easy way to set this up is to download GNU
+Libiconv, unpack it inside the top-level directory of the @value{GDBN}
+source tree, and then rename the directory holding the Libiconv source
+code to @samp{libiconv}.
+
+@item lzma
+@value{GDBN} can support debugging sections that are compressed with
+the LZMA library.  @xref{MiniDebugInfo}.  If this library is not
+included with your operating system, you can find it in the xz package
+at @url{http://tukaani.org/xz/}.  If the LZMA library is available in
+the usual place, then the @file{configure} script will use it
+automatically.  If it is installed in an unusual path, you can use the
+@option{--with-lzma-prefix} option to specify its location.
+
 @item MPFR
 @anchor{MPFR}
 @value{GDBN} can use the GNU MPFR multiple-precision floating-point
@@ -35216,6 +35321,15 @@ expression evaluation when the target uses different floating-point
 formats than the host.  If GNU MPFR it is not available, @value{GDBN}
 will fall back to using host floating-point arithmetic.
 
+@item Python
+@value{GDBN} can be scripted using Python language.  @xref{Python}.
+By default, @value{GDBN} will be compiled if the Python libraries are
+installed and are found by @file{configure}.  You can use the
+@code{--with-python} option to request Python, and pass either the
+file name of the relevant @code{python} executable, or the name of the
+directory in which Python is installed, to choose a particular
+installation of Python.
+
 @item zlib
 @cindex compressed debug sections 
 @value{GDBN} will use the @samp{zlib} library, if available, to read
@@ -35227,30 +35341,6 @@ information in such binaries.
 The @samp{zlib} library is likely included with your operating system
 distribution; if it is not, you can get the latest version from
 @url{http://zlib.net}.
-
-@item iconv
-@value{GDBN}'s features related to character sets (@pxref{Character
-Sets}) require a functioning @code{iconv} implementation.  If you are
-on a GNU system, then this is provided by the GNU C Library.  Some
-other systems also provide a working @code{iconv}.
-
-If @value{GDBN} is using the @code{iconv} program which is installed
-in a non-standard place, you will need to tell @value{GDBN} where to find it.
-This is done with @option{--with-iconv-bin} which specifies the
-directory that contains the @code{iconv} program.
-
-On systems without @code{iconv}, you can install GNU Libiconv.  If you
-have previously installed Libiconv, you can use the
-@option{--with-libiconv-prefix} option to configure.
-
-@value{GDBN}'s top-level @file{configure} and @file{Makefile} will
-arrange to build Libiconv if a directory named @file{libiconv} appears
-in the top-most source directory.  If Libiconv is built this way, and
-if the operating system does not provide a suitable @code{iconv}
-implementation, then the just-built library will automatically be used
-by @value{GDBN}.  One easy way to set this up is to download GNU
-Libiconv, unpack it, and then rename the directory holding the
-Libiconv source code to @samp{libiconv}.
 @end table
 
 @node Running Configure
@@ -35294,13 +35384,9 @@ source for the library of opcode tables and disassemblers
 
 @item gdb-@value{GDBVN}/readline
 source for the @sc{gnu} command-line interface
-
-@item gdb-@value{GDBVN}/glob
-source for the @sc{gnu} filename pattern-matching subroutine
-
-@item gdb-@value{GDBVN}/mmalloc
-source for the @sc{gnu} memory-mapped malloc package
 @end table
+
+There may be other subdirectories as well.
 
 The simplest way to configure and build @value{GDBN} is to run @file{configure}
 from the @file{gdb-@var{version-number}} source directory, which in
@@ -35315,20 +35401,14 @@ For example:
 
 @smallexample
 cd gdb-@value{GDBVN}
-./configure @var{host}
+./configure
 make
 @end smallexample
 
-@noindent
-where @var{host} is an identifier such as @samp{sun4} or
-@samp{decstation}, that identifies the platform where @value{GDBN} will run.
-(You can often leave off @var{host}; @file{configure} tries to guess the
-correct value by examining your system.)
-
-Running @samp{configure @var{host}} and then running @code{make} builds the
-@file{bfd}, @file{readline}, @file{mmalloc}, and @file{libiberty}
-libraries, then @code{gdb} itself.  The configured source files, and the
-binaries, are left in the corresponding source directories.
+Running @samp{configure} and then running @code{make} builds the
+included supporting libraries, then @code{gdb} itself.  The configured
+source files, and the binaries, are left in the corresponding source
+directories.
 
 @need 750
 @file{configure} is a Bourne-shell (@code{/bin/sh}) script; if your
@@ -35336,15 +35416,8 @@ system does not recognize this automatically when you run a different
 shell, you may need to run @code{sh} on it explicitly:
 
 @smallexample
-sh configure @var{host}
+sh configure
 @end smallexample
-
-If you run @file{configure} from a directory that contains source
-directories for multiple libraries or programs, such as the
-@file{gdb-@value{GDBVN}} source directory for version @value{GDBVN},
-@file{configure}
-creates configuration files for every directory level underneath (unless
-you tell it not to, with the @samp{--norecursion} option).
 
 You should run the @file{configure} script from the top directory in the
 source tree, the @file{gdb-@var{version-number}} directory.  If you run
@@ -35356,11 +35429,9 @@ configuration of @file{bfd}, @file{readline}, and other sibling
 directories of the @file{gdb} subdirectory.  This leads to build errors
 about missing include files such as @file{bfd/bfd.h}.
 
-You can install @code{@value{GDBP}} anywhere; it has no hardwired paths.
-However, you should make sure that the shell on your path (named by
-the @samp{SHELL} environment variable) is publicly readable.  Remember
-that @value{GDBN} uses the shell to start your program---some systems refuse to
-let @value{GDBN} debug child processes whose programs are not readable.
+You can install @code{@value{GDBN}} anywhere.  The best way to do this
+is to pass the @code{--prefix} option to @code{configure}, and then
+install it with @code{make install}.
 
 @node Separate Objdir
 @section Compiling @value{GDBN} in Another Directory
@@ -35389,7 +35460,7 @@ separate directory for a Sun 4 like this:
 cd gdb-@value{GDBVN}
 mkdir ../gdb-sun4
 cd ../gdb-sun4
-../gdb-@value{GDBVN}/configure sun4
+../gdb-@value{GDBVN}/configure
 make
 @end group
 @end smallexample
@@ -35475,18 +35546,17 @@ directory (@file{gdb-@value{GDBVN}}, for version @value{GDBVN}).
 @section @file{configure} Options
 
 Here is a summary of the @file{configure} options and arguments that
-are most often useful for building @value{GDBN}.  @file{configure} also has
-several other options not listed here.  @inforef{What Configure
-Does,,configure.info}, for a full explanation of @file{configure}.
+are most often useful for building @value{GDBN}.  @file{configure}
+also has several other options not listed here.  @inforef{Running
+configure scripts,,autoconf.info}, for a full
+explanation of @file{configure}.
 
 @smallexample
 configure @r{[}--help@r{]}
           @r{[}--prefix=@var{dir}@r{]}
           @r{[}--exec-prefix=@var{dir}@r{]}
           @r{[}--srcdir=@var{dirname}@r{]}
-          @r{[}--norecursion@r{]} @r{[}--rm@r{]}
           @r{[}--target=@var{target}@r{]}
-          @var{host}
 @end smallexample
 
 @noindent
@@ -35509,8 +35579,6 @@ Configure the source to install programs under directory
 @c avoid splitting the warning from the explanation:
 @need 2000
 @item --srcdir=@var{dirname}
-@strong{Warning: using this option requires @sc{gnu} @code{make}, or another
-@code{make} that implements the @code{VPATH} feature.}@*
 Use this option to make configurations in directories separate from the
 @value{GDBN} source directories.  Among other things, you can use this to
 build (or maintain) several configurations simultaneously, in separate
@@ -35520,25 +35588,163 @@ directory @var{dirname}.  @file{configure} creates directories under
 the working directory in parallel to the source directories below
 @var{dirname}.
 
-@item --norecursion
-Configure only the directory level where @file{configure} is executed; do not
-propagate configuration to subdirectories.
-
 @item --target=@var{target}
 Configure @value{GDBN} for cross-debugging programs running on the specified
 @var{target}.  Without this option, @value{GDBN} is configured to debug
 programs that run on the same machine (@var{host}) as @value{GDBN} itself.
 
-There is no convenient way to generate a list of all available targets.
-
-@item @var{host} @dots{}
-Configure @value{GDBN} to run on the specified @var{host}.
-
-There is no convenient way to generate a list of all available hosts.
+There is no convenient way to generate a list of all available
+targets.  Also see the @code{--enable-targets} option, below.
 @end table
 
-There are many other options available as well, but they are generally
-needed for special purposes only.
+There are many other options that are specific to @value{GDBN}.  This
+lists just the most common ones; there are some very specialized
+options not described here.
+
+@table @code
+@item --enable-targets=@r{[}@var{target}@r{]}@dots{}
+@itemx --enable-targets=all
+Configure @value{GDBN} for cross-debugging programs running on the
+specified list of targets.  The special value @samp{all} configures
+@value{GDBN} for debugging programs running on any target it supports.
+
+@item --with-gdb-datadir=@var{path}
+Set the @value{GDBN}-specific data directory.  @value{GDBN} will look
+here for certain supporting files or scripts.  This defaults to the
+@file{gdb} subdirectory of @samp{datadi} (which can be set using
+@code{--datadir}).
+
+@item --with-relocated-sources=@var{dir}
+Sets up the default source path substitution rule so that directory
+names recorded in debug information will be automatically adjusted for
+any directory under @var{dir}.  @var{dir} should be a subdirectory of
+@value{GDBN}'s configured prefix, the one mentioned in the
+@code{--prefix} or @code{--exec-prefix} options to configure.  This
+option is useful if GDB is supposed to be moved to a different place
+after it is built.
+
+@item --enable-64-bit-bfd
+Enable 64-bit support in BFD on 32-bit hosts.
+
+@item --disable-gdbmi
+Build @value{GDBN} without the GDB/MI machine interface
+(@pxref{GDB/MI}).
+
+@item --enable-tui
+Build @value{GDBN} with the text-mode full-screen user interface
+(TUI).  Requires a curses library (ncurses and cursesX are also
+supported).
+
+@item --with-curses
+Use the curses library instead of the termcap library, for text-mode
+terminal operations.
+
+@item --with-libunwind-ia64
+Use the libunwind library for unwinding function call stack on ia64
+target platforms.  See http://www.nongnu.org/libunwind/index.html for
+details.
+
+@item --with-system-readline
+Use the readline library installed on the host, rather than the
+library supplied as part of @value{GDBN}.
+
+@item --with-system-zlib
+Use the zlib library installed on the host, rather than the library
+supplied as part of @value{GDBN}.
+
+@item --with-expat
+Build @value{GDBN} with Expat, a library for XML parsing.  (Done by
+default if libexpat is installed and found at configure time.)  This
+library is used to read XML files supplied with @value{GDBN}.  If it
+is unavailable, some features, such as remote protocol memory maps,
+target descriptions, and shared library lists, that are based on XML
+files, will not be available in @value{GDBN}.  If your host does not
+have libexpat installed, you can get the latest version from
+`http://expat.sourceforge.net'.
+
+@item --with-libiconv-prefix@r{[}=@var{dir}@r{]}
+
+Build @value{GDBN} with GNU libiconv, a character set encoding
+conversion library.  This is not done by default, as on GNU systems
+the @code{iconv} that is built in to the C library is sufficient.  If
+your host does not have a working @code{iconv}, you can get the latest
+version of GNU iconv from `https://www.gnu.org/software/libiconv/'.
+
+@value{GDBN}'s build system also supports building GNU libiconv as
+part of the overall build.   @xref{Requirements}.
+
+@item --with-lzma
+Build @value{GDBN} with LZMA, a compression library.  (Done by default
+if liblzma is installed and found at configure time.)  LZMA is used by
+@value{GDBN}'s "mini debuginfo" feature, which is only useful on
+platforms using the ELF object file format.  If your host does not
+have liblzma installed, you can get the latest version from
+`https://tukaani.org/xz/'.
+
+@item --with-mpfr
+Build @value{GDBN} with GNU MPFR, a library for multiple-precision
+floating-point computation with correct rounding.  (Done by default if
+GNU MPFR is installed and found at configure time.)  This library is
+used to emulate target floating-point arithmetic during expression
+evaluation when the target uses different floating-point formats than
+the host.  If GNU MPFR is not available, @value{GDBN} will fall back
+to using host floating-point arithmetic.  If your host does not have
+GNU MPFR installed, you can get the latest version from
+`http://www.mpfr.org'.
+
+@item --with-python@r{[}=@var{python}@r{]}
+Build @value{GDBN} with Python scripting support.  (Done by default if
+libpython is present and found at configure time.)  Python makes
+@value{GDBN} scripting much more powerful than the restricted CLI
+scripting language.  If your host does not have Python installed, you
+can find it on `http://www.python.org/download/'.  The oldest version
+of Python supported by GDB is 2.4.  The optional argument @var{python}
+is used to find the Python headers and libraries.  It can be either
+the name of a Python executable, or the name of the directory in which
+Python is installed.
+
+@item --with-guile[=GUILE]'
+Build @value{GDBN} with GNU Guile scripting support.  (Done by default
+if libguile is present and found at configure time.)  If your host
+does not have Guile installed, you can find it at
+`https://www.gnu.org/software/guile/'.  The optional argument GUILE
+can be a version number, which will cause @code{configure} to try to
+use that version of Guile; or the file name of a @code{pkg-config}
+executable, which will be queried to find the information needed to
+compile and link against Guile.
+
+@item --without-included-regex
+Don't use the regex library included with @value{GDBN} (as part of the
+libiberty library).  This is the default on hosts with version 2 of
+the GNU C library.
+
+@item --with-sysroot=@var{dir}
+Use @var{dir} as the default system root directory for libraries whose
+file names begin with @file{/lib}' or @file{/usr/lib'}.  (The value of
+@var{dir} can be modified at run time by using the @command{set
+sysroot} command.)  If @var{dir} is under the @value{GDBN} configured
+prefix (set with @code{--prefix} or @code{--exec-prefix options}, the
+default system root will be automatically adjusted if and when
+@value{GDBN} is moved to a different location.
+
+@item --with-system-gdbinit=@var{file}
+Configure @value{GDBN} to automatically load a system-wide init file.
+@var{file} should be an absolute file name.  If @var{file} is in a
+directory under the configured prefix, and @value{GDBN} is moved to
+another location after being built, the location of the system-wide
+init file will be adjusted accordingly.
+
+@item --enable-build-warnings
+When building the @value{GDBN} sources, ask the compiler to warn about
+any code which looks even vaguely suspicious.  It passes many
+different warning flags, depending on the exact version of the
+compiler you are using.
+
+@item --enable-werror
+Treat compiler warnings as werrors.  It adds the @code{-Werror} flag
+to the compiler, which will fail the compilation if the compiler
+outputs any warning messages.
+@end table
 
 @node System-wide configuration
 @section System-wide configuration and settings

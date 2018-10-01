@@ -1,3 +1,246 @@
+2018-10-01  Alan Hayward  <alan.hayward@arm.com>
+
+	* aarch64-linux-tdep.c (AARCH64_SIGCONTEXT_RESERVED_OFFSET): Add
+	define.
+	(AARCH64_EXTRA_MAGIC): Likewise.
+	(AARCH64_FPSIMD_MAGIC): Likewise.
+	(AARCH64_SVE_MAGIC): Likewise.
+	(AARCH64_EXTRA_DATAP_OFFSET): Likewise.
+	(AARCH64_FPSIMD_FPSR_OFFSET): Likewise.
+	(AARCH64_FPSIMD_FPCR_OFFSET): Likewise.
+	(AARCH64_FPSIMD_V0_OFFSET): Likewise.
+	(AARCH64_FPSIMD_VREG_SIZE): Likewise.
+	(AARCH64_SVE_CONTEXT_VL_OFFSET): Likewise.
+	(AARCH64_SVE_CONTEXT_REGS_OFFSET): Likewise.
+	(AARCH64_SVE_CONTEXT_P_REGS_OFFSET): Likewise.
+	(AARCH64_SVE_CONTEXT_FFR_OFFSET): Likewise.
+	(AARCH64_SVE_CONTEXT_SIZE): Likewise.
+	(read_aarch64_ctx): Add function.
+	(aarch64_linux_sigframe_init): Detect FP registers.
+
+2018-10-01  Alan Hayward  <alan.hayward@arm.com>
+
+	* aarch64-tdep.c (AARCH64_Q0_REGNUM): Move to here.
+	(AARCH64_D0_REGNUM): Likewise.
+	(AARCH64_S0_REGNUM): Likewise.
+	(AARCH64_H0_REGNUM): Likewise.
+	(AARCH64_B0_REGNUM): Likewise.
+	(AARCH64_SVE_V0_REGNUM): Likewise.
+	* arch/aarch64.h (AARCH64_Q0_REGNUM): Move from here.
+	(AARCH64_D0_REGNUM): Likewise.
+	(AARCH64_S0_REGNUM): Likewise.
+	(AARCH64_H0_REGNUM): Likewise.
+	(AARCH64_B0_REGNUM): Likewise.
+	(AARCH64_SVE_V0_REGNUM): Likewise.
+
+2018-10-01  Gary Benson <gbenson@redhat.com>
+
+	* gdb_proc_service.h (gdb_prfpregset_t): Remove typedef.
+	* proc-service.c (ps_lgetfpregs, ps_lsetfpregs): Use
+	prfpregset_t instead of gdb_prfpregset_t.
+	* configure.ac (PRFPREGSET_T_BROKEN): Remove check.
+	* configure, config.in: Rebuild.
+
+2018-10-01  Gary Benson <gbenson@redhat.com>
+
+	* common/gdb_proc_service.h: New file, factored out from...
+	* gdb_proc_service.h: Moved common code to the above file.
+	* Makefile.in (HFILES_NO_SRCDIR): Add the above new file.
+
+2018-10-01  Gary Benson <gbenson@redhat.com>
+
+	* gdb_proc_service.h: Use elf_gregset_t if prgregset_t is
+	undefined.  Use elf_fpregset_t if prfpregset_t is undefined.
+
+2018-10-01  Gary Benson <gbenson@redhat.com>
+
+	* configure.ac: Check if sys/procfs.h defines elf_fpregset_t.
+	(AC_CHECK_HEADERS): Check for linux/elf.h.
+	* configure, config.in: Rebuild.
+	* gdb_proc_service.h: Include linux/elf.h if sys/procfs.h
+	doesn't define elf_fpregset_t.
+
+2018-10-01  Gary Benson <gbenson@redhat.com>
+
+	* gdb_proc_service.h: Whitespace change.
+
+2018-10-01  Tom Tromey  <tom@tromey.com>
+
+	* unittests/scoped_mmap-selftests.c: Don't check HAVE_UNISTD_H.
+	* unittests/scoped_fd-selftests.c: Don't check HAVE_UNISTD_H.
+	* common/scoped_fd.h: Don't check HAVE_UNISTD_H.
+
+2018-10-01  Tom Tromey  <tom@tromey.com>
+
+	* README: Minor change.
+
+2018-09-30  Pedro Alves  <palves@redhat.com>
+
+	* darwin-nat-info.c (darwin_debug_regions_recurse)
+	(info_mach_exceptions_command): Remove unused local variables.
+	* darwin-nat.c (darwin_decode_notify_message)
+	(darwin_nat_target::resume, darwin_nat_target::mourn_inferior)
+	(darwin_stop_inferior, darwin_setup_exceptions)
+	(darwin_nat_target::kill, darwin_attach_pid, darwin_ptrace_him)
+	(darwin_nat_target::attach, darwin_nat_target::detach)
+	(darwin_read_write_inferior, darwin_read_dyld_info): Remove unused
+	local variables.
+	* i386-darwin-nat.c (i386_darwin_dr_set): Remove unused local
+	variables.
+
+2018-09-29  Tom Tromey  <tom@tromey.com>
+
+	* README: Remove some leftover text.
+
+2018-09-29  Tom Tromey  <tom@tromey.com>
+
+	* PROBLEMS: Rewrite.
+	* README: Update.
+
+2018-09-28  John Baldwin  <jhb@FreeBSD.org>
+
+	* disasm-selftests.c (print_one_insn_test): Add bfd_arch_riscv to
+	case with explicit breakpoint kind.
+	* riscv-tdep.c (show_use_compressed_breakpoints): Remove
+	'additional_info' and related logic.
+	(riscv_debug_breakpoints): New variable.
+	(riscv_breakpoint_kind_from_pc): Use the length of the existing
+	instruction to determine the breakpoint kind.
+	(_initialize_riscv_tdep): Add 'set/show debug riscv breakpoints'
+	flag.  Update description of 'set/show riscv
+	use-compressed-breakpoints' flag.
+
+2018-09-28  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	(NEWS): Mention changes to frame related commands.
+	* cli/cli-decode.c (add_cmd_suppress_notification): New function.
+	(add_prefix_cmd_suppress_notification): New function.
+	(add_com_suppress_notification): Call
+	add_cmd_suppress_notification.
+	* command.h (add_cmd_suppress_notification): Declare.
+	(add_prefix_cmd_suppress_notification): Declare.
+	* mi/mi-cmd-stack.c: Add 'safe-ctype.h' include.
+	(parse_frame_specification): Moved from stack.c, with
+	simplification to handle a single argument.
+	(mi_cmd_stack_select_frame): Use parse_frame_specification, the
+	switch to the selected frame.  Add a header comment.
+	* stack.c: Remove 'safe-ctype.h' include.
+	(find_frame_for_function): Add declaration.
+	(find_frame_for_address): New function.
+	(parse_frame_specification): Moved into mi/mi-cmd-stack.c.
+	(frame_selection_by_function_completer): New function.
+	(info_frame_command): Rename to...
+	(info_frame_command_core): ...this, and update parameter types.
+	(select_frame_command): Rename to...
+	(select_frame_command_core): ...this, and update parameter types.
+	(frame_command): Rename to...
+	(frame_command_core): ...this, and update parameter types.
+	(class frame_command_helper): New class to wrap implementations of
+	frame related sub-commands.
+	(frame_apply_cmd_list): New static global.
+	(frame_cmd_list): Make static.
+	(select_frame_cmd_list): New global for sub-commands.
+	(info_frame_cmd_list): New global for sub-commands.
+	(_initialize_stack): Register sub-commands for 'frame',
+	'select-frame', and 'info frame'.  Update 'frame apply' commands
+	to use frame_apply_cmd_list.  Move function local static
+	frame_apply_list to file static frame_apply_cmd_list for
+	consistency.
+	* stack.h (select_frame_command): Delete declarationn.
+	(select_frame_for_mi): Declare new function.
+
+2018-09-26  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* riscv-tdep.c (riscv_insn::decode): Decode c.lui.
+	(riscv_scan_prologue): Split handling of AUIPC, LUI, ADD, ADDI,
+	and NOP.
+
+2018-09-26  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* elf32-nds32.c (elf32_nds32_allocate_dynrelocs): Remove.
+
+2018-09-26  Tom Tromey  <tom@tromey.com>
+
+	* valops.c (auto_abandon): Remove dead code.
+
+2018-09-26  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-win.c (WIN_HEIGHT_USAGE): Remove extra ">"s.
+
+2018-09-24  Tom Tromey  <tom@tromey.com>
+
+	* common/pathstuff.c (get_standard_cache_dir): Make
+	"xdg_cache_home" and "home" const.
+	* top.c (init_history): Make "tmpenv" const.
+	* main.c (get_init_files): Make "homedir" const.
+
+2018-09-23  Tom Tromey  <tom@tromey.com>
+
+	PR python/18852:
+	* python/py-param.c (get_set_value): Use gdbpy_handle_exception.
+
+2018-09-23  Tom Tromey  <tom@tromey.com>
+
+	* python/py-function.c (fnpy_call): Use gdbpy_handle_exception.
+	* python/py-cmd.c (cmdpy_function): Use gdbpy_handle_exception.
+	* python/python-internal.h (gdbpy_handle_exception): Declare.
+	* python/py-utils.c (gdbpy_handle_exception): New function.
+
+2018-09-23  Tom Tromey  <tom@tromey.com>
+
+	PR python/17284:
+	* python/py-type.c (typy_template_argument): Check for negative
+	argument number.
+
+2018-09-23  Tom Tromey  <tom@tromey.com>
+
+	PR python/14062:
+	* python/python.c (gdbpy_run_events): Do not ignore exceptions.
+
+2018-09-23  Tom Tromey  <tom@tromey.com>
+
+	PR python/18170:
+	* python/py-value.c (valpy_int): Allow conversion from pointer
+	type.
+
+2018-09-23  Tom Tromey  <tom@tromey.com>
+
+	PR python/20126:
+	* python/py-value.c (valpy_int): Respect type sign.
+
+2018-09-23  Tom Tromey  <tom@tromey.com>
+
+	PR python/18352;
+	* python/py-value.c (valpy_float): Allow conversions from int or
+	char.
+	(valpy_int, valpy_long): Allow conversions from float.
+
+2018-09-23  Tom Tromey  <tom@tromey.com>
+
+	* ctf.c (ctf_start): Use gdb_fopen_cloexec.
+	* common/scoped_mmap.c (mmap_file): Use gdb_open_cloexec.
+
+2018-09-23  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* amd64-sol2-tdep.c (amd64_sol2_sigtramp_p): Also recognize
+	__sighndlr.
+	* i386-sol2-tdep.c (i386_sol2_sigtramp_p): Likewise.
+
+2018-08-02  Jon Turney  <jon.turney@dronecode.org.uk>
+
+	* windows-nat.c (windows_nat_target::wait): Remove a spurious
+	target_terminal::ours().
+
+2018-09-23  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* aarch64-linux-tdep.c (aarch64_linux_supply_sve_regset): Change type
+	of vl to ULONGEST.
+
+2018-09-21  Yacov Simhony  <ysimhony@gmail.com>
+
+	* breakpoint.c (update_inserted_breakpoint_locations): Remove
+	redundant condition.
+
 2018-09-20  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
 
 	* proc-utils.h (PROC_CTL_WORD_TYPE): Remove.

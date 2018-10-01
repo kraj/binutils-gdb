@@ -1,3 +1,78 @@
+2018-10-01  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* gdb.arch/i386-avx512.exp: Fix setting of nr_regs based on
+	is_amd64_regs_target.
+
+2018-10-01  Alan Hayward  <alan.hayward@arm.com>
+
+	* gdb.arch/aarch64-sighandler-regs.c: New test.
+	* gdb.arch/aarch64-sighandler-regs.exp: New file.
+	* lib/gdb.exp (skip_aarch64_sve_tests): New proc.
+
+2018-10-01  Markus Metzger  <markus.t.metzger@intel.com>
+
+	* lib/gdb.exp (is_amd64_regs_target): Change assembly to C inline
+	assembly.
+
+2018-09-28  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.base/frame-selection.exp: New file.
+	* gdb.base/frame-selection.c: New file.
+
+2018-09-27  Alan Hayward  <alan.hayward@arm.com>
+
+	* gdb.threads/check-libthread-db.c (thread_routine): Use a
+	pthread barrier.
+	(main): Likewise.
+
+2018-09-26  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.base/large-frame-1.c: New file.
+	* gdb.base/large-frame-2.c: New file.
+	* gdb.base/large-frame.exp: New file.
+	* gdb.base/large-frame.h: New file.
+
+2018-09-24  Jozef Lawrynowicz  <jozef.l@mittosystems.com>
+
+	PR gdb/20948
+	* gdb.base/write_mem.exp: New test.
+	* gdb.base/write_mem.c: Likewise.
+
+2018-09-23  Tom Tromey  <tom@tromey.com>
+
+	PR python/18852:
+	* gdb.python/py-parameter.exp: Add test for parameter that throws
+	on "set".
+
+2018-09-23  Tom Tromey  <tom@tromey.com>
+
+	PR python/17284:
+	* gdb.python/py-template.exp (test_template_arg): Add test for
+	negative template argument number.
+
+2018-09-23  Tom Tromey  <tom@tromey.com>
+
+	PR python/14062:
+	* gdb.python/python.exp: Add test for post_event error.
+
+2018-09-23  Tom Tromey  <tom@tromey.com>
+
+	PR python/18170:
+	* gdb.python/py-value.exp (test_value_numeric_ops): Add tests to
+	convert pointers to int and long.
+
+2018-09-23  Tom Tromey  <tom@tromey.com>
+
+	PR python/20126:
+	* gdb.python/py-value.exp (test_value_numeric_ops): Add
+	signed-ness conversion tests.
+
+2018-09-23  Tom Tromey  <tom@tromey.com>
+
+	PR python/18352;
+	* gdb.python/py-value.exp (test_float_conversion): New proc.
+	Use it.
+
 2018-09-20  Hafiz Abid Qadeer  <abidh@codesourcery.com>
 
 	gdb.base/reggroups.exp (fetch_reggroups): Add '_' in match pattern.

@@ -79,6 +79,7 @@ proc test_value_creation {} {
 
 proc test_value_numeric_ops {} {
   global gdb_prompt
+  global gdb_py_is_py3k
 
   gdb_py_test_silent_cmd "python i = gdb.Value (5)" "create first integer value" 0
   gdb_py_test_silent_cmd "python j = gdb.Value (2)" "create second integer value" 0
@@ -129,6 +130,11 @@ proc test_value_numeric_ops {} {
   gdb_test "print (void *) 5" ".*" ""
   gdb_test_no_output "python b = gdb.history (0)" ""
 
+  gdb_test "python print(int(b))" "5" "convert pointer to int"
+  if {!$gdb_py_is_py3k} {
+    gdb_test "python print(long(b))" "5" "convert pointer to long"
+  }
+
   gdb_test "python print ('result = ' + str(a+5))" " = 0x7( <.*>)?" "add pointer value with python integer"
   gdb_test "python print ('result = ' + str(b-2))" " = 0x3( <.*>)?" "subtract python integer from pointer value"
   gdb_test "python print ('result = ' + str(b-a))" " = 3" "subtract two pointer values"
@@ -137,8 +143,17 @@ proc test_value_numeric_ops {} {
     "result = r" "use value as string index"
   gdb_test "python print ('result = ' + str((1,2,3)\[gdb.Value(0)\]))" \
     "result = 1" "use value as tuple index"
-  gdb_test "python print ('result = ' + str(\[1,2,3\]\[gdb.Value(0)\]))" \
-    "result = 1" "use value as array index"
+  if {!$gdb_py_is_py3k} {
+    gdb_test "python print ('result = ' + str(\[1,2,3\]\[gdb.Value(0)\]))" \
+      "result = 1" "use value as array index"
+  }
+
+  gdb_test "python print('%x' % int(gdb.parse_and_eval('-1ull')))" \
+      "f+" "int conversion respect type sign"
+  if {!$gdb_py_is_py3k} {
+    gdb_test "python print('%x' % long(gdb.parse_and_eval('-1ull')))" \
+      "f+" "long conversion respect type sign"
+  }
 
   # Test some invalid operations.
 
@@ -483,6 +498,18 @@ proc test_value_hash {} {
     gdb_test "python print (one.__hash__() == hash(one))" "True" "test inbuilt hash"
 }
 
+proc test_float_conversion {} {
+    global gdb_py_is_py3k
+    gdb_test "python print(int(gdb.Value(0)))" "0"
+    gdb_test "python print(int(gdb.Value(2.5)))" "2"
+    if {!$gdb_py_is_py3k} {
+	gdb_test "python print(long(gdb.Value(0)))" "0"
+	gdb_test "python print(long(gdb.Value(2.5)))" "2"
+    }
+    gdb_test "python print(float(gdb.Value(2.5)))" "2\\.5"
+    gdb_test "python print(float(gdb.Value(0)))" "0\\.0"
+}
+
 # Build C version of executable.  C++ is built later.
 if { [build_inferior "${binfile}" "c"] < 0 } {
     return -1
@@ -501,6 +528,7 @@ test_value_compare
 test_objfiles
 test_parse_and_eval
 test_value_hash
+test_float_conversion
 
 # The following tests require execution.
 

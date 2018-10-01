@@ -1497,7 +1497,14 @@ valpy_int (PyObject *self)
 
   TRY
     {
-      if (!is_integral_type (type))
+      if (is_floating_value (value))
+	{
+	  type = builtin_type_pylong;
+	  value = value_cast (type, value);
+	}
+
+      if (!is_integral_type (type)
+	  && TYPE_CODE (type) != TYPE_CODE_PTR)
 	error (_("Cannot convert value to int."));
 
       l = value_as_long (value);
@@ -1508,7 +1515,10 @@ valpy_int (PyObject *self)
     }
   END_CATCH
 
-  return gdb_py_object_from_longest (l);
+  if (TYPE_UNSIGNED (type))
+    return gdb_py_object_from_ulongest (l);
+  else
+    return gdb_py_object_from_longest (l);
 }
 #endif
 
@@ -1522,6 +1532,12 @@ valpy_long (PyObject *self)
 
   TRY
     {
+      if (is_floating_value (value))
+	{
+	  type = builtin_type_pylong;
+	  value = value_cast (type, value);
+	}
+
       type = check_typedef (type);
 
       if (!is_integral_type (type)
@@ -1554,10 +1570,17 @@ valpy_float (PyObject *self)
     {
       type = check_typedef (type);
 
-      if (TYPE_CODE (type) != TYPE_CODE_FLT || !is_floating_value (value))
+      if (TYPE_CODE (type) == TYPE_CODE_FLT && is_floating_value (value))
+	d = target_float_to_host_double (value_contents (value), type);
+      else if (TYPE_CODE (type) == TYPE_CODE_INT)
+	{
+	  /* Note that valpy_long accepts TYPE_CODE_PTR and some
+	     others here here -- but casting a pointer or bool to a
+	     float seems wrong.  */
+	  d = value_as_long (value);
+	}
+      else
 	error (_("Cannot convert value to float."));
-
-      d = target_float_to_host_double (value_contents (value), type);
     }
   CATCH (except, RETURN_MASK_ALL)
     {

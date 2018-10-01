@@ -1,3 +1,56 @@
+2018-09-28  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* elf-properties.c (_bfd_elf_link_setup_gnu_properties): Use
+	elfclass instead of bed->s->elfclass.
+
+2018-09-27  Jim Wilson  <jimw@sifive.com>
+
+	* elfnn-riscv.c (riscv_init_pcgp_relocs): Add explanatory comment.
+	(riscv_free_pcgp_relocs, riscv_record_pcgp_reloc): Likewise.
+	(riscv_find_pcgp_hi_reloc, riscv_reocrd_pcgp_lo_reloc): Likewise.
+	(riscv_find_pcgp_lo_reloc): Likewise.
+	(riscv_delete_pcgp_hi_reloc, riscv_use_pcgp_hi_reloc): Delete.
+	(riscv_delete_pcgp_lo_reloc): Likewise.
+	(_bfd_riscv_relax_pc): Don't call riscv_use_pcgp_hi_reloc. Replace
+	calls to riscv_delete_pcgp_lo_reloc and riscv_delete_pcgp_hi_reloc
+	with TRUE.  Mark abfd arg as ATTRIBUTE_UNUSED.
+
+2018-09-25  Jim Wilson  <jimw@sifive.com>
+
+	* elfnn-riscv.c (riscv_make_plt_header): New arg output_bfd.  Change
+	return type to bfd_boolean.  If	EF_RISCV_RVE call _bfd_error_handler
+	and return FALSE.  Return TRUE at end.
+	(riscv_make_plt_entry): Likewise.
+	(riscv_elf_finish_dynamic_symbol): Update call to riscv_make_plt_entry.
+	(riscv_elf_finish_dynamic_sections): Update call to
+	riscv_make_plt_header.
+
+2018-09-24  Jim Wilson  <jimw@sifive.com>
+
+	* elfnn-riscv.c (_bfd_riscv_relax_pc) <R_RISCV_PCREL_LO12_I>: New local
+	hi_sec_off which is symbol address with addend subtracted.  Use in
+	riscv_find_pcgp_hi_reloc and riscv_record_pcgp_lo_reloc calls.
+
+	* elfnn-riscv.c (riscv_resolve_pcrel_lo_relocs): Add check for reloc
+	overflow with addend.  Use reloc_dangerous instead of reloc_overflow.
+	Add strings for the two errors handled here.
+	(riscv_elf_relocate_section) In case R_RISCV_PCREL_LO12_I, rewrite
+	comment.  Only give error with addend when used with section symbol.
+	In case bfd_reloc_dangerous, update error string.
+
+2018-09-24  Jozef Lawrynowicz  <jozef.l@mittosystems.com>
+
+	PR gdb/20948
+	* elf.c (_bfd_elf_write_object_contents): Return from function
+	early if abfd->direction == both_direction.
+
+2018-09-21  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* configure.ac: Check for fls.
+	* elf32-nds32.c (fls): Only define if !HAVE_FLS.
+	* config.in: Re-generate.
+	* configure: Re-generate.
+
 2018-09-20  Maciej W. Rozycki  <macro@linux-mips.org>
 
     	* config.bfd <rs6000-*-aix5.[01], rs6000-*-aix[5-9]*>: Remove
@@ -191,7 +244,7 @@
 	to calculate header and padding size.  Use filepos of the first
 	section otherwise.
 
-018-08-31  H.J. Lu  <hongjiu.lu@intel.com>
+2018-08-31  H.J. Lu  <hongjiu.lu@intel.com>
 
 	PR ld/23600
 	* archures.c (bfd_arch_get_compatible): Allow an IR object with

@@ -24,6 +24,9 @@
 
 #define TCB_SIZE (8)
 
+#define	align_power(addr, align)	\
+  (((addr) + ((bfd_vma) 1 << (align)) - 1) & (-((bfd_vma) 1 << (align))))
+
 enum tls_type_e
 {
   GOT_UNKNOWN = 0,
@@ -156,9 +159,11 @@ get_got_entry_list_for_symbol (bfd *abfd,
 			       unsigned long r_symndx,
 			       struct elf_link_hash_entry *h)
 {
-  if (h != NULL)
+  struct elf_arc_link_hash_entry *h1 =
+    ((struct elf_arc_link_hash_entry *) h);
+  if (h1 != NULL)
     {
-      return &h->got.glist;
+      return &h1->got_ents;
     }
   else
     {
@@ -330,7 +335,11 @@ relocate_fix_got_relocs_for_got_info (struct got_entry **	   list_p,
 		bfd_vma sec_vma = tls_sec->output_section->vma;
 
 		bfd_put_32 (output_bfd,
-			    sym_value - sec_vma,
+			    sym_value - sec_vma
+			    + (elf_hash_table (info)->dynamic_sections_created
+			       ? 0
+			       : (align_power (TCB_SIZE,
+					       tls_sec->alignment_power))),
 			    htab->sgot->contents + entry->offset
 			    + (entry->existing_entries == TLS_GOT_MOD_AND_OFF
 			       ? 4 : 0));
@@ -341,7 +350,7 @@ relocate_fix_got_relocs_for_got_info (struct got_entry **	   list_p,
 			    "GOT_TLS_IE"),
 			   (long) (sym_value - sec_vma),
 			   (long) (htab->sgot->output_section->vma
-			      + htab->sgot->output_offset->vma
+			      + htab->sgot->output_offset
 			      + entry->offset
 			      + (entry->existing_entries == TLS_GOT_MOD_AND_OFF
 				 ? 4 : 0)),
@@ -357,7 +366,10 @@ relocate_fix_got_relocs_for_got_info (struct got_entry **	   list_p,
 
 		bfd_put_32 (output_bfd,
 			    sym_value - sec_vma
-			    + (elf_hash_table (info)->dynamic_sections_created ? 0 : TCB_SIZE),
+			    + (elf_hash_table (info)->dynamic_sections_created
+			       ? 0
+			       : (align_power (TCB_SIZE,
+					       tls_sec->alignment_power))),
 			    htab->sgot->contents + entry->offset
 			    + (entry->existing_entries == TLS_GOT_MOD_AND_OFF
 			       ? 4 : 0));
@@ -368,7 +380,7 @@ relocate_fix_got_relocs_for_got_info (struct got_entry **	   list_p,
 			    "GOT_TLS_IE"),
 			   (long) (sym_value - sec_vma),
 			   (long) (htab->sgot->output_section->vma
-			      + htab->sgot->output_offset->vma
+			      + htab->sgot->output_offset
 			      + entry->offset
 			      + (entry->existing_entries == TLS_GOT_MOD_AND_OFF
 				 ? 4 : 0)),
