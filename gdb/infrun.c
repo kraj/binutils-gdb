@@ -1082,7 +1082,6 @@ show_follow_exec_mode_string (struct ui_file *file, int from_tty,
 static void
 follow_exec (ptid_t ptid, char *exec_file_target)
 {
-  struct thread_info *th, *tmp;
   struct inferior *inf = current_inferior ();
   int pid = ptid.pid ();
   ptid_t process_ptid;
@@ -1129,7 +1128,7 @@ follow_exec (ptid_t ptid, char *exec_file_target)
      them.  Deleting them now rather than at the next user-visible
      stop provides a nicer sequence of events for user and MI
      notifications.  */
-  ALL_THREADS_SAFE (th, tmp)
+  for (thread_info *th : all_threads_safe ())
     if (th->ptid.pid () == pid && th->ptid != ptid)
       delete_thread (th);
 
@@ -1137,7 +1136,7 @@ follow_exec (ptid_t ptid, char *exec_file_target)
      leader/event thread.  E.g., if there was any step-resume
      breakpoint or similar, it's gone now.  We cannot truly
      step-to-next statement through an exec().  */
-  th = inferior_thread ();
+  thread_info *th = inferior_thread ();
   th->control.step_resume_breakpoint = NULL;
   th->control.exception_resume_breakpoint = NULL;
   th->control.single_step_breakpoints = NULL;
@@ -2862,21 +2861,14 @@ clear_proceed_status (int step)
 				     execution_direction))
     target_record_stop_replaying ();
 
-  if (!non_stop)
+  if (!non_stop && inferior_ptid != null_ptid)
     {
-      struct thread_info *tp;
-      ptid_t resume_ptid;
-
-      resume_ptid = user_visible_resume_ptid (step);
+      ptid_t resume_ptid = user_visible_resume_ptid (step);
 
       /* In all-stop mode, delete the per-thread status of all threads
 	 we're about to resume, implicitly and explicitly.  */
-      ALL_NON_EXITED_THREADS (tp)
-        {
-	  if (!tp->ptid.matches (resume_ptid))
-	    continue;
-	  clear_proceed_status_thread (tp);
-	}
+      for (thread_info *tp : all_non_exited_threads (resume_ptid))
+	clear_proceed_status_thread (tp);
     }
 
   if (inferior_ptid != null_ptid)
@@ -3079,15 +3071,11 @@ proceed (CORE_ADDR addr, enum gdb_signal siggnal)
     {
       struct thread_info *current = tp;
 
-      ALL_NON_EXITED_THREADS (tp)
-        {
+      for (thread_info *tp : all_non_exited_threads (resume_ptid))
+	{
 	  /* Ignore the current thread here.  It's handled
 	     afterwards.  */
 	  if (tp == current)
-	    continue;
-
-	  /* Ignore threads of processes we're not resuming.  */
-	  if (!tp->ptid.matches (resume_ptid))
 	    continue;
 
 	  if (!thread_still_needs_step_over (tp))
@@ -3138,12 +3126,8 @@ proceed (CORE_ADDR addr, enum gdb_signal siggnal)
       {
 	/* In all-stop, but the target is always in non-stop mode.
 	   Start all other threads that are implicitly resumed too.  */
-	ALL_NON_EXITED_THREADS (tp)
+      for (thread_info *tp : all_non_exited_threads (resume_ptid))
         {
-	  /* Ignore threads of processes we're not resuming.  */
-	  if (!tp->ptid.matches (resume_ptid))
-	    continue;
-
 	  if (tp->resumed)
 	    {
 	      if (debug_infrun)
@@ -3246,9 +3230,6 @@ init_wait_for_inferior (void)
   target_last_wait_ptid = minus_one_ptid;
 
   previous_inferior_ptid = inferior_ptid;
-
-  /* Discard any skipped inlined frames.  */
-  clear_inline_frame_state (minus_one_ptid);
 }
 
 
@@ -3276,53 +3257,50 @@ static int switch_back_to_stepped_thread (struct execution_control_state *ecs);
 static void
 infrun_thread_stop_requested (ptid_t ptid)
 {
-  struct thread_info *tp;
-
   /* PTID was requested to stop.  If the thread was already stopped,
      but the user/frontend doesn't know about that yet (e.g., the
      thread had been temporarily paused for some step-over), set up
      for reporting the stop now.  */
-  ALL_NON_EXITED_THREADS (tp)
-    if (tp->ptid.matches (ptid))
-      {
-	if (tp->state != THREAD_RUNNING)
-	  continue;
-	if (tp->executing)
-	  continue;
+  for (thread_info *tp : all_threads (ptid))
+    {
+      if (tp->state != THREAD_RUNNING)
+	continue;
+      if (tp->executing)
+	continue;
 
-	/* Remove matching threads from the step-over queue, so
-	   start_step_over doesn't try to resume them
-	   automatically.  */
-	if (thread_is_in_step_over_chain (tp))
-	  thread_step_over_chain_remove (tp);
+      /* Remove matching threads from the step-over queue, so
+	 start_step_over doesn't try to resume them
+	 automatically.  */
+      if (thread_is_in_step_over_chain (tp))
+	thread_step_over_chain_remove (tp);
 
-	/* If the thread is stopped, but the user/frontend doesn't
-	   know about that yet, queue a pending event, as if the
-	   thread had just stopped now.  Unless the thread already had
-	   a pending event.  */
-	if (!tp->suspend.waitstatus_pending_p)
-	  {
-	    tp->suspend.waitstatus_pending_p = 1;
-	    tp->suspend.waitstatus.kind = TARGET_WAITKIND_STOPPED;
-	    tp->suspend.waitstatus.value.sig = GDB_SIGNAL_0;
-	  }
+      /* If the thread is stopped, but the user/frontend doesn't
+	 know about that yet, queue a pending event, as if the
+	 thread had just stopped now.  Unless the thread already had
+	 a pending event.  */
+      if (!tp->suspend.waitstatus_pending_p)
+	{
+	  tp->suspend.waitstatus_pending_p = 1;
+	  tp->suspend.waitstatus.kind = TARGET_WAITKIND_STOPPED;
+	  tp->suspend.waitstatus.value.sig = GDB_SIGNAL_0;
+	}
 
-	/* Clear the inline-frame state, since we're re-processing the
-	   stop.  */
-	clear_inline_frame_state (tp->ptid);
+      /* Clear the inline-frame state, since we're re-processing the
+	 stop.  */
+      clear_inline_frame_state (tp->ptid);
 
-	/* If this thread was paused because some other thread was
-	   doing an inline-step over, let that finish first.  Once
-	   that happens, we'll restart all threads and consume pending
-	   stop events then.  */
-	if (step_over_info_valid_p ())
-	  continue;
+      /* If this thread was paused because some other thread was
+	 doing an inline-step over, let that finish first.  Once
+	 that happens, we'll restart all threads and consume pending
+	 stop events then.  */
+      if (step_over_info_valid_p ())
+	continue;
 
-	/* Otherwise we can process the (new) pending event now.  Set
-	   it so this pending event is considered by
-	   do_target_wait.  */
-	tp->resumed = 1;
-      }
+      /* Otherwise we can process the (new) pending event now.  Set
+	 it so this pending event is considered by
+	 do_target_wait.  */
+      tp->resumed = 1;
+    }
 }
 
 static void
@@ -3363,13 +3341,9 @@ for_each_just_stopped_thread (for_each_just_stopped_thread_callback_func func)
     }
   else
     {
-      struct thread_info *tp;
-
       /* In all-stop mode, all threads have stopped.  */
-      ALL_NON_EXITED_THREADS (tp)
-        {
-	  func (tp);
-	}
+      for (thread_info *tp : all_non_exited_threads ())
+	func (tp);
     }
 }
 
@@ -3438,24 +3412,26 @@ print_target_wait_results (ptid_t waiton_ptid, ptid_t result_ptid,
 static struct thread_info *
 random_pending_event_thread (ptid_t waiton_ptid)
 {
-  struct thread_info *event_tp;
   int num_events = 0;
-  int random_selector;
+
+  auto has_event = [] (thread_info *tp)
+    {
+      return (tp->resumed
+	      && tp->suspend.waitstatus_pending_p);
+    };
 
   /* First see how many events we have.  Count only resumed threads
      that have an event pending.  */
-  ALL_NON_EXITED_THREADS (event_tp)
-    if (event_tp->ptid.matches (waiton_ptid)
-	&& event_tp->resumed
-	&& event_tp->suspend.waitstatus_pending_p)
+  for (thread_info *tp : all_non_exited_threads (waiton_ptid))
+    if (has_event (tp))
       num_events++;
 
   if (num_events == 0)
     return NULL;
 
   /* Now randomly pick a thread out of those that have had events.  */
-  random_selector = (int)
-    ((num_events * (double) rand ()) / (RAND_MAX + 1.0));
+  int random_selector = (int) ((num_events * (double) rand ())
+			       / (RAND_MAX + 1.0));
 
   if (debug_infrun && num_events > 1)
     fprintf_unfiltered (gdb_stdlog,
@@ -3463,14 +3439,12 @@ random_pending_event_thread (ptid_t waiton_ptid)
 			num_events, random_selector);
 
   /* Select the Nth thread that has had an event.  */
-  ALL_NON_EXITED_THREADS (event_tp)
-    if (event_tp->ptid.matches (waiton_ptid)
-	&& event_tp->resumed
-	&& event_tp->suspend.waitstatus_pending_p)
+  for (thread_info *tp : all_non_exited_threads (waiton_ptid))
+    if (has_event (tp))
       if (random_selector-- == 0)
-	break;
+	return tp;
 
-  return event_tp;
+  gdb_assert_not_reached ("event thread not found");
 }
 
 /* Wrapper for target_wait that first checks whether threads have
@@ -3766,14 +3740,14 @@ reinstall_readline_callback_handler_cleanup (void *arg)
 static void
 clean_up_just_stopped_threads_fsms (struct execution_control_state *ecs)
 {
-  struct thread_info *thr = ecs->event_thread;
-
-  if (thr != NULL && thr->thread_fsm != NULL)
-    thread_fsm_clean_up (thr->thread_fsm, thr);
+  if (ecs->event_thread != NULL
+      && ecs->event_thread->thread_fsm != NULL)
+    thread_fsm_clean_up (ecs->event_thread->thread_fsm,
+			 ecs->event_thread);
 
   if (!non_stop)
     {
-      ALL_NON_EXITED_THREADS (thr)
+      for (thread_info *thr : all_non_exited_threads ())
         {
 	  if (thr->thread_fsm == NULL)
 	    continue;
@@ -4472,13 +4446,12 @@ stop_all_threads (void)
 	  ptid_t event_ptid;
 	  struct target_waitstatus ws;
 	  int need_wait = 0;
-	  struct thread_info *t;
 
 	  update_thread_list ();
 
 	  /* Go through all threads looking for threads that we need
 	     to tell the target to stop.  */
-	  ALL_NON_EXITED_THREADS (t)
+	  for (thread_info *t : all_non_exited_threads ())
 	    {
 	      if (t->executing)
 		{
@@ -4550,9 +4523,7 @@ stop_all_threads (void)
 	    }
 	  else
 	    {
-	      inferior *inf;
-
-	      t = find_thread_ptid (event_ptid);
+	      thread_info *t = find_thread_ptid (event_ptid);
 	      if (t == NULL)
 		t = add_thread (event_ptid);
 
@@ -4563,7 +4534,7 @@ stop_all_threads (void)
 
 	      /* This may be the first time we see the inferior report
 		 a stop.  */
-	      inf = find_inferior_ptid (event_ptid);
+	      inferior *inf = find_inferior_ptid (event_ptid);
 	      if (inf->needs_setup)
 		{
 		  switch_to_thread_no_regs (t);
@@ -4653,9 +4624,6 @@ stop_all_threads (void)
 static int
 handle_no_resumed (struct execution_control_state *ecs)
 {
-  struct inferior *inf;
-  struct thread_info *thread;
-
   if (target_can_async_p ())
     {
       struct ui *ui;
@@ -4718,7 +4686,7 @@ handle_no_resumed (struct execution_control_state *ecs)
      the synchronous command show "no unwaited-for " to the user.  */
   update_thread_list ();
 
-  ALL_NON_EXITED_THREADS (thread)
+  for (thread_info *thread : all_non_exited_threads ())
     {
       if (thread->executing
 	  || thread->suspend.waitstatus_pending_p)
@@ -4738,7 +4706,7 @@ handle_no_resumed (struct execution_control_state *ecs)
      process exited meanwhile (thus updating the thread list results
      in an empty thread list).  In this case we know we'll be getting
      a process exit event shortly.  */
-  ALL_INFERIORS (inf)
+  for (inferior *inf : all_inferiors ())
     {
       if (inf->pid == 0)
 	continue;
@@ -5394,12 +5362,10 @@ handle_inferior_event (struct execution_control_state *ecs)
 static void
 restart_threads (struct thread_info *event_thread)
 {
-  struct thread_info *tp;
-
   /* In case the instruction just stepped spawned a new thread.  */
   update_thread_list ();
 
-  ALL_NON_EXITED_THREADS (tp)
+  for (thread_info *tp : all_non_exited_threads ())
     {
       if (tp == event_thread)
 	{
@@ -7007,7 +6973,6 @@ switch_back_to_stepped_thread (struct execution_control_state *ecs)
 {
   if (!target_is_non_stop_p ())
     {
-      struct thread_info *tp;
       struct thread_info *stepping_thread;
 
       /* If any thread is blocked on some internal breakpoint, and we
@@ -7094,7 +7059,7 @@ switch_back_to_stepped_thread (struct execution_control_state *ecs)
       /* Look for the stepping/nexting thread.  */
       stepping_thread = NULL;
 
-      ALL_NON_EXITED_THREADS (tp)
+      for (thread_info *tp : all_non_exited_threads ())
         {
 	  /* Ignore threads of processes the caller is not
 	     resuming.  */
