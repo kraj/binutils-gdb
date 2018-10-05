@@ -641,6 +641,17 @@ enum aarch64_op
   OP_TOTAL_NUM,		/* Pseudo.  */
 };
 
+/* Error types.  */
+enum err_type
+{
+  ERR_OK,
+  ERR_UND,
+  ERR_UNP,
+  ERR_NYI,
+  ERR_VFI,
+  ERR_NR_ENTRIES
+};
+
 /* Maximum number of operands an instruction can have.  */
 #define AARCH64_MAX_OPND_NUM 6
 /* Maximum number of qualifier sequences an instruction can have.  */
@@ -661,6 +672,13 @@ empty_qualifier_sequence_p (const aarch64_opnd_qualifier_t *qualifiers)
       return FALSE;
   return TRUE;
 }
+
+/*  Forward declare error reporting type.  */
+typedef struct aarch64_operand_error aarch64_operand_error;
+/* Forward declare instruction sequence type.  */
+typedef struct aarch64_instr_sequence aarch64_instr_sequence;
+/* Forward declare instruction definition.  */
+typedef struct aarch64_inst aarch64_inst;
 
 /* This structure holds information for a particular opcode.  */
 
@@ -700,14 +718,19 @@ struct aarch64_opcode
   aarch64_opnd_qualifier_seq_t qualifiers_list[AARCH64_MAX_QLF_SEQ_NUM];
 
   /* Flags providing information about this instruction */
-  uint32_t flags;
+  uint64_t flags;
+
+  /* Extra constraints on the instruction that the verifier checks.  */
+  uint32_t constraints;
 
   /* If nonzero, this operand and operand 0 are both registers and
      are required to have the same register number.  */
   unsigned char tied_operand;
 
   /* If non-NULL, a function to verify that a given instruction is valid.  */
-  bfd_boolean (* verifier) (const struct aarch64_opcode *, const aarch64_insn);
+  enum err_type (* verifier) (const struct aarch64_inst *, const aarch64_insn,
+			      bfd_vma, bfd_boolean, aarch64_operand_error *,
+			      struct aarch64_instr_sequence *);
 };
 
 typedef struct aarch64_opcode aarch64_opcode;
@@ -771,7 +794,18 @@ extern aarch64_opcode aarch64_opcode_table[];
 #define F_SYS_READ (1ULL << 29)
 /* This system instruction is used to write system registers.  */
 #define F_SYS_WRITE (1ULL << 30)
-/* Next bit is 31.  */
+/* This instruction has an extra constraint on it that imposes a requirement on
+   subsequent instructions.  */
+#define F_SCAN (1ULL << 31)
+/* Next bit is 32.  */
+
+/* Instruction constraints.  */
+/* This instruction has a predication constraint on the instruction at PC+4.  */
+#define C_SCAN_MOVPRFX (1U << 0)
+/* This instruction's operation width is determined by the operand with the
+   largest element size.  */
+#define C_MAX_ELEM (1U << 1)
+/* Next bit is 2.  */
 
 static inline bfd_boolean
 alias_opcode_p (const aarch64_opcode *opcode)
@@ -1032,7 +1066,6 @@ struct aarch64_inst
   aarch64_opnd_info operands[AARCH64_MAX_OPND_NUM];
 };
 
-typedef struct aarch64_inst aarch64_inst;
 
 /* Diagnosis related declaration and interface.  */
 
@@ -1110,14 +1143,27 @@ struct aarch64_operand_error
   bfd_boolean non_fatal;
 };
 
-typedef struct aarch64_operand_error aarch64_operand_error;
+/* AArch64 sequence structure used to track instructions with F_SCAN
+   dependencies for both assembler and disassembler.  */
+struct aarch64_instr_sequence
+{
+  /* The instruction that caused this sequence to be opened.  */
+  aarch64_inst *instr;
+  /* The number of instructions the above instruction allows to be kept in the
+     sequence before an automatic close is done.  */
+  int num_insns;
+  /* The instructions currently added to the sequence.  */
+  aarch64_inst **current_insns;
+  /* The number of instructions already in the sequence.  */
+  int next_insn;
+};
 
 /* Encoding entrypoint.  */
 
 extern int
 aarch64_opcode_encode (const aarch64_opcode *, const aarch64_inst *,
 		       aarch64_insn *, aarch64_opnd_qualifier_t *,
-		       aarch64_operand_error *);
+		       aarch64_operand_error *, aarch64_instr_sequence *);
 
 extern const aarch64_opcode *
 aarch64_replace_opcode (struct aarch64_inst *,
@@ -1144,6 +1190,9 @@ extern aarch64_opnd_qualifier_t
 aarch64_get_expected_qualifier (const aarch64_opnd_qualifier_seq_t *, int,
 				const aarch64_opnd_qualifier_t, int);
 
+extern bfd_boolean
+aarch64_is_destructive_by_operands (const aarch64_opcode *);
+
 extern int
 aarch64_num_of_operands (const aarch64_opcode *);
 
@@ -1153,9 +1202,12 @@ aarch64_stack_pointer_p (const aarch64_opnd_info *);
 extern int
 aarch64_zero_register_p (const aarch64_opnd_info *);
 
-extern int
+extern enum err_type
 aarch64_decode_insn (aarch64_insn, aarch64_inst *, bfd_boolean,
-		     aarch64_operand_error *errors);
+		     aarch64_operand_error *);
+
+extern void
+init_insn_sequence (const struct aarch64_inst *, aarch64_instr_sequence *);
 
 /* Given an operand qualifier, return the expected data element size
    of a qualified operand.  */

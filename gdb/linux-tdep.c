@@ -822,13 +822,13 @@ linux_info_proc (struct gdbarch *gdbarch, const char *args,
 	       line = strtok (NULL, "\n"))
 	    {
 	      ULONGEST addr, endaddr, offset, inode;
-	      const char *permissions, *device, *filename;
+	      const char *permissions, *device, *mapping_filename;
 	      size_t permissions_len, device_len;
 
 	      read_mapping (line, &addr, &endaddr,
 			    &permissions, &permissions_len,
 			    &offset, &device, &device_len,
-			    &inode, &filename);
+			    &inode, &mapping_filename);
 
 	      if (gdbarch_addr_bit (gdbarch) == 32)
 	        {
@@ -837,7 +837,7 @@ linux_info_proc (struct gdbarch *gdbarch, const char *args,
 				   paddress (gdbarch, endaddr),
 				   hex_string (endaddr - addr),
 				   hex_string (offset),
-				   *filename? filename : "");
+				   *mapping_filename ? mapping_filename : "");
 		}
 	      else
 	        {
@@ -846,7 +846,7 @@ linux_info_proc (struct gdbarch *gdbarch, const char *args,
 				   paddress (gdbarch, endaddr),
 				   hex_string (endaddr - addr),
 				   hex_string (offset),
-				   *filename? filename : "");
+				   *mapping_filename ? mapping_filename : "");
 	        }
 	    }
 	}
@@ -1547,8 +1547,9 @@ linux_make_mappings_corefile_notes (struct gdbarch *gdbarch, bfd *obfd,
 		 long_type, mapping_data.file_count);
 
       /* Copy the filenames to the data obstack.  */
+      int size = obstack_object_size (&filename_obstack);
       obstack_grow (&data_obstack, obstack_base (&filename_obstack),
-		    obstack_object_size (&filename_obstack));
+		    size);
 
       note_data = elfcore_write_note (obfd, note_data, note_size,
 				      "CORE", NT_FILE,

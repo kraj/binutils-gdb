@@ -78,11 +78,8 @@ require_partial_symbols (struct objfile *objfile, int verbose)
       if (objfile->sf->sym_read_psymbols)
 	{
 	  if (verbose)
-	    {
-	      printf_unfiltered (_("Reading symbols from %s..."),
-				 objfile_name (objfile));
-	      gdb_flush (gdb_stdout);
-	    }
+	    printf_filtered (_("Reading symbols from %s...\n"),
+			     objfile_name (objfile));
 	  (*objfile->sf->sym_read_psymbols) (objfile);
 
 	  /* Partial symbols list are not expected to changed after this
@@ -90,17 +87,9 @@ require_partial_symbols (struct objfile *objfile, int verbose)
 	  objfile->global_psymbols.shrink_to_fit ();
 	  objfile->static_psymbols.shrink_to_fit ();
 
-	  if (verbose)
-	    {
-	      if (!objfile_has_symbols (objfile))
-		{
-		  wrap_here ("");
-		  printf_unfiltered (_("(no debugging symbols found)..."));
-		  wrap_here ("");
-		}
-
-	      printf_unfiltered (_("done.\n"));
-	    }
+	  if (verbose && !objfile_has_symbols (objfile))
+	    printf_filtered (_("(No debugging symbols found in %s)\n"),
+			     objfile_name (objfile));
 	}
     }
 
@@ -931,10 +920,10 @@ dump_psymtab (struct objfile *objfile, struct partial_symtab *psymtab,
   fprintf_filtered (outfile, "(object ");
   gdb_print_host_address (psymtab, outfile);
   fprintf_filtered (outfile, ")\n\n");
-  fprintf_unfiltered (outfile, "  Read from object file %s (",
-		      objfile_name (objfile));
+  fprintf_filtered (outfile, "  Read from object file %s (",
+		    objfile_name (objfile));
   gdb_print_host_address (objfile, outfile);
-  fprintf_unfiltered (outfile, ")\n");
+  fprintf_filtered (outfile, ")\n");
 
   if (psymtab->readin)
     {
@@ -1241,7 +1230,9 @@ psym_map_matching_symbols (struct objfile *objfile,
 
 static bool
 recursively_search_psymtabs
-  (struct partial_symtab *ps, struct objfile *objfile, enum search_domain domain,
+  (struct partial_symtab *ps,
+   struct objfile *objfile,
+   enum search_domain domain,
    const lookup_name_info &lookup_name,
    gdb::function_view<expand_symtabs_symbol_matcher_ftype> sym_matcher)
 {
@@ -1766,13 +1757,13 @@ allocate_psymtab (const char *filename, struct objfile *objfile)
 	{
 	  xfree (last_objfile_name);
 	  last_objfile_name = xstrdup (objfile_name (objfile));
-	  fprintf_unfiltered (gdb_stdlog,
-			      "Creating one or more psymtabs for objfile %s ...\n",
-			      last_objfile_name);
+	  fprintf_filtered (gdb_stdlog,
+			    "Creating one or more psymtabs for objfile %s ...\n",
+			    last_objfile_name);
 	}
-      fprintf_unfiltered (gdb_stdlog,
-			  "Created psymtab %s for module %s.\n",
-			  host_address_to_string (psymtab), filename);
+      fprintf_filtered (gdb_stdlog,
+			"Created psymtab %s for module %s.\n",
+			host_address_to_string (psymtab), filename);
     }
 
   return psymtab;

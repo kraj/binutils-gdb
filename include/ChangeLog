@@ -1,3 +1,74 @@
+2018-10-05  Sudakshina Das  <sudi.das@arm.com>
+
+	* opcode/arm.h (ARM_EXT2_PREDRES): New.
+	(ARM_ARCH_V8_5A): Add ARM_EXT2_PREDRES by default.
+
+2018-10-05  Sudakshina Das  <sudi.das@arm.com>
+
+	* opcode/arm.h (ARM_EXT2_SB): New.
+	(ARM_ARCH_V8_5A): Add ARM_EXT2_SB by default.
+
+2018-10-05  Sudakshina Das  <sudi.das@arm.com>
+
+	* opcode/arm.h (ARM_EXT2_V8_5A): New.
+	(ARM_AEXT2_V8_5A, ARM_ARCH_V8_5A): New.
+
+2018-10-05  Richard Henderson  <rth@twiddle.net>
+
+	* elf/or1k.h (elf_or1k_reloc_type): Add R_OR1K_PCREL_PG21,
+	R_OR1K_GOT_PG21, R_OR1K_TLS_GD_PG21, R_OR1K_TLS_LDM_PG21,
+	R_OR1K_TLS_IE_PG21, R_OR1K_LO13, R_OR1K_GOT_LO13,
+	R_OR1K_TLS_GD_LO13, R_OR1K_TLS_LDM_LO13, R_OR1K_TLS_IE_LO13,
+	R_OR1K_SLO13, R_OR1K_PLTA26.
+
+2018-10-05  Richard Henderson  <rth@twiddle.net>
+
+	* elf/or1k.h (elf_or1k_reloc_type): Add R_OR1K_AHI16,
+	R_OR1K_GOTOFF_AHI16, R_OR1K_TLS_IE_AHI16, R_OR1K_TLS_LE_AHI16,
+	R_OR1K_SLO16, R_OR1K_GOTOFF_SLO16, R_OR1K_TLS_LE_SLO16.
+
+2018-10-03  Tamar Christina  <tamar.christina@arm.com>
+
+	* opcode/aarch64.h (aarch64_inst): Remove.
+	(enum err_type): Add ERR_VFI.
+	(aarch64_is_destructive_by_operands): New.
+	(init_insn_sequence): New.
+	(aarch64_decode_insn): Remove param name.
+
+2018-10-03  Tamar Christina  <tamar.christina@arm.com>
+
+	* opcode/aarch64.h (struct aarch64_opcode): Expand verifiers to take
+	more arguments.
+
+2018-10-03  Tamar Christina  <tamar.christina@arm.com>
+
+	* opcode/aarch64.h (enum err_type): New.
+	(aarch64_decode_insn): Use it.
+
+2018-10-03  Tamar Christina  <tamar.christina@arm.com>
+
+	* opcode/aarch64.h (struct aarch64_instr_sequence): New.
+	(aarch64_opcode_encode): Use it.
+
+2018-10-03  Tamar Christina  <tamar.christina@arm.com>
+
+	* opcode/aarch64.h (struct aarch64_opcode): Add constraints,
+	extend flags field size.
+	(F_SCAN, C_SCAN_MOVPRFX, C_MAX_ELEM): New.
+
+2018-10-03  John Darrington <john@darrington.wattle.id.au>
+
+	* dis-asm.h (print_insn_s12z): New declaration.
+
+2018-10-02  Palmer Dabbelt  <palmer@sifive.com>
+
+	* opcode/riscv-opc.h (MATCH_FENCE_TSO): New define.
+	(MASK_FENCE_TSO): Likewise.
+
+2018-10-01  Cupertino Miranda <cmiranda@synopsys.com>
+
+	* arc-reloc.def (ARC_TLS_LE_32): Updated reloc formula.
+
 2018-09-21  H.J. Lu  <hongjiu.lu@intel.com>
 
 	PR binutils/23694

@@ -5497,7 +5497,6 @@ read_debug_names_from_section (struct objfile *objfile,
   const gdb_byte *abbrev_table_start = addr;
   for (;;)
     {
-      unsigned int bytes_read;
       const ULONGEST index_num = read_unsigned_leb128 (abfd, addr, &bytes_read);
       addr += bytes_read;
       if (index_num == 0)
@@ -8079,18 +8078,14 @@ process_psymtab_comp_unit_reader (const struct die_reader_specs *reader,
   dwarf2_build_include_psymtabs (cu, comp_unit_die, pst);
 
   if (dwarf_read_debug)
-    {
-      struct gdbarch *gdbarch = get_objfile_arch (objfile);
-
-      fprintf_unfiltered (gdb_stdlog,
-			  "Psymtab for %s unit @%s: %s - %s"
-			  ", %d global, %d static syms\n",
-			  per_cu->is_debug_types ? "type" : "comp",
-			  sect_offset_str (per_cu->sect_off),
-			  paddress (gdbarch, pst->text_low (objfile)),
-			  paddress (gdbarch, pst->text_high (objfile)),
-			  pst->n_global_syms, pst->n_static_syms);
-    }
+    fprintf_unfiltered (gdb_stdlog,
+			"Psymtab for %s unit @%s: %s - %s"
+			", %d global, %d static syms\n",
+			per_cu->is_debug_types ? "type" : "comp",
+			sect_offset_str (per_cu->sect_off),
+			paddress (gdbarch, pst->text_low (objfile)),
+			paddress (gdbarch, pst->text_high (objfile)),
+			pst->n_global_syms, pst->n_static_syms);
 }
 
 /* Subroutine of dwarf2_build_psymtabs_hard to simplify it.
@@ -9112,18 +9107,21 @@ add_partial_subprogram (struct partial_die_info *pdi,
 	      struct objfile *objfile = cu->per_cu->dwarf2_per_objfile->objfile;
 	      struct gdbarch *gdbarch = get_objfile_arch (objfile);
 	      CORE_ADDR baseaddr;
-	      CORE_ADDR highpc;
-	      CORE_ADDR lowpc;
+	      CORE_ADDR this_highpc;
+	      CORE_ADDR this_lowpc;
 
 	      baseaddr = ANOFFSET (objfile->section_offsets,
 				   SECT_OFF_TEXT (objfile));
-	      lowpc = (gdbarch_adjust_dwarf2_addr (gdbarch,
-						   pdi->lowpc + baseaddr)
-		       - baseaddr);
-	      highpc = (gdbarch_adjust_dwarf2_addr (gdbarch,
-						    pdi->highpc + baseaddr)
-			- baseaddr);
-	      addrmap_set_empty (objfile->psymtabs_addrmap, lowpc, highpc - 1,
+	      this_lowpc
+		= (gdbarch_adjust_dwarf2_addr (gdbarch,
+					       pdi->lowpc + baseaddr)
+		   - baseaddr);
+	      this_highpc
+		= (gdbarch_adjust_dwarf2_addr (gdbarch,
+					       pdi->highpc + baseaddr)
+		   - baseaddr);
+	      addrmap_set_empty (objfile->psymtabs_addrmap,
+				 this_lowpc, this_highpc - 1,
 				 cu->per_cu->v.psymtab);
 	    }
         }
@@ -13835,7 +13833,7 @@ read_func_scope (struct die_info *die, struct dwarf2_cu *cu)
 	 though they don't appear in this symtab directly, other parts
 	 of gdb assume that symbols do, and this is reasonably
 	 true.  */
-      for (struct symbol *sym : template_args)
+      for (symbol *sym : template_args)
 	symbol_set_symtab (sym, symbol_symtab (templ_func));
     }
 
@@ -17709,7 +17707,7 @@ read_subrange_type (struct die_info *die, struct dwarf2_cu *cu)
   int low_default_is_valid;
   int high_bound_is_count = 0;
   const char *name;
-  LONGEST negative_mask;
+  ULONGEST negative_mask;
 
   orig_base_type = die_type (die, cu);
   /* If ORIG_BASE_TYPE is a typedef, it will not be TYPE_UNSIGNED,
@@ -17842,7 +17840,7 @@ read_subrange_type (struct die_info *die, struct dwarf2_cu *cu)
      the bounds as signed, and thus sign-extend their values, when
      the base type is signed.  */
   negative_mask =
-    -((LONGEST) 1 << (TYPE_LENGTH (base_type) * TARGET_CHAR_BIT - 1));
+    -((ULONGEST) 1 << (TYPE_LENGTH (base_type) * TARGET_CHAR_BIT - 1));
   if (low.kind == PROP_CONST
       && !TYPE_UNSIGNED (base_type) && (low.data.const_val & negative_mask))
     low.data.const_val |= negative_mask;
@@ -19627,7 +19625,7 @@ static LONGEST
 read_signed_leb128 (bfd *abfd, const gdb_byte *buf,
 		    unsigned int *bytes_read_ptr)
 {
-  LONGEST result;
+  ULONGEST result;
   int shift, num_read;
   unsigned char byte;
 
@@ -19639,7 +19637,7 @@ read_signed_leb128 (bfd *abfd, const gdb_byte *buf,
       byte = bfd_get_8 (abfd, buf);
       buf++;
       num_read++;
-      result |= ((LONGEST) (byte & 127) << shift);
+      result |= ((ULONGEST) (byte & 127) << shift);
       shift += 7;
       if ((byte & 128) == 0)
 	{
@@ -19647,7 +19645,7 @@ read_signed_leb128 (bfd *abfd, const gdb_byte *buf,
 	}
     }
   if ((shift < 8 * sizeof (result)) && (byte & 0x40))
-    result |= -(((LONGEST) 1) << shift);
+    result |= -(((ULONGEST) 1) << shift);
   *bytes_read_ptr = num_read;
   return result;
 }
@@ -20339,21 +20337,21 @@ dwarf_decode_line_header (sect_offset sect_off, struct dwarf2_cu *cu)
       /* Read directory table.  */
       read_formatted_entries (dwarf2_per_objfile, abfd, &line_ptr, lh.get (),
 			      &cu->header,
-			      [] (struct line_header *lh, const char *name,
+			      [] (struct line_header *header, const char *name,
 				  dir_index d_index, unsigned int mod_time,
 				  unsigned int length)
 	{
-	  lh->add_include_dir (name);
+	  header->add_include_dir (name);
 	});
 
       /* Read file name table.  */
       read_formatted_entries (dwarf2_per_objfile, abfd, &line_ptr, lh.get (),
 			      &cu->header,
-			      [] (struct line_header *lh, const char *name,
+			      [] (struct line_header *header, const char *name,
 				  dir_index d_index, unsigned int mod_time,
 				  unsigned int length)
 	{
-	  lh->add_file_name (name, d_index, mod_time, length);
+	  header->add_file_name (name, d_index, mod_time, length);
 	});
     }
   else

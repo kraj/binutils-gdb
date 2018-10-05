@@ -1523,17 +1523,17 @@ proc gdb_file_cmd { arg } {
 
     send_gdb "file $arg\n"
     gdb_expect 120 {
-	-re "Reading symbols from.*LZMA support was disabled.*done.*$gdb_prompt $" {
+	-re "Reading symbols from.*LZMA support was disabled.*$gdb_prompt $" {
 	    verbose "\t\tLoaded $arg into $GDB; .gnu_debugdata found but no LZMA available"
 	    set gdb_file_cmd_debug_info "lzma"
 	    return 0
 	}
-	-re "Reading symbols from.*no debugging symbols found.*done.*$gdb_prompt $" {
+	-re "Reading symbols from.*no debugging symbols found.*$gdb_prompt $" {
 	    verbose "\t\tLoaded $arg into $GDB with no debugging symbols"
 	    set gdb_file_cmd_debug_info "nodebug"
 	    return 0
 	}
-        -re "Reading symbols from.*done.*$gdb_prompt $" {
+        -re "Reading symbols from.*$gdb_prompt $" {
             verbose "\t\tLoaded $arg into $GDB"
 	    set gdb_file_cmd_debug_info "debug"
 	    return 0
@@ -1541,7 +1541,7 @@ proc gdb_file_cmd { arg } {
         -re "Load new symbol table from \".*\".*y or n. $" {
             send_gdb "y\n"
             gdb_expect 120 {
-                -re "Reading symbols from.*done.*$gdb_prompt $" {
+                -re "Reading symbols from.*$gdb_prompt $" {
                     verbose "\t\tLoaded $arg with new symbol table into $GDB"
 		    set gdb_file_cmd_debug_info "debug"
 		    return 0
@@ -2891,6 +2891,20 @@ gdb_caching_proc has_int128_c {
 # Return true if the C++ compiler understands the __int128 type.
 gdb_caching_proc has_int128_cxx {
     return [gdb_int128_helper c++]
+}
+
+# Return true if the IFUNC feature is unsupported.
+gdb_caching_proc skip_ifunc_tests {
+    if [gdb_can_simple_compile ifunc {
+	extern void f_ ();
+	typedef void F (void);
+	F* g (void) { return &f_; }
+	void f () __attribute__ ((ifunc ("g")));
+    } object] {
+	return 0
+    } else {
+	return 1
+    }
 }
 
 # Return whether we should skip tests for showing inlined functions in

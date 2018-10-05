@@ -1,3 +1,124 @@
+2018-10-05  Alan Modra  <amodra@gmail.com>
+
+	* elf32-spu.c (spu_elf_create_sections): Make .note.spu_name
+	SHT_NOTE.
+
+2018-10-05  Richard Henderson  <rth@twiddle.net>
+
+	* bfd-in2.h: Regenerated.
+	* elf32-or1k.c: (or1k_elf_howto_table): Fix formatting for
+	R_OR1K_PLT26, Add R_OR1K_PCREL_PG21, R_OR1K_GOT_PG21,
+	R_OR1K_TLS_GD_PG21, R_OR1K_TLS_LDM_PG21, R_OR1K_TLS_IE_PG21,
+	R_OR1K_LO13, R_OR1K_GOT_LO13, R_OR1K_TLS_GD_LO13, R_OR1K_TLS_LDM_LO13,
+	R_OR1K_TLS_IE_LO13, R_OR1K_SLO13, R_OR1K_PLTA26.
+	(or1k_reloc_map): Add BFD_RELOC_OR1K_PCREL_PG21,
+	BFD_RELOC_OR1K_GOT_PG21, BFD_RELOC_OR1K_TLS_GD_PG21,
+	BFD_RELOC_OR1K_TLS_LDM_PG21, BFD_RELOC_OR1K_TLS_IE_PG21,
+	BFD_RELOC_OR1K_LO13, BFD_RELOC_OR1K_GOT_LO13,
+	BFD_RELOC_OR1K_TLS_GD_LO13, BFD_RELOC_OR1K_TLS_GD_LO13,
+	BFD_RELOC_OR1K_TLS_LDM_LO13, BFD_RELOC_OR1K_TLS_IE_LO13,
+	BFD_RELOC_OR1K_SLO13, BFD_RELOC_OR1K_PLTA26.
+	(elf_or1k_link_hash_table): Add field saw_plta.
+	(or1k_final_link_relocate): Add value calculations for new relocations.
+	(or1k_elf_relocate_section): Add section relocations for new
+	relocations.
+	(or1k_write_plt_entry): New function.
+	(or1k_elf_finish_dynamic_sections): Add support for PLTA relocations
+	using new l.adrp instruction.  Cleanup PLT relocation code generation.
+	* libbfd.h: Regenerated.
+	* reloc.c: Add BFD_RELOC_OR1K_PCREL_PG21, BFD_RELOC_OR1K_LO13,
+	BFD_RELOC_OR1K_SLO13, BFD_RELOC_OR1K_GOT_PG21, BFD_RELOC_OR1K_GOT_LO13,
+	BFD_RELOC_OR1K_PLTA26, BFD_RELOC_OR1K_TLS_GD_PG21,
+	BFD_RELOC_OR1K_TLS_GD_LO13, BFD_RELOC_OR1K_TLS_LDM_PG21,
+	BFD_RELOC_OR1K_TLS_LDM_LO13, BFD_RELOC_OR1K_TLS_IE_PG21,
+	BFD_RELOC_OR1K_TLS_IE_LO13.
+
+2018-10-05  Richard Henderson  <rth@twiddle.net>
+
+	* elf32-or1k.c (or1k_elf_relocate_section): Add error for unknown
+	relocations.  Add error for non zero addend with plt and got
+	relocations.  Add error for got and plt references against dynamic, non
+	local, symbols.  Add error when linking non shared liraries with
+	flag_pic.
+
+2018-10-05  Richard Henderson  <rth@twiddle.net>
+	    Stafford Horne  <shorne@gmail.com>
+
+	* bfd-in2.h: Regenerated.
+	* elf32-or1k.c (N_ONES): New macro.
+	(or1k_elf_howto_table): Fix R_OR1K_PLT26 to complain on overflow.
+	Add definitions for R_OR1K_TLS_TPOFF, R_OR1K_TLS_DTPOFF,
+	R_OR1K_TLS_DTPMOD, R_OR1K_AHI16, R_OR1K_GOTOFF_AHI16,
+	R_OR1K_TLS_IE_AHI16, R_OR1K_TLS_LE_AHI16, R_OR1K_SLO16,
+	R_OR1K_GOTOFF_SLO16, R_OR1K_TLS_LE_SLO16.
+	(or1k_reloc_map): Add entries for BFD_RELOC_HI16_S,
+	BFD_RELOC_LO16_GOTOFF, BFD_RELOC_HI16_GOTOFF, BFD_RELOC_HI16_S_GOTOFF,
+	BFD_RELOC_OR1K_TLS_IE_AHI16, BFD_RELOC_OR1K_TLS_LE_AHI16,
+	BFD_RELOC_OR1K_SLO16, BFD_RELOC_OR1K_GOTOFF_SLO16,
+	BFD_RELOC_OR1K_TLS_LE_SLO16.
+	(or1k_reloc_type_lookup): Change search loop to start ad index 0 and
+	also check results before returning.
+	(or1k_reloc_name_lookup): Simplify loop to use R_OR1K_max as index
+	limit.
+	(or1k_final_link_relocate): New function.
+	(or1k_elf_relocate_section): Add support for new AHI and SLO
+	relocations.  Use or1k_final_link_relocate instead of generic
+	_bfd_final_link_relocate.
+	(or1k_elf_check_relocs): Add support for new AHI and SLO relocations.
+	* reloc.c: Add new enums for BFD_RELOC_OR1K_SLO16,
+	BFD_RELOC_OR1K_GOTOFF_SLO16, BFD_RELOC_OR1K_TLS_IE_AHI16,
+	BFD_RELOC_OR1K_TLS_IE_AHI16, BFD_RELOC_OR1K_TLS_LE_AHI16,
+	BFD_RELOC_OR1K_TLS_LE_SLO16.  Remove unused BFD_RELOC_OR1K_GOTOFF_HI16
+	and BFD_RELOC_OR1K_GOTOFF_LO16.
+	* libbfd.h: Regenerated.
+
+2018-10-04  Jim Wilson  <jimw@sifive.com>
+
+	* elfnn-riscv.c (riscv_elf_size_dynamic_sections): In dynobj->sections
+	loop, handle htab->sdyntdata section.
+
+2018-10-04  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* elf64-sparc.c (elf64_sparc_output_arch_syms): Do notcorrect the
+	impact of STT_REGISTER symbols in the dynsym sh_info here...
+	* elfxx-sparc.c (_bfd_sparc_elf_finish_dynamic_sections): ...but
+	do it here.
+
+2018-10-03  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/23658
+	* elf.c (get_program_header_size): Put all adjacent SHT_NOTE
+	sections with the same section alignment into a single PT_NOTE
+	segment.  Check SHT_NOTE section type instead of section name.
+	(_bfd_elf_map_sections_to_segments): Likewise.
+
+2018-10-03  Millan Wolff  <mail@milianw.de>
+
+	PR 23715
+	* dwarf2.c (find_abstract_instance): Allow recursive invocations
+	of find_abstract_instance to override the name variable.
+
+2018-10-03  Nick Clifton  <nickc@redhat.com>
+
+	* po/pt.po: Updated Portuguese translation.
+
+2018-10-01  Cupertino Miranda <cmiranda@synopsys.com>
+
+	* arc-got.h (relocate_fix_got_relocs_for_got_info): Changed. Take TLS
+	section alignment in consideration for this relocation. Fixed TCB_SIZE
+	offset size to include section alignment.
+	(get_got_entry_list_for_symbol): Changed.
+	* elf32-arc.c (FINAL_SECTSTART): Added this formula macro.
+	(ARC_TLS_DTPOFF) Updated reloc to use new created macro instead.
+	(arc_special_overflow_checks): Fixed TCB_SIZE offsize to include
+	section alignment.
+	(elf_arc_check_relocs): Changed.
+	(elf_arc_finish_dynamic_symbol) Return FALSE in case arc_htab is NULL.
+	(struct elf_arc_link_hash_entry): Moved and changed.
+	(elf_arc_link_hash_newfunc): Changed.
+	(arc_elf_link_hash_table_create): Removed old initializations.
+	(elf_arc_relocate_section, elf_arc_finish_dynamic_symbol): Changed.
+
 2018-09-28  H.J. Lu  <hongjiu.lu@intel.com>
 
 	* elf-properties.c (_bfd_elf_link_setup_gnu_properties): Use

@@ -69,6 +69,11 @@ info proc files
 
 * Changed commands
 
+target remote FILENAME
+target extended-remote FILENAME
+  If FILENAME is a Unix domain socket, GDB will attempt to connect
+  to this socket instead of opening FILENAME as a character device.
+
 thread apply [all | COUNT | -COUNT] [FLAG]... COMMAND
   The 'thread apply' command accepts new FLAG arguments.
   FLAG arguments allow to control what output to produce and how to handle
@@ -102,6 +107,16 @@ CSKY GNU/LINUX			csky*-*-linux
 
   ** The gdb.Progspace type has a new 'objfiles' method, which returns the list
      of objfiles associated to that program space.
+
+* Configure changes
+
+--enable-ubsan
+
+  Enable or disable the undefined behavior sanitizer.  Release
+  versions of GDB disable this by default if it is available, but
+  development versions enable it.  Enabling this can cause a
+  performance penalty.  The undefined behavior sanitizer was first
+  introduced in GCC 4.9.
 
 *** Changes in GDB 8.2
 

@@ -1760,10 +1760,8 @@ static int
 parse_number (struct parser_state *par_state,
 	      const char *buf, int len, int parsed_float, YYSTYPE *putithere)
 {
-  /* FIXME: Shouldn't these be unsigned?  We don't deal with negative values
-     here, and we do kind of silly things like cast to unsigned.  */
-  LONGEST n = 0;
-  LONGEST prevn = 0;
+  ULONGEST n = 0;
+  ULONGEST prevn = 0;
   ULONGEST un;
 
   int i = 0;
@@ -1922,7 +1920,7 @@ parse_number (struct parser_state *par_state,
 	 on 0x123456789 when LONGEST is 32 bits.  */
       if (c != 'l' && c != 'u' && n != 0)
 	{	
-	  if ((unsigned_p && (ULONGEST) prevn >= (ULONGEST) n))
+	  if (unsigned_p && prevn >= n)
 	    error (_("Numeric constant too large."));
 	}
       prevn = n;
@@ -1940,7 +1938,7 @@ parse_number (struct parser_state *par_state,
      the case where it is we just always shift the value more than
      once, with fewer bits each time.  */
 
-  un = (ULONGEST)n >> 2;
+  un = n >> 2;
   if (long_p == 0
       && (un >> (gdbarch_int_bit (parse_gdbarch (par_state)) - 2)) == 0)
     {
@@ -2662,7 +2660,6 @@ lex_one_token (struct parser_state *par_state, bool *is_quoted_name)
     case '@':
       {
 	const char *p = &tokstart[1];
-	size_t len = strlen ("entry");
 
 	if (parse_language (par_state)->la_language == language_objc)
 	  {
@@ -2680,6 +2677,7 @@ lex_one_token (struct parser_state *par_state, bool *is_quoted_name)
 
 	while (ISSPACE (*p))
 	  p++;
+	size_t len = strlen ("entry");
 	if (strncmp (p, "entry", len) == 0 && !c_ident_is_alnum (p[len])
 	    && p[len] != '_')
 	  {

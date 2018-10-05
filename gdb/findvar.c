@@ -50,7 +50,7 @@ template<typename T, typename>
 T
 extract_integer (const gdb_byte *addr, int len, enum bfd_endian byte_order)
 {
-  T retval = 0;
+  typename std::make_unsigned<T>::type retval = 0;
   const unsigned char *p;
   const unsigned char *startaddr = addr;
   const unsigned char *endaddr = startaddr + len;
@@ -632,7 +632,7 @@ default_read_var_value (struct symbol *var, const struct block *var_block,
       v = allocate_value (type);
       if (overlay_debugging)
 	{
-	  CORE_ADDR addr
+	  addr
 	    = symbol_overlayed_address (SYMBOL_VALUE_ADDRESS (var),
 					SYMBOL_OBJ_SECTION (symbol_objfile (var),
 							    var));

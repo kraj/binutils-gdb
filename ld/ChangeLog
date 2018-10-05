@@ -1,3 +1,44 @@
+2018-10-05  Richard Henderson  <rth@twiddle.net>
+
+	* testsuite/ld-or1k/or1k.exp: Add test cases for plt generation.
+	* testsuite/ld-or1k/plt1.dd: New file.
+	* testsuite/ld-or1k/plt1.s: New file.
+	* testsuite/ld-or1k/plt1.x.dd: New file.
+	* testsuite/ld-or1k/plta1.dd: New file.
+	* testsuite/ld-or1k/plta1.s: New file.
+	* testsuite/ld-or1k/pltlib.s: New file.
+
+2018-10-05  Richard Henderson  <rth@twiddle.net>
+
+	* testsuite/ld-or1k/offsets1.d: New file.
+	* testsuite/ld-or1k/offsets1.s: New file.
+	* testsuite/ld-or1k/or1k.exp: New file.
+
+2018-10-04  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/23658
+	* testsuite/ld-elf/pr23658-1.d: Also xfail ft32-* and xgate-*.
+
+2018-10-03  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/23658
+	* testsuite/ld-elf/pr23658-1.d: New file.
+	* testsuite/ld-elf/pr23658-1a.s: Likewise.
+	* testsuite/ld-elf/pr23658-1b.s: Likewise.
+	* testsuite/ld-elf/pr23658-1c.s: Likewise.
+	* testsuite/ld-elf/pr23658-1d.s: Likewise.
+	* testsuite/ld-elf/pr23658-2.rd: Likewise.
+	* testsuite/ld-elf/pr23658-3.d: Likewise.
+	* testsuite/ld-elf/pr23658-3.s: Likewise.
+	* testsuite/ld-elf/pr23658-3.t: Likewise.
+	* testsuite/ld-elf/shared.exp: Run PR ld/23658 tests.
+
+2018-10-03  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/23658
+	* ldlang.c (lang_insert_orphan): Group and sort output note
+	sections by section alignments.
+
 2018-09-25  Eric Botcazou  <ebotcazou@adacore.com>
 
 	* testsuite/ld-elf/pr14156b.d: Adjust for extra symbols.

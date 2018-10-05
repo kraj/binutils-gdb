@@ -256,6 +256,10 @@ static const arm_feature_set arm_ext_v8_2 =
   ARM_FEATURE_CORE_HIGH (ARM_EXT2_V8_2A);
 static const arm_feature_set arm_ext_v8_3 =
   ARM_FEATURE_CORE_HIGH (ARM_EXT2_V8_3A);
+static const arm_feature_set arm_ext_sb =
+  ARM_FEATURE_CORE_HIGH (ARM_EXT2_SB);
+static const arm_feature_set arm_ext_predres =
+  ARM_FEATURE_CORE_HIGH (ARM_EXT2_PREDRES);
 
 static const arm_feature_set arm_arch_any = ARM_ANY;
 #ifdef OBJ_ELF
@@ -21516,6 +21520,21 @@ static const struct asm_opcode insns[] =
  cCE("cfmadda32", e200600, 4, (RMAX, RMAX, RMFX, RMFX), mav_quad),
  cCE("cfmsuba32", e300600, 4, (RMAX, RMAX, RMFX, RMFX), mav_quad),
 
+ /* ARMv8.5-A instructions.  */
+#undef  ARM_VARIANT
+#define ARM_VARIANT   & arm_ext_sb
+#undef  THUMB_VARIANT
+#define THUMB_VARIANT & arm_ext_sb
+ TUF("sb", 57ff070, f3bf8f70, 0, (), noargs, noargs),
+
+#undef  ARM_VARIANT
+#define ARM_VARIANT   & arm_ext_predres
+#undef  THUMB_VARIANT
+#define THUMB_VARIANT & arm_ext_predres
+ CE("cfprctx", e070f93, 1, (RRnpc), rd),
+ CE("dvprctx", e070fb3, 1, (RRnpc), rd),
+ CE("cpprctx", e070ff3, 1, (RRnpc), rd),
+
  /* ARMv8-M instructions.  */
 #undef  ARM_VARIANT
 #define ARM_VARIANT NULL
@@ -26335,6 +26354,7 @@ static const struct arm_arch_option_table arm_archs[] =
   ARM_ARCH_OPT ("armv8.3-a",	ARM_ARCH_V8_3A,	 FPU_ARCH_VFP),
   ARM_ARCH_OPT ("armv8-r",	ARM_ARCH_V8R,	 FPU_ARCH_VFP),
   ARM_ARCH_OPT ("armv8.4-a",	ARM_ARCH_V8_4A,	 FPU_ARCH_VFP),
+  ARM_ARCH_OPT ("armv8.5-a",	ARM_ARCH_V8_5A,	 FPU_ARCH_VFP),
   ARM_ARCH_OPT ("xscale",	ARM_ARCH_XSCALE, FPU_ARCH_VFP),
   ARM_ARCH_OPT ("iwmmxt",	ARM_ARCH_IWMMXT, FPU_ARCH_VFP),
   ARM_ARCH_OPT ("iwmmxt2",	ARM_ARCH_IWMMXT2,FPU_ARCH_VFP),
@@ -26411,12 +26431,18 @@ static const struct arm_option_extension_value_table arm_extensions[] =
   ARM_EXT_OPT ("pan",	ARM_FEATURE_CORE_HIGH (ARM_EXT2_PAN),
 			ARM_FEATURE (ARM_EXT_V8, ARM_EXT2_PAN, 0),
 			ARM_FEATURE_CORE_HIGH (ARM_EXT2_V8A)),
+  ARM_EXT_OPT ("predres", ARM_FEATURE_CORE_HIGH (ARM_EXT2_PREDRES),
+			ARM_FEATURE_CORE_HIGH (ARM_EXT2_PREDRES),
+			ARM_ARCH_V8A),
   ARM_EXT_OPT ("ras",	ARM_FEATURE_CORE_HIGH (ARM_EXT2_RAS),
 			ARM_FEATURE (ARM_EXT_V8, ARM_EXT2_RAS, 0),
 			ARM_FEATURE_CORE_HIGH (ARM_EXT2_V8A)),
   ARM_EXT_OPT ("rdma",  FPU_ARCH_NEON_VFP_ARMV8_1,
 			ARM_FEATURE_COPROC (FPU_NEON_ARMV8 | FPU_NEON_EXT_RDMA),
 			ARM_FEATURE_CORE_HIGH (ARM_EXT2_V8A)),
+  ARM_EXT_OPT ("sb",	ARM_FEATURE_CORE_HIGH (ARM_EXT2_SB),
+			ARM_FEATURE_CORE_HIGH (ARM_EXT2_SB),
+			ARM_ARCH_V8A),
   ARM_EXT_OPT2 ("sec",	ARM_FEATURE_CORE_LOW (ARM_EXT_SEC),
 			ARM_FEATURE_CORE_LOW (ARM_EXT_SEC),
 			ARM_FEATURE_CORE_LOW (ARM_EXT_V6K),
@@ -27046,6 +27072,7 @@ static const cpu_arch_ver_table cpu_arch_ver[] =
     {TAG_CPU_ARCH_V8M_MAIN, ARM_ARCH_V8M_MAIN},
     {TAG_CPU_ARCH_V8R,	    ARM_ARCH_V8R},
     {TAG_CPU_ARCH_V8,	    ARM_ARCH_V8_4A},
+    {TAG_CPU_ARCH_V8,	    ARM_ARCH_V8_5A},
     {-1,		    ARM_ARCH_NONE}
 };
 

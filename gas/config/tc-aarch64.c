@@ -55,6 +55,9 @@ static const aarch64_feature_set *march_cpu_opt = NULL;
 /* Constants for known architecture features.  */
 static const aarch64_feature_set cpu_default = CPU_DEFAULT;
 
+/* Currently active instruction sequence.  */
+static aarch64_instr_sequence *insn_sequence = NULL;
+
 #ifdef OBJ_ELF
 /* Pre-defined "_GLOBAL_OFFSET_TABLE_"	*/
 static symbolS *GOT_symbol;
@@ -145,6 +148,13 @@ static aarch64_instruction inst;
 
 static bfd_boolean parse_operands (char *, const aarch64_opcode *);
 static bfd_boolean programmer_friendly_fixup (aarch64_instruction *);
+
+#ifdef OBJ_ELF
+#  define now_instr_sequence seg_info \
+		(now_seg)->tc_segment_info_data.insn_sequence
+#else
+static struct aarch64_instr_sequence now_instr_sequence;
+#endif
 
 /* Diagnostics inline function utilities.
 
@@ -4661,7 +4671,7 @@ output_operand_error_record (const operand_error_record *record, char *str)
 	    && programmer_friendly_fixup (&inst);
 	  gas_assert (result);
 	  result = aarch64_opcode_encode (opcode, inst_base, &inst_base->value,
-					  NULL, NULL);
+					  NULL, NULL, insn_sequence);
 	  gas_assert (!result);
 
 	  /* Find the most matched qualifier sequence.  */
@@ -4797,10 +4807,12 @@ output_operand_error_report (char *str, bfd_boolean non_fatal_only)
     {
       gas_assert (curr->detail.kind != AARCH64_OPDE_NIL);
       DEBUG_TRACE ("\t%s", operand_mismatch_kind_names[curr->detail.kind]);
-      if (operand_error_higher_severity_p (curr->detail.kind, kind))
+      if (operand_error_higher_severity_p (curr->detail.kind, kind)
+	  && (!non_fatal_only || (non_fatal_only && curr->detail.non_fatal)))
 	kind = curr->detail.kind;
     }
-  gas_assert (kind != AARCH64_OPDE_NIL);
+
+  gas_assert (kind != AARCH64_OPDE_NIL || non_fatal_only);
 
   /* Pick up one of errors of KIND to report.  */
   largest_error_pos = -2; /* Index can be -1 which means unknown index.  */
@@ -6726,6 +6738,17 @@ warn_unpredictable_ldst (aarch64_instruction *instr, char *str)
     }
 }
 
+static void
+force_automatic_sequence_close (void)
+{
+  if (now_instr_sequence.instr)
+    {
+      as_warn (_("previous `%s' sequence has not been closed"),
+	       now_instr_sequence.instr->opcode->name);
+      init_insn_sequence (NULL, &now_instr_sequence);
+    }
+}
+
 /* A wrapper function to interface with libopcodes on encoding and
    record the error message if there is any.
 
@@ -6738,7 +6761,7 @@ do_encode (const aarch64_opcode *opcode, aarch64_inst *instr,
   aarch64_operand_error error_info;
   memset (&error_info, '\0', sizeof (error_info));
   error_info.kind = AARCH64_OPDE_NIL;
-  if (aarch64_opcode_encode (opcode, instr, code, NULL, &error_info)
+  if (aarch64_opcode_encode (opcode, instr, code, NULL, &error_info, insn_sequence)
       && !error_info.non_fatal)
     return TRUE;
 
@@ -6783,6 +6806,9 @@ md_assemble (char *str)
       S_SET_VALUE (last_label_seen, (valueT) frag_now_fix ());
       S_SET_SEGMENT (last_label_seen, now_seg);
     }
+
+  /* Update the current insn_sequence from the segment.  */
+  insn_sequence = &seg_info (now_seg)->tc_segment_info_data.insn_sequence;
 
   inst.reloc.type = BFD_RELOC_UNUSED;
 
@@ -6914,6 +6940,13 @@ aarch64_frob_label (symbolS * sym)
   last_label_seen = sym;
 
   dwarf2_emit_label (sym);
+}
+
+void
+aarch64_frob_section (asection *sec ATTRIBUTE_UNUSED)
+{
+  /* Check to see if we have a block to close.  */
+  force_automatic_sequence_close ();
 }
 
 int
@@ -7376,7 +7409,8 @@ try_to_encode_as_unscaled_ldst (aarch64_inst *instr)
 
   DEBUG_TRACE ("Found LDURB entry to encode programmer-friendly LDRB");
 
-  if (!aarch64_opcode_encode (instr->opcode, instr, &instr->value, NULL, NULL))
+  if (!aarch64_opcode_encode (instr->opcode, instr, &instr->value, NULL, NULL,
+			      insn_sequence))
     return FALSE;
 
   return TRUE;
@@ -7410,7 +7444,7 @@ fix_mov_imm_insn (fixS *fixP, char *buf, aarch64_inst *instr, offsetT value)
       opcode = aarch64_get_opcode (OP_MOV_IMM_WIDE);
       aarch64_replace_opcode (instr, opcode);
       if (aarch64_opcode_encode (instr->opcode, instr,
-				 &instr->value, NULL, NULL))
+				 &instr->value, NULL, NULL, insn_sequence))
 	{
 	  put_aarch64_insn (buf, instr->value);
 	  return;
@@ -7419,7 +7453,7 @@ fix_mov_imm_insn (fixS *fixP, char *buf, aarch64_inst *instr, offsetT value)
       opcode = aarch64_get_opcode (OP_MOV_IMM_WIDEN);
       aarch64_replace_opcode (instr, opcode);
       if (aarch64_opcode_encode (instr->opcode, instr,
-				 &instr->value, NULL, NULL))
+				 &instr->value, NULL, NULL, insn_sequence))
 	{
 	  put_aarch64_insn (buf, instr->value);
 	  return;
@@ -7432,7 +7466,7 @@ fix_mov_imm_insn (fixS *fixP, char *buf, aarch64_inst *instr, offsetT value)
       opcode = aarch64_get_opcode (OP_MOV_IMM_LOG);
       aarch64_replace_opcode (instr, opcode);
       if (aarch64_opcode_encode (instr->opcode, instr,
-				 &instr->value, NULL, NULL))
+				 &instr->value, NULL, NULL, insn_sequence))
 	{
 	  put_aarch64_insn (buf, instr->value);
 	  return;
@@ -7543,7 +7577,7 @@ fix_insn (fixS *fixP, uint32_t flags, offsetT value)
       idx = aarch64_operand_index (new_inst->opcode->operands, opnd);
       new_inst->operands[idx].imm.value = value;
       if (aarch64_opcode_encode (new_inst->opcode, new_inst,
-				 &new_inst->value, NULL, NULL))
+				 &new_inst->value, NULL, NULL, insn_sequence))
 	put_aarch64_insn (buf, new_inst->value);
       else
 	as_bad_where (fixP->fx_file, fixP->fx_line,
@@ -7597,7 +7631,7 @@ fix_insn (fixS *fixP, uint32_t flags, offsetT value)
 
       /* Encode/fix-up.  */
       if (aarch64_opcode_encode (new_inst->opcode, new_inst,
-				 &new_inst->value, NULL, NULL))
+				 &new_inst->value, NULL, NULL, insn_sequence))
 	{
 	  put_aarch64_insn (buf, new_inst->value);
 	  break;
