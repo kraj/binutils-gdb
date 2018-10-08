@@ -1,3 +1,23 @@
+2018-10-06  Tom Tromey  <tom@tromey.com>
+
+	PR python/19399:
+	* gdb.python/py-inferior.exp: Add architecture test.
+
+2018-10-06  Tom Tromey  <tom@tromey.com>
+
+	* gdb.base/gnu-ifunc.exp (build): Use standard_output_file.
+	* gdb.trace/unavailable-dwarf-piece.exp: Use standard_output_file.
+
+2018-10-06  Tom Tromey  <tom@tromey.com>
+
+	* gdb.python/py-breakpoint.exp (check_last_event): Check location
+	of a "throw" catchpoint.
+
+2018-10-06  Sergio Durigan Junior  <sergiodj@redhat.com>
+
+	* gdb.base/info-proc.exp: Update string expected from "help info
+	proc".
+
 2018-10-04  Tom Tromey  <tom@tromey.com>
 
 	* gdb.cp/maint.exp (test_invalid_name): Update expected output.

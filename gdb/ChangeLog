@@ -1,3 +1,70 @@
+2018-10-08   John Darrington <john@darrington.wattle.id.au>
+
+    * dwarf2read.c (dwarf2_cu) <producer_is_codewarrior>: New field.
+      (check_producer): Check if the producer is codewarrior.
+      (producer_is_codewarrior): New function.
+      (lnp_state_machine::record_line): Ignore is_stmt flag for records
+       produced by codewarrior.
+      (dwarf2_cu::dwarf2_cu): Initialize producer_is_codewarrior.
+
+2018-10-06  Tom Tromey  <tom@tromey.com>
+
+	PR python/19399:
+	* python/py-inferior.c: Add "architecture" entry.
+	(infpy_architecture): New function.
+
+2018-10-06  Tom Tromey  <tom@tromey.com>
+
+	PR python/21765:
+	* python/py-symbol.c (gdbpy_initialize_symbols): Redefine
+	SYMBOL_VARIABLES_DOMAIN, SYMBOL_FUNCTIONS_DOMAIN,
+	SYMBOL_TYPES_DOMAIN.  Define SYMBOL_MODULE_DOMAIN,
+	SYMBOL_COMMON_BLOCK_DOMAIN, SYMBOL_LOC_COMMON_BLOCK.
+
+2018-10-06  Tom Tromey  <tom@tromey.com>
+
+	PR build/17077:
+	* Makefile.in (OPCODES_CFLAGS): Remove "-I$(OPCODES_SRC)/..".
+	* arc-tdep.c, frv-tdep.c, lm32-tdep.c, mep-tdep.c,
+	microblaze-tdep.c, or1k-tdep.h: Use ../opcodes, not opcodes, in
+	#include.
+
+2018-10-06  Tom Tromey  <tom@tromey.com>
+
+	* python/py-breakpoint.c (bppy_get_location): Handle a
+	bp_breakpoint without a location.
+
+2018-10-06  Tom Tromey  <tom@tromey.com>
+
+	* python/lib/gdb/function/strfns.py (_MemEq, _StrLen, _StrEq)
+	(_RegEx): Reformat help text.
+	* python/lib/gdb/function/caller_is.py (CallerIs, CallerMatches)
+	(AnyCallerIs, AnyCallerMatches): Reformat help text.
+	* python/lib/gdb/function/as_string.py (_AsString): Reformat help
+	text.
+	* python/lib/gdb/command/xmethods.py (InfoXMethod)
+	(EnableXMethod, DisableXMethod): Remove help indentation.
+	Capitalize meta-syntactic variables.
+	* python/lib/gdb/command/unwinders.py (InfoUnwinder)
+	(EnableUnwinder, DisableUnwinder): Remove help indentation.
+	Capitalize meta-syntactic variables.
+	* python/lib/gdb/command/explore.py (ExploreCommand)
+	(ExploreValueCommand, ExploreTypeCommand): Reformat help text.
+	* python/lib/gdb/command/type_printers.py (InfoTypePrinter)
+	(EnableTypePrinter, DisableTypePrinter): Remove help indentation.
+	* python/lib/gdb/command/pretty_printers.py (InfoPrettyPrinter):
+	Remove help indentation.
+	(EnablePrettyPrinter, DisablePrettyPrinter): Likewise.
+	* python/lib/gdb/command/frame_filters.py (EnableFrameFilter)
+	(DisableFrameFilter, SetFrameFilterPriority)
+	(ShowFrameFilterPriority, InfoFrameFilter): Reword help text.
+
+2018-10-06  Tom Tromey  <tom@tromey.com>
+
+	PR tui/28819:
+	* tui/tui-io.c (gdb_wgetch): New function.
+	(tui_mld_getc, tui_getc): Use it.
+
 2018-10-05  Tom Tromey  <tom@tromey.com>
 
 	* sol-thread.c (sol_thread_target::wait): Rename inner

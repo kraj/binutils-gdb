@@ -2860,6 +2860,14 @@ when it is called.  If there are no valid threads, the method will
 return an empty tuple.
 @end defun
 
+@defun Inferior.architecture ()
+Return the @code{gdb.Architecture} (@pxref{Architectures In Python})
+for this inferior.  This represents the architecture of the inferior
+as a whole.  Some platforms can have multiple architectures in a
+single address space, so this may not match the architecture of a
+particular frame (@pxref{Unwinding Frames in Python}).
+@end defun
+
 @findex Inferior.read_memory
 @defun Inferior.read_memory (address, length)
 Read @var{length} addressable memory units from the inferior, starting at
@@ -4794,18 +4802,13 @@ This domain holds struct, union and enum type names.
 @item gdb.SYMBOL_LABEL_DOMAIN
 This domain contains names of labels (for gotos).
 
-@vindex SYMBOL_VARIABLES_DOMAIN
-@item gdb.SYMBOL_VARIABLES_DOMAIN
-This domain holds a subset of the @code{SYMBOLS_VAR_DOMAIN}; it
-contains everything minus functions and types.
+@vindex SYMBOL_MODULE_DOMAIN
+@item gdb.SYMBOL_MODULE_DOMAIN
+This domain contains names of Fortran module types.
 
-@vindex SYMBOL_FUNCTIONS_DOMAIN
-@item gdb.SYMBOL_FUNCTIONS_DOMAIN
-This domain contains all functions.
-
-@vindex SYMBOL_TYPES_DOMAIN
-@item gdb.SYMBOL_TYPES_DOMAIN
-This domain contains all types.
+@vindex SYMBOL_COMMON_BLOCK_DOMAIN
+@item gdb.SYMBOL_COMMON_BLOCK_DOMAIN
+This domain contains names of Fortran common blocks.
 @end vtable
 
 The available address class categories in @code{gdb.Symbol} are represented
@@ -4876,6 +4879,11 @@ The value does not actually exist in the program.
 @vindex SYMBOL_LOC_COMPUTED
 @item gdb.SYMBOL_LOC_COMPUTED
 The value's address is a computed location.
+
+@vindex SYMBOL_LOC_COMPUTED
+@item gdb.SYMBOL_LOC_COMPUTED
+The value's address is a symbol.  This is only used for Fortran common
+blocks.
 @end vtable
 
 @node Symbol Tables In Python
