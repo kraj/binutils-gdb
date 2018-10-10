@@ -1243,6 +1243,12 @@ aarch64_ext_sysins_op (const aarch64_operand *self ATTRIBUTE_UNUSED,
     case AARCH64_OPND_SYSREG_DC: sysins_ops = aarch64_sys_regs_dc; break;
     case AARCH64_OPND_SYSREG_IC: sysins_ops = aarch64_sys_regs_ic; break;
     case AARCH64_OPND_SYSREG_TLBI: sysins_ops = aarch64_sys_regs_tlbi; break;
+    case AARCH64_OPND_SYSREG_SR:
+	sysins_ops = aarch64_sys_regs_sr;
+	 /* Let's remove op2 for rctx.  Refer to comments in the definition of
+	    aarch64_sys_regs_sr[].  */
+	value = value & ~(0x7);
+	break;
     default: assert (0); return FALSE;
     }
 
@@ -1306,7 +1312,7 @@ aarch64_ext_hint (const aarch64_operand *self ATTRIBUTE_UNUSED,
 
   for (i = 0; aarch64_hint_options[i].name != NULL; i++)
     {
-      if (hint_number == aarch64_hint_options[i].value)
+      if (hint_number == HINT_VAL (aarch64_hint_options[i].value))
 	{
 	  info->hint_option = &(aarch64_hint_options[i]);
 	  return TRUE;

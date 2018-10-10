@@ -1,3 +1,20 @@
+2018-10-10  Sergio Durigan Junior  <sergiodj@redhat.com>
+
+	* gdb.gdb/unittest.exp: Update expected message informing that
+	selftests have been disabled.
+	* gdb.server/unittest.exp: Likewise.
+
+2018-10-09  Tom de Vries  <tdevries@suse.de>
+
+	* lib/gdb.exp (target_supports_scheduler_locking): Replace gdb_start_cmd
+	with runto_main.
+
+2018-10-08  Weimin Pan  <weimin.pan@oracle.com>
+
+	PR c++/16841
+	* gdb.cp/virtbase2.cc: New file.
+	* gdb.cp/virtbase2.exp: New file.
+
 2018-10-06  Tom Tromey  <tom@tromey.com>
 
 	PR python/19399:

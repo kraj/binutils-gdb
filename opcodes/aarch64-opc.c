@@ -466,8 +466,13 @@ const struct aarch64_name_value_pair aarch64_barrier_options[16] =
 
 const struct aarch64_name_value_pair aarch64_hint_options[] =
 {
-  { "csync", 0x11 },    /* PSB CSYNC.  */
-  { NULL, 0x0 },
+  /* BTI.  This is also the F_DEFAULT entry for AARCH64_OPND_BTI_TARGET.  */
+  { " ",	HINT_ENCODE (HINT_OPD_F_NOPRINT, 0x20) },
+  { "csync",	HINT_OPD_CSYNC },	/* PSB CSYNC.  */
+  { "c",	HINT_OPD_C },		/* BTI C.  */
+  { "j",	HINT_OPD_J },		/* BTI J.  */
+  { "jc",	HINT_OPD_JC },		/* BTI JC.  */
+  { NULL,	HINT_OPD_NULL },
 };
 
 /* op -> op:       load = 0 instruction = 1 store = 2
@@ -2485,9 +2490,11 @@ operand_general_constraint_met_p (const aarch64_opnd_info *opnds, int idx,
 	  assert (idx == 0 && opnds[1].type == AARCH64_OPND_UIMM4);
 	  /* MSR UAO, #uimm4
 	     MSR PAN, #uimm4
+	     MSR SSBS,#uimm4
 	     The immediate must be #0 or #1.  */
 	  if ((opnd->pstatefield == 0x03	/* UAO.  */
 	       || opnd->pstatefield == 0x04	/* PAN.  */
+	       || opnd->pstatefield == 0x19     /* SSBS.  */
 	       || opnd->pstatefield == 0x1a)	/* DIT.  */
 	      && opnds[1].imm.value > 1)
 	    {
@@ -3630,6 +3637,7 @@ aarch64_print_operand (char *buf, size_t size, bfd_vma pc,
     case AARCH64_OPND_SYSREG_DC:
     case AARCH64_OPND_SYSREG_IC:
     case AARCH64_OPND_SYSREG_TLBI:
+    case AARCH64_OPND_SYSREG_SR:
       snprintf (buf, size, "%s", opnd->sysins_op->name);
       break;
 
@@ -3653,7 +3661,9 @@ aarch64_print_operand (char *buf, size_t size, bfd_vma pc,
       break;
 
     case AARCH64_OPND_BARRIER_PSB:
-      snprintf (buf, size, "%s", opnd->hint_option->name);
+    case AARCH64_OPND_BTI_TARGET:
+      if ((HINT_FLAG (opnd->hint_option->value) & HINT_OPD_F_NOPRINT) == 0)
+	snprintf (buf, size, "%s", opnd->hint_option->name);
       break;
 
     default:
@@ -3700,6 +3710,7 @@ const aarch64_sys_reg aarch64_sys_regs [] =
   { "pan",		CPEN_(0,C2,3),	F_ARCHEXT },
   { "uao",		CPEN_ (0, C2, 4), F_ARCHEXT },
   { "nzcv",             CPEN_(3,C2,0),	0 },
+  { "ssbs",		CPEN_(3,C2,6),  F_ARCHEXT },
   { "fpcr",             CPEN_(3,C4,0),	0 },
   { "fpsr",             CPEN_(3,C4,1),	0 },
   { "dspsr_el0",        CPEN_(3,C5,0),	0 },
@@ -3725,6 +3736,7 @@ const aarch64_sys_reg aarch64_sys_regs [] =
   { "id_dfr0_el1",      CPENC(3,0,C0,C1,2),	F_REG_READ }, /* RO */
   { "id_pfr0_el1",      CPENC(3,0,C0,C1,0),	F_REG_READ }, /* RO */
   { "id_pfr1_el1",      CPENC(3,0,C0,C1,1),	F_REG_READ }, /* RO */
+  { "id_pfr2_el1",      CPENC(3,0,C0,C3,4),	F_ARCHEXT | F_REG_READ}, /* RO */
   { "id_afr0_el1",      CPENC(3,0,C0,C1,3),	F_REG_READ }, /* RO */
   { "id_mmfr0_el1",     CPENC(3,0,C0,C1,4),	F_REG_READ }, /* RO */
   { "id_mmfr1_el1",     CPENC(3,0,C0,C1,5),	F_REG_READ }, /* RO */
@@ -3854,11 +3866,18 @@ const aarch64_sys_reg aarch64_sys_regs [] =
   { "contextidr_el1",   CPENC(3,0,C13,C0,1),	0 },
   { "contextidr_el2",	CPENC (3, 4, C13, C0, 1), F_ARCHEXT },
   { "contextidr_el12",	CPENC (3, 5, C13, C0, 1), F_ARCHEXT },
+  { "rndr",		CPENC(3,3,C2,C4,0), F_ARCHEXT | F_REG_READ }, /* RO */
+  { "rndrrs",		CPENC(3,3,C2,C4,1), F_ARCHEXT | F_REG_READ }, /* RO */
   { "tpidr_el0",        CPENC(3,3,C13,C0,2),	0 },
   { "tpidrro_el0",      CPENC(3,3,C13,C0,3),	0 }, /* RW */
   { "tpidr_el1",        CPENC(3,0,C13,C0,4),	0 },
   { "tpidr_el2",        CPENC(3,4,C13,C0,2),	0 },
   { "tpidr_el3",        CPENC(3,6,C13,C0,2),	0 },
+  { "scxtnum_el0",      CPENC(3,3,C13,C0,7), F_ARCHEXT },
+  { "scxtnum_el1",      CPENC(3,0,C13,C0,7), F_ARCHEXT },
+  { "scxtnum_el2",      CPENC(3,4,C13,C0,7), F_ARCHEXT },
+  { "scxtnum_el12",     CPENC(3,5,C13,C0,7), F_ARCHEXT },
+  { "scxtnum_el3",      CPENC(3,6,C13,C0,7), F_ARCHEXT },
   { "teecr32_el1",      CPENC(2,2,C0, C0,0),	0 }, /* See section 3.9.7.1 */
   { "cntfrq_el0",       CPENC(3,3,C14,C0,0),	0 }, /* RW */
   { "cntpct_el0",       CPENC(3,3,C14,C0,1),	F_REG_READ }, /* RO */
@@ -4098,6 +4117,25 @@ aarch64_sys_reg_supported_p (const aarch64_feature_set features,
       && !AARCH64_CPU_HAS_FEATURE (features, AARCH64_FEATURE_PAN))
     return FALSE;
 
+  /* SCXTNUM_ELx registers.  */
+  if ((reg->value == CPENC (3, 3, C13, C0, 7)
+       || reg->value == CPENC (3, 0, C13, C0, 7)
+       || reg->value == CPENC (3, 4, C13, C0, 7)
+       || reg->value == CPENC (3, 6, C13, C0, 7)
+       || reg->value == CPENC (3, 5, C13, C0, 7))
+      && !AARCH64_CPU_HAS_FEATURE (features, AARCH64_FEATURE_SCXTNUM))
+      return FALSE;
+
+  /* ID_PFR2_EL1 register.  */
+  if (reg->value == CPENC(3, 0, C0, C3, 4)
+      && !AARCH64_CPU_HAS_FEATURE (features, AARCH64_FEATURE_ID_PFR2))
+    return FALSE;
+
+  /* SSBS.  Values are from aarch64_sys_regs.  */
+  if (reg->value == CPEN_(3,C2,6)
+      && !AARCH64_CPU_HAS_FEATURE (features, AARCH64_FEATURE_SSBS))
+    return FALSE;
+
   /* Virtualization host extensions: system registers.  */
   if ((reg->value == CPENC (3, 4, C2, C0, 1)
        || reg->value == CPENC (3, 4, C13, C0, 1)
@@ -4285,6 +4323,14 @@ aarch64_sys_reg_supported_p (const aarch64_feature_set features,
       && !AARCH64_CPU_HAS_FEATURE (features, AARCH64_FEATURE_V8_4))
     return FALSE;
 
+  /* Random Number Instructions.  For now they are available
+     (and optional) only with ARMv8.5-A.  */
+  if ((reg->value == CPENC (3, 3, C2, C4, 0)
+       || reg->value == CPENC (3, 3, C2, C4, 1))
+      && !(AARCH64_CPU_HAS_FEATURE (features, AARCH64_FEATURE_RNG)
+	   && AARCH64_CPU_HAS_FEATURE (features, AARCH64_FEATURE_V8_5)))
+    return FALSE;
+
   return TRUE;
 }
 
@@ -4302,6 +4348,7 @@ const aarch64_sys_reg aarch64_pstatefields [] =
   { "daifclr",          0x1f,	0 },
   { "pan",		0x04,	F_ARCHEXT },
   { "uao",		0x03,	F_ARCHEXT },
+  { "ssbs",		0x19,   F_ARCHEXT },
   { "dit",		0x1a,	F_ARCHEXT },
   { 0,          CPENC(0,0,0,0,0), 0 },
 };
@@ -4321,6 +4368,11 @@ aarch64_pstatefield_supported_p (const aarch64_feature_set features,
   /* UAO.  Values are from aarch64_pstatefields.  */
   if (reg->value == 0x03
       && !AARCH64_CPU_HAS_FEATURE (features, AARCH64_FEATURE_V8_2))
+    return FALSE;
+
+  /* SSBS.  Values are from aarch64_pstatefields.  */
+  if (reg->value == 0x19
+      && !AARCH64_CPU_HAS_FEATURE (features, AARCH64_FEATURE_SSBS))
     return FALSE;
 
   /* DIT.  Values are from aarch64_pstatefields.  */
@@ -4348,6 +4400,7 @@ const aarch64_sys_ins_reg aarch64_sys_regs_dc[] =
     { "csw",	    CPENS (0, C7, C10, 2), F_HASXT },
     { "cvau",       CPENS (3, C7, C11, 1), F_HASXT },
     { "cvap",       CPENS (3, C7, C12, 1), F_HASXT | F_ARCHEXT },
+    { "cvadp",      CPENS (3, C7, C13, 1), F_HASXT | F_ARCHEXT },
     { "civac",      CPENS (3, C7, C14, 1), F_HASXT },
     { "cisw",       CPENS (0, C7, C14, 2), F_HASXT },
     { 0,       CPENS(0,0,0,0), 0 }
@@ -4458,6 +4511,17 @@ const aarch64_sys_ins_reg aarch64_sys_regs_tlbi[] =
     { 0,       CPENS(0,0,0,0), 0 }
 };
 
+const aarch64_sys_ins_reg aarch64_sys_regs_sr[] =
+{
+    /* RCTX is somewhat unique in a way that it has different values
+       (op2) based on the instruction in which it is used (cfp/dvp/cpp).
+       Thus op2 is masked out and instead encoded directly in the
+       aarch64_opcode_table entries for the respective instructions.  */
+    { "rctx",   CPENS(3,C7,C3,0), F_HASXT | F_ARCHEXT | F_REG_WRITE}, /* WO */
+
+    { 0,       CPENS(0,0,0,0), 0 }
+};
+
 bfd_boolean
 aarch64_sys_ins_reg_has_xt (const aarch64_sys_ins_reg *sys_ins_reg)
 {
@@ -4476,10 +4540,20 @@ aarch64_sys_ins_reg_supported_p (const aarch64_feature_set features,
       && !AARCH64_CPU_HAS_FEATURE (features, AARCH64_FEATURE_V8_2))
     return FALSE;
 
+  /* DC CVADP.  Values are from aarch64_sys_regs_dc.  */
+  if (reg->value == CPENS (3, C7, C13, 1)
+      && !AARCH64_CPU_HAS_FEATURE (features, AARCH64_FEATURE_CVADP))
+    return FALSE;
+
   /* AT S1E1RP, AT S1E1WP.  Values are from aarch64_sys_regs_at.  */
   if ((reg->value == CPENS (0, C7, C9, 0)
        || reg->value == CPENS (0, C7, C9, 1))
       && !AARCH64_CPU_HAS_FEATURE (features, AARCH64_FEATURE_V8_2))
+    return FALSE;
+
+  /* CFP/DVP/CPP RCTX : Value are from aarch64_sys_regs_sr. */
+  if (reg->value == CPENS (3, C7, C3, 0)
+      && !AARCH64_CPU_HAS_FEATURE (features, AARCH64_FEATURE_PREDRES))
     return FALSE;
 
   return TRUE;
@@ -4671,7 +4745,9 @@ verify_constraints (const struct aarch64_inst *inst,
 
 	  /* Next check for usage of the predicate register.  */
 	  aarch64_opnd_info blk_dest = insn_sequence->instr->operands[0];
-	  aarch64_opnd_info blk_pred = {0}, inst_pred = {0};
+	  aarch64_opnd_info blk_pred, inst_pred;
+	  memset (&blk_pred, 0, sizeof (aarch64_opnd_info));
+	  memset (&inst_pred, 0, sizeof (aarch64_opnd_info));
 	  bfd_boolean predicated = FALSE;
 	  assert (blk_dest.type == AARCH64_OPND_SVE_Zd);
 

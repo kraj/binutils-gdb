@@ -1,3 +1,78 @@
+2018-10-10  Sergio Durigan Junior  <sergiodj@redhat.com>
+	    Simon Marchi <simark@simark.ca>
+
+	* README (`configure' options): Add documentation for new
+	"--enable-unit-tests" option.
+	* acinclude.m4: Include "selftest.m4".
+	* configure: Regenerate.
+	* configure.ac: Use "GDB_AC_SELFTEST".
+	* maint.c (maintenance_selftest): Update message informing
+	that selftests have been disabled.
+	(maintenance_info_selftests): Likewise.
+	* selftest.m4: New file.
+
+2018-10-10  Gary Benson <gbenson@redhat.com>
+
+	* remote.c (remote_target::remote_send_printf): Add
+	missing va_end found by Coverity.
+
+2018-10-10  Markus Metzger  <markus.t.metzger@intel.com>
+
+	* btrace.c (ftrace_update_function): Add indirect jump heuristic.
+
+2018-10-09  Tom Tromey  <tom@tromey.com>
+
+	* configure: Rebuild.
+	* sanitize.m4 (AM_GDB_UBSAN): Default to no.
+	* NEWS: Update --enable-ubsan documentation.
+
+2018-10-09  Gary Benson <gbenson@redhat.com>
+
+	* dwarf2read.c (create_dwp_hash_table): Fix buffer overrun
+	found by Coverity.
+
+2018-10-08  Tom Tromey  <tom@tromey.com>
+
+	* riscv-fbsd-tdep.c (riscv_fbsd_sigframe_init): Remove unused
+	variable.
+	(riscv_fbsd_init_abi): Likewise.
+
+2018-10-08  Weimin Pan  <weimin.pan@oracle.com>
+	* valops.c (value_struct_elt_for_reference): Rename local variable
+	to work around the shadowing a previous local warning.
+
+2018-10-08  John Baldwin  <jhb@FreeBSD.org>
+
+	* Makefile.in (ALLDEPFILES): Add riscv-fbsd-nat.c.
+	* NEWS: Mention new FreeBSD/riscv native configuration.
+	* configure.host: Add riscv*-*-freebsd*.
+	* configure.nat: Likewise.
+	* riscv-fbsd-nat.c: New file.
+
+2018-10-08  John Baldwin  <jhb@FreeBSD.org>
+
+	* Makefile.in (ALL_TARGET_OBS): Add riscv-fbsd-tdep.o.
+	(HFILES_NO_SRCDIR): Add riscv-fbsd-tdep.h.
+	(ALLDEPFILES): Add riscv-fbsd-tdep.c.
+	* NEWS: Mention new FreeBSD/riscv target.
+	* configure.tgt: Add riscv*-*-freebsd*.
+	* riscv-fbsd-tdep.c: New file.
+	* riscv-fbsd-tdep.h: New file.
+
+2018-10-08  John Baldwin  <jhb@FreeBSD.org>
+
+	* regcache.h (struct regcache_map_entry): Note that this type can
+	be used with traditional frame caches.
+	* trad-frame.c (trad_frame_set_reg_regmap): New.
+	* trad-frame.h (trad_frame_set_reg_regmap): New.
+
+2018-10-08  Weimin Pan  <weimin.pan@oracle.com>
+
+	PR c++/16841
+	* valops.c (get_virtual_base_offset): New function.
+	(value_struct_elt_for_reference): Use it to get virtual base offset
+	and add it in calculating class member address.
+
 2018-10-08   John Darrington <john@darrington.wattle.id.au>
 
     * dwarf2read.c (dwarf2_cu) <producer_is_codewarrior>: New field.

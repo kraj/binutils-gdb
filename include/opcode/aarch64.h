@@ -62,6 +62,29 @@ typedef uint32_t aarch64_insn;
 #define AARCH64_FEATURE_COMPNUM	0x40000000	/* Complex # instructions.  */
 #define AARCH64_FEATURE_DOTPROD 0x080000000     /* Dot Product instructions.  */
 #define AARCH64_FEATURE_F16_FML	0x1000000000ULL	/* v8.2 FP16FML ins.  */
+#define AARCH64_FEATURE_V8_5	0x2000000000ULL	/* ARMv8.5 processors.  */
+
+/* Flag Manipulation insns.  */
+#define AARCH64_FEATURE_FLAGMANIP	0x4000000000ULL
+/* FRINT[32,64][Z,X] insns.  */
+#define AARCH64_FEATURE_FRINTTS		0x8000000000ULL
+/* SB instruction.  */
+#define AARCH64_FEATURE_SB		0x10000000000ULL
+/* Execution and Data Prediction Restriction instructions.  */
+#define AARCH64_FEATURE_PREDRES		0x20000000000ULL
+/* DC CVADP.  */
+#define AARCH64_FEATURE_CVADP		0x40000000000ULL
+/* Random Number instructions.  */
+#define AARCH64_FEATURE_RNG		0x80000000000ULL
+/* BTI instructions.  */
+#define AARCH64_FEATURE_BTI		0x100000000000ULL
+/* SCXTNUM_ELx.  */
+#define AARCH64_FEATURE_SCXTNUM		0x200000000000ULL
+/* ID_PFR2 instructions.  */
+#define AARCH64_FEATURE_ID_PFR2		0x400000000000ULL
+/* SSBS mechanism enabled.  */
+#define AARCH64_FEATURE_SSBS		0x800000000000ULL
+
 
 /* Architectures are the sum of the base and extensions.  */
 #define AARCH64_ARCH_V8		AARCH64_FEATURE (AARCH64_FEATURE_V8, \
@@ -85,6 +108,18 @@ typedef uint32_t aarch64_insn;
 						 AARCH64_FEATURE_V8_4   \
 						 | AARCH64_FEATURE_DOTPROD \
 						 | AARCH64_FEATURE_F16_FML)
+#define AARCH64_ARCH_V8_5	AARCH64_FEATURE (AARCH64_ARCH_V8_4,	\
+						 AARCH64_FEATURE_V8_5   \
+						 | AARCH64_FEATURE_FLAGMANIP \
+						 | AARCH64_FEATURE_FRINTTS \
+						 | AARCH64_FEATURE_SB   \
+						 | AARCH64_FEATURE_PREDRES \
+						 | AARCH64_FEATURE_CVADP \
+						 | AARCH64_FEATURE_BTI	\
+						 | AARCH64_FEATURE_SCXTNUM \
+						 | AARCH64_FEATURE_ID_PFR2 \
+						 | AARCH64_FEATURE_SSBS)
+
 
 #define AARCH64_ARCH_NONE	AARCH64_FEATURE (0, 0)
 #define AARCH64_ANY		AARCH64_FEATURE (-1, 0)	/* Any basic core.  */
@@ -258,10 +293,12 @@ enum aarch64_opnd
   AARCH64_OPND_SYSREG_DC,	/* System register <dc_op> operand.  */
   AARCH64_OPND_SYSREG_IC,	/* System register <ic_op> operand.  */
   AARCH64_OPND_SYSREG_TLBI,	/* System register <tlbi_op> operand.  */
+  AARCH64_OPND_SYSREG_SR,	/* System register RCTX operand.  */
   AARCH64_OPND_BARRIER,		/* Barrier operand.  */
   AARCH64_OPND_BARRIER_ISB,	/* Barrier operand for ISB.  */
   AARCH64_OPND_PRFOP,		/* Prefetch operation.  */
   AARCH64_OPND_BARRIER_PSB,	/* Barrier operand for PSB.  */
+  AARCH64_OPND_BTI_TARGET,	/* BTI {<target>}.  */
 
   AARCH64_OPND_SVE_ADDR_RI_S4x16,   /* SVE [<Xn|SP>, #<simm4>*16].  */
   AARCH64_OPND_SVE_ADDR_RI_S4xVL,   /* SVE [<Xn|SP>, #<simm4>, MUL VL].  */
@@ -901,6 +938,7 @@ extern const aarch64_sys_ins_reg aarch64_sys_regs_ic [];
 extern const aarch64_sys_ins_reg aarch64_sys_regs_dc [];
 extern const aarch64_sys_ins_reg aarch64_sys_regs_at [];
 extern const aarch64_sys_ins_reg aarch64_sys_regs_tlbi [];
+extern const aarch64_sys_ins_reg aarch64_sys_regs_sr [];
 
 /* Shift/extending operator kinds.
    N.B. order is important; keep aarch64_operand_modifiers synced.  */
@@ -1065,6 +1103,13 @@ struct aarch64_inst
   /* Operands information.  */
   aarch64_opnd_info operands[AARCH64_MAX_OPND_NUM];
 };
+
+/* Defining the HINT #imm values for the aarch64_hint_options.  */
+#define HINT_OPD_CSYNC	0x11
+#define HINT_OPD_C	0x22
+#define HINT_OPD_J	0x24
+#define HINT_OPD_JC	0x26
+#define HINT_OPD_NULL	0x00
 
 
 /* Diagnosis related declaration and interface.  */

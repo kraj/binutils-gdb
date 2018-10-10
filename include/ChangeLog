@@ -1,3 +1,54 @@
+2018-10-09  Sudakshina Das  <sudi.das@arm.com>
+
+	* opcode/aarch64.h (AARCH64_FEATURE_SSBS): New.
+	(AARCH64_ARCH_V8_5): Add AARCH64_FEATURE_SSBS by default.
+
+2018-10-09  Sudakshina Das  <sudi.das@arm.com>
+
+	* opcode/aarch64.h (AARCH64_FEATURE_SCXTNUM): New.
+	(AARCH64_FEATURE_ID_PFR2): New.
+	(AARCH64_ARCH_V8_5): Add both by default.
+
+2018-10-09  Sudakshina Das  <sudi.das@arm.com>
+
+	* opcode/aarch64.h (AARCH64_FEATURE_BTI): New.
+	(AARCH64_ARCH_V8_5): Add AARCH64_FEATURE_BTI by default.
+	(aarch64_opnd): Add AARCH64_OPND_BTI_TARGET.
+	(HINT_OPD_CSYNC, HINT_OPD_C, HINT_OPD_J): New macros to
+	define HINT #imm values.
+	(HINT_OPD_JC, HINT_OPD_NULL): Likewise.
+
+2018-10-09  Sudakshina Das  <sudi.das@arm.com>
+
+	* opcode/aarch64.h (AARCH64_FEATURE_RNG): New.
+
+2018-10-09  Sudakshina Das  <sudi.das@arm.com>
+
+	* opcode/aarch64.h (AARCH64_FEATURE_CVADP): New.
+
+2018-10-09  Sudakshina Das  <sudi.das@arm.com>
+
+	* opcode/aarch64.h (AARCH64_FEATURE_PREDRES): New.
+	(AARCH64_ARCH_V8_5): Add AARCH64_FEATURE_PREDRES by default.
+	(aarch64_opnd): Add AARCH64_OPND_SYSREG_SR.
+	(aarch64_sys_regs_sr): Declare new table.
+
+2018-10-09  Sudakshina Das  <sudi.das@arm.com>
+
+	* opcode/aarch64.h (AARCH64_FEATURE_SB): New.
+	(AARCH64_ARCH_V8_5): Add AARCH64_FEATURE_SB by default.
+
+2018-10-09  Sudakshina Das  <sudi.das@arm.com>
+
+	* opcode/aarch64.h (AARCH64_FEATURE_FLAGMANIP): New.
+	(AARCH64_FEATURE_FRINTTS): New.
+	(AARCH64_ARCH_V8_5): Add both by default.
+
+2018-10-09  Sudakshina Das  <sudi.das@arm.com>
+
+	* opcode/aarch64.h (AARCH64_FEATURE_V8_5): New.
+	(AARCH64_ARCH_V8_5): New.
+
 2018-10-08  Alan Modra  <amodra@gmail.com>
 
 	* bfdlink.h (struct bfd_link_info): Add load_phdrs field.

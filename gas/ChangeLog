@@ -1,4 +1,88 @@
+2018-10-10  Jan Beulich  <jbeulich@suse.com>
+
+	* config/tc-i386.c (parse_insn, process_suffix): Replace
+	opcode_modifier.size<N> uses.
+
+2018-10-09  Sudakshina Das  <sudi.das@arm.com>
+
+	* config/tc-aarch64.c (aarch64_features): Add new "ssbs".
+	* doc/c-aarch64.texi: Document the same.
+	* testsuite/gas/aarch64/ssbs-illegal1.d: New test.
+	* testsuite/gas/aarch64/ssbs-illegal1.l: New test.
+	* testsuite/gas/aarch64/ssbs-illegal2.d: New test.
+	* testsuite/gas/aarch64/ssbs-illegal2.l: New test.
+	* testsuite/gas/aarch64/ssbs.s: New test.
+	* testsuite/gas/aarch64/ssbs1.d: Test with +ssbs
+	* testsuite/gas/aarch64/ssbs2.d: Test with armv8.5-a.
+
+2018-10-09  Sudakshina Das  <sudi.das@arm.com>
+
+	* testsuite/gas/aarch64/sysreg-4.s: Test registers
+	scxtnum_el[0,1,2,3,12] and id_pfr2_el1.
+	* testsuite/gas/aarch64/sysreg-4.d: Likewise.
+	* testsuite/gas/aarch64/illegal-sysreg-4.l: Likewise.
+
+2018-10-09  Sudakshina Das  <sudi.das@arm.com>
+
+	* config/tc-aarch64.c (parse_bti_operand): New.
+	(process_omitted_operand): Add case for AARCH64_OPND_BTI_TARGET.
+	(parse_operands): Likewise.
+	* testsuite/gas/aarch64/system.d: Update for BTI.
+	* testsuite/gas/aarch64/bti.s: New.
+	* testsuite/gas/aarch64/bti.d: New.
+	* testsuite/gas/aarch64/illegal-bti.d: New.
+	* testsuite/gas/aarch64/illegal-bti.l: New.
+
+2018-10-09  Sudakshina Das  <sudi.das@arm.com>
+
+	* config/tc-aarch64.c (aarch64_features): New "rng" option.
+	* doc/c-aarch64.texi: Document the same.
+	* testsuite/gas/aarch64/sysreg-4.s: Test both instructions.
+	* testsuite/gas/aarch64/sysreg-4.d: Likewise.
+	* testsuite/gas/aarch64/illegal-sysreg-4.l: Likewise.
+
+2018-10-09  Sudakshina Das  <sudi.das@arm.com>
+
+	* testsuite/gas/aarch64/sysreg-4.s: Test instruction.
+	* testsuite/gas/aarch64/sysreg-4.d: Likewise.
+	* testsuite/gas/aarch64/illegal-sysreg-4.l: Likewise.
+
+2018-10-09  Sudakshina Das  <sudi.das@arm.com>
+
+	* config/tc-aarch64.c (aarch64_sys_regs_sr_hsh): New.
+	(parse_operands): Add entry for AARCH64_OPND_SYSREG_SR.
+	(md_begin): Allocate and initialize aarch64_sys_regs_sr_hsh
+	with aarch64_sys_regs_sr.
+	(aarch64_features): Add new "predres" option for older
+	architectures.
+	* doc/c-aarch64.texi: Document the same.
+	* testsuite/gas/aarch64/sysreg-4.s: New.
+	* testsuite/gas/aarch64/sysreg-4.d: New.
+	* testsuite/gas/aarch64/illegal-sysreg-4.d: New.
+	* testsuite/gas/aarch64/illegal-sysreg-4.l: New.
+	* testsuite/gas/aarch64/predres.s: New.
+	* testsuite/gas/aarch64/predres.d: New.
+
+2018-10-09  Sudakshina Das  <sudi.das@arm.com>
+
+	* config/tc-aarch64.c (aarch64_features): Add new "sb" option
+	for older architectures.
+	* doc/c-aarch64.texi: Document the same.
+	* testsuite/gas/aarch64/sb.s: New.
+	* testsuite/gas/aarch64/sb.d: New.
+
+2018-10-09  Sudakshina Das  <sudi.das@arm.com>
+
+	* testsuite/gas/aarch64/armv8_5-a-dp.s: New.
+	* testsuite/gas/aarch64/armv8_5-a-dp.d: New.
+
+2018-10-09  Sudakshina Das  <sudi.das@arm.com>
+
+	* config/tc-aarch64.c (aarch64_archs): New entry for armv8.5-a.
+	* doc/c-aarch64.texi: Add documentation for the same.
+
 2018-10-05  H.J. Lu  <hongjiu.lu@intel.com>
+
 
 	* testsuite/gas/i386/se1.s: Add enclv.
 	* testsuite/gas/i386/x86-64-se1.s: Likewise.

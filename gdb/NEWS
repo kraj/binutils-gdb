@@ -93,12 +93,14 @@ thread apply [all | COUNT | -COUNT] [FLAG]... COMMAND
 * New native configurations
 
 GNU/Linux/RISC-V		riscv*-*-linux*
+FreeBSD/riscv			riscv*-*-freebsd*
 
 * New targets
 
 GNU/Linux/RISC-V		riscv*-*-linux*
 CSKY ELF			csky*-*-elf
 CSKY GNU/LINUX			csky*-*-linux
+FreeBSD/riscv			riscv*-*-freebsd*
 
 * Python API
 
@@ -120,11 +122,11 @@ CSKY GNU/LINUX			csky*-*-linux
 
 --enable-ubsan
 
-  Enable or disable the undefined behavior sanitizer.  Release
-  versions of GDB disable this by default if it is available, but
-  development versions enable it.  Enabling this can cause a
-  performance penalty.  The undefined behavior sanitizer was first
-  introduced in GCC 4.9.
+  Enable or disable the undefined behavior sanitizer.  This is
+  disabled by default, but passing --enable-ubsan=yes or
+  --enable-ubsan=auto to configure will enable it.  Enabling this can
+  cause a performance penalty.  The undefined behavior sanitizer was
+  first introduced in GCC 4.9.
 
 *** Changes in GDB 8.2
 
