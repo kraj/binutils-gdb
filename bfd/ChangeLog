@@ -1,3 +1,33 @@
+2018-10-17  Alan Modra  <amodra@gmail.com>
+
+	PR 23653
+	* elflink.c (_bfd_elf_link_create_dynstrtab): Match elf_object_id
+	too when choosing dynobj.
+
+2018-10-16  Alan Modra  <amodra@gmail.com>
+
+	* peXXigen.c (_bfd_XX_bfd_copy_private_bfd_data_common): Simplify
+	PE_DEBUG_DATA size checks.
+
+2018-10-16  Alan Modra  <amodra@gmail.com>
+
+	PR 23781
+	* peXXigen.c (_bfd_XX_bfd_copy_private_bfd_data_common): Free data
+	before returning.
+
+2018-10-16  Alan Modra  <amodra@gmail.com>
+
+	PR 23534
+	* init.c (bfd_init): Return an unsigned int.
+	bfd-in2.h: Regenerate.
+
+2018-10-15  Alan Modra  <amodra@gmail.com>
+
+	PR 23534
+	* init.c (BFD_INIT_MAGIC): Define.
+	(bfd_init): Return BFD_INIT_MAGIC.
+	bfd-in2.h: Regenerate.
+
 2018-10-13  Alan Modra  <amodra@gmail.com>
 
 	PR 23770

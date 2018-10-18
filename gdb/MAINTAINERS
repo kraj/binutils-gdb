@@ -235,9 +235,13 @@ The Target/Architecture maintainer works with the host maintainer when
 resolving build issues.  The Target/Architecture maintainer works with
 the native maintainer when resolving ABI issues.
 
+	aarch64		--target=aarch64-elf ,-Werror
+			Alan Hayward		alan.hayward@arm.com
+
 	alpha		--target=alpha-elf ,-Werror
 
 	arm		--target=arm-elf ,-Werror
+			Alan Hayward		alan.hayward@arm.com
 
 	avr		--target=avr ,-Werror
 
@@ -350,7 +354,7 @@ Darwin			Tristan Gingold		tgingold@free.fr
 djgpp native		Eli Zaretskii		eliz@gnu.org
 FreeBSD			John Baldwin		jhb@freebsd.org
 GNU/Linux m68k		Andreas Schwab		schwab@linux-m68k.org
-
+Solaris			Rainer Orth		ro@CeBiTec.Uni-Bielefeld.DE
 
 
 Core: Generic components used by all of GDB

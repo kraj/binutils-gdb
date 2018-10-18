@@ -1,3 +1,59 @@
+2018-10-18  Sergio Durigan Junior  <sergiodj@redhat.com>
+
+	PR cli/23785
+	* cli/cli-dump.c (restore_binary_file): Check if "file" is
+	NULL.
+
+2018-10-17  Paul Koning  <paul_koning@dell.com>
+
+	* charset.c (convert_between_encodings): Fix unsigned overflow.
+
+2018-10-17  John Baldwin  <jhb@FreeBSD.org>
+
+	* fbsd-nat.c (fbsd_nat_target::info_proc) Use
+	fbsd_info_proc_mappings_header and fbsd_info_proc_mappings_entry.
+	* fbsd-tdep.c (fbsd_vm_map_entry_flags): Mark static.
+	(fbsd_info_proc_mappings_header, fbsd_info_proc_mappings_entry):
+	New functions.
+	(fbsd_core_info_proc_mappings): Use fbsd_info_proc_mappings_header
+	and fbsd_info_proc_mappings_header.
+	* fbsd-tdep.h (fbsd_vm_map_entry_flags): Remove.
+	(fbsd_info_proc_mappings_header, fbsd_info_proc_mappings_entry):
+	New.
+
+2018-10-17  Joel Brobecker  <brobecker@adacore.com>
+
+	* MAINTAINERS (Responsible Maintainers): Add Rainer Orth as
+	Solaris Maintainer.
+
+2018-10-15  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui.c (strcat_to_buf): Remove casts.
+	* tui/tui-winsource.c (tui_show_source_line)
+	(tui_set_is_exec_point_at, tui_line_is_displayed): Remove casts.
+	* tui/tui-wingeneral.c (tui_refresh_win, box_win): Remove casts.
+	* tui/tui-windata.c (tui_first_data_item_displayed)
+	(tui_delete_data_content_windows, tui_erase_data_content)
+	(tui_display_all_data, tui_display_data_from)
+	(tui_refresh_data_win, tui_vertical_data_scroll): Remove casts.
+	* tui/tui-win.c (tui_set_win_height)
+	(make_invisible_and_set_new_height, parse_scrolling_args): Remove
+	casts.
+	* tui/tui-win.c (tui_resize_all): Remove casts.
+	(tui_scroll_backward_command, tui_set_focus)
+	(tui_set_tab_width_command): Likewise.
+	* tui/tui-source.c (tui_vertical_source_scroll): Remove cast.
+	* tui/tui-regs.c (tui_show_register_group): Remove cast.
+	* tui/tui-layout.c (tui_set_layout_by_name): Remove cast.
+	* tui/tui-disasm.c (tui_vertical_disassem_scroll): Remove cast.
+	* tui/tui-data.c (tui_partial_win_by_name, tui_free_win_content):
+	Remove casts.
+
+2018-10-15  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* MAINTAINERS (Responsible Maintainers): Add Alan Hayward as
+	AArch64/ARM maintainer.
+
 2018-10-11  Gary Benson <gbenson@redhat.com>
 
 	* interps.h (interp::m_name): Make private and mutable.

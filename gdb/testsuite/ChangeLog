@@ -1,3 +1,28 @@
+2018-10-18  Sergio Durigan Junior  <sergiodj@redhat.com>
+
+	PR cli/23785
+	* gdb.base/restore.exp: New test to check if "restore" with an
+	invalid file doesn't segfault.
+
+2018-10-18  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.ada/bp_inlined_func.exp: Fix capitalized test name.
+	* gdb.ada/excep_handle.exp: Same.
+	* gdb.ada/mi_string_access.exp: Same.
+	* gdb.ada/mi_var_union.exp: Same.
+	* gdb.arch/arc-analyze-prologue.exp: Same.
+	* gdb.arch/arc-decode-insn.exp: Same.
+	* gdb.base/readnever.exp: Same.
+	* gdb.fortran/printing-types.exp: Same.
+	* gdb.guile/scm-lazy-string.exp: Same.
+
+2018-10-16  Tom de Vries  <tdevries@suse.de>
+
+	PR gdb/23730
+	* gdb.base/catch-follow-exec.c: Add copyright notice.
+	* gdb.base/catch-follow-exec.exp: Rewrite to use
+	gdb_spawn_with_cmdline_opts.  Require gdb-native.
+
 2018-10-12  Sandra Loosemore  <sandra@codesourcery.com>
 
 	* gdb.trace/actions-changed.exp: Check for arch support.
