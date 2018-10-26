@@ -1,3 +1,39 @@
+2018-10-24  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/23818
+	* elflink.c (_bfd_elf_link_assign_sym_version): Hide symbols
+	defined in discarded input sections.
+
+2018-10-24  Alan Modra  <amodra@gmail.com>
+
+	* elf32-arm.c (elf32_arm_size_stubs): Ignore as-needed libs that
+	were not needed.
+
+2018-10-23  Alan Modra  <amodra@gmail.com>
+
+	PR 23806
+	* merge.c (_bfd_add_merge_section): Don't attempt to merge
+	sections with ridiculously large alignments.
+
+2018-10-23  Alan Modra  <amodra@gmail.com>
+
+	PR 23805
+	* elflink.c (elf_link_input_bfd): Don't segfault on finding
+	STT_TLS symbols without any TLS sections.  Instead, change the
+	symbol type to STT_NOTYPE.
+
+2018-10-23  Alan Modra  <amodra@gmail.com>
+
+	PR 23804
+	* merge.c (_bfd_add_merge_section): Don't attempt to merge
+	sections where size is not a multiple of entsize.
+
+2018-10-20  Alan Modra  <amodra@gmail.com>
+
+	PR 23788
+	* elf.c (section_match): Don't require a size match for SHT_SYMTAB
+	or SHT_STRTAB.
+
 2018-10-17  Alan Modra  <amodra@gmail.com>
 
 	PR 23653

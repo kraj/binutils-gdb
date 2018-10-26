@@ -91,11 +91,14 @@ case $target_triplet in {
 
 gas_test "eqv-ok.s" "" "" ".eqv support"
 gas_test_error "eqv-bad.s" "" ".eqv for symbol already set"
+run_dump_test eqv-dot
 
 if { ![istarget "bfin-*-*"] } then {
     gas_test "assign-ok.s" "" "" "== assignment support"
 }
 gas_test_error "assign-bad.s" "" "== assignment for symbol already set"
+
+run_dump_test simple-forward
 
 # .equ works differently on some targets.
 # linkrelax-ing prevents most forward references from working.
@@ -110,10 +113,6 @@ case $target_triplet in {
     { microblaze-*-* } { }
     { mn10\[23\]00*-*-* } { }
     default {
-	# Some targets don't manage to resolve BFD_RELOC_8 for constants.
-	setup_xfail "alpha*-*-*" "*c30*-*-*" "*c4x*-*-*" \
-	    "d\[13\]0v*-*-*" \
-	    "pdp11-*-*" "xtensa*-*-*"
 	run_dump_test forward
     }
 }

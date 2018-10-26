@@ -1,3 +1,67 @@
+2018-10-23  John Darrington  <john@darrington.wattle.id.au>
+
+	* config/tc-s12z.c (md_apply_fix): Handle BFD_RELOC_16 for fixups
+	without a symbol.
+
+2018-10-22  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/gas/all/simple-forward.d,
+	* testsuite/gas/all/simple-forward.s: New test.
+	* testsuite/gas/all/gas.exp: Run it.
+	* testsuite/gas/all/eqv-dot.d: xfail tic30 and tic54x.
+
+2018-10-22  Alan Modra  <amodra@gmail.com>
+
+	* config/tc-alpha.c (md_apply_fix): Handle BFD_RELOC_8 for fixups
+	without a symbol.
+	* testsuite/gas/all/gas.exp: Don't xfail forward test here..
+	* testsuite/gas/all/forward.d: ..do so here, removing alpha.
+
+2018-10-22  Alan Modra  <amodra@gmail.com>
+
+	PR 23040
+	* symbols.c (get_real_sym): New function.
+	(symbol_same_p): Use get_real_sym.
+	(symbol_clone_if_forward_ref): Save real original add_symbol and
+	op_symbol for comparison against that returned from lookup or
+	recursive calls.
+	* dwarf2dbg.c (set_or_check_view): Use expr_section for
+	expression symbols, not absolute_section.
+	(dwarf2_directive_loc): Check symbol_equated_p and tidy cloning
+	of view symbols.
+	* read.c (s_leb128): Don't use deferred_expression.
+
+2018-10-20  Alan Modra  <amodra@gmail.com>
+
+	PR 23800
+	* expr.c (expr): Don't simplify expressions involving forward_ref
+	symbols when mode is expr_defer.
+	* config/tc-spu.c (spu_cons): Parse expression using normal
+	expression evaluation if @ppu is not detected.
+	* testsuite/gas/all/eqv-dot.d,
+	* testsuite/gas/all/eqv-dot.s: New test.
+	* testsuite/gas/all/gas.exp: Run it.
+
+2018-10-19  Tamar Christina  <tamar.christina@arm.com>
+
+	* testsuite/gas/arm/undefined-insn-arm.d: Widen pe skip.
+	* testsuite/gas/arm/undefined-insn-thumb.d: Likewise.
+
+2018-10-19  Tamar Christina  <tamar.christina@arm.com>
+
+	* testsuite/gas/arm/undefined-insn-arm.d: New test.
+	* testsuite/gas/arm/undefined-insn-thumb.d: New test.
+	* testsuite/gas/arm/undefined-insn.s: New test.
+
+2018-10-19  Fredrik Noring  <noring@nocrew.org>
+
+	* testsuite/gas/mips/r5900.s: Extend the R5900 short loop fix
+	test with border cases.
+	* testsuite/gas/mips/r5900.d: Add extra expected disassembly.
+	* config/tc-mips.c (can_swap_branch_p): Clarify the R5900 short
+	loop hardware bug conditions.  Correct note on the R5900
+	instruction count short loop fix.
+
 2018-10-16  Matthew Malcomson  <matthew.malcomson@arm.com>
 
 	* testsuite/gas/aarch64/illegal-dotproduct.d: New test.

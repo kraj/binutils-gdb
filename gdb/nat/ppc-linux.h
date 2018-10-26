@@ -51,6 +51,21 @@
 #ifndef PPC_FEATURE_HAS_SPE
 #define PPC_FEATURE_HAS_SPE 0x00800000
 #endif
+#ifndef PPC_FEATURE2_DSCR
+#define PPC_FEATURE2_DSCR 0x20000000
+#endif
+#ifndef PPC_FEATURE2_ARCH_2_07
+#define PPC_FEATURE2_ARCH_2_07 0x80000000
+#endif
+#ifndef PPC_FEATURE2_TAR
+#define PPC_FEATURE2_TAR 0x04000000
+#endif
+#ifndef PPC_FEATURE2_EBB
+#define PPC_FEATURE2_EBB 0x10000000
+#endif
+#ifndef PPC_FEATURE2_HTM
+#define PPC_FEATURE2_HTM 0x40000000
+#endif
 
 /* Glibc's headers don't define PTRACE_GETVRREGS so we cannot use a
    configure time check.  Some older glibc's (for instance 2.2.1)
@@ -80,6 +95,71 @@
 #ifndef PTRACE_GETEVRREGS
 #define PTRACE_GETEVRREGS 20
 #define PTRACE_SETEVRREGS 21
+#endif
+
+/* Target Address Register.  */
+#ifndef NT_PPC_TAR
+#define NT_PPC_TAR 0x103
+#endif
+
+/* Program Priority Register.  */
+#ifndef NT_PPC_PPR
+#define NT_PPC_PPR 0x104
+#endif
+
+/* Data Stream Control Register.  */
+#ifndef NT_PPC_DSCR
+#define NT_PPC_DSCR 0x105
+#endif
+
+/* Event Based Branch Registers.  */
+#ifndef NT_PPC_EBB
+#define NT_PPC_EBB 0x106
+#endif
+
+/* Performance Monitor Registers.  */
+#ifndef NT_PPC_PMU
+#define NT_PPC_PMU 0x107
+#endif
+
+/* TM checkpointed GPR Registers.  */
+#ifndef NT_PPC_TM_CGPR
+#define NT_PPC_TM_CGPR 0x108
+#endif
+
+/* TM checkpointed FPR Registers.  */
+#ifndef NT_PPC_TM_CFPR
+#define NT_PPC_TM_CFPR 0x109
+#endif
+
+/* TM checkpointed VMX Registers.  */
+#ifndef NT_PPC_TM_CVMX
+#define NT_PPC_TM_CVMX 0x10a
+#endif
+
+/* TM checkpointed VSX Registers.  */
+#ifndef NT_PPC_TM_CVSX
+#define NT_PPC_TM_CVSX 0x10b
+#endif
+
+/* TM Special Purpose Registers.  */
+#ifndef NT_PPC_TM_SPR
+#define NT_PPC_TM_SPR 0x10c
+#endif
+
+/* TM checkpointed Target Address Register.  */
+#ifndef NT_PPC_TM_CTAR
+#define NT_PPC_TM_CTAR 0x10d
+#endif
+
+/* TM checkpointed Program Priority Register.  */
+#ifndef NT_PPC_TM_CPPR
+#define NT_PPC_TM_CPPR 0x10e
+#endif
+
+/* TM checkpointed Data Stream Control Register.  */
+#ifndef NT_PPC_TM_CDSCR
+#define NT_PPC_TM_CDSCR 0x10f
 #endif
 
 /* Return the wordsize of the target, either 4 or 8 bytes.  */

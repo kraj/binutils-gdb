@@ -1,3 +1,533 @@
+2018-10-26  Tom Tromey  <tom@tromey.com>
+
+	* dwarf2read.c (recursively_compute_inclusions): Use std::vector.
+	(compute_compunit_symtab_includes): Update.
+	* symtab.h: (symtab_ptr): Remove typedef.  Don't define a VEC.
+	(compunit_symtab_ptr): Likewise.
+
+2018-10-26  John Baldwin  <jhb@FreeBSD.org>
+
+	* fbsd-tdep.c (fbsd_print_auxv_entry): Only use
+	default_print_auxv_entry for specific tag values.
+
+2018-10-26  John Baldwin  <jhb@FreeBSD.org>
+
+	* fbsd-tdep.c (fbsd_print_auxv_entry): Handle AT_FREEBSD_HWCAP2.
+
+2018-10-26  Jim Wilson  <jimw@sifive.com>
+
+	* riscv-linux-tdep.c: Include tramp-frame.h and trad-frame.h.
+	(riscv_linux_sigframe_init): Declare.
+	(RISCV_INST_LI_A7_SIGRETURN, RISCV_INT_ECALL): New.
+	(riscv_linux_sigframe): New.
+	(SIGFRAME_SIGINFO_SIZE, UCONTEXT_MCONTEXT_OFFSET): New.
+	(riscv_linux_sigframe_init): Define.
+	(riscv_linux_init_abi): Call tramp_frame_prepend_unwinder.
+
+	* riscv-tdep.c (riscv_isa_xlen): Refer to riscv-tdep.h comment.
+	(riscv_isa_flen): Likewise.  Drop static.
+	* riscv-tdep.h (riscv_isa_xlen): Move riscv-tdep.c comment to here.
+	(riscv_isa_flen): Likewise.  Declare.
+
+2018-10-26  Edjunior Barbosa Machado  <emachado@linux.vnet.ibm.com>
+	    Pedro Franco de Carvalho  <pedromfc@linux.ibm.com>
+
+	* arch/ppc-linux-tdesc.h (tdesc_powerpc_isa207_htm_vsx32l)
+	(tdesc_powerpc_isa207_htm_vsx64l): Declare.
+	* arch/ppc-linux-common.h (PPC_LINUX_SIZEOF_TM_SPRREGSET)
+	(PPC32_LINUX_SIZEOF_CGPRREGSET, PPC64_LINUX_SIZEOF_CGPRREGSET)
+	(PPC_LINUX_SIZEOF_CFPRREGSET, PPC_LINUX_SIZEOF_CVMXREGSET)
+	(PPC_LINUX_SIZEOF_CVSXREGSET, PPC_LINUX_SIZEOF_CPPRREGSET)
+	(PPC_LINUX_SIZEOF_CDSCRREGSET, PPC_LINUX_SIZEOF_CTARREGSET):
+	Define.
+	(struct ppc_linux_features) <htm>: New field.
+	(ppc_linux_no_features): Add initializer for htm field.
+	* arch/ppc-linux-common.c (ppc_linux_match_description): Return
+	new tdescs.
+	* nat/ppc-linux.h (PPC_FEATURE2_HTM, NT_PPC_TM_CGPR)
+	(NT_PPC_TM_CFPR, NT_PPC_TM_CVMX, NT_PPC_TM_CVSX)
+	(NT_PPC_TM_SPR, NT_PPC_TM_CTAR, NT_PPC_TM_CPPR, NT_PPC_TM_CDSCR):
+	Define if not already defined.
+	* features/Makefile (WHICH): Add rs6000/powerpc-isa207-htm-vsx32l
+	and rs6000/powerpc-isa207-htm-vsx64l.
+	(XMLTOC): Add rs6000/powerpc-isa207-htm-vsx32l.xml and
+	rs6000/powerpc-isa207-htm-vsx64l.xml.
+	* features/rs6000/power-htm-spr.xml: New file.
+	* features/rs6000/power-htm-core.xml: New file.
+	* features/rs6000/power64-htm-core.xml: New file.
+	* features/rs6000/power-htm-fpu.xml: New file.
+	* features/rs6000/power-htm-altivec.xml: New file.
+	* features/rs6000/power-htm-vsx.xml: New file.
+	* features/rs6000/power-htm-ppr.xml: New file.
+	* features/rs6000/power-htm-dscr.xml: New file.
+	* features/rs6000/power-htm-tar.xml: New file.
+	* features/rs6000/powerpc-isa207-htm-vsx32l.xml: New file.
+	* features/rs6000/powerpc-isa207-htm-vsx64l.xml: New file.
+	* features/rs6000/powerpc-isa207-htm-vsx32l.c: Generate.
+	* features/rs6000/powerpc-isa207-htm-vsx64l.c: Generate.
+	* regformats/rs6000/powerpc-isa207-htm-vsx32l.dat: Generate.
+	* regformats/rs6000/powerpc-isa207-htm-vsx64l.dat: Generate.
+	* ppc-linux-nat.c (fetch_register, fetch_ppc_registers): Call
+	fetch_regset with HTM regsets.
+	(store_register, store_ppc_registers): Call store_regset with HTM
+	regsets.
+	(ppc_linux_nat_target::read_description): Set htm field in the
+	features struct if needed.
+	* ppc-linux-tdep.c: Include
+	features/rs6000/powerpc-isa207-htm-vsx32l.c and
+	features/rs6000/powerpc-isa207-htm-vsx64l.c.
+	(ppc32_regmap_tm_spr, ppc32_regmap_cgpr, ppc64_le_regmap_cgpr)
+	(ppc64_be_regmap_cgpr, ppc32_regmap_cfpr, ppc32_le_regmap_cvmx)
+	(ppc32_be_regmap_cvmx, ppc32_regmap_cvsx, ppc32_regmap_cppr)
+	(ppc32_regmap_cdscr, ppc32_regmap_ctar): New globals.
+	(ppc32_linux_tm_sprregset, ppc32_linux_cgprregset)
+	(ppc64_be_linux_cgprregset, ppc64_le_linux_cgprregset)
+	(ppc32_linux_cfprregset, ppc32_le_linux_cvmxregset)
+	(ppc32_be_linux_cvmxregset, ppc32_linux_cvsxregset)
+	(ppc32_linux_cpprregset, ppc32_linux_cdscrregset)
+	(ppc32_linux_ctarregset): New globals.
+	(ppc_linux_cgprregset, ppc_linux_cvmxregset): New functions.
+	(ppc_linux_collect_core_cpgrregset): New function.
+	(ppc_linux_iterate_over_regset_sections): Call back with the htm
+	regsets.
+	(ppc_linux_core_read_description): Check if the tm spr section is
+	present and set htm in the features struct.
+	(_initialize_ppc_linux_tdep): Call
+	initialize_tdesc_powerpc_isa207_htm_vsx32l and
+	initialize_tdesc_powerpc_isa207_htm_vsx64l.
+	* ppc-linux-tdep.h (ppc_linux_cgprregset, ppc_linux_cvmxregset):
+	Declare.
+	(ppc32_linux_tm_sprregset, ppc32_linux_cfprregset)
+	(ppc32_linux_cvsxregset, ppc32_linux_cpprregset)
+	(ppc32_linux_cdscrregset, ppc32_linux_ctarregset): Declare.
+	* ppc-tdep.h (struct gdbarch_tdep) <have_htm_spr, have_htm_core>:
+	New fields.
+	<have_htm_fpu, have_htm_altivec, have_htm_vsx>:
+	Likewise.
+	<ppc_cppr_regnum, ppc_cdscr_regnum, ppc_ctar_regnum>: Likewise.
+	<ppc_cdl0_regnum, ppc_cvsr0_regnum, ppc_cefpr0_regnum>: Likewise.
+	(enum) <PPC_TFHAR_REGNUM, PPC_TEXASR_REGNUM, PPC_TFIAR_REGNUM>:
+	New enum fields.
+	<PPC_CR0_REGNUM, PPC_CCR_REGNUM, PPC_CXER_REGNUM>: Likewise.
+	<PPC_CLR_REGNUM, PPC_CCTR_REGNUM, PPC_CF0_REGNUM>: Likewise.
+	<PPC_CFPSCR_REGNUM, PPC_CVR0_REGNUM, PPC_CVSCR_REGNUM>: Likewise.
+	<PPC_CVRSAVE_REGNUM, PPC_CVSR0_UPPER_REGNUM>: Likewise.
+	<PPC_CPPR_REGNUM, PPC_CDSCR_REGNUM>: Likewise.
+	<PPC_CTAR_REGNUM>: Likewise.
+	(PPC_IS_TMSPR_REGNUM, PPC_IS_CKPTGP_REGNUM, PPC_IS_CKPTFP_REGNUM)
+	(PPC_IS_CKPTVMX_REGNUM, PPC_IS_CKPTVSX_REGNUM): Define.
+	* rs6000-tdep.c (IS_CDFP_PSEUDOREG, IS_CVSX_PSEUDOREG)
+	(IS_CEFP_PSEUDOREG): Define.
+	(rs6000_register_name): Hide the upper halves of checkpointed VSX
+	registers.  Return names for the checkpointed DFP, VSX, and EFP
+	pseudo registers.
+	(rs6000_pseudo_register_type): Remove initial assert and raise an
+	internal error in the else clause instead.  Return types for the
+	checkpointed DFP, VSX, and EFP pseudo registers.
+	(dfp_pseudo_register_read, dfp_pseudo_register_write): Handle
+	checkpointed DFP pseudo registers.
+	(vsx_pseudo_register_read, vsx_pseudo_register_write): Handle
+	checkpointed VSX pseudo registers.
+	(efp_pseudo_register_read, efp_pseudo_register_write): Rename
+	from efpr_pseudo_register_read and
+	efpr_pseudo_register_write.  Handle checkpointed EFP pseudo
+	registers.
+	(rs6000_pseudo_register_read, rs6000_pseudo_register_write):
+	Handle checkpointed DFP, VSX, and EFP registers.
+	(dfp_ax_pseudo_register_collect, vsx_ax_pseudo_register_collect)
+	(efp_ax_pseudo_register_collect): New functions.
+	(rs6000_ax_pseudo_register_collect): Move DFP, VSX and EFP pseudo
+	register logic to new functions.  Handle checkpointed DFP, VSX,
+	and EFP pseudo registers.
+	(rs6000_gdbarch_init): Look for and validate the htm features.
+	Include checkpointed DFP, VSX and EFP pseudo-registers.
+	* NEWS: Mention access to PPR, DSCR, TAR, EBB/PMU registers and
+	HTM registers.
+
+2018-10-26  Pedro Franco de Carvalho  <pedromfc@linux.ibm.com>
+
+	* rs6000-tdep.c (rs6000_gdbarch_init): Reject tdescs with vsx but
+	without altivec or fpu.
+
+2018-10-26  Edjunior Barbosa Machado  <emachado@linux.vnet.ibm.com>
+	    Pedro Franco de Carvalho  <pedromfc@linux.ibm.com>
+
+	* arch/ppc-linux-common.h (PPC_LINUX_SIZEOF_EBBREGSET)
+	(PPC_LINUX_SIZEOF_PMUREGSET): Declare.
+	* nat/ppc-linux.h (PPC_FEATURE2_EBB, NT_PPC_EBB, NT_PPC_PMU):
+	Define if not already defined.
+	* features/rs6000/power-ebb.xml: New file.
+	* features/rs6000/power-linux-pmu.xml: New file.
+	* features/rs6000/powerpc-isa207-vsx32l.xml: Include ebb and pmu
+	features.
+	* features/rs6000/powerpc-isa207-vsx64l.xml: Likewise.
+	* features/rs6000/powerpc-isa207-vsx32l.c: Re-generate.
+	* features/rs6000/powerpc-isa207-vsx64l.c: Re-generate.
+	* regformats/rs6000/powerpc-isa207-vsx32l.dat: Re-generate.
+	* regformats/rs6000/powerpc-isa207-vsx64l.dat: Re-generate.
+	* ppc-linux-nat.c (fetch_register, fetch_ppc_registers): Call
+	fetch_regset with ebb and pmu regsets.
+	(store_register, store_ppc_registers): Call store_regset with ebb
+	and pmu regsets.
+	(ppc_linux_nat_target::read_description): Set isa207 field in the
+	features struct if ebb and pmu are avaiable.
+	* ppc-linux-tdep.c (ppc32_regmap_ebb, ppc32_regmap_pmu)
+	(ppc32_linux_ebbregset, ppc32_linux_pmuregset): New globals.
+	(ppc_linux_iterate_over_regset_sections): Call back with the ebb
+	and pmu regsets.
+	(ppc_linux_core_read_description): Check if the pmu section is
+	present and set isa207 in the features struct.
+	* ppc-linux-tdep.h (ppc32_linux_ebbregset)
+	(ppc32_linux_pmuregset): Declare.
+	* ppc-tdep.h (struct gdbarch_tdep) <ppc_mmcr0_regnum>: New field.
+	<ppc_mmcr2_regnum, ppc_siar_regnum, ppc_sdar_regnum>: New fields.
+	<ppc_sier_regnum>: New field.
+	(enum): <PPC_BESCR_REGNUM, PPC_EBBHR_REGNUM, PPC_EBBRR_REGNUM>:
+	New enum values.
+	<PPC_MMCR0_REGNUM, PPC_MMCR2_REGNUM, PPC_SIAR_REGNUM>: New enum
+	values.
+	<PPC_SDAR_REGNUM, PPC_SIER_REGNUM>: New enum values.
+	(PPC_IS_EBB_REGNUM, PPC_IS_PMU_REGNUM): Define.
+	* rs6000-tdep.c (rs6000_gdbarch_init): Look for and validate the
+	ebb and pmu features.
+
+2018-10-26  Edjunior Barbosa Machado  <emachado@linux.vnet.ibm.com>
+	    Pedro Franco de Carvalho  <pedromfc@linux.ibm.com>
+
+	* arch/ppc-linux-tdesc.h (tdesc_powerpc_isa207_vsx32l)
+	(tdesc_powerpc_isa207_vsx64l): Declare.
+	* arch/ppc-linux-common.h (PPC_LINUX_SIZEOF_TARREGSET): Define.
+	(struct ppc_linux_features) <isa207>: New field.
+	(ppc_linux_no_features): Add initializer for isa207 field.
+	* arch/ppc-linux-common.c (ppc_linux_match_description): Return
+	new tdescs.
+	* nat/ppc-linux.h (PPC_FEATURE2_ARCH_2_07, PPC_FEATURE2_TAR)
+	(NT_PPC_TAR): Define if not already defined.
+	* features/Makefile (WHICH): Add rs6000/powerpc-isa207-vsx32l and
+	rs6000/powerpc-isa207-vsx64l.
+	(XMLTOC): Add rs6000/powerpc-isa207-vsx32l.xml and
+	rs6000/powerpc-isa207-vsx64l.xml.
+	* features/rs6000/power-tar.xml: New file.
+	* features/rs6000/powerpc-isa207-vsx32l.xml: New file.
+	* features/rs6000/powerpc-isa207-vsx64l.xml: New file.
+	* features/rs6000/powerpc-isa207-vsx32l.c: Generate.
+	* features/rs6000/powerpc-isa207-vsx64l.c: Generate.
+	* regformats/rs6000/powerpc-isa207-vsx32l.dat: Generate.
+	* regformats/rs6000/powerpc-isa207-vsx64l.dat: Generate.
+	* ppc-linux-nat.c (fetch_register, fetch_ppc_registers): Call
+	fetch_regset with the TAR regset.
+	(store_register, store_ppc_registers): Call store_regset with the
+	TAR regset.
+	(ppc_linux_nat_target::read_description): Set isa207 field in the
+	features struct if needed.
+	* ppc-linux-tdep.c: Include
+	features/rs6000/powerpc-isa207-vsx32l.c and
+	features/rs6000/powerpc-isa207-vsx64l.c.
+	(ppc32_regmap_tar, ppc32_linux_tarregset): New globals.
+	(ppc_linux_iterate_over_regset_sections): Call back with the tar
+	regset.
+	(ppc_linux_core_read_description): Check if the tar section is
+	present and set isa207 in the features struct.
+	(_initialize_ppc_linux_tdep): Call
+	initialize_tdesc_powerpc_isa207_vsx32l and
+	initialize_tdesc_powerpc_isa207_vsx64l.
+	* ppc-linux-tdep.h (ppc32_linux_tarregset): Declare.
+	* ppc-tdep.h (gdbarch_tdep) <ppc_tar_regnum>: New field.
+	(enum) <PPC_TAR_REGNUM>: New enum value.
+	* rs6000-tdep.c (rs6000_gdbarch_init): Look for and validate tar
+	feature.
+	(ppc_process_record_op31): Record changes to TAR.
+
+2018-10-26  Edjunior Barbosa Machado  <emachado@linux.vnet.ibm.com>
+	    Pedro Franco de Carvalho  <pedromfc@linux.ibm.com>
+
+	* arch/ppc-linux-tdesc.h (tdesc_powerpc_isa205_ppr_dscr_vsx32l)
+	(tdesc_powerpc_isa205_ppr_dscr_vsx64l): Declare.
+	* arch/ppc-linux-common.h (PPC_LINUX_SIZEOF_PPRREGSET)
+	(PPC_LINUX_SIZEOF_DSCRREGSET): Define.
+	(struct ppc_linux_features) <ppr_dscr>: New field.
+	(ppc_linux_no_features): Add initializer for ppr_dscr field.
+	* arch/ppc-linux-common.c (ppc_linux_match_description): Return
+	new tdescs.
+	* nat/ppc-linux.h (PPC_FEATURE2_DSCR, NT_PPC_PPR, NT_PPC_DSCR):
+	Define if not already defined.
+	* features/Makefile (WHICH): Add
+	rs6000/powerpc-isa205-ppr-dscr-vsx32l and
+	rs6000/powerpc-isa205-ppr-dscr-vsx64l.
+	(XMLTOC): Add rs6000/powerpc-isa205-ppr-dscr-vsx32l.xml and
+	rs6000/powerpc-isa205-ppr-dscr-vsx64l.xml.
+	* features/rs6000/power-dscr.xml: New file.
+	* features/rs6000/power-ppr.xml: New file.
+	* features/rs6000/powerpc-isa205-ppr-dscr-vsx32l.xml: New file.
+	* features/rs6000/powerpc-isa205-ppr-dscr-vsx64l.xml: New file.
+	* features/rs6000/powerpc-isa205-ppr-dscr-vsx32l.c: Generate.
+	* features/rs6000/powerpc-isa205-ppr-dscr-vsx64l.c: Generate.
+	* regformats/rs6000/powerpc-isa205-ppr-dscr-vsx32l.dat: Generate.
+	* regformats/rs6000/powerpc-isa205-ppr-dscr-vsx64l.dat: Generate.
+	* ppc-linux-nat.c: Include <sys/uio.h>.
+	(fetch_regset, store_regset, check_regset): New functions.
+	(fetch_register, fetch_ppc_registers): Call fetch_regset with
+	DSCR and PPR regsets.
+	(store_register, store_ppc_registers): Call store_regset with
+	DSCR and PPR regsets.
+	(ppc_linux_get_hwcap2): New function.
+	(ppc_linux_nat_target::read_description): Call
+	ppc_linux_get_hwcap2 and check_regset, set ppr_dscr field in the
+	features struct if needed.
+	* ppc-linux-tdep.c: Include
+	features/rs6000/powerpc-isa205-ppr-dscr-vsx32l.c and
+	features/rs6000/powerpc-isa205-ppr-dscr-vsx64l.c.
+	(ppc32_regmap_ppr, ppc32_regmap_dscr, ppc32_linux_pprregset)
+	(ppc32_linux_dscrregset): New globals.
+	(ppc_linux_iterate_over_regset_sections): Call back with the ppr
+	and dscr regsets.
+	(ppc_linux_core_read_description): Check if the ppr and dscr
+	sections are present and set ppr_dscr in the features struct.
+	(_initialize_ppc_linux_tdep): Call
+	initialize_tdesc_powerpc_isa205_ppr_dscr_vsx32l and
+	initialize_tdesc_powerpc_isa205_ppr_dscr_vsx64l.
+	* ppc-linux-tdep.h (ppc32_linux_pprregset)
+	(ppc32_linux_dscrregset): Declare.
+	* ppc-tdep.h (struct gdbarch_tdep) <ppc_ppr_regnum>: New field.
+	<ppc_dscr_regnum>: New field.
+	(enum) <PPC_PPR_REGNUM, PPC_DSCR_REGNUM>: New enum values.
+	* rs6000-tdep.c (rs6000_gdbarch_init): Look for and validate ppr
+	and dscr features.
+	(ppc_process_record_op31): Record changes to PPR and DSCR.
+
+2018-10-26  Pedro Franco de Carvalho  <pedromfc@linux.ibm.com>
+
+	* rs6000-tdep.c (rs6000_gdbarch_init): Replace line wrapping by a
+	second initializer line for the have_* variables.  Initialize
+	have_fpu to 0 instead of 1.
+
+2018-10-26  Pedro Franco de Carvalho  <pedromfc@linux.ibm.com>
+
+	* arch/ppc-linux-common.c (ppc_linux_match_description):
+	Parenthesize tdesc assignements and indent them properly.
+
+2018-10-26  Pedro Franco de Carvalho  <pedromfc@linux.ibm.com>
+
+	* ppc-linux-nat.c (fetch_register): Change if statement to else
+	if.
+	(store_register): Likewise.
+
+2018-10-26  Pedro Franco de Carvalho  <pedromfc@linux.ibm.com>
+
+	* rs6000-tdep.c: Remove reggroups.h include.
+	(rs6000_pseudo_register_reggroup_p): Remove.
+	(rs6000_gdbarch_init): Remove call to
+	set_tdesc_pseudo_register_reggroup_p.
+
+2018-10-26  Pedro Franco de Carvalho  <pedromfc@linux.ibm.com>
+
+	* reggroups.c (default_register_reggroup_p): Return true for
+	decfloat registers and float_reggroup.
+
+2018-10-26  Pedro Franco de Carvalho  <pedromfc@linux.ibm.com>
+
+	* ppc-linux-tdep.c (ppc_linux_collect_vrregset): Remove.
+	(ppc32_le_linux_vrregset, ppc32_be_linux_vrregset): Replace
+	ppc_linux_collect_vrregset by regcache_collect_regset.
+
+2018-10-26  Pedro Franco de Carvalho  <pedromfc@linux.ibm.com>
+
+	* linux-tdep.c (linux_collect_regset_section_cb): Use
+	std::vector<gdb_byte> instead of char * and malloc for buf.
+	Remove xfree.
+
+2018-10-26  Sangamesh Mallayya <sangamesh.swamy@in.ibm.com>
+
+	* xcoffread.c (read_xcoff_symtab): Pass deduced language to
+	symtab_start instead of always using language_unknown.
+
+2018-10-26  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* riscv-tdep.c (riscv_read_misa_reg): Update comment, remove
+	READ_P parameter, catch and ignore register access errors from
+	either the old or new MISA location.
+	(riscv_has_feature): Update call to riscv_read_misa_reg.
+
+2018-10-25  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* python/py-function.c (convert_values_to_python): Return
+	gdbpy_ref<>.  Add header comment.
+	(fnpy_call): Adjust.
+
+2018-10-25  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* python/py-cmd.c (cmdpy_completer_helper): Return gdbpy_ref<>.
+	(cmdpy_completer_handle_brkchars): Adjust.
+	(cmdpy_completer): Adjust.
+
+2018-10-25  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* riscv-linux-nat.c (riscv_linux_nat_target::fetch_registers):
+	Pass correct regnum to raw_supply_zeroed.
+
+2018-10-23  Hafiz Abid Qadeer  <abidh@codesourcery.com>
+
+	* regcache.c (cooked_read_test): Add CSKY to the list of
+	architectures with a save_reggroup
+
+2018-10-23  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	PR gdb/23368
+	* infrun.c (follow_exec): In the follow_exec_mode_new case,
+	transfer terminal state from old new new inferior.
+	* terminal.h (swap_terminal_info): New function.
+	* inflow.c (swap_terminal_info): New function.
+
+2018-10-23  Tom Tromey  <tom@tromey.com>
+
+	* record-btrace.c (get_thread_current_frame_id): Rename from
+	get_thread_current_frame.  Return a frame_id.
+	(record_btrace_start_replaying): Update.
+
+2018-10-23  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* riscv-tdep.c (riscv_register_name): Use the user-friendly names
+	for CSRs.
+
+2018-10-23  Joel Brobecker  <brobecker@adacore.com>
+
+	* riscv-tdep.c (riscv_gdbarch_init): Set the gdbarch's
+	have_nonsteppable_watchpoint attribute to 1.
+
+2018-10-23  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* riscv-tdep.c (riscv_gdb_reg_names): Update comment, and all
+	register names.
+	(struct register_alias): Rename to...
+	(struct riscv_register_alias): ...this, and update comment.
+	(riscv_register_aliases): Update type, and alias names.  Remove
+	CSR names from this list.
+	(riscv_register_name): Use riscv_gdb_reg_names for int and float
+	register names.  Add an extra assertion.
+	(riscv_is_regnum_a_named_csr): New function.
+	(riscv_register_reggroup_p): Use riscv_is_regnum_a_named_csr.
+
+2018-10-22  Jim Wilson  <jimw@sifive.com>
+
+	* riscv-tdep.c (riscv_push_dummy_call) <in_reg>: Check for value in
+	FP reg smaller than FP reg size, and fill with -1 instead of 0.
+
+	* riscv-tdep.c (riscv_fpreg_d_type, riscv_fpreg_q_type): New.
+	(riscv_register_type): Use them.
+	(riscv_print_one_register_info): Handle union of floats same as float.
+	* riscv-tdep.h (struct gdbarch_tdep): Add riscv_fpreg_d_type and
+	riscv_fpreg_q_type fields.
+
+2018-10-21  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* gdbarch.sh (gdbarch_num_cooked_regs): New.
+	* gdbarch.h: Re-generate.
+	* ax-gdb.c (gen_expr): Use gdbarch_num_cooked_regs.
+	* dwarf2-frame.c (dwarf2_frame_cache): Likewise.
+	* eval.c (evaluate_subexp_standard): Likewise.
+	* findvar.c (value_of_register): Likewise.
+	(value_of_register_lazy): Likewise.
+	(address_from_register): Likewise.
+	* frame.c (get_frame_register_bytes): Likewise.
+	* gdbarch-selftests.c (register_to_value_test): Likewise.
+	* h8300-tdep.c (h8300_register_type): Likewise.
+	* i386-tdep.c (i386_dbx_reg_to_regnum): Likewise.
+	(i386_svr4_reg_to_regnum): Likewise.
+	* infcmd.c (default_print_registers_info): Likewise.
+	(registers_info): Likewise.
+	(print_vector_info): Likewise.
+	(default_print_float_info): Likewise.
+	* m68hc11-tdep.c (m68hc11_frame_unwind_cache): Likewise.
+	* mdebugread.c (mdebug_reg_to_regnum): Likewise.
+	* mi/mi-main.c (mi_cmd_data_list_register_names): Likewise.
+	(mi_cmd_data_list_changed_registers): Likewise.
+	(mi_cmd_data_list_register_values): Likewise.
+	(mi_cmd_data_write_register_values): Likewise.
+	(mi_cmd_trace_frame_collected): Likewise.
+	* mips-tdep.c (print_gp_register_row): Likewise.
+	(mips_print_registers_info): Likewise.
+	* nds32-tdep.c (nds32_gdbarch_init): Likewise.
+	* regcache.c (init_regcache_descr): Likewise.
+	(register_size): Likewise.
+	(register_dump::dump): Likewise.
+	(cooked_read_test): Likewise.
+	(cooked_write_test): Likewise.
+	* rs6000-tdep.c (rs6000_register_sim_regno): Likewise.
+	(rs6000_gdbarch_init): Likewise.
+	* stabsread.c (stab_reg_to_regnum): Likewise.
+	* stack.c (info_frame_command): Likewise.
+	* target-descriptions.c (tdesc_register_name): Likewise.
+	* trad-frame.c (trad_frame_alloc_saved_regs): Likewise.
+	* tui/tui-regs.c (tui_show_register_group): Likewise.
+	* user-regs.c (user_reg_map_name_to_regnum): Likewise.
+	(user_reg_map_regnum_to_name): Likewise.
+	(value_of_user_reg): Likewise.
+	(maintenance_print_user_registers): Likewise.
+	* xtensa-tdep.c (xtensa_find_register_by_name): Likewise.
+	(xtensa_register_name): Likewise.
+	(xtensa_register_type): Likewise.
+	(xtensa_reg_to_regnum): Likewise.
+	(xtensa_pseudo_register_read): Likewise.
+	(xtensa_pseudo_register_write): Likewise.
+
+2018-10-21  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* amd64-tdep.c (amd64_pseudo_register_read_value): Use
+	correctly-sized buffer with raw_read.
+	(amd64_pseudo_register_write): Use correctly-sized buffer for
+	raw_read/raw_write.
+
+2018-10-19  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* typeprint.c (_initialize_typeprint): Fix wrong prefixname arg
+	in add_prefix_cmd of set print type.
+
+2018-10-19  Tom Tromey  <tom@tromey.com>
+
+	PR tui/18388:
+	* NEWS: Mention tabset deprecation.
+	* tui/tui-win.c (tui_tab_width, internal_tab_width): New globals.
+	(update_tab_width): New function.
+	(tui_set_tab_width, tui_show_tab_width): New functions.
+	(tui_set_tab_width_command): Use update_tab_width.
+	(_initialize_tui_win): Move to end of file.  Deprecate "tabset".
+	Add new "set tui tab-width" command.
+	* tui/tui-source.c (tui_set_source_content): Update.
+	* tui/tui-disasm.c (tui_set_disassem_content): Update.
+	* tui/tui-data.h (tui_default_tab_len, tui_set_default_tab_len):
+	Don't declare.
+	(tui_tab_width): Declare.
+	* tui/tui-data.c (default_tab_len, tui_default_tab_len)
+	(tui_set_default_tab_len): Remove.
+
+2018-10-19  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-io.h (key_is_start_sequence, key_is_end_sequence)
+	(key_is_backspace, tui_getc): Don't declare.
+	* tui/tui-io.c (key_is_start_sequence): Now static.
+	(key_is_end_sequence, key_is_backspace): Remove.
+	(tui_getc): Now static.
+
+2018-10-19  Tom Tromey  <tom@tromey.com>
+
+	* symfile.c (reread_symbols): Clear "static_links".
+
+2018-10-19  Alan Hayward  <alan.hayward@arm.com>
+
+	* aarch64-linux-tdep.c (AARCH64_SIGCONTEXT_RESERVED_SIZE): New
+	define.
+	(aarch64_linux_sigframe_init): Extra boundary checks.
+
+2018-10-19  Andreas Arnez  <arnez@linux.ibm.com>
+
+	* s390-tdep.c (s390_pseudo_register_type): For v0-v15 don't yield
+	the possibly non-existent tdesc type 'vec128', but the type of raw
+	register v16 instead.
+
+2018-10-19  Gary Benson <gbenson@redhat.com>
+
+	* cli/cli-interp.c (cli_interp::~cli_interp): New function.
+
 2018-10-18  Sergio Durigan Junior  <sergiodj@redhat.com>
 
 	PR cli/23785

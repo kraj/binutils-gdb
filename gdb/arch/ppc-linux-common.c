@@ -53,14 +53,17 @@ ppc_linux_match_description (struct ppc_linux_features features)
       if (features.cell)
 	tdesc = tdesc_powerpc_cell64l;
       else if (features.vsx)
-	tdesc = features.isa205
-	  ? tdesc_powerpc_isa205_vsx64l : tdesc_powerpc_vsx64l;
+	tdesc = (features.htm? tdesc_powerpc_isa207_htm_vsx64l
+		 : features.isa207? tdesc_powerpc_isa207_vsx64l
+		 : features.ppr_dscr? tdesc_powerpc_isa205_ppr_dscr_vsx64l
+		 : features.isa205? tdesc_powerpc_isa205_vsx64l
+		 : tdesc_powerpc_vsx64l);
       else if (features.altivec)
-	tdesc = features.isa205
-	  ? tdesc_powerpc_isa205_altivec64l : tdesc_powerpc_altivec64l;
+	tdesc = (features.isa205? tdesc_powerpc_isa205_altivec64l
+		 : tdesc_powerpc_altivec64l);
       else
-	tdesc = features.isa205?
-	  tdesc_powerpc_isa205_64l : tdesc_powerpc_64l;
+	tdesc = (features.isa205? tdesc_powerpc_isa205_64l
+		 : tdesc_powerpc_64l);
     }
   else
     {
@@ -69,14 +72,17 @@ ppc_linux_match_description (struct ppc_linux_features features)
       if (features.cell)
 	tdesc = tdesc_powerpc_cell32l;
       else if (features.vsx)
-	tdesc = features.isa205
-	  ? tdesc_powerpc_isa205_vsx32l : tdesc_powerpc_vsx32l;
+	tdesc = (features.htm? tdesc_powerpc_isa207_htm_vsx32l
+		 : features.isa207? tdesc_powerpc_isa207_vsx32l
+		 : features.ppr_dscr? tdesc_powerpc_isa205_ppr_dscr_vsx32l
+		 : features.isa205? tdesc_powerpc_isa205_vsx32l
+		 : tdesc_powerpc_vsx32l);
       else if (features.altivec)
-	tdesc = features.isa205
-	  ? tdesc_powerpc_isa205_altivec32l : tdesc_powerpc_altivec32l;
+	tdesc = (features.isa205? tdesc_powerpc_isa205_altivec32l
+		 : tdesc_powerpc_altivec32l);
       else
-	tdesc = features.isa205
-	  ? tdesc_powerpc_isa205_32l : tdesc_powerpc_32l;
+	tdesc = (features.isa205? tdesc_powerpc_isa205_32l
+		 : tdesc_powerpc_32l);
     }
 
   gdb_assert (tdesc != NULL);

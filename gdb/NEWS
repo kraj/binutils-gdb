@@ -3,6 +3,10 @@
 
 *** Changes since GDB 8.2
 
+* GDB and GDBserver now support access to additional registers on
+  PowerPC GNU/Linux targets: PPR, DSCR, TAR, EBB/PMU registers, and
+  HTM registers.
+
 * GDB now has experimental support for the compilation and injection of
   C++ source code into the inferior.  This beta release does not include
   support for several language features, such as templates, constructors,
@@ -14,6 +18,10 @@
 * GDB and GDBserver now support IPv6 connections.  IPv6 addresses
   can be passed using the '[ADDRESS]:PORT' notation, or the regular
   'ADDRESS:PORT' method.
+
+* GDB and GDBserver now support local domain socket connections.  The
+  name of a local domain socket may be provided instead of the
+  [ADDRESS]:PORT notation.
 
 * DWARF index cache: GDB can now automatically save indices of DWARF
   symbols on disk to speed up further loading of the same binaries.
@@ -28,6 +36,10 @@
   address, or viewing a frame outside the current backtrace now
   requires the use of a keyword.  Selecting a frame by level is
   unchanged.  The MI comment "-stack-select-frame" is unchanged.
+
+* New targets
+
+  NXP S12Z		s12z-*-elf
 
 * New commands
 
@@ -78,6 +90,10 @@ thread apply [all | COUNT | -COUNT] [FLAG]... COMMAND
   The 'thread apply' command accepts new FLAG arguments.
   FLAG arguments allow to control what output to produce and how to handle
   errors raised when applying COMMAND to a thread.
+
+set tui tab-width NCHARS
+show tui tab-width NCHARS
+  "set tui tab-width" replaces the "tabset" command, which has been deprecated.
 
 * MI changes
 

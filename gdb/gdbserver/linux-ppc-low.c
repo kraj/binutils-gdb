@@ -20,6 +20,8 @@
 #include "server.h"
 #include "linux-low.h"
 
+#include "elf/common.h"
+#include <sys/uio.h>
 #include <elf.h>
 #include <asm/ptrace.h>
 
@@ -41,7 +43,13 @@
 #define PPC_LI(insn)	(PPC_SEXT (PPC_FIELD (insn, 6, 24), 24) << 2)
 #define PPC_BD(insn)	(PPC_SEXT (PPC_FIELD (insn, 16, 14), 14) << 2)
 
+/* Holds the AT_HWCAP auxv entry.  */
+
 static unsigned long ppc_hwcap;
+
+/* Holds the AT_HWCAP2 auxv entry.  */
+
+static unsigned long ppc_hwcap2;
 
 
 #define ppc_num_regs 73
@@ -115,6 +123,24 @@ static int ppc_regmap_e500[] =
   PT_ORIG_R3 * 4, PT_TRAP * 4
  };
 #endif
+
+/* Check whether the kernel provides a register set with number
+   REGSET_ID of size REGSETSIZE for process/thread TID.  */
+
+static int
+ppc_check_regset (int tid, int regset_id, int regsetsize)
+{
+  void *buf = alloca (regsetsize);
+  struct iovec iov;
+
+  iov.iov_base = buf;
+  iov.iov_len = regsetsize;
+
+  if (ptrace (PTRACE_GETREGSET, tid, regset_id, &iov) >= 0
+      || errno == ENODATA)
+    return 1;
+  return 0;
+}
 
 static int
 ppc_cannot_store_register (int regno)
@@ -459,6 +485,273 @@ static void ppc_fill_gregset (struct regcache *regcache, void *buf)
     ppc_collect_ptrace_register (regcache, i, (char *) buf + ppc_regmap[i]);
 }
 
+/* Program Priority Register regset fill function.  */
+
+static void
+ppc_fill_pprregset (struct regcache *regcache, void *buf)
+{
+  char *ppr = (char *) buf;
+
+  collect_register_by_name (regcache, "ppr", ppr);
+}
+
+/* Program Priority Register regset store function.  */
+
+static void
+ppc_store_pprregset (struct regcache *regcache, const void *buf)
+{
+  const char *ppr = (const char *) buf;
+
+  supply_register_by_name (regcache, "ppr", ppr);
+}
+
+/* Data Stream Control Register regset fill function.  */
+
+static void
+ppc_fill_dscrregset (struct regcache *regcache, void *buf)
+{
+  char *dscr = (char *) buf;
+
+  collect_register_by_name (regcache, "dscr", dscr);
+}
+
+/* Data Stream Control Register regset store function.  */
+
+static void
+ppc_store_dscrregset (struct regcache *regcache, const void *buf)
+{
+  const char *dscr = (const char *) buf;
+
+  supply_register_by_name (regcache, "dscr", dscr);
+}
+
+/* Target Address Register regset fill function.  */
+
+static void
+ppc_fill_tarregset (struct regcache *regcache, void *buf)
+{
+  char *tar = (char *) buf;
+
+  collect_register_by_name (regcache, "tar", tar);
+}
+
+/* Target Address Register regset store function.  */
+
+static void
+ppc_store_tarregset (struct regcache *regcache, const void *buf)
+{
+  const char *tar = (const char *) buf;
+
+  supply_register_by_name (regcache, "tar", tar);
+}
+
+/* Event-Based Branching regset store function.  Unless the inferior
+   has a perf event open, ptrace can return in error when reading and
+   writing to the regset, with ENODATA.  For reading, the registers
+   will correctly show as unavailable.  For writing, gdbserver
+   currently only caches any register writes from P and G packets and
+   the stub always tries to write all the regsets when resuming the
+   inferior, which would result in frequent warnings.  For this
+   reason, we don't define a fill function.  This also means that the
+   client-side regcache will be dirty if the user tries to write to
+   the EBB registers.  G packets that the client sends to write to
+   unrelated registers will also include data for EBB registers, even
+   if they are unavailable.  */
+
+static void
+ppc_store_ebbregset (struct regcache *regcache, const void *buf)
+{
+  const char *regset = (const char *) buf;
+
+  /* The order in the kernel regset is: EBBRR, EBBHR, BESCR.  In the
+     .dat file is BESCR, EBBHR, EBBRR.  */
+  supply_register_by_name (regcache, "ebbrr", &regset[0]);
+  supply_register_by_name (regcache, "ebbhr", &regset[8]);
+  supply_register_by_name (regcache, "bescr", &regset[16]);
+}
+
+/* Performance Monitoring Unit regset fill function.  */
+
+static void
+ppc_fill_pmuregset (struct regcache *regcache, void *buf)
+{
+  char *regset = (char *) buf;
+
+  /* The order in the kernel regset is SIAR, SDAR, SIER, MMCR2, MMCR0.
+     In the .dat file is MMCR0, MMCR2, SIAR, SDAR, SIER.  */
+  collect_register_by_name (regcache, "siar", &regset[0]);
+  collect_register_by_name (regcache, "sdar", &regset[8]);
+  collect_register_by_name (regcache, "sier", &regset[16]);
+  collect_register_by_name (regcache, "mmcr2", &regset[24]);
+  collect_register_by_name (regcache, "mmcr0", &regset[32]);
+}
+
+/* Performance Monitoring Unit regset store function.  */
+
+static void
+ppc_store_pmuregset (struct regcache *regcache, const void *buf)
+{
+  const char *regset = (const char *) buf;
+
+  supply_register_by_name (regcache, "siar", &regset[0]);
+  supply_register_by_name (regcache, "sdar", &regset[8]);
+  supply_register_by_name (regcache, "sier", &regset[16]);
+  supply_register_by_name (regcache, "mmcr2", &regset[24]);
+  supply_register_by_name (regcache, "mmcr0", &regset[32]);
+}
+
+/* Hardware Transactional Memory special-purpose register regset fill
+   function.  */
+
+static void
+ppc_fill_tm_sprregset (struct regcache *regcache, void *buf)
+{
+  int i, base;
+  char *regset = (char *) buf;
+
+  base = find_regno (regcache->tdesc, "tfhar");
+  for (i = 0; i < 3; i++)
+    collect_register (regcache, base + i, &regset[i * 8]);
+}
+
+/* Hardware Transactional Memory special-purpose register regset store
+   function.  */
+
+static void
+ppc_store_tm_sprregset (struct regcache *regcache, const void *buf)
+{
+  int i, base;
+  const char *regset = (const char *) buf;
+
+  base = find_regno (regcache->tdesc, "tfhar");
+  for (i = 0; i < 3; i++)
+    supply_register (regcache, base + i, &regset[i * 8]);
+}
+
+/* For the same reasons as the EBB regset, none of the HTM
+   checkpointed regsets have a fill function.  These registers are
+   only available if the inferior is in a transaction.  */
+
+/* Hardware Transactional Memory checkpointed general-purpose regset
+   store function.  */
+
+static void
+ppc_store_tm_cgprregset (struct regcache *regcache, const void *buf)
+{
+  int i, base, size, endian_offset;
+  const char *regset = (const char *) buf;
+
+  base = find_regno (regcache->tdesc, "cr0");
+  size = register_size (regcache->tdesc, base);
+
+  gdb_assert (size == 4 || size == 8);
+
+  for (i = 0; i < 32; i++)
+    supply_register (regcache, base + i, &regset[i * size]);
+
+  endian_offset = 0;
+
+  if ((size == 8) && (__BYTE_ORDER == __BIG_ENDIAN))
+    endian_offset = 4;
+
+  supply_register_by_name (regcache, "ccr",
+			   &regset[PT_CCR * size + endian_offset]);
+
+  supply_register_by_name (regcache, "cxer",
+			   &regset[PT_XER * size + endian_offset]);
+
+  supply_register_by_name (regcache, "clr", &regset[PT_LNK * size]);
+  supply_register_by_name (regcache, "cctr", &regset[PT_CTR * size]);
+}
+
+/* Hardware Transactional Memory checkpointed floating-point regset
+   store function.  */
+
+static void
+ppc_store_tm_cfprregset (struct regcache *regcache, const void *buf)
+{
+  int i, base;
+  const char *regset = (const char *) buf;
+
+  base = find_regno (regcache->tdesc, "cf0");
+
+  for (i = 0; i < 32; i++)
+    supply_register (regcache, base + i, &regset[i * 8]);
+
+  supply_register_by_name (regcache, "cfpscr", &regset[32 * 8]);
+}
+
+/* Hardware Transactional Memory checkpointed vector regset store
+   function.  */
+
+static void
+ppc_store_tm_cvrregset (struct regcache *regcache, const void *buf)
+{
+  int i, base;
+  const char *regset = (const char *) buf;
+  int vscr_offset = 0;
+
+  base = find_regno (regcache->tdesc, "cvr0");
+
+  for (i = 0; i < 32; i++)
+    supply_register (regcache, base + i, &regset[i * 16]);
+
+  if (__BYTE_ORDER == __BIG_ENDIAN)
+    vscr_offset = 12;
+
+  supply_register_by_name (regcache, "cvscr",
+			   &regset[32 * 16 + vscr_offset]);
+
+  supply_register_by_name (regcache, "cvrsave", &regset[33 * 16]);
+}
+
+/* Hardware Transactional Memory checkpointed vector-scalar regset
+   store function.  */
+
+static void
+ppc_store_tm_cvsxregset (struct regcache *regcache, const void *buf)
+{
+  int i, base;
+  const char *regset = (const char *) buf;
+
+  base = find_regno (regcache->tdesc, "cvs0h");
+  for (i = 0; i < 32; i++)
+    supply_register (regcache, base + i, &regset[i * 8]);
+}
+
+/* Hardware Transactional Memory checkpointed Program Priority
+   Register regset store function.  */
+
+static void
+ppc_store_tm_cpprregset (struct regcache *regcache, const void *buf)
+{
+  const char *cppr = (const char *) buf;
+
+  supply_register_by_name (regcache, "cppr", cppr);
+}
+
+/* Hardware Transactional Memory checkpointed Data Stream Control
+   Register regset store function.  */
+
+static void
+ppc_store_tm_cdscrregset (struct regcache *regcache, const void *buf)
+{
+  const char *cdscr = (const char *) buf;
+
+  supply_register_by_name (regcache, "cdscr", cdscr);
+}
+
+/* Hardware Transactional Memory checkpointed Target Address Register
+   regset store function.  */
+
+static void
+ppc_store_tm_ctarregset (struct regcache *regcache, const void *buf)
+{
+  const char *ctar = (const char *) buf;
+
+  supply_register_by_name (regcache, "ctar", ctar);
+}
+
 static void
 ppc_fill_vsxregset (struct regcache *regcache, void *buf)
 {
@@ -495,13 +788,9 @@ ppc_fill_vrregset (struct regcache *regcache, void *buf)
   if (__BYTE_ORDER == __BIG_ENDIAN)
     vscr_offset = 12;
 
-  /* Zero-pad the unused bytes in the fields for vscr and vrsave in
-     case they get displayed somewhere.  */
-  memset (&regset[32 * 16], 0, 16);
   collect_register_by_name (regcache, "vscr",
 			    &regset[32 * 16 + vscr_offset]);
 
-  memset (&regset[33 * 16], 0, 16);
   collect_register_by_name (regcache, "vrsave", &regset[33 * 16]);
 }
 
@@ -572,6 +861,32 @@ static struct regset_info ppc_regsets[] = {
      fetch them every time, but still fall back to PTRACE_PEEKUSER for the
      general registers.  Some kernels support these, but not the newer
      PPC_PTRACE_GETREGS.  */
+  { PTRACE_GETREGSET, PTRACE_SETREGSET, NT_PPC_TM_CTAR, 0, EXTENDED_REGS,
+    NULL, ppc_store_tm_ctarregset },
+  { PTRACE_GETREGSET, PTRACE_SETREGSET, NT_PPC_TM_CDSCR, 0, EXTENDED_REGS,
+    NULL, ppc_store_tm_cdscrregset },
+  { PTRACE_GETREGSET, PTRACE_SETREGSET, NT_PPC_TM_CPPR, 0, EXTENDED_REGS,
+    NULL, ppc_store_tm_cpprregset },
+  { PTRACE_GETREGSET, PTRACE_SETREGSET, NT_PPC_TM_CVSX, 0, EXTENDED_REGS,
+    NULL, ppc_store_tm_cvsxregset },
+  { PTRACE_GETREGSET, PTRACE_SETREGSET, NT_PPC_TM_CVMX, 0, EXTENDED_REGS,
+    NULL, ppc_store_tm_cvrregset },
+  { PTRACE_GETREGSET, PTRACE_SETREGSET, NT_PPC_TM_CFPR, 0, EXTENDED_REGS,
+    NULL, ppc_store_tm_cfprregset },
+  { PTRACE_GETREGSET, PTRACE_SETREGSET, NT_PPC_TM_CGPR, 0, EXTENDED_REGS,
+    NULL, ppc_store_tm_cgprregset },
+  { PTRACE_GETREGSET, PTRACE_SETREGSET, NT_PPC_TM_SPR, 0, EXTENDED_REGS,
+    ppc_fill_tm_sprregset, ppc_store_tm_sprregset },
+  { PTRACE_GETREGSET, PTRACE_SETREGSET, NT_PPC_EBB, 0, EXTENDED_REGS,
+    NULL, ppc_store_ebbregset },
+  { PTRACE_GETREGSET, PTRACE_SETREGSET, NT_PPC_PMU, 0, EXTENDED_REGS,
+    ppc_fill_pmuregset, ppc_store_pmuregset },
+  { PTRACE_GETREGSET, PTRACE_SETREGSET, NT_PPC_TAR, 0, EXTENDED_REGS,
+    ppc_fill_tarregset, ppc_store_tarregset },
+  { PTRACE_GETREGSET, PTRACE_SETREGSET, NT_PPC_PPR, 0, EXTENDED_REGS,
+    ppc_fill_pprregset, ppc_store_pprregset },
+  { PTRACE_GETREGSET, PTRACE_SETREGSET, NT_PPC_DSCR, 0, EXTENDED_REGS,
+    ppc_fill_dscrregset, ppc_store_dscrregset },
   { PTRACE_GETVSXREGS, PTRACE_SETVSXREGS, 0, 0, EXTENDED_REGS,
   ppc_fill_vsxregset, ppc_store_vsxregset },
   { PTRACE_GETVRREGS, PTRACE_SETVRREGS, 0, 0, EXTENDED_REGS,
@@ -629,6 +944,7 @@ ppc_arch_setup (void)
   /* The value of current_process ()->tdesc needs to be set for this
      call.  */
   ppc_get_auxv (AT_HWCAP, &ppc_hwcap);
+  ppc_get_auxv (AT_HWCAP2, &ppc_hwcap2);
 
   features.isa205 = ppc_linux_has_isa205 (ppc_hwcap);
 
@@ -637,6 +953,29 @@ ppc_arch_setup (void)
 
   if (ppc_hwcap & PPC_FEATURE_HAS_ALTIVEC)
     features.altivec = true;
+
+  if ((ppc_hwcap2 & PPC_FEATURE2_DSCR)
+      && ppc_check_regset (tid, NT_PPC_DSCR, PPC_LINUX_SIZEOF_DSCRREGSET)
+      && ppc_check_regset (tid, NT_PPC_PPR, PPC_LINUX_SIZEOF_PPRREGSET))
+    {
+      features.ppr_dscr = true;
+      if ((ppc_hwcap2 & PPC_FEATURE2_ARCH_2_07)
+	  && (ppc_hwcap2 & PPC_FEATURE2_TAR)
+	  && (ppc_hwcap2 & PPC_FEATURE2_EBB)
+	  && ppc_check_regset (tid, NT_PPC_TAR,
+			       PPC_LINUX_SIZEOF_TARREGSET)
+	  && ppc_check_regset (tid, NT_PPC_EBB,
+			       PPC_LINUX_SIZEOF_EBBREGSET)
+	  && ppc_check_regset (tid, NT_PPC_PMU,
+			       PPC_LINUX_SIZEOF_PMUREGSET))
+	{
+	  features.isa207 = true;
+	  if ((ppc_hwcap2 & PPC_FEATURE2_HTM)
+	      && ppc_check_regset (tid, NT_PPC_TM_SPR,
+				   PPC_LINUX_SIZEOF_TM_SPRREGSET))
+	    features.htm = true;
+	}
+    }
 
   if (ppc_hwcap & PPC_FEATURE_CELL)
     features.cell = true;
@@ -681,6 +1020,69 @@ ppc_arch_setup (void)
 	  regset->size = 32 * 4 + 8 + 4;
 	else
 	  regset->size = 0;
+	break;
+      case PTRACE_GETREGSET:
+	switch (regset->nt_type)
+	  {
+	  case NT_PPC_PPR:
+	    regset->size = (features.ppr_dscr ?
+			    PPC_LINUX_SIZEOF_PPRREGSET : 0);
+	    break;
+	  case NT_PPC_DSCR:
+	    regset->size = (features.ppr_dscr ?
+			    PPC_LINUX_SIZEOF_DSCRREGSET : 0);
+	    break;
+	  case NT_PPC_TAR:
+	    regset->size = (features.isa207 ?
+			    PPC_LINUX_SIZEOF_TARREGSET : 0);
+	    break;
+	  case NT_PPC_EBB:
+	    regset->size = (features.isa207 ?
+			    PPC_LINUX_SIZEOF_EBBREGSET : 0);
+	    break;
+	  case NT_PPC_PMU:
+	    regset->size = (features.isa207 ?
+			    PPC_LINUX_SIZEOF_PMUREGSET : 0);
+	    break;
+	  case NT_PPC_TM_SPR:
+	    regset->size = (features.htm ?
+			    PPC_LINUX_SIZEOF_TM_SPRREGSET : 0);
+	    break;
+	  case NT_PPC_TM_CGPR:
+	    if (features.wordsize == 4)
+	      regset->size = (features.htm ?
+			      PPC32_LINUX_SIZEOF_CGPRREGSET : 0);
+	    else
+	      regset->size = (features.htm ?
+			      PPC64_LINUX_SIZEOF_CGPRREGSET : 0);
+	    break;
+	  case NT_PPC_TM_CFPR:
+	    regset->size = (features.htm ?
+			    PPC_LINUX_SIZEOF_CFPRREGSET : 0);
+	    break;
+	  case NT_PPC_TM_CVMX:
+	    regset->size = (features.htm ?
+			    PPC_LINUX_SIZEOF_CVMXREGSET : 0);
+	    break;
+	  case NT_PPC_TM_CVSX:
+	    regset->size = (features.htm ?
+			    PPC_LINUX_SIZEOF_CVSXREGSET : 0);
+	    break;
+	  case NT_PPC_TM_CPPR:
+	    regset->size = (features.htm ?
+			    PPC_LINUX_SIZEOF_CPPRREGSET : 0);
+	    break;
+	  case NT_PPC_TM_CDSCR:
+	    regset->size = (features.htm ?
+			    PPC_LINUX_SIZEOF_CDSCRREGSET : 0);
+	    break;
+	  case NT_PPC_TM_CTAR:
+	    regset->size = (features.htm ?
+			    PPC_LINUX_SIZEOF_CTARREGSET : 0);
+	    break;
+	  default:
+	    break;
+	  }
 	break;
       default:
 	break;
@@ -3057,6 +3459,12 @@ ppc_get_ipa_tdesc_idx (void)
     return PPC_TDESC_ISA205_ALTIVEC;
   if (tdesc == tdesc_powerpc_isa205_vsx64l)
     return PPC_TDESC_ISA205_VSX;
+  if (tdesc == tdesc_powerpc_isa205_ppr_dscr_vsx64l)
+    return PPC_TDESC_ISA205_PPR_DSCR_VSX;
+  if (tdesc == tdesc_powerpc_isa207_vsx64l)
+    return PPC_TDESC_ISA207_VSX;
+  if (tdesc == tdesc_powerpc_isa207_htm_vsx64l)
+    return PPC_TDESC_ISA207_HTM_VSX;
 #endif
 
   if (tdesc == tdesc_powerpc_32l)
@@ -3073,6 +3481,12 @@ ppc_get_ipa_tdesc_idx (void)
     return PPC_TDESC_ISA205_ALTIVEC;
   if (tdesc == tdesc_powerpc_isa205_vsx32l)
     return PPC_TDESC_ISA205_VSX;
+  if (tdesc == tdesc_powerpc_isa205_ppr_dscr_vsx32l)
+    return PPC_TDESC_ISA205_PPR_DSCR_VSX;
+  if (tdesc == tdesc_powerpc_isa207_vsx32l)
+    return PPC_TDESC_ISA207_VSX;
+  if (tdesc == tdesc_powerpc_isa207_htm_vsx32l)
+    return PPC_TDESC_ISA207_HTM_VSX;
   if (tdesc == tdesc_powerpc_e500l)
     return PPC_TDESC_E500;
 
@@ -3131,6 +3545,9 @@ initialize_low_arch (void)
   init_registers_powerpc_isa205_32l ();
   init_registers_powerpc_isa205_altivec32l ();
   init_registers_powerpc_isa205_vsx32l ();
+  init_registers_powerpc_isa205_ppr_dscr_vsx32l ();
+  init_registers_powerpc_isa207_vsx32l ();
+  init_registers_powerpc_isa207_htm_vsx32l ();
   init_registers_powerpc_e500l ();
 #if __powerpc64__
   init_registers_powerpc_64l ();
@@ -3140,6 +3557,9 @@ initialize_low_arch (void)
   init_registers_powerpc_isa205_64l ();
   init_registers_powerpc_isa205_altivec64l ();
   init_registers_powerpc_isa205_vsx64l ();
+  init_registers_powerpc_isa205_ppr_dscr_vsx64l ();
+  init_registers_powerpc_isa207_vsx64l ();
+  init_registers_powerpc_isa207_htm_vsx64l ();
 #endif
 
   initialize_regsets_info (&ppc_regsets_info);

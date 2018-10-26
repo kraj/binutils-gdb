@@ -20829,6 +20829,15 @@ Note that this command has the same form as the command to connect
 to a serial line.  @value{GDBN} will automatically determine which
 kind of file you have specified and will make the appropriate kind
 of connection.
+The above command is identical to the command:
+
+@smallexample
+target remote unix::/tmp/gdb-socket1
+@end smallexample
+@noindent
+
+See below for the explanation of this syntax.
+
 This feature is not available if the host system does not support
 Unix domain sockets.
 
@@ -20839,6 +20848,7 @@ Unix domain sockets.
 @itemx target remote @code{tcp4:@var{host}:@var{port}}
 @itemx target remote @code{tcp6:@var{host}:@var{port}}
 @itemx target remote @code{tcp6:@var{[host]}:@var{port}}
+@itemx target remote @code{unix::@var{local-socket}}
 @itemx target extended-remote @code{@var{host}:@var{port}}
 @itemx target extended-remote @code{@var{[host]}:@var{port}}
 @itemx target extended-remote @code{tcp:@var{host}:@var{port}}
@@ -20846,8 +20856,10 @@ Unix domain sockets.
 @itemx target extended-remote @code{tcp4:@var{host}:@var{port}}
 @itemx target extended-remote @code{tcp6:@var{host}:@var{port}}
 @itemx target extended-remote @code{tcp6:@var{[host]}:@var{port}}
+@itemx target extended-remote @code{unix::@var{local-socket}}
 @cindex @acronym{TCP} port, @code{target remote}
-Debug using a @acronym{TCP} connection to @var{port} on @var{host}.
+Debug using a @acronym{TCP} connection to @var{port} on @var{host}
+or using the Unix domain socket @var{local-socket} on the local machine.
 The @var{host} may be either a host name, a numeric @acronym{IPv4}
 address, or a numeric @acronym{IPv6} address (with or without the
 square brackets to separate the address from the port); @var{port}
@@ -20895,6 +20907,16 @@ target remote :1234
 @noindent
 
 Note that the colon is still required here.
+Alternatively you can use a Unix domain socket:
+
+@smallexample
+target remote unix::/tmp/gdb-socket1
+@end smallexample
+@noindent
+
+This has the advantage that it'll not fail if the port number is already
+in use.
+
 
 @item target remote @code{udp:@var{host}:@var{port}}
 @itemx target remote @code{udp:@var{[host]}:@var{port}}
@@ -21075,9 +21097,19 @@ syntax is:
 target> gdbserver @var{comm} @var{program} [ @var{args} @dots{} ]
 @end smallexample
 
-@var{comm} is either a device name (to use a serial line), or a TCP
-hostname and portnumber, or @code{-} or @code{stdio} to use
-stdin/stdout of @code{gdbserver}.
+@code{gdbserver} waits passively for the host @value{GDBN} to communicate
+with it.
+
+@var{comm} may take several forms:
+
+@table @code
+@item @var{device}
+A serial line device.
+
+@item -
+@itemx stdio
+To use the stdin/stdout of @code{gdbserver}.
+
 For example, to debug Emacs with the argument
 @samp{foo.txt} and communicate with @value{GDBN} over the serial port
 @file{/dev/com1}:
@@ -21086,8 +21118,27 @@ For example, to debug Emacs with the argument
 target> gdbserver /dev/com1 emacs foo.txt
 @end smallexample
 
-@code{gdbserver} waits passively for the host @value{GDBN} to communicate
-with it.
+The @code{stdio} connection is useful when starting @code{gdbserver}
+with ssh:
+
+@smallexample
+(gdb) target remote | ssh -T hostname gdbserver - hello
+@end smallexample
+
+The @samp{-T} option to ssh is provided because we don't need a remote pty,
+and we don't want escape-character handling.  Ssh does this by default when
+a command is provided, the flag is provided to make it explicit.
+You could elide it if you want to.
+
+Programs started with stdio-connected gdbserver have @file{/dev/null} for
+@code{stdin}, and @code{stdout},@code{stderr} are sent back to gdb for
+display through a pipe connected to gdbserver.
+Both @code{stdout} and @code{stderr} use the same pipe.
+
+@item @var{host}:@var{port}
+@itemx tcp:@var{host}:@var{port}
+@itemx tcp4:@var{host}:@var{port}
+To use a @acronym{TCP} @acronym{IPv4} socket connection on port number @var{port}.
 
 To use a TCP connection instead of a serial line:
 
@@ -21107,22 +21158,21 @@ conflicts with another service, @code{gdbserver} prints an error message
 and exits.}  You must use the same port number with the host @value{GDBN}
 @code{target remote} command.
 
-The @code{stdio} connection is useful when starting @code{gdbserver}
-with ssh:
+
+@item tcp6:@var{host}:@var{port}
+To use a @acronym{TCP} @acronym{IPv6} socket connection on port number @var{port}.
+
+@item unix:@var{host}:@var{local-socket}
+To use a Unix domain socket.  This will create a socket with the file
+system entry @var{local-socket} and listen on that.  For example:
 
 @smallexample
-(gdb) target remote | ssh -T hostname gdbserver - hello
+target> gdbserver unix:localhost:/tmp/gdb-socket0 emacs foo.txt
 @end smallexample
 
-The @samp{-T} option to ssh is provided because we don't need a remote pty,
-and we don't want escape-character handling.  Ssh does this by default when
-a command is provided, the flag is provided to make it explicit.
-You could elide it if you want to.
+@var{host} must either be the empty string or the literal string @code{localhost}.
+@end table
 
-Programs started with stdio-connected gdbserver have @file{/dev/null} for
-@code{stdin}, and @code{stdout},@code{stderr} are sent back to gdb for
-display through a pipe connected to gdbserver.
-Both @code{stdout} and @code{stderr} use the same pipe.
 
 @anchor{Attaching to a program}
 @subsubsection Attaching to a Running Program
@@ -23565,6 +23615,7 @@ all uses of @value{GDBN} with the architecture, both native and cross.
 * PowerPC::
 * Nios II::
 * Sparc64::
+* S12Z::
 @end menu
 
 @node AArch64
@@ -24036,6 +24087,21 @@ variable "shmaddr":
 @end smallexample
 
 @end table
+
+@node S12Z
+@subsection S12Z
+@cindex S12Z support
+
+When @value{GDBN} is debugging the S12Z architecture,
+it provides the following special command:
+
+@table @code
+@item maint info bdccsr
+@kindex maint info bdccsr@r{, S12Z}
+This command displays the current value of the microprocessor's
+BDCCSR register.
+@end table
+
 
 @node Controlling GDB
 @chapter Controlling @value{GDBN}
@@ -26779,12 +26845,6 @@ lines.  Positive counts increase the height, while negative counts
 decrease it.  The @var{name} parameter can be one of @code{src} (the
 source window), @code{cmd} (the command window), @code{asm} (the
 disassembly window), or @code{regs} (the register display window).
-
-@item tabset @var{nchars}
-@kindex tabset
-Set the width of tab stops to be @var{nchars} characters.  This
-setting affects the display of TAB characters in the source and
-assembly windows.
 @end table
 
 @node TUI Configuration
@@ -26838,6 +26898,13 @@ Use extra bright or bold mode.
 @item bold-standout
 Use extra bright or bold and standout mode.
 @end table
+
+@item set tui tab-width @var{nchars}
+@kindex set tui tab-width
+@kindex tabset
+Set the width of tab stops to be @var{nchars} characters.  This
+setting affects the display of TAB characters in the source and
+assembly windows.
 @end table
 
 @node Emacs
@@ -43125,6 +43192,66 @@ contain registers @samp{ev0h} through @samp{ev31h}, @samp{acc}, and
 these to present registers @samp{ev0} through @samp{ev31} to the
 user.
 
+The @samp{org.gnu.gdb.power.ppr} feature is optional.  It should
+contain the 64-bit register @samp{ppr}.
+
+The @samp{org.gnu.gdb.power.dscr} feature is optional.  It should
+contain the 64-bit register @samp{dscr}.
+
+The @samp{org.gnu.gdb.power.tar} feature is optional.  It should
+contain the 64-bit register @samp{tar}.
+
+The @samp{org.gnu.gdb.power.ebb} feature is optional.  It should
+contain registers @samp{bescr}, @samp{ebbhr} and @samp{ebbrr}, all
+64-bit wide.
+
+The @samp{org.gnu.gdb.power.linux.pmu} feature is optional.  It should
+contain registers @samp{mmcr0}, @samp{mmcr2}, @samp{siar}, @samp{sdar}
+and @samp{sier}, all 64-bit wide.  This is the subset of the isa 2.07
+server PMU registers provided by @sc{gnu}/Linux.
+
+The @samp{org.gnu.gdb.power.htm.spr} feature is optional.  It should
+contain registers @samp{tfhar}, @samp{texasr} and @samp{tfiar}, all
+64-bit wide.
+
+The @samp{org.gnu.gdb.power.htm.core} feature is optional.  It should
+contain the checkpointed general-purpose registers @samp{cr0} through
+@samp{cr31}, as well as the checkpointed registers @samp{clr} and
+@samp{cctr}.  These registers may all be either 32-bit or 64-bit
+depending on the target.  It should also contain the checkpointed
+registers @samp{ccr} and @samp{cxer}, which should both be 32-bit
+wide.
+
+The @samp{org.gnu.gdb.power.htm.fpu} feature is optional.  It should
+contain the checkpointed 64-bit floating-point registers @samp{cf0}
+through @samp{cf31}, as well as the checkpointed 64-bit register
+@samp{cfpscr}.
+
+The @samp{org.gnu.gdb.power.htm.altivec} feature is optional.  It
+should contain the checkpointed altivec registers @samp{cvr0} through
+@samp{cvr31}, all 128-bit wide.  It should also contain the
+checkpointed registers @samp{cvscr} and @samp{cvrsave}, both 32-bit
+wide.
+
+The @samp{org.gnu.gdb.power.htm.vsx} feature is optional.  It should
+contain registers @samp{cvs0h} through @samp{cvs31h}.  @value{GDBN}
+will combine these registers with the checkpointed floating point
+registers (@samp{cf0} through @samp{cf31}) and the checkpointed
+altivec registers (@samp{cvr0} through @samp{cvr31}) to present the
+128-bit wide checkpointed vector-scalar registers @samp{cvs0} through
+@samp{cvs63}.  Therefore, this feature requires both
+@samp{org.gnu.gdb.power.htm.altivec} and
+@samp{org.gnu.gdb.power.htm.fpu}.
+
+The @samp{org.gnu.gdb.power.htm.ppr} feature is optional.  It should
+contain the 64-bit checkpointed register @samp{cppr}.
+
+The @samp{org.gnu.gdb.power.htm.dscr} feature is optional.  It should
+contain the 64-bit checkpointed register @samp{cdscr}.
+
+The @samp{org.gnu.gdb.power.htm.tar} feature is optional.  It should
+contain the 64-bit checkpointed register @samp{ctar}.
+
 @node S/390 and System z Features
 @subsection S/390 and System z Features
 @cindex target descriptions, S/390 features
@@ -43957,7 +44084,7 @@ Usage (host side):
 @end ifset
 
 You need an unstripped copy of the target program on your host system, since
-@value{GDBN} needs to examine it's symbol tables and such.  Start up @value{GDBN} as you normally
+@value{GDBN} needs to examine its symbol tables and such.  Start up @value{GDBN} as you normally
 would, with the target program as the first argument.  (You may need to use the
 @option{--baud} option if the serial line is running at anything except 9600 baud.)
 That is @code{gdb TARGET-PROG}, or @code{gdb --baud BAUD TARGET-PROG}.  After that, the only

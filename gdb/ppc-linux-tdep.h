@@ -32,6 +32,14 @@ const struct regset *ppc_linux_fpregset (void);
 const struct regset *ppc_linux_vrregset (struct gdbarch *gdbarch);
 const struct regset *ppc_linux_vsxregset (void);
 
+/* Get the checkpointed GPR regset that matches the target wordsize
+   and byteorder of GDBARCH.  */
+const struct regset *ppc_linux_cgprregset (struct gdbarch *gdbarch);
+
+/* Get the checkpointed vector regset that matches the target byte
+   order.  */
+const struct regset* ppc_linux_cvmxregset (struct gdbarch *gdbarch);
+
 /* Extra register number constants.  The Linux kernel stores a
    "trap" code and the original value of r3 into special "registers";
    these need to be saved and restored when performing an inferior
@@ -43,5 +51,18 @@ enum {
 
 /* Return 1 if PPC_ORIG_R3_REGNUM and PPC_TRAP_REGNUM are usable.  */
 int ppc_linux_trap_reg_p (struct gdbarch *gdbarch);
+
+/* Additional register sets, defined in ppc-linux-tdep.c.  */
+extern const struct regset ppc32_linux_pprregset;
+extern const struct regset ppc32_linux_dscrregset;
+extern const struct regset ppc32_linux_tarregset;
+extern const struct regset ppc32_linux_ebbregset;
+extern const struct regset ppc32_linux_pmuregset;
+extern const struct regset ppc32_linux_tm_sprregset;
+extern const struct regset ppc32_linux_cfprregset;
+extern const struct regset ppc32_linux_cvsxregset;
+extern const struct regset ppc32_linux_cpprregset;
+extern const struct regset ppc32_linux_cdscrregset;
+extern const struct regset ppc32_linux_ctarregset;
 
 #endif /* PPC_LINUX_TDEP_H */

@@ -1,3 +1,110 @@
+2018-10-26  Pedro Franco de Carvalho  <pedromfc@linux.ibm.com>
+
+	* configure.srv (ipa_ppc_linux_regobj): Add
+	powerpc-isa207-htm-vsx32l-ipa.o and
+	powerpc-isa207-htm-vsx64l-ipa.o.
+	(powerpc*-*-linux*): Add powerpc-isa207-htm-vsx32l.o and
+	powerpc-isa207-htm-vsx64l.o to srv_regobj.  Add
+	rs6000/power-htm-spr.xml, rs6000/power-htm-core.xml,
+	rs6000/power64-htm-core.xml, rs6000/power-htm-fpu.xml,
+	rs6000/power-htm-altivec.xml, rs6000/power-htm-vsx.xml,
+	rs6000/power-htm-ppr.xml, rs6000/power-htm-dscr.xml,
+	rs6000/power-htm-tar.xml, rs6000/powerpc-isa207-htm-vsx32l.xml,
+	and rs6000/powerpc-isa207-htm-vsx64l.xml to srv_xmlfiles.
+	* linux-ppc-tdesc-init.h (enum ppc_linux_tdesc)
+	<PPC_TDESC_ISA207_HTM_VSX>: New enum value.
+	(init_registers_powerpc_isa207_htm_vsx32l)
+	(init_registers_powerpc_isa207_htm_vsx64l): Declare.
+	* linux-ppc-low.c (ppc_fill_tm_sprregset, ppc_store_tm_sprregset)
+	(ppc_store_tm_cgprregset, ppc_store_tm_cfprregset)
+	(ppc_store_tm_cvrregset, ppc_store_tm_cvsxregset)
+	(ppc_store_tm_cpprregset, ppc_store_tm_cdscrregset)
+	(ppc_store_tm_ctarregset): New functions.
+	(ppc_regsets): Add entries for HTM regsets.
+	(ppc_arch_setup): Set htm in features struct when needed.  Set
+	sizes for the HTM regsets.
+	(ppc_get_ipa_tdesc_idx): Return PPC_TDESC_ISA207_HTM_VSX.
+	(initialize_low_arch): Call
+	init_registers_powerpc_isa207_htm_vsx32l and
+	init_registers_powerpc_isa207_htm_vsx64l.
+	* linux-ppc-ipa.c (get_ipa_tdesc): Handle
+	PPC_TDESC_ISA207_HTM_VSX.
+	(initialize_low_tracepoint): Call
+	init_registers_powerpc_isa207_htm_vsx32l and
+	init_registers_powerpc_isa207_htm_vsx64l.
+
+2018-10-26  Pedro Franco de Carvalho  <pedromfc@linux.ibm.com>
+
+	* configure.srv (powerpc*-*-linux*): Add rs6000/power-ebb.xml and
+	rs6000/power-linux-pmu.xml to srv_xmlfiles.
+	* linux-ppc-low.c (ppc_store_ebbregset, ppc_fill_pmuregset)
+	(ppc_store_pmuregset): New functions.
+	(ppc_regsets): Add entries for ebb and pmu regsets.
+	(ppc_arch_setup): Set isa207 in features struct if the ebb and
+	pmu regsets are available.  Set sizes for these regsets.
+
+2018-10-26  Pedro Franco de Carvalho  <pedromfc@linux.ibm.com>
+
+	* configure.srv (ipa_ppc_linux_regobj): Add
+	powerpc-isa207-vsx64l-ipa.o and powerpc-isa207-vsx32l-ipa.o.
+	(powerpc*-*-linux*): Add powerpc-isa207-vsx32l.o and
+	powerpc-isa207-vsx64l.o to srv_regobj, add rs6000/power-tar.xml,
+	rs6000/powerpc-isa207-vsx32l.xml, and
+	rs6000/powerpc-isa207-vsx64l.xml to srv_xmlfiles.
+	* linux-ppc-tdesc-init.h (enum ppc_linux_tdesc)
+	<PPC_TDESC_ISA207_VSX>: New enum value.
+	(init_registers_powerpc_isa207_vsx32l): Declare.
+	(init_registers_powerpc_isa207_vsx64l): Declare.
+	* linux-ppc-low.c (ppc_fill_tarregset): New function.
+	(ppc_store_tarregset): New function.
+	(ppc_regsets): Add entry for the TAR regset.
+	(ppc_arch_setup): Set isa207 in features struct when needed.  Set
+	size for the TAR regsets.
+	(ppc_get_ipa_tdesc_idx): Return PPC_TDESC_ISA207_VSX.
+	(initialize_low_arch): Call init_registers_powerpc_isa207_vsx32l
+	and init_registers_powerpc_isa207_vsx64l.
+	* linux-ppc-ipa.c (get_ipa_tdesc): Handle PPC_TDESC_ISA207_VSX.
+	(initialize_low_tracepoint): Call
+	init_registers_powerpc_isa207_vsx32l and
+	init_registers_powerpc_isa207_vsx64l.
+
+2018-10-26  Edjunior Barbosa Machado  <emachado@linux.vnet.ibm.com>
+	    Pedro Franco de Carvalho  <pedromfc@linux.ibm.com>
+
+	* configure.srv (ipa_ppc_linux_regobj): Add
+	powerpc-isa205-ppr-dscr-vsx32l-ipa.o and
+	powerpc-isa205-ppr-dscr-vsx64l-ipa.o.
+	(powerpc*-*-linux*): Add powerpc-isa205-ppr-dscr-vsx32l.o and
+	powerpc-isa205-ppr-dscr-vsx64l.o to srv_regobj, add
+	rs6000/power-dscr.xml, rs6000/power-ppr.xml,
+	rs6000/powerpc-isa205-ppr-dscr-vsx32l.xml and
+	rs6000/powerpc-isa205-ppr-dscr-vsx64l.xml to srv_xmlfiles.
+	* linux-ppc-tdesc-init.h (enum ppc_linux_tdesc)
+	<PPC_TDESC_ISA205_PPR_DSCR_VSX>: New enum value.
+	(init_registers_powerpc_isa205_ppr_dscr_vsx32l)
+	(init_registers_powerpc_isa205_ppr_dscr_vsx64l): Declare.
+	* linux-ppc-low.c: Include "elf/common.h" and <sys/uio.h>.
+	(ppc_hwcap): Add comment.
+	(ppc_hwcap2): New global.
+	(ppc_check_regset, ppc_fill_pprregset, ppc_store_pprregset)
+	(ppc_fill_dscrregset, ppc_store_dscrregset): New functions.
+	(ppc_regsets): Add entries for the DSCR and PPR regsets.
+	(ppc_arch_setup): Get AT_HWCAP2.  Set ppr_dscr in features struct
+	when needed.  Set sizes for the the DSCR and PPR regsets.
+	(ppc_get_ipa_tdesc_idx): Return PPC_TDESC_ISA205_PPR_DSCR_VSX.
+	(initialize_low_arch): Call
+	init_registers_powerpc_isa205_ppr_dscr_vsx32l and
+	init_registers_powerpc_isa205_ppr_dscr_vsx64l.
+	* linux-ppc-ipa.c (get_ipa_tdesc): Handle
+	PPC_TDESC_ISA205_PPR_DSCR_VSX.
+	(initialize_low_tracepoint): Call
+	init_registers_powerpc_isa205_ppr_dscr_vsx32l and
+	init_registers_powerpc_isa205_ppr_dscr_vsx64l.
+
+2018-10-26  Pedro Franco de Carvalho  <pedromfc@linux.ibm.com>
+
+	* linux-ppc-low.c (ppc_fill_vrregset): Remove memset calls.
+
 2018-10-10  Sergio Durigan Junior  <sergiodj@redhat.com>
 	    Simon Marchi <simark@simark.ca>
 

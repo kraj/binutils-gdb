@@ -1,3 +1,57 @@
+2018-10-26  Pedro Franco de Carvalho  <pedromfc@linux.ibm.com>
+
+	* gdb.arch/powerpc-htm-regs.c: New file.
+	* gdb.arch/powerpc-htm-regs.exp: New file.
+
+2018-10-26  Pedro Franco de Carvalho  <pedromfc@linux.ibm.com>
+
+	* gdb.arch/powerpc-tar.c: New file.
+	* gdb.arch/powerpc-tar.exp: New file.
+
+2018-10-26  Pedro Franco de Carvalho  <pedromfc@linux.ibm.com>
+
+	* gdb.arch/powerpc-ppr-dscr.c: New file.
+	* gdb.arch/powerpc-ppr-dscr.exp: New file.
+
+2018-10-25  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.base/valgrind-db-attach.exp: Rewrite to use vgdb.
+
+2018-10-24  Tom de Vries  <tdevries@suse.de>
+
+	* lib/gdb.exp (gdb_test_multiple): Log wait status on process no
+	longer exists error.
+
+2018-10-24  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.base/catch-follow-exec.exp: Rewrite using gdb_test.
+
+2018-10-24  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.base/valgrind-db-attach.exp: Handle removed support for
+	--db-attach in valgrind.
+
+2018-10-23  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.arch/riscv-reg-aliases.c: New file.
+	* gdb.arch/riscv-reg-aliases.exp: New file.
+
+2018-10-19  Alan Hayward  <alan.hayward@arm.com>
+
+	* gdb.python/py-cmd.exp: Check for gdb_prompt.
+
+2018-10-19  Alan Hayward  <alan.hayward@arm.com>
+
+	* gdb.base/vla-optimized-out.exp: Allow either optimized out or 6.
+
+2018-10-19  Alan Hayward  <alan.hayward@arm.com>
+
+	* gdb.cp/ovldbreak.exp: Fix regexps.
+
+2018-10-19  Alan Hayward  <alan.hayward@arm.com>
+
+	* gdb.compile/compile-cplus-print.exp: Start inferior earlier.
+
 2018-10-18  Sergio Durigan Junior  <sergiodj@redhat.com>
 
 	PR cli/23785
