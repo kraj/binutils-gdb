@@ -20,6 +20,7 @@
 #define FILESTUFF_H
 
 #include <dirent.h>
+#include <fcntl.h>
 
 /* Note all the file descriptors which are open when this is called.
    These file descriptors will not be closed by close_most_fds.  */
@@ -47,6 +48,16 @@ extern void close_most_fds (void);
 
 extern int gdb_open_cloexec (const char *filename, int flags,
 			     /* mode_t */ unsigned long mode);
+
+/* Like mkstemp, but ensures that the file descriptor is
+   close-on-exec.  */
+
+static inline int
+gdb_mkostemp_cloexec (char *name_template, int flags = 0)
+{
+  /* gnulib provides a mkostemp replacement if needed.  */
+  return mkostemp (name_template, flags | O_CLOEXEC);
+}
 
 /* Convenience wrapper for the above, which takes the filename as an
    std::string.  */
@@ -121,5 +132,15 @@ typedef std::unique_ptr<DIR, gdb_dir_deleter> gdb_dir_up;
    If the result is false then *ERRNO_PTR is set to a useful value assuming
    we're expecting a regular file.  */
 extern bool is_regular_file (const char *name, int *errno_ptr);
+
+
+/* A cheap (as in low-quality) recursive mkdir.  Try to create all the
+   parents directories up to DIR and DIR itself.  Stop if we hit an
+   error along the way.  There is no attempt to remove created
+   directories in case of failure.
+
+   Returns false on failure and sets errno.  */
+
+extern bool mkdir_recursive (const char *dir);
 
 #endif /* FILESTUFF_H */

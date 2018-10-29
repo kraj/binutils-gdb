@@ -47,6 +47,7 @@
 #include "procfs.h"
 #include "observable.h"
 #include "common/scoped_fd.h"
+#include "common/pathstuff.h"
 
 /* This module provides the interface between GDB and the
    /proc file system, which is used on many versions of Unix
@@ -3035,11 +3036,11 @@ procfs_target::create_inferior (const char *exec_file,
 				const std::string &allargs,
 				char **env, int from_tty)
 {
-  char *shell_file = getenv ("SHELL");
+  const char *shell_file = get_shell ();
   char *tryname;
   int pid;
 
-  if (shell_file != NULL && strchr (shell_file, '/') == NULL)
+  if (strchr (shell_file, '/') == NULL)
     {
 
       /* We will be looking down the PATH to find shell_file.  If we

@@ -190,3 +190,26 @@ get_standard_cache_dir ()
 
   return {};
 }
+
+/* See common/pathstuff.h.  */
+
+const char *
+get_shell ()
+{
+  const char *ret = getenv ("SHELL");
+  if (ret == NULL)
+    ret = "/bin/sh";
+
+  return ret;
+}
+
+/* See common/pathstuff.h.  */
+
+gdb::char_vector
+make_temp_filename (const std::string &f)
+{
+  gdb::char_vector filename_temp (f.length () + 8);
+  strcpy (filename_temp.data (), f.c_str ());
+  strcat (filename_temp.data () + f.size (), "-XXXXXX");
+  return filename_temp;
+}

@@ -19,6 +19,7 @@
 
 #include "defs.h"
 
+#include "common/filestuff.h"
 #include "common/scoped_fd.h"
 #include "config.h"
 #include "selftest.h"
@@ -31,7 +32,7 @@ static void
 test_destroy ()
 {
   char filename[] = "scoped_fd-selftest-XXXXXX";
-  int fd = mkstemp (filename);
+  int fd = gdb_mkostemp_cloexec (filename);
   SELF_CHECK (fd >= 0);
 
   unlink (filename);
@@ -50,7 +51,7 @@ static void
 test_release ()
 {
   char filename[] = "scoped_fd-selftest-XXXXXX";
-  int fd = mkstemp (filename);
+  int fd = gdb_mkostemp_cloexec (filename);
   SELF_CHECK (fd >= 0);
 
   unlink (filename);
@@ -64,12 +65,29 @@ test_release ()
   SELF_CHECK (close (fd) == 0 || errno != EBADF);
 }
 
+/* Test that the file descriptor can be converted to a FILE *.  */
+static void
+test_to_file ()
+{
+  char filename[] = "scoped_fd-selftest-XXXXXX";
+
+  ::scoped_fd sfd (gdb_mkostemp_cloexec (filename));
+  SELF_CHECK (sfd.get () >= 0);
+
+  unlink (filename);
+  
+  gdb_file_up file = sfd.to_file ("rw");
+  SELF_CHECK (file != nullptr);
+  SELF_CHECK (sfd.get () == -1);
+}
+
 /* Run selftests.  */
 static void
 run_tests ()
 {
   test_destroy ();
   test_release ();
+  test_to_file ();
 }
 
 } /* namespace scoped_fd */

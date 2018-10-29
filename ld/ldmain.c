@@ -77,7 +77,7 @@ int ld_canon_sysroot_len;
 int g_switch_value = 8;
 
 /* Nonzero means print names of input files as processed.  */
-bfd_boolean trace_files;
+unsigned int trace_files;
 
 /* Nonzero means report actions taken by the linker, and describe the linker script in use.  */
 bfd_boolean verbose;
@@ -413,7 +413,7 @@ main (int argc, char **argv)
       einfo (_("%F%P: no input files\n"));
     }
 
-  if (trace_files)
+  if (verbose)
     info_msg (_("%P: mode %s\n"), emulation);
 
   ldemul_after_parse ();
@@ -478,7 +478,7 @@ main (int argc, char **argv)
      want to ignore for relocatable output?)  */
   if (!config.make_executable && !force_make_executable)
     {
-      if (trace_files)
+      if (verbose)
 	einfo (_("%P: link errors found, deleting executable `%s'\n"),
 	       output_filename);
 
@@ -584,21 +584,25 @@ static const char *
 get_sysroot (int argc, char **argv)
 {
   int i;
-  const char *path;
+  const char *path = NULL;
 
   for (i = 1; i < argc; i++)
     if (CONST_STRNEQ (argv[i], "--sysroot="))
-      return argv[i] + strlen ("--sysroot=");
+      path = argv[i] + strlen ("--sysroot=");
 
-  path = get_relative_sysroot (BINDIR);
-  if (path)
-    return path;
+  if (!path)
+    path = get_relative_sysroot (BINDIR);
 
-  path = get_relative_sysroot (TOOLBINDIR);
-  if (path)
-    return path;
+  if (!path)
+    path = get_relative_sysroot (TOOLBINDIR);
 
-  return TARGET_SYSTEM_ROOT;
+  if (!path)
+    path = TARGET_SYSTEM_ROOT;
+
+  if (IS_DIR_SEPARATOR (*path) && path[1] == 0)
+    path = "";
+
+  return path;
 }
 
 /* We need to find any explicitly given emulation in order to initialize the
@@ -829,7 +833,7 @@ add_archive_element (struct bfd_link_info *info,
 	    {
 	      /* Don't claim new IR symbols after all IR symbols have
 		 been claimed.  */
-	      if (trace_files || verbose)
+	      if (verbose)
 		info_msg ("%pI: no new IR symbols to claimi\n",
 			  &orig_input);
 	      input->flags.claimed = 0;
@@ -922,7 +926,9 @@ add_archive_element (struct bfd_link_info *info,
 	minfo ("(%s)\n", name);
     }
 
-  if (trace_files || verbose)
+  if (verbose
+      || trace_files > 1
+      || (trace_files && bfd_is_thin_archive (orig_input.the_bfd->my_archive)))
     info_msg ("%pI\n", &orig_input);
   return TRUE;
 }
