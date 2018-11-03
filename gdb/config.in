@@ -68,9 +68,6 @@
 /* Define if self-testing features should be enabled */
 #undef GDB_SELF_TEST
 
-/* Define to 1 if AF_LOCAL is defined or declared by sys/socket.h. */
-#undef HAVE_AF_LOCAL
-
 /* Define to 1 if you have `alloca', as a function or macro. */
 #undef HAVE_ALLOCA
 
@@ -290,9 +287,6 @@
 
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
-
-/* Define to 1 if you have the `mkdtemp' function. */
-#undef HAVE_MKDTEMP
 
 /* Define to 1 if you have a working `mmap' system call. */
 #undef HAVE_MMAP

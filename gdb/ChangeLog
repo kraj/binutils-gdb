@@ -1,14 +1,123 @@
+2018-12-02  Joel Brobecker  <brobecker@adacore.com>
+
+	* aarch64-ravenscar-thread.h, aarch64-ravenscar-thread.c: New files.
+	* aarch64-tdep.c: #include "aarch64-ravenscar-thread.h".
+	(aarch64_gdbarch_init): Add call to register_aarch64_ravenscar_ops.
+	* Makefile.in (ALL_64_TARGET_OBS): Add aarch64-ravenscar-thread.o.
+	(HFILES_NO_SRCDIR): Add aarch64-ravenscar-thread.h.
+	(ALLDEPFILES): Add aarch64-ravenscar-thread.c.
+	* configure.tgt (cpu_obs) [aarch64*-*-*]: Add ravenscar-thread.o
+	and aarch64-ravenscar-thread.o.
+	* NEWS: Add entry documenting Ravenscar tasking support
+	on AArch64 ELF.
+
+2018-11-02  Matthew Malcomson  <matthew.malcomson@arm.com>
+
+	* symtab.c (info_functions_command): Initialize quiet flag.
+	* stack.c (info_args_command): Likewise.
+
+2018-11-01  Jim Wilson  <jimw@sifive.com>
+
+	* riscv-tdep.c (riscv_breakpoint_kind_from_pc): New local unaligned_p.
+	Set if pcptr if unaligned.  Return 2 if unaligned_p true.  Update
+	debugging messages.
+
+2018-11-01  Joel Brobecker  <brobecker@adacore.com>
+
+	* ada-lang.c (ada_watch_location_expression): New function.
+	(ada_language_defn): Set la_watch_location_expression to
+	ada_watch_location_expression.
+
+2018-11-01  Joel Brobecker  <brobecker@adacore.com>
+
+	* print-utils.c (int_string): Remove unnecessary trailing spaces.
+
+2018-11-01  Joel Brobecker  <brobecker@adacore.com>
+
+	* rs6000-tdep.c (skip_prologue): Fix potential negative left
+	shifting.
+
+2018-11-01  Jerome Guitton  <guitton@adacore.com>
+	    Joel Brobecker  <brobecker@adacore.com>
+
+	* defs.h (enum gdb_osabi): Add GDB_OSABI_PIKEOS.
+	* osabi.c (gdb_osabi_names): Add name for GDB_OSABI_PIKEOS.
+	* arm-pikeos-tdep.c: New file.
+	* configure.tgt: Add arm-pikeos-tdep.o to the case of ARM
+	embedded system.
+	* Makefile.in (ALL_TARGET_OBS): Add arm-pikeos-tdep.o.
+
+2018-11-01  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* common/pathstuff.c (get_standard_temp_dir): New.
+	* common/pathstuff.h (get_standard_temp_dir): New.
+	* config.in: Re-generate.
+	* configure: Re-generate.
+	* configure.ac: Don't check for mkdtemp.
+	* gnulib/aclocal-m4-deps.mk: Re-generate.
+	* gnulib/aclocal.m4: Re-generate.
+	* gnulib/config.in: Re-generate.
+	* gnulib/configure: Re-generate.
+	* gnulib/import/Makefile.am: Re-generate.
+	* gnulib/import/Makefile.in: Re-generate.
+	* gnulib/import/m4/gnulib-cache.m4: Re-generate.
+	* gnulib/import/m4/gnulib-comp.m4: Re-generate.
+	* gnulib/import/m4/mkdtemp.m4: New file.
+	* gnulib/import/mkdtemp.c: New file.
+	* gnulib/update-gnulib.sh (IMPORTED_GNULIB_MODULES):
+	Add mkdtemp module.
+	* unittests/mkdir-recursive-selftests.c (test): Use
+	get_standard_temp_dir.
+	(_initialize_mkdir_recursive_selftests): Remove HAVE_MKDTEMP
+	ifdef.
+	* compile/compile.c (get_compile_file_tempdir): Likewise.
+
+2018-11-01  Sangamesh Mallayya <sangamesh.swamy@in.ibm.com>
+
+	* rs6000-aix-tdep.c: Include "trad-frame.h" and "frame-unwind.h".
+	(SIG_FRAME_LR_OFFSET64): New define.
+	(SIG_FRAME_FP_OFFSET64): New define.
+	(aix_sighandle_frame_cache): New Function.
+	(aix_sighandle_frame_this_id): New Function.
+	(aix_sighandle_frame_prev_register): New Function.
+	(aix_sighandle_frame_sniffer): New Function.
+	(aix_sighandle_frame_unwind): New global variable.
+	(rs6000_aix_init_osabi): Install new frame unwinder.
+
+2018-10-31  Sergio Durigan Junior  <sergiodj@redhat.com>
+
+	PR gdb/23835
+	* common/common-defs.h: Don't redefine _FORTIFY_SOURCE if it's
+	already defined.
+
+2018-10-31  Pedro Franco de Carvalho  <pedromfc@linux.ibm.com>
+
+	* ppc-linux-nat.c: Include nat/linux-ptrace.h.
+
+2018-10-31  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* dwarf2read.c (struct dwarf2_cu): Add producer_is_icc field.
+	(producer_is_icc): New function.
+	(check_producer): Set producer_is_icc field on dwarf2_cu.
+	(dwarf2_init_integer_type): New function.
+	(read_base_type): Call dwarf2_init_integer_type instead of
+	init_integer_type in all cases.
+	(dwarf2_cu::dwarf2_cu): Initialise producer_is_icc field.
+	* valprint.c (maybe_negate_by_bytes): Add an assertion that the
+	LEN is greater than 0.
+
+2018-10-30  Tom Tromey  <tom@tromey.com>
+
+	* main.c (captured_main_1): Check return value of bfd_init.
+
+2018-10-29  Sergio Durigan Junior  <sergiodj@redhat.com>
+
+	* common/offset-type.h (DEFINE_OFFSET_REL_OP): Delete.
+	Adjust comments.
+
 2018-10-29  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
 
 	* procfs.c: Include common/pathstuff.h.
-
-2018-10-29   John Darrington <john@darrington.wattle.id.au>
-
-	* configure.ac: New test HAVE_AF_LOCAL
-	* common/netstuff.c (parse_connection_spec) [prefixes]: Only
-	compile "unix:" if HAVE_AF_LOCAL is true.
-	* configure: Regenerate.
-	* config.in: Regenerate.
 
 2018-10-28  Andrew Burgess  <andrew.burgess@embecosm.com>
 
