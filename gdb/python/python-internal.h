@@ -656,12 +656,12 @@ int gdbpy_print_python_errors_p (void);
 void gdbpy_print_stack (void);
 void gdbpy_handle_exception () ATTRIBUTE_NORETURN;
 
-PyObject *python_string_to_unicode (PyObject *obj);
+gdbpy_ref<> python_string_to_unicode (PyObject *obj);
 gdb::unique_xmalloc_ptr<char> unicode_to_target_string (PyObject *unicode_str);
 gdb::unique_xmalloc_ptr<char> python_string_to_target_string (PyObject *obj);
-PyObject *python_string_to_target_python_string (PyObject *obj);
+gdbpy_ref<> python_string_to_target_python_string (PyObject *obj);
 gdb::unique_xmalloc_ptr<char> python_string_to_host_string (PyObject *obj);
-PyObject *host_string_to_python_string (const char *str);
+gdbpy_ref<> host_string_to_python_string (const char *str);
 int gdbpy_is_string (PyObject *obj);
 gdb::unique_xmalloc_ptr<char> gdbpy_obj_to_string (PyObject *obj);
 gdb::unique_xmalloc_ptr<char> gdbpy_exception_to_string (PyObject *ptype,
@@ -680,7 +680,7 @@ int gdbpy_is_value_object (PyObject *obj);
 gdbpy_ref<> apply_varobj_pretty_printer (PyObject *print_obj,
 					 struct value **replacement,
 					 struct ui_file *stream);
-PyObject *gdbpy_get_varobj_pretty_printer (struct value *value);
+gdbpy_ref<> gdbpy_get_varobj_pretty_printer (struct value *value);
 gdb::unique_xmalloc_ptr<char> gdbpy_get_display_hint (PyObject *printer);
 PyObject *gdbpy_default_visualizer (PyObject *self, PyObject *args);
 
@@ -705,8 +705,8 @@ extern void gdbpy_convert_exception (struct gdb_exception)
 int get_addr_from_python (PyObject *obj, CORE_ADDR *addr)
     CPYCHECKER_NEGATIVE_RESULT_SETS_EXCEPTION;
 
-PyObject *gdb_py_object_from_longest (LONGEST l);
-PyObject *gdb_py_object_from_ulongest (ULONGEST l);
+gdbpy_ref<> gdb_py_object_from_longest (LONGEST l);
+gdbpy_ref<> gdb_py_object_from_ulongest (ULONGEST l);
 int gdb_py_int_as_long (PyObject *, long *);
 
 PyObject *gdb_py_generic_dict (PyObject *self, void *closure);
