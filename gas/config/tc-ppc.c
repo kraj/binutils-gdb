@@ -1514,6 +1514,7 @@ insn_validate (const struct powerpc_opcode *op)
   /* The operands must not overlap the opcode or each other.  */
   for (o = op->operands; *o; ++o)
     {
+      bfd_boolean optional = FALSE;
       if (*o >= num_powerpc_operands)
         {
 	  as_bad (_("operand index error for %s"), op->name);
@@ -1521,22 +1522,39 @@ insn_validate (const struct powerpc_opcode *op)
         }
       else
         {
+	  uint64_t mask;
 	  const struct powerpc_operand *operand = &powerpc_operands[*o];
-	  if (operand->shift != (int) PPC_OPSHIFT_INV)
+	  if (operand->shift == (int) PPC_OPSHIFT_INV)
 	    {
-	      uint64_t mask;
+	      const char *errmsg;
+	      int64_t val;
 
-	      if (operand->shift >= 0)
-		mask = operand->bitm << operand->shift;
-	      else
-		mask = operand->bitm >> -operand->shift;
-	      if (omask & mask)
-		{
-		  as_bad (_("operand %d overlap in %s"),
-			  (int) (o - op->operands), op->name);
-		  return TRUE;
-		}
-	      omask |= mask;
+	      errmsg = NULL;
+	      val = -1;
+	      if ((operand->flags & PPC_OPERAND_NEGATIVE) != 0)
+		val = -val;
+	      else if ((operand->flags & PPC_OPERAND_PLUS1) != 0)
+		val += 1;
+	      mask = (*operand->insert) (0, val, ppc_cpu, &errmsg);
+	    }
+	  else if (operand->shift >= 0)
+	    mask = operand->bitm << operand->shift;
+	  else
+	    mask = operand->bitm >> -operand->shift;
+	  if (omask & mask)
+	    {
+	      as_bad (_("operand %d overlap in %s"),
+		      (int) (o - op->operands), op->name);
+	      return TRUE;
+	    }
+	  omask |= mask;
+	  if ((operand->flags & PPC_OPERAND_OPTIONAL) != 0)
+	    optional = TRUE;
+	  else if (optional)
+	    {
+	      as_bad (_("non-optional operand %d follows optional operand in %s"),
+		      (int) (o - op->operands), op->name);
+	      return TRUE;
 	    }
         }
     }
