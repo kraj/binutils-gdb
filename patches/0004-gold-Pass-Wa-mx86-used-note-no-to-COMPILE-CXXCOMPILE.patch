@@ -1,4 +1,4 @@
-From e1a35644c388c10567b4b5b3557c11e92f67cbc0 Mon Sep 17 00:00:00 2001
+From 8fab8e7e7260ef27a1025585e7120d404dc86811 Mon Sep 17 00:00:00 2001
 From: "H.J. Lu" <hjl.tools@gmail.com>
 Date: Fri, 17 Aug 2018 05:18:39 -0700
 Subject: [PATCH 4/5] gold: Pass -Wa,-mx86-used-note=no to COMPILE/CXXCOMPILE
@@ -10,42 +10,40 @@ Work around --incremental-update problems with GNU properties.
 	(CXXCOMPILE): Likewise.
 ---
  gold/testsuite/Makefile.am | 2 ++
- gold/testsuite/Makefile.in | 8 ++++++--
- 2 files changed, 8 insertions(+), 2 deletions(-)
+ gold/testsuite/Makefile.in | 6 ++++--
+ 2 files changed, 6 insertions(+), 2 deletions(-)
 
 diff --git a/gold/testsuite/Makefile.am b/gold/testsuite/Makefile.am
-index ede706442a..79eb736ca2 100644
+index c9f7f15eb1..78c14bba52 100644
 --- a/gold/testsuite/Makefile.am
 +++ b/gold/testsuite/Makefile.am
-@@ -49,6 +49,8 @@ COMPILE = `echo $(COMPILE1) | sed -e 's/-Wp,-D_FORTIFY_SOURCE=[0-9[0-9]]*//'`
- LINK = `echo $(LINK1) | sed -e 's/-Wp,-D_FORTIFY_SOURCE=[0-9][0-9]*//'`
- CXXCOMPILE = `echo $(CXXCOMPILE1) | sed -e 's/-Wp,-D_FORTIFY_SOURCE=[0-9][0-9]*//'`
- CXXLINK = `echo $(CXXLINK1) | sed -e 's/-Wp,-D_FORTIFY_SOURCE=[0-9][0-9]*//'`
+@@ -56,6 +56,8 @@ COMPILE = `echo $(COMPILE1) | sed $(editcc) $(editcc1)`
+ LINK = `echo $(LINK1) | sed $(editcc) $(editcc1)`
+ CXXCOMPILE = `echo $(CXXCOMPILE1) | sed $(editcc) $(editcc1)`
+ CXXLINK = `echo $(CXXLINK1) | sed $(editcc) $(editcc1)`
 +COMPILE += -Wa,-mx86-used-note=no
 +CXXCOMPILE += -Wa,-mx86-used-note=no
  
  # Strip out -static-libgcc and -static-libstdc++ options, for tests
  # that must have these libraries linked dynamically.  The -shared-libgcc
 diff --git a/gold/testsuite/Makefile.in b/gold/testsuite/Makefile.in
-index 52e8f5421b..2eead0c820 100644
+index a6d485c9cd..dac9094ee3 100644
 --- a/gold/testsuite/Makefile.in
 +++ b/gold/testsuite/Makefile.in
-@@ -2781,9 +2781,13 @@ CXXLINK1 = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(OPT_NO_PLUGINS) \
- # Strip out -Wp,-D_FORTIFY_SOURCE=, which is irrelevant for the gold
- # testsuite and incompatible with -O0 used in gold tests, from
- # COMPILE, LINK, CXXCOMPILE and CXXLINK.
--COMPILE = `echo $(COMPILE1) | sed -e 's/-Wp,-D_FORTIFY_SOURCE=[0-9[0-9]]*//'`
-+COMPILE = `echo $(COMPILE1) | sed -e \
-+	's/-Wp,-D_FORTIFY_SOURCE=[0-9[0-9]]*//'` \
+@@ -2763,9 +2763,11 @@ editcc = -e 's/\([^ ]*\)\(.*\)/\1 -Bgcctestdir\/\2/'
+ editcc1 = -e 's/-Wp,-D_FORTIFY_SOURCE=[0-9][0-9]*//'
+ CCLD = `echo $(CC) | sed $(editcc)`
+ CXXLD = `echo $(CXX) | sed $(editcc)`
+-COMPILE = `echo $(COMPILE1) | sed $(editcc) $(editcc1)`
++COMPILE = `echo $(COMPILE1) | sed $(editcc) $(editcc1)` \
 +	-Wa,-mx86-used-note=no
- LINK = `echo $(LINK1) | sed -e 's/-Wp,-D_FORTIFY_SOURCE=[0-9][0-9]*//'`
--CXXCOMPILE = `echo $(CXXCOMPILE1) | sed -e 's/-Wp,-D_FORTIFY_SOURCE=[0-9][0-9]*//'`
-+CXXCOMPILE = `echo $(CXXCOMPILE1) | sed -e \
-+	's/-Wp,-D_FORTIFY_SOURCE=[0-9][0-9]*//'` \
+ LINK = `echo $(LINK1) | sed $(editcc) $(editcc1)`
+-CXXCOMPILE = `echo $(CXXCOMPILE1) | sed $(editcc) $(editcc1)`
++CXXCOMPILE = `echo $(CXXCOMPILE1) | sed $(editcc) $(editcc1)` \
 +	-Wa,-mx86-used-note=no
- CXXLINK = `echo $(CXXLINK1) | sed -e 's/-Wp,-D_FORTIFY_SOURCE=[0-9][0-9]*//'`
+ CXXLINK = `echo $(CXXLINK1) | sed $(editcc) $(editcc1)`
  
  # Strip out -static-libgcc and -static-libstdc++ options, for tests
 -- 
-2.17.1
+2.19.1
 
