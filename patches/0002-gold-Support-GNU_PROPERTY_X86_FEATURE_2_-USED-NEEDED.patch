@@ -1,4 +1,4 @@
-From 9ffced151b9d3365483a95cb729b1f929ec82498 Mon Sep 17 00:00:00 2001
+From 7e52e3e0146c708ceb929154d5b8cfdf298a70cd Mon Sep 17 00:00:00 2001
 From: "H.J. Lu" <hjl.tools@gmail.com>
 Date: Thu, 9 Aug 2018 17:02:42 -0700
 Subject: [PATCH 2/5] gold: Support GNU_PROPERTY_X86_FEATURE_2_[USED|NEEDED]
@@ -35,6 +35,8 @@ gold/
 	(Target_x86_64::feature_2_needed_): Likewise.
 	(Target_x86_64::object_isa_1_used_): Likewise.
 	(Target_x86_64::record_gnu_property): Support
+	GNU_PROPERTY_X86_COMPAT_ISA_1_USED,
+	GNU_PROPERTY_X86_COMPAT_ISA_1_NEEDED,
 	GNU_PROPERTY_X86_FEATURE_2_USED and
 	GNU_PROPERTY_X86_FEATURE_2_NEEDED.
 	(Target_x86_64::merge_gnu_properties): Merge FEATURE_2_USED bits.
@@ -54,14 +56,14 @@ gold/
 	(GNU_PROPERTY_X86_ISA_1_NEEDED): Set to 0xc0008000.
 	* testsuite/gnu_property_test.sh: Updated.
 ---
- elfcpp/elfcpp.h                     | 16 ++++++++---
+ elfcpp/elfcpp.h                     | 16 +++++++++--
  elfcpp/x86_64.h                     |  1 +
  gold/testsuite/gnu_property_a.S     |  4 +--
  gold/testsuite/gnu_property_b.S     |  4 +--
  gold/testsuite/gnu_property_c.S     |  4 +--
  gold/testsuite/gnu_property_test.sh |  4 +--
- gold/x86_64.cc                      | 41 +++++++++++++++++++++++++----
- 7 files changed, 58 insertions(+), 16 deletions(-)
+ gold/x86_64.cc                      | 43 +++++++++++++++++++++++++----
+ 7 files changed, 60 insertions(+), 16 deletions(-)
 
 diff --git a/elfcpp/elfcpp.h b/elfcpp/elfcpp.h
 index ea2e8eab13..31cef2de05 100644
@@ -163,7 +165,7 @@ index 9a188edda4..79286d4721 100755
  
  exit 0
 diff --git a/gold/x86_64.cc b/gold/x86_64.cc
-index 19215b5923..e9bc37068e 100644
+index 19215b5923..227eae0216 100644
 --- a/gold/x86_64.cc
 +++ b/gold/x86_64.cc
 @@ -706,8 +706,9 @@ class Target_x86_64 : public Sized_target<size, false>
@@ -195,7 +197,12 @@ index 19215b5923..e9bc37068e 100644
    // Whether we have seen our first object, for use in initializing FEATURE_1_.
    bool seen_first_object_;
  };
-@@ -1597,6 +1601,8 @@ Target_x86_64<size>::record_gnu_property(
+@@ -1594,9 +1598,13 @@ Target_x86_64<size>::record_gnu_property(
+ 
+   switch (pr_type)
+     {
++    case elfcpp::GNU_PROPERTY_X86_COMPAT_ISA_1_USED:
++    case elfcpp::GNU_PROPERTY_X86_COMPAT_ISA_1_NEEDED:
      case elfcpp::GNU_PROPERTY_X86_ISA_1_USED:
      case elfcpp::GNU_PROPERTY_X86_ISA_1_NEEDED:
      case elfcpp::GNU_PROPERTY_X86_FEATURE_1_AND:
@@ -204,7 +211,7 @@ index 19215b5923..e9bc37068e 100644
        if (pr_datasz != 4)
  	{
  	  gold_warning(_("%s: corrupt .note.gnu.property section "
-@@ -1625,6 +1631,12 @@ Target_x86_64<size>::record_gnu_property(
+@@ -1625,6 +1633,12 @@ Target_x86_64<size>::record_gnu_property(
        // If we see multiple feature props in one object, OR them together.
        this->object_feature_1_ |= val;
        break;
@@ -217,7 +224,7 @@ index 19215b5923..e9bc37068e 100644
      }
  }
  
-@@ -1642,15 +1654,23 @@ Target_x86_64<size>::merge_gnu_properties(const Object*)
+@@ -1642,15 +1656,23 @@ Target_x86_64<size>::merge_gnu_properties(const Object*)
        else if (this->isa_1_used_ != 0)
  	this->isa_1_used_ |= this->object_isa_1_used_;
        this->feature_1_ &= this->object_feature_1_;
@@ -241,7 +248,7 @@ index 19215b5923..e9bc37068e 100644
  }
  
  static inline void
-@@ -1667,15 +1687,26 @@ template<int size>
+@@ -1667,15 +1689,26 @@ template<int size>
  void
  Target_x86_64<size>::do_finalize_gnu_properties(Layout* layout) const
  {
@@ -272,5 +279,5 @@ index 19215b5923..e9bc37068e 100644
  
  // Write the first three reserved words of the .got.plt section.
 -- 
-2.17.1
+2.19.1
 
