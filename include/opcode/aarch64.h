@@ -84,6 +84,8 @@ typedef uint32_t aarch64_insn;
 #define AARCH64_FEATURE_ID_PFR2		0x400000000000ULL
 /* SSBS mechanism enabled.  */
 #define AARCH64_FEATURE_SSBS		0x800000000000ULL
+/* Memory Tagging Extension.  */
+#define AARCH64_FEATURE_MEMTAG		0x1000000000000ULL
 
 
 /* Architectures are the sum of the base and extensions.  */
@@ -244,7 +246,9 @@ enum aarch64_opnd
   AARCH64_OPND_UIMM3_OP1,/* Unsigned 3-bit immediate in the op1 field.  */
   AARCH64_OPND_UIMM3_OP2,/* Unsigned 3-bit immediate in the op2 field.  */
   AARCH64_OPND_UIMM4,	/* Unsigned 4-bit immediate in the CRm field.  */
+  AARCH64_OPND_UIMM4_ADDG,/* Unsigned 4-bit immediate in addg/subg.  */
   AARCH64_OPND_UIMM7,	/* Unsigned 7-bit immediate in the CRm:op2 fields.  */
+  AARCH64_OPND_UIMM10,	/* Unsigned 10-bit immediate in addg/subg.  */
   AARCH64_OPND_BIT_NUM,	/* Immediate.  */
   AARCH64_OPND_EXCEPTION,/* imm16 operand in exception instructions.  */
   AARCH64_OPND_CCMP_IMM,/* Immediate in conditional compare instructions.  */
@@ -271,6 +275,7 @@ enum aarch64_opnd
   AARCH64_OPND_ADDR_PCREL26,	/* 26-bit PC-relative address for e.g. BL.  */
 
   AARCH64_OPND_ADDR_SIMPLE,	/* Address of ld/st exclusive.  */
+  AARCH64_OPND_ADDR_SIMPLE_2,	/* Address of ld/stgv.  */
   AARCH64_OPND_ADDR_REGOFF,	/* Address of register offset.  */
   AARCH64_OPND_ADDR_SIMM7,	/* Address of signed 7-bit immediate.  */
   AARCH64_OPND_ADDR_SIMM9,	/* Address of signed 9-bit immediate.  */
@@ -282,7 +287,11 @@ enum aarch64_opnd
 				   the mnemonic name for LDUR/STUR instructions
 				   wherever there is no ambiguity.  */
   AARCH64_OPND_ADDR_SIMM10,	/* Address of signed 10-bit immediate.  */
+  AARCH64_OPND_ADDR_SIMM11,	/* Address with a signed 11-bit (multiple of
+				   16) immediate.  */
   AARCH64_OPND_ADDR_UIMM12,	/* Address of unsigned 12-bit immediate.  */
+  AARCH64_OPND_ADDR_SIMM13,	/* Address with a signed 13-bit (multiple of
+				   16) immediate.  */
   AARCH64_OPND_SIMD_ADDR_SIMPLE,/* Address of ld/st multiple structures.  */
   AARCH64_OPND_ADDR_OFFSET,     /* Address with an optional 9-bit immediate.  */
   AARCH64_OPND_SIMD_ADDR_POST,	/* Address of ld/st multiple post-indexed.  */
@@ -463,6 +472,10 @@ enum aarch64_opnd_qualifier
   AARCH64_OPND_QLF_P_Z,
   AARCH64_OPND_QLF_P_M,
 
+  /* Used in scaled signed immediate that are scaled by a Tag granule
+     like in stg, st2g, etc.   */
+  AARCH64_OPND_QLF_imm_tag,
+
   /* Constraint on value.  */
   AARCH64_OPND_QLF_CR,		/* CRn, CRm. */
   AARCH64_OPND_QLF_imm_0_7,
@@ -549,6 +562,7 @@ enum aarch64_insn_class
   ldstnapair_offs,
   ldstpair_off,
   ldstpair_indexed,
+  ldstgv_indexed,
   loadlit,
   log_imm,
   log_shift,

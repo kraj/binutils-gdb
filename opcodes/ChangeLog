@@ -1,3 +1,87 @@
+2018-11-12  Sudakshina Das  <sudi.das@arm.com>
+
+	* aarch64-opc.c (aarch64_sys_regs_dc): New entries for
+	IGVAC, IGSW, CGSW, CIGSW, CGVAC, CGVAP, CGVADP, CIGVAC, GVA,
+	IGDVAC, IGDSW, CGDSW, CIGDSW, CGDVAC, CGDVAP, CGDVADP,
+	CIGDVAC and GZVA.
+	(aarch64_sys_ins_reg_supported_p): New check for above.
+
+2018-11-12  Sudakshina Das  <sudi.das@arm.com>
+
+	* aarch64-opc.c (aarch64_sys_regs): New entries for TCO,
+	TFSRE0_SL1, TFSR_EL1, TFSR_EL2, TFSR_EL3, TFSR_EL12,
+	RGSR_EL1 and GCR_EL1.
+	(aarch64_sys_reg_supported_p): New check for above.
+	(aarch64_pstatefields): New entry for TCO.
+	(aarch64_pstatefield_supported_p): New check for above.
+
+2018-11-12  Sudakshina Das  <sudi.das@arm.com>
+
+	* aarch64-asm.c (aarch64_ins_addr_simple_2): New.
+	* aarch64-asm.h (ins_addr_simple_2): Declare the above.
+	* aarch64-dis.c (aarch64_ext_addr_simple_2): New.
+	* aarch64-dis.h (ext_addr_simple_2): Declare the above.
+	* aarch64-opc.c (operand_general_constraint_met_p): Add case for
+	AARCH64_OPND_ADDR_SIMPLE_2 and ldstgv_indexed.
+	(aarch64_print_operand): Add case for AARCH64_OPND_ADDR_SIMPLE_2.
+	* aarch64-tbl.h (aarch64_opcode_table): Add stgv and ldgv.
+	(AARCH64_OPERANDS): Define ADDR_SIMPLE_2.
+	* aarch64-asm-2.c: Regenerated.
+	* aarch64-dis-2.c: Regenerated.
+	* aarch64-opc-2.c: Regenerated.
+
+2018-11-12  Sudakshina Das  <sudi.das@arm.com>
+
+	* aarch64-tbl.h (QL_LDG): New.
+	(aarch64_opcode_table): Add ldg.
+	* aarch64-asm-2.c: Regenerated.
+	* aarch64-dis-2.c: Regenerated.
+	* aarch64-opc-2.c: Regenerated.
+
+2018-11-12  Sudakshina Das  <sudi.das@arm.com>
+
+	* aarch64-opc.c (aarch64_opnd_qualifiers): Add new data
+	for AARCH64_OPND_QLF_imm_tag.
+	(operand_general_constraint_met_p): Add case for
+	AARCH64_OPND_ADDR_SIMM11 and AARCH64_OPND_ADDR_SIMM13.
+	(aarch64_print_operand): Likewise.
+	* aarch64-tbl.h (QL_LDST_AT, QL_STGP): New.
+	(aarch64_opcode_table): Add stg, stzg, st2g, stz2g and stgp
+	for both offset and pre/post indexed versions.
+	(AARCH64_OPERANDS): Define ADDR_SIMM11 and ADDR_SIMM13.
+	* aarch64-asm-2.c: Regenerated.
+	* aarch64-dis-2.c: Regenerated.
+	* aarch64-opc-2.c: Regenerated.
+
+2018-11-12  Sudakshina Das  <sudi.das@arm.com>
+
+	* aarch64-tbl.h (aarch64_opcode_table): Add subp, subps and cmpp.
+	* aarch64-asm-2.c: Regenerated.
+	* aarch64-dis-2.c: Regenerated.
+	* aarch64-opc-2.c: Regenerated.
+
+2018-11-12  Sudakshina Das  <sudi.das@arm.com>
+
+	* aarch64-opc.h (aarch64_field_kind): New FLD_imm4_3.
+	(OPD_F_SHIFT_BY_4, operand_need_shift_by_four): New.
+	* aarch64-opc.c (fields): Add entry for imm4_3.
+	(operand_general_constraint_met_p): Add cases for
+	AARCH64_OPND_UIMM4_ADDG and AARCH64_OPND_UIMM10.
+	(aarch64_print_operand): Likewise.
+	* aarch64-tbl.h (QL_ADDG): New.
+	(aarch64_opcode_table): Add addg, subg, irg and gmi.
+	(AARCH64_OPERANDS): Define UIMM4_ADDG and UIMM10.
+	* aarch64-asm.c (aarch64_ins_imm): Add case for
+	operand_need_shift_by_four.
+	* aarch64-asm-2.c: Regenerated.
+	* aarch64-dis-2.c: Regenerated.
+	* aarch64-opc-2.c: Regenerated.
+
+2018-11-12  Sudakshina Das  <sudi.das@arm.com>
+
+	* aarch64-tbl.h (aarch64_feature_memtag): New.
+	(MEMTAG, MEMTAG_INSN): New.
+
 2018-11-06  Sudakshina Das  <sudi.das@arm.com>
 
 	* arm-dis.c (select_arm_features): Update bfd_mach_arm_8

@@ -125,6 +125,12 @@
   QLF1(X),			\
 }
 
+/* e.g. STG [<Xn|SP>, #<imm9>].  */
+#define QL_LDST_AT		\
+{				\
+  QLF1(imm_tag),		\
+}
+
 /* e.g. RBIT <Wd>, <Wn>.  */
 #define QL_I2SAME		\
 {				\
@@ -239,6 +245,12 @@
   QLF4(W,W,imm_0_31,imm_0_31),	\
   QLF4(X,X,imm_0_63,imm_0_63),	\
 }
+
+/* e.g. ADDG <Xd>, <Xn>, #<uimm10>, #<uimm4>.  */
+#define QL_ADDG			\
+{				\
+  QLF4(X,X,NIL,imm_0_15),	\
+}				\
 
 /* e.g. BFC <Wd>, #<immr>, #<imms>.  */
 #define QL_BF1					\
@@ -1206,10 +1218,22 @@
   QLF2(NIL, S_D),		\
 }
 
+/* e.g. LDG <Xt>, [<Xn|SP>{, #<simm>}].  */
+#define QL_LDG			\
+{				\
+  QLF2(X, imm_tag),		\
+}
+
 /* e.g. LDPSW <Xt1>, <Xt2>, [<Xn|SP>{, #<imm>}].  */
 #define QL_LDST_PAIR_X32	\
 {				\
   QLF3(X, X, S_S),		\
+}
+
+/* e.g. STGP <Xt1>, <Xt2>, [<Xn|SP>{, #<imm>}].  */
+#define QL_STGP			\
+{				\
+  QLF3(X, X, imm_tag),		\
 }
 
 /* e.g. STP <Wt1>, <Wt2>, [<Xn|SP>, #<imm>]!.  */
@@ -2171,6 +2195,8 @@ static const aarch64_feature_set aarch64_feature_predres =
   AARCH64_FEATURE (AARCH64_FEATURE_PREDRES, 0);
 static const aarch64_feature_set aarch64_feature_bti =
   AARCH64_FEATURE (AARCH64_FEATURE_BTI, 0);
+static const aarch64_feature_set aarch64_feature_memtag =
+  AARCH64_FEATURE (AARCH64_FEATURE_V8_5 | AARCH64_FEATURE_MEMTAG, 0);
 
 
 #define CORE		&aarch64_feature_v8
@@ -2205,6 +2231,7 @@ static const aarch64_feature_set aarch64_feature_bti =
 #define SB		&aarch64_feature_sb
 #define PREDRES		&aarch64_feature_predres
 #define BTI		&aarch64_feature_bti
+#define MEMTAG		&aarch64_feature_memtag
 
 #define CORE_INSN(NAME,OPCODE,MASK,CLASS,OP,OPS,QUALS,FLAGS) \
   { NAME, OPCODE, MASK, CLASS, OP, CORE, OPS, QUALS, FLAGS, 0, 0, NULL }
@@ -2268,6 +2295,8 @@ static const aarch64_feature_set aarch64_feature_bti =
   { NAME, OPCODE, MASK, CLASS, 0, PREDRES, OPS, QUALS, FLAGS, 0, 0, NULL }
 #define BTI_INSN(NAME,OPCODE,MASK,CLASS,OPS,QUALS,FLAGS) \
   { NAME, OPCODE, MASK, CLASS, 0, BTI, OPS, QUALS, FLAGS, 0, 0, NULL }
+#define MEMTAG_INSN(NAME,OPCODE,MASK,CLASS,OPS,QUALS,FLAGS) \
+  { NAME, OPCODE, MASK, CLASS, 0, MEMTAG, OPS, QUALS, FLAGS, 0, 0, NULL }
 
 struct aarch64_opcode aarch64_opcode_table[] =
 {
@@ -2293,6 +2322,8 @@ struct aarch64_opcode aarch64_opcode_table[] =
   CORE_INSN ("sub",  0x51000000, 0x7f000000, addsub_imm, 0, OP3 (Rd_SP, Rn_SP, AIMM), QL_R2NIL, F_SF),
   CORE_INSN ("subs", 0x71000000, 0x7f000000, addsub_imm, 0, OP3 (Rd, Rn_SP, AIMM),    QL_R2NIL, F_HAS_ALIAS | F_SF),
   CORE_INSN ("cmp",  0x7100001f, 0x7f00001f, addsub_imm, 0, OP2 (Rn_SP, AIMM),        QL_R1NIL, F_ALIAS | F_SF),
+  MEMTAG_INSN ("addg",  0x91800000, 0xffc0c000, addsub_imm, OP4 (Rd_SP, Rn_SP, UIMM10, UIMM4_ADDG), QL_ADDG, 0),
+  MEMTAG_INSN ("subg",  0xd1800000, 0xffc0c000, addsub_imm, OP4 (Rd_SP, Rn_SP, UIMM10, UIMM4_ADDG), QL_ADDG, 0),
   /* Add/subtract (shifted register).  */
   CORE_INSN ("add",  0x0b000000, 0x7f200000, addsub_shift, 0, OP3 (Rd, Rn, Rm_SFT), QL_I3SAMER, F_SF),
   CORE_INSN ("adds", 0x2b000000, 0x7f200000, addsub_shift, 0, OP3 (Rd, Rn, Rm_SFT), QL_I3SAMER, F_HAS_ALIAS | F_SF),
@@ -3031,6 +3062,11 @@ struct aarch64_opcode aarch64_opcode_table[] =
   CORE_INSN ("asr",   0x1ac02800, 0x7fe0fc00, dp_2src, 0, OP3 (Rd, Rn, Rm), QL_I3SAMER, F_SF | F_ALIAS),
   CORE_INSN ("rorv",  0x1ac02c00, 0x7fe0fc00, dp_2src, 0, OP3 (Rd, Rn, Rm), QL_I3SAMER, F_SF | F_HAS_ALIAS),
   CORE_INSN ("ror",   0x1ac02c00, 0x7fe0fc00, dp_2src, 0, OP3 (Rd, Rn, Rm), QL_I3SAMER, F_SF | F_ALIAS),
+  MEMTAG_INSN ("subp",   0x9ac00000, 0xffe0fc00, dp_2src, OP3 (Rd, Rn_SP, Rm_SP), QL_I3SAMEX, 0),
+  MEMTAG_INSN ("subps",  0xbac00000, 0xffe0fc00, dp_2src, OP3 (Rd, Rn_SP, Rm_SP), QL_I3SAMEX, F_HAS_ALIAS),
+  MEMTAG_INSN ("cmpp",   0xbac0001f, 0xffe0fc1f, dp_2src, OP2 (Rn_SP, Rm_SP), QL_I2SAMEX, F_ALIAS),
+  MEMTAG_INSN ("irg",    0x9ac01000, 0xffe0fc00, dp_2src, OP3 (Rd_SP, Rn_SP, Rm), QL_I3SAMEX, F_OPD2_OPT | F_DEFAULT (0x1f)),
+  MEMTAG_INSN ("gmi",    0x9ac01400, 0xffe0fc00, dp_2src, OP3 (Rd, Rn_SP, Rm), QL_I3SAMEX, 0),
   V8_3_INSN ("pacga", 0x9ac03000, 0xffe0fc00, dp_2src, OP3 (Rd, Rn, Rm_SP), QL_I3SAMEX, 0),
   /* CRC instructions.  */
   _CRC_INSN ("crc32b", 0x1ac04000, 0xffe0fc00, dp_2src, OP3 (Rd, Rn, Rm), QL_I3SAMEW, 0),
@@ -3200,6 +3236,15 @@ struct aarch64_opcode aarch64_opcode_table[] =
   CORE_INSN ("str", 0xb8000400, 0xbfe00400, ldst_imm9, 0, OP2 (Rt, ADDR_SIMM9), QL_LDST_R, F_GPRSIZE_IN_Q),
   CORE_INSN ("ldr", 0xb8400400, 0xbfe00400, ldst_imm9, 0, OP2 (Rt, ADDR_SIMM9), QL_LDST_R, F_GPRSIZE_IN_Q),
   CORE_INSN ("ldrsw", 0xb8800400, 0xffe00400, ldst_imm9, 0, OP2 (Rt, ADDR_SIMM9), QL_LDST_X32, 0),
+  /* Load/store Allocation Tag instructions.  */
+  MEMTAG_INSN ("stg",  0xd920081f, 0xffe00c1f, ldst_unscaled, OP1 (ADDR_SIMM13), QL_LDST_AT, 0),
+  MEMTAG_INSN ("stzg", 0xd960081f, 0xffe00c1f, ldst_unscaled, OP1 (ADDR_SIMM13), QL_LDST_AT, 0),
+  MEMTAG_INSN ("st2g", 0xd9a0081f, 0xffe00c1f, ldst_unscaled, OP1 (ADDR_SIMM13), QL_LDST_AT, 0),
+  MEMTAG_INSN ("stz2g",0xd9e0081f, 0xffe00c1f, ldst_unscaled, OP1 (ADDR_SIMM13), QL_LDST_AT, 0),
+  MEMTAG_INSN ("stg",  0xd920041f, 0xffe0041f, ldst_imm9, OP1 (ADDR_SIMM13), QL_LDST_AT, 0),
+  MEMTAG_INSN ("stzg", 0xd960041f, 0xffe0041f, ldst_imm9, OP1 (ADDR_SIMM13), QL_LDST_AT, 0),
+  MEMTAG_INSN ("st2g", 0xd9a0041f, 0xffe0041f, ldst_imm9, OP1 (ADDR_SIMM13), QL_LDST_AT, 0),
+  MEMTAG_INSN ("stz2g",0xd9e0041f, 0xffe0041f, ldst_imm9, OP1 (ADDR_SIMM13), QL_LDST_AT, 0),
   /* Load/store register (unsigned immediate).  */
   CORE_INSN ("strb", 0x39000000, 0xffc00000, ldst_pos, OP_STRB_POS, OP2 (Rt, ADDR_UIMM12), QL_LDST_W8, 0),
   CORE_INSN ("ldrb", 0x39400000, 0xffc00000, ldst_pos, OP_LDRB_POS, OP2 (Rt, ADDR_UIMM12), QL_LDST_W8, 0),
@@ -3249,6 +3294,7 @@ struct aarch64_opcode aarch64_opcode_table[] =
   CORE_INSN ("ldur", 0xb8400000, 0xbfe00c00, ldst_unscaled, OP_LDUR, OP2 (Rt, ADDR_SIMM9), QL_LDST_R, F_GPRSIZE_IN_Q),
   CORE_INSN ("ldursw", 0xb8800000, 0xffe00c00, ldst_unscaled, OP_LDURSW, OP2 (Rt, ADDR_SIMM9), QL_LDST_X32, 0),
   CORE_INSN ("prfum", 0xf8800000, 0xffe00c00, ldst_unscaled, OP_PRFUM, OP2 (PRFOP, ADDR_SIMM9), QL_LDST_PRFM, 0),
+  MEMTAG_INSN ("ldg",  0xd9600000, 0xffe00c00, ldst_unscaled, OP2 (Rt, ADDR_SIMM13), QL_LDG, 0),
   /* Load/store register (scaled signed immediate).  */
   V8_3_INSN ("ldraa", 0xf8200400, 0xffa00400, ldst_imm10, OP2 (Rt, ADDR_SIMM10), QL_X1NIL, 0),
   V8_3_INSN ("ldrab", 0xf8a00400, 0xffa00400, ldst_imm10, OP2 (Rt, ADDR_SIMM10), QL_X1NIL, 0),
@@ -3278,6 +3324,8 @@ struct aarch64_opcode aarch64_opcode_table[] =
   RCPC_INSN ("ldaprb", 0x38bfc000, 0xfffffc00, ldstexcl, OP2 (Rt, ADDR_SIMPLE), QL_W1_LDST_EXC, 0),
   RCPC_INSN ("ldaprh", 0x78bfc000, 0xfffffc00, ldstexcl, OP2 (Rt, ADDR_SIMPLE), QL_W1_LDST_EXC, 0),
   RCPC_INSN ("ldapr", 0xb8bfc000, 0xbffffc00, ldstexcl, OP2 (Rt, ADDR_SIMPLE), QL_R1NIL, F_GPRSIZE_IN_Q),
+  MEMTAG_INSN ("ldgv", 0xd9e00000, 0xfffffc00, ldstgv_indexed, OP2 (Rt, ADDR_SIMPLE_2), QL_STLX, 0),
+  MEMTAG_INSN ("stgv", 0xd9a00000, 0xfffffc00, ldstgv_indexed, OP2 (Rt, ADDR_SIMPLE_2), QL_STLX, 0),
   /* Limited Ordering Regions load/store instructions.  */
   _LOR_INSN ("ldlar",  0x88df7c00, 0xbfe08000, ldstexcl, OP2 (Rt, ADDR_SIMPLE), QL_R1NIL,       F_GPRSIZE_IN_Q),
   _LOR_INSN ("ldlarb", 0x08df7c00, 0xffe08000, ldstexcl, OP2 (Rt, ADDR_SIMPLE), QL_W1_LDST_EXC, 0),
@@ -3296,12 +3344,14 @@ struct aarch64_opcode aarch64_opcode_table[] =
   CORE_INSN ("stp", 0x2d000000, 0x3fc00000, ldstpair_off, 0, OP3 (Ft, Ft2, ADDR_SIMM7), QL_LDST_PAIR_FP, 0),
   CORE_INSN ("ldp", 0x2d400000, 0x3fc00000, ldstpair_off, 0, OP3 (Ft, Ft2, ADDR_SIMM7), QL_LDST_PAIR_FP, 0),
   {"ldpsw", 0x69400000, 0xffc00000, ldstpair_off, 0, CORE, OP3 (Rt, Rt2, ADDR_SIMM7), QL_LDST_PAIR_X32, 0, 0, 0, VERIFIER (ldpsw)},
+  MEMTAG_INSN ("stgp", 0x69000000, 0xffc00000, ldstpair_off, OP3 (Rt, Rt2, ADDR_SIMM11), QL_STGP, 0),
   /* Load/store register pair (indexed).  */
   CORE_INSN ("stp", 0x28800000, 0x7ec00000, ldstpair_indexed, 0, OP3 (Rt, Rt2, ADDR_SIMM7), QL_LDST_PAIR_R, F_SF),
   CORE_INSN ("ldp", 0x28c00000, 0x7ec00000, ldstpair_indexed, 0, OP3 (Rt, Rt2, ADDR_SIMM7), QL_LDST_PAIR_R, F_SF),
   CORE_INSN ("stp", 0x2c800000, 0x3ec00000, ldstpair_indexed, 0, OP3 (Ft, Ft2, ADDR_SIMM7), QL_LDST_PAIR_FP, 0),
   CORE_INSN ("ldp", 0x2cc00000, 0x3ec00000, ldstpair_indexed, 0, OP3 (Ft, Ft2, ADDR_SIMM7), QL_LDST_PAIR_FP, 0),
   {"ldpsw", 0x68c00000, 0xfec00000, ldstpair_indexed, 0, CORE, OP3 (Rt, Rt2, ADDR_SIMM7), QL_LDST_PAIR_X32, 0, 0, 0, VERIFIER (ldpsw)},
+  MEMTAG_INSN ("stgp", 0x68800000, 0xfec00000, ldstpair_indexed, OP3 (Rt, Rt2, ADDR_SIMM11), QL_STGP, 0),
   /* Load register (literal).  */
   CORE_INSN ("ldr",   0x18000000, 0xbf000000, loadlit, OP_LDR_LIT,   OP2 (Rt, ADDR_PCREL19),    QL_R_PCREL, F_GPRSIZE_IN_Q),
   CORE_INSN ("ldr",   0x1c000000, 0x3f000000, loadlit, OP_LDRV_LIT,  OP2 (Ft, ADDR_PCREL19),    QL_FP_PCREL, 0),
@@ -4554,8 +4604,12 @@ struct aarch64_opcode aarch64_opcode_table[] =
       "a 3-bit unsigned immediate")					\
     Y(IMMEDIATE, imm, "UIMM4", 0, F(FLD_CRm),				\
       "a 4-bit unsigned immediate")					\
+    Y(IMMEDIATE, imm, "UIMM4_ADDG", 0, F(FLD_imm4_3),			\
+      "a 4-bit unsigned Logical Address Tag modifier")			\
     Y(IMMEDIATE, imm, "UIMM7", 0, F(FLD_CRm, FLD_op2),			\
       "a 7-bit unsigned immediate")					\
+    Y(IMMEDIATE, imm, "UIMM10", OPD_F_SHIFT_BY_4, F(FLD_immr),		\
+      "a 10-bit unsigned multiple of 16")				\
     Y(IMMEDIATE, imm, "BIT_NUM", 0, F(FLD_b5, FLD_b40),			\
       "the bit number to be tested")					\
     Y(IMMEDIATE, imm, "EXCEPTION", 0, F(FLD_imm16),			\
@@ -4596,6 +4650,8 @@ struct aarch64_opcode aarch64_opcode_table[] =
       F(FLD_imm26), "26-bit PC-relative address")			\
     Y(ADDRESS, addr_simple, "ADDR_SIMPLE", 0, F(),			\
       "an address with base register (no offset)")			\
+    Y(ADDRESS, addr_simple_2, "ADDR_SIMPLE_2", 0, F(),			\
+      "a writeback address with base register (no offset)")		\
     Y(ADDRESS, addr_regoff, "ADDR_REGOFF", 0, F(),			\
       "an address with register offset")				\
     Y(ADDRESS, addr_simm, "ADDR_SIMM7", 0, F(FLD_imm7,FLD_index2),	\
@@ -4606,8 +4662,12 @@ struct aarch64_opcode aarch64_opcode_table[] =
       "an address with 9-bit negative or unaligned immediate offset")	\
     Y(ADDRESS, addr_simm10, "ADDR_SIMM10", 0, F(FLD_Rn,FLD_S_imm10,FLD_imm9,FLD_index),\
       "an address with 10-bit scaled, signed immediate offset")		\
+    Y(ADDRESS, addr_simm, "ADDR_SIMM11", 0, F(FLD_imm7,FLD_index2),\
+      "an address with 11-bit signed immediate (multiple of 16) offset")\
     Y(ADDRESS, addr_uimm12, "ADDR_UIMM12", 0, F(FLD_Rn,FLD_imm12),	\
       "an address with scaled, unsigned immediate offset")		\
+    Y(ADDRESS, addr_simm, "ADDR_SIMM13", 0, F(FLD_imm9,FLD_index),\
+      "an address with 13-bit signed immediate (multiple of 16) offset")\
     Y(ADDRESS, addr_simple, "SIMD_ADDR_SIMPLE", 0, F(),			\
       "an address with base register (no offset)")			\
     Y(ADDRESS, addr_offset, "ADDR_OFFSET", 0, F(FLD_Rn,FLD_imm9,FLD_index),\

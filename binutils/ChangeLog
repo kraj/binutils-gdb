@@ -1,3 +1,60 @@
+2018-11-09  Hafiz Abid Qadeer  <abidh@codesourcery.com>
+
+	* configure: Regenerate.
+
+2018-11-09  Mathias   <m4tze@exitno.de>
+
+	* strings.c (print_strings): Check for multibyte encodings.
+	* binutils-all/strings-1.bin: New file.  Test binary for string decoding.
+	* testsuite/binutils-all/strings.exp: New file.  Test the strings program.
+	* testsuite/config/default.exp (STRINGS): Define if not provided
+	by the environment.
+	(STRINGSFLAGS): Likewise.
+
+2018-11-07  Masatake Yamato  <yamato@redhat.com>
+
+	* objdump.c (long_options): Have the --disassemble option take an
+	optional argument.
+	(usage): Add description for the `symbol' argument to the
+	--disassemble option.
+	(disasm_sym): New file private variable.
+	(struct objdump_disasm_info): New field `symbol'.
+	(disassemble_section): Introduce `do_print' local variable
+	to control whether objdump displays the result of disassembling
+	for a symbol or not.
+	(main): Set `symbol' file private variable if the option argument
+	for the --disassemble option is given.
+	* doc/binutils.texi (objdump): Add description for the option
+	argument.
+	* NEWS: Mention the new feature.
+	* testsuite/binutils-all/objdump.exp: Add tests of the -d and
+	--disassemble=<symbol> options.
+	* testsuite/binutils-all/bintest.s: Add more symbols and code.
+	* testsuite/binutils-all/readelf.s: Update expected output.
+	* testsuite/binutils-all/readelf.ss-64: Likewise.
+	* testsuite/binutils-all/readelf.ss-mips: Likewise.
+	* testsuite/binutils-all/readelf.ss-tmips: Likewise.
+
+2018-11-07  Nick Clifton  <nickc@redhat.com>
+
+	* po/pt.po: Updated Portuguese translation.
+
+2018-11-06  Roman Bolshakov  <r.bolshakov@yadro.com>
+	    Saagar Jha  <saagar@saagarjha.com>
+
+	PR 23728
+	* od-macho.c (printf_version): New.
+	(dump_load_command): Use it to print version. Print sdk version. Print
+	version info for watchOS and tvOS. Print LC_NOTE, LC_BUILD_VERSION.
+	(dump_buld_version): New.
+	(bfd_mach_o_platform_name): New
+	(bfd_mach_o_tool_name): New
+
+2018-11-07  Yoshinori Sato  <ysato@users.sourceforge.jp>
+
+	* testsuite/lib/binutils-common.exp: Special section name
+	use only rx-*-elf.
+
 2018-11-06  H.J. Lu  <hongjiu.lu@intel.com>
 
 	* doc/binutils.texi: Document --enable-x86-feature and

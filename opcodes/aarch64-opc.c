@@ -243,6 +243,7 @@ const aarch64_field fields[] =
     { 15,  6 },	/* imm6_2: in rmif instructions.  */
     { 11,  4 },	/* imm4: in advsimd ext and advsimd ins instructions.  */
     {  0,  4 },	/* imm4_2: in rmif instructions.  */
+    { 10,  4 },	/* imm4_3: in adddg/subg instructions.  */
     { 16,  5 },	/* imm5: in conditional compare (immediate) instructions.  */
     { 15,  7 },	/* imm7: in load/store pair pre/post index instructions.  */
     { 13,  8 },	/* imm8: in floating-point scalar move immediate inst.  */
@@ -719,6 +720,9 @@ struct operand_qualifier_data aarch64_opnd_qualifiers[] =
 
   {0, 0, 0, "z", OQK_OPD_VARIANT},
   {0, 0, 0, "m", OQK_OPD_VARIANT},
+
+  /* Qualifier for scaled immediate for Tag granule (stg,st2g,etc).  */
+  {16, 0, 0, "tag", OQK_OPD_VARIANT},
 
   /* Qualifiers constraining the value range.
      First 3 fields:
@@ -1598,6 +1602,7 @@ operand_general_constraint_met_p (const aarch64_opnd_info *opnds, int idx,
 	  break;
 	case ldst_imm9:
 	case ldstpair_indexed:
+	case ldstgv_indexed:
 	case asisdlsep:
 	case asisdlsop:
 	  if (opnd->addr.writeback == 0)
@@ -1663,6 +1668,36 @@ operand_general_constraint_met_p (const aarch64_opnd_info *opnds, int idx,
 	  if (!value_aligned_p (opnd->addr.offset.imm, 8))
 	    {
 	      set_unaligned_error (mismatch_detail, idx, 8);
+	      return 0;
+	    }
+	  break;
+
+	case AARCH64_OPND_ADDR_SIMM11:
+	  /* Signed 11 bits immediate offset (multiple of 16).  */
+	  if (!value_in_range_p (opnd->addr.offset.imm, -1024, 1008))
+	    {
+	      set_offset_out_of_range_error (mismatch_detail, idx, -1024, 1008);
+	      return 0;
+	    }
+
+	  if (!value_aligned_p (opnd->addr.offset.imm, 16))
+	    {
+	      set_unaligned_error (mismatch_detail, idx, 16);
+	      return 0;
+	    }
+	  break;
+
+	case AARCH64_OPND_ADDR_SIMM13:
+	  /* Signed 13 bits immediate offset (multiple of 16).  */
+	  if (!value_in_range_p (opnd->addr.offset.imm, -4096, 4080))
+	    {
+	      set_offset_out_of_range_error (mismatch_detail, idx, -4096, 4080);
+	      return 0;
+	    }
+
+	  if (!value_aligned_p (opnd->addr.offset.imm, 16))
+	    {
+	      set_unaligned_error (mismatch_detail, idx, 16);
 	      return 0;
 	    }
 	  break;
@@ -2091,6 +2126,7 @@ operand_general_constraint_met_p (const aarch64_opnd_info *opnds, int idx,
 	case AARCH64_OPND_CCMP_IMM:
 	case AARCH64_OPND_EXCEPTION:
 	case AARCH64_OPND_UIMM4:
+	case AARCH64_OPND_UIMM4_ADDG:
 	case AARCH64_OPND_UIMM7:
 	case AARCH64_OPND_UIMM3_OP1:
 	case AARCH64_OPND_UIMM3_OP2:
@@ -2104,6 +2140,21 @@ operand_general_constraint_met_p (const aarch64_opnd_info *opnds, int idx,
 	    {
 	      set_imm_out_of_range_error (mismatch_detail, idx, 0,
 					  (1 << size) - 1);
+	      return 0;
+	    }
+	  break;
+
+	case AARCH64_OPND_UIMM10:
+	  /* Scaled unsigned 10 bits immediate offset.  */
+	  if (!value_in_range_p (opnd->imm.value, 0, 1008))
+	    {
+	      set_imm_out_of_range_error (mismatch_detail, idx, 0, 1008);
+	      return 0;
+	    }
+
+	  if (!value_aligned_p (opnd->imm.value, 16))
+	    {
+	      set_unaligned_error (mismatch_detail, idx, 16);
 	      return 0;
 	    }
 	  break;
@@ -3434,7 +3485,9 @@ aarch64_print_operand (char *buf, size_t size, bfd_vma pc,
     case AARCH64_OPND_NZCV:
     case AARCH64_OPND_EXCEPTION:
     case AARCH64_OPND_UIMM4:
+    case AARCH64_OPND_UIMM4_ADDG:
     case AARCH64_OPND_UIMM7:
+    case AARCH64_OPND_UIMM10:
       if (optional_operand_p (opcode, idx) == TRUE
 	  && (opnd->imm.value ==
 	      (int64_t) get_optional_operand_default_value (opcode)))
@@ -3504,6 +3557,11 @@ aarch64_print_operand (char *buf, size_t size, bfd_vma pc,
 	snprintf (buf, size, "[%s]", name);
       break;
 
+    case AARCH64_OPND_ADDR_SIMPLE_2:
+      name = get_64bit_int_reg_name (opnd->addr.base_regno, 1);
+      snprintf (buf, size, "[%s]!", name);
+      break;
+
     case AARCH64_OPND_ADDR_REGOFF:
     case AARCH64_OPND_SVE_ADDR_R:
     case AARCH64_OPND_SVE_ADDR_RR:
@@ -3540,6 +3598,8 @@ aarch64_print_operand (char *buf, size_t size, bfd_vma pc,
     case AARCH64_OPND_ADDR_SIMM9:
     case AARCH64_OPND_ADDR_SIMM9_2:
     case AARCH64_OPND_ADDR_SIMM10:
+    case AARCH64_OPND_ADDR_SIMM11:
+    case AARCH64_OPND_ADDR_SIMM13:
     case AARCH64_OPND_ADDR_OFFSET:
     case AARCH64_OPND_SVE_ADDR_RI_S4x16:
     case AARCH64_OPND_SVE_ADDR_RI_S4xVL:
@@ -3869,6 +3929,14 @@ const aarch64_sys_reg aarch64_sys_regs [] =
   { "contextidr_el12",	CPENC (3, 5, C13, C0, 1), F_ARCHEXT },
   { "rndr",		CPENC(3,3,C2,C4,0), F_ARCHEXT | F_REG_READ }, /* RO */
   { "rndrrs",		CPENC(3,3,C2,C4,1), F_ARCHEXT | F_REG_READ }, /* RO */
+  { "tco",		CPENC(3,3,C4,C2,7), F_ARCHEXT },
+  { "tfsre0_el1",	CPENC(3,0,C6,C6,1), F_ARCHEXT },
+  { "tfsr_el1",		CPENC(3,0,C6,C5,0), F_ARCHEXT },
+  { "tfsr_el2",		CPENC(3,4,C6,C5,0), F_ARCHEXT },
+  { "tfsr_el3",		CPENC(3,6,C6,C6,0), F_ARCHEXT },
+  { "tfsr_el12",	CPENC(3,5,C6,C6,0), F_ARCHEXT },
+  { "rgsr_el1",		CPENC(3,0,C1,C0,5), F_ARCHEXT },
+  { "gcr_el1",		CPENC(3,0,C1,C0,6), F_ARCHEXT },
   { "tpidr_el0",        CPENC(3,3,C13,C0,2),	0 },
   { "tpidrro_el0",      CPENC(3,3,C13,C0,3),	0 }, /* RW */
   { "tpidr_el1",        CPENC(3,0,C13,C0,4),	0 },
@@ -4332,6 +4400,18 @@ aarch64_sys_reg_supported_p (const aarch64_feature_set features,
 	   && AARCH64_CPU_HAS_FEATURE (features, AARCH64_FEATURE_V8_5)))
     return FALSE;
 
+  /* System Registers in ARMv8.5-A with AARCH64_FEATURE_MEMTAG.  */
+  if ((reg->value == CPENC (3, 3, C4, C2, 7)
+       || reg->value == CPENC (3, 0, C6, C6, 1)
+       || reg->value == CPENC (3, 0, C6, C5, 0)
+       || reg->value == CPENC (3, 4, C6, C5, 0)
+       || reg->value == CPENC (3, 6, C6, C6, 0)
+       || reg->value == CPENC (3, 5, C6, C6, 0)
+       || reg->value == CPENC (3, 0, C1, C0, 5)
+       || reg->value == CPENC (3, 0, C1, C0, 6))
+      && !(AARCH64_CPU_HAS_FEATURE (features, AARCH64_FEATURE_MEMTAG)))
+    return FALSE;
+
   return TRUE;
 }
 
@@ -4351,6 +4431,7 @@ const aarch64_sys_reg aarch64_pstatefields [] =
   { "uao",		0x03,	F_ARCHEXT },
   { "ssbs",		0x19,   F_ARCHEXT },
   { "dit",		0x1a,	F_ARCHEXT },
+  { "tco",		0x1c,	F_ARCHEXT },
   { 0,          CPENC(0,0,0,0,0), 0 },
 };
 
@@ -4381,6 +4462,11 @@ aarch64_pstatefield_supported_p (const aarch64_feature_set features,
       && !AARCH64_CPU_HAS_FEATURE (features, AARCH64_FEATURE_V8_4))
     return FALSE;
 
+  /* TCO.  Values are from aarch64_pstatefields.  */
+  if (reg->value == 0x1c
+      && !AARCH64_CPU_HAS_FEATURE (features, AARCH64_FEATURE_MEMTAG))
+    return FALSE;
+
   return TRUE;
 }
 
@@ -4395,15 +4481,33 @@ const aarch64_sys_ins_reg aarch64_sys_regs_ic[] =
 const aarch64_sys_ins_reg aarch64_sys_regs_dc[] =
 {
     { "zva",	    CPENS (3, C7, C4, 1),  F_HASXT },
+    { "gva",	    CPENS (3, C7, C4, 3),  F_HASXT | F_ARCHEXT },
+    { "gzva",	    CPENS (3, C7, C4, 4),  F_HASXT | F_ARCHEXT },
     { "ivac",       CPENS (0, C7, C6, 1),  F_HASXT },
+    { "igvac",      CPENS (0, C7, C6, 3),  F_HASXT | F_ARCHEXT },
+    { "igsw",       CPENS (0, C7, C6, 4),  F_HASXT | F_ARCHEXT },
     { "isw",	    CPENS (0, C7, C6, 2),  F_HASXT },
+    { "igdvac",	    CPENS (0, C7, C6, 5),  F_HASXT | F_ARCHEXT },
+    { "igdsw",	    CPENS (0, C7, C6, 6),  F_HASXT | F_ARCHEXT },
     { "cvac",       CPENS (3, C7, C10, 1), F_HASXT },
+    { "cgvac",      CPENS (3, C7, C10, 3), F_HASXT | F_ARCHEXT },
+    { "cgdvac",     CPENS (3, C7, C10, 5), F_HASXT | F_ARCHEXT },
     { "csw",	    CPENS (0, C7, C10, 2), F_HASXT },
+    { "cgsw",       CPENS (0, C7, C10, 4), F_HASXT | F_ARCHEXT },
+    { "cgdsw",	    CPENS (0, C7, C10, 6), F_HASXT | F_ARCHEXT },
     { "cvau",       CPENS (3, C7, C11, 1), F_HASXT },
     { "cvap",       CPENS (3, C7, C12, 1), F_HASXT | F_ARCHEXT },
+    { "cgvap",      CPENS (3, C7, C12, 3), F_HASXT | F_ARCHEXT },
+    { "cgdvap",     CPENS (3, C7, C12, 5), F_HASXT | F_ARCHEXT },
     { "cvadp",      CPENS (3, C7, C13, 1), F_HASXT | F_ARCHEXT },
+    { "cgvadp",     CPENS (3, C7, C13, 3), F_HASXT | F_ARCHEXT },
+    { "cgdvadp",    CPENS (3, C7, C13, 5), F_HASXT | F_ARCHEXT },
     { "civac",      CPENS (3, C7, C14, 1), F_HASXT },
+    { "cigvac",     CPENS (3, C7, C14, 3), F_HASXT | F_ARCHEXT },
+    { "cigdvac",    CPENS (3, C7, C14, 5), F_HASXT | F_ARCHEXT },
     { "cisw",       CPENS (0, C7, C14, 2), F_HASXT },
+    { "cigsw",      CPENS (0, C7, C14, 4), F_HASXT | F_ARCHEXT },
+    { "cigdsw",     CPENS (0, C7, C14, 6), F_HASXT | F_ARCHEXT },
     { 0,       CPENS(0,0,0,0), 0 }
 };
 
@@ -4544,6 +4648,28 @@ aarch64_sys_ins_reg_supported_p (const aarch64_feature_set features,
   /* DC CVADP.  Values are from aarch64_sys_regs_dc.  */
   if (reg->value == CPENS (3, C7, C13, 1)
       && !AARCH64_CPU_HAS_FEATURE (features, AARCH64_FEATURE_CVADP))
+    return FALSE;
+
+  /* DC <dc_op> for ARMv8.5-A Memory Tagging Extension.  */
+  if ((reg->value == CPENS (0, C7, C6, 3)
+       || reg->value == CPENS (0, C7, C6, 4)
+       || reg->value == CPENS (0, C7, C10, 4)
+       || reg->value == CPENS (0, C7, C14, 4)
+       || reg->value == CPENS (3, C7, C10, 3)
+       || reg->value == CPENS (3, C7, C12, 3)
+       || reg->value == CPENS (3, C7, C13, 3)
+       || reg->value == CPENS (3, C7, C14, 3)
+       || reg->value == CPENS (3, C7, C4, 3)
+       || reg->value == CPENS (0, C7, C6, 5)
+       || reg->value == CPENS (0, C7, C6, 6)
+       || reg->value == CPENS (0, C7, C10, 6)
+       || reg->value == CPENS (0, C7, C14, 6)
+       || reg->value == CPENS (3, C7, C10, 5)
+       || reg->value == CPENS (3, C7, C12, 5)
+       || reg->value == CPENS (3, C7, C13, 5)
+       || reg->value == CPENS (3, C7, C14, 5)
+       || reg->value == CPENS (3, C7, C4, 4))
+      && !AARCH64_CPU_HAS_FEATURE (features, AARCH64_FEATURE_MEMTAG))
     return FALSE;
 
   /* AT S1E1RP, AT S1E1WP.  Values are from aarch64_sys_regs_at.  */

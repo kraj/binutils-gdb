@@ -1,3 +1,29 @@
+2018-11-12  Nick Clifton  <nickc@redhat.com>
+
+	PR 10865
+	* ld.texi (Entry Point): Make it clear that the text refers to
+	PE-based systems rather than just a PE system.
+
+2018-11-12  Nick Clifton  <nickc@redhat.com>
+
+	* po/es.po: Updated Spanish translation.
+
+2018-11-09  Nick Clifton  <nickc@redhat.com>
+
+	* po/fr.po: Updated French translation.
+
+2018-11-09  Claudiu Zissulescu  <claziss@synopsys.com>
+
+	* testsuite/ld-arc/tls_gd-01.d: Update test.
+	* testsuite/ld-arc/arclinux-nps.d: Add cpu option.
+
+2018-11-09  Marc  <marc@groundctl.com>
+
+	PR 23872
+	* scripttempl/pep.sc (pe.sc): Ensure rdata_runtime_pseudo_relocs
+	are aligned.
+	* scripttempl/pep.sc (pep.sc): Likewise.
+
 2018-11-06  H.J. Lu  <hongjiu.lu@intel.com>
 
 	* testsuite/config/default.exp (ELFEDIT): New.

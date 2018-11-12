@@ -1,3 +1,118 @@
+2018-11-12  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* skip.c (complete_skip_number): New function.
+	(_initialize_step_skip): Add completers to some skip commands.
+
+2018-11-09  Tom Tromey  <tom@tromey.com>
+
+	* remote.c (remote_g_packet_guess_s): Remove typedef and DEF_VEC.
+	(struct remote_g_packet_data): Derive from allocate_on_obstack.
+	<guesses>: Now a std::vector.
+	(remote_g_packet_data_init, register_remote_g_packet_guess):
+	Update.
+	(remote_read_description_p): Update.  Return bool.
+	(remote_target::read_description): Update.
+	(struct remote_g_packet_guess): Add constructor.
+
+2018-11-09  Tom Tromey  <tom@tromey.com>
+
+	* common/scoped_fd.h (class scoped_fd): Add move constructor and
+	move assignment operator.
+	* psymtab.c (psymtab_to_fullname): Update.
+	* source.h (open_source_file): Return scoped_fd.
+	(find_and_open_source): Likewise.
+	* source.c (open_source_file): Return scoped_fd.
+	(get_filename_and_charpos): Update.
+	(print_source_lines_base): Update.  Use scoped_fd::to_file.
+	(forward_search_command): Likewise.
+	(reverse_search_command): Likewise.
+	(find_and_open_source): Return scoped_fd.
+	* tui/tui-source.c (tui_set_source_content): Update.  Use
+	gdb_file_up.
+
+2018-11-09  John Baldwin  <jhb@FreeBSD.org>
+
+	* minsyms.c (minimal_symbol_reader::install): Fix unsigned
+	overflow.
+
+2018-11-09  Hafiz Abid Qadeer  <abidh@codesourcery.com>
+
+	* configure: Regenerate.
+
+2018-11-09  Tom de Vries  <tdevries@suse.de>
+
+	* symtab.c (symbol_set_names): Call symbol_find_demangled_name
+	unconditionally, to set the language of the symbol.  Manage freeing
+	returned pointer using gdb::unique_xmalloc_ptr.
+
+2018-11-08  Tom Tromey  <tom@tromey.com>
+
+	* record.c (require_record_target): Upper-case "<TAB>".
+
+2018-11-08  Tom Tromey  <tom@tromey.com>
+
+	* python/lib/gdb/command/pretty_printers.py
+	(InfoPrettyPrinter.invoke): Don't indent "objfile" heading.
+
+2018-11-08  Tom Tromey  <tom@tromey.com>
+
+	PR gdb/23555:
+	PR gdb/23838:
+	* target.h (target_supports_terminal_ours): Return bool.
+	* target.c (target_supports_terminal_ours): Handle case where
+	current_top_target returns nullptr.  Return bool.
+
+2018-11-08  Joel Brobecker  <brobecker@adacore.com>
+
+	* aarch64-tdep.c (aapcs_is_vfp_call_or_return_candidate_1):
+	return the correct count for potential HFAs.
+
+2018-11-08  Jan Beulich  <jbeulich@suse.com>
+
+	* i387-tdep.c (i387_supply_xsave): Split handling of
+	X86_XSTATE_ZMM_H and X86_XSTATE_ZMM.
+	(i387_collect_xsave): Likewise.
+
+2018-11-08  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* riscv-tdep.c (riscv_insn::decode): Update header comment.
+	(riscv_frame_this_id): Catch errors thrown while building the
+	frame cache, leave the frame id as the default, which is the outer
+	frame id.
+
+2018-11-07  Joel Brobecker  <brobecker@adacore.com>
+
+	* ada-lang.c (read_atcb): Only set task_info->called_task if
+	task_info->state == Entry_Caller_Sleep.
+	(print_ada_task_info): Do not check task_info->state before
+	checking task_info->called_task.
+	(info_task): Likewise.
+
+2018-11-07  Joel Brobecker  <brobecker@adacore.com>
+
+	* ada-tasks.c (read_atcb): Clear task_info before computing
+	the value of each of its fields.
+
+2018-11-07  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* dwarf2read.c (dwarf2_init_integer_type): Check for name being
+	NULL before dereferencing it.
+
+2018-11-06  Tom de Vries  <tdevries@suse.de>
+
+	* linux-tdep.c (linux_vsyscall_range_raw): Use xmalloc to allocate
+	program headers.
+
+2018-11-06  Max Filippov  <jcmvbkbc@gmail.com>
+
+	* configure.tgt (xtensa*-*-linux*): Change to xtensa*-*-*linux*
+	so that it applies to uclinux as well.
+
+2018-11-06  Marius Muench  <marius.muench@eurecom.fr>
+
+	* arm-tdep.c (arm_scan_prologue): Don't dereference FP reg
+	when on AAPCS.
+
 2018-11-06  John Baldwin  <jhb@FreeBSD.org>
 
 	* riscv-fbsd-nat.c (getregs_supplies): Return true for

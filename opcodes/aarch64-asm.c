@@ -381,6 +381,8 @@ aarch64_ins_imm (const aarch64_operand *self, const aarch64_opnd_info *info,
   imm = info->imm.value;
   if (operand_need_shift_by_two (self))
     imm >>= 2;
+  if (operand_need_shift_by_four (self))
+    imm >>= 4;
   insert_all_fields (self, code, imm);
   return TRUE;
 }
@@ -616,6 +618,17 @@ aarch64_ins_addr_simple (const aarch64_operand *self ATTRIBUTE_UNUSED,
   return TRUE;
 }
 
+/* Encode the address operand for e.g. STGV <Xt>, [<Xn|SP>]!.  */
+bfd_boolean
+aarch64_ins_addr_simple_2 (const aarch64_operand *self,
+			   const aarch64_opnd_info *info, aarch64_insn *code,
+			   const aarch64_inst *inst,
+			   aarch64_operand_error *errors)
+
+{
+  return aarch64_ins_addr_simple (self, info, code, inst, errors);
+}
+
 /* Encode the address operand for e.g.
      STR <Qt>, [<Xn|SP>, <R><m>{, <extend> {<amount>}}].  */
 bfd_boolean
@@ -688,7 +701,8 @@ aarch64_ins_addr_simm (const aarch64_operand *self,
   insert_field (FLD_Rn, code, info->addr.base_regno, 0);
   /* simm (imm9 or imm7) */
   imm = info->addr.offset.imm;
-  if (self->fields[0] == FLD_imm7)
+  if (self->fields[0] == FLD_imm7
+     || info->qualifier == AARCH64_OPND_QLF_imm_tag)
     /* scaled immediate in ld/st pair instructions..  */
     imm >>= get_logsz (aarch64_get_qualifier_esize (info->qualifier));
   insert_field (self->fields[0], code, imm, 0);

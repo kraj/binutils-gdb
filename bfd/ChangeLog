@@ -1,3 +1,69 @@
+2018-11-09  Bernhard M. Wiedemann  <bwiedemann@suse.de>
+
+	* peXXigen.c (_bfd_XXi_only_swap_filehdr_out): Correct comment
+	concerning timestamp insertion.
+
+2018-11-09  Cupertino Miranda  <cmiranda@synopsys.com>
+
+	* arc-got.h (arc_got_entry_type_for_reloc): Changed to
+	correct static TLS relocs.
+	* elf32-arc.c (elf_arc_check_relocs): Introduced warning to
+	TLS relocs which require -fPIC.
+	(arc_create_forced_local_got_entries_for_tls): Created.
+	Traverses list of GOT entries to be resolved statically
+	when needed.
+	(elf_arc_finish_dynamic_sections): Changed. Calls
+	arc_create_forced_local_got_entries_for_tls for each known
+	possibly GOT symbol.
+
+2018-11-09  rhn  <sowaac.rhn@porcupinefactory.org>
+
+	PR 23699
+	* ihex.c (ihex_write_object_contents): Check for sign extended
+	addresses that cannot be supported in the ihex format.
+
+2018-11-09  Claudiu Zissulescu  <claziss@synopsys.com>
+
+	* arc-got.h (arc_get_local_got_ents): Revamp it; use
+	elf_local_got_ents to store the local got list.
+	(get_got_entry_list_for_symbo): Restructure it.
+	* elf32-arc.c (elf_arc_relocate_section): Correct the call to
+	get_got_entry_list_for_symbol.
+
+2018-11-07  Nick Clifton  <nickc@redhat.com>
+
+	* po/fr.po: Updated French translation.
+	* po/pt.po: Updated Portuguese translation.
+
+2018-11-06  Roman Bolshakov <r.bolshakov@yadro.com>
+	    Saagar Jha  <saagar@saagarjha.com>
+
+	* mach-o.h: Add new enums for BFD_MACH_O_PLATFORM_MACOS,
+	BFD_MACH_O_PLATFORM_IOS, BFD_MACH_O_PLATFORM_TVOS,
+	BFD_MACH_O_PLATFORM_WATCHOS, BFD_MACH_O_PLATFORM_BRIDGEOS,
+	BFD_MACH_O_TOOL_CLANG, BFD_MACH_O_TOOL_SWIFT, BFD_MACH_O_TOOL_LD.
+	(struct bfd_mach_o_note_command): New.
+	(struct bfd_mach_o_build_version_tool): New.
+	(struct bfd_mach_o_build_version_command): New.
+	(bfd_mach_o_read_version_min): Don't split version into
+	a few fields. Rename reserved to sdk.
+	* mach-o.c (bfd_mach_o_read_version_min): Don't split version into a
+	few fields. Rename reserved to sdk.
+	(bfd_mach_o_read_command): Handle LC_VERSION_MIN_TVOS, LC_NOTE,
+	LC_BUILD_VERSION.
+	(bfd_mach_o_read_note): New.
+	(bfd_mach_o_read_build_version): New.
+
+2018-11-07  Yoshinori Sato  <ysato@users.sourceforge.jp>
+
+	* config.bfd: Add rx-*-linux.
+	* congigure.ac: Likewise.
+	* elf32-rx.c (rx_linux_object_p): New function.
+	(TARGET_LITTLE_SYM, TARGET_LITTLE_NAME)
+	(elf_backend_object_p, elf32_bed): Define rx-*-linux.
+	* targets.c: Add rx_elf32_linux_le_vec.
+	* configure: Regenerate.
+
 2018-11-06  Romain Margheriti  <lilrom13@gmail.com>
 
 	PR 23742

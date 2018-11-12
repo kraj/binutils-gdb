@@ -665,6 +665,8 @@ aarch64_ext_imm (const aarch64_operand *self, aarch64_opnd_info *info,
 
   if (operand_need_shift_by_two (self))
     imm <<= 2;
+  else if (operand_need_shift_by_four (self))
+    imm <<= 4;
 
   if (info->type == AARCH64_OPND_ADDR_ADRP)
     imm <<= 12;
@@ -983,6 +985,23 @@ aarch64_ext_addr_simple (const aarch64_operand *self ATTRIBUTE_UNUSED,
   return TRUE;
 }
 
+
+
+/* Decode the address operand for e.g. STGV <Xt>, [<Xn|SP>]!.  */
+bfd_boolean
+aarch64_ext_addr_simple_2 (const aarch64_operand *self ATTRIBUTE_UNUSED,
+			   aarch64_opnd_info *info,
+			   aarch64_insn code,
+			   const aarch64_inst *inst ATTRIBUTE_UNUSED,
+			   aarch64_operand_error *errors ATTRIBUTE_UNUSED)
+{
+  /* Rn */
+  info->addr.base_regno = extract_field (FLD_Rn, code, 0);
+  info->addr.writeback = 1;
+  info->addr.preind = 1;
+  return TRUE;
+}
+
 /* Decode the address operand for e.g.
      stlur <Xt>, [<Xn|SP>{, <amount>}].  */
 bfd_boolean
@@ -1065,7 +1084,8 @@ aarch64_ext_addr_simm (const aarch64_operand *self, aarch64_opnd_info *info,
   /* simm (imm9 or imm7)  */
   imm = extract_field (self->fields[0], code, 0);
   info->addr.offset.imm = sign_extend (imm, fields[self->fields[0]].width - 1);
-  if (self->fields[0] == FLD_imm7)
+  if (self->fields[0] == FLD_imm7
+      || info->qualifier == AARCH64_OPND_QLF_imm_tag)
     /* scaled immediate in ld/st pair instructions.  */
     info->addr.offset.imm *= aarch64_get_qualifier_esize (info->qualifier);
   /* qualifier */
