@@ -22,6 +22,7 @@ patches="
 0003-gold-Discard-.note.gnu.property-for-PR-gold-23503.patch
 0004-gold-Pass-Wa-mx86-used-note-no-to-COMPILE-CXXCOMPILE.patch
 0005-gold-Properly-align-the-NT_GNU_PROPERTY_TYPE_0-note.patch
+0001-gold-Ignore-gnu.build.attributes-section.patch
 	binutils-lto-mixed.patch
 	binutils-lto-mixed-test.patch
 	binutils-lto-mixed-plugin.patch

@@ -1,0 +1,27 @@
+From b5760c3994800bd7f69e99d63d57606892983f11 Mon Sep 17 00:00:00 2001
+From: "H.J. Lu" <hjl.tools@gmail.com>
+Date: Mon, 12 Nov 2018 08:23:14 -0800
+Subject: [PATCH] gold: Ignore gnu.build.attributes section
+
+	PR gold/23880
+	* target-reloc.h (Default_comdat_behavior::get): Ignore
+	.gnu.build.attributes section.
+---
+ gold/target-reloc.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/gold/target-reloc.h b/gold/target-reloc.h
+index 6bde51dc31..d4360e7369 100644
+--- a/gold/target-reloc.h
++++ b/gold/target-reloc.h
+@@ -136,6 +136,7 @@ class Default_comdat_behavior
+     if (Layout::is_debug_info_section(name))
+       return CB_PRETEND;
+     if (strcmp(name, ".eh_frame") == 0
++	|| strncmp(name, ".gnu.build.attributes", 21) == 0 	// FIXME: We should really be checking the section type for ST_NOTE...
+ 	|| strcmp(name, ".gcc_except_table") == 0)
+       return CB_IGNORE;
+     return CB_ERROR;
+-- 
+2.19.1
+
