@@ -1,3 +1,11 @@
+2018-11-28  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* readelf.c: Include elf/bpf.h.
+	(guess_is_rela): EM_BPF uses REL relocations.
+	(dump_relocations): Handle EM_BPF.
+	(get_machine_name): Likewise.
+	(is_32bit_abs_reloc): Likewise.
+
 2018-11-13  Francois H. Theron <francois.theron@netronome.com>
 
 	* testsuite/binutils-all/nfp/test1.d: Test for swapped operand crc[].

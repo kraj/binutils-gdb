@@ -1,3 +1,8 @@
+2018-11-26  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* bpf.cpu: New file.
+	* bpf.opc: Likewise.
+
 2018-10-05  Richard Henderson  <rth@twiddle.net>
 	    Stafford Horne  <shorne@gmail.com>
 

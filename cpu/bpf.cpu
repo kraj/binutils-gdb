@@ -1,0 +1,517 @@
+;; Linux BPF CPU description  -*- Scheme -*-
+;; Copyright 2018 Free Software Foundation, Inc.
+;;
+;; Contributed by Oracle Inc.
+;;
+;; This file is part of the GNU Binutils and of GDB.
+;;
+;; This program is free software; you can redistribute it and/or
+;; modify it under the terms of the GNU General Public License as
+;; published by the Free Software Foundation; either version 3 of the
+;; License, or (at your option) any later version.
+;;
+;; This program is distributed in the hope that it will be useful, but
+;; WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+;; General Public License for more details.
+;;
+;; You should have received a copy of the GNU General Public License
+;; along with this program; if not, write to the Free Software
+;; Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston, MA
+;; 02110-1301, USA.
+
+(include "simplify.inc")
+
+;;;; Hardware Hierarchy
+
+;;
+;;                       bpf                 architecture
+;;                        |
+;;                      bpfbf                cpu-family
+;;                    /        \
+;;                bpf:be      bpf:le         machine
+;;                   |           |
+;;             bpf-be-def   bpf-le-def       model
+
+(define-arch
+  (name bpf)
+  (comment "Linux kernel BPF")
+  (insn-lsb0? #t)
+  (machs bpf:le bpf:be)
+  (isas ebpf-isa))
+
+(define-isa
+  (name ebpf-isa)
+  (comment "The eBPF instruction set")
+  ;; Default length to record in ifields.  This is used in
+  ;; calculations involving bit numbers.
+  (default-insn-word-bitsize 32)
+  ;; Length of an unknown instruction.  Used by disassembly and by the
+  ;; simulator's invalid insn handler.
+  (default-insn-bitsize 64) ;; XXX: there is an error when the last
+                            ;; instruction is unknown: it tries to
+                            ;; read 64-bit after the unkonwn 32-bit
+                            ;; base word.  CGEN bug.
+  ;; Number of bits of insn that can be initially fetched.
+  (base-insn-bitsize 64))
+
+(define-cpu
+  (name bpfbf) ; bf stands for "base family".
+  (comment "Linux kernel eBPF virtual CPU, base family")
+  ;; XXX: how to handle endianness in the disassembler??
+  (endian either)
+  (word-bitsize 64))
+
+(define-mach
+  (name bpf:le)
+  (comment "Linux eBPF, little-endian")
+  (cpu bpfbf)
+  (isas ebpf-isa))
+
+(define-mach
+  (name bpf:be)
+  (comment "Linux eBPF, big-endian")
+  (cpu bpfbf)
+  (isas ebpf-isa))
+
+(define-model
+  (name bpf-le-def)
+  (comment "Linux eBPF (little-endian) default model")
+  (mach bpf:le)
+  (unit u-exec "execution unit" ()
+    1 ; issue
+    1 ; done
+    () ; state
+    () ; inputs
+    () ; outputs
+    () ; profile action (default)
+    ))
+
+(define-model
+  (name bpf-be-def)
+  (comment "Linux eBPF (big-endian) default model")
+  (mach bpf:be)
+  (unit u-exec "execution unit" ()
+    1 ; issue
+    1 ; done
+    () ; state
+    () ; inputs
+    () ; outputs
+    () ; profile action (default)
+    ))
+
+;;;; Hardware Elements
+
+;; eBPF programs can access 10 general-purpose registers which are
+;; 64-bit.
+
+(define-hardware
+  (name h-gpr)
+  (comment "General Purpose Registers")
+  (attrs (ISA ebpf-isa) (MACH bpf:le bpf:be))
+  (type register DI (16))
+  (indices keyword "%" ;; XXX If we don't use register prefixes, then
+                       ;; there can be conflicts with symbols, which
+                       ;; would require to reorder the insns and also
+                       ;; could lead to confusing situations.
+           (;; ABI names.  Take priority when disassembling.
+            (a 0) (r1 1) (r2 2) (r3 3) (r4 4) (r5 5) (r6 6)
+            (r7 7) (r8 8) (r9 9) (fp 10)
+            ;; Additional names recognized when assembling.
+            (r0 0) (r10 10))))
+
+;; The program counter.  CGEN requires it, even if it is not visible
+;; to eBPF programs.
+
+(dnh h-pc "program counter" (PC PROFILE) (pc) () () ())
+
+;;;; The ISA
+
+;; The encoding of 64-bit eBPF instructions is:
+;;
+;;    msb                                                        lsb
+;;    +------------------------+----------------+----+----+--------+
+;;    |imm32|imm64-a           |offset16        |src |dst |opcode  |
+;;    +------------------------+----------------+----+----+--------+
+;;    63                        31               15   11   7      0
+;;
+;; The encoding of the 128-bit eBPF instruction is:
+;;
+;;    msb                                                        lsb
+;;    +------------------------+----------------+----+----+--------+
+;;    |imm64                   |offset16        |src |dst |opcode  |
+;;    +------------------------+----------------+----+----+--------+
+;;    63                        31               15   11   7      0
+;;    +------------------------+-----------------------------------+
+;;    |imm64                   |                                   |
+;;    +------------------------+-----------------------------------+
+
+;;; Fields
+
+(define-pmacro (dwf x-name x-comment x-attrs
+                    x-word-offset x-word-length x-start x-length
+                    x-mode)
+  "Define a field including its containing word."
+  (define-ifield
+    (name x-name)
+    (comment x-comment)
+    (.splice attrs (.unsplice x-attrs))
+    (word-offset x-word-offset)
+    (word-length x-word-length)
+    (start x-start)
+    (length x-length)
+    (mode x-mode)))
+
+;; XXX endianness impacts the numbering of insn words?
+(dwf f-offset16 "eBPF offset field" ((ISA ebpf-isa)) 0 32 31 16 INT)
+(dwf f-src "eBPF source register field" ((ISA ebpf-isa)) 0 32 15 4 UINT)
+(dwf f-dst "eBPF source register field" ((ISA ebpf-isa)) 0 32 11 4 UINT)
+;;(dwf f-opcode "eBPF instruction opcode field" ((ISA ebpf-isa)) 0 32 7 8 UINT)
+(dwf f-op-code "eBPF opcode code" ((ISA ebpf-isa)) 0 32 7 4 UINT)
+(dwf f-op-src "eBPF opcode source" ((ISA ebpf-isa)) 0 32 3 1 UINT)
+(dwf f-op-class "eBPF opcode instruction class" ((ISA ebpf-isa)) 0 32 2 3 UINT)
+(dwf f-op-mode "eBPF opcode mode" ((ISA ebpf-isa)) 0 32 7 3 UINT)
+(dwf f-op-size "eBPF opcode size" ((ISA ebpf-isa)) 0 32 4 2 UINT)
+
+;; Note that, due to a CGEN limitation, the only safe usage of f-imm32
+;; fields in instruction formats is when it is initialized to 0.  This
+;; is because the resulting mask is applied to the first word (32-bit)
+;; of the instruction, regardless word-offset.
+;;
+;; It is ok to use $imm32 in assembler syntax though.
+
+(dwf f-imm32 "eBPF 32-bit immediate field" ((ISA ebpf-isa)) 32 32 31 32 INT)
+
+;; CGEN doesn't support instruction words bigger than 32-bit.  Also,
+;; in practice fields are required to fit in a single containing
+;; instruction word.  Therefore the eBPF 64-bit immediate fields shall
+;; be defined using a multi-ifield, as it is done below.
+;;
+;; Note that despite the f-imm64-c field should be part of the
+;; multi-ifield, even if it is not used in any instruction operand.
+
+(dwf f-imm64-a "eBPF 64-bit immediate a" ((ISA ebpf-isa)) 32 32 31 32 UINT)
+(dwf f-imm64-b "eBPF 64-bit immediate b" ((ISA ebpf-isa)) 64 32 31 32 UINT)
+(dwf f-imm64-c "eBPF 64-bit immediate c" ((ISA ebpf-isa)) 96 32 31 32 UINT)
+
+(define-multi-ifield
+  (name f-imm64)
+  (comment "eBPF 64-bit immediate field")
+  (attrs (ISA ebpf-isa))
+  (mode DI)
+  (subfields f-imm64-a f-imm64-b f-imm64-c)
+  ;; XXX: handle endianness in `insert' and 'extract'!!
+  ;; XXX: also negative numbers are NOT diplayed as such in the disasssembler.
+  (insert (sequence ()
+                    (set (ifield f-imm64-c) (const 0))
+                    (set (ifield f-imm64-b) (srl (ifield f-imm64) (const 32)))
+                    (set (ifield f-imm64-a) (and (ifield f-imm64) (const #xffffffff)))))
+  (extract (sequence ()
+                     (set (ifield f-imm64) (or (sll (ifield f-imm64-b) (const 16))
+                                               (ifield f-imm64-a))))))
+
+;;; Operands
+
+(dnop dst "destination register" ((ISA ebpf-isa)) h-gpr f-dst)
+(dnop src "source register" ((ISA ebpf-isa)) h-gpr f-src)
+(dnop imm32 "32-bit immediate" ((ISA ebpf-isa)) h-sint f-imm32)
+(dnop imm64 "64-bit immediate" ((ISA ebpf-isa)) h-sint f-imm64)
+(dnop offset16 "16-bit offset" ((ISA ebpf-isa)) h-sint f-offset16)
+
+;;; Instruction classes, sources and codes
+
+(define-normal-insn-enum insn-op-class "eBPF instruction class"
+  ((ISA ebpf-isa)) OP_CLASS_ f-op-class
+  ((LD    #b000) (LDX   #b001) (ST    #b010) (STX   #b011)
+   (ALU   #b100) (JMP   #b101) (ALU64 #b111)))
+
+(define-normal-insn-enum insn-op-src "eBPF instruction source"
+  ((ISA ebpf-isa)) OP_SRC_ f-op-src
+  ;; in eBPF: X => use `src' as source operand.
+  ;;          K => use `imm32' as ource operand.
+  ((K #b0) (X #b1)))
+
+(define-normal-insn-enum insn-op-bitsize "eBPF bit size for le/be"
+  ((ISA ebpf-isa)) OP_BITSIZE_ f-imm32
+  (("16" #x00000010) ("32" #x00000020) ("64" #x00000040)))
+
+(define-normal-insn-enum insn-op-code-alu "eBPF instruction codes"
+  ((ISA ebpf-isa)) OP_CODE_ f-op-code
+  (;; Codes for OP_CLASS_ALU and OP_CLASS_ALU64
+   (ADD #x0) (SUB #x1) (MUL #x2) (DIV #x3) (OR #x4) (AND #x5)
+   (LSH #x6) (RSH #x7) (NEG #x8) (MOD #x9) (XOR #xa) (MOV #xb)
+   (ARSH #xc) (END #xd)
+   ;; Codes for OP_CLASS_JMP
+   (JA #x0) (JEQ #x1) (JGT #x2) (JGE #x3) (JSET #x4)
+   (JNE #x5) (JSGT #x6) (JSGE #x7) (CALL #x8) (EXIT #x9)
+   (JLT #xa) (JLE #xb) (JSLT #xc) (JSLE #xd)))
+
+(define-normal-insn-enum insn-op-size "eBPF load/store instruction sizes"
+  ((ISA ebpf-isa)) OP_SIZE_ f-op-size
+  ((W  #b00)   ;; Word:        4 byte
+   (H  #b01)   ;; Half-word:   2 byte
+   (B  #b10)   ;; Byte:        1 byte
+   (DW #b11))) ;; Double-word: 8 byte
+
+(define-normal-insn-enum insn-op-mode "eBPF load/store instruction modes"
+  ((ISA ebpf-isa)) OP_MODE_ f-op-mode
+  ((IMM #b000) (ABS #b001) (IND #b010) (MEM #b011)
+   ;; #b100 and #b101 are used in classic BPF only, reserved in eBPF.
+   (XADD #b110)))
+
+;;; ALU instructions
+
+(define-pmacro (define-alu-insn-un x-basename x-suffix x-op-class x-op-code)
+  (dni (.sym x-basename x-suffix)
+       (.str x-basename x-suffix)
+       ((ISA ebpf-isa))
+       (.str x-basename x-suffix " $dst")
+       (+ (f-imm32 0) (f-offset16 0) (f-src 0) dst
+          x-op-class OP_SRC_X x-op-code) () ()))
+
+(define-pmacro (define-alu-insn-bin x-basename x-suffix x-op-class x-op-code)
+  (begin
+    (dni (.sym x-basename x-suffix "i")
+         (.str x-basename x-suffix " immediate")
+         ((ISA ebpf-isa))
+         (.str x-basename x-suffix " $dst,$imm32")
+         (+ imm32 (f-offset16 0) (f-src 0) dst
+            x-op-class OP_SRC_K x-op-code) () ())
+    (dni (.sym x-basename x-suffix "r")
+         (.str x-basename x-suffix " register")
+         ((ISA ebpf-isa))
+         (.str x-basename x-suffix " $dst,$src")
+         (+ (f-imm32 0) (f-offset16 0) src dst
+            x-op-class OP_SRC_X x-op-code) () ())))
+
+(define-pmacro (daiu x-basename x-op-code)
+  (begin
+    (define-alu-insn-un x-basename "" OP_CLASS_ALU64 x-op-code)
+    (define-alu-insn-un x-basename "32" OP_CLASS_ALU x-op-code)))
+
+(define-pmacro (daib x-basename x-op-code)
+  (begin
+    (define-alu-insn-bin x-basename "" OP_CLASS_ALU64 x-op-code)
+    (define-alu-insn-bin x-basename "32" OP_CLASS_ALU x-op-code)))
+
+(daib add OP_CODE_ADD)
+(daib sub OP_CODE_SUB)
+(daib mul OP_CODE_MUL)
+(daib div OP_CODE_DIV)
+(daib or  OP_CODE_OR)
+(daib and OP_CODE_AND)
+(daib lsh OP_CODE_LSH)
+(daib rsh OP_CODE_RSH)
+(daib mod OP_CODE_MOD)
+(daib xor OP_CODE_XOR)
+(daib mov OP_CODE_MOV)
+(daib arsh OP_CODE_ARSH)
+(daiu neg OP_CODE_NEG)
+
+;;; Endianness conversion instructions
+
+(define-pmacro (define-endian-insn x-prefix x-bitsize x-op-src)
+  (dni (.sym x-prefix x-bitsize)
+       (.str x-prefix x-bitsize " register")
+       ((ISA ebpf-isa))
+       (.str x-prefix x-bitsize " $dst")
+       (+  (f-imm32 16) (f-offset16 0) (f-src 0) dst ;;(.sym OP_BITSIZE_ x-bitsize)
+          OP_CLASS_ALU x-op-src OP_CODE_END) () ()))
+
+(define-pmacro (deni x-bitsize)
+  (begin
+    (define-endian-insn "le" x-bitsize OP_SRC_X)
+    (define-endian-insn "be" x-bitsize OP_SRC_K)))
+
+;;(deni 16)
+;;(deni 32)
+;;(deni 64)
+
+;;; Load/Store instructions
+
+(dni lddw "LDDW" ((ISA ebpf-isa)) "lddw $dst,$imm64"
+     (+ imm64 (f-offset16 0) (f-src 0) dst
+        OP_CLASS_LD OP_SIZE_DW OP_MODE_IMM) () ())
+
+(dni ldabsw "LDABSW" ((ISA ebpf-isa)) "ldabsw $src,$dst,$imm32"
+     (+ imm32 (f-offset16 0) src dst
+        OP_CLASS_LD OP_SIZE_W OP_MODE_ABS) () ())
+
+(dni ldabsh "LDABSH" ((ISA ebpf-isa)) "ldabsh $src,$dst,$imm32"
+     (+ imm32 (f-offset16 0) src dst
+        OP_CLASS_LD OP_SIZE_H OP_MODE_ABS) () ())
+
+(dni ldabsb "LDABSB" ((ISA ebpf-isa)) "ldabsb $src,$dst,$imm32"
+     (+ imm32 (f-offset16 0) src dst
+        OP_CLASS_LD OP_SIZE_B OP_MODE_ABS) () ())
+
+(dni ldabsdw "LDABSDW" ((ISA ebpf-isa)) "ldabsdw $src,$dst,$imm32"
+     (+ imm32 (f-offset16 0) src dst
+        OP_CLASS_LD OP_SIZE_DW OP_MODE_ABS) () ())
+
+(dni ldindw "LDINDW" ((ISA ebpf-isa)) "ldindw $src,$dst,$imm32"
+     (+ imm32 (f-offset16 0) src dst
+        OP_CLASS_LD OP_SIZE_W OP_MODE_IND) () ())
+
+(dni ldindh "LDINDH" ((ISA ebpf-isa)) "ldindh $src,$dst,$imm32"
+     (+ imm32 (f-offset16 0) src dst
+        OP_CLASS_LD OP_SIZE_H OP_MODE_IND) () ())
+
+(dni ldindb "LDINDB" ((ISA ebpf-isa)) "ldindb $src,$dst,$imm32"
+     (+ imm32 (f-offset16 0) src dst
+        OP_CLASS_LD OP_SIZE_B OP_MODE_IND) () ())
+
+(dni ldinddw "LDINDDW" ((ISA ebpf-isa)) "ldinddw $src,$dst,$imm32"
+     (+ imm32 (f-offset16 0) src dst
+        OP_CLASS_LD OP_SIZE_DW OP_MODE_IND) () ())
+
+(dni ldxw "LDXW" ((ISA ebpf-isa)) "ldxw $dst,[$src+$offset16]"
+     (+ (f-imm32 0) offset16 src dst
+        OP_CLASS_LDX OP_SIZE_W OP_MODE_MEM) () ())
+
+(dni ldxh "LDXH" ((ISA ebpf-isa)) "ldxh $dst,[$src+$offset16]"
+     (+ (f-imm32 0) offset16 src dst
+        OP_CLASS_LDX OP_SIZE_H OP_MODE_MEM) () ())
+
+(dni ldxb "LDXB" ((ISA ebpf-isa)) "ldxb $dst,[$src+$offset16]"
+     (+ (f-imm32 0) offset16 src dst
+        OP_CLASS_LDX OP_SIZE_B OP_MODE_MEM) () ())
+
+(dni ldxdw "LDXDW" ((ISA ebpf-isa)) "ldxdw $dst,[$src+$offset16]"
+     (+ (f-imm32 0) offset16 src dst
+        OP_CLASS_LDX OP_SIZE_DW OP_MODE_MEM) () ())
+
+(dni stw "STW" ((ISA ebpf-isa)) "stw [$dst+$offset16],$imm32"
+     (+ imm32 offset16 (f-src 0) dst
+        OP_CLASS_ST OP_SIZE_W OP_MODE_MEM) () ())
+
+(dni sth "STH" ((ISA ebpf-isa)) "sth [$dst+$offset16],$imm32"
+     (+ imm32 offset16 (f-src 0) dst
+        OP_CLASS_ST OP_SIZE_H OP_MODE_MEM) () ())
+
+(dni stb "STB" ((ISA ebpf-isa)) "stb [$dst+$offset16],$imm32"
+     (+ imm32 offset16 (f-src 0) dst
+        OP_CLASS_ST OP_SIZE_B OP_MODE_MEM) () ())
+
+(dni stdw "STDW" ((ISA ebpf-isa)) "stdw [$dst+$offset16],$imm32"
+     (+ imm32 offset16 (f-src 0) dst
+        OP_CLASS_ST OP_SIZE_DW OP_MODE_MEM) () ())
+
+(dni stxw "STXW" ((ISA ebpf-isa)) "stxw [$dst+$offset16],$src"
+     (+ (f-imm32 0) offset16 src dst
+        OP_CLASS_STX OP_SIZE_W OP_MODE_MEM) () ())
+
+(dni stxh "STXH" ((ISA ebpf-isa)) "stxh [$dst+$offset16],$src"
+     (+ (f-imm32 0) offset16 src dst
+        OP_CLASS_STX OP_SIZE_H OP_MODE_MEM) () ())
+
+(dni stxb "STXB" ((ISA ebpf-isa)) "stxb [$dst+$offset16],$src"
+     (+ (f-imm32 0) offset16 src dst
+        OP_CLASS_STX OP_SIZE_B OP_MODE_MEM) () ())
+
+(dni stxdw "STXDW" ((ISA ebpf-isa)) "stxdw [$dst+$offset16],$src"
+     (+ (f-imm32 0) offset16 src dst
+        OP_CLASS_STX OP_SIZE_DW OP_MODE_MEM) () ())
+
+;;; Jump instructions
+
+(dni ja "JA" ((ISA ebpf-isa)) "ja +$offset16"
+     (+ (f-imm32 0) offset16 (f-src 0) (f-dst 0)
+        OP_CLASS_JMP OP_SRC_K OP_CODE_JA) () ())
+
+(dni jeqi "JEQI" ((ISA ebpf-isa)) "jeq $dst,$imm32,+$offset16"
+     (+ imm32 offset16 (f-src 0) dst
+        OP_CLASS_JMP OP_SRC_K OP_CODE_JEQ) () ())
+
+(dni jeqr "JEQR" ((ISA ebpf-isa)) "jeq $dst,$src,+$offset16"
+     (+ (f-imm32 0) offset16 src dst
+        OP_CLASS_JMP OP_SRC_X OP_CODE_JEQ) () ())
+
+(dni jgti "JGTI" ((ISA ebpf-isa)) "jgt $dst,$imm32,+$offset16"
+     (+ imm32 offset16 (f-src 0) dst
+        OP_CLASS_JMP OP_SRC_K OP_CODE_JGT) () ())
+
+(dni jgtr "JGTR" ((ISA ebpf-isa)) "jgt $dst,$src,+$offset16"
+     (+ (f-imm32 0) offset16 src dst
+        OP_CLASS_JMP OP_SRC_X OP_CODE_JGT) () ())
+
+(dni jgei "JGEI" ((ISA ebpf-isa)) "jge $dst,$imm32,+$offset16"
+     (+ imm32 offset16 (f-src 0) dst
+        OP_CLASS_JMP OP_SRC_K OP_CODE_JGE) () ())
+
+(dni jger "JGER" ((ISA ebpf-isa)) "jge $dst,$src,+$offset16"
+     (+ (f-imm32 0) offset16 src dst
+        OP_CLASS_JMP OP_SRC_X OP_CODE_JGE) () ())
+
+(dni jlti "JLTI" ((ISA ebpf-isa)) "jlt $dst,$imm32,+$offset16"
+     (+ imm32 offset16 (f-src 0) dst
+        OP_CLASS_JMP OP_SRC_K OP_CODE_JLT) () ())
+
+(dni jltr "JLTR" ((ISA ebpf-isa)) "jlt $dst,$src,+$offset16"
+     (+ (f-imm32 0) offset16 src dst
+        OP_CLASS_JMP OP_SRC_X OP_CODE_JLT) () ())
+
+(dni jlei "JLEI" ((ISA ebpf-isa)) "jle $dst,$imm32,+$offset16"
+     (+ imm32 offset16 (f-src 0) dst
+        OP_CLASS_JMP OP_SRC_K OP_CODE_JLE) () ())
+
+(dni jler "JLER" ((ISA ebpf-isa)) "jle $dst,$src,+$offset16"
+     (+ (f-imm32 0) offset16 src dst
+        OP_CLASS_JMP OP_SRC_X OP_CODE_JLE) () ())
+
+(dni jseti "JSETI" ((ISA ebpf-isa)) "jset $dst,$imm32,+$offset16"
+     (+ imm32 offset16 (f-src 0) dst
+        OP_CLASS_JMP OP_SRC_K OP_CODE_JSET) () ())
+
+(dni jsetr "JSETR" ((ISA ebpf-isa)) "jset $dst,$src,+$offset16"
+     (+ (f-imm32 0) offset16 src dst
+        OP_CLASS_JMP OP_SRC_X OP_CODE_JSET) () ())
+
+(dni jnei "JNEI" ((ISA ebpf-isa)) "jne $dst,$imm32,+$offset16"
+     (+ imm32 offset16 (f-src 0) dst
+        OP_CLASS_JMP OP_SRC_K OP_CODE_JNE) () ())
+
+(dni jner "JNER" ((ISA ebpf-isa)) "jne $dst,$src,+$offset16"
+     (+ (f-imm32 0) offset16 src dst
+        OP_CLASS_JMP OP_SRC_X OP_CODE_JNE) () ())
+
+(dni jsgti "JSGTI" ((ISA ebpf-isa)) "jsgt $dst,$imm32,+$offset16"
+     (+ imm32 offset16 (f-src 0) dst
+        OP_CLASS_JMP OP_SRC_K OP_CODE_JSGT) () ())
+
+(dni jsgtr "JSGTR" ((ISA ebpf-isa)) "jsgt $dst,$src,+$offset16"
+     (+ (f-imm32 0) offset16 src dst
+        OP_CLASS_JMP OP_SRC_X OP_CODE_JSGT) () ())
+
+(dni jsgei "JSGEI" ((ISA ebpf-isa)) "jsge $dst,$imm32,+$offset16"
+     (+ imm32 offset16 (f-src 0) dst
+        OP_CLASS_JMP OP_SRC_K OP_CODE_JSGE) () ())
+
+(dni jsger "JSGER" ((ISA ebpf-isa)) "jsge $dst,$src,+$offset16"
+     (+ (f-imm32 0) offset16 src dst
+        OP_CLASS_JMP OP_SRC_X OP_CODE_JSGE) () ())
+
+(dni jslti "JSLTI" ((ISA ebpf-isa)) "jslt $dst,$imm32,+$offset16"
+     (+ imm32 offset16 (f-src 0) dst
+        OP_CLASS_JMP OP_SRC_K OP_CODE_JSLT) () ())
+
+(dni jsltr "JSLTR" ((ISA ebpf-isa)) "jslt $dst,$src,+$offset16"
+     (+ (f-imm32 0) offset16 src dst
+        OP_CLASS_JMP OP_SRC_X OP_CODE_JSLT) () ())
+
+(dni jslei "JSLEI" ((ISA ebpf-isa)) "jsle $dst,$imm32,+$offset16"
+     (+ imm32 offset16 (f-src 0) dst
+        OP_CLASS_JMP OP_SRC_K OP_CODE_JSLE) () ())
+
+(dni jsler "JSLER" ((ISA ebpf-isa)) "jsle $dst,$src,+$offset16"
+     (+ (f-imm32 0) offset16 src dst
+        OP_CLASS_JMP OP_SRC_X OP_CODE_JSLE) () ())
+
+(dni call "CALL" ((ISA ebpf-isa)) "call $imm32"
+     (+ imm32 (f-offset16 0) (f-src 0) (f-dst 0)
+        OP_CLASS_JMP OP_SRC_K OP_CODE_CALL) () ())
+
+(dni "exit" "EXIT" ((ISA ebpf-isa)) "exit"
+     (+ (f-imm32 0) (f-offset16 0) (f-src 0) (f-dst 0)
+        OP_CLASS_JMP (f-op-src 0) OP_CODE_EXIT) () ())
+

@@ -1,0 +1,108 @@
+/* EBPF opcode support.  -*- c -*-
+
+   Copyright 2018 Free Software Foundation, Inc.
+
+   Contributed by Oracle, Inc.
+
+   This file is part of the GNU Binutils and of GDB.
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 3 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston,
+   MA 02110-1301, USA.  */
+
+/*
+   Each section is delimited with start and end markers.
+
+   <arch>-opc.h additions use: "-- opc.h"
+   <arch>-opc.c additions use: "-- opc.c"
+   <arch>-asm.c additions use: "-- asm.c"
+   <arch>-dis.c additions use: "-- dis.c"
+   <arch>-ibd.h additions use: "-- ibd.h".  */
+
+/* -- opc.h */
+
+#undef CGEN_DIS_HASH_SIZE
+#define CGEN_DIS_HASH_SIZE 1
+
+#undef CGEN_DIS_HASH
+#define CGEN_DIS_HASH(buffer, value) 0
+
+/* Allows reason codes to be output when assembler errors occur.  */
+#define CGEN_VERBOSE_ASSEMBLER_ERRORS
+
+
+
+/* -- opc.c */
+
+/* -- asm.c */
+
+/* -- dis.c */
+
+/* We need to customize the disassembler a bit:
+   - Use 8 bytes per line by default.
+*/
+
+#define CGEN_PRINT_INSN ebpf_print_insn
+
+static int
+ebpf_print_insn (CGEN_CPU_DESC cd, bfd_vma pc, disassemble_info *info)
+{
+  bfd_byte buf[CGEN_MAX_INSN_SIZE];
+  int buflen;
+  int status;
+
+  info->bytes_per_chunk = 1;
+  info->bytes_per_line = 8;
+
+  /* Attempt to read the base part of the insn.  */
+  buflen = cd->base_insn_bitsize / 8;
+  status = (*info->read_memory_func) (pc, buf, buflen, info);
+
+  /* Try again with the minimum part, if min < base.  */
+  if (status != 0 && (cd->min_insn_bitsize < cd->base_insn_bitsize))
+    {
+      buflen = cd->min_insn_bitsize / 8;
+      status = (*info->read_memory_func) (pc, buf, buflen, info);
+    }
+
+  if (status != 0)
+    {
+      (*info->memory_error_func) (status, pc, info);
+      return -1;
+    }
+
+  return print_insn (cd, pc, info, buf, buflen);
+}
+
+#if 0
+/* Print signed immediate operands with '#' prefixes.  */
+
+static void
+print_signed_with_hash_prefix (CGEN_CPU_DESC cd ATTRIBUTE_UNUSED,
+                               void *dis_info,
+                               long value,
+                               unsigned int attrs ATTRIBUTE_UNUSED,
+                               bfd_vma pc ATTRIBUTE_UNUSED,
+                               int length ATTRIBUTE_UNUSED)
+{
+  disassemble_info *info = (disassemble_info *) dis_info;
+
+  (*info->fprintf_func) (info->stream, "#");
+  (*info->fprintf_func) (info->stream, "%ld", value);
+}
+#endif
+
+
+/* -- */
+

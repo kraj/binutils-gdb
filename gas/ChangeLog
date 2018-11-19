@@ -1,3 +1,21 @@
+2018-11-29  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* testsuite/gas/bpf/bpf.exp: New file.
+	* testsuite/gas/bpf/lddw.s: Likewise.
+	* testsuite/gas/bpf/lddw.d: Likewise.
+	* testsuite/gas/bpf/alu64.s: Likewise.
+	* testsuite/gas/bpf/alu.s: Likewise.
+	* testsuite/gas/bpf/alu.d: Likewise.
+	* testsuite/gas/bpf/mem.d: Likewise.
+
+2018-11-28  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* configure.ac (DEFAULT_FLAG_COMPRESS_DEBUG): Canonicalize
+	cgen_cpu_prefix for BPF.
+	* configure.tgt: Support BPF targets.
+	* config/tc-bpf.h: New file.
+	* config/tc-bpf.c: Likewise.
+
 2018-11-13  Thomas Preud'homme  <thomas.preudhomme@arm.com>
 
 	* config/tc-arm.c (arm_archs): Reindent.

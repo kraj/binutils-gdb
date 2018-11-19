@@ -480,6 +480,22 @@ case "${targ}" in
     targ_defvec=d30v_elf32_vec
     ;;
 
+  bpfel-*-*)
+    # Note that bpfel is supported for compatibility with llvm.
+    targ_defvec=bpf_elf64_le_vec
+    targ_selvecs=bpf_elf64_be_vec
+    targ_archs="bfd_bpf_arch"
+    targ_underscore=yes
+    ;;
+
+  bpfeb-*-*)
+    # Note that bpfeb is supported for compatibility with llvm.
+    targ_defvec=bpf_elf64_be_vec
+    targ_selvecs=bpf_elf64_le_vec
+    targ_archs="bfd_bpf_arch"
+    targ_underscore=yes
+    ;;
+
   epiphany-*-*)
     targ_defvec=epiphany_elf32_vec
     targ_underscore=yes

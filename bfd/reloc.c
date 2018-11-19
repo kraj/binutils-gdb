@@ -7851,6 +7851,13 @@ ENUMDOC
   Tilera TILE-Gx Relocations.
 
 ENUM
+  BFD_RELOC_BPF_64_64
+ENUMX
+  BFD_RELOC_BPF_64_32
+ENUMDOC
+  Linux eBPF relocations.
+
+ENUM
   BFD_RELOC_EPIPHANY_SIMM8
 ENUMDOC
   Adapteva EPIPHANY - 8 bit signed pc-relative displacement

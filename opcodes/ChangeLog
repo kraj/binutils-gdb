@@ -1,3 +1,16 @@
+2018-11-26  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* Makefile.am (HFILES): Add files for the bpf port.
+	(TARGET_LIBOPCODES_CFILES): Likewise.
+	(BPF_DEPS): Define.
+	Add rules to invoke CGEN.
+	* Makefile.in: Regenerate.
+	* aclocal.m4: Likewise.
+	* configure: Likewise.
+	* disassemble.h (print_insn_bpf): Prototype.
+	* disassemble.c (ARCH_bpf): Define.
+	(disassembler): Handle ARCH_bpf.
+
 2018-11-13  Francois H. Theron <francois.theron@netronome.com>
 
 	* nfp-dis.c: Fix crc[] disassembly if operands are swapped.

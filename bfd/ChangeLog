@@ -1,3 +1,17 @@
+2018-11-26  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* elf64-bpf.c: New file.
+	* configure.ac (TDEFINES): Handle bpf_elf64_le_vec and
+	bpf_elf64_be_vec.
+	* targets.c (bpf_elf64_le_vec): Extern declaration.
+	(bpf_elf64_be_vec): Likewise.
+	(_bfd_target_vector): Added addresses of vectors for bpf.
+	* cpu-bpf.c: New file.
+	* config.bfd (targ_cpu): Recognize bpf-*-* targets.
+	* archures.c (bfd_arch_bpf): Define.
+	(bfd_mach_bpf_le): Likewise.
+	(bfd_mach_bpf_be): Likewise.
+
 2018-11-13  Jim Wilson  <jimw@sifive.com>
 
 	* elfnn-riscv.c (riscv_float_abi_string): New.
