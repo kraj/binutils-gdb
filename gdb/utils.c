@@ -3219,6 +3219,99 @@ strip_leading_path_elements (const char *path, int n)
   return p;
 }
 
+/* See utils.h.  */
+
+void
+copy_bitwise (gdb_byte *dest, ULONGEST dest_offset,
+	      const gdb_byte *source, ULONGEST source_offset,
+	      ULONGEST nbits, int bits_big_endian)
+{
+  unsigned int buf, avail;
+
+  if (nbits == 0)
+    return;
+
+  if (bits_big_endian)
+    {
+      /* Start from the end, then work backwards.  */
+      dest_offset += nbits - 1;
+      dest += dest_offset / 8;
+      dest_offset = 7 - dest_offset % 8;
+      source_offset += nbits - 1;
+      source += source_offset / 8;
+      source_offset = 7 - source_offset % 8;
+    }
+  else
+    {
+      dest += dest_offset / 8;
+      dest_offset %= 8;
+      source += source_offset / 8;
+      source_offset %= 8;
+    }
+
+  /* Fill BUF with DEST_OFFSET bits from the destination and 8 -
+     SOURCE_OFFSET bits from the source.  */
+  buf = *(bits_big_endian ? source-- : source++) >> source_offset;
+  buf <<= dest_offset;
+  buf |= *dest & ((1 << dest_offset) - 1);
+
+  /* NBITS: bits yet to be written; AVAIL: BUF's fill level.  */
+  nbits += dest_offset;
+  avail = dest_offset + 8 - source_offset;
+
+  /* Flush 8 bits from BUF, if appropriate.  */
+  if (nbits >= 8 && avail >= 8)
+    {
+      *(bits_big_endian ? dest-- : dest++) = buf;
+      buf >>= 8;
+      avail -= 8;
+      nbits -= 8;
+    }
+
+  /* Copy the middle part.  */
+  if (nbits >= 8)
+    {
+      size_t len = nbits / 8;
+
+      /* Use a faster method for byte-aligned copies.  */
+      if (avail == 0)
+	{
+	  if (bits_big_endian)
+	    {
+	      dest -= len;
+	      source -= len;
+	      memcpy (dest + 1, source + 1, len);
+	    }
+	  else
+	    {
+	      memcpy (dest, source, len);
+	      dest += len;
+	      source += len;
+	    }
+	}
+      else
+	{
+	  while (len--)
+	    {
+	      buf |= *(bits_big_endian ? source-- : source++) << avail;
+	      *(bits_big_endian ? dest-- : dest++) = buf;
+	      buf >>= 8;
+	    }
+	}
+      nbits %= 8;
+    }
+
+  /* Write the last byte.  */
+  if (nbits)
+    {
+      if (avail < nbits)
+	buf |= *source << avail;
+
+      buf &= (1 << nbits) - 1;
+      *dest = (*dest & (~0 << nbits)) | buf;
+    }
+}
+
 void
 _initialize_utils (void)
 {

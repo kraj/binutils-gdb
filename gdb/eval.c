@@ -789,7 +789,9 @@ eval_call (expression *exp, enum noside noside,
       else if (TYPE_CODE (ftype) == TYPE_CODE_XMETHOD)
 	{
 	  type *return_type
-	    = result_type_of_xmethod (argvec[0], nargs, argvec + 1);
+	    = result_type_of_xmethod (argvec[0],
+				      gdb::make_array_view (argvec + 1,
+							    nargs));
 
 	  if (return_type == NULL)
 	    error (_("Xmethod is missing return type."));
@@ -827,10 +829,10 @@ eval_call (expression *exp, enum noside noside,
       return call_internal_function (exp->gdbarch, exp->language_defn,
 				     argvec[0], nargs, argvec + 1);
     case TYPE_CODE_XMETHOD:
-      return call_xmethod (argvec[0], nargs, argvec + 1);
+      return call_xmethod (argvec[0], gdb::make_array_view (argvec + 1, nargs));
     default:
       return call_function_by_hand (argvec[0], default_return_type,
-				    nargs, argvec + 1);
+				    gdb::make_array_view (argvec + 1, nargs));
     }
 }
 
@@ -1100,7 +1102,8 @@ evaluate_funcall (type *expect_type, expression *exp, int *pos,
       func_name = (char *) alloca (name_len + 1);
       strcpy (func_name, &exp->elts[string_pc + 1].string);
 
-      find_overload_match (&argvec[1], nargs, func_name,
+      find_overload_match (gdb::make_array_view (&argvec[1], nargs),
+			   func_name,
 			   NON_METHOD, /* not method */
 			   NULL, NULL, /* pass NULL symbol since
 					  symbol is unknown */
@@ -1136,7 +1139,8 @@ evaluate_funcall (type *expect_type, expression *exp, int *pos,
 	     evaluation.  */
 	  struct value *valp = NULL;
 
-	  (void) find_overload_match (&argvec[1], nargs, tstr,
+	  (void) find_overload_match (gdb::make_array_view (&argvec[1], nargs),
+				      tstr,
 				      METHOD, /* method */
 				      &arg2,  /* the object */
 				      NULL, &valp, NULL,
@@ -1207,7 +1211,7 @@ evaluate_funcall (type *expect_type, expression *exp, int *pos,
 	  if (op == OP_VAR_VALUE)
 	    function = exp->elts[save_pos1+2].symbol;
 
-	  (void) find_overload_match (&argvec[1], nargs,
+	  (void) find_overload_match (gdb::make_array_view (&argvec[1], nargs),
 				      NULL,        /* no need for name */
 				      NON_METHOD,  /* not method */
 				      NULL, function, /* the function */
@@ -1728,12 +1732,12 @@ evaluate_subexp_standard (struct type *expect_type,
 	argvec[3] = value_from_longest (long_type, selector);
 	argvec[4] = 0;
 
-	ret = call_function_by_hand (argvec[0], NULL, 3, argvec + 1);
+	ret = call_function_by_hand (argvec[0], NULL, {argvec + 1, 3});
 	if (gnu_runtime)
 	  {
 	    /* Function objc_msg_lookup returns a pointer.  */
 	    argvec[0] = ret;
-	    ret = call_function_by_hand (argvec[0], NULL, 3, argvec + 1);
+	    ret = call_function_by_hand (argvec[0], NULL, {argvec + 1, 3});
 	  }
 	if (value_as_long (ret) == 0)
 	  error (_("Target does not respond to this message selector."));
@@ -1750,11 +1754,11 @@ evaluate_subexp_standard (struct type *expect_type,
 	argvec[3] = value_from_longest (long_type, selector);
 	argvec[4] = 0;
 
-	ret = call_function_by_hand (argvec[0], NULL, 3, argvec + 1);
+	ret = call_function_by_hand (argvec[0], NULL, {argvec + 1, 3});
 	if (gnu_runtime)
 	  {
 	    argvec[0] = ret;
-	    ret = call_function_by_hand (argvec[0], NULL, 3, argvec + 1);
+	    ret = call_function_by_hand (argvec[0], NULL, {argvec + 1, 3});
 	  }
 
 	/* ret should now be the selector.  */
@@ -1890,17 +1894,17 @@ evaluate_subexp_standard (struct type *expect_type,
 	  argvec[tem + 3] = evaluate_subexp_with_coercion (exp, pos, noside);
 	argvec[tem + 3] = 0;
 
+	auto call_args = gdb::make_array_view (argvec + 1, nargs + 2);
+
 	if (gnu_runtime && (method != NULL))
 	  {
 	    /* Function objc_msg_lookup returns a pointer.  */
 	    deprecated_set_value_type (argvec[0],
 				       lookup_pointer_type (lookup_function_type (value_type (argvec[0]))));
-	    argvec[0]
-	      = call_function_by_hand (argvec[0], NULL, nargs + 2, argvec + 1);
+	    argvec[0] = call_function_by_hand (argvec[0], NULL, call_args);
 	  }
 
-	ret = call_function_by_hand (argvec[0], NULL, nargs + 2, argvec + 1);
-	return ret;
+	return call_function_by_hand (argvec[0], NULL, call_args);
       }
       break;
 

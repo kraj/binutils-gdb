@@ -1514,14 +1514,12 @@ static CORE_ADDR
 aarch64_push_dummy_call (struct gdbarch *gdbarch, struct value *function,
 			 struct regcache *regcache, CORE_ADDR bp_addr,
 			 int nargs,
-			 struct value **args, CORE_ADDR sp, int struct_return,
+			 struct value **args, CORE_ADDR sp,
+			 function_call_return_method return_method,
 			 CORE_ADDR struct_addr)
 {
   int argnum;
   struct aarch64_call_info info;
-  struct type *func_type;
-  struct type *return_type;
-  int lang_struct_return;
 
   memset (&info, 0, sizeof (info));
 
@@ -1543,42 +1541,21 @@ aarch64_push_dummy_call (struct gdbarch *gdbarch, struct value *function,
      If the language code decides to pass in memory we want to move
      the pointer inserted as the initial argument from the argument
      list and into X8, the conventional AArch64 struct return pointer
-     register.
-
-     This is slightly awkward, ideally the flag "lang_struct_return"
-     would be passed to the targets implementation of push_dummy_call.
-     Rather that change the target interface we call the language code
-     directly ourselves.  */
-
-  func_type = check_typedef (value_type (function));
-
-  /* Dereference function pointer types.  */
-  if (TYPE_CODE (func_type) == TYPE_CODE_PTR)
-    func_type = TYPE_TARGET_TYPE (func_type);
-
-  gdb_assert (TYPE_CODE (func_type) == TYPE_CODE_FUNC
-	      || TYPE_CODE (func_type) == TYPE_CODE_METHOD);
-
-  /* If language_pass_by_reference () returned true we will have been
-     given an additional initial argument, a hidden pointer to the
-     return slot in memory.  */
-  return_type = TYPE_TARGET_TYPE (func_type);
-  lang_struct_return = language_pass_by_reference (return_type);
+     register.  */
 
   /* Set the return address.  For the AArch64, the return breakpoint
      is always at BP_ADDR.  */
   regcache_cooked_write_unsigned (regcache, AARCH64_LR_REGNUM, bp_addr);
 
-  /* If we were given an initial argument for the return slot because
-     lang_struct_return was true, lose it.  */
-  if (lang_struct_return)
+  /* If we were given an initial argument for the return slot, lose it.  */
+  if (return_method == return_method_hidden_param)
     {
       args++;
       nargs--;
     }
 
   /* The struct_return pointer occupies X8.  */
-  if (struct_return || lang_struct_return)
+  if (return_method != return_method_normal)
     {
       if (aarch64_debug)
 	{

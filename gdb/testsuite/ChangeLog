@@ -1,3 +1,54 @@
+2018-11-21  Benno Fünfstück  <benno.fuenfstueck@gmail.com>
+
+	PR python/23714
+	* gdb.python/python.exp: Test command repetition after
+	gdb.execute.
+
+2018-11-20  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.opt/inline-break.exp: Add test that info breakpoint output
+	is correctly aligned.
+
+2018-11-20  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* gdb.ada/info_auto_lang.exp: New testcase.
+	* gdb.ada/info_auto_lang/global_pack.ads: New file.
+	* gdb.ada/info_auto_lang/proc_in_ada.adb: New file.
+	* gdb.ada/info_auto_lang/some_c.c: New file.
+
+2018-11-20  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* gdb.dwarf2/dw2-case-insensitive.exp: Update due to auto switch to
+	FUNC_lang language syntax.
+
+2018-11-20  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* gdb.base/info_minsym.c: New file.
+	* gdb.base/info_minsym.exp: New file.
+
+2018-11-19  Tom Tromey  <tom@tromey.com>
+
+	PR rust/23625:
+	* gdb.rust/simple.exp: Add ptype test.  Update expected output.
+	* gdb.rust/expr.exp: Update expected output.  Change one test.
+
+2018-11-19  Tom Tromey  <tom@tromey.com>
+
+	* gdb.rust/simple.rs: Don't initialize empty_enum_value.
+
+2018-11-19  Pedro Alves  <palves@redhat.com>
+
+	* gdb.base/warning.exp: Don't override INTERNAL_FLAGS.  Use
+	gdb_spawn_with_cmdline_opts instead of gdb_start.  Check that we
+	see the expected warning.
+
+2018-11-16  Alan Hayward  <alan.hayward@arm.com>
+
+	PR gdb/22736:
+	* gdb.cp/infcall-nodebug-lib.c: New test.
+	* gdb.cp/infcall-nodebug-main.c: New test.
+	* gdb.cp/infcall-nodebug.exp: New file.
+
 2018-11-12  Simon Marchi  <simon.marchi@polymtl.ca>
 
 	* gdb.base/skip.exp: Add standard_testfile.  Add "skip delete"

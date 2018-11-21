@@ -38,6 +38,8 @@
   requires the use of a keyword.  Selecting a frame by level is
   unchanged.  The MI comment "-stack-select-frame" is unchanged.
 
+* The RISC-V target now supports target descriptions.
+
 * New targets
 
   NXP S12Z		s12z-*-elf
@@ -95,6 +97,15 @@ info variables [-q] [-t TYPEREGEXP] [NAMEREGEXP]
   matching the provided regexp(s), giving a condition
   on the entity names or entity types.  The flag -q disables
   printing headers or informations messages.
+
+info functions
+info types
+info variables
+rbreak
+  These commands now determine the syntax for the shown entities
+  according to the language chosen by `set language'.  In particular,
+  `set language auto' means to automatically choose the language of
+  the shown entities.
 
 thread apply [all | COUNT | -COUNT] [FLAG]... COMMAND
   The 'thread apply' command accepts new FLAG arguments.

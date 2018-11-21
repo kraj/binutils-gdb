@@ -3873,6 +3873,13 @@ breakpoints are set, they are treated just like the breakpoints set with
 the @code{break} command.  You can delete them, disable them, or make
 them conditional the same way as any other breakpoint.
 
+In programs using different languages, @value{GDBN} chooses the syntax
+to print the list of all breakpoints it sets according to the
+@samp{set language} value: using @samp{set language auto}
+(see @ref{Automatically, ,Set Language Automatically}) means to use the
+language of the breakpoint's function, other values mean to use
+the manually specified language (see @ref{Manually, ,Set Language Manually}).
+
 The syntax of the regular expression is the standard one used with tools
 like @file{grep}.  Note that this is different from the syntax used by
 shells, so for instance @code{foo*} matches all functions that include
@@ -17903,6 +17910,13 @@ types in your program whose names include the string @code{value}, but
 @samp{i type ^value$} gives information only on types whose complete
 name is @code{value}.
 
+In programs using different languages, @value{GDBN} chooses the syntax
+to print the type description according to the
+@samp{set language} value: using @samp{set language auto}
+(see @ref{Automatically, ,Set Language Automatically}) means to use the
+language of the type, other values mean to use
+the manually specified language (see @ref{Manually, ,Set Language Manually}).
+
 This command differs from @code{ptype} in two ways: first, like
 @code{whatis}, it does not print a detailed description; second, it
 lists all source files and line numbers where a type is defined.
@@ -17987,6 +18001,13 @@ Similarly to @samp{info types}, this command groups its output by source
 files and annotates each function definition with its source line
 number.
 
+In programs using different languages, @value{GDBN} chooses the syntax
+to print the function name and type according to the
+@samp{set language} value: using @samp{set language auto}
+(see @ref{Automatically, ,Set Language Automatically}) means to use the
+language of the function, other values mean to use
+the manually specified language (see @ref{Manually, ,Set Language Manually}).
+
 The optional flag @samp{-q}, which stands for @samp{quiet}, disables
 printing header information and messages explaining why no functions
 have been printed.
@@ -18026,6 +18047,13 @@ Print the names and data types of all variables that are defined
 outside of functions (i.e.@: excluding local variables).
 The printed variables are grouped by source files and annotated with
 their respective source line numbers.
+
+In programs using different languages, @value{GDBN} chooses the syntax
+to print the variable name and type according to the
+@samp{set language} value: using @samp{set language auto}
+(see @ref{Automatically, ,Set Language Automatically}) means to use the
+language of the variable, other values mean to use
+the manually specified language (see @ref{Manually, ,Set Language Manually}).
 
 The optional flag @samp{-q}, which stands for @samp{quiet}, disables
 printing header information and messages explaining why no variables
@@ -42916,6 +42944,7 @@ registers using the capitalization used in the description.
 * Nios II Features::
 * OpenRISC 1000 Features::
 * PowerPC Features::
+* RISC-V Features::
 * S/390 and System z Features::
 * Sparc Features::
 * TIC6x Features::
@@ -43305,6 +43334,41 @@ contain the 64-bit checkpointed register @samp{cdscr}.
 
 The @samp{org.gnu.gdb.power.htm.tar} feature is optional.  It should
 contain the 64-bit checkpointed register @samp{ctar}.
+
+
+@node RISC-V Features
+@subsection RISC-V Features
+@cindex target descriptions, RISC-V Features
+
+The @samp{org.gnu.gdb.riscv.cpu} feature is required for RISC-V
+targets.  It should contain the registers @samp{x0} through
+@samp{x31}, and @samp{pc}.  Either the architectural names (@samp{x0},
+@samp{x1}, etc) can be used, or the ABI names (@samp{zero}, @samp{ra},
+etc).
+
+The @samp{org.gnu.gdb.riscv.fpu} feature is optional.  If present, it
+should contain registers @samp{f0} through @samp{f31}, @samp{fflags},
+@samp{frm}, and @samp{fcsr}.  As with the cpu feature, either the
+architectural register names, or the ABI names can be used.
+
+The @samp{org.gnu.gdb.riscv.virtual} feature is optional.  If present,
+it should contain registers that are not backed by real registers on
+the target, but are instead virtual, where the register value is
+derived from other target state.  In many ways these are like
+@value{GDBN}s pseudo-registers, except implemented by the target.
+Currently the only register expected in this set is the one byte
+@samp{priv} register that contains the target's privilege level in the
+least significant two bits.
+
+The @samp{org.gnu.gdb.riscv.csr} feature is optional.  If present, it
+should contain all of the target's standard CSRs.  Standard CSRs are
+those defined in the RISC-V specification documents.  There is some
+overlap between this feature and the fpu feature; the @samp{fflags},
+@samp{frm}, and @samp{fcsr} registers could be in either feature.  The
+expectation is that these registers will be in the fpu feature if the
+target has floating point hardware, but can be moved into the csr
+feature if the target has the floating point control registers, but no
+other floating point hardware.
 
 @node S/390 and System z Features
 @subsection S/390 and System z Features
