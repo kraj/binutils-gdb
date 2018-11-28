@@ -1,4 +1,4 @@
-From c6ea4d3e5db955b6015eb28e28da7de00ab0448e Mon Sep 17 00:00:00 2001
+From 2c6fa477836ab4218a013f09744e2d4840cc8772 Mon Sep 17 00:00:00 2001
 From: "H.J. Lu" <hjl.tools@gmail.com>
 Date: Thu, 16 Aug 2018 10:40:26 -0700
 Subject: [PATCH 5/5] gold: Properly align the NT_GNU_PROPERTY_TYPE_0 note
@@ -138,12 +138,12 @@ index c2458831e3..dbed757806 100644
    // indicates whether this has been finalized.
    uint64_t max_align_;
 diff --git a/gold/testsuite/Makefile.am b/gold/testsuite/Makefile.am
-index 79eb736ca2..b3635a0580 100644
+index 7ad7e4fbf2..b2a2682dac 100644
 --- a/gold/testsuite/Makefile.am
 +++ b/gold/testsuite/Makefile.am
-@@ -3270,9 +3270,9 @@ if DEFAULT_TARGET_X86_64
- check_SCRIPTS += gnu_property_test.sh
+@@ -3268,9 +3268,9 @@ check_SCRIPTS += gnu_property_test.sh
  check_DATA += gnu_property_test.stdout
+ MOSTLYCLEANFILES += gnu_property_test
  gnu_property_test.stdout: gnu_property_test
 -	$(TEST_READELF) -n $< >$@
 +	$(TEST_READELF) -lhSWn $< >$@
@@ -154,12 +154,12 @@ index 79eb736ca2..b3635a0580 100644
  	$(COMPILE) -c -o $@ $<
  gnu_property_a.o: gnu_property_a.S
 diff --git a/gold/testsuite/Makefile.in b/gold/testsuite/Makefile.in
-index 2eead0c820..1b39743f21 100644
+index c1bba75cc3..6cf83e5fd5 100644
 --- a/gold/testsuite/Makefile.in
 +++ b/gold/testsuite/Makefile.in
-@@ -9483,9 +9483,9 @@ uninstall-am:
+@@ -9450,9 +9450,9 @@ uninstall-am:
  @DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@exception_x86_64_bnd_2.o: exception_test_2.cc gcctestdir/as
- @DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	$(CXXCOMPILE) -c -Bgcctestdir/ -Wa,-madd-bnd-prefix -o $@ $<
+ @DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	$(CXXCOMPILE) -c -Wa,-madd-bnd-prefix -o $@ $<
  @DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@gnu_property_test.stdout: gnu_property_test
 -@DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	$(TEST_READELF) -n $< >$@
 +@DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	$(TEST_READELF) -lhSWn $< >$@
@@ -203,5 +203,5 @@ index 79286d4721..e98b09d84e 100755
  check gnu_property_test.stdout "no copy on protected"
  check gnu_property_test.stdout "x86 ISA used: CMOV, SSSE3, AVX2, AVX512ER"
 -- 
-2.17.1
+2.19.1
 

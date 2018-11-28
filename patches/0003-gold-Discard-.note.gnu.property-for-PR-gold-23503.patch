@@ -1,4 +1,4 @@
-From 3330a13ed2330a0785d0ed1b7bc3bdb0513ff93d Mon Sep 17 00:00:00 2001
+From da29b623df0c3bd8e6f76fcbbdf4976c7bb17c68 Mon Sep 17 00:00:00 2001
 From: "H.J. Lu" <hjl.tools@gmail.com>
 Date: Fri, 10 Aug 2018 06:39:28 -0700
 Subject: [PATCH 3/5] gold: Discard .note.gnu.property for PR gold/23503
@@ -15,28 +15,28 @@ Subject: [PATCH 3/5] gold: Discard .note.gnu.property for PR gold/23503
  create mode 100644 gold/testsuite/justsyms_lib.t
 
 diff --git a/gold/testsuite/Makefile.am b/gold/testsuite/Makefile.am
-index c1c5539cdb..ede706442a 100644
+index 135790b30d..782d71606b 100644
 --- a/gold/testsuite/Makefile.am
 +++ b/gold/testsuite/Makefile.am
-@@ -2009,7 +2009,7 @@ MOSTLYCLEANFILES += justsyms_lib
+@@ -2013,7 +2013,7 @@ MOSTLYCLEANFILES += justsyms_lib
  justsyms_lib.o: justsyms_lib.c
  	$(COMPILE) -c -o $@ $<
  justsyms_lib: justsyms_lib.o gcctestdir/ld
--	gcctestdir/ld -o $@ -Ttext=0x1000200 -Tdata=0x2000000 -e exported_func justsyms_lib.o
-+	gcctestdir/ld -o $@ -T $(srcdir)/justsyms_lib.t -Ttext=0x1000200 -Tdata=0x2000000 -e exported_func justsyms_lib.o
+-	gcctestdir/ld -o $@ -z norelro -Ttext=0x1000200 -Tdata=0x2000000 -e exported_func justsyms_lib.o
++	gcctestdir/ld -o $@ -z norelro -T $(srcdir)/justsyms_lib.t -Ttext=0x1000200 -Tdata=0x2000000 -e exported_func justsyms_lib.o
  
  check_PROGRAMS += binary_test
  MOSTLYCLEANFILES += binary.txt
 diff --git a/gold/testsuite/Makefile.in b/gold/testsuite/Makefile.in
-index 08b5c07a67..52e8f5421b 100644
+index db923943fb..fd4ea20250 100644
 --- a/gold/testsuite/Makefile.in
 +++ b/gold/testsuite/Makefile.in
-@@ -8797,7 +8797,7 @@ uninstall-am:
+@@ -8766,7 +8766,7 @@ uninstall-am:
  @GCC_TRUE@@NATIVE_LINKER_TRUE@justsyms_lib.o: justsyms_lib.c
  @GCC_TRUE@@NATIVE_LINKER_TRUE@	$(COMPILE) -c -o $@ $<
  @GCC_TRUE@@NATIVE_LINKER_TRUE@justsyms_lib: justsyms_lib.o gcctestdir/ld
--@GCC_TRUE@@NATIVE_LINKER_TRUE@	gcctestdir/ld -o $@ -Ttext=0x1000200 -Tdata=0x2000000 -e exported_func justsyms_lib.o
-+@GCC_TRUE@@NATIVE_LINKER_TRUE@	gcctestdir/ld -o $@ -T $(srcdir)/justsyms_lib.t -Ttext=0x1000200 -Tdata=0x2000000 -e exported_func justsyms_lib.o
+-@GCC_TRUE@@NATIVE_LINKER_TRUE@	gcctestdir/ld -o $@ -z norelro -Ttext=0x1000200 -Tdata=0x2000000 -e exported_func justsyms_lib.o
++@GCC_TRUE@@NATIVE_LINKER_TRUE@	gcctestdir/ld -o $@ -z norelro -T $(srcdir)/justsyms_lib.t -Ttext=0x1000200 -Tdata=0x2000000 -e exported_func justsyms_lib.o
  # Copy the file to the build directory to avoid worrying about the
  # full pathname in the generated symbols.
  @GCC_TRUE@@NATIVE_LINKER_TRUE@binary.txt: $(srcdir)/binary.in
@@ -75,5 +75,5 @@ index 0000000000..632f7cde24
 +  /DISCARD/ : { *(.note.gnu.property) }
 +}
 -- 
-2.17.1
+2.19.1
 
