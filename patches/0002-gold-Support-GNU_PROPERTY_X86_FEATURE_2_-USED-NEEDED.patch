@@ -1,4 +1,4 @@
-From 7e52e3e0146c708ceb929154d5b8cfdf298a70cd Mon Sep 17 00:00:00 2001
+From 78af54f19d9eca0f0dac075e2ce397e637e2e742 Mon Sep 17 00:00:00 2001
 From: "H.J. Lu" <hjl.tools@gmail.com>
 Date: Thu, 9 Aug 2018 17:02:42 -0700
 Subject: [PATCH 2/5] gold: Support GNU_PROPERTY_X86_FEATURE_2_[USED|NEEDED]
@@ -25,7 +25,6 @@ elfcpp/
 	(GNU_PROPERTY_X86_UINT32_OR_AND_LO + 0).
 	(GNU_PROPERTY_X86_FEATURE_2_USED): New.  Defined to
 	(GNU_PROPERTY_X86_UINT32_OR_AND_LO + 1).
-	* x86_64.h (GNU_PROPERTY_X86_UINT32_VALID): New.
 
 gold/
 
@@ -41,9 +40,8 @@ gold/
 	GNU_PROPERTY_X86_FEATURE_2_NEEDED.
 	(Target_x86_64::merge_gnu_properties): Merge FEATURE_2_USED bits.
 	Initialize object_feature_2_used_.
-	(Target_x86_64::do_finalize_gnu_properties): Set
-	GNU_PROPERTY_X86_UINT32_VALID bit for non-relocatable output.
-	Support GNU_PROPERTY_X86_FEATURE_2_USED and
+	(Target_x86_64::do_finalize_gnu_properties): Support
+	GNU_PROPERTY_X86_FEATURE_2_USED and
 	GNU_PROPERTY_X86_FEATURE_2_NEEDED.
 	* testsuite/gnu_property_a.S (GNU_PROPERTY_X86_ISA_1_USED): Set
 	to 0xc0010000.
@@ -56,14 +54,13 @@ gold/
 	(GNU_PROPERTY_X86_ISA_1_NEEDED): Set to 0xc0008000.
 	* testsuite/gnu_property_test.sh: Updated.
 ---
- elfcpp/elfcpp.h                     | 16 +++++++++--
- elfcpp/x86_64.h                     |  1 +
- gold/testsuite/gnu_property_a.S     |  4 +--
- gold/testsuite/gnu_property_b.S     |  4 +--
- gold/testsuite/gnu_property_c.S     |  4 +--
- gold/testsuite/gnu_property_test.sh |  4 +--
- gold/x86_64.cc                      | 43 +++++++++++++++++++++++++----
- 7 files changed, 60 insertions(+), 16 deletions(-)
+ elfcpp/elfcpp.h                     | 16 ++++++++++++---
+ gold/testsuite/gnu_property_a.S     |  4 ++--
+ gold/testsuite/gnu_property_b.S     |  4 ++--
+ gold/testsuite/gnu_property_c.S     |  4 ++--
+ gold/testsuite/gnu_property_test.sh |  4 ++--
+ gold/x86_64.cc                      | 32 +++++++++++++++++++++++++++--
+ 6 files changed, 51 insertions(+), 13 deletions(-)
 
 diff --git a/elfcpp/elfcpp.h b/elfcpp/elfcpp.h
 index ea2e8eab13..31cef2de05 100644
@@ -92,18 +89,6 @@ index ea2e8eab13..31cef2de05 100644
    GNU_PROPERTY_HIPROC = 0xdfffffff,
    GNU_PROPERTY_LOUSER = 0xe0000000,
    GNU_PROPERTY_HIUSER = 0xffffffff
-diff --git a/elfcpp/x86_64.h b/elfcpp/x86_64.h
-index 0f1dc9af60..a1470e0456 100644
---- a/elfcpp/x86_64.h
-+++ b/elfcpp/x86_64.h
-@@ -106,6 +106,7 @@ enum
- // The bit values that can appear in the GNU_PROPERTY_X86_FEATURE_1_AND
- // program property.
- 
-+const uint64_t GNU_PROPERTY_X86_UINT32_VALID = 1ULL << 31;
- const uint64_t GNU_PROPERTY_X86_FEATURE_1_IBT = 1ULL << 0;
- const uint64_t GNU_PROPERTY_X86_FEATURE_1_SHSTK = 1ULL << 1;
- 
 diff --git a/gold/testsuite/gnu_property_a.S b/gold/testsuite/gnu_property_a.S
 index 463bc8e52f..f629f16508 100644
 --- a/gold/testsuite/gnu_property_a.S
@@ -165,7 +150,7 @@ index 9a188edda4..79286d4721 100755
  
  exit 0
 diff --git a/gold/x86_64.cc b/gold/x86_64.cc
-index 19215b5923..227eae0216 100644
+index 19215b5923..bb4837ccb8 100644
 --- a/gold/x86_64.cc
 +++ b/gold/x86_64.cc
 @@ -706,8 +706,9 @@ class Target_x86_64 : public Sized_target<size, false>
@@ -248,33 +233,16 @@ index 19215b5923..227eae0216 100644
  }
  
  static inline void
-@@ -1667,15 +1689,26 @@ template<int size>
- void
- Target_x86_64<size>::do_finalize_gnu_properties(Layout* layout) const
- {
-+  uint64_t valid_bit;
-+  if (parameters->options().relocatable())
-+    valid_bit = 0;
-+  else
-+    valid_bit = elfcpp::GNU_PROPERTY_X86_UINT32_VALID;
-   if (this->isa_1_used_ != 0)
-     add_property(layout, elfcpp::GNU_PROPERTY_X86_ISA_1_USED,
--		 this->isa_1_used_);
-+		 this->isa_1_used_ | valid_bit);
-   if (this->isa_1_needed_ != 0)
-     add_property(layout, elfcpp::GNU_PROPERTY_X86_ISA_1_NEEDED,
--		 this->isa_1_needed_);
-+		 this->isa_1_needed_ | valid_bit);
+@@ -1676,6 +1698,12 @@ Target_x86_64<size>::do_finalize_gnu_properties(Layout* layout) const
    if (this->feature_1_ != 0)
      add_property(layout, elfcpp::GNU_PROPERTY_X86_FEATURE_1_AND,
--		 this->feature_1_);
-+		 this->feature_1_| valid_bit);
+ 		 this->feature_1_);
 +  if (this->feature_2_used_ != 0)
 +    add_property(layout, elfcpp::GNU_PROPERTY_X86_FEATURE_2_USED,
-+		 this->feature_2_used_ | valid_bit);
++		 this->feature_2_used_);
 +  if (this->feature_2_needed_ != 0)
 +    add_property(layout, elfcpp::GNU_PROPERTY_X86_FEATURE_2_NEEDED,
-+		 this->feature_2_needed_ | valid_bit);
++		 this->feature_2_needed_);
  }
  
  // Write the first three reserved words of the .got.plt section.
