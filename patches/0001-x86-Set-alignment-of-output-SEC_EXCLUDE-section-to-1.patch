@@ -1,0 +1,230 @@
+From 5ec653430e35695fb5aac2ca08724469e5882b3f Mon Sep 17 00:00:00 2001
+From: "H.J. Lu" <hjl.tools@gmail.com>
+Date: Wed, 28 Nov 2018 15:29:42 -0800
+Subject: [PATCH] x86: Set alignment of output SEC_EXCLUDE section to 1
+
+The first pass of one_lang_size_sections_pass doesn't check the
+SEC_EXCLUDE bit in input section.  But the input SEC_EXCLUDE section
+alignment will affect vma and lma of the following sections.  When the
+input SEC_EXCLUDE section is stripped by strip_excluded_output_sections
+later, the subsequent pass of one_lang_size_sections_pass may move dot
+of the following section moving backwards, resulting in a warning and
+section lma not being set properly.  It later leads to a "File truncated"
+error.  To work around it, we set alignment of the output section to
+1 if there is only one input section.
+
+bfd/
+
+	PR ld/23930
+	* elfxx-x86.c (_bfd_x86_elf_size_dynamic_sections): Set alignment
+	of the output section of the input SEC_EXCLUDE section to 1 if
+	there is only one input section.
+
+ld/
+
+	PR ld/23930
+	* testsuite/ld-i386/i386.exp: Run pr23930.
+	* testsuite/ld-i386/pr23930.d: New file.
+	* testsuite/ld-x86-64/pr23930-32.t: Likewise.
+	* testsuite/ld-x86-64/pr23930-x32.d: Likewise.
+	* testsuite/ld-x86-64/pr23930.d: Likewise.
+	* testsuite/ld-x86-64/pr23930.t: Likewise.
+	* testsuite/ld-x86-64/pr23930a.s: Likewise.
+	* testsuite/ld-x86-64/pr23930b.s: Likewise.
+	* testsuite/ld-x86-64/x86-64.exp: Run pr23930 and pr23930-x32.
+---
+ bfd/elfxx-x86.c                      | 21 ++++++++++++++++++++-
+ ld/testsuite/ld-i386/i386.exp        |  1 +
+ ld/testsuite/ld-i386/pr23930.d       | 11 +++++++++++
+ ld/testsuite/ld-x86-64/pr23930-32.t  | 10 ++++++++++
+ ld/testsuite/ld-x86-64/pr23930-x32.d | 11 +++++++++++
+ ld/testsuite/ld-x86-64/pr23930.d     | 11 +++++++++++
+ ld/testsuite/ld-x86-64/pr23930.t     | 10 ++++++++++
+ ld/testsuite/ld-x86-64/pr23930a.s    |  7 +++++++
+ ld/testsuite/ld-x86-64/pr23930b.s    | 14 ++++++++++++++
+ ld/testsuite/ld-x86-64/x86-64.exp    |  2 ++
+ 10 files changed, 97 insertions(+), 1 deletion(-)
+ create mode 100644 ld/testsuite/ld-i386/pr23930.d
+ create mode 100644 ld/testsuite/ld-x86-64/pr23930-32.t
+ create mode 100644 ld/testsuite/ld-x86-64/pr23930-x32.d
+ create mode 100644 ld/testsuite/ld-x86-64/pr23930.d
+ create mode 100644 ld/testsuite/ld-x86-64/pr23930.t
+ create mode 100644 ld/testsuite/ld-x86-64/pr23930a.s
+ create mode 100644 ld/testsuite/ld-x86-64/pr23930b.s
+
+diff --git a/bfd/elfxx-x86.c b/bfd/elfxx-x86.c
+index 05f5c6a2f9..cff09adff2 100644
+--- a/bfd/elfxx-x86.c
++++ b/bfd/elfxx-x86.c
+@@ -1268,7 +1268,26 @@ _bfd_x86_elf_size_dynamic_sections (bfd *output_bfd,
+ 	     function which decides whether anything needs to go
+ 	     into these sections.  */
+ 	  if (strip_section)
+-	    s->flags |= SEC_EXCLUDE;
++	    {
++	      s->flags |= SEC_EXCLUDE;
++	      /* NB: The first pass of one_lang_size_sections_pass
++		 doesn't check the SEC_EXCLUDE bit in input section.
++		 But the input SEC_EXCLUDE section alignment will
++		 affect vma and lma of the following sections.  When
++		 the input SEC_EXCLUDE section is stripped by
++		 strip_excluded_output_sections later, the subsequent
++		 pass of one_lang_size_sections_pass may move dot of
++		 the following section moving backwards, resulting in
++		 a warning and section lma not being set properly.  It
++		 later leads to a "File truncated" error.  To work
++		 around it, we set alignment of the output section to
++		 1 if there is only one input section.  */
++	      if (s->output_section
++		  && s->map_tail.s == NULL
++		  && s->output_section->map_tail.s == s
++		  && (s->output_section->flags & SEC_KEEP) == 0)
++		s->output_section->alignment_power = 0;
++	    }
+ 	  continue;
+ 	}
+ 
+diff --git a/ld/testsuite/ld-i386/i386.exp b/ld/testsuite/ld-i386/i386.exp
+index 76577c4fcb..f86a54d27a 100644
+--- a/ld/testsuite/ld-i386/i386.exp
++++ b/ld/testsuite/ld-i386/i386.exp
+@@ -482,6 +482,7 @@ run_dump_test "pr23486b"
+ run_dump_test "pr23486c"
+ run_dump_test "pr23486d"
+ run_dump_test "pr23854"
++run_dump_test "pr23930"
+ 
+ if { !([istarget "i?86-*-linux*"]
+        || [istarget "i?86-*-gnu*"]
+diff --git a/ld/testsuite/ld-i386/pr23930.d b/ld/testsuite/ld-i386/pr23930.d
+new file mode 100644
+index 0000000000..e9da5106eb
+--- /dev/null
++++ b/ld/testsuite/ld-i386/pr23930.d
+@@ -0,0 +1,11 @@
++#source: ../ld-x86-64/pr23930a.s
++#source: ../ld-x86-64/pr23930b.s
++#as: --32
++#ld: -m elf_i386 -z separate-code -z norelro -T ../ld-x86-64/pr23930-32.t
++#objdump: --disassemble=main
++
++#...
++[a-f0-9]+ <main>:
++[a-f0-9]+:	31 c0                	xor    %eax,%eax
++[a-f0-9]+:	c3                   	ret    
++#pass
+diff --git a/ld/testsuite/ld-x86-64/pr23930-32.t b/ld/testsuite/ld-x86-64/pr23930-32.t
+new file mode 100644
+index 0000000000..29b5309f48
+--- /dev/null
++++ b/ld/testsuite/ld-x86-64/pr23930-32.t
+@@ -0,0 +1,10 @@
++PHDRS {
++ text PT_LOAD;
++}
++
++SECTIONS
++{
++ . = (0x8000000f + ALIGN(0x1000000, 0x1000000));
++ .text : AT(ADDR(.text) - 0x8000000f) {
++ } :text
++}
+diff --git a/ld/testsuite/ld-x86-64/pr23930-x32.d b/ld/testsuite/ld-x86-64/pr23930-x32.d
+new file mode 100644
+index 0000000000..b01d2b961c
+--- /dev/null
++++ b/ld/testsuite/ld-x86-64/pr23930-x32.d
+@@ -0,0 +1,11 @@
++#source: pr23930a.s
++#source: pr23930b.s
++#as: --x32
++#ld: -m elf32_x86_64 -z separate-code -z norelro -T pr23930-32.t
++#objdump: --disassemble=main
++
++#...
++[a-f0-9]+ <main>:
++[a-f0-9]+:	31 c0                	xor    %eax,%eax
++[a-f0-9]+:	c3                   	retq   
++#pass
+diff --git a/ld/testsuite/ld-x86-64/pr23930.d b/ld/testsuite/ld-x86-64/pr23930.d
+new file mode 100644
+index 0000000000..c849b68c45
+--- /dev/null
++++ b/ld/testsuite/ld-x86-64/pr23930.d
+@@ -0,0 +1,11 @@
++#source: pr23930a.s
++#source: pr23930b.s
++#as: --64
++#ld: -m elf_x86_64 -z separate-code -z norelro -T pr23930.t
++#objdump: --disassemble=main
++
++#...
++[a-f0-9]+ <main>:
++[a-f0-9]+:	31 c0                	xor    %eax,%eax
++[a-f0-9]+:	c3                   	retq   
++#pass
+diff --git a/ld/testsuite/ld-x86-64/pr23930.t b/ld/testsuite/ld-x86-64/pr23930.t
+new file mode 100644
+index 0000000000..2255ed3173
+--- /dev/null
++++ b/ld/testsuite/ld-x86-64/pr23930.t
+@@ -0,0 +1,10 @@
++PHDRS {
++ text PT_LOAD;
++}
++
++SECTIONS
++{
++ . = (0xffffffff8000000f + ALIGN(0x1000000, 0x1000000));
++ .text : AT(ADDR(.text) - 0xffffffff8000000f) {
++ } :text
++}
+diff --git a/ld/testsuite/ld-x86-64/pr23930a.s b/ld/testsuite/ld-x86-64/pr23930a.s
+new file mode 100644
+index 0000000000..e1679a9af4
+--- /dev/null
++++ b/ld/testsuite/ld-x86-64/pr23930a.s
+@@ -0,0 +1,7 @@
++	.text
++	.globl	other
++	.type	other, @function
++other:
++	xorl	%eax, %eax
++	ret
++	.size	other, .-other
+diff --git a/ld/testsuite/ld-x86-64/pr23930b.s b/ld/testsuite/ld-x86-64/pr23930b.s
+new file mode 100644
+index 0000000000..e4859c7747
+--- /dev/null
++++ b/ld/testsuite/ld-x86-64/pr23930b.s
+@@ -0,0 +1,14 @@
++	.text
++	.globl	orig
++	.type	orig, @function
++orig:
++	xorl	%eax, %eax
++	ret
++	.size	orig, .-orig
++	.section	.text.startup,"ax",@progbits
++	.globl	main
++	.type	main, @function
++main:
++	xorl	%eax, %eax
++	ret
++	.size	main, .-main
+diff --git a/ld/testsuite/ld-x86-64/x86-64.exp b/ld/testsuite/ld-x86-64/x86-64.exp
+index 8e5348dfea..b51ad7cebc 100644
+--- a/ld/testsuite/ld-x86-64/x86-64.exp
++++ b/ld/testsuite/ld-x86-64/x86-64.exp
+@@ -422,6 +422,8 @@ run_dump_test "pr23486c-x32"
+ run_dump_test "pr23486d"
+ run_dump_test "pr23486d-x32"
+ run_dump_test "pr23854"
++run_dump_test "pr23930"
++run_dump_test "pr23930-x32"
+ 
+ if { ![istarget "x86_64-*-linux*"] && ![istarget "x86_64-*-nacl*"]} {
+     return
+-- 
+2.19.2
+
