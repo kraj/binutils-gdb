@@ -1,0 +1,275 @@
+From bfa1523c0bb05e9fc237977f94ab8a77149715dd Mon Sep 17 00:00:00 2001
+From: "H.J. Lu" <hjl.tools@gmail.com>
+Date: Mon, 19 Nov 2018 14:58:18 -0800
+Subject: [PATCH] elf: Report property change when merging properties
+
+With merging properties, report property change in linker map file, like
+
+Removed property 0xc0000002 to merge foo.o (0x1) and bar.o (not found)
+
+bfd/
+
+	elf-properties.c (elf_merge_gnu_property_list): Updated.  Report
+	property change in linker map file.
+	(_bfd_elf_link_setup_gnu_properties): Pass abfd to
+	elf_merge_gnu_property_list.
+
+ld/
+
+	* NEWS: Updated for property change report.
+	* ld.texi: Document property change report.
+	* testsuite/ld-x86-64/property-x86-ibt1a-x32.d: Check linker map
+	file.
+	* testsuite/ld-x86-64/property-x86-ibt1a.d: Likewise.
+	* testsuite/ld-x86-64/property-x86-ibt1a.map: New file.
+---
+ bfd/elf-properties.c                          | 112 ++++++++++++++----
+ ld/NEWS                                       |   2 +
+ ld/ld.texi                                    |  22 ++++
+ .../ld-x86-64/property-x86-ibt1a-x32.d        |   3 +-
+ ld/testsuite/ld-x86-64/property-x86-ibt1a.d   |   3 +-
+ ld/testsuite/ld-x86-64/property-x86-ibt1a.map |   5 +
+ 6 files changed, 125 insertions(+), 22 deletions(-)
+ create mode 100644 ld/testsuite/ld-x86-64/property-x86-ibt1a.map
+
+diff --git a/bfd/elf-properties.c b/bfd/elf-properties.c
+index cd44ed6194..2188602eda 100644
+--- a/bfd/elf-properties.c
++++ b/bfd/elf-properties.c
+@@ -261,47 +261,119 @@ elf_find_and_remove_property (elf_property_list **listp,
+   return NULL;
+ }
+ 
+-/* Merge GNU property list *LISTP with ABFD.  */
++/* Merge GNU property list *LISTP in ABFD with FIRST_PBFD.  */
+ 
+ static void
+-elf_merge_gnu_property_list (struct bfd_link_info *info, bfd *abfd,
+-			     elf_property_list **listp)
++elf_merge_gnu_property_list (struct bfd_link_info *info, bfd *first_pbfd,
++			     bfd *abfd, elf_property_list **listp)
+ {
+   elf_property_list *p, **lastp;
+   elf_property *pr;
++  bfd_boolean number_p;
++  bfd_vma number = 0;
+ 
+-  /* Merge each GNU property in ABFD with the one on *LISTP.  */
+-  lastp = &elf_properties (abfd);
++  /* Merge each GNU property in FIRST_PBFD with the one on *LISTP.  */
++  lastp = &elf_properties (first_pbfd);
+   for (p = *lastp; p; p = p->next)
+     {
++      if (p->property.pr_kind == property_number)
++	{
++	  number_p = TRUE;
++	  number = p->property.u.number;
++	}
++      else
++	number_p = FALSE;
+       pr = elf_find_and_remove_property (listp, p->property.pr_type);
+       /* Pass NULL to elf_merge_gnu_properties for the property which
+ 	 isn't on *LISTP.  */
+-      elf_merge_gnu_properties (info, abfd, &p->property, pr);
++      elf_merge_gnu_properties (info, first_pbfd, &p->property, pr);
+       if (p->property.pr_kind == property_remove)
+ 	{
+ 	  /* Remove this property.  */
+ 	  *lastp = p->next;
++	  if (number_p)
++	    {
++	      if (pr != NULL)
++		info->callbacks->minfo
++		  (_("Removed property %W to merge %pB (0x%v) and %pB "
++		     "(0x%v)\n"),
++		   (bfd_vma) p->property.pr_type, first_pbfd, number,
++		   abfd, pr->u.number);
++	      else
++		info->callbacks->minfo
++		  (_("Removed property %W to merge %pB (0x%v) and %pB "
++		     "(not found)\n"),
++		   (bfd_vma) p->property.pr_type, first_pbfd, number,
++		   abfd);
++	    }
++	  else
++	    {
++	      if (pr != NULL)
++		info->callbacks->minfo
++		  (_("Removed property %W to merge %pB and %pB\n"),
++		   (bfd_vma) p->property.pr_type, first_pbfd, abfd);
++	      else
++		info->callbacks->minfo
++		  (_("Removed property %W to merge %pB and %pB (not found)\n"),
++		   (bfd_vma) p->property.pr_type, first_pbfd, abfd);
++	    }
+ 	  continue;
+ 	}
++      if (number_p)
++	{
++	  if (pr != NULL)
++	    info->callbacks->minfo
++	      (_("Updated property %W (0x%v) to merge %pB (0x%v) and "
++		 "%pB (0x%v)\n"),
++	       (bfd_vma) p->property.pr_type, p->property.u.number,
++	       first_pbfd, number, abfd, pr->u.number);
++	  else
++	    info->callbacks->minfo
++	      (_("Updated property %W (%v) to merge %pB (0x%v) and "
++		 "%pB (not found)\n"),
++	       (bfd_vma) p->property.pr_type, p->property.u.number,
++	       first_pbfd, number, abfd);
++	}
+       lastp = &p->next;
+     }
+ 
+-  /* Merge the remaining properties on *LISTP with ABFD.  */
++  /* Merge the remaining properties on *LISTP with FIRST_PBFD.  */
+   for (p = *listp; p != NULL; p = p->next)
+-    if (elf_merge_gnu_properties (info, abfd, NULL, &p->property))
+-      {
+-	if (p->property.pr_type == GNU_PROPERTY_NO_COPY_ON_PROTECTED)
+-	  elf_has_no_copy_on_protected (abfd) = TRUE;
++    {
++      if (p->property.pr_kind == property_number)
++	{
++	  number_p = TRUE;
++	  number = p->property.u.number;
++	}
++      else
++	number_p = FALSE;
+ 
+-	pr = _bfd_elf_get_property (abfd, p->property.pr_type,
+-				    p->property.pr_datasz);
+-	/* It must be a new property.  */
+-	if (pr->pr_kind != property_unknown)
+-	  abort ();
+-	/* Add a new property.  */
+-	*pr = p->property;
+-      }
++      if (elf_merge_gnu_properties (info, first_pbfd, NULL, &p->property))
++	{
++	  if (p->property.pr_type == GNU_PROPERTY_NO_COPY_ON_PROTECTED)
++	    elf_has_no_copy_on_protected (first_pbfd) = TRUE;
++
++	  pr = _bfd_elf_get_property (first_pbfd, p->property.pr_type,
++				      p->property.pr_datasz);
++	  /* It must be a new property.  */
++	  if (pr->pr_kind != property_unknown)
++	    abort ();
++	  /* Add a new property.  */
++	  *pr = p->property;
++	}
++      else
++	{
++	if (number_p)
++	  info->callbacks->minfo
++	    (_("Removed property %W to merge %pB (not found) and %pB "
++	       "(0x%v)\n"),
++	     (bfd_vma) p->property.pr_type, first_pbfd, abfd, number);
++	else
++	  info->callbacks->minfo
++	    (_("Removed property %W to merge %pB and %pB\n"),
++	       (bfd_vma) p->property.pr_type, first_pbfd, abfd);
++	     }
++    }
+ }
+ 
+ /* Get GNU property section size.  */
+@@ -471,7 +543,7 @@ _bfd_elf_link_setup_gnu_properties (struct bfd_link_info *info)
+ 	   when all properties are from ELF objects with different
+ 	   machine code or class.  */
+ 	if (first_pbfd != NULL)
+-	  elf_merge_gnu_property_list (info, first_pbfd, listp);
++	  elf_merge_gnu_property_list (info, first_pbfd, abfd, listp);
+ 
+ 	if (list != NULL)
+ 	  {
+diff --git a/ld/NEWS b/ld/NEWS
+index e2e87defee..502966635e 100644
+--- a/ld/NEWS
++++ b/ld/NEWS
+@@ -1,5 +1,7 @@
+ -*- text -*-
+ 
++* Report property change in linker map file when merging GNU properties.
++
+ * Add support for the C-SKY processor series.
+ 
+ Changes in 2.31:
+diff --git a/ld/ld.texi b/ld/ld.texi
+index 985c591d6a..83a322c992 100644
+--- a/ld/ld.texi
++++ b/ld/ld.texi
+@@ -759,6 +759,28 @@ option is used:
+ 
+ See @ref{Expressions} for more information about expressions in linker
+ scripts.
++
++@item How GNU properties are merged.
++
++When linker merges input .note.gnu.property sections into one output
++.note.gnu.property section, some properties are removed or updated,
++which are reported in the link map as
++
++@smallexample
++Removed property 0xc0000002 to merge foo.o (0x1) and bar.o (not found)
++@end smallexample
++
++It indicates that property 0xc0000002 is removed from output when
++merging properties in  @file{foo.o}, whose property 0xc0000002 value
++is 0x1, and @file{bar.o}, which doesn't have property 0xc0000002.
++
++@smallexample
++Updated property 0xc0000002 (0x1) to merge foo.o (0x1) and bar.o (0x1)
++@end smallexample
++
++It indicates that property 0xc0010001 value is updated to 0x1 in output
++when merging properties in  @file{foo.o}, whose 0xc0010001 property value
++is 0x1, and @file{bar.o}, whose 0xc0010001 property value is 0x1.
+ @end itemize
+ 
+ @kindex -n
+diff --git a/ld/testsuite/ld-x86-64/property-x86-ibt1a-x32.d b/ld/testsuite/ld-x86-64/property-x86-ibt1a-x32.d
+index 7a95401ac3..d05ab1dce5 100644
+--- a/ld/testsuite/ld-x86-64/property-x86-ibt1a-x32.d
++++ b/ld/testsuite/ld-x86-64/property-x86-ibt1a-x32.d
+@@ -1,8 +1,9 @@
+ #source: property-x86-empty.s
+ #source: property-x86-ibt.s
+ #as: --x32 -mx86-used-note=yes
+-#ld: -r -m elf32_x86_64
++#ld: -r -m elf32_x86_64 -Map tmpdir/property-x86-ibt1a-x32.map
+ #readelf: -n
++#map: property-x86-ibt1a.map
+ 
+ Displaying notes found in: .note.gnu.property
+   Owner                 Data size	Description
+diff --git a/ld/testsuite/ld-x86-64/property-x86-ibt1a.d b/ld/testsuite/ld-x86-64/property-x86-ibt1a.d
+index e989a8a817..f8d6a063b4 100644
+--- a/ld/testsuite/ld-x86-64/property-x86-ibt1a.d
++++ b/ld/testsuite/ld-x86-64/property-x86-ibt1a.d
+@@ -1,8 +1,9 @@
+ #source: property-x86-empty.s
+ #source: property-x86-ibt.s
+ #as: --64 -defsym __64_bit__=1 -mx86-used-note=yes
+-#ld: -r -melf_x86_64
++#ld: -r -melf_x86_64 -Map tmpdir/property-x86-ibt1a.map
+ #readelf: -n
++#map: property-x86-ibt1a.map
+ 
+ Displaying notes found in: .note.gnu.property
+   Owner                 Data size	Description
+diff --git a/ld/testsuite/ld-x86-64/property-x86-ibt1a.map b/ld/testsuite/ld-x86-64/property-x86-ibt1a.map
+new file mode 100644
+index 0000000000..753e18efb5
+--- /dev/null
++++ b/ld/testsuite/ld-x86-64/property-x86-ibt1a.map
+@@ -0,0 +1,5 @@
++#...
++Removed property 0xc0000002 to merge tmpdir/property-x86-empty.o \(0x0\) and tmpdir/property-x86-ibt.o \(0x1\)
++Updated property 0xc0010000 \(0x0\) to merge tmpdir/property-x86-empty.o \(0x0\) and tmpdir/property-x86-ibt.o \(0x0\)
++Updated property 0xc0010001 \(0x1\) to merge tmpdir/property-x86-empty.o \(0x1\) and tmpdir/property-x86-ibt.o \(0x1\)
++#pass
+-- 
+2.19.2
+

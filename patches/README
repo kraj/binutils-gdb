@@ -25,6 +25,7 @@ patches="
 0001-gold-Ignore-gnu.build.attributes-section.patch
 0001-gold-Get-alignment-of-uncompressed-section-from-ch_a.patch
 0001-x86-Set-alignment-of-output-SEC_EXCLUDE-section-to-1.patch
+0001-elf-Report-property-change-when-merging-properties.patch
 	binutils-lto-mixed.patch
 	binutils-lto-mixed-test.patch
 	binutils-lto-mixed-plugin.patch
