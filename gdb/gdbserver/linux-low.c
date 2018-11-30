@@ -5904,9 +5904,7 @@ linux_look_up_symbols (void)
 static void
 linux_request_interrupt (void)
 {
-  /* Send a SIGINT to the process group.  This acts just like the user
-     typed a ^C on the controlling terminal.  */
-  kill (-signal_pid, SIGINT);
+  kill (signal_pid, SIGINT);
 }
 
 /* Copy LEN bytes from inferior's auxiliary vector starting at OFFSET
