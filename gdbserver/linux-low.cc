@@ -5496,7 +5496,7 @@ linux_process_target::request_interrupt ()
 {
   /* Send a SIGINT to the process group.  This acts just like the user
      typed a ^C on the controlling terminal.  */
-  ::kill (-signal_pid, SIGINT);
+  ::kill (signal_pid, SIGINT);
 }
 
 bool
