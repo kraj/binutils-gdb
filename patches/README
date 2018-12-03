@@ -24,7 +24,6 @@ patches="
 0005-gold-Properly-align-the-NT_GNU_PROPERTY_TYPE_0-note.patch
 0001-gold-Ignore-gnu.build.attributes-section.patch
 0001-gold-Get-alignment-of-uncompressed-section-from-ch_a.patch
-0001-x86-Delay-setting-the-iplt-section-alignment.patch
 0001-elf-Report-property-change-when-merging-properties.patch
 	binutils-lto-mixed.patch
 	binutils-lto-mixed-test.patch
