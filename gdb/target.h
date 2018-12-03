@@ -431,6 +431,9 @@ struct target_info
 
 struct target_ops
   {
+    /* Return this target's stratum.  */
+    virtual strata stratum () const = 0;
+
     /* To the target under this one.  */
     target_ops *beneath () const;
 
@@ -672,7 +675,6 @@ struct target_ops
       TARGET_DEFAULT_IGNORE ();
     virtual struct target_section_table *get_section_table ()
       TARGET_DEFAULT_RETURN (NULL);
-    enum strata to_stratum;
 
     /* Provide default values for all "must have" methods.  */
     virtual bool has_all_memory () { return false; }
@@ -882,18 +884,13 @@ struct target_ops
        to_thread_architecture would return SPU, otherwise PPC32 or PPC64).
        This is architecture used to perform decr_pc_after_break adjustment,
        and also determines the frame architecture of the innermost frame.
-       ptrace operations need to operate according to target_gdbarch ().
-
-       The default implementation always returns target_gdbarch ().  */
+       ptrace operations need to operate according to target_gdbarch ().  */
     virtual struct gdbarch *thread_architecture (ptid_t)
-      TARGET_DEFAULT_FUNC (default_thread_architecture);
+      TARGET_DEFAULT_RETURN (NULL);
 
-    /* Determine current address space of thread PTID.
-
-       The default implementation always returns the inferior's
-       address space.  */
+    /* Determine current address space of thread PTID.  */
     virtual struct address_space *thread_address_space (ptid_t)
-      TARGET_DEFAULT_FUNC (default_thread_address_space);
+      TARGET_DEFAULT_RETURN (NULL);
 
     /* Target file operations.  */
 
@@ -1291,7 +1288,7 @@ public:
 
   /* Returns true if T is pushed on the target stack.  */
   bool is_pushed (target_ops *t) const
-  { return at (t->to_stratum) == t; }
+  { return at (t->stratum ()) == t; }
 
   /* Return the target at STRATUM.  */
   target_ops *at (strata stratum) const { return m_stack[stratum]; }
@@ -1794,15 +1791,6 @@ extern int target_has_execution_1 (ptid_t);
 extern int target_has_execution_current (void);
 
 #define target_has_execution target_has_execution_current ()
-
-/* Default implementations for process_stratum targets.  Return true
-   if there's a selected inferior, false otherwise.  */
-
-extern int default_child_has_all_memory ();
-extern int default_child_has_memory ();
-extern int default_child_has_stack ();
-extern int default_child_has_registers ();
-extern int default_child_has_execution (ptid_t the_ptid);
 
 /* Can the target support the debugger control of thread execution?
    Can it lock the thread scheduler?  */
@@ -2573,50 +2561,5 @@ extern void target_prepare_to_generate_core (void);
 
 /* See to_done_generating_core.  */
 extern void target_done_generating_core (void);
-
-#if GDB_SELF_TEST
-namespace selftests {
-
-/* A mock process_stratum target_ops that doesn't read/write registers
-   anywhere.  */
-
-class test_target_ops : public target_ops
-{
-public:
-  test_target_ops ()
-    : target_ops {}
-  {
-    to_stratum = process_stratum;
-  }
-
-  const target_info &info () const override;
-
-  bool has_registers () override
-  {
-    return true;
-  }
-
-  bool has_stack () override
-  {
-    return true;
-  }
-
-  bool has_memory () override
-  {
-    return true;
-  }
-
-  void prepare_to_store (regcache *regs) override
-  {
-  }
-
-  void store_registers (regcache *regs, int regno) override
-  {
-  }
-};
-
-
-} // namespace selftests
-#endif /* GDB_SELF_TEST */
 
 #endif /* !defined (TARGET_H) */

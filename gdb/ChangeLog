@@ -1,3 +1,216 @@
+2018-11-30  John Baldwin  <jhb@FreeBSD.org>
+
+	* common/filestuff.c [HAVE_KINFO_GETFILE]: Include headers.
+	(fdwalk) [HAVE_KINFO_GETFILE]: Use kinfo_getfile.
+
+2018-11-30  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+            Simon Marchi  <simon.marchi@ericsson.com>
+
+	* linespec.c (symtab_vector_up): Remove.
+	(symtabs_from_filename): Change return type to std::vector.
+	(collect_symtabs_from_filename): Likewise.
+	(create_sals_line_offset): Assign return value of
+	collect_symtabs_from_filename to *ls->file_symtabs.
+	(convert_explicit_location_to_linespec): Remove call to release.
+	(parse_linespec): Likewise.
+	(symtab_collector) <symtab_collector>: Remove initialization of
+	m_symtabs.
+	<release_symtabs>: Change return type to std::vector<symtab *>.
+	<operator ()>: Adjust.
+
+2018-11-30  John Baldwin  <jhb@FreeBSD.org>
+
+	* fbsd-nat.c [__FreeBSD_version >= 700009] (USE_SIGINFO): Macro
+	defined.
+	(union sigval32, struct siginfo32, fbsd_siginfo_size)
+	(fbsd_convert_siginfo): Make conditional on USE_SIGINFO instead
+	of KERN_PROC_AUXV and PT_LWPINFO.
+	(fbsd_nat_target::xfer_partial): Define method unconditionally.
+	Make TARGET_OBJECT_SIGNAL_INFO conditional on USE_SIGINFO.
+	Make TARGET_OBJECT_AUXV conditional on KERN_PROC_AUXV.
+	Make TARGET_OBJECT_FREEBSD_VMMAP and
+	TARGET_OBJECT_FREEBSD_PS_STRINGS conditional on KERN_PROC_VMMAP
+	and KERN_PROC_PS_STRINGS.
+	* fbsd-nat.h: Include <sys/proc.h>.
+	(fbsd_nat_target::xfer_partial): Declare method unconditionally.
+
+2018-11-30  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* riscv-linux-nat.c: Add 'inferior.h' and 'target-descriptions.h'
+	header files.
+	(riscv_linux_nat_target::read_description): New method.
+
+2018-11-30  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* arch/riscv.h (riscv_gdbarch_features::hash): New method.
+	* arch/riscv.c (struct riscv_gdbarch_features_hasher): New.
+	(riscv_tdesc_cache): New global.
+	(riscv_create_target_description): Look in the cache before
+	creating a new target description.
+
+2018-11-30  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* arch/riscv.h (riscv_gdb_features::operator==): New.
+	(riscv_gdb_features::operator!=): New.
+	* riscv-tdep.c (riscv_gdbarch_init): Make use of the inequality
+	operator.
+
+2018-11-30  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* arch/riscv.h (riscv_create_target_description): Make return type
+	const.
+	* arch/riscv.c (riscv_create_target_description): Likewise.
+	* riscv-tdep.c (riscv_find_default_target_description): Likewise.
+
+2018-11-30  Jan Kratochvil  <jan.kratochvil@redhat.com>
+	    Keith Seitz  <keiths@redhat.com>
+	    Tom Tromey  <tom@tromey.com>
+	    Sergio Durigan Junior  <sergiodj@redhat.com>
+
+	https://bugzilla.redhat.com/show_bug.cgi?id=1613614
+	* dwarf2read.c (dwarf2_find_containing_comp_unit): Add
+	'mid_cu->length' to '*cu_off' when checking if 'sect_off' is
+	inside the CU.
+
+2018-11-30  Pedro Alves  <palves@redhat.com>
+
+	* aix-thread.c (aix_thread_target) <aix_thread_target>: Delete.
+	<stratum>: New override.
+	* bfd-target.c (aix_thread_target) <aix_thread_target>: Delete.
+	<stratum>: New override.
+	* bsd-uthread.c (bsd_uthread_target) <bsd_uthread_target>: Delete.
+	<stratum>: New override.
+	* exec.c (exec_target) <exec_target>: Delete.
+	<stratum>: New override.
+	* gdbarch-selftests.c (register_to_value_test): Adjust to use the
+	stratum method instead of the to_stratum field.
+	* linux-thread-db.c (thread_db_target) <thread_db_target>: Delete.
+	<stratum>: New override.
+	(thread_db_target::thread_db_target): Delete.
+	* make-target-delegates (print_class): Don't print a ctor
+	declaration.  Print a stratum method override declaration.
+	* process-stratum-target.h (process_stratum_target)
+	<process_stratum_target>: Delete.
+	<stratum>: New override.
+	* ravenscar-thread.c (ravenscar_thread_target)
+	<ravenscar_thread_target>: Delete.
+	<stratum>: New override.
+	* record-btrace.c (record_btrace_target)
+	<record_btrace_target>: Delete.
+	<stratum>: New override.
+	* record-full.c (record_full_base_target)
+	<record_full_base_target>: Delete.
+	<stratum>: New override.
+	* record.c (record_disconnect, record_detach)
+	(record_mourn_inferior, record_kill): Adjust to use the stratum
+	method instead of the to_stratum field.
+	* regcache.c (cooked_read_test, cooked_write_test): Likewise.
+	* sol-thread.c (sol_thread_target)
+	<sol_thread_target>: Delete.
+	<stratum>: New override.
+	* spu-multiarch.c (spu_multiarch_target)
+	<spu_multiarch_target>: Delete.
+	<stratum>: New override.
+	* target-delegates.c: Regenerate.
+	* target.c (target_stack::push, target_stack::unpush)
+	(pop_all_targets_above, pop_all_targets_at_and_above)
+	(info_target_command, target_require_runnable)
+	(target_stack::find_beneath): Adjust to use the stratum method
+	instead of the to_stratum field.
+	(dummy_target::dummy_target): Delete.
+	(dummy_target::stratum): New.
+	(debug_target::debug_target): Delete.
+	(debug_target::stratum): New.
+	(maintenance_print_target_stack): Adjust to use the stratum method
+	instead of the to_stratum field.
+	* target.h (struct target_ops) <stratum>: New method.
+	<to_stratum>: Delete.
+	<is_pushed>: Adjust to use the stratum method
+	instead of the to_stratum field.
+
+2018-11-30  Pedro Alves  <palves@redhat.com>
+
+	* corelow.c (core_target) <has_all_memory, has_execution>: New
+	overrides.
+	* inf-child.c (inf_child_target::has_all_memory)
+	(inf_child_target::has_memory, inf_child_target::has_stack)
+	(inf_child_target::has_registers)
+	(inf_child_target::has_execution): Delete.
+	* inf-child.h (inf_child_target) <has_all_memory, has_memory,
+	has_stack, has_registers, has_execution>: Delete.
+	* process-stratum-target.c
+	(process_stratum_target::has_all_memory)
+	(process_stratum_target::has_memory)
+	(process_stratum_target::has_stack)
+	(process_stratum_target::has_registers)
+	(process_stratum_target::has_execution): New.
+	* process-stratum-target.h (process_stratum_target)
+	<has_all_memory, has_memory, has_stack, has_registers,
+	has_execution>: New method overrides.
+	* ravenscar-thread.c (ravenscar_thread_target) <has_all_memory,
+	has_memory, has_stack, has_registers, has_execution>: Delete.
+	* remote-sim.c (gdbsim_target) <has_stack, has_registers,
+	has_execution>: Delete.
+	* remote.c (remote_target) <has_all_memory, has_memory, has_stack,
+	has_registers, has_execution>: Delete.
+	* target.c (default_child_has_all_memory)
+	(default_child_has_memory, default_child_has_stack)
+	(default_child_has_registers, default_child_has_execution):
+	Delete.
+	* target.h (default_child_has_all_memory)
+	(default_child_has_memory, default_child_has_stack)
+	(default_child_has_registers, default_child_has_execution):
+	Delete.
+	* tracefile.h (tracefile_target) <has_execution>: New override.
+
+2018-11-30  Pedro Alves  <palves@redhat.com>
+
+	* Makefile.in (COMMON_SFILES): Add process-stratum-target.c.
+	* bsd-kvm.c: Include "process-stratum-target.h".
+	(bsd_kvm_target): Now inherits from process_stratum_target.
+	(bsd_kvm_target::bsd_kvm_target): Default it.
+	* corelow.c: Include "process-stratum-target.h".
+	(core_target): Now inherits from process_stratum_target.
+	(core_target::core_target): Don't set to_stratum here.
+	* inf-child.c (inf_child_target::inf_child_target): Delete.
+	* inf-child.h: Include "process-stratum-target.h".
+	(inf_child_target): Inherit from process_stratum_target.
+	(inf_child_target) <inf_child_target>: Default it.
+	<can_async_p, supports_non_stop, supports_disable_randomization>:
+	Delete overrides.
+	* process-stratum-target.c: New file.
+	* process-stratum-target.h: New file.
+	* remote-sim.c: Include "process-stratum-target.h".
+	(gdbsim_target): Inherit from process_stratum_target.
+	<gdbsim_target>: Default it.
+	* remote.c: Include "process-stratum-target.h".
+	(remote_target): Inherit from process_stratum_target.
+	<remote_target>: Default it.
+	* target.c (default_thread_address_space)
+	(default_thread_architecture): Delete.
+	* target.h (target_ops) <thread_architecture>: Now returns NULL by
+	default.
+	<thread_address_space>: Ditto.
+	* test-target.h: Include "process-stratum-target.h" instead of
+	"target.h".
+	(test_target_ops): Inherit from process_stratum_target.
+	<test_target_ops>: Default it.
+	* tracefile.c (tracefile_target::tracefile_target): Delete.
+	* tracefile.h: Include "process-stratum-target.h".
+	(tracefile_target): Inherit from process_stratum_target.
+	<tracefile_target>: Default it.
+	* target-delegates.c: Regenerate.
+
+2018-11-30  Pedro Alves  <palves@redhat.com>
+
+	* Makefile.in (COMMON_SFILES): Add test-target.c.
+	* gdbarch-selftests.c: Include "test-target.h".
+	* regcache.c: Include "test-target.h".
+	* target.c (test_target_info, test_target_ops::info): Move to ...
+	* test-target.c: ... this new file.
+	* target.h (test_target_ops): Move to ...
+	* test-target.h: ... this new file.
+
 2018-11-29  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
 
 	* source.c (forward_search_command): Fix leak by using

@@ -82,15 +82,9 @@ static int default_verify_memory (struct target_ops *self,
 				  const gdb_byte *data,
 				  CORE_ADDR memaddr, ULONGEST size);
 
-static struct address_space *default_thread_address_space
-     (struct target_ops *self, ptid_t ptid);
-
 static void tcomplain (void) ATTRIBUTE_NORETURN;
 
 static struct target_ops *find_default_run_target (const char *);
-
-static struct gdbarch *default_thread_architecture (struct target_ops *ops,
-						    ptid_t ptid);
 
 static int dummy_find_memory_regions (struct target_ops *self,
 				      find_memory_region_ftype ignore1,
@@ -191,81 +185,6 @@ target_command (const char *arg, int from_tty)
   fputs_filtered ("Argument required (target name).  Try `help target'\n",
 		  gdb_stdout);
 }
-
-#if GDB_SELF_TEST
-namespace selftests {
-
-/* A mock process_stratum target_ops that doesn't read/write registers
-   anywhere.  */
-
-static const target_info test_target_info = {
-  "test",
-  N_("unit tests target"),
-  N_("You should never see this"),
-};
-
-const target_info &
-test_target_ops::info () const
-{
-  return test_target_info;
-}
-
-} /* namespace selftests */
-#endif /* GDB_SELF_TEST */
-
-/* Default target_has_* methods for process_stratum targets.  */
-
-int
-default_child_has_all_memory ()
-{
-  /* If no inferior selected, then we can't read memory here.  */
-  if (inferior_ptid == null_ptid)
-    return 0;
-
-  return 1;
-}
-
-int
-default_child_has_memory ()
-{
-  /* If no inferior selected, then we can't read memory here.  */
-  if (inferior_ptid == null_ptid)
-    return 0;
-
-  return 1;
-}
-
-int
-default_child_has_stack ()
-{
-  /* If no inferior selected, there's no stack.  */
-  if (inferior_ptid == null_ptid)
-    return 0;
-
-  return 1;
-}
-
-int
-default_child_has_registers ()
-{
-  /* Can't read registers from no inferior.  */
-  if (inferior_ptid == null_ptid)
-    return 0;
-
-  return 1;
-}
-
-int
-default_child_has_execution (ptid_t the_ptid)
-{
-  /* If there's no thread selected, then we can't make it run through
-     hoops.  */
-  if (the_ptid == null_ptid)
-    return 0;
-
-  return 1;
-}
-
 
 int
 target_has_all_memory_1 (void)
@@ -643,18 +562,20 @@ void
 target_stack::push (target_ops *t)
 {
   /* If there's already a target at this stratum, remove it.  */
-  if (m_stack[t->to_stratum] != NULL)
+  strata stratum = t->stratum ();
+
+  if (m_stack[stratum] != NULL)
     {
-      target_ops *prev = m_stack[t->to_stratum];
-      m_stack[t->to_stratum] = NULL;
+      target_ops *prev = m_stack[stratum];
+      m_stack[stratum] = NULL;
       target_close (prev);
     }
 
   /* Now add the new one.  */
-  m_stack[t->to_stratum] = t;
+  m_stack[stratum] = t;
 
-  if (m_top < t->to_stratum)
-    m_top = t->to_stratum;
+  if (m_top < stratum)
+    m_top = stratum;
 }
 
 /* See target.h.  */
@@ -678,7 +599,9 @@ unpush_target (struct target_ops *t)
 bool
 target_stack::unpush (target_ops *t)
 {
-  if (t->to_stratum == dummy_stratum)
+  strata stratum = t->stratum ();
+
+  if (stratum == dummy_stratum)
     internal_error (__FILE__, __LINE__,
 		    _("Attempt to unpush the dummy target"));
 
@@ -687,7 +610,7 @@ target_stack::unpush (target_ops *t)
   /* Look for the specified target.  Note that a target can only occur
      once in the target stack.  */
 
-  if (m_stack[t->to_stratum] != t)
+  if (m_stack[stratum] != t)
     {
       /* If T wasn't pushed, quit.  Only open targets should be
 	 closed.  */
@@ -695,10 +618,10 @@ target_stack::unpush (target_ops *t)
     }
 
   /* Unchain the target.  */
-  m_stack[t->to_stratum] = NULL;
+  m_stack[stratum] = NULL;
 
-  if (m_top == t->to_stratum)
-    m_top = t->beneath ()->to_stratum;
+  if (m_top == stratum)
+    m_top = t->beneath ()->stratum ();
 
   /* Finally close the target.  Note we do this after unchaining, so
      any target method calls from within the target_close
@@ -726,7 +649,7 @@ unpush_target_and_assert (struct target_ops *target)
 void
 pop_all_targets_above (enum strata above_stratum)
 {
-  while ((int) (current_top_target ()->to_stratum) > (int) above_stratum)
+  while ((int) (current_top_target ()->stratum ()) > (int) above_stratum)
     unpush_target_and_assert (current_top_target ());
 }
 
@@ -735,7 +658,7 @@ pop_all_targets_above (enum strata above_stratum)
 void
 pop_all_targets_at_and_above (enum strata stratum)
 {
-  while ((int) (current_top_target ()->to_stratum) >= (int) stratum)
+  while ((int) (current_top_target ()->stratum ()) >= (int) stratum)
     unpush_target_and_assert (current_top_target ());
 }
 
@@ -1962,7 +1885,7 @@ info_target_command (const char *args, int from_tty)
       if (!t->has_memory ())
 	continue;
 
-      if ((int) (t->to_stratum) <= (int) dummy_stratum)
+      if ((int) (t->stratum ()) <= (int) dummy_stratum)
 	continue;
       if (has_all_mem)
 	printf_unfiltered (_("\tWhile running this, "
@@ -2404,7 +2327,7 @@ target_require_runnable (void)
       /* Do not worry about targets at certain strata that can not
 	 create inferiors.  Assume they will be pushed again if
 	 necessary, and continue to the process_stratum.  */
-      if (t->to_stratum > process_stratum)
+      if (t->stratum () > process_stratum)
 	continue;
 
       error (_("The \"%s\" target does not support \"run\".  "
@@ -2588,22 +2511,6 @@ target_get_osdata (const char *type)
   return target_read_stralloc (t, TARGET_OBJECT_OSDATA, type);
 }
 
-static struct address_space *
-default_thread_address_space (struct target_ops *self, ptid_t ptid)
-{
-  struct inferior *inf;
-
-  /* Fall-back to the "main" address space of the inferior.  */
-  inf = find_inferior_ptid (ptid);
-
-  if (inf == NULL || inf->aspace == NULL)
-    internal_error (__FILE__, __LINE__,
-		    _("Can't determine the current "
-		      "address space of thread %s\n"),
-		    target_pid_to_str (ptid));
-
-  return inf->aspace;
-}
 
 /* Determine the current address space of thread PTID.  */
 
@@ -3201,21 +3108,13 @@ default_watchpoint_addr_within_range (struct target_ops *target,
   return addr >= start && addr < start + length;
 }
 
-static struct gdbarch *
-default_thread_architecture (struct target_ops *ops, ptid_t ptid)
-{
-  inferior *inf = find_inferior_ptid (ptid);
-  gdb_assert (inf != NULL);
-  return inf->gdbarch;
-}
-
 /* See target.h.  */
 
 target_ops *
 target_stack::find_beneath (const target_ops *t) const
 {
   /* Look for a non-empty slot at stratum levels beneath T's.  */
-  for (int stratum = t->to_stratum - 1; stratum >= 0; --stratum)
+  for (int stratum = t->stratum () - 1; stratum >= 0; --stratum)
     if (m_stack[stratum] != NULL)
       return m_stack[stratum];
 
@@ -3329,14 +3228,16 @@ static const target_info dummy_target_info = {
   ""
 };
 
-dummy_target::dummy_target ()
+strata
+dummy_target::stratum () const
 {
-  to_stratum = dummy_stratum;
+  return dummy_stratum;
 }
 
-debug_target::debug_target ()
+strata
+debug_target::stratum () const
 {
-  to_stratum = debug_stratum;
+  return debug_stratum;
 }
 
 const target_info &
@@ -3884,7 +3785,7 @@ maintenance_print_target_stack (const char *cmd, int from_tty)
 
   for (target_ops *t = current_top_target (); t != NULL; t = t->beneath ())
     {
-      if (t->to_stratum == debug_stratum)
+      if (t->stratum () == debug_stratum)
 	continue;
       printf_filtered ("  - %s (%s)\n", t->shortname (), t->longname ());
     }

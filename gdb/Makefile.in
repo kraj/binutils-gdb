@@ -1075,6 +1075,7 @@ COMMON_SFILES = \
 	parse.c \
 	printcmd.c \
 	probe.c \
+	process-stratum-target.c \
 	producer.c \
 	progspace.c \
 	progspace-and-thread.c \
@@ -1110,6 +1111,7 @@ COMMON_SFILES = \
 	target-dcache.c \
 	target-descriptions.c \
 	target-memory.c \
+	test-target.c \
 	thread.c \
 	thread-iter.c \
 	thread-fsm.c \
