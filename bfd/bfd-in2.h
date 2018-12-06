@@ -6926,6 +6926,7 @@ enum bfd_lto_object_type
     lto_non_object,
     lto_non_ir_object,
     lto_ir_object,
+    lto_fat_ir_object,
     lto_mixed_object
   };
 
@@ -7109,7 +7110,7 @@ struct bfd
   unsigned int lto_output : 1;
 
   /* LTO object type.  */
-  ENUM_BITFIELD (bfd_lto_object_type) lto_type : 2;
+  ENUM_BITFIELD (bfd_lto_object_type) lto_type : 3;
 
   /* Set to dummy BFD created when claimed by a compiler plug-in
      library.  */

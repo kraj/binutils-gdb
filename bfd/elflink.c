@@ -5673,6 +5673,47 @@ elf_link_add_archive_symbols (bfd *abfd, struct bfd_link_info *info)
 	  if (! bfd_check_format (element, bfd_object))
 	    goto error_return;
 
+	  /* FIXME: Check if it is a fat IR object.  */
+	  if (element->lto_type == lto_ir_object)
+	    {
+	      long symsize;
+
+	      /* Get symbol table size.  */
+	      symsize = bfd_get_symtab_upper_bound (element);
+	      if (symsize > 0)
+		{
+		  asymbol **sympp;
+		  long symcount;
+
+		  /* Read in the symbol table.  */
+		  sympp = (asymbol **) xmalloc (symsize);
+		  symcount = bfd_canonicalize_symtab (element, sympp);
+		  if (symcount > 0)
+		    {
+		      long count;
+		      const char *name;
+		      bfd_boolean thin_ir_object = FALSE;
+
+		      for (count = 0; count < symcount; count++)
+			{
+			  name = sympp[count]->name;
+			  if (name[0] == '_'
+			      && name[1] == '_'
+			      && strcmp (name + (name[2] == '_'),
+					 "__gnu_lto_slim") == 0)
+			    {
+			      thin_ir_object = TRUE;
+			      break;
+			    }
+			}
+
+		      if (!thin_ir_object)
+			element->lto_type = lto_fat_ir_object;
+		    }
+		  free (sympp);
+		}
+	    }
+
 	  undefs_tail = info->hash->undefs_tail;
 
 	  if (!(*info->callbacks

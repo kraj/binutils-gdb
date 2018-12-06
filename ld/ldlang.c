@@ -7500,7 +7500,11 @@ lang_process (void)
       object_type = 0;
       for (p = link_info.input_bfds; p != (bfd *) NULL; p = p->link.next)
 	{
-	  object_type |= 1 << p->lto_type;
+	  enum bfd_lto_object_type lto_type = p->lto_type;
+	  /* NB: Treat fat IR object as IR object here.  */
+	  if (lto_type == lto_fat_ir_object)
+	    lto_type = lto_ir_object;
+	  object_type |= 1 << lto_type;
 	  if ((object_type & (1 << lto_mixed_object)) != 0
 	      || ((object_type
 		   & (1 << lto_non_ir_object
@@ -9961,6 +9965,7 @@ cmdline_check_object_only_section (bfd *abfd, bfd_boolean lto)
 	  break;
 	case lto_non_ir_object:
 	case lto_ir_object:
+	case lto_fat_ir_object:
 	  break;
 	}
     }
@@ -9982,6 +9987,7 @@ cmdline_check_object_only_section (bfd *abfd, bfd_boolean lto)
 	  cmdline_object_only_list_append (cmdline_is_bfd_enum, abfd);
 	  break;
 	case lto_ir_object:
+	case lto_fat_ir_object:
 	  break;
 	}
     }

@@ -714,9 +714,17 @@ proc pr20103 {cflags libs} {
     set testname "PR ld/20103 ($cflags $libs)"
     set exec_output [run_host_cmd "$CC" "$cflags $libs"]
     if { [ regexp "undefined reference to `\\.?dead'" $exec_output ] } {
-        pass "$testname (1)"
+	if { [ regexp "fatpr20103" "$libs" ] } {
+	    fail "$testname (1)"
+	} else {
+            pass "$testname (1)"
+	}
     } {
-        fail "$testname (1)"
+	if { [ regexp "fatpr20103" "$libs" ] } {
+	    pass "$testname (1)"
+	} else {
+	    fail "$testname (1)"
+	}
     }
     if { [ regexp "plugin needed to handle lto object" $exec_output ] } {
         fail "$testname (2)"
