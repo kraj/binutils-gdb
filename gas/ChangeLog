@@ -1,3 +1,114 @@
+2018-12-06  Alan Modra  <amodra@gmail.com>
+
+	* config/tc-ppc.c (md_assemble): Adjust relocs for VLE before
+	TLS tweaks.  Handle e_li.  Warn on unexpected operand field
+	for lo16/hi16/ha16 relocs.
+
+2018-12-06  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* config/tc-riscv.h (FAKE_LABEL_NAME): Define as
+	RISCV_FAKE_LABEL_NAME.
+	(FAKE_LABEL_CHAR): Define as RISCV_FAKE_LABEL_CHAR.
+
+2018-12-05  Sam Tebbs  <sam.tebbs@arm.com>
+
+	* dw2gencfi.c (struct cie_entry): Add tc_cie_entry_extras invocation.
+	(alloc_fde_entry): Add tc_fde_entry_init_extra invocation.
+	(output_cie): Add tc_output_cie_extra invocation.
+	(select_cie_for_fde): Add tc_cie_fde_equivalent_extra and
+	tc_cie_entry_init_extra invocation.
+	(frch_cfi_data, cfa_save_data): Move to dwgencfi.h.
+	* config/tc-aarch64.c (s_aarch64_cfi_b_key_frame): Declare.
+	(md_pseudo_table): Add "cfi_b_key_frame".
+	* config/tc-aarch64.h (tc_fde_entry_extras, tc_cie_entry_extras,
+	tc_fde_entry_init_extra, tc_output_cie_extra,
+	tc_cie_fde_equivalent_extra, tc_cie_entry_init_extra): Define.
+	* dw2gencfi.h (struct fde_entry): Add tc_fde_entry_extras invocation.
+	(pointer_auth_key): Define.
+	(frch_cfi_data, cfa_save_data): Move from dwgencfi.c.
+	* doc/c-aarch64.texi (.cfi_b_key_frame): Add documentation.
+	* testsuite/gas/aarch64/(pac_ab_key.d, pac_ab_key.s): New file.
+
+2018-12-04  wu.heng  <wu.heng@zte.com.cn>
+
+	PR 23939
+	* dw2gencfi.c (dot_cfi_label): Check frch_cfi_data is non-NULL
+	before use.
+
+2018-12-03  Kito Cheng  <kito@andestech.com>
+
+	* config/tc-riscv.c: Include elfxx-riscv.h.
+	(struct riscv_subset): Removed.
+	(riscv_subsets): Change type to riscv_subset_list_t.
+	(riscv_subset_supports): Removed argument: xlen_required and move
+	logic into libbfd.
+	(riscv_multi_subset_supports): Removed argument: xlen_required.
+	(riscv_clear_subsets): Removed.
+	(riscv_add_subset): Ditto.
+	(riscv_set_arch): Extract parsing logic into libbfd.
+	(riscv_ip): Update argument for riscv_multi_subset_supports and
+	riscv_subset_supports. Update riscv_subsets due to struct definition
+	changed.
+	(riscv_after_parse_args): Update riscv_subsets due to struct
+	definition changed, update and argument for riscv_subset_supports.
+	* testsuite/gas/riscv/empty.s: New.
+	* testsuite/gas/riscv/march-fail-rv32ef.d: Likewise.
+	* testsuite/gas/riscv/march-fail-rv32ef.l: Likewise.
+	* testsuite/gas/riscv/march-fail-rv32i.d: Likewise.
+	* testsuite/gas/riscv/march-fail-rv32i.l: Likewise.
+	* testsuite/gas/riscv/march-fail-rv32iam.d: Likewise.
+	* testsuite/gas/riscv/march-fail-rv32iam.l: Likewise.
+	* testsuite/gas/riscv/march-fail-rv32ic.d: Likewise.
+	* testsuite/gas/riscv/march-fail-rv32ic.l: Likewise.
+	* testsuite/gas/riscv/march-fail-rv32icx2p.d: Likewise.
+	* testsuite/gas/riscv/march-fail-rv32icx2p.l: Likewise.
+	* testsuite/gas/riscv/march-fail-rv32imc.d: Likewise.
+	* testsuite/gas/riscv/march-fail-rv32imc.l: Likewise.
+	* testsuite/gas/riscv/march-fail-rv64I.d: Likewise.
+	* testsuite/gas/riscv/march-fail-rv64I.l: Likewise.
+	* testsuite/gas/riscv/march-fail-rv64e.d: Likewise.
+	* testsuite/gas/riscv/march-fail-rv64e.l: Likewise.
+	* testsuite/gas/riscv/march-ok-g2.d: Likewise.
+	* testsuite/gas/riscv/march-ok-g2p0.d: Likewise.
+	* testsuite/gas/riscv/march-ok-i2p0.d: Likewise.
+	* testsuite/gas/riscv/march-ok-nse-with-version.: Likewise.d
+	* testsuite/gas/riscv/march-ok-s-with-version.d: Likewise.
+	* testsuite/gas/riscv/march-ok-s.d: Likewise.
+	* testsuite/gas/riscv/march-ok-sx.d: Likewise.
+	* testsuite/gas/riscv/march-ok-two-nse.d: Likewise.
+	* testsuite/gas/riscv/march-ok-g2_p1.d: Likewise.
+	* testsuite/gas/riscv/march-ok-i2p0m2_a2f2.d: Likewise.
+
+018-12-03  Egeyar Bagcioglu  <egeyar.bagcioglu@oracle.com>
+
+	PR 23193
+	PR 19721
+	* testsuite/gas/aarch64/pr19721.s: Add new test cases.
+	* testsuite/gas/aarch64/pr19721.d: Correct existing test
+	cases and add new ones.
+
+2018-12-03  Nick Clifton  <nickc@redhat.com>
+
+	PR 23941
+	* dwarf2dbg.c (DWARF2_LINE_VERSION): Change to 3.
+	* testsuite/gas/elf/dwarf2-3.d: Update expected output.
+	* testsuite/gas/elf/dwarf2-5.d: Likewise.
+	* testsuite/gas/i386/debug1.d: Likewise.
+	* testsuite/gas/i386/dw2-compress-1.d: Likewise.
+	* testsuite/gas/i386/dw2-compress-3a.d: Likewise.
+	* testsuite/gas/i386/dw2-compress-3b.d: Likewise.
+	* testsuite/gas/i386/dw2-compressed-1.d: Likewise.
+	* testsuite/gas/i386/dw2-compressed-3a.d: Likewise.
+	* testsuite/gas/i386/dw2-compressed-3b.d: Likewise.
+	* testsuite/gas/ia64/pr13167.d: Likewise.
+	* testsuite/gas/mips/loc-swap-2.d: Likewise.
+	* testsuite/gas/mips/loc-swap.d: Likewise.
+	* testsuite/gas/mips/micromips@loc-swap-2.d: Likewise.
+	* testsuite/gas/mips/micromips@loc-swap.d: Likewise.
+	* testsuite/gas/mips/mips16@loc-swap-2.d: Likewise.
+	* testsuite/gas/mips/mips16@loc-swap.d: Likewise.
+	* testsuite/gas/mips/mips16e@loc-swap.d: Likewise.
+
 2018-12-01  Alan Modra  <amodra@gmail.com>
 
 	PR 23938

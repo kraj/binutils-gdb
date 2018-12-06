@@ -1,3 +1,27 @@
+2018-12-06  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* configure.ac (enable-cgen-maint): Support passing path to cgen
+	source tree.
+	* configure: Regenerate.
+
+2018-12-06  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* disassembler.c (disassemble_init_for_target): Add RISC-V
+	initialisation.
+	* riscv-dis.c (riscv_symbol_is_valid): New function.
+
+2018-12-03  Kito Cheng <kito@andestech.com>
+
+	* riscv-opc.c: Change the type of xlen, because type of
+	xlen_requirement changed.
+
+2018-12-03  Egeyar Bagcioglu <egeyar.bagcioglu@oracle.com>
+
+	PR 23193
+        PR 19721
+        * aarch64-tbl.h (aarch64_opcode_table): Only disassemble an ORR
+	encoding as MOV if the shift operation is a left shift of zero.
+
 2018-11-29  Jim Wilson  <jimw@sifive.com>
 
 	* riscv-opc.c (unimp): Mark compressed unimp as INSN_ALIAS.

@@ -1,3 +1,27 @@
+2018-12-05  John Baldwin  <jhb@FreeBSD.org>
+
+	* configure: Re-generate.
+	* configure.ac: Use separate sed expressions to escape variables
+	in auto-load directories.
+
+2018-12-05  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* riscv-tdep.c (riscv_features_from_gdbarch_info): New function.
+	(riscv_find_default_target_description): Use new function to
+	extract feature from gdbarch_info.
+	(riscv_gdbarch_init): Add error checks for xlen and flen between
+	target description and bfd headers.  Be smarter about when we
+	think the hardware floating point abi should be used.
+
+2018-12-05  Alan Hayward  <alan.hayward@arm.com>
+
+	* nat/aarch64-linux-hw-point.c
+	(aarch64_linux_any_set_debug_regs_state): New function.
+	* nat/aarch64-linux-hw-point.h
+	(aarch64_linux_any_set_debug_regs_state): New declaration.
+	* nat/aarch64-linux.c (aarch64_linux_new_thread): Check if any
+	BPs or WPs are set.
+
 2018-11-30  John Baldwin  <jhb@FreeBSD.org>
 
 	* common/filestuff.c [HAVE_KINFO_GETFILE]: Include headers.

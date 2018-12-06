@@ -1,3 +1,18 @@
+2018-12-06  Alan Modra  <amodra@gmail.com>
+
+	* opcode/ppc.h (E_OPCODE_MASK, E_LI_MASK, E_LI_INSN): Define.
+
+2018-12-06  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* dis-asm.h (riscv_symbol_is_valid): Declare.
+	* opcode/riscv.h (RISCV_FAKE_LABEL_NAME): Define.
+	(RISCV_FAKE_LABEL_CHAR): Define.
+
+2018-12-03  Kito Cheng  <kito@andestech.com>
+
+	* opcode/riscv.h (riscv_opcode): Change type of xlen_requirement to
+	unsigned.
+
 2018-11-27  Jim Wilson  <jimw@sifive.com>
 
 	* opcode/riscv.h (OP_MASK_CFUNCT6, OP_SH_CFUNCT6): New.
