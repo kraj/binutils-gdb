@@ -1,0 +1,300 @@
+From e89aff14a8d17a3c72cae8a506bc4a27c1f94d8f Mon Sep 17 00:00:00 2001
+From: "H.J. Lu" <hjl.tools@gmail.com>
+Date: Thu, 6 Dec 2018 11:45:41 -0800
+Subject: [PATCH] Don't claim a fat IR object if no IR object should be claimed
+
+When the linker sees an input object containing nothing but IR during
+rescan, it should ignore it (LTO phase is over).  But if the input object
+is a fat IR object, which has non-IR code as well, it should be used to
+resolve references as if it did not contain any IR at all.  This patch
+adds lto_type to bfd and linker avoids claiming a fat IR object if no IR
+object should be claimed.
+
+bfd/
+
+	PR ld/23935
+	* bfd.c (bfd_lto_object_type): New.
+	(bfd): Add lto_type.
+	* format.c: Include "libiberty.h" if BFD_SUPPORTS_PLUGINS is
+	defined.
+	(bfd_set_lto_type): New function.
+	(bfd_check_format_matches): Call bfd_set_lto_type.
+	* bfd-in2.h: Regenerated.
+
+ld/
+
+	PR ld/23935
+	* ldmain.c (add_archive_element): Don't claim a fat IR object if
+	no IR object should be claimed.
+	* testsuite/ld-plugin/lto.exp (pr20103): Adjust fat IR test.
+	Add PR ld/23935 test.
+	* testsuite/ld-plugin/pr23935a.c: New file.
+	* testsuite/ld-plugin/pr23935b.c: Likewise.
+---
+ bfd/bfd-in2.h                     | 11 +++++
+ bfd/bfd.c                         | 11 +++++
+ bfd/format.c                      | 77 ++++++++++++++++++++++++++++++-
+ ld/ldmain.c                       |  4 +-
+ ld/testsuite/ld-plugin/lto.exp    | 35 +++++++++++++-
+ ld/testsuite/ld-plugin/pr23935a.c |  2 +
+ ld/testsuite/ld-plugin/pr23935b.c |  2 +
+ 7 files changed, 138 insertions(+), 4 deletions(-)
+ create mode 100644 ld/testsuite/ld-plugin/pr23935a.c
+ create mode 100644 ld/testsuite/ld-plugin/pr23935b.c
+
+diff --git a/bfd/bfd-in2.h b/bfd/bfd-in2.h
+index 6d92c51cb9..48f2765461 100644
+--- a/bfd/bfd-in2.h
++++ b/bfd/bfd-in2.h
+@@ -6915,6 +6915,14 @@ struct bfd_build_id
+     bfd_byte data[1];
+   };
+ 
++enum bfd_lto_object_type
++  {
++    lto_non_object,
++    lto_non_ir_object,
++    lto_ir_object,
++    lto_fat_ir_object
++  };
++
+ struct bfd
+ {
+   /* The filename the application opened the BFD with.  */
+@@ -7094,6 +7102,9 @@ struct bfd
+   /* Set if this is a plugin output file.  */
+   unsigned int lto_output : 1;
+ 
++  /* LTO object type.  */
++  ENUM_BITFIELD (bfd_lto_object_type) lto_type : 2;
++
+   /* Set to dummy BFD created when claimed by a compiler plug-in
+      library.  */
+   bfd *plugin_dummy_bfd;
+diff --git a/bfd/bfd.c b/bfd/bfd.c
+index 2b658298ea..f00810f965 100644
+--- a/bfd/bfd.c
++++ b/bfd/bfd.c
+@@ -57,6 +57,14 @@ CODE_FRAGMENT
+ .    bfd_byte data[1];
+ .  };
+ .
++.enum bfd_lto_object_type
++.  {
++.    lto_non_object,
++.    lto_non_ir_object,
++.    lto_ir_object,
++.    lto_fat_ir_object
++.  };
++.
+ .struct bfd
+ .{
+ .  {* The filename the application opened the BFD with.  *}
+@@ -236,6 +244,9 @@ CODE_FRAGMENT
+ .  {* Set if this is a plugin output file.  *}
+ .  unsigned int lto_output : 1;
+ .
++.  {* LTO object type.  *}
++.  ENUM_BITFIELD (bfd_lto_object_type) lto_type : 2;
++.
+ .  {* Set to dummy BFD created when claimed by a compiler plug-in
+ .     library.  *}
+ .  bfd *plugin_dummy_bfd;
+diff --git a/bfd/format.c b/bfd/format.c
+index c4afd97d08..08a05ff84c 100644
+--- a/bfd/format.c
++++ b/bfd/format.c
+@@ -46,6 +46,9 @@ SUBSECTION
+ #include "sysdep.h"
+ #include "bfd.h"
+ #include "libbfd.h"
++#if BFD_SUPPORTS_PLUGINS
++#include "libiberty.h"
++#endif
+ 
+ /* IMPORT from targets.c.  */
+ extern const size_t _bfd_target_vector_entries;
+@@ -186,6 +189,73 @@ bfd_preserve_finish (bfd *abfd ATTRIBUTE_UNUSED, struct bfd_preserve *preserve)
+   preserve->marker = NULL;
+ }
+ 
++/* Set lto_type in ABFD.  */
++
++static void
++bfd_set_lto_type (bfd *abfd ATTRIBUTE_UNUSED)
++{
++#if BFD_SUPPORTS_PLUGINS
++  if (abfd->format == bfd_object
++      && abfd->lto_type == lto_non_object
++      && (abfd->flags & (DYNAMIC | EXEC_P)) == 0)
++    {
++      asection *sec;
++      enum bfd_lto_object_type type = lto_non_ir_object;
++      for (sec = abfd->sections; sec != NULL; sec = sec->next)
++	{
++	  if (strncmp (sec->name, ".gnu.lto_", 9) == 0)
++	    {
++	      type = lto_ir_object;
++	      break;
++	    }
++	}
++
++      /* FIXME: Check if it is a fat IR object.  */
++      if (type == lto_ir_object)
++	{
++	  long symsize;
++
++	  /* Get symbol table size.  */
++	  symsize = bfd_get_symtab_upper_bound (abfd);
++	  if (symsize > 0)
++	    {
++	      asymbol **sympp;
++	      long symcount;
++
++	      /* Read in the symbol table.  */
++	      sympp = (asymbol **) xmalloc (symsize);
++	      symcount = bfd_canonicalize_symtab (abfd, sympp);
++	      if (symcount > 0)
++		{
++		  long count;
++		  const char *name;
++		  bfd_boolean thin_ir_object = FALSE;
++
++		  for (count = 0; count < symcount; count++)
++		    {
++		      name = sympp[count]->name;
++		      if (name[0] == '_'
++			  && name[1] == '_'
++			  && strcmp (name + (name[2] == '_'),
++				     "__gnu_lto_slim") == 0)
++			{
++			  thin_ir_object = TRUE;
++			  break;
++			}
++		    }
++
++		  if (!thin_ir_object)
++		    type = lto_fat_ir_object;
++		}
++	      free (sympp);
++	    }
++	}
++
++      abfd->lto_type = type;
++    }
++#endif
++}
++
+ /*
+ FUNCTION
+ 	bfd_check_format_matches
+@@ -232,7 +302,10 @@ bfd_check_format_matches (bfd *abfd, bfd_format format, char ***matching)
+     }
+ 
+   if (abfd->format != bfd_unknown)
+-    return abfd->format == format;
++    {
++      bfd_set_lto_type (abfd);
++      return abfd->format == format;
++    }
+ 
+   if (matching != NULL || *bfd_associated_vector != NULL)
+     {
+@@ -471,6 +544,8 @@ bfd_check_format_matches (bfd *abfd, bfd_format format, char ***matching)
+       if (matching_vector)
+ 	free (matching_vector);
+ 
++      bfd_set_lto_type (abfd);
++
+       /* File position has moved, BTW.  */
+       return TRUE;
+     }
+diff --git a/ld/ldmain.c b/ld/ldmain.c
+index b7f51abc75..e5123f7a0a 100644
+--- a/ld/ldmain.c
++++ b/ld/ldmain.c
+@@ -824,7 +824,9 @@ add_archive_element (struct bfd_link_info *info,
+      BFD, but we still want to output the original BFD filename.  */
+   orig_input = *input;
+ #ifdef ENABLE_PLUGINS
+-  if (link_info.lto_plugin_active)
++  /* Don't claim a fat IR object if no IR object should be claimed.  */
++  if (link_info.lto_plugin_active
++      && (!no_more_claiming || abfd->lto_type != lto_fat_ir_object))
+     {
+       /* We must offer this archive member to the plugins to claim.  */
+       plugin_maybe_claim (input);
+diff --git a/ld/testsuite/ld-plugin/lto.exp b/ld/testsuite/ld-plugin/lto.exp
+index 008bde79de..5a9666fcc1 100644
+--- a/ld/testsuite/ld-plugin/lto.exp
++++ b/ld/testsuite/ld-plugin/lto.exp
+@@ -655,10 +655,20 @@ proc pr20103 {cflags libs} {
+ 
+     set testname "PR ld/20103 ($cflags $libs)"
+     set exec_output [run_host_cmd "$CC" "$cflags $libs"]
++    # NB: Starting from GCC 4.9, -flto is optional for final link.
++    if { [ regexp "fatpr20103" "$libs" ] \
++          && ([regexp " -flto" "$cflags"] \
++	      || [at_least_gcc_version 4 9]) } {
++	set result1good "fail"
++	set result1bad "pass"
++    } {
++	set result1good "pass"
++	set result1bad "fail"
++    }
+     if { [ regexp "undefined reference to `\\.?dead'" $exec_output ] } {
+-        pass "$testname (1)"
++	$result1good "$testname (1)"
+     } {
+-        fail "$testname (1)"
++	$result1bad "$testname (1)"
+     }
+     if { [ regexp "plugin needed to handle lto object" $exec_output ] } {
+         fail "$testname (2)"
+@@ -717,6 +727,27 @@ if { [check_lto_fat_available] } {
+ 	    "-O2" \
+ 	    {dummy.c} {} "pr20103c" \
+ 	] \
++	[list "Build fatpr23935.a" \
++	    "$plug_opt" \
++	    "-flto -fno-builtin -ffat-lto-objects" \
++	    {pr23935a.c} \
++	    "" \
++	    "fatpr23935.a" \
++	] \
++	[list "Build pr23935b.o" \
++	    "$plug_opt" \
++	    "-flto -fno-fat-lto-objects" \
++	    {pr23935b.c} \
++	] \
++	[list \
++	    "Build pr23935" \
++	    "-static -flto -Wl,-emain -nostdlib tmpdir/pr23935b.o \
++	     tmpdir/fatpr23935.a" \
++	    "-flto -fno-fat-lto-objects" \
++	    {dummy.c} \
++	    "" \
++	    "pr23935" \
++	] \
+     ]
+     pr20103 "-O2 -flto" "tmpdir/thinpr20103a.a tmpdir/thinpr20103b.a tmpdir/thinpr20103c.a"
+     pr20103 "-O2 -flto" "tmpdir/fatpr20103a.a tmpdir/fatpr20103b.a tmpdir/fatpr20103c.a"
+diff --git a/ld/testsuite/ld-plugin/pr23935a.c b/ld/testsuite/ld-plugin/pr23935a.c
+new file mode 100644
+index 0000000000..8c731977f4
+--- /dev/null
++++ b/ld/testsuite/ld-plugin/pr23935a.c
+@@ -0,0 +1,2 @@
++#include <stdio.h>
++int puts(const char *s) { return 0; }
+diff --git a/ld/testsuite/ld-plugin/pr23935b.c b/ld/testsuite/ld-plugin/pr23935b.c
+new file mode 100644
+index 0000000000..58ae07e869
+--- /dev/null
++++ b/ld/testsuite/ld-plugin/pr23935b.c
+@@ -0,0 +1,2 @@
++#include <stdio.h>
++int main() { printf("hi\n"); return 0; }
+-- 
+2.19.2
+
