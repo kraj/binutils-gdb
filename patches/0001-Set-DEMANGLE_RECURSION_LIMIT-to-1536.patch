@@ -1,0 +1,33 @@
+From a4ab0cf4d912de076ec876569ad5da41baf80e53 Mon Sep 17 00:00:00 2001
+From: "H.J. Lu" <hjl.tools@gmail.com>
+Date: Fri, 7 Dec 2018 08:20:45 -0800
+Subject: [PATCH] Set DEMANGLE_RECURSION_LIMIT to 1536
+
+Define DEMANGLE_RECURSION_LIMIT to 1536 for
+
+_ZN4modc6parser8sequenceINS_9astParser13LocatedParserINS0_9ParserRefINS2_UlRNS2_16TokenParserInputEE_EEEEEINS0_14OptionalParserINS2_18ListParserTemplateILNS_6tokens5Token4TypeE4EXadL_ZNSD_Ut_13parenthesizedEEEE6ParserINS4_INS0_6ParserIS5_NS_3ast10ExpressionEEEEEEEEENSA_INS4_INS2_22OneOfKeywordsToTParserINSJ_5StyleEEEEEEENS0_14SequenceParserIS5_INS0_18ExactElementParserIS5_EENSA_ISM_EEEEENS0_14RepeatedParserINS4_INS0_15TransformParserINSU_IS5_INS4_INSP_INSJ_10Annotation12RelationshipEEEEESX_EEENS2_UlNS2_3LocES12_ONS_5MaybeISK_EEE19_EEEEELb0EEEEEENSU_INS0_17ExtractParserTypeIT_E9InputTypeEINS0_8MaybeRefIS1F_E4TypeEDpNS1I_IT0_E4TypeEEEEOS1F_DpOS1L_
+
+whose recursion level can reach 1306.
+
+	PR other/88409
+	* demangle.h (DEMANGLE_RECURSION_LIMIT): Set to 1536.
+---
+ include/demangle.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/include/demangle.h b/include/demangle.h
+index 1e67fe2fb3..d9de074bef 100644
+--- a/include/demangle.h
++++ b/include/demangle.h
+@@ -77,7 +77,7 @@ extern "C" {
+ /* If DMGL_NO_RECURSE_LIMIT is not enabled, then this is the value used as
+    the maximum depth of recursion allowed.  It should be enough for any
+    real-world mangled name.  */
+-#define DEMANGLE_RECURSION_LIMIT 1024
++#define DEMANGLE_RECURSION_LIMIT 1536
+   
+ /* Enumeration of possible demangling styles.
+ 
+-- 
+2.19.2
+
