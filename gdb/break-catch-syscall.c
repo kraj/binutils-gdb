@@ -409,40 +409,23 @@ catch_syscall_split_args (const char *arg)
 	{
 	  /* We have a syscall group.  Let's expand it into a syscall
 	     list before inserting.  */
-	  struct syscall *syscall_list;
 	  const char *group_name;
 
 	  /* Skip over "g:" and "group:" prefix strings.  */
 	  group_name = strchr (cur_name, ':') + 1;
 
-	  syscall_list = get_syscalls_by_group (gdbarch, group_name);
-
-	  if (syscall_list == NULL)
+	  if (!get_syscalls_by_group (gdbarch, group_name, &result))
 	    error (_("Unknown syscall group '%s'."), group_name);
-
-	  for (i = 0; syscall_list[i].name != NULL; i++)
-	    {
-	      /* Insert each syscall that are part of the group.  No
-		 need to check if it is valid.  */
-	      result.push_back (syscall_list[i].number);
-	    }
-
-	  xfree (syscall_list);
 	}
       else
 	{
-	  /* We have a name.  Let's check if it's valid and convert it
-	     to a number.  */
-	  get_syscall_by_name (gdbarch, cur_name, &s);
-
-	  if (s.number == UNKNOWN_SYSCALL)
+	  /* We have a name.  Let's check if it's valid and fetch a
+	     list of matching numbers.  */
+	  if (!get_syscalls_by_name (gdbarch, cur_name, &result))
 	    /* Here we have to issue an error instead of a warning,
 	       because GDB cannot do anything useful if there's no
 	       syscall number to be caught.  */
 	    error (_("Unknown syscall name '%s'."), cur_name);
-
-	  /* Ok, it's valid.  */
-	  result.push_back (s.number);
 	}
     }
 

@@ -1,3 +1,26 @@
+2018-12-12  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.base/annota1.exp: Update a test regexp.
+
+2018-12-11  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.base/float.exp: Handle RISC-V targets without an FPU.
+
+2018-12-09  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* gdb.threads/tid-reuse.c (REUSE_TIME_CAP): Declare as 60.
+	(reuse_time): Initialize to REUSE_TIME_CAP.
+	(check_rc): New function.
+	(main): Use REUSE_TIME_CAP instead of hardcoded 60.
+	Check pthread_create rc.
+	(spawner_thread_func): Check pthread_create and pthread_join rc.
+
+2018-12-08  Pedro Alves  <palves@redhat.com>
+
+	* gdb.base/list.exp (test_forward_search): Rename to ...
+	(test_forward_reverse_search): ... this.  Also test reverse-search
+	and the forward-search alias.
+
 2018-12-05  Andrew Burgess  <andrew.burgess@embecosm.com>
 
 	* config/sim.exp (gdb_target_sim): Remove redundant adjustment of
