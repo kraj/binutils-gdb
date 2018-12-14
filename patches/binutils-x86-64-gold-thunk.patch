@@ -1,4 +1,4 @@
-From 86af7dbf63343978140d1876db85dc5951cfd212 Mon Sep 17 00:00:00 2001
+From b99d239dc3c0d2e2a5b841a9e610d2ed0cbb5a41 Mon Sep 17 00:00:00 2001
 From: "H.J. Lu" <hjl.tools@gmail.com>
 Date: Tue, 23 Jan 2018 12:09:12 -0800
 Subject: [PATCH 2/2] gold: Initial R_X86_64_THUNK_GOTPCRELX support
@@ -24,7 +24,7 @@ gold/
  2 files changed, 11 insertions(+), 2 deletions(-)
 
 diff --git a/elfcpp/x86_64.h b/elfcpp/x86_64.h
-index a8883dd20c..653ecd92ff 100644
+index 0f1dc9af60..b4a25eb37f 100644
 --- a/elfcpp/x86_64.h
 +++ b/elfcpp/x86_64.h
 @@ -98,6 +98,8 @@ enum
@@ -37,10 +37,10 @@ index a8883dd20c..653ecd92ff 100644
    R_X86_64_GNU_VTINHERIT = 250,
    R_X86_64_GNU_VTENTRY = 251
 diff --git a/gold/x86_64.cc b/gold/x86_64.cc
-index a8140602b0..ca65776b1a 100644
+index dd2a215878..2adae39dd5 100644
 --- a/gold/x86_64.cc
 +++ b/gold/x86_64.cc
-@@ -1048,7 +1048,8 @@ class Target_x86_64 : public Sized_target<size, false>
+@@ -1165,7 +1165,8 @@ class Target_x86_64 : public Sized_target<size, false>
      // We cannot do the conversion unless it's one of these relocations.
      if (r_type != elfcpp::R_X86_64_GOTPCREL
          && r_type != elfcpp::R_X86_64_GOTPCRELX
@@ -50,7 +50,7 @@ index a8140602b0..ca65776b1a 100644
        return false;
      // We cannot convert references to IFUNC symbols, or to symbols that
      // are not local to the current module.
-@@ -2770,6 +2771,7 @@ Target_x86_64<size>::Scan::get_reference_flags(unsigned int r_type)
+@@ -3388,6 +3389,7 @@ Target_x86_64<size>::Scan::get_reference_flags(unsigned int r_type)
      case elfcpp::R_X86_64_GOTPCREL:
      case elfcpp::R_X86_64_GOTPCRELX:
      case elfcpp::R_X86_64_REX_GOTPCRELX:
@@ -58,7 +58,7 @@ index a8140602b0..ca65776b1a 100644
      case elfcpp::R_X86_64_GOTPLT64:
        // Absolute in GOT.
        return Symbol::ABSOLUTE_REF;
-@@ -3056,6 +3058,7 @@ Target_x86_64<size>::Scan::local(Symbol_table* symtab,
+@@ -3674,6 +3676,7 @@ Target_x86_64<size>::Scan::local(Symbol_table* symtab,
      case elfcpp::R_X86_64_GOTPCREL:
      case elfcpp::R_X86_64_GOTPCRELX:
      case elfcpp::R_X86_64_REX_GOTPCRELX:
@@ -66,7 +66,7 @@ index a8140602b0..ca65776b1a 100644
      case elfcpp::R_X86_64_GOTPLT64:
        {
  	// The symbol requires a GOT section.
-@@ -3069,7 +3072,8 @@ Target_x86_64<size>::Scan::local(Symbol_table* symtab,
+@@ -3687,7 +3690,8 @@ Target_x86_64<size>::Scan::local(Symbol_table* symtab,
  	if (!parameters->incremental()
  	    && (r_type == elfcpp::R_X86_64_GOTPCREL
  		|| r_type == elfcpp::R_X86_64_GOTPCRELX
@@ -76,7 +76,7 @@ index a8140602b0..ca65776b1a 100644
  	    && reloc.get_r_offset() >= 2
  	    && !is_ifunc)
  	  {
-@@ -3302,6 +3306,7 @@ Target_x86_64<size>::Scan::possible_function_pointer_reloc(
+@@ -3920,6 +3924,7 @@ Target_x86_64<size>::Scan::possible_function_pointer_reloc(
      case elfcpp::R_X86_64_GOTPCREL:
      case elfcpp::R_X86_64_GOTPCRELX:
      case elfcpp::R_X86_64_REX_GOTPCRELX:
@@ -84,7 +84,7 @@ index a8140602b0..ca65776b1a 100644
      case elfcpp::R_X86_64_GOTPLT64:
        {
  	return true;
-@@ -3533,6 +3538,7 @@ Target_x86_64<size>::Scan::global(Symbol_table* symtab,
+@@ -4151,6 +4156,7 @@ Target_x86_64<size>::Scan::global(Symbol_table* symtab,
      case elfcpp::R_X86_64_GOTPCREL:
      case elfcpp::R_X86_64_GOTPCRELX:
      case elfcpp::R_X86_64_REX_GOTPCRELX:
@@ -92,7 +92,7 @@ index a8140602b0..ca65776b1a 100644
      case elfcpp::R_X86_64_GOTPLT64:
        {
  	// The symbol requires a GOT entry.
-@@ -4244,6 +4250,7 @@ Target_x86_64<size>::Relocate::relocate(
+@@ -4862,6 +4868,7 @@ Target_x86_64<size>::Relocate::relocate(
      case elfcpp::R_X86_64_GOTPCREL:
      case elfcpp::R_X86_64_GOTPCRELX:
      case elfcpp::R_X86_64_REX_GOTPCRELX:
@@ -101,5 +101,5 @@ index a8140602b0..ca65776b1a 100644
        // Convert
        // mov foo@GOTPCREL(%rip), %reg
 -- 
-2.14.3
+2.19.2
 
