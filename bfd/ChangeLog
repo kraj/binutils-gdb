@@ -1,3 +1,72 @@
+2018-12-18  Alan Modra  <amodra@gmail.com>
+
+	* Makefile.am (bfdinclude_HEADERS): Add bfd_stdint.h.
+	(BFD_H_DEPS): Add include/diagnostics.h.
+	(LOCAL_H_DEPS): Add bfd_stdint.h.
+	* bfd-in.h: Include bfd_stdint.h.
+	* arc-plt.h: Don't include stdint.h.
+	* coff-rs6000.c: Likewise.
+	* coff64-rs6000.c: Likewise.
+	* elfxx-riscv.c: Likewise.
+	* cache.c: Don't include bfd_stdint.h.
+	* elf32-arm.c: Likewise.
+	* elf32-avr.c: Likewise.
+	* elf32-nds32.c: Likewise.
+	* elf32-rl78.c: Likewise.
+	* elf32-rx.c: Likewise.
+	* elf32-wasm32.c: Likewise.
+	* elf64-nfp.c: Likewise.
+	* elflink.c: Likewise.
+	* elfnn-aarch64.c: Likewise.
+	* elfnn-ia64.c: Likewise.
+	* elfxx-ia64.c: Likewise.
+	* elfxx-x86.h: Likewise.
+	* wasm-module.c: Likewise, and don't include sysdep.h twice.
+	* elf-nacl.h: Don't include bfd.h.
+	* mach-o.h: Likewise.
+	* elfxx-aarch64.c: Include bfd.h and elf-bfd.h.
+	* elfxx-aarch64.h: Don't include bfd.h, elf-bfd.h or stdint.h.
+	* mach-o-aarch64.c: Include mach-o.h later.
+	* mach-o-arm.c: Likewise.
+	* mach-o-i386.c: Likewise.
+	* mach-o-x86-64.c: Likewise.
+	* mach-o.c: Likewise.
+	* sysdep.h: Don't include ansidecl.h or sys/stat.h.
+	* Makefile.in: Regenerate.
+	* bfd-in2.h: Regenerate.
+
+2018-12-18  Alan Modra  <amodra@gmail.com>
+
+	PR 23980
+	* elf32-i386.c (elf_i386_relocate_section): Exit with wrong format
+	error rather than asserting input file is as expected.
+	* elf32-s390.c (elf_s390_relocate_section): Likewise.
+	* elf32-sh.c (sh_elf_relocate_section): Likewise.
+	* elf32-xtensa.c (elf_xtensa_relocate_section): Likewise.
+	* elf64-ppc.c (ppc64_elf_relocate_section): Likewise.
+	* elf64-s390.c (elf_s390_relocate_section): Likewise.
+	* elf64-x86-64.c (elf_x86_64_relocate_section): Likewise.
+	* elf32-ppc.c (ppc_elf_relocate_section): Exit with wrong format
+	error if input file is not ppc32 ELF.
+
+2018-12-18  Alan Modra  <amodra@gmail.com>
+
+	PR 23980
+	* elf64-ppc.c (ppc64_elf_hide_symbol): Check hash table type
+	before referencing ppc64-only fields of hash entries.
+
+2018-12-17  Alan Modra  <amodra@gmail.com>
+
+	PR 23994
+	* aoutx.h: Include limits.h.
+	(get_reloc_upper_bound): Detect long overflow and return a file
+	too big error if it occurs.
+	* elf.c: Include limits.h.
+	(_bfd_elf_get_symtab_upper_bound): Detect long overflow and return
+	a file too big error if it occurs.
+	(_bfd_elf_get_dynamic_symtab_upper_bound): Likewise.
+	(_bfd_elf_get_dynamic_reloc_upper_bound): Likewise.
+
 2018-12-14  H.J. Lu  <hongjiu.lu@intel.com>
 
 	PR ld/23900

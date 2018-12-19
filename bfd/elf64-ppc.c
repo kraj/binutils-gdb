@@ -6193,6 +6193,9 @@ ppc64_elf_hide_symbol (struct bfd_link_info *info,
   struct ppc_link_hash_entry *eh;
   _bfd_elf_link_hash_hide_symbol (info, h, force_local);
 
+  if (ppc_hash_table (info) == NULL)
+    return;
+
   eh = (struct ppc_link_hash_entry *) h;
   if (eh->is_func_descriptor)
     {
@@ -13357,7 +13360,11 @@ ppc64_elf_relocate_section (bfd *output_bfd,
   if (input_section->owner == htab->params->stub_bfd)
     return TRUE;
 
-  BFD_ASSERT (is_ppc64_elf (input_bfd));
+  if (!is_ppc64_elf (input_bfd))
+    {
+      bfd_set_error (bfd_error_wrong_format);
+      return FALSE;
+    }
 
   local_got_ents = elf_local_got_ents (input_bfd);
   TOCstart = elf_gp (output_bfd);

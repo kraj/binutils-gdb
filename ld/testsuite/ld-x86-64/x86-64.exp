@@ -1587,11 +1587,19 @@ if { [isnative] && [which $CC] != 0 } {
 	    "$NOPIE_CFLAGS" \
 	] \
 	[list \
-	    "Build pr22842" \
+	    "Run pr22842" \
 	    "-pie -Wl,--no-as-needed tmpdir/pr22842.so" \
 	    "-Wa,-mx86-used-note=yes" \
 	    { pr22842b.S } \
 	    "pr22842" \
+	    "pass.out" \
+	] \
+	[list \
+	    "Run pr23997" \
+	    "" \
+	    "" \
+	    { pr23997a.s pr23997b.c pr23997c.c } \
+	    "pr23997" \
 	    "pass.out" \
 	] \
     ]
