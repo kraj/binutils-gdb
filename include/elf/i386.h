@@ -69,6 +69,12 @@ START_RELOC_NUMBERS (elf_i386_reloc_type)
      /* Load from 32 bit GOT entry, relaxable.  */
      RELOC_NUMBER (R_386_GOT32X,       43)
 
+     /* Relocation number 44 is reserved.  */
+
+     RELOC_NUMBER (R_386_SEG16,        45)
+     RELOC_NUMBER (R_386_SUB16,        46)
+     RELOC_NUMBER (R_386_SUB32,        47)
+
      /* Used by Intel.  */
      RELOC_NUMBER (R_386_USED_BY_INTEL_200, 200)
 
