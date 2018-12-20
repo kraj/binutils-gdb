@@ -148,10 +148,10 @@ static reloc_howto_type elf_howto_table[]=
 #define R_386_ext2 (R_386_GOT32X + 1 - R_386_tls_offset)
 #define R_386_seg16_offset (R_386_SEG16 - R_386_ext2)
 
-  HOWTO(R_386_SEG16, 0, 1, 16, TRUE, 0, complain_overflow_bitfield,
+  HOWTO(R_386_SEG16, 0, 1, 16, FALSE, 0, complain_overflow_bitfield,
 	bfd_elf_generic_reloc, "R_386_SEG16",
 	TRUE, 0xffff, 0xffff, FALSE),
-  HOWTO(R_386_SUB16, 0, 1, 16, TRUE, 0, complain_overflow_bitfield,
+  HOWTO(R_386_SUB16, 0, 1, 16, FALSE, 0, complain_overflow_bitfield,
 	bfd_elf_generic_reloc, "R_386_SUB16",
 	TRUE, 0xffff, 0xffff, FALSE),
   HOWTO(R_386_SUB32, 0, 2, 32, FALSE, 0, complain_overflow_bitfield,
@@ -1947,27 +1947,16 @@ do_size:
 	case R_386_SUB32:
 	  if (!bfd_link_executable (info))
 	    {
-	      reloc_howto_type *howto;
-	      unsigned int indx;
-	      if ((indx = r_type) >= R_386_standard
-		  && ((indx = r_type - R_386_ext_offset) - R_386_standard
-		      >= R_386_ext - R_386_standard)
-		  && ((indx = r_type - R_386_seg16_offset) - R_386_ext
-		      >= R_386_ext2 - R_386_ext)
-		  && ((indx = r_type - R_386_tls_offset) - R_386_ext2
-		      >= R_386_ext3 - R_386_ext2))
-		return _bfd_unrecognized_reloc (abfd, sec, r_type);
-	      howto = elf_howto_table + indx;
+	      reloc_howto_type *howto
+		= elf_i386_rtype_to_howto (abfd, r_type);
 	      if (h)
 		name = h->root.root.string;
 	      else
-		name = bfd_elf_sym_name (abfd, symtab_hdr, isym,
-					     NULL);
+		name = bfd_elf_sym_name (abfd, symtab_hdr, isym, NULL);
 	      info->callbacks->einfo
 		(_("%F%P: %pB: unsupported relocation %s against symbol "
 		   "`%s' for non-executable\n"),
 		 abfd, howto->name, name);
-	      bfd_set_error (bfd_error_bad_value);
 	      return FALSE;
 	    }
 	  break;
@@ -2077,6 +2066,7 @@ elf_i386_relocate_section (bfd *output_bfd,
   Elf_Internal_Rela *relend;
   bfd_boolean is_vxworks_tls;
   unsigned plt_entry_size;
+  bfd_vma last_relocation;
 
   /* Skip if check_relocs failed.  */
   if (input_section->check_relocs_failed)
@@ -2106,6 +2096,8 @@ elf_i386_relocate_section (bfd *output_bfd,
   _bfd_x86_elf_set_tls_module_base (info);
 
   plt_entry_size = htab->plt.plt_entry_size;
+
+  last_relocation = 0;
 
   rel = wrel = relocs;
   relend = relocs + input_section->reloc_count;
@@ -3469,7 +3461,7 @@ disallow_got32:
 	case R_386_SUB16:
 	  where = contents + rel->r_offset;
 	  addend = bfd_get_16 (input_bfd, where);
-	  relocation = addend - relocation;
+	  relocation = addend - relocation + last_relocation;
 	  bfd_put_16 (input_bfd, 0, where);
 	  break;
 
@@ -3482,6 +3474,39 @@ disallow_got32:
 
 	default:
 	  break;
+	}
+
+      /* Handle consecutive relocations of R_386_16 and R_386_SUB16
+	 for the same offset.  */
+      if ((rel + 1) < relend && rel->r_offset == rel[1].r_offset)
+	{
+	  unsigned int r_type2 = ELF32_R_TYPE (rel[1].r_info);
+	  reloc_howto_type *howto2
+	    = elf_i386_rtype_to_howto (input_bfd, r_type2);
+	  if (r_type != R_386_16 && r_type2 != R_386_SUB16)
+	    {
+	      const char *name;
+	      if (h)
+		name = h->root.root.string;
+	      else
+		name = bfd_elf_sym_name (input_bfd, symtab_hdr, sym,
+					 NULL);
+	      info->callbacks->einfo
+		(_("%F%P: %pB: invalid consecutive relocations %s and "
+		   "%s against symbol `%s` at %#x in in section `%pA'\n"),
+		 input_bfd, howto->name, howto2->name, name,
+		 (uint32_t) rel->r_offset, input_section);
+	      return FALSE;
+	    }
+
+	  /* Record the R_386_16 relocation result.  */
+	  where = contents + rel->r_offset;
+	  addend = bfd_get_16 (input_bfd, where);
+	  last_relocation = relocation + addend;
+	  bfd_put_16 (input_bfd, 0, where);
+
+	  /* Combine R_386_16 relocation with R_386_SUB16.  */
+	  continue;
 	}
 
       /* Dynamic relocs are not propagated for SEC_DEBUGGING sections
@@ -3544,6 +3569,9 @@ check_relocation_error:
 
       if (wrel != rel)
 	*wrel = *rel;
+
+      /* Clear the previous relocation.  */
+      last_relocation = 0;
     }
 
   if (wrel != rel)
