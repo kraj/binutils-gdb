@@ -146,7 +146,21 @@ static reloc_howto_type elf_howto_table[]=
 
   /* Another gap.  */
 #define R_386_ext2 (R_386_GOT32X + 1 - R_386_tls_offset)
-#define R_386_vt_offset (R_386_GNU_VTINHERIT - R_386_ext2)
+#define R_386_seg16_offset (R_386_SEG16 - R_386_ext2)
+
+  HOWTO(R_386_SEG16, 0, 1, 16, TRUE, 0, complain_overflow_bitfield,
+	bfd_elf_generic_reloc, "R_386_SEG16",
+	TRUE, 0xffff, 0xffff, FALSE),
+  HOWTO(R_386_SUB16, 0, 1, 16, TRUE, 0, complain_overflow_bitfield,
+	bfd_elf_generic_reloc, "R_386_SUB16",
+	TRUE, 0xffff, 0xffff, FALSE),
+  HOWTO(R_386_SUB32, 0, 2, 32, FALSE, 0, complain_overflow_bitfield,
+	bfd_elf_generic_reloc, "R_386_SUB32",
+	TRUE, 0xffffffff, 0xffffffff, FALSE),
+
+  /* Another gap.  */
+#define R_386_ext3 (R_386_SUB32 + 1 - R_386_seg16_offset)
+#define R_386_vt_offset (R_386_GNU_VTINHERIT - R_386_ext3)
 
 /* GNU extension to record C++ vtable hierarchy.  */
   HOWTO (R_386_GNU_VTINHERIT,	/* type */
@@ -337,6 +351,18 @@ elf_i386_reloc_type_lookup (bfd *abfd,
       TRACE ("BFD_RELOC_386_GOT32X");
       return &elf_howto_table[R_386_GOT32X - R_386_tls_offset];
 
+    case BFD_RELOC_386_SEG16:
+      TRACE ("BFD_RELOC_386_SEG16");
+      return &elf_howto_table[R_386_SEG16 - R_386_seg16_offset];
+
+    case BFD_RELOC_386_SUB16:
+      TRACE ("BFD_RELOC_386_SUB16");
+      return &elf_howto_table[R_386_SUB16 - R_386_seg16_offset];
+
+    case BFD_RELOC_386_SUB32:
+      TRACE ("BFD_RELOC_386_SUB32");
+      return &elf_howto_table[R_386_SUB32 - R_386_seg16_offset];
+
     case BFD_RELOC_VTABLE_INHERIT:
       TRACE ("BFD_RELOC_VTABLE_INHERIT");
       return &elf_howto_table[R_386_GNU_VTINHERIT - R_386_vt_offset];
@@ -379,8 +405,10 @@ elf_i386_rtype_to_howto (bfd *abfd ATTRIBUTE_UNUSED, unsigned r_type)
 	  >= R_386_ext - R_386_standard)
       && ((indx = r_type - R_386_tls_offset) - R_386_ext
 	  >= R_386_ext2 - R_386_ext)
-      && ((indx = r_type - R_386_vt_offset) - R_386_ext2
-	  >= R_386_vt - R_386_ext2))
+      && ((indx = r_type - R_386_seg16_offset ) - R_386_ext2
+	  >= R_386_ext3 - R_386_ext2)
+      && ((indx = r_type - R_386_vt_offset) - R_386_ext3
+	  >= R_386_vt - R_386_ext3))
       return NULL;
   /* PR 17512: file: 0f67f69d.  */
   if (elf_howto_table [indx].type != r_type)
@@ -1914,6 +1942,36 @@ do_size:
 	    goto error_return;
 	  break;
 
+	case R_386_SEG16:
+	case R_386_SUB16:
+	case R_386_SUB32:
+	  if (!bfd_link_executable (info))
+	    {
+	      reloc_howto_type *howto;
+	      unsigned int indx;
+	      if ((indx = r_type) >= R_386_standard
+		  && ((indx = r_type - R_386_ext_offset) - R_386_standard
+		      >= R_386_ext - R_386_standard)
+		  && ((indx = r_type - R_386_seg16_offset) - R_386_ext
+		      >= R_386_ext2 - R_386_ext)
+		  && ((indx = r_type - R_386_tls_offset) - R_386_ext2
+		      >= R_386_ext3 - R_386_ext2))
+		return _bfd_unrecognized_reloc (abfd, sec, r_type);
+	      howto = elf_howto_table + indx;
+	      if (h)
+		name = h->root.root.string;
+	      else
+		name = bfd_elf_sym_name (abfd, symtab_hdr, isym,
+					     NULL);
+	      info->callbacks->einfo
+		(_("%F%P: %pB: unsupported relocation %s against symbol "
+		   "`%s' for non-executable\n"),
+		 abfd, howto->name, name);
+	      bfd_set_error (bfd_error_bad_value);
+	      return FALSE;
+	    }
+	  break;
+
 	default:
 	  break;
 	}
@@ -2070,6 +2128,8 @@ elf_i386_relocate_section (bfd *output_bfd,
       asection *resolved_plt;
       bfd_boolean resolved_to_zero;
       bfd_boolean relative_reloc;
+      bfd_vma addend;
+      bfd_byte *where;
 
       r_type = ELF32_R_TYPE (rel->r_info);
       if (r_type == R_386_GNU_VTINHERIT
@@ -2084,7 +2144,11 @@ elf_i386_relocate_section (bfd *output_bfd,
 	  && ((indx = r_type - R_386_ext_offset) - R_386_standard
 	      >= R_386_ext - R_386_standard)
 	  && ((indx = r_type - R_386_tls_offset) - R_386_ext
-	      >= R_386_ext2 - R_386_ext))
+	      >= R_386_ext2 - R_386_ext)
+	  && ((indx = r_type - R_386_seg16_offset ) - R_386_ext2
+	      >= R_386_ext3 - R_386_ext2)
+	  && ((indx = r_type - R_386_vt_offset) - R_386_ext3
+	      >= R_386_vt - R_386_ext3))
 	return _bfd_unrecognized_reloc (input_bfd, input_section, r_type);
 
       howto = elf_howto_table + indx;
@@ -2108,8 +2172,7 @@ elf_i386_relocate_section (bfd *output_bfd,
 		  || (bfd_link_relocatable (info)
 		      && sec->output_offset != 0)))
 	    {
-	      bfd_vma addend;
-	      bfd_byte *where = contents + rel->r_offset;
+	      where = contents + rel->r_offset;
 
 	      switch (howto->size)
 		{
@@ -3394,6 +3457,27 @@ disallow_got32:
 	    relocation = elf_i386_tpoff (info, relocation);
 	  else
 	    relocation = -elf_i386_tpoff (info, relocation);
+	  break;
+
+	case R_386_SEG16:
+	  where = contents + rel->r_offset;
+	  addend = bfd_get_16 (input_bfd, where);
+	  relocation = addend + (relocation >> 4);
+	  bfd_put_16 (input_bfd, 0, where);
+	  break;
+
+	case R_386_SUB16:
+	  where = contents + rel->r_offset;
+	  addend = bfd_get_16 (input_bfd, where);
+	  relocation = addend - relocation;
+	  bfd_put_16 (input_bfd, 0, where);
+	  break;
+
+	case R_386_SUB32:
+	  where = contents + rel->r_offset;
+	  addend = bfd_get_32 (input_bfd, where);
+	  relocation = addend - relocation;
+	  bfd_put_32 (input_bfd, 0, where);
 	  break;
 
 	default:
