@@ -113,6 +113,7 @@ static int type_aggregate_p (struct type *);
 static int parse_number (struct parser_state *par_state,
 			 const char *, int, int, YYSTYPE *);
 static struct stoken operator_stoken (const char *);
+static struct stoken typename_stoken (const char *);
 static void check_parameter_typelist (VEC (type_ptr) *);
 static void write_destructor_name (struct parser_state *par_state,
 				   struct stoken);
@@ -156,7 +157,7 @@ static void c_print_token (FILE *file, int type, YYSTYPE value);
 %token <voidval> COMPLETE
 %token <tsym> TYPENAME
 %token <theclass> CLASSNAME	/* ObjC Class name */
-%type <sval> name
+%type <sval> name field_name
 %type <svec> string_exp
 %type <ssym> name_not_typename
 %type <tsym> type_name
@@ -312,13 +313,13 @@ exp	:	ALIGNOF '(' type_exp ')'	%prec UNARY
 			{ write_exp_elt_opcode (pstate, UNOP_ALIGNOF); }
 	;
 
-exp	:	exp ARROW name
+exp	:	exp ARROW field_name
 			{ write_exp_elt_opcode (pstate, STRUCTOP_PTR);
 			  write_exp_string (pstate, $3);
 			  write_exp_elt_opcode (pstate, STRUCTOP_PTR); }
 	;
 
-exp	:	exp ARROW name COMPLETE
+exp	:	exp ARROW field_name COMPLETE
 			{ mark_struct_expression (pstate);
 			  write_exp_elt_opcode (pstate, STRUCTOP_PTR);
 			  write_exp_string (pstate, $3);
@@ -360,13 +361,13 @@ exp	:	exp ARROW_STAR exp
 			{ write_exp_elt_opcode (pstate, STRUCTOP_MPTR); }
 	;
 
-exp	:	exp '.' name
+exp	:	exp '.' field_name
 			{ write_exp_elt_opcode (pstate, STRUCTOP_STRUCT);
 			  write_exp_string (pstate, $3);
 			  write_exp_elt_opcode (pstate, STRUCTOP_STRUCT); }
 	;
 
-exp	:	exp '.' name COMPLETE
+exp	:	exp '.' field_name COMPLETE
 			{ mark_struct_expression (pstate);
 			  write_exp_elt_opcode (pstate, STRUCTOP_STRUCT);
 			  write_exp_string (pstate, $3);
@@ -1224,7 +1225,17 @@ func_mod:	'(' ')'
 type	:	ptype
 	;
 
-typebase  /* Implements (approximately): (type-qualifier)* type-specifier */
+/* Implements (approximately): (type-qualifier)* type-specifier.
+
+   When type-specifier is only ever a single word, like 'float' then these
+   arrive as pre-built TYPENAME tokens thanks to the classify_name
+   function.  However, when a type-specifier can contain multiple words,
+   for example 'double' can appear as just 'double' or 'long double', and
+   similarly 'long' can appear as just 'long' or in 'long double', then
+   these type-specifiers are parsed into their own tokens in the function
+   lex_one_token and the ident_tokens array.  These separate tokens are all
+   recognised here.  */
+typebase
 	:	TYPENAME
 			{ $$ = $1.type; }
 	|	INT_KEYWORD
@@ -1635,7 +1646,22 @@ oper:	OPERATOR NEW
 			}
 	;
 
-
+/* This rule exists in order to allow some tokens that would not normally
+   match the 'name' rule to appear as fields within a struct.  The example
+   that initially motivated this was the RISC-V target which models the
+   floating point registers as a union with fields called 'float' and
+   'double'.  The 'float' string becomes a TYPENAME token and can appear
+   anywhere a 'name' can, however 'double' is its own token,
+   DOUBLE_KEYWORD, and doesn't match the 'name' rule.*/
+field_name
+	:	name
+	|	DOUBLE_KEYWORD { $$ = typename_stoken ("double"); }
+	|	INT_KEYWORD { $$ = typename_stoken ("int"); }
+	|	LONG { $$ = typename_stoken ("long"); }
+	|	SHORT { $$ = typename_stoken ("short"); }
+	|	SIGNED_KEYWORD { $$ = typename_stoken ("signed"); }
+	|	UNSIGNED { $$ = typename_stoken ("unsigned"); }
+	;
 
 name	:	NAME { $$ = $1.stoken; }
 	|	BLOCKNAME { $$ = $1.stoken; }
@@ -1704,6 +1730,16 @@ operator_stoken (const char *op)
 
   /* The toplevel (c_parse) will free the memory allocated here.  */
   make_cleanup (free, buf);
+  return st;
+};
+
+/* Returns a stoken of the type named TYPE.  */
+
+static struct stoken
+typename_stoken (const char *type)
+{
+  struct stoken st = { type, 0 };
+  st.length = strlen (type);
   return st;
 };
 
@@ -2323,7 +2359,10 @@ static const struct token tokentab2[] =
     {".*", DOT_STAR, BINOP_END, FLAG_CXX}
   };
 
-/* Identifier-like tokens.  */
+/* Identifier-like tokens.  Only type-specifiers than can appear in
+   multi-word type names (for example 'double' can appear in 'long
+   double') need to be listed here.  type-specifiers that are only ever
+   single word (like 'float') are handled by the classify_name function.  */
 static const struct token ident_tokens[] =
   {
     {"unsigned", UNSIGNED, OP_NULL, 0},

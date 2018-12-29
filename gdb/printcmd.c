@@ -46,9 +46,11 @@
 #include "arch-utils.h"
 #include "cli/cli-utils.h"
 #include "cli/cli-script.h"
+#include "cli/cli-style.h"
 #include "format.h"
 #include "source.h"
 #include "common/byte-vector.h"
+#include "cli/cli-style.h"
 
 /* Last specified output format.  */
 
@@ -534,7 +536,7 @@ print_address_symbolic (struct gdbarch *gdbarch, CORE_ADDR addr,
     fputs_filtered ("<*", stream);
   else
     fputs_filtered ("<", stream);
-  fputs_filtered (name.c_str (), stream);
+  fputs_styled (name.c_str (), function_name_style.style (), stream);
   if (offset != 0)
     fprintf_filtered (stream, "+%u", (unsigned int) offset);
 
@@ -542,10 +544,10 @@ print_address_symbolic (struct gdbarch *gdbarch, CORE_ADDR addr,
      line # of this addr, if we have it; else line # of the nearest symbol.  */
   if (print_symbol_filename && !filename.empty ())
     {
+      fputs_filtered (line == -1 ? " in " : " at ", stream);
+      fputs_styled (filename.c_str (), file_name_style.style (), stream);
       if (line != -1)
-	fprintf_filtered (stream, " at %s:%d", filename.c_str (), line);
-      else
-	fprintf_filtered (stream, " in %s", filename.c_str ());
+	fprintf_filtered (stream, ":%d", line);
     }
   if (unmapped)
     fputs_filtered ("*>", stream);
@@ -691,7 +693,7 @@ void
 print_address (struct gdbarch *gdbarch,
 	       CORE_ADDR addr, struct ui_file *stream)
 {
-  fputs_filtered (paddress (gdbarch, addr), stream);
+  fputs_styled (paddress (gdbarch, addr), address_style.style (), stream);
   print_address_symbolic (gdbarch, addr, stream, asm_demangle, " ");
 }
 
@@ -724,7 +726,7 @@ print_address_demangle (const struct value_print_options *opts,
 {
   if (opts->addressprint)
     {
-      fputs_filtered (paddress (gdbarch, addr), stream);
+      fputs_styled (paddress (gdbarch, addr), address_style.style (), stream);
       print_address_symbolic (gdbarch, addr, stream, do_demangle, " ");
     }
   else
@@ -1402,14 +1404,17 @@ info_address_command (const char *exp, int from_tty)
 	  fprintf_symbol_filtered (gdb_stdout, exp,
 				   current_language->la_language, DMGL_ANSI);
 	  printf_filtered ("\" is at ");
-	  fputs_filtered (paddress (gdbarch, load_addr), gdb_stdout);
+	  fputs_styled (paddress (gdbarch, load_addr), address_style.style (),
+			gdb_stdout);
 	  printf_filtered (" in a file compiled without debugging");
 	  section = MSYMBOL_OBJ_SECTION (objfile, msymbol.minsym);
 	  if (section_is_overlay (section))
 	    {
 	      load_addr = overlay_unmapped_address (load_addr, section);
 	      printf_filtered (",\n -- loaded at ");
-	      fputs_filtered (paddress (gdbarch, load_addr), gdb_stdout);
+	      fputs_styled (paddress (gdbarch, load_addr),
+			    address_style.style (),
+			    gdb_stdout);
 	      printf_filtered (" in overlay section %s",
 			       section->the_bfd_section->name);
 	    }
@@ -1449,12 +1454,14 @@ info_address_command (const char *exp, int from_tty)
     case LOC_LABEL:
       printf_filtered ("a label at address ");
       load_addr = SYMBOL_VALUE_ADDRESS (sym);
-      fputs_filtered (paddress (gdbarch, load_addr), gdb_stdout);
+      fputs_styled (paddress (gdbarch, load_addr), address_style.style (),
+		    gdb_stdout);
       if (section_is_overlay (section))
 	{
 	  load_addr = overlay_unmapped_address (load_addr, section);
 	  printf_filtered (",\n -- loaded at ");
-	  fputs_filtered (paddress (gdbarch, load_addr), gdb_stdout);
+	  fputs_styled (paddress (gdbarch, load_addr), address_style.style (),
+			gdb_stdout);
 	  printf_filtered (" in overlay section %s",
 			   section->the_bfd_section->name);
 	}
@@ -1483,12 +1490,14 @@ info_address_command (const char *exp, int from_tty)
     case LOC_STATIC:
       printf_filtered (_("static storage at address "));
       load_addr = SYMBOL_VALUE_ADDRESS (sym);
-      fputs_filtered (paddress (gdbarch, load_addr), gdb_stdout);
+      fputs_styled (paddress (gdbarch, load_addr), address_style.style (),
+		    gdb_stdout);
       if (section_is_overlay (section))
 	{
 	  load_addr = overlay_unmapped_address (load_addr, section);
 	  printf_filtered (_(",\n -- loaded at "));
-	  fputs_filtered (paddress (gdbarch, load_addr), gdb_stdout);
+	  fputs_styled (paddress (gdbarch, load_addr), address_style.style (),
+			gdb_stdout);
 	  printf_filtered (_(" in overlay section %s"),
 			   section->the_bfd_section->name);
 	}
@@ -1520,12 +1529,14 @@ info_address_command (const char *exp, int from_tty)
     case LOC_BLOCK:
       printf_filtered (_("a function at address "));
       load_addr = BLOCK_ENTRY_PC (SYMBOL_BLOCK_VALUE (sym));
-      fputs_filtered (paddress (gdbarch, load_addr), gdb_stdout);
+      fputs_styled (paddress (gdbarch, load_addr), address_style.style (),
+		    gdb_stdout);
       if (section_is_overlay (section))
 	{
 	  load_addr = overlay_unmapped_address (load_addr, section);
 	  printf_filtered (_(",\n -- loaded at "));
-	  fputs_filtered (paddress (gdbarch, load_addr), gdb_stdout);
+	  fputs_styled (paddress (gdbarch, load_addr), address_style.style (),
+			gdb_stdout);
 	  printf_filtered (_(" in overlay section %s"),
 			   section->the_bfd_section->name);
 	}
@@ -1555,12 +1566,15 @@ info_address_command (const char *exp, int from_tty)
 	      {
 		load_addr = BMSYMBOL_VALUE_ADDRESS (msym);
 		printf_filtered (_("static storage at address "));
-		fputs_filtered (paddress (gdbarch, load_addr), gdb_stdout);
+		fputs_styled (paddress (gdbarch, load_addr),
+			      address_style.style (), gdb_stdout);
 		if (section_is_overlay (section))
 		  {
 		    load_addr = overlay_unmapped_address (load_addr, section);
 		    printf_filtered (_(",\n -- loaded at "));
-		    fputs_filtered (paddress (gdbarch, load_addr), gdb_stdout);
+		    fputs_styled (paddress (gdbarch, load_addr),
+				  address_style.style (),
+				  gdb_stdout);
 		    printf_filtered (_(" in overlay section %s"),
 				     section->the_bfd_section->name);
 		  }
@@ -2156,7 +2170,10 @@ print_variable_and_value (const char *name, struct symbol *var,
   if (!name)
     name = SYMBOL_PRINT_NAME (var);
 
-  fprintf_filtered (stream, "%s%s = ", n_spaces (2 * indent), name);
+  fputs_filtered (n_spaces (2 * indent), stream);
+  fputs_styled (name, variable_name_style.style (), stream);
+  fputs_filtered (" = ", stream);
+
   TRY
     {
       struct value *val;
@@ -2609,6 +2626,8 @@ static void
 printf_command (const char *arg, int from_tty)
 {
   ui_printf (arg, gdb_stdout);
+  reset_terminal_style (gdb_stdout);
+  wrap_here ("");
   gdb_flush (gdb_stdout);
 }
 

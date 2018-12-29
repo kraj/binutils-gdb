@@ -423,6 +423,30 @@ extern void fputstrn_unfiltered (const char *str, int n, int quotr,
 /* Return nonzero if filtered printing is initialized.  */
 extern int filtered_printing_initialized (void);
 
+/* Like fprintf_filtered, but styles the output according to STYLE,
+   when appropriate.  */
+
+extern void fprintf_styled (struct ui_file *stream,
+			    const ui_file_style &style,
+			    const char *fmt,
+			    ...)
+  ATTRIBUTE_PRINTF (3, 4);
+
+/* Like fputs_filtered, but styles the output according to STYLE, when
+   appropriate.  */
+
+extern void fputs_styled (const char *linebuffer,
+			  const ui_file_style &style,
+			  struct ui_file *stream);
+
+/* Reset the terminal style to the default, if needed.  */
+
+extern void reset_terminal_style (struct ui_file *stream);
+
+/* Return true if ANSI escapes can be used on STREAM.  */
+
+extern bool can_emit_style_escape (struct ui_file *stream);
+
 /* Display the host ADDR on STREAM formatted as ``0x%x''.  */
 extern void gdb_print_host_address_1 (const void *addr, struct ui_file *stream);
 

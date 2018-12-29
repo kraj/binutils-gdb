@@ -896,7 +896,10 @@ riscv_register_reggroup_p (struct gdbarch  *gdbarch, int regnum,
   else if (reggroup == restore_reggroup || reggroup == save_reggroup)
     {
       if (riscv_has_fp_regs (gdbarch))
-	return regnum <= RISCV_LAST_FP_REGNUM;
+	return (regnum <= RISCV_LAST_FP_REGNUM
+		|| regnum == RISCV_CSR_FCSR_REGNUM
+		|| regnum == RISCV_CSR_FFLAGS_REGNUM
+		|| regnum == RISCV_CSR_FRM_REGNUM);
       else
 	return regnum < RISCV_FIRST_FP_REGNUM;
     }
@@ -1542,10 +1545,16 @@ riscv_scan_prologue (struct gdbarch *gdbarch,
 	  if (stack.find_reg (gdbarch, i, &offset))
             {
               if (riscv_debug_unwinder)
-                fprintf_unfiltered (gdb_stdlog,
-                                    "Register $%s at stack offset %ld\n",
-                                    gdbarch_register_name (gdbarch, i),
-                                    offset);
+		{
+		  /* Display OFFSET as a signed value, the offsets are from
+		     the frame base address to the registers location on
+		     the stack, with a descending stack this means the
+		     offsets are always negative.  */
+		  fprintf_unfiltered (gdb_stdlog,
+				      "Register $%s at stack offset %s\n",
+				      gdbarch_register_name (gdbarch, i),
+				      plongest ((LONGEST) offset));
+		}
               trad_frame_set_addr (cache->regs, i, offset);
             }
 	}
@@ -2190,7 +2199,6 @@ riscv_call_arg_struct (struct riscv_arg_info *ainfo,
 
   /* Non of the structure flattening cases apply, so we just pass using
      the integer ABI.  */
-  ainfo->length = align_up (ainfo->length, cinfo->xlen);
   riscv_call_arg_scalar_int (ainfo, cinfo);
 }
 
@@ -2570,7 +2578,35 @@ riscv_return_value (struct gdbarch  *gdbarch,
 
   if (readbuf != nullptr || writebuf != nullptr)
     {
-        int regnum;
+	unsigned int arg_len;
+	struct value *abi_val;
+	gdb_byte *old_readbuf = nullptr;
+	int regnum;
+
+	/* We only do one thing at a time.  */
+	gdb_assert (readbuf == nullptr || writebuf == nullptr);
+
+	/* In some cases the argument is not returned as the declared type,
+	   and we need to cast to or from the ABI type in order to
+	   correctly access the argument.  When writing to the machine we
+	   do the cast here, when reading from the machine the cast occurs
+	   later, after extracting the value.  As the ABI type can be
+	   larger than the declared type, then the read or write buffers
+	   passed in might be too small.  Here we ensure that we are using
+	   buffers of sufficient size.  */
+	if (writebuf != nullptr)
+	  {
+	    struct value *arg_val = value_from_contents (arg_type, writebuf);
+	    abi_val = value_cast (info.type, arg_val);
+	    writebuf = value_contents_raw (abi_val);
+	  }
+	else
+	  {
+	    abi_val = allocate_value (info.type);
+	    old_readbuf = readbuf;
+	    readbuf = value_contents_raw (abi_val);
+	  }
+	arg_len = TYPE_LENGTH (info.type);
 
 	switch (info.argloc[0].loc_type)
 	  {
@@ -2578,12 +2614,19 @@ riscv_return_value (struct gdbarch  *gdbarch,
 	  case riscv_arg_info::location::in_reg:
 	    {
 	      regnum = info.argloc[0].loc_data.regno;
+              gdb_assert (info.argloc[0].c_length <= arg_len);
+              gdb_assert (info.argloc[0].c_length
+			  <= register_size (gdbarch, regnum));
 
 	      if (readbuf)
-		regcache->cooked_read (regnum, readbuf);
+		regcache->cooked_read_part (regnum, 0,
+					    info.argloc[0].c_length,
+					    readbuf);
 
 	      if (writebuf)
-		regcache->cooked_write (regnum, writebuf);
+		regcache->cooked_write_part (regnum, 0,
+					     info.argloc[0].c_length,
+					     writebuf);
 
 	      /* A return value in register can have a second part in a
 		 second register.  */
@@ -2594,16 +2637,25 @@ riscv_return_value (struct gdbarch  *gdbarch,
 		    case riscv_arg_info::location::in_reg:
 		      regnum = info.argloc[1].loc_data.regno;
 
+                      gdb_assert ((info.argloc[0].c_length
+				   + info.argloc[1].c_length) <= arg_len);
+                      gdb_assert (info.argloc[1].c_length
+				  <= register_size (gdbarch, regnum));
+
 		      if (readbuf)
 			{
 			  readbuf += info.argloc[1].c_offset;
-			  regcache->cooked_read (regnum, readbuf);
+			  regcache->cooked_read_part (regnum, 0,
+						      info.argloc[1].c_length,
+						      readbuf);
 			}
 
 		      if (writebuf)
 			{
 			  writebuf += info.argloc[1].c_offset;
-			  regcache->cooked_write (regnum, writebuf);
+			  regcache->cooked_write_part (regnum, 0,
+						       info.argloc[1].c_length,
+						       writebuf);
 			}
 		      break;
 
@@ -2635,6 +2687,16 @@ riscv_return_value (struct gdbarch  *gdbarch,
 	  default:
 	    error (_("invalid argument location"));
 	    break;
+	  }
+
+	/* This completes the cast from abi type back to the declared type
+	   in the case that we are reading from the machine.  See the
+	   comment at the head of this block for more details.  */
+	if (readbuf != nullptr)
+	  {
+	    struct value *arg_val = value_cast (arg_type, abi_val);
+	    memcpy (old_readbuf, value_contents_raw (arg_val),
+		    TYPE_LENGTH (arg_type));
 	  }
     }
 
@@ -2940,6 +3002,20 @@ riscv_setup_register_aliases (struct gdbarch *gdbarch,
     }
 }
 
+/* Implement the "dwarf2_reg_to_regnum" gdbarch method.  */
+
+static int
+riscv_dwarf_reg_to_regnum (struct gdbarch *gdbarch, int reg)
+{
+  if (reg < RISCV_DWARF_REGNUM_X31)
+    return RISCV_ZERO_REGNUM + (reg - RISCV_DWARF_REGNUM_X0);
+
+  else if (reg < RISCV_DWARF_REGNUM_F31)
+    return RISCV_FIRST_FP_REGNUM + (reg - RISCV_DWARF_REGNUM_F0);
+
+  return -1;
+}
+
 /* Initialize the current architecture based on INFO.  If possible,
    re-use an architecture from ARCHES, which is a list of
    architectures already created during this debugging session.
@@ -3126,6 +3202,9 @@ riscv_gdbarch_init (struct gdbarch_info info,
 
   /* Register architecture.  */
   riscv_add_reggroups (gdbarch);
+
+  /* Internal <-> external register number maps.  */
+  set_gdbarch_dwarf2_reg_to_regnum (gdbarch, riscv_dwarf_reg_to_regnum);
 
   /* We reserve all possible register numbers for the known registers.
      This means the target description mechanism will add any target

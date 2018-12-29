@@ -256,7 +256,7 @@ print_frame_arg (const struct frame_arg *arg)
   if (arg->entry_kind == print_entry_values_only
       || arg->entry_kind == print_entry_values_compact)
     stb.puts ("@entry");
-  uiout->field_stream ("name", stb);
+  uiout->field_stream ("name", stb, ui_out_style_kind::VARIABLE);
   annotate_arg_name_end ();
   uiout->text ("=");
 
@@ -824,16 +824,19 @@ print_frame_info (struct frame_info *frame, int print_level,
       if (get_frame_type (frame) == DUMMY_FRAME)
         {
           annotate_function_call ();
-          uiout->field_string ("func", "<function called from gdb>");
+          uiout->field_string ("func", "<function called from gdb>",
+			       ui_out_style_kind::FUNCTION);
 	}
       else if (get_frame_type (frame) == SIGTRAMP_FRAME)
         {
 	  annotate_signal_handler_caller ();
-          uiout->field_string ("func", "<signal handler called>");
+          uiout->field_string ("func", "<signal handler called>",
+			       ui_out_style_kind::FUNCTION);
         }
       else if (get_frame_type (frame) == ARCH_FRAME)
         {
-          uiout->field_string ("func", "<cross-architecture call>");
+          uiout->field_string ("func", "<cross-architecture call>",
+			       ui_out_style_kind::FUNCTION);
 	}
       uiout->text ("\n");
       annotate_frame_end ();
@@ -1173,7 +1176,8 @@ print_frame (struct frame_info *frame, int print_level,
 	  if (pc_p)
 	    uiout->field_core_addr ("addr", gdbarch, pc);
 	  else
-	    uiout->field_string ("addr", "<unavailable>");
+	    uiout->field_string ("addr", "<unavailable>",
+				 ui_out_style_kind::ADDRESS);
 	  annotate_frame_address_end ();
 	  uiout->text (" in ");
 	}
@@ -1182,10 +1186,10 @@ print_frame (struct frame_info *frame, int print_level,
     string_file stb;
     fprintf_symbol_filtered (&stb, funname ? funname.get () : "??",
 			     funlang, DMGL_ANSI);
-    uiout->field_stream ("func", stb);
+    uiout->field_stream ("func", stb, ui_out_style_kind::FUNCTION);
     uiout->wrap_hint ("   ");
     annotate_frame_args ();
-      
+
     uiout->text (" (");
     if (print_args)
       {
@@ -1225,7 +1229,7 @@ print_frame (struct frame_info *frame, int print_level,
 	uiout->wrap_hint ("   ");
 	uiout->text (" at ");
 	annotate_frame_source_file ();
-	uiout->field_string ("file", filename_display);
+	uiout->field_string ("file", filename_display, ui_out_style_kind::FILE);
 	if (uiout->is_mi_like_p ())
 	  {
 	    const char *fullname = symtab_to_fullname (sal.symtab);

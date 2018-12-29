@@ -1,3 +1,33 @@
+2018-12-28  Alan Modra  <amodra@gmail.com>
+
+	PR 24015
+	* elf.c (bfd_elf_get_default_section_type): Make common sections
+	SHT_NOBITS.
+	* linker.c (bfd_generic_define_common_symbol): Clear
+	SEC_HAS_CONTENTS.
+
+2018-12-28  Alan Modra  <amodra@gmail.com>
+
+	PR 23966
+	* libbfd.c (SSIZE_MAX): Define.
+	(bfd_malloc, bfd_realloc): Don't cast size to long to check for
+	"negative" values, compare against SSIZE_MAX instead.
+
+2018-12-23  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* elf32-i386.c (elf_i386_rtype_to_howto): Remove the unused bfd
+	pointer argument.
+	(elf_i386_info_to_howto_rel): Updated.
+	(elf_i386_tls_transition): Likewise.
+	(elf_i386_relocate_section): Likewise.
+
+2018-12-20  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* elf32-i386.c (elf_i386_relocate_section): Call
+	elf_i386_rtype_to_howto to get reloc_howto_type pointer.
+	* elf64-x86-64.c (elf_x86_64_relocate_section): Call
+	elf_x86_64_rtype_to_howto to get reloc_howto_type pointer.
+
 2018-12-18  Alan Modra  <amodra@gmail.com>
 
 	* Makefile.am (bfdinclude_HEADERS): Add bfd_stdint.h.

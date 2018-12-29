@@ -71,6 +71,7 @@
 #include "cp-support.h"
 #include <algorithm>
 #include "common/pathstuff.h"
+#include "cli/cli-style.h"
 
 void (*deprecated_error_begin_hook) (void);
 
@@ -1268,13 +1269,11 @@ static bool pagination_disabled_for_command;
    the end of the line, we spit out a newline, the indent, and then
    the buffered output.  */
 
-/* Malloc'd buffer with chars_per_line+2 bytes.  Contains characters which
-   are waiting to be output (they have already been counted in chars_printed).
-   When wrap_buffer[0] is null, the buffer is empty.  */
-static char *wrap_buffer;
+static bool filter_initialized = false;
 
-/* Pointer in wrap_buffer to the next character to fill.  */
-static char *wrap_pointer;
+/* Contains characters which are waiting to be output (they have
+   already been counted in chars_printed).  */
+static std::string wrap_buffer;
 
 /* String to indent by if the wrap occurs.  Must not be NULL if wrap_column
    is non-zero.  */
@@ -1347,7 +1346,7 @@ init_page_info (void)
 int
 filtered_printing_initialized (void)
 {
-  return wrap_buffer != NULL;
+  return filter_initialized;
 }
 
 set_batch_flag_and_restore_page_info::set_batch_flag_and_restore_page_info ()
@@ -1387,8 +1386,7 @@ set_screen_size (void)
   rl_set_screen_size (rows, cols);
 }
 
-/* Reinitialize WRAP_BUFFER according to the current value of
-   CHARS_PER_LINE.  */
+/* Reinitialize WRAP_BUFFER.  */
 
 static void
 set_width (void)
@@ -1396,14 +1394,8 @@ set_width (void)
   if (chars_per_line == 0)
     init_page_info ();
 
-  if (!wrap_buffer)
-    {
-      wrap_buffer = (char *) xmalloc (chars_per_line + 2);
-      wrap_buffer[0] = '\0';
-    }
-  else
-    wrap_buffer = (char *) xrealloc (wrap_buffer, chars_per_line + 2);
-  wrap_pointer = wrap_buffer;	/* Start it at the beginning.  */
+  wrap_buffer.clear ();
+  filter_initialized = true;
 }
 
 static void
@@ -1431,6 +1423,71 @@ set_screen_width_and_height (int width, int height)
   set_width ();
 }
 
+/* The currently applied style.  */
+
+static ui_file_style applied_style;
+
+/* The currently desired style.  This can differ from the applied
+   style when showing the pagination prompt.  */
+
+static ui_file_style desired_style;
+
+/* Emit an ANSI style escape for STYLE to the wrap buffer.  */
+
+static void
+emit_style_escape (const ui_file_style &style)
+{
+  if (applied_style == style)
+    return;
+  applied_style = style;
+
+  wrap_buffer.append (style.to_ansi ());
+}
+
+/* See utils.h.  */
+
+bool
+can_emit_style_escape (struct ui_file *stream)
+{
+  if (stream != gdb_stdout
+      || !cli_styling
+      || !ui_file_isatty (stream))
+    return false;
+  const char *term = getenv ("TERM");
+  if (term == nullptr || !strcmp (term, "dumb"))
+    return false;
+  return true;
+}
+
+/* Set the current output style.  This will affect future uses of the
+   _filtered output functions.  */
+
+static void
+set_output_style (struct ui_file *stream, const ui_file_style &style)
+{
+  if (!can_emit_style_escape (stream)
+      || style == desired_style)
+    return;
+
+  desired_style = style;
+  emit_style_escape (style);
+}
+
+/* See utils.h.  */
+
+void
+reset_terminal_style (struct ui_file *stream)
+{
+  if (can_emit_style_escape (stream))
+    {
+      /* Force the setting, regardless of what we think the setting
+	 might already be.  */
+      desired_style = ui_file_style ();
+      applied_style = desired_style;
+      wrap_buffer.append (desired_style.to_ansi ());
+    }
+}
+
 /* Wait, so the user can read what's on the screen.  Prompt the user
    to continue by pressing RETURN.  'q' is also provided because
    telling users what to do in the prompt is more user-friendly than
@@ -1445,6 +1502,9 @@ prompt_for_continue (void)
   using namespace std::chrono;
   steady_clock::time_point prompt_started = steady_clock::now ();
   bool disable_pagination = pagination_disabled_for_command;
+
+  /* Clear the current styling.  */
+  emit_style_escape (ui_file_style ());
 
   if (annotation_level > 1)
     printf_unfiltered (("\n\032\032pre-prompt-for-continue\n"));
@@ -1490,6 +1550,9 @@ prompt_for_continue (void)
   reinitialize_more_filter ();
   pagination_disabled_for_command = disable_pagination;
 
+  /* Restore the current styling.  */
+  emit_style_escape (desired_style);
+
   dont_repeat ();		/* Forget prev cmd -- CR won't repeat it.  */
 }
 
@@ -1521,6 +1584,18 @@ reinitialize_more_filter (void)
   pagination_disabled_for_command = false;
 }
 
+/* Flush the wrap buffer to STREAM, if necessary.  */
+
+static void
+flush_wrap_buffer (struct ui_file *stream)
+{
+  if (!wrap_buffer.empty ())
+    {
+      fputs_unfiltered (wrap_buffer.c_str (), stream);
+      wrap_buffer.clear ();
+    }
+}
+
 /* Indicate that if the next sequence of characters overflows the line,
    a newline should be inserted here rather than when it hits the end.
    If INDENT is non-null, it is a string to be printed to indent the
@@ -1546,17 +1621,11 @@ void
 wrap_here (const char *indent)
 {
   /* This should have been allocated, but be paranoid anyway.  */
-  if (!wrap_buffer)
+  if (!filter_initialized)
     internal_error (__FILE__, __LINE__,
 		    _("failed internal consistency check"));
 
-  if (wrap_buffer[0])
-    {
-      *wrap_pointer = '\0';
-      fputs_unfiltered (wrap_buffer, gdb_stdout);
-    }
-  wrap_pointer = wrap_buffer;
-  wrap_buffer[0] = '\0';
+  flush_wrap_buffer (gdb_stdout);
   if (chars_per_line == UINT_MAX)	/* No line overflow checking.  */
     {
       wrap_column = 0;
@@ -1669,6 +1738,7 @@ fputs_maybe_filtered (const char *linebuffer, struct ui_file *stream,
       || top_level_interpreter () == NULL
       || top_level_interpreter ()->interp_ui_out ()->is_mi_like_p ())
     {
+      flush_wrap_buffer (stream);
       fputs_unfiltered (linebuffer, stream);
       return;
     }
@@ -1692,10 +1762,7 @@ fputs_maybe_filtered (const char *linebuffer, struct ui_file *stream,
 	  /* Print a single line.  */
 	  if (*lineptr == '\t')
 	    {
-	      if (wrap_column)
-		*wrap_pointer++ = '\t';
-	      else
-		fputc_unfiltered ('\t', stream);
+	      wrap_buffer.push_back ('\t');
 	      /* Shifting right by 3 produces the number of tab stops
 	         we have already passed, and then adding one and
 	         shifting left 3 advances to the next tab stop.  */
@@ -1704,10 +1771,7 @@ fputs_maybe_filtered (const char *linebuffer, struct ui_file *stream,
 	    }
 	  else
 	    {
-	      if (wrap_column)
-		*wrap_pointer++ = *lineptr;
-	      else
-		fputc_unfiltered (*lineptr, stream);
+	      wrap_buffer.push_back (*lineptr);
 	      chars_printed++;
 	      lineptr++;
 	    }
@@ -1722,7 +1786,11 @@ fputs_maybe_filtered (const char *linebuffer, struct ui_file *stream,
 	         if chars_per_line is right, we probably just overflowed
 	         anyway; if it's wrong, let us keep going.  */
 	      if (wrap_column)
-		fputc_unfiltered ('\n', stream);
+		{
+		  emit_style_escape (ui_file_style ());
+		  flush_wrap_buffer (stream);
+		  fputc_unfiltered ('\n', stream);
+		}
 
 	      /* Possible new page.  Note that
 		 PAGINATION_DISABLED_FOR_COMMAND might be set during
@@ -1735,8 +1803,8 @@ fputs_maybe_filtered (const char *linebuffer, struct ui_file *stream,
 	      if (wrap_column)
 		{
 		  fputs_unfiltered (wrap_indent, stream);
-		  *wrap_pointer = '\0';	/* Null-terminate saved stuff, */
-		  fputs_unfiltered (wrap_buffer, stream); /* and eject it.  */
+		  emit_style_escape (desired_style);
+		  flush_wrap_buffer (stream);
 		  /* FIXME, this strlen is what prevents wrap_indent from
 		     containing tabs.  However, if we recurse to print it
 		     and count its chars, we risk trouble if wrap_indent is
@@ -1745,8 +1813,6 @@ fputs_maybe_filtered (const char *linebuffer, struct ui_file *stream,
 		     if we are printing a long string.  */
 		  chars_printed = strlen (wrap_indent)
 		    + (save_chars - wrap_column);
-		  wrap_pointer = wrap_buffer;	/* Reset buffer */
-		  wrap_buffer[0] = '\0';
 		  wrap_column = 0;	/* And disable fancy wrap */
 		}
 	    }
@@ -1768,6 +1834,17 @@ void
 fputs_filtered (const char *linebuffer, struct ui_file *stream)
 {
   fputs_maybe_filtered (linebuffer, stream, 1);
+}
+
+/* See utils.h.  */
+
+void
+fputs_styled (const char *linebuffer, const ui_file_style &style,
+	      struct ui_file *stream)
+{
+  set_output_style (stream, style);
+  fputs_maybe_filtered (linebuffer, stream, 1);
+  set_output_style (stream, ui_file_style ());
 }
 
 int
@@ -1995,6 +2072,21 @@ fprintfi_filtered (int spaces, struct ui_file *stream, const char *format,
 
   vfprintf_filtered (stream, format, args);
   va_end (args);
+}
+
+/* See utils.h.  */
+
+void
+fprintf_styled (struct ui_file *stream, const ui_file_style &style,
+		const char *format, ...)
+{
+  va_list args;
+
+  set_output_style (stream, style);
+  va_start (args, format);
+  vfprintf_filtered (stream, format, args);
+  va_end (args);
+  set_output_style (stream, ui_file_style ());
 }
 
 

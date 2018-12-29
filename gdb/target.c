@@ -393,7 +393,7 @@ target_terminal::restore_inferior (void)
   {
     scoped_restore_current_inferior restore_inferior;
 
-    for (struct inferior *inf : all_inferiors ())
+    for (::inferior *inf : all_inferiors ())
       {
 	if (inf->terminal_state == target_terminal_state::is_ours_for_output)
 	  {
@@ -1793,7 +1793,7 @@ target_read_stralloc (struct target_ops *ops, enum target_object object,
   if (!buf)
     return {};
 
-  if (buf->back () != '\0')
+  if (buf->empty () || buf->back () != '\0')
     buf->push_back ('\0');
 
   /* Check for embedded NUL bytes; but allow trailing NULs.  */

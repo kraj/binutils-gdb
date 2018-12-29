@@ -1,8 +1,6 @@
-/* Native-dependent definitions for FreeBSD/i386.
+/* This testcase is part of GDB, the GNU debugger.
 
-   Copyright (C) 1986-2018 Free Software Foundation, Inc.
-
-   This file is part of GDB.
+   Copyright 2018 Free Software Foundation, Inc.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -17,7 +15,18 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#ifndef NM_FBSD_H
-#define NM_FBSD_H
+struct foo
+{
+  int field;
+};
 
-#endif /* nm-fbsd.h */
+struct foo obj = { 0 };
+
+struct foo *ptr = &obj;
+
+int
+main (void)
+{
+  return obj.field;
+}
+

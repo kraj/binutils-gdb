@@ -1,3 +1,369 @@
+2018-12-28  Tom Tromey  <tom@tromey.com>
+
+	* source-cache.c (get_language_name): Conditionally compile.
+
+2018-12-28  Tom Tromey  <tom@tromey.com>
+
+	* jit.c (free_objfile_data): Only delete breakpoint if non-null.
+
+2018-12-28  Tom Tromey  <tom@tromey.com>
+
+	* NEWS: Mention terminal styling.
+
+2018-12-28  Tom Tromey  <tom@tromey.com>
+
+	* utils.h (can_emit_style_escape): Declare.
+	* utils.c (can_emit_style_escape): No longer static.
+	* cli/cli-style.c (set_style_enabled): New function.
+	(_initialize_cli_style): Use it.
+	* tui/tui-winsource.c (tui_show_source_line): Use tui_puts.
+	(tui_alloc_source_buffer): Change how source lines are allocated.
+	* tui/tui-source.c (copy_source_line): New function.
+	(tui_set_source_content): Use source cache.
+	* tui/tui-io.h (tui_puts): Update.
+	* tui/tui-io.c (tui_puts_internal): Add window parameter.
+	(tui_puts): Likewise.
+	(tui_redisplay_readline): Update.
+	* tui/tui-data.c (free_content_elements): Change how source window
+	contents are freed.
+	* source.c (forget_cached_source_info): Clear the source cache.
+	(print_source_lines_base): Use the source cache.
+	* source-cache.h: New file.
+	* source-cache.c: New file.
+	* configure.ac: Check for GNU Source Highlight library.
+	* configure: Update.
+	* config.in: Update.
+	* Makefile.in (SRCHIGH_LIBS, SRCHIGH_CFLAGS): New variables.
+	(INTERNAL_CFLAGS_BASE): Add SRCHIGH_CFLAGS.
+	(CLIBS): Add SRCHIGH_LIBS.
+	(COMMON_SFILES): Add source-cache.c.
+	(HFILES_NO_SRCDIR): Add source-cache.h.
+
+2018-12-28  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-winsource.c (tui_show_source_line): Use wclrtoeol.
+
+2018-12-28  Tom Tromey  <tom@tromey.com>
+
+	PR tui/14126:
+	* tui/tui.c (tui_enable): Call start_color and
+	use_default_colors.
+	* tui/tui-io.c (struct color_pair): New.
+	(color_pair_map, last_color_pair, last_style): New globals.
+	(tui_setup_io): Clean up color map when shutting down.
+	(curses_colors): New constant.
+	(get_color_pair, apply_ansi_escape): New functions.
+	(tui_write): Rewrite.
+	(tui_puts_internal): New function, from tui_puts.  Add "height"
+	parameter.
+	(tui_puts): Use tui_puts_internal.
+	(tui_redisplay_readline): Use tui_puts_internal.
+	(_initialize_tui_io): New function.
+	(color_map): New globals.
+	(get_color): New function.
+	* configure.ac: Check for use_default_colors.
+	* config.in, configure: Rebuild.
+
+2018-12-28  Tom Tromey  <tom@tromey.com>
+
+	* ui-out.h (enum class ui_out_style_kind) <ADDRESS>: New
+	constant.
+	* ui-out.c (ui_out::field_core_addr): Add styling.
+	* stack.c (print_frame): Add styling.
+	* printcmd.c (print_address): Add styling.
+	(print_address_demangle, info_address_command): Likewise.
+	* cli/cli-style.h (address_style): Declare.
+	* cli/cli-style.c (address_style): New global.
+	(_initialize_cli_style): Register new commands.
+	* cli-out.c (cli_ui_out::do_field_string): Update.
+
+2018-12-28  Tom Tromey  <tom@tromey.com>
+
+	* symfile.c (symbol_file_add_with_addrs): Style file name.
+
+2018-12-28  Tom Tromey  <tom@tromey.com>
+
+	* top.c (print_gdb_version): Style gdb version number.
+
+2018-12-28  Tom Tromey  <tom@tromey.com>
+
+	* printcmd.c (print_address_symbolic): Style function name.
+
+2018-12-28  Tom Tromey  <tom@tromey.com>
+
+	* breakpoint.c (say_where): Style file name.
+
+2018-12-28  Tom Tromey  <tom@tromey.com>
+
+	* ui-out.h (enum class ui_out_style_kind) <VARIABLE>: New global.
+	* stack.c (print_frame_arg): Style name.
+	* printcmd.c (print_variable_and_value): Style variable name.
+	* cli/cli-style.h (variable_name_style): Declare.
+	* cli/cli-style.c (variable_name_style): New global.
+	(_initialize_cli_style): Update.
+	* cli-out.c (cli_ui_out::do_field_string): Update.
+
+2018-12-28  Tom Tromey  <tom@tromey.com>
+
+	* utils.h (reset_terminal_style): Declare.
+	* utils.c (can_emit_style_escape): New function.
+	(set_output_style): Use it.
+	(reset_terminal_style): New function.
+	* printcmd.c (printf_command): Call reset_terminal_style.
+	* cli/cli-cmds.c (echo_command): Call reset_terminal_style.
+
+2018-12-28  Tom Tromey  <tom@tromey.com>
+
+	* utils.h (set_output_style, fprintf_styled)
+	(fputs_styled): Declare.
+	* utils.c (applied_style, desired_style): New globals.
+	(emit_style_escape, set_output_style): New function.
+	(prompt_for_continue): Emit style escapes.
+	(fputs_maybe_filtered): Likewise.
+	(fputs_styled, fprintf_styled): New functions.
+	* ui-out.h (enum class ui_out_style_kind): New.
+	(class ui_out) <field_string, field_stream, do_field_string>: Add
+	style parameter.
+	* ui-out.c (ui_out::field_stream, ui_out::field_string): Add style
+	parameter.
+	* tui/tui-out.h (class tui_ui_out) <do_field_string>: Add style
+	parameter.
+	* tui/tui-out.c (tui_ui_out::do_field_string): Add style
+	parameter.
+	(tui_ui_out::do_field_string): Update.
+	* tracepoint.c (print_one_static_tracepoint_marker): Style
+	output.
+	* stack.c (print_frame_info, print_frame): Style output.
+	* source.c (print_source_lines_base): Style output.
+	* skip.c (info_skip_command): Style output.
+	* record-btrace.c (btrace_call_history_src_line): Style output.
+	(btrace_call_history): Likewise.
+	* python/py-framefilter.c (py_print_frame): Style output.
+	* mi/mi-out.h (class mi_ui_out) <do_field_string>: Add style
+	parameter.
+	* mi/mi-out.c (mi_ui_out::do_table_header)
+	(mi_ui_out::do_field_int): Update.
+	(mi_ui_out::do_field_string): Update.
+	* disasm.c (gdb_pretty_print_disassembler::pretty_print_insn):
+	Style output.
+	* cli/cli-style.h: New file.
+	* cli/cli-style.c: New file.
+	* cli-out.h (class cli_ui_out) <do_field_string>: Add style
+	parameter.
+	* cli-out.c (cli_ui_out::do_table_header)
+	(cli_ui_out::do_field_int, cli_ui_out::do_field_skip): Update.
+	(cli_ui_out::do_field_string): Add style parameter.  Style the
+	output.
+	* breakpoint.c (print_breakpoint_location): Style output.
+	(update_static_tracepoint): Likewise.
+	* Makefile.in (SUBDIR_CLI_SRCS): Add cli-style.c.
+	(HFILES_NO_SRCDIR): Add cli-style.h.
+
+2018-12-28  Tom Tromey  <tom@tromey.com>
+
+	* unittests/style-selftests.c: New file.
+	* ui-style.c: New file.
+	* ui-style.h: New file.
+	* ui-file.h: Include ui-style.h.
+	* Makefile.in (COMMON_SFILES): Add ui-style.c.
+	(HFILES_NO_SRCDIR): Add ui-style.h.
+	(SUBDIR_UNITTESTS_SRCS): Add style-selftests.c.
+
+2018-12-28  Tom Tromey  <tom@tromey.com>
+
+	* command.h (add_setshow_enum_cmd): Add "context" argument.
+	* cli/cli-decode.c (add_setshow_enum_cmd): Add "context"
+	argument.  Call set_cmd_context.
+
+2018-12-28  Tom Tromey  <tom@tromey.com>
+
+	* utils.c (filter_initialized): New global.
+	(wrap_buffer): Now a std::string.
+	(wrap_pointer): Remove.
+	(flush_wrap_buffer): New function.
+	(filtered_printing_initialized, set_width, wrap_here)
+	(fputs_maybe_filtered): Update.
+
+2018-12-28  Eli Zaretskii  <eliz@gnu.org>
+
+	* coffread.c (coff_symtab_read): Don't record in minsyms symbols
+	that are unresolved.  This avoids triggering an internal error
+	when stepping outside of 'main' in MinGW programs.
+
+2018-12-27  Tom Tromey  <tom@tromey.com>
+
+	* python/py-utils.c (gdbpy_handle_exception): Translate
+	PyExc_KeyboardInterrupt to quit.
+
+2018-12-27  Tom Tromey  <tom@tromey.com>
+
+	* python/python-internal.h (gdbpy_print_stack_or_quit): Declare.
+	* python/py-unwind.c (pyuw_sniffer): Use
+	gdbpy_print_stack_or_quit.
+	* python/py-framefilter.c (throw_quit_or_print_exception):
+	Remove.
+	(gdbpy_apply_frame_filter): Use gdbpy_print_stack_or_quit.
+	* python/python.c (gdbpy_print_stack_or_quit): New function.
+
+2018-12-27  Tom Tromey  <tom@tromey.com>
+
+	* python/py-value.c (convert_value_from_python): Use
+	gdbpy_convert_exception.
+	* python/py-param.c (parmpy_init): Use gdbpy_convert_exception.
+	* python/py-cmd.c (cmdpy_init): Use gdbpy_convert_exception.
+	* python/py-breakpoint.c (bppy_init): Use
+	gdbpy_convert_exception.
+
+2018-12-27  Tom Tromey  <tom@tromey.com>
+
+	* configure.nat (NATDEPFILES): Use nat/ prefix.
+	* Makefile.in (CONFIG_SRC_SUBDIR): Add nat.
+	(%.o: ${srcdir}/nat/%.c): Remove rule.
+	(INIT_FILES): Do not filter out NATDEPFILES.
+
+2018-12-27  Tom Tromey  <tom@tromey.com>
+
+	* Makefile.in (INIT_FILES): Redefine.
+	(stamp-init): Remove sed, tr invocations.  Use for loop.  Don't
+	set LANG or LC_ALL.
+
+2018-12-27  Tom Tromey  <tom@tromey.com>
+
+	* Makefile.in (stamp-init): Remove gdbtypes special case.
+
+2018-12-27  John Baldwin  <jhb@FreeBSD.org>
+
+	* config/i386/nm-fbsd.h: Remove file.
+	* Makefile.in (HFILES_NO_SRCDIR): Remove config/i386/nm-fbsd.h.
+	* configure.nat: Remove NAT_FILE for FreeBSD/i386.
+
+2018-12-27  Tom Tromey  <tom@tromey.com>
+
+	* minsyms.h (class minimal_symbol_reader): Use
+	DISABLE_COPY_AND_ASSIGN.
+
+2018-12-27  Tom Tromey  <tom@tromey.com>
+
+	* python/python.c (python_interactive_command): Use std::string.
+	(gdbpy_parameter): Likewise.
+	* python/py-utils.c (unicode_to_encoded_string): Update comment.
+	* python/py-symtab.c (salpy_str): Use PyString_FromFormat.
+	* python/py-record-btrace.c (recpy_bt_insn_data): Use
+	byte_vector.
+	* python/py-objfile.c (objfpy_get_build_id): Use
+	unique_xmalloc_ptr.
+	* python/py-inferior.c (infpy_read_memory): Use
+	unique_xmalloc_ptr.
+	* python/py-cmd.c (gdbpy_parse_command_name): Use std::string.
+
+2018-12-26  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* target.c (target_terminal::restore_inferior): Remove struct keyword.
+
+2018-12-26  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* build-id.c (build_id_to_debug_bfd): Enhance debug output.
+	* symfile.c (separate_debug_file_exists): Likewise.
+
+2018-12-24  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* c-exp.y (field_name): Allow DOUBLE_KEYWORD, INT_KEYWORD, LONG,
+	SHORT, SIGNED_KEYWORD, and UNSIGNED tokens to act as a field
+	names.
+	(typename_stoken): New function.
+
+2018-12-24  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* c-exp.y (field_name): New %token, and new rule.
+	(exp): Replace uses of 'name' with 'field_name' where appropriate.
+
+2018-12-24  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	PR gdb/13368
+	* c-exp.y (typebase): Extend the comment.
+	(ident_tokens): Likewise.
+
+2018-12-18  Tom Tromey  <tom@tromey.com>
+
+	* dwarf2read.c (dwarf2_find_containing_comp_unit): Don't take
+	address of sect_off.
+
+2018-12-23  Joel Brobecker  <brobecker@adacore.com>
+
+	GDB 8.2.1 released.
+
+2018-12-22  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* riscv-tdep.c (riscv_call_arg_struct): Don't adjust size before
+	assigning locations.
+	(riscv_return_value): Take more care not to read/write outside of
+	argument buffer.  Cast return value between the declared type and
+	the abi type.
+
+2018-12-22  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* riscv-tdep.c (riscv_register_reggroup_p): Save and restore fcsr,
+	fflags, and frm registers.
+
+2018-12-22  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* riscv-tdep.c (riscv_dwarf_reg_to_regnum): New function.
+	(riscv_gdbarch_init): Register new function with gdbarch.
+	* riscv-tdep.h: New enum to define RISC-V DWARF register numbers.
+
+2018-12-21  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* minsyms.c (mst_str): New.
+	(minimal_symbol_reader::record_full): Add debug output.
+
+2018-12-21  John Baldwin  <jhb@FreeBSD.org>
+
+	* fbsd-nat.c (fbsd_handle_debug_trap): Require pl.pl_flags to
+	equal PL_FLAG_SI.
+	(fbsd_nat_target::stopped_by_sw_breakpoint): Likewise.
+
+2018-12-21  Paul Marechal  <paul.marechal@ericsson.com>
+
+	PR gdb/23974
+	* target.c (target_read_stralloc): Check for empty vector.
+
+2018-12-21  Дилян Палаузов  <dilyan.palauzov@aegee.org>
+
+	* top.c (print_gdb_configuration): Print "--without-python"
+	if GDB was configured without Python.
+
+2018-12-21  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* riscv-tdep.c (riscv_scan_prologue): Use plongest to format
+	a signed offset as a string.
+
+2018-12-21  Dave Murphy  <davem@devkitpro.org>
+
+	* dtrace-probe.c (dtrace_static_probe_ops): Explicit zero
+	initialise.
+	* probe.c (any_static_probe_ops): Ditto.
+	* record-btrace.c (record_btrace_thread_observer_token): Ditto.
+	* stap-probe.c (stap_static_probe_ops): Ditto.
+	* tui/tui-hooks.c (tui_observers_token): Ditto.
+	* unittests/observable-selftests.c (token1, token2, token3): Ditto.
+
+2018-12-19  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb/dummy-frame.c (default_dummy_id): Defined new function.
+	* gdb/dummy-frame.h (default_dummy_id): Declare new function.
+	* gdb/frame-unwind.c (default_unwind_pc): Define new function.
+	(default_unwind_sp): Define new function.
+	* gdb/frame-unwind.h (default_unwind_pc): Declare new function.
+	(default_unwind_sp): Declare new function.
+	* gdb/frame.c (frame_unwind_pc): Assume gdbarch_unwind_pc is
+	available.
+	(get_frame_sp): Assume that gdbarch_unwind_sp is available.
+	* gdb/gdbarch.c: Regenerate.
+	* gdb/gdbarch.h: Regenerate.
+	* gdb/gdbarch.sh: Update definition of dummy_id, unwind_pc, and
+	unwind_sp.  Add additional header files to be included in
+	generated file.
+
 2018-12-19  Dimitar Dimitrov  <dimitar@dinux.eu>
 
 	* nat/linux-ptrace.c (linux_ptrace_test_ret_to_nx): Remove

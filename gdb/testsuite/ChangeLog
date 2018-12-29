@@ -1,3 +1,86 @@
+2018-12-28  Tom Tromey  <tom@tromey.com>
+	    Simon Marchi <simark@simark.ca>
+
+	* gdb.base/jit-exec.exp: New file.
+	* gdb.base/jit-exec.c: New file.
+	* gdb.base/jit-execd.c: New file.
+
+2018-12-28  Tom Tromey  <tom@tromey.com>
+
+	* gdb.base/style.exp: Update test to check for address styling.
+
+2018-12-28  Tom Tromey  <tom@tromey.com>
+
+	* gdb.base/style.exp: Add test for styling of "Reading symbols"
+	message.
+
+2018-12-28  Tom Tromey  <tom@tromey.com>
+
+	* gdb.base/style.exp: Add test for version number styling.
+
+2018-12-28  Tom Tromey  <tom@tromey.com>
+
+	* gdb.base/style.exp: Add test for print_address_symbolic.
+
+2018-12-28  Tom Tromey  <tom@tromey.com>
+
+	* gdb.base/style.exp: Add test for breakpoint setting.
+
+2018-12-28  Tom Tromey  <tom@tromey.com>
+
+	* gdb.base/style.exp: Add test for variable names.
+
+2018-12-28  Tom Tromey  <tom@tromey.com>
+
+	* gdb.base/style.exp: New file.
+	* gdb.base/style.c: New file.
+
+2018-12-28  Tom Tromey  <tom@tromey.com>
+
+	* lib/gdb.exp (gdb_init): Set the TERM environment variable to
+	"dumb".
+	* gdb.base/readline.exp (operate_and_get_next): Save and restore
+	the TERM environment variable.
+
+2018-12-27  Tom Tromey  <tom@tromey.com>
+
+	* gdb.python/py-cmd.exp (test_python_inline_or_multiline): Add
+	pagination test.
+
+2018-12-24  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.dwarf2/dw2-unusual-field-names.c: New file.
+	* gdb.dwarf2/dw2-unusual-field-names.exp: New file.
+
+2018-12-24  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* gdb.ada/bp_fun_addr/a.adb (a): Rename to bp_fun_addr.
+	Filename a.adb changed to bp_fun_addr.adb.
+	gdb.ada/bp_fun_addr.exp: Update test accordingly.
+
+2018-12-21  Jan Vrany  <jan.vrany@fit.cvut.cz>
+
+	* lib/gdb.exp (gdb_compile): Add new nopie flag enforce
+	non-PIE executables.
+	* README: Mention the gdb,nopie_flag board setting.
+	* gdb.arch/amd64-disp-step.exp: Use nopie flag to enforce
+	non-PIE executable.
+	* gdb.arch/amd64-entry-value.exp: Likewise.
+	* gdb.arch/amd64-invalid-stack-middle.exp: Likewise.
+	* gdb.arch/i386-float.exp: Likewise.
+	* gdb.arch/i386-signal.exp: Likewise.
+	* gdb.mi/mi-reg-undefined.exp: Likewise.
+
+2018-12-21  Paul Marechal  <paul.marechal@ericsson.com>
+
+	PR gdb/23974
+	* gdb.base/info-os.exp: Check return for unknown "info os" type.
+
+2018-12-20  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* gdb.ada/info_auto_lang.exp: Normalize some_c source file.
+	Update order of results accordingly.
+
 2018-12-12  Andrew Burgess  <andrew.burgess@embecosm.com>
 
 	* gdb.base/annota1.exp: Update a test regexp.

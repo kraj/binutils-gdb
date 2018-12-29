@@ -62,9 +62,8 @@ python_string_to_unicode (PyObject *obj)
 
 /* Returns a newly allocated string with the contents of the given unicode
    string object converted to CHARSET.  If an error occurs during the
-   conversion, NULL will be returned and a python exception will be set.
-
-   The caller is responsible for xfree'ing the string.  */
+   conversion, NULL will be returned and a python exception will be
+   set.  */
 static gdb::unique_xmalloc_ptr<char>
 unicode_to_encoded_string (PyObject *unicode_str, const char *charset)
 {
@@ -423,7 +422,9 @@ gdbpy_handle_exception ()
      for user errors.  However, a missing message for gdb.GdbError
      exceptions is arguably a bug, so we flag it as such.  */
 
-  if (! PyErr_GivenExceptionMatches (ptype, gdbpy_gdberror_exc)
+  if (PyErr_GivenExceptionMatches (ptype, PyExc_KeyboardInterrupt))
+    throw_quit ("Quit");
+  else if (! PyErr_GivenExceptionMatches (ptype, gdbpy_gdberror_exc)
       || msg == NULL || *msg == '\0')
     {
       PyErr_Restore (ptype, pvalue, ptraceback);

@@ -68,6 +68,7 @@
 #include "format.h"
 #include "thread-fsm.h"
 #include "tid-parse.h"
+#include "cli/cli-style.h"
 
 /* readline include files */
 #include "readline/readline.h"
@@ -5860,13 +5861,15 @@ print_breakpoint_location (struct breakpoint *b,
       if (sym)
 	{
 	  uiout->text ("in ");
-	  uiout->field_string ("func", SYMBOL_PRINT_NAME (sym));
+	  uiout->field_string ("func", SYMBOL_PRINT_NAME (sym),
+			       ui_out_style_kind::FUNCTION);
 	  uiout->text (" ");
 	  uiout->wrap_hint (wrap_indent_at_field (uiout, "what"));
 	  uiout->text ("at ");
 	}
       uiout->field_string ("file",
-			   symtab_to_filename_for_display (loc->symtab));
+			   symtab_to_filename_for_display (loc->symtab),
+			   ui_out_style_kind::FILE);
       uiout->text (":");
 
       if (uiout->is_mi_like_p ())
@@ -12193,9 +12196,14 @@ say_where (struct breakpoint *b)
 	  /* If there is a single location, we can print the location
 	     more nicely.  */
 	  if (b->loc->next == NULL)
-	    printf_filtered (": file %s, line %d.",
-			     symtab_to_filename_for_display (b->loc->symtab),
-			     b->loc->line_number);
+	    {
+	      puts_filtered (": file ");
+	      fputs_styled (symtab_to_filename_for_display (b->loc->symtab),
+			    file_name_style.style (),
+			    gdb_stdout);
+	      printf_filtered (", line %d.",
+			       b->loc->line_number);
+	    }
 	  else
 	    /* This is not ideal, but each location may have a
 	       different file name, and this at least reflects the
@@ -13427,11 +13435,13 @@ update_static_tracepoint (struct breakpoint *b, struct symtab_and_line sal)
 	  uiout->text ("Now in ");
 	  if (sym)
 	    {
-	      uiout->field_string ("func", SYMBOL_PRINT_NAME (sym));
+	      uiout->field_string ("func", SYMBOL_PRINT_NAME (sym),
+				   ui_out_style_kind::FUNCTION);
 	      uiout->text (" at ");
 	    }
 	  uiout->field_string ("file",
-			       symtab_to_filename_for_display (sal2.symtab));
+			       symtab_to_filename_for_display (sal2.symtab),
+			       ui_out_style_kind::FILE);
 	  uiout->text (":");
 
 	  if (uiout->is_mi_like_p ())

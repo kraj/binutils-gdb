@@ -1281,7 +1281,14 @@ print_gdb_version (struct ui_file *stream, bool interactive)
      program to parse, and is just canonical program name and version
      number, which starts after last space.  */
 
-  fprintf_filtered (stream, "GNU gdb %s%s\n", PKGVERSION, version);
+  ui_file_style style;
+  if (interactive)
+    {
+      ui_file_style nstyle = { ui_file_style::MAGENTA, ui_file_style::NONE,
+			       ui_file_style::BOLD };
+      style = nstyle;
+    }
+  fprintf_styled (stream, style, "GNU gdb %s%s\n", PKGVERSION, version);
 
   /* Second line is a copyright notice.  */
 
@@ -1428,6 +1435,10 @@ This GDB was configured as follows:\n\
   fprintf_filtered (stream, _("\
              --with-python=%s%s\n\
 "), WITH_PYTHON_PATH, PYTHON_PATH_RELOCATABLE ? " (relocatable)" : "");
+#else
+  fprintf_filtered (stream, _("\
+             --without-python\n\
+"));
 #endif
 #if HAVE_GUILE
   fprintf_filtered (stream, _("\
@@ -1816,7 +1827,7 @@ show_history (const char *args, int from_tty)
 
 int info_verbose = 0;		/* Default verbose msgs off.  */
 
-/* Called by do_setshow_command.  An elaborate joke.  */
+/* Called by do_set_command.  An elaborate joke.  */
 void
 set_verbose (const char *args, int from_tty, struct cmd_list_element *c)
 {
@@ -1826,16 +1837,22 @@ set_verbose (const char *args, int from_tty, struct cmd_list_element *c)
   showcmd = lookup_cmd_1 (&cmdname, showlist, NULL, 1);
   gdb_assert (showcmd != NULL && showcmd != CMD_LIST_AMBIGUOUS);
 
+  if (c->doc && c->doc_allocated)
+    xfree ((char *) c->doc);
+  if (showcmd->doc && showcmd->doc_allocated)
+    xfree ((char *) showcmd->doc);
   if (info_verbose)
     {
-      c->doc = "Set verbose printing of informational messages.";
-      showcmd->doc = "Show verbose printing of informational messages.";
+      c->doc = _("Set verbose printing of informational messages.");
+      showcmd->doc = _("Show verbose printing of informational messages.");
     }
   else
     {
-      c->doc = "Set verbosity.";
-      showcmd->doc = "Show verbosity.";
+      c->doc = _("Set verbosity.");
+      showcmd->doc = _("Show verbosity.");
     }
+  c->doc_allocated = 0;
+  showcmd->doc_allocated = 0;
 }
 
 /* Init the history buffer.  Note that we are called after the init file(s)

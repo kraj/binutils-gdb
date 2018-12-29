@@ -143,7 +143,7 @@ static record_btrace_target record_btrace_ops;
 
 /* Token associated with a new-thread observer enabling branch tracing
    for the new thread.  */
-static const gdb::observers::token record_btrace_thread_observer_token;
+static const gdb::observers::token record_btrace_thread_observer_token {};
 
 /* Memory access types used in set/show record btrace replay-memory-access.  */
 static const char replay_memory_access_read_only[] = "read-only";
@@ -1090,7 +1090,8 @@ btrace_call_history_src_line (struct ui_out *uiout,
     return;
 
   uiout->field_string ("file",
-		       symtab_to_filename_for_display (symbol_symtab (sym)));
+		       symtab_to_filename_for_display (symbol_symtab (sym)),
+		       ui_out_style_kind::FILE);
 
   btrace_compute_src_line_range (bfun, &begin, &end);
   if (end < begin)
@@ -1181,11 +1182,14 @@ btrace_call_history (struct ui_out *uiout,
 	}
 
       if (sym != NULL)
-	uiout->field_string ("function", SYMBOL_PRINT_NAME (sym));
+	uiout->field_string ("function", SYMBOL_PRINT_NAME (sym),
+			     ui_out_style_kind::FUNCTION);
       else if (msym != NULL)
-	uiout->field_string ("function", MSYMBOL_PRINT_NAME (msym));
+	uiout->field_string ("function", MSYMBOL_PRINT_NAME (msym),
+			     ui_out_style_kind::FUNCTION);
       else if (!uiout->is_mi_like_p ())
-	uiout->field_string ("function", "??");
+	uiout->field_string ("function", "??",
+			     ui_out_style_kind::FUNCTION);
 
       if ((flags & RECORD_PRINT_INSN_RANGE) != 0)
 	{

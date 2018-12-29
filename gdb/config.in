@@ -426,6 +426,9 @@
 /* Define to 1 if the system has the type `socklen_t'. */
 #undef HAVE_SOCKLEN_T
 
+/* Define to 1 if the source-highlight library is available */
+#undef HAVE_SOURCE_HIGHLIGHT
+
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
 
@@ -542,6 +545,9 @@
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
+
+/* Define to 1 if you have the `use_default_colors' function. */
+#undef HAVE_USE_DEFAULT_COLORS
 
 /* Define to 1 if you have the `vfork' function. */
 #undef HAVE_VFORK

@@ -58,6 +58,7 @@
 #include "cli/cli-utils.h"
 #include "common/byte-vector.h"
 #include "selftest.h"
+#include "cli/cli-style.h"
 
 #include <sys/types.h>
 #include <fcntl.h>
@@ -1110,7 +1111,11 @@ symbol_file_add_with_addrs (bfd *abfd, const char *name,
       if (deprecated_pre_add_symbol_hook)
 	deprecated_pre_add_symbol_hook (name);
       else
-	printf_filtered (_("Reading symbols from %s...\n"), name);
+	{
+	  puts_filtered (_("Reading symbols from "));
+	  fputs_styled (name, file_name_style.style (), gdb_stdout);
+	  puts_filtered ("...\n");
+	}
     }
   syms_from_objfile (objfile, addrs, add_flags);
 
@@ -1285,12 +1290,20 @@ separate_debug_file_exists (const std::string &name, unsigned long crc,
     return 0;
 
   if (separate_debug_file_debug)
-    printf_filtered (_("  Trying %s\n"), name.c_str ());
+    {
+      printf_filtered (_("  Trying %s..."), name.c_str ());
+      gdb_flush (gdb_stdout);
+    }
 
   gdb_bfd_ref_ptr abfd (gdb_bfd_open (name.c_str (), gnutarget, -1));
 
   if (abfd == NULL)
-    return 0;
+    {
+      if (separate_debug_file_debug)
+	printf_filtered (_(" no, unable to open.\n"));
+
+      return 0;
+    }
 
   /* Verify symlinks were not the cause of filename_cmp name difference above.
 
@@ -1309,7 +1322,12 @@ separate_debug_file_exists (const std::string &name, unsigned long crc,
     {
       if (abfd_stat.st_dev == parent_stat.st_dev
 	  && abfd_stat.st_ino == parent_stat.st_ino)
-	return 0;
+	{
+	  if (separate_debug_file_debug)
+	    printf_filtered (_(" no, same file as the objfile.\n"));
+
+	  return 0;
+	}
       verified_as_different = 1;
     }
   else
@@ -1318,7 +1336,12 @@ separate_debug_file_exists (const std::string &name, unsigned long crc,
   file_crc_p = gdb_bfd_crc (abfd.get (), &file_crc);
 
   if (!file_crc_p)
-    return 0;
+    {
+      if (separate_debug_file_debug)
+	printf_filtered (_(" no, error computing CRC.\n"));
+
+      return 0;
+    }
 
   if (crc != file_crc)
     {
@@ -1331,7 +1354,12 @@ separate_debug_file_exists (const std::string &name, unsigned long crc,
       if (!verified_as_different)
 	{
 	  if (!gdb_bfd_crc (parent_objfile->obfd, &parent_crc))
-	    return 0;
+	    {
+	      if (separate_debug_file_debug)
+		printf_filtered (_(" no, error computing CRC.\n"));
+
+	      return 0;
+	    }
 	}
 
       if (verified_as_different || parent_crc != file_crc)
@@ -1339,8 +1367,14 @@ separate_debug_file_exists (const std::string &name, unsigned long crc,
 		   " does not match \"%s\" (CRC mismatch).\n"),
 		 name.c_str (), objfile_name (parent_objfile));
 
+      if (separate_debug_file_debug)
+	printf_filtered (_(" no, CRC doesn't match.\n"));
+
       return 0;
     }
+
+  if (separate_debug_file_debug)
+    printf_filtered (_(" yes!\n"));
 
   return 1;
 }
