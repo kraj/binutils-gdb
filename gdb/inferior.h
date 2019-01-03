@@ -1,7 +1,7 @@
 /* Variables that describe the inferior process running under GDB:
    Where it is, why it stopped, and how to step it.
 
-   Copyright (C) 1986-2018 Free Software Foundation, Inc.
+   Copyright (C) 1986-2019 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -502,6 +502,9 @@ public:
      per-inferior/target properties should be made through
      this gdbarch.  */
   struct gdbarch *gdbarch = NULL;
+
+  /* Data related to displaced stepping.  */
+  displaced_step_inferior_state displaced_step_state;
 
   /* Per inferior data-pointers required by other GDB modules.  */
   REGISTRY_FIELDS;

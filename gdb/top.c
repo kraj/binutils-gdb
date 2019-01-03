@@ -1,6 +1,6 @@
 /* Top level stuff for GDB, the GNU debugger.
 
-   Copyright (C) 1986-2018 Free Software Foundation, Inc.
+   Copyright (C) 1986-2019 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -900,10 +900,10 @@ gdb_in_secondary_prompt_p (struct ui *ui)
    text.  */
 
 static void
-gdb_readline_wrapper_line (char *line)
+gdb_readline_wrapper_line (gdb::unique_xmalloc_ptr<char> &&line)
 {
   gdb_assert (!gdb_readline_wrapper_done);
-  gdb_readline_wrapper_result = line;
+  gdb_readline_wrapper_result = line.release ();
   gdb_readline_wrapper_done = 1;
 
   /* Prevent operate-and-get-next from acting too early.  */
@@ -972,7 +972,7 @@ public:
 
 private:
 
-  void (*m_handler_orig) (char *);
+  void (*m_handler_orig) (gdb::unique_xmalloc_ptr<char> &&);
   int m_already_prompted_orig;
 
   /* Whether the target was async.  */
@@ -1212,7 +1212,7 @@ command_line_input (const char *prompt_arg, const char *annotation_suffix)
 
   while (1)
     {
-      char *rl;
+      gdb::unique_xmalloc_ptr<char> rl;
 
       /* Make sure that all output has been output.  Some machines may
          let you get away with leaving out some of the gdb_flush, but
@@ -1236,20 +1236,20 @@ command_line_input (const char *prompt_arg, const char *annotation_suffix)
 	  && from_tty
 	  && input_interactive_p (current_ui))
 	{
-	  rl = (*deprecated_readline_hook) (prompt);
+	  rl.reset ((*deprecated_readline_hook) (prompt));
 	}
       else if (command_editing_p
 	       && from_tty
 	       && input_interactive_p (current_ui))
 	{
-	  rl = gdb_readline_wrapper (prompt);
+	  rl.reset (gdb_readline_wrapper (prompt));
 	}
       else
 	{
-	  rl = gdb_readline_no_editing (prompt);
+	  rl.reset (gdb_readline_no_editing (prompt));
 	}
 
-      cmd = handle_line_of_input (&cmd_line_buffer, rl,
+      cmd = handle_line_of_input (&cmd_line_buffer, rl.get (),
 				  0, annotation_suffix);
       if (cmd == (char *) EOF)
 	{
@@ -1293,7 +1293,7 @@ print_gdb_version (struct ui_file *stream, bool interactive)
   /* Second line is a copyright notice.  */
 
   fprintf_filtered (stream,
-		    "Copyright (C) 2018 Free Software Foundation, Inc.\n");
+		    "Copyright (C) 2019 Free Software Foundation, Inc.\n");
 
   /* Following the copyright is a brief statement that the program is
      free software, that users are free to copy and change it on

@@ -1,6 +1,6 @@
 /* Top level stuff for GDB, the GNU debugger.
 
-   Copyright (C) 1986-2018 Free Software Foundation, Inc.
+   Copyright (C) 1986-2019 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -81,7 +81,7 @@ struct ui
 
   /* The function to invoke when a complete line of input is ready for
      processing.  */
-  void (*input_handler) (char *);
+  void (*input_handler) (gdb::unique_xmalloc_ptr<char> &&);
 
   /* True if this UI is using the readline library for command
      editing; false if using GDB's own simple readline emulation, with
@@ -297,7 +297,7 @@ extern void show_history (const char *, int);
 extern void set_verbose (const char *, int, struct cmd_list_element *);
 
 extern char *handle_line_of_input (struct buffer *cmd_line_buffer,
-				   char *rl, int repeat,
+				   const char *rl, int repeat,
 				   const char *annotation_suffix);
 
 #endif

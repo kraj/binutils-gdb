@@ -1,6 +1,6 @@
 /* Definitions used by event-top.c, for GDB, the GNU debugger.
 
-   Copyright (C) 1999-2018 Free Software Foundation, Inc.
+   Copyright (C) 1999-2019 Free Software Foundation, Inc.
 
    Written by Elena Zannoni <ezannoni@cygnus.com> of Cygnus Solutions.
 
@@ -35,7 +35,7 @@ extern void gdb_disable_readline (void);
 extern void async_init_signals (void);
 extern void change_line_handler (int);
 
-extern void command_line_handler (char *rl);
+extern void command_line_handler (gdb::unique_xmalloc_ptr<char> &&rl);
 extern void command_handler (const char *command);
 
 #ifdef SIGTSTP

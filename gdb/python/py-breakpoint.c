@@ -1,6 +1,6 @@
 /* Python interface to breakpoints
 
-   Copyright (C) 2008-2018 Free Software Foundation, Inc.
+   Copyright (C) 2008-2019 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -1196,7 +1196,7 @@ local_setattro (PyObject *self, PyObject *name, PyObject *v)
 	}
     }
 
-  return PyObject_GenericSetAttr ((PyObject *)self, name, v);
+  return PyObject_GenericSetAttr (self, name, v);
 }
 
 static gdb_PyGetSetDef breakpoint_object_getset[] = {

@@ -1,5 +1,5 @@
 /* List lines of source files for GDB, the GNU debugger.
-   Copyright (C) 1986-2018 Free Software Foundation, Inc.
+   Copyright (C) 1986-2019 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -1598,6 +1598,8 @@ search_command_helper (const char *regex, int from_tty, bool forward)
       else
 	{
 	  line--;
+	  if (line < 1)
+	    break;
 	  if (fseek (stream.get (),
 		     current_source_symtab->line_charpos[line - 1], 0) < 0)
 	    {

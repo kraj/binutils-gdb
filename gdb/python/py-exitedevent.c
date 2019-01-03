@@ -1,6 +1,6 @@
 /* Python interface to inferior exit events.
 
-   Copyright (C) 2009-2018 Free Software Foundation, Inc.
+   Copyright (C) 2009-2019 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -39,7 +39,7 @@ create_exited_event_object (const LONGEST *exit_code, struct inferior *inf)
 	return NULL;
     }
 
-  gdbpy_ref<inferior_object> inf_obj (inferior_to_inferior_object (inf));
+  gdbpy_ref<inferior_object> inf_obj = inferior_to_inferior_object (inf);
   if (inf_obj == NULL || evpy_add_attribute (exited_event.get (),
 					     "inferior",
 					     (PyObject *) inf_obj.get ()) < 0)
