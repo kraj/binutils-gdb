@@ -2619,9 +2619,7 @@ parse_partial_symbols (minimal_symbol_reader &reader,
 	textlow = 0;
       pst = start_psymtab_common (objfile,
 				  fdr_name (fh),
-				  textlow,
-				  objfile->global_psymbols,
-				  objfile->static_psymbols);
+				  textlow);
       pst->read_symtab_private = XOBNEW (&objfile->objfile_obstack, symloc);
       memset (pst->read_symtab_private, 0, sizeof (struct symloc));
 
@@ -2767,6 +2765,9 @@ parse_partial_symbols (minimal_symbol_reader &reader,
 	      /* Handle stabs continuation.  */
 	      {
 		char *stabstring = debug_info->ss + fh->issBase + sh.iss;
+		/* If we need to heap-allocate STABSTRING, this owns
+		   it.  */
+		gdb::unique_xmalloc_ptr<char> stabstring_storage;
 		int len = strlen (stabstring);
 
 		while (stabstring[len - 1] == '\\')
@@ -2789,14 +2790,19 @@ parse_partial_symbols (minimal_symbol_reader &reader,
 		    stabstring2 = debug_info->ss + fh->issBase + sh2.iss;
 		    len2 = strlen (stabstring2);
 
-		    /* Concatinate stabstring2 with stabstring1.  */
-		    if (stabstring
-		     && stabstring != debug_info->ss + fh->issBase + sh.iss)
-		      stabstring
-			= (char *) xrealloc (stabstring, len + len2 + 1);
+		    /* Concatenate stabstring2 with stabstring1.  */
+		    if (stabstring_storage != nullptr)
+		      {
+			stabstring_storage.reset
+			  ((char *) xrealloc (stabstring_storage.release (),
+					      len + len2 + 1));
+			stabstring = stabstring_storage.get ();
+		      }
 		    else
 		      {
-			stabstring = (char *) xmalloc (len + len2 + 1);
+			stabstring_storage.reset
+			  ((char *) xmalloc (len + len2 + 1));
+			stabstring = stabstring_storage.get ();
 			strcpy (stabstring, stabstring1);
 		      }
 		    strcpy (stabstring + len, stabstring2);
@@ -3050,7 +3056,7 @@ parse_partial_symbols (minimal_symbol_reader &reader,
 			add_psymbol_to_list (namestring, p - namestring, 1,
 					     VAR_DOMAIN, LOC_STATIC,
 					     SECT_OFF_DATA (objfile),
-					     &objfile->static_psymbols,
+					     psymbol_placement::STATIC,
 					     sh.value,
 					     psymtab_language, objfile);
 			continue;
@@ -3061,7 +3067,7 @@ parse_partial_symbols (minimal_symbol_reader &reader,
 			add_psymbol_to_list (namestring, p - namestring, 1,
 					     VAR_DOMAIN, LOC_STATIC,
 					     SECT_OFF_DATA (objfile),
-					     &objfile->global_psymbols,
+					     psymbol_placement::GLOBAL,
 					     sh.value,
 					     psymtab_language, objfile);
 			continue;
@@ -3080,7 +3086,7 @@ parse_partial_symbols (minimal_symbol_reader &reader,
 			    add_psymbol_to_list (namestring, p - namestring, 1,
 						 STRUCT_DOMAIN, LOC_TYPEDEF,
 						 -1,
-						 &objfile->static_psymbols,
+						 psymbol_placement::STATIC,
 						 0, psymtab_language, objfile);
 			    if (p[2] == 't')
 			      {
@@ -3089,7 +3095,7 @@ parse_partial_symbols (minimal_symbol_reader &reader,
 						     p - namestring, 1,
 						     VAR_DOMAIN, LOC_TYPEDEF,
 						     -1,
-						     &objfile->static_psymbols,
+						     psymbol_placement::STATIC,
 						     0, psymtab_language,
 						     objfile);
 				p += 1;
@@ -3103,7 +3109,7 @@ parse_partial_symbols (minimal_symbol_reader &reader,
 			    add_psymbol_to_list (namestring, p - namestring, 1,
 						 VAR_DOMAIN, LOC_TYPEDEF,
 						 -1,
-						 &objfile->static_psymbols,
+						 psymbol_placement::STATIC,
 						 0, psymtab_language, objfile);
 			  }
 		      check_enum:
@@ -3168,7 +3174,7 @@ parse_partial_symbols (minimal_symbol_reader &reader,
 				add_psymbol_to_list (p, q - p, 1,
 						     VAR_DOMAIN, LOC_CONST,
 						     -1,
-						     &objfile->static_psymbols,
+						     psymbol_placement::STATIC,
 						     0, psymtab_language,
 						     objfile);
 				/* Point past the name.  */
@@ -3186,7 +3192,7 @@ parse_partial_symbols (minimal_symbol_reader &reader,
 			/* Constant, e.g. from "const" in Pascal.  */
 			add_psymbol_to_list (namestring, p - namestring, 1,
 					     VAR_DOMAIN, LOC_CONST, -1,
-					     &objfile->static_psymbols,
+					     psymbol_placement::STATIC,
 					     0, psymtab_language, objfile);
 			continue;
 
@@ -3200,7 +3206,7 @@ parse_partial_symbols (minimal_symbol_reader &reader,
 			add_psymbol_to_list (namestring, p - namestring, 1,
 					     VAR_DOMAIN, LOC_BLOCK,
 					     SECT_OFF_TEXT (objfile),
-					     &objfile->static_psymbols,
+					     psymbol_placement::STATIC,
 					     sh.value,
 					     psymtab_language, objfile);
 			continue;
@@ -3219,7 +3225,7 @@ parse_partial_symbols (minimal_symbol_reader &reader,
 			add_psymbol_to_list (namestring, p - namestring, 1,
 					     VAR_DOMAIN, LOC_BLOCK,
 					     SECT_OFF_TEXT (objfile),
-					     &objfile->global_psymbols,
+					     psymbol_placement::GLOBAL,
 					     sh.value,
 					     psymtab_language, objfile);
 			continue;
@@ -3332,9 +3338,6 @@ parse_partial_symbols (minimal_symbol_reader &reader,
 			       hex_string (type_code)); /* CUR_SYMBOL_TYPE */
 		    continue;
 		  }
-		if (stabstring
-		    && stabstring != debug_info->ss + fh->issBase + sh.iss)
-		  xfree (stabstring);
 	      }
 	      /* end - Handle continuation */
 	    }
@@ -3457,13 +3460,13 @@ parse_partial_symbols (minimal_symbol_reader &reader,
 		    add_psymbol_to_list (sym_name, strlen (sym_name), 1,
 					 VAR_DOMAIN, LOC_BLOCK,
 					 section,
-					 &objfile->global_psymbols,
+					 psymbol_placement::GLOBAL,
 					 sh.value, psymtab_language, objfile);
 		  else
 		    add_psymbol_to_list (sym_name, strlen (sym_name), 1,
 					 VAR_DOMAIN, LOC_BLOCK,
 					 section,
-					 &objfile->static_psymbols,
+					 psymbol_placement::STATIC,
 					 sh.value, psymtab_language, objfile);
 
 		  procaddr = sh.value;
@@ -3529,7 +3532,7 @@ parse_partial_symbols (minimal_symbol_reader &reader,
 		    {
 		      add_psymbol_to_list (sym_name, strlen (sym_name), 1,
 					   STRUCT_DOMAIN, LOC_TYPEDEF, -1,
-					   &objfile->static_psymbols,
+					   psymbol_placement::STATIC,
 					   0, psymtab_language, objfile);
 		    }
 		  handle_psymbol_enumerators (objfile, fh, sh.st, sh.value);
@@ -3569,7 +3572,7 @@ parse_partial_symbols (minimal_symbol_reader &reader,
 	      /* Use this gdb symbol.  */
 	      add_psymbol_to_list (sym_name, strlen (sym_name), 1,
 				   VAR_DOMAIN, theclass, section,
-				   &objfile->static_psymbols,
+				   psymbol_placement::STATIC,
 				   sh.value, psymtab_language, objfile);
 	    skip:
 	      cur_sdx++;	/* Go to next file symbol.  */
@@ -3649,7 +3652,7 @@ parse_partial_symbols (minimal_symbol_reader &reader,
 	      add_psymbol_to_list (sym_name, strlen (sym_name), 1,
 				   VAR_DOMAIN, theclass,
 				   section,
-				   &objfile->global_psymbols,
+				   psymbol_placement::GLOBAL,
 				   svalue, psymtab_language, objfile);
 	    }
 	}
@@ -3681,17 +3684,17 @@ parse_partial_symbols (minimal_symbol_reader &reader,
 	  && save_pst->text_low_valid
 	  && !(objfile->flags & OBJF_REORDERED))
 	{
-	  ALL_OBJFILE_PSYMTABS (objfile, pst)
-	  {
-	    if (save_pst != pst
-		&& save_pst->raw_text_low () >= pst->raw_text_low ()
-		&& save_pst->raw_text_low () < pst->raw_text_high ()
-		&& save_pst->raw_text_high () > pst->raw_text_high ())
-	      {
-		objfile->flags |= OBJF_REORDERED;
-		break;
-	      }
-	  }
+	  for (partial_symtab *iter : objfile_psymtabs (objfile))
+	    {
+	      if (save_pst != iter
+		  && save_pst->raw_text_low () >= iter->raw_text_low ()
+		  && save_pst->raw_text_low () < iter->raw_text_high ()
+		  && save_pst->raw_text_high () > iter->raw_text_high ())
+		{
+		  objfile->flags |= OBJF_REORDERED;
+		  break;
+		}
+	    }
 	}
     }
 
@@ -3711,8 +3714,8 @@ parse_partial_symbols (minimal_symbol_reader &reader,
       /* Skip the first file indirect entry as it is a self dependency for
          source files or a reverse .h -> .c dependency for header files.  */
       pst->number_of_dependencies = 0;
-      pst->dependencies = XOBNEWVEC (&objfile->objfile_obstack,
-				     partial_symtab *, (fh->crfd - 1));
+      pst->dependencies
+	= objfile->partial_symtabs->allocate_dependencies (fh->crfd - 1);
       for (s_idx = 1; s_idx < fh->crfd; s_idx++)
 	{
 	  RFDT rh;
@@ -3741,11 +3744,12 @@ parse_partial_symbols (minimal_symbol_reader &reader,
 
   /* Remove the dummy psymtab created for -O3 images above, if it is
      still empty, to enable the detection of stripped executables.  */
-  if (objfile->psymtabs->next == NULL
-      && objfile->psymtabs->number_of_dependencies == 0
-      && objfile->psymtabs->n_global_syms == 0
-      && objfile->psymtabs->n_static_syms == 0)
-    objfile->psymtabs = NULL;
+  pst = objfile->partial_symtabs->psymtabs;
+  if (pst->next == NULL
+      && pst->number_of_dependencies == 0
+      && pst->n_global_syms == 0
+      && pst->n_static_syms == 0)
+    objfile->partial_symtabs->psymtabs = NULL;
 }
 
 /* If the current psymbol has an enumerated type, we need to add
@@ -3810,7 +3814,7 @@ handle_psymbol_enumerators (struct objfile *objfile, FDR *fh, int stype,
          in psymtabs, just in symtabs.  */
       add_psymbol_to_list (name, strlen (name), 1,
 			   VAR_DOMAIN, LOC_CONST, -1,
-			   &objfile->static_psymbols, 0,
+			   psymbol_placement::STATIC, 0,
 			   psymtab_language, objfile);
       ext_sym += external_sym_size;
     }
@@ -4502,7 +4506,7 @@ static void
 add_symbol (struct symbol *s, struct symtab *symtab, struct block *b)
 {
   symbol_set_symtab (s, symtab);
-  dict_add_symbol (BLOCK_DICT (b), s);
+  mdict_add_symbol (BLOCK_MULTIDICT (b), s);
 }
 
 /* Add a new block B to a symtab S.  */
@@ -4730,7 +4734,7 @@ new_bvect (int nblocks)
 }
 
 /* Allocate and zero a new block of language LANGUAGE, and set its
-   BLOCK_DICT.  If function is non-zero, assume the block is
+   BLOCK_MULTIDICT.  If function is non-zero, assume the block is
    associated to a function, and make sure that the symbols are stored
    linearly; otherwise, store them hashed.  */
 
@@ -4743,9 +4747,9 @@ new_block (enum block_type type, enum language language)
   struct block *retval = XCNEW (struct block);
 
   if (type == FUNCTION_BLOCK)
-    BLOCK_DICT (retval) = dict_create_linear_expandable (language);
+    BLOCK_MULTIDICT (retval) = mdict_create_linear_expandable (language);
   else
-    BLOCK_DICT (retval) = dict_create_hashed_expandable (language);
+    BLOCK_MULTIDICT (retval) = mdict_create_hashed_expandable (language);
 
   return retval;
 }

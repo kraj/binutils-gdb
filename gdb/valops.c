@@ -1980,23 +1980,12 @@ search_struct_method (const char *name, struct value **arg1p,
   int i;
   struct value *v;
   int name_matched = 0;
-  char dem_opname[64];
 
   type = check_typedef (type);
   for (i = TYPE_NFN_FIELDS (type) - 1; i >= 0; i--)
     {
       const char *t_field_name = TYPE_FN_FIELDLIST_NAME (type, i);
 
-      /* FIXME!  May need to check for ARM demangling here.  */
-      if (startswith (t_field_name, "__") ||
-	  startswith (t_field_name, "op") ||
-	  startswith (t_field_name, "type"))
-	{
-	  if (cplus_demangle_opname (t_field_name, dem_opname, DMGL_ANSI))
-	    t_field_name = dem_opname;
-	  else if (cplus_demangle_opname (t_field_name, dem_opname, 0))
-	    t_field_name = dem_opname;
-	}
       if (t_field_name && (strcmp_iw (t_field_name, name) == 0))
 	{
 	  int j = TYPE_FN_FIELDLIST_LENGTH (type, i) - 1;
@@ -2516,10 +2505,9 @@ find_overload_match (gdb::array_view<value *> args,
   struct type *basetype = NULL;
   LONGEST boffset;
 
-  struct cleanup *all_cleanups = make_cleanup (null_cleanup, NULL);
-
   const char *obj_type_name = NULL;
   const char *func_name = NULL;
+  gdb::unique_xmalloc_ptr<char> temp_func;
   enum oload_classification match_quality;
   enum oload_classification method_match_quality = INCOMPATIBLE;
   enum oload_classification src_method_match_quality = INCOMPATIBLE;
@@ -2546,7 +2534,6 @@ find_overload_match (gdb::array_view<value *> args,
 	  if (*valp)
 	    {
 	      *staticp = 1;
-	      do_cleanups (all_cleanups);
 	      return 0;
 	    }
 	}
@@ -2666,20 +2653,17 @@ find_overload_match (gdb::array_view<value *> args,
               && TYPE_CODE (check_typedef (SYMBOL_TYPE (fsym)))
 	      == TYPE_CODE_FUNC)
             {
-	      char *temp_func;
-
 	      temp_func = cp_func_name (qualified_name);
 
 	      /* If cp_func_name did not remove anything, the name of the
 	         symbol did not include scope or argument types - it was
 	         probably a C-style function.  */
-	      if (temp_func)
+	      if (temp_func != nullptr)
 		{
-		  make_cleanup (xfree, temp_func);
-		  if (strcmp (temp_func, qualified_name) == 0)
+		  if (strcmp (temp_func.get (), qualified_name) == 0)
 		    func_name = NULL;
 		  else
-		    func_name = temp_func;
+		    func_name = temp_func.get ();
 		}
             }
         }
@@ -2695,7 +2679,6 @@ find_overload_match (gdb::array_view<value *> args,
       if (func_name == NULL)
         {
 	  *symp = fsym;
-	  do_cleanups (all_cleanups);
           return 0;
         }
 
@@ -2821,8 +2804,6 @@ find_overload_match (gdb::array_view<value *> args,
 	}
       *objp = temp;
     }
-
-  do_cleanups (all_cleanups);
 
   switch (match_quality)
     {
@@ -3429,19 +3410,7 @@ value_struct_elt_for_reference (struct type *domain, int offset,
   for (i = TYPE_NFN_FIELDS (t) - 1; i >= 0; --i)
     {
       const char *t_field_name = TYPE_FN_FIELDLIST_NAME (t, i);
-      char dem_opname[64];
 
-      if (startswith (t_field_name, "__") 
-	  || startswith (t_field_name, "op") 
-	  || startswith (t_field_name, "type"))
-	{
-	  if (cplus_demangle_opname (t_field_name, 
-				     dem_opname, DMGL_ANSI))
-	    t_field_name = dem_opname;
-	  else if (cplus_demangle_opname (t_field_name, 
-					  dem_opname, 0))
-	    t_field_name = dem_opname;
-	}
       if (t_field_name && strcmp (t_field_name, name) == 0)
 	{
 	  int j;

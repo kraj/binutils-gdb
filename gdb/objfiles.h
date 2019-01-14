@@ -27,7 +27,10 @@
 #include "progspace.h"
 #include "registry.h"
 #include "gdb_bfd.h"
+#include "psymtab.h"
 #include <vector>
+#include "common/next-iterator.h"
+#include "common/safe-iterator.h"
 
 struct bcache;
 struct htab;
@@ -290,6 +293,15 @@ struct objfile
 
   DISABLE_COPY_AND_ASSIGN (objfile);
 
+  /* Reset the storage for the partial symbol tables.  */
+
+  void reset_psymtabs ()
+  {
+    psymbol_map.clear ();
+    partial_symtabs.reset (new psymtab_storage ());
+  }
+
+
   /* All struct objfile's are chained together by their next pointers.
      The program space field "objfiles"  (frequently referenced via
      the macro "object_files") points to the first link in this chain.  */
@@ -319,22 +331,9 @@ struct objfile
 
   struct compunit_symtab *compunit_symtabs = nullptr;
 
-  /* Each objfile points to a linked list of partial symtabs derived from
-     this file, one partial symtab structure for each compilation unit
-     (source file).  */
+  /* The partial symbol tables.  */
 
-  struct partial_symtab *psymtabs = nullptr;
-
-  /* Map addresses to the entries of PSYMTABS.  It would be more efficient to
-     have a map per the whole process but ADDRMAP cannot selectively remove
-     its items during FREE_OBJFILE.  This mapping is already present even for
-     PARTIAL_SYMTABs which still have no corresponding full SYMTABs read.  */
-
-  struct addrmap *psymtabs_addrmap = nullptr;
-
-  /* List of freed partial symtabs, available for re-use.  */
-
-  struct partial_symtab *free_psymtabs = nullptr;
+  std::shared_ptr<psymtab_storage> partial_symtabs;
 
   /* The object file's BFD.  Can be null if the objfile contains only
      minimal symbols, e.g. the run time common symbols for SunOS4.  */
@@ -356,21 +355,10 @@ struct objfile
 
   struct obstack objfile_obstack {};
 
-  /* A byte cache where we can stash arbitrary "chunks" of bytes that
-     will not change.  */
-
-  struct psymbol_bcache *psymbol_cache;
-
   /* Map symbol addresses to the partial symtab that defines the
      object at that address.  */
 
   std::vector<std::pair<CORE_ADDR, partial_symtab *>> psymbol_map;
-
-  /* Vectors of all partial symbols read in from file.  The actual data
-     is stored in the objfile_obstack.  */
-
-  std::vector<partial_symbol *> global_psymbols;
-  std::vector<partial_symbol *> static_psymbols;
 
   /* Structure which keeps track of functions that manipulate objfile's
      of the same type as this objfile.  I.e. the function to read partial
@@ -428,7 +416,7 @@ struct objfile
      Although this is a tree structure, GDB only support one level
      (ie a separate debug for a separate debug is not supported).  Note that
      separate debug object are in the main chain and therefore will be
-     visited by ALL_OBJFILES & co iterators.  Separate debug objfile always
+     visited by all_objfiles & co iterators.  Separate debug objfile always
      has a non-nul separate_debug_objfile_backlink.  */
 
   /* Link to the first separate debug object, if any.  */
@@ -565,62 +553,148 @@ extern void default_iterate_over_objfiles_in_search_order
    void *cb_data, struct objfile *current_objfile);
 
 
-/* Traverse all object files in the current program space.
-   ALL_OBJFILES_SAFE works even if you delete the objfile during the
-   traversal.  */
+/* An iterarable object that can be used to iterate over all
+   objfiles.  The basic use is in a foreach, like:
 
-/* Traverse all object files in program space SS.  */
+   for (objfile *objf : all_objfiles (pspace)) { ... }  */
 
-#define ALL_PSPACE_OBJFILES(ss, obj)					\
-  for ((obj) = ss->objfiles; (obj) != NULL; (obj) = (obj)->next)
+class all_objfiles : public next_adapter<struct objfile>
+{
+public:
 
-#define ALL_OBJFILES(obj)			    \
-  for ((obj) = current_program_space->objfiles; \
-       (obj) != NULL;				    \
-       (obj) = (obj)->next)
+  explicit all_objfiles (struct program_space *pspace)
+    : next_adapter<struct objfile> (pspace->objfiles)
+  {
+  }
+};
 
-#define ALL_OBJFILES_SAFE(obj,nxt)			\
-  for ((obj) = current_program_space->objfiles;	\
-       (obj) != NULL? ((nxt)=(obj)->next,1) :0;	\
-       (obj) = (nxt))
+/* An iterarable object that can be used to iterate over all
+   objfiles.  The basic use is in a foreach, like:
 
-/* Traverse all symtabs in one objfile.  */
+   for (objfile *objf : all_objfiles_safe (pspace)) { ... }
 
-#define ALL_OBJFILE_FILETABS(objfile, cu, s) \
-  ALL_OBJFILE_COMPUNITS (objfile, cu) \
-    ALL_COMPUNIT_FILETABS (cu, s)
+   This variant uses a basic_safe_iterator so that objfiles can be
+   deleted during iteration.  */
 
-/* Traverse all compunits in one objfile.  */
+class all_objfiles_safe
+  : public next_adapter<struct objfile,
+			basic_safe_iterator<next_iterator<objfile>>>
+{
+public:
 
-#define ALL_OBJFILE_COMPUNITS(objfile, cu) \
-  for ((cu) = (objfile) -> compunit_symtabs; (cu) != NULL; (cu) = (cu) -> next)
+  explicit all_objfiles_safe (struct program_space *pspace)
+    : next_adapter<struct objfile,
+		   basic_safe_iterator<next_iterator<objfile>>>
+        (pspace->objfiles)
+  {
+  }
+};
 
-/* Traverse all minimal symbols in one objfile.  */
+/* A range adapter that makes it possible to iterate over all
+   compunits in one objfile.  */
 
-#define	ALL_OBJFILE_MSYMBOLS(objfile, m)	\
-    for ((m) = (objfile)->per_bfd->msymbols;	\
-	 MSYMBOL_LINKAGE_NAME (m) != NULL;	\
-	 (m)++)
+class objfile_compunits : public next_adapter<struct compunit_symtab>
+{
+public:
 
-/* Traverse all symtabs in all objfiles in the current symbol
-   space.  */
+  explicit objfile_compunits (struct objfile *objfile)
+    : next_adapter<struct compunit_symtab> (objfile->compunit_symtabs)
+  {
+  }
+};
 
-#define ALL_FILETABS(objfile, ps, s)		\
-  ALL_OBJFILES (objfile)			\
-    ALL_OBJFILE_FILETABS (objfile, ps, s)
+/* A range adapter that makes it possible to iterate over all
+   minimal symbols of an objfile.  */
 
-/* Traverse all compunits in all objfiles in the current program space.  */
+class objfile_msymbols
+{
+public:
 
-#define ALL_COMPUNITS(objfile, cu)	\
-  ALL_OBJFILES (objfile)		\
-    ALL_OBJFILE_COMPUNITS (objfile, cu)
+  explicit objfile_msymbols (struct objfile *objfile)
+    : m_objfile (objfile)
+  {
+  }
 
-/* Traverse all minimal symbols in all objfiles in the current symbol
-   space.  */
+  struct iterator
+  {
+    typedef iterator self_type;
+    typedef struct minimal_symbol *value_type;
+    typedef struct minimal_symbol *&reference;
+    typedef struct minimal_symbol **pointer;
+    typedef std::forward_iterator_tag iterator_category;
+    typedef int difference_type;
 
-#define	ALL_MSYMBOLS(objfile, m) \
-  ALL_OBJFILES (objfile)	 \
-    ALL_OBJFILE_MSYMBOLS (objfile, m)
+    explicit iterator (struct objfile *objfile)
+      : m_msym (objfile->per_bfd->msymbols)
+    {
+      /* Make sure to properly handle the case where there are no
+	 minsyms.  */
+      if (MSYMBOL_LINKAGE_NAME (m_msym) == nullptr)
+	m_msym = nullptr;
+    }
+
+    iterator ()
+      : m_msym (nullptr)
+    {
+    }
+    
+    value_type operator* () const
+    {
+      return m_msym;
+    }
+
+    bool operator== (const self_type &other) const
+    {
+      return m_msym == other.m_msym;
+    }
+
+    bool operator!= (const self_type &other) const
+    {
+      return m_msym != other.m_msym;
+    }
+
+    self_type &operator++ ()
+    {
+      if (m_msym != nullptr)
+	{
+	  ++m_msym;
+	  if (MSYMBOL_LINKAGE_NAME (m_msym) == nullptr)
+	    m_msym = nullptr;
+	}
+      return *this;
+    }
+
+  private:
+    struct minimal_symbol *m_msym;
+  };
+
+  iterator begin () const
+  {
+    return iterator (m_objfile);
+  }
+
+  iterator end () const
+  {
+    return iterator ();
+  }
+
+private:
+
+  struct objfile *m_objfile;
+};
+
+/* A range adapter that makes it possible to iterate over all
+   psymtabs in one objfile.  */
+
+class objfile_psymtabs : public next_adapter<struct partial_symtab>
+{
+public:
+
+  explicit objfile_psymtabs (struct objfile *objfile)
+    : next_adapter<struct partial_symtab> (objfile->partial_symtabs->psymtabs)
+  {
+  }
+};
 
 #define ALL_OBJFILE_OSECTIONS(objfile, osect)	\
   for (osect = objfile->sections; osect < objfile->sections_end; osect++) \
@@ -629,42 +703,6 @@ extern void default_iterate_over_objfiles_in_search_order
 	/* Nothing.  */							\
       }									\
     else
-
-/* Traverse all obj_sections in all objfiles in the current program
-   space.
-
-   Note that this detects a "break" in the inner loop, and exits
-   immediately from the outer loop as well, thus, client code doesn't
-   need to know that this is implemented with a double for.  The extra
-   hair is to make sure that a "break;" stops the outer loop iterating
-   as well, and both OBJFILE and OSECT are left unmodified:
-
-    - The outer loop learns about the inner loop's end condition, and
-      stops iterating if it detects the inner loop didn't reach its
-      end.  In other words, the outer loop keeps going only if the
-      inner loop reached its end cleanly [(osect) ==
-      (objfile)->sections_end].
-
-    - OSECT is initialized in the outer loop initialization
-      expressions, such as if the inner loop has reached its end, so
-      the check mentioned above succeeds the first time.
-
-    - The trick to not clearing OBJFILE on a "break;" is, in the outer
-      loop's loop expression, advance OBJFILE, but iff the inner loop
-      reached its end.  If not, there was a "break;", so leave OBJFILE
-      as is; the outer loop's conditional will break immediately as
-      well (as OSECT will be different from OBJFILE->sections_end).  */
-
-#define ALL_OBJSECTIONS(objfile, osect)					\
-  for ((objfile) = current_program_space->objfiles,			\
-	 (objfile) != NULL ? ((osect) = (objfile)->sections_end) : 0;	\
-       (objfile) != NULL						\
-	 && (osect) == (objfile)->sections_end;				\
-       ((osect) == (objfile)->sections_end				\
-	? ((objfile) = (objfile)->next,					\
-	   (objfile) != NULL ? (osect) = (objfile)->sections_end : 0)	\
-	: 0))								\
-    ALL_OBJFILE_OSECTIONS (objfile, osect)
 
 #define SECT_OFF_DATA(objfile) \
      ((objfile->sect_index_data == -1) \

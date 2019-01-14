@@ -66,6 +66,50 @@
 
 static struct parser_state *pstate = NULL;
 
+/* Data that must be held for the duration of a parse.  */
+
+struct c_parse_state
+{
+  /* These are used to hold type lists and type stacks that are
+     allocated during the parse.  */
+  std::vector<std::unique_ptr<std::vector<struct type *>>> type_lists;
+  std::vector<std::unique_ptr<struct type_stack>> type_stacks;
+
+  /* Storage for some strings allocated during the parse.  */
+  std::vector<gdb::unique_xmalloc_ptr<char>> strings;
+
+  /* When we find that lexptr (the global var defined in parse.c) is
+     pointing at a macro invocation, we expand the invocation, and call
+     scan_macro_expansion to save the old lexptr here and point lexptr
+     into the expanded text.  When we reach the end of that, we call
+     end_macro_expansion to pop back to the value we saved here.  The
+     macro expansion code promises to return only fully-expanded text,
+     so we don't need to "push" more than one level.
+
+     This is disgusting, of course.  It would be cleaner to do all macro
+     expansion beforehand, and then hand that to lexptr.  But we don't
+     really know where the expression ends.  Remember, in a command like
+
+     (gdb) break *ADDRESS if CONDITION
+
+     we evaluate ADDRESS in the scope of the current frame, but we
+     evaluate CONDITION in the scope of the breakpoint's location.  So
+     it's simply wrong to try to macro-expand the whole thing at once.  */
+  const char *macro_original_text = nullptr;
+
+  /* We save all intermediate macro expansions on this obstack for the
+     duration of a single parse.  The expansion text may sometimes have
+     to live past the end of the expansion, due to yacc lookahead.
+     Rather than try to be clever about saving the data for a single
+     token, we simply keep it all and delete it after parsing has
+     completed.  */
+  auto_obstack expansion_obstack;
+};
+
+/* This is set and cleared in c_parse.  */
+
+static struct c_parse_state *cpstate;
+
 int yyparse (void);
 
 static int yylex (void);
@@ -101,7 +145,7 @@ static int type_aggregate_p (struct type *);
     enum exp_opcode opcode;
 
     struct stoken_vector svec;
-    VEC (type_ptr) *tvec;
+    std::vector<struct type *> *tvec;
 
     struct type_stack *type_stack;
 
@@ -114,7 +158,7 @@ static int parse_number (struct parser_state *par_state,
 			 const char *, int, int, YYSTYPE *);
 static struct stoken operator_stoken (const char *);
 static struct stoken typename_stoken (const char *);
-static void check_parameter_typelist (VEC (type_ptr) *);
+static void check_parameter_typelist (std::vector<struct type *> *);
 static void write_destructor_name (struct parser_state *par_state,
 				   struct stoken);
 
@@ -190,7 +234,7 @@ static void c_print_token (FILE *file, int type, YYSTYPE value);
    legal basetypes.  */
 %token SIGNED_KEYWORD LONG SHORT INT_KEYWORD CONST_KEYWORD VOLATILE_KEYWORD DOUBLE_KEYWORD
 
-%token <sval> VARIABLE
+%token <sval> DOLLAR_VARIABLE
 
 %token <opcode> ASSIGN_MODIFY
 
@@ -552,10 +596,9 @@ arglist	:	arglist ',' exp   %prec ABOVE_COMMA
 	;
 
 function_method:       exp '(' parameter_typelist ')' const_or_volatile
-			{ int i;
-			  VEC (type_ptr) *type_list = $3;
-			  struct type *type_elt;
-			  LONGEST len = VEC_length (type_ptr, type_list);
+			{
+			  std::vector<struct type *> *type_list = $3;
+			  LONGEST len = type_list->size ();
 
 			  write_exp_elt_opcode (pstate, TYPE_INSTANCE);
 			  /* Save the const/volatile qualifiers as
@@ -564,13 +607,10 @@ function_method:       exp '(' parameter_typelist ')' const_or_volatile
 			  write_exp_elt_longcst (pstate,
 						 follow_type_instance_flags ());
 			  write_exp_elt_longcst (pstate, len);
-			  for (i = 0;
-			       VEC_iterate (type_ptr, type_list, i, type_elt);
-			       ++i)
+			  for (type *type_elt : *type_list)
 			    write_exp_elt_type (pstate, type_elt);
 			  write_exp_elt_longcst(pstate, len);
 			  write_exp_elt_opcode (pstate, TYPE_INSTANCE);
-			  VEC_free (type_ptr, type_list);
 			}
 	;
 
@@ -758,7 +798,7 @@ exp	:	FLOAT
 exp	:	variable
 	;
 
-exp	:	VARIABLE
+exp	:	DOLLAR_VARIABLE
 			{
 			  write_dollar_variable (pstate, $1);
 			}
@@ -1157,9 +1197,7 @@ ptr_operator:
 ptr_operator_ts: ptr_operator
 			{
 			  $$ = get_type_stack ();
-			  /* This cleanup is eventually run by
-			     c_parse.  */
-			  make_cleanup (type_stack_cleanup, $$);
+			  cpstate->type_stacks.emplace_back ($$);
 			}
 	;
 
@@ -1209,7 +1247,10 @@ array_mod:	'[' ']'
 	;
 
 func_mod:	'(' ')'
-			{ $$ = NULL; }
+			{
+			  $$ = new std::vector<struct type *>;
+			  cpstate->type_lists.emplace_back ($$);
+			}
 	|	'(' parameter_typelist ')'
 			{ $$ = $2; }
 	;
@@ -1471,7 +1512,7 @@ parameter_typelist:
 			{ check_parameter_typelist ($1); }
 	|	nonempty_typelist ',' DOTDOTDOT
 			{
-			  VEC_safe_push (type_ptr, $1, NULL);
+			  $1->push_back (NULL);
 			  check_parameter_typelist ($1);
 			  $$ = $1;
 			}
@@ -1480,13 +1521,16 @@ parameter_typelist:
 nonempty_typelist
 	:	type
 		{
-		  VEC (type_ptr) *typelist = NULL;
-		  VEC_safe_push (type_ptr, typelist, $1);
+		  std::vector<struct type *> *typelist
+		    = new std::vector<struct type *>;
+		  cpstate->type_lists.emplace_back (typelist);
+
+		  typelist->push_back ($1);
 		  $$ = typelist;
 		}
 	|	nonempty_typelist ',' type
 		{
-		  VEC_safe_push (type_ptr, $1, $3);
+		  $1->push_back ($3);
 		  $$ = $1;
 		}
 	;
@@ -1729,7 +1773,7 @@ operator_stoken (const char *op)
   st.ptr = buf;
 
   /* The toplevel (c_parse) will free the memory allocated here.  */
-  make_cleanup (free, buf);
+  cpstate->strings.emplace_back (buf);
   return st;
 };
 
@@ -1758,30 +1802,27 @@ type_aggregate_p (struct type *type)
 /* Validate a parameter typelist.  */
 
 static void
-check_parameter_typelist (VEC (type_ptr) *params)
+check_parameter_typelist (std::vector<struct type *> *params)
 {
   struct type *type;
   int ix;
 
-  for (ix = 0; VEC_iterate (type_ptr, params, ix, type); ++ix)
+  for (ix = 0; ix < params->size (); ++ix)
     {
+      type = (*params)[ix];
       if (type != NULL && TYPE_CODE (check_typedef (type)) == TYPE_CODE_VOID)
 	{
 	  if (ix == 0)
 	    {
-	      if (VEC_length (type_ptr, params) == 1)
+	      if (params->size () == 1)
 		{
 		  /* Ok.  */
 		  break;
 		}
-	      VEC_free (type_ptr, params);
 	      error (_("parameter types following 'void'"));
 	    }
 	  else
-	    {
-	      VEC_free (type_ptr, params);
-	      error (_("'void' invalid as parameter type"));
-	    }
+	    error (_("'void' invalid as parameter type"));
 	}
     }
 }
@@ -2413,32 +2454,6 @@ static const struct token ident_tokens[] =
     {"typeid", TYPEID, OP_TYPEID, FLAG_CXX}
   };
 
-/* When we find that lexptr (the global var defined in parse.c) is
-   pointing at a macro invocation, we expand the invocation, and call
-   scan_macro_expansion to save the old lexptr here and point lexptr
-   into the expanded text.  When we reach the end of that, we call
-   end_macro_expansion to pop back to the value we saved here.  The
-   macro expansion code promises to return only fully-expanded text,
-   so we don't need to "push" more than one level.
-
-   This is disgusting, of course.  It would be cleaner to do all macro
-   expansion beforehand, and then hand that to lexptr.  But we don't
-   really know where the expression ends.  Remember, in a command like
-
-     (gdb) break *ADDRESS if CONDITION
-
-   we evaluate ADDRESS in the scope of the current frame, but we
-   evaluate CONDITION in the scope of the breakpoint's location.  So
-   it's simply wrong to try to macro-expand the whole thing at once.  */
-static const char *macro_original_text;
-
-/* We save all intermediate macro expansions on this obstack for the
-   duration of a single parse.  The expansion text may sometimes have
-   to live past the end of the expansion, due to yacc lookahead.
-   Rather than try to be clever about saving the data for a single
-   token, we simply keep it all and delete it after parsing has
-   completed.  */
-static struct obstack expansion_obstack;
 
 static void
 scan_macro_expansion (char *expansion)
@@ -2446,44 +2461,35 @@ scan_macro_expansion (char *expansion)
   char *copy;
 
   /* We'd better not be trying to push the stack twice.  */
-  gdb_assert (! macro_original_text);
+  gdb_assert (! cpstate->macro_original_text);
 
   /* Copy to the obstack, and then free the intermediate
      expansion.  */
-  copy = (char *) obstack_copy0 (&expansion_obstack, expansion,
+  copy = (char *) obstack_copy0 (&cpstate->expansion_obstack, expansion,
 				 strlen (expansion));
   xfree (expansion);
 
   /* Save the old lexptr value, so we can return to it when we're done
      parsing the expanded text.  */
-  macro_original_text = lexptr;
+  cpstate->macro_original_text = lexptr;
   lexptr = copy;
 }
 
 static int
 scanning_macro_expansion (void)
 {
-  return macro_original_text != 0;
+  return cpstate->macro_original_text != 0;
 }
 
 static void
 finished_macro_expansion (void)
 {
   /* There'd better be something to pop back to.  */
-  gdb_assert (macro_original_text);
+  gdb_assert (cpstate->macro_original_text);
 
   /* Pop back to the original text.  */
-  lexptr = macro_original_text;
-  macro_original_text = 0;
-}
-
-static void
-scan_macro_cleanup (void *dummy)
-{
-  if (macro_original_text)
-    finished_macro_expansion ();
-
-  obstack_free (&expansion_obstack, NULL);
+  lexptr = cpstate->macro_original_text;
+  cpstate->macro_original_text = 0;
 }
 
 /* Return true iff the token represents a C++ cast operator.  */
@@ -2878,7 +2884,7 @@ lex_one_token (struct parser_state *par_state, bool *is_quoted_name)
       }
 
   if (*tokstart == '$')
-    return VARIABLE;
+    return DOLLAR_VARIABLE;
 
   if (parse_completion && *lexptr == '\0')
     saw_name_at_eof = 1;
@@ -3248,7 +3254,7 @@ yylex (void)
   if (checkpoint > 0)
     {
       current.value.sval.ptr
-	= (const char *) obstack_copy0 (&expansion_obstack,
+	= (const char *) obstack_copy0 (&cpstate->expansion_obstack,
 					current.value.sval.ptr,
 					current.value.sval.length);
 
@@ -3268,13 +3274,13 @@ yylex (void)
 int
 c_parse (struct parser_state *par_state)
 {
-  int result;
-  struct cleanup *back_to;
-
   /* Setting up the parser state.  */
   scoped_restore pstate_restore = make_scoped_restore (&pstate);
   gdb_assert (par_state != NULL);
   pstate = par_state;
+
+  c_parse_state cstate;
+  scoped_restore cstate_restore = make_scoped_restore (&cpstate, &cstate);
 
   gdb::unique_xmalloc_ptr<struct macro_scope> macro_scope;
 
@@ -3288,13 +3294,6 @@ c_parse (struct parser_state *par_state)
   scoped_restore restore_macro_scope
     = make_scoped_restore (&expression_macro_scope, macro_scope.get ());
 
-  /* Initialize macro expansion code.  */
-  obstack_init (&expansion_obstack);
-  gdb_assert (! macro_original_text);
-  /* Note that parsing (within yyparse) freely installs cleanups
-     assuming they'll be run here (below).  */
-  back_to = make_cleanup (scan_macro_cleanup, 0);
-
   scoped_restore restore_yydebug = make_scoped_restore (&yydebug,
 							parser_debug);
 
@@ -3306,10 +3305,7 @@ c_parse (struct parser_state *par_state)
   popping = 0;
   name_obstack.clear ();
 
-  result = yyparse ();
-  do_cleanups (back_to);
-
-  return result;
+  return yyparse ();
 }
 
 #ifdef YYBISON
@@ -3341,7 +3337,7 @@ c_print_token (FILE *file, int type, YYSTYPE value)
       break;
 
     case NSSTRING:
-    case VARIABLE:
+    case DOLLAR_VARIABLE:
       parser_fprintf (file, "sval<%s>", copy_name (value.sval));
       break;
 

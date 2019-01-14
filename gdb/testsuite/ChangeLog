@@ -1,3 +1,32 @@
+2019-01-12  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.base/style.exp: Don't include path in testname.
+
+2019-01-10  Keith Seitz  <keiths@redhat.com>
+
+	PR gdb/23712
+	PR symtab/23010
+	* gdb.dwarf2/multidictionary.exp: New file.
+
+2019-01-09  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* gdb.cp/demangle.exp (test_gnu_style_demangling): Rename to...
+	(test_gnuv3_style_demangling): ... this.
+	(test_lucid_style_demangling): Remove.
+	(test_arm_style_demangling): Remove.
+	(test_hp_style_demangling): Remove.
+	(do_tests): Remove calls to the above.
+
+2019-01-09  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* lib/mi-support.exp (mi_gdb_test): Remove interactive prompt
+	case.
+
+2019-01-06  Tom Tromey  <tom@tromey.com>
+
+	PR gdb/28155:
+	* gdb.dwarf2/typedef-void-finish.exp: New file.
+
 2018-12-28  Tom Tromey  <tom@tromey.com>
 	    Simon Marchi <simark@simark.ca>
 

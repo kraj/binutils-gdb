@@ -1,3 +1,22 @@
+2019-01-14  Sebastian Huber  <sebastian.huber@embedded-brains.de>
+
+	* ld.texi (--wrap): Add example to emphasise that only undefined
+	references are replaced by the linker.
+
+2019-01-09  Nick Clifton  <nickc@redhat.com>
+
+	* po/es.po: Updated Spanish translation.
+
+2019-01-09  Andrew Paprocki  <andrew@ishiboo.com>
+
+	* configure: Regenerate.
+
+2019-01-08  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/ld-elf/sec64k.exp: Use . rather than $objdir in
+	generated source file names.
+	* testsuite/ld-m68k/m68k-got.exp: Likewise.
+
 2019-01-01  Alan Modra  <amodra@gmail.com>
 
 	Update year range in copyright notice of all files.

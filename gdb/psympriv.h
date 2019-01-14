@@ -271,30 +271,51 @@ struct partial_symtab
   void *read_symtab_private;
 };
 
+/* Specify whether a partial psymbol should be allocated on the global
+   list or the static list.  */
+
+enum class psymbol_placement
+{
+  STATIC,
+  GLOBAL
+};
+
 /* Add any kind of symbol to a partial_symbol vector.  */
 
 extern void add_psymbol_to_list (const char *, int,
 				 int, domain_enum,
 				 enum address_class,
 				 short /* section */,
-				 std::vector<partial_symbol *> *,
+				 enum psymbol_placement,
 				 CORE_ADDR,
 				 enum language, struct objfile *);
 
-extern void init_psymbol_list (struct objfile *, int);
+/* Initialize storage for partial symbols.  If partial symbol storage
+   has already been initialized, this does nothing.  TOTAL_SYMBOLS is
+   an estimate of how many symbols there will be.  */
+
+extern void init_psymbol_list (struct objfile *objfile, int total_symbols);
 
 extern struct partial_symtab *start_psymtab_common (struct objfile *,
-						    const char *, CORE_ADDR,
-						    std::vector<partial_symbol *> &,
-						    std::vector<partial_symbol *> &);
+						    const char *, CORE_ADDR);
 
 extern void end_psymtab_common (struct objfile *, struct partial_symtab *);
 
-extern struct partial_symtab *allocate_psymtab (const char *,
-						struct objfile *)
+/* Allocate a new partial symbol table associated with OBJFILE.
+   FILENAME (which must be non-NULL) is the filename of this partial
+   symbol table; it is copied into the appropriate storage.  A new
+   partial symbol table is returned; aside from "next" and "filename",
+   its fields are initialized to zero.  */
+
+extern struct partial_symtab *allocate_psymtab (const char *filename,
+						struct objfile *objfile)
   ATTRIBUTE_NONNULL (1);
 
-extern void discard_psymtab (struct objfile *, struct partial_symtab *);
+static inline void
+discard_psymtab (struct objfile *objfile, struct partial_symtab *pst)
+{
+  objfile->partial_symtabs->discard_psymtab (pst);
+}
 
 /* Used when recording partial symbol tables.  On destruction,
    discards any partial symbol tables that have been built.  However,
@@ -305,15 +326,14 @@ class psymtab_discarder
 
   psymtab_discarder (struct objfile *objfile)
     : m_objfile (objfile),
-      m_psymtab (objfile->psymtabs)
+      m_psymtab (objfile->partial_symtabs->psymtabs)
   {
   }
 
   ~psymtab_discarder ()
   {
     if (m_objfile != NULL)
-      while (m_objfile->psymtabs != m_psymtab)
-	discard_psymtab (m_objfile, m_objfile->psymtabs);
+      m_objfile->partial_symtabs->discard_psymtabs_to (m_psymtab);
   }
 
   /* Keep any partial symbol tables that were built.  */
@@ -330,10 +350,5 @@ class psymtab_discarder
   /* How far back to free.  */
   struct partial_symtab *m_psymtab;
 };
-
-/* Traverse all psymtabs in one objfile.  */
-
-#define	ALL_OBJFILE_PSYMTABS(objfile, p) \
-    for ((p) = (objfile) -> psymtabs; (p) != NULL; (p) = (p) -> next)
 
 #endif /* PSYMPRIV_H */

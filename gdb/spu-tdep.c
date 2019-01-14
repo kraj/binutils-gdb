@@ -1883,11 +1883,10 @@ spu_overlay_update (struct obj_section *osect)
   /* All sections.  */
   else
     {
-      struct objfile *objfile;
-
-      ALL_OBJSECTIONS (objfile, osect)
-	if (section_is_overlay (osect))
-	  spu_overlay_update_osect (osect);
+      for (objfile *objfile : all_objfiles (current_program_space))
+	ALL_OBJFILE_OSECTIONS (objfile, osect)
+	  if (section_is_overlay (osect))
+	    spu_overlay_update_osect (osect);
     }
 }
 
@@ -2000,12 +1999,11 @@ spu_objfile_from_frame (struct frame_info *frame)
 {
   struct gdbarch *gdbarch = get_frame_arch (frame);
   struct gdbarch_tdep *tdep = gdbarch_tdep (gdbarch);
-  struct objfile *obj;
 
   if (gdbarch_bfd_arch_info (gdbarch)->arch != bfd_arch_spu)
     return NULL;
 
-  ALL_OBJFILES (obj)
+  for (objfile *obj : all_objfiles (current_program_space))
     {
       if (obj->sections != obj->sections_end
 	  && SPUADDR_SPU (obj_section_addr (obj->sections)) == tdep->id)

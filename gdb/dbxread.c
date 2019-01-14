@@ -298,9 +298,7 @@ static void add_old_header_file (const char *, int);
 static void add_this_object_header_file (int);
 
 static struct partial_symtab *start_psymtab (struct objfile *, const char *,
-					     CORE_ADDR, int,
-					     std::vector<partial_symbol *> &,
-					     std::vector<partial_symbol *> &);
+					     CORE_ADDR, int);
 
 /* Free up old header file tables.  */
 
@@ -538,9 +536,7 @@ dbx_symfile_read (struct objfile *objfile, symfile_add_flags symfile_flags)
     perror_with_name (objfile_name (objfile));
 
   /* Size the symbol table.  */
-  if (objfile->global_psymbols.capacity () == 0
-      && objfile->static_psymbols.capacity () == 0)
-    init_psymbol_list (objfile, DBX_SYMCOUNT (objfile));
+  init_psymbol_list (objfile, DBX_SYMCOUNT (objfile));
 
   symbol_size = DBX_SYMBOL_SIZE (objfile);
   symbol_table_offset = DBX_SYMTAB_OFFSET (objfile);
@@ -1302,9 +1298,7 @@ read_dbx_symtab (minimal_symbol_reader &reader, struct objfile *objfile)
 	      {
 		pst = start_psymtab (objfile,
 				     namestring, valu,
-				     first_so_symnum * symbol_size,
-				     objfile->global_psymbols,
-				     objfile->static_psymbols);
+				     first_so_symnum * symbol_size);
 		pst->dirname = dirname_nso;
 		dirname_nso = NULL;
 	      }
@@ -1480,7 +1474,7 @@ read_dbx_symtab (minimal_symbol_reader &reader, struct objfile *objfile)
 	      add_psymbol_to_list (sym_name, sym_len, 1,
 				   VAR_DOMAIN, LOC_STATIC,
 				   data_sect_index,
-				   &objfile->static_psymbols,
+				   psymbol_placement::STATIC,
 				   nlist.n_value, psymtab_language, objfile);
 	      continue;
 
@@ -1490,7 +1484,7 @@ read_dbx_symtab (minimal_symbol_reader &reader, struct objfile *objfile)
 	      add_psymbol_to_list (sym_name, sym_len, 1,
 				   VAR_DOMAIN, LOC_STATIC,
 				   data_sect_index,
-				   &objfile->global_psymbols,
+				   psymbol_placement::GLOBAL,
 				   nlist.n_value, psymtab_language, objfile);
 	      continue;
 
@@ -1507,14 +1501,14 @@ read_dbx_symtab (minimal_symbol_reader &reader, struct objfile *objfile)
 		{
 		  add_psymbol_to_list (sym_name, sym_len, 1,
 				       STRUCT_DOMAIN, LOC_TYPEDEF, -1,
-				       &objfile->static_psymbols,
+				       psymbol_placement::STATIC,
 				       0, psymtab_language, objfile);
 		  if (p[2] == 't')
 		    {
 		      /* Also a typedef with the same name.  */
 		      add_psymbol_to_list (sym_name, sym_len, 1,
 					   VAR_DOMAIN, LOC_TYPEDEF, -1,
-					   &objfile->static_psymbols,
+					   psymbol_placement::STATIC,
 					   0, psymtab_language, objfile);
 		      p += 1;
 		    }
@@ -1526,7 +1520,7 @@ read_dbx_symtab (minimal_symbol_reader &reader, struct objfile *objfile)
 		{
 		  add_psymbol_to_list (sym_name, sym_len, 1,
 				       VAR_DOMAIN, LOC_TYPEDEF, -1,
-				       &objfile->static_psymbols,
+				       psymbol_placement::STATIC,
 				       0, psymtab_language, objfile);
 		}
 	    check_enum:
@@ -1587,7 +1581,7 @@ read_dbx_symtab (minimal_symbol_reader &reader, struct objfile *objfile)
 			 enum constants in psymtabs, just in symtabs.  */
 		      add_psymbol_to_list (p, q - p, 1,
 					   VAR_DOMAIN, LOC_CONST, -1,
-					   &objfile->static_psymbols, 0,
+					   psymbol_placement::STATIC, 0,
 					   psymtab_language, objfile);
 		      /* Point past the name.  */
 		      p = q;
@@ -1605,7 +1599,7 @@ read_dbx_symtab (minimal_symbol_reader &reader, struct objfile *objfile)
 	      /* Constant, e.g. from "const" in Pascal.  */
 	      add_psymbol_to_list (sym_name, sym_len, 1,
 				   VAR_DOMAIN, LOC_CONST, -1,
-				   &objfile->static_psymbols, 0,
+				   psymbol_placement::STATIC, 0,
 				   psymtab_language, objfile);
 	      continue;
 
@@ -1661,7 +1655,7 @@ read_dbx_symtab (minimal_symbol_reader &reader, struct objfile *objfile)
 	      add_psymbol_to_list (sym_name, sym_len, 1,
 				   VAR_DOMAIN, LOC_BLOCK,
 				   SECT_OFF_TEXT (objfile),
-				   &objfile->static_psymbols,
+				   psymbol_placement::STATIC,
 				   nlist.n_value, psymtab_language, objfile);
 	      continue;
 
@@ -1720,7 +1714,7 @@ read_dbx_symtab (minimal_symbol_reader &reader, struct objfile *objfile)
 	      add_psymbol_to_list (sym_name, sym_len, 1,
 				   VAR_DOMAIN, LOC_BLOCK,
 				   SECT_OFF_TEXT (objfile),
-				   &objfile->global_psymbols,
+				   psymbol_placement::GLOBAL,
 				   nlist.n_value, psymtab_language, objfile);
 	      continue;
 
@@ -1916,12 +1910,10 @@ read_dbx_symtab (minimal_symbol_reader &reader, struct objfile *objfile)
 
 static struct partial_symtab *
 start_psymtab (struct objfile *objfile, const char *filename, CORE_ADDR textlow,
-	       int ldsymoff, std::vector<partial_symbol *> &global_psymbols,
-	       std::vector<partial_symbol *> &static_psymbols)
+	       int ldsymoff)
 {
   struct partial_symtab *result =
-    start_psymtab_common (objfile, filename, textlow,
-			  global_psymbols, static_psymbols);
+    start_psymtab_common (objfile, filename, textlow);
 
   result->read_symtab_private =
     XOBNEW (&objfile->objfile_obstack, struct symloc);
@@ -2014,18 +2006,14 @@ dbx_end_psymtab (struct objfile *objfile, struct partial_symtab *pst,
     pst->set_text_low (pst->raw_text_high ());
   else
     {
-      struct partial_symtab *p1;
-
       /* If we know our own starting text address, then walk through all other
          psymtabs for this objfile, and if any didn't know their ending text
          address, set it to our starting address.  Take care to not set our
          own ending address to our starting address.  */
 
-      ALL_OBJFILE_PSYMTABS (objfile, p1)
-      {
+      for (partial_symtab *p1 : objfile_psymtabs (objfile))
 	if (!p1->text_high_valid && p1->text_low_valid && p1 != pst)
 	  p1->set_text_high (pst->raw_text_low ());
-      }
     }
 
   /* End of kludge for patching Solaris textlow and texthigh.  */
@@ -2035,9 +2023,8 @@ dbx_end_psymtab (struct objfile *objfile, struct partial_symtab *pst,
   pst->number_of_dependencies = number_dependencies;
   if (number_dependencies)
     {
-      pst->dependencies = XOBNEWVEC (&objfile->objfile_obstack,
-				     struct partial_symtab *,
-				     number_dependencies);
+      pst->dependencies
+	= objfile->partial_symtabs->allocate_dependencies (number_dependencies);
       memcpy (pst->dependencies, dependency_list,
 	      number_dependencies * sizeof (struct partial_symtab *));
     }
@@ -2057,17 +2044,10 @@ dbx_end_psymtab (struct objfile *objfile, struct partial_symtab *pst,
       /* We could save slight bits of space by only making one of these,
          shared by the entire set of include files.  FIXME-someday.  */
       subpst->dependencies =
-	XOBNEW (&objfile->objfile_obstack, struct partial_symtab *);
+	objfile->partial_symtabs->allocate_dependencies (1);
       subpst->dependencies[0] = pst;
       subpst->number_of_dependencies = 1;
 
-      subpst->globals_offset =
-	subpst->n_global_syms =
-	subpst->statics_offset =
-	subpst->n_static_syms = 0;
-
-      subpst->readin = 0;
-      subpst->compunit_symtab = 0;
       subpst->read_symtab = pst->read_symtab;
     }
 

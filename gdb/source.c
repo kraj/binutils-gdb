@@ -233,20 +233,11 @@ clear_current_source_symtab_and_line (void)
   current_source_line = 0;
 }
 
-/* Set the source file default for the "list" command to be S.
-
-   If S is NULL, and we don't have a default, find one.  This
-   should only be called when the user actually tries to use the
-   default, since we produce an error if we can't find a reasonable
-   default.  Also, since this can cause symbols to be read, doing it
-   before we need to would make things slower than necessary.  */
+/* See source.h.  */
 
 void
 select_source_symtab (struct symtab *s)
 {
-  struct objfile *ofp;
-  struct compunit_symtab *cu;
-
   if (s)
     {
       current_source_symtab = s;
@@ -278,29 +269,35 @@ select_source_symtab (struct symtab *s)
 
   current_source_line = 1;
 
-  ALL_FILETABS (ofp, cu, s)
+  for (objfile *ofp : all_objfiles (current_program_space))
     {
-      const char *name = s->filename;
-      int len = strlen (name);
-
-      if (!(len > 2 && (strcmp (&name[len - 2], ".h") == 0
-			|| strcmp (name, "<<C++-namespaces>>") == 0)))
+      for (compunit_symtab *cu : objfile_compunits (ofp))
 	{
-	  current_source_pspace = current_program_space;
-	  current_source_symtab = s;
+	  for (symtab *symtab : compunit_filetabs (cu))
+	    {
+	      const char *name = symtab->filename;
+	      int len = strlen (name);
+
+	      if (!(len > 2 && (strcmp (&name[len - 2], ".h") == 0
+				|| strcmp (name, "<<C++-namespaces>>") == 0)))
+		{
+		  current_source_pspace = current_program_space;
+		  current_source_symtab = symtab;
+		}
+	    }
 	}
     }
 
   if (current_source_symtab)
     return;
 
-  ALL_OBJFILES (ofp)
-  {
-    if (ofp->sf)
-      s = ofp->sf->qf->find_last_source_symtab (ofp);
-    if (s)
-      current_source_symtab = s;
-  }
+  for (objfile *objfile : all_objfiles (current_program_space))
+    {
+      if (objfile->sf)
+	s = objfile->sf->qf->find_last_source_symtab (objfile);
+      if (s)
+	current_source_symtab = s;
+    }
   if (current_source_symtab)
     return;
 
@@ -351,26 +348,25 @@ show_directories_command (struct ui_file *file, int from_tty,
   show_directories_1 (NULL, from_tty);
 }
 
-/* Forget line positions and file names for the symtabs in a
-   particular objfile.  */
+/* See source.h.  */
 
 void
 forget_cached_source_info_for_objfile (struct objfile *objfile)
 {
-  struct compunit_symtab *cu;
-  struct symtab *s;
-
-  ALL_OBJFILE_FILETABS (objfile, cu, s)
+  for (compunit_symtab *cu : objfile_compunits (objfile))
     {
-      if (s->line_charpos != NULL)
+      for (symtab *s : compunit_filetabs (cu))
 	{
-	  xfree (s->line_charpos);
-	  s->line_charpos = NULL;
-	}
-      if (s->fullname != NULL)
-	{
-	  xfree (s->fullname);
-	  s->fullname = NULL;
+	  if (s->line_charpos != NULL)
+	    {
+	      xfree (s->line_charpos);
+	      s->line_charpos = NULL;
+	    }
+	  if (s->fullname != NULL)
+	    {
+	      xfree (s->fullname);
+	      s->fullname = NULL;
+	    }
 	}
     }
 
@@ -378,21 +374,18 @@ forget_cached_source_info_for_objfile (struct objfile *objfile)
     objfile->sf->qf->forget_cached_source_info (objfile);
 }
 
-/* Forget what we learned about line positions in source files, and
-   which directories contain them; must check again now since files
-   may be found in a different directory now.  */
+/* See source.h.  */
 
 void
 forget_cached_source_info (void)
 {
   struct program_space *pspace;
-  struct objfile *objfile;
 
   ALL_PSPACES (pspace)
-    ALL_PSPACE_OBJFILES (pspace, objfile)
-    {
-      forget_cached_source_info_for_objfile (objfile);
-    }
+    for (objfile *objfile : all_objfiles (pspace))
+      {
+	forget_cached_source_info_for_objfile (objfile);
+      }
 
   g_source_cache.clear ();
   last_source_visited = NULL;
@@ -1226,14 +1219,7 @@ get_filename_and_charpos (struct symtab *s, char **fullname)
     find_source_lines (s, desc.get ());
 }
 
-/* Print text describing the full name of the source file S
-   and the line number LINE and its corresponding character position.
-   The text starts with two Ctrl-z so that the Emacs-GDB interface
-   can easily find it.
-
-   MID_STATEMENT is nonzero if the PC is not at the beginning of that line.
-
-   Return 1 if successful, 0 if could not find the file.  */
+/* See source.h.  */
 
 int
 identify_source_line (struct symtab *s, int line, int mid_statement,
@@ -1346,6 +1332,11 @@ print_source_lines_base (struct symtab *s, int line, int stopline,
 
   last_source_error = 0;
 
+  /* If the user requested a sequence of lines that seems to go backward
+     (from high to low line numbers) then we don't print anything.  */
+  if (stopline <= line)
+    return;
+
   std::string lines;
   if (!g_source_cache.get_source_lines (s, line, stopline - 1, &lines))
     error (_("Line number %d out of range; %s has %d lines."),
@@ -1379,12 +1370,7 @@ print_source_lines_base (struct symtab *s, int line, int stopline,
 	  else if (c == '\r')
 	    {
 	      /* Skip a \r character, but only before a \n.  */
-	      if (iter[1] == '\n')
-		{
-		  ++iter;
-		  c = '\n';
-		}
-	      else
+	      if (*iter != '\n')
 		printf_filtered ("^%c", c + 0100);
 	    }
 	  else
@@ -1397,14 +1383,12 @@ print_source_lines_base (struct symtab *s, int line, int stopline,
       if (c == '\0')
 	break;
     }
-  if (lines.back () != '\n')
+  if (!lines.empty() && lines.back () != '\n')
     uiout->text ("\n");
 }
 
-/* Show source lines from the file of symtab S, starting with line
-   number LINE and stopping before line number STOPLINE.  If this is
-   not the command line version, then the source is shown in the source
-   window otherwise it is simply printed.  */
+
+/* See source.h.  */
 
 void
 print_source_lines (struct symtab *s, int line, int stopline,
@@ -1412,6 +1396,18 @@ print_source_lines (struct symtab *s, int line, int stopline,
 {
   print_source_lines_base (s, line, stopline, flags);
 }
+
+/* See source.h.  */
+
+void
+print_source_lines (struct symtab *s, source_lines_range line_range,
+		    print_source_lines_flags flags)
+{
+  print_source_lines_base (s, line_range.startline (),
+			   line_range.stopline (), flags);
+}
+
+
 
 /* Print info on range of pc's in a specified line.  */
 
@@ -1833,6 +1829,33 @@ set_substitute_path_command (const char *args, int from_tty)
 
   add_substitute_path_rule (argv[0], argv[1]);
   forget_cached_source_info ();
+}
+
+/* See source.h.  */
+
+source_lines_range::source_lines_range (int startline,
+					source_lines_range::direction dir)
+{
+  if (dir == source_lines_range::FORWARD)
+    {
+      LONGEST end = static_cast <LONGEST> (startline) + get_lines_to_list ();
+
+      if (end > INT_MAX)
+	end = INT_MAX;
+
+      m_startline = startline;
+      m_stopline = static_cast <int> (end);
+    }
+  else
+    {
+      LONGEST start = static_cast <LONGEST> (startline) - get_lines_to_list ();
+
+      if (start < 1)
+	start = 1;
+
+      m_startline = static_cast <int> (start);
+      m_stopline = startline;
+    }
 }
 
 

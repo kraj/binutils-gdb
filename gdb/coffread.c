@@ -661,9 +661,7 @@ coff_symfile_read (struct objfile *objfile, symfile_add_flags symfile_flags)
 
   if (pe_file)
     {
-      struct minimal_symbol *msym;
-
-      ALL_OBJFILE_MSYMBOLS (objfile, msym)
+      for (minimal_symbol *msym : objfile_msymbols (objfile))
 	{
 	  const char *name = MSYMBOL_LINKAGE_NAME (msym);
 
@@ -1205,11 +1203,11 @@ coff_symtab_read (minimal_symbol_reader &reader,
   /* Patch up any opaque types (references to types that are not defined
      in the file where they are referenced, e.g. "struct foo *bar").  */
   {
-    struct compunit_symtab *cu;
-    struct symtab *s;
-
-    ALL_OBJFILE_FILETABS (objfile, cu, s)
-      patch_opaque_types (s);
+    for (compunit_symtab *cu : objfile_compunits (objfile))
+      {
+	for (symtab *s : compunit_filetabs (cu))
+	  patch_opaque_types (s);
+      }
   }
 
   coffread_objfile = NULL;

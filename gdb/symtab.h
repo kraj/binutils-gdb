@@ -29,6 +29,7 @@
 #include "common/enum-flags.h"
 #include "common/function-view.h"
 #include "common/gdb_optional.h"
+#include "common/next-iterator.h"
 #include "completer.h"
 
 /* Opaque declarations.  */
@@ -493,10 +494,11 @@ extern void symbol_set_language (struct general_symbol_info *symbol,
 /* Set the linkage and natural names of a symbol, by demangling
    the linkage name.  */
 #define SYMBOL_SET_NAMES(symbol,linkage_name,len,copy_name,objfile)	\
-  symbol_set_names (&(symbol)->ginfo, linkage_name, len, copy_name, objfile)
+  symbol_set_names (&(symbol)->ginfo, linkage_name, len, copy_name, \
+		    (objfile)->per_bfd)
 extern void symbol_set_names (struct general_symbol_info *symbol,
 			      const char *linkage_name, int len, int copy_name,
-			      struct objfile *objfile);
+			      struct objfile_per_bfd_storage *per_bfd);
 
 /* Now come lots of name accessor macros.  Short version as to when to
    use which: Use SYMBOL_NATURAL_NAME to refer to the name of the
@@ -733,7 +735,8 @@ struct minimal_symbol
 #define MSYMBOL_SEARCH_NAME(symbol)					 \
    (symbol_search_name (&(symbol)->mginfo))
 #define MSYMBOL_SET_NAMES(symbol,linkage_name,len,copy_name,objfile)	\
-  symbol_set_names (&(symbol)->mginfo, linkage_name, len, copy_name, objfile)
+  symbol_set_names (&(symbol)->mginfo, linkage_name, len, copy_name, \
+		    (objfile)->per_bfd)
 
 #include "minsyms.h"
 
@@ -1485,10 +1488,16 @@ struct compunit_symtab
 #define COMPUNIT_CALL_SITE_HTAB(cust) ((cust)->call_site_htab)
 #define COMPUNIT_MACRO_TABLE(cust) ((cust)->macro_table)
 
-/* Iterate over all file tables (struct symtab) within a compunit.  */
+/* A range adapter to allowing iterating over all the file tables
+   within a compunit.  */
 
-#define ALL_COMPUNIT_FILETABS(cu, s) \
-  for ((s) = (cu) -> filetabs; (s) != NULL; (s) = (s) -> next)
+struct compunit_filetabs : public next_adapter<struct symtab>
+{
+  compunit_filetabs (struct compunit_symtab *cu)
+    : next_adapter<struct symtab> (cu->filetabs)
+  {
+  }
+};
 
 /* Return the primary symtab of CUST.  */
 
@@ -1881,30 +1890,6 @@ extern void resolve_sal_pc (struct symtab_and_line *);
 /* solib.c */
 
 extern void clear_solib (void);
-
-/* source.c */
-
-extern int identify_source_line (struct symtab *, int, int, CORE_ADDR);
-
-/* Flags passed as 4th argument to print_source_lines.  */
-
-enum print_source_lines_flag
-  {
-    /* Do not print an error message.  */
-    PRINT_SOURCE_LINES_NOERROR = (1 << 0),
-
-    /* Print the filename in front of the source lines.  */
-    PRINT_SOURCE_LINES_FILENAME = (1 << 1)
-  };
-DEF_ENUM_FLAGS_TYPE (enum print_source_lines_flag, print_source_lines_flags);
-
-extern void print_source_lines (struct symtab *, int, int,
-				print_source_lines_flags);
-
-extern void forget_cached_source_info_for_objfile (struct objfile *);
-extern void forget_cached_source_info (void);
-
-extern void select_source_symtab (struct symtab *);
 
 /* The reason we're calling into a completion match list collector
    function.  */

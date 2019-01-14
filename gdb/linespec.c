@@ -1130,7 +1130,6 @@ iterate_over_all_matching_symtabs
    struct program_space *search_pspace, bool include_inline,
    gdb::function_view<symbol_found_callback_ftype> callback)
 {
-  struct objfile *objfile;
   struct program_space *pspace;
 
   ALL_PSPACES (pspace)
@@ -1142,46 +1141,46 @@ iterate_over_all_matching_symtabs
 
     set_current_program_space (pspace);
 
-    ALL_OBJFILES (objfile)
-    {
-      struct compunit_symtab *cu;
+    for (objfile *objfile : all_objfiles (current_program_space))
+      {
+	if (objfile->sf)
+	  objfile->sf->qf->expand_symtabs_matching (objfile,
+						    NULL,
+						    lookup_name,
+						    NULL, NULL,
+						    search_domain);
 
-      if (objfile->sf)
-	objfile->sf->qf->expand_symtabs_matching (objfile,
-						  NULL,
-						  lookup_name,
-						  NULL, NULL,
-						  search_domain);
+	for (compunit_symtab *cu : objfile_compunits (objfile))
+	  {
+	    struct symtab *symtab = COMPUNIT_FILETABS (cu);
 
-      ALL_OBJFILE_COMPUNITS (objfile, cu)
-	{
-	  struct symtab *symtab = COMPUNIT_FILETABS (cu);
+	    iterate_over_file_blocks (symtab, lookup_name, name_domain,
+				      callback);
 
-	  iterate_over_file_blocks (symtab, lookup_name, name_domain, callback);
+	    if (include_inline)
+	      {
+		struct block *block;
+		int i;
 
-	  if (include_inline)
-	    {
-	      struct block *block;
-	      int i;
-
-	      for (i = FIRST_LOCAL_BLOCK;
-		   i < BLOCKVECTOR_NBLOCKS (SYMTAB_BLOCKVECTOR (symtab));
-		   i++)
-		{
-		  block = BLOCKVECTOR_BLOCK (SYMTAB_BLOCKVECTOR (symtab), i);
-		  state->language->la_iterate_over_symbols
-		    (block, lookup_name, name_domain, [&] (block_symbol *bsym)
-		     {
-		       /* Restrict calls to CALLBACK to symbols
-			  representing inline symbols only.  */
-		       if (SYMBOL_INLINED (bsym->symbol))
-			 return callback (bsym);
-		       return true;
-		     });
-		}
-	    }
-	}
-    }
+		for (i = FIRST_LOCAL_BLOCK;
+		     i < BLOCKVECTOR_NBLOCKS (SYMTAB_BLOCKVECTOR (symtab));
+		     i++)
+		  {
+		    block = BLOCKVECTOR_BLOCK (SYMTAB_BLOCKVECTOR (symtab), i);
+		    state->language->la_iterate_over_symbols
+		      (block, lookup_name, name_domain,
+		       [&] (block_symbol *bsym)
+		       {
+			 /* Restrict calls to CALLBACK to symbols
+			    representing inline symbols only.  */
+			 if (SYMBOL_INLINED (bsym->symbol))
+			   return callback (bsym);
+			 return true;
+		       });
+		  }
+	      }
+	  }
+      }
   }
 }
 
@@ -1251,17 +1250,6 @@ find_methods (struct type *t, enum language t_lang, const char *name,
 	   --method_counter)
 	{
 	  const char *method_name = TYPE_FN_FIELDLIST_NAME (t, method_counter);
-	  char dem_opname[64];
-
-	  if (startswith (method_name, "__") ||
-	      startswith (method_name, "op") ||
-	      startswith (method_name, "type"))
-	    {
-	      if (cplus_demangle_opname (method_name, dem_opname, DMGL_ANSI))
-		method_name = dem_opname;
-	      else if (cplus_demangle_opname (method_name, dem_opname, 0))
-		method_name = dem_opname;
-	    }
 
 	  if (symbol_name_compare (method_name, lookup_name, NULL))
 	    {
@@ -2767,6 +2755,7 @@ static void
 linespec_state_destructor (struct linespec_state *self)
 {
   htab_delete (self->addr_set);
+  xfree (self->canonical_names);
 }
 
 /* Delete a linespec parser.  */
@@ -4361,8 +4350,6 @@ search_minsyms_for_name (struct collect_info *info,
 
       ALL_PSPACES (pspace)
       {
-	struct objfile *objfile;
-
 	if (search_pspace != NULL && search_pspace != pspace)
 	  continue;
 	if (pspace->executing_startup)
@@ -4370,17 +4357,17 @@ search_minsyms_for_name (struct collect_info *info,
 
 	set_current_program_space (pspace);
 
-	ALL_OBJFILES (objfile)
-	{
-	  iterate_over_minimal_symbols (objfile, name,
-					[&] (struct minimal_symbol *msym)
+	for (objfile *objfile : all_objfiles (current_program_space))
+	  {
+	    iterate_over_minimal_symbols (objfile, name,
+					  [&] (struct minimal_symbol *msym)
 					  {
 					    add_minsym (msym, objfile, nullptr,
 							info->state->list_mode,
 							&minsyms);
 					    return false;
 					  });
-	}
+	  }
       }
     }
   else

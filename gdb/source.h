@@ -127,4 +127,100 @@ extern void clear_current_source_symtab_and_line (void);
 
 /* Add a source path substitution rule.  */
 extern void add_substitute_path_rule (char *, char *);
+
+/* Print text describing the full name of the source file S
+   and the line number LINE and its corresponding character position.
+   The text starts with two Ctrl-z so that the Emacs-GDB interface
+   can easily find it.
+
+   MID_STATEMENT is nonzero if the PC is not at the beginning of that line.
+
+   Return 1 if successful, 0 if could not find the file.  */
+extern int identify_source_line (struct symtab *s, int line,
+				 int mid_statement, CORE_ADDR pc);
+
+/* Flags passed as 4th argument to print_source_lines.  */
+enum print_source_lines_flag
+  {
+    /* Do not print an error message.  */
+    PRINT_SOURCE_LINES_NOERROR = (1 << 0),
+
+    /* Print the filename in front of the source lines.  */
+    PRINT_SOURCE_LINES_FILENAME = (1 << 1)
+  };
+DEF_ENUM_FLAGS_TYPE (enum print_source_lines_flag, print_source_lines_flags);
+
+/* Show source lines from the file of symtab S, starting with line
+   number LINE and stopping before line number STOPLINE.  If this is
+   not the command line version, then the source is shown in the source
+   window otherwise it is simply printed.  */
+extern void print_source_lines (struct symtab *s, int line, int stopline,
+				print_source_lines_flags flags);
+
+/* Wrap up the logic to build a line number range for passing to
+   print_source_lines when using get_lines_to_list.  An instance of this
+   class can be built from a single line number and a direction (forward or
+   backward) the range is then computed using get_lines_to_list.  */
+class source_lines_range
+{
+public:
+  /* When constructing the range from a single line number, does the line
+     range extend forward, or backward.  */
+  enum direction
+  {
+   FORWARD,
+   BACKWARD
+  };
+
+  /* Construct a SOURCE_LINES_RANGE starting at STARTLINE and extending in
+   direction DIR.  The number of lines is from GET_LINES_TO_LIST.  If the
+   direction is backward then the start is actually (STARTLINE -
+   GET_LINES_TO_LIST).  There is also logic in place to ensure the start
+   is always 1 or more, and the end will be at most INT_MAX.  */
+  explicit source_lines_range (int startline, direction dir = FORWARD);
+
+  /* Construct a SOURCE_LINES_RANGE from STARTLINE to STOPLINE.  */
+  explicit source_lines_range (int startline, int stopline)
+    : m_startline (startline),
+      m_stopline (stopline)
+  { /* Nothing.  */ }
+
+  /* Return the line to start listing from.  */
+  int startline () const
+  { return m_startline; }
+
+  /* Return the line after the last line that should be listed.  */
+  int stopline () const
+  { return m_stopline; }
+
+private:
+
+  /* The start and end of the range.  */
+  int m_startline;
+  int m_stopline;
+};
+
+/* Variation of previous print_source_lines that takes a range instead of a
+   start and end line number.  */
+extern void print_source_lines (struct symtab *s, source_lines_range r,
+				print_source_lines_flags flags);
+
+/* Forget line positions and file names for the symtabs in a
+   particular objfile.  */
+extern void forget_cached_source_info_for_objfile (struct objfile *);
+
+/* Forget what we learned about line positions in source files, and
+   which directories contain them; must check again now since files
+   may be found in a different directory now.  */
+extern void forget_cached_source_info (void);
+
+/* Set the source file default for the "list" command to be S.
+
+   If S is NULL, and we don't have a default, find one.  This
+   should only be called when the user actually tries to use the
+   default, since we produce an error if we can't find a reasonable
+   default.  Also, since this can cause symbols to be read, doing it
+   before we need to would make things slower than necessary.  */
+extern void select_source_symtab (struct symtab *s);
+
 #endif

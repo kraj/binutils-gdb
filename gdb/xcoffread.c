@@ -2026,16 +2026,13 @@ static unsigned int first_fun_line_offset;
 
 static struct partial_symtab *
 xcoff_start_psymtab (struct objfile *objfile,
-		     const char *filename, int first_symnum,
-		     std::vector<partial_symbol *> &global_psymbols,
-		     std::vector<partial_symbol *> &static_psymbols)
+		     const char *filename, int first_symnum)
 {
   struct partial_symtab *result =
     start_psymtab_common (objfile,
 			  filename,
 			  /* We fill in textlow later.  */
-			  0,
-			  global_psymbols, static_psymbols);
+			  0);
 
   result->read_symtab_private =
     XOBNEW (&objfile->objfile_obstack, struct symloc);
@@ -2078,9 +2075,8 @@ xcoff_end_psymtab (struct objfile *objfile, struct partial_symtab *pst,
   pst->number_of_dependencies = number_dependencies;
   if (number_dependencies)
     {
-      pst->dependencies = XOBNEWVEC (&objfile->objfile_obstack,
-				     struct partial_symtab *,
-				     number_dependencies);
+      pst->dependencies
+	= objfile->partial_symtabs->allocate_dependencies (number_dependencies);
       memcpy (pst->dependencies, dependency_list,
 	      number_dependencies * sizeof (struct partial_symtab *));
     }
@@ -2099,17 +2095,10 @@ xcoff_end_psymtab (struct objfile *objfile, struct partial_symtab *pst,
       /* We could save slight bits of space by only making one of these,
          shared by the entire set of include files.  FIXME-someday.  */
       subpst->dependencies =
-	  XOBNEW (&objfile->objfile_obstack, struct partial_symtab *);
+	objfile->partial_symtabs->allocate_dependencies (1);
       subpst->dependencies[0] = pst;
       subpst->number_of_dependencies = 1;
 
-      subpst->globals_offset =
-	subpst->n_global_syms =
-	subpst->statics_offset =
-	subpst->n_static_syms = 0;
-
-      subpst->readin = 0;
-      subpst->compunit_symtab = NULL;
       subpst->read_symtab = pst->read_symtab;
     }
 
@@ -2324,9 +2313,7 @@ scan_xcoff_symtab (minimal_symbol_reader &reader,
 			    pst = xcoff_start_psymtab
 			      (objfile,
 			       filestring,
-			       symnum_before,
-			       objfile->global_psymbols,
-			       objfile->static_psymbols);
+			       symnum_before);
 			  }
 		      }
 		    /* Activate the misc_func_recorded mechanism for
@@ -2508,9 +2495,7 @@ scan_xcoff_symtab (minimal_symbol_reader &reader,
 
 	    pst = xcoff_start_psymtab (objfile,
 				       filestring,
-				       symnum_before,
-				       objfile->global_psymbols,
-				       objfile->static_psymbols);
+				       symnum_before);
 	    last_csect_name = NULL;
 	  }
 	  break;
@@ -2668,7 +2653,7 @@ scan_xcoff_symtab (minimal_symbol_reader &reader,
 		add_psymbol_to_list (namestring, p - namestring, 1,
 				     VAR_DOMAIN, LOC_STATIC,
 				     SECT_OFF_DATA (objfile),
-				     &objfile->static_psymbols,
+				     psymbol_placement::STATIC,
 				     symbol.n_value,
 				     psymtab_language, objfile);
 		continue;
@@ -2679,7 +2664,7 @@ scan_xcoff_symtab (minimal_symbol_reader &reader,
 		add_psymbol_to_list (namestring, p - namestring, 1,
 				     VAR_DOMAIN, LOC_STATIC,
 				     SECT_OFF_DATA (objfile),
-				     &objfile->global_psymbols,
+				     psymbol_placement::GLOBAL,
 				     symbol.n_value,
 				     psymtab_language, objfile);
 		continue;
@@ -2697,14 +2682,14 @@ scan_xcoff_symtab (minimal_symbol_reader &reader,
 		  {
 		    add_psymbol_to_list (namestring, p - namestring, 1,
 					 STRUCT_DOMAIN, LOC_TYPEDEF, -1,
-					 &objfile->static_psymbols,
+					 psymbol_placement::STATIC,
 					 0, psymtab_language, objfile);
 		    if (p[2] == 't')
 		      {
 			/* Also a typedef with the same name.  */
 			add_psymbol_to_list (namestring, p - namestring, 1,
 					     VAR_DOMAIN, LOC_TYPEDEF, -1,
-					     &objfile->static_psymbols,
+					     psymbol_placement::STATIC,
 					     0, psymtab_language, objfile);
 			p += 1;
 		      }
@@ -2716,7 +2701,7 @@ scan_xcoff_symtab (minimal_symbol_reader &reader,
 		  {
 		    add_psymbol_to_list (namestring, p - namestring, 1,
 					 VAR_DOMAIN, LOC_TYPEDEF, -1,
-					 &objfile->static_psymbols,
+					 psymbol_placement::STATIC,
 					 0, psymtab_language, objfile);
 		  }
 	      check_enum:
@@ -2778,7 +2763,7 @@ scan_xcoff_symtab (minimal_symbol_reader &reader,
 			   enum constants in psymtabs, just in symtabs.  */
 			add_psymbol_to_list (p, q - p, 1,
 					     VAR_DOMAIN, LOC_CONST, -1,
-					     &objfile->static_psymbols,
+					     psymbol_placement::STATIC,
 					     0, psymtab_language, objfile);
 			/* Point past the name.  */
 			p = q;
@@ -2796,7 +2781,7 @@ scan_xcoff_symtab (minimal_symbol_reader &reader,
 		/* Constant, e.g. from "const" in Pascal.  */
 		add_psymbol_to_list (namestring, p - namestring, 1,
 				     VAR_DOMAIN, LOC_CONST, -1,
-				     &objfile->static_psymbols,
+				     psymbol_placement::STATIC,
 				     0, psymtab_language, objfile);
 		continue;
 
@@ -2814,7 +2799,7 @@ scan_xcoff_symtab (minimal_symbol_reader &reader,
 		add_psymbol_to_list (namestring, p - namestring, 1,
 				     VAR_DOMAIN, LOC_BLOCK,
 				     SECT_OFF_TEXT (objfile),
-				     &objfile->static_psymbols,
+				     psymbol_placement::STATIC,
 				     symbol.n_value,
 				     psymtab_language, objfile);
 		continue;
@@ -2844,7 +2829,7 @@ scan_xcoff_symtab (minimal_symbol_reader &reader,
 		add_psymbol_to_list (namestring, p - namestring, 1,
 				     VAR_DOMAIN, LOC_BLOCK,
 				     SECT_OFF_TEXT (objfile),
-				     &objfile->global_psymbols,
+				     psymbol_placement::GLOBAL,
 				     symbol.n_value,
 				     psymtab_language, objfile);
 		continue;
@@ -3005,14 +2990,11 @@ xcoff_initial_scan (struct objfile *objfile, symfile_add_flags symfile_flags)
   if (val != size)
     perror_with_name (_("reading symbol table"));
 
-  /* If we are reinitializing, or if we have never loaded syms yet, init.  */
-  if (objfile->global_psymbols.capacity () == 0
-      && objfile->static_psymbols.capacity () == 0)
-    /* I'm not sure how how good num_symbols is; the rule of thumb in
-       init_psymbol_list was developed for a.out.  On the one hand,
-       num_symbols includes auxents.  On the other hand, it doesn't
-       include N_SLINE.  */
-    init_psymbol_list (objfile, num_symbols);
+  /* I'm not sure how how good num_symbols is; the rule of thumb in
+     init_psymbol_list was developed for a.out.  On the one hand,
+     num_symbols includes auxents.  On the other hand, it doesn't
+     include N_SLINE.  */
+  init_psymbol_list (objfile, num_symbols);
 
   scoped_free_pendings free_pending;
   minimal_symbol_reader reader (objfile);

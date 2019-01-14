@@ -2552,7 +2552,6 @@ read_member_functions (struct field_info *fip, const char **pp,
 	}
       else
 	{
-	  int has_stub = 0;
 	  int has_destructor = 0, has_other = 0;
 	  int is_v3 = 0;
 	  struct next_fnfield *tmp_sublist;
@@ -2616,8 +2615,6 @@ read_member_functions (struct field_info *fip, const char **pp,
 	  tmp_sublist = sublist;
 	  while (tmp_sublist != NULL)
 	    {
-	      if (tmp_sublist->fn_field.is_stub)
-		has_stub = 1;
 	      if (tmp_sublist->fn_field.physname[0] == '_'
 		  && tmp_sublist->fn_field.physname[1] == 'Z')
 		is_v3 = 1;
@@ -2702,23 +2699,6 @@ read_member_functions (struct field_info *fip, const char **pp,
 	      new_fnlist->fn_fieldlist.name =
 		obconcat (&objfile->objfile_obstack,
 			  "~", main_fn_name, (char *)NULL);
-	      xfree (main_fn_name);
-	    }
-	  else if (!has_stub)
-	    {
-	      char dem_opname[256];
-	      int ret;
-
-	      ret = cplus_demangle_opname (new_fnlist->fn_fieldlist.name,
-					      dem_opname, DMGL_ANSI);
-	      if (!ret)
-		ret = cplus_demangle_opname (new_fnlist->fn_fieldlist.name,
-					     dem_opname, 0);
-	      if (ret)
-		new_fnlist->fn_fieldlist.name
-		  = ((const char *)
-		     obstack_copy0 (&objfile->objfile_obstack, dem_opname,
-				    strlen (dem_opname)));
 	      xfree (main_fn_name);
 	    }
 
@@ -4593,7 +4573,6 @@ void
 scan_file_globals (struct objfile *objfile)
 {
   int hash;
-  struct minimal_symbol *msymbol;
   struct symbol *sym, *prev;
   struct objfile *resolve_objfile;
 
@@ -4619,7 +4598,7 @@ scan_file_globals (struct objfile *objfile)
       if (hash >= HASHSIZE)
 	return;
 
-      ALL_OBJFILE_MSYMBOLS (resolve_objfile, msymbol)
+      for (minimal_symbol *msymbol : objfile_msymbols (resolve_objfile))
 	{
 	  QUIT;
 

@@ -90,17 +90,8 @@ valpy_dealloc (PyObject *obj)
 
   value_decref (self->value);
 
-  if (self->address)
-    /* Use braces to appease gcc warning.  *sigh*  */
-    {
-      Py_DECREF (self->address);
-    }
-
-  if (self->type)
-    {
-      Py_DECREF (self->type);
-    }
-
+  Py_XDECREF (self->address);
+  Py_XDECREF (self->type);
   Py_XDECREF (self->dynamic_type);
 
   Py_TYPE (self)->tp_free (self);
@@ -1661,9 +1652,7 @@ convert_value_from_python (PyObject *obj)
 	         ULONGEST instead.  */
 	      if (PyErr_ExceptionMatches (PyExc_OverflowError))
 		{
-		  PyObject *etype, *evalue, *etraceback;
-
-		  PyErr_Fetch (&etype, &evalue, &etraceback);
+		  gdbpy_err_fetch fetched_error;
 		  gdbpy_ref<> zero (PyInt_FromLong (0));
 
 		  /* Check whether obj is positive.  */
@@ -1676,8 +1665,10 @@ convert_value_from_python (PyObject *obj)
 			value = value_from_ulongest (builtin_type_upylong, ul);
 		    }
 		  else
-		    /* There's nothing we can do.  */
-		    PyErr_Restore (etype, evalue, etraceback);
+		    {
+		      /* There's nothing we can do.  */
+		      fetched_error.restore ();
+		    }
 		}
 	    }
 	  else

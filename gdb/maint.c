@@ -348,7 +348,6 @@ maintenance_info_sections (const char *arg, int from_tty)
       printf_filtered (_("file type %s.\n"), bfd_get_target (exec_bfd));
       if (arg && *arg && match_substring (arg, "ALLOBJ"))
 	{
-	  struct objfile *ofile;
 	  struct obj_section *osect;
 
 	  /* Only this function cares about the 'ALLOBJ' argument; 
@@ -358,7 +357,7 @@ maintenance_info_sections (const char *arg, int from_tty)
 	  if (strcmp (arg, "ALLOBJ") == 0)
 	    arg = NULL;
 
-	  ALL_OBJFILES (ofile)
+	  for (objfile *ofile : all_objfiles (current_program_space))
 	    {
 	      printf_filtered (_("  Object file: %s\n"), 
 			       bfd_get_filename (ofile->obfd));
@@ -431,7 +430,6 @@ maintenance_translate_address (const char *arg, int from_tty)
   struct obj_section *sect;
   const char *p;
   struct bound_minimal_symbol sym;
-  struct objfile *objfile;
 
   if (arg == NULL || *arg == 0)
     error (_("requires argument (address or section + address)"));
@@ -449,14 +447,15 @@ maintenance_translate_address (const char *arg, int from_tty)
       int arg_len = p - arg;
       p = skip_spaces (p + 1);
 
-      ALL_OBJSECTIONS (objfile, sect)
-      {
-	if (strncmp (sect->the_bfd_section->name, arg, arg_len) == 0)
-	  break;
-      }
+      for (objfile *objfile : all_objfiles (current_program_space))
+	ALL_OBJFILE_OSECTIONS (objfile, sect)
+	  {
+	    if (strncmp (sect->the_bfd_section->name, arg, arg_len) == 0)
+	      goto found;
+	  }
 
-      if (!objfile)
-	error (_("Unknown section %s."), arg);
+      error (_("Unknown section %s."), arg);
+    found: ;
     }
 
   address = parse_and_eval_address (p);
@@ -763,9 +762,6 @@ static void
 count_symtabs_and_blocks (int *nr_symtabs_ptr, int *nr_compunit_symtabs_ptr,
 			  int *nr_blocks_ptr)
 {
-  struct objfile *o;
-  struct compunit_symtab *cu;
-  struct symtab *s;
   int nr_symtabs = 0;
   int nr_compunit_symtabs = 0;
   int nr_blocks = 0;
@@ -775,12 +771,15 @@ count_symtabs_and_blocks (int *nr_symtabs_ptr, int *nr_compunit_symtabs_ptr,
      current_program_space may be NULL.  */
   if (current_program_space != NULL)
     {
-      ALL_COMPUNITS (o, cu)
+      for (objfile *o : all_objfiles (current_program_space))
 	{
-	  ++nr_compunit_symtabs;
-	  nr_blocks += BLOCKVECTOR_NBLOCKS (COMPUNIT_BLOCKVECTOR (cu));
-	  ALL_COMPUNIT_FILETABS (cu, s)
-	    ++nr_symtabs;
+	  for (compunit_symtab *cu : objfile_compunits (o))
+	    {
+	      ++nr_compunit_symtabs;
+	      nr_blocks += BLOCKVECTOR_NBLOCKS (COMPUNIT_BLOCKVECTOR (cu));
+	      nr_symtabs += std::distance (compunit_filetabs (cu).begin (),
+					   compunit_filetabs (cu).end ());
+	    }
 	}
     }
 

@@ -4913,8 +4913,6 @@ struct bound_minimal_symbol
 ada_lookup_simple_minsym (const char *name)
 {
   struct bound_minimal_symbol result;
-  struct objfile *objfile;
-  struct minimal_symbol *msymbol;
 
   memset (&result, 0, sizeof (result));
 
@@ -4924,16 +4922,19 @@ ada_lookup_simple_minsym (const char *name)
   symbol_name_matcher_ftype *match_name
     = ada_get_symbol_name_matcher (lookup_name);
 
-  ALL_MSYMBOLS (objfile, msymbol)
-  {
-    if (match_name (MSYMBOL_LINKAGE_NAME (msymbol), lookup_name, NULL)
-        && MSYMBOL_TYPE (msymbol) != mst_solib_trampoline)
-      {
-	result.minsym = msymbol;
-	result.objfile = objfile;
-	break;
-      }
-  }
+  for (objfile *objfile : all_objfiles (current_program_space))
+    {
+      for (minimal_symbol *msymbol : objfile_msymbols (objfile))
+	{
+	  if (match_name (MSYMBOL_LINKAGE_NAME (msymbol), lookup_name, NULL)
+	      && MSYMBOL_TYPE (msymbol) != mst_solib_trampoline)
+	    {
+	      result.minsym = msymbol;
+	      result.objfile = objfile;
+	      break;
+	    }
+	}
+    }
 
   return result;
 }
@@ -5604,8 +5605,6 @@ add_nonlocal_symbols (struct obstack *obstackp,
 		      const lookup_name_info &lookup_name,
 		      domain_enum domain, int global)
 {
-  struct objfile *objfile;
-  struct compunit_symtab *cu;
   struct match_data data;
 
   memset (&data, 0, sizeof data);
@@ -5613,7 +5612,7 @@ add_nonlocal_symbols (struct obstack *obstackp,
 
   bool is_wild_match = lookup_name.ada ().wild_match_p ();
 
-  ALL_OBJFILES (objfile)
+  for (objfile *objfile : all_objfiles (current_program_space))
     {
       data.objfile = objfile;
 
@@ -5630,7 +5629,7 @@ add_nonlocal_symbols (struct obstack *obstackp,
 					       symbol_name_match_type::FULL,
 					       compare_names);
 
-      ALL_OBJFILE_COMPUNITS (objfile, cu)
+      for (compunit_symtab *cu : objfile_compunits (objfile))
 	{
 	  const struct block *global_block
 	    = BLOCKVECTOR_BLOCK (COMPUNIT_BLOCKVECTOR (cu), GLOBAL_BLOCK);
@@ -5646,7 +5645,7 @@ add_nonlocal_symbols (struct obstack *obstackp,
       const char *name = ada_lookup_name (lookup_name);
       std::string name1 = std::string ("<_ada_") + name + '>';
 
-      ALL_OBJFILES (objfile)
+      for (objfile *objfile : all_objfiles (current_program_space))
         {
 	  data.objfile = objfile;
 	  objfile->sf->qf->map_matching_symbols (objfile, name1.c_str (),
@@ -6391,9 +6390,6 @@ ada_collect_symbol_completion_matches (completion_tracker &tracker,
 				       enum type_code code)
 {
   struct symbol *sym;
-  struct compunit_symtab *s;
-  struct minimal_symbol *msymbol;
-  struct objfile *objfile;
   const struct block *b, *surrounding_static_block = 0;
   struct block_iterator iter;
 
@@ -6413,35 +6409,38 @@ ada_collect_symbol_completion_matches (completion_tracker &tracker,
      anything that isn't a text symbol (everything else will be
      handled by the psymtab code above).  */
 
-  ALL_MSYMBOLS (objfile, msymbol)
-  {
-    QUIT;
+  for (objfile *objfile : all_objfiles (current_program_space))
+    {
+      for (minimal_symbol *msymbol : objfile_msymbols (objfile))
+	{
+	  QUIT;
 
-    if (completion_skip_symbol (mode, msymbol))
-      continue;
+	  if (completion_skip_symbol (mode, msymbol))
+	    continue;
 
-    language symbol_language = MSYMBOL_LANGUAGE (msymbol);
+	  language symbol_language = MSYMBOL_LANGUAGE (msymbol);
 
-    /* Ada minimal symbols won't have their language set to Ada.  If
-       we let completion_list_add_name compare using the
-       default/C-like matcher, then when completing e.g., symbols in a
-       package named "pck", we'd match internal Ada symbols like
-       "pckS", which are invalid in an Ada expression, unless you wrap
-       them in '<' '>' to request a verbatim match.
+	  /* Ada minimal symbols won't have their language set to Ada.  If
+	     we let completion_list_add_name compare using the
+	     default/C-like matcher, then when completing e.g., symbols in a
+	     package named "pck", we'd match internal Ada symbols like
+	     "pckS", which are invalid in an Ada expression, unless you wrap
+	     them in '<' '>' to request a verbatim match.
 
-       Unfortunately, some Ada encoded names successfully demangle as
-       C++ symbols (using an old mangling scheme), such as "name__2Xn"
-       -> "Xn::name(void)" and thus some Ada minimal symbols end up
-       with the wrong language set.  Paper over that issue here.  */
-    if (symbol_language == language_auto
-	|| symbol_language == language_cplus)
-      symbol_language = language_ada;
+	     Unfortunately, some Ada encoded names successfully demangle as
+	     C++ symbols (using an old mangling scheme), such as "name__2Xn"
+	     -> "Xn::name(void)" and thus some Ada minimal symbols end up
+	     with the wrong language set.  Paper over that issue here.  */
+	  if (symbol_language == language_auto
+	      || symbol_language == language_cplus)
+	    symbol_language = language_ada;
 
-    completion_list_add_name (tracker,
-			      symbol_language,
-			      MSYMBOL_LINKAGE_NAME (msymbol),
-			      lookup_name, text, word);
-  }
+	  completion_list_add_name (tracker,
+				    symbol_language,
+				    MSYMBOL_LINKAGE_NAME (msymbol),
+				    lookup_name, text, word);
+	}
+    }
 
   /* Search upwards from currently selected frame (so that we can
      complete on local vars.  */
@@ -6466,40 +6465,46 @@ ada_collect_symbol_completion_matches (completion_tracker &tracker,
   /* Go through the symtabs and check the externs and statics for
      symbols which match.  */
 
-  ALL_COMPUNITS (objfile, s)
-  {
-    QUIT;
-    b = BLOCKVECTOR_BLOCK (COMPUNIT_BLOCKVECTOR (s), GLOBAL_BLOCK);
-    ALL_BLOCK_SYMBOLS (b, iter, sym)
+  for (objfile *objfile : all_objfiles (current_program_space))
     {
-      if (completion_skip_symbol (mode, sym))
-	continue;
+      for (compunit_symtab *s : objfile_compunits (objfile))
+	{
+	  QUIT;
+	  b = BLOCKVECTOR_BLOCK (COMPUNIT_BLOCKVECTOR (s), GLOBAL_BLOCK);
+	  ALL_BLOCK_SYMBOLS (b, iter, sym)
+	    {
+	      if (completion_skip_symbol (mode, sym))
+		continue;
 
-      completion_list_add_name (tracker,
-				SYMBOL_LANGUAGE (sym),
-				SYMBOL_LINKAGE_NAME (sym),
-				lookup_name, text, word);
+	      completion_list_add_name (tracker,
+					SYMBOL_LANGUAGE (sym),
+					SYMBOL_LINKAGE_NAME (sym),
+					lookup_name, text, word);
+	    }
+	}
     }
-  }
 
-  ALL_COMPUNITS (objfile, s)
-  {
-    QUIT;
-    b = BLOCKVECTOR_BLOCK (COMPUNIT_BLOCKVECTOR (s), STATIC_BLOCK);
-    /* Don't do this block twice.  */
-    if (b == surrounding_static_block)
-      continue;
-    ALL_BLOCK_SYMBOLS (b, iter, sym)
+  for (objfile *objfile : all_objfiles (current_program_space))
     {
-      if (completion_skip_symbol (mode, sym))
-	continue;
+      for (compunit_symtab *s : objfile_compunits (objfile))
+	{
+	  QUIT;
+	  b = BLOCKVECTOR_BLOCK (COMPUNIT_BLOCKVECTOR (s), STATIC_BLOCK);
+	  /* Don't do this block twice.  */
+	  if (b == surrounding_static_block)
+	    continue;
+	  ALL_BLOCK_SYMBOLS (b, iter, sym)
+	    {
+	      if (completion_skip_symbol (mode, sym))
+		continue;
 
-      completion_list_add_name (tracker,
-				SYMBOL_LANGUAGE (sym),
-				SYMBOL_LINKAGE_NAME (sym),
-				lookup_name, text, word);
+	      completion_list_add_name (tracker,
+					SYMBOL_LANGUAGE (sym),
+					SYMBOL_LINKAGE_NAME (sym),
+					lookup_name, text, word);
+	    }
+	}
     }
-  }
 }
 
                                 /* Field Access */
@@ -13548,9 +13553,6 @@ static void
 ada_add_global_exceptions (compiled_regex *preg,
 			   std::vector<ada_exc_info> *exceptions)
 {
-  struct objfile *objfile;
-  struct compunit_symtab *s;
-
   /* In Ada, the symbol "search name" is a linkage name, whereas the
      regular expression used to do the matching refers to the natural
      name.  So match against the decoded name.  */
@@ -13564,26 +13566,29 @@ ada_add_global_exceptions (compiled_regex *preg,
 			   NULL,
 			   VARIABLES_DOMAIN);
 
-  ALL_COMPUNITS (objfile, s)
+  for (objfile *objfile : all_objfiles (current_program_space))
     {
-      const struct blockvector *bv = COMPUNIT_BLOCKVECTOR (s);
-      int i;
-
-      for (i = GLOBAL_BLOCK; i <= STATIC_BLOCK; i++)
+      for (compunit_symtab *s : objfile_compunits (objfile))
 	{
-	  struct block *b = BLOCKVECTOR_BLOCK (bv, i);
-	  struct block_iterator iter;
-	  struct symbol *sym;
+	  const struct blockvector *bv = COMPUNIT_BLOCKVECTOR (s);
+	  int i;
 
-	  ALL_BLOCK_SYMBOLS (b, iter, sym)
-	    if (ada_is_non_standard_exception_sym (sym)
-		&& name_matches_regex (SYMBOL_NATURAL_NAME (sym), preg))
-	      {
-		struct ada_exc_info info
-		  = {SYMBOL_PRINT_NAME (sym), SYMBOL_VALUE_ADDRESS (sym)};
+	  for (i = GLOBAL_BLOCK; i <= STATIC_BLOCK; i++)
+	    {
+	      struct block *b = BLOCKVECTOR_BLOCK (bv, i);
+	      struct block_iterator iter;
+	      struct symbol *sym;
 
-		exceptions->push_back (info);
-	      }
+	      ALL_BLOCK_SYMBOLS (b, iter, sym)
+		if (ada_is_non_standard_exception_sym (sym)
+		    && name_matches_regex (SYMBOL_NATURAL_NAME (sym), preg))
+		  {
+		    struct ada_exc_info info
+		      = {SYMBOL_PRINT_NAME (sym), SYMBOL_VALUE_ADDRESS (sym)};
+
+		    exceptions->push_back (info);
+		  }
+	    }
 	}
     }
 }
@@ -14503,7 +14508,14 @@ overloads selection menu is activated"),
 
   add_catch_command ("exception", _("\
 Catch Ada exceptions, when raised.\n\
-With an argument, catch only exceptions with the given name."),
+Usage: catch exception [ ARG ]\n\
+\n\
+Without any argument, stop when any Ada exception is raised.\n\
+If ARG is \"unhandled\" (without the quotes), only stop when the exception\n\
+being raised does not have a handler (and will therefore lead to the task's\n\
+termination).\n\
+Otherwise, the catchpoint only stops when the name of the exception being\n\
+raised is the same as ARG."),
 		     catch_ada_exception_command,
                      NULL,
 		     CATCH_PERMANENT,

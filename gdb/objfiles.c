@@ -369,8 +369,8 @@ build_objfile_section_table (struct objfile *objfile)
 objfile::objfile (bfd *abfd, const char *name, objfile_flags flags_)
   : flags (flags_),
     pspace (current_program_space),
-    obfd (abfd),
-    psymbol_cache (psymbol_bcache_init ())
+    partial_symtabs (new psymtab_storage ()),
+    obfd (abfd)
 {
   const char *expanded_name;
 
@@ -514,7 +514,7 @@ objfile_separate_debug_iterate (const struct objfile *parent,
 
 /* Put one object file before a specified on in the global list.
    This can be used to make sure an object file is destroyed before
-   another when using ALL_OBJFILES_SAFE to free all objfiles.  */
+   another when using all_objfiles_safe to free all objfiles.  */
 void
 put_objfile_before (struct objfile *objfile, struct objfile *before_this)
 {
@@ -587,7 +587,7 @@ add_separate_debug_objfile (struct objfile *objfile, struct objfile *parent)
   parent->separate_debug_objfile = objfile;
 
   /* Put the separate debug object before the normal one, this is so that
-     usage of the ALL_OBJFILES_SAFE macro will stay safe.  */
+     usage of all_objfiles_safe will stay safe.  */
   put_objfile_before (objfile, parent);
 }
 
@@ -713,7 +713,6 @@ objfile::~objfile ()
   }
 
   /* Free the obstacks for non-reusable objfiles.  */
-  psymbol_bcache_free (psymbol_cache);
   obstack_free (&objfile_obstack, 0);
 
   /* Rebuild section map next time we need it.  */
@@ -730,17 +729,14 @@ objfile::~objfile ()
 void
 free_all_objfiles (void)
 {
-  struct objfile *objfile, *temp;
   struct so_list *so;
 
   /* Any objfile referencewould become stale.  */
   for (so = master_so_list (); so; so = so->next)
     gdb_assert (so->objfile == NULL);
 
-  ALL_OBJFILES_SAFE (objfile, temp)
-  {
+  for (objfile *objfile : all_objfiles_safe (current_program_space))
     delete objfile;
-  }
   clear_symtab_users (0);
 }
 
@@ -791,59 +787,60 @@ objfile_relocate1 (struct objfile *objfile,
 
   /* OK, get all the symtabs.  */
   {
-    struct compunit_symtab *cust;
-    struct symtab *s;
+    for (compunit_symtab *cust : objfile_compunits (objfile))
+      {
+	for (symtab *s : compunit_filetabs (cust))
+	  {
+	    struct linetable *l;
 
-    ALL_OBJFILE_FILETABS (objfile, cust, s)
-    {
-      struct linetable *l;
-
-      /* First the line table.  */
-      l = SYMTAB_LINETABLE (s);
-      if (l)
-	{
-	  for (int i = 0; i < l->nitems; ++i)
-	    l->item[i].pc += ANOFFSET (delta,
-				       COMPUNIT_BLOCK_LINE_SECTION
-					 (cust));
-	}
-    }
-
-    ALL_OBJFILE_COMPUNITS (objfile, cust)
-    {
-      const struct blockvector *bv = COMPUNIT_BLOCKVECTOR (cust);
-      int block_line_section = COMPUNIT_BLOCK_LINE_SECTION (cust);
-
-      if (BLOCKVECTOR_MAP (bv))
-	addrmap_relocate (BLOCKVECTOR_MAP (bv),
-			  ANOFFSET (delta, block_line_section));
-
-      for (int i = 0; i < BLOCKVECTOR_NBLOCKS (bv); ++i)
-	{
-	  struct block *b;
-	  struct symbol *sym;
-	  struct dict_iterator iter;
-
-	  b = BLOCKVECTOR_BLOCK (bv, i);
-	  BLOCK_START (b) += ANOFFSET (delta, block_line_section);
-	  BLOCK_END (b) += ANOFFSET (delta, block_line_section);
-
-	  if (BLOCK_RANGES (b) != nullptr)
-	    for (int j = 0; j < BLOCK_NRANGES (b); j++)
+	    /* First the line table.  */
+	    l = SYMTAB_LINETABLE (s);
+	    if (l)
 	      {
-		BLOCK_RANGE_START (b, j)
-		  += ANOFFSET (delta, block_line_section);
-		BLOCK_RANGE_END (b, j) += ANOFFSET (delta, block_line_section);
+		for (int i = 0; i < l->nitems; ++i)
+		  l->item[i].pc += ANOFFSET (delta,
+					     COMPUNIT_BLOCK_LINE_SECTION
+					     (cust));
 	      }
+	  }
+      }
 
-	  /* We only want to iterate over the local symbols, not any
-	     symbols in included symtabs.  */
-	  ALL_DICT_SYMBOLS (BLOCK_DICT (b), iter, sym)
-	    {
-	      relocate_one_symbol (sym, objfile, delta);
-	    }
-	}
-    }
+    for (compunit_symtab *cust : objfile_compunits (objfile))
+      {
+	const struct blockvector *bv = COMPUNIT_BLOCKVECTOR (cust);
+	int block_line_section = COMPUNIT_BLOCK_LINE_SECTION (cust);
+
+	if (BLOCKVECTOR_MAP (bv))
+	  addrmap_relocate (BLOCKVECTOR_MAP (bv),
+			    ANOFFSET (delta, block_line_section));
+
+	for (int i = 0; i < BLOCKVECTOR_NBLOCKS (bv); ++i)
+	  {
+	    struct block *b;
+	    struct symbol *sym;
+	    struct mdict_iterator miter;
+
+	    b = BLOCKVECTOR_BLOCK (bv, i);
+	    BLOCK_START (b) += ANOFFSET (delta, block_line_section);
+	    BLOCK_END (b) += ANOFFSET (delta, block_line_section);
+
+	    if (BLOCK_RANGES (b) != nullptr)
+	      for (int j = 0; j < BLOCK_NRANGES (b); j++)
+		{
+		  BLOCK_RANGE_START (b, j)
+		    += ANOFFSET (delta, block_line_section);
+		  BLOCK_RANGE_END (b, j) += ANOFFSET (delta,
+						      block_line_section);
+		}
+
+	    /* We only want to iterate over the local symbols, not any
+	       symbols in included symtabs.  */
+	    ALL_DICT_SYMBOLS (BLOCK_MULTIDICT (b), miter, sym)
+	      {
+		relocate_one_symbol (sym, objfile, delta);
+	      }
+	  }
+      }
   }
 
   /* This stores relocated addresses and so must be cleared.  This
@@ -1016,13 +1013,11 @@ objfile_has_symbols (struct objfile *objfile)
 int
 have_partial_symbols (void)
 {
-  struct objfile *ofp;
-
-  ALL_OBJFILES (ofp)
-  {
-    if (objfile_has_partial_symbols (ofp))
-      return 1;
-  }
+  for (objfile *ofp : all_objfiles (current_program_space))
+    {
+      if (objfile_has_partial_symbols (ofp))
+	return 1;
+    }
   return 0;
 }
 
@@ -1033,13 +1028,11 @@ have_partial_symbols (void)
 int
 have_full_symbols (void)
 {
-  struct objfile *ofp;
-
-  ALL_OBJFILES (ofp)
-  {
-    if (objfile_has_full_symbols (ofp))
-      return 1;
-  }
+  for (objfile *ofp : all_objfiles (current_program_space))
+    {
+      if (objfile_has_full_symbols (ofp))
+	return 1;
+    }
   return 0;
 }
 
@@ -1051,17 +1044,14 @@ have_full_symbols (void)
 void
 objfile_purge_solibs (void)
 {
-  struct objfile *objf;
-  struct objfile *temp;
+  for (objfile *objf : all_objfiles_safe (current_program_space))
+    {
+      /* We assume that the solib package has been purged already, or will
+	 be soon.  */
 
-  ALL_OBJFILES_SAFE (objf, temp)
-  {
-    /* We assume that the solib package has been purged already, or will
-       be soon.  */
-
-    if (!(objf->flags & OBJF_USERLOADED) && (objf->flags & OBJF_SHARED))
-      delete objf;
-  }
+      if (!(objf->flags & OBJF_USERLOADED) && (objf->flags & OBJF_SHARED))
+	delete objf;
+    }
 }
 
 
@@ -1072,15 +1062,13 @@ objfile_purge_solibs (void)
 int
 have_minimal_symbols (void)
 {
-  struct objfile *ofp;
-
-  ALL_OBJFILES (ofp)
-  {
-    if (ofp->per_bfd->minimal_symbol_count > 0)
-      {
-	return 1;
-      }
-  }
+  for (objfile *ofp : all_objfiles (current_program_space))
+    {
+      if (ofp->per_bfd->minimal_symbol_count > 0)
+	{
+	  return 1;
+	}
+    }
   return 0;
 }
 
@@ -1145,9 +1133,7 @@ qsort_cmp (const void *a, const void *b)
 	{
 	  /* Sort on sequence number of the objfile in the chain.  */
 
-	  const struct objfile *objfile;
-
-	  ALL_OBJFILES (objfile)
+	  for (objfile *objfile : all_objfiles (current_program_space))
 	    if (objfile == objfile1)
 	      return -1;
 	    else if (objfile == objfile2)
@@ -1322,7 +1308,6 @@ update_section_map (struct program_space *pspace,
   struct objfile_pspace_info *pspace_info;
   int alloc_size, map_size, i;
   struct obj_section *s, **map;
-  struct objfile *objfile;
 
   pspace_info = get_objfile_pspace_data (pspace);
   gdb_assert (pspace_info->section_map_dirty != 0
@@ -1332,7 +1317,7 @@ update_section_map (struct program_space *pspace,
   xfree (map);
 
   alloc_size = 0;
-  ALL_PSPACE_OBJFILES (pspace, objfile)
+  for (objfile *objfile : all_objfiles (pspace))
     ALL_OBJFILE_OSECTIONS (objfile, s)
       if (insert_section_p (objfile->obfd, s->the_bfd_section))
 	alloc_size += 1;
@@ -1348,7 +1333,7 @@ update_section_map (struct program_space *pspace,
   map = XNEWVEC (struct obj_section *, alloc_size);
 
   i = 0;
-  ALL_PSPACE_OBJFILES (pspace, objfile)
+  for (objfile *objfile : all_objfiles (pspace))
     ALL_OBJFILE_OSECTIONS (objfile, s)
       if (insert_section_p (objfile->obfd, s->the_bfd_section))
 	map[i++] = s;
@@ -1492,9 +1477,7 @@ int
 shared_objfile_contains_address_p (struct program_space *pspace,
 				   CORE_ADDR address)
 {
-  struct objfile *objfile;
-
-  ALL_PSPACE_OBJFILES (pspace, objfile)
+  for (objfile *objfile : all_objfiles (pspace))
     {
       if ((objfile->flags & OBJF_SHARED) != 0
 	  && is_addr_in_objfile (address, objfile))
@@ -1505,7 +1488,7 @@ shared_objfile_contains_address_p (struct program_space *pspace,
 }
 
 /* The default implementation for the "iterate_over_objfiles_in_search_order"
-   gdbarch method.  It is equivalent to use the ALL_OBJFILES macro,
+   gdbarch method.  It is equivalent to use the all_objfiles iterable,
    searching the objfiles in the order they are stored internally,
    ignoring CURRENT_OBJFILE.
 
@@ -1519,9 +1502,8 @@ default_iterate_over_objfiles_in_search_order
    void *cb_data, struct objfile *current_objfile)
 {
   int stop = 0;
-  struct objfile *objfile;
 
-  ALL_OBJFILES (objfile)
+  for (objfile *objfile : all_objfiles (current_program_space))
     {
        stop = cb (objfile, cb_data);
        if (stop)
