@@ -2,7 +2,7 @@
 #objdump: -dr
 #name: eBPF ALU64 instructions
 
-.*: +file format .*ebpf.*
+.*: +file format .*bpf.*
 
 Disassembly of section .text:
 

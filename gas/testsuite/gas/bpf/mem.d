@@ -2,7 +2,7 @@
 #objdump: -dr
 #name: eBPF MEM instructions, modulus lddw
 
-.*: +file format .*ebpf.*
+.*: +file format .*bpf.*
 
 Disassembly of section .text:
 
