@@ -1,3 +1,82 @@
+2019-01-23  Nick Clifton  <nickc@redhat.com>
+
+	* po/fr.po: Updated French translation.
+
+2019-01-21  Nick Clifton  <nickc@redhat.com>
+
+	* po/pt.po: Updated Portuguese translation.
+	* po/uk.po: Updated Ukranian translation.
+
+2019-01-21  Yuri Chornoivan  <yurchor@ukr.net>
+
+	PR 24108
+	* elf32-nds32.c (nds32_relocate_section): Add space between words
+	in error message.
+	* elfnn-riscv.c (riscv_version_mismatch): Fix spelling mistake in
+	error message.
+	(riscv_i_or_e_p): Likewise.
+	(riscv_merge_arch_attr_info): Likewise.
+
+2019-01-19  Nick Clifton  <nickc@redhat.com>
+
+	* version.m4: Reset to 2.32.51
+	* configure: Regenerate.
+	* po/bfd.pot: Regenerate.
+
+2018-06-24  Nick Clifton  <nickc@redhat.com>
+
+	2.32 branch created.
+
+2019-01-16  Kito Cheng  <kito@andestech.com>
+
+	* elf-attrs.c (vendor_obj_attr_size): Return 0 if size is 0 even
+	for OBJ_ATTR_PROC.
+
+2019-01-16  Kito Cheng  <kito@andestech.com>
+	    Nelson Chu  <nelson@andestech.com>
+
+	* elfnn-riscv.c (in_subsets): New.
+	(out_subsets): Likewise.
+	(merged_subsets): Likewise.
+	(riscv_std_ext_p): Likewise.
+	(riscv_non_std_ext_p): Likewise.
+	(riscv_std_sv_ext_p): Likewise.
+	(riscv_non_std_sv_ext_p): Likewise.
+	(riscv_version_mismatch): Likewise.
+	(riscv_i_or_e_p): Likewise.
+	(riscv_merge_std_ext): Likewise.
+	(riscv_merge_non_std_and_sv_ext): Likewise.
+	(riscv_merge_arch_attr_info): Likewise.
+	(riscv_merge_attributes): Likewise.
+	(_bfd_riscv_elf_merge_private_bfd_data): Merge attribute.
+
+	* elfnn-riscv.c (riscv_elf_obj_attrs_arg_type): New.
+	(elf_backend_obj_attrs_vendor): Define.
+	(elf_backend_obj_attrs_section_type): Likewise.
+	(elf_backend_obj_attrs_section): Likewise.
+	(elf_backend_obj_attrs_arg_type): Define as
+	riscv_elf_obj_attrs_arg_type.
+	* elfxx-riscv.c (riscv_estimate_digit): New.
+	(riscv_estimate_arch_strlen1): Likewise.
+	(riscv_estimate_arch_strlen): Likewise.
+	(riscv_arch_str1): Likewise.
+	(riscv_arch_str): Likewise.
+	* elfxx-riscv.h (riscv_arch_str): Declare.
+
+2019-01-14  John Darrington <john@darrington.wattle.id.au>
+
+	* bfd-in2.h [BFD_RELOC_S12Z_OPR]: New reloc.
+	* libbfd.h: regen.
+	* elf32-s12z.c (eld_s12z_howto_table): R_S12Z_OPR takes non zero
+	source field.  (md_apply_fix): Apply final fix
+	to BFD_RELOC_S12Z_OPR.
+	* reloc.c[BFD_RELOC_S12Z_OPR]: New reloc.
+
+2019-01-14  Maamoun Tarsha  <maamountk@hotmail.com>
+
+	PR 20113
+	* elf32-s390.c (allocate_dynrelocs): Update comment.
+
 2019-01-09  Andrew Paprocki  <andrew@ishiboo.com>
 
 	* warning.m4: Adjust egrep pattern for non-GNU compilers.

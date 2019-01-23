@@ -4922,9 +4922,9 @@ ada_lookup_simple_minsym (const char *name)
   symbol_name_matcher_ftype *match_name
     = ada_get_symbol_name_matcher (lookup_name);
 
-  for (objfile *objfile : all_objfiles (current_program_space))
+  for (objfile *objfile : current_program_space->objfiles ())
     {
-      for (minimal_symbol *msymbol : objfile_msymbols (objfile))
+      for (minimal_symbol *msymbol : objfile->msymbols ())
 	{
 	  if (match_name (MSYMBOL_LINKAGE_NAME (msymbol), lookup_name, NULL)
 	      && MSYMBOL_TYPE (msymbol) != mst_solib_trampoline)
@@ -5612,7 +5612,7 @@ add_nonlocal_symbols (struct obstack *obstackp,
 
   bool is_wild_match = lookup_name.ada ().wild_match_p ();
 
-  for (objfile *objfile : all_objfiles (current_program_space))
+  for (objfile *objfile : current_program_space->objfiles ())
     {
       data.objfile = objfile;
 
@@ -5629,7 +5629,7 @@ add_nonlocal_symbols (struct obstack *obstackp,
 					       symbol_name_match_type::FULL,
 					       compare_names);
 
-      for (compunit_symtab *cu : objfile_compunits (objfile))
+      for (compunit_symtab *cu : objfile->compunits ())
 	{
 	  const struct block *global_block
 	    = BLOCKVECTOR_BLOCK (COMPUNIT_BLOCKVECTOR (cu), GLOBAL_BLOCK);
@@ -5645,7 +5645,7 @@ add_nonlocal_symbols (struct obstack *obstackp,
       const char *name = ada_lookup_name (lookup_name);
       std::string name1 = std::string ("<_ada_") + name + '>';
 
-      for (objfile *objfile : all_objfiles (current_program_space))
+      for (objfile *objfile : current_program_space->objfiles ())
         {
 	  data.objfile = objfile;
 	  objfile->sf->qf->map_matching_symbols (objfile, name1.c_str (),
@@ -6409,9 +6409,9 @@ ada_collect_symbol_completion_matches (completion_tracker &tracker,
      anything that isn't a text symbol (everything else will be
      handled by the psymtab code above).  */
 
-  for (objfile *objfile : all_objfiles (current_program_space))
+  for (objfile *objfile : current_program_space->objfiles ())
     {
-      for (minimal_symbol *msymbol : objfile_msymbols (objfile))
+      for (minimal_symbol *msymbol : objfile->msymbols ())
 	{
 	  QUIT;
 
@@ -6465,9 +6465,9 @@ ada_collect_symbol_completion_matches (completion_tracker &tracker,
   /* Go through the symtabs and check the externs and statics for
      symbols which match.  */
 
-  for (objfile *objfile : all_objfiles (current_program_space))
+  for (objfile *objfile : current_program_space->objfiles ())
     {
-      for (compunit_symtab *s : objfile_compunits (objfile))
+      for (compunit_symtab *s : objfile->compunits ())
 	{
 	  QUIT;
 	  b = BLOCKVECTOR_BLOCK (COMPUNIT_BLOCKVECTOR (s), GLOBAL_BLOCK);
@@ -6484,9 +6484,9 @@ ada_collect_symbol_completion_matches (completion_tracker &tracker,
 	}
     }
 
-  for (objfile *objfile : all_objfiles (current_program_space))
+  for (objfile *objfile : current_program_space->objfiles ())
     {
-      for (compunit_symtab *s : objfile_compunits (objfile))
+      for (compunit_symtab *s : objfile->compunits ())
 	{
 	  QUIT;
 	  b = BLOCKVECTOR_BLOCK (COMPUNIT_BLOCKVECTOR (s), STATIC_BLOCK);
@@ -13566,9 +13566,9 @@ ada_add_global_exceptions (compiled_regex *preg,
 			   NULL,
 			   VARIABLES_DOMAIN);
 
-  for (objfile *objfile : all_objfiles (current_program_space))
+  for (objfile *objfile : current_program_space->objfiles ())
     {
-      for (compunit_symtab *s : objfile_compunits (objfile))
+      for (compunit_symtab *s : objfile->compunits ())
 	{
 	  const struct blockvector *bv = COMPUNIT_BLOCKVECTOR (s);
 	  int i;

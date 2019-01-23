@@ -1232,6 +1232,14 @@ aapcs_is_vfp_call_or_return_candidate_1 (struct type *type,
 	      return -1;
 	    count += sub_count;
 	  }
+
+	/* Ensure there is no padding between the fields (allowing for empty
+	   zero length structs)  */
+	int ftype_length = (*fundamental_type == nullptr)
+			   ? 0 : TYPE_LENGTH (*fundamental_type);
+	if (count * ftype_length != TYPE_LENGTH (type))
+	  return -1;
+
 	return count;
       }
 
@@ -1932,7 +1940,7 @@ aarch64_extract_return_value (struct type *type, struct regcache *regs,
 	   || TYPE_IS_REFERENCE (type)
 	   || TYPE_CODE (type) == TYPE_CODE_ENUM)
     {
-      /* If the the type is a plain integer, then the access is
+      /* If the type is a plain integer, then the access is
 	 straight-forward.  Otherwise we have to play around a bit
 	 more.  */
       int len = TYPE_LENGTH (type);

@@ -605,9 +605,9 @@ info_selectors_command (const char *regexp, int from_tty)
     }
 
   /* First time thru is JUST to get max length and count.  */
-  for (objfile *objfile : all_objfiles (current_program_space))
+  for (objfile *objfile : current_program_space->objfiles ())
     {
-      for (minimal_symbol *msymbol : objfile_msymbols (objfile))
+      for (minimal_symbol *msymbol : objfile->msymbols ())
 	{
 	  QUIT;
 	  name = MSYMBOL_NATURAL_NAME (msymbol);
@@ -645,9 +645,9 @@ info_selectors_command (const char *regexp, int from_tty)
 
       sym_arr = XALLOCAVEC (struct symbol *, matches);
       matches = 0;
-      for (objfile *objfile : all_objfiles (current_program_space))
+      for (objfile *objfile : current_program_space->objfiles ())
 	{
-	  for (minimal_symbol *msymbol : objfile_msymbols (objfile))
+	  for (minimal_symbol *msymbol : objfile->msymbols ())
 	    {
 	      QUIT;
 	      name = MSYMBOL_NATURAL_NAME (msymbol);
@@ -759,9 +759,9 @@ info_classes_command (const char *regexp, int from_tty)
     }
 
   /* First time thru is JUST to get max length and count.  */
-  for (objfile *objfile : all_objfiles (current_program_space))
+  for (objfile *objfile : current_program_space->objfiles ())
     {
-      for (minimal_symbol *msymbol : objfile_msymbols (objfile))
+      for (minimal_symbol *msymbol : objfile->msymbols ())
 	{
 	  QUIT;
 	  name = MSYMBOL_NATURAL_NAME (msymbol);
@@ -786,9 +786,9 @@ info_classes_command (const char *regexp, int from_tty)
 		       regexp ? regexp : "*");
       sym_arr = XALLOCAVEC (struct symbol *, matches);
       matches = 0;
-      for (objfile *objfile : all_objfiles (current_program_space))
+      for (objfile *objfile : current_program_space->objfiles ())
 	{
-	  for (minimal_symbol *msymbol : objfile_msymbols (objfile))
+	  for (minimal_symbol *msymbol : objfile->msymbols ())
 	    {
 	      QUIT;
 	      name = MSYMBOL_NATURAL_NAME (msymbol);
@@ -992,7 +992,7 @@ find_methods (char type, const char *theclass, const char *category,
 
   gdb_assert (symbol_names != NULL);
 
-  for (objfile *objfile : all_objfiles (current_program_space))
+  for (objfile *objfile : current_program_space->objfiles ())
     {
       unsigned int *objc_csym;
 
@@ -1008,7 +1008,7 @@ find_methods (char type, const char *theclass, const char *category,
 	/* There are no ObjC symbols in this objfile.  Skip it entirely.  */
 	continue;
 
-      for (minimal_symbol *msymbol : objfile_msymbols (objfile))
+      for (minimal_symbol *msymbol : objfile->msymbols ())
 	{
 	  QUIT;
 

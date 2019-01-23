@@ -104,7 +104,7 @@ psymtab_storage::allocate_psymtab ()
 
 /* See psymtab.h.  */
 
-objfile_psymtabs
+psymtab_storage::partial_symtab_range
 require_partial_symbols (struct objfile *objfile, int verbose)
 {
   if ((objfile->flags & OBJF_PSYMTABS_READ) == 0)
@@ -129,7 +129,7 @@ require_partial_symbols (struct objfile *objfile, int verbose)
 	}
     }
 
-  return objfile_psymtabs (objfile);
+  return objfile->psymtabs ();
 }
 
 /* Helper function for psym_map_symtabs_matching_filename that
@@ -1341,7 +1341,7 @@ psym_expand_symtabs_matching
   for (partial_symtab *ps : require_partial_symbols (objfile, 1))
     ps->searched_flag = PST_NOT_SEARCHED;
 
-  for (partial_symtab *ps : objfile_psymtabs (objfile))
+  for (partial_symtab *ps : objfile->psymtabs ())
     {
       QUIT;
 
@@ -1942,7 +1942,7 @@ maintenance_print_psymbols (const char *args, int from_tty)
     }
 
   found = 0;
-  for (objfile *objfile : all_objfiles (current_program_space))
+  for (objfile *objfile : current_program_space->objfiles ())
     {
       int printed_objfile_header = 0;
       int print_for_objfile = 1;
@@ -2035,7 +2035,7 @@ maintenance_info_psymtabs (const char *regexp, int from_tty)
     re_comp (regexp);
 
   ALL_PSPACES (pspace)
-    for (objfile *objfile : all_objfiles (pspace))
+    for (objfile *objfile : pspace->objfiles ())
       {
 	struct gdbarch *gdbarch = get_objfile_arch (objfile);
 
@@ -2148,7 +2148,7 @@ maintenance_check_psymtabs (const char *ignore, int from_tty)
   struct block *b;
   int length;
 
-  for (objfile *objfile : all_objfiles (current_program_space))
+  for (objfile *objfile : current_program_space->objfiles ())
     for (partial_symtab *ps : require_partial_symbols (objfile, 1))
       {
 	struct gdbarch *gdbarch = get_objfile_arch (objfile);

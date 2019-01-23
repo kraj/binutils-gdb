@@ -1,3 +1,25 @@
+2019-01-22  Tom Tromey  <tom@tromey.com>
+
+	* coff/ecoff.h: Include coff/sym.h.
+
+2018-06-24  Nick Clifton  <nickc@redhat.com>
+
+	2.32 branch created.
+
+2019-01-16  Kito Cheng  <kito@andestech.com>
+
+	* elf/riscv.h (SHT_RISCV_ATTRIBUTES): Define.
+	(Tag_RISCV_arch): Likewise.
+	(Tag_RISCV_priv_spec): Likewise.
+	(Tag_RISCV_priv_spec_minor): Likewise.
+	(Tag_RISCV_priv_spec_revision): Likewise.
+	(Tag_RISCV_unaligned_access): Likewise.
+	(Tag_RISCV_stack_align): Likewise.
+
+2019-01-14  Pavel I. Kryukov  <kryukov@frtk.ru>
+
+	* dis-asm.h: include <string.h>
+
 2019-01-10  Nick Clifton  <nickc@redhat.com>
 
 	* Merge from GCC:

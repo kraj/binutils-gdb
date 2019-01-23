@@ -1378,7 +1378,7 @@ add_symbol_overload_list_qualified (const char *func_name,
   /* Look through the partial symtabs for all symbols which begin by
      matching FUNC_NAME.  Make sure we read that symbol table in.  */
 
-  for (objfile *objf : all_objfiles (current_program_space))
+  for (objfile *objf : current_program_space->objfiles ())
     {
       if (objf->sf)
 	objf->sf->qf->expand_symtabs_for_function (objf, func_name);
@@ -1395,9 +1395,9 @@ add_symbol_overload_list_qualified (const char *func_name,
   /* Go through the symtabs and check the externs and statics for
      symbols which match.  */
 
-  for (objfile *objfile : all_objfiles (current_program_space))
+  for (objfile *objfile : current_program_space->objfiles ())
     {
-      for (compunit_symtab *cust : objfile_compunits (objfile))
+      for (compunit_symtab *cust : objfile->compunits ())
 	{
 	  QUIT;
 	  b = BLOCKVECTOR_BLOCK (COMPUNIT_BLOCKVECTOR (cust), GLOBAL_BLOCK);
@@ -1405,9 +1405,9 @@ add_symbol_overload_list_qualified (const char *func_name,
 	}
     }
 
-  for (objfile *objfile : all_objfiles (current_program_space))
+  for (objfile *objfile : current_program_space->objfiles ())
     {
-      for (compunit_symtab *cust : objfile_compunits (objfile))
+      for (compunit_symtab *cust : objfile->compunits ())
 	{
 	  QUIT;
 	  b = BLOCKVECTOR_BLOCK (COMPUNIT_BLOCKVECTOR (cust), STATIC_BLOCK);

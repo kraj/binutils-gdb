@@ -182,6 +182,47 @@ extern void print_symbol_bcache_statistics (void);
 /* Number of entries in the minimal symbol hash table.  */
 #define MINIMAL_SYMBOL_HASH_SIZE 2039
 
+/* An iterator for minimal symbols.  */
+
+struct minimal_symbol_iterator
+{
+  typedef minimal_symbol_iterator self_type;
+  typedef struct minimal_symbol *value_type;
+  typedef struct minimal_symbol *&reference;
+  typedef struct minimal_symbol **pointer;
+  typedef std::forward_iterator_tag iterator_category;
+  typedef int difference_type;
+
+  explicit minimal_symbol_iterator (struct minimal_symbol *msym)
+    : m_msym (msym)
+  {
+  }
+
+  value_type operator* () const
+  {
+    return m_msym;
+  }
+
+  bool operator== (const self_type &other) const
+  {
+    return m_msym == other.m_msym;
+  }
+
+  bool operator!= (const self_type &other) const
+  {
+    return m_msym != other.m_msym;
+  }
+
+  self_type &operator++ ()
+  {
+    ++m_msym;
+    return *this;
+  }
+
+private:
+  struct minimal_symbol *m_msym;
+};
+
 /* Some objfile data is hung off the BFD.  This enables sharing of the
    data across all objfiles using the BFD.  The data is stored in an
    instance of this structure, and associated with the BFD using the
@@ -199,11 +240,11 @@ struct objfile_per_bfd_storage
 
   /* Byte cache for file names.  */
 
-  bcache *filename_cache = NULL;
+  struct bcache *filename_cache = NULL;
 
   /* Byte cache for macros.  */
 
-  bcache *macro_cache = NULL;
+  struct bcache *macro_cache = NULL;
 
   /* The gdbarch associated with the BFD.  Note that this gdbarch is
      determined solely from BFD information, without looking at target
@@ -293,12 +334,67 @@ struct objfile
 
   DISABLE_COPY_AND_ASSIGN (objfile);
 
+  /* A range adapter that makes it possible to iterate over all
+     psymtabs in one objfile.  */
+
+  psymtab_storage::partial_symtab_range psymtabs ()
+  {
+    return partial_symtabs->range ();
+  }
+
   /* Reset the storage for the partial symbol tables.  */
 
   void reset_psymtabs ()
   {
     psymbol_map.clear ();
     partial_symtabs.reset (new psymtab_storage ());
+  }
+
+  typedef next_adapter<struct compunit_symtab> compunits_range;
+
+  /* A range adapter that makes it possible to iterate over all
+     compunits in one objfile.  */
+
+  compunits_range compunits ()
+  {
+    return compunits_range (compunit_symtabs);
+  }
+
+  /* A range adapter that makes it possible to iterate over all
+     minimal symbols of an objfile.  */
+
+  class msymbols_range
+  {
+  public:
+
+    explicit msymbols_range (struct objfile *objfile)
+      : m_objfile (objfile)
+    {
+    }
+
+    minimal_symbol_iterator begin () const
+    {
+      return minimal_symbol_iterator (m_objfile->per_bfd->msymbols);
+    }
+
+    minimal_symbol_iterator end () const
+    {
+      return minimal_symbol_iterator
+	(m_objfile->per_bfd->msymbols
+	 + m_objfile->per_bfd->minimal_symbol_count);
+    }
+
+  private:
+
+    struct objfile *m_objfile;
+  };
+
+  /* Return a range adapter for iterating over all minimal
+     symbols.  */
+
+  msymbols_range msymbols ()
+  {
+    return msymbols_range (this);
   }
 
 
@@ -416,7 +512,7 @@ struct objfile
      Although this is a tree structure, GDB only support one level
      (ie a separate debug for a separate debug is not supported).  Note that
      separate debug object are in the main chain and therefore will be
-     visited by all_objfiles & co iterators.  Separate debug objfile always
+     visited by objfiles & co iterators.  Separate debug objfile always
      has a non-nul separate_debug_objfile_backlink.  */
 
   /* Link to the first separate debug object, if any.  */
@@ -552,149 +648,6 @@ extern void default_iterate_over_objfiles_in_search_order
    iterate_over_objfiles_in_search_order_cb_ftype *cb,
    void *cb_data, struct objfile *current_objfile);
 
-
-/* An iterarable object that can be used to iterate over all
-   objfiles.  The basic use is in a foreach, like:
-
-   for (objfile *objf : all_objfiles (pspace)) { ... }  */
-
-class all_objfiles : public next_adapter<struct objfile>
-{
-public:
-
-  explicit all_objfiles (struct program_space *pspace)
-    : next_adapter<struct objfile> (pspace->objfiles)
-  {
-  }
-};
-
-/* An iterarable object that can be used to iterate over all
-   objfiles.  The basic use is in a foreach, like:
-
-   for (objfile *objf : all_objfiles_safe (pspace)) { ... }
-
-   This variant uses a basic_safe_iterator so that objfiles can be
-   deleted during iteration.  */
-
-class all_objfiles_safe
-  : public next_adapter<struct objfile,
-			basic_safe_iterator<next_iterator<objfile>>>
-{
-public:
-
-  explicit all_objfiles_safe (struct program_space *pspace)
-    : next_adapter<struct objfile,
-		   basic_safe_iterator<next_iterator<objfile>>>
-        (pspace->objfiles)
-  {
-  }
-};
-
-/* A range adapter that makes it possible to iterate over all
-   compunits in one objfile.  */
-
-class objfile_compunits : public next_adapter<struct compunit_symtab>
-{
-public:
-
-  explicit objfile_compunits (struct objfile *objfile)
-    : next_adapter<struct compunit_symtab> (objfile->compunit_symtabs)
-  {
-  }
-};
-
-/* A range adapter that makes it possible to iterate over all
-   minimal symbols of an objfile.  */
-
-class objfile_msymbols
-{
-public:
-
-  explicit objfile_msymbols (struct objfile *objfile)
-    : m_objfile (objfile)
-  {
-  }
-
-  struct iterator
-  {
-    typedef iterator self_type;
-    typedef struct minimal_symbol *value_type;
-    typedef struct minimal_symbol *&reference;
-    typedef struct minimal_symbol **pointer;
-    typedef std::forward_iterator_tag iterator_category;
-    typedef int difference_type;
-
-    explicit iterator (struct objfile *objfile)
-      : m_msym (objfile->per_bfd->msymbols)
-    {
-      /* Make sure to properly handle the case where there are no
-	 minsyms.  */
-      if (MSYMBOL_LINKAGE_NAME (m_msym) == nullptr)
-	m_msym = nullptr;
-    }
-
-    iterator ()
-      : m_msym (nullptr)
-    {
-    }
-    
-    value_type operator* () const
-    {
-      return m_msym;
-    }
-
-    bool operator== (const self_type &other) const
-    {
-      return m_msym == other.m_msym;
-    }
-
-    bool operator!= (const self_type &other) const
-    {
-      return m_msym != other.m_msym;
-    }
-
-    self_type &operator++ ()
-    {
-      if (m_msym != nullptr)
-	{
-	  ++m_msym;
-	  if (MSYMBOL_LINKAGE_NAME (m_msym) == nullptr)
-	    m_msym = nullptr;
-	}
-      return *this;
-    }
-
-  private:
-    struct minimal_symbol *m_msym;
-  };
-
-  iterator begin () const
-  {
-    return iterator (m_objfile);
-  }
-
-  iterator end () const
-  {
-    return iterator ();
-  }
-
-private:
-
-  struct objfile *m_objfile;
-};
-
-/* A range adapter that makes it possible to iterate over all
-   psymtabs in one objfile.  */
-
-class objfile_psymtabs : public next_adapter<struct partial_symtab>
-{
-public:
-
-  explicit objfile_psymtabs (struct objfile *objfile)
-    : next_adapter<struct partial_symtab> (objfile->partial_symtabs->psymtabs)
-  {
-  }
-};
 
 #define ALL_OBJFILE_OSECTIONS(objfile, osect)	\
   for (osect = objfile->sections; osect < objfile->sections_end; osect++) \

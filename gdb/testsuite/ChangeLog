@@ -1,3 +1,34 @@
+2019-01-21  Alan Hayward  <alan.hayward@arm.com>
+	* gdb.base/infcall-nested-structs.exp: Test C++ in addition to C.
+
+2019-01-21  Alan Hayward  <alan.hayward@arm.com>
+	* gdb.base/stack-protector.c: New test.
+	* gdb.base/stack-protector.exp: New file.
+	* gdb.cp/ovldbreak.exp: Only allow a single break line.
+	* lib/gdb.exp (get_compiler_info): Use getting_compiler_info
+	option.
+	(gdb_compile): Remove stack protector for GCC and prevent
+	recursion.
+
+2019-01-16  Keith Seitz  <keiths@redhat.com>
+
+	PR gdb/23773
+	* gdb.dwarf2/inlined_subroutine-inheritance.exp: New file.
+
+2019-01-14  Pedro Franco de Carvalho  <pedromfc@linux.ibm.com>
+
+	* gdb.arch/vsx-regs.exp: Add tests that use the vector register
+	aliases.
+	* gdb.arch/altivec-regs.exp: Likewise.  Fix indentation of two
+	tests.
+	* gdb.arch/powerpc-vector-regs.c: New file.
+	* gdb.arch/powerpc-vector-regs.exp: New file.
+
+2019-01-14  Pedro Franco de Carvalho  <pedromfc@linux.ibm.com>
+
+	* gdb.arch/altivec-regs.exp: Fix the list passed to
+	gdb_expect_list when testing "info vector".
+
 2019-01-12  Andrew Burgess  <andrew.burgess@embecosm.com>
 
 	* gdb.base/style.exp: Don't include path in testname.

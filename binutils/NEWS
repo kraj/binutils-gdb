@@ -1,5 +1,7 @@
 -*- text -*-
 
+Changes in 2.32:
+
 * The addr2line, c++filt, nm and objdump tools now have a limit on the
   maximum amount of recursion that is allowed whilst demangling strings.
   The value for this limit is defined by the DEMANGLE_RECRUSE_LIMIT
@@ -13,7 +15,7 @@
 
 * Objdump's --disassemble option can now take a parameter, specifying the
   starting symbol for disassembly.  Disassembly will continue from this
-  symbol up to the next symbol.
+  symbol up to the next symbol or the end of the function.
 
 * The MIPS port now supports the Loongson 2K1000 processor which implements
   the MIPS64r2 ISA, the Loongson-mmi ASE, Loongson-cam ASE, Loongson-ext ASE,

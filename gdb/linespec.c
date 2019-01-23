@@ -1141,7 +1141,7 @@ iterate_over_all_matching_symtabs
 
     set_current_program_space (pspace);
 
-    for (objfile *objfile : all_objfiles (current_program_space))
+    for (objfile *objfile : current_program_space->objfiles ())
       {
 	if (objfile->sf)
 	  objfile->sf->qf->expand_symtabs_matching (objfile,
@@ -1150,7 +1150,7 @@ iterate_over_all_matching_symtabs
 						    NULL, NULL,
 						    search_domain);
 
-	for (compunit_symtab *cu : objfile_compunits (objfile))
+	for (compunit_symtab *cu : objfile->compunits ())
 	  {
 	    struct symtab *symtab = COMPUNIT_FILETABS (cu);
 
@@ -1445,7 +1445,7 @@ convert_results_to_lsals (struct linespec_state *self,
 
 /* A structure that contains two string representations of a struct
    linespec_canonical_name:
-     - one where the the symtab's fullname is used;
+     - one where the symtab's fullname is used;
      - one where the filename followed the "set filename-display"
        setting.  */
 
@@ -4357,7 +4357,7 @@ search_minsyms_for_name (struct collect_info *info,
 
 	set_current_program_space (pspace);
 
-	for (objfile *objfile : all_objfiles (current_program_space))
+	for (objfile *objfile : current_program_space->objfiles ())
 	  {
 	    iterate_over_minimal_symbols (objfile, name,
 					  [&] (struct minimal_symbol *msym)

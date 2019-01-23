@@ -2,6 +2,7 @@
 #name: SB instruction (Thumb) with +sb
 #source: sb.s
 #as: -march=armv8-a+sb -mthumb
+#skip: *-*-pe *-*-wince
 
 # Test SB Instructio
 

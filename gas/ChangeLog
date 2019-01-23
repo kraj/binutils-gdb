@@ -1,3 +1,93 @@
+2019-01-21  Nick Clifton  <nickc@redhat.com>
+
+	* po/uk.po: Updated Ukranian translation.
+
+2019-01-19  Nick Clifton  <nickc@redhat.com>
+
+	* config.in: Regenerate.
+	* configure: Regenerate.
+	* po/gas.pot: Regenerate.
+
+2018-06-24  Nick Clifton  <nickc@redhat.com>
+
+	2.32 branch created.
+
+2019-01-17  Tamar Christina  <tamar.christina@arm.com>
+
+	* testsuite/gas/arm/archv6t2-1-pe.d: New test.
+	* testsuite/gas/arm/archv6t2-1.d: Skip pe.
+	* testsuite/gas/arm/csdb.d: Skip pe.
+	* testsuite/gas/arm/sb-thumb1-pe.d: New test.
+	* testsuite/gas/arm/sb-thumb1.d: Skip pe.
+	* testsuite/gas/arm/sb-thumb2-pe.d: New test.
+	* testsuite/gas/arm/sb-thumb2.d: Skip pe.
+	* testsuite/gas/arm/udf.d: Skip pe.
+
+2019-01-16  Kito Cheng  <kito@andestech.com>
+
+	* testsuite/gas/riscv/attribute-empty.d: New.
+
+2019-01-16  Kito Cheng  <kito@andestech.com>
+	    Nelson Chu  <nelson@andestech.com>
+
+	* config/tc-riscv.c (DEFAULT_RISCV_ATTR): Define to 0 if not defined.
+	(riscv_set_options): Add `arch_attr` field.
+	(riscv_opts): Set default value for arch_attr.
+	(riscv_write_out_arch_attr): New.
+	(riscv_set_public_attributes): Likewise.
+	(riscv_md_end): Likewise.
+	(riscv_convert_symbolic_attribute): Likewise.
+	(s_riscv_attribute): Likewise.
+	(explicit_arch_attr): Likewise.
+	(riscv_pseudo_table): Add .attribute to the table.
+	(options): Add OPTION_ARCH_ATTR and OPTION_NO_ARCH_ATTR
+	enumeration constants.
+	(md_longopts): Add `march-attr' and `mno-arch-attr' options.
+	(md_parse_option): Handle the new options.
+	(md_show_usage): Document the `march-attr' option.
+	* config/tc-riscv.h (md_end): Define as riscv_md_end
+	(riscv_md_end): Declare.
+	(CONVERT_SYMBOLIC_ATTRIBUTE): Define as
+	riscv_convert_symbolic_attribute.
+	(riscv_convert_symbolic_attribute): Declare.
+	(start_assemble): Declare.
+	* testsuite/gas/elf/elf.exp: Adjust test case for section2.e.
+	* testsuite/gas/elf/section2.e-riscv: New.
+	* testsuite/gas/riscv/attribute-01.d: New test
+	* testsuite/gas/riscv/attribute-02.d: Likewise.
+	* testsuite/gas/riscv/attribute-03.d: Likewise.
+	* testsuite/gas/riscv/attribute-04.d: Likewise.
+	* testsuite/gas/riscv/attribute-04.s: Likewise.
+	* testsuite/gas/riscv/attribute-05.d: Likewise.
+	* testsuite/gas/riscv/attribute-05.s: Likewise.
+	* testsuite/gas/riscv/attribute-06.d: Likewise.
+	* testsuite/gas/riscv/attribute-06.s: Likewise.
+	* testsuite/gas/riscv/attribute-07.d: Likewise.
+	* testsuite/gas/riscv/attribute-07.s: Likewise.
+	* testsuite/gas/riscv/attribute-08.d: Likewise.
+	* testsuite/gas/riscv/attribute-08.s: Likewise.
+	* testsuite/gas/riscv/attribute-unknown.d: Likewise.
+	* testsuite/gas/riscv/attribute-unknown.s: Likewise.
+	* testsuite/gas/riscv/empty.l: Likewise.
+	* doc/c-riscv.texi (.attribute): Add documentation.
+	* configure.ac (--enable-default-riscv-attribute): New options.
+	* configure: Re-generate.
+	* config.in: Re-generate.
+
+2019-01-16  John Darrington <john@darrington.wattle.id.au>
+
+	* config/tc-s12z.c (lex_reg_name): Compare the length of the strings
+	before the contents.
+	* testsuite/gas/s12z/labels.d: New file.
+	* testsuite/gas/s12z/labels.s: New file.
+	* testsuite/gas/s12z/s12z.exp: Add them.
+	* config/tc-s12z.c (tfr): Change as_bad to as_warn.
+	Also fix message typo and semantics.
+	* config/tc-s12z.c (emit_opr): Emit BFD_RELOC_S12Z_OPR instead of
+	BFD_RELOC_24.
+	* testsuite/gas/s12z/opr-indirect-expr.d: Expect R_S12Z_OPR instead
+	of R_S12Z_EXT24.
+
 2019-01-14  Srinath Parvathaneni  <srinath.parvathaneni@arm.com>
 
 	* config/tc-arm.c (arm_ext_v6k_v6t2): Define.

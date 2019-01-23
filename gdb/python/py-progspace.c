@@ -24,7 +24,6 @@
 #include "objfiles.h"
 #include "language.h"
 #include "arch-utils.h"
-#include "py-ref.h"
 #include "solib.h"
 #include "block.h"
 
@@ -333,7 +332,7 @@ pspy_get_objfiles (PyObject *self_, PyObject *args)
 
   if (self->pspace != NULL)
     {
-      for (objfile *objf : all_objfiles (self->pspace))
+      for (objfile *objf : self->pspace->objfiles ())
 	{
 	  gdbpy_ref<> item = objfile_to_objfile_object (objf);
 

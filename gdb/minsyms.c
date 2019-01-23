@@ -1492,9 +1492,9 @@ find_solib_trampoline_target (struct frame_info *frame, CORE_ADDR pc)
 
   if (tsymbol != NULL)
     {
-      for (objfile *objfile : all_objfiles (current_program_space))
+      for (objfile *objfile : current_program_space->objfiles ())
 	{
-	  for (minimal_symbol *msymbol : objfile_msymbols (objfile))
+	  for (minimal_symbol *msymbol : objfile->msymbols ())
 	    {
 	      /* Also handle minimal symbols pointing to function
 		 descriptors.  */

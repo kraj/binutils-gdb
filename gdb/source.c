@@ -269,9 +269,9 @@ select_source_symtab (struct symtab *s)
 
   current_source_line = 1;
 
-  for (objfile *ofp : all_objfiles (current_program_space))
+  for (objfile *ofp : current_program_space->objfiles ())
     {
-      for (compunit_symtab *cu : objfile_compunits (ofp))
+      for (compunit_symtab *cu : ofp->compunits ())
 	{
 	  for (symtab *symtab : compunit_filetabs (cu))
 	    {
@@ -291,7 +291,7 @@ select_source_symtab (struct symtab *s)
   if (current_source_symtab)
     return;
 
-  for (objfile *objfile : all_objfiles (current_program_space))
+  for (objfile *objfile : current_program_space->objfiles ())
     {
       if (objfile->sf)
 	s = objfile->sf->qf->find_last_source_symtab (objfile);
@@ -353,7 +353,7 @@ show_directories_command (struct ui_file *file, int from_tty,
 void
 forget_cached_source_info_for_objfile (struct objfile *objfile)
 {
-  for (compunit_symtab *cu : objfile_compunits (objfile))
+  for (compunit_symtab *cu : objfile->compunits ())
     {
       for (symtab *s : compunit_filetabs (cu))
 	{
@@ -382,7 +382,7 @@ forget_cached_source_info (void)
   struct program_space *pspace;
 
   ALL_PSPACES (pspace)
-    for (objfile *objfile : all_objfiles (pspace))
+    for (objfile *objfile : pspace->objfiles ())
       {
 	forget_cached_source_info_for_objfile (objfile);
       }

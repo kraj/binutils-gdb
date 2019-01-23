@@ -1,3 +1,383 @@
+2019-01-23  Alan Hayward  <alan.hayward@arm.com>
+
+	* nat/aarch64-linux.c (aarch64_linux_new_thread): Replace XNEW
+	with XCNEW.
+
+2019-01-22  Tom Tromey  <tom@tromey.com>
+
+	* corelow.c: Do not include sys/file.h.
+
+2019-01-22  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-wingeneral.h: Include gdb_curses.h.
+
+2019-01-22  Tom Tromey  <tom@tromey.com>
+
+	* source-cache.h (class source_cache) <get_source_lines,
+	get_plain_source_lines, extract_lines>: Rename "lines" parameter.
+
+2019-01-22  Tom Tromey  <tom@tromey.com>
+
+	* remote-fileio.h (struct remote_target): Declare.
+
+2019-01-22  Tom Tromey  <tom@tromey.com>
+
+	* python/py-arch.c: Do not include py-ref.h.
+	* python/py-bpevent.c: Do not include py-ref.h.
+	* python/py-cmd.c: Do not include py-ref.h.
+	* python/py-continueevent.c: Do not include py-ref.h.
+	* python/py-event.h: Do not include py-ref.h.
+	* python/py-evtregistry.c: Do not include py-ref.h.
+	* python/py-finishbreakpoint.c: Do not include py-ref.h.
+	* python/py-frame.c: Do not include py-ref.h.
+	* python/py-framefilter.c: Do not include py-ref.h.
+	* python/py-function.c: Do not include py-ref.h.
+	* python/py-infevents.c: Do not include py-ref.h.
+	* python/py-linetable.c: Do not include py-ref.h.
+	* python/py-objfile.c: Do not include py-ref.h.
+	* python/py-param.c: Do not include py-ref.h.
+	* python/py-prettyprint.c: Do not include py-ref.h.
+	* python/py-progspace.c: Do not include py-ref.h.
+	* python/py-symbol.c: Do not include py-ref.h.
+	* python/py-symtab.c: Do not include py-ref.h.
+	* python/py-type.c: Do not include py-ref.h.
+	* python/py-unwind.c: Do not include py-ref.h.
+	* python/py-utils.c: Do not include py-ref.h.
+	* python/py-value.c: Do not include py-ref.h.
+	* python/py-varobj.c: Do not include py-ref.h.
+	* python/py-xmethods.c: Do not include py-ref.h.
+	* python/python.c: Do not include py-ref.h.
+	* varobj.c: Do not include py-ref.h.
+
+2019-01-22  Tom Tromey  <tom@tromey.com>
+
+	* objfiles.h (struct objfile_per_bfd_storage): Use "struct"
+	keyword for bcache.
+
+2019-01-22  Tom Tromey  <tom@tromey.com>
+
+	* compile/compile-cplus-types.c: Remove a comment by #include.
+
+2019-01-22  Tom Tromey  <tom@tromey.com>
+
+	* compile/gcc-c-plugin.h: Include compile-internal.h.
+
+2019-01-22  Tom Tromey  <tom@tromey.com>
+
+	* stabsread.c (EXTERN): Do not define.
+	(symnum, next_symbol_text_func, processing_gcc_compilation)
+	(within_function, global_sym_chain, global_stabs)
+	(previous_stab_code, this_object_header_files)
+	(n_this_object_header_files)
+	(n_allocated_this_object_header_files): Define.
+	* stabsread.h (EXTERN): Never define.  Use "extern".
+
+2019-01-22  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* event-top.c (handle_line_of_input): use unique_xmalloc_ptr for
+	history_value.
+
+2019-01-21  Tom Tromey  <tom@tromey.com>
+
+	* ui-out.c: Fix includes.
+	* tui/tui-source.c: Fix includes.
+	* target.c: Fix includes.
+	* remote.c: Fix includes.
+	* regcache.c: Fix includes.
+	* python/py-block.c: Fix includes.
+	* printcmd.c: Fix includes.
+	* or1k-tdep.c: Fix includes.
+	* mi/mi-main.c: Fix includes.
+	* m32r-tdep.c: Fix includes.
+	* csky-tdep.c: Fix includes.
+	* compile/compile-cplus-types.c: Fix includes.
+	* cli/cli-interp.c: Fix includes.
+
+2019-01-21  Alan Hayward  <alan.hayward@arm.com>
+
+	* aarch64-tdep.c (aapcs_is_vfp_call_or_return_candidate_1): Check
+	for padding.
+
+2019-01-16  Tom Tromey  <tom@tromey.com>
+
+	* objfiles.h (struct minimal_symbol_iterator): Rename.  Move
+	earlier.
+	(struct objfile) <msymbols_range>: Move from top level.
+	<msymbols>: New method.
+	(class objfile_msymbols): Remove.
+	* symtab.c (default_collect_symbol_completion_matches_break_on):
+	Update.
+	* symmisc.c (dump_msymbols): Update.
+	* stabsread.c (scan_file_globals): Update.
+	* objc-lang.c (info_selectors_command, info_classes_command)
+	(find_methods): Update.
+	* minsyms.c (find_solib_trampoline_target): Update.
+	* hppa-tdep.c (hppa_lookup_stub_minimal_symbol): Update.
+	* coffread.c (coff_symfile_read): Update.
+	* ada-lang.c (ada_lookup_simple_minsym)
+	(ada_collect_symbol_completion_matches): Update.
+
+2019-01-16  Tom Tromey  <tom@tromey.com>
+
+	* objfiles.h (class objfile_msymbols) <iterator>: Change argument
+	type.  Remove no-argument constructor.
+	<iterator::operator++>: Simplify.
+	<begin>: Update.
+	<end>: Use minimal_symbol_count.
+
+2019-01-16  Tom Tromey  <tom@tromey.com>
+
+	* objfiles.h (struct objfile) <psymtabs>: New method.
+	(class objfile_psymtabs): Remove.
+	* psymtab.h (class psymtab_storage) <partial_symtab_range>: New
+	typedef.
+	<range>: New method.
+	(require_partial_symbols): Change return type.
+	* psymtab.c (require_partial_symbols)
+	(psym_expand_symtabs_matching): Update.
+	* mdebugread.c (parse_partial_symbols): Update.
+	* dbxread.c (dbx_end_psymtab): Update.
+
+2019-01-15  Tom Tromey  <tom@tromey.com>
+
+	* symtab.c (lookup_objfile_from_block)
+	(lookup_symbol_in_objfile_symtabs)
+	(basic_lookup_transparent_type_1, find_pc_sect_compunit_symtab)
+	(find_line_symtab, info_sources_command)
+	(default_collect_symbol_completion_matches_break_on)
+	(make_source_files_completion_list): Update.
+	* symmisc.c (print_objfile_statistics, dump_objfile)
+	(maintenance_print_symbols, maintenance_info_symtabs)
+	(maintenance_check_symtabs, maintenance_info_line_tables):
+	Update.
+	* source.c (select_source_symtab)
+	(forget_cached_source_info_for_objfile): Update.
+	* objfiles.h (class objfile_compunits): Remove.
+	(struct objfile) <compunits_range>: New typedef.
+	(compunits): New method.
+	* objfiles.c (objfile_relocate1): Update.
+	* mi/mi-cmd-file.c (mi_cmd_file_list_exec_source_files): Update.
+	* maint.c (count_symtabs_and_blocks): Update.
+	* linespec.c (iterate_over_all_matching_symtabs): Update.
+	* cp-support.c (add_symbol_overload_list_qualified): Update.
+	* coffread.c (coff_symtab_read): Update.
+	* ada-lang.c (add_nonlocal_symbols)
+	(ada_collect_symbol_completion_matches)
+	(ada_add_global_exceptions): Update.
+
+2019-01-15  Tom Tromey  <tom@tromey.com>
+
+	* progspace.h (program_space) <objfiles_safe_range>: New
+	typedef.
+	<objfiles_safe>: New method.
+	* objfiles.h (class all_objfiles_safe): Remove.
+	* objfiles.c (free_all_objfiles, objfile_purge_solibs): Update.
+	* jit.c (jit_inferior_exit_hook): Update.
+
+2019-01-17  Tom Tromey  <tom@tromey.com>
+
+	* progspace.h (program_space) <objfiles_range>: New typedef.
+	<objfiles>: New method.
+	<objfiles_head>: Rename from objfiles.
+	(object_files): Update.
+	* guile/scm-progspace.c (gdbscm_progspace_objfiles): Update.
+	* guile/scm-pretty-print.c
+	(ppscm_find_pretty_printer_from_objfiles): Update.
+	* guile/scm-objfile.c (gdbscm_objfiles): Update.
+	* python/py-xmethods.c (gdbpy_get_matching_xmethod_workers):
+	Update.
+	* python/py-progspace.c (pspy_get_objfiles): Update.
+	* python/py-prettyprint.c (find_pretty_printer_from_objfiles):
+	Update.
+	* python/py-objfile.c (objfpy_lookup_objfile_by_name)
+	(objfpy_lookup_objfile_by_build_id): Update.
+	* mi/mi-cmd-file.c (mi_cmd_file_list_exec_source_files): Update.
+	* windows-tdep.c (windows_iterate_over_objfiles_in_search_order):
+	Update.
+	* symtab.c (iterate_over_symtabs, matching_obj_sections)
+	(expand_symtab_containing_pc, lookup_objfile_from_block)
+	(lookup_static_symbol, basic_lookup_transparent_type)
+	(find_pc_sect_compunit_symtab, find_symbol_at_address)
+	(find_line_symtab, info_sources_command)
+	(default_collect_symbol_completion_matches_break_on)
+	(make_source_files_completion_list, find_main_name): Update.
+	* symmisc.c (print_symbol_bcache_statistics)
+	(print_objfile_statistics, maintenance_print_symbols)
+	(maintenance_print_msymbols, maintenance_print_objfiles)
+	(maintenance_info_symtabs, maintenance_check_symtabs)
+	(maintenance_expand_symtabs, maintenance_info_line_tables):
+	Update.
+	* symfile.c (remove_symbol_file_command, overlay_invalidate_all)
+	(find_pc_overlay, find_pc_mapped_section, list_overlays_command)
+	(map_overlay_command, unmap_overlay_command)
+	(simple_overlay_update, expand_symtabs_matching)
+	(map_symbol_filenames): Update.
+	* symfile-debug.c (set_debug_symfile): Update.
+	* spu-tdep.c (spu_overlay_update, spu_objfile_from_frame):
+	Update.
+	* source.c (select_source_symtab, forget_cached_source_info):
+	Update.
+	* solib.c (solib_read_symbols): Update.
+	* solib-spu.c (append_ocl_sos): Update.
+	* psymtab.c (maintenance_print_psymbols)
+	(maintenance_info_psymtabs, maintenance_check_psymtabs): Update.
+	* probe.c (parse_probes_in_pspace, find_probe_by_pc): Update.
+	* printcmd.c (info_symbol_command): Update.
+	* ppc-linux-tdep.c (ppc_linux_spe_context_inferior_created):
+	Update.
+	* objfiles.h (class all_objfiles): Remove.
+	* objfiles.c (have_partial_symbols, have_full_symbols)
+	(have_minimal_symbols, qsort_cmp, update_section_map)
+	(shared_objfile_contains_address_p)
+	(default_iterate_over_objfiles_in_search_order): Update.
+	* objc-lang.c (info_selectors_command, info_classes_command)
+	(find_methods): Update.
+	* minsyms.c (find_solib_trampoline_target): Update.
+	* maint.c (maintenance_info_sections)
+	(maintenance_translate_address, count_symtabs_and_blocks):
+	Update.
+	* main.c (captured_main_1): Update.
+	* linux-thread-db.c (try_thread_db_load_from_pdir)
+	(has_libpthread): Update.
+	* linespec.c (iterate_over_all_matching_symtabs)
+	(search_minsyms_for_name): Update.
+	* jit.c (jit_find_objf_with_entry_addr): Update.
+	* hppa-tdep.c (find_unwind_entry)
+	(hppa_lookup_stub_minimal_symbol): Update.
+	* gcore.c (gcore_create_callback, objfile_find_memory_regions):
+	Update.
+	* elfread.c (elf_gnu_ifunc_resolve_by_cache)
+	(elf_gnu_ifunc_resolve_by_got): Update.
+	* dwarf2-frame.c (dwarf2_frame_find_fde): Update.
+	* dwarf-index-write.c (save_gdb_index_command): Update.
+	* cp-support.c (add_symbol_overload_list_qualified): Update.
+	* breakpoint.c (create_overlay_event_breakpoint)
+	(create_longjmp_master_breakpoint)
+	(create_std_terminate_master_breakpoint)
+	(create_exception_master_breakpoint): Update.
+	* blockframe.c (find_pc_partial_function): Update.
+	* ada-lang.c (ada_lookup_simple_minsym, add_nonlocal_symbols)
+	(ada_collect_symbol_completion_matches)
+	(ada_add_global_exceptions): Update.
+
+2019-01-17  Tom Tromey  <tom@tromey.com>
+
+	* solib-target.c (lm_info_target_p): Remove typedef.  Don't
+	declare VEC.
+	(solib_target_parse_libraries): Change return type.
+	(library_list_start_segment, library_list_start_section)
+	(library_list_end_library, library_list_start_library); Update.
+	(solib_target_free_library_list): Remove.
+	(solib_target_parse_libraries): Remove cleanup.  Change return
+	type.
+	(solib_target_current_sos): Update.
+
+2019-01-17  Tom Tromey  <tromey@bapiya>
+
+	* valprint.c: Replace "the the" with "the".
+	* symtab.c: Replace "the the" with "the".
+	* solib.c: Replace "the the" with "the".
+	* solib-dsbt.c: Replace "the the" with "the".
+	* linespec.c: Replace "the the" with "the".
+	* dwarf2loc.h: Replace "the the" with "the".
+	* amd64-windows-tdep.c: Replace "the the" with "the".
+	* aarch64-tdep.c: Replace "the the" with "the".
+
+2019-01-16  Keith Seitz  <keiths@redhat.com>
+
+	PR gdb/23773
+	* dwarf2read.c (dwarf2_cu) <ancestor>: New field.
+	<builder>: Rename to ..
+	<m_builder>: ... this and make private.
+	(dwarf2_cu::get_builder): New method.  Change all users of
+	`builder' to use this method.
+	(dwarf2_start_symtab): Move to ...
+	(dwarf2_cu::start_symtab): ... here.  Update all callers
+	(setup_type_unit_groups): Move to ...
+	(dwarf2_cu::setup_type_unit_groups): ... here.  Update all
+	callers.
+	(dwarf2_cu::reset_builder): New method.
+	(process_full_compunit, process_full_type_unit): Use
+	dwarf2_cu::reset_builder.
+	(follow_die_offset): Record the ancestor CU if it is different
+	from the followed DIE's CU.
+	(follow_die_sig_1): Likewise.
+
+2019-01-15  Tom Tromey  <tom@tromey.com>
+
+	* remote.c (class remote_state) <buf>: Now a char_vector.
+	<buf_size>: Remove.
+	(remote_target::getpkt): Change type of buf.  Remove sizeof_buf
+	parameter.
+	(remote_target::getpkt_or_notif_sane_1)
+	(remote_target::getpkt_sane)
+	(remote_target::getpkt_or_notif_sane): Likewise.
+	(class remote_target) <putpkt>: New overload.
+	(remote_target::read_frame): Change type of "buf_p".  Remove
+	sizeof_p parameter.
+	(packet_ok): New overload.
+	(packet_check_result): New overload.
+	Update all uses.
+
+2019-01-14  Tom Tromey  <tom@tromey.com>
+
+	* remote-notif.c (handle_notification, remote_notif_ack)
+	(remote_notif_parse): Make "buf" const.
+	* remote-notif.h (struct notif_client) <parse, ack>: Make "buf"
+	const.
+	(remote_notif_parse, remote_notif_ack, handle_notification):
+	Likewise.
+	* remote.c (remote_notif_stop_parse): Make "buf" const.
+	(remote_target::remote_parse_stop_reply): Make "buf" const.
+	(remote_notif_stop_ack): Make "buf" const.
+
+2019-01-14  Tom Tromey  <tom@tromey.com>
+
+	* remote.c (remote_console_output): Make parameter const.
+
+2019-01-14  Tom Tromey  <tom@tromey.com>
+
+	* target-debug.h (target_debug_print_signals): Constify.
+	* nto-procfs.c (nto_procfs_target::pass_signals): Update.
+	* procfs.c (procfs_target::pass_signals): Update.
+	* linux-nat.c (linux_nat_target::pass_signals): Update.
+	* linux-nat.h (class linux_nat_target) <pass_signals>: Update.
+	* target-delegates.c: Rebuild.
+	* remote.c (remote_target::program_signals): Update.
+	(remote_target::pass_signals): Update.
+	* target.c (target_pass_signals): Constify argument.
+	(target_program_signals): Likewise.
+	* target.h (struct target_ops) <pass_signals, program_signals>:
+	Constify argument.
+	(target_pass_signals, target_program_signals): Constify argument.
+
+2019-01-14  Tom Tromey  <tom@tromey.com>
+
+	PR tui/28819:
+	* tui/tui-io.c (gdb_wgetch): Print \r when needed.
+
+2019-01-14  Pedro Franco de Carvalho  <pedromfc@linux.ibm.com>
+
+	* ppc-tdep.h (struct gdbarch_tdep) <ppc_v0_alias_regnum>: New
+	field.
+	* rs6000-tdep.c: Include reggroups.h.
+	(IS_V_ALIAS_PSEUDOREG): Define.
+	(rs6000_register_name): Return names for the "vX" aliases.
+	(rs6000_pseudo_register_type): Return type for the "vX" aliases.
+	(rs6000_pseudo_register_reggroup_p): Restore.  Handle "vX"
+	aliases.  Call default_register_reggroup_p for all other
+	pseudo-registers.
+	(v_alias_pseudo_register_read, v_alias_pseudo_register_write):
+	New functions.
+	(rs6000_pseudo_register_read, rs6000_pseudo_register_write):
+	Handle "vX" aliases.
+	(v_alias_pseudo_register_collect): New function.
+	(rs6000_ax_pseudo_register_collect): Handle "vX" aliases.
+	(rs6000_gdbarch_init): Initialize "vX" aliases as
+	pseudo-registers.  Restore registration of
+	rs6000_pseudo_register_reggroup_p with
+	set_tdesc_pseudo_register_reggroup_p.
+
 2019-01-13  Max Filippov  <jcmvbkbc@gmail.com>
 
 	* xtensa-linux-tdep.c (xtensa_linux_init_abi): Update
@@ -910,7 +1290,7 @@
 
 	Update copyright year range in all GDB files.
 
-2019-01-01  Joel Brobecker  <brobecker@adacore.com>
+2019-01-01, 19  Joel Brobecker  <brobecker@adacore.com>
 
 	* config/djgpp/fnchange.lst: Add entry for gdb/ChangeLog-2018.
 

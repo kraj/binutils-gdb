@@ -1,3 +1,46 @@
+2019-01-23  Nick Clifton  <nickc@redhat.com>
+
+	* po/fr.po: Updated French translation.
+	* po/pt.po: Updated Portuguese translation.
+
+2019-01-21  Nick Clifton  <nickc@redhat.com>
+
+	* po/uk.po: Updated Ukranian translation.
+
+2019-01-19  Nick Clifton  <nickc@redhat.com>
+
+	* configure: Regenerate.
+	* binutils/po/binutils.pot.
+
+	* README-how-to-make-a-release: Update description on how to make
+	a branch.
+
+2018-06-24  Nick Clifton  <nickc@redhat.com>
+
+	2.32 branch created.
+
+2019-01-17  Nick Clifton  <nickc@redhat.com>
+
+	* objdump.c (disassemble_section): When disassembling from a
+	symbol only stop at the next symbol if the original symbol was not
+	a function symbol.  Otherwise continue disassembling until a new
+	function is reached.
+	* testsuite/binutils-all/objdump.exp: Add tests of extended
+	functionality.
+	* testsuite/binutils-all/disasm.s: New test source file.
+
+2019-01-16  Kito Cheng  <kito@andestech.com>
+	    Nelson Chu  <nelson@andestech.com>
+
+	* readelf.c (get_riscv_section_type_name): New function.
+	(get_section_type_name): Add handler for RISC-V.
+	(riscv_attr_tag_t): Declare.
+	(riscv_attr_tag): New.
+	(display_riscv_attribute): New function.
+	(process_attributes): Add handler for RISC-V.
+	* testsuite/binutils-all/strip-3.d: Remove .riscv.attribute
+	section.
+
 2019-01-10  Nick Clifton  <nickc@redhat.com>
 
 	PR 23963

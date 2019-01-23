@@ -25,7 +25,6 @@
 #include "extension-priv.h"
 #include "python.h"
 #include "python-internal.h"
-#include "py-ref.h"
 
 /* Return type of print_string_repr.  */
 
@@ -93,7 +92,7 @@ search_pp_list (PyObject *list, PyObject *value)
 static PyObject *
 find_pretty_printer_from_objfiles (PyObject *value)
 {
-  for (objfile *obj : all_objfiles (current_program_space))
+  for (objfile *obj : current_program_space->objfiles ())
     {
       gdbpy_ref<> objf = objfile_to_objfile_object (obj);
       if (objf == NULL)

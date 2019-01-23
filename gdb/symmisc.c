@@ -64,7 +64,7 @@ print_symbol_bcache_statistics (void)
   struct program_space *pspace;
 
   ALL_PSPACES (pspace)
-    for (objfile *objfile : all_objfiles (pspace))
+    for (objfile *objfile : pspace->objfiles ())
       {
 	QUIT;
 	printf_filtered (_("Byte cache statistics for '%s':\n"),
@@ -86,7 +86,7 @@ print_objfile_statistics (void)
   int i, linetables, blockvectors;
 
   ALL_PSPACES (pspace)
-  for (objfile *objfile : all_objfiles (pspace))
+  for (objfile *objfile : pspace->objfiles ())
     {
       QUIT;
       printf_filtered (_("Statistics for '%s':\n"), objfile_name (objfile));
@@ -108,7 +108,7 @@ print_objfile_statistics (void)
       if (objfile->sf)
 	objfile->sf->qf->print_stats (objfile);
       i = linetables = 0;
-      for (compunit_symtab *cu : objfile_compunits (objfile))
+      for (compunit_symtab *cu : objfile->compunits ())
 	{
 	  for (symtab *s : compunit_filetabs (cu))
 	    {
@@ -117,8 +117,8 @@ print_objfile_statistics (void)
 		linetables++;
 	    }
 	}
-      blockvectors = std::distance (objfile_compunits (objfile).begin (),
-				    objfile_compunits (objfile).end ());
+      blockvectors = std::distance (objfile->compunits ().begin (),
+				    objfile->compunits ().end ());
       printf_filtered (_("  Number of symbol tables: %d\n"), i);
       printf_filtered (_("  Number of symbol tables with line tables: %d\n"),
 		       linetables);
@@ -162,7 +162,7 @@ dump_objfile (struct objfile *objfile)
   if (objfile->compunit_symtabs != NULL)
     {
       printf_filtered ("Symtabs:\n");
-      for (compunit_symtab *cu : objfile_compunits (objfile))
+      for (compunit_symtab *cu : objfile->compunits ())
 	{
 	  for (symtab *symtab : compunit_filetabs (cu))
 	    {
@@ -197,7 +197,7 @@ dump_msymbols (struct objfile *objfile, struct ui_file *outfile)
       return;
     }
   index = 0;
-  for (minimal_symbol *msymbol : objfile_msymbols (objfile))
+  for (minimal_symbol *msymbol : objfile->msymbols ())
     {
       struct obj_section *section = MSYMBOL_OBJ_SECTION (objfile, msymbol);
 
@@ -475,7 +475,7 @@ maintenance_print_symbols (const char *args, int from_tty)
     {
       int found = 0;
 
-      for (objfile *objfile : all_objfiles (current_program_space))
+      for (objfile *objfile : current_program_space->objfiles ())
 	{
 	  int print_for_objfile = 1;
 
@@ -486,7 +486,7 @@ maintenance_print_symbols (const char *args, int from_tty)
 	  if (!print_for_objfile)
 	    continue;
 
-	  for (compunit_symtab *cu : objfile_compunits (objfile))
+	  for (compunit_symtab *cu : objfile->compunits ())
 	    {
 	      for (symtab *s : compunit_filetabs (cu))
 		{
@@ -736,7 +736,7 @@ maintenance_print_msymbols (const char *args, int from_tty)
       outfile = &arg_outfile;
     }
 
-  for (objfile *objfile : all_objfiles (current_program_space))
+  for (objfile *objfile : current_program_space->objfiles ())
     {
       QUIT;
       if (objfile_arg == NULL
@@ -756,7 +756,7 @@ maintenance_print_objfiles (const char *regexp, int from_tty)
     re_comp (regexp);
 
   ALL_PSPACES (pspace)
-    for (objfile *objfile : all_objfiles (pspace))
+    for (objfile *objfile : pspace->objfiles ())
       {
 	QUIT;
 	if (! regexp
@@ -778,13 +778,13 @@ maintenance_info_symtabs (const char *regexp, int from_tty)
     re_comp (regexp);
 
   ALL_PSPACES (pspace)
-    for (objfile *objfile : all_objfiles (pspace))
+    for (objfile *objfile : pspace->objfiles ())
       {
 	/* We don't want to print anything for this objfile until we
 	   actually find a symtab whose name matches.  */
 	int printed_objfile_start = 0;
 
-	for (compunit_symtab *cust : objfile_compunits (objfile))
+	for (compunit_symtab *cust : objfile->compunits ())
 	  {
 	    int printed_compunit_symtab_start = 0;
 
@@ -863,13 +863,13 @@ maintenance_check_symtabs (const char *ignore, int from_tty)
   struct program_space *pspace;
 
   ALL_PSPACES (pspace)
-    for (objfile *objfile : all_objfiles (pspace))
+    for (objfile *objfile : pspace->objfiles ())
       {
 	/* We don't want to print anything for this objfile until we
 	   actually find something worth printing.  */
 	int printed_objfile_start = 0;
 
-	for (compunit_symtab *cust : objfile_compunits (objfile))
+	for (compunit_symtab *cust : objfile->compunits ())
 	  {
 	    int found_something = 0;
 	    struct symtab *symtab = compunit_primary_filetab (cust);
@@ -929,7 +929,7 @@ maintenance_expand_symtabs (const char *args, int from_tty)
     re_comp (regexp);
 
   ALL_PSPACES (pspace)
-    for (objfile *objfile : all_objfiles (pspace))
+    for (objfile *objfile : pspace->objfiles ())
       {
 	if (objfile->sf)
 	  {
@@ -1030,9 +1030,9 @@ maintenance_info_line_tables (const char *regexp, int from_tty)
     re_comp (regexp);
 
   ALL_PSPACES (pspace)
-    for (objfile *objfile : all_objfiles (pspace))
+    for (objfile *objfile : pspace->objfiles ())
       {
-	for (compunit_symtab *cust : objfile_compunits (objfile))
+	for (compunit_symtab *cust : objfile->compunits ())
 	  {
 	    for (symtab *symtab : compunit_filetabs (cust))
 	      {

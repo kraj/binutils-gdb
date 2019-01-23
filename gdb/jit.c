@@ -984,7 +984,7 @@ jit_unregister_code (struct objfile *objfile)
 static struct objfile *
 jit_find_objf_with_entry_addr (CORE_ADDR entry_addr)
 {
-  for (objfile *objf : all_objfiles (current_program_space))
+  for (objfile *objf : current_program_space->objfiles ())
     {
       struct jit_objfile_data *objf_data;
 
@@ -1391,7 +1391,7 @@ jit_breakpoint_re_set (void)
 static void
 jit_inferior_exit_hook (struct inferior *inf)
 {
-  for (objfile *objf : all_objfiles_safe (current_program_space))
+  for (objfile *objf : current_program_space->objfiles_safe ())
     {
       struct jit_objfile_data *objf_data
 	= (struct jit_objfile_data *) objfile_data (objf, jit_objfile_data);

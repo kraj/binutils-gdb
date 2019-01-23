@@ -27,26 +27,34 @@ How to perform a release.
      directories and the top level configure files.
 
   3. When branch day arrives add markers for the upcoming release to
-     gas, ld, gold and binutils NEWS files.
-       [If using the make-prerelease.sh script, check that
-        common.sh has the right values].
-       [make-prelease.sh command i]
-     Likewise for all of the ChangeLog files.
+     the NEWS files in gas, ld, gold and binutils.
+
+     Likewise for the ChangeLog files in: bfd, binutils, config, cpu,
+     elfcpp, gas, gold, gprof, include, ld, opcodes and toplevel.
+
      Add a note of the name of the new branch to binutils/BRANCHES.
+
      Commit these changes.
-       [make-prerelease.sh command C]
 
   4. Create the release branch using:
 
-	git branch binutils-2_31-branch
-        git push origin binutils-2_31-branch
+	git branch binutils-2_33-branch
+        git push origin binutils-2_33-branch
+
+     If you get a message like:
+     
+       remote: fatal: Invalid revision range 0000000000000000000000000000000000000000..f974f26cb16cc6fe3946f163c787a05e713fb77b
+       
+     It appears that this can be ignored...
 
   5. Make sure that the branch is there.  IE check out the branch sources:
   
-        git clone ssh://sourceware.org/git/binutils-gdb.git -b binutils-2_31-branch 2.31
+        git clone ssh://sourceware.org/git/binutils-gdb.git -b binutils-2_33-branch 2.33
 
      If you get a message about being in a "detached head" state, something
      has gone wrong...
+
+     Keep the checked out sources - they are going to be needed in future steps.
 
   6. Update "BINUTILS_BRANCH" in gdbadmin's crontab:
 
@@ -62,7 +70,7 @@ How to perform a release.
      ask Joel Brobecker <brobecker AT adacore DOT com>.
 
   7. Rename the current HEAD version entry in Bugzilla, and create a
-     new one.  E.g. rename "2.30 (HEAD)" to 2.30, and create "2.31
+     new one.  E.g. rename "2.33 (HEAD)" to 2.33, and create "2.34
      (HEAD)":
      
         https://sourceware.org/bugzilla/editversions.cgi?product=binutils
@@ -70,34 +78,64 @@ How to perform a release.
   8. Update bfd/version.m4 on HEAD to indicate that is now a snapshot
      of the next release:
      
-       m4_define([BFD_VERSION], [2.31.51])
+       m4_define([BFD_VERSION], [2.33.51])
        
      Update the release number in bfd/version.m4 for the branch.
      The branch only needs the point value set to 90 as the release
      has not actually happened yet.
 
-       m4_define([BFD_VERSION], [2.30.90])
+       m4_define([BFD_VERSION], [2.32.90])
 
      Regenerate various files on both branch and HEAD by configuring
-     with --enable-maintainer-mode.  NB/ Remember to build gold and
-     gprof.  Add ChangeLog entries.  Commit the changes.  Make sure
-     that this includes the .pot files as well as the configure and
-     makefiles.
+     with "--enable-maintainer-mode --enable-gold" and then building
+     with "make all-binutils all-gas all-gold all-gprof all-ld"
+
+     Add ChangeLog entries for the updated files.  Commit the changes.
+     Make sure that this includes the .pot files as well as the
+     configure and makefiles.
 
   8. Create an initial prerelease:
 
      a. Create a source tarball of the BRANCH sources:
 
+           cd <branch-sources>
            ./src-release -x binutils
 
      b. Build a test target using this tarball.
 
-     c. Upload the prerelease snapshot to the FTP:
+           cp binutils-<version>.tar.xz /dev/shm
+	   cd /dev/shm
+	   tar xvf binutils-<version>.tar.xz
+	   mkdir build
+	   cd build
+	   ../<version>/configure --quiet --enable-gold
+	   make
 
-          scp ../binutils-$version.tar.xz sourceware.org:~ftp/pub/binutils/snapshots
-          ssh sourceware.org md5sum ~ftp/pub/binutils/snapshots/binutils-$version.tar.xz
+        If there are problems, fix them.
+
+     c. Upload the prerelease snapshot to the sourceware FTP site:
+
+          cd <branch-sources>
+          scp binutils-<version>.tar.xz sourceware.org:~ftp/pub/binutils/snapshots
+          ssh sourceware.org md5sum ~ftp/pub/binutils/snapshots/binutils-<version>.tar.xz
 
      d. Clean up the source directory.
+
+          rm binutils-<version> binutils-<version>.tar binutils-<version>.tar.xz
+	  rm gas/bfin-lex.c \
+	     gas/bfin-parse.c \
+	     gas/bfin-parse.h \
+	     gas/itbl-lex.c \
+	     gas/itbl-parse.c \
+	     gas/itbl-parse.h \
+	     gas/m68k-parse.c \
+	     gas/rl78-parse.c \
+	     gas/rl78-parse.h \
+	     gas/rx-parse.c \
+	     gas/rx-parse.h \
+	     gold/yyscript.c \
+	     gold/yyscript.h
+	rm -fr proto-toplev
 
    9. Tell the Translation Project where to find the new tarball. <coordinator@translationproject.org>
       qv: http://translationproject.org/html/maintainers.html

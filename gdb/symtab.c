@@ -473,7 +473,7 @@ iterate_over_symtabs (const char *name,
       gdb_assert (IS_ABSOLUTE_PATH (real_path.get ()));
     }
 
-  for (objfile *objfile : all_objfiles (current_program_space))
+  for (objfile *objfile : current_program_space->objfiles ())
     {
       if (iterate_over_some_symtabs (name, real_path.get (),
 				     objfile->compunit_symtabs, NULL,
@@ -484,7 +484,7 @@ iterate_over_symtabs (const char *name,
   /* Same search rules as above apply here, but now we look thru the
      psymtabs.  */
 
-  for (objfile *objfile : all_objfiles (current_program_space))
+  for (objfile *objfile : current_program_space->objfiles ())
     {
       if (objfile->sf
 	  && objfile->sf->qf->map_symtabs_matching_filename (objfile,
@@ -1010,7 +1010,7 @@ matching_obj_sections (struct obj_section *obj_first,
   /* Otherwise check that they are in corresponding objfiles.  */
 
   struct objfile *obj = NULL;
-  for (objfile *objfile : all_objfiles (current_program_space))
+  for (objfile *objfile : current_program_space->objfiles ())
     if (objfile->obfd == first->owner)
       {
 	obj = objfile;
@@ -1047,7 +1047,7 @@ expand_symtab_containing_pc (CORE_ADDR pc, struct obj_section *section)
 	  || MSYMBOL_TYPE (msymbol.minsym) == mst_file_bss))
     return;
 
-  for (objfile *objfile : all_objfiles (current_program_space))
+  for (objfile *objfile : current_program_space->objfiles ())
     {
       struct compunit_symtab *cust = NULL;
 
@@ -2169,9 +2169,9 @@ lookup_objfile_from_block (const struct block *block)
 
   block = block_global_block (block);
   /* Look through all blockvectors.  */
-  for (objfile *obj : all_objfiles (current_program_space))
+  for (objfile *obj : current_program_space->objfiles ())
     {
-      for (compunit_symtab *cust : objfile_compunits (obj))
+      for (compunit_symtab *cust : obj->compunits ())
 	if (block == BLOCKVECTOR_BLOCK (COMPUNIT_BLOCKVECTOR (cust),
 					GLOBAL_BLOCK))
 	  {
@@ -2265,7 +2265,7 @@ lookup_symbol_in_objfile_symtabs (struct objfile *objfile, int block_index,
 			  name, domain_name (domain));
     }
 
-  for (compunit_symtab *cust : objfile_compunits (objfile))
+  for (compunit_symtab *cust : objfile->compunits ())
     {
       const struct blockvector *bv;
       const struct block *block;
@@ -2301,7 +2301,7 @@ lookup_symbol_in_objfile_symtabs (struct objfile *objfile, int block_index,
    Normally we only look in OBJFILE, and not any separate debug objfiles
    because the outer loop will cause them to be searched too.  This case is
    different.  Here we're called from search_symbols where it will only
-   call us for the the objfile that contains a matching minsym.  */
+   call us for the objfile that contains a matching minsym.  */
 
 static struct block_symbol
 lookup_symbol_in_objfile_from_linkage_name (struct objfile *objfile,
@@ -2588,7 +2588,7 @@ lookup_static_symbol (const char *name, const domain_enum domain)
       return result;
     }
 
-  for (objfile *objfile : all_objfiles (current_program_space))
+  for (objfile *objfile : current_program_space->objfiles ())
     {
       result = lookup_symbol_in_objfile (objfile, STATIC_BLOCK, name, domain);
       if (result.symbol != NULL)
@@ -2763,7 +2763,7 @@ basic_lookup_transparent_type_1 (struct objfile *objfile, int block_index,
   const struct block *block;
   const struct symbol *sym;
 
-  for (compunit_symtab *cust : objfile_compunits (objfile))
+  for (compunit_symtab *cust : objfile->compunits ())
     {
       bv = COMPUNIT_BLOCKVECTOR (cust);
       block = BLOCKVECTOR_BLOCK (bv, block_index);
@@ -2795,14 +2795,14 @@ basic_lookup_transparent_type (const char *name)
      of the desired name as a global, then do psymtab-to-symtab
      conversion on the fly and return the found symbol.  */
 
-  for (objfile *objfile : all_objfiles (current_program_space))
+  for (objfile *objfile : current_program_space->objfiles ())
     {
       t = basic_lookup_transparent_type_1 (objfile, GLOBAL_BLOCK, name);
       if (t)
 	return t;
     }
 
-  for (objfile *objfile : all_objfiles (current_program_space))
+  for (objfile *objfile : current_program_space->objfiles ())
     {
       t = basic_lookup_transparent_type_quick (objfile, GLOBAL_BLOCK, name);
       if (t)
@@ -2816,14 +2816,14 @@ basic_lookup_transparent_type (const char *name)
      of the desired name as a file-level static, then do psymtab-to-symtab
      conversion on the fly and return the found symbol.  */
 
-  for (objfile *objfile : all_objfiles (current_program_space))
+  for (objfile *objfile : current_program_space->objfiles ())
     {
       t = basic_lookup_transparent_type_1 (objfile, STATIC_BLOCK, name);
       if (t)
 	return t;
     }
 
-  for (objfile *objfile : all_objfiles (current_program_space))
+  for (objfile *objfile : current_program_space->objfiles ())
     {
       t = basic_lookup_transparent_type_quick (objfile, STATIC_BLOCK, name);
       if (t)
@@ -2902,9 +2902,9 @@ find_pc_sect_compunit_symtab (CORE_ADDR pc, struct obj_section *section)
      It also happens for objfiles that have their functions reordered.
      For these, the symtab we are looking for is not necessarily read in.  */
 
-  for (objfile *obj_file : all_objfiles (current_program_space))
+  for (objfile *obj_file : current_program_space->objfiles ())
     {
-      for (compunit_symtab *cust : objfile_compunits (obj_file))
+      for (compunit_symtab *cust : obj_file->compunits ())
 	{
 	  struct block *b;
 	  const struct blockvector *bv;
@@ -2964,7 +2964,7 @@ find_pc_sect_compunit_symtab (CORE_ADDR pc, struct obj_section *section)
 
   /* Not found in symtabs, search the "quick" symtabs (e.g. psymtabs).  */
 
-  for (objfile *objf : all_objfiles (current_program_space))
+  for (objfile *objf : current_program_space->objfiles ())
     {
       struct compunit_symtab *result;
 
@@ -2996,7 +2996,7 @@ find_pc_compunit_symtab (CORE_ADDR pc)
 struct symbol *
 find_symbol_at_address (CORE_ADDR address)
 {
-  for (objfile *objfile : all_objfiles (current_program_space))
+  for (objfile *objfile : current_program_space->objfiles ())
     {
       if (objfile->sf == NULL
 	  || objfile->sf->qf->find_compunit_symtab_by_address == NULL)
@@ -3351,16 +3351,16 @@ find_line_symtab (struct symtab *sym_tab, int line,
       else
 	best = 0;
 
-      for (objfile *objfile : all_objfiles (current_program_space))
+      for (objfile *objfile : current_program_space->objfiles ())
 	{
 	  if (objfile->sf)
 	    objfile->sf->qf->expand_symtabs_with_fullname
 	      (objfile, symtab_to_fullname (sym_tab));
 	}
 
-      for (objfile *objfile : all_objfiles (current_program_space))
+      for (objfile *objfile : current_program_space->objfiles ())
 	{
-	  for (compunit_symtab *cu : objfile_compunits (objfile))
+	  for (compunit_symtab *cu : objfile->compunits ())
 	    {
 	      for (symtab *s : compunit_filetabs (cu))
 		{
@@ -4198,9 +4198,9 @@ info_sources_command (const char *ignore, int from_tty)
   printf_filtered ("Source files for which symbols have been read in:\n\n");
 
   data.first = 1;
-  for (objfile *objfile : all_objfiles (current_program_space))
+  for (objfile *objfile : current_program_space->objfiles ())
     {
-      for (compunit_symtab *cu : objfile_compunits (objfile))
+      for (compunit_symtab *cu : objfile->compunits ())
 	{
 	  for (symtab *s : compunit_filetabs (cu))
 	    {
@@ -4453,9 +4453,9 @@ search_symbols (const char *regexp, enum search_domain kind,
 
   if (nfiles == 0 && (kind == VARIABLES_DOMAIN || kind == FUNCTIONS_DOMAIN))
     {
-      for (objfile *objfile : all_objfiles (current_program_space))
+      for (objfile *objfile : current_program_space->objfiles ())
 	{
-	  for (minimal_symbol *msymbol : objfile_msymbols (objfile))
+	  for (minimal_symbol *msymbol : objfile->msymbols ())
 	    {
 	      QUIT;
 
@@ -4490,9 +4490,9 @@ search_symbols (const char *regexp, enum search_domain kind,
 	}
     }
 
-  for (objfile *objfile : all_objfiles (current_program_space))
+  for (objfile *objfile : current_program_space->objfiles ())
     {
-      for (compunit_symtab *cust : objfile_compunits (objfile))
+      for (compunit_symtab *cust : objfile->compunits ())
 	{
 	  bv = COMPUNIT_BLOCKVECTOR (cust);
 	  for (i = GLOBAL_BLOCK; i <= STATIC_BLOCK; i++)
@@ -4556,9 +4556,9 @@ search_symbols (const char *regexp, enum search_domain kind,
   if ((found_misc || (nfiles == 0 && kind != FUNCTIONS_DOMAIN))
       && !treg.has_value ())
     {
-      for (objfile *objfile : all_objfiles (current_program_space))
+      for (objfile *objfile : current_program_space->objfiles ())
 	{
-	  for (minimal_symbol *msymbol : objfile_msymbols (objfile))
+	  for (minimal_symbol *msymbol : objfile->msymbols ())
 	    {
 	      QUIT;
 
@@ -5272,9 +5272,9 @@ default_collect_symbol_completion_matches_break_on
 
   if (code == TYPE_CODE_UNDEF)
     {
-      for (objfile *objfile : all_objfiles (current_program_space))
+      for (objfile *objfile : current_program_space->objfiles ())
 	{
-	  for (minimal_symbol *msymbol : objfile_msymbols (objfile))
+	  for (minimal_symbol *msymbol : objfile->msymbols ())
 	    {
 	      QUIT;
 
@@ -5291,9 +5291,9 @@ default_collect_symbol_completion_matches_break_on
     }
 
   /* Add completions for all currently loaded symbol tables.  */
-  for (objfile *objfile : all_objfiles (current_program_space))
+  for (objfile *objfile : current_program_space->objfiles ())
     {
-      for (compunit_symtab *cust : objfile_compunits (objfile))
+      for (compunit_symtab *cust : objfile->compunits ())
 	add_symtab_completions (cust, tracker, mode, lookup_name,
 				sym_text, word, code);
     }
@@ -5600,9 +5600,9 @@ make_source_files_completion_list (const char *text, const char *word)
 
   filename_seen_cache filenames_seen;
 
-  for (objfile *objfile : all_objfiles (current_program_space))
+  for (objfile *objfile : current_program_space->objfiles ())
     {
-      for (compunit_symtab *cu : objfile_compunits (objfile))
+      for (compunit_symtab *cu : objfile->compunits ())
 	{
 	  for (symtab *s : compunit_filetabs (cu))
 	    {
@@ -5717,7 +5717,7 @@ find_main_name (void)
      relies on the order of objfile creation -- which still isn't
      guaranteed to get the correct answer, but is just probably more
      accurate.  */
-  for (objfile *objfile : all_objfiles (current_program_space))
+  for (objfile *objfile : current_program_space->objfiles ())
     {
       if (objfile->per_bfd->name_of_main != NULL)
 	{

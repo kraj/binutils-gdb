@@ -1,3 +1,25 @@
+2019-01-23  Nick Clifton  <nickc@redhat.com>
+
+	* po/pt_BR.po: Updated Brazilian Portuguese translation.
+
+2019-01-21  Nick Clifton  <nickc@redhat.com>
+
+	* po/de.po: Updated German translation.
+	* po/uk.po: Updated Ukranian translation.
+
+2019-01-20  Chenghua Xu  <paul.hua.gm@gmail.com>
+	* mips-dis.c (mips_arch_choices): Fix typo in
+	gs464, gs464e and gs264e descriptors.
+
+2019-01-19  Nick Clifton  <nickc@redhat.com>
+
+	* configure: Regenerate.
+	* po/opcodes.pot: Regenerate.
+
+2018-06-24  Nick Clifton  <nickc@redhat.com>
+
+	2.32 branch created.
+
 2019-01-09  John Darrington <john@darrington.wattle.id.au>
 
 	* s12z-dis.c (print_insn_s12z):  Do not dereference an operand

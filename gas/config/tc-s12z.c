@@ -308,7 +308,7 @@ lex_reg_name (uint16_t which, int *reg)
       p++;
     }
 
-  int len = p - input_line_pointer;
+  size_t len = p - input_line_pointer;
 
   if (len <= 0)
     return 0;
@@ -318,7 +318,8 @@ lex_reg_name (uint16_t which, int *reg)
     {
       gas_assert (registers[i].name);
 
-      if (0 == strncasecmp (registers[i].name, input_line_pointer, len))
+      if (len == strlen (registers[i].name)
+	  && 0 == strncasecmp (registers[i].name, input_line_pointer, len))
 	{
 	  if ((0x1U << i) & which)
 	    {
@@ -732,12 +733,17 @@ emit_opr (char *f, const uint8_t *buffer, int n_bytes, expressionS *exp)
   number_to_chars_bigendian (f++, buffer[0], 1);
   if (exp->X_op != O_absent && exp->X_op != O_constant)
     {
-      fix_new_exp (frag_now,
-		   f - frag_now->fr_literal,
-		   3,
-		   exp,
-		   FALSE,
-		   BFD_RELOC_24);
+      fixS *fix = fix_new_exp (frag_now,
+			       f - frag_now->fr_literal,
+			       3,
+			       exp,
+			       FALSE,
+			       BFD_RELOC_S12Z_OPR);
+      /* Some third party tools seem to use the lower bits
+	of this addend for flags.   They don't get added
+	to the final location.   The purpose of these flags
+	is not known.  We simply set it to zero.  */
+      fix->fx_addnumber = 0x00;
     }
   for (i = 1; i < n_bytes; ++i)
     number_to_chars_bigendian (f++,  buffer[i], 1);
@@ -1311,16 +1317,11 @@ tfr (const struct instruction *insn)
   if (!lex_reg_name (~0, &reg2))
     goto fail;
 
-  if ((0 == strcasecmp ("sex", insn->name))
-      || (0 == strcasecmp ("zex", insn->name)))
-    {
-      if (registers[reg1].bytes >= registers[reg2].bytes)
-	{
-	  as_bad (_("Source register for %s must be smaller that the destination register"),
-		  insn->name);
-	  goto fail;
-	}
-    }
+  if ( ((0 == strcasecmp ("sex", insn->name))
+        || (0 == strcasecmp ("zex", insn->name)))
+       && (registers[reg2].bytes <= registers[reg1].bytes))
+      as_warn (_("Source register for %s is no larger than the destination register"),
+               insn->name);
 
   char *f = s12z_new_insn (1 + insn->page);
   if (insn->page == 2)
@@ -3821,6 +3822,7 @@ md_apply_fix (fixS *fixP, valueT *valP, segT seg ATTRIBUTE_UNUSED)
       bfd_putb16 ((bfd_vma) value, (unsigned char *) where);
       break;
     case BFD_RELOC_24:
+    case BFD_RELOC_S12Z_OPR:
       bfd_putb24 ((bfd_vma) value, (unsigned char *) where);
       break;
     case BFD_RELOC_32:

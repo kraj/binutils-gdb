@@ -48,7 +48,6 @@
 #include <algorithm>
 #include "byte-vector.h"
 #include "terminal.h"
-#include <algorithm>
 #include <unordered_map>
 
 static void generic_tls_error (void) ATTRIBUTE_NORETURN;
@@ -2112,13 +2111,13 @@ make_scoped_defer_target_commit_resume ()
 }
 
 void
-target_pass_signals (int numsigs, unsigned char *pass_signals)
+target_pass_signals (int numsigs, const unsigned char *pass_signals)
 {
   current_top_target ()->pass_signals (numsigs, pass_signals);
 }
 
 void
-target_program_signals (int numsigs, unsigned char *program_signals)
+target_program_signals (int numsigs, const unsigned char *program_signals)
 {
   current_top_target ()->program_signals (numsigs, program_signals);
 }
