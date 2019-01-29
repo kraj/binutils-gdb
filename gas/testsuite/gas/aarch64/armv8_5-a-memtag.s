@@ -17,25 +17,30 @@ func:
 	.endm
 
 	.macro expand_stg op
-	\op [x0, #0]
-	\op [x27, #0]
-	\op [x0, #-80]
-	\op [x0, #0]!
-	\op [x0, #160]!
-	\op [x0], #0
-	\op [x0], #-1440
-	\op [sp, #4080]
-	\op [sp, #-4096]
-	\op [sp, #4080]!
-	\op [sp], #-4096
+	\op x0, [x0, #0]
+	\op x0, [x27, #0]
+	\op xzr, [x0, #0]
+	\op x27, [x0, #-80]
+	\op x0, [x0, #0]!
+	\op xzr, [x0, #0]!
+	\op x27, [x0, #160]!
+	\op x0, [x0], #0
+	\op xzr, [x0], #0
+	\op x27, [x0], #-1440
+	\op x0, [sp, #4080]
+	\op xzr, [sp, #4080]
+	\op x27, [sp, #-4096]
+	\op x0, [sp, #4080]!
+	\op xzr, [sp], #-4096
 	.endm
 
 	.macro expand_ldg_bulk op
-	\op x27, [x0]!
-	\op x0, [x27]!
-	\op x25, [x27]!
-	\op x0, [sp]!
-	\op xzr, [x0]!
+	\op x0, [x0]
+	\op x27, [x0]
+	\op x0, [x27]
+	\op x25, [x27]
+	\op x0, [sp]
+	\op xzr, [x0]
 	.endm
 
 	# IRG
@@ -107,7 +112,4 @@ func:
 	ldg x0, [x0, #4080]
 	ldg x0, [x0, #-4096]
 
-	expand_ldg_bulk ldgv
-
-	stgv x0, [x0]!
-	expand_ldg_bulk stgv
+	expand_ldg_bulk stzgm

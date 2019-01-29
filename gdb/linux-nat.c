@@ -23,7 +23,7 @@
 #include "target.h"
 #include "nat/linux-nat.h"
 #include "nat/linux-waitpid.h"
-#include "gdb_wait.h"
+#include "common/gdb_wait.h"
 #include <unistd.h>
 #include <sys/syscall.h>
 #include "nat/gdb_ptrace.h"
@@ -58,14 +58,15 @@
 #include "nat/linux-osdata.h"
 #include "linux-tdep.h"
 #include "symfile.h"
-#include "agent.h"
+#include "common/agent.h"
 #include "tracepoint.h"
-#include "buffer.h"
+#include "common/buffer.h"
 #include "target-descriptions.h"
-#include "filestuff.h"
+#include "common/filestuff.h"
 #include "objfiles.h"
 #include "nat/linux-namespaces.h"
-#include "fileio.h"
+#include "common/fileio.h"
+#include "common/scope-exit.h"
 
 #ifndef SPUFS_MAGIC
 #define SPUFS_MAGIC 0x23c9b64e
@@ -788,7 +789,8 @@ static sigset_t pass_mask;
 
 /* Update signals to pass to the inferior.  */
 void
-linux_nat_target::pass_signals (int numsigs, const unsigned char *pass_signals)
+linux_nat_target::pass_signals
+  (gdb::array_view<const unsigned char> pass_signals)
 {
   int signo;
 
@@ -797,7 +799,7 @@ linux_nat_target::pass_signals (int numsigs, const unsigned char *pass_signals)
   for (signo = 1; signo < NSIG; signo++)
     {
       int target_signo = gdb_signal_from_host (signo);
-      if (target_signo < numsigs && pass_signals[target_signo])
+      if (target_signo < pass_signals.size () && pass_signals[target_signo])
         sigaddset (&pass_mask, signo);
     }
 }
@@ -1095,7 +1097,7 @@ linux_nat_target::create_inferior (const char *exec_file,
      we have to mask the async mode.  */
 
   /* Make sure we report all signals during startup.  */
-  pass_signals (0, NULL);
+  pass_signals ({});
 
   inf_ptrace_target::create_inferior (exec_file, allargs, env, from_tty);
 }
@@ -1185,7 +1187,7 @@ linux_nat_target::attach (const char *args, int from_tty)
   ptid_t ptid;
 
   /* Make sure we report all signals during attach.  */
-  pass_signals (0, NULL);
+  pass_signals ({});
 
   TRY
     {
@@ -4223,22 +4225,10 @@ linux_nat_xfer_osdata (enum target_object object,
     return TARGET_XFER_OK;
 }
 
-static void
-cleanup_target_stop (void *arg)
-{
-  ptid_t *ptid = (ptid_t *) arg;
-
-  gdb_assert (arg != NULL);
-
-  /* Unpause all */
-  target_continue_no_signal (*ptid);
-}
-
 std::vector<static_tracepoint_marker>
 linux_nat_target::static_tracepoint_markers_by_strid (const char *strid)
 {
   char s[IPA_CMD_BUF_SIZE];
-  struct cleanup *old_chain;
   int pid = inferior_ptid.pid ();
   std::vector<static_tracepoint_marker> markers;
   const char *p = s;
@@ -4253,7 +4243,8 @@ linux_nat_target::static_tracepoint_markers_by_strid (const char *strid)
 
   agent_run_command (pid, s, strlen (s) + 1);
 
-  old_chain = make_cleanup (cleanup_target_stop, &ptid);
+  /* Unpause all.  */
+  SCOPE_EXIT { target_continue_no_signal (ptid); };
 
   while (*p++ == 'm')
     {
@@ -4271,8 +4262,6 @@ linux_nat_target::static_tracepoint_markers_by_strid (const char *strid)
       agent_run_command (pid, s, strlen (s) + 1);
       p = s;
     }
-
-  do_cleanups (old_chain);
 
   return markers;
 }

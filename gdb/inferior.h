@@ -44,15 +44,16 @@ struct thread_info;
 #include "frame.h"
 
 /* For gdb_environ.  */
-#include "environ.h"
+#include "common/environ.h"
 
 #include "progspace.h"
 #include "registry.h"
 
 #include "symfile-add-flags.h"
 #include "common/refcounted-object.h"
+#include "common/forward-scope-exit.h"
 
-#include "common-inferior.h"
+#include "common/common-inferior.h"
 #include "gdbthread.h"
 
 struct infcall_suspend_state;
@@ -198,7 +199,8 @@ extern void continue_1 (int all_threads);
 
 extern void interrupt_target_1 (int all_threads);
 
-extern void delete_longjmp_breakpoint_cleanup (void *arg);
+using delete_longjmp_breakpoint_cleanup
+  = FORWARD_SCOPE_EXIT (delete_longjmp_breakpoint);
 
 extern void detach_command (const char *, int);
 

@@ -31,14 +31,14 @@
 #include "regcache.h"
 #include "inf-child.h"
 #include "nat/fork-inferior.h"
-#include "filestuff.h"
+#include "common/filestuff.h"
 
 #define _STRUCTURED_PROC 1	/* Should be done by configure script.  */
 
 #include <sys/procfs.h>
 #include <sys/fault.h>
 #include <sys/syscall.h>
-#include "gdb_wait.h"
+#include "common/gdb_wait.h"
 #include <signal.h>
 #include <ctype.h>
 #include "gdb_bfd.h"
@@ -119,7 +119,7 @@ public:
 					ULONGEST offset, ULONGEST len,
 					ULONGEST *xfered_len) override;
 
-  void pass_signals (int, const unsigned char *) override;
+  void pass_signals (gdb::array_view<const unsigned char>) override;
 
   void files_info () override;
 
@@ -2772,7 +2772,7 @@ procfs_target::resume (ptid_t ptid, int step, enum gdb_signal signo)
 /* Set up to trace signals in the child process.  */
 
 void
-procfs_target::pass_signals (int numsigs, const unsigned char *pass_signals)
+procfs_target::pass_signals (gdb::array_view<const unsigned char> pass_signals)
 {
   sigset_t signals;
   procinfo *pi = find_procinfo_or_die (inferior_ptid.pid (), 0);
@@ -2783,7 +2783,7 @@ procfs_target::pass_signals (int numsigs, const unsigned char *pass_signals)
   for (signo = 0; signo < NSIG; signo++)
     {
       int target_signo = gdb_signal_from_host (signo);
-      if (target_signo < numsigs && pass_signals[target_signo])
+      if (target_signo < pass_signals.size () && pass_signals[target_signo])
 	prdelset (&signals, signo);
     }
 

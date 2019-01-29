@@ -65,7 +65,7 @@
 #include "ax-gdb.h"
 #include "dummy-frame.h"
 #include "interps.h"
-#include "format.h"
+#include "common/format.h"
 #include "thread-fsm.h"
 #include "tid-parse.h"
 #include "cli/cli-style.h"
@@ -4468,7 +4468,7 @@ get_bpstat_thread ()
 void
 bpstat_do_actions (void)
 {
-  struct cleanup *cleanup_if_error = make_bpstat_clear_actions_cleanup ();
+  auto cleanup_if_error = make_scope_exit (bpstat_clear_actions);
   thread_info *tp;
 
   /* Do any commands attached to breakpoint we are stopped at.  */
@@ -4482,7 +4482,7 @@ bpstat_do_actions (void)
 	break;
     }
 
-  discard_cleanups (cleanup_if_error);
+  cleanup_if_error.release ();
 }
 
 /* Print out the (old or new) value associated with a watchpoint.  */
@@ -9230,7 +9230,6 @@ create_breakpoint (struct gdbarch *gdbarch,
 		   unsigned flags)
 {
   struct linespec_result canonical;
-  struct cleanup *bkpt_chain = NULL;
   int pending = 0;
   int task = 0;
   int prev_bkpt_count = breakpoint_count;
@@ -9279,12 +9278,6 @@ create_breakpoint (struct gdbarch *gdbarch,
 
   if (!pending && canonical.lsals.empty ())
     return 0;
-
-  /* ----------------------------- SNIP -----------------------------
-     Anything added to the cleanup chain beyond this point is assumed
-     to be part of a breakpoint.  If the breakpoint create succeeds
-     then the memory is not reclaimed.  */
-  bkpt_chain = make_cleanup (null_cleanup, 0);
 
   /* Resolve all line numbers to PC's and verify that the addresses
      are ok for the target.  */
@@ -9384,11 +9377,6 @@ create_breakpoint (struct gdbarch *gdbarch,
       prev_breakpoint_count = prev_bkpt_count;
     }
 
-  /* That's it.  Discard the cleanups for data inserted into the
-     breakpoint.  */
-  discard_cleanups (bkpt_chain);
-
-  /* error call may happen here - have BKPT_CHAIN already discarded.  */
   update_global_location_list (UGLL_MAY_INSERT);
 
   return 1;
@@ -11073,7 +11061,6 @@ until_break_command (const char *arg, int from_tty, int anywhere)
   struct gdbarch *frame_gdbarch;
   struct frame_id stack_frame_id;
   struct frame_id caller_frame_id;
-  struct cleanup *old_chain;
   int thread;
   struct thread_info *tp;
   struct until_break_fsm *sm;
@@ -11106,8 +11093,6 @@ until_break_command (const char *arg, int from_tty, int anywhere)
   tp = inferior_thread ();
   thread = tp->global_num;
 
-  old_chain = make_cleanup (null_cleanup, NULL);
-
   /* Note linespec handling above invalidates the frame chain.
      Installing a breakpoint also invalidates the frame chain (as it
      may need to switch threads), so do any frame handling before
@@ -11122,6 +11107,9 @@ until_break_command (const char *arg, int from_tty, int anywhere)
      one.  */
 
   breakpoint_up caller_breakpoint;
+
+  gdb::optional<delete_longjmp_breakpoint_cleanup> lj_deleter;
+
   if (frame_id_p (caller_frame_id))
     {
       struct symtab_and_line sal2;
@@ -11136,7 +11124,7 @@ until_break_command (const char *arg, int from_tty, int anywhere)
 						    bp_until);
 
       set_longjmp_breakpoint (tp, caller_frame_id);
-      make_cleanup (delete_longjmp_breakpoint_cleanup, &thread);
+      lj_deleter.emplace (thread);
     }
 
   /* set_momentary_breakpoint could invalidate FRAME.  */
@@ -11159,7 +11147,8 @@ until_break_command (const char *arg, int from_tty, int anywhere)
 			    std::move (caller_breakpoint));
   tp->thread_fsm = &sm->thread_fsm;
 
-  discard_cleanups (old_chain);
+  if (lj_deleter)
+    lj_deleter->release ();
 
   proceed (-1, GDB_SIGNAL_DEFAULT);
 }

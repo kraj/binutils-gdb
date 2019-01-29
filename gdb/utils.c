@@ -19,7 +19,7 @@
 
 #include "defs.h"
 #include <ctype.h>
-#include "gdb_wait.h"
+#include "common/gdb_wait.h"
 #include "event-top.h"
 #include "gdbthread.h"
 #include "fnmatch.h"
@@ -65,7 +65,7 @@
 #include "gdb_usleep.h"
 #include "interps.h"
 #include "gdb_regex.h"
-#include "job-control.h"
+#include "common/job-control.h"
 #include "common/selftest.h"
 #include "common/gdb_optional.h"
 #include "cp-support.h"
@@ -3055,23 +3055,6 @@ parse_pid_to_attach (const char *args)
     error (_("Illegal process-id: %s."), args);
 
   return pid;
-}
-
-/* Helper for make_bpstat_clear_actions_cleanup.  */
-
-static void
-do_bpstat_clear_actions_cleanup (void *unused)
-{
-  bpstat_clear_actions ();
-}
-
-/* Call bpstat_clear_actions for the case an exception is throw.  You should
-   discard_cleanups if no exception is caught.  */
-
-struct cleanup *
-make_bpstat_clear_actions_cleanup (void)
-{
-  return make_cleanup (do_bpstat_clear_actions_cleanup, NULL);
 }
 
 /* Substitute all occurences of string FROM by string TO in *STRINGP.  *STRINGP

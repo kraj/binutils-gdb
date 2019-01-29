@@ -125,10 +125,10 @@
   QLF1(X),			\
 }
 
-/* e.g. STG [<Xn|SP>, #<imm9>].  */
+/* e.g. STG Xt, [<Xn|SP>, #<imm9>].  */
 #define QL_LDST_AT		\
 {				\
-  QLF1(imm_tag),		\
+  QLF2(X, imm_tag),		\
 }
 
 /* e.g. RBIT <Wd>, <Wn>.  */
@@ -3237,14 +3237,14 @@ struct aarch64_opcode aarch64_opcode_table[] =
   CORE_INSN ("ldr", 0xb8400400, 0xbfe00400, ldst_imm9, 0, OP2 (Rt, ADDR_SIMM9), QL_LDST_R, F_GPRSIZE_IN_Q),
   CORE_INSN ("ldrsw", 0xb8800400, 0xffe00400, ldst_imm9, 0, OP2 (Rt, ADDR_SIMM9), QL_LDST_X32, 0),
   /* Load/store Allocation Tag instructions.  */
-  MEMTAG_INSN ("stg",  0xd920081f, 0xffe00c1f, ldst_unscaled, OP1 (ADDR_SIMM13), QL_LDST_AT, 0),
-  MEMTAG_INSN ("stzg", 0xd960081f, 0xffe00c1f, ldst_unscaled, OP1 (ADDR_SIMM13), QL_LDST_AT, 0),
-  MEMTAG_INSN ("st2g", 0xd9a0081f, 0xffe00c1f, ldst_unscaled, OP1 (ADDR_SIMM13), QL_LDST_AT, 0),
-  MEMTAG_INSN ("stz2g",0xd9e0081f, 0xffe00c1f, ldst_unscaled, OP1 (ADDR_SIMM13), QL_LDST_AT, 0),
-  MEMTAG_INSN ("stg",  0xd920041f, 0xffe0041f, ldst_imm9, OP1 (ADDR_SIMM13), QL_LDST_AT, 0),
-  MEMTAG_INSN ("stzg", 0xd960041f, 0xffe0041f, ldst_imm9, OP1 (ADDR_SIMM13), QL_LDST_AT, 0),
-  MEMTAG_INSN ("st2g", 0xd9a0041f, 0xffe0041f, ldst_imm9, OP1 (ADDR_SIMM13), QL_LDST_AT, 0),
-  MEMTAG_INSN ("stz2g",0xd9e0041f, 0xffe0041f, ldst_imm9, OP1 (ADDR_SIMM13), QL_LDST_AT, 0),
+  MEMTAG_INSN ("stg",  0xd9200800, 0xffe00c00, ldst_unscaled, OP2 (Rt, ADDR_SIMM13), QL_LDST_AT, 0),
+  MEMTAG_INSN ("stzg", 0xd9600800, 0xffe00c00, ldst_unscaled, OP2 (Rt, ADDR_SIMM13), QL_LDST_AT, 0),
+  MEMTAG_INSN ("st2g", 0xd9a00800, 0xffe00c00, ldst_unscaled, OP2 (Rt, ADDR_SIMM13), QL_LDST_AT, 0),
+  MEMTAG_INSN ("stz2g",0xd9e00800, 0xffe00c00, ldst_unscaled, OP2 (Rt, ADDR_SIMM13), QL_LDST_AT, 0),
+  MEMTAG_INSN ("stg",  0xd9200400, 0xffe00400, ldst_imm9, OP2 (Rt, ADDR_SIMM13), QL_LDST_AT, 0),
+  MEMTAG_INSN ("stzg", 0xd9600400, 0xffe00400, ldst_imm9, OP2 (Rt, ADDR_SIMM13), QL_LDST_AT, 0),
+  MEMTAG_INSN ("st2g", 0xd9a00400, 0xffe00400, ldst_imm9, OP2 (Rt, ADDR_SIMM13), QL_LDST_AT, 0),
+  MEMTAG_INSN ("stz2g",0xd9e00400, 0xffe00400, ldst_imm9, OP2 (Rt, ADDR_SIMM13), QL_LDST_AT, 0),
   /* Load/store register (unsigned immediate).  */
   CORE_INSN ("strb", 0x39000000, 0xffc00000, ldst_pos, OP_STRB_POS, OP2 (Rt, ADDR_UIMM12), QL_LDST_W8, 0),
   CORE_INSN ("ldrb", 0x39400000, 0xffc00000, ldst_pos, OP_LDRB_POS, OP2 (Rt, ADDR_UIMM12), QL_LDST_W8, 0),
@@ -3324,8 +3324,7 @@ struct aarch64_opcode aarch64_opcode_table[] =
   RCPC_INSN ("ldaprb", 0x38bfc000, 0xfffffc00, ldstexcl, OP2 (Rt, ADDR_SIMPLE), QL_W1_LDST_EXC, 0),
   RCPC_INSN ("ldaprh", 0x78bfc000, 0xfffffc00, ldstexcl, OP2 (Rt, ADDR_SIMPLE), QL_W1_LDST_EXC, 0),
   RCPC_INSN ("ldapr", 0xb8bfc000, 0xbffffc00, ldstexcl, OP2 (Rt, ADDR_SIMPLE), QL_R1NIL, F_GPRSIZE_IN_Q),
-  MEMTAG_INSN ("ldgv", 0xd9e00000, 0xfffffc00, ldstgv_indexed, OP2 (Rt, ADDR_SIMPLE_2), QL_STLX, 0),
-  MEMTAG_INSN ("stgv", 0xd9a00000, 0xfffffc00, ldstgv_indexed, OP2 (Rt, ADDR_SIMPLE_2), QL_STLX, 0),
+  MEMTAG_INSN ("stzgm", 0xd9200000, 0xfffffc00, ldstexcl, OP2 (Rt, ADDR_SIMPLE), QL_X1NIL, 0),
   /* Limited Ordering Regions load/store instructions.  */
   _LOR_INSN ("ldlar",  0x88df7c00, 0xbfe08000, ldstexcl, OP2 (Rt, ADDR_SIMPLE), QL_R1NIL,       F_GPRSIZE_IN_Q),
   _LOR_INSN ("ldlarb", 0x08df7c00, 0xffe08000, ldstexcl, OP2 (Rt, ADDR_SIMPLE), QL_W1_LDST_EXC, 0),
@@ -4650,8 +4649,6 @@ struct aarch64_opcode aarch64_opcode_table[] =
       F(FLD_imm26), "26-bit PC-relative address")			\
     Y(ADDRESS, addr_simple, "ADDR_SIMPLE", 0, F(),			\
       "an address with base register (no offset)")			\
-    Y(ADDRESS, addr_simple_2, "ADDR_SIMPLE_2", 0, F(),			\
-      "a writeback address with base register (no offset)")		\
     Y(ADDRESS, addr_regoff, "ADDR_REGOFF", 0, F(),			\
       "an address with register offset")				\
     Y(ADDRESS, addr_simm, "ADDR_SIMM7", 0, F(FLD_imm7,FLD_index2),	\

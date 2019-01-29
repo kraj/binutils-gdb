@@ -35,11 +35,11 @@
 #include "value.h"
 #include "language.h"
 #include "terminal.h"		/* For job_control.  */
-#include "job-control.h"
+#include "common/job-control.h"
 #include "annotate.h"
 #include "completer.h"
 #include "top.h"
-#include "version.h"
+#include "common/version.h"
 #include "serial.h"
 #include "main.h"
 #include "event-loop.h"
@@ -50,8 +50,9 @@
 #include "maint.h"
 #include "filenames.h"
 #include "frame.h"
-#include "buffer.h"
+#include "common/buffer.h"
 #include "gdb_select.h"
+#include "common/scope-exit.h"
 
 /* readline include files.  */
 #include "readline/readline.h"
@@ -539,12 +540,11 @@ set_repeat_arguments (const char *args)
 void
 execute_command (const char *p, int from_tty)
 {
-  struct cleanup *cleanup_if_error;
   struct cmd_list_element *c;
   const char *line;
   const char *cmd_start = p;
 
-  cleanup_if_error = make_bpstat_clear_actions_cleanup ();
+  auto cleanup_if_error = make_scope_exit (bpstat_clear_actions);
   scoped_value_mark cleanup = prepare_execute_command ();
 
   /* Force cleanup of any alloca areas if using C alloca instead of
@@ -554,7 +554,7 @@ execute_command (const char *p, int from_tty)
   /* This can happen when command_line_input hits end of file.  */
   if (p == NULL)
     {
-      discard_cleanups (cleanup_if_error);
+      cleanup_if_error.release ();
       return;
     }
 
@@ -649,7 +649,7 @@ execute_command (const char *p, int from_tty)
   if (has_stack_frames () && inferior_thread ()->state != THREAD_RUNNING)
     check_frame_language_change ();
 
-  discard_cleanups (cleanup_if_error);
+  cleanup_if_error.release ();
 }
 
 /* Run execute_command for P and FROM_TTY.  Capture its output into the

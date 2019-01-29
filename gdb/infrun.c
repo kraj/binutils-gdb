@@ -25,7 +25,7 @@
 #include "frame.h"
 #include "inferior.h"
 #include "breakpoint.h"
-#include "gdb_wait.h"
+#include "common/gdb_wait.h"
 #include "gdbcore.h"
 #include "gdbcmd.h"
 #include "cli/cli-script.h"
@@ -67,6 +67,7 @@
 #include "progspace-and-thread.h"
 #include "common/gdb_optional.h"
 #include "arch-utils.h"
+#include "common/scope-exit.h"
 
 /* Prototypes for local functions */
 
@@ -305,20 +306,19 @@ update_observer_mode (void)
 
 /* Tables of how to react to signals; the user sets them.  */
 
-static unsigned char *signal_stop;
-static unsigned char *signal_print;
-static unsigned char *signal_program;
+static unsigned char signal_stop[GDB_SIGNAL_LAST];
+static unsigned char signal_print[GDB_SIGNAL_LAST];
+static unsigned char signal_program[GDB_SIGNAL_LAST];
 
 /* Table of signals that are registered with "catch signal".  A
    non-zero entry indicates that the signal is caught by some "catch
-   signal" command.  This has size GDB_SIGNAL_LAST, to accommodate all
-   signals.  */
-static unsigned char *signal_catch;
+   signal" command.  */
+static unsigned char signal_catch[GDB_SIGNAL_LAST];
 
 /* Table of signals that the target may silently handle.
    This is automatically determined from the flags above,
    and simply cached here.  */
-static unsigned char *signal_pass;
+static unsigned char signal_pass[GDB_SIGNAL_LAST];
 
 #define SET_SIGS(nsigs,sigs,flags) \
   do { \
@@ -342,7 +342,7 @@ static unsigned char *signal_pass;
 void
 update_signals_program_target (void)
 {
-  target_program_signals ((int) GDB_SIGNAL_LAST, signal_program);
+  target_program_signals (signal_program);
 }
 
 /* Value to pass to target_resume() to cause all threads to resume.  */
@@ -2218,9 +2218,9 @@ do_target_resume (ptid_t resume_ptid, int step, enum gdb_signal sig)
        valid.  */
   if (step_over_info_valid_p ()
       || displaced_step_in_progress (tp->inf))
-    target_pass_signals (0, NULL);
+    target_pass_signals ({});
   else
-    target_pass_signals ((int) GDB_SIGNAL_LAST, signal_pass);
+    target_pass_signals (signal_pass);
 
   target_resume (resume_ptid, step, sig);
 
@@ -3247,14 +3247,6 @@ delete_just_stopped_threads_single_step_breakpoints (void)
   for_each_just_stopped_thread (delete_single_step_breakpoints);
 }
 
-/* A cleanup wrapper.  */
-
-static void
-delete_just_stopped_threads_infrun_breakpoints_cleanup (void *arg)
-{
-  delete_just_stopped_threads_infrun_breakpoints ();
-}
-
 /* See infrun.h.  */
 
 void
@@ -3538,15 +3530,11 @@ prepare_for_detach (void)
 void
 wait_for_inferior (void)
 {
-  struct cleanup *old_cleanups;
-
   if (debug_infrun)
     fprintf_unfiltered
       (gdb_stdlog, "infrun: wait_for_inferior ()\n");
 
-  old_cleanups
-    = make_cleanup (delete_just_stopped_threads_infrun_breakpoints_cleanup,
-		    NULL);
+  SCOPE_EXIT { delete_just_stopped_threads_infrun_breakpoints (); };
 
   /* If an error happens while handling the event, propagate GDB's
      knowledge of the executing state to the frontend/user running
@@ -3583,8 +3571,6 @@ wait_for_inferior (void)
 
   /* No error, don't finish the state yet.  */
   finish_state.release ();
-
-  do_cleanups (old_cleanups);
 }
 
 /* Cleanup that reinstalls the readline callback handler, if the
@@ -3598,7 +3584,7 @@ wait_for_inferior (void)
    input.  */
 
 static void
-reinstall_readline_callback_handler_cleanup (void *arg)
+reinstall_readline_callback_handler_cleanup ()
 {
   struct ui *ui = current_ui;
 
@@ -3700,7 +3686,6 @@ fetch_inferior_event (void *client_data)
 {
   struct execution_control_state ecss;
   struct execution_control_state *ecs = &ecss;
-  struct cleanup *old_chain = make_cleanup (null_cleanup, NULL);
   int cmd_done = 0;
   ptid_t waiton_ptid = minus_one_ptid;
 
@@ -3712,114 +3697,119 @@ fetch_inferior_event (void *client_data)
   scoped_restore save_ui = make_scoped_restore (&current_ui, main_ui);
 
   /* End up with readline processing input, if necessary.  */
-  make_cleanup (reinstall_readline_callback_handler_cleanup, NULL);
+  {
+    SCOPE_EXIT { reinstall_readline_callback_handler_cleanup (); };
 
-  /* We're handling a live event, so make sure we're doing live
-     debugging.  If we're looking at traceframes while the target is
-     running, we're going to need to get back to that mode after
-     handling the event.  */
-  gdb::optional<scoped_restore_current_traceframe> maybe_restore_traceframe;
-  if (non_stop)
-    {
-      maybe_restore_traceframe.emplace ();
-      set_current_traceframe (-1);
-    }
+    /* We're handling a live event, so make sure we're doing live
+       debugging.  If we're looking at traceframes while the target is
+       running, we're going to need to get back to that mode after
+       handling the event.  */
+    gdb::optional<scoped_restore_current_traceframe> maybe_restore_traceframe;
+    if (non_stop)
+      {
+	maybe_restore_traceframe.emplace ();
+	set_current_traceframe (-1);
+      }
 
-  gdb::optional<scoped_restore_current_thread> maybe_restore_thread;
+    gdb::optional<scoped_restore_current_thread> maybe_restore_thread;
 
-  if (non_stop)
-    /* In non-stop mode, the user/frontend should not notice a thread
-       switch due to internal events.  Make sure we reverse to the
-       user selected thread and frame after handling the event and
-       running any breakpoint commands.  */
-    maybe_restore_thread.emplace ();
+    if (non_stop)
+      /* In non-stop mode, the user/frontend should not notice a thread
+	 switch due to internal events.  Make sure we reverse to the
+	 user selected thread and frame after handling the event and
+	 running any breakpoint commands.  */
+      maybe_restore_thread.emplace ();
 
-  overlay_cache_invalid = 1;
-  /* Flush target cache before starting to handle each event.  Target
-     was running and cache could be stale.  This is just a heuristic.
-     Running threads may modify target memory, but we don't get any
-     event.  */
-  target_dcache_invalidate ();
+    overlay_cache_invalid = 1;
+    /* Flush target cache before starting to handle each event.  Target
+       was running and cache could be stale.  This is just a heuristic.
+       Running threads may modify target memory, but we don't get any
+       event.  */
+    target_dcache_invalidate ();
 
-  scoped_restore save_exec_dir
-    = make_scoped_restore (&execution_direction, target_execution_direction ());
+    scoped_restore save_exec_dir
+      = make_scoped_restore (&execution_direction,
+			     target_execution_direction ());
 
-  ecs->ptid = do_target_wait (waiton_ptid, &ecs->ws,
-			      target_can_async_p () ? TARGET_WNOHANG : 0);
+    ecs->ptid = do_target_wait (waiton_ptid, &ecs->ws,
+				target_can_async_p () ? TARGET_WNOHANG : 0);
 
-  if (debug_infrun)
-    print_target_wait_results (waiton_ptid, ecs->ptid, &ecs->ws);
+    if (debug_infrun)
+      print_target_wait_results (waiton_ptid, ecs->ptid, &ecs->ws);
 
-  /* If an error happens while handling the event, propagate GDB's
-     knowledge of the executing state to the frontend/user running
-     state.  */
-  ptid_t finish_ptid = !target_is_non_stop_p () ? minus_one_ptid : ecs->ptid;
-  scoped_finish_thread_state finish_state (finish_ptid);
+    /* If an error happens while handling the event, propagate GDB's
+       knowledge of the executing state to the frontend/user running
+       state.  */
+    ptid_t finish_ptid = !target_is_non_stop_p () ? minus_one_ptid : ecs->ptid;
+    scoped_finish_thread_state finish_state (finish_ptid);
 
-  /* Get executed before make_cleanup_restore_current_thread above to apply
-     still for the thread which has thrown the exception.  */
-  struct cleanup *ts_old_chain = make_bpstat_clear_actions_cleanup ();
+    /* Get executed before scoped_restore_current_thread above to apply
+       still for the thread which has thrown the exception.  */
+    auto defer_bpstat_clear
+      = make_scope_exit (bpstat_clear_actions);
+    auto defer_delete_threads
+      = make_scope_exit (delete_just_stopped_threads_infrun_breakpoints);
 
-  make_cleanup (delete_just_stopped_threads_infrun_breakpoints_cleanup, NULL);
+    /* Now figure out what to do with the result of the result.  */
+    handle_inferior_event (ecs);
 
-  /* Now figure out what to do with the result of the result.  */
-  handle_inferior_event (ecs);
+    if (!ecs->wait_some_more)
+      {
+	struct inferior *inf = find_inferior_ptid (ecs->ptid);
+	int should_stop = 1;
+	struct thread_info *thr = ecs->event_thread;
 
-  if (!ecs->wait_some_more)
-    {
-      struct inferior *inf = find_inferior_ptid (ecs->ptid);
-      int should_stop = 1;
-      struct thread_info *thr = ecs->event_thread;
+	delete_just_stopped_threads_infrun_breakpoints ();
 
-      delete_just_stopped_threads_infrun_breakpoints ();
+	if (thr != NULL)
+	  {
+	    struct thread_fsm *thread_fsm = thr->thread_fsm;
 
-      if (thr != NULL)
-	{
-	  struct thread_fsm *thread_fsm = thr->thread_fsm;
+	    if (thread_fsm != NULL)
+	      should_stop = thread_fsm_should_stop (thread_fsm, thr);
+	  }
 
-	  if (thread_fsm != NULL)
-	    should_stop = thread_fsm_should_stop (thread_fsm, thr);
-	}
+	if (!should_stop)
+	  {
+	    keep_going (ecs);
+	  }
+	else
+	  {
+	    int should_notify_stop = 1;
+	    int proceeded = 0;
 
-      if (!should_stop)
-	{
-	  keep_going (ecs);
-	}
-      else
-	{
-	  int should_notify_stop = 1;
-	  int proceeded = 0;
+	    clean_up_just_stopped_threads_fsms (ecs);
 
-	  clean_up_just_stopped_threads_fsms (ecs);
+	    if (thr != NULL && thr->thread_fsm != NULL)
+	      {
+		should_notify_stop
+		  = thread_fsm_should_notify_stop (thr->thread_fsm);
+	      }
 
-	  if (thr != NULL && thr->thread_fsm != NULL)
-	    {
-	      should_notify_stop
-		= thread_fsm_should_notify_stop (thr->thread_fsm);
-	    }
+	    if (should_notify_stop)
+	      {
+		/* We may not find an inferior if this was a process exit.  */
+		if (inf == NULL || inf->control.stop_soon == NO_STOP_QUIETLY)
+		  proceeded = normal_stop ();
+	      }
 
-	  if (should_notify_stop)
-	    {
-	      /* We may not find an inferior if this was a process exit.  */
-	      if (inf == NULL || inf->control.stop_soon == NO_STOP_QUIETLY)
-		proceeded = normal_stop ();
-	    }
+	    if (!proceeded)
+	      {
+		inferior_event_handler (INF_EXEC_COMPLETE, NULL);
+		cmd_done = 1;
+	      }
+	  }
+      }
 
-	  if (!proceeded)
-	    {
-	      inferior_event_handler (INF_EXEC_COMPLETE, NULL);
-	      cmd_done = 1;
-	    }
-	}
-    }
+    defer_delete_threads.release ();
+    defer_bpstat_clear.release ();
 
-  discard_cleanups (ts_old_chain);
+    /* No error, don't finish the thread states yet.  */
+    finish_state.release ();
 
-  /* No error, don't finish the thread states yet.  */
-  finish_state.release ();
-
-  /* Revert thread and frame.  */
-  do_cleanups (old_chain);
+    /* This scope is used to ensure that readline callbacks are
+       reinstalled here.  */
+  }
 
   /* If a UI was in sync execution mode, and now isn't, restore its
      prompt (a synchronous execution command has finished, and we're
@@ -4284,14 +4274,6 @@ save_waitstatus (struct thread_info *tp, struct target_waitstatus *ws)
     }
 }
 
-/* A cleanup that disables thread create/exit events.  */
-
-static void
-disable_thread_events (void *arg)
-{
-  target_thread_events (0);
-}
-
 /* See infrun.h.  */
 
 void
@@ -4300,7 +4282,6 @@ stop_all_threads (void)
   /* We may need multiple passes to discover all threads.  */
   int pass;
   int iterations = 0;
-  struct cleanup *old_chain;
 
   gdb_assert (target_is_non_stop_p ());
 
@@ -4310,7 +4291,7 @@ stop_all_threads (void)
   scoped_restore_current_thread restore_thread;
 
   target_thread_events (1);
-  old_chain = make_cleanup (disable_thread_events, NULL);
+  SCOPE_EXIT { target_thread_events (0); };
 
   /* Request threads to stop, and then wait for the stops.  Because
      threads we already know about can spawn more threads while we're
@@ -4494,8 +4475,6 @@ stop_all_threads (void)
 	    }
 	}
     }
-
-  do_cleanups (old_chain);
 
   if (debug_infrun)
     fprintf_unfiltered (gdb_stdlog, "infrun: stop_all_threads done\n");
@@ -8271,7 +8250,7 @@ signal_catch_update (const unsigned int *info)
   for (i = 0; i < GDB_SIGNAL_LAST; ++i)
     signal_catch[i] = info[i] > 0;
   signal_cache_update (-1);
-  target_pass_signals ((int) GDB_SIGNAL_LAST, signal_pass);
+  target_pass_signals (signal_pass);
 }
 
 static void
@@ -8307,8 +8286,6 @@ handle_command (const char *args, int from_tty)
   int sigfirst, siglast;
   enum gdb_signal oursig;
   int allsigs;
-  int nsigs;
-  unsigned char *sigs;
 
   if (args == NULL)
     {
@@ -8317,9 +8294,8 @@ handle_command (const char *args, int from_tty)
 
   /* Allocate and zero an array of flags for which signals to handle.  */
 
-  nsigs = (int) GDB_SIGNAL_LAST;
-  sigs = (unsigned char *) alloca (nsigs);
-  memset (sigs, 0, nsigs);
+  const size_t nsigs = GDB_SIGNAL_LAST;
+  unsigned char sigs[nsigs] {};
 
   /* Break the command line up into args.  */
 
@@ -8456,8 +8432,8 @@ Are you sure you want to change it? "),
     if (sigs[signum])
       {
 	signal_cache_update (-1);
-	target_pass_signals ((int) GDB_SIGNAL_LAST, signal_pass);
-	target_program_signals ((int) GDB_SIGNAL_LAST, signal_program);
+	target_pass_signals (signal_pass);
+	target_program_signals (signal_program);
 
 	if (from_tty)
 	  {
@@ -8983,8 +8959,6 @@ infrun_async_inferior_event_handler (gdb_client_data data)
 void
 _initialize_infrun (void)
 {
-  int i;
-  int numsigs;
   struct cmd_list_element *c;
 
   /* Register extra event sources in the event loop.  */
@@ -9066,13 +9040,7 @@ leave it stopped or free to run as needed."),
 			   &setlist,
 			   &showlist);
 
-  numsigs = (int) GDB_SIGNAL_LAST;
-  signal_stop = XNEWVEC (unsigned char, numsigs);
-  signal_print = XNEWVEC (unsigned char, numsigs);
-  signal_program = XNEWVEC (unsigned char, numsigs);
-  signal_catch = XNEWVEC (unsigned char, numsigs);
-  signal_pass = XNEWVEC (unsigned char, numsigs);
-  for (i = 0; i < numsigs; i++)
+  for (size_t i = 0; i < GDB_SIGNAL_LAST; i++)
     {
       signal_stop[i] = 1;
       signal_print[i] = 1;
