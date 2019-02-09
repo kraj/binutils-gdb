@@ -1,3 +1,37 @@
+2019-02-08  Jim Wilson  <jimw@sifive.com>
+
+	* config/tc-riscv.c (validate_riscv_insn) <'C'>: Add 'z' support.
+	(riscv_ip) <'C'>: Add 'z' support.
+
+2019-02-07  Tamar Christina  <tamar.christina@arm.com>
+
+	* config/tc-arm.c (insns): Redefine THUMB_VARIANT and ARM_VARIANT for
+	hlt to armv1.
+	* testsuite/gas/arm/armv8a-automatic-hlt.d: Update TAGs
+	* testsuite/gas/arm/hlt.d: New test.
+	* testsuite/gas/arm/hlt.s: New test.
+
+2019-02-07  Tamar Christina  <tamar.christina@arm.com>
+
+	* testsuite/gas/aarch64/undefined_advsimd_armv8_3.d: New test.
+	* testsuite/gas/aarch64/undefined_advsimd_armv8_3.s: New test.
+
+2019-02-07  Tamar Christina  <tamar.christina@arm.com>
+
+	PR binutils/23212
+	* testsuite/gas/aarch64/undefined_by_elem_sz_l.s: New test.
+	* testsuite/gas/aarch64/undefined_by_elem_sz_l.d: New test.
+
+2019-02-07  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* config/tc-visium.c (md_assemble) <mode_cad>: Align instruction on
+	64-bit boundaries for the GR6.
+	* testsuite/gas/visium/allinsn_gr6.s: Tweak.
+	* testsuite/gas/visium/allinsn_gr6.d: Likewise.
+	* testsuite/gas/visium/bra-1.d: New test.
+	* testsuite/gas/visium/bra-1.s: Likewise.
+	* testsuite/gas/visium/visium.exp: Run bra-1 test.
+
 2019-01-31  John Darrington <john@darrington.wattle.id.au>
 
         * config/tc-s12z.c (lex_imm): Add new argument exp_o.
