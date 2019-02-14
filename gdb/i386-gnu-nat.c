@@ -17,6 +17,9 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
+/* Include this first, to pick up the <mach.h> 'thread_info' diversion.  */
+#include "gnu-nat.h"
+
 /* Mach/Hurd headers are not yet ready for C++ compilation.  */
 extern "C"
 {
@@ -34,7 +37,6 @@ extern "C"
 
 #include "i386-tdep.h"
 
-#include "gnu-nat.h"
 #include "inf-child.h"
 #include "i387-tdep.h"
 
@@ -103,9 +105,8 @@ fetch_fpregs (struct regcache *regcache, struct proc *thread)
 }
 
 /* Fetch register REGNO, or all regs if REGNO is -1.  */
-static void
-gnu_fetch_registers (struct target_ops *ops,
-		     struct regcache *regcache, int regno)
+void
+i386_gnu_nat_target::fetch_registers (struct regcache *regcache, int regno)
 {
   struct proc *thread;
   ptid_t ptid = regcache->ptid ();
@@ -194,9 +195,8 @@ store_fpregs (const struct regcache *regcache, struct proc *thread, int regno)
 }
 
 /* Store at least register REGNO, or all regs if REGNO == -1.  */
-static void
-gnu_store_registers (struct target_ops *ops,
-		     struct regcache *regcache, int regno)
+void
+i386_gnu_nat_target::store_registers (struct regcache *regcache, int regno)
 {
   struct proc *thread;
   struct gdbarch *gdbarch = regcache->arch ();

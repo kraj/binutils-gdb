@@ -57,6 +57,7 @@
 #include "gdb_bfd.h"
 #include "cli/cli-utils.h"
 #include "common/byte-vector.h"
+#include "common/pathstuff.h"
 #include "common/selftest.h"
 #include "cli/cli-style.h"
 #include "common/forward-scope-exit.h"
@@ -1440,6 +1441,7 @@ find_separate_debug_file (const char *dir,
   const char *dir_notarget = target_prefix ? dir + strlen ("target:") : dir;
   std::vector<gdb::unique_xmalloc_ptr<char>> debugdir_vec
     = dirnames_to_char_ptr_vec (debug_file_directory);
+  gdb::unique_xmalloc_ptr<char> canon_sysroot = gdb_realpath (gdb_sysroot);
 
   for (const gdb::unique_xmalloc_ptr<char> &debugdir : debugdir_vec)
     {
@@ -1452,22 +1454,42 @@ find_separate_debug_file (const char *dir,
       if (separate_debug_file_exists (debugfile, crc32, objfile))
 	return debugfile;
 
-      /* If the file is in the sysroot, try using its base path in the
-	 global debugfile directory.  */
-      if (canon_dir != NULL
-	  && filename_ncmp (canon_dir, gdb_sysroot,
-			    strlen (gdb_sysroot)) == 0
-	  && IS_DIR_SEPARATOR (canon_dir[strlen (gdb_sysroot)]))
+      const char *base_path = NULL;
+      if (canon_dir != NULL)
 	{
+	  if (canon_sysroot.get () != NULL)
+	    base_path = child_path (canon_sysroot.get (), canon_dir);
+	  else
+	    base_path = child_path (gdb_sysroot, canon_dir);
+	}
+      if (base_path != NULL)
+	{
+	  /* If the file is in the sysroot, try using its base path in
+	     the global debugfile directory.  */
 	  debugfile = target_prefix ? "target:" : "";
 	  debugfile += debugdir.get ();
-	  debugfile += (canon_dir + strlen (gdb_sysroot));
+	  debugfile += "/";
+	  debugfile += base_path;
+	  debugfile += "/";
+	  debugfile += debuglink;
+
+	  if (separate_debug_file_exists (debugfile, crc32, objfile))
+	    return debugfile;
+
+	  /* If the file is in the sysroot, try using its base path in
+	     the sysroot's global debugfile directory.  */
+	  debugfile = target_prefix ? "target:" : "";
+	  debugfile += gdb_sysroot;
+	  debugfile += debugdir.get ();
+	  debugfile += "/";
+	  debugfile += base_path;
 	  debugfile += "/";
 	  debugfile += debuglink;
 
 	  if (separate_debug_file_exists (debugfile, crc32, objfile))
 	    return debugfile;
 	}
+
     }
 
   return std::string ();

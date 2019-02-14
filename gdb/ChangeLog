@@ -1,3 +1,125 @@
+2019-02-14  Thomas Schwinge  <thomas@codesourcery.com>
+	    Pedro Alves  <palves@redhat.com>
+
+	* remote.c (remote_target::remote_parse_stop_reply): Avoid using
+	'PATH_MAX'.
+
+2019-02-14  David Michael  <fedora.dm0@gmail.com>
+	    Samuel Thibault  <samuel.thibault@gnu.org>
+	    Thomas Schwinge  <thomas@codesourcery.com>
+
+	* gnu-nat.c (S_proc_getmsgport_reply, S_proc_task2proc_reply)
+	(S_proc_pid2proc_reply): Adjust to Hurd "proc" interface changes.
+
+2019-02-14  Thomas Schwinge  <thomas@codesourcery.com>
+
+	* gnu-nat.c (gnu_write_inferior, parse_int_arg, _parse_bool_arg)
+	(check_empty): Use "const char *".
+
+	* gnu-nat.c (gnu_nat_target::detach): Instead of
+	'detach_inferior (pid)' call
+	'detach_inferior (find_inferior_pid (pid))'.
+
+	* configure.nat [gdb_host == i386gnu] (NATDEPFILES): Add
+	'nat/fork-inferior.o'.
+	* gnu-nat.c: #include "nat/fork-inferior.h".
+
+	* gnu-nat.c (gnu_nat_target::detach): Instead of
+	'inf_child_maybe_unpush_target (ops)' call 'maybe_unpush_target'.
+	* gnu-nat.h: #include "inf-child.h".
+	* i386-gnu-nat.c (gnu_fetch_registers): Rename/move to
+	'i386_gnu_nat_target::fetch_registers'.
+	(gnu_store_registers): Rename/move to
+	'i386_gnu_nat_target::store_registers'.
+
+	* config/i386/nm-i386gnu.h: Don't "#include" any files.
+	* gnu-nat.h (mach_thread_info): New function.
+	* gnu-nat.c (thread_takeover_sc_cmd): Use it.
+
+	* config/i386/nm-i386gnu.h (gnu_target_pid_to_str): Remove.
+
+2019-02-14  Frederic Konrad  <konrad@adacore.com>
+
+	* riscv-rdep.c (riscv_type_alignment): Handle TYPE_CODE_RANGE.
+
+2019-02-14  Joel Brobecker  <brobecker@adacore.com>
+
+	* windows-nat.c (windows_add_thread): Add new parameter
+	"main_thread_p" with default value set to false.  Update
+	function documentation as well as all callers.
+	(windows_delete_thread): Likewise.
+	(fake_create_process): Update call to windows_add_thread.
+	(get_windows_debug_event) <CREATE_THREAD_DEBUG_EVENT>
+	<CREATE_PROCESS_DEBUG_EVENT>: Likewise.
+	<EXIT_THREAD_DEBUG_EVENT, EXIT_PROCESS_DEBUG_EVENT>: Update
+	call to windows_delete_thread.
+
+2019-02-13  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* MAINTAINERS: Add Andrew Burgess as global maintainer.
+
+2019-02-12  John Baldwin  <jhb@FreeBSD.org>
+
+	* symfile.c (find_separate_debug_file): Use canonical path of
+	sysroot with child_path instead of gdb_sysroot if it is valid.
+
+2019-02-12  John Baldwin  <jhb@FreeBSD.org>
+
+	* symfile.c (find_separate_debug_file): Use child_path to
+	determine if an object file is under a sysroot.
+
+2019-02-12  John Baldwin  <jhb@FreeBSD.org>
+
+	* Makefile.in (SUBDIR_UNITTESTS_SRCS): Add
+	unittests/child-path-selftests.c.
+	* common/pathstuff.c (child_path): New function.
+	* common/pathstuff.h (child_path): New prototype.
+	* unittests/child-path-selftests.c: New file.
+
+2019-02-12  John Baldwin  <jhb@FreeBSD.org>
+
+	* symfile.c (find_separate_debug_file): Look for separate debug
+	files in debug directories under the sysroot.
+
+2019-02-12  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* symtab.h (struct minimal_symbol data_p): New const method.
+	(struct minimal_symbol text_p): Likewise.
+	* symtab.c (output_source_filename): Use file name style
+	to print file name.
+	(print_symbol_info): Likewise.
+	(print_msymbol_info): Use address style to print addresses.
+	Use function name style to print executable text symbols.
+	(expand_symtab_containing_pc): Use data_p.
+	(find_pc_sect_compunit_symtab): Likewise.
+
+2019-02-12  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* breakpoint.c (describe_other_breakpoints): Use address style
+	to print addresses.
+	(say_where): Likewise.
+
+2019-02-12  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* ada-typeprint.c (print_func_type): Print function name
+	style to print function name.
+	* c-typeprint.c (c_print_type_1): Likewise.
+
+2019-02-11  Alan Hayward  <alan.hayward@arm.com>
+
+	* aarch64-linux-tdep.c (aarch64_linux_get_syscall_number): Check
+	for execve.
+
+2019-02-10  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* c-exp.y (direct_abs_decl): Use emplace_back to record the
+	type_stack.
+
+2019-02-10  Joel Brobecker  <brobecker@adacore.com>
+
+	* ada-varobj.c (ada_value_is_changeable_p): Add handling of
+	TYPE_CODE_REF types.
+
 2019-02-08  Jim Wilson  <jimw@sifive.com>
 
 	* riscv-linux-tdep.c (riscv_linux_fregmap): New.
