@@ -398,10 +398,11 @@ get_data (void *         var,
       return NULL;
     }
 
-  /* Be kind to memory chekers (eg valgrind, address sanitizer) by not
+  /* Be kind to memory checkers (eg valgrind, address sanitizer) by not
      attempting to allocate memory when the read is bound to fail.  */
-  if (amt > filedata->file_size
-      || offset + archive_file_offset + amt > filedata->file_size)
+  if (archive_file_offset > filedata->file_size
+      || offset > filedata->file_size - archive_file_offset
+      || amt > filedata->file_size - archive_file_offset - offset)
     {
       if (reason)
 	error (_("Reading %s bytes extends past end of file for %s\n"),
@@ -5235,7 +5236,8 @@ process_program_headers (Filedata * filedata)
 	     segment.  Check this after matching against the section headers
 	     so we don't warn on debuginfo file (which have NOBITS .dynamic
 	     sections).  */
-	  if (dynamic_addr + dynamic_size >= filedata->file_size)
+	  if (dynamic_addr > filedata->file_size
+	      || dynamic_size > filedata->file_size - dynamic_addr)
 	    {
 	      error (_("the dynamic segment offset + size exceeds the size of the file\n"));
 	      dynamic_addr = dynamic_size = 0;
@@ -16185,6 +16187,12 @@ process_mips_specific (Filedata * filedata)
 	  error (_("No MIPS_OPTIONS header found\n"));
 	  return FALSE;
 	}
+      /* PR 24243  */
+      if (sect->sh_size < sizeof (* eopt))
+	{
+	  error (_("The MIPS options section is too small.\n"));
+	  return FALSE;
+	}
 
       eopt = (Elf_External_Options *) get_data (NULL, filedata, options_offset, 1,
                                                 sect->sh_size, _("options"));
@@ -17860,25 +17868,60 @@ get_stapsdt_note_type (unsigned e_type)
 static bfd_boolean
 print_stapsdt_note (Elf_Internal_Note *pnote)
 {
-  int addr_size = is_32bit_elf ? 4 : 8;
+  size_t len, maxlen;
+  unsigned long addr_size = is_32bit_elf ? 4 : 8;
   char *data = pnote->descdata;
   char *data_end = pnote->descdata + pnote->descsz;
   bfd_vma pc, base_addr, semaphore;
   char *provider, *probe, *arg_fmt;
 
+  if (pnote->descsz < (addr_size * 3))
+    goto stapdt_note_too_small;
+
   pc = byte_get ((unsigned char *) data, addr_size);
   data += addr_size;
+
   base_addr = byte_get ((unsigned char *) data, addr_size);
   data += addr_size;
+
   semaphore = byte_get ((unsigned char *) data, addr_size);
   data += addr_size;
 
-  provider = data;
-  data += strlen (data) + 1;
-  probe = data;
-  data += strlen (data) + 1;
-  arg_fmt = data;
-  data += strlen (data) + 1;
+  if (data >= data_end)
+    goto stapdt_note_too_small;
+  maxlen = data_end - data;
+  len = strnlen (data, maxlen);
+  if (len < maxlen)
+    {
+      provider = data;
+      data += len + 1;
+    }
+  else
+    goto stapdt_note_too_small;
+
+  if (data >= data_end)
+    goto stapdt_note_too_small;
+  maxlen = data_end - data;
+  len = strnlen (data, maxlen);
+  if (len < maxlen)
+    {
+      probe = data;
+      data += len + 1;
+    }
+  else
+    goto stapdt_note_too_small;
+  
+  if (data >= data_end)
+    goto stapdt_note_too_small;
+  maxlen = data_end - data;
+  len = strnlen (data, maxlen);
+  if (len < maxlen)
+    {
+      arg_fmt = data;
+      data += len + 1;
+    }
+  else
+    goto stapdt_note_too_small;
 
   printf (_("    Provider: %s\n"), provider);
   printf (_("    Name: %s\n"), probe);
@@ -17892,6 +17935,11 @@ print_stapsdt_note (Elf_Internal_Note *pnote)
   printf (_("    Arguments: %s\n"), arg_fmt);
 
   return data == data_end;
+
+ stapdt_note_too_small:
+  printf (_("  <corrupt - note is too small>\n"));
+  error (_("corrupt stapdt note - the data size is too small\n"));
+  return FALSE;
 }
 
 static const char *
@@ -17938,42 +17986,77 @@ get_ia64_vms_note_type (unsigned e_type)
 static bfd_boolean
 print_ia64_vms_note (Elf_Internal_Note * pnote)
 {
+  int maxlen = pnote->descsz;
+
+  if (maxlen < 2 || (unsigned long) maxlen != pnote->descsz)
+    goto desc_size_fail;
+
   switch (pnote->type)
     {
     case NT_VMS_MHD:
-      if (pnote->descsz > 36)
-        {
-          size_t l = strlen (pnote->descdata + 34);
-          printf (_("    Creation date  : %.17s\n"), pnote->descdata);
-          printf (_("    Last patch date: %.17s\n"), pnote->descdata + 17);
-          printf (_("    Module name    : %s\n"), pnote->descdata + 34);
-          printf (_("    Module version : %s\n"), pnote->descdata + 34 + l + 1);
-        }
+      if (maxlen <= 36)
+	goto desc_size_fail;
+
+      int l = (int) strnlen (pnote->descdata + 34, maxlen - 34);
+
+      printf (_("    Creation date  : %.17s\n"), pnote->descdata);
+      printf (_("    Last patch date: %.17s\n"), pnote->descdata + 17);
+      if (l + 34 < maxlen)
+	{
+	  printf (_("    Module name    : %s\n"), pnote->descdata + 34);
+	  if (l + 35 < maxlen)
+	    printf (_("    Module version : %s\n"), pnote->descdata + 34 + l + 1);
+	  else
+	    printf (_("    Module version : <missing>\n"));
+	}
       else
-        printf (_("    Invalid size\n"));
+	{
+	  printf (_("    Module name    : <missing>\n"));
+	  printf (_("    Module version : <missing>\n"));
+	}
       break;
+
     case NT_VMS_LNM:
-      printf (_("   Language: %s\n"), pnote->descdata);
+      printf (_("   Language: %.*s\n"), maxlen, pnote->descdata);
       break;
+
 #ifdef BFD64
     case NT_VMS_FPMODE:
       printf (_("   Floating Point mode: "));
+      if (maxlen < 8)
+	goto desc_size_fail;
+      /* FIXME: Generate an error if descsz > 8 ?  */
+
       printf ("0x%016" BFD_VMA_FMT "x\n",
-              (bfd_vma) byte_get ((unsigned char *)pnote->descdata, 8));
+	      (bfd_vma) byte_get ((unsigned char *)pnote->descdata, 8));
       break;
+
     case NT_VMS_LINKTIME:
       printf (_("   Link time: "));
+      if (maxlen < 8)
+	goto desc_size_fail;
+      /* FIXME: Generate an error if descsz > 8 ?  */
+
       print_vms_time
-        ((bfd_int64_t) byte_get ((unsigned char *)pnote->descdata, 8));
+	((bfd_int64_t) byte_get ((unsigned char *)pnote->descdata, 8));
       printf ("\n");
       break;
+
     case NT_VMS_PATCHTIME:
       printf (_("   Patch time: "));
+      if (maxlen < 8)
+	goto desc_size_fail;
+      /* FIXME: Generate an error if descsz > 8 ?  */
+
       print_vms_time
-        ((bfd_int64_t) byte_get ((unsigned char *)pnote->descdata, 8));
+	((bfd_int64_t) byte_get ((unsigned char *)pnote->descdata, 8));
       printf ("\n");
       break;
+
     case NT_VMS_ORIG_DYN:
+      if (maxlen < 34)
+	goto desc_size_fail;
+
       printf (_("   Major id: %u,  minor id: %u\n"),
               (unsigned) byte_get ((unsigned char *)pnote->descdata, 4),
               (unsigned) byte_get ((unsigned char *)pnote->descdata + 4, 4));
@@ -17985,25 +18068,36 @@ print_ia64_vms_note (Elf_Internal_Note * pnote)
               (bfd_vma) byte_get ((unsigned char *)pnote->descdata + 16, 8));
       printf (_("   Header flags: 0x%08x\n"),
               (unsigned) byte_get ((unsigned char *)pnote->descdata + 24, 4));
-      printf (_("   Image id    : %s\n"), pnote->descdata + 32);
+      printf (_("   Image id    : %.*s\n"), maxlen - 32, pnote->descdata + 32);
       break;
 #endif
+
     case NT_VMS_IMGNAM:
-      printf (_("    Image name: %s\n"), pnote->descdata);
+      printf (_("    Image name: %.*s\n"), maxlen, pnote->descdata);
       break;
+
     case NT_VMS_GSTNAM:
-      printf (_("    Global symbol table name: %s\n"), pnote->descdata);
+      printf (_("    Global symbol table name: %.*s\n"), maxlen, pnote->descdata);
       break;
+
     case NT_VMS_IMGID:
-      printf (_("    Image id: %s\n"), pnote->descdata);
+      printf (_("    Image id: %.*s\n"), maxlen, pnote->descdata);
       break;
+
     case NT_VMS_LINKID:
-      printf (_("    Linker id: %s\n"), pnote->descdata);
+      printf (_("    Linker id: %.*s\n"), maxlen, pnote->descdata);
       break;
+
     default:
       return FALSE;
     }
+
   return TRUE;
+
+ desc_size_fail:
+  printf (_("  <corrupt - data size is too small>\n"));
+  error (_("corrupt IA64 note: data size is too small\n"));
+  return FALSE;
 }
 
 /* Find the symbol associated with a build attribute that is attached

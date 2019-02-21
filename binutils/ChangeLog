@@ -1,3 +1,56 @@
+2019-02-21  Nick Clifton  <nickc@redhat.com>
+
+	PR 24247
+	* unwind-ia64.c: Include sysdep.h.
+	(unw_decode_x1): Check current pointer against end pointer before
+	accessing memory.
+	(unw_decode_x2): Likewise.
+	(unw_decode_x3): Likewise.
+	(unw_decode_x4): Likewise.
+	(unw_decode_r2): Likewise.
+	(unw_decode_p2_p5): Likewise.
+	(unw_decode_p7_p10): Likewise.
+	(unw_decode): Likewise.
+
+2019-02-20  Nick Clifton  <nickc@redhat.com>
+
+	PR 24246
+	* readelf.c (print_stapsdt_note): Harden against corrupt notes.
+
+	PR 24244
+	* unwind-ia64.c (unw_decode_uleb128): Add end parameter, use it to
+	prevent walking off the end of the buffer.
+	(unw_decode_x1): Add end paramter, pass it to unw_decode_uleb128.
+	(unw_decode_x2): Likewise.
+	(unw_decode_x3): Likewise.
+	(unw_decode_x4): Likewise.
+	(unw_decode_r2): Pass the end parameter to unw_decode_uleb128.
+	(unw_decode_r3): Likewise.
+	(unw_decode_p7_p10): Likewise.
+	(unw_decode_b2): Likewise.
+	(unw_decode_b3_x4): Likewise.
+
+	PR 24243
+	* readelf.c (process_mips_specific): Check for an options section
+	that is too small to even contain a single option.
+
+	PR 24242
+	* readelf.c (print_ia64_vms_note): Harden against corrupt notes.
+
+2019-02-20  Alan Modra  <amodra@gmail.com>
+
+	PR 24132
+	PR 24138
+	* readelf.c (get_data): Avoid possibility of overflow when
+	checking for a read that may extend past end of file.
+	(process_program_headers): Likewise.
+
+2019-02-20  Alan Modra  <amodra@gmail.com>
+
+	PR 24233
+	* objdump.c (dump_bfd_private_header): Print warning if
+	bfd_print_private_bfd_data returns false.
+
 2019-02-12  Nick Clifton  <nickc@redhat.com>
 
 	PR 23440

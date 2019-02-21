@@ -1,3 +1,11 @@
+2019-02-20  Alan Hayward  <alan.hayward@arm.com>
+
+	* elf/common.h (NT_ARM_PAC_MASK): Add define.
+
+2019-02-15  Saagar Jha  <saagar@saagarjha.com>
+
+	* mach-o/loader.h: Use new OS names in comments.
+
 2019-02-11  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
 
 	* splay-tree.h (splay_tree_delete_key_fn): Update comment.

@@ -3903,16 +3903,16 @@ user_select_syms (struct block_symbol *syms, int nsyms, int max_results)
     error (_("\
 canceled because the command is ambiguous\n\
 See set/show multiple-symbol."));
-  
+
   /* If select_mode is "all", then return all possible symbols.
      Only do that if more than one symbol can be selected, of course.
      Otherwise, display the menu as usual.  */
   if (select_mode == multiple_symbols_all && max_results > 1)
     return nsyms;
 
-  printf_unfiltered (_("[0] cancel\n"));
+  printf_filtered (_("[0] cancel\n"));
   if (max_results > 1)
-    printf_unfiltered (_("[1] all\n"));
+    printf_filtered (_("[1] all\n"));
 
   sort_choices (syms, nsyms);
 
@@ -3926,16 +3926,16 @@ See set/show multiple-symbol."));
           struct symtab_and_line sal =
             find_function_start_sal (syms[i].symbol, 1);
 
-	  printf_unfiltered ("[%d] ", i + first_choice);
+	  printf_filtered ("[%d] ", i + first_choice);
 	  ada_print_symbol_signature (gdb_stdout, syms[i].symbol,
 				      &type_print_raw_options);
 	  if (sal.symtab == NULL)
-	    printf_unfiltered (_(" at <no source file available>:%d\n"),
-			       sal.line);
+	    printf_filtered (_(" at <no source file available>:%d\n"),
+			     sal.line);
 	  else
-	    printf_unfiltered (_(" at %s:%d\n"),
-			       symtab_to_filename_for_display (sal.symtab),
-			       sal.line);
+	    printf_filtered (_(" at %s:%d\n"),
+			     symtab_to_filename_for_display (sal.symtab),
+			     sal.line);
           continue;
         }
       else
@@ -3951,37 +3951,37 @@ See set/show multiple-symbol."));
 
           if (SYMBOL_LINE (syms[i].symbol) != 0 && symtab != NULL)
 	    {
-	      printf_unfiltered ("[%d] ", i + first_choice);
+	      printf_filtered ("[%d] ", i + first_choice);
 	      ada_print_symbol_signature (gdb_stdout, syms[i].symbol,
 					  &type_print_raw_options);
-	      printf_unfiltered (_(" at %s:%d\n"),
-				 symtab_to_filename_for_display (symtab),
-				 SYMBOL_LINE (syms[i].symbol));
+	      printf_filtered (_(" at %s:%d\n"),
+			       symtab_to_filename_for_display (symtab),
+			       SYMBOL_LINE (syms[i].symbol));
 	    }
           else if (is_enumeral
                    && TYPE_NAME (SYMBOL_TYPE (syms[i].symbol)) != NULL)
             {
-              printf_unfiltered (("[%d] "), i + first_choice);
+              printf_filtered (("[%d] "), i + first_choice);
               ada_print_type (SYMBOL_TYPE (syms[i].symbol), NULL,
                               gdb_stdout, -1, 0, &type_print_raw_options);
-              printf_unfiltered (_("'(%s) (enumeral)\n"),
-                                 SYMBOL_PRINT_NAME (syms[i].symbol));
+              printf_filtered (_("'(%s) (enumeral)\n"),
+			       SYMBOL_PRINT_NAME (syms[i].symbol));
             }
 	  else
 	    {
-	      printf_unfiltered ("[%d] ", i + first_choice);
+	      printf_filtered ("[%d] ", i + first_choice);
 	      ada_print_symbol_signature (gdb_stdout, syms[i].symbol,
 					  &type_print_raw_options);
 
 	      if (symtab != NULL)
-		printf_unfiltered (is_enumeral
-				   ? _(" in %s (enumeral)\n")
-				   : _(" at %s:?\n"),
-				   symtab_to_filename_for_display (symtab));
+		printf_filtered (is_enumeral
+				 ? _(" in %s (enumeral)\n")
+				 : _(" at %s:?\n"),
+				 symtab_to_filename_for_display (symtab));
 	      else
-		printf_unfiltered (is_enumeral
-				   ? _(" (enumeral)\n")
-				   : _(" at ?\n"));
+		printf_filtered (is_enumeral
+				 ? _(" (enumeral)\n")
+				 : _(" at ?\n"));
 	    }
         }
     }
@@ -4760,7 +4760,7 @@ standard_lookup (const char *name, const struct block *block,
 
   if (lookup_cached_symbol (name, domain, &sym.symbol, NULL))
     return sym.symbol;
-  sym = lookup_symbol_in_language (name, block, domain, language_c, 0);
+  ada_lookup_encoded_symbol (name, block, domain, &sym);
   cache_symbol (name, domain, sym.symbol, sym.block);
   return sym.symbol;
 }
@@ -12396,32 +12396,14 @@ static std::string ada_exception_catchpoint_cond_string
 class ada_catchpoint_location : public bp_location
 {
 public:
-  ada_catchpoint_location (const bp_location_ops *ops, breakpoint *owner)
-    : bp_location (ops, owner)
+  ada_catchpoint_location (breakpoint *owner)
+    : bp_location (owner)
   {}
 
   /* The condition that checks whether the exception that was raised
      is the specific exception the user specified on catchpoint
      creation.  */
   expression_up excep_cond_expr;
-};
-
-/* Implement the DTOR method in the bp_location_ops structure for all
-   Ada exception catchpoint kinds.  */
-
-static void
-ada_catchpoint_location_dtor (struct bp_location *bl)
-{
-  struct ada_catchpoint_location *al = (struct ada_catchpoint_location *) bl;
-
-  al->excep_cond_expr.reset ();
-}
-
-/* The vtable to be used in Ada catchpoint locations.  */
-
-static const struct bp_location_ops ada_catchpoint_location_ops =
-{
-  ada_catchpoint_location_dtor
 };
 
 /* An instance of this type is used to represent an Ada catchpoint.  */
@@ -12493,7 +12475,7 @@ static struct bp_location *
 allocate_location_exception (enum ada_exception_catchpoint_kind ex,
 			     struct breakpoint *self)
 {
-  return new ada_catchpoint_location (&ada_catchpoint_location_ops, self);
+  return new ada_catchpoint_location (self);
 }
 
 /* Implement the RE_SET method in the breakpoint_ops structure for all
@@ -13194,7 +13176,7 @@ ada_exception_catchpoint_cond_string (const char *excep_string,
 
 static struct symtab_and_line
 ada_exception_sal (enum ada_exception_catchpoint_kind ex,
-		   const char **addr_string, const struct breakpoint_ops **ops)
+		   std::string *addr_string, const struct breakpoint_ops **ops)
 {
   const char *sym_name;
   struct symbol *sym;
@@ -13214,7 +13196,7 @@ ada_exception_sal (enum ada_exception_catchpoint_kind ex,
     error (_("Unable to insert catchpoint. %s is not a function."), sym_name);
 
   /* Set ADDR_STRING.  */
-  *addr_string = xstrdup (sym_name);
+  *addr_string = sym_name;
 
   /* Set OPS.  */
   *ops = ada_exception_breakpoint_ops (ex);
@@ -13246,12 +13228,12 @@ create_ada_exception_catchpoint (struct gdbarch *gdbarch,
 				 int disabled,
 				 int from_tty)
 {
-  const char *addr_string = NULL;
+  std::string addr_string;
   const struct breakpoint_ops *ops = NULL;
   struct symtab_and_line sal = ada_exception_sal (ex_kind, &addr_string, &ops);
 
   std::unique_ptr<ada_catchpoint> c (new ada_catchpoint ());
-  init_ada_exception_breakpoint (c.get (), gdbarch, sal, addr_string,
+  init_ada_exception_breakpoint (c.get (), gdbarch, sal, addr_string.c_str (),
 				 ops, tempflag, disabled, from_tty);
   c->excep_string = excep_string;
   create_excep_cond_exprs (c.get (), ex_kind);
@@ -14193,6 +14175,16 @@ do_full_match (const char *symbol_search_name,
   return full_match (symbol_search_name, ada_lookup_name (lookup_name));
 }
 
+/* symbol_name_matcher_ftype for exact (verbatim) matches.  */
+
+static bool
+do_exact_match (const char *symbol_search_name,
+		const lookup_name_info &lookup_name,
+		completion_match_result *comp_match_res)
+{
+  return strcmp (symbol_search_name, ada_lookup_name (lookup_name)) == 0;
+}
+
 /* Build the Ada lookup name for LOOKUP_NAME.  */
 
 ada_lookup_name_info::ada_lookup_name_info (const lookup_name_info &lookup_name)
@@ -14303,6 +14295,8 @@ ada_get_symbol_name_matcher (const lookup_name_info &lookup_name)
     {
       if (lookup_name.ada ().wild_match_p ())
 	return do_wild_match;
+      else if (lookup_name.ada ().verbatim_p ())
+	return do_exact_match;
       else
 	return do_full_match;
     }

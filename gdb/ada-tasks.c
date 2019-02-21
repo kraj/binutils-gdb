@@ -26,6 +26,8 @@
 #include "progspace.h"
 #include "objfiles.h"
 
+static int ada_build_task_list ();
+
 /* The name of the array in the GNAT runtime where the Ada Task Control
    Block of each task is stored.  */
 #define KNOWN_TASKS_NAME "system__tasking__debug__known_tasks"
@@ -161,6 +163,15 @@ struct ada_tasks_pspace_data
 /* Key to our per-program-space data.  */
 static const struct program_space_data *ada_tasks_pspace_data_handle;
 
+/* A cleanup routine for our per-program-space data.  */
+static void
+ada_tasks_pspace_data_cleanup (struct program_space *pspace, void *arg)
+{
+  struct ada_tasks_pspace_data *data
+    = (struct ada_tasks_pspace_data *) arg;
+  xfree (data);
+}
+
 /* The kind of data structure used by the runtime to store the list
    of Ada tasks.  */
 
@@ -221,7 +232,7 @@ struct ada_tasks_inferior_data
   /* When nonzero, this flag indicates that the task_list field
      below is up to date.  When set to zero, the list has either
      not been initialized, or has potentially become stale.  */
-  int task_list_valid_p = 0;
+  bool task_list_valid_p = false;
 
   /* The list of Ada tasks.
 
@@ -283,6 +294,15 @@ get_ada_tasks_inferior_data (struct inferior *inf)
     }
 
   return data;
+}
+
+/* A cleanup routine for our per-inferior data.  */
+static void
+ada_tasks_inferior_data_cleanup (struct inferior *inf, void *arg)
+{
+  struct ada_tasks_inferior_data *data
+    = (struct ada_tasks_inferior_data *) arg;
+  delete data;
 }
 
 /* Return the task number of the task whose thread is THREAD, or zero
@@ -785,9 +805,9 @@ add_ada_task (CORE_ADDR task_id, struct inferior *inf)
 }
 
 /* Read the Known_Tasks array from the inferior memory, and store
-   it in the current inferior's TASK_LIST.  Return non-zero upon success.  */
+   it in the current inferior's TASK_LIST.  Return true upon success.  */
 
-static int
+static bool
 read_known_tasks_array (struct ada_tasks_inferior_data *data)
 {
   const int target_ptr_byte = TYPE_LENGTH (data->known_tasks_element);
@@ -808,13 +828,13 @@ read_known_tasks_array (struct ada_tasks_inferior_data *data)
         add_ada_task (task_id, current_inferior ());
     }
 
-  return 1;
+  return true;
 }
 
 /* Read the known tasks from the inferior memory, and store it in
-   the current inferior's TASK_LIST.  Return non-zero upon success.  */
+   the current inferior's TASK_LIST.  Return true upon success.  */
 
-static int
+static bool
 read_known_tasks_list (struct ada_tasks_inferior_data *data)
 {
   const int target_ptr_byte = TYPE_LENGTH (data->known_tasks_element);
@@ -825,7 +845,7 @@ read_known_tasks_list (struct ada_tasks_inferior_data *data)
 
   /* Sanity check.  */
   if (pspace_data->atcb_fieldno.activation_link < 0)
-    return 0;
+    return false;
 
   /* Build a new list by reading the ATCBs.  Read head of the list.  */
   read_memory (data->known_tasks_addr, known_tasks, target_ptr_byte);
@@ -846,7 +866,7 @@ read_known_tasks_list (struct ada_tasks_inferior_data *data)
                                 pspace_data->atcb_fieldno.activation_link));
     }
 
-  return 1;
+  return true;
 }
 
 /* Set all fields of the current inferior ada-tasks data pointed by DATA.
@@ -944,11 +964,10 @@ ada_tasks_inferior_data_sniffer (struct ada_tasks_inferior_data *data)
 }
 
 /* Read the known tasks from the current inferior's memory, and store it
-   in the current inferior's data TASK_LIST.
-   Return non-zero upon success.  */
+   in the current inferior's data TASK_LIST.  */
 
-static int
-read_known_tasks (void)
+static void
+read_known_tasks ()
 {
   struct ada_tasks_inferior_data *data =
     get_ada_tasks_inferior_data (current_inferior ());
@@ -965,29 +984,27 @@ read_known_tasks (void)
   ada_tasks_inferior_data_sniffer (data);
   gdb_assert (data->known_tasks_kind != ADA_TASKS_UNKNOWN);
 
+  /* Step 3: Set task_list_valid_p, to avoid re-reading the Known_Tasks
+     array unless needed.  */
   switch (data->known_tasks_kind)
     {
-      case ADA_TASKS_NOT_FOUND: /* Tasking not in use in inferior.  */
-        return 0;
-      case ADA_TASKS_ARRAY:
-        return read_known_tasks_array (data);
-      case ADA_TASKS_LIST:
-        return read_known_tasks_list (data);
+    case ADA_TASKS_NOT_FOUND: /* Tasking not in use in inferior.  */
+      break;
+    case ADA_TASKS_ARRAY:
+      data->task_list_valid_p = read_known_tasks_array (data);
+      break;
+    case ADA_TASKS_LIST:
+      data->task_list_valid_p = read_known_tasks_list (data);
+      break;
     }
-
-  /* Step 3: Set task_list_valid_p, to avoid re-reading the Known_Tasks
-     array unless needed.  Then report a success.  */
-  data->task_list_valid_p = 1;
-
-  return 1;
 }
 
 /* Build the task_list by reading the Known_Tasks array from
    the inferior, and return the number of tasks in that list
    (zero means that the program is not using tasking at all).  */
 
-int
-ada_build_task_list (void)
+static int
+ada_build_task_list ()
 {
   struct ada_tasks_inferior_data *data;
 
@@ -1343,7 +1360,7 @@ ada_task_list_changed (struct inferior *inf)
 {
   struct ada_tasks_inferior_data *data = get_ada_tasks_inferior_data (inf);
 
-  data->task_list_valid_p = 0;
+  data->task_list_valid_p = false;
 }
 
 /* Invalidate the per-program-space data.  */
@@ -1362,7 +1379,7 @@ ada_tasks_invalidate_inferior_data (struct inferior *inf)
   struct ada_tasks_inferior_data *data = get_ada_tasks_inferior_data (inf);
 
   data->known_tasks_kind = ADA_TASKS_UNKNOWN;
-  data->task_list_valid_p = 0;
+  data->task_list_valid_p = false;
 }
 
 /* The 'normal_stop' observer notification callback.  */
@@ -1414,8 +1431,12 @@ ada_tasks_new_objfile_observer (struct objfile *objfile)
 void
 _initialize_tasks (void)
 {
-  ada_tasks_pspace_data_handle = register_program_space_data ();
-  ada_tasks_inferior_data_handle = register_inferior_data ();
+  ada_tasks_pspace_data_handle
+    = register_program_space_data_with_cleanup (NULL,
+						ada_tasks_pspace_data_cleanup);
+  ada_tasks_inferior_data_handle
+    = register_inferior_data_with_cleanup (NULL,
+					   ada_tasks_inferior_data_cleanup);
 
   /* Attach various observers.  */
   gdb::observers::normal_stop.attach (ada_tasks_normal_stop_observer);

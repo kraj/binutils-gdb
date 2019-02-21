@@ -1,3 +1,41 @@
+2019-02-20  Tom Tromey  <tom@tromey.com>
+
+	* gdb.base/info_qt.exp: Update.
+
+2019-02-19  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* gdb.base/source.exp: Move "error in sourced script" code to
+	the end.
+	* gdb.base/source-error.gdb: Move contents to
+	source-error-1.gdb.  Add new code to source source-error-1.gdb.
+	* gdb.base/source-error-1.gdb: New file, from previous
+	source-error.gdb.
+
+2019-02-17  Tom Tromey  <tom@tromey.com>
+
+	* gdb.base/style.exp: Use -g3 to compile when possible.  Add test
+	for macro styling.
+	* gdb.base/style.c (SOME_MACRO): New macro.
+
+2019-02-17  Tom Tromey  <tom@tromey.com>
+
+	* gdb.base/style.exp: Add line-wrapping tests.
+	* gdb.base/page.exp: Add test for quitting during pagination.
+
+2019-02-17  Joel Brobecker  <brobecker@adacore.com>
+
+	* gdb.ada/big_packed_array: New testcase.
+	* gdb.ada/homonym.exp: Fix incorrect expected output for
+	"break <homonym__get_value>" test.
+
+2019-02-13  Weimin Pan  <weimin.pan@oracle.com>
+
+	PR breakpoints/21870
+	* gdb.arch/aarch64-dbreg-contents.exp: Use runto_main + continue
+	and prepare_for_testing.  Add comment.
+	* gdb.arch/aarch64-dbreg-contents.c: Remove SET_WATCHPOINT and
+	redundant cleanup call.  Clean up comment.
+
 2019-02-12  Weimin Pan  <weimin.pan@oracle.com>
 
 	PR breakpoints/21870

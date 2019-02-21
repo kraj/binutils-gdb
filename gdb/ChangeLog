@@ -1,3 +1,224 @@
+2019-02-21  Alan Hayward  <alan.hayward@arm.com>
+
+	* main.c (captured_main_1): Disable styling in batch mode.
+
+2019-02-20  Tom Tromey  <tom@tromey.com>
+
+	* symtab.c (symtab_symbol_info): Fix typos.
+
+2019-02-20  Tom Tromey  <tromey@adacore.com>
+
+	* findcmd.c (_initialize_mem_search): Use upper case for
+	metasyntactic variables.
+
+2019-02-20  Alan Hayward  <alan.hayward@arm.com>
+
+	* aarch64-tdep.c (aarch64_add_reggroups): New function.
+	(aarch64_gdbarch_init): Call aarch64_add_reggroups.
+
+2019-02-19  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* top.h (source_file_name): Change to std::string.
+	* top.c (source_file_name): Likewise.
+	(command_line_input): Adjust.
+	* cli/cli-script.c (script_from_file): Adjust.
+
+2019-02-19  Tom Tromey  <tromey@adacore.com>
+
+	* ravenscar-thread.c
+	(ravenscar_thread_target::update_thread_list): Don't call
+	ada_build_task_list.
+	* ada-lang.h (ada_build_task_list): Don't declare.
+	* ada-tasks.c (struct ada_tasks_inferior_data)
+	<task_list_valid_p>: Now bool.
+	(read_known_tasks, ada_task_list_changed)
+	(ada_tasks_invalidate_inferior_data): Update.
+	(read_known_tasks_array): Return bool.
+	(read_known_tasks_list): Likewise.
+	(read_known_tasks): Return void.
+	(ada_build_task_list): Now static.
+
+2019-02-18  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdbtypes.c (type_align): Allow alignment of TYPE_CODE_METHODPTR
+	and TYPE_CODE_MEMBERPTR to be overridden by the gdbarch.
+
+2019-02-18  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* ada-task.c (_initialize_tasks): Use 'with_cleanup' register
+	variant for ada_tasks_pspace_data_handle and
+	ada_tasks_inferior_data_handle.
+	(ada_tasks_pspace_data_cleanup): New function.
+	(ada_tasks_inferior_data_cleanup): New function.
+
+2019-02-17  Tom Tromey  <tom@tromey.com>
+
+	* macrotab.h (macro_source_fullname): Return a std::string.
+	* macrotab.c (macro_include, check_for_redefinition)
+	(macro_undef, macro_lookup_definition, foreach_macro)
+	(foreach_macro_in_scope): Update.
+	(macro_source_fullname): Return a std::string.
+	* macrocmd.c (show_pp_source_pos): Update.
+
+2019-02-17  Tom Tromey  <tom@tromey.com>
+
+	* macrocmd.c (show_pp_source_pos): Style the file names.
+
+2019-02-17  Tom Tromey  <tom@tromey.com>
+
+	PR tui/24197:
+	* tui/tui-source.c (tui_set_source_content_nil): Rewrite.
+
+2019-02-17  Tom Tromey  <tom@tromey.com>
+
+	* ada-lang.c (user_select_syms): Use filtered printing.
+	* utils.c (wrap_style): New global.
+	(desired_style): Remove.
+	(emit_style_escape): Add stream parameter.
+	(set_output_style, reset_terminal_style, prompt_for_continue):
+	Update.
+	(flush_wrap_buffer): Only flush gdb_stdout.
+	(wrap_here): Set wrap_style.
+	(fputs_maybe_filtered): Clear the wrap buffer on exception.  Don't
+	treat escape sequences as a character.  Change when wrap buffer is
+	flushed.
+	(fputs_styled): Do not set the output style when the default is
+	requested.
+	* ui-style.h (struct ui_file_style) <is_default>: New method.
+	* source.c (print_source_lines_base): Emit escape sequences in one
+	piece.
+
+2019-02-17  Joel Brobecker  <brobecker@adacore.com>
+
+	* gdbtypes.c (type_align): Handle TYPE_CODE_RANGE the same as
+	integers and enumeration types.
+
+2019-02-17  Joel Brobecker  <brobecker@adacore.com>
+
+	* ada-lang.c (standard_lookup): Use ada_lookup_encoded_symbol
+	instead of lookup_symbol_in_language
+	(do_exact_match): New function.
+	(ada_get_symbol_name_matcher): Return do_exact_match when
+	doing a verbatim match.
+
+2019-02-15  Tom Tromey  <tromey@adacore.com>
+
+	* ravenscar-thread.c (ravenscar_thread_target::resume)
+	(ravenscar_thread_target::wait): Special case wildcard requests.
+
+2019-02-15  Tom Tromey  <tromey@adacore.com>
+
+	* ravenscar-thread.c (base_ptid): Remove.
+	(struct ravenscar_thread_target) <close>: New method.
+	<m_base_ptid>: New member.
+	<update_inferior_ptid, active_task, task_is_currently_active,
+	runtime_initialized>: Declare methods.
+	<ravenscar_thread_target>: Add constructor.
+	(ravenscar_thread_target::task_is_currently_active)
+	(ravenscar_thread_target::update_inferior_ptid)
+	(ravenscar_runtime_initialized): Rename.  Now methods.
+	(ravenscar_thread_target::resume, ravenscar_thread_target::wait)
+	(ravenscar_thread_target::update_thread_list): Update.
+	(ravenscar_thread_target::active_task): Now method.
+	(ravenscar_thread_target::store_registers)
+	(ravenscar_thread_target::prepare_to_store)
+	(ravenscar_thread_target::prepare_to_store)
+	(ravenscar_thread_target::mourn_inferior): Update.
+	(ravenscar_inferior_created): Use "new" to create target.
+	(ravenscar_thread_target::get_ada_task_ptid): Update.
+	(_initialize_ravenscar): Don't initialize base_ptid.
+	(ravenscar_ops): Remove global.
+
+2019-02-15  Tom Tromey  <tromey@adacore.com>
+
+	* target.h (push_target): Declare new overload.
+	* target.c (push_target): New overload, taking an rvalue reference.
+	* remote.c (remote_target::open_1): Use push_target overload.
+	* corelow.c (core_target_open): Use push_target overload.
+
+2019-02-15  Tom Tromey  <tromey@adacore.com>
+
+	* ravenscar-thread.c (is_ravenscar_task)
+	(ravenscar_task_is_currently_active): Return bool.
+	(ravenscar_update_inferior_ptid, get_running_thread_msymbol)
+	(_initialize_ravenscar): Remove "(void)".
+	(has_ravenscar_runtime, ravenscar_runtime_initialized): Likewise.
+	Return bool.
+
+2019-02-15  Tom Tromey  <tromey@adacore.com>
+
+	* ravenscar-thread.c (ravenscar_runtime_initializer)
+	(has_ravenscar_runtime, get_running_thread_id)
+	(ravenscar_thread_target::resume): Fix indentation.
+
+2019-02-15  Tom Tromey  <tromey@adacore.com>
+
+	* sparc-ravenscar-thread.c (struct sparc_ravenscar_ops): Derive
+	from ravenscar_arch_ops.
+	(sparc_ravenscar_ops::fetch_registers)
+	(sparc_ravenscar_ops::store_registers): Now methods.
+	(sparc_ravenscar_prepare_to_store): Remove.
+	(sparc_ravenscar_ops): Redefine.
+	* ravenscar-thread.h (struct ravenscar_arch_ops): Add virtual
+	methods and destructor.  Remove members.
+	* ravenscar-thread.c (ravenscar_thread_target::fetch_registers)
+	(ravenscar_thread_target::store_registers)
+	(ravenscar_thread_target::prepare_to_store): Update.
+	* ppc-ravenscar-thread.c (ppc_ravenscar_generic_prepare_to_store):
+	Remove.
+	(struct ppc_ravenscar_powerpc_ops): Derive from
+	ravenscar_arch_ops.
+	(ppc_ravenscar_powerpc_ops::fetch_registers)
+	(ppc_ravenscar_powerpc_ops::store_registers): Now methods.
+	(ppc_ravenscar_powerpc_ops): Redefine.
+	(struct ppc_ravenscar_e500_ops): Derive from ravenscar_arch_ops.
+	(ppc_ravenscar_e500_ops::fetch_registers)
+	(ppc_ravenscar_e500_ops::store_registers): Now methods.
+	(ppc_ravenscar_e500_ops): Redefine.
+	* aarch64-ravenscar-thread.c
+	(aarch64_ravenscar_generic_prepare_to_store): Remove.
+	(struct aarch64_ravenscar_ops): Derive from ravenscar_arch_ops.
+	(aarch64_ravenscar_fetch_registers)
+	(aarch64_ravenscar_store_registers): Now methods.
+	(aarch64_ravenscar_ops): Redefine.
+
+2019-02-15  Tom Tromey  <tromey@adacore.com>
+
+	* ravenscar-thread.c (ravenscar_thread_target::stopped_by_sw_breakpoint)
+	(ravenscar_thread_target::stopped_by_hw_breakpoint)
+	(ravenscar_thread_target::stopped_by_watchpoint)
+	(ravenscar_thread_target::stopped_data_address)
+	(ravenscar_thread_target::core_of_thread): Use scoped_restore.
+
+2019-02-15  Tom Tromey  <tromey@adacore.com>
+
+	* ravenscar-thread.c: Fix some typos.
+
+2019-02-15  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+	    Tom Tromey  <tromey@adacore.com>
+
+	* ada-lang.c (ada_exception_sal): Change addr_string to a
+	std::string.
+	(create_ada_exception_catchpoint): Update.
+
+2019-02-15  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+	    Tom Tromey  <tromey@adacore.com>
+
+	* breakpoint.c (~bp_location): Rename from bp_location_dtor.
+	(bp_location_ops): Remove.
+	(base_breakpoint_allocate_location): Update.
+	(free_bp_location): Update.
+	* ada-lang.c (class ada_catchpoint_location)
+	<ada_catchpoint_location>: Remove ops parameter.
+	(ada_catchpoint_location_dtor): Remove.
+	(ada_catchpoint_location_ops): Remove.
+	(allocate_location_exception): Update.
+	* breakpoint.h (struct bp_location_ops): Remove.
+	(class bp_location) <bp_location>: Remove bp_location_ops
+	parameter.
+	<~bp_location>: Add destructor.
+	<ops>: Remove.
+
 2019-02-14  Thomas Schwinge  <thomas@codesourcery.com>
 	    Pedro Alves  <palves@redhat.com>
 

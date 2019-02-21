@@ -1,3 +1,51 @@
+2019-02-20  Eric Tsai  <erictsai@cadence.com>
+
+	* elf32-xtensa.c (is_resolvable_asm_expansion): Scan output
+	sections between the call site and call destination and adjust
+	call distance by the largest alignment.
+
+2019-02-20  Alan Hayward  <alan.hayward@arm.com>
+
+	* elf-bfd.h (elfcore_write_aarch_pauth): Add declaration.
+	* elf.c (elfcore_grok_aarch_pauth): New function.
+	(elfcore_grok_note): Check for NT_ARM_PAC_MASK.
+	(elfcore_write_aarch_pauth): New function.
+	(elfcore_write_register_note): Check for AArch64 pauth section.
+
+2019-02-20  Alan Modra  <amodra@gmail.com>
+
+	PR 24225
+	* elf32-nios2.c (nios2_elf32_relocate_section): Check asprintf
+	return value.
+
+2019-02-20  Michael Roitzsch  <reactorcontrol@icloud.com>
+
+	* configure.ac (SHARED_LIBADD): Add -liberty -lintl for all
+	Darwin hosts, not just or1k.
+	* configure: Regenerate.
+
+2019-02-20  Alan Modra  <amodra@gmail.com>
+
+	PR 24236
+	* archive64.c (_bfd_archive_64_bit_slurp_armap): Move code adding
+	sentinel NUL to string buffer nearer to loop where it is used.
+	Don't go past sentinel when scanning strings, and don't write
+	NUL again.
+	* archive.c (do_slurp_coff_armap): Simplify string handling to
+	archive64.c style.
+
+2019-02-19  Alan Modra  <amodra@gmail.com>
+
+	PR 24235
+	* pei-x86_64.c (pex64_bfd_print_pdata_section): Correct checks
+	attempting to prevent read past end of section.
+
+2019-02-18  Alan Modra  <amodra@gmail.com>
+
+	PR 24225
+	* elf32-nios2.c (nios2_elf32_relocate_section): Use asprintf and
+	PRIx64 to generate warning messages.  Print local sym names too.
+
 2019-02-09  Vineet Gupta  <vgupta@synopsys.com>
 
 	* elf32-arc (INIT_SYM_STRING): Delete.
