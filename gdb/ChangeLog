@@ -1,3 +1,32 @@
+2019-02-23  Sergio Durigan Junior  <sergiodj@redhat.com>
+
+	* gcore.in: Add '--readnever' option when invoking GDB.
+
+2019-02-22  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* MAINTAINERS: Update my email address.
+
+2019-02-22  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* build-id.c (build_id_to_debug_bfd_1): New function.
+	(build_id_to_debug_bfd): Look for separate debug file in
+	sysroot.
+
+2019-02-22  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdbarch.sh: Update the copyright year range that is placed into
+	generated files.
+
+2019-02-22  Keith Seitz  <keiths@redhat.com>
+
+	PR symtab/23853
+	* linespec.c (create_sals_line_offset): Search for the default
+	symtab's filename instead of its fullname.
+
+2019-02-21  Alan Hayward  <alan.hayward@arm.com>
+
+	* NEWS: Update style defaults.
+
 2019-02-21  Alan Hayward  <alan.hayward@arm.com>
 
 	* main.c (captured_main_1): Disable styling in batch mode.

@@ -1,5 +1,18 @@
 -*- text -*-
 
+* The separate debug info file options of readelf (--debug-dump=links
+  and --debug-dump=follow) and objdump (--dwarf=links and
+  --dwarf=follow-links) will now display and/or follow multiple links if
+  more than one are present in a file.  (This usually happens when gcc's
+  -gsplit-dwarf option is used).
+
+  In addition objdump's --dwarf=follow-links now also affects its other
+  display options, so that for example, when combined with --syms it will
+  cause the symbol tables in any linked debug info files to also be
+  displayed.  In addition when combined with --disassemble the --dwarf=
+  follow-links option will ensure that any symbol tables in the linked
+  files are read and used when disassembling code in the main file.
+  
 Changes in 2.32:
 
 * The addr2line, c++filt, nm and objdump tools now have a limit on the

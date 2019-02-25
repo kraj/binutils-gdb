@@ -187,6 +187,15 @@ typedef struct
 }
 debug_info;
 
+typedef struct separate_info
+{
+  void *                  handle;    /* The pointer returned by open_debug_file().  */
+  const char *            filename;
+  struct separate_info *  next;
+} separate_info;
+
+extern separate_info * first_separate_info;
+
 extern unsigned int eh_addr_size;
 
 extern int do_debug_info;
@@ -209,6 +218,7 @@ extern int do_debug_addr;
 extern int do_debug_cu_index;
 extern int do_wide;
 extern int do_debug_links;
+extern int do_follow_links;
 
 extern int dwarf_cutoff_level;
 extern unsigned long dwarf_start_die;
@@ -225,7 +235,7 @@ extern void init_dwarf_regnames_riscv (void);
 
 extern bfd_boolean  load_debug_section (enum dwarf_section_display_enum, void *);
 extern void         free_debug_section (enum dwarf_section_display_enum);
-extern void *       load_separate_debug_file (void *, const char *);
+extern bfd_boolean  load_separate_debug_files (void *, const char *);
 extern void         close_debug_file (void *);
 extern void *       open_debug_file (const char *);
 

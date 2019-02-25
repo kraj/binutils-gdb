@@ -1,3 +1,28 @@
+2019-02-24  Alan Modra  <amodra@gmail.com>
+
+	* config/tc-ppc.c (parse_tls_arg): Wrap in #ifdef OBJ_ELF.
+
+2019-02-24  Alan Modra  <amodra@gmail.com>
+
+	PR 24144
+	* config/obj-aout.c (obj_aout_frob_file_before_fix): Write to end
+	of section to ensure file contents cover aligned section size.
+
+2019-02-22  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/tc-arm.c (arm_cpus): Add neoverse-n1.
+	* doc/c-arm.texi (-mcpu): Document neoverse-n1 value.
+
+2019-02-22  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/tc-aarch64.c (aarch64_cpus): Add neoverse-e1.
+	* doc/c-aarch64.texi (-mcpu): Document neoverse-e1 value.
+
+2019-02-22  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/tc-aarch64.c (aarch64_cpus): Add neoverse-n1.
+	* doc/c-aarch64.texi (-mcpu): Document neoverse-n1 value.
+
 2019-02-19  Paul Hua  <paul.hua.gm@gmail.com>
 
 	* NEWS: Mention -m[no-]fix-loongson3-llsc.
