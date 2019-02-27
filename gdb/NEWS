@@ -1,7 +1,9 @@
 		What has changed in GDB?
 	     (Organized release by release)
 
-*** Changes since GDB 8.2
+*** Changes since GDB 8.3
+
+*** Changes in GDB 8.3
 
 * GDB and GDBserver now support access to additional registers on
   PowerPC GNU/Linux targets: PPR, DSCR, TAR, EBB/PMU registers, and
@@ -188,6 +190,8 @@ FreeBSD/riscv			riscv*-*-freebsd*
 
 * Python API
 
+  ** GDB no longer supports Python versions less than 2.6.
+
   ** The gdb.Inferior type has a new 'progspace' property, which is the program
      space associated to that inferior.
 
@@ -201,6 +205,9 @@ FreeBSD/riscv			riscv*-*-freebsd*
   ** gdb.SYMBOL_VARIABLES_DOMAIN, gdb.SYMBOL_FUNCTIONS_DOMAIN, and
      gdb.SYMBOL_TYPES_DOMAIN are now deprecated.  These were never
      correct and did not work properly.
+
+  ** The gdb.Value type has a new constructor, which is used to construct a
+     gdb.Value from a Python buffer object and a gdb.Type.
 
 * Configure changes
 

@@ -1,3 +1,218 @@
+2019-02-27  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* target.c (target_detach): Clear the regcache and the
+	frame cache.
+
+2019-02-27  Pedro Alves  <palves@redhat.com>
+
+	* utils.c (set_screen_size): When we cap the height/width sizes,
+	tweak the corresponding command variable to show "unlimited":
+
+2019-02-27  Saagar Jha  <saagar@saagarjha.com>
+	    Pedro Alves  <palves@redhat.com>
+
+	* utils.c (set_screen_size): Reduce "infinite" rows and columns
+	before calling rl_set_screen_size.
+
+2019-02-27  Tom Tromey  <tromey@adacore.com>
+
+	* configure.ac (HAVE_LIBPYTHON2_4, HAVE_LIBPYTHON2_5): Never
+	define.
+	* python/py-value.c: Remove Python 2.4 workaround.
+	* python/py-utils.c (gdb_pymodule_addobject): Remove Python 2.4
+	workaround.
+	* python/py-type.c (convert_field, gdbpy_initialize_types): Remove
+	Python 2.4 workaround.
+	* python/python-internal.h: Remove Python 2.4 comment.
+	(Py_ssize_t): Don't define.
+	(PyVarObject_HEAD_INIT, Py_TYPE): Don't define.
+	(gdb_Py_DECREF): Remove Python 2.4 workaround.
+	(gdb_PyObject_GetAttrString, PyObject_GetAttrString): Remove.
+	(gdb_PyObject_HasAttrString, PyObject_HasAttrString): Remove.
+	* python/python.c (do_start_initialization): Remove Python 2.4
+	workaround.
+	* python/py-prettyprint.c (class dummy_python_frame): Remove.
+	(print_children): Remove Python 2.4 workaround.
+	* python/py-inferior.c (buffer_procs): Remove Python 2.4
+	workaround.
+	(CHARBUFFERPROC_NAME): Remove.
+	* python/py-breakpoint.c (gdbpy_initialize_breakpoints): Remove
+	Python 2.4 workaround.
+
+2019-02-27  Kevin Buettner  <kevinb@redhat.com>
+
+	* NEWS: Note minimum Python version.
+
+2019-02-27  Kevin Buettner  <kevinb@redhat.com>
+
+	* python/py-inferior.c (infpy_write_memory): Remove non-IS_PY3K
+	code from these functions.  Remove corresponding ifdefs.  Use
+	Py_buffer_up instead of explicit calls to PyBuffer_Release.
+	Remove gotos and target of gotos.
+	(infpy_search_memory): Likewise.
+
+2019-02-27  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb/hppa-tdep.c (hppa_dummy_id): Delete.
+	(hppa_gdbarch_init): Don't register deleted functions with
+	gdbarch.
+
+2019-02-27  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb/h8300-tdep.c (h8300_unwind_pc): Delete.
+	(h8300_unwind_sp): Delete.
+	(h8300_dummy_id): Delete.
+	(h8300_gdbarch_init): Don't register deleted functions with
+	gdbarch.
+
+2019-02-27  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb/ft32-tdep.c (ft32_dummy_id): Delete.
+	(ft32_unwind_pc): Delete.
+	(ft32_unwind_sp): Delete.
+	(ft32_gdbarch_init): Don't register deleted functions with
+	gdbarch.
+
+2019-02-27  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb/frv-tdep.c (frv_dummy_id): Delete.
+	(frv_unwind_pc): Delete.
+	(frv_unwind_sp): Delete.
+	(frv_gdbarch_init): Don't register deleted functions with
+	gdbarch.
+
+2019-02-27  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb/riscv-tdep.c (riscv_dummy_id): Delete.
+	(riscv_unwind_pc): Delete.
+	(riscv_unwind_sp): Delete.
+	(riscv_gdbarch_init): Don't register deleted functions with
+	gdbarch.
+
+2019-02-27  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb/csky-tdep.c (csky_dummy_id): Delete.
+	(csky_unwind_pc): Delete.
+	(csky_unwind_sp): Delete.
+	(csky_gdbarch_init): Don't register deleted functions with
+	gdbarch.
+
+2019-02-27  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb/cris-tdep.c (cris_dummy_id): Delete.
+	(cris_unwind_pc): Delete.
+	(cris_unwind_sp): Delete.
+	(cris_gdbarch_init): Don't register deleted functions with
+	gdbarch.
+
+2019-02-27  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb/bfin-tdep.c (bfin_dummy_id): Delete.
+	(bfin_unwind_pc): Delete.
+	(bfin_gdbarch_init): Don't register deleted functions with gdbarch.
+
+2019-02-27  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb/arm-tdep.c (arm_dummy_id): Delete.
+	(arm_unwind_pc): Delete.
+	(arm_unwind_sp): Delete.
+	(arm_gdbarch_init): Don't register deleted functions with gdbarch.
+
+2019-02-27  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb/arc-tdep.c (arc_dummy_id): Delete.
+	(arc_unwind_pc): Delete.
+	(arc_unwind_sp): Delete.
+	(arc_gdbarch_init): Don't register deleted functions with gdbarch.
+
+2019-02-27  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb/alpha-tdep.c (alpha_dummy_id): Delete.
+	(alpha_unwind_pc): Delete.
+	(alpha_gdbarch_init): Don't register deleted functions with
+	gdbarch.
+
+2019-02-27  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb/aarch64-tdep.c (aarch64_dummy_id): Delete.
+	(aarch64_unwind_pc): Delete.
+	(aarch64_unwind_sp): Delete.
+	(aarch64_gdbarch_init): Don't register deleted functions with
+	gdbarch.
+
+2019-02-27  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdbtypes.c (type_align): Don't consider static members when
+	computing structure alignment.
+
+2019-02-27  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* arc-tdep.c (arc_type_align): Provide alignment for basic types,
+	return 0 for other types.
+	* arch-utils.c (default_type_align): Always return 0.
+	* gdbarch.h: Regenerate.
+	* gdbarch.sh (type_align): Extend comment.
+	* gdbtypes.c (type_align): Add additional comments, always call
+	gdbarch_type_align before applying the default rules.
+	* i386-tdep.c (i386_type_align): Return 0 as the default rule,
+	generic code will then apply a suitable default.
+	* nios2-tdep.c (nios2_type_align): Provide alignment for basic
+	types, return 0 for other types.
+
+2019-02-27  Joel Brobecker  <brobecker@adacore.com>
+
+	* NEWS: Create a new section for the next release branch.
+	Rename the section of the current branch, now that it has
+	been cut.
+
+2019-02-27  Joel Brobecker  <brobecker@adacore.com>
+
+	GDB 8.3 branch created (143420fb0d5ae54323ba9953f0818c194635228d):
+	* version.in: Bump version to 8.3.50.DATE-git.
+
+2019-02-26  Simon Marchi  <simon.marchi@efficios.com>
+
+	* aix-thread.c (ptid_cmp): Remove unused variable.
+	(get_signaled_thread): Likewise.
+	(store_regs_user_thread): Likewise.
+	(store_regs_kernel_thread): Likewise.
+	(fetch_regs_kernel_thread): Remove shadowed variable.
+
+2019-02-26  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* features/riscv/32bit-cpu.xml: Add register numbers.
+	* features/riscv/32bit-fpu.c: Regenerate.
+	* features/riscv/32bit-fpu.xml: Add register numbers.
+	* features/riscv/64bit-cpu.xml: Add register numbers.
+	* features/riscv/64bit-fpu.c: Regenerate.
+	* features/riscv/64bit-fpu.xml: Add register numbers.
+
+2019-02-26  Kevin Buettner  <kevinb@redhat.com>
+
+	* NEWS: Mention two argument form of gdb.Value constructor.
+	* python/py-value.c (convert_buffer_and_type_to_value): New
+	function.
+	(valpy_new): Parse arguments via gdb_PyArg_ParseTupleAndKeywords.
+	Add support for handling an optional second argument.  Call
+	convert_buffer_and_type_to_value as appropriate.
+	* python/python-internal.h (Py_buffer_deleter): New struct.
+	(Py_buffer_up): New typedef.
+
+2019-02-25  John Baldwin  <jhb@FreeBSD.org>
+
+	* dwarf2read.c (dwarf2_get_dwz_file): Reset dwz_bfd to nullptr
+	instead of releasing ownership.
+
+2019-02-25  Jordan Rupprecht  <rupprecht@google.com>
+
+	* dwarf2read.c (open_and_init_dwp_file): Call
+	elf_numsections instead of bfd_count_sections to initialize
+	dwp_file->num_sections.
+
+2019-02-25  Tom Tromey  <tromey@adacore.com>
+
+	* solib-darwin.c (darwin_get_dyld_bfd): Don't release dyld_bfd.
+
 2019-02-23  Sergio Durigan Junior  <sergiodj@redhat.com>
 
 	* gcore.in: Add '--readnever' option when invoking GDB.

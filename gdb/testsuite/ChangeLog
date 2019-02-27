@@ -1,3 +1,34 @@
+2019-02-27  Pedro Alves  <palves@redhat.com>
+
+	* gdb.base/page.exp: Add tests for "set width/height -1".
+
+2019-02-27  Pedro Alves  <palves@redhat.com>
+
+	* gdb.base/page.exp: Add tests for "set/show width/height" with
+	"infinite" values.
+
+2019-02-27  Tom Tromey  <tromey@adacore.com>
+
+	* lib/gdb.exp (skip_python_tests_prompt): Don't check for Python
+	2.4.
+	* gdb.python/py-finish-breakpoint.exp: Remove Python 2.4
+	workaround.
+
+2019-02-27  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.base/align.exp: Extend to compile in both C and C++, and add
+	tests for structs with static members.
+
+2019-02-26  Tom Tromey  <tromey@adacore.com>
+
+	* gdb.python/py-value.exp (test_value_from_buffer): Check for
+	ValueError, not TypeError.
+
+2019-02-26  Kevin Buettner  <kevinb@redhat.com>
+
+	* gdb.python/py-value.exp (test_value_from_buffer): New proc with
+	call from main program.
+
 2019-02-23  Joel Brobecker  <brobecker@adacore.com>
 
 	* gdb.ada/mi_ref_changeable.exp: Update copyright year range.
