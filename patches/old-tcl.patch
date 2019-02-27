@@ -1,0 +1,31 @@
+diff --git a/binutils/testsuite/lib/binutils-common.exp b/binutils/testsuite/lib/binutils-common.exp
+index e01b3fb..53a7ee5 100644
+--- a/binutils/testsuite/lib/binutils-common.exp
++++ b/binutils/testsuite/lib/binutils-common.exp
+@@ -477,6 +477,26 @@ if ![string length [info proc prune_warnings]] {
+     }
+ }
+ 
++# Taken from: https://wiki.tcl-lang.org/page/lmap
++if ![string length [info proc lmap]] {
++    proc lmap args {
++	set body [lindex $args end]
++	set args [lrange $args 0 end-1]
++	set n 0
++	set pairs [list]
++	foreach {varname listval} $args {
++	    upvar 1 $varname var$n
++	    lappend pairs var$n $listval
++	    incr n
++	}
++	set temp [list]
++	foreach {*}$pairs {
++	    lappend temp [uplevel 1 $body]
++	}
++	set temp
++    }
++}
++
+ # run_dump_test FILE (optional:) EXTRA_OPTIONS
+ #
+ # Assemble a .s file, then run some utility on it and check the output.
