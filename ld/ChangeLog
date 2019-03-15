@@ -1,3 +1,90 @@
+2019-03-13  Sudakshina Das  <sudi.das@arm.com>
+
+	* NEWS: Document --pac-plt.
+	* emultempl/aarch64elf.em (OPTION_PAC_PLT): New.
+	(PARSE_AND_LIST_LONGOPTS, PARSE_AND_LIST_OPTIONS): Add pac-plt.
+	(PARSE_AND_LIST_ARGS_CASES): Handle OPTION_PAC_PLT.
+	* testsuite/ld-aarch64/aarch64-elf.exp: Add the following tests.
+	* testsuite/ld-aarch64/bti-pac-plt-1.d: New test.
+	* testsuite/ld-aarch64/bti-pac-plt-2.d: New test.
+	* testsuite/ld-aarch64/pac-plt-1.d: New test.
+	* testsuite/ld-aarch64/pac-plt-2.d: New test.
+	* testsuite/ld-aarch64/bti-plt-1.s: Add .ifndef directive.
+
+2019-03-13  Sudakshina Das  <sudi.das@arm.com>
+	    Szabolcs Nagy  <szabolcs.nagy@arm.com>
+
+	* NEWS: Document --force-bti.
+	* emultempl/aarch64elf.em (plt_type, bti_type, OPTION_FORCE_BTI): New.
+	(PARSE_AND_LIST_SHORTOPTS, PARSE_AND_LIST_OPTIONS): Add force-bti.
+	(PARSE_AND_LIST_ARGS_CASES): Handle OPTION_FORCE_BTI.
+	* testsuite/ld-aarch64/aarch64-elf.exp: Add all the tests below.
+	* testsuite/ld-aarch64/bti-plt-1.d: New test.
+	* testsuite/ld-aarch64/bti-plt-1.s: New test.
+	* testsuite/ld-aarch64/bti-plt-2.d: New test.
+	* testsuite/ld-aarch64/bti-plt-3.d: New test.
+	* testsuite/ld-aarch64/bti-plt-4.d: New test.
+	* testsuite/ld-aarch64/bti-plt-5.d: New test.
+	* testsuite/ld-aarch64/bti-plt-6.d: New test.
+	* testsuite/ld-aarch64/bti-plt-7.d: New test.
+	* testsuite/ld-aarch64/bti-plt-so.s: New test.
+	* testsuite/ld-aarch64/bti-plt.ld: New test.
+
+2019-03-13  Sudakshina Das  <sudi.das@arm.com>
+
+	* NEWS: Document GNU_PROPERTY_AARCH64_FEATURE_1_BTI and
+	GNU_PROPERTY_AARCH64_FEATURE_1_PAC.
+	* testsuite/ld-aarch64/aarch64-elf.exp: Add run commands for new tests.
+	* testsuite/ld-aarch64/property-bti-pac1.d: New test.
+	* testsuite/ld-aarch64/property-bti-pac1.s: New test.
+	* testsuite/ld-aarch64/property-bti-pac2.d: New test.
+	* testsuite/ld-aarch64/property-bti-pac2.s: New test.
+	* testsuite/ld-aarch64/property-bti-pac3.d: New test.
+
+2019-03-13  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/24322
+	* testsuite/ld-i386/i386.exp: Run PR ld/24322 tests.
+	* testsuite/ld-x86-64/x86-64.exp: Likewise.
+	* testsuite/ld-i386/pr24322a.d: New file.
+	* testsuite/ld-i386/pr24322b.d: Likewise.
+	* testsuite/ld-x86-64/pr24322a-x32.d: Likewise.
+	* testsuite/ld-x86-64/pr24322a.d: Likewise.
+	* testsuite/ld-x86-64/pr24322b-x32.d: Likewise.
+	* testsuite/ld-x86-64/pr24322b.d: Likewise.
+	* testsuite/ld-x86-64/pr24322a.s: Likewise.
+	* testsuite/ld-x86-64/pr24322b.s: Likewise.
+	* testsuite/ld-x86-64/pr24322c.s: Likewise.
+
+2019-03-06  Nick Bowler  <nbowler@draconx.ca>
+
+	PR 24289
+	* ldexp.c (fold_name): Allow lookups of the LENGTH and ORIGIN
+	attributes during the first phase.
+
+2019-03-01  Andreas Krebbel  <krebbel@linux.ibm.com>
+
+	This reverts commit 5a12586d44fa8d5dfc74cbca4f2f36a273a16335.
+	2019-01-14  Maamoun Tarsha  <maamountk@hotmail.com>
+
+	PR 20113
+	* emulparams/elf64_s390.sh (SEPARATE_GOTPLT): Define.
+	* emulparams/elf_s390.sh (SEPARATE_GOTPLT): Define.
+	* testsuite/ld-s390/gotreloc_31-1.dd: Update expected output.
+	* testsuite/ld-s390/tlsbin.dd: Likewise.
+	* testsuite/ld-s390/tlsbin.rd: Likewise.
+	* testsuite/ld-s390/tlsbin.sd: Likewise.
+	* testsuite/ld-s390/tlsbin_64.dd: Likewise.
+	* testsuite/ld-s390/tlsbin_64.rd: Likewise.
+	* testsuite/ld-s390/tlsbin_64.sd: Likewise.
+	* testsuite/ld-s390/tlspic.dd: Likewise.
+	* testsuite/ld-s390/tlspic.rd: Likewise.
+	* testsuite/ld-s390/tlspic.sd: Likewise.
+	* testsuite/ld-s390/tlspic_64.dd: Likewise.
+	* testsuite/ld-s390/tlspic_64.rd: Likewise.
+	* testsuite/ld-s390/tlspic_64.sd: Likewise.
+	* testsuite/ld-s390/s390.exp: Skip s390 tests for tpf targets.
+
 2019-02-27  H.J. Lu  <hongjiu.lu@intel.com>
 
 	PR ld/24276

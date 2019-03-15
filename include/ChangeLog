@@ -1,3 +1,18 @@
+2019-03-13  Sudakshina Das  <sudi.das@arm.com>
+
+	* elf/aarch64.h (DT_AARCH64_PAC_PLT): New.
+
+2019-03-13  Sudakshina Das  <sudi.das@arm.com>
+	    Szabolcs Nagy  <szabolcs.nagy@arm.com>
+
+	* elf/aarch64.h (DT_AARCH64_BTI_PLT): New.
+
+2019-03-13  Sudakshina Das  <sudi.das@arm.com>
+
+	* elf/common.h (GNU_PROPERTY_AARCH64_FEATURE_1_AND): New.
+	(GNU_PROPERTY_AARCH64_FEATURE_1_BTI): New.
+	(GNU_PROPERTY_AARCH64_FEATURE_1_PAC): New.
+
 2019-02-20  Alan Hayward  <alan.hayward@arm.com>
 
 	* elf/common.h (NT_ARM_PAC_MASK): Add define.

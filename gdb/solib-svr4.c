@@ -1198,8 +1198,10 @@ static const struct gdb_xml_element svr4_library_list_elements[] =
 static int
 svr4_parse_libraries (const char *document, struct svr4_library_list *list)
 {
-  struct cleanup *back_to = make_cleanup (svr4_free_library_list,
-					  &list->head);
+  auto cleanup = make_scope_exit ([&] ()
+    {
+      svr4_free_library_list (&list->head);
+    });
 
   memset (list, 0, sizeof (*list));
   list->tailp = &list->head;
@@ -1207,11 +1209,10 @@ svr4_parse_libraries (const char *document, struct svr4_library_list *list)
 			   svr4_library_list_elements, document, list) == 0)
     {
       /* Parsed successfully, keep the result.  */
-      discard_cleanups (back_to);
+      cleanup.release ();
       return 1;
     }
 
-  do_cleanups (back_to);
   return 0;
 }
 
@@ -1374,7 +1375,6 @@ svr4_current_sos_direct (struct svr4_info *info)
   CORE_ADDR lm;
   struct so_list *head = NULL;
   struct so_list **link_ptr = &head;
-  struct cleanup *back_to;
   int ignore_first;
   struct svr4_library_list library_list;
 
@@ -1412,7 +1412,10 @@ svr4_current_sos_direct (struct svr4_info *info)
   else
     ignore_first = 1;
 
-  back_to = make_cleanup (svr4_free_library_list, &head);
+  auto cleanup = make_scope_exit ([&] ()
+    {
+      svr4_free_library_list (&head);
+    });
 
   /* Walk the inferior's link map list, and build our list of
      `struct so_list' nodes.  */
@@ -1428,7 +1431,7 @@ svr4_current_sos_direct (struct svr4_info *info)
   if (lm)
     svr4_read_so_list (lm, 0, &link_ptr, 0);
 
-  discard_cleanups (back_to);
+  cleanup.release ();
 
   if (head == NULL)
     return svr4_default_sos ();
@@ -1547,6 +1550,11 @@ svr4_fetch_objfile_link_map (struct objfile *objfile)
   /* svr4_current_sos() will set main_lm_addr for the main executable.  */
   if (objfile == symfile_objfile)
     return info->main_lm_addr;
+
+  /* If OBJFILE is a separate debug object file, look for the
+     original object file.  */
+  if (objfile->separate_debug_objfile_backlink != NULL)
+    objfile = objfile->separate_debug_objfile_backlink;
 
   /* The other link map addresses may be found by examining the list
      of shared libraries.  */
@@ -1826,7 +1834,7 @@ solist_update_incremental (struct svr4_info *info, CORE_ADDR lm)
    ones set up for the probes-based interface are adequate.  */
 
 static void
-disable_probes_interface_cleanup (void *arg)
+disable_probes_interface ()
 {
   struct svr4_info *info = get_svr4_info ();
 
@@ -1847,7 +1855,6 @@ svr4_handle_solib_event (void)
   struct svr4_info *info = get_svr4_info ();
   struct probe_and_action *pa;
   enum probe_action action;
-  struct cleanup *old_chain;
   struct value *val = NULL;
   CORE_ADDR pc, debug_base, lm = 0;
   struct frame_info *frame = get_current_frame ();
@@ -1858,26 +1865,20 @@ svr4_handle_solib_event (void)
 
   /* If anything goes wrong we revert to the original linker
      interface.  */
-  old_chain = make_cleanup (disable_probes_interface_cleanup, NULL);
+  auto cleanup = make_scope_exit (disable_probes_interface);
 
   pc = regcache_read_pc (get_current_regcache ());
   pa = solib_event_probe_at (info, pc);
   if (pa == NULL)
-    {
-      do_cleanups (old_chain);
-      return;
-    }
+    return;
 
   action = solib_event_probe_action (pa);
   if (action == PROBES_INTERFACE_FAILED)
-    {
-      do_cleanups (old_chain);
-      return;
-    }
+    return;
 
   if (action == DO_NOTHING)
     {
-      discard_cleanups (old_chain);
+      cleanup.release ();
       return;
     }
 
@@ -1907,25 +1908,16 @@ svr4_handle_solib_event (void)
     END_CATCH
 
     if (val == NULL)
-      {
-	do_cleanups (old_chain);
-	return;
-      }
+      return;
 
     debug_base = value_as_address (val);
     if (debug_base == 0)
-      {
-	do_cleanups (old_chain);
-	return;
-      }
+      return;
 
     /* Always locate the debug struct, in case it moved.  */
     info->debug_base = 0;
     if (locate_base (info) == 0)
-      {
-	do_cleanups (old_chain);
-	return;
-      }
+      return;
 
     /* GDB does not currently support libraries loaded via dlmopen
        into namespaces other than the initial one.  We must ignore
@@ -1943,7 +1935,6 @@ svr4_handle_solib_event (void)
 	CATCH (ex, RETURN_MASK_ERROR)
 	  {
 	    exception_print (gdb_stderr, ex);
-	    do_cleanups (old_chain);
 	    return;
 	  }
 	END_CATCH
@@ -1968,13 +1959,10 @@ svr4_handle_solib_event (void)
   if (action == FULL_RELOAD)
     {
       if (!solist_update_full (info))
-	{
-	  do_cleanups (old_chain);
-	  return;
-	}
+	return;
     }
 
-  discard_cleanups (old_chain);
+  cleanup.release ();
 }
 
 /* Helper function for svr4_update_solib_event_breakpoints.  */

@@ -1,3 +1,49 @@
+2019-03-13  Sudakshina Das  <sudi.das@arm.com>
+
+	* readelf.c (get_aarch64_dynamic_type): Add case for
+	DT_AARCH64_PAC_PLT.
+	(dynamic_section_aarch64_val): Likewise.
+
+2019-03-13  Sudakshina Das  <sudi.das@arm.com>
+	    Szabolcs Nagy  <szabolcs.nagy@arm.com>
+
+	* readelf.c (get_aarch64_dynamic_type): New.
+	(get_dynamic_type): Use above for EM_AARCH64.
+	(dynamic_section_aarch64_val): New.
+	(process_dynamic_section): Use above for EM_AARCH64.
+
+2019-03-13  Sudakshina Das  <sudi.das@arm.com>
+
+	* readelf.c (decode_aarch64_feature_1_and): New.
+	(print_gnu_property_note): Add case for AArch64 gnu notes.
+
+2019-03-12  Alan Modra  <amodra@gmail.com>
+
+	* objdump.c (load_specific_debug_section): Don't compare section
+	size against file size.
+	(dump_relocs_in_section): Don't compare reloc size against file size.
+	Print "failed to read relocs" on bfd_get_reloc_upper_bound error.
+
+2019-03-05  Nick Clifton  <nickc@redhat.com>
+
+	PR 24295
+	* doc/binutils.texi (ar cmdline): Fix spelling mistake.
+
+2019-03-05  Nick Clifton  <nickc@redhat.com>
+
+	* po/sv.po: Updated Swedish translation.
+
+2019-03-05  Matthew Malcomson  <matthew.malcomson@arm.com>
+
+	PR 24287
+	* testsuite/lib/binutils-common.exp (run_dump_test): Replace a use
+	of "lmap" with a "foreach" loop.
+
+2019-03-04  Nick Clifton  <nickc@redhat.com>
+
+	PR 24281
+	* objcopy.c (copy_archive): Do not copy thin  archives.
+
 2019-02-27  Matthew Malcomson  <matthew.malcomson@arm.com>
 
 	* testsuite/lib/binutils-common.exp: Allow multiple "as" lines.

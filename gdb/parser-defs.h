@@ -48,7 +48,7 @@ struct parser_state
 
   /* Resize the allocated expression to the correct size, and return
      it as an expression_up -- passing ownership to the caller.  */
-  expression_up release ();
+  ATTRIBUTE_UNUSED_RESULT expression_up release ();
 
   /* The size of the expression above.  */
 
@@ -214,7 +214,8 @@ enum type_pieces
     tp_const, 
     tp_volatile, 
     tp_space_identifier,
-    tp_type_stack
+    tp_type_stack,
+    tp_kind
   };
 /* The stack can contain either an enum type_pieces or an int.  */
 union type_stack_elt

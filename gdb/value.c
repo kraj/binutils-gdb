@@ -2274,20 +2274,20 @@ set_internalvar (struct internalvar *var, struct value *val)
 
     default:
       new_kind = INTERNALVAR_VALUE;
-      new_data.value = value_copy (val);
-      new_data.value->modifiable = 1;
+      struct value *copy = value_copy (val);
+      copy->modifiable = 1;
 
       /* Force the value to be fetched from the target now, to avoid problems
 	 later when this internalvar is referenced and the target is gone or
 	 has changed.  */
-      if (value_lazy (new_data.value))
-       value_fetch_lazy (new_data.value);
+      if (value_lazy (copy))
+	value_fetch_lazy (copy);
 
       /* Release the value from the value chain to prevent it from being
 	 deleted by free_all_values.  From here on this function should not
 	 call error () until new_data is installed into the var->u to avoid
 	 leaking memory.  */
-      release_value (new_data.value).release ();
+      new_data.value = release_value (copy).release ();
 
       /* Internal variables which are created from values with a dynamic
          location don't need the location property of the origin anymore.
@@ -3430,6 +3430,19 @@ value_from_pointer (struct type *type, CORE_ADDR addr)
   return val;
 }
 
+/* Create and return a value object of TYPE containing the value D.  The
+   TYPE must be of TYPE_CODE_FLT, and must be large enough to hold D once
+   it is converted to target format.  */
+
+struct value *
+value_from_host_double (struct type *type, double d)
+{
+  struct value *value = allocate_value (type);
+  gdb_assert (TYPE_CODE (type) == TYPE_CODE_FLT);
+  target_float_from_host_double (value_contents_raw (value),
+				 value_type (value), d);
+  return value;
+}
 
 /* Create a value of type TYPE whose contents come from VALADDR, if it
    is non-null, and whose memory address (in the inferior) is

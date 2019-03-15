@@ -1,3 +1,160 @@
+2019-03-14  Nick Clifton  <nickc@redhat.com>
+
+	PR 24334
+	* dwarf2.c (struct dwarf2_debug): Add sec_vma_count field.
+	(save_section_vma): Initialise field to the number of entries in
+	the sec_vma table.
+	(section_vma_same): Check that the number of entries in the
+	sec_vma table matches the number of sections in the bfd.
+
+2019-03-14  Nick Clifton  <nickc@redhat.com>
+
+	PR 24333
+	* elflink.c (_bfd_elf_add_default_symbol): Add a check for a NULL
+	section owner pointer when adding the default symbol.
+
+2019-03-14  Nick Clifton  <nickc@redhat.com>
+
+	PR 24332
+	* elflink.c (elf_link_add_object_symbols): Add new local variable
+	extversym_end.  Initialise it to point to the end of the version
+	symbol table, if present.  Check it when initialising and updating
+	the ever pointer.
+
+2019-03-13  Sudakshina Das  <sudi.das@arm.com>
+
+	* elfnn-aarch64.c (PLT_PAC_ENTRY_SIZE, PLT_PAC_SMALL_ENTRY_SIZE): New.
+	(PLT_BTI_PAC_ENTRY_SIZE, PLT_BTI_PAC_SMALL_ENTRY_SIZE): New.
+	(setup_plt_values): Account for PAC or PAC and BTI enabled PLTs.
+	(elfNN_aarch64_size_dynamic_sections): Add checks for PLT_BTI_PAC
+	and PLT_PAC_PLT.
+	(elfNN_aarch64_finish_dynamic_sections): Account for PLT_BTI_PAC.
+	(get_plt_type): Add case for DT_AARCH64_PAC_PLT.
+	(elfNN_aarch64_plt_sym_val): Add cases for PLT_BTI_PAC and PLT_PAC.
+
+2019-03-13  Sudakshina Das  <sudi.das@arm.com>
+	    Szabolcs Nagy  <szabolcs.nagy@arm.com>
+
+	* bfd-in.h (aarch64_plt_type, aarch64_enable_bti_type): New.
+	(aarch64_bti_pac_info): New.
+	(bfd_elf64_aarch64_set_options): Add aarch64_bti_pac_info argument.
+	(bfd_elf32_aarch64_set_options): Likewise.
+	* bfd-in2.h: Regenerate
+	* elfnn-aarch64.c (PLT_BTI_ENTRY_SIZE): New.
+	(PLT_BTI_SMALL_ENTRY_SIZE, PLT_BTI_TLSDESC_ENTRY_SIZE): New.
+	(elfNN_aarch64_small_plt0_bti_entry): New.
+	(elfNN_aarch64_small_plt_bti_entry): New.
+	(elfNN_aarch64_tlsdesc_small_plt_bti_entry): New.
+	(elf_aarch64_obj_tdata): Add no_bti_warn and plt_type fields.
+	(elf_aarch64_link_hash_table): Add plt0_entry, plt_entry and
+	tlsdesc_plt_entry_size fields.
+	(elfNN_aarch64_link_hash_table_create): Initialise the new fields.
+	(setup_plt_values): New helper function.
+	(bfd_elfNN_aarch64_set_options): Use new bp_info to set plt sizes and
+	bti enable type.
+	(elfNN_aarch64_allocate_dynrelocs): Use new size members instead of
+	fixed macros.
+	(elfNN_aarch64_size_dynamic_sections): Likewise and add checks.
+	(elfNN_aarch64_create_small_pltn_entry): Use new generic pointers
+	to plt stubs instead of fixed ones and update filling them according
+	to the need for bti.
+	(elfNN_aarch64_init_small_plt0_entry): Likewise.
+	(elfNN_aarch64_finish_dynamic_sections): Likewise.
+	(get_plt_type, elfNN_aarch64_get_synthetic_symtab): New.
+	(elfNN_aarch64_plt_sym_val): Update size accordingly.
+	(elfNN_aarch64_link_setup_gnu_properties): Set up plts if BTI GNU NOTE
+	is set.
+	(bfd_elfNN_get_synthetic_symtab): Define.
+	(elfNN_aarch64_merge_gnu_properties): Give out warning with --force-bti
+	and mising BTI NOTE SECTION.
+
+
+2019-03-13  Sudakshina Das  <sudi.das@arm.com>
+
+	* elf-properties.c (_bfd_elf_link_setup_gnu_properties): Exclude
+	linker created inputs from merge.
+	* elfnn-aarch64.c (struct elf_aarch64_obj_tdata): Add field for
+	GNU_PROPERTY_AARCH64_FEATURE_1_AND properties.
+	(elfNN_aarch64_link_setup_gnu_properties): New.
+	(elfNN_aarch64_merge_gnu_properties): New.
+	(elf_backend_setup_gnu_properties): Define for AArch64.
+	(elf_backend_merge_gnu_properties): Likewise.
+	* elfxx-aarch64.c (_bfd_aarch64_elf_link_setup_gnu_properties): Define.
+	(_bfd_aarch64_elf_parse_gnu_properties): Define.
+	(_bfd_aarch64_elf_merge_gnu_properties): Define.
+	* elfxx-aarch64.h (_bfd_aarch64_elf_link_setup_gnu_properties): Declare.
+	(_bfd_aarch64_elf_parse_gnu_properties): Declare.
+	(_bfd_aarch64_elf_merge_gnu_properties): Declare.
+	(elf_backend_parse_gnu_properties): Define for AArch64.
+
+2019-03-13  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/24322
+	* elfxx-x86.c (_bfd_x86_elf_merge_gnu_properties): Properly
+	merge GNU_PROPERTY_X86_FEATURE_1_[IBT|SHSTK].
+
+2019-03-12  Alan Modra  <amodra@gmail.com>
+
+	* coffcode.h (buy_and_read): Delete unnecessary forward decl.  Add
+	nmemb parameter.  Use bfd_alloc2.
+	(coff_slurp_line_table): Use bfd_alloc2.  Update buy_and_read calls.
+	Delete assertion.
+	(coff_slurp_symbol_table): Use bfd_alloc2 and bfd_zalloc2.
+	(coff_slurp_reloc_table): Use bfd_alloc2.  Update buy_and_read calls.
+	* coffgen.c (coff_get_reloc_upper_bound): Ensure size calculation
+	doesn't overflow.
+	* elf.c (bfd_section_from_shdr): Use bfd_zalloc2.  Style fix.
+	(assign_section_numbers): Style fix.
+	(swap_out_syms): Use bfd_malloc2.
+	(_bfd_elf_get_reloc_upper_bound): Ensure size calculation doesn't
+	overflow.
+	(_bfd_elf_make_empty_symbol): Style fix.
+	(elfobj_grok_stapsdt_note_1): Formatting.
+	* elfcode.h (elf_object_p): Use bfd_alloc2.
+	(elf_write_relocs, elf_write_shdrs_and_ehdr): Likewise.
+	(elf_slurp_symbol_table): Use bfd_zalloc2.
+	(elf_slurp_reloc_table): Use bfd_alloc2.
+	(_bfd_elf_bfd_from_remote_memory): Use bfd_malloc2.
+	* elf64-sparc (elf64_sparc_get_reloc_upper_bound): Ensure
+	size calculation doesn't overflow.
+	(elf64_sparc_get_dynamic_reloc_upper_bound): Likewise.
+	* mach-o.c (bfd_mach_o_get_reloc_upper_bound): Likewise.
+	* pdp11.c (get_reloc_upper_bound): Copy aoutx.h version.
+
+2019-03-08  Alan Modra  <amodra@gmail.com>
+
+	PR 24311
+	* merge.c (merge_strings): Return secinfo.  Don't pad section
+	to alignment here.
+	(_bfd_merge_sections): Pad section to alignment here, if input
+	sections contributing to merged output all pad to alignment.
+	Formatting.
+
+2019-03-06  Nick Clifton  <nickc@redhat.com>
+
+	* dwarf2.c (_bfd_dwarf2_find_symbol_bias): Check for a NULL symbol
+	table pointer.
+	* coffgen.c (coff_find_nearest_line_with_names): Do not call
+	_bfd_dwarf2_find_symbol_bias if there is no symbol table available.
+
+2019-03-01  Andreas Krebbel  <krebbel@linux.ibm.com>
+
+	This reverts commit 5a12586d44fa8d5dfc74cbca4f2f36a273a16335.
+	2019-01-14  Maamoun Tarsha  <maamountk@hotmail.com>
+
+	PR 20113
+	* elf32-s390.c (allocate_dynrelocs): Update comment.
+
+2019-02-28  Tamar Christina  <tamar.christina@arm.com>
+
+	* elf-eh-frame.c (_bfd_elf_write_section_eh_frame): Correct CIE parse.
+
+2019-02-28  Nick Clifton  <nickc@redhat.com>
+
+	PR 24273
+	* elf.c (bfd_elf_string_from_elf_section): Check for a string
+	section that is not NUL terminated.
+
 2019-02-27  H.J. Lu  <hongjiu.lu@intel.com>
 
 	PR ld/24276

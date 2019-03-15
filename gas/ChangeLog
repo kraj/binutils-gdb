@@ -1,3 +1,44 @@
+2019-03-13  Christian Eggers  <ceggers@gmx.de>
+
+	* dwarf2dbg.c (out_set_addr): Align relocation within .debug_line.
+
+2019-03-13  Christian Eggers  <ceggers@gmx.de>
+
+	* dwarf2dbg.c (out_debug_line): Pad size of .debug_line section.
+
+2019-03-13  Christian Eggers  <ceggers@gmx.de>
+
+	* dwarf2dbg.c (out_debug_str): Use octets for .debug_string pointers.
+
+2019-03-13  Christian Eggers  <ceggers@gmx.de>
+
+	* dwarf2dbg.c (out_debug_line): Use octets for .debug_line prologue.
+
+2019-03-13  Christian Eggers  <ceggers@gmx.de>
+
+	* dwarf2dbg.c (out_debug_line): Use octets for dwarf2 headers.
+	(out_debug_aranges, out_debug_info): Likewise.
+
+2019-03-13  Christian Eggers  <ceggers@gmx.de>
+
+	* symbols.h (symbol_temp_new_now_octets): Declare.
+	(symbol_set_value_now_octets, symbol_octets_p): Declare.
+	* symbols.c (struct symbol_flags): New member sy_octets.
+	(symbol_temp_new_now_octets): New function.
+	(resolve_symbol_value): Return octets instead of bytes if
+	sy_octets is set.
+	(symbol_set_value_now_octets): New function.
+	(symbol_octets_p): New function.
+
+2019-03-13  Christian Eggers  <ceggers@gmx.de>
+
+	* dwarf2dbg.c (dwarf2_emit_insn): Fix calculation of line info offset.
+
+2019-03-12  Andreas Krebbel  <krebbel@linux.ibm.com>
+
+	* testsuite/gas/s390/zarch-arch13.s: Adjust testcase to optable changes.
+	* testsuite/gas/s390/zarch-arch13.d: Likewise.
+
 2019-02-27  Matthew Malcomson  <matthew.malcomson@arm.com>
 
 	* testsuite/gas/aarch64/dotproduct.d: Use multiple "as" lines.

@@ -78,6 +78,10 @@ static void growbuf_by_size (int);
 
 static int match_string_literal (void);
 
+static void push_kind_type (LONGEST val, struct type *type);
+
+static struct type *convert_to_kind_type (struct type *basetype, int kind);
+
 %}
 
 /* Although the yacc "value" of an expression is not used,
@@ -149,7 +153,7 @@ static int parse_number (struct parser_state *, const char *, int,
 
 %token <ssym> NAME_OR_INT 
 
-%token  SIZEOF 
+%token SIZEOF KIND
 %token ERROR
 
 /* Special type cases, put in to allow the parser to distinguish different
@@ -164,6 +168,7 @@ static int parse_number (struct parser_state *, const char *, int,
 %token <voidval> DOLLAR_VARIABLE
 
 %token <opcode> ASSIGN_MODIFY
+%token <opcode> UNOP_INTRINSIC
 
 %left ','
 %left ABOVE_COMMA
@@ -228,6 +233,10 @@ exp	:	SIZEOF exp       %prec UNARY
 			{ write_exp_elt_opcode (pstate, UNOP_SIZEOF); }
 	;
 
+exp	:	KIND '(' exp ')'       %prec UNARY
+			{ write_exp_elt_opcode (pstate, UNOP_KIND); }
+	;
+
 /* No more explicit array operators, we treat everything in F77 as 
    a function call.  The disambiguation as to whether we are 
    doing a subscript operation or a function call is done 
@@ -242,6 +251,10 @@ exp	:	exp '('
 						 (LONGEST) end_arglist ());
 			  write_exp_elt_opcode (pstate,
 					      OP_F77_UNDETERMINED_ARGLIST); }
+	;
+
+exp	:	UNOP_INTRINSIC '(' exp ')'
+			{ write_exp_elt_opcode (pstate, $1); }
 	;
 
 arglist	:
@@ -530,6 +543,13 @@ ptype	:	typebase
 		      case tp_function:
 			follow_type = lookup_function_type (follow_type);
 			break;
+		      case tp_kind:
+			{
+			  int kind_val = pop_type_int ();
+			  follow_type
+			    = convert_to_kind_type (follow_type, kind_val);
+			}
+			break;
 		      }
 		  $$ = follow_type;
 		}
@@ -548,6 +568,10 @@ abs_decl:	'*'
 
 direct_abs_decl: '(' abs_decl ')'
 			{ $$ = $2; }
+	| 	'(' KIND '=' INT ')'
+			{ push_kind_type ($4.val, $4.type); }
+	|	'*' INT
+			{ push_kind_type ($2.val, $2.type); }
 	| 	direct_abs_decl func_mod
 			{ push_type (tp_function); }
 	|	func_mod
@@ -773,74 +797,164 @@ parse_number (struct parser_state *par_state,
   return INT;
 }
 
+/* Called to setup the type stack when we encounter a '(kind=N)' type
+   modifier, performs some bounds checking on 'N' and then pushes this to
+   the type stack followed by the 'tp_kind' marker.  */
+static void
+push_kind_type (LONGEST val, struct type *type)
+{
+  int ival;
+
+  if (TYPE_UNSIGNED (type))
+    {
+      ULONGEST uval = static_cast <ULONGEST> (val);
+      if (uval > INT_MAX)
+	error (_("kind value out of range"));
+      ival = static_cast <int> (uval);
+    }
+  else
+    {
+      if (val > INT_MAX || val < 0)
+	error (_("kind value out of range"));
+      ival = static_cast <int> (val);
+    }
+
+  push_type_int (ival);
+  push_type (tp_kind);
+}
+
+/* Called when a type has a '(kind=N)' modifier after it, for example
+   'character(kind=1)'.  The BASETYPE is the type described by 'character'
+   in our example, and KIND is the integer '1'.  This function returns a
+   new type that represents the basetype of a specific kind.  */
+static struct type *
+convert_to_kind_type (struct type *basetype, int kind)
+{
+  if (basetype == parse_f_type (pstate)->builtin_character)
+    {
+      /* Character of kind 1 is a special case, this is the same as the
+	 base character type.  */
+      if (kind == 1)
+	return parse_f_type (pstate)->builtin_character;
+    }
+  else if (basetype == parse_f_type (pstate)->builtin_complex_s8)
+    {
+      if (kind == 4)
+	return parse_f_type (pstate)->builtin_complex_s8;
+      else if (kind == 8)
+	return parse_f_type (pstate)->builtin_complex_s16;
+      else if (kind == 16)
+	return parse_f_type (pstate)->builtin_complex_s32;
+    }
+  else if (basetype == parse_f_type (pstate)->builtin_real)
+    {
+      if (kind == 4)
+	return parse_f_type (pstate)->builtin_real;
+      else if (kind == 8)
+	return parse_f_type (pstate)->builtin_real_s8;
+      else if (kind == 16)
+	return parse_f_type (pstate)->builtin_real_s16;
+    }
+  else if (basetype == parse_f_type (pstate)->builtin_logical)
+    {
+      if (kind == 1)
+	return parse_f_type (pstate)->builtin_logical_s1;
+      else if (kind == 2)
+	return parse_f_type (pstate)->builtin_logical_s2;
+      else if (kind == 4)
+	return parse_f_type (pstate)->builtin_logical;
+      else if (kind == 8)
+	return parse_f_type (pstate)->builtin_logical_s8;
+    }
+  else if (basetype == parse_f_type (pstate)->builtin_integer)
+    {
+      if (kind == 2)
+	return parse_f_type (pstate)->builtin_integer_s2;
+      else if (kind == 4)
+	return parse_f_type (pstate)->builtin_integer;
+      else if (kind == 8)
+	return parse_f_type (pstate)->builtin_integer_s8;
+    }
+
+  error (_("unsupported kind %d for type %s"),
+	 kind, TYPE_SAFE_NAME (basetype));
+
+  /* Should never get here.  */
+  return nullptr;
+}
+
 struct token
 {
+  /* The string to match against.  */
   const char *oper;
+
+  /* The lexer token to return.  */
   int token;
+
+  /* The expression opcode to embed within the token.  */
   enum exp_opcode opcode;
+
+  /* When this is true the string in OPER is matched exactly including
+     case, when this is false OPER is matched case insensitively.  */
+  bool case_sensitive;
 };
 
 static const struct token dot_ops[] =
 {
-  { ".and.", BOOL_AND, BINOP_END },
-  { ".AND.", BOOL_AND, BINOP_END },
-  { ".or.", BOOL_OR, BINOP_END },
-  { ".OR.", BOOL_OR, BINOP_END },
-  { ".not.", BOOL_NOT, BINOP_END },
-  { ".NOT.", BOOL_NOT, BINOP_END },
-  { ".eq.", EQUAL, BINOP_END },
-  { ".EQ.", EQUAL, BINOP_END },
-  { ".eqv.", EQUAL, BINOP_END },
-  { ".NEQV.", NOTEQUAL, BINOP_END },
-  { ".neqv.", NOTEQUAL, BINOP_END },
-  { ".EQV.", EQUAL, BINOP_END },
-  { ".ne.", NOTEQUAL, BINOP_END },
-  { ".NE.", NOTEQUAL, BINOP_END },
-  { ".le.", LEQ, BINOP_END },
-  { ".LE.", LEQ, BINOP_END },
-  { ".ge.", GEQ, BINOP_END },
-  { ".GE.", GEQ, BINOP_END },
-  { ".gt.", GREATERTHAN, BINOP_END },
-  { ".GT.", GREATERTHAN, BINOP_END },
-  { ".lt.", LESSTHAN, BINOP_END },
-  { ".LT.", LESSTHAN, BINOP_END },
-  { NULL, 0, BINOP_END }
+  { ".and.", BOOL_AND, BINOP_END, false },
+  { ".or.", BOOL_OR, BINOP_END, false },
+  { ".not.", BOOL_NOT, BINOP_END, false },
+  { ".eq.", EQUAL, BINOP_END, false },
+  { ".eqv.", EQUAL, BINOP_END, false },
+  { ".neqv.", NOTEQUAL, BINOP_END, false },
+  { ".ne.", NOTEQUAL, BINOP_END, false },
+  { ".le.", LEQ, BINOP_END, false },
+  { ".ge.", GEQ, BINOP_END, false },
+  { ".gt.", GREATERTHAN, BINOP_END, false },
+  { ".lt.", LESSTHAN, BINOP_END, false },
 };
 
-struct f77_boolean_val 
+/* Holds the Fortran representation of a boolean, and the integer value we
+   substitute in when one of the matching strings is parsed.  */
+struct f77_boolean_val
 {
+  /* The string representing a Fortran boolean.  */
   const char *name;
-  int value;
-}; 
 
-static const struct f77_boolean_val boolean_values[]  = 
+  /* The integer value to replace it with.  */
+  int value;
+};
+
+/* The set of Fortran booleans.  These are matched case insensitively.  */
+static const struct f77_boolean_val boolean_values[]  =
 {
   { ".true.", 1 },
-  { ".TRUE.", 1 },
-  { ".false.", 0 },
-  { ".FALSE.", 0 },
-  { NULL, 0 }
+  { ".false.", 0 }
 };
 
-static const struct token f77_keywords[] = 
+static const struct token f77_keywords[] =
 {
-  { "complex_16", COMPLEX_S16_KEYWORD, BINOP_END },
-  { "complex_32", COMPLEX_S32_KEYWORD, BINOP_END },
-  { "character", CHARACTER, BINOP_END },
-  { "integer_2", INT_S2_KEYWORD, BINOP_END },
-  { "logical_1", LOGICAL_S1_KEYWORD, BINOP_END },
-  { "logical_2", LOGICAL_S2_KEYWORD, BINOP_END },
-  { "logical_8", LOGICAL_S8_KEYWORD, BINOP_END },
-  { "complex_8", COMPLEX_S8_KEYWORD, BINOP_END },
-  { "integer", INT_KEYWORD, BINOP_END },
-  { "logical", LOGICAL_KEYWORD, BINOP_END },
-  { "real_16", REAL_S16_KEYWORD, BINOP_END },
-  { "complex", COMPLEX_S8_KEYWORD, BINOP_END },
-  { "sizeof", SIZEOF, BINOP_END },
-  { "real_8", REAL_S8_KEYWORD, BINOP_END },
-  { "real", REAL_KEYWORD, BINOP_END },
-  { NULL, 0, BINOP_END }
-}; 
+  /* Historically these have always been lowercase only in GDB.  */
+  { "complex_16", COMPLEX_S16_KEYWORD, BINOP_END, true },
+  { "complex_32", COMPLEX_S32_KEYWORD, BINOP_END, true },
+  { "character", CHARACTER, BINOP_END, true },
+  { "integer_2", INT_S2_KEYWORD, BINOP_END, true },
+  { "logical_1", LOGICAL_S1_KEYWORD, BINOP_END, true },
+  { "logical_2", LOGICAL_S2_KEYWORD, BINOP_END, true },
+  { "logical_8", LOGICAL_S8_KEYWORD, BINOP_END, true },
+  { "complex_8", COMPLEX_S8_KEYWORD, BINOP_END, true },
+  { "integer", INT_KEYWORD, BINOP_END, true },
+  { "logical", LOGICAL_KEYWORD, BINOP_END, true },
+  { "real_16", REAL_S16_KEYWORD, BINOP_END, true },
+  { "complex", COMPLEX_S8_KEYWORD, BINOP_END, true },
+  { "sizeof", SIZEOF, BINOP_END, true },
+  { "real_8", REAL_S8_KEYWORD, BINOP_END, true },
+  { "real", REAL_KEYWORD, BINOP_END, true },
+  /* The following correspond to actual functions in Fortran and are case
+     insensitive.  */
+  { "kind", KIND, BINOP_END, false },
+  { "abs", UNOP_INTRINSIC, UNOP_ABS, false }
+};
 
 /* Implementation of a dynamically expandable buffer for processing input
    characters acquired through lexptr and building a value to return in
@@ -931,35 +1045,35 @@ yylex (void)
   prev_lexptr = lexptr;
  
   tokstart = lexptr;
-  
-  /* First of all, let us make sure we are not dealing with the 
+
+  /* First of all, let us make sure we are not dealing with the
      special tokens .true. and .false. which evaluate to 1 and 0.  */
-  
+
   if (*lexptr == '.')
-    { 
-      for (int i = 0; boolean_values[i].name != NULL; i++)
+    {
+      for (int i = 0; i < ARRAY_SIZE (boolean_values); i++)
 	{
-	  if (strncmp (tokstart, boolean_values[i].name,
-		       strlen (boolean_values[i].name)) == 0)
+	  if (strncasecmp (tokstart, boolean_values[i].name,
+			   strlen (boolean_values[i].name)) == 0)
 	    {
-	      lexptr += strlen (boolean_values[i].name); 
-	      yylval.lval = boolean_values[i].value; 
+	      lexptr += strlen (boolean_values[i].name);
+	      yylval.lval = boolean_values[i].value;
 	      return BOOLEAN_LITERAL;
 	    }
 	}
     }
-  
+
   /* See if it is a special .foo. operator.  */
-  
-  for (int i = 0; dot_ops[i].oper != NULL; i++)
-    if (strncmp (tokstart, dot_ops[i].oper,
-		 strlen (dot_ops[i].oper)) == 0)
+  for (int i = 0; i < ARRAY_SIZE (dot_ops); i++)
+    if (strncasecmp (tokstart, dot_ops[i].oper,
+		     strlen (dot_ops[i].oper)) == 0)
       {
+	gdb_assert (!dot_ops[i].case_sensitive);
 	lexptr += strlen (dot_ops[i].oper);
 	yylval.opcode = dot_ops[i].opcode;
 	return dot_ops[i].token;
       }
-  
+
   /* See if it is an exponentiation operator.  */
 
   if (strncmp (tokstart, "**", 2) == 0)
@@ -1119,16 +1233,18 @@ yylex (void)
   lexptr += namelen;
   
   /* Catch specific keywords.  */
-  
-  for (int i = 0; f77_keywords[i].oper != NULL; i++)
+
+  for (int i = 0; i < ARRAY_SIZE (f77_keywords); i++)
     if (strlen (f77_keywords[i].oper) == namelen
-	&& strncmp (tokstart, f77_keywords[i].oper, namelen) == 0)
+	&& ((!f77_keywords[i].case_sensitive
+	     && strncasecmp (tokstart, f77_keywords[i].oper, namelen) == 0)
+	    || (f77_keywords[i].case_sensitive
+		&& strncmp (tokstart, f77_keywords[i].oper, namelen) == 0)))
       {
-	/* 	lexptr += strlen(f77_keywords[i].operator); */ 
 	yylval.opcode = f77_keywords[i].opcode;
 	return f77_keywords[i].token;
       }
-  
+
   yylval.sval.ptr = tokstart;
   yylval.sval.length = namelen;
   
@@ -1209,6 +1325,8 @@ f_parse (struct parser_state *par_state)
 {
   /* Setting up the parser state.  */
   scoped_restore pstate_restore = make_scoped_restore (&pstate);
+  scoped_restore restore_yydebug = make_scoped_restore (&yydebug,
+							parser_debug);
   gdb_assert (par_state != NULL);
   pstate = par_state;
 

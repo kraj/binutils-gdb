@@ -1,3 +1,96 @@
+2019-03-14  Tom Tromey  <tromey@adacore.com>
+
+	* gdb.base/style.exp: Add "set style sources" test.
+
+2019-03-13  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* mi-breakpoint-location-ena-dis.exp: Rename to ...
+	* mi-breakpoint-multiple-locations.exp: ... this.
+	(make_breakpoints_pattern): New proc.
+	(do_test): Add mi_version parameter, test -break-insert,
+	-break-info and	=breakpoint-created.
+
+2019-03-12  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* config/default.exp: Remove 'load_lib gdb.exp'.
+	* config/monitor.exp: Likewise.
+	* config/sid.exp: Likewise.
+	* config/sim.exp: Likewise.
+	* config/slite.exp: Likewise.
+	* config/unix.exp: Likewise.
+	* gdb.base/default.exp: Remove unhelpful comment.
+
+2019-03-06  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.fortran/type-kinds.exp: Extend to cover TYPE*SIZE cases.
+
+2019-03-06  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.fortran/intrinsics.exp: Extend to cover ABS.
+
+2019-03-06  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.fortran/type-kinds.exp: Update expected results.
+
+2019-03-06  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.fortran/type-kinds.exp: Test new integer type kind.
+
+2019-03-06  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.fortran/type-kinds.exp (test_cast_1_to_type_kind): New
+	function.
+	(test_basic_parsing_of_type_kinds): Expand types tested.
+	(test_parsing_invalid_type_kinds): New function.
+
+2019-03-06  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.fortran/intrinsics.exp: New file.
+	* gdb.fortran/intrinsics.f90: New file.
+	* gdb.fortran/type-kinds.exp: New file.
+
+2019-03-06  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.fortran/dot-ops.exp: New file.
+
+2019-03-06  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.fortran/types.exp (test_logical_literal_types_accepted):
+	Check upper and lower case logical literals.
+
+2019-03-06  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.fortran/types.exp (test_float_literal_types_accepted):
+	Remove duplicate tests.
+
+2019-03-06  Alan Hayward  <alan.hayward@arm.com>
+
+	* lib/gdb.exp (builtin_cd): rename of cd.
+	(cd): Override builtin.
+
+2019-03-06  Richard Bunt  <richard.bunt@arm.com>
+
+	* gdb.fortran/function-calls.exp: New file.
+	* gdb.fortran/function-calls.f90: New test.
+
+2019-03-04  Richard Bunt  <richard.bunt@arm.com>
+
+	* gdb.fortran/short-circuit-argument-list.exp: Remove reliance
+	on user program standard output.
+	* gdb.fortran/short-circuit-argument-list.f90: Record function
+	calls.
+
+2019-02-28  Alan Hayward  <alan.hayward@arm.com>
+
+	* lib/gdbserver-support.exp (gdbserver_start): Check for listen
+	failure.
+
+2019-02-28  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	PR gdb/8527
+	* gdb.base/interrupt-daemon-attach.c,
+	gdb.base/interrupt-daemon-attach.exp: New test.
+
 2019-02-27  Pedro Alves  <palves@redhat.com>
 
 	* gdb.base/page.exp: Add tests for "set width/height -1".

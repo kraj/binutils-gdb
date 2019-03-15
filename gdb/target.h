@@ -649,7 +649,7 @@ struct target_ops
       TARGET_DEFAULT_RETURN (false);
     virtual void update_thread_list ()
       TARGET_DEFAULT_IGNORE ();
-    virtual const char *pid_to_str (ptid_t)
+    virtual std::string pid_to_str (ptid_t)
       TARGET_DEFAULT_FUNC (default_pid_to_str);
     virtual const char *extra_thread_info (thread_info *)
       TARGET_DEFAULT_RETURN (NULL);
@@ -718,9 +718,9 @@ struct target_ops
       TARGET_DEFAULT_NORETURN (tcomplain ());
     /* Return the thread-local address at OFFSET in the
        thread-local storage for the thread PTID and the shared library
-       or executable file given by OBJFILE.  If that block of
+       or executable file given by LOAD_MODULE_ADDR.  If that block of
        thread-local storage hasn't been allocated yet, this function
-       may return an error.  LOAD_MODULE_ADDR may be zero for statically
+       may throw an error.  LOAD_MODULE_ADDR may be zero for statically
        linked multithreaded inferiors.  */
     virtual CORE_ADDR get_thread_local_address (ptid_t ptid,
 						CORE_ADDR load_module_addr,
@@ -1829,9 +1829,9 @@ extern int target_is_non_stop_p (void);
    `process xyz', but on some systems it may contain
    `process xyz thread abc'.  */
 
-extern const char *target_pid_to_str (ptid_t ptid);
+extern std::string target_pid_to_str (ptid_t ptid);
 
-extern const char *normal_pid_to_str (ptid_t ptid);
+extern std::string normal_pid_to_str (ptid_t ptid);
 
 /* Return a short string describing extra information about PID,
    e.g. "sleeping", "runnable", "running on LWP 3".  Null return value

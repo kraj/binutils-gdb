@@ -127,35 +127,6 @@ show_pagination_enabled (struct ui_file *file, int from_tty,
 }
 
 
-/* Cleanup utilities.
-
-   These are not defined in cleanups.c (nor declared in cleanups.h)
-   because while they use the "cleanup API" they are not part of the
-   "cleanup API".  */
-
-/* This function is useful for cleanups.
-   Do
-
-   foo = xmalloc (...);
-   old_chain = make_cleanup (free_current_contents, &foo);
-
-   to arrange to free the object thus allocated.  */
-
-void
-free_current_contents (void *ptr)
-{
-  void **location = (void **) ptr;
-
-  if (location == NULL)
-    internal_error (__FILE__, __LINE__,
-		    _("free_current_contents: NULL pointer"));
-  if (*location != NULL)
-    {
-      xfree (*location);
-      *location = NULL;
-    }
-}
-
 
 
 /* Print a warning message.  The first argument STRING is the warning
@@ -890,7 +861,6 @@ defaulted_query (const char *ctlstr, const char defchar, va_list args)
       printf_filtered (_("(%s or %s) [answered %c; "
 			 "input not from terminal]\n"),
 		       y_string, n_string, def_answer);
-      gdb_flush (gdb_stdout);
 
       return def_value;
     }
@@ -1475,8 +1445,18 @@ can_emit_style_escape (struct ui_file *stream)
       || !ui_file_isatty (stream))
     return false;
   const char *term = getenv ("TERM");
+  /* Windows doesn't by default define $TERM, but can support styles
+     regardless.  */
+#ifndef _WIN32
   if (term == nullptr || !strcmp (term, "dumb"))
     return false;
+#else
+  /* But if they do define $TERM, let us behave the same as on Posix
+     platforms, for the benefit of programs which invoke GDB as their
+     back-end.  */
+  if (term && !strcmp (term, "dumb"))
+    return false;
+#endif
   return true;
 }
 

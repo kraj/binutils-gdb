@@ -1548,11 +1548,11 @@ print_inferior_quit_action (struct inferior *inf, void *arg)
   if (inf->attach_flag)
     fprintf_filtered (stb,
 		      _("\tInferior %d [%s] will be detached.\n"), inf->num,
-		      target_pid_to_str (ptid_t (inf->pid)));
+		      target_pid_to_str (ptid_t (inf->pid)).c_str ());
   else
     fprintf_filtered (stb,
 		      _("\tInferior %d [%s] will be killed.\n"), inf->num,
-		      target_pid_to_str (ptid_t (inf->pid)));
+		      target_pid_to_str (ptid_t (inf->pid)).c_str ());
 
   return 0;
 }
@@ -1675,7 +1675,7 @@ quit_force (int *exit_arg, int from_tty)
   /* Do any final cleanups before exiting.  */
   TRY
     {
-      do_final_cleanups (all_cleanups ());
+      do_final_cleanups ();
     }
   CATCH (ex, RETURN_MASK_ALL)
     {

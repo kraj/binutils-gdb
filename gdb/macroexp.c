@@ -19,7 +19,6 @@
 
 #include "defs.h"
 #include "gdb_obstack.h"
-#include "bcache.h"
 #include "macrotab.h"
 #include "macroexp.h"
 #include "c-lang.h"
@@ -130,7 +129,7 @@ struct macro_buffer
 
   /* Release the text of the buffer to the caller, which is now
      responsible for freeing it.  */
-  char *release ()
+  ATTRIBUTE_UNUSED_RESULT char *release ()
   {
     gdb_assert (! shared);
     gdb_assert (size);

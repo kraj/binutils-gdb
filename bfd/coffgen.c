@@ -37,6 +37,7 @@
    coff_data (abfd).  */
 
 #include "sysdep.h"
+#include <limits.h>
 #include "bfd.h"
 #include "libbfd.h"
 #include "coff/internal.h"
@@ -2006,6 +2007,10 @@ coff_get_normalized_symtab (bfd *abfd)
   return internal;
 }
 
+#if GCC_VERSION >= 4003
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
 long
 coff_get_reloc_upper_bound (bfd *abfd, sec_ptr asect)
 {
@@ -2014,8 +2019,16 @@ coff_get_reloc_upper_bound (bfd *abfd, sec_ptr asect)
       bfd_set_error (bfd_error_invalid_operation);
       return -1;
     }
+  if (asect->reloc_count >= LONG_MAX / sizeof (arelent *))
+    {
+      bfd_set_error (bfd_error_file_too_big);
+      return -1;
+    }
   return (asect->reloc_count + 1) * sizeof (arelent *);
 }
+#if GCC_VERSION >= 4003
+# pragma GCC diagnostic pop
+#endif
 
 asymbol *
 coff_make_empty_symbol (bfd *abfd)
@@ -2294,7 +2307,7 @@ coff_find_nearest_line_with_names (bfd *abfd,
      information.  So try again, using a bias against the address sought.  */
   if (coff_data (abfd)->dwarf2_find_line_info != NULL)
     {
-      bfd_signed_vma bias;
+      bfd_signed_vma bias = 0;
 
       /* Create a cache of the result for the next call.  */
       if (sec_data == NULL && section->owner == abfd)
@@ -2306,10 +2319,11 @@ coff_find_nearest_line_with_names (bfd *abfd,
 
       if (sec_data != NULL && sec_data->saved_bias)
 	bias = sec_data->saved_bias;
-      else
+      else if (symbols)
 	{
 	  bias = _bfd_dwarf2_find_symbol_bias (symbols,
 					       & coff_data (abfd)->dwarf2_find_line_info);
+
 	  if (sec_data)
 	    {
 	      sec_data->saved_bias = TRUE;

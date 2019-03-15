@@ -1,5 +1,21 @@
 -*- text -*-
 
+Changes in 2.33:
+
+* Add target handlers for AArch64 for ELF GNU program properties.
+
+* Add support for GNU_PROPERTY_AARCH64_FEATURE_1_BTI in ELF GNU program
+  properties in the AArch64 ELF linker.
+
+* Add support for GNU_PROPERTY_AARCH64_FEATURE_1_PAC in ELF GNU program
+  properties in the AArch64 ELF linker.
+
+* Add --force-bti for AArch64 to enable GNU_PROPERTY_AARCH64_FEATURE_1_BTI
+  on output while warning about missing GNU_PROPERTY_AARCH64_FEATURE_1_BTI
+  on inputs and use PLTs protected with BTI.
+
+* Add --pac-plt for AArch64 to pick PAC enabled PLTs.
+
 Changes in 2.32:
 
 * Report property change in linker map file when merging GNU properties.

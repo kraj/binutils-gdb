@@ -1941,6 +1941,7 @@ _bfd_elf_add_default_symbol (bfd *abfd,
 	{
 	  bh = &hi->root;
 	  if (bh->type == bfd_link_hash_defined
+	      && bh->u.def.section->owner != NULL
 	      && (bh->u.def.section->owner->flags & BFD_PLUGIN) != 0)
 	    {
 	      /* Mark the previous definition from IR object as
@@ -3872,6 +3873,7 @@ elf_link_add_object_symbols (bfd *abfd, struct bfd_link_info *info)
   struct elf_link_hash_entry **sym_hash;
   bfd_boolean dynamic;
   Elf_External_Versym *extversym = NULL;
+  Elf_External_Versym *extversym_end = NULL;
   Elf_External_Versym *ever;
   struct elf_link_hash_entry *weaks;
   struct elf_link_hash_entry **nondeflt_vers = NULL;
@@ -4297,13 +4299,14 @@ error_free_dyn:
 	  Elf_Internal_Shdr *versymhdr;
 
 	  versymhdr = &elf_tdata (abfd)->dynversym_hdr;
-	  extversym = (Elf_External_Versym *) bfd_malloc (versymhdr->sh_size);
+	  amt = versymhdr->sh_size;
+	  extversym = (Elf_External_Versym *) bfd_malloc (amt);
 	  if (extversym == NULL)
 	    goto error_free_sym;
-	  amt = versymhdr->sh_size;
 	  if (bfd_seek (abfd, versymhdr->sh_offset, SEEK_SET) != 0
 	      || bfd_bread (extversym, amt, abfd) != amt)
 	    goto error_free_vers;
+	  extversym_end = extversym + (amt / sizeof (* extversym));
 	}
     }
 
@@ -4378,7 +4381,20 @@ error_free_dyn:
     }
 
   weaks = NULL;
-  ever = extversym != NULL ? extversym + extsymoff : NULL;
+  if (extversym == NULL)
+    ever = NULL;
+  else if (extversym + extsymoff < extversym_end)
+    ever = extversym + extsymoff;
+  else
+    {
+      /* xgettext:c-format */
+      _bfd_error_handler (_("%pB: invalid version offset %lx (max %lx)"),
+			  abfd, (long) extsymoff,
+			  (long) (extversym_end - extversym) / sizeof (* extversym));
+      bfd_set_error (bfd_error_bad_value);
+      goto error_free_vers;
+    }
+
   for (isym = isymbuf, isymend = isymbuf + extsymcount;
        isym < isymend;
        isym++, sym_hash++, ever = (ever != NULL ? ever + 1 : NULL))
@@ -4561,6 +4577,14 @@ error_free_dyn:
 		iver.vs_vers = elf_tdata (abfd)->cverdefs;
 	      else
 		iver.vs_vers = 0;
+	    }
+	  else if (ever >= extversym_end)
+	    {
+	      /* xgettext:c-format */
+	      _bfd_error_handler (_("%pB: not enough version information"),
+				  abfd);
+	      bfd_set_error (bfd_error_bad_value);
+	      goto error_free_vers;
 	    }
 	  else
 	    _bfd_elf_swap_versym_in (abfd, ever, &iver);

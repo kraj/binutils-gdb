@@ -1,3 +1,965 @@
+2019-03-14  Eli Zaretskii  <eliz@gnu.org>
+
+	The MS-Windows port of ncurses fails to switch to a color pair if
+	one or both of the colors are the implicit default colors.  This
+	change records the default colors when TUI is initialized, and
+	then specifies them explicitly when a color pair uses the default
+	colors.  This allows color styling in TUI mode on MS-Windows.
+
+	* tui/tui-io.c [__MINGW32__]: Include windows.h.  Declare
+	ncurses_norm_attr.
+	(tui_initialize_io) [__MINGW32__]: Record the default terminal
+	colors in ncurses_norm_attr.
+	(apply_ansi_escape) [__MINGW32__]: If a color in a color pair is
+	"none", replace it with the default color recorded in
+	ncurses_norm_attr.
+
+2019-03-14  Tom Tromey  <tromey@adacore.com>
+
+	* source-cache.h (class source_cache) <get_source_lines>: Return
+	std::string.
+	* source-cache.c (source_cache::extract_lines): Handle case where
+	first_pos==npos.  Return std::string.
+	(source_cache::get_source_lines): Update.
+
+2019-03-14  Tom Tromey  <tromey@adacore.com>
+
+	* NEWS: Add item for "style sources" commands.
+	* source-cache.c (source_cache::get_source_lines): Check
+	source_styling.
+	* cli/cli-style.c (source_styling): New global.
+	(_initialize_cli_style): Add "style sources" commands.
+	(show_style_sources): New function.
+	* cli/cli-style.h (source_styling): Declare.
+
+2019-03-14  Pedro Alves  <palves@redhat.com>
+	    Tom Tromey  <tromey@adacore.com>
+
+	* tui/tui-winsource.h (tui_refill_source_window): Declare.
+	* tui/tui-winsource.c (tui_refill_source_window): New function,
+	from...
+	(tui_horizontal_source_scroll): ... here.  Move some logic.
+	* cli/cli-style.c (set_style_enabled): Notify new observable.
+	* tui/tui-hooks.c (tui_redisplay_source): New function.
+	(tui_attach_detach_observers): Attach or detach
+	tui_redisplay_source.
+	* observable.h (source_styling_changed): New observable.
+	* observable.c: Define source_styling_changed observable.
+
+2019-03-13  Tom Tromey  <tromey@adacore.com>
+
+	* i386-gnu-nat.c (i386_gnu_nat_target::fetch_registers)
+	(i386_gnu_nat_target::store_registers): Update.
+	* target-debug.h (target_debug_print_std_string): New macro.
+	* x86-linux-nat.c (x86_linux_nat_target::enable_btrace): Update.
+	* windows-tdep.c (display_one_tib): Update.
+	* tui/tui-stack.c (tui_make_status_line): Update.
+	* top.c (print_inferior_quit_action): Update.
+	* thread.c (thr_try_catch_cmd): Update.
+	(add_thread_with_info): Update.
+	(thread_target_id_str): Update.
+	(thr_try_catch_cmd): Update.
+	(thread_command): Update.
+	(thread_find_command): Update.
+	* record-btrace.c (record_btrace_target::info_record)
+	(record_btrace_resume_thread, record_btrace_target::resume)
+	(record_btrace_cancel_resume, record_btrace_step_thread)
+	(record_btrace_target::wait, record_btrace_target::wait)
+	(record_btrace_target::wait, record_btrace_target::stop): Update.
+	* progspace.c (print_program_space): Update.
+	* process-stratum-target.c
+	(process_stratum_target::thread_address_space): Update.
+	* linux-fork.c (linux_fork_mourn_inferior)
+	(detach_checkpoint_command, info_checkpoints_command)
+	(linux_fork_context): Update.
+	(linux_fork_detach): Update.
+	(class scoped_switch_fork_info): Update.
+	(delete_checkpoint_command): Update.
+	* infrun.c (follow_fork_inferior): Update.
+	(follow_fork_inferior): Update.
+	(proceed_after_vfork_done): Update.
+	(handle_vfork_child_exec_or_exit): Update.
+	(follow_exec): Update.
+	(displaced_step_prepare_throw): Update.
+	(displaced_step_restore): Update.
+	(start_step_over): Update.
+	(resume_1): Update.
+	(clear_proceed_status_thread): Update.
+	(proceed): Update.
+	(print_target_wait_results): Update.
+	(do_target_wait): Update.
+	(context_switch): Update.
+	(stop_all_threads): Update.
+	(restart_threads): Update.
+	(finish_step_over): Update.
+	(handle_signal_stop): Update.
+	(switch_back_to_stepped_thread): Update.
+	(keep_going_pass_signal): Update.
+	(print_exited_reason): Update.
+	(normal_stop): Update.
+	* inferior.c (inferior_pid_to_str): Change return type.
+	(print_selected_inferior): Update.
+	(add_inferior): Update.
+	(detach_inferior): Update.
+	* dummy-frame.c (fprint_dummy_frames): Update.
+	* dcache.c (dcache_info_1): Update.
+	* btrace.c (btrace_enable, btrace_disable, btrace_teardown)
+	(btrace_fetch, btrace_clear): Update.
+	* linux-tdep.c (linux_core_pid_to_str): Change return type.
+	* i386-cygwin-tdep.c (i386_windows_core_pid_to_str): Change return
+	type.
+	* fbsd-tdep.c (fbsd_core_pid_to_str): Change return type.
+	* sol2-tdep.h (sol2_core_pid_to_str): Change return type.
+	* sol2-tdep.c (sol2_core_pid_to_str): Change return type.
+	* gdbarch.c, gdbarch.h: Rebuild.
+	* gdbarch.sh (core_pid_to_str): Change return type.
+	* windows-nat.c (struct windows_nat_target) <pid_to_str>: Change
+	return type.
+	(windows_nat_target::pid_to_str): Change return type.
+	(windows_delete_thread): Update.
+	(windows_nat_target::attach): Update.
+	(windows_nat_target::files_info): Update.
+	* target-delegates.c: Rebuild.
+	* sol-thread.c (class sol_thread_target) <pid_to_str>: Change
+	return type.
+	(sol_thread_target::pid_to_str): Change return type.
+	* remote.c (class remote_target) <pid_to_str>: Change return
+	type.
+	(remote_target::pid_to_str): Change return type.
+	(extended_remote_target::attach, remote_target::remote_stop_ns)
+	(remote_target::remote_notif_remove_queued_reply)
+	(remote_target::push_stop_reply, remote_target::disable_btrace):
+	Update.
+	(extended_remote_target::attach): Update.
+	* remote-sim.c (struct gdbsim_target) <pid_to_str>: Change return
+	type.
+	(gdbsim_target::pid_to_str): Change return type.
+	* ravenscar-thread.c (struct ravenscar_thread_target)
+	<pid_to_str>: Change return type.
+	(ravenscar_thread_target::pid_to_str): Change return type.
+	* procfs.c (class procfs_target) <pid_to_str>: Change return
+	type.
+	(procfs_target::pid_to_str): Change return type.
+	(procfs_target::attach): Update.
+	(procfs_target::detach): Update.
+	(procfs_target::fetch_registers): Update.
+	(procfs_target::store_registers): Update.
+	(procfs_target::wait): Update.
+	(procfs_target::files_info): Update.
+	* obsd-nat.c (obsd_nat_target::pid_to_str): Change return type.
+	* nto-procfs.c (struct nto_procfs_target) <pid_to_str>: Change
+	return type.
+	(nto_procfs_target::pid_to_str): Change return type.
+	(nto_procfs_target::files_info, nto_procfs_target::attach): Update.
+	* linux-thread-db.c (class thread_db_target) <pid_to_str>: Change
+	return type.
+	* linux-nat.c (linux_nat_target::pid_to_str): Change return type.
+	(exit_lwp): Update.
+	(attach_proc_task_lwp_callback, get_detach_signal)
+	(detach_one_lwp, resume_lwp, linux_nat_target::resume)
+	(linux_nat_target::resume, wait_lwp, stop_callback)
+	(maybe_clear_ignore_sigint, stop_wait_callback, status_callback)
+	(save_stop_reason, select_event_lwp, linux_nat_filter_event)
+	(linux_nat_wait_1, resume_stopped_resumed_lwps)
+	(linux_nat_target::wait, linux_nat_stop_lwp): Update.
+	* inf-ptrace.c (inf_ptrace_target::pid_to_str): Change return
+	type.
+	(inf_ptrace_target::attach): Update.
+	(inf_ptrace_target::files_info): Update.
+	* go32-nat.c (struct go32_nat_target) <pid_to_str>: Change return
+	type.
+	(go32_nat_target::pid_to_str): Change return type.
+	* gnu-nat.c (gnu_nat_target::pid_to_str): Change return type.
+	(gnu_nat_target::wait): Update.
+	(gnu_nat_target::wait): Update.
+	(gnu_nat_target::resume): Update.
+	* fbsd-nat.c (fbsd_nat_target::pid_to_str): Change return type.
+	(fbsd_nat_target::wait): Update.
+	* darwin-nat.c (darwin_nat_target::pid_to_str): Change return
+	type.
+	(darwin_nat_target::attach): Update.
+	* corelow.c (class core_target) <pid_to_str>: Change return type.
+	(core_target::pid_to_str): Change return type.
+	* target.c (normal_pid_to_str): Change return type.
+	(default_pid_to_str): Likewise.
+	(target_pid_to_str): Change return type.
+	(target_translate_tls_address): Update.
+	(target_announce_detach): Update.
+	* bsd-uthread.c (struct bsd_uthread_target) <pid_to_str>: Change
+	return type.
+	(bsd_uthread_target::pid_to_str): Change return type.
+	* bsd-kvm.c (class bsd_kvm_target) <pid_to_str>: Change return
+	type.
+	(bsd_kvm_target::pid_to_str): Change return type.
+	* aix-thread.c (class aix_thread_target) <pid_to_str>: Change
+	return type.
+	(aix_thread_target::pid_to_str): Change return type.
+	* target.h (struct target_ops) <pid_to_str>: Change return type.
+	(target_pid_to_str, normal_pid_to_str): Likewise.
+	* obsd-nat.h (class obsd_nat_target) <pid_to_str>: Change return
+	type.
+	* linux-nat.h (class linux_nat_target) <pid_to_str>: Change return
+	type.
+	* inf-ptrace.h (struct inf_ptrace_target) <pid_to_str>: Change
+	return type.
+	* gnu-nat.h (struct gnu_nat_target) <pid_to_str>: Change return
+	type.
+	* fbsd-nat.h (class fbsd_nat_target) <pid_to_str>: Change return
+	type.
+	* darwin-nat.h (class darwin_nat_target) <pid_to_str>: Change
+	return type.
+
+2019-03-13  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* NEWS: Mention that the new default MI version is 3.  Mention
+	changes to the output of commands and events that deal with
+	multi-location breakpoints.
+	* breakpoint.c: Include "mi/mi-out.h".
+	(print_one_breakpoint): Change output syntax if using MI version
+	>= 3.
+	* mi/mi-main.h (mi_cmd_fix_multi_location_breakpoint_output):
+	New.
+	(mi_multi_location_breakpoint_output_fixed): New.
+	* mi/mi-main.c (fix_multi_location_breakpoint_output): New.
+	(mi_cmd_fix_multi_location_breakpoint_output): New.
+	(mi_multi_location_breakpoint_output_fixed): New.
+	* mi/mi-cmds.c (mi_cmds): Register command
+	-fix-multi-location-breakpoint-output.
+	* mi/mi-out.c (mi_out_new): Instantiate version 3 when using
+	interpreter "mi".
+
+2019-03-13  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* mi/mi-out.h (mi_out_new): Change parameter to const char *.
+	* mi/mi-out.c (mi_out_new): Change parameter to const char *,
+	instantiate mi_ui_out based on interpreter name.
+	* mi/mi-interp.c (mi_interp::init): Use the new mi_out_new.
+	* mi/mi-main.c (mi_load_progress): Likewise.
+
+2019-03-12  John Baldwin  <jhb@FreeBSD.org>
+
+	* NEWS: Combine separate "New targets" sections for 8.3.
+
+2019-03-12  John Baldwin  <jhb@FreeBSD.org>
+
+	* ppc-fbsd-tdep.c (ppcfbsd_get_thread_local_address): New.
+	(ppcfbsd_init_abi): Install gdbarch
+	"fetch_tls_load_module_address" and "get_thread_local_address"
+	methods.
+
+2019-03-12  John Baldwin  <jhb@FreeBSD.org>
+
+	* riscv-fbsd-tdep.c (riscv_fbsd_get_thread_local_address): New.
+	(riscv_fbsd_init_abi): Install gdbarch
+	"fetch_tls_load_module_address" and "get_thread_local_address"
+	methods.
+
+2019-03-12  John Baldwin  <jhb@FreeBSD.org>
+
+	* i386-fbsd-tdep.c (i386fbsd_get_thread_local_address): New.
+	(i386fbsd_init_abi): Install gdbarch
+	"fetch_tls_load_module_address" and "get_thread_local_address"
+	methods.
+
+2019-03-12  John Baldwin  <jhb@FreeBSD.org>
+
+	* amd64-fbsd-tdep.c (amd64fbsd_get_thread_local_address): New.
+	(amd64fbsd_init_abi): Install gdbarch
+	"fetch_tls_load_module_address" and "get_thread_local_address"
+	methods.
+
+2019-03-12  John Baldwin  <jhb@FreeBSD.org>
+
+	* fbsd-tdep.c (fbsd_pspace_data_handle): New variable.
+	(struct fbsd_pspace_data): New type.
+	(get_fbsd_pspace_data, fbsd_pspace_data_cleanup)
+	(fbsd_read_integer_by_name, fbsd_fetch_rtld_offsets)
+	(fbsd_get_tls_index, fbsd_get_thread_local_address): New function.
+	(_initialize_fbsd_tdep): Initialize 'fbsd_pspace_data_handle'.
+	* fbsd-tdep.c (fbsd_get_thread_local_address): New prototype.
+
+2019-03-12  John Baldwin  <jhb@FreeBSD.org>
+
+	* gdbtypes.c (lookup_struct_elt): New function.
+	(lookup_struct_elt_type): Reimplement via lookup_struct_elt.
+	* gdbtypes.h (struct struct_elt): New type.
+	(lookup_struct_elt): New prototype.
+
+2019-03-12  John Baldwin  <jhb@FreeBSD.org>
+
+	* gdbtypes.c (lookup_struct_elt_type): Update comment and
+	remove disabled code block.
+
+2019-03-12  John Baldwin  <jhb@FreeBSD.org>
+
+	* gdbarch.sh (get_thread_local_address): New method.
+	* gdbarch.h, gdbarch.c: Regenerate.
+	* target.c (target_translate_tls_address): Use
+	gdbarch_get_thread_local_address if present instead of
+	target::get_thread_local_address.
+
+2019-03-12  John Baldwin  <jhb@FreeBSD.org>
+
+	* target.h (target::get_thread_local_address): Update comment.
+
+2019-03-12  John Baldwin  <jhb@FreeBSD.org>
+
+	* solib-svr4.c (svr4_fetch_objfile_link_map): Look for
+	objfile->separate_debug_objfile_backlink if not NULL.
+
+2019-03-12  John Baldwin  <jhb@FreeBSD.org>
+
+	* amd64-bsd-nat.c (amd64bsd_fetch_inferior_registers): Use
+	tdep->fsbase_regnum instead of constants for fs_base and gs_base.
+	(amd64bsd_store_inferior_registers): Likewise.
+	* amd64-fbsd-nat.c (amd64_fbsd_nat_target::read_description):
+	Enable segment base registers.
+	* i386-bsd-nat.c (i386bsd_fetch_inferior_registers): Use
+	PT_GETFSBASE and PT_GETGSBASE.
+	(i386bsd_store_inferior_registers): Use PT_SETFSBASE and
+	PT_SETGSBASE.
+	* i386-fbsd-nat.c (i386_fbsd_nat_target::read_description): Enable
+	segment base registers.
+	* i386-fbsd-tdep.c (i386fbsd_core_read_description): Likewise.
+
+2019-03-12  John Baldwin  <jhb@FreeBSD.org>
+
+	* amd64-fbsd-nat.c (amd64_fbsd_nat_target::read_description):
+	Update calls to i386_target_description to add 'segments'
+	parameter.
+	* amd64-tdep.c (amd64_init_abi): Set tdep->fsbase_regnum.  Don't
+	add segment base registers.
+	* arch/i386.c (i386_create_target_description): Add 'segments'
+	parameter to enable segment base registers.
+	* arch/i386.h (i386_create_target_description): Likewise.
+	* features/i386/32bit-segments.xml: New file.
+	* features/i386/32bit-segments.c: Generate.
+	* i386-fbsd-nat.c (i386_fbsd_nat_target::read_description): Update
+	call to i386_target_description to add 'segments' parameter.
+	* i386-fbsd-tdep.c (i386fbsd_core_read_description): Likewise.
+	* i386-go32-tdep.c (i386_go32_init_abi): Likewise.
+	* i386-linux-tdep.c (i386_linux_read_description): Likewise.
+	* i386-tdep.c (i386_validate_tdesc_p): Add segment base registers
+	if feature is present.
+	(i386_gdbarch_init): Pass I386_NUM_REGS to set_gdbarch_num_regs.
+	Add 'segments' parameter to call to i386_target_description.
+	(i386_target_description): Add 'segments' parameter to enable
+	segment base registers.
+	(_initialize_i386_tdep) [GDB_SELF_TEST]: Add 'segments' parameter
+	to call to i386_target_description.
+	* i386-tdep.h (struct gdbarch_tdep): Add 'fsbase_regnum'.
+	(enum i386_regnum): Add I386_FSBASE_REGNUM and I386_GSBASE_REGNUM.
+	Define I386_NUM_REGS.
+	(i386_target_description): Add 'segments' parameter to enable
+	segment base registers.
+
+2019-03-12  Eli Zaretskii  <eliz@gnu.org>
+
+	PR/24325
+	* source-cache.c: #undef open and close, to avoid unresolved
+	externals during linking.
+
+2019-03-12  Tom Tromey  <tromey@adacore.com>
+
+	* remote.c (magic_null_ptid, not_sent_ptid, any_thread_ptid): Now
+	const.  Add initializers.
+	(_initialize_remote): Don't initialize ptid globals.
+
+2019-03-12  Pedro Alves  <palves@redhat.com>
+
+	* yy-remap.h [TEST_CPNAMES] (YYFPRINTF): Don't define.
+
+2019-03-12  Pedro Alves  <palves@redhat.com>
+
+	* cp-name-parser.y (main): Remove unused 'len' variable.
+
+2019-03-12  Tom Tromey  <tromey@adacore.com>
+
+	* common/ptid.c (null_ptid, minus_one_ptid): Now const.
+	* common/ptid.h (null_ptid, minus_one_ptid): Now const.
+
+2019-03-12  Tom Tromey  <tromey@adacore.com>
+
+	* linux-nat.c (iterate_over_lwps): Update.
+	(stop_callback): Remove parameter.
+	(stop_wait_callback, detach_callback, resume_set_callback)
+	(select_singlestep_lwp_callback, set_ignore_sigint)
+	(status_callback, resumed_callback, resume_clear_callback)
+	(kill_callback, kill_wait_callback, linux_nat_stop_lwp): Remove
+	data parameter.
+	(linux_nat_target::detach, linux_nat_target::resume)
+	(linux_stop_and_wait_all_lwps, select_event_lwp)
+	(linux_nat_filter_event, linux_nat_wait_1)
+	(linux_nat_target::kill, linux_nat_target::stop)
+	(linux_nat_target::stop): Update.
+	(linux_nat_resume_callback): Change type.
+	(resume_stopped_resumed_lwps, count_events_callback)
+	(select_event_lwp_callback): Likewise.
+	(linux_stop_lwp, linux_nat_stop_lwp): Update.
+	* arm-linux-nat.c (struct update_registers_data): Remove.
+	(update_registers_callback): Change type.
+	(arm_linux_insert_hw_breakpoint1): Update.
+	* nat/x86-linux-dregs.c (update_debug_registers_callback): Remove
+	parameter.
+	(x86_linux_dr_set_addr): Update.
+	(x86_linux_dr_set_control): Update.
+	* nat/linux-nat.h (iterate_over_lwps_ftype): Remove parameter.
+	(iterate_over_lwps): Use gdb::function_view.
+	* nat/aarch64-linux-hw-point.c (struct
+	aarch64_dr_update_callback_param): Remove.
+	(debug_reg_change_callback): Change type.
+	(aarch64_notify_debug_reg_change): Update.
+	* s390-linux-nat.c (s390_refresh_per_info): Update.
+
+2019-03-11  Tom Tromey  <tromey@adacore.com>
+
+	* dwarf2read.c (dwarf2_find_containing_comp_unit): Remove
+	redundant assignment to "this_cu".
+
+2019-03-08  Simon Marchi  <simon.marchi@efficios.com>
+
+	* gdbtypes.c (rank_one_type): Remove unnecessary cases from switch.
+
+2019-03-08  Simon Marchi  <simon.marchi@efficios.com>
+
+	* gdbtypes.c (rank_one_type_parm_set): New function extracted
+	from...
+	(rank_one_type): ... this.
+
+2019-03-08  Simon Marchi  <simon.marchi@efficios.com>
+
+	* gdbtypes.c (rank_one_type_parm_struct): New function extracted
+	from...
+	(rank_one_type): ... this.
+
+2019-03-08  Simon Marchi  <simon.marchi@efficios.com>
+
+	* gdbtypes.c (rank_one_type_parm_complex): New function extracted
+	from...
+	(rank_one_type): ... this.
+
+2019-03-08  Simon Marchi  <simon.marchi@efficios.com>
+
+	* gdbtypes.c (rank_one_type_parm_float): New function extracted
+	from...
+	(rank_one_type): ... this.
+
+2019-03-08  Simon Marchi  <simon.marchi@efficios.com>
+
+	* gdbtypes.c (rank_one_type_parm_bool): New function extracted
+	from...
+	(rank_one_type): ... this.
+
+2019-03-08  Simon Marchi  <simon.marchi@efficios.com>
+
+	* gdbtypes.c (rank_one_type_parm_range): New function extracted
+	from...
+	(rank_one_type): ... this.
+
+2019-03-08  Simon Marchi  <simon.marchi@efficios.com>
+
+	* gdbtypes.c (rank_one_type_parm_char): New function extracted
+	from...
+	(rank_one_type): ... this.
+
+2019-03-08  Simon Marchi  <simon.marchi@efficios.com>
+
+	* gdbtypes.c (rank_one_type_parm_enum): New function extracted
+	from...
+	(rank_one_type): ... this.
+
+2019-03-08  Simon Marchi  <simon.marchi@efficios.com>
+
+	* gdbtypes.c (rank_one_type_parm_int): New function extracted
+	from...
+	(rank_one_type): ... this.
+
+2019-03-08  Simon Marchi  <simon.marchi@efficios.com>
+
+	* gdbtypes.c (rank_one_type_parm_func): New function extracted
+	from...
+	(rank_one_type): ... this.
+
+2019-03-08  Simon Marchi  <simon.marchi@efficios.com>
+
+	* gdbtypes.c (rank_one_type_parm_array): New function extracted
+	from...
+	(rank_one_type): ... this.
+
+2019-03-08  Simon Marchi  <simon.marchi@efficios.com>
+
+	* gdbtypes.c (rank_one_type_parm_ptr): New function extracted
+	from...
+	(rank_one_type): ... this.
+
+2019-02-27  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* inferior.c (initialize_inferiors): Ensure 'help set/show print
+	inferior-events' shows the example events.
+
+2019-03-08  Eli Zaretskii  <eliz@gnu.org>
+
+	Support styling on native MS-Windows console
+
+	PR/24315
+	* utils.c (can_emit_style_escape) [_WIN32]: Don't disable styling
+	on MS-Windows if $TERM is not defined.
+
+	* cli/cli-style.c: Set cli_styling to 1 in the MinGW build.
+
+	* posix-hdep.c (gdb_console_fputs):
+	* mingw-hdep.c (rgb_to_16colors, gdb_console_fputs): New
+	functions.
+	* ui-file.h (gdb_console_fputs): Add prototype.
+
+	* ui-file.c (stdio_file::puts): Call gdb_console_fputs, and fall
+	back to fputs only if the former returns zero.
+
+2019-03-07  Tom Tromey  <tom@tromey.com>
+
+	* symmisc.c (print_symbol_bcache_statistics): Update.
+	(print_objfile_statistics): Update.
+	* symfile.c (allocate_symtab): Update.
+	* stabsread.c: Don't include bcache.h.
+	* psymtab.h (struct psymbol_bcache): Don't declare.
+	(class psymtab_storage) <psymbol_cache>: Now a bcache.
+	(psymbol_bcache_init, psymbol_bcache_free)
+	(psymbol_bcache_get_bcache): Don't declare.
+	* psymtab.c (struct psymbol_bcache): Remove.
+	(psymtab_storage::psymtab_storage): Update.
+	(psymtab_storage::~psymtab_storage): Update.
+	(psymbol_bcache_init, psymbol_bcache_free)
+	(psymbol_bcache_get_bcache, psymbol_bcache_full): Remove.
+	(add_psymbol_to_bcache): Update.
+	(allocate_psymtab): Update.
+	* objfiles.h (struct objfile_per_bfd_storage) <filename_cache,
+	macro_cache>: No longer pointers.
+	* objfiles.c (get_objfile_bfd_data): Don't call bcache_xmalloc.
+	(free_objfile_per_bfd_storage): Don't call bcache_xfree.
+	* macrotab.c (macro_bcache): Update.
+	* macroexp.c: Don't include bcache.h.
+	* gdbtypes.c (check_types_worklist): Update.
+	(types_deeply_equal): Remove TRY/CATCH.  Update.
+	* elfread.c (elf_symtab_read): Update.
+	* dwarf2read.c: Don't include bcache.h.
+	* buildsym.c (buildsym_compunit::get_macro_table): Update.
+	* bcache.h (bcache, bcache_full, bcache_xffree, bcache_xmalloc)
+	(print_bcache_statistics, bcache_memory_used): Don't declare.
+	(struct bcache): Move from bcache.c.  Add constructor, destructor,
+	methods.  Rename all data members.
+	* bcache.c (struct bcache): Move to bcache.h.
+	(bcache::expand_hash_table): Rename from expand_hash_table.
+	(bcache): Remove.
+	(bcache::insert): Rename from bcache_full.
+	(bcache::compare): Rename from bcache_compare.
+	(bcache_xmalloc): Remove.
+	(bcache::~bcache): Rename from bcache_xfree.
+	(bcache::print_statistics): Rename from print_bcache_statistics.
+	(bcache::memory_used): Rename from bcache_memory_used.
+
+2019-03-07  Pedro Alves  <palves@redhat.com>
+
+	* infrun.c (normal_stop): Also check for
+	TARGET_WAITKIND_NO_RESUMED before referring to inferior_thread().
+
+2019-03-07  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* f-lang.c (value_from_host_double): Moved to...
+	* value.c (value_from_host_double): ...here.
+	* value.h (value_from_host_double): Declare.
+	* guile/scm-math.c (vlscm_convert_typed_number): Use
+	value_from_host_double.
+	(vlscm_convert_number): Likewise.
+	* guile/scm-value.c (gdbscm_value_to_real): Likewise.
+	* python/py-value.c (convert_value_from_python): Likewise.
+
+2019-03-06  Tom Tromey  <tom@tromey.com>
+
+	* gcore.c (write_gcore_file): Use SCOPE_EXIT.
+
+2019-03-06  Tom Tromey  <tom@tromey.com>
+
+	* utils.h (free_current_contents): Don't declare.
+	* utils.c (free_current_contents): Remove.
+
+2019-03-06  Tom Tromey  <tom@tromey.com>
+
+	* top.c (quit_force): Update.
+	* main.c (captured_command_loop): Update.
+	* common/new-op.c (operator new): Update.
+	* common/common-exceptions.c (struct catcher)
+	<save_cleanup_chain>: Remove member.
+	(exceptions_state_mc_init): Update.
+	(exception_try_scope_entry): Return nullptr.
+	(exception_try_scope_exit, exception_rethrow)
+	(throw_exception_sjlj, throw_exception_cxx): Update.
+	* common/cleanups.h (make_cleanup, make_cleanup_dtor)
+	(all_cleanups, do_cleanups, discard_cleanups)
+	(discard_final_cleanups, save_cleanups, save_final_cleanups)
+	(restore_cleanups, restore_final_cleanups): Don't declare.
+	(do_final_cleanups): Remove parameter.
+	* common/cleanups.c (cleanup_chain, make_cleanup)
+	(make_cleanup_dtor, all_cleanups, do_cleanups)
+	(discard_my_cleanups, discard_cleanups)
+	(discard_final_cleanups, save_my_cleanups, save_cleanups)
+	(save_final_cleanups, restore_my_cleanups, restore_cleanups)
+	(null_cleanup): Remove.
+	(do_final_cleanups): Remove parameter.
+
+2019-03-06  Tom Tromey  <tom@tromey.com>
+
+	* remote.c (remote_target::remote_parse_stop_reply): Use
+	unique_xmalloc_ptr.
+
+2019-03-06  Tom Tromey  <tom@tromey.com>
+
+	* stabsread.c (struct stabs_field_info): Rename from field_info.
+	<list, fnlist>: Add initializers.
+	<obstack>: New member.
+	(read_member_functions, read_struct_fields, read_baseclasses):
+	Allocate on obstack.  Don't use cleanups.
+	(read_one_struct_field, read_member_functions, read_struct_fields)
+	(read_baseclasses, read_tilde_fields, attach_fn_fields_to_type)
+	(attach_fields_to_type, read_cpp_abbrev, read_member_functions)
+	(read_struct_type): Update.
+
+2019-03-06  Tom Tromey  <tom@tromey.com>
+
+	* nat/linux-namespaces.c (linux_mntns_access_fs): Use SCOPE_EXIT.
+	* common/filestuff.h (make_cleanup_close): Don't declare.
+	* common/filestuff.c (do_close_cleanup, make_cleanup_close):
+	Remove.
+
+2019-03-06  Tom Tromey  <tom@tromey.com>
+
+	* solib-aix.c: Use make_scope_exit.
+
+2019-03-06  Tom Tromey  <tom@tromey.com>
+
+	* solib-svr4.c (svr4_parse_libraries, svr4_current_sos_direct):
+	Use make_scope_exit.
+
+2019-03-06  Tom Tromey  <tom@tromey.com>
+
+	* solib-svr4.c (disable_probes_interface): Remove parameter.
+	(svr4_handle_solib_event): Use make_scope_exit.
+
+2019-03-06  Tom Tromey  <tom@tromey.com>
+
+	* remote.c (struct stop_reply_deleter): Remove.
+	(stop_reply_up): Update.
+	(struct stop_reply): Derive from notif_event.  Don't typedef.
+	<regcache>: Now a std::vector.
+	(stop_reply_xfree): Remove.
+	(stop_reply::~stop_reply): Rename from stop_reply_dtr.
+	(remote_notif_stop_alloc_reply): Return a unique_ptr.  Use new.
+	(remote_target::discard_pending_stop_replies): Use delete.
+	(remote_target::remote_parse_stop_reply): Update.
+	(remote_target::process_stop_reply): Update.
+	* remote-notif.h (struct notif_event): Add virtual destructor.
+	Remove "dtr" member.
+	(struct notif_client) <alloc_event>: Return a unique_ptr.
+	(notif_event_xfree): Don't declare.
+	(notif_event_up): New typedef.
+	* remote-notif.c (remote_notif_ack, remote_notif_parse): Update.
+	(notif_event_xfree, do_notif_event_xfree): Remove.
+	(remote_notif_state_xfree): Update.
+
+2019-03-06  Tom Tromey  <tom@tromey.com>
+
+	* infrun.c (displaced_step_clear_cleanup): Now a
+	forward_scope_exit type.
+	(displaced_step_prepare_throw): Update.
+	(displaced_step_fixup): Update.
+
+2019-03-06  Tom Tromey  <tom@tromey.com>
+
+	* inferior.h (class inferior): Update comment.
+	* gdbthread.h (class thread_info): Update comment.
+
+2019-03-06  Joel Brobecker  <brobecker@adacore.com>
+	    Tom Tromey  <tom@tromey.com>
+
+	* stabsread.h (struct stab_section_list): Remove.
+	(coffstab_build_psymtabs): Update.
+	* dbxread.c (symbuf_sections): Now a std::vector.
+	(sect_idx): New global.
+	(fill_symbuf): Update.
+	(coffstab_build_psymtabs): Change type of stabsects parameter.
+	Update.
+	* coffread.c (struct coff_symfile_info) <stabsects>: Now a
+	std::vector.
+	(linetab, linetab_offset, linetab_size, stringtab): Move earlier.
+	(coff_locate_sections): Update.
+	(coff_symfile_read): Remove cleanups.  Update.
+	(init_stringtab): Add storage parameter.
+	(free_stringtab, free_stringtab_cleanup): Remove.
+	(init_lineno): Add storage parameter.
+	(free_linetab, free_linetab_cleanup): Remove.
+
+2019-03-06  Pedro Alves  <palves@redhat.com>
+
+	* linux-fork.c (fork_info::clobber_regs): Delete.
+	(fork_load_infrun_state): Remove reference to 'clobber_regs'.
+	(fork_save_infrun_state): Remove 'clobber_regs' parameter.  Update
+	comment.  Adjust.
+	(scoped_switch_fork_info::scoped_switch_fork_info)
+	(checkpoint_command, linux_fork_context): Adjust
+	fork_save_infrun_state calls.
+
+2019-03-06  Pedro Alves  <palves@redhat.com>
+
+	* linux-fork.c (inf_has_multiple_thread_cb): Delete.
+	(inf_has_multiple_threads): Return 'bool' and rewrite using
+	inferior_info::threads().
+
+2019-03-06  Pedro Alves  <palves@redhat.com>
+
+	* linux-fork.c: Include <list>.
+	(fork_list): Now a std::list instance.
+	(fork_info): Add ctor, dtor, and in-class initialize all fields.
+	(forks_exist_p, find_last_fork): Adjust.
+	(new_fork): Delete.
+	(one_fork_p): New.
+	(add_fork): Adjust.
+	(free_fork): Delete, folded into fork_info::~fork_info().
+	(delete_fork, find_fork_ptid, find_fork_id, find_fork_pid):
+	Adjust.
+	(init_fork_list): Delete.
+	(linux_fork_killall, linux_fork_mourn_inferior)
+	(linux_fork_detach, info_checkpoints_command): Adjust.
+	(_initialize_linux_fork): No longer call init_fork_list.
+
+2019-03-06  Pedro Alves  <palves@redhat.com>
+
+	* linux-fork.c (new_fork): New, split out of ...
+	(add_fork): ... this.  Return void.  Move "first fork" special
+	case from here, to ...
+	(checkpoint_command): ... here.
+	* linux-linux.h (add_fork): Return void.
+
+2019-03-06  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* f-exp.y (direct_abs_decl): Handle TYPE*SIZE type names.
+
+2019-03-06  Andrew Burgess  <andrew.burgess@embecosm.com>
+	    Chris January  <chris.january@arm.com>
+	    David Lecomber  <david.lecomber@arm.com>
+
+	* f-exp.y: New token, UNOP_INTRINSIC.
+	(exp): New pattern using UNOP_INTRINSIC token.
+	(f77_keywords): Add 'abs' keyword.
+	* f-lang.c: Add 'target-float.h' and 'math.h' includes.
+	(value_from_host_double): New function.
+	(evaluate_subexp_f): Support UNOP_ABS.
+
+2019-03-06  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* f-lang.c (build_fortran_types): Use TYPE_CODE_CHAR for character
+	types.
+
+2019-03-06  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* f-exp.y (convert_to_kind_type): Handle integer (kind=8).
+	* f-lang.c (build_fortran_types): Setup builtin_integer_s8.
+	* f-lang.h (struct builtin_f_type): Add builtin_integer_s8 field.
+
+2019-03-06  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* f-exp.y (convert_to_kind_type): Handle more type kinds.
+
+2019-03-06  Andrew Burgess  <andrew.burgess@embecosm.com>
+	    Chris January  <chris.january@arm.com>
+
+	* expprint.c (dump_subexp_body_standard): Support UNOP_KIND.
+	* f-exp.y: Define 'KIND' token.
+	(exp): New pattern for KIND expressions.
+	(ptype): Handle types with a kind extension.
+	(direct_abs_decl): Extend to spot kind extensions.
+	(f77_keywords): Add 'kind' to the list.
+	(push_kind_type): New function.
+	(convert_to_kind_type): New function.
+	* f-lang.c (evaluate_subexp_f): Support UNOP_KIND.
+	* parse.c (operator_length_standard): Likewise.
+	* parser-defs.h (enum type_pieces): Add tp_kind.
+	* std-operator.def: Add UNOP_KIND.
+
+2019-03-06  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* f-exp.y (f_parse): Set yydebug.
+
+2019-03-06  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* f-lang.c (evaluate_subexp_f): New function.
+	(exp_descriptor_f): New global.
+	(f_language_defn): Use exp_descriptor_f instead of
+	exp_descriptor_standard.
+
+2019-03-06  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* f-exp.y (struct token): Add comments.
+	(dot_ops): Remove uppercase versions and the end marker.
+	(f77_keywords): Likewise.
+	(yylex): Use ARRAY_SIZE to iterate over dot_ops, assert all
+	entries in the dot_ops array are case insensitive, and use
+	strncasecmp to compare strings.  Also some whitespace cleanup in
+	this area.  Similar for the f77_keywords array, except entries in
+	this list might be case sensitive.
+
+2019-03-06  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* f-exp.y (struct f77_boolean_val): Add comments.
+	(boolean_values): Remove uppercase versions, and end marker.
+	(yylex): Use ARRAY_SIZE for iterating over boolean_values array,
+	and use strncasecmp to achieve case insensitivity.  Additionally,
+	perform whitespace cleanup around this code.
+
+2019-03-06  Tom Tromey  <tromey@adacore.com>
+
+	* remote-sim.c (gdbsim_target_open): Use result of
+	gdb_argv::release.
+
+2019-03-06  Richard Bunt  <richard.bunt@arm.com>
+	Dirk Schubert  <dirk.schubert@arm.com>
+	Chris January  <chris.january@arm.com>
+
+	* eval.c (evaluate_subexp_standard): Call Fortran argument
+	wrapping logic.
+	* f-lang.c (struct value): A value which can be passed into a
+	Fortran function call.
+	(fortran_argument_convert): Wrap Fortran arguments in a pointer
+	where appropriate.
+	(struct type): Value ready for a Fortran function call.
+	(fortran_preserve_arg_pointer): Undo check_typedef, the pointer
+	is needed.
+	* f-lang.h (fortran_argument_convert): Declaration.
+	(fortran_preserve_arg_pointer): Declaration.
+	* infcall.c (value_arg_coerce): Call Fortran argument logic.
+
+2019-03-05  Tom Tromey  <tromey@adacore.com>
+
+	* python/py-prettyprint.c (print_string_repr): Remove #if.
+	* python/py-utils.c (unicode_to_encoded_string): Remove #if.
+
+2019-03-05  Tom Tromey  <tromey@adacore.com>
+
+	* target.c (the_dummy_target): Move later.  Change type to
+	"dummy_target".
+	(initialize_targets): Don't initialize the_dummy_target.
+
+2019-03-05  Tom Tromey  <tromey@adacore.com>
+
+	* gdb_bfd.c (gdb_bfd_fdopenr): Remove.
+	* gdb_bfd.h (gdb_bfd_fdopenr): Don't declare.
+
+2019-03-05  Tom Tromey  <tromey@adacore.com>
+
+	* windows-nat.c (windows_nat_target::attach)
+	(windows_nat_target::detach): Don't call gdb_flush.
+	* valprint.c (generic_val_print, val_print, val_print_string):
+	Don't call gdb_flush.
+	* utils.c (defaulted_query): Don't call gdb_flush.
+	* typeprint.c (print_type_scalar): Don't call gdb_flush.
+	* target.c (target_announce_detach): Don't call gdb_flush.
+	* sparc64-tdep.c (adi_print_versions): Don't call gdb_flush.
+	* remote.c (extended_remote_target::attach): Don't call
+	gdb_flush.
+	* procfs.c (procfs_target::detach): Don't call gdb_flush.
+	* printcmd.c (do_examine): Don't call gdb_flush.
+	(info_display_command): Don't call gdb_flush.
+	* p-valprint.c (pascal_val_print): Don't call gdb_flush.
+	* nto-procfs.c (nto_procfs_target::attach): Don't call gdb_flush.
+	* memattr.c (info_mem_command): Don't call gdb_flush.
+	* mdebugread.c (mdebug_build_psymtabs): Don't call gdb_flush.
+	* m2-valprint.c (m2_val_print): Don't call gdb_flush.
+	* infrun.c (follow_exec, handle_command): Don't call gdb_flush.
+	* inf-ptrace.c (inf_ptrace_target::attach): Don't call gdb_flush.
+	* hppa-tdep.c (unwind_command): Don't call gdb_flush.
+	* gnu-nat.c (gnu_nat_target::attach): Don't call gdb_flush.
+	(gnu_nat_target::detach): Don't call gdb_flush.
+	* f-valprint.c (f_val_print): Don't call gdb_flush.
+	* darwin-nat.c (darwin_nat_target::attach): Don't call gdb_flush.
+	* cli/cli-script.c (read_command_lines): Don't call gdb_flush.
+	* cli/cli-cmds.c (shell_escape, print_disassembly): Don't call
+	gdb_flush.
+	* c-valprint.c (c_val_print): Don't call gdb_flush.
+	* ada-valprint.c (ada_print_scalar): Don't call gdb_flush.
+
+2019-03-05  Tom Tromey  <tromey@adacore.com>
+
+	* varobj.c (update_dynamic_varobj_children): Update.
+	(install_default_visualizer): Use reset, not release.
+	* value.c (set_internalvar): Update.
+	* dwarf2loc.c (value_of_dwarf_reg_entry): Update.
+	* common/gdb_ref_ptr.h (class ref_ptr) <release>: Add
+	ATTRIBUTE_UNUSED_RESULT.
+
+2019-03-05  Tom Tromey  <tromey@adacore.com>
+
+	* remote.c (class scoped_remote_fd) <release>: Add
+	ATTRIBUTE_UNUSED_RESULT.
+
+2019-03-05  Tom Tromey  <tromey@adacore.com>
+
+	* macroexp.c (struct macro_buffer) <release>: Add
+	ATTRIBUTE_UNUSED_RESULT.
+
+2019-03-05  Tom Tromey  <tromey@adacore.com>
+
+	* nat/linux-btrace.c (linux_enable_bts, linux_enable_pt): Update.
+	* common/scoped_mmap.h (class scoped_mmap) <release>: Add
+	ATTRIBUTE_UNUSED_RESULT.
+
+2019-03-05  Tom Tromey  <tromey@adacore.com>
+
+	* common/scoped_fd.h (class scoped_fd) <release>: Add
+	ATTRIBUTE_UNUSED_RESULT.
+
+2019-03-05  Tom Tromey  <tromey@adacore.com>
+
+	* parser-defs.h (struct parser_state) <release>: Add
+	ATTRIBUTE_UNUSED_RESULT.
+
+2019-03-05  Tom Tromey  <tromey@adacore.com>
+
+	* utils.h (class gdb_argv) <release>: Add
+	ATTRIBUTE_UNUSED_RESULT.
+	* common/common-defs.h (ATTRIBUTE_UNUSED_RESULT): Define.
+
+2019-03-02  Eli Zaretskii  <eliz@gnu.org>
+
+	* xml-syscall.c (xml_list_syscalls_by_group): Drop 'struct' from
+	for-loop range, to avoid compiler warnings.
+
+	* tui/tui.c (tui_enable) [__MINGW32__]: Don't declare 'cap', to
+	avoid compiler warnings about unused variables.
+
+	* NEWS: Mention end of support for native debugging on MS-Windows
+	before XP.
+
+	PR gdb/24292
+	* common/netstuff.c:
+	* gdbserver/gdbreplay.c
+	* gdbserver/remote-utils.c:
+	* ser-tcp.c:
+	* unittests/parse-connection-spec-selftests.c [USE_WIN32API]:
+	Include ws2tcpip.h instead of wsiapi.h and winsock2.h.  Redefine
+	_WIN32_WINNT to 0x0501 if defined to a smaller value, as
+	'getaddrinfo' and 'freeaddrinfo' were not available before
+	Windows XP, and mingw.org's MinGW headers by default define
+	_WIN32_WINNT to 0x500.
+
+2019-03-01  Gary Benson <gbenson@redhat.com>
+
+	* coffread.c (coff_start_symtab): Remove unnecessary xstrdup.
+
+2019-02-28  Brian Vandenberg  <phantall@gmail.com>
+	    Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	PR gdb/8527
+	* procfs.c (proc_wait_for_stop): Wrap write of PCWSTOP in
+	set_sigint_trap, clear_sigint_trap.
+
 2019-02-27  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
 
 	* target.c (target_detach): Clear the regcache and the

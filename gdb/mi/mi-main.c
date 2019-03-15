@@ -2173,16 +2173,8 @@ mi_load_progress (const char *section_name,
      which means uiout may not be correct.  Fix it for the duration
      of this function.  */
 
-  std::unique_ptr<ui_out> uiout;
-
-  if (current_interp_named_p (INTERP_MI)
-      || current_interp_named_p (INTERP_MI2))
-    uiout.reset (mi_out_new (2));
-  else if (current_interp_named_p (INTERP_MI1))
-    uiout.reset (mi_out_new (1));
-  else if (current_interp_named_p (INTERP_MI3))
-    uiout.reset (mi_out_new (3));
-  else
+  std::unique_ptr<ui_out> uiout (mi_out_new (current_interpreter ()->name ()));
+  if (uiout == nullptr)
     return;
 
   scoped_restore save_uiout
@@ -2707,6 +2699,33 @@ mi_cmd_trace_frame_collected (const char *command, char **argv, int argc)
 	  }
       }
   }
+}
+
+/* Whether to use the fixed output when printing information about a
+   multi-location breakpoint (see PR 9659).  */
+
+static bool fix_multi_location_breakpoint_output = false;
+
+/* See mi/mi-main.h.  */
+
+void
+mi_cmd_fix_multi_location_breakpoint_output (const char *command, char **argv,
+					     int argc)
+{
+  fix_multi_location_breakpoint_output = true;
+}
+
+/* See mi/mi-main.h.  */
+
+bool
+mi_multi_location_breakpoint_output_fixed (ui_out *uiout)
+{
+  mi_ui_out *mi_uiout = dynamic_cast<mi_ui_out *> (uiout);
+
+  if (mi_uiout == nullptr)
+    return false;
+
+  return mi_uiout->version () >= 3 || fix_multi_location_breakpoint_output;
 }
 
 void
