@@ -28,6 +28,7 @@
 #include "registry.h"
 #include "gdb_bfd.h"
 #include "psymtab.h"
+#include <bitset>
 #include <vector>
 #include "common/next-iterator.h"
 #include "common/safe-iterator.h"
@@ -234,6 +235,8 @@ struct objfile_per_bfd_storage
     : minsyms_read (false)
   {}
 
+  ~objfile_per_bfd_storage ();
+
   /* The storage has an obstack of its own.  */
 
   auto_obstack storage_obstack;
@@ -259,7 +262,7 @@ struct objfile_per_bfd_storage
      name, and the second is the demangled name or just a zero byte
      if the name doesn't demangle.  */
 
-  htab *demangled_names_hash = NULL;
+  htab_up demangled_names_hash;
 
   /* The per-objfile information about the entry point, the scope (file/func)
      containing the entry point, and the scope of the user's main() func.  */
@@ -279,11 +282,9 @@ struct objfile_per_bfd_storage
      name and a zero value for the address.  This makes it easy to walk
      through the array when passed a pointer to somewhere in the middle
      of it.  There is also a count of the number of symbols, which does
-     not include the terminating null symbol.  The array itself, as well
-     as all the data that it points to, should be allocated on the
-     objfile_obstack for this file.  */
+     not include the terminating null symbol.  */
 
-  minimal_symbol *msymbols = NULL;
+  gdb::unique_xmalloc_ptr<minimal_symbol> msymbols;
   int minimal_symbol_count = 0;
 
   /* The number of minimal symbols read, before any minimal symbol
@@ -313,10 +314,8 @@ struct objfile_per_bfd_storage
   minimal_symbol *msymbol_demangled_hash[MINIMAL_SYMBOL_HASH_SIZE] {};
 
   /* All the different languages of symbols found in the demangled
-     hash table.  A flat/vector-based map is more efficient than a map
-     or hash table here, since this will only usually contain zero or
-     one entries.  */
-  std::vector<enum language> demangled_hash_languages;
+     hash table.  */
+  std::bitset<nr_languages> demangled_hash_languages;
 };
 
 /* Master structure for keeping track of each file from which
@@ -374,13 +373,13 @@ struct objfile
 
     minimal_symbol_iterator begin () const
     {
-      return minimal_symbol_iterator (m_objfile->per_bfd->msymbols);
+      return minimal_symbol_iterator (m_objfile->per_bfd->msymbols.get ());
     }
 
     minimal_symbol_iterator end () const
     {
       return minimal_symbol_iterator
-	(m_objfile->per_bfd->msymbols
+	(m_objfile->per_bfd->msymbols.get ()
 	 + m_objfile->per_bfd->minimal_symbol_count);
     }
 

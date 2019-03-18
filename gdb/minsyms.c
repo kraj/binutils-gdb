@@ -160,11 +160,7 @@ add_minsym_to_demangled_hash_table (struct minimal_symbol *sym,
       unsigned int hash = search_name_hash (MSYMBOL_LANGUAGE (sym),
 					    MSYMBOL_SEARCH_NAME (sym));
 
-      auto &vec = objfile->per_bfd->demangled_hash_languages;
-      auto it = std::lower_bound (vec.begin (), vec.end (),
-				  MSYMBOL_LANGUAGE (sym));
-      if (it == vec.end () || *it != MSYMBOL_LANGUAGE (sym))
-	vec.insert (it, MSYMBOL_LANGUAGE (sym));
+      objfile->per_bfd->demangled_hash_languages.set (MSYMBOL_LANGUAGE (sym));
 
       struct minimal_symbol **table
 	= objfile->per_bfd->msymbol_demangled_hash;
@@ -354,8 +350,12 @@ lookup_minimal_symbol (const char *name, const char *sfile,
 	    {
 	      /* Once for each language in the demangled hash names
 		 table (usually just zero or one languages).  */
-	      for (auto lang : objfile->per_bfd->demangled_hash_languages)
+	      for (unsigned iter = 0; iter < nr_languages; ++iter)
 		{
+		  if (!objfile->per_bfd->demangled_hash_languages.test (iter))
+		    continue;
+		  enum language lang = (enum language) iter;
+
 		  unsigned int hash
 		    = (lookup_name.search_name_hash (lang)
 		       % MINIMAL_SYMBOL_HASH_SIZE);
@@ -497,8 +497,12 @@ iterate_over_minimal_symbols
   /* The second pass is over the demangled table.  Once for each
      language in the demangled hash names table (usually just zero or
      one).  */
-  for (auto lang : objf->per_bfd->demangled_hash_languages)
+  for (unsigned liter = 0; liter < nr_languages; ++liter)
     {
+      if (!objf->per_bfd->demangled_hash_languages.test (liter))
+	continue;
+
+      enum language lang = (enum language) liter;
       const language_defn *lang_def = language_def (lang);
       symbol_name_matcher_ftype *name_match
 	= get_symbol_name_matcher (lang_def, lookup_name);
@@ -731,17 +735,14 @@ lookup_minimal_symbol_by_pc_section (CORE_ADDR pc_in, struct obj_section *sectio
     {
       CORE_ADDR pc = pc_in;
 
-      /* If this objfile has a minimal symbol table, go search it using
-         a binary search.  Note that a minimal symbol table always consists
-         of at least two symbols, a "real" symbol and the terminating
-         "null symbol".  If there are no real symbols, then there is no
-         minimal symbol table at all.  */
+      /* If this objfile has a minimal symbol table, go search it
+         using a binary search.  */
 
       if (objfile->per_bfd->minimal_symbol_count > 0)
 	{
 	  int best_zero_sized = -1;
 
-          msymbol = objfile->per_bfd->msymbols;
+          msymbol = objfile->per_bfd->msymbols.get ();
 	  lo = 0;
 	  hi = objfile->per_bfd->minimal_symbol_count - 1;
 
@@ -1151,24 +1152,14 @@ minimal_symbol_reader::record_full (const char *name, int name_len,
       m_msym_bunch = newobj;
     }
   msymbol = &m_msym_bunch->contents[m_msym_bunch_index];
-  MSYMBOL_SET_LANGUAGE (msymbol, language_auto,
-			&m_objfile->per_bfd->storage_obstack);
-  MSYMBOL_SET_NAMES (msymbol, name, name_len, copy_name, m_objfile);
+  symbol_set_language (msymbol, language_auto,
+		       &m_objfile->per_bfd->storage_obstack);
+  symbol_set_names (msymbol, name, name_len, copy_name, m_objfile->per_bfd);
 
   SET_MSYMBOL_VALUE_ADDRESS (msymbol, address);
   MSYMBOL_SECTION (msymbol) = section;
 
   MSYMBOL_TYPE (msymbol) = ms_type;
-  MSYMBOL_TARGET_FLAG_1 (msymbol) = 0;
-  MSYMBOL_TARGET_FLAG_2 (msymbol) = 0;
-  /* Do not use the SET_MSYMBOL_SIZE macro to initialize the size,
-     as it would also set the has_size flag.  */
-  msymbol->size = 0;
-
-  /* The hash pointers must be cleared! If they're not,
-     add_minsym_to_hash_table will NOT add this msymbol to the hash table.  */
-  msymbol->hash_next = NULL;
-  msymbol->demangled_hash_next = NULL;
 
   /* If we already read minimal symbols for this objfile, then don't
      ever allocate a new one.  */
@@ -1307,7 +1298,7 @@ build_minimal_symbol_hash_tables (struct objfile *objfile)
 
   /* Now, (re)insert the actual entries.  */
   for ((i = objfile->per_bfd->minimal_symbol_count,
-	msym = objfile->per_bfd->msymbols);
+	msym = objfile->per_bfd->msymbols.get ());
        i > 0;
        i--, msym++)
     {
@@ -1346,7 +1337,6 @@ build_minimal_symbol_hash_tables (struct objfile *objfile)
 void
 minimal_symbol_reader::install ()
 {
-  int bindex;
   int mcount;
   struct msym_bunch *bunch;
   struct minimal_symbol *msymbols;
@@ -1369,17 +1359,19 @@ minimal_symbol_reader::install ()
          compact out the duplicate entries.  Once we have a final table,
          we will give back the excess space.  */
 
-      alloc_count = m_msym_count + m_objfile->per_bfd->minimal_symbol_count + 1;
+      alloc_count = m_msym_count + m_objfile->per_bfd->minimal_symbol_count;
       obstack_blank (&m_objfile->per_bfd->storage_obstack,
 		     alloc_count * sizeof (struct minimal_symbol));
-      msymbols = (struct minimal_symbol *)
-	obstack_base (&m_objfile->per_bfd->storage_obstack);
+      gdb::unique_xmalloc_ptr<minimal_symbol>
+	msym_holder (XNEWVEC (minimal_symbol, alloc_count));
+      msymbols = msym_holder.get ();
 
       /* Copy in the existing minimal symbols, if there are any.  */
 
       if (m_objfile->per_bfd->minimal_symbol_count)
-	memcpy ((char *) msymbols, (char *) m_objfile->per_bfd->msymbols,
-	    m_objfile->per_bfd->minimal_symbol_count * sizeof (struct minimal_symbol));
+	memcpy (msymbols, m_objfile->per_bfd->msymbols.get (),
+		m_objfile->per_bfd->minimal_symbol_count
+		* sizeof (struct minimal_symbol));
 
       /* Walk through the list of minimal symbol bunches, adding each symbol
          to the new contiguous array of symbols.  Note that we start with the
@@ -1391,8 +1383,9 @@ minimal_symbol_reader::install ()
 
       for (bunch = m_msym_bunch; bunch != NULL; bunch = bunch->next)
 	{
-	  for (bindex = 0; bindex < m_msym_bunch_index; bindex++, mcount++)
-	    msymbols[mcount] = bunch->contents[bindex];
+	  memcpy (&msymbols[mcount], &bunch->contents[0],
+		  m_msym_bunch_index * sizeof (struct minimal_symbol));
+	  mcount += m_msym_bunch_index;
 	  m_msym_bunch_index = BUNCH_SIZE;
 	}
 
@@ -1405,29 +1398,16 @@ minimal_symbol_reader::install ()
          no longer using.  */
 
       mcount = compact_minimal_symbols (msymbols, mcount, m_objfile);
-
-      ssize_t shrink_bytes
-	= (mcount + 1 - alloc_count) * sizeof (struct minimal_symbol);
-      obstack_blank_fast (&m_objfile->per_bfd->storage_obstack, shrink_bytes);
-      msymbols = (struct minimal_symbol *)
-	obstack_finish (&m_objfile->per_bfd->storage_obstack);
-
-      /* We also terminate the minimal symbol table with a "null symbol",
-         which is *not* included in the size of the table.  This makes it
-         easier to find the end of the table when we are handed a pointer
-         to some symbol in the middle of it.  Zero out the fields in the
-         "null symbol" allocated at the end of the array.  Note that the
-         symbol count does *not* include this null symbol, which is why it
-         is indexed by mcount and not mcount-1.  */
-
-      memset (&msymbols[mcount], 0, sizeof (struct minimal_symbol));
+      msym_holder.reset (XRESIZEVEC (struct minimal_symbol,
+				     msym_holder.release (),
+				     mcount));
 
       /* Attach the minimal symbol table to the specified objfile.
          The strings themselves are also located in the storage_obstack
          of this objfile.  */
 
       m_objfile->per_bfd->minimal_symbol_count = mcount;
-      m_objfile->per_bfd->msymbols = msymbols;
+      m_objfile->per_bfd->msymbols = std::move (msym_holder);
 
       /* Now build the hash tables; we can't do this incrementally
          at an earlier point since we weren't finished with the obstack
@@ -1435,27 +1415,6 @@ minimal_symbol_reader::install ()
 	 pointers to other msymbols need to be adjusted.)  */
       build_minimal_symbol_hash_tables (m_objfile);
     }
-}
-
-/* See minsyms.h.  */
-
-void
-terminate_minimal_symbol_table (struct objfile *objfile)
-{
-  if (! objfile->per_bfd->msymbols)
-    objfile->per_bfd->msymbols = XOBNEW (&objfile->per_bfd->storage_obstack,
-					 minimal_symbol);
-
-  {
-    struct minimal_symbol *m
-      = &objfile->per_bfd->msymbols[objfile->per_bfd->minimal_symbol_count];
-
-    memset (m, 0, sizeof (*m));
-    /* Don't rely on these enumeration values being 0's.  */
-    MSYMBOL_TYPE (m) = mst_unknown;
-    MSYMBOL_SET_LANGUAGE (m, language_unknown,
-			  &objfile->per_bfd->storage_obstack);
-  }
 }
 
 /* Check if PC is in a shared library trampoline code stub.

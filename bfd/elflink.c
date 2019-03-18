@@ -2523,9 +2523,11 @@ elf_link_read_relocs_from_section (bfd *abfd,
     }
 
   erela = (const bfd_byte *) external_relocs;
-  erelaend = erela + shdr->sh_size;
+  /* Setting erelaend like this and comparing with <= handles case of
+     a fuzzed object with sh_size not a multiple of sh_entsize.  */
+  erelaend = erela + shdr->sh_size - shdr->sh_entsize;
   irela = internal_relocs;
-  while (erela < erelaend)
+  while (erela <= erelaend)
     {
       bfd_vma r_symndx;
 
@@ -4440,7 +4442,13 @@ error_free_dyn:
 	     global symbols follow all local symbols, and that sh_info
 	     point to the first global symbol.  Unfortunately, Irix 5
 	     screws this up.  */
-	  continue;
+	  if (elf_bad_symtab (abfd))
+	    continue;
+
+	  /* If we aren't prepared to handle locals within the globals
+	     then we'll likely segfault on a NULL section.  */
+	  bfd_set_error (bfd_error_bad_value);
+	  goto error_free_vers;
 
 	case STB_GLOBAL:
 	  if (isym->st_shndx != SHN_UNDEF && !common)
@@ -10413,8 +10421,7 @@ elf_link_input_bfd (struct elf_final_link_info *flinfo, bfd *input_bfd)
 	    {
 	      /* Don't attempt to output symbols with st_shnx in the
 		 reserved range other than SHN_ABS and SHN_COMMON.  */
-	      *ppsection = NULL;
-	      continue;
+	      isec = bfd_und_section_ptr;
 	    }
 	  else if (isec->sec_info_type == SEC_INFO_TYPE_MERGE
 		   && ELF_ST_TYPE (isym->st_info) != STT_SECTION)

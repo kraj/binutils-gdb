@@ -1,3 +1,47 @@
+2019-03-16  Alan Modra  <amodra@gmail.com>
+
+	PR 24337
+	* elf.c (_bfd_elf_rela_local_sym): Revert last change.
+	(_bfd_elf_rel_local_sym): Likewise.
+	* elflink.c (elf_link_input_bfd): Use bfd_und_section for
+	section of symbols with unrecognized shndx.
+
+2019-03-15  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/24267
+	* coffgen.c (_bfd_coff_section_already_linked): Skip discarded
+	section.
+	* cofflink.c (coff_link_add_symbols): Check for symbols defined
+	in discarded section.
+
+2019-03-15  Alan Modra  <amodra@gmail.com>
+
+	PR 24339
+	* elflink.c (elf_link_add_object_symbols): Bail out on a local
+	symbol after globals if elf_bad_symtab is not set.
+
+2019-03-15  Alan Modra  <amodra@gmail.com>
+
+	PR 24337
+	* elf.c (_bfd_elf_rela_local_sym): Don't segfault on NULL sec.
+	(_bfd_elf_rel_local_sym): Likewise.
+
+2019-03-15  Alan Modra  <amodra@gmail.com>
+
+	PR 24336
+	* elflink.c (elf_link_read_relocs_from_section): Handle fuzzed
+	object files with sh_size not a multiple of sh_entsize.
+
+2019-03-15  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/24338
+	* elf64-x86-64.c (elf_x86_64_relocate_section): Check for corrupt
+	input with bad relocation.
+
+22019-03-15  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* elf64-x86-64.c (elf_x86_64_relocate_section): Re-indent.
+
 2019-03-14  Nick Clifton  <nickc@redhat.com>
 
 	PR 24334

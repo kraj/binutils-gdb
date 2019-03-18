@@ -778,7 +778,6 @@ windows_make_so (const char *name, LPVOID load_addr)
   if (p >= so->so_name && strcasecmp (p, "/cygwin1.dll") == 0)
     {
       asection *text = NULL;
-      CORE_ADDR text_vma;
 
       gdb_bfd_ref_ptr abfd (gdb_bfd_open (so->so_name, "pei-i386", -1));
 
@@ -1097,14 +1096,14 @@ display_selector (HANDLE thread, DWORD sel)
 	  puts_filtered ("Code (Exec/Read, Conf");
 	  break;
 	default:
-	  printf_filtered ("Unknown type 0x%x",info.HighWord.Bits.Type);
+	  printf_filtered ("Unknown type 0x%lx",info.HighWord.Bits.Type);
 	}
       if ((info.HighWord.Bits.Type & 0x1) == 0)
 	puts_filtered(", N.Acc");
       puts_filtered (")\n");
       if ((info.HighWord.Bits.Type & 0x10) == 0)
 	puts_filtered("System selector ");
-      printf_filtered ("Priviledge level = %d. ", info.HighWord.Bits.Dpl);
+      printf_filtered ("Priviledge level = %ld. ", info.HighWord.Bits.Dpl);
       if (info.HighWord.Bits.Granularity)
 	puts_filtered ("Page granular.\n");
       else

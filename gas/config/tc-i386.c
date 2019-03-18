@@ -33,6 +33,17 @@
 #include "elf/x86-64.h"
 #include "opcodes/i386-init.h"
 
+#ifdef HAVE_LIMITS_H
+#include <limits.h>
+#else
+#ifdef HAVE_SYS_PARAM_H
+#include <sys/param.h>
+#endif
+#ifndef INT_MAX
+#define INT_MAX (int) (((unsigned) (-1)) >> 1)
+#endif
+#endif
+
 #ifndef REGISTER_WARNINGS
 #define REGISTER_WARNINGS 1
 #endif
@@ -3966,8 +3977,7 @@ optimize_encoding (void)
 	    }
 	}
     }
-  else if (optimize > 1
-	   && i.reg_operands == 3
+  else if (i.reg_operands == 3
 	   && i.op[0].regs == i.op[1].regs
 	   && !i.types[2].bitfield.xmmword
 	   && (i.tm.opcode_modifier.vex
@@ -3975,10 +3985,13 @@ optimize_encoding (void)
 		   && !i.rounding
 		   && is_evex_encoding (&i.tm)
 		   && (i.vec_encoding != vex_encoding_evex
+		       || cpu_arch_flags.bitfield.cpuavx
+		       || cpu_arch_isa_flags.bitfield.cpuavx
+		       || cpu_arch_flags.bitfield.cpuavx512vl
+		       || cpu_arch_isa_flags.bitfield.cpuavx512vl
 		       || i.tm.cpu_flags.bitfield.cpuavx512vl
 		       || (i.tm.operand_types[2].bitfield.zmmword
-			   && i.types[2].bitfield.ymmword)
-		       || cpu_arch_isa_flags.bitfield.cpuavx512vl)))
+			   && i.types[2].bitfield.ymmword))))
 	   && ((i.tm.base_opcode == 0x55
 		|| i.tm.base_opcode == 0x6655
 		|| i.tm.base_opcode == 0x66df
@@ -3995,15 +4008,15 @@ optimize_encoding (void)
 		|| i.tm.base_opcode == 0x6647)
 	       && i.tm.extension_opcode == None))
     {
-      /* Optimize: -O2:
+      /* Optimize: -O1:
 	   VOP, one of vandnps, vandnpd, vxorps, vxorpd, vpsubb, vpsubd,
 	   vpsubq and vpsubw:
 	     EVEX VOP %zmmM, %zmmM, %zmmN
 	       -> VEX VOP %xmmM, %xmmM, %xmmN (M and N < 16)
-	       -> EVEX VOP %xmmM, %xmmM, %xmmN (M || N >= 16)
+	       -> EVEX VOP %xmmM, %xmmM, %xmmN (M || N >= 16) (-O2)
 	     EVEX VOP %ymmM, %ymmM, %ymmN
 	       -> VEX VOP %xmmM, %xmmM, %xmmN (M and N < 16)
-	       -> EVEX VOP %xmmM, %xmmM, %xmmN (M || N >= 16)
+	       -> EVEX VOP %xmmM, %xmmM, %xmmN (M || N >= 16) (-O2)
 	     VEX VOP %ymmM, %ymmM, %ymmN
 	       -> VEX VOP %xmmM, %xmmM, %xmmN
 	   VOP, one of vpandn and vpxor:
@@ -4012,17 +4025,17 @@ optimize_encoding (void)
 	   VOP, one of vpandnd and vpandnq:
 	     EVEX VOP %zmmM, %zmmM, %zmmN
 	       -> VEX vpandn %xmmM, %xmmM, %xmmN (M and N < 16)
-	       -> EVEX VOP %xmmM, %xmmM, %xmmN (M || N >= 16)
+	       -> EVEX VOP %xmmM, %xmmM, %xmmN (M || N >= 16) (-O2)
 	     EVEX VOP %ymmM, %ymmM, %ymmN
 	       -> VEX vpandn %xmmM, %xmmM, %xmmN (M and N < 16)
-	       -> EVEX VOP %xmmM, %xmmM, %xmmN (M || N >= 16)
+	       -> EVEX VOP %xmmM, %xmmM, %xmmN (M || N >= 16) (-O2)
 	   VOP, one of vpxord and vpxorq:
 	     EVEX VOP %zmmM, %zmmM, %zmmN
 	       -> VEX vpxor %xmmM, %xmmM, %xmmN (M and N < 16)
-	       -> EVEX VOP %xmmM, %xmmM, %xmmN (M || N >= 16)
+	       -> EVEX VOP %xmmM, %xmmM, %xmmN (M || N >= 16) (-O2)
 	     EVEX VOP %ymmM, %ymmM, %ymmN
 	       -> VEX vpxor %xmmM, %xmmM, %xmmN (M and N < 16)
-	       -> EVEX VOP %xmmM, %xmmM, %xmmN (M || N >= 16)
+	       -> EVEX VOP %xmmM, %xmmM, %xmmN (M || N >= 16) (-O2)
 	   VOP, one of kxord and kxorq:
 	     VEX VOP %kM, %kM, %kN
 	       -> VEX kxorw %kM, %kM, %kN
@@ -4032,14 +4045,20 @@ optimize_encoding (void)
        */
       if (is_evex_encoding (&i.tm))
 	{
-	  if (i.vec_encoding == vex_encoding_evex)
-	    i.tm.opcode_modifier.evex = EVEX128;
-	  else
+	  if (i.vec_encoding != vex_encoding_evex
+	      && (cpu_arch_flags.bitfield.cpuavx
+		  || cpu_arch_isa_flags.bitfield.cpuavx))
 	    {
 	      i.tm.opcode_modifier.vex = VEX128;
 	      i.tm.opcode_modifier.vexw = VEXW0;
 	      i.tm.opcode_modifier.evex = 0;
 	    }
+	  else if (optimize > 1
+		   && (cpu_arch_flags.bitfield.cpuavx512vl
+		       || cpu_arch_isa_flags.bitfield.cpuavx512vl))
+	    i.tm.opcode_modifier.evex = EVEX128;
+	  else
+	    return;
 	}
       else if (i.tm.operand_types[0].bitfield.regmask)
 	{
@@ -4054,6 +4073,56 @@ optimize_encoding (void)
 	  {
 	    i.types[j].bitfield.xmmword = 1;
 	    i.types[j].bitfield.ymmword = 0;
+	  }
+    }
+  else if ((cpu_arch_flags.bitfield.cpuavx
+	    || cpu_arch_isa_flags.bitfield.cpuavx)
+	   && i.vec_encoding != vex_encoding_evex
+	   && !i.types[0].bitfield.zmmword
+	   && !i.mask
+	   && is_evex_encoding (&i.tm)
+	   && (i.tm.base_opcode == 0x666f
+	       || (i.tm.base_opcode ^ Opcode_SIMD_IntD) == 0x666f
+	       || i.tm.base_opcode == 0xf36f
+	       || (i.tm.base_opcode ^ Opcode_SIMD_IntD) == 0xf36f
+	       || i.tm.base_opcode == 0xf26f
+	       || (i.tm.base_opcode ^ Opcode_SIMD_IntD) == 0xf26f)
+	   && i.tm.extension_opcode == None)
+    {
+      /* Optimize: -O1:
+	   VOP, one of vmovdqa32, vmovdqa64, vmovdqu8, vmovdqu16,
+	   vmovdqu32 and vmovdqu64:
+	     EVEX VOP %xmmM, %xmmN
+	       -> VEX vmovdqa|vmovdqu %xmmM, %xmmN (M and N < 16)
+	     EVEX VOP %ymmM, %ymmN
+	       -> VEX vmovdqa|vmovdqu %ymmM, %ymmN (M and N < 16)
+	     EVEX VOP %xmmM, mem
+	       -> VEX vmovdqa|vmovdqu %xmmM, mem (M < 16)
+	     EVEX VOP %ymmM, mem
+	       -> VEX vmovdqa|vmovdqu %ymmM, mem (M < 16)
+	     EVEX VOP mem, %xmmN
+	       -> VEX mvmovdqa|vmovdquem, %xmmN (N < 16)
+	     EVEX VOP mem, %ymmN
+	       -> VEX vmovdqa|vmovdqu mem, %ymmN (N < 16)
+       */
+      if (i.tm.base_opcode == 0xf26f)
+	i.tm.base_opcode = 0xf36f;
+      else if ((i.tm.base_opcode ^ Opcode_SIMD_IntD) == 0xf26f)
+	i.tm.base_opcode = 0xf36f ^ Opcode_SIMD_IntD;
+      i.tm.opcode_modifier.vex
+	= i.types[0].bitfield.ymmword ? VEX256 : VEX128;
+      i.tm.opcode_modifier.vexw = VEXW0;
+      i.tm.opcode_modifier.evex = 0;
+      i.tm.opcode_modifier.masking = 0;
+      i.tm.opcode_modifier.disp8memshift = 0;
+      i.memshift = 0;
+      for (j = 0; j < 2; j++)
+	if (operand_type_check (i.types[j], disp)
+	    && i.op[j].disps->X_op == O_constant)
+	  {
+	    i.types[j].bitfield.disp8
+	      = fits_in_disp8 (i.op[j].disps->X_add_number);
+	    break;
 	  }
     }
 }
@@ -4561,46 +4630,50 @@ parse_insn (char *line, char *mnemonic)
   if (!current_templates)
     {
 check_suffix:
-      /* See if we can get a match by trimming off a suffix.  */
-      switch (mnem_p[-1])
+      if (mnem_p > mnemonic)
 	{
-	case WORD_MNEM_SUFFIX:
-	  if (intel_syntax && (intel_float_operand (mnemonic) & 2))
-	    i.suffix = SHORT_MNEM_SUFFIX;
-	  else
-	    /* Fall through.  */
-	case BYTE_MNEM_SUFFIX:
-	case QWORD_MNEM_SUFFIX:
-	  i.suffix = mnem_p[-1];
-	  mnem_p[-1] = '\0';
-	  current_templates = (const templates *) hash_find (op_hash,
-                                                             mnemonic);
-	  break;
-	case SHORT_MNEM_SUFFIX:
-	case LONG_MNEM_SUFFIX:
-	  if (!intel_syntax)
+	  /* See if we can get a match by trimming off a suffix.  */
+	  switch (mnem_p[-1])
 	    {
-	      i.suffix = mnem_p[-1];
-	      mnem_p[-1] = '\0';
-	      current_templates = (const templates *) hash_find (op_hash,
-                                                                 mnemonic);
-	    }
-	  break;
-
-	  /* Intel Syntax.  */
-	case 'd':
-	  if (intel_syntax)
-	    {
-	      if (intel_float_operand (mnemonic) == 1)
+	    case WORD_MNEM_SUFFIX:
+	      if (intel_syntax && (intel_float_operand (mnemonic) & 2))
 		i.suffix = SHORT_MNEM_SUFFIX;
 	      else
-		i.suffix = LONG_MNEM_SUFFIX;
+		/* Fall through.  */
+	      case BYTE_MNEM_SUFFIX:
+	      case QWORD_MNEM_SUFFIX:
+		i.suffix = mnem_p[-1];
 	      mnem_p[-1] = '\0';
 	      current_templates = (const templates *) hash_find (op_hash,
-                                                                 mnemonic);
+								 mnemonic);
+	      break;
+	    case SHORT_MNEM_SUFFIX:
+	    case LONG_MNEM_SUFFIX:
+	      if (!intel_syntax)
+		{
+		  i.suffix = mnem_p[-1];
+		  mnem_p[-1] = '\0';
+		  current_templates = (const templates *) hash_find (op_hash,
+								     mnemonic);
+		}
+	      break;
+
+	      /* Intel Syntax.  */
+	    case 'd':
+	      if (intel_syntax)
+		{
+		  if (intel_float_operand (mnemonic) == 1)
+		    i.suffix = SHORT_MNEM_SUFFIX;
+		  else
+		    i.suffix = LONG_MNEM_SUFFIX;
+		  mnem_p[-1] = '\0';
+		  current_templates = (const templates *) hash_find (op_hash,
+								     mnemonic);
+		}
+	      break;
 	    }
-	  break;
 	}
+
       if (!current_templates)
 	{
 	  as_bad (_("no such instruction: `%s'"), token_start);
@@ -11338,7 +11411,7 @@ md_parse_option (int c, const char *arg)
 	{
 	  optimize_for_space = 1;
 	  /* Turn on all encoding optimizations.  */
-	  optimize = -1;
+	  optimize = INT_MAX;
 	}
       else
 	{

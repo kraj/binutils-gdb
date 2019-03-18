@@ -116,14 +116,15 @@ class minimal_symbol_reader
 
   /* Like record_full, but:
      - uses strlen to compute NAME_LEN,
-     - passes COPY_NAME = true.  */
+     - passes COPY_NAME = true.
 
-  struct minimal_symbol *record_with_info (const char *name,
-					   CORE_ADDR address,
-					   enum minimal_symbol_type ms_type,
-					   int section)
+     This variant does not return the new symbol.  */
+
+  void record_with_info (const char *name, CORE_ADDR address,
+			 enum minimal_symbol_type ms_type,
+			 int section)
   {
-    return record_full (name, strlen (name), true, address, ms_type, section);
+    record_full (name, strlen (name), true, address, ms_type, section);
   }
 
  private:
@@ -146,13 +147,6 @@ class minimal_symbol_reader
 
   int m_msym_count;
 };
-
-/* Create the terminating entry of OBJFILE's minimal symbol table.
-   If OBJFILE->msymbols is zero, allocate a single entry from
-   OBJFILE->objfile_obstack; otherwise, just initialize
-   OBJFILE->msymbols[OBJFILE->minimal_symbol_count].  */
-
-void terminate_minimal_symbol_table (struct objfile *objfile);
 
 
 

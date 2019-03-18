@@ -1,6 +1,7 @@
-#as: -O2 -march=+avx512vl -I${srcdir}/$subdir
+#source: optimize-1.s
+#as: -O
 #objdump: -drw
-#name: optimized encoding 4 with -O2
+#name: optimized encoding 1a with -O
 
 .*: +file format .*
 
@@ -98,6 +99,4 @@ Disassembly of section .text:
  +[a-f0-9]+:	c5 fe 7f 88 80 00 00 00 	vmovdqu %ymm1,0x80\(%eax\)
  +[a-f0-9]+:	c5 fe 7f 88 80 00 00 00 	vmovdqu %ymm1,0x80\(%eax\)
  +[a-f0-9]+:	c5 fe 7f 88 80 00 00 00 	vmovdqu %ymm1,0x80\(%eax\)
- +[a-f0-9]+:	62 f1 f5 08 55 e9    	vandnpd %xmm1,%xmm1,%xmm5
- +[a-f0-9]+:	62 f1 f5 08 55 e9    	vandnpd %xmm1,%xmm1,%xmm5
 #pass
