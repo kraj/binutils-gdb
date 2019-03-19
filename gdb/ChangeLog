@@ -1,3 +1,49 @@
+2019-03-18  Pedro Alves  <palves@redhat.com>
+	    Eli Zaretskii <eliz@gnu.org>
+
+	* tui/tui-out.c (tui_ui_out::tui_ui_out): Fix initialization of
+	m_line and m_start_of_line.
+
+2019-03-18  Eli Zaretskii  <eliz@gnu.org>
+
+	* tui/tui-io.c (gdb_wgetch): Don't echo CR.
+	(tui_getc): When gdb_wgetch returns a CR, behave the same as when
+	it returns a newline.  This fixes a regression in TU mode, whereby
+	the next line is output on the same screen line as the user input.
+
+2019-03-18  Tom Tromey  <tromey@adacore.com>
+
+	* minsyms.c (minimal_symbol_reader::install): Remove call to
+	obstack_blank.
+
+2019-03-18  Pedro Alves  <palves@redhat.com>
+
+	* tui/tui-io.c (reverse_mode_p, reverse_save_bg, reverse_save_fg):
+	New globals.
+	(apply_style): New, factored out from ...
+	(apply_ansi_escape): ... this.  Handle reverse video mode.
+	(tui_set_reverse_mode): New function.
+	* tui/tui-io.h (tui_set_reverse_mode): New declaration.
+	* tui/tui-winsource.c (tui_show_source_line): Use
+	tui_set_reverse_mode instead of setting A_STANDOUT.
+	* ui-style.h (struct ui_file_style) <set_reverse, set_fg, set_bg>:
+	New setter methods.
+
+2019-03-18  Hannes Domani  <ssbssa@yahoo.de>
+
+	* tui/tui-source.c (copy_source_line): Fix handling of 'column'.
+	Handle tabs.
+
+2019-03-18  Tom Tromey  <tromey@adacore.com>
+
+	* ada-lang.c (empty_array): Add "high" parameter.
+	(ada_evaluate_subexp): Update.
+
+2019-03-17  Sergei Trofimovich <siarheit@google.com>
+
+	* unittests/string_view-selftests.c: Define
+	_initialize_string_view_selftests unconditionally.
+
 2019-03-17  Vladimir Martyanov  <vilgeforce@gmail.com>
 
 	PR gdb/24350
