@@ -20,25 +20,29 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "bfd.h"
-#include "symtab.h"
-#include "symfile.h"
-#include "objfiles.h"
 #include "gdbtypes.h"
+
+/* Local non-gdb includes.  */
+#include "bfd.h"
+#include "demangle.h"
+#include "floatformat.h"
+#include "hashtab.h"
+
+/* Local includes.  */
+#include "bcache.h"
+#include "complaints.h"
+#include "cp-abi.h"
+#include "cp-support.h"
+#include "dwarf2loc.h"
 #include "expression.h"
+#include "gdbcmd.h"
+#include "gdbcore.h"
 #include "language.h"
+#include "objfiles.h"
+#include "symfile.h"
+#include "symtab.h"
 #include "target.h"
 #include "value.h"
-#include "demangle.h"
-#include "complaints.h"
-#include "gdbcmd.h"
-#include "cp-abi.h"
-#include "hashtab.h"
-#include "cp-support.h"
-#include "bcache.h"
-#include "dwarf2loc.h"
-#include "gdbcore.h"
-#include "floatformat.h"
 
 /* Initialize BADNESS constants.  */
 

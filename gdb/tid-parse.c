@@ -19,9 +19,13 @@
 
 #include "defs.h"
 #include "tid-parse.h"
-#include "inferior.h"
-#include "gdbthread.h"
+
+/* Standard C includes.  */
 #include <ctype.h>
+
+/* Local includes.  */
+#include "gdbthread.h"
+#include "inferior.h"
 
 /* See tid-parse.h.  */
 

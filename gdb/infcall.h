@@ -20,8 +20,10 @@
 #ifndef INFCALL_H
 #define INFCALL_H
 
-#include "dummy-frame.h"
 #include "common/array-view.h"
+
+/* Local includes.  */
+#include "dummy-frame.h"
 
 struct value;
 struct type;

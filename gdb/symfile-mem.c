@@ -42,17 +42,21 @@
 
 
 #include "defs.h"
-#include "symtab.h"
+
+/* Local non-gdb includes.  */
+#include "elf/common.h"
+
+/* Local includes.  */
+#include "auxv.h"
+#include "gdb_bfd.h"
+#include "gdbcmd.h"
 #include "gdbcore.h"
 #include "objfiles.h"
-#include "gdbcmd.h"
+#include "observable.h"
+#include "symfile.h"
+#include "symtab.h"
 #include "target.h"
 #include "value.h"
-#include "symfile.h"
-#include "observable.h"
-#include "auxv.h"
-#include "elf/common.h"
-#include "gdb_bfd.h"
 
 /* Verify parameters of target_read_memory_bfd and target_read_memory are
    compatible.  */

@@ -51,6 +51,8 @@
    this interface of course).  */
 
 #include "defs.h"
+
+/* Local non-gdb includes.  */
 #include "guile-internal.h"
 
 /* A smob for iterating over something.

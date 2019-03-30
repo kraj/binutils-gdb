@@ -20,13 +20,18 @@
 
 #include "server.h"
 
-#include "common/gdb_wait.h"
-#include <sys/ptrace.h>
+/* Standard C includes.  */
 #include <fcntl.h>
-#include <unistd.h>
+#include <sys/ptrace.h>
 #include <sys/syscall.h>
-#include "common/filestuff.h"
+#include <unistd.h>
+
+/* Local non-gdb includes.  */
 #include "hostio.h"
+
+/* Local subdirectory includes.  */
+#include "common/filestuff.h"
+#include "common/gdb_wait.h"
 #include "nat/fork-inferior.h"
 
 /* Some older glibc versions do not define this.  */

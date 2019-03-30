@@ -17,8 +17,10 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "main.h"
+
+/* Local includes.  */
 #include "interps.h"
+#include "main.h"
 
 int
 main (int argc, char **argv)

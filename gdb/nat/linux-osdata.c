@@ -18,26 +18,30 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "common/common-defs.h"
-#include "linux-osdata.h"
+#include "nat/linux-osdata.h"
 
-#include <sys/types.h>
-#include <sys/sysinfo.h>
+/* Standard C includes.  */
+#include <arpa/inet.h>
 #include <ctype.h>
-#include <utmp.h>
-#include <time.h>
-#include <unistd.h>
-#include <pwd.h>
+#include <dirent.h>
 #include <grp.h>
 #include <netdb.h>
 #include <netinet/in.h>
-#include <arpa/inet.h>
-
-#include "common/xml-utils.h"
-#include "common/buffer.h"
-#include <dirent.h>
+#include <pwd.h>
 #include <sys/stat.h>
-#include "common/filestuff.h"
+#include <sys/sysinfo.h>
+#include <sys/types.h>
+#include <time.h>
+#include <unistd.h>
+#include <utmp.h>
+
+/* Standard C++ includes.  */
 #include <algorithm>
+
+/* Local subdirectory includes.  */
+#include "common/buffer.h"
+#include "common/filestuff.h"
+#include "common/xml-utils.h"
 
 #define NAMELEN(dirent) strlen ((dirent)->d_name)
 

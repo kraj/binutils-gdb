@@ -18,7 +18,8 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "mi-getopt.h"
+#include "mi/mi-getopt.h"
+
 /* See comments about mi_getopt and mi_getopt_silent in mi-getopt.h.
    When there is an unknown option, if ERROR_ON_UNKNOWN is true,
    throw an error, otherwise return -1.  */

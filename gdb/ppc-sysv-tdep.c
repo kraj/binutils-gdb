@@ -19,17 +19,23 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "gdbcore.h"
-#include "inferior.h"
-#include "regcache.h"
-#include "value.h"
-#include "ppc-tdep.h"
-#include "target.h"
-#include "objfiles.h"
-#include "infcall.h"
-#include "dwarf2.h"
-#include "target-float.h"
+
+/* Standard C++ includes.  */
 #include <algorithm>
+
+/* Local non-gdb includes.  */
+#include "dwarf2.h"
+
+/* Local includes.  */
+#include "gdbcore.h"
+#include "infcall.h"
+#include "inferior.h"
+#include "objfiles.h"
+#include "ppc-tdep.h"
+#include "regcache.h"
+#include "target-float.h"
+#include "target.h"
+#include "value.h"
 
 
 /* Check whether FTPYE is a (pointer to) function type that should use

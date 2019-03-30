@@ -19,23 +19,24 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+
+/* Local includes.  */
+#include "arch-utils.h"
+#include "darwin-nat.h"
 #include "frame.h"
-#include "inferior.h"
-#include "target.h"
-#include "symfile.h"
-#include "symtab.h"
-#include "objfiles.h"
+#include "gdbarch.h"
 #include "gdbcmd.h"
-#include "regcache.h"
+#include "gdbcore.h"
+#include "i386-darwin-tdep.h"
 #include "i386-tdep.h"
 #include "i387-tdep.h"
-#include "gdbarch.h"
-#include "arch-utils.h"
-#include "gdbcore.h"
-
+#include "inferior.h"
+#include "objfiles.h"
+#include "regcache.h"
+#include "symfile.h"
+#include "symtab.h"
+#include "target.h"
 #include "x86-nat.h"
-#include "darwin-nat.h"
-#include "i386-darwin-tdep.h"
 
 #ifdef BFD64
 #include "amd64-nat.h"

@@ -18,24 +18,32 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "gdb_obstack.h"
-#include "bfd.h"		/* Binary File Description */
-#include "symtab.h"
-#include "gdbtypes.h"
-#include "expression.h"
-#include "value.h"
-#include "gdbcore.h"
-#include "command.h"
-#include "gdbcmd.h"
-#include "target.h"
-#include "language.h"
-#include "cp-abi.h"
 #include "typeprint.h"
-#include "valprint.h"
+
+/* Standard C includes.  */
 #include <ctype.h>
+
+/* Local non-gdb includes.  */
+#include "bfd.h"
+
+/* Local subdirectory includes.  */
 #include "cli/cli-utils.h"
-#include "extension.h"
+
+/* Local includes.  */
+#include "command.h"
 #include "completer.h"
+#include "cp-abi.h"
+#include "expression.h"
+#include "extension.h"
+#include "gdb_obstack.h"
+#include "gdbcmd.h"
+#include "gdbcore.h"
+#include "gdbtypes.h"
+#include "language.h"
+#include "symtab.h"
+#include "target.h"
+#include "valprint.h"
+#include "value.h"
 
 const struct type_print_options type_print_raw_options =
 {

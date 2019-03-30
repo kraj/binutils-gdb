@@ -18,11 +18,12 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "frame.h"
-#include "symtab.h"
-#include "objfiles.h"
-
 #include "obsd-tdep.h"
+
+/* Local includes.  */
+#include "frame.h"
+#include "objfiles.h"
+#include "symtab.h"
 
 CORE_ADDR
 obsd_skip_solib_resolver (struct gdbarch *gdbarch, CORE_ADDR pc)

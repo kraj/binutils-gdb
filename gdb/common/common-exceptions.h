@@ -21,6 +21,8 @@
 #define COMMON_COMMON_EXCEPTIONS_H
 
 #include <setjmp.h>
+
+/* Standard C++ includes.  */
 #include <new>
 
 /* Reasons for calling throw_exceptions().  NOTE: all reason values

@@ -18,11 +18,15 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+
+/* Local non-gdb includes.  */
 #include "python-internal.h"
-#include "charset.h"
-#include "objfiles.h"
-#include "language.h"
+
+/* Local includes.  */
 #include "build-id.h"
+#include "charset.h"
+#include "language.h"
+#include "objfiles.h"
 #include "symtab.h"
 
 typedef struct

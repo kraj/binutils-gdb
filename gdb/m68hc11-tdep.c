@@ -21,28 +21,31 @@
 
 
 #include "defs.h"
-#include "frame.h"
-#include "frame-unwind.h"
-#include "frame-base.h"
+
+/* Local non-gdb includes.  */
+#include "dis-asm.h"
+#include "elf-bfd.h"
+#include "elf/m68hc11.h"
+#include "opcode/m68hc11.h"
+
+/* Local includes.  */
+#include "arch-utils.h"
 #include "dwarf2-frame.h"
-#include "trad-frame.h"
-#include "symtab.h"
-#include "gdbtypes.h"
+#include "frame-base.h"
+#include "frame-unwind.h"
+#include "frame.h"
 #include "gdbcmd.h"
 #include "gdbcore.h"
-#include "value.h"
+#include "gdbtypes.h"
 #include "inferior.h"
-#include "dis-asm.h"  
-#include "symfile.h"
 #include "objfiles.h"
-#include "arch-utils.h"
 #include "regcache.h"
 #include "reggroups.h"
-
+#include "symfile.h"
+#include "symtab.h"
 #include "target.h"
-#include "opcode/m68hc11.h"
-#include "elf/m68hc11.h"
-#include "elf-bfd.h"
+#include "trad-frame.h"
+#include "value.h"
 
 /* Macros for setting and testing a bit in a minimal symbol.
    For 68HC11/68HC12 we have two flags that tell which return

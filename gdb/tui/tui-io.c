@@ -20,23 +20,30 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "target.h"
-#include "event-loop.h"
-#include "event-top.h"
-#include "command.h"
-#include "top.h"
-#include "tui/tui.h"
-#include "tui/tui-data.h"
 #include "tui/tui-io.h"
-#include "tui/tui-command.h"
-#include "tui/tui-win.h"
-#include "tui/tui-wingeneral.h"
-#include "tui/tui-file.h"
-#include "tui/tui-out.h"
-#include "ui-out.h"
-#include "cli-out.h"
+
+/* Standard C includes.  */
 #include <fcntl.h>
 #include <signal.h>
+
+/* Local subdirectory includes.  */
+#include "tui/tui-command.h"
+#include "tui/tui-data.h"
+#include "tui/tui-file.h"
+#include "tui/tui-out.h"
+#include "tui/tui-win.h"
+#include "tui/tui-wingeneral.h"
+#include "tui/tui.h"
+
+/* Local includes.  */
+#include "cli-out.h"
+#include "command.h"
+#include "event-loop.h"
+#include "event-top.h"
+#include "target.h"
+#include "top.h"
+#include "ui-out.h"
+
 #ifdef __MINGW32__
 #include <windows.h>
 #endif

@@ -1,3 +1,10 @@
+2019-03-30  Tom Tromey  <tom@tromey.com>
+
+	* sparc-stub.c: Sort headers.
+	* sh-stub.c: Sort headers.
+	* m68k-stub.c: Sort headers.
+	* i386-stub.c: Sort headers.
+
 2019-01-21  Tom Tromey  <tom@tromey.com>
 
 	* ia64vms-stub.c: Fix includes.

@@ -18,24 +18,30 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "gdb_obstack.h"
-#include "symtab.h"
-#include "gdbtypes.h"
-#include "expression.h"
-#include "value.h"
-#include "command.h"
-#include "gdbcmd.h"
+
+/* Local non-gdb includes.  */
 #include "demangle.h"
+
+/* Local subdirectory includes.  */
+#include "common/byte-vector.h"
+
+/* Local includes.  */
 #include "annotate.h"
 #include "c-lang.h"
-#include "target.h"
+#include "command.h"
 #include "cp-abi.h"
-#include "valprint.h"
 #include "cp-support.h"
-#include "language.h"
+#include "expression.h"
 #include "extension.h"
+#include "gdb_obstack.h"
+#include "gdbcmd.h"
+#include "gdbtypes.h"
+#include "language.h"
+#include "symtab.h"
+#include "target.h"
 #include "typeprint.h"
-#include "common/byte-vector.h"
+#include "valprint.h"
+#include "value.h"
 
 /* Controls printing of vtbl's.  */
 static void

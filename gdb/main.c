@@ -18,36 +18,43 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "top.h"
-#include "target.h"
-#include "inferior.h"
-#include "symfile.h"
-#include "gdbcore.h"
+#include "main.h"
+
+/* Standard C includes.  */
+#include <ctype.h>
+#include <signal.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+
+/* Standard C++ includes.  */
+#include <vector>
+
+/* Local non-gdb includes.  */
+#include "filenames.h"
 #include "getopt.h"
 
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <ctype.h>
-#include "event-loop.h"
-#include "ui-out.h"
-
-#include "interps.h"
-#include "main.h"
-#include "source.h"
+/* Local subdirectory includes.  */
 #include "cli/cli-cmds.h"
-#include "objfiles.h"
-#include "auto-load.h"
-#include "maint.h"
-
-#include "filenames.h"
-#include "common/filestuff.h"
-#include <signal.h>
-#include "event-top.h"
-#include "infrun.h"
-#include "common/signals-state-save-restore.h"
-#include <vector>
-#include "common/pathstuff.h"
 #include "cli/cli-style.h"
+#include "common/filestuff.h"
+#include "common/pathstuff.h"
+#include "common/signals-state-save-restore.h"
+
+/* Local includes.  */
+#include "auto-load.h"
+#include "event-loop.h"
+#include "event-top.h"
+#include "gdbcore.h"
+#include "inferior.h"
+#include "infrun.h"
+#include "interps.h"
+#include "maint.h"
+#include "objfiles.h"
+#include "source.h"
+#include "symfile.h"
+#include "target.h"
+#include "top.h"
+#include "ui-out.h"
 
 /* The selected interpreter.  This will be used as a set command
    variable, so it should always be malloc'ed - since

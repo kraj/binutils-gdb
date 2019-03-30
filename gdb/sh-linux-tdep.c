@@ -18,17 +18,16 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "osabi.h"
 
+/* Local includes.  */
+#include "glibc-tdep.h"
+#include "linux-tdep.h"
+#include "osabi.h"
+#include "sh-tdep.h"
 #include "solib-svr4.h"
 #include "symtab.h"
-
 #include "trad-frame.h"
 #include "tramp-frame.h"
-
-#include "glibc-tdep.h"
-#include "sh-tdep.h"
-#include "linux-tdep.h"
 
 #define REGSx16(base) \
   {(base),      0}, \

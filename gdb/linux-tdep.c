@@ -18,29 +18,36 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "gdbtypes.h"
 #include "linux-tdep.h"
-#include "auxv.h"
-#include "target.h"
-#include "gdbthread.h"
-#include "gdbcore.h"
-#include "regcache.h"
-#include "regset.h"
+
+/* Standard C includes.  */
+#include <ctype.h>
+
+/* Local non-gdb includes.  */
+#include "elf-bfd.h"
 #include "elf/common.h"
-#include "elf-bfd.h"            /* for elfcore_write_* */
-#include "inferior.h"
+
+/* Local subdirectory includes.  */
 #include "cli/cli-utils.h"
-#include "arch-utils.h"
-#include "gdb_obstack.h"
-#include "observable.h"
-#include "objfiles.h"
-#include "infcall.h"
-#include "gdbcmd.h"
-#include "gdb_regex.h"
 #include "common/enum-flags.h"
 #include "common/gdb_optional.h"
 
-#include <ctype.h>
+/* Local includes.  */
+#include "arch-utils.h"
+#include "auxv.h"
+#include "gdb_obstack.h"
+#include "gdb_regex.h"
+#include "gdbcmd.h"
+#include "gdbcore.h"
+#include "gdbthread.h"
+#include "gdbtypes.h"
+#include "infcall.h"
+#include "inferior.h"
+#include "objfiles.h"
+#include "observable.h"
+#include "regcache.h"
+#include "regset.h"
+#include "target.h"
 
 /* This enum represents the values that the user can choose when
    informing the Linux kernel about which memory mappings will be

@@ -20,8 +20,10 @@
 #ifndef PYTHON_PY_EVENTS_H
 #define PYTHON_PY_EVENTS_H
 
-#include "command.h"
 #include "python-internal.h"
+
+/* Local includes.  */
+#include "command.h"
 #include "inferior.h"
 
 /* Stores a list of objects to be notified when the event for which this

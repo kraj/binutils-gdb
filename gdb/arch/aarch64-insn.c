@@ -17,7 +17,7 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "common/common-defs.h"
-#include "aarch64-insn.h"
+#include "arch/aarch64-insn.h"
 
 /* Toggle this file's internal debugging dump.  */
 int aarch64_debug = 0;

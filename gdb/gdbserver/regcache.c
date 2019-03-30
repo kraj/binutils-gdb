@@ -17,10 +17,18 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "server.h"
+#include "regcache.h"
+
+/* Local non-gdb includes.  */
 #include "regdef.h"
-#include "gdbthread.h"
 #include "tdesc.h"
+
+/* Local subdirectory includes.  */
 #include "common/rsp-low.h"
+
+/* Local includes.  */
+#include "gdbthread.h"
+
 #ifndef IN_PROCESS_AGENT
 
 struct regcache *

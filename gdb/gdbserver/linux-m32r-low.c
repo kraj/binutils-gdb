@@ -17,11 +17,14 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "server.h"
-#include "linux-low.h"
 
+/* Standard C includes.  */
 #ifdef HAVE_SYS_REG_H
 #include <sys/reg.h>
 #endif
+
+/* Local non-gdb includes.  */
+#include "linux-low.h"
 
 /* Defined in auto-generated file reg-m32r.c.  */
 void init_registers_m32r (void);

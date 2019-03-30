@@ -18,8 +18,12 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "common/ptid.h"
+
+/* Standard C++ includes.  */
 #include <type_traits>
+
+/* Local subdirectory includes.  */
+#include "common/ptid.h"
 
 namespace selftests {
 namespace ptid {

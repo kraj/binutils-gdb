@@ -18,16 +18,22 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "value.h"
-#include "python-internal.h"
-#include "charset.h"
-#include "gdbtypes.h"
-#include "cp-support.h"
+
+/* Local non-gdb includes.  */
 #include "demangle.h"
-#include "objfiles.h"
-#include "language.h"
+#include "python-internal.h"
+
+/* Local subdirectory includes.  */
 #include "common/vec.h"
+
+/* Local includes.  */
+#include "charset.h"
+#include "cp-support.h"
+#include "gdbtypes.h"
+#include "language.h"
+#include "objfiles.h"
 #include "typeprint.h"
+#include "value.h"
 
 typedef struct pyty_type_object
 {

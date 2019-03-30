@@ -21,20 +21,21 @@
 
 #include "defs.h"
 
-#include <sys/types.h>
-#include <sys/ptrace.h>
-#include <machine/reg.h>
+/* Standard C includes.  */
 #include <machine/frame.h>
 #include <machine/pcb.h>
+#include <machine/reg.h>
+#include <sys/ptrace.h>
+#include <sys/types.h>
 
-#include "gdbcore.h"
-#include "inferior.h"
-#include "regcache.h"
-
-#include "ppc-tdep.h"
-#include "ppc-nbsd-tdep.h"
+/* Local includes.  */
 #include "bsd-kvm.h"
+#include "gdbcore.h"
 #include "inf-ptrace.h"
+#include "inferior.h"
+#include "ppc-nbsd-tdep.h"
+#include "ppc-tdep.h"
+#include "regcache.h"
 
 struct ppc_nbsd_nat_target final : public inf_ptrace_target
 {

@@ -18,18 +18,20 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+
+/* Standard C includes.  */
+#include <machine/reg.h>
+#include <sys/ptrace.h>
+#include <sys/types.h>
+
+/* Local includes.  */
+#include "fbsd-nat.h"
+#include "inf-ptrace.h"
 #include "inferior.h"
+#include "mips-fbsd-tdep.h"
+#include "mips-tdep.h"
 #include "regcache.h"
 #include "target.h"
-
-#include <sys/types.h>
-#include <sys/ptrace.h>
-#include <machine/reg.h>
-
-#include "fbsd-nat.h"
-#include "mips-tdep.h"
-#include "mips-fbsd-tdep.h"
-#include "inf-ptrace.h"
 
 struct mips_fbsd_nat_target final : public fbsd_nat_target
 {

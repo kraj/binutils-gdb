@@ -18,13 +18,16 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "gdbcmd.h"
-#include "objfiles.h"
+#include "progspace.h"
+
+/* Local includes.  */
 #include "arch-utils.h"
+#include "gdbcmd.h"
 #include "gdbcore.h"
-#include "solib.h"
 #include "gdbthread.h"
 #include "inferior.h"
+#include "objfiles.h"
+#include "solib.h"
 
 /* The last program space number assigned.  */
 int last_program_space_num = 0;

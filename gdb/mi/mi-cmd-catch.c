@@ -19,12 +19,16 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "arch-utils.h"
-#include "breakpoint.h"
-#include "ada-lang.h"
+
+/* Local non-gdb includes.  */
+#include "mi-cmd-break.h"
 #include "mi-cmds.h"
 #include "mi-getopt.h"
-#include "mi-cmd-break.h"
+
+/* Local includes.  */
+#include "ada-lang.h"
+#include "arch-utils.h"
+#include "breakpoint.h"
 
 /* Handler for the -catch-assert command.  */
 

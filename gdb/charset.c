@@ -19,15 +19,21 @@
 
 #include "defs.h"
 #include "charset.h"
-#include "gdbcmd.h"
-#include "gdb_obstack.h"
-#include "common/gdb_wait.h"
-#include "charset-list.h"
-#include "common/vec.h"
-#include "common/environ.h"
-#include "arch-utils.h"
-#include "common/gdb_vecs.h"
+
+/* Standard C includes.  */
 #include <ctype.h>
+
+/* Local subdirectory includes.  */
+#include "common/environ.h"
+#include "common/gdb_vecs.h"
+#include "common/gdb_wait.h"
+#include "common/vec.h"
+
+/* Local includes.  */
+#include "arch-utils.h"
+#include "charset-list.h"
+#include "gdb_obstack.h"
+#include "gdbcmd.h"
 
 #ifdef USE_WIN32API
 #include <windows.h>

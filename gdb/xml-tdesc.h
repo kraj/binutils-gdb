@@ -22,8 +22,10 @@
 #ifndef XML_TDESC_H
 #define XML_TDESC_H
 
-#include "common/gdb_optional.h"
 #include <string>
+
+/* Local subdirectory includes.  */
+#include "common/gdb_optional.h"
 
 struct target_ops;
 struct target_desc;

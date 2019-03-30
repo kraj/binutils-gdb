@@ -20,10 +20,12 @@
 #ifndef PSYMTAB_H
 #define PSYMTAB_H
 
+#include "common/next-iterator.h"
+
+/* Local includes.  */
+#include "bcache.h"
 #include "gdb_obstack.h"
 #include "symfile.h"
-#include "common/next-iterator.h"
-#include "bcache.h"
 
 struct partial_symbol;
 

@@ -19,12 +19,17 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "common/vec.h"
-#include "target.h"
-#include "memory-map.h"
 
-#include "common/gdb_sys_time.h"
+/* Standard C++ includes.  */
 #include <algorithm>
+
+/* Local subdirectory includes.  */
+#include "common/gdb_sys_time.h"
+#include "common/vec.h"
+
+/* Local includes.  */
+#include "memory-map.h"
+#include "target.h"
 
 static bool
 compare_block_starting_address (const memory_write_request &a_req,

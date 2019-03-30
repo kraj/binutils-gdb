@@ -18,8 +18,12 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "command.h"
+
+/* Local non-gdb includes.  */
 #include "py-events.h"
+
+/* Local includes.  */
+#include "command.h"
 
 events_object gdb_py_events;
 

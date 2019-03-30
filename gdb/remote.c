@@ -20,62 +20,65 @@
 /* See the GDB User Guide for details of the GDB remote protocol.  */
 
 #include "defs.h"
+#include "remote.h"
+
+/* Standard C includes.  */
 #include <ctype.h>
 #include <fcntl.h>
-#include "inferior.h"
-#include "infrun.h"
+#include <signal.h>
+#include <sys/stat.h>
+
+/* Standard C++ includes.  */
+#include <algorithm>
+#include <unordered_map>
+
+/* Local non-gdb includes.  */
 #include "bfd.h"
-#include "symfile.h"
-#include "target.h"
-#include "process-stratum-target.h"
-#include "gdbcmd.h"
-#include "objfiles.h"
-#include "gdb-stabs.h"
-#include "gdbthread.h"
-#include "remote.h"
-#include "remote-notif.h"
-#include "regcache.h"
-#include "value.h"
-#include "observable.h"
-#include "solib.h"
+#include "gdb/fileio.h"
+
+/* Local subdirectory includes.  */
 #include "cli/cli-decode.h"
 #include "cli/cli-setshow.h"
-#include "target-descriptions.h"
-#include "gdb_bfd.h"
+#include "common/agent.h"
+#include "common/byte-vector.h"
+#include "common/environ.h"
 #include "common/filestuff.h"
-#include "common/rsp-low.h"
-#include "disasm.h"
-#include "location.h"
-
 #include "common/gdb_sys_time.h"
+#include "common/rsp-low.h"
+#include "common/scoped_restore.h"
 
+/* Local includes.  */
+#include "ax-gdb.h"
+#include "ax.h"
+#include "btrace.h"
+#include "disasm.h"
 #include "event-loop.h"
 #include "event-top.h"
+#include "gdb-stabs.h"
+#include "gdb_bfd.h"
+#include "gdbcmd.h"
+#include "gdbcore.h"
+#include "gdbthread.h"
 #include "inf-loop.h"
-
-#include <signal.h>
-#include "serial.h"
-
-#include "gdbcore.h" /* for exec_bfd */
-
-#include "remote-fileio.h"
-#include "gdb/fileio.h"
-#include <sys/stat.h>
-#include "xml-support.h"
-
+#include "inferior.h"
+#include "infrun.h"
+#include "location.h"
 #include "memory-map.h"
-
-#include "tracepoint.h"
-#include "ax.h"
-#include "ax-gdb.h"
-#include "common/agent.h"
-#include "btrace.h"
+#include "objfiles.h"
+#include "observable.h"
+#include "process-stratum-target.h"
 #include "record-btrace.h"
-#include <algorithm>
-#include "common/scoped_restore.h"
-#include "common/environ.h"
-#include "common/byte-vector.h"
-#include <unordered_map>
+#include "regcache.h"
+#include "remote-fileio.h"
+#include "remote-notif.h"
+#include "serial.h"
+#include "solib.h"
+#include "symfile.h"
+#include "target-descriptions.h"
+#include "target.h"
+#include "tracepoint.h"
+#include "value.h"
+#include "xml-support.h"
 
 /* The remote target.  */
 

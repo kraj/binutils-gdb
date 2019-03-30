@@ -20,8 +20,10 @@
 #ifndef GDB_BFD_H
 #define GDB_BFD_H
 
-#include "registry.h"
 #include "common/gdb_ref_ptr.h"
+
+/* Local includes.  */
+#include "registry.h"
 
 DECLARE_REGISTRY (bfd);
 

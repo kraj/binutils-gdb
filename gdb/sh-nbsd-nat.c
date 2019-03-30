@@ -20,15 +20,17 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "inferior.h"
 
-#include <sys/types.h>
-#include <sys/ptrace.h>
+/* Standard C includes.  */
 #include <machine/reg.h>
+#include <sys/ptrace.h>
+#include <sys/types.h>
 
-#include "sh-tdep.h"
+/* Local includes.  */
 #include "inf-ptrace.h"
+#include "inferior.h"
 #include "regcache.h"
+#include "sh-tdep.h"
 
 struct sh_nbsd_nat_target final : public inf_ptrace_target
 {

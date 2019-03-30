@@ -19,14 +19,20 @@
 
 
 #include "defs.h"
-#include "value.h"
+
+/* Local non-gdb includes.  */
 #include "python-internal.h"
-#include "charset.h"
-#include "gdbcmd.h"
+
+/* Local subdirectory includes.  */
 #include "cli/cli-decode.h"
-#include "completer.h"
-#include "language.h"
+
+/* Local includes.  */
 #include "arch-utils.h"
+#include "charset.h"
+#include "completer.h"
+#include "gdbcmd.h"
+#include "language.h"
+#include "value.h"
 
 /* Parameter constants and their values.  */
 struct parm_constant

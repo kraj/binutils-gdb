@@ -19,6 +19,8 @@
 
 #include "defs.h"
 #include "x86-nat.h"
+
+/* Local includes.  */
 #include "gdbcmd.h"
 #include "inferior.h"
 

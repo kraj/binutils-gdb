@@ -18,6 +18,9 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 /* Include this first, to pick up the <mach.h> 'thread_info' diversion.  */
+#include "defs.h"
+
+/* Local includes.  */
 #include "gnu-nat.h"
 
 /* Mach/Hurd headers are not yet ready for C++ compilation.  */

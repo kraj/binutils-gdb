@@ -17,15 +17,18 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "common/common-defs.h"
+#include "nat/aarch64-linux-hw-point.h"
+
+/* Standard C includes.  */
+#include <asm/ptrace.h>
+#include <elf.h>
+#include <sys/ptrace.h>
+#include <sys/uio.h>
+
+/* Local subdirectory includes.  */
 #include "common/break-common.h"
 #include "common/common-regcache.h"
 #include "nat/linux-nat.h"
-#include "aarch64-linux-hw-point.h"
-
-#include <sys/uio.h>
-#include <asm/ptrace.h>
-#include <sys/ptrace.h>
-#include <elf.h>
 
 /* Number of hardware breakpoints/watchpoints the target supports.
    They are initialized with values obtained via the ptrace calls

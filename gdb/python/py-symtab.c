@@ -18,12 +18,16 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "charset.h"
-#include "symtab.h"
-#include "source.h"
+
+/* Local non-gdb includes.  */
 #include "python-internal.h"
-#include "objfiles.h"
+
+/* Local includes.  */
 #include "block.h"
+#include "charset.h"
+#include "objfiles.h"
+#include "source.h"
+#include "symtab.h"
 
 typedef struct stpy_symtab_object {
   PyObject_HEAD

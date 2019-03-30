@@ -18,14 +18,18 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "solib.h"
-#include "osabi.h"
+
+/* Local non-gdb includes.  */
+#include "elf-bfd.h"
+#include "elf/tic6x.h"
+
+/* Local includes.  */
 #include "linux-tdep.h"
+#include "osabi.h"
+#include "solib.h"
 #include "tic6x-tdep.h"
 #include "trad-frame.h"
 #include "tramp-frame.h"
-#include "elf-bfd.h"
-#include "elf/tic6x.h"
 
 /* The offset from rt_sigframe pointer to SP register.  */
 #define TIC6X_SP_RT_SIGFRAME 8

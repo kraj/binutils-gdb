@@ -18,14 +18,20 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "value.h"
-#include "charset.h"
-#include "gdbcmd.h"
-#include "cli/cli-decode.h"
-#include "completer.h"
-#include "language.h"
-#include "arch-utils.h"
+
+/* Local non-gdb includes.  */
 #include "guile-internal.h"
+
+/* Local subdirectory includes.  */
+#include "cli/cli-decode.h"
+
+/* Local includes.  */
+#include "arch-utils.h"
+#include "charset.h"
+#include "completer.h"
+#include "gdbcmd.h"
+#include "language.h"
+#include "value.h"
 
 /* A union that can hold anything described by enum var_types.  */
 

@@ -20,22 +20,27 @@
 
 #include "defs.h"
 #include "solib-spu.h"
-#include "gdbcore.h"
+
+/* Standard C includes.  */
 #include <sys/stat.h>
-#include "arch-utils.h"
+
+/* Local non-gdb includes.  */
 #include "bfd.h"
-#include "symtab.h"
-#include "solib.h"
-#include "solib-svr4.h"
-#include "solist.h"
+
+/* Local includes.  */
+#include "arch-utils.h"
+#include "breakpoint.h"
+#include "gdb_bfd.h"
+#include "gdbcore.h"
+#include "gdbthread.h"
 #include "inferior.h"
 #include "objfiles.h"
 #include "observable.h"
-#include "breakpoint.h"
-#include "gdbthread.h"
-#include "gdb_bfd.h"
-
+#include "solib-svr4.h"
+#include "solib.h"
+#include "solist.h"
 #include "spu-tdep.h"
+#include "symtab.h"
 
 /* Highest SPE id (file handle) the inferior may have.  */
 #define MAX_SPE_FD 1024

@@ -18,8 +18,10 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "common/selftest.h"
+
+/* Local subdirectory includes.  */
 #include "common/rsp-low.h"
+#include "common/selftest.h"
 
 namespace selftests {
 namespace rsp_low {

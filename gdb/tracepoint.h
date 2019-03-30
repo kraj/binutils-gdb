@@ -19,12 +19,15 @@
 #if !defined (TRACEPOINT_H)
 #define TRACEPOINT_H 1
 
-#include "breakpoint.h"
-#include "memrange.h"
+#include <string>
+#include <vector>
+
+/* Local subdirectory includes.  */
 #include "common/gdb_vecs.h"
 
-#include <vector>
-#include <string>
+/* Local includes.  */
+#include "breakpoint.h"
+#include "memrange.h"
 
 /* An object describing the contents of a traceframe.  */
 

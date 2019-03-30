@@ -22,8 +22,10 @@
 #ifndef TUI_TUI_DATA_H
 #define TUI_TUI_DATA_H
 
-#include "tui/tui.h"	/* For enum tui_win_type.  */
-#include "gdb_curses.h"	/* For WINDOW.  */
+#include "tui/tui.h"
+
+/* Local includes.  */
+#include "gdb_curses.h"
 
 /* This is a point definition.  */
 struct tui_point

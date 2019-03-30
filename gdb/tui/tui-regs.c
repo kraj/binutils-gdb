@@ -20,28 +20,31 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "arch-utils.h"
-#include "tui/tui.h"
+#include "tui/tui-regs.h"
+
+/* Local subdirectory includes.  */
 #include "tui/tui-data.h"
-#include "symtab.h"
-#include "gdbtypes.h"
-#include "gdbcmd.h"
-#include "frame.h"
-#include "regcache.h"
-#include "inferior.h"
-#include "target.h"
+#include "tui/tui-file.h"
+#include "tui/tui-io.h"
 #include "tui/tui-layout.h"
 #include "tui/tui-win.h"
 #include "tui/tui-windata.h"
 #include "tui/tui-wingeneral.h"
-#include "tui/tui-file.h"
-#include "tui/tui-regs.h"
-#include "tui/tui-io.h"
-#include "reggroups.h"
-#include "valprint.h"
-#include "completer.h"
+#include "tui/tui.h"
 
+/* Local includes.  */
+#include "arch-utils.h"
+#include "completer.h"
+#include "frame.h"
 #include "gdb_curses.h"
+#include "gdbcmd.h"
+#include "gdbtypes.h"
+#include "inferior.h"
+#include "regcache.h"
+#include "reggroups.h"
+#include "symtab.h"
+#include "target.h"
+#include "valprint.h"
 
 
 /*****************************************

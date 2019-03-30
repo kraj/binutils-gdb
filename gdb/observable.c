@@ -19,6 +19,8 @@
 
 #include "defs.h"
 #include "observable.h"
+
+/* Local includes.  */
 #include "command.h"
 #include "gdbcmd.h"
 

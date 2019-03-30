@@ -17,25 +17,33 @@
 
 #include "defs.h"
 #include "skip.h"
-#include "value.h"
-#include "valprint.h"
-#include "ui-out.h"
-#include "symtab.h"
-#include "gdbcmd.h"
-#include "command.h"
-#include "completer.h"
-#include "stack.h"
-#include "cli/cli-utils.h"
-#include "arch-utils.h"
-#include "linespec.h"
-#include "objfiles.h"
-#include "breakpoint.h" /* for get_sal_arch () */
-#include "source.h"
+
+/* Standard C++ includes.  */
+#include <list>
+
+/* Local non-gdb includes.  */
 #include "filenames.h"
 #include "fnmatch.h"
-#include "gdb_regex.h"
+
+/* Local subdirectory includes.  */
+#include "cli/cli-utils.h"
 #include "common/gdb_optional.h"
-#include <list>
+
+/* Local includes.  */
+#include "arch-utils.h"
+#include "breakpoint.h"
+#include "command.h"
+#include "completer.h"
+#include "gdb_regex.h"
+#include "gdbcmd.h"
+#include "linespec.h"
+#include "objfiles.h"
+#include "source.h"
+#include "stack.h"
+#include "symtab.h"
+#include "ui-out.h"
+#include "valprint.h"
+#include "value.h"
 
 /* True if we want to print debug printouts related to file/function
    skipping. */

@@ -18,12 +18,14 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "gdbcore.h"
-#include "regcache.h"
-#include "ppc-tdep.h"
-#include "inferior.h"
-#include "ravenscar-thread.h"
 #include "ppc-ravenscar-thread.h"
+
+/* Local includes.  */
+#include "gdbcore.h"
+#include "inferior.h"
+#include "ppc-tdep.h"
+#include "ravenscar-thread.h"
+#include "regcache.h"
 
 #define NO_OFFSET -1
 

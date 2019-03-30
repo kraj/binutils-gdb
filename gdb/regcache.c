@@ -18,17 +18,21 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "inferior.h"
-#include "gdbthread.h"
-#include "target.h"
-#include "test-target.h"
+#include "regcache.h"
+
+/* Standard C++ includes.  */
+#include <forward_list>
+
+/* Local includes.  */
 #include "gdbarch.h"
 #include "gdbcmd.h"
-#include "regcache.h"
-#include "reggroups.h"
+#include "gdbthread.h"
+#include "inferior.h"
 #include "observable.h"
+#include "reggroups.h"
 #include "regset.h"
-#include <forward_list>
+#include "target.h"
+#include "test-target.h"
 
 /*
  * DATA STRUCTURE

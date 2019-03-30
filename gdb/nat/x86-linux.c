@@ -18,7 +18,9 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "common/common-defs.h"
-#include "x86-linux.h"
+#include "nat/x86-linux.h"
+
+/* Local non-gdb includes.  */
 #include "x86-linux-dregs.h"
 
 /* Per-thread arch-specific data we want to keep.  */

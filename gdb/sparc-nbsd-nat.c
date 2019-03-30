@@ -18,11 +18,12 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "regcache.h"
-#include "target.h"
 
-#include "sparc-tdep.h"
+/* Local includes.  */
+#include "regcache.h"
 #include "sparc-nat.h"
+#include "sparc-tdep.h"
+#include "target.h"
 
 /* Support for debugging kernel virtual memory images.  */
 

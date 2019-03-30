@@ -20,6 +20,7 @@
 
 #include "server.h"
 
+/* Local non-gdb includes.  */
 #include "linux-low.h"
 
 extern int debug_threads;

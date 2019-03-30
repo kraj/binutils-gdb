@@ -18,14 +18,20 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+#include "solib-target.h"
+
+/* Standard C++ includes.  */
+#include <vector>
+
+/* Local subdirectory includes.  */
+#include "common/vec.h"
+
+/* Local includes.  */
 #include "objfiles.h"
 #include "solist.h"
-#include "symtab.h"
 #include "symfile.h"
+#include "symtab.h"
 #include "target.h"
-#include "common/vec.h"
-#include "solib-target.h"
-#include <vector>
 
 /* Private data for each loaded library.  */
 struct lm_info_target : public lm_info_base

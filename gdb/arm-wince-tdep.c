@@ -19,13 +19,16 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "osabi.h"
-#include "gdbcore.h"
-#include "target.h"
-#include "frame.h"
 
+/* Local subdirectory includes.  */
 #include "arch/arm.h"
+
+/* Local includes.  */
 #include "arm-tdep.h"
+#include "frame.h"
+#include "gdbcore.h"
+#include "osabi.h"
+#include "target.h"
 #include "windows-tdep.h"
 
 static const gdb_byte arm_wince_le_breakpoint[] = { 0x10, 0x00, 0x00, 0xe6 };

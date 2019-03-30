@@ -19,13 +19,15 @@
 
 #include "defs.h"
 #include "block.h"
-#include "symtab.h"
-#include "symfile.h"
-#include "gdb_obstack.h"
-#include "cp-support.h"
+
+/* Local includes.  */
 #include "addrmap.h"
+#include "cp-support.h"
+#include "gdb_obstack.h"
 #include "gdbtypes.h"
 #include "objfiles.h"
+#include "symfile.h"
+#include "symtab.h"
 
 /* This is used by struct block to store namespace-related info for
    C++ files, namely using declarations and the current namespace in

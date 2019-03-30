@@ -20,22 +20,29 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include <ctype.h>
-#include "symtab.h"
-#include "frame.h"
-#include "breakpoint.h"
-#include "source.h"
-#include "objfiles.h"
-#include "filenames.h"
-#include "source-cache.h"
+#include "tui/tui-source.h"
 
-#include "tui/tui.h"
+/* Standard C includes.  */
+#include <ctype.h>
+
+/* Local non-gdb includes.  */
+#include "filenames.h"
+
+/* Local subdirectory includes.  */
 #include "tui/tui-data.h"
 #include "tui/tui-io.h"
 #include "tui/tui-stack.h"
 #include "tui/tui-winsource.h"
-#include "tui/tui-source.h"
+#include "tui/tui.h"
+
+/* Local includes.  */
+#include "breakpoint.h"
+#include "frame.h"
 #include "gdb_curses.h"
+#include "objfiles.h"
+#include "source-cache.h"
+#include "source.h"
+#include "symtab.h"
 
 /* A helper function for tui_set_source_content that extracts some
    source text from PTR.  LINE_NO is the line number; FIRST_COL is the

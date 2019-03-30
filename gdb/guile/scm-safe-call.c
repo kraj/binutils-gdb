@@ -21,8 +21,12 @@
    conventions, et.al.  */
 
 #include "defs.h"
+
+/* Local non-gdb includes.  */
 #include "filenames.h"
 #include "guile-internal.h"
+
+/* Local subdirectory includes.  */
 #include "common/pathstuff.h"
 
 /* Struct to marshall args to scscm_safe_call_body.  */

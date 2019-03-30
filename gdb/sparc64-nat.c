@@ -18,10 +18,11 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "gdbarch.h"
 
-#include "sparc64-tdep.h"
+/* Local includes.  */
+#include "gdbarch.h"
 #include "sparc-nat.h"
+#include "sparc64-tdep.h"
 
 /* Determine whether `gregset_t' contains register REGNUM.  */
 

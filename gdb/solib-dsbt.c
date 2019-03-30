@@ -18,17 +18,21 @@
 
 
 #include "defs.h"
-#include "inferior.h"
+
+/* Local non-gdb includes.  */
+#include "elf-bfd.h"
+
+/* Local includes.  */
+#include "command.h"
+#include "gdb_bfd.h"
+#include "gdbcmd.h"
 #include "gdbcore.h"
+#include "inferior.h"
+#include "language.h"
+#include "objfiles.h"
 #include "solib.h"
 #include "solist.h"
-#include "objfiles.h"
 #include "symtab.h"
-#include "language.h"
-#include "command.h"
-#include "gdbcmd.h"
-#include "elf-bfd.h"
-#include "gdb_bfd.h"
 
 #define GOT_MODULE_OFFSET 4
 

@@ -17,8 +17,8 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#include "common-defs.h"
-#include "format.h"
+#include "common/common-defs.h"
+#include "common/format.h"
 
 format_pieces::format_pieces (const char **arg)
 {

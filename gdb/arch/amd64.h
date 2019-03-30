@@ -18,8 +18,10 @@
 #ifndef ARCH_AMD64_H
 #define ARCH_AMD64_H
 
-#include "common/tdesc.h"
 #include <stdint.h>
+
+/* Local subdirectory includes.  */
+#include "common/tdesc.h"
 
 target_desc *amd64_create_target_description (uint64_t xcr0, bool is_x32,
 					      bool is_linux, bool segments);

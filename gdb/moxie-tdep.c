@@ -18,28 +18,33 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "frame.h"
-#include "frame-unwind.h"
+#include "moxie-tdep.h"
+
+/* Standard C++ includes.  */
+#include <algorithm>
+
+/* Local non-gdb includes.  */
+#include "dis-asm.h"
+
+/* Local includes.  */
+#include "arch-utils.h"
 #include "frame-base.h"
-#include "symtab.h"
-#include "gdbtypes.h"
+#include "frame-unwind.h"
+#include "frame.h"
 #include "gdbcmd.h"
 #include "gdbcore.h"
-#include "value.h"
+#include "gdbtypes.h"
 #include "inferior.h"
-#include "symfile.h"
+#include "language.h"
 #include "objfiles.h"
 #include "osabi.h"
-#include "language.h"
-#include "arch-utils.h"
-#include "regcache.h"
-#include "trad-frame.h"
-#include "dis-asm.h"
-#include "record.h"
 #include "record-full.h"
-
-#include "moxie-tdep.h"
-#include <algorithm>
+#include "record.h"
+#include "regcache.h"
+#include "symfile.h"
+#include "symtab.h"
+#include "trad-frame.h"
+#include "value.h"
 
 /* Use an invalid address value as 'not available' marker.  */
 enum { REG_UNAVAIL = (CORE_ADDR) -1 };

@@ -18,16 +18,21 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "gdbcmd.h"
-#include "completer.h"
 #include "record.h"
-#include "observable.h"
-#include "inferior.h"
-#include "common/common-utils.h"
-#include "cli/cli-utils.h"
-#include "disasm.h"
 
+/* Standard C includes.  */
 #include <ctype.h>
+
+/* Local subdirectory includes.  */
+#include "cli/cli-utils.h"
+#include "common/common-utils.h"
+
+/* Local includes.  */
+#include "completer.h"
+#include "disasm.h"
+#include "gdbcmd.h"
+#include "inferior.h"
+#include "observable.h"
 
 /* This is the debug switch for process record.  */
 unsigned int record_debug = 0;

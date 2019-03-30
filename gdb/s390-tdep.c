@@ -18,12 +18,20 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+#include "s390-tdep.h"
 
+/* Local non-gdb includes.  */
+#include "elf-bfd.h"
+#include "elf/s390.h"
+
+/* Local subdirectory includes.  */
+#include "features/s390-linux32.c"
+#include "features/s390x-linux64.c"
+
+/* Local includes.  */
 #include "arch-utils.h"
 #include "ax-gdb.h"
 #include "dwarf2-frame.h"
-#include "elf/s390.h"
-#include "elf-bfd.h"
 #include "frame-base.h"
 #include "frame-unwind.h"
 #include "gdbarch.h"
@@ -35,13 +43,9 @@
 #include "record-full.h"
 #include "regcache.h"
 #include "reggroups.h"
-#include "s390-tdep.h"
 #include "target-descriptions.h"
 #include "trad-frame.h"
 #include "value.h"
-
-#include "features/s390-linux32.c"
-#include "features/s390x-linux64.c"
 
 /* Holds the current set of options to be passed to the disassembler.  */
 static char *s390_disassembler_options;

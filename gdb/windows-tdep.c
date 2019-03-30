@@ -17,23 +17,25 @@
 
 #include "defs.h"
 #include "windows-tdep.h"
+
+/* Local includes.  */
+#include "coff-pe-read.h"
+#include "command.h"
+#include "complaints.h"
+#include "gdb_bfd.h"
 #include "gdb_obstack.h"
-#include "xml-support.h"
 #include "gdbarch.h"
+#include "gdbcmd.h"
+#include "gdbcore.h"
+#include "gdbthread.h"
+#include "inferior.h"
+#include "objfiles.h"
+#include "solib-target.h"
+#include "solib.h"
+#include "symfile.h"
 #include "target.h"
 #include "value.h"
-#include "inferior.h"
-#include "command.h"
-#include "gdbcmd.h"
-#include "gdbthread.h"
-#include "objfiles.h"
-#include "symfile.h"
-#include "coff-pe-read.h"
-#include "gdb_bfd.h"
-#include "complaints.h"
-#include "solib.h"
-#include "solib-target.h"
-#include "gdbcore.h"
+#include "xml-support.h"
 
 struct cmd_list_element *info_w32_cmdlist;
 

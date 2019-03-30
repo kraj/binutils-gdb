@@ -18,9 +18,11 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+#include "continuations.h"
+
+/* Local includes.  */
 #include "gdbthread.h"
 #include "inferior.h"
-#include "continuations.h"
 
 struct continuation
 {

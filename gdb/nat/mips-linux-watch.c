@@ -16,8 +16,10 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "common/common-defs.h"
+#include "nat/mips-linux-watch.h"
+
+/* Local subdirectory includes.  */
 #include "nat/gdb_ptrace.h"
-#include "mips-linux-watch.h"
 
 /* Assuming usable watch registers REGS, return the irw_mask of
    register N.  */

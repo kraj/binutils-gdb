@@ -18,25 +18,31 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "frame.h"
-#include "frame-unwind.h"
+#include "m32r-tdep.h"
+
+/* Standard C++ includes.  */
+#include <algorithm>
+
+/* Local non-gdb includes.  */
+#include "dis-asm.h"
+
+/* Local includes.  */
+#include "arch-utils.h"
 #include "frame-base.h"
-#include "symtab.h"
-#include "gdbtypes.h"
+#include "frame-unwind.h"
+#include "frame.h"
 #include "gdbcmd.h"
 #include "gdbcore.h"
-#include "value.h"
+#include "gdbtypes.h"
 #include "inferior.h"
-#include "symfile.h"
+#include "language.h"
 #include "objfiles.h"
 #include "osabi.h"
-#include "language.h"
-#include "arch-utils.h"
 #include "regcache.h"
+#include "symfile.h"
+#include "symtab.h"
 #include "trad-frame.h"
-#include "dis-asm.h"
-#include "m32r-tdep.h"
-#include <algorithm>
+#include "value.h"
 
 /* The size of the argument registers (r0 - r3) in bytes.  */
 #define M32R_ARG_REGISTER_SIZE 4

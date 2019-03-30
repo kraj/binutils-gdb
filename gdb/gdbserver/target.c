@@ -19,6 +19,9 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "server.h"
+#include "target.h"
+
+/* Local includes.  */
 #include "tracepoint.h"
 
 struct target_ops *the_target;

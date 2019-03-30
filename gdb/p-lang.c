@@ -20,17 +20,21 @@
 /* This file is derived from c-lang.c */
 
 #include "defs.h"
-#include "symtab.h"
-#include "gdbtypes.h"
-#include "expression.h"
-#include "parser-defs.h"
-#include "language.h"
-#include "varobj.h"
 #include "p-lang.h"
+
+/* Standard C includes.  */
+#include <ctype.h>
+
+/* Local includes.  */
+#include "c-lang.h"
+#include "expression.h"
+#include "gdbtypes.h"
+#include "language.h"
+#include "parser-defs.h"
+#include "symtab.h"
 #include "valprint.h"
 #include "value.h"
-#include <ctype.h>
-#include "c-lang.h"
+#include "varobj.h"
 
 /* All GPC versions until now (2007-09-27) also define a symbol called
    '_p_initialize'.  Check for the presence of this symbol first.  */

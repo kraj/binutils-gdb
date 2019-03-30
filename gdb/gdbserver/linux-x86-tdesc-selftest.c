@@ -16,8 +16,12 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "server.h"
+
+/* Local non-gdb includes.  */
 #include "linux-x86-tdesc.h"
 #include "tdesc.h"
+
+/* Local subdirectory includes.  */
 #include "common/selftest.h"
 #include "common/x86-xstate.h"
 

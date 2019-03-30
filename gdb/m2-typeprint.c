@@ -17,20 +17,24 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "gdb_obstack.h"
-#include "bfd.h"		/* Binary File Description */
-#include "symtab.h"
-#include "gdbtypes.h"
-#include "expression.h"
-#include "value.h"
-#include "gdbcore.h"
-#include "m2-lang.h"
-#include "target.h"
-#include "language.h"
+
+/* Local non-gdb includes.  */
+#include "bfd.h"
 #include "demangle.h"
+
+/* Local includes.  */
 #include "c-lang.h"
-#include "typeprint.h"
 #include "cp-abi.h"
+#include "expression.h"
+#include "gdb_obstack.h"
+#include "gdbcore.h"
+#include "gdbtypes.h"
+#include "language.h"
+#include "m2-lang.h"
+#include "symtab.h"
+#include "target.h"
+#include "typeprint.h"
+#include "value.h"
 
 static void m2_print_bounds (struct type *type,
 			     struct ui_file *stream, int show, int level,

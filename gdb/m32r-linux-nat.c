@@ -18,15 +18,21 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "inferior.h"
-#include "gdbcore.h"
-#include "regcache.h"
-#include "linux-nat.h"
-#include "target.h"
-#include "nat/gdb_ptrace.h"
-#include <sys/user.h>
+
+/* Standard C includes.  */
 #include <sys/procfs.h>
+#include <sys/user.h>
+
+/* Local subdirectory includes.  */
+#include "nat/gdb_ptrace.h"
+
+/* Local includes.  */
+#include "gdbcore.h"
 #include "inf-ptrace.h"
+#include "inferior.h"
+#include "linux-nat.h"
+#include "regcache.h"
+#include "target.h"
 
 /* Prototypes for supply_gregset etc.  */
 #include "gregset.h"

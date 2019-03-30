@@ -40,33 +40,35 @@
    on any type of host.  */
 
 #include "defs.h"
-#include "symtab.h"
-#include "gdbtypes.h"
-#include "gdbcore.h"
-#include "filenames.h"
-#include "objfiles.h"
-#include "gdb_obstack.h"
-#include "buildsym-legacy.h"
-#include "stabsread.h"
-#include "complaints.h"
-#include "demangle.h"
-#include "gdb-demangle.h"
-#include "block.h"
-#include "dictionary.h"
 #include "mdebugread.h"
+
+/* Standard C includes.  */
 #include <sys/stat.h>
+
+/* Local non-gdb includes.  */
+#include "aout/aout64.h"
+#include "aout/stab_gnu.h"
+#include "bfd.h"
+#include "coff/ecoff.h"
+#include "demangle.h"
+#include "filenames.h"
+#include "libaout.h"
+
+/* Local includes.  */
+#include "block.h"
+#include "buildsym-legacy.h"
+#include "complaints.h"
+#include "dictionary.h"
+#include "expression.h"
+#include "gdb-demangle.h"
+#include "gdb_obstack.h"
+#include "gdbcore.h"
+#include "gdbtypes.h"
+#include "objfiles.h"
 #include "psympriv.h"
 #include "source.h"
-
-#include "bfd.h"
-
-#include "coff/ecoff.h"		/* COFF-like aspects of ecoff files.  */
-
-#include "libaout.h"		/* Private BFD a.out information.  */
-#include "aout/aout64.h"
-#include "aout/stab_gnu.h"	/* STABS information.  */
-
-#include "expression.h"
+#include "stabsread.h"
+#include "symtab.h"
 
 /* Provide a way to test if we have both ECOFF and ELF symbol tables.
    We use this define in order to know whether we should override a 

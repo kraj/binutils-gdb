@@ -20,16 +20,21 @@
 
 #include "defs.h"
 
+/* Local non-gdb includes.  */
+#include "opcode/s12z.h"
+
+/* Local subdirectory includes.  */
+#include "common/errors.h"
+
+/* Local includes.  */
 #include "arch-utils.h"
 #include "dwarf2-frame.h"
-#include "common/errors.h"
 #include "frame-unwind.h"
-#include "gdbcore.h"
 #include "gdbcmd.h"
+#include "gdbcore.h"
 #include "inferior.h"
-#include "opcode/s12z.h"
-#include "trad-frame.h"
 #include "remote.h"
+#include "trad-frame.h"
 
 /* Two of the registers included in S12Z_N_REGISTERS are
    the CCH and CCL "registers" which are just views into

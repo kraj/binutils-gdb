@@ -26,12 +26,14 @@
    returns.  */
 
 #include "defs.h"
+
+/* Local includes.  */
 #include "gdbcmd.h"
 #include "objfiles.h"
 #include "observable.h"
 #include "source.h"
-#include "symtab.h"
 #include "symfile.h"
+#include "symtab.h"
 
 /* We need to save a pointer to the real symbol functions.
    Plus, the debug versions are malloc'd because we have to NULL out the

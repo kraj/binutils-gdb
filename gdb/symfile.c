@@ -20,56 +20,64 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "arch-utils.h"
-#include "bfdlink.h"
-#include "symtab.h"
-#include "gdbtypes.h"
-#include "gdbcore.h"
-#include "frame.h"
-#include "target.h"
-#include "value.h"
 #include "symfile.h"
-#include "objfiles.h"
-#include "source.h"
-#include "gdbcmd.h"
-#include "breakpoint.h"
-#include "language.h"
-#include "complaints.h"
-#include "demangle.h"
-#include "inferior.h"
-#include "regcache.h"
-#include "filenames.h"		/* for DOSish file names */
-#include "gdb-stabs.h"
-#include "gdb_obstack.h"
-#include "completer.h"
-#include "bcache.h"
-#include "hashtab.h"
-#include "readline/readline.h"
-#include "block.h"
-#include "observable.h"
-#include "exec.h"
-#include "parser-defs.h"
-#include "varobj.h"
-#include "elf-bfd.h"
-#include "solib.h"
-#include "remote.h"
-#include "stack.h"
-#include "gdb_bfd.h"
-#include "cli/cli-utils.h"
-#include "common/byte-vector.h"
-#include "common/pathstuff.h"
-#include "common/selftest.h"
-#include "cli/cli-style.h"
-#include "common/forward-scope-exit.h"
 
-#include <sys/types.h>
+/* Standard C includes.  */
+#include <ctype.h>
 #include <fcntl.h>
 #include <sys/stat.h>
-#include <ctype.h>
-#include <chrono>
-#include <algorithm>
+#include <sys/types.h>
 
+/* Standard C++ includes.  */
+#include <algorithm>
+#include <chrono>
+
+/* Local non-gdb includes.  */
+#include "bfdlink.h"
+#include "demangle.h"
+#include "elf-bfd.h"
+#include "filenames.h"
+#include "hashtab.h"
+#include "readline/readline.h"
+
+/* Local subdirectory includes.  */
+#include "cli/cli-style.h"
+#include "cli/cli-utils.h"
+#include "common/byte-vector.h"
+#include "common/forward-scope-exit.h"
+#include "common/pathstuff.h"
+#include "common/selftest.h"
+
+/* Local includes.  */
+#include "arch-utils.h"
+#include "bcache.h"
+#include "block.h"
+#include "breakpoint.h"
+#include "complaints.h"
+#include "completer.h"
+#include "exec.h"
+#include "frame.h"
+#include "gdb-stabs.h"
+#include "gdb_bfd.h"
+#include "gdb_obstack.h"
+#include "gdbcmd.h"
+#include "gdbcore.h"
+#include "gdbtypes.h"
+#include "inferior.h"
+#include "language.h"
+#include "objfiles.h"
+#include "observable.h"
+#include "parser-defs.h"
 #include "psymtab.h"
+#include "regcache.h"
+#include "remote.h"
+#include "solib.h"
+#include "source.h"
+#include "stack.h"
+#include "symtab.h"
+#include "target.h"
+#include "value.h"
+#include "varobj.h"
 
 int (*deprecated_ui_load_progress_hook) (const char *section,
 					 unsigned long num);

@@ -19,21 +19,27 @@
 
 
 #include "defs.h"
-#include "compile-internal.h"
-#include "compile-cplus.h"
-#include "common/gdb_assert.h"
-#include "symtab.h"
-#include "parser-defs.h"
-#include "block.h"
-#include "objfiles.h"
-#include "compile.h"
-#include "value.h"
-#include "exceptions.h"
-#include "gdbtypes.h"
-#include "dwarf2loc.h"
-#include "cp-support.h"
-#include "gdbcmd.h"
+
+/* Local non-gdb includes.  */
 #include "compile-c.h"
+#include "compile-cplus.h"
+#include "compile-internal.h"
+#include "compile.h"
+
+/* Local subdirectory includes.  */
+#include "common/gdb_assert.h"
+
+/* Local includes.  */
+#include "block.h"
+#include "cp-support.h"
+#include "dwarf2loc.h"
+#include "exceptions.h"
+#include "gdbcmd.h"
+#include "gdbtypes.h"
+#include "objfiles.h"
+#include "parser-defs.h"
+#include "symtab.h"
+#include "value.h"
 
 /* Convert a given symbol, SYM, to the compiler's representation.
    INSTANCE is the compiler instance.  IS_GLOBAL is true if the

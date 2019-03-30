@@ -21,17 +21,24 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+#include "procfs.h"
+
+/* Local non-gdb includes.  */
+#include "elf-bfd.h"
+
+/* Local subdirectory includes.  */
+#include "common/filestuff.h"
+#include "nat/fork-inferior.h"
+
+/* Local includes.  */
+#include "gdbcmd.h"
+#include "gdbcore.h"
+#include "gdbthread.h"
+#include "inf-child.h"
 #include "inferior.h"
 #include "infrun.h"
-#include "target.h"
-#include "gdbcore.h"
-#include "elf-bfd.h"		/* for elfcore_write_* */
-#include "gdbcmd.h"
-#include "gdbthread.h"
 #include "regcache.h"
-#include "inf-child.h"
-#include "nat/fork-inferior.h"
-#include "common/filestuff.h"
+#include "target.h"
 
 #define _STRUCTURED_PROC 1	/* Should be done by configure script.  */
 

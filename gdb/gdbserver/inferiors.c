@@ -19,8 +19,13 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "server.h"
-#include "gdbthread.h"
+#include "inferiors.h"
+
+/* Local non-gdb includes.  */
 #include "dll.h"
+
+/* Local includes.  */
+#include "gdbthread.h"
 
 std::list<process_info *> all_processes;
 std::list<thread_info *> all_threads;

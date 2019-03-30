@@ -17,17 +17,22 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "common/gdb_assert.h"
 #include "location.h"
-#include "symtab.h"
-#include "language.h"
-#include "linespec.h"
-#include "cli/cli-utils.h"
-#include "probe.h"
-#include "cp-support.h"
 
+/* Standard C includes.  */
 #include <ctype.h>
 #include <string.h>
+
+/* Local subdirectory includes.  */
+#include "cli/cli-utils.h"
+#include "common/gdb_assert.h"
+
+/* Local includes.  */
+#include "cp-support.h"
+#include "language.h"
+#include "linespec.h"
+#include "probe.h"
+#include "symtab.h"
 
 /* An event location used to set a stop event in the inferior.
    This structure is an amalgam of the various ways

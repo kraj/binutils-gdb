@@ -17,6 +17,8 @@
 
 #include "server.h"
 #include "tdesc.h"
+
+/* Local non-gdb includes.  */
 #include "regdef.h"
 
 #ifndef IN_PROCESS_AGENT

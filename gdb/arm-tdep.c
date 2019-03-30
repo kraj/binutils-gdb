@@ -18,56 +18,59 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-
-#include <ctype.h>		/* XXX for isupper ().  */
-
-#include "frame.h"
-#include "inferior.h"
-#include "infrun.h"
-#include "gdbcmd.h"
-#include "gdbcore.h"
-#include "dis-asm.h"		/* For register styles.  */
-#include "disasm.h"
-#include "regcache.h"
-#include "reggroups.h"
-#include "target-float.h"
-#include "value.h"
-#include "arch-utils.h"
-#include "osabi.h"
-#include "frame-unwind.h"
-#include "frame-base.h"
-#include "trad-frame.h"
-#include "objfiles.h"
-#include "dwarf2-frame.h"
-#include "gdbtypes.h"
-#include "prologue-value.h"
-#include "remote.h"
-#include "target-descriptions.h"
-#include "user-regs.h"
-#include "observable.h"
-
-#include "arch/arm.h"
-#include "arch/arm-get-next-pcs.h"
 #include "arm-tdep.h"
-#include "gdb/sim-arm.h"
 
-#include "elf-bfd.h"
-#include "coff/internal.h"
-#include "elf/arm.h"
+/* Standard C includes.  */
+#include <ctype.h>
 
-#include "common/vec.h"
-
-#include "record.h"
-#include "record-full.h"
+/* Standard C++ includes.  */
 #include <algorithm>
 
-#include "features/arm/arm-with-m.c"
+/* Local non-gdb includes.  */
+#include "coff/internal.h"
+#include "dis-asm.h"
+#include "elf-bfd.h"
+#include "elf/arm.h"
+#include "gdb/sim-arm.h"
+
+/* Local subdirectory includes.  */
+#include "arch/arm-get-next-pcs.h"
+#include "arch/arm.h"
+#include "common/vec.h"
+#include "features/arm/arm-with-iwmmxt.c"
 #include "features/arm/arm-with-m-fpa-layout.c"
 #include "features/arm/arm-with-m-vfp-d16.c"
-#include "features/arm/arm-with-iwmmxt.c"
+#include "features/arm/arm-with-m.c"
+#include "features/arm/arm-with-neon.c"
 #include "features/arm/arm-with-vfpv2.c"
 #include "features/arm/arm-with-vfpv3.c"
-#include "features/arm/arm-with-neon.c"
+
+/* Local includes.  */
+#include "arch-utils.h"
+#include "disasm.h"
+#include "dwarf2-frame.h"
+#include "frame-base.h"
+#include "frame-unwind.h"
+#include "frame.h"
+#include "gdbcmd.h"
+#include "gdbcore.h"
+#include "gdbtypes.h"
+#include "inferior.h"
+#include "infrun.h"
+#include "objfiles.h"
+#include "observable.h"
+#include "osabi.h"
+#include "prologue-value.h"
+#include "record-full.h"
+#include "record.h"
+#include "regcache.h"
+#include "reggroups.h"
+#include "remote.h"
+#include "target-descriptions.h"
+#include "target-float.h"
+#include "trad-frame.h"
+#include "user-regs.h"
+#include "value.h"
 
 #if GDB_SELF_TEST
 #include "common/selftest.h"

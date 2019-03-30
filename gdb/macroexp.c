@@ -18,10 +18,12 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+#include "macroexp.h"
+
+/* Local includes.  */
+#include "c-lang.h"
 #include "gdb_obstack.h"
 #include "macrotab.h"
-#include "macroexp.h"
-#include "c-lang.h"
 
 
 

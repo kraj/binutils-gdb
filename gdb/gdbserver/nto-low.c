@@ -19,17 +19,22 @@
 
 
 #include "server.h"
-#include "gdbthread.h"
 #include "nto-low.h"
-#include "hostio.h"
 
-#include <limits.h>
+/* Standard C includes.  */
 #include <fcntl.h>
+#include <limits.h>
 #include <spawn.h>
-#include <sys/procfs.h>
 #include <sys/auxv.h>
 #include <sys/iomgr.h>
 #include <sys/neutrino.h>
+#include <sys/procfs.h>
+
+/* Local non-gdb includes.  */
+#include "hostio.h"
+
+/* Local includes.  */
+#include "gdbthread.h"
 
 
 extern int using_threads;

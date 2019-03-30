@@ -18,13 +18,16 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "regcache.h"
 
-#include <sys/reg.h>
+/* Standard C includes.  */
 #include <sys/procfs.h>
+#include <sys/reg.h>
+
+/* Local includes.  */
 #include "gregset.h"
-#include "target.h"
 #include "procfs.h"
+#include "regcache.h"
+#include "target.h"
 
 /* This file provids the (temporary) glue between the Solaris x86
    target dependent code and the machine independent SVR4 /proc

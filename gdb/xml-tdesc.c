@@ -20,14 +20,20 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "target.h"
-#include "target-descriptions.h"
-#include "xml-support.h"
 #include "xml-tdesc.h"
-#include "osabi.h"
-#include "filenames.h"
-#include <unordered_map>
+
+/* Standard C++ includes.  */
 #include <string>
+#include <unordered_map>
+
+/* Local non-gdb includes.  */
+#include "filenames.h"
+
+/* Local includes.  */
+#include "osabi.h"
+#include "target-descriptions.h"
+#include "target.h"
+#include "xml-support.h"
 
 /* Maximum sizes.
    This is just to catch obviously wrong values.  */

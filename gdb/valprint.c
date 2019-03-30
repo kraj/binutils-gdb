@@ -18,24 +18,32 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "symtab.h"
-#include "gdbtypes.h"
-#include "value.h"
-#include "gdbcore.h"
-#include "gdbcmd.h"
-#include "target.h"
-#include "language.h"
-#include "annotate.h"
 #include "valprint.h"
-#include "target-float.h"
-#include "extension.h"
-#include "ada-lang.h"
-#include "gdb_obstack.h"
-#include "charset.h"
-#include "typeprint.h"
+
+/* Standard C includes.  */
 #include <ctype.h>
+
+/* Standard C++ includes.  */
 #include <algorithm>
+
+/* Local subdirectory includes.  */
 #include "common/byte-vector.h"
+
+/* Local includes.  */
+#include "ada-lang.h"
+#include "annotate.h"
+#include "charset.h"
+#include "extension.h"
+#include "gdb_obstack.h"
+#include "gdbcmd.h"
+#include "gdbcore.h"
+#include "gdbtypes.h"
+#include "language.h"
+#include "symtab.h"
+#include "target-float.h"
+#include "target.h"
+#include "typeprint.h"
+#include "value.h"
 
 /* Maximum number of wchars returned from wchar_iterate.  */
 #define MAX_WCHARS 4

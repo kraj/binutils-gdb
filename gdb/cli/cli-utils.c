@@ -19,9 +19,12 @@
 
 #include "defs.h"
 #include "cli/cli-utils.h"
-#include "value.h"
 
+/* Standard C includes.  */
 #include <ctype.h>
+
+/* Local includes.  */
+#include "value.h"
 
 static std::string extract_arg_maybe_quoted (const char **arg);
 

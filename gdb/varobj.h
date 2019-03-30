@@ -17,9 +17,11 @@
 #ifndef VAROBJ_H
 #define VAROBJ_H 1
 
-#include "symtab.h"
-#include "gdbtypes.h"
 #include "common/vec.h"
+
+/* Local includes.  */
+#include "gdbtypes.h"
+#include "symtab.h"
 #include "value.h"
 
 /* Enumeration for the format types */

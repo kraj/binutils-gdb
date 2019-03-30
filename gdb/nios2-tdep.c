@@ -20,26 +20,31 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "frame.h"
-#include "frame-unwind.h"
-#include "frame-base.h"
-#include "trad-frame.h"
-#include "dwarf2-frame.h"
-#include "symtab.h"
-#include "inferior.h"
-#include "gdbtypes.h"
-#include "gdbcore.h"
-#include "gdbcmd.h"
-#include "osabi.h"
-#include "target.h"
+#include "nios2-tdep.h"
+
+/* Local non-gdb includes.  */
 #include "dis-asm.h"
-#include "regcache.h"
-#include "value.h"
-#include "symfile.h"
+
+/* Local includes.  */
 #include "arch-utils.h"
+#include "dwarf2-frame.h"
+#include "frame-base.h"
+#include "frame-unwind.h"
+#include "frame.h"
+#include "gdbcmd.h"
+#include "gdbcore.h"
+#include "gdbtypes.h"
 #include "infcall.h"
+#include "inferior.h"
+#include "osabi.h"
+#include "regcache.h"
 #include "regset.h"
+#include "symfile.h"
+#include "symtab.h"
 #include "target-descriptions.h"
+#include "target.h"
+#include "trad-frame.h"
+#include "value.h"
 
 /* To get entry_point_address.  */
 #include "objfiles.h"

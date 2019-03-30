@@ -18,6 +18,8 @@
 #define COMPLETER_H 1
 
 #include "common/gdb_vecs.h"
+
+/* Local includes.  */
 #include "command.h"
 
 /* Types of functions in struct match_list_displayer.  */

@@ -32,16 +32,19 @@
 */
 
 #include "defs.h"
-#include "gdb_obstack.h"
-#include "block.h"
-#include "symtab.h"
-#include "language.h"
-#include "varobj.h"
 #include "go-lang.h"
-#include "c-lang.h"
-#include "parser-defs.h"
 
+/* Standard C includes.  */
 #include <ctype.h>
+
+/* Local includes.  */
+#include "block.h"
+#include "c-lang.h"
+#include "gdb_obstack.h"
+#include "language.h"
+#include "parser-defs.h"
+#include "symtab.h"
+#include "varobj.h"
 
 /* The main function in the main package.  */
 static const char GO_MAIN_MAIN[] = "main.main";

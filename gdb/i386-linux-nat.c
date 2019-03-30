@@ -18,24 +18,30 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "inferior.h"
-#include "gdbcore.h"
-#include "regcache.h"
-#include "elf/common.h"
-#include "nat/gdb_ptrace.h"
-#include <sys/uio.h>
-#include "gregset.h"
-#include "gdb_proc_service.h"
-
 #include "i386-linux-nat.h"
-#include "i387-tdep.h"
-#include "i386-tdep.h"
-#include "i386-linux-tdep.h"
-#include "common/x86-xstate.h"
 
-#include "x86-linux-nat.h"
+/* Standard C includes.  */
+#include <sys/uio.h>
+
+/* Local non-gdb includes.  */
+#include "elf/common.h"
+
+/* Local subdirectory includes.  */
+#include "common/x86-xstate.h"
+#include "nat/gdb_ptrace.h"
 #include "nat/linux-ptrace.h"
+
+/* Local includes.  */
+#include "gdb_proc_service.h"
+#include "gdbcore.h"
+#include "gregset.h"
+#include "i386-linux-tdep.h"
+#include "i386-tdep.h"
+#include "i387-tdep.h"
 #include "inf-ptrace.h"
+#include "inferior.h"
+#include "regcache.h"
+#include "x86-linux-nat.h"
 
 struct i386_linux_nat_target final : public x86_linux_nat_target
 {

@@ -18,22 +18,24 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "gdbcore.h"
-#include "inferior.h"
-#include "regcache.h"
 
-#include <sys/types.h>
-#include <sys/ptrace.h>
-#include <sys/signal.h>
+/* Standard C includes.  */
 #include <machine/frame.h>
 #include <machine/pcb.h>
 #include <machine/reg.h>
+#include <sys/ptrace.h>
+#include <sys/signal.h>
+#include <sys/types.h>
 
-#include "ppc-tdep.h"
-#include "ppc-obsd-tdep.h"
-#include "inf-ptrace.h"
-#include "obsd-nat.h"
+/* Local includes.  */
 #include "bsd-kvm.h"
+#include "gdbcore.h"
+#include "inf-ptrace.h"
+#include "inferior.h"
+#include "obsd-nat.h"
+#include "ppc-obsd-tdep.h"
+#include "ppc-tdep.h"
+#include "regcache.h"
 
 struct ppc_obsd_nat_target final : public obsd_nat_target
 {

@@ -19,14 +19,18 @@
 
 
 #include "defs.h"
-#include "macrotab.h"
-#include "macroexp.h"
-#include "macroscope.h"
+
+/* Local subdirectory includes.  */
 #include "cli/cli-style.h"
 #include "cli/cli-utils.h"
+
+/* Local includes.  */
 #include "command.h"
 #include "gdbcmd.h"
 #include "linespec.h"
+#include "macroexp.h"
+#include "macroscope.h"
+#include "macrotab.h"
 
 
 /* The `macro' prefix command.  */

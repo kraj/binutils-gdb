@@ -18,6 +18,8 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+
+/* Local subdirectory includes.  */
 #include "cli/cli-utils.h"
 #include "common/selftest.h"
 

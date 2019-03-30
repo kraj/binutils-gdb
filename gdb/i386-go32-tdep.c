@@ -18,10 +18,14 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "i386-tdep.h"
+
+/* Local subdirectory includes.  */
 #include "common/x86-xstate.h"
-#include "target-descriptions.h"
+
+/* Local includes.  */
+#include "i386-tdep.h"
 #include "osabi.h"
+#include "target-descriptions.h"
 
 static void
 i386_go32_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)

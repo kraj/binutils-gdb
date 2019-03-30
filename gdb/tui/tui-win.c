@@ -25,32 +25,37 @@
    Author: Susan B. Macchia  */
 
 #include "defs.h"
-#include "command.h"
-#include "symtab.h"
-#include "breakpoint.h"
-#include "frame.h"
-#include "cli/cli-cmds.h"
-#include "top.h"
-#include "source.h"
-#include "event-loop.h"
-
-#include "tui/tui.h"
-#include "tui/tui-io.h"
-#include "tui/tui-data.h"
-#include "tui/tui-wingeneral.h"
-#include "tui/tui-stack.h"
-#include "tui/tui-regs.h"
-#include "tui/tui-disasm.h"
-#include "tui/tui-source.h"
-#include "tui/tui-winsource.h"
-#include "tui/tui-windata.h"
 #include "tui/tui-win.h"
 
-#include "gdb_curses.h"
+/* Standard C includes.  */
 #include <ctype.h>
+#include <signal.h>
+
+/* Local non-gdb includes.  */
 #include "readline/readline.h"
 
-#include <signal.h>
+/* Local subdirectory includes.  */
+#include "cli/cli-cmds.h"
+#include "tui/tui-data.h"
+#include "tui/tui-disasm.h"
+#include "tui/tui-io.h"
+#include "tui/tui-regs.h"
+#include "tui/tui-source.h"
+#include "tui/tui-stack.h"
+#include "tui/tui-windata.h"
+#include "tui/tui-wingeneral.h"
+#include "tui/tui-winsource.h"
+#include "tui/tui.h"
+
+/* Local includes.  */
+#include "breakpoint.h"
+#include "command.h"
+#include "event-loop.h"
+#include "frame.h"
+#include "gdb_curses.h"
+#include "source.h"
+#include "symtab.h"
+#include "top.h"
 
 /*******************************
 ** Static Local Decls

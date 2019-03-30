@@ -19,19 +19,20 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "frame.h"
+
+/* Local includes.  */
 #include "frame-unwind.h"
+#include "frame.h"
 #include "gdbcore.h"
+#include "nbsd-tdep.h"
+#include "objfiles.h"
 #include "osabi.h"
 #include "regcache.h"
 #include "regset.h"
-#include "symtab.h"
-#include "objfiles.h"
 #include "solib-svr4.h"
-#include "trad-frame.h"
-
 #include "sparc64-tdep.h"
-#include "nbsd-tdep.h"
+#include "symtab.h"
+#include "trad-frame.h"
 
 /* From <machine/reg.h>.  */
 const struct sparc_gregmap sparc64nbsd_gregmap =

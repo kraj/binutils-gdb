@@ -18,12 +18,16 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "serial.h"
 #include "ser-base.h"
-#include "event-loop.h"
 
-#include "gdb_select.h"
+/* Local subdirectory includes.  */
 #include "common/gdb_sys_time.h"
+
+/* Local includes.  */
+#include "event-loop.h"
+#include "gdb_select.h"
+#include "serial.h"
+
 #ifdef USE_WIN32API
 #include <winsock2.h>
 #endif

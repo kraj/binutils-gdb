@@ -18,14 +18,16 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "regcache.h"
 
+/* Standard C includes.  */
 #include <sys/procfs.h>
-#include "gregset.h"
 
+/* Local includes.  */
+#include "gregset.h"
+#include "procfs.h"
+#include "regcache.h"
 #include "sparc-tdep.h"
 #include "target.h"
-#include "procfs.h"
 
 /* This file provids the (temporary) glue between the Solaris SPARC
    target dependent code and the machine independent SVR4 /proc

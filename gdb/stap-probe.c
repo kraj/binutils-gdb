@@ -19,26 +19,33 @@
 
 #include "defs.h"
 #include "stap-probe.h"
-#include "probe.h"
-#include "common/vec.h"
-#include "ui-out.h"
-#include "objfiles.h"
-#include "arch-utils.h"
-#include "command.h"
-#include "gdbcmd.h"
-#include "filenames.h"
-#include "value.h"
-#include "ax.h"
-#include "ax-gdb.h"
-#include "complaints.h"
-#include "cli/cli-utils.h"
-#include "linespec.h"
-#include "user-regs.h"
-#include "parser-defs.h"
-#include "language.h"
-#include "elf-bfd.h"
 
+/* Standard C includes.  */
 #include <ctype.h>
+
+/* Local non-gdb includes.  */
+#include "elf-bfd.h"
+#include "filenames.h"
+
+/* Local subdirectory includes.  */
+#include "cli/cli-utils.h"
+#include "common/vec.h"
+
+/* Local includes.  */
+#include "arch-utils.h"
+#include "ax-gdb.h"
+#include "ax.h"
+#include "command.h"
+#include "complaints.h"
+#include "gdbcmd.h"
+#include "language.h"
+#include "linespec.h"
+#include "objfiles.h"
+#include "parser-defs.h"
+#include "probe.h"
+#include "ui-out.h"
+#include "user-regs.h"
+#include "value.h"
 
 /* The name of the SystemTap section where we will find information about
    the probes.  */

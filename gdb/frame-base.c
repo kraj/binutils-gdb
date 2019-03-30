@@ -19,6 +19,8 @@
 
 #include "defs.h"
 #include "frame-base.h"
+
+/* Local includes.  */
 #include "frame.h"
 #include "gdb_obstack.h"
 

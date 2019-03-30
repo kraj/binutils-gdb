@@ -17,8 +17,10 @@
 #ifndef COMPILE_COMPILE_OBJECT_LOAD_H
 #define COMPILE_COMPILE_OBJECT_LOAD_H
 
-#include "compile-internal.h"
 #include <list>
+
+/* Local non-gdb includes.  */
+#include "compile-internal.h"
 
 struct munmap_list
 {

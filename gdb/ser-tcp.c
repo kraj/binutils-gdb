@@ -18,25 +18,28 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "serial.h"
-#include "ser-base.h"
 #include "ser-tcp.h"
-#include "gdbcmd.h"
-#include "cli/cli-decode.h"
-#include "cli/cli-setshow.h"
-#include "common/filestuff.h"
-#include "common/netstuff.h"
 
-#include <sys/types.h>
-
+/* Standard C includes.  */
 #ifdef HAVE_SYS_FILIO_H
 #include <sys/filio.h>  /* For FIONBIO.  */
 #endif
 #ifdef HAVE_SYS_IOCTL_H
 #include <sys/ioctl.h>  /* For FIONBIO.  */
 #endif
+#include <sys/types.h>
 
+/* Local subdirectory includes.  */
+#include "cli/cli-decode.h"
+#include "cli/cli-setshow.h"
+#include "common/filestuff.h"
 #include "common/gdb_sys_time.h"
+#include "common/netstuff.h"
+
+/* Local includes.  */
+#include "gdbcmd.h"
+#include "ser-base.h"
+#include "serial.h"
 
 #ifdef USE_WIN32API
 #if _WIN32_WINNT < 0x0501

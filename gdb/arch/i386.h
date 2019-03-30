@@ -18,8 +18,10 @@
 #ifndef ARCH_I386_H
 #define ARCH_I386_H
 
-#include "common/tdesc.h"
 #include <stdint.h>
+
+/* Local subdirectory includes.  */
+#include "common/tdesc.h"
 
 target_desc *i386_create_target_description (uint64_t xcr0, bool is_linux,
 					     bool segments);

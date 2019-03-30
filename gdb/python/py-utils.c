@@ -18,9 +18,13 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+
+/* Local non-gdb includes.  */
+#include "python-internal.h"
+
+/* Local includes.  */
 #include "charset.h"
 #include "value.h"
-#include "python-internal.h"
 
 /* Converts a Python 8-bit string to a unicode string object.  Assumes the
    8-bit string is in the host charset.  If an error occurs during conversion,

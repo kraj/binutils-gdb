@@ -18,17 +18,20 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+
+/* Local non-gdb includes.  */
+#include "python-internal.h"
+#include "python.h"
+
+/* Local includes.  */
 #include "charset.h"
-#include "value.h"
+#include "cp-abi.h"
+#include "expression.h"
+#include "infcall.h"
 #include "language.h"
 #include "target-float.h"
 #include "valprint.h"
-#include "infcall.h"
-#include "expression.h"
-#include "cp-abi.h"
-#include "python.h"
-
-#include "python-internal.h"
+#include "value.h"
 
 /* Even though Python scalar types directly map to host types, we use
    target types here to remain consistent with the values system in

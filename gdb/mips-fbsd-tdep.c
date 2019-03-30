@@ -18,16 +18,16 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "osabi.h"
-#include "regset.h"
-#include "trad-frame.h"
-#include "tramp-frame.h"
-
-#include "fbsd-tdep.h"
-#include "mips-tdep.h"
 #include "mips-fbsd-tdep.h"
 
+/* Local includes.  */
+#include "fbsd-tdep.h"
+#include "mips-tdep.h"
+#include "osabi.h"
+#include "regset.h"
 #include "solib-svr4.h"
+#include "trad-frame.h"
+#include "tramp-frame.h"
 
 /* Core file support. */
 

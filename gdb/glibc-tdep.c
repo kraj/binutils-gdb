@@ -18,12 +18,13 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "frame.h"
-#include "symtab.h"
-#include "symfile.h"
-#include "objfiles.h"
-
 #include "glibc-tdep.h"
+
+/* Local includes.  */
+#include "frame.h"
+#include "objfiles.h"
+#include "symfile.h"
+#include "symtab.h"
 
 /* Calling functions in shared libraries.  */
 

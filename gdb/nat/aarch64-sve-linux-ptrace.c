@@ -17,15 +17,21 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#include <sys/utsname.h>
-#include <sys/uio.h>
 #include "common/common-defs.h"
-#include "elf/external.h"
+#include "nat/aarch64-sve-linux-ptrace.h"
+
+/* Standard C includes.  */
+#include <sys/uio.h>
+#include <sys/utsname.h>
+
+/* Local non-gdb includes.  */
 #include "elf/common.h"
-#include "aarch64-sve-linux-ptrace.h"
+#include "elf/external.h"
+
+/* Local subdirectory includes.  */
 #include "arch/aarch64.h"
-#include "common/common-regcache.h"
 #include "common/byte-vector.h"
+#include "common/common-regcache.h"
 
 static bool vq_change_warned = false;
 

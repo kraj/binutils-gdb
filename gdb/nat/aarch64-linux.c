@@ -17,15 +17,20 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "common/common-defs.h"
-#include "common/break-common.h"
-#include "nat/linux-nat.h"
-#include "nat/aarch64-linux-hw-point.h"
 #include "nat/aarch64-linux.h"
 
-#include "elf/common.h"
-#include "nat/gdb_ptrace.h"
+/* Standard C includes.  */
 #include <asm/ptrace.h>
 #include <sys/uio.h>
+
+/* Local non-gdb includes.  */
+#include "elf/common.h"
+
+/* Local subdirectory includes.  */
+#include "common/break-common.h"
+#include "nat/aarch64-linux-hw-point.h"
+#include "nat/gdb_ptrace.h"
+#include "nat/linux-nat.h"
 
 /* Called when resuming a thread LWP.
    The hardware debug registers are updated when there is any change.  */

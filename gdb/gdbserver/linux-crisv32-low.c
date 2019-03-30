@@ -17,7 +17,11 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "server.h"
+
+/* Local non-gdb includes.  */
 #include "linux-low.h"
+
+/* Local subdirectory includes.  */
 #include "nat/gdb_ptrace.h"
 
 /* Defined in auto-generated file reg-crisv32.c.  */

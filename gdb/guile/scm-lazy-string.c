@@ -21,11 +21,15 @@
    conventions, et.al.  */
 
 #include "defs.h"
-#include "charset.h"
-#include "value.h"
-#include "valprint.h"
-#include "language.h"
+
+/* Local non-gdb includes.  */
 #include "guile-internal.h"
+
+/* Local includes.  */
+#include "charset.h"
+#include "language.h"
+#include "valprint.h"
+#include "value.h"
 
 /* The <gdb:lazy-string> smob.  */
 

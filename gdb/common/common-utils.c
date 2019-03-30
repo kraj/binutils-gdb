@@ -17,10 +17,14 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#include "common-defs.h"
-#include "common-utils.h"
-#include "host-defs.h"
+#include "common/common-defs.h"
+#include "common/common-utils.h"
+
+/* Standard C includes.  */
 #include <ctype.h>
+
+/* Local non-gdb includes.  */
+#include "host-defs.h"
 
 /* The xmalloc() (libiberty.h) family of memory management routines.
 

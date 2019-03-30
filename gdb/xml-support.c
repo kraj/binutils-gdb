@@ -18,12 +18,20 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "gdbcmd.h"
 #include "xml-support.h"
-#include "common/filestuff.h"
-#include "safe-ctype.h"
-#include <vector>
+
+/* Standard C++ includes.  */
 #include <string>
+#include <vector>
+
+/* Local non-gdb includes.  */
+#include "safe-ctype.h"
+
+/* Local subdirectory includes.  */
+#include "common/filestuff.h"
+
+/* Local includes.  */
+#include "gdbcmd.h"
 
 /* Debugging flag.  */
 static int debug_xml;

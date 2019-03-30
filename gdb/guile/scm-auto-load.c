@@ -18,13 +18,19 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "top.h"
+
+/* Local non-gdb includes.  */
+#include "guile-internal.h"
+#include "guile.h"
+
+/* Local subdirectory includes.  */
+#include "cli/cli-cmds.h"
+
+/* Local includes.  */
+#include "auto-load.h"
 #include "gdbcmd.h"
 #include "objfiles.h"
-#include "cli/cli-cmds.h"
-#include "auto-load.h"
-#include "guile.h"
-#include "guile-internal.h"
+#include "top.h"
 
 /* User-settable option to enable/disable auto-loading of Guile scripts:
    set auto-load guile-scripts on|off

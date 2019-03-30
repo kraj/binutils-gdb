@@ -18,10 +18,16 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include <ctype.h>
 #include "serial.h"
-#include "gdbcmd.h"
+
+/* Standard C includes.  */
+#include <ctype.h>
+
+/* Local subdirectory includes.  */
 #include "cli/cli-utils.h"
+
+/* Local includes.  */
+#include "gdbcmd.h"
 
 /* Is serial being debugged?  */
 

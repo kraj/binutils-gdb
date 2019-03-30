@@ -16,14 +16,20 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#include "common-defs.h"
-#include "filestuff.h"
-#include "gdb_vecs.h"
+#include "common/common-defs.h"
+#include "common/filestuff.h"
+
+/* Standard C includes.  */
 #include <fcntl.h>
-#include <unistd.h>
-#include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
+
+/* Standard C++ includes.  */
 #include <algorithm>
+
+/* Local non-gdb includes.  */
+#include "gdb_vecs.h"
 
 #ifdef USE_WIN32API
 #include <winsock2.h>

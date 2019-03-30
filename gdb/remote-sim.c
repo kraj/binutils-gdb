@@ -21,27 +21,35 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "gdb_bfd.h"
-#include "inferior.h"
-#include "infrun.h"
-#include "value.h"
+
+/* Standard C includes.  */
 #include <ctype.h>
 #include <fcntl.h>
-#include <signal.h>
 #include <setjmp.h>
-#include "terminal.h"
-#include "target.h"
-#include "process-stratum-target.h"
-#include "gdbcore.h"
+#include <signal.h>
+
+/* Local non-gdb includes.  */
 #include "gdb/callback.h"
 #include "gdb/remote-sim.h"
+#include "readline/readline.h"
+
+/* Local subdirectory includes.  */
+#include "common/byte-vector.h"
+
+/* Local includes.  */
+#include "arch-utils.h"
 #include "command.h"
+#include "gdb_bfd.h"
+#include "gdbcore.h"
+#include "gdbthread.h"
+#include "inferior.h"
+#include "infrun.h"
+#include "process-stratum-target.h"
 #include "regcache.h"
 #include "sim-regno.h"
-#include "arch-utils.h"
-#include "readline/readline.h"
-#include "gdbthread.h"
-#include "common/byte-vector.h"
+#include "target.h"
+#include "terminal.h"
+#include "value.h"
 
 /* Prototypes */
 

@@ -49,25 +49,29 @@
    by calling functions in procfs.c.  */
 
 #include "defs.h"
-#include <thread.h>
-#include <proc_service.h>
-#include <thread_db.h>
-#include "gdbthread.h"
-#include "target.h"
-#include "inferior.h"
-#include <fcntl.h>
-#include <sys/stat.h>
+
+/* Standard C includes.  */
 #include <dlfcn.h>
+#include <fcntl.h>
+#include <proc_service.h>
+#include <sys/stat.h>
+#include <thread.h>
+#include <thread_db.h>
+
+/* Local includes.  */
 #include "gdbcmd.h"
 #include "gdbcore.h"
+#include "gdbthread.h"
+#include "inferior.h"
+#include "minsyms.h"
+#include "objfiles.h"
+#include "observable.h"
+#include "procfs.h"
 #include "regcache.h"
 #include "solib.h"
 #include "symfile.h"
-#include "observable.h"
-#include "procfs.h"
 #include "symtab.h"
-#include "minsyms.h"
-#include "objfiles.h"
+#include "target.h"
 
 static const target_info thread_db_target_info = {
   "solaris-threads",

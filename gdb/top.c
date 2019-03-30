@@ -18,41 +18,49 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "gdbcmd.h"
+#include "top.h"
+
+/* Standard C includes.  */
+#include <signal.h>
+
+/* Local non-gdb includes.  */
+#include "filenames.h"
+
+/* Local subdirectory includes.  */
 #include "cli/cli-cmds.h"
+#include "cli/cli-decode.h"
 #include "cli/cli-script.h"
 #include "cli/cli-setshow.h"
-#include "cli/cli-decode.h"
-#include "symtab.h"
+#include "common/buffer.h"
+#include "common/job-control.h"
+#include "common/scope-exit.h"
+#include "common/version.h"
+
+/* Local includes.  */
+#include "annotate.h"
+#include "breakpoint.h"
+#include "completer.h"
+#include "event-loop.h"
+#include "expression.h"
+#include "extension.h"
+#include "frame.h"
+#include "gdb_select.h"
+#include "gdbcmd.h"
+#include "gdbthread.h"
+#include "gdbtypes.h"
 #include "inferior.h"
 #include "infrun.h"
-#include <signal.h>
-#include "target.h"
-#include "target-dcache.h"
-#include "breakpoint.h"
-#include "gdbtypes.h"
-#include "expression.h"
-#include "value.h"
-#include "language.h"
-#include "terminal.h"		/* For job_control.  */
-#include "common/job-control.h"
-#include "annotate.h"
-#include "completer.h"
-#include "top.h"
-#include "common/version.h"
-#include "serial.h"
-#include "main.h"
-#include "event-loop.h"
-#include "gdbthread.h"
-#include "extension.h"
 #include "interps.h"
-#include "observable.h"
+#include "language.h"
+#include "main.h"
 #include "maint.h"
-#include "filenames.h"
-#include "frame.h"
-#include "common/buffer.h"
-#include "gdb_select.h"
-#include "common/scope-exit.h"
+#include "observable.h"
+#include "serial.h"
+#include "symtab.h"
+#include "target-dcache.h"
+#include "target.h"
+#include "terminal.h"
+#include "value.h"
 
 /* readline include files.  */
 #include "readline/readline.h"

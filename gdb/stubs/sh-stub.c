@@ -144,8 +144,11 @@
 	So 
 	"0* " means the same as "0000".  */
 
-#include <string.h>
+#include "defs.h"
+
+/* Standard C includes.  */
 #include <setjmp.h>
+#include <string.h>
 
 /* Renesas SH architecture instruction encoding masks */
 

@@ -16,9 +16,14 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "server.h"
+
+/* Local non-gdb includes.  */
 #include "win32-low.h"
 #include "x86-low.h"
+
+/* Local subdirectory includes.  */
 #include "common/x86-xstate.h"
+
 #ifdef __x86_64__
 #include "arch/amd64.h"
 #endif

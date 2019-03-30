@@ -20,23 +20,30 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+#include "target-descriptions.h"
+
+/* Standard C++ includes.  */
+#include <algorithm>
+
+/* Local non-gdb includes.  */
+#include "hashtab.h"
+#include "readline/tilde.h"
+
+/* Local subdirectory includes.  */
+#include "common/vec.h"
+
+/* Local includes.  */
 #include "arch-utils.h"
+#include "completer.h"
+#include "gdb_obstack.h"
 #include "gdbcmd.h"
 #include "gdbtypes.h"
+#include "inferior.h"
+#include "osabi.h"
 #include "reggroups.h"
 #include "target.h"
-#include "target-descriptions.h"
-#include "common/vec.h"
 #include "xml-support.h"
 #include "xml-tdesc.h"
-#include "osabi.h"
-
-#include "gdb_obstack.h"
-#include "hashtab.h"
-#include "inferior.h"
-#include <algorithm>
-#include "completer.h"
-#include "readline/tilde.h" /* tilde_expand */
 
 /* Types.  */
 

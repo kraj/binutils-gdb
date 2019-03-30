@@ -18,6 +18,7 @@
 #include "server.h"
 #include "dll.h"
 
+/* Standard C++ includes.  */
 #include <algorithm>
 
 /* An "unspecified" CORE_ADDR, for match_dll.  */

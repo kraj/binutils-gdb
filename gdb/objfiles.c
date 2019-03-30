@@ -23,38 +23,45 @@
    destroying objfile structures.  */
 
 #include "defs.h"
-#include "bfd.h"		/* Binary File Description */
-#include "symtab.h"
-#include "symfile.h"
 #include "objfiles.h"
-#include "gdb-stabs.h"
-#include "target.h"
-#include "bcache.h"
-#include "expression.h"
-#include "parser-defs.h"
 
-#include <sys/types.h>
-#include <sys/stat.h>
+/* Standard C includes.  */
 #include <fcntl.h>
-#include "gdb_obstack.h"
+#include <sys/stat.h>
+#include <sys/types.h>
+
+/* Standard C++ includes.  */
+#include <vector>
+
+/* Local non-gdb includes.  */
+#include "bfd.h"
 #include "hashtab.h"
 
-#include "breakpoint.h"
-#include "block.h"
-#include "dictionary.h"
-#include "source.h"
-#include "addrmap.h"
-#include "arch-utils.h"
-#include "exec.h"
-#include "observable.h"
-#include "complaints.h"
-#include "psymtab.h"
-#include "solist.h"
-#include "gdb_bfd.h"
-#include "btrace.h"
+/* Local subdirectory includes.  */
 #include "common/pathstuff.h"
 
-#include <vector>
+/* Local includes.  */
+#include "addrmap.h"
+#include "arch-utils.h"
+#include "bcache.h"
+#include "block.h"
+#include "breakpoint.h"
+#include "btrace.h"
+#include "complaints.h"
+#include "dictionary.h"
+#include "exec.h"
+#include "expression.h"
+#include "gdb-stabs.h"
+#include "gdb_bfd.h"
+#include "gdb_obstack.h"
+#include "observable.h"
+#include "parser-defs.h"
+#include "psymtab.h"
+#include "solist.h"
+#include "source.h"
+#include "symfile.h"
+#include "symtab.h"
+#include "target.h"
 
 /* Keep a registry of per-objfile data-pointers required by other GDB
    modules.  */

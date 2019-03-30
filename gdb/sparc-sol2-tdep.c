@@ -18,20 +18,21 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "frame.h"
+
+/* Local includes.  */
 #include "frame-unwind.h"
+#include "frame.h"
 #include "gdbcore.h"
-#include "symtab.h"
 #include "objfiles.h"
 #include "osabi.h"
 #include "regcache.h"
 #include "regset.h"
+#include "sol2-tdep.h"
+#include "solib-svr4.h"
+#include "sparc-tdep.h"
+#include "symtab.h"
 #include "target.h"
 #include "trad-frame.h"
-
-#include "sol2-tdep.h"
-#include "sparc-tdep.h"
-#include "solib-svr4.h"
 
 /* From <sys/regset.h>.  */
 const struct sparc_gregmap sparc32_sol2_gregmap =

@@ -24,22 +24,24 @@
    mdebugread.c.  */
 
 #include "defs.h"
-#include "bfd.h"
-#include "symtab.h"
-#include "objfiles.h"
-#include "stabsread.h"
-#include "mdebugread.h"
 
-#include "coff/sym.h"
-#include "coff/internal.h"
+/* Local non-gdb includes.  */
+#include "bfd.h"
 #include "coff/ecoff.h"
-#include "libcoff.h"		/* Private BFD COFF information.  */
-#include "libecoff.h"		/* Private BFD ECOFF information.  */
+#include "coff/internal.h"
+#include "coff/sym.h"
 #include "elf/common.h"
 #include "elf/internal.h"
 #include "elf/mips.h"
+#include "libcoff.h"
+#include "libecoff.h"
 
+/* Local includes.  */
+#include "mdebugread.h"
+#include "objfiles.h"
 #include "psymtab.h"
+#include "stabsread.h"
+#include "symtab.h"
 
 static void
 read_alphacoff_dynamic_symtab (minimal_symbol_reader &,

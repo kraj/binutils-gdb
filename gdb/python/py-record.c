@@ -18,12 +18,16 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+#include "python/py-record.h"
+
+/* Local non-gdb includes.  */
 #include "py-instruction.h"
-#include "py-record.h"
 #include "py-record-btrace.h"
 #include "py-record-full.h"
-#include "target.h"
+
+/* Local includes.  */
 #include "gdbthread.h"
+#include "target.h"
 
 /* Python Record type.  */
 

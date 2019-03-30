@@ -19,8 +19,8 @@
 #ifndef PROGSPACE_AND_THREAD_H
 #define PROGSPACE_AND_THREAD_H
 
-#include "progspace.h"
 #include "gdbthread.h"
+#include "progspace.h"
 
 /* Save/restore the current program space, thread, inferior and frame.
    Use this when you need to call

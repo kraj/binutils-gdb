@@ -18,18 +18,24 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "breakpoint.h"
 #include "inline-frame.h"
+
+/* Standard C++ includes.  */
+#include <algorithm>
+
+/* Local subdirectory includes.  */
+#include "common/vec.h"
+
+/* Local includes.  */
 #include "addrmap.h"
 #include "block.h"
+#include "breakpoint.h"
 #include "frame-unwind.h"
-#include "inferior.h"
+#include "frame.h"
 #include "gdbthread.h"
+#include "inferior.h"
 #include "regcache.h"
 #include "symtab.h"
-#include "common/vec.h"
-#include "frame.h"
-#include <algorithm>
 
 /* We need to save a few variables for every thread stopped at the
    virtual call site of an inlined function.  If there was always a

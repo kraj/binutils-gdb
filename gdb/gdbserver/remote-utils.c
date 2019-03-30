@@ -17,50 +17,59 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "server.h"
-#if HAVE_TERMIOS_H
-#include <termios.h>
+#include "remote-utils.h"
+
+/* Standard C includes.  */
+#if HAVE_ARPA_INET_H
+#include <arpa/inet.h>
 #endif
-#include "target.h"
-#include "gdbthread.h"
-#include "tdesc.h"
-#include "dll.h"
-#include "common/rsp-low.h"
-#include "common/netstuff.h"
-#include "common/filestuff.h"
 #include <ctype.h>
-#if HAVE_SYS_IOCTL_H
-#include <sys/ioctl.h>
-#endif
-#if HAVE_SYS_FILE_H
-#include <sys/file.h>
-#endif
-#if HAVE_NETINET_IN_H
-#include <netinet/in.h>
-#endif
-#if HAVE_SYS_SOCKET_H
-#include <sys/socket.h>
+#if HAVE_FCNTL_H
+#include <fcntl.h>
 #endif
 #if HAVE_NETDB_H
 #include <netdb.h>
 #endif
+#if HAVE_NETINET_IN_H
+#include <netinet/in.h>
+#endif
 #if HAVE_NETINET_TCP_H
 #include <netinet/tcp.h>
-#endif
-#if HAVE_SYS_IOCTL_H
-#include <sys/ioctl.h>
 #endif
 #if HAVE_SIGNAL_H
 #include <signal.h>
 #endif
-#if HAVE_FCNTL_H
-#include <fcntl.h>
+#if HAVE_SYS_FILE_H
+#include <sys/file.h>
 #endif
-#include "common/gdb_sys_time.h"
-#include <unistd.h>
-#if HAVE_ARPA_INET_H
-#include <arpa/inet.h>
+#if HAVE_SYS_IOCTL_H
+#include <sys/ioctl.h>
+#endif
+#if HAVE_SYS_IOCTL_H
+#include <sys/ioctl.h>
+#endif
+#if HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
 #endif
 #include <sys/stat.h>
+#if HAVE_TERMIOS_H
+#include <termios.h>
+#endif
+#include <unistd.h>
+
+/* Local non-gdb includes.  */
+#include "dll.h"
+#include "tdesc.h"
+
+/* Local subdirectory includes.  */
+#include "common/filestuff.h"
+#include "common/gdb_sys_time.h"
+#include "common/netstuff.h"
+#include "common/rsp-low.h"
+
+/* Local includes.  */
+#include "gdbthread.h"
+#include "target.h"
 
 #if USE_WIN32API
 #if _WIN32_WINNT < 0x0501

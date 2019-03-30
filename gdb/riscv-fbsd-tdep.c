@@ -17,10 +17,12 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+#include "riscv-fbsd-tdep.h"
+
+/* Local includes.  */
 #include "fbsd-tdep.h"
 #include "osabi.h"
 #include "riscv-tdep.h"
-#include "riscv-fbsd-tdep.h"
 #include "solib-svr4.h"
 #include "target.h"
 #include "trad-frame.h"

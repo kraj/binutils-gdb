@@ -21,13 +21,15 @@
 #ifndef PROGSPACE_H
 #define PROGSPACE_H
 
-#include "target.h"
-#include "common/vec.h"
-#include "gdb_bfd.h"
 #include "common/gdb_vecs.h"
-#include "registry.h"
 #include "common/next-iterator.h"
 #include "common/safe-iterator.h"
+#include "common/vec.h"
+
+/* Local includes.  */
+#include "gdb_bfd.h"
+#include "registry.h"
+#include "target.h"
 
 struct target_ops;
 struct bfd;

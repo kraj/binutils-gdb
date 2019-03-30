@@ -17,14 +17,16 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "riscv-tdep.h"
-#include "osabi.h"
+
+/* Local includes.  */
 #include "glibc-tdep.h"
 #include "linux-tdep.h"
-#include "solib-svr4.h"
+#include "osabi.h"
 #include "regset.h"
-#include "tramp-frame.h"
+#include "riscv-tdep.h"
+#include "solib-svr4.h"
 #include "trad-frame.h"
+#include "tramp-frame.h"
 
 /* Define the general register mapping.  The kernel puts the PC at offset 0,
    gdb puts it at offset 32.  Register x0 is always 0 and can be ignored.

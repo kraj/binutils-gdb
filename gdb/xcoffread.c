@@ -19,25 +19,29 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "bfd.h"
+#include "xcoffread.h"
 
-#include <sys/types.h>
-#include <fcntl.h>
+/* Standard C includes.  */
 #include <ctype.h>
+#include <fcntl.h>
 #ifdef HAVE_SYS_FILE_H
 #include <sys/file.h>
 #endif
 #include <sys/stat.h>
+#include <sys/types.h>
 
+/* Local non-gdb includes.  */
+#include "bfd.h"
 #include "coff/internal.h"
-#include "libcoff.h"		/* FIXME, internal data from BFD */
-#include "coff/xcoff.h"
-#include "libxcoff.h"
 #include "coff/rs6000.h"
-#include "xcoffread.h"
+#include "coff/xcoff.h"
+#include "libcoff.h"
+#include "libxcoff.h"
 
-#include "symtab.h"
+/* Local includes.  */
 #include "gdbtypes.h"
+#include "symtab.h"
+
 /* FIXME: ezannoni/2004-02-13 Verify if the include below is really needed.  */
 #include "symfile.h"
 #include "objfiles.h"

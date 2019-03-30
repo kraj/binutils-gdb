@@ -18,23 +18,24 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+#include "ppc-fbsd-tdep.h"
+
+/* Local includes.  */
 #include "arch-utils.h"
+#include "fbsd-tdep.h"
+#include "frame-unwind.h"
 #include "frame.h"
 #include "gdbcore.h"
-#include "frame-unwind.h"
 #include "gdbtypes.h"
 #include "osabi.h"
+#include "ppc-tdep.h"
+#include "ppc64-tdep.h"
 #include "regcache.h"
 #include "regset.h"
+#include "solib-svr4.h"
 #include "symtab.h"
 #include "target.h"
 #include "trad-frame.h"
-
-#include "ppc-tdep.h"
-#include "ppc64-tdep.h"
-#include "ppc-fbsd-tdep.h"
-#include "fbsd-tdep.h"
-#include "solib-svr4.h"
 
 
 /* 32-bit regset descriptions.  */

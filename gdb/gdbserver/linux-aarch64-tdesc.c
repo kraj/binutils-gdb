@@ -18,10 +18,17 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "server.h"
-#include "tdesc.h"
-#include "arch/aarch64.h"
-#include "linux-aarch32-low.h"
+#include "linux-aarch64-tdesc.h"
+
+/* Standard C includes.  */
 #include <inttypes.h>
+
+/* Local non-gdb includes.  */
+#include "linux-aarch32-low.h"
+#include "tdesc.h"
+
+/* Local subdirectory includes.  */
+#include "arch/aarch64.h"
 
 /* All possible aarch64 target descriptors.  */
 struct target_desc *tdesc_aarch64_list[AARCH64_MAX_SVE_VQ + 1][2/*pauth*/];

@@ -21,16 +21,22 @@
    conventions, et.al.  */
 
 #include "defs.h"
-#include "arch-utils.h"
-#include "value.h"
-#include "gdbtypes.h"
-#include "objfiles.h"
-#include "language.h"
+
+/* Local non-gdb includes.  */
+#include "guile-internal.h"
+
+/* Local subdirectory includes.  */
 #include "common/vec.h"
+
+/* Local includes.  */
+#include "arch-utils.h"
 #include "bcache.h"
 #include "dwarf2loc.h"
+#include "gdbtypes.h"
+#include "language.h"
+#include "objfiles.h"
 #include "typeprint.h"
-#include "guile-internal.h"
+#include "value.h"
 
 /* The <gdb:type> smob.
    The type is chained with all types associated with its objfile, if any.

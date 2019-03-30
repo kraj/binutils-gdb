@@ -18,52 +18,59 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+#include "i386-tdep.h"
+
+/* Standard C includes.  */
+#include <ctype.h>
+
+/* Standard C++ includes.  */
+#include <algorithm>
+
+/* Local non-gdb includes.  */
+#include "dis-asm.h"
 #include "opcode/i386.h"
+
+/* Local subdirectory includes.  */
+#include "arch/i386.h"
+#include "cli/cli-utils.h"
+#include "common/x86-xstate.h"
+
+/* Local includes.  */
 #include "arch-utils.h"
+#include "ax-gdb.h"
+#include "ax.h"
 #include "command.h"
+#include "disasm.h"
 #include "dummy-frame.h"
 #include "dwarf2-frame.h"
-#include "frame.h"
+#include "expression.h"
 #include "frame-base.h"
 #include "frame-unwind.h"
-#include "inferior.h"
-#include "infrun.h"
+#include "frame.h"
 #include "gdbcmd.h"
 #include "gdbcore.h"
 #include "gdbtypes.h"
+#include "i387-tdep.h"
+#include "inferior.h"
+#include "infrun.h"
 #include "objfiles.h"
 #include "osabi.h"
+#include "parser-defs.h"
+#include "record-full.h"
+#include "record.h"
 #include "regcache.h"
 #include "reggroups.h"
 #include "regset.h"
+#include "remote.h"
+#include "stap-probe.h"
 #include "symfile.h"
 #include "symtab.h"
-#include "target.h"
-#include "target-float.h"
-#include "value.h"
-#include "dis-asm.h"
-#include "disasm.h"
-#include "remote.h"
-#include "i386-tdep.h"
-#include "i387-tdep.h"
-#include "common/x86-xstate.h"
-#include "x86-tdep.h"
-
-#include "record.h"
-#include "record-full.h"
 #include "target-descriptions.h"
-#include "arch/i386.h"
-
-#include "ax.h"
-#include "ax-gdb.h"
-
-#include "stap-probe.h"
+#include "target-float.h"
+#include "target.h"
 #include "user-regs.h"
-#include "cli/cli-utils.h"
-#include "expression.h"
-#include "parser-defs.h"
-#include <ctype.h>
-#include <algorithm>
+#include "value.h"
+#include "x86-tdep.h"
 
 /* Register names.  */
 

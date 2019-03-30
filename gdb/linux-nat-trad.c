@@ -20,7 +20,10 @@
 #include "defs.h"
 #include "linux-nat-trad.h"
 
+/* Local subdirectory includes.  */
 #include "nat/gdb_ptrace.h"
+
+/* Local includes.  */
 #include "inf-ptrace.h"
 
 /* Fetch register REGNUM from the inferior.  */

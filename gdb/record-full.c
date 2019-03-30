@@ -18,28 +18,35 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "gdbcmd.h"
-#include "regcache.h"
-#include "gdbthread.h"
-#include "inferior.h"
-#include "event-top.h"
-#include "completer.h"
-#include "arch-utils.h"
-#include "gdbcore.h"
-#include "exec.h"
-#include "record.h"
 #include "record-full.h"
-#include "elf-bfd.h"
-#include "gcore.h"
-#include "event-loop.h"
-#include "inf-loop.h"
-#include "gdb_bfd.h"
-#include "observable.h"
-#include "infrun.h"
-#include "common/gdb_unlinker.h"
-#include "common/byte-vector.h"
 
+/* Standard C includes.  */
 #include <signal.h>
+
+/* Local non-gdb includes.  */
+#include "elf-bfd.h"
+
+/* Local subdirectory includes.  */
+#include "common/byte-vector.h"
+#include "common/gdb_unlinker.h"
+
+/* Local includes.  */
+#include "arch-utils.h"
+#include "completer.h"
+#include "event-loop.h"
+#include "event-top.h"
+#include "exec.h"
+#include "gcore.h"
+#include "gdb_bfd.h"
+#include "gdbcmd.h"
+#include "gdbcore.h"
+#include "gdbthread.h"
+#include "inf-loop.h"
+#include "inferior.h"
+#include "infrun.h"
+#include "observable.h"
+#include "record.h"
+#include "regcache.h"
 
 /* This module implements "target record-full", also known as "process
    record and replay".  This target sits on top of a "normal" target

@@ -18,12 +18,13 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "value.h"
-#include "osabi.h"
 
-#include "sol2-tdep.h"
+/* Local includes.  */
 #include "i386-tdep.h"
+#include "osabi.h"
+#include "sol2-tdep.h"
 #include "solib-svr4.h"
+#include "value.h"
 
 /* From <ia32/sys/reg.h>.  */
 static int i386_sol2_gregset_reg_offset[] =

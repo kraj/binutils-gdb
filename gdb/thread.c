@@ -20,32 +20,39 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "symtab.h"
-#include "frame.h"
-#include "inferior.h"
-#include "common/environ.h"
-#include "value.h"
-#include "target.h"
-#include "gdbthread.h"
-#include "command.h"
-#include "gdbcmd.h"
-#include "regcache.h"
-#include "btrace.h"
 
+/* Standard C includes.  */
 #include <ctype.h>
-#include <sys/types.h>
 #include <signal.h>
-#include "ui-out.h"
-#include "observable.h"
-#include "annotate.h"
+#include <sys/types.h>
+
+/* Standard C++ includes.  */
+#include <algorithm>
+
+/* Local subdirectory includes.  */
 #include "cli/cli-decode.h"
-#include "gdb_regex.h"
 #include "cli/cli-utils.h"
+#include "common/environ.h"
+#include "common/gdb_optional.h"
+
+/* Local includes.  */
+#include "annotate.h"
+#include "btrace.h"
+#include "command.h"
+#include "frame.h"
+#include "gdb_regex.h"
+#include "gdbcmd.h"
+#include "gdbthread.h"
+#include "inferior.h"
+#include "inline-frame.h"
+#include "observable.h"
+#include "regcache.h"
+#include "symtab.h"
+#include "target.h"
 #include "thread-fsm.h"
 #include "tid-parse.h"
-#include <algorithm>
-#include "common/gdb_optional.h"
-#include "inline-frame.h"
+#include "ui-out.h"
+#include "value.h"
 
 /* Definition of struct thread_info exported to gdbthread.h.  */
 

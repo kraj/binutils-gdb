@@ -21,8 +21,10 @@
 #define PYTHON_PY_EVENT_H
 
 #include "py-events.h"
-#include "command.h"
 #include "python-internal.h"
+
+/* Local includes.  */
+#include "command.h"
 #include "inferior.h"
 
 /* Declare all event types.  */

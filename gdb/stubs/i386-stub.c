@@ -89,6 +89,9 @@
  *
  ****************************************************************************/
 
+#include "defs.h"
+
+/* Standard C includes.  */
 #include <stdio.h>
 #include <string.h>
 

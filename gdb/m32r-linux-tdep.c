@@ -18,24 +18,23 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "gdbcore.h"
+
+/* Local includes.  */
+#include "frame-unwind.h"
 #include "frame.h"
-#include "value.h"
-#include "regcache.h"
+#include "gdbcore.h"
+#include "glibc-tdep.h"
 #include "inferior.h"
+#include "linux-tdep.h"
+#include "m32r-tdep.h"
 #include "osabi.h"
+#include "regcache.h"
 #include "reggroups.h"
 #include "regset.h"
-
-#include "glibc-tdep.h"
 #include "solib-svr4.h"
 #include "symtab.h"
-
 #include "trad-frame.h"
-#include "frame-unwind.h"
-
-#include "m32r-tdep.h"
-#include "linux-tdep.h"
+#include "value.h"
 
 
 

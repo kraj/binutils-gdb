@@ -18,16 +18,18 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "symtab.h"
-#include "gdbtypes.h"
-#include "expression.h"
-#include "value.h"
-#include "valprint.h"
-#include "language.h"
-#include "typeprint.h"
+
+/* Local includes.  */
 #include "c-lang.h"
+#include "expression.h"
+#include "gdbtypes.h"
+#include "language.h"
 #include "m2-lang.h"
+#include "symtab.h"
 #include "target.h"
+#include "typeprint.h"
+#include "valprint.h"
+#include "value.h"
 
 static int print_unpacked_pointer (struct type *type,
 				   CORE_ADDR address, CORE_ADDR addr,

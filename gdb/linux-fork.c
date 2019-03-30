@@ -18,24 +18,30 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+#include "linux-fork.h"
+
+/* Standard C includes.  */
+#include <ctype.h>
+#include <dirent.h>
+
+/* Standard C++ includes.  */
+#include <list>
+
+/* Local subdirectory includes.  */
+#include "common/gdb_wait.h"
+#include "nat/gdb_ptrace.h"
+
+/* Local includes.  */
 #include "arch-utils.h"
+#include "gdbcmd.h"
+#include "gdbthread.h"
+#include "infcall.h"
 #include "inferior.h"
 #include "infrun.h"
-#include "regcache.h"
-#include "gdbcmd.h"
-#include "infcall.h"
-#include "objfiles.h"
-#include "linux-fork.h"
 #include "linux-nat.h"
-#include "gdbthread.h"
+#include "objfiles.h"
+#include "regcache.h"
 #include "source.h"
-
-#include "nat/gdb_ptrace.h"
-#include "common/gdb_wait.h"
-#include <dirent.h>
-#include <ctype.h>
-
-#include <list>
 
 /* Fork list data structure:  */
 struct fork_info

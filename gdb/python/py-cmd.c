@@ -19,14 +19,20 @@
 
 
 #include "defs.h"
-#include "arch-utils.h"
-#include "value.h"
+
+/* Local non-gdb includes.  */
 #include "python-internal.h"
-#include "charset.h"
-#include "gdbcmd.h"
+
+/* Local subdirectory includes.  */
 #include "cli/cli-decode.h"
+
+/* Local includes.  */
+#include "arch-utils.h"
+#include "charset.h"
 #include "completer.h"
+#include "gdbcmd.h"
 #include "language.h"
+#include "value.h"
 
 /* Struct representing built-in completion types.  */
 struct cmdpy_completer

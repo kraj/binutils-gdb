@@ -18,8 +18,8 @@
 #ifndef NAT_PPC_LINUX_H
 #define NAT_PPC_LINUX_H
 
-#include <asm/ptrace.h>
 #include <asm/cputable.h>
+#include <asm/ptrace.h>
 
 /* This sometimes isn't defined.  */
 #ifndef PT_ORIG_R3

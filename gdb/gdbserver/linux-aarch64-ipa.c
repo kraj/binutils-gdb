@@ -19,13 +19,19 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "server.h"
-#include <sys/mman.h>
-#include "tracepoint.h"
+
+/* Standard C includes.  */
 #include <elf.h>
 #ifdef HAVE_GETAUXVAL
 #include <sys/auxv.h>
 #endif
+#include <sys/mman.h>
+
+/* Local non-gdb includes.  */
 #include "linux-aarch64-tdesc.h"
+
+/* Local includes.  */
+#include "tracepoint.h"
 
 /* Each register saved by the jump pad is in a 16 byte cell.  */
 #define FT_CR_SIZE 16

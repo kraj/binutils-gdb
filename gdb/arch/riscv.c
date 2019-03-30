@@ -16,13 +16,18 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "common/common-defs.h"
-#include "riscv.h"
+#include "arch/riscv.h"
+
+/* Standard C includes.  */
 #include <stdlib.h>
+
+/* Standard C++ includes.  */
 #include <unordered_map>
 
+/* Local non-gdb includes.  */
 #include "../features/riscv/32bit-cpu.c"
-#include "../features/riscv/64bit-cpu.c"
 #include "../features/riscv/32bit-fpu.c"
+#include "../features/riscv/64bit-cpu.c"
 #include "../features/riscv/64bit-fpu.c"
 
 /* Wrapper used by std::unordered_map to generate hash for feature set.  */

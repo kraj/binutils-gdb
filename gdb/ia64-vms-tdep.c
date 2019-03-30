@@ -18,11 +18,13 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+
+/* Local includes.  */
 #include "frame-unwind.h"
+#include "gdbcore.h"
+#include "gdbtypes.h"
 #include "ia64-tdep.h"
 #include "osabi.h"
-#include "gdbtypes.h"
-#include "gdbcore.h"
 
 #ifdef HAVE_LIBUNWIND_IA64_H
 

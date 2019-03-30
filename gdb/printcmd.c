@@ -18,38 +18,44 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "frame.h"
-#include "symtab.h"
-#include "gdbtypes.h"
-#include "value.h"
-#include "language.h"
-#include "expression.h"
-#include "gdbcore.h"
-#include "gdbcmd.h"
-#include "target.h"
-#include "breakpoint.h"
+
+/* Local non-gdb includes.  */
 #include "demangle.h"
-#include "gdb-demangle.h"
-#include "valprint.h"
-#include "annotate.h"
-#include "symfile.h"		/* for overlay functions */
-#include "objfiles.h"		/* ditto */
-#include "completer.h"		/* for completion functions */
-#include "ui-out.h"
-#include "block.h"
-#include "disasm.h"
-#include "target-float.h"
-#include "observable.h"
-#include "solist.h"
-#include "parser-defs.h"
-#include "charset.h"
-#include "arch-utils.h"
-#include "cli/cli-utils.h"
+
+/* Local subdirectory includes.  */
 #include "cli/cli-script.h"
 #include "cli/cli-style.h"
-#include "common/format.h"
-#include "source.h"
+#include "cli/cli-utils.h"
 #include "common/byte-vector.h"
+#include "common/format.h"
+
+/* Local includes.  */
+#include "annotate.h"
+#include "arch-utils.h"
+#include "block.h"
+#include "breakpoint.h"
+#include "charset.h"
+#include "completer.h"
+#include "disasm.h"
+#include "expression.h"
+#include "frame.h"
+#include "gdb-demangle.h"
+#include "gdbcmd.h"
+#include "gdbcore.h"
+#include "gdbtypes.h"
+#include "language.h"
+#include "objfiles.h"
+#include "observable.h"
+#include "parser-defs.h"
+#include "solist.h"
+#include "source.h"
+#include "symfile.h"
+#include "symtab.h"
+#include "target-float.h"
+#include "target.h"
+#include "ui-out.h"
+#include "valprint.h"
+#include "value.h"
 
 /* Last specified output format.  */
 

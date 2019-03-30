@@ -17,8 +17,10 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#include "common-defs.h"
-#include "gdb_tilde_expand.h"
+#include "common/common-defs.h"
+#include "common/gdb_tilde_expand.h"
+
+/* Standard C includes.  */
 #include <glob.h>
 
 /* RAII-style class wrapping "glob".  */

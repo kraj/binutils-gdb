@@ -18,55 +18,63 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "inferior.h"
-#include "infrun.h"
-#include "target.h"
-#include "nat/linux-nat.h"
-#include "nat/linux-waitpid.h"
-#include "common/gdb_wait.h"
-#include <unistd.h>
-#include <sys/syscall.h>
-#include "nat/gdb_ptrace.h"
 #include "linux-nat.h"
-#include "nat/linux-ptrace.h"
-#include "nat/linux-procfs.h"
+
+/* Standard C includes.  */
+#include <ctype.h>
+#include <dirent.h>
+#include <fcntl.h>
+#include <pwd.h>
+#include <sys/procfs.h>
+#include <sys/stat.h>
+#include <sys/syscall.h>
+#include <sys/types.h>
+#include <sys/vfs.h>
+#include <unistd.h>
+
+/* Local non-gdb includes.  */
+#include "elf-bfd.h"
+
+/* Local subdirectory includes.  */
+#include "common/agent.h"
+#include "common/buffer.h"
+#include "common/fileio.h"
+#include "common/filestuff.h"
+#include "common/gdb_wait.h"
+#include "common/scope-exit.h"
+#include "nat/gdb_ptrace.h"
+#include "nat/linux-namespaces.h"
+#include "nat/linux-nat.h"
+#include "nat/linux-osdata.h"
 #include "nat/linux-personality.h"
-#include "linux-fork.h"
-#include "gdbthread.h"
-#include "gdbcmd.h"
-#include "regcache.h"
-#include "regset.h"
-#include "inf-child.h"
-#include "inf-ptrace.h"
+#include "nat/linux-procfs.h"
+#include "nat/linux-ptrace.h"
+#include "nat/linux-waitpid.h"
+
+/* Local includes.  */
 #include "auxv.h"
-#include <sys/procfs.h>		/* for elf_gregset etc.  */
-#include "elf-bfd.h"		/* for elfcore_write_* */
-#include "gregset.h"		/* for gregset */
-#include "gdbcore.h"		/* for get_exec_file */
-#include <ctype.h>		/* for isdigit */
-#include <sys/stat.h>		/* for struct stat */
-#include <fcntl.h>		/* for O_RDONLY */
-#include "inf-loop.h"
 #include "event-loop.h"
 #include "event-top.h"
-#include <pwd.h>
-#include <sys/types.h>
-#include <dirent.h>
-#include "xml-support.h"
-#include <sys/vfs.h>
-#include "solib.h"
-#include "nat/linux-osdata.h"
+#include "gdbcmd.h"
+#include "gdbcore.h"
+#include "gdbthread.h"
+#include "gregset.h"
+#include "inf-child.h"
+#include "inf-loop.h"
+#include "inf-ptrace.h"
+#include "inferior.h"
+#include "infrun.h"
+#include "linux-fork.h"
 #include "linux-tdep.h"
-#include "symfile.h"
-#include "common/agent.h"
-#include "tracepoint.h"
-#include "common/buffer.h"
-#include "target-descriptions.h"
-#include "common/filestuff.h"
 #include "objfiles.h"
-#include "nat/linux-namespaces.h"
-#include "common/fileio.h"
-#include "common/scope-exit.h"
+#include "regcache.h"
+#include "regset.h"
+#include "solib.h"
+#include "symfile.h"
+#include "target-descriptions.h"
+#include "target.h"
+#include "tracepoint.h"
+#include "xml-support.h"
 
 #ifndef SPUFS_MAGIC
 #define SPUFS_MAGIC 0x23c9b64e

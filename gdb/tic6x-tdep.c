@@ -20,34 +20,40 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "frame.h"
-#include "frame-unwind.h"
-#include "frame-base.h"
-#include "trad-frame.h"
-#include "dwarf2-frame.h"
-#include "symtab.h"
-#include "inferior.h"
-#include "gdbtypes.h"
-#include "gdbcore.h"
-#include "gdbcmd.h"
-#include "target.h"
+#include "tic6x-tdep.h"
+
+/* Standard C++ includes.  */
+#include <algorithm>
+
+/* Local non-gdb includes.  */
 #include "dis-asm.h"
-#include "regcache.h"
-#include "value.h"
-#include "symfile.h"
+
+/* Local includes.  */
 #include "arch-utils.h"
+#include "dwarf2-frame.h"
+#include "frame-base.h"
+#include "frame-unwind.h"
+#include "frame.h"
+#include "gdbcmd.h"
+#include "gdbcore.h"
+#include "gdbtypes.h"
 #include "glibc-tdep.h"
 #include "infcall.h"
-#include "regset.h"
-#include "tramp-frame.h"
+#include "inferior.h"
+#include "language.h"
 #include "linux-tdep.h"
-#include "solib.h"
 #include "objfiles.h"
 #include "osabi.h"
-#include "tic6x-tdep.h"
-#include "language.h"
+#include "regcache.h"
+#include "regset.h"
+#include "solib.h"
+#include "symfile.h"
+#include "symtab.h"
 #include "target-descriptions.h"
-#include <algorithm>
+#include "target.h"
+#include "trad-frame.h"
+#include "tramp-frame.h"
+#include "value.h"
 
 #define TIC6X_OPCODE_SIZE 4
 #define TIC6X_FETCH_PACKET_SIZE 32

@@ -19,9 +19,13 @@
 
 
 #include "defs.h"
-#include "gdbtypes.h"
-#include "compile-internal.h"
+
+/* Local non-gdb includes.  */
 #include "compile-c.h"
+#include "compile-internal.h"
+
+/* Local includes.  */
+#include "gdbtypes.h"
 #include "objfiles.h"
 
 /* Convert a pointer type to its gcc representation.  */

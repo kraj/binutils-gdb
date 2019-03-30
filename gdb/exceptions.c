@@ -19,15 +19,19 @@
 
 #include "defs.h"
 #include "exceptions.h"
-#include "breakpoint.h"
-#include "target.h"
-#include "inferior.h"
-#include "annotate.h"
-#include "ui-out.h"
-#include "serial.h"
-#include "gdbthread.h"
-#include "top.h"
+
+/* Local subdirectory includes.  */
 #include "common/gdb_optional.h"
+
+/* Local includes.  */
+#include "annotate.h"
+#include "breakpoint.h"
+#include "gdbthread.h"
+#include "inferior.h"
+#include "serial.h"
+#include "target.h"
+#include "top.h"
+#include "ui-out.h"
 
 static void
 print_flush (void)

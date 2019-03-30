@@ -24,10 +24,12 @@
    support is unavailable.  */
 
 #include "defs.h"
-#include "gdbtypes.h"
-#include "gdbcore.h"
-#include "go-lang.h"
+
+/* Local includes.  */
 #include "c-lang.h"
+#include "gdbcore.h"
+#include "gdbtypes.h"
+#include "go-lang.h"
 #include "valprint.h"
 
 /* Print a Go string.

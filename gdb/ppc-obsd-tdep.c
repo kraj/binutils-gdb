@@ -18,19 +18,20 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+#include "ppc-obsd-tdep.h"
+
+/* Local includes.  */
 #include "arch-utils.h"
-#include "frame.h"
 #include "frame-unwind.h"
+#include "frame.h"
 #include "gdbtypes.h"
 #include "osabi.h"
+#include "ppc-tdep.h"
 #include "regcache.h"
 #include "regset.h"
+#include "solib-svr4.h"
 #include "symtab.h"
 #include "trad-frame.h"
-
-#include "ppc-tdep.h"
-#include "ppc-obsd-tdep.h"
-#include "solib-svr4.h"
 
 /* Register offsets from <machine/reg.h>.  */
 struct ppc_reg_offsets ppcobsd_reg_offsets;

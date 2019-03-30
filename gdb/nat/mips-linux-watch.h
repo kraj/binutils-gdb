@@ -19,6 +19,8 @@
 #define NAT_MIPS_LINUX_WATCH_H
 
 #include <asm/ptrace.h>
+
+/* Local subdirectory includes.  */
 #include "common/break-common.h"
 
 #define MAX_DEBUG_REGISTER 8

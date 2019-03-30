@@ -15,6 +15,9 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
+#include "defs.h"
+
+/* Local subdirectory includes.  */
 #include "common/tdesc.h"
 
 /* This function is NOT auto generated from xml.  Create the aarch64 with SVE

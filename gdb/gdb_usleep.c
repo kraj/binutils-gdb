@@ -17,8 +17,12 @@
 
 #include "defs.h"
 #include "gdb_usleep.h"
-#include "gdb_select.h"
+
+/* Local subdirectory includes.  */
 #include "common/gdb_sys_time.h"
+
+/* Local includes.  */
+#include "gdb_select.h"
 
 int
 gdb_usleep (int usec)

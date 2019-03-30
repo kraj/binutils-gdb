@@ -18,40 +18,42 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "frame.h"
-#include "solib-svr4.h"
-#include "symtab.h"
-#include "symfile.h"
-#include "objfiles.h"
-#include "gdbtypes.h"
-#include "gdbcore.h"
-#include "value.h"
-#include "dis-asm.h"
-#include "inferior.h"
-#include "osabi.h"
-#include "regcache.h"
-#include "reggroups.h"
-#include "regset.h"
+#include "xtensa-tdep.h"
 
-#include "dummy-frame.h"
+/* Standard C++ includes.  */
+#include <algorithm>
+
+/* Local non-gdb includes.  */
+#include "dis-asm.h"
 #include "dwarf2.h"
+#include "xtensa-config.h"
+#include "xtensa-isa.h"
+
+/* Local includes.  */
+#include "arch-utils.h"
+#include "command.h"
+#include "dummy-frame.h"
 #include "dwarf2-frame.h"
 #include "dwarf2loc.h"
 #include "frame-base.h"
 #include "frame-unwind.h"
-
-#include "arch-utils.h"
+#include "frame.h"
 #include "gdbarch.h"
+#include "gdbcmd.h"
+#include "gdbcore.h"
+#include "gdbtypes.h"
+#include "inferior.h"
+#include "objfiles.h"
+#include "osabi.h"
+#include "regcache.h"
+#include "reggroups.h"
+#include "regset.h"
 #include "remote.h"
 #include "serial.h"
-
-#include "command.h"
-#include "gdbcmd.h"
-
-#include "xtensa-isa.h"
-#include "xtensa-tdep.h"
-#include "xtensa-config.h"
-#include <algorithm>
+#include "solib-svr4.h"
+#include "symfile.h"
+#include "symtab.h"
+#include "value.h"
 
 
 static unsigned int xtensa_debug_level = 0;

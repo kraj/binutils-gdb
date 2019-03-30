@@ -18,14 +18,17 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+
+/* Local non-gdb includes.  */
+#include "python-internal.h"
+#include "python.h"
+
+/* Local includes.  */
 #include "arch-utils.h"
 #include "extension-priv.h"
+#include "language.h"
 #include "objfiles.h"
 #include "value.h"
-#include "language.h"
-
-#include "python.h"
-#include "python-internal.h"
 
 static const char enabled_field_name[] = "enabled";
 static const char match_method_name[] = "match";

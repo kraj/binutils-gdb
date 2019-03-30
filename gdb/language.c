@@ -29,22 +29,30 @@
    whenever the working language changes.  That would be a lot faster.  */
 
 #include "defs.h"
-#include <ctype.h>
-#include "symtab.h"
-#include "gdbtypes.h"
-#include "value.h"
-#include "gdbcmd.h"
-#include "expression.h"
 #include "language.h"
-#include "varobj.h"
-#include "target.h"
-#include "parser-defs.h"
-#include "demangle.h"
-#include "symfile.h"
-#include "cp-support.h"
-#include "frame.h"
-#include "c-lang.h"
+
+/* Standard C includes.  */
+#include <ctype.h>
+
+/* Standard C++ includes.  */
 #include <algorithm>
+
+/* Local non-gdb includes.  */
+#include "demangle.h"
+
+/* Local includes.  */
+#include "c-lang.h"
+#include "cp-support.h"
+#include "expression.h"
+#include "frame.h"
+#include "gdbcmd.h"
+#include "gdbtypes.h"
+#include "parser-defs.h"
+#include "symfile.h"
+#include "symtab.h"
+#include "target.h"
+#include "value.h"
+#include "varobj.h"
 
 static int unk_lang_parser (struct parser_state *);
 

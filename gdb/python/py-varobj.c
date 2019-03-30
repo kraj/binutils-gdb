@@ -14,9 +14,13 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+
+/* Local non-gdb includes.  */
 #include "python-internal.h"
-#include "varobj.h"
+
+/* Local includes.  */
 #include "varobj-iter.h"
+#include "varobj.h"
 
 /* A dynamic varobj iterator "class" for python pretty-printed
    varobjs.  This inherits struct varobj_iter.  */

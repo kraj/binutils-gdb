@@ -19,24 +19,30 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "frame.h"
-#include "frame-unwind.h"
-#include "frame-base.h"
-#include "inferior.h"
+
+/* Standard C++ includes.  */
+#include <algorithm>
+
+/* Local non-gdb includes.  */
+#include "../opcodes/lm32-desc.h"
 #include "dis-asm.h"
-#include "symfile.h"
-#include "remote.h"
-#include "gdbcore.h"
-#include "gdb/sim-lm32.h"
 #include "gdb/callback.h"
 #include "gdb/remote-sim.h"
-#include "sim-regno.h"
+#include "gdb/sim-lm32.h"
+
+/* Local includes.  */
 #include "arch-utils.h"
+#include "frame-base.h"
+#include "frame-unwind.h"
+#include "frame.h"
+#include "gdbcore.h"
+#include "inferior.h"
 #include "regcache.h"
-#include "trad-frame.h"
 #include "reggroups.h"
-#include "../opcodes/lm32-desc.h"
-#include <algorithm>
+#include "remote.h"
+#include "sim-regno.h"
+#include "symfile.h"
+#include "trad-frame.h"
 
 /* Macros to extract fields from an instruction.  */
 #define LM32_OPCODE(insn)       ((insn >> 26) & 0x3f)

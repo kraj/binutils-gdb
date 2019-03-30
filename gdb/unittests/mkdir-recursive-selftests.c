@@ -19,10 +19,11 @@
 
 #include "defs.h"
 
-#include "common/filestuff.h"
-#include "common/selftest.h"
+/* Local subdirectory includes.  */
 #include "common/byte-vector.h"
+#include "common/filestuff.h"
 #include "common/pathstuff.h"
+#include "common/selftest.h"
 
 namespace selftests {
 namespace mkdir_recursive {

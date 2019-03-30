@@ -19,14 +19,22 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "server.h"
-#include <sys/mman.h>
-#include "tracepoint.h"
-#include "arch/ppc-linux-tdesc.h"
-#include "linux-ppc-tdesc-init.h"
+
+/* Standard C includes.  */
 #include <elf.h>
 #ifdef HAVE_GETAUXVAL
 #include <sys/auxv.h>
 #endif
+#include <sys/mman.h>
+
+/* Local non-gdb includes.  */
+#include "linux-ppc-tdesc-init.h"
+
+/* Local subdirectory includes.  */
+#include "arch/ppc-linux-tdesc.h"
+
+/* Local includes.  */
+#include "tracepoint.h"
 
 /* These macros define the position of registers in the buffer collected
    by the fast tracepoint jump pad.  */

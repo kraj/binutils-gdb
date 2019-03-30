@@ -19,10 +19,12 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+#include "xml-syscall.h"
+
+/* Local includes.  */
+#include "gdbarch.h"
 #include "gdbtypes.h"
 #include "xml-support.h"
-#include "xml-syscall.h"
-#include "gdbarch.h"
 
 /* For the struct syscall definition.  */
 #include "target.h"

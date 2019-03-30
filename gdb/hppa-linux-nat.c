@@ -18,21 +18,24 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "gdbcore.h"
-#include "regcache.h"
-#include "inferior.h"
-#include "target.h"
-#include "linux-nat.h"
-#include "inf-ptrace.h"
 
-#include <sys/procfs.h>
-#include "nat/gdb_ptrace.h"
-#include <linux/version.h>
-
+/* Standard C includes.  */
 #include <asm/ptrace.h>
-#include "hppa-linux-offsets.h"
+#include <linux/version.h>
+#include <sys/procfs.h>
 
+/* Local subdirectory includes.  */
+#include "nat/gdb_ptrace.h"
+
+/* Local includes.  */
+#include "gdbcore.h"
+#include "hppa-linux-offsets.h"
 #include "hppa-tdep.h"
+#include "inf-ptrace.h"
+#include "inferior.h"
+#include "linux-nat.h"
+#include "regcache.h"
+#include "target.h"
 
 class hppa_linux_nat_target final : public linux_nat_target
 {

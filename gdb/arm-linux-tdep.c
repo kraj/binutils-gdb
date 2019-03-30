@@ -18,43 +18,49 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "target.h"
-#include "value.h"
-#include "gdbtypes.h"
-#include "gdbcore.h"
-#include "frame.h"
-#include "regcache.h"
-#include "solib-svr4.h"
-#include "osabi.h"
-#include "regset.h"
-#include "trad-frame.h"
-#include "tramp-frame.h"
-#include "breakpoint.h"
-#include "auxv.h"
-#include "xml-syscall.h"
+#include "arm-linux-tdep.h"
 
-#include "arch/arm.h"
+/* Standard C includes.  */
+#include <ctype.h>
+
+/* Local non-gdb includes.  */
+#include "elf/common.h"
+
+/* Local subdirectory includes.  */
 #include "arch/arm-get-next-pcs.h"
 #include "arch/arm-linux.h"
-#include "arm-tdep.h"
-#include "arm-linux-tdep.h"
-#include "linux-tdep.h"
-#include "glibc-tdep.h"
+#include "arch/arm.h"
+#include "cli/cli-utils.h"
+
+/* Local includes.  */
 #include "arch-utils.h"
+#include "arm-tdep.h"
+#include "auxv.h"
+#include "breakpoint.h"
+#include "frame.h"
+#include "gdbcore.h"
+#include "gdbthread.h"
+#include "gdbtypes.h"
+#include "glibc-tdep.h"
 #include "inferior.h"
 #include "infrun.h"
-#include "gdbthread.h"
-#include "symfile.h"
-
-#include "record-full.h"
 #include "linux-record.h"
-
-#include "cli/cli-utils.h"
-#include "stap-probe.h"
+#include "linux-tdep.h"
+#include "osabi.h"
 #include "parser-defs.h"
+#include "record-full.h"
+#include "regcache.h"
+#include "regset.h"
+#include "solib-svr4.h"
+#include "stap-probe.h"
+#include "symfile.h"
+#include "target.h"
+#include "trad-frame.h"
+#include "tramp-frame.h"
 #include "user-regs.h"
-#include <ctype.h>
-#include "elf/common.h"
+#include "value.h"
+#include "xml-syscall.h"
+
 extern int arm_apcs_32;
 
 /* Under ARM GNU/Linux the traditional way of performing a breakpoint

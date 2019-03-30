@@ -20,19 +20,27 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include <sys/stat.h>
 #include "nto-tdep.h"
-#include "top.h"
-#include "inferior.h"
-#include "infrun.h"
-#include "gdbarch.h"
+
+/* Standard C includes.  */
+#include <sys/stat.h>
+
+/* Local non-gdb includes.  */
 #include "bfd.h"
 #include "elf-bfd.h"
-#include "solib-svr4.h"
-#include "gdbcore.h"
-#include "objfiles.h"
-#include "source.h"
+
+/* Local subdirectory includes.  */
 #include "common/pathstuff.h"
+
+/* Local includes.  */
+#include "gdbarch.h"
+#include "gdbcore.h"
+#include "inferior.h"
+#include "infrun.h"
+#include "objfiles.h"
+#include "solib-svr4.h"
+#include "source.h"
+#include "top.h"
 
 #define QNX_NOTE_NAME	"QNX"
 #define QNX_INFO_SECT_NAME "QNX_info"

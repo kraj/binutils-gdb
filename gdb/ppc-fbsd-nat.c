@@ -18,24 +18,26 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "gdbcore.h"
-#include "inferior.h"
-#include "regcache.h"
 
-#include <sys/types.h>
-#include <sys/procfs.h>
-#include <sys/ptrace.h>
-#include <sys/signal.h>
+/* Standard C includes.  */
 #include <machine/frame.h>
 #include <machine/pcb.h>
 #include <machine/reg.h>
+#include <sys/procfs.h>
+#include <sys/ptrace.h>
+#include <sys/signal.h>
+#include <sys/types.h>
 
-#include "fbsd-nat.h"
-#include "gregset.h"
-#include "ppc-tdep.h"
-#include "ppc-fbsd-tdep.h"
-#include "inf-ptrace.h"
+/* Local includes.  */
 #include "bsd-kvm.h"
+#include "fbsd-nat.h"
+#include "gdbcore.h"
+#include "gregset.h"
+#include "inf-ptrace.h"
+#include "inferior.h"
+#include "ppc-fbsd-tdep.h"
+#include "ppc-tdep.h"
+#include "regcache.h"
 
 struct ppc_fbsd_nat_target final : public fbsd_nat_target
 {

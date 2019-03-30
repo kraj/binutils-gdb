@@ -18,12 +18,16 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "target.h"
-#include "common/vec.h"
-#include "xml-support.h"
 #include "osdata.h"
-#include "ui-out.h"
+
+/* Local subdirectory includes.  */
+#include "common/vec.h"
+
+/* Local includes.  */
 #include "gdbcmd.h"
+#include "target.h"
+#include "ui-out.h"
+#include "xml-support.h"
 
 #if !defined(HAVE_LIBEXPAT)
 

@@ -21,9 +21,13 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "ui-out.h"
-#include "tui-out.h"
+#include "tui/tui-out.h"
+
+/* Local non-gdb includes.  */
 #include "tui.h"
+
+/* Local includes.  */
+#include "ui-out.h"
 
 /* Output an int field.  */
 

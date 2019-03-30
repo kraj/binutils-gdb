@@ -18,8 +18,11 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "inferior.h"
+#include "x86-bsd-nat.h"
+
+/* Local includes.  */
 #include "gdbthread.h"
+#include "inferior.h"
 
 /* We include <signal.h> to make sure `struct fxsave64' is defined on
    NetBSD, since NetBSD's <machine/reg.h> needs it.  */

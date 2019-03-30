@@ -22,28 +22,32 @@
 
 #include "defs.h"
 
+/* Standard C includes.  */
+#include <dirent.h>
 #include <fcntl.h>
 #include <spawn.h>
-#include <sys/debug.h>
-#include <sys/procfs.h>
-#include <sys/neutrino.h>
-#include <sys/syspage.h>
-#include <dirent.h>
-#include <sys/netmgr.h>
 #include <sys/auxv.h>
+#include <sys/debug.h>
+#include <sys/netmgr.h>
+#include <sys/neutrino.h>
+#include <sys/procfs.h>
+#include <sys/syspage.h>
 
-#include "gdbcore.h"
-#include "inferior.h"
-#include "target.h"
-#include "objfiles.h"
-#include "gdbthread.h"
-#include "nto-tdep.h"
-#include "command.h"
-#include "regcache.h"
-#include "solib.h"
-#include "inf-child.h"
+/* Local subdirectory includes.  */
 #include "common/filestuff.h"
 #include "common/scoped_fd.h"
+
+/* Local includes.  */
+#include "command.h"
+#include "gdbcore.h"
+#include "gdbthread.h"
+#include "inf-child.h"
+#include "inferior.h"
+#include "nto-tdep.h"
+#include "objfiles.h"
+#include "regcache.h"
+#include "solib.h"
+#include "target.h"
 
 #define NULL_PID		0
 #define _DEBUG_FLAG_TRACE	(_DEBUG_FLAG_TRACE_EXEC|_DEBUG_FLAG_TRACE_RD|\

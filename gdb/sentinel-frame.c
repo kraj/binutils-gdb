@@ -19,10 +19,12 @@
 
 
 #include "defs.h"
-#include "regcache.h"
 #include "sentinel-frame.h"
-#include "inferior.h"
+
+/* Local includes.  */
 #include "frame-unwind.h"
+#include "inferior.h"
+#include "regcache.h"
 
 struct frame_unwind_cache
 {

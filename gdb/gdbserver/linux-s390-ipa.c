@@ -19,13 +19,19 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "server.h"
-#include <sys/mman.h>
-#include "tracepoint.h"
-#include "linux-s390-tdesc.h"
+
+/* Standard C includes.  */
 #include <elf.h>
 #ifdef HAVE_GETAUXVAL
 #include <sys/auxv.h>
 #endif
+#include <sys/mman.h>
+
+/* Local non-gdb includes.  */
+#include "linux-s390-tdesc.h"
+
+/* Local includes.  */
+#include "tracepoint.h"
 
 #define FT_FPR(x) (0x000 + (x) * 0x10)
 #define FT_VR(x) (0x000 + (x) * 0x10)

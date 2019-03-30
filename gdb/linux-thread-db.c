@@ -18,35 +18,45 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+
+/* Standard C includes.  */
+#include <ctype.h>
 #include <dlfcn.h>
-#include "gdb_proc_service.h"
-#include "nat/gdb_thread_db.h"
-#include "common/gdb_vecs.h"
+#include <signal.h>
+
+/* Standard C++ includes.  */
+#include <algorithm>
+
+/* Local non-gdb includes.  */
 #include "bfd.h"
+
+/* Local subdirectory includes.  */
+#include "cli/cli-utils.h"
+#include "common/gdb_vecs.h"
+#include "common/pathstuff.h"
+#include "nat/gdb_thread_db.h"
+#include "nat/linux-namespaces.h"
+#include "nat/linux-osdata.h"
+#include "nat/linux-procfs.h"
+#include "nat/linux-ptrace.h"
+
+/* Local includes.  */
+#include "auto-load.h"
 #include "command.h"
+#include "gdb_proc_service.h"
 #include "gdbcmd.h"
+#include "gdbcore.h"
 #include "gdbthread.h"
 #include "inferior.h"
 #include "infrun.h"
-#include "symfile.h"
-#include "objfiles.h"
-#include "target.h"
-#include "regcache.h"
-#include "solib.h"
-#include "solib-svr4.h"
-#include "gdbcore.h"
-#include "observable.h"
 #include "linux-nat.h"
-#include "nat/linux-procfs.h"
-#include "nat/linux-ptrace.h"
-#include "nat/linux-osdata.h"
-#include "auto-load.h"
-#include "cli/cli-utils.h"
-#include <signal.h>
-#include <ctype.h>
-#include "nat/linux-namespaces.h"
-#include <algorithm>
-#include "common/pathstuff.h"
+#include "objfiles.h"
+#include "observable.h"
+#include "regcache.h"
+#include "solib-svr4.h"
+#include "solib.h"
+#include "symfile.h"
+#include "target.h"
 #include "valprint.h"
 
 /* GNU/Linux libthread_db support.

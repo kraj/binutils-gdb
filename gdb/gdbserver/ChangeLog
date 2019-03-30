@@ -1,3 +1,70 @@
+2019-03-30  Tom Tromey  <tom@tromey.com>
+
+	* wincecompat.c: Sort headers.
+	* win32-low.c: Sort headers.
+	* win32-i386-low.c: Sort headers.
+	* win32-arm-low.c: Sort headers.
+	* utils.c: Sort headers.
+	* tracepoint.c: Sort headers.
+	* thread-db.c: Sort headers.
+	* tdesc.h: Sort headers.
+	* tdesc.c: Sort headers.
+	* target.h: Sort headers.
+	* target.c: Sort headers.
+	* symbol.c: Sort headers.
+	* spu-low.c: Sort headers.
+	* server.c: Sort headers.
+	* remote-utils.c: Sort headers.
+	* regcache.c: Sort headers.
+	* nto-x86-low.c: Sort headers.
+	* nto-low.c: Sort headers.
+	* notif.h: Sort headers.
+	* mem-break.c: Sort headers.
+	* lynx-ppc-low.c: Sort headers.
+	* lynx-low.c: Sort headers.
+	* lynx-i386-low.c: Sort headers.
+	* linux-xtensa-low.c: Sort headers.
+	* linux-x86-tdesc.c: Sort headers.
+	* linux-x86-tdesc-selftest.c: Sort headers.
+	* linux-x86-low.c: Sort headers.
+	* linux-tile-low.c: Sort headers.
+	* linux-tic6x-low.c: Sort headers.
+	* linux-sparc-low.c: Sort headers.
+	* linux-sh-low.c: Sort headers.
+	* linux-s390-low.c: Sort headers.
+	* linux-s390-ipa.c: Sort headers.
+	* linux-ppc-low.c: Sort headers.
+	* linux-ppc-ipa.c: Sort headers.
+	* linux-nios2-low.c: Sort headers.
+	* linux-mips-low.c: Sort headers.
+	* linux-m68k-low.c: Sort headers.
+	* linux-m32r-low.c: Sort headers.
+	* linux-low.h: Sort headers.
+	* linux-low.c: Sort headers.
+	* linux-ia64-low.c: Sort headers.
+	* linux-i386-ipa.c: Sort headers.
+	* linux-crisv32-low.c: Sort headers.
+	* linux-cris-low.c: Sort headers.
+	* linux-bfin-low.c: Sort headers.
+	* linux-arm-low.c: Sort headers.
+	* linux-amd64-ipa.c: Sort headers.
+	* linux-aarch64-tdesc.c: Sort headers.
+	* linux-aarch64-tdesc-selftest.c: Sort headers.
+	* linux-aarch64-low.c: Sort headers.
+	* linux-aarch64-ipa.c: Sort headers.
+	* linux-aarch32-low.c: Sort headers.
+	* inferiors.h: Sort headers.
+	* inferiors.c: Sort headers.
+	* i387-fp.c: Sort headers.
+	* hostio.c: Sort headers.
+	* hostio-errno.c: Sort headers.
+	* gdbthread.h: Sort headers.
+	* fork-child.c: Sort headers.
+	* event-loop.c: Sort headers.
+	* dll.c: Sort headers.
+	* debug.c: Sort headers.
+	* ax.c: Sort headers.
+
 2019-03-28  Alan Hayward  <alan.hayward@arm.com>
 
 	* linux-low.c (AT_HWCAP2): Add define if not already included.

@@ -17,10 +17,12 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#include "common-defs.h"
-#include "fileio.h"
-#include <sys/stat.h>
+#include "common/common-defs.h"
+#include "common/fileio.h"
+
+/* Standard C includes.  */
 #include <fcntl.h>
+#include <sys/stat.h>
 
 /* See fileio.h.  */
 

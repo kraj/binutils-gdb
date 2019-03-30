@@ -18,11 +18,16 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "arch-utils.h"
+#include "vax-tdep.h"
+
+/* Local non-gdb includes.  */
 #include "dis-asm.h"
-#include "frame.h"
+
+/* Local includes.  */
+#include "arch-utils.h"
 #include "frame-base.h"
 #include "frame-unwind.h"
+#include "frame.h"
 #include "gdbcore.h"
 #include "gdbtypes.h"
 #include "osabi.h"
@@ -30,8 +35,6 @@
 #include "regset.h"
 #include "trad-frame.h"
 #include "value.h"
-
-#include "vax-tdep.h"
 
 /* Return the name of register REGNUM.  */
 

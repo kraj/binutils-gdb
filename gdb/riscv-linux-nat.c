@@ -17,16 +17,20 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "regcache.h"
-#include "gregset.h"
-#include "linux-nat.h"
-#include "riscv-tdep.h"
-#include "inferior.h"
-#include "target-descriptions.h"
 
+/* Standard C includes.  */
+#include <sys/ptrace.h>
+
+/* Local non-gdb includes.  */
 #include "elf/common.h"
 
-#include <sys/ptrace.h>
+/* Local includes.  */
+#include "gregset.h"
+#include "inferior.h"
+#include "linux-nat.h"
+#include "regcache.h"
+#include "riscv-tdep.h"
+#include "target-descriptions.h"
 
 /* RISC-V Linux native additions to the default linux support.  */
 

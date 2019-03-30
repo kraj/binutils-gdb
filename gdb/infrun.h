@@ -18,8 +18,10 @@
 #ifndef INFRUN_H
 #define INFRUN_H 1
 
-#include "symtab.h"
 #include "common/byte-vector.h"
+
+/* Local includes.  */
+#include "symtab.h"
 
 struct target_waitstatus;
 struct frame_info;

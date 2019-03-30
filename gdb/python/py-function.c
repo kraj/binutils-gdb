@@ -19,14 +19,20 @@
 
 
 #include "defs.h"
-#include "value.h"
+
+/* Local non-gdb includes.  */
 #include "python-internal.h"
-#include "charset.h"
-#include "gdbcmd.h"
+
+/* Local subdirectory includes.  */
 #include "cli/cli-decode.h"
+
+/* Local includes.  */
+#include "charset.h"
 #include "completer.h"
 #include "expression.h"
+#include "gdbcmd.h"
 #include "language.h"
+#include "value.h"
 
 extern PyTypeObject fnpy_object_type
     CPYCHECKER_TYPE_OBJECT_FOR_TYPEDEF ("PyObject");

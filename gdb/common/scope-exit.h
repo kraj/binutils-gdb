@@ -20,6 +20,8 @@
 
 #include <functional>
 #include <type_traits>
+
+/* Local subdirectory includes.  */
 #include "common/preprocessor.h"
 
 /* scope_exit is a general-purpose scope guard that calls its exit

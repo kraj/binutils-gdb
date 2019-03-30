@@ -18,17 +18,18 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "inferior.h"
-#include "regcache.h"
 
-#include <sys/types.h>
-#include <sys/ptrace.h>
+/* Standard C includes.  */
 #include <machine/reg.h>
+#include <sys/ptrace.h>
+#include <sys/types.h>
 
+/* Local includes.  */
 #include "hppa-tdep.h"
 #include "inf-ptrace.h"
-
+#include "inferior.h"
 #include "nbsd-nat.h"
+#include "regcache.h"
 
 class hppa_nbsd_nat_target final : public nbsd_nat_target
 {

@@ -18,8 +18,10 @@
 #ifndef COMMON_ARRAY_VIEW_H
 #define COMMON_ARRAY_VIEW_H
 
-#include "traits.h"
 #include <type_traits>
+
+/* Local non-gdb includes.  */
+#include "traits.h"
 
 /* An array_view is an abstraction that provides a non-owning view
    over a sequence of contiguous objects.

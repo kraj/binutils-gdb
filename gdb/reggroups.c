@@ -20,13 +20,15 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "arch-utils.h"
 #include "reggroups.h"
+
+/* Local includes.  */
+#include "arch-utils.h"
+#include "command.h"
+#include "gdb_obstack.h"
+#include "gdbcmd.h"
 #include "gdbtypes.h"
 #include "regcache.h"
-#include "command.h"
-#include "gdbcmd.h"		/* For maintenanceprintlist.  */
-#include "gdb_obstack.h"
 
 /* Individual register groups.  */
 

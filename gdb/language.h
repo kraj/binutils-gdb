@@ -23,9 +23,11 @@
 #if !defined (LANGUAGE_H)
 #define LANGUAGE_H 1
 
-#include "symtab.h"
 #include "common/function-view.h"
+
+/* Local includes.  */
 #include "expression.h"
+#include "symtab.h"
 
 /* Forward decls for prototypes.  */
 struct value;

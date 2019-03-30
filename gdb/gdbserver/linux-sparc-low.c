@@ -17,10 +17,14 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "server.h"
+
+/* Local non-gdb includes.  */
 #include "linux-low.h"
 
+/* Local subdirectory includes.  */
 #include "nat/gdb_ptrace.h"
 
+/* Local includes.  */
 #include "gdb_proc_service.h"
 
 /* The stack pointer is offset from the stack frame by a BIAS of 2047

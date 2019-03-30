@@ -21,8 +21,12 @@
    conventions, et.al.  */
 
 #include "defs.h"
-#include "charset.h"
+
+/* Local non-gdb includes.  */
 #include "guile-internal.h"
+
+/* Local includes.  */
+#include "charset.h"
 
 /* Convert STRING to an int.
    STRING must be a valid integer.  */

@@ -19,11 +19,18 @@
 
 #include "defs.h"
 #include "gdb_bfd.h"
-#include "ui-out.h"
-#include "gdbcmd.h"
+
+/* Local non-gdb includes.  */
 #include "hashtab.h"
+
+/* Local subdirectory includes.  */
 #include "common/filestuff.h"
 #include "common/vec.h"
+
+/* Local includes.  */
+#include "gdbcmd.h"
+#include "ui-out.h"
+
 #ifdef HAVE_MMAP
 #include <sys/mman.h>
 #ifndef MAP_FAILED

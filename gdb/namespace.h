@@ -19,8 +19,10 @@
 #ifndef NAMESPACE_H
 #define NAMESPACE_H
 
-#include "common/vec.h"
 #include "common/gdb_vecs.h"
+#include "common/vec.h"
+
+/* Local includes.  */
 #include "gdb_obstack.h"
 
 /* This struct is designed to store data from using directives.  It

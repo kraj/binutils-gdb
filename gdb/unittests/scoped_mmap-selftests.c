@@ -19,9 +19,12 @@
 
 #include "defs.h"
 
+/* Local non-gdb includes.  */
+#include "config.h"
+
+/* Local subdirectory includes.  */
 #include "common/filestuff.h"
 #include "common/scoped_mmap.h"
-#include "config.h"
 
 #if defined(HAVE_SYS_MMAN_H)
 

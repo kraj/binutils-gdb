@@ -18,8 +18,9 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "event-loop.h"
 
+/* Local includes.  */
+#include "event-loop.h"
 #include "gdb_select.h"
 
 /* Wrapper for select.  Nothing special needed on POSIX platforms.  */

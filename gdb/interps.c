@@ -30,14 +30,16 @@
    them take over the input in their resume proc.  */
 
 #include "defs.h"
-#include "gdbcmd.h"
-#include "ui-out.h"
+#include "interps.h"
+
+/* Local includes.  */
+#include "completer.h"
+#include "continuations.h"
 #include "event-loop.h"
 #include "event-top.h"
-#include "interps.h"
-#include "completer.h"
-#include "top.h"		/* For command_loop.  */
-#include "continuations.h"
+#include "gdbcmd.h"
+#include "top.h"
+#include "ui-out.h"
 
 /* Each UI has its own independent set of interpreters.  */
 

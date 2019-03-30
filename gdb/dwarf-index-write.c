@@ -18,28 +18,35 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+#include "dwarf-index-write.h"
 
-#include "addrmap.h"
+/* Standard C++ includes.  */
+#include <algorithm>
+#include <cmath>
+#include <set>
+#include <unordered_map>
+#include <unordered_set>
+
+/* Local non-gdb includes.  */
+#include "dwarf2.h"
+#include "gdb/gdb-index.h"
+
+/* Local subdirectory includes.  */
 #include "cli/cli-decode.h"
 #include "common/byte-vector.h"
 #include "common/filestuff.h"
 #include "common/gdb_unlinker.h"
 #include "common/pathstuff.h"
 #include "common/scoped_fd.h"
+
+/* Local includes.  */
+#include "addrmap.h"
 #include "complaints.h"
 #include "dwarf-index-common.h"
-#include "dwarf2.h"
 #include "dwarf2read.h"
-#include "gdb/gdb-index.h"
 #include "gdbcmd.h"
 #include "objfiles.h"
 #include "psympriv.h"
-
-#include <algorithm>
-#include <cmath>
-#include <set>
-#include <unordered_map>
-#include <unordered_set>
 
 /* Ensure only legit values are used.  */
 #define DW2_GDB_INDEX_SYMBOL_STATIC_SET_VALUE(cu_index, value) \

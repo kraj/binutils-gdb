@@ -20,12 +20,19 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "mi-cmds.h"
-#include "mi-parse.h"
-#include "charset.h"
+#include "mi/mi-parse.h"
 
+/* Standard C includes.  */
 #include <ctype.h>
+
+/* Local non-gdb includes.  */
+#include "mi-cmds.h"
+
+/* Local subdirectory includes.  */
 #include "cli/cli-utils.h"
+
+/* Local includes.  */
+#include "charset.h"
 #include "language.h"
 
 static const char mi_no_values[] = "--no-values";

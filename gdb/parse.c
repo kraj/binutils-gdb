@@ -30,27 +30,35 @@
    come first in the result.  */
 
 #include "defs.h"
+
+/* Standard C includes.  */
 #include <ctype.h>
-#include "arch-utils.h"
-#include "symtab.h"
-#include "gdbtypes.h"
-#include "frame.h"
-#include "expression.h"
-#include "value.h"
-#include "command.h"
-#include "language.h"
-#include "f-lang.h"
-#include "parser-defs.h"
-#include "gdbcmd.h"
-#include "symfile.h"		/* for overlay functions */
-#include "inferior.h"
-#include "target-float.h"
-#include "block.h"
-#include "source.h"
-#include "objfiles.h"
-#include "user-regs.h"
+
+/* Standard C++ includes.  */
 #include <algorithm>
+
+/* Local subdirectory includes.  */
 #include "common/gdb_optional.h"
+
+/* Local includes.  */
+#include "arch-utils.h"
+#include "block.h"
+#include "command.h"
+#include "expression.h"
+#include "f-lang.h"
+#include "frame.h"
+#include "gdbcmd.h"
+#include "gdbtypes.h"
+#include "inferior.h"
+#include "language.h"
+#include "objfiles.h"
+#include "parser-defs.h"
+#include "source.h"
+#include "symfile.h"
+#include "symtab.h"
+#include "target-float.h"
+#include "user-regs.h"
+#include "value.h"
 
 /* Standard set of definitions for printing, dumping, prefixifying,
  * and evaluating expressions.  */

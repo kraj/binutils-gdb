@@ -18,14 +18,18 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "target.h"
-#include "top.h"
+
+/* Local subdirectory includes.  */
 #include "cli/cli-cmds.h"
 #include "cli/cli-decode.h"
 #include "cli/cli-utils.h"
+
+/* Local includes.  */
 #include "inferior.h"
 #include "infrun.h"
 #include "regcache.h"
+#include "target.h"
+#include "top.h"
 
 /* User interface:
    reverse-step, reverse-next etc.  */

@@ -20,8 +20,10 @@
 #ifndef REGCACHE_H
 #define REGCACHE_H
 
-#include "common/common-regcache.h"
 #include <forward_list>
+
+/* Local subdirectory includes.  */
+#include "common/common-regcache.h"
 
 struct regcache;
 struct regset;

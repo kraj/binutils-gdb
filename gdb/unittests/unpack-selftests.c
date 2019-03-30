@@ -18,11 +18,15 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+
+/* Local subdirectory includes.  */
 #include "common/selftest.h"
+
+/* Local includes.  */
+#include "arch-utils.h"
+#include "gdbtypes.h"
 #include "selftest-arch.h"
 #include "value.h"
-#include "gdbtypes.h"
-#include "arch-utils.h"
 
 namespace selftests {
 namespace unpack {

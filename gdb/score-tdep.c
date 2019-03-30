@@ -22,20 +22,24 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "inferior.h"
-#include "symtab.h"
-#include "objfiles.h"
-#include "gdbcore.h"
-#include "target.h"
+#include "score-tdep.h"
+
+/* Local non-gdb includes.  */
+#include "dis-asm.h"
+
+/* Local includes.  */
 #include "arch-utils.h"
+#include "dwarf2-frame.h"
+#include "frame-base.h"
+#include "frame-unwind.h"
+#include "gdbcore.h"
+#include "inferior.h"
+#include "objfiles.h"
 #include "regcache.h"
 #include "regset.h"
-#include "dis-asm.h"
-#include "frame-unwind.h"
-#include "frame-base.h"
+#include "symtab.h"
+#include "target.h"
 #include "trad-frame.h"
-#include "dwarf2-frame.h"
-#include "score-tdep.h"
 
 #define G_FLD(_i,_ms,_ls) \
     ((unsigned)((_i) << (31 - (_ms))) >> (31 - (_ms) + (_ls)))

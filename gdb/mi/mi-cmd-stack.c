@@ -18,24 +18,32 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "target.h"
-#include "frame.h"
-#include "value.h"
-#include "mi-cmds.h"
-#include "ui-out.h"
-#include "symtab.h"
-#include "block.h"
-#include "stack.h"
-#include "dictionary.h"
-#include "language.h"
-#include "valprint.h"
-#include "utils.h"
-#include "mi-getopt.h"
-#include "extension.h"
+
+/* Standard C includes.  */
 #include <ctype.h>
+
+/* Local non-gdb includes.  */
+#include "mi-cmds.h"
+#include "mi-getopt.h"
 #include "mi-parse.h"
-#include "common/gdb_optional.h"
 #include "safe-ctype.h"
+
+/* Local subdirectory includes.  */
+#include "common/gdb_optional.h"
+
+/* Local includes.  */
+#include "block.h"
+#include "dictionary.h"
+#include "extension.h"
+#include "frame.h"
+#include "language.h"
+#include "stack.h"
+#include "symtab.h"
+#include "target.h"
+#include "ui-out.h"
+#include "utils.h"
+#include "valprint.h"
+#include "value.h"
 
 enum what_to_list { locals, arguments, all };
 

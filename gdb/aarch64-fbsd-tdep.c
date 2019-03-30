@@ -18,16 +18,17 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-
-#include "gdbarch.h"
-#include "fbsd-tdep.h"
-#include "aarch64-tdep.h"
 #include "aarch64-fbsd-tdep.h"
+
+/* Local includes.  */
+#include "aarch64-tdep.h"
+#include "fbsd-tdep.h"
+#include "gdbarch.h"
 #include "osabi.h"
 #include "solib-svr4.h"
 #include "target.h"
-#include "tramp-frame.h"
 #include "trad-frame.h"
+#include "tramp-frame.h"
 
 /* Register maps.  */
 

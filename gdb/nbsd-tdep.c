@@ -20,8 +20,10 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "solib-svr4.h"
 #include "nbsd-tdep.h"
+
+/* Local includes.  */
+#include "solib-svr4.h"
 
 /* FIXME: kettenis/20060115: We should really eliminate the next two
    functions completely.  */

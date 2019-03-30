@@ -37,22 +37,33 @@
 
 
 #include "defs.h"
+#include "minsyms.h"
+
+/* Standard C includes.  */
 #include <ctype.h>
-#include "symtab.h"
+
+/* Standard C++ includes.  */
+#include <algorithm>
+
+/* Local non-gdb includes.  */
 #include "bfd.h"
-#include "filenames.h"
-#include "symfile.h"
-#include "objfiles.h"
 #include "demangle.h"
-#include "value.h"
-#include "cp-abi.h"
-#include "target.h"
-#include "cp-support.h"
-#include "language.h"
+#include "filenames.h"
+#include "safe-ctype.h"
+
+/* Local subdirectory includes.  */
 #include "cli/cli-utils.h"
 #include "common/symbol.h"
-#include <algorithm>
-#include "safe-ctype.h"
+
+/* Local includes.  */
+#include "cp-abi.h"
+#include "cp-support.h"
+#include "language.h"
+#include "objfiles.h"
+#include "symfile.h"
+#include "symtab.h"
+#include "target.h"
+#include "value.h"
 
 /* See minsyms.h.  */
 

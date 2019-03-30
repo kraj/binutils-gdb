@@ -22,11 +22,17 @@
    conventions, et.al.  */
 
 #include "defs.h"
-#include "gdb_select.h"
-#include "top.h"
-#include "target.h"
+
+/* Local non-gdb includes.  */
 #include "guile-internal.h"
+
+/* Local subdirectory includes.  */
 #include "common/gdb_optional.h"
+
+/* Local includes.  */
+#include "gdb_select.h"
+#include "target.h"
+#include "top.h"
 
 #ifdef HAVE_POLL
 #if defined (HAVE_POLL_H)

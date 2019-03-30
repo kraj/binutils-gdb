@@ -18,20 +18,22 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "frame.h"
-#include "frame-unwind.h"
+
+/* Local includes.  */
 #include "dwarf2-frame.h"
-#include "regset.h"
-#include "regcache.h"
+#include "frame-unwind.h"
+#include "frame.h"
 #include "gdbarch.h"
 #include "gdbcore.h"
+#include "linux-tdep.h"
 #include "osabi.h"
+#include "regcache.h"
+#include "regset.h"
 #include "solib-svr4.h"
 #include "symtab.h"
 #include "trad-frame.h"
 #include "tramp-frame.h"
 #include "xml-syscall.h"
-#include "linux-tdep.h"
 
 /* ADI specific si_code */
 #ifndef SEGV_ACCADI

@@ -20,10 +20,13 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "symtab.h"
+
+/* Local includes.  */
 #include "breakpoint.h"
 #include "inferior.h"
+#include "symtab.h"
 #include "target.h"
+
 /* Insert a breakpoint on targets that don't have any better
    breakpoint support.  We read the contents of the target location
    and stash it, then overwrite it with a breakpoint instruction.

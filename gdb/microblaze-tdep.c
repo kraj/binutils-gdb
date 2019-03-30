@@ -18,29 +18,35 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "arch-utils.h"
-#include "dis-asm.h"
-#include "frame.h"
-#include "trad-frame.h"
-#include "symtab.h"
-#include "value.h"
-#include "gdbcmd.h"
-#include "breakpoint.h"
-#include "inferior.h"
-#include "regcache.h"
-#include "target.h"
-#include "frame-base.h"
-#include "frame-unwind.h"
-#include "dwarf2-frame.h"
-#include "osabi.h"
-#include "target-descriptions.h"
-#include "../opcodes/microblaze-opcm.h"
-#include "../opcodes/microblaze-dis.h"
 #include "microblaze-tdep.h"
-#include "remote.h"
 
+/* Local non-gdb includes.  */
+#include "../opcodes/microblaze-dis.h"
+#include "../opcodes/microblaze-opcm.h"
+#include "dis-asm.h"
+
+/* Local subdirectory includes.  */
 #include "features/microblaze-with-stack-protect.c"
 #include "features/microblaze.c"
+
+/* Local includes.  */
+#include "arch-utils.h"
+#include "breakpoint.h"
+#include "dwarf2-frame.h"
+#include "frame-base.h"
+#include "frame-unwind.h"
+#include "frame.h"
+#include "gdbcmd.h"
+#include "inferior.h"
+#include "osabi.h"
+#include "regcache.h"
+#include "remote.h"
+#include "symtab.h"
+#include "target-descriptions.h"
+#include "target.h"
+#include "trad-frame.h"
+#include "value.h"
+
 
 /* Instruction macros used for analyzing the prologue.  */
 /* This set of instruction macros need to be changed whenever the

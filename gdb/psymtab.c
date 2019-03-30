@@ -18,24 +18,31 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "symtab.h"
-#include "objfiles.h"
-#include "psympriv.h"
-#include "block.h"
-#include "filenames.h"
-#include "source.h"
-#include "addrmap.h"
-#include "gdbtypes.h"
-#include "ui-out.h"
-#include "command.h"
-#include "readline/readline.h"
-#include "gdb_regex.h"
-#include "dictionary.h"
-#include "language.h"
-#include "cp-support.h"
-#include "gdbcmd.h"
+#include "psymtab.h"
+
+/* Standard C++ includes.  */
 #include <algorithm>
 #include <set>
+
+/* Local non-gdb includes.  */
+#include "filenames.h"
+#include "readline/readline.h"
+
+/* Local includes.  */
+#include "addrmap.h"
+#include "block.h"
+#include "command.h"
+#include "cp-support.h"
+#include "dictionary.h"
+#include "gdb_regex.h"
+#include "gdbcmd.h"
+#include "gdbtypes.h"
+#include "language.h"
+#include "objfiles.h"
+#include "psympriv.h"
+#include "source.h"
+#include "symtab.h"
+#include "ui-out.h"
 
 static struct partial_symbol *match_partial_symbol (struct objfile *,
 						    struct partial_symtab *,

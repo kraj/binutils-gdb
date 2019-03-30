@@ -19,21 +19,29 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "server.h"
-#include "regcache.h"
-#include "gdb/fileio.h"
-#include "mem-break.h"
 #include "win32-low.h"
-#include "gdbthread.h"
-#include "dll.h"
-#include "hostio.h"
+
+/* Standard C includes.  */
+#include <imagehlp.h>
+#include <process.h>
+#include <psapi.h>
+#include <tlhelp32.h>
 #include <windows.h>
 #include <winnt.h>
-#include <imagehlp.h>
-#include <tlhelp32.h>
-#include <psapi.h>
-#include <process.h>
-#include "common/gdb_tilde_expand.h"
+
+/* Local non-gdb includes.  */
+#include "dll.h"
+#include "gdb/fileio.h"
+#include "hostio.h"
+#include "mem-break.h"
+
+/* Local subdirectory includes.  */
 #include "common/common-inferior.h"
+#include "common/gdb_tilde_expand.h"
+
+/* Local includes.  */
+#include "gdbthread.h"
+#include "regcache.h"
 
 #ifndef USE_WIN32API
 #include <sys/cygwin.h>

@@ -18,27 +18,32 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "symtab.h"
-#include "gdbtypes.h"
+
+/* Standard C includes.  */
+#include <sys/stat.h>
+
+/* Local non-gdb includes.  */
 #include "bfd.h"
 #include "filenames.h"
-#include "symfile.h"
-#include "objfiles.h"
-#include "breakpoint.h"
-#include "command.h"
-#include "gdb_obstack.h"
-#include "language.h"
-#include "bcache.h"
-#include "block.h"
-#include "gdb_regex.h"
-#include <sys/stat.h>
-#include "dictionary.h"
-#include "typeprint.h"
-#include "gdbcmd.h"
-#include "source.h"
 #include "readline/readline.h"
 
+/* Local includes.  */
+#include "bcache.h"
+#include "block.h"
+#include "breakpoint.h"
+#include "command.h"
+#include "dictionary.h"
+#include "gdb_obstack.h"
+#include "gdb_regex.h"
+#include "gdbcmd.h"
+#include "gdbtypes.h"
+#include "language.h"
+#include "objfiles.h"
 #include "psymtab.h"
+#include "source.h"
+#include "symfile.h"
+#include "symtab.h"
+#include "typeprint.h"
 
 /* Unfortunately for debugging, stderr is usually a macro.  This is painful
    when calling functions that take FILE *'s from the debugger.

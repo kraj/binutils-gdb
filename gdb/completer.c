@@ -17,20 +17,29 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "symtab.h"
-#include "gdbtypes.h"
-#include "expression.h"
-#include "filenames.h"		/* For DOSish file names.  */
-#include "language.h"
-#include "common/gdb_signals.h"
-#include "target.h"
-#include "reggroups.h"
-#include "user-regs.h"
-#include "arch-utils.h"
-#include "location.h"
+#include "completer.h"
+
+/* Standard C++ includes.  */
 #include <algorithm>
-#include "linespec.h"
+
+/* Local non-gdb includes.  */
+#include "filenames.h"
+
+/* Local subdirectory includes.  */
 #include "cli/cli-decode.h"
+#include "common/gdb_signals.h"
+
+/* Local includes.  */
+#include "arch-utils.h"
+#include "expression.h"
+#include "gdbtypes.h"
+#include "language.h"
+#include "linespec.h"
+#include "location.h"
+#include "reggroups.h"
+#include "symtab.h"
+#include "target.h"
+#include "user-regs.h"
 
 /* FIXME: This is needed because of lookup_cmd_1 ().  We should be
    calling a hook instead so we eliminate the CLI dependency.  */

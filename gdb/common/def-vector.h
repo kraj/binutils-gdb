@@ -19,6 +19,8 @@
 #define COMMON_DEF_VECTOR_H
 
 #include <vector>
+
+/* Local subdirectory includes.  */
 #include "common/default-init-alloc.h"
 
 namespace gdb {

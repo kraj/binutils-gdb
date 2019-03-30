@@ -18,24 +18,30 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "exec.h"
 #include "inferior.h"
-#include "target.h"
+
+/* Local non-gdb includes.  */
+#include "readline/tilde.h"
+
+/* Local subdirectory includes.  */
+#include "cli/cli-utils.h"
+#include "common/environ.h"
+
+/* Local includes.  */
+#include "arch-utils.h"
 #include "command.h"
 #include "completer.h"
-#include "gdbcmd.h"
-#include "gdbthread.h"
-#include "ui-out.h"
-#include "observable.h"
-#include "gdbcore.h"
-#include "symfile.h"
-#include "common/environ.h"
-#include "cli/cli-utils.h"
 #include "continuations.h"
-#include "arch-utils.h"
-#include "target-descriptions.h"
-#include "readline/tilde.h"
+#include "exec.h"
+#include "gdbcmd.h"
+#include "gdbcore.h"
+#include "gdbthread.h"
+#include "observable.h"
 #include "progspace-and-thread.h"
+#include "symfile.h"
+#include "target-descriptions.h"
+#include "target.h"
+#include "ui-out.h"
 
 /* Keep a registry of per-inferior data-pointers required by other GDB
    modules.  */

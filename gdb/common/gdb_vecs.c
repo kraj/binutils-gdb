@@ -17,8 +17,10 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#include "common-defs.h"
-#include "gdb_vecs.h"
+#include "common/common-defs.h"
+#include "common/gdb_vecs.h"
+
+/* Local non-gdb includes.  */
 #include "host-defs.h"
 
 /* Worker function to split character delimiter separated string of fields

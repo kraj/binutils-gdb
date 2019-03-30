@@ -18,10 +18,12 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "target.h"
 #include "bfd-target.h"
+
+/* Local includes.  */
 #include "exec.h"
 #include "gdb_bfd.h"
+#include "target.h"
 
 /* A target that wraps a BFD.  */
 

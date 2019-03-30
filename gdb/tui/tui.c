@@ -20,29 +20,35 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "gdbcmd.h"
 #include "tui/tui.h"
-#include "tui/tui-hooks.h"
+
+/* Standard C includes.  */
+#include <ctype.h>
+#include <fcntl.h>
+#include <signal.h>
+
+/* Local subdirectory includes.  */
 #include "tui/tui-data.h"
-#include "tui/tui-layout.h"
+#include "tui/tui-hooks.h"
 #include "tui/tui-io.h"
+#include "tui/tui-layout.h"
 #include "tui/tui-regs.h"
 #include "tui/tui-stack.h"
 #include "tui/tui-win.h"
-#include "tui/tui-winsource.h"
 #include "tui/tui-windata.h"
-#include "target.h"
-#include "frame.h"
+#include "tui/tui-winsource.h"
+
+/* Local includes.  */
 #include "breakpoint.h"
+#include "frame.h"
+#include "gdbcmd.h"
 #include "inferior.h"
-#include "symtab.h"
 #include "source.h"
+#include "symtab.h"
+#include "target.h"
 #include "terminal.h"
 #include "top.h"
 
-#include <ctype.h>
-#include <signal.h>
-#include <fcntl.h>
 #if 0
 #include <termio.h>
 #endif

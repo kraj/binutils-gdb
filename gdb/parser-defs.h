@@ -24,6 +24,8 @@
 #define PARSER_DEFS_H 1
 
 #include "common/vec.h"
+
+/* Local includes.  */
 #include "expression.h"
 
 struct block;

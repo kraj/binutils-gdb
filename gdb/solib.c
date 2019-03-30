@@ -18,35 +18,42 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-
-#include <sys/types.h>
-#include <fcntl.h>
-#include "symtab.h"
-#include "bfd.h"
-#include "symfile.h"
-#include "objfiles.h"
-#include "gdbcore.h"
-#include "command.h"
-#include "target.h"
-#include "frame.h"
-#include "gdb_regex.h"
-#include "inferior.h"
-#include "common/environ.h"
-#include "language.h"
-#include "gdbcmd.h"
-#include "completer.h"
-#include "filenames.h"		/* for DOSish file names */
-#include "exec.h"
-#include "solist.h"
-#include "observable.h"
-#include "readline/readline.h"
-#include "remote.h"
 #include "solib.h"
-#include "interps.h"
-#include "filesystem.h"
-#include "gdb_bfd.h"
+
+/* Standard C includes.  */
+#include <fcntl.h>
+#include <sys/types.h>
+
+/* Local non-gdb includes.  */
+#include "bfd.h"
+#include "filenames.h"
+#include "readline/readline.h"
+
+/* Local subdirectory includes.  */
+#include "common/environ.h"
 #include "common/filestuff.h"
+
+/* Local includes.  */
+#include "command.h"
+#include "completer.h"
+#include "exec.h"
+#include "filesystem.h"
+#include "frame.h"
+#include "gdb_bfd.h"
+#include "gdb_regex.h"
+#include "gdbcmd.h"
+#include "gdbcore.h"
+#include "inferior.h"
+#include "interps.h"
+#include "language.h"
+#include "objfiles.h"
+#include "observable.h"
+#include "remote.h"
+#include "solist.h"
 #include "source.h"
+#include "symfile.h"
+#include "symtab.h"
+#include "target.h"
 
 /* Architecture-specific operations.  */
 

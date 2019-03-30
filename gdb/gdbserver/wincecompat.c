@@ -17,7 +17,9 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "server.h"
+#include "wincecompat.h"
 
+/* Standard C includes.  */
 #include <windows.h>
 
 void

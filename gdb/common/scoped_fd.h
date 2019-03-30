@@ -21,6 +21,8 @@
 #define COMMON_SCOPED_FD_H
 
 #include <unistd.h>
+
+/* Local non-gdb includes.  */
 #include "filestuff.h"
 
 /* A smart-pointer-like class to automatically close a file descriptor.  */

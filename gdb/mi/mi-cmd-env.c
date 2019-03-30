@@ -19,19 +19,27 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "inferior.h"
-#include "value.h"
-#include "mi-out.h"
+
+/* Standard C includes.  */
+#include <sys/stat.h>
+
+/* Local non-gdb includes.  */
 #include "mi-cmds.h"
 #include "mi-getopt.h"
+#include "mi-out.h"
+
+/* Local subdirectory includes.  */
+#include "common/environ.h"
+
+/* Local includes.  */
+#include "command.h"
+#include "inferior.h"
+#include "source.h"
 #include "symtab.h"
 #include "target.h"
-#include "common/environ.h"
-#include "command.h"
-#include "ui-out.h"
 #include "top.h"
-#include <sys/stat.h>
-#include "source.h"
+#include "ui-out.h"
+#include "value.h"
 
 static const char path_var_name[] = "PATH";
 static char *orig_path = NULL;

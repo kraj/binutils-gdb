@@ -18,9 +18,14 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "common/selftest.h"
-#include "common/netstuff.h"
+
+/* Local non-gdb includes.  */
 #include "diagnostics.h"
+
+/* Local subdirectory includes.  */
+#include "common/netstuff.h"
+#include "common/selftest.h"
+
 #ifdef USE_WIN32API
 #if _WIN32_WINNT < 0x0501
 # undef _WIN32_WINNT

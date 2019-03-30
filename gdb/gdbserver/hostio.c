@@ -19,14 +19,19 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "server.h"
-#include "gdb/fileio.h"
 #include "hostio.h"
 
+/* Standard C includes.  */
 #include <fcntl.h>
 #include <limits.h>
-#include <unistd.h>
-#include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
+
+/* Local non-gdb includes.  */
+#include "gdb/fileio.h"
+
+/* Local subdirectory includes.  */
 #include "common/fileio.h"
 
 extern int remote_debug;

@@ -16,10 +16,14 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+
+/* Local subdirectory includes.  */
+#include "common/agent.h"
+
+/* Local includes.  */
 #include "command.h"
 #include "gdbcmd.h"
 #include "target.h"
-#include "common/agent.h"
 
 /* Enum strings for "set|show agent".  */
 

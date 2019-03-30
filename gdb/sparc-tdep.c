@@ -18,27 +18,32 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "arch-utils.h"
+#include "sparc-tdep.h"
+
+/* Standard C++ includes.  */
+#include <algorithm>
+
+/* Local non-gdb includes.  */
 #include "dis-asm.h"
 #include "dwarf2.h"
+
+/* Local includes.  */
+#include "arch-utils.h"
 #include "dwarf2-frame.h"
-#include "frame.h"
 #include "frame-base.h"
 #include "frame-unwind.h"
+#include "frame.h"
 #include "gdbcore.h"
 #include "gdbtypes.h"
 #include "inferior.h"
-#include "symtab.h"
 #include "objfiles.h"
 #include "osabi.h"
 #include "regcache.h"
-#include "target.h"
-#include "target-descriptions.h"
-#include "value.h"
-
-#include "sparc-tdep.h"
 #include "sparc-ravenscar-thread.h"
-#include <algorithm>
+#include "symtab.h"
+#include "target-descriptions.h"
+#include "target.h"
+#include "value.h"
 
 struct regset;
 

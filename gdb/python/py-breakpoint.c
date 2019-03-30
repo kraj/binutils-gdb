@@ -18,21 +18,27 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "value.h"
+
+/* Local non-gdb includes.  */
+#include "py-event.h"
 #include "python-internal.h"
 #include "python.h"
-#include "charset.h"
-#include "breakpoint.h"
-#include "gdbcmd.h"
-#include "gdbthread.h"
-#include "observable.h"
+
+/* Local subdirectory includes.  */
 #include "cli/cli-script.h"
+
+/* Local includes.  */
 #include "ada-lang.h"
 #include "arch-utils.h"
+#include "breakpoint.h"
+#include "charset.h"
+#include "gdbcmd.h"
+#include "gdbthread.h"
 #include "language.h"
-#include "location.h"
-#include "py-event.h"
 #include "linespec.h"
+#include "location.h"
+#include "observable.h"
+#include "value.h"
 
 /* Number of live breakpoints.  */
 static int bppy_live;

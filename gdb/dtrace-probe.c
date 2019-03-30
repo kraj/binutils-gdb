@@ -20,19 +20,25 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "probe.h"
-#include "common/vec.h"
+
+/* Local non-gdb includes.  */
 #include "elf-bfd.h"
-#include "gdbtypes.h"
 #include "obstack.h"
-#include "objfiles.h"
-#include "complaints.h"
-#include "value.h"
-#include "ax.h"
+
+/* Local subdirectory includes.  */
+#include "common/vec.h"
+
+/* Local includes.  */
 #include "ax-gdb.h"
-#include "language.h"
-#include "parser-defs.h"
+#include "ax.h"
+#include "complaints.h"
+#include "gdbtypes.h"
 #include "inferior.h"
+#include "language.h"
+#include "objfiles.h"
+#include "parser-defs.h"
+#include "probe.h"
+#include "value.h"
 
 /* The type of the ELF sections where we will find the DOF programs
    with information about probes.  */

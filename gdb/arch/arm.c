@@ -18,8 +18,10 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "common/common-defs.h"
+#include "arch/arm.h"
+
+/* Local subdirectory includes.  */
 #include "common/common-regcache.h"
-#include "arm.h"
 
 /* See arm.h.  */
 

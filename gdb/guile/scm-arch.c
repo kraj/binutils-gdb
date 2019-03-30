@@ -21,10 +21,14 @@
    conventions, et.al.  */
 
 #include "defs.h"
+
+/* Local non-gdb includes.  */
+#include "guile-internal.h"
+
+/* Local includes.  */
+#include "arch-utils.h"
 #include "charset.h"
 #include "gdbarch.h"
-#include "arch-utils.h"
-#include "guile-internal.h"
 
 /* The <gdb:arch> smob.
    The typedef for this struct is in guile-internal.h.  */

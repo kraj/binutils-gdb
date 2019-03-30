@@ -21,15 +21,19 @@
    conventions, et.al.  */
 
 #include "defs.h"
+
+/* Local non-gdb includes.  */
+#include "guile-internal.h"
+
+/* Local includes.  */
 #include "arch-utils.h"
 #include "charset.h"
 #include "cp-abi.h"
-#include "target-float.h"
-#include "symtab.h" /* Needed by language.h.  */
 #include "language.h"
+#include "symtab.h"
+#include "target-float.h"
 #include "valprint.h"
 #include "value.h"
-#include "guile-internal.h"
 
 /* Note: Use target types here to remain consistent with the values system in
    GDB (which uses target arithmetic).  */

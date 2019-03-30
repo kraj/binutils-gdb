@@ -20,8 +20,8 @@
 #ifndef INF_CHILD_H
 #define INF_CHILD_H
 
-#include "target.h"
 #include "process-stratum-target.h"
+#include "target.h"
 
 /* A prototype child target.  The client can override it with local
    methods.  */

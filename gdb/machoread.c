@@ -19,21 +19,29 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "symtab.h"
-#include "gdbtypes.h"
-#include "bfd.h"
-#include "symfile.h"
-#include "objfiles.h"
-#include "gdbcmd.h"
-#include "gdbcore.h"
-#include "mach-o.h"
+
+/* Standard C++ includes.  */
+#include <algorithm>
+#include <string>
+
+/* Local non-gdb includes.  */
 #include "aout/stab_gnu.h"
+#include "bfd.h"
+#include "mach-o.h"
+
+/* Local subdirectory includes.  */
 #include "common/vec.h"
-#include "psympriv.h"
+
+/* Local includes.  */
 #include "complaints.h"
 #include "gdb_bfd.h"
-#include <string>
-#include <algorithm>
+#include "gdbcmd.h"
+#include "gdbcore.h"
+#include "gdbtypes.h"
+#include "objfiles.h"
+#include "psympriv.h"
+#include "symfile.h"
+#include "symtab.h"
 
 /* If non-zero displays debugging message.  */
 static unsigned int mach_o_debug_level = 0;

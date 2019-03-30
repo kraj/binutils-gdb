@@ -21,29 +21,31 @@
    sac@cygnus.com.  */
 
 #include "defs.h"
-#include "frame.h"
-#include "frame-base.h"
-#include "frame-unwind.h"
-#include "dwarf2-frame.h"
-#include "symtab.h"
-#include "gdbtypes.h"
-#include "gdbcmd.h"
-#include "gdbcore.h"
-#include "value.h"
-#include "dis-asm.h"
-#include "inferior.h"
-#include "arch-utils.h"
-#include "regcache.h"
-#include "target-float.h"
-#include "osabi.h"
-#include "reggroups.h"
-#include "regset.h"
-#include "objfiles.h"
-
 #include "sh-tdep.h"
 
+/* Local non-gdb includes.  */
+#include "dis-asm.h"
 #include "elf-bfd.h"
+
+/* Local includes.  */
+#include "arch-utils.h"
+#include "dwarf2-frame.h"
+#include "frame-base.h"
+#include "frame-unwind.h"
+#include "frame.h"
+#include "gdbcmd.h"
+#include "gdbcore.h"
+#include "gdbtypes.h"
+#include "inferior.h"
+#include "objfiles.h"
+#include "osabi.h"
+#include "regcache.h"
+#include "reggroups.h"
+#include "regset.h"
 #include "solib-svr4.h"
+#include "symtab.h"
+#include "target-float.h"
+#include "value.h"
 
 /* sh flags */
 #include "elf/sh.h"

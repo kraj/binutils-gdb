@@ -18,19 +18,25 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+
+/* Local non-gdb includes.  */
+#include "demangle.h"
+#include "hashtab.h"
+#include "python-internal.h"
+#include "python.h"
+
+/* Local subdirectory includes.  */
+#include "common/gdb_optional.h"
+#include "mi/mi-cmds.h"
+
+/* Local includes.  */
+#include "annotate.h"
+#include "arch-utils.h"
+#include "language.h"
 #include "objfiles.h"
 #include "symtab.h"
-#include "language.h"
-#include "arch-utils.h"
-#include "python.h"
 #include "ui-out.h"
 #include "valprint.h"
-#include "annotate.h"
-#include "hashtab.h"
-#include "demangle.h"
-#include "mi/mi-cmds.h"
-#include "python-internal.h"
-#include "common/gdb_optional.h"
 
 enum mi_print_types
 {

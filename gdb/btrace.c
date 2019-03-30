@@ -21,19 +21,25 @@
 
 #include "defs.h"
 #include "btrace.h"
+
+/* Local non-gdb includes.  */
+#include "filenames.h"
+
+/* Local subdirectory includes.  */
+#include "cli/cli-utils.h"
+#include "common/rsp-low.h"
+
+/* Local includes.  */
+#include "disasm.h"
+#include "gdbcmd.h"
 #include "gdbthread.h"
 #include "inferior.h"
-#include "target.h"
 #include "record.h"
-#include "symtab.h"
-#include "disasm.h"
-#include "source.h"
-#include "filenames.h"
-#include "xml-support.h"
 #include "regcache.h"
-#include "common/rsp-low.h"
-#include "gdbcmd.h"
-#include "cli/cli-utils.h"
+#include "source.h"
+#include "symtab.h"
+#include "target.h"
+#include "xml-support.h"
 
 /* For maintenance commands.  */
 #include "record-btrace.h"

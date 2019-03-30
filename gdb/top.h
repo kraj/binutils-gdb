@@ -21,6 +21,8 @@
 #define TOP_H
 
 #include "common/buffer.h"
+
+/* Local includes.  */
 #include "event-loop.h"
 #include "value.h"
 

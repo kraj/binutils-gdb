@@ -24,8 +24,10 @@
 */
 
 #include "defs.h"
-#include "gdbtypes.h"
+
+/* Local includes.  */
 #include "c-lang.h"
+#include "gdbtypes.h"
 #include "go-lang.h"
 
 /* Print a description of a type TYPE.

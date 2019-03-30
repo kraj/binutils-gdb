@@ -20,8 +20,12 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "server.h"
-#include "linux-low.h"
+
+/* Standard C includes.  */
 #include <asm/ptrace.h>
+
+/* Local non-gdb includes.  */
+#include "linux-low.h"
 
 /* Defined in auto-generated file reg-bfin.c.  */
 void init_registers_bfin (void);

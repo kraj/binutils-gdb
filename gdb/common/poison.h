@@ -20,8 +20,8 @@
 #ifndef COMMON_POISON_H
 #define COMMON_POISON_H
 
-#include "traits.h"
 #include "obstack.h"
+#include "traits.h"
 
 /* Poison memset of non-POD types.  The idea is catching invalid
    initialization of non-POD structs that is easy to be introduced as

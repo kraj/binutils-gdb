@@ -18,8 +18,10 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "osabi.h"
+
+/* Local includes.  */
 #include "dicos-tdep.h"
+#include "osabi.h"
 
 static void
 i386_dicos_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)

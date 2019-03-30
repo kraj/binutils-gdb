@@ -17,12 +17,18 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "server.h"
-#include "linux-low.h"
 
-#include "nat/gdb_ptrace.h"
+/* Standard C includes.  */
 #include <endian.h>
 
+/* Local non-gdb includes.  */
+#include "linux-low.h"
+
+/* Local subdirectory includes.  */
+#include "nat/gdb_ptrace.h"
 #include "nat/mips-linux-watch.h"
+
+/* Local includes.  */
 #include "gdb_proc_service.h"
 
 /* Defined in auto-generated file mips-linux.c.  */

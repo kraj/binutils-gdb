@@ -16,19 +16,24 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "common/common-defs.h"
-#include "i386.h"
-#include "common/tdesc.h"
-#include "common/x86-xstate.h"
+#include "arch/i386.h"
+
+/* Standard C includes.  */
 #include <stdlib.h>
 
-#include "../features/i386/32bit-core.c"
-#include "../features/i386/32bit-linux.c"
-#include "../features/i386/32bit-sse.c"
+/* Local non-gdb includes.  */
 #include "../features/i386/32bit-avx.c"
 #include "../features/i386/32bit-avx512.c"
+#include "../features/i386/32bit-core.c"
+#include "../features/i386/32bit-linux.c"
 #include "../features/i386/32bit-mpx.c"
 #include "../features/i386/32bit-pkeys.c"
 #include "../features/i386/32bit-segments.c"
+#include "../features/i386/32bit-sse.c"
+
+/* Local subdirectory includes.  */
+#include "common/tdesc.h"
+#include "common/x86-xstate.h"
 
 /* Create i386 target descriptions according to XCR0.  */
 

@@ -18,10 +18,15 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "server.h"
-#include "tdesc.h"
 #include "linux-x86-tdesc.h"
+
+/* Local non-gdb includes.  */
+#include "tdesc.h"
+
+/* Local subdirectory includes.  */
 #include "arch/i386.h"
 #include "common/x86-xstate.h"
+
 #ifdef __x86_64__
 #include "arch/amd64.h"
 #endif

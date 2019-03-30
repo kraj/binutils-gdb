@@ -18,17 +18,20 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+#include "i387-tdep.h"
+
+/* Local subdirectory includes.  */
+#include "common/x86-xstate.h"
+
+/* Local includes.  */
 #include "frame.h"
 #include "gdbcore.h"
+#include "i386-tdep.h"
 #include "inferior.h"
 #include "language.h"
 #include "regcache.h"
 #include "target-float.h"
 #include "value.h"
-
-#include "i386-tdep.h"
-#include "i387-tdep.h"
-#include "common/x86-xstate.h"
 
 /* Print the floating point number specified by RAW.  */
 

@@ -18,25 +18,28 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+
+/* Standard C includes.  */
+#include <asm/ptrace.h>
+#include <sgidefs.h>
+
+/* Local subdirectory includes.  */
+#include "nat/gdb_ptrace.h"
+#include "nat/mips-linux-watch.h"
+
+/* Local includes.  */
 #include "command.h"
+#include "gdb_proc_service.h"
 #include "gdbcmd.h"
+#include "gregset.h"
+#include "inf-ptrace.h"
 #include "inferior.h"
-#include "mips-tdep.h"
-#include "target.h"
-#include "regcache.h"
 #include "linux-nat-trad.h"
 #include "mips-linux-tdep.h"
+#include "mips-tdep.h"
+#include "regcache.h"
 #include "target-descriptions.h"
-
-#include "gdb_proc_service.h"
-#include "gregset.h"
-
-#include <sgidefs.h>
-#include "nat/gdb_ptrace.h"
-#include <asm/ptrace.h>
-#include "inf-ptrace.h"
-
-#include "nat/mips-linux-watch.h"
+#include "target.h"
 
 #ifndef PTRACE_GET_THREAD_AREA
 #define PTRACE_GET_THREAD_AREA 25

@@ -21,17 +21,25 @@
 
 #include "defs.h"
 #include "ctf.h"
-#include "tracepoint.h"
-#include "regcache.h"
-#include <sys/stat.h>
-#include "exec.h"
-#include "completer.h"
-#include "inferior.h"
-#include "gdbthread.h"
-#include "tracefile.h"
+
+/* Standard C includes.  */
 #include <ctype.h>
+#include <sys/stat.h>
+
+/* Standard C++ includes.  */
 #include <algorithm>
+
+/* Local subdirectory includes.  */
 #include "common/filestuff.h"
+
+/* Local includes.  */
+#include "completer.h"
+#include "exec.h"
+#include "gdbthread.h"
+#include "inferior.h"
+#include "regcache.h"
+#include "tracefile.h"
+#include "tracepoint.h"
 
 /* The CTF target.  */
 

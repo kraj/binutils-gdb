@@ -21,10 +21,12 @@
 #ifndef XML_SUPPORT_H
 #define XML_SUPPORT_H
 
-#include "gdb_obstack.h"
+#include "common/byte-vector.h"
 #include "common/vec.h"
 #include "common/xml-utils.h"
-#include "common/byte-vector.h"
+
+/* Local includes.  */
+#include "gdb_obstack.h"
 
 struct gdb_xml_parser;
 struct gdb_xml_element;

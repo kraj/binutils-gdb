@@ -16,12 +16,18 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "server.h"
-#include "lynx-low.h"
+
+/* Standard C includes.  */
 #include <limits.h>
 #include <sys/ptrace.h>
-#include "common/x86-xstate.h"
-#include "arch/i386.h"
+
+/* Local non-gdb includes.  */
+#include "lynx-low.h"
 #include "x86-tdesc.h"
+
+/* Local subdirectory includes.  */
+#include "arch/i386.h"
+#include "common/x86-xstate.h"
 
 /* The following two typedefs are defined in a .h file which is not
    in the standard include path (/sys/include/family/x86/ucontext.h),

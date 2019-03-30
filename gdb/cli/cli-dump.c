@@ -20,18 +20,26 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "cli/cli-decode.h"
-#include "cli/cli-cmds.h"
-#include "value.h"
-#include "completer.h"
+
+/* Standard C includes.  */
 #include <ctype.h>
-#include "target.h"
+
+/* Local non-gdb includes.  */
 #include "readline/readline.h"
-#include "gdbcore.h"
+
+/* Local subdirectory includes.  */
+#include "cli/cli-cmds.h"
+#include "cli/cli-decode.h"
 #include "cli/cli-utils.h"
-#include "gdb_bfd.h"
-#include "common/filestuff.h"
 #include "common/byte-vector.h"
+#include "common/filestuff.h"
+
+/* Local includes.  */
+#include "completer.h"
+#include "gdb_bfd.h"
+#include "gdbcore.h"
+#include "target.h"
+#include "value.h"
 
 static gdb::unique_xmalloc_ptr<char>
 scan_expression (const char **cmd, const char *def)

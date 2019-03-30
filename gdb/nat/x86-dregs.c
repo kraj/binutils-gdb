@@ -18,7 +18,9 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "common/common-defs.h"
-#include "x86-dregs.h"
+#include "nat/x86-dregs.h"
+
+/* Local subdirectory includes.  */
 #include "common/break-common.h"
 
 /* Support for hardware watchpoints and breakpoints using the x86

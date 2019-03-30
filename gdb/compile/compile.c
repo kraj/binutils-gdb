@@ -18,30 +18,36 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "top.h"
-#include "ui-out.h"
-#include "command.h"
-#include "cli/cli-script.h"
-#include "cli/cli-utils.h"
-#include "completer.h"
-#include "gdbcmd.h"
-#include "compile.h"
+#include "compile/compile.h"
+
+/* Local non-gdb includes.  */
 #include "compile-internal.h"
 #include "compile-object-load.h"
 #include "compile-object-run.h"
-#include "language.h"
-#include "frame.h"
-#include "source.h"
-#include "block.h"
-#include "arch-utils.h"
+
+/* Local subdirectory includes.  */
+#include "cli/cli-script.h"
+#include "cli/cli-utils.h"
 #include "common/filestuff.h"
-#include "target.h"
-#include "osabi.h"
-#include "common/gdb_wait.h"
-#include "valprint.h"
 #include "common/gdb_optional.h"
 #include "common/gdb_unlinker.h"
+#include "common/gdb_wait.h"
 #include "common/pathstuff.h"
+
+/* Local includes.  */
+#include "arch-utils.h"
+#include "block.h"
+#include "command.h"
+#include "completer.h"
+#include "frame.h"
+#include "gdbcmd.h"
+#include "language.h"
+#include "osabi.h"
+#include "source.h"
+#include "target.h"
+#include "top.h"
+#include "ui-out.h"
+#include "valprint.h"
 
 
 

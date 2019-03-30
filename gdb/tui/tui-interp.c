@@ -18,22 +18,28 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "cli/cli-interp.h"
-#include "interps.h"
-#include "top.h"
-#include "event-top.h"
-#include "event-loop.h"
-#include "ui-out.h"
-#include "cli-out.h"
-#include "tui/tui-data.h"
+
+/* Local non-gdb includes.  */
 #include "readline/readline.h"
+
+/* Local subdirectory includes.  */
+#include "cli/cli-interp.h"
+#include "tui/tui-data.h"
+#include "tui/tui-io.h"
 #include "tui/tui-win.h"
 #include "tui/tui.h"
-#include "tui/tui-io.h"
-#include "infrun.h"
-#include "observable.h"
+
+/* Local includes.  */
+#include "cli-out.h"
+#include "event-loop.h"
+#include "event-top.h"
 #include "gdbthread.h"
 #include "inferior.h"
+#include "infrun.h"
+#include "interps.h"
+#include "observable.h"
+#include "top.h"
+#include "ui-out.h"
 
 /* Set to 1 when the TUI mode must be activated when we first start
    gdb.  */

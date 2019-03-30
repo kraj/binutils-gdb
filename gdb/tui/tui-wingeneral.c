@@ -20,11 +20,14 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "tui/tui.h"
-#include "tui/tui-data.h"
 #include "tui/tui-wingeneral.h"
-#include "tui/tui-win.h"
 
+/* Local subdirectory includes.  */
+#include "tui/tui-data.h"
+#include "tui/tui-win.h"
+#include "tui/tui.h"
+
+/* Local includes.  */
 #include "gdb_curses.h"
 
 /***********************

@@ -20,24 +20,29 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "arch-utils.h"
-#include "command.h"
-#include "symtab.h"
-#include "frame.h"
-#include "source.h"
+#include "tui/tui-layout.h"
+
+/* Standard C includes.  */
 #include <ctype.h>
 
-#include "tui/tui.h"
+/* Local subdirectory includes.  */
 #include "tui/tui-data.h"
+#include "tui/tui-disasm.h"
+#include "tui/tui-regs.h"
+#include "tui/tui-stack.h"
+#include "tui/tui-win.h"
 #include "tui/tui-windata.h"
 #include "tui/tui-wingeneral.h"
-#include "tui/tui-stack.h"
-#include "tui/tui-regs.h"
-#include "tui/tui-win.h"
 #include "tui/tui-winsource.h"
-#include "tui/tui-disasm.h"
-#include "tui/tui-layout.h"
+#include "tui/tui.h"
+
+/* Local includes.  */
+#include "arch-utils.h"
+#include "command.h"
+#include "frame.h"
 #include "gdb_curses.h"
+#include "source.h"
+#include "symtab.h"
 
 /*******************************
 ** Static Local Decls

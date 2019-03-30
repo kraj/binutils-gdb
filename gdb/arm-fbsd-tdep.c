@@ -18,10 +18,13 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-
-#include "elf/common.h"
-#include "arm-tdep.h"
 #include "arm-fbsd-tdep.h"
+
+/* Local non-gdb includes.  */
+#include "elf/common.h"
+
+/* Local includes.  */
+#include "arm-tdep.h"
 #include "auxv.h"
 #include "fbsd-tdep.h"
 #include "gdbcore.h"

@@ -20,9 +20,11 @@
 #if !defined (VALUE_H)
 #define VALUE_H 1
 
-#include "frame.h"		/* For struct frame_id.  */
-#include "extension.h"
 #include "common/gdb_ref_ptr.h"
+
+/* Local includes.  */
+#include "extension.h"
+#include "frame.h"
 
 struct block;
 struct expression;

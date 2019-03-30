@@ -18,14 +18,15 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-
 #include "macroscope.h"
-#include "symtab.h"
-#include "source.h"
-#include "target.h"
+
+/* Local includes.  */
+#include "complaints.h"
 #include "frame.h"
 #include "inferior.h"
-#include "complaints.h"
+#include "source.h"
+#include "symtab.h"
+#include "target.h"
 
 /* A table of user-defined macros.  Unlike the macro tables used for
    symtabs, this one uses xmalloc for all its allocation, not an

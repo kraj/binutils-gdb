@@ -21,16 +21,20 @@
    conventions, et.al.  */
 
 #include "defs.h"
+
+/* Local non-gdb includes.  */
+#include "guile-internal.h"
+
+/* Local includes.  */
 #include "block.h"
 #include "frame.h"
 #include "inferior.h"
 #include "objfiles.h"
+#include "stack.h"
 #include "symfile.h"
 #include "symtab.h"
-#include "stack.h"
 #include "user-regs.h"
 #include "value.h"
-#include "guile-internal.h"
 
 /* The <gdb:frame> smob.
    The typedef for this struct is in guile-internal.h.  */

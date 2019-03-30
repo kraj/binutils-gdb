@@ -18,21 +18,25 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+
+/* Standard C includes.  */
+#include <sys/ptrace.h>
+#include <sys/sysctl.h>
+#include <sys/types.h>
+#include <sys/user.h>
+
+/* Local subdirectory includes.  */
+#include "common/x86-xstate.h"
+
+/* Local includes.  */
+#include "fbsd-nat.h"
+#include "i386-bsd-nat.h"
+#include "i386-tdep.h"
 #include "inferior.h"
 #include "regcache.h"
 #include "target.h"
-
-#include <sys/types.h>
-#include <sys/ptrace.h>
-#include <sys/sysctl.h>
-#include <sys/user.h>
-
-#include "fbsd-nat.h"
-#include "i386-tdep.h"
-#include "x86-nat.h"
-#include "common/x86-xstate.h"
 #include "x86-bsd-nat.h"
-#include "i386-bsd-nat.h"
+#include "x86-nat.h"
 
 class i386_fbsd_nat_target final
   : public i386_bsd_nat_target<fbsd_nat_target>

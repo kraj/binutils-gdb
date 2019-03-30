@@ -16,9 +16,13 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "server.h"
-#include "tdesc.h"
-#include "common/selftest.h"
+
+/* Local non-gdb includes.  */
 #include "linux-aarch64-tdesc.h"
+#include "tdesc.h"
+
+/* Local subdirectory includes.  */
+#include "common/selftest.h"
 
 /* Defined in auto-generated file features/aarch64.c.  */
 void init_registers_aarch64 (void);

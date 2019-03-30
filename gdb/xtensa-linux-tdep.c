@@ -18,11 +18,13 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "xtensa-tdep.h"
-#include "osabi.h"
+
+/* Local includes.  */
 #include "linux-tdep.h"
+#include "osabi.h"
 #include "solib-svr4.h"
 #include "symtab.h"
+#include "xtensa-tdep.h"
 
 /* This enum represents the signals' numbers on the Xtensa
    architecture.  It just contains the signal definitions which are

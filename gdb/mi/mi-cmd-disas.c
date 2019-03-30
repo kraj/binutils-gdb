@@ -18,13 +18,17 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "arch-utils.h"
-#include "target.h"
-#include "value.h"
+
+/* Local non-gdb includes.  */
 #include "mi-cmds.h"
 #include "mi-getopt.h"
-#include "ui-out.h"
+
+/* Local includes.  */
+#include "arch-utils.h"
 #include "disasm.h"
+#include "target.h"
+#include "ui-out.h"
+#include "value.h"
 
 /* The arguments to be passed on the command line and parsed here are
    either:

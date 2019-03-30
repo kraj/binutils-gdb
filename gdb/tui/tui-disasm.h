@@ -22,8 +22,8 @@
 #ifndef TUI_TUI_DISASM_H
 #define TUI_TUI_DISASM_H
 
-#include "tui/tui.h"		/* For enum tui_status.  */
-#include "tui/tui-data.h"	/* For enum tui_scroll_direction.  */
+#include "tui/tui-data.h"
+#include "tui/tui.h"
 
 extern enum tui_status tui_set_disassem_content (struct gdbarch *, CORE_ADDR);
 extern void tui_show_disassem (struct gdbarch *, CORE_ADDR);

@@ -18,11 +18,15 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+
+/* Local non-gdb includes.  */
 #include "python-internal.h"
+
+/* Local includes.  */
 #include "charset.h"
-#include "value.h"
-#include "valprint.h"
 #include "language.h"
+#include "valprint.h"
+#include "value.h"
 
 typedef struct {
   PyObject_HEAD

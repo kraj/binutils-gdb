@@ -18,13 +18,14 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "gdbcore.h"
-#include "regcache.h"
-#include "target.h"
 
-#include "sparc64-tdep.h"
-#include "sparc-nat.h"
+/* Local includes.  */
+#include "gdbcore.h"
 #include "obsd-nat.h"
+#include "regcache.h"
+#include "sparc-nat.h"
+#include "sparc64-tdep.h"
+#include "target.h"
 
 /* Determine whether `gregset_t' contains register REGNUM.  */
 

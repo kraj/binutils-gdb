@@ -20,18 +20,26 @@
 /* See the GDB User Guide for details of the GDB remote protocol.  */
 
 #include "defs.h"
+#include "remote-fileio.h"
+
+/* Standard C includes.  */
+#include <fcntl.h>
+#include <sys/stat.h>
+
+/* Local non-gdb includes.  */
+#include "filenames.h"
+
+/* Local subdirectory includes.  */
+#include "common/filestuff.h"
+#include "common/gdb_sys_time.h"
+#include "common/gdb_wait.h"
+
+/* Local includes.  */
+#include "event-loop.h"
 #include "gdbcmd.h"
 #include "remote.h"
-#include "common/gdb_wait.h"
-#include <sys/stat.h>
-#include "remote-fileio.h"
-#include "event-loop.h"
 #include "target.h"
-#include "filenames.h"
-#include "common/filestuff.h"
 
-#include <fcntl.h>
-#include "common/gdb_sys_time.h"
 #ifdef __CYGWIN__
 #include <sys/cygwin.h>		/* For cygwin_conv_path.  */
 #endif

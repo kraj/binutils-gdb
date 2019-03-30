@@ -18,21 +18,27 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "arch-utils.h"
-#include "mi-cmds.h"
-#include "ui-out.h"
-#include "mi-out.h"
-#include "breakpoint.h"
-#include "mi-getopt.h"
-#include "observable.h"
-#include "mi-main.h"
-#include "mi-cmd-break.h"
-#include "language.h"
-#include "location.h"
-#include "linespec.h"
-#include "gdb_obstack.h"
+#include "mi/mi-cmd-break.h"
+
+/* Standard C includes.  */
 #include <ctype.h>
+
+/* Local non-gdb includes.  */
+#include "mi-cmds.h"
+#include "mi-getopt.h"
+#include "mi-main.h"
+#include "mi-out.h"
+
+/* Local includes.  */
+#include "arch-utils.h"
+#include "breakpoint.h"
+#include "gdb_obstack.h"
+#include "language.h"
+#include "linespec.h"
+#include "location.h"
+#include "observable.h"
 #include "tracepoint.h"
+#include "ui-out.h"
 
 enum
   {

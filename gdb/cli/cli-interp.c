@@ -18,17 +18,19 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "cli-interp.h"
-#include "interps.h"
-#include "event-top.h"
-#include "ui-out.h"
+#include "cli/cli-interp.h"
+
+/* Local includes.  */
 #include "cli-out.h"
-#include "top.h"		/* for "execute_command" */
-#include "infrun.h"
-#include "observable.h"
+#include "event-top.h"
 #include "gdbthread.h"
-#include "thread-fsm.h"
 #include "inferior.h"
+#include "infrun.h"
+#include "interps.h"
+#include "observable.h"
+#include "thread-fsm.h"
+#include "top.h"
+#include "ui-out.h"
 
 cli_interp_base::cli_interp_base (const char *name)
   : interp (name)

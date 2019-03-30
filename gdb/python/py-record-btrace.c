@@ -18,14 +18,18 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "gdbcore.h"
-#include "gdbcmd.h"
-#include "gdbthread.h"
-#include "btrace.h"
+#include "python/py-record-btrace.h"
+
+/* Local non-gdb includes.  */
 #include "py-record.h"
-#include "py-record-btrace.h"
-#include "record-btrace.h"
+
+/* Local includes.  */
+#include "btrace.h"
 #include "disasm.h"
+#include "gdbcmd.h"
+#include "gdbcore.h"
+#include "gdbthread.h"
+#include "record-btrace.h"
 
 #if defined (IS_PY3K)
 

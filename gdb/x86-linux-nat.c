@@ -18,15 +18,24 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "inferior.h"
-#include "elf/common.h"
-#include "gdb_proc_service.h"
-#include "nat/gdb_ptrace.h"
-#include <sys/user.h>
+#include "x86-linux-nat.h"
+
+/* Standard C includes.  */
 #include <sys/procfs.h>
 #include <sys/uio.h>
+#include <sys/user.h>
 
+/* Local non-gdb includes.  */
+#include "elf/common.h"
+
+/* Local subdirectory includes.  */
+#include "nat/gdb_ptrace.h"
+
+/* Local includes.  */
+#include "gdb_proc_service.h"
+#include "inferior.h"
 #include "x86-nat.h"
+
 #ifndef __x86_64__
 #include "i386-linux-nat.h"
 #endif

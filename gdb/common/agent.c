@@ -17,11 +17,18 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#include "common-defs.h"
-#include "target/target.h"
-#include "common/symbol.h"
+#include "common/common-defs.h"
+#include "common/agent.h"
+
+/* Standard C includes.  */
 #include <unistd.h>
+
+/* Local non-gdb includes.  */
 #include "filestuff.h"
+
+/* Local subdirectory includes.  */
+#include "common/symbol.h"
+#include "target/target.h"
 
 #define IPA_SYM_STRUCT_NAME ipa_sym_addresses_common
 #include "agent.h"

@@ -21,28 +21,35 @@
 
 
 #include "defs.h"
-#include "arch-utils.h"
+#include "maint.h"
+
+/* Standard C includes.  */
 #include <ctype.h>
 #include <signal.h>
-#include "command.h"
-#include "gdbcmd.h"
-#include "symtab.h"
-#include "block.h"
-#include "gdbtypes.h"
+
+/* Local non-gdb includes.  */
 #include "demangle.h"
-#include "gdbcore.h"
-#include "expression.h"		/* For language.h */
-#include "language.h"
-#include "symfile.h"
-#include "objfiles.h"
-#include "value.h"
-#include "top.h"
-#include "maint.h"
+
+/* Local subdirectory includes.  */
+#include "cli/cli-decode.h"
+#include "cli/cli-setshow.h"
+#include "cli/cli-utils.h"
 #include "common/selftest.h"
 
-#include "cli/cli-decode.h"
-#include "cli/cli-utils.h"
-#include "cli/cli-setshow.h"
+/* Local includes.  */
+#include "arch-utils.h"
+#include "block.h"
+#include "command.h"
+#include "expression.h"
+#include "gdbcmd.h"
+#include "gdbcore.h"
+#include "gdbtypes.h"
+#include "language.h"
+#include "objfiles.h"
+#include "symfile.h"
+#include "symtab.h"
+#include "top.h"
+#include "value.h"
 
 static void maintenance_do_deprecate (const char *, int);
 

@@ -21,6 +21,8 @@
 #define REMOTE_NOTIF_H
 
 #include <memory>
+
+/* Local subdirectory includes.  */
 #include "common/queue.h"
 
 /* An event of a type of async remote notification.  */

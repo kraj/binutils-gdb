@@ -21,9 +21,13 @@
 
 #include "defs.h"
 #include "ui-file.h"
+
+/* Local subdirectory includes.  */
+#include "common/filestuff.h"
+
+/* Local includes.  */
 #include "gdb_obstack.h"
 #include "gdb_select.h"
-#include "common/filestuff.h"
 
 null_file null_stream;
 

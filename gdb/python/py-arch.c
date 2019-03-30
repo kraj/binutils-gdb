@@ -18,10 +18,14 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "gdbarch.h"
+
+/* Local non-gdb includes.  */
+#include "python-internal.h"
+
+/* Local includes.  */
 #include "arch-utils.h"
 #include "disasm.h"
-#include "python-internal.h"
+#include "gdbarch.h"
 
 typedef struct arch_object_type_object {
   PyObject_HEAD

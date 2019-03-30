@@ -25,28 +25,33 @@
    this file.  */
 
 #include "defs.h"
-#include "bfd.h"
-#include "gdb_obstack.h"
-#include "symtab.h"
-#include "gdbtypes.h"
-#include "expression.h"
-#include "symfile.h"
-#include "objfiles.h"
-#include "aout/stab_gnu.h"	/* We always use GNU stabs, not native.  */
-#include "libaout.h"
-#include "aout/aout64.h"
-#include "gdb-stabs.h"
-#include "buildsym-legacy.h"
-#include "complaints.h"
-#include "demangle.h"
-#include "gdb-demangle.h"
-#include "language.h"
-#include "target-float.h"
-#include "cp-abi.h"
-#include "cp-support.h"
+#include "stabsread.h"
+
+/* Standard C includes.  */
 #include <ctype.h>
 
-#include "stabsread.h"
+/* Local non-gdb includes.  */
+#include "aout/aout64.h"
+#include "aout/stab_gnu.h"
+#include "bfd.h"
+#include "demangle.h"
+#include "libaout.h"
+
+/* Local includes.  */
+#include "buildsym-legacy.h"
+#include "complaints.h"
+#include "cp-abi.h"
+#include "cp-support.h"
+#include "expression.h"
+#include "gdb-demangle.h"
+#include "gdb-stabs.h"
+#include "gdb_obstack.h"
+#include "gdbtypes.h"
+#include "language.h"
+#include "objfiles.h"
+#include "symfile.h"
+#include "symtab.h"
+#include "target-float.h"
 
 /* See stabsread.h for these globals.  */
 unsigned int symnum;

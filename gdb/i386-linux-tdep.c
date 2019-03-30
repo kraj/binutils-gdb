@@ -18,27 +18,30 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "gdbcore.h"
-#include "frame.h"
-#include "value.h"
-#include "regcache.h"
-#include "regset.h"
-#include "inferior.h"
-#include "osabi.h"
-#include "reggroups.h"
-#include "dwarf2-frame.h"
-#include "i386-tdep.h"
 #include "i386-linux-tdep.h"
-#include "linux-tdep.h"
-#include "utils.h"
+
+/* Local subdirectory includes.  */
+#include "common/x86-xstate.h"
+
+/* Local includes.  */
+#include "arch-utils.h"
+#include "dwarf2-frame.h"
+#include "frame.h"
+#include "gdbcore.h"
 #include "glibc-tdep.h"
+#include "i386-tdep.h"
+#include "i387-tdep.h"
+#include "inferior.h"
+#include "linux-tdep.h"
+#include "osabi.h"
+#include "regcache.h"
+#include "reggroups.h"
+#include "regset.h"
 #include "solib-svr4.h"
 #include "symtab.h"
-#include "arch-utils.h"
+#include "utils.h"
+#include "value.h"
 #include "xml-syscall.h"
-
-#include "i387-tdep.h"
-#include "common/x86-xstate.h"
 
 /* The syscall's XML filename for i386.  */
 #define XML_SYSCALL_FILENAME_I386 "syscalls/i386-linux.xml"

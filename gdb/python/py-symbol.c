@@ -18,11 +18,15 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+
+/* Local non-gdb includes.  */
+#include "python-internal.h"
+
+/* Local includes.  */
 #include "block.h"
 #include "frame.h"
-#include "symtab.h"
-#include "python-internal.h"
 #include "objfiles.h"
+#include "symtab.h"
 
 typedef struct sympy_symbol_object {
   PyObject_HEAD

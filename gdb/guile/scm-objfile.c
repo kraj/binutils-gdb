@@ -21,9 +21,13 @@
    conventions, et.al.  */
 
 #include "defs.h"
-#include "objfiles.h"
-#include "language.h"
+
+/* Local non-gdb includes.  */
 #include "guile-internal.h"
+
+/* Local includes.  */
+#include "language.h"
+#include "objfiles.h"
 
 /* The <gdb:objfile> smob.
    The typedef for this struct is in guile-internal.h.  */

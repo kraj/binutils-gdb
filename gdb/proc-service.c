@@ -19,17 +19,18 @@
 
 #include "defs.h"
 
+/* Standard C includes.  */
+#include <sys/procfs.h>
+
+/* Local includes.  */
+#include "gdb_proc_service.h"
 #include "gdbcore.h"
-#include "inferior.h"
 #include "gdbthread.h"
+#include "inferior.h"
+#include "objfiles.h"
+#include "regcache.h"
 #include "symtab.h"
 #include "target.h"
-#include "regcache.h"
-#include "objfiles.h"
-
-#include "gdb_proc_service.h"
-
-#include <sys/procfs.h>
 
 /* Prototypes for supply_gregset etc.  */
 #include "gregset.h"

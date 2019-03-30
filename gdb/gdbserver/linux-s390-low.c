@@ -20,18 +20,24 @@
 /* This file is used for both 31-bit and 64-bit S/390 systems.  */
 
 #include "server.h"
-#include "linux-low.h"
-#include "elf/common.h"
-#include "ax.h"
-#include "tracepoint.h"
 
+/* Standard C includes.  */
 #include <asm/ptrace.h>
-#include "nat/gdb_ptrace.h"
-#include <sys/uio.h>
 #include <elf.h>
 #include <inttypes.h>
+#include <sys/uio.h>
 
+/* Local non-gdb includes.  */
+#include "elf/common.h"
+#include "linux-low.h"
 #include "linux-s390-tdesc.h"
+
+/* Local subdirectory includes.  */
+#include "nat/gdb_ptrace.h"
+
+/* Local includes.  */
+#include "ax.h"
+#include "tracepoint.h"
 
 #ifndef HWCAP_S390_HIGH_GPRS
 #define HWCAP_S390_HIGH_GPRS 512

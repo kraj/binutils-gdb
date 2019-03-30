@@ -19,19 +19,27 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "mi-cmds.h"
-#include "mi-main.h"
-#include "ui-out.h"
-#include "mi-out.h"
-#include "varobj.h"
-#include "language.h"
-#include "value.h"
+
+/* Standard C includes.  */
 #include <ctype.h>
+
+/* Local non-gdb includes.  */
+#include "mi-cmds.h"
 #include "mi-getopt.h"
-#include "gdbthread.h"
+#include "mi-main.h"
+#include "mi-out.h"
 #include "mi-parse.h"
+
+/* Local subdirectory includes.  */
 #include "common/gdb_optional.h"
+
+/* Local includes.  */
+#include "gdbthread.h"
 #include "inferior.h"
+#include "language.h"
+#include "ui-out.h"
+#include "value.h"
+#include "varobj.h"
 
 extern unsigned int varobjdebug;		/* defined in varobj.c.  */
 

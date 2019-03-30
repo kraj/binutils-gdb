@@ -19,8 +19,11 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "server.h"
-#include "regcache.h"
+#include "mem-break.h"
+
+/* Local includes.  */
 #include "ax.h"
+#include "regcache.h"
 
 #define MAX_BREAKPOINT_LEN 8
 

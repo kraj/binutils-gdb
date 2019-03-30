@@ -18,10 +18,14 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "osabi.h"
-#include "amd64-tdep.h"
+
+/* Local subdirectory includes.  */
 #include "common/x86-xstate.h"
+
+/* Local includes.  */
+#include "amd64-tdep.h"
 #include "dicos-tdep.h"
+#include "osabi.h"
 
 static void
 amd64_dicos_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)

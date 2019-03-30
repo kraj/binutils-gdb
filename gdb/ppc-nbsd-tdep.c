@@ -20,16 +20,17 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+#include "ppc-nbsd-tdep.h"
+
+/* Local includes.  */
 #include "gdbtypes.h"
 #include "osabi.h"
+#include "ppc-tdep.h"
 #include "regcache.h"
 #include "regset.h"
+#include "solib-svr4.h"
 #include "trad-frame.h"
 #include "tramp-frame.h"
-
-#include "ppc-tdep.h"
-#include "ppc-nbsd-tdep.h"
-#include "solib-svr4.h"
 
 /* Register offsets from <machine/reg.h>.  */
 struct ppc_reg_offsets ppcnbsd_reg_offsets;

@@ -18,18 +18,22 @@
 
 
 #include "defs.h"
-#include "inferior.h"
+
+/* Local non-gdb includes.  */
+#include "elf/frv.h"
+
+/* Local includes.  */
+#include "command.h"
+#include "frv-tdep.h"
+#include "gdb_bfd.h"
+#include "gdbcmd.h"
 #include "gdbcore.h"
+#include "inferior.h"
+#include "language.h"
+#include "objfiles.h"
 #include "solib.h"
 #include "solist.h"
-#include "frv-tdep.h"
-#include "objfiles.h"
 #include "symtab.h"
-#include "language.h"
-#include "command.h"
-#include "gdbcmd.h"
-#include "elf/frv.h"
-#include "gdb_bfd.h"
 
 /* Flag which indicates whether internal debug messages should be printed.  */
 static unsigned int solib_frv_debug;

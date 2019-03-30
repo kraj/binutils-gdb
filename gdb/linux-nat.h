@@ -20,10 +20,14 @@
 #ifndef LINUX_NAT_H
 #define LINUX_NAT_H
 
+#include <signal.h>
+
+/* Local subdirectory includes.  */
 #include "nat/linux-nat.h"
+
+/* Local includes.  */
 #include "inf-ptrace.h"
 #include "target.h"
-#include <signal.h>
 
 /* A prototype generic GNU/Linux target.  A concrete instance should
    override it with local methods.  */

@@ -18,17 +18,20 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "ia64-tdep.h"
+
+/* Standard C includes.  */
+#include <ctype.h>
+
+/* Local includes.  */
 #include "arch-utils.h"
 #include "gdbcore.h"
-#include "regcache.h"
+#include "ia64-tdep.h"
+#include "linux-tdep.h"
 #include "osabi.h"
+#include "regcache.h"
+#include "regset.h"
 #include "solib-svr4.h"
 #include "symtab.h"
-#include "linux-tdep.h"
-#include "regset.h"
-
-#include <ctype.h>
 
 /* The sigtramp code is in a non-readable (executable-only) region
    of memory called the ``gate page''.  The addresses in question

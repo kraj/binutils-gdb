@@ -20,17 +20,21 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "common/common-defs.h"
-#include "linux-btrace.h"
-#include "common/common-regcache.h"
-#include "common/gdb_wait.h"
+#include "nat/linux-btrace.h"
+
+/* Standard C includes.  */
+#include <inttypes.h>
+#include <sys/syscall.h>
+
+/* Local non-gdb includes.  */
 #include "x86-cpuid.h"
+
+/* Local subdirectory includes.  */
+#include "common/common-regcache.h"
 #include "common/filestuff.h"
+#include "common/gdb_wait.h"
 #include "common/scoped_fd.h"
 #include "common/scoped_mmap.h"
-
-#include <inttypes.h>
-
-#include <sys/syscall.h>
 
 #if HAVE_LINUX_PERF_EVENT_H && defined(SYS_perf_event_open)
 #include <unistd.h>

@@ -21,12 +21,16 @@
    conventions, et.al.  */
 
 #include "defs.h"
+
+/* Local non-gdb includes.  */
+#include "guile-internal.h"
+
+/* Local includes.  */
 #include "block.h"
 #include "dictionary.h"
 #include "objfiles.h"
 #include "source.h"
 #include "symtab.h"
-#include "guile-internal.h"
 
 /* A smob describing a gdb block.  */
 

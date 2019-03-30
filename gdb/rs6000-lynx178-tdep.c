@@ -16,12 +16,14 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "osabi.h"
-#include "regcache.h"
+
+/* Local includes.  */
 #include "gdbcore.h"
 #include "gdbtypes.h"
 #include "infcall.h"
+#include "osabi.h"
 #include "ppc-tdep.h"
+#include "regcache.h"
 #include "target-float.h"
 #include "value.h"
 #include "xcoffread.h"

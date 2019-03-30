@@ -22,10 +22,10 @@
 #ifndef NTO_TDEP_H
 #define NTO_TDEP_H
 
-#include "solist.h"
+#include "gdbthread.h"
 #include "osabi.h"
 #include "regset.h"
-#include "gdbthread.h"
+#include "solist.h"
 
 /* Target operations defined for Neutrino targets (<target>-nto-tdep.c).  */
 

@@ -18,12 +18,16 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "charset.h"
-#include "progspace.h"
-#include "objfiles.h"
-#include "language.h"
-#include "arch-utils.h"
+
+/* Local non-gdb includes.  */
 #include "guile-internal.h"
+
+/* Local includes.  */
+#include "arch-utils.h"
+#include "charset.h"
+#include "language.h"
+#include "objfiles.h"
+#include "progspace.h"
 
 /* NOTE: Python exports the name "Progspace", so we export "progspace".
    Internally we shorten that to "pspace".  */

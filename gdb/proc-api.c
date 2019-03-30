@@ -25,8 +25,10 @@
  */
 
 #include "defs.h"
-#include "gdbcmd.h"
+
+/* Local includes.  */
 #include "completer.h"
+#include "gdbcmd.h"
 
 #define _STRUCTURED_PROC 1
 

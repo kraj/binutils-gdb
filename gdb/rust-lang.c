@@ -18,25 +18,31 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+#include "rust-lang.h"
 
+/* Standard C includes.  */
 #include <ctype.h>
 
+/* Standard C++ includes.  */
+#include <algorithm>
+#include <string>
+#include <vector>
+
+/* Local non-gdb includes.  */
+#include "demangle.h"
+
+/* Local includes.  */
 #include "block.h"
 #include "c-lang.h"
 #include "charset.h"
 #include "cp-support.h"
-#include "demangle.h"
 #include "gdbarch.h"
 #include "infcall.h"
 #include "objfiles.h"
 #include "psymtab.h"
-#include "rust-lang.h"
 #include "typeprint.h"
 #include "valprint.h"
 #include "varobj.h"
-#include <algorithm>
-#include <string>
-#include <vector>
 
 /* See rust-lang.h.  */
 

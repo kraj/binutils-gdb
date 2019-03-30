@@ -20,32 +20,37 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "server.h"
-#include "linux-low.h"
-#include "nat/aarch64-linux.h"
-#include "nat/aarch64-linux-hw-point.h"
-#include "arch/aarch64-insn.h"
-#include "linux-aarch32-low.h"
-#include "elf/common.h"
-#include "ax.h"
-#include "tracepoint.h"
 
-#include <signal.h>
-#include <sys/user.h>
-#include "nat/gdb_ptrace.h"
+/* Standard C includes.  */
 #include <asm/ptrace.h>
-#include <inttypes.h>
 #include <endian.h>
-#include <sys/uio.h>
-
-#include "gdb_proc_service.h"
-#include "arch/aarch64.h"
-#include "linux-aarch64-tdesc.h"
-#include "nat/aarch64-sve-linux-ptrace.h"
-#include "tdesc.h"
-
+#include <inttypes.h>
+#include <signal.h>
 #ifdef HAVE_SYS_REG_H
 #include <sys/reg.h>
 #endif
+#include <sys/uio.h>
+#include <sys/user.h>
+
+/* Local non-gdb includes.  */
+#include "elf/common.h"
+#include "linux-aarch32-low.h"
+#include "linux-aarch64-tdesc.h"
+#include "linux-low.h"
+#include "tdesc.h"
+
+/* Local subdirectory includes.  */
+#include "arch/aarch64-insn.h"
+#include "arch/aarch64.h"
+#include "nat/aarch64-linux-hw-point.h"
+#include "nat/aarch64-linux.h"
+#include "nat/aarch64-sve-linux-ptrace.h"
+#include "nat/gdb_ptrace.h"
+
+/* Local includes.  */
+#include "ax.h"
+#include "gdb_proc_service.h"
+#include "tracepoint.h"
 
 /* Per-process arch-specific data we want to keep.  */
 

@@ -18,21 +18,29 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "tracefile.h"
-#include "readline/tilde.h"
-#include "common/filestuff.h"
-#include "common/rsp-low.h" /* bin2hex */
-#include "regcache.h"
-#include "inferior.h"
-#include "gdbthread.h"
-#include "exec.h" /* exec_bfd */
-#include "completer.h"
-#include "filenames.h"
-#include "remote.h"
-#include "xml-tdesc.h"
-#include "target-descriptions.h"
-#include "common/buffer.h"
+
+/* Standard C++ includes.  */
 #include <algorithm>
+
+/* Local non-gdb includes.  */
+#include "filenames.h"
+#include "readline/tilde.h"
+
+/* Local subdirectory includes.  */
+#include "common/buffer.h"
+#include "common/filestuff.h"
+#include "common/rsp-low.h"
+
+/* Local includes.  */
+#include "completer.h"
+#include "exec.h"
+#include "gdbthread.h"
+#include "inferior.h"
+#include "regcache.h"
+#include "remote.h"
+#include "target-descriptions.h"
+#include "tracefile.h"
+#include "xml-tdesc.h"
 
 #ifndef O_LARGEFILE
 #define O_LARGEFILE 0

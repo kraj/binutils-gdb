@@ -19,10 +19,13 @@
 #ifndef GDBSERVER_TDESC_H
 #define GDBSERVER_TDESC_H
 
-#include "common/tdesc.h"
-
-#include "regdef.h"
 #include <vector>
+
+/* Local non-gdb includes.  */
+#include "regdef.h"
+
+/* Local subdirectory includes.  */
+#include "common/tdesc.h"
 
 /* A target description.  Inherit from tdesc_feature so that target_desc
    can be used as tdesc_feature.  */

@@ -19,10 +19,13 @@
 #ifndef GDBSERVER_GDBTHREAD_H
 #define GDBSERVER_GDBTHREAD_H
 
-#include "common/common-gdbthread.h"
+#include <list>
+
+/* Local non-gdb includes.  */
 #include "inferiors.h"
 
-#include <list>
+/* Local subdirectory includes.  */
+#include "common/common-gdbthread.h"
 
 struct btrace_target_info;
 struct regcache;

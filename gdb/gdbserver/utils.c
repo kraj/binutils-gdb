@@ -17,6 +17,7 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "server.h"
+#include "utils.h"
 
 #ifdef IN_PROCESS_AGENT
 #  define PREFIX "ipa: "

@@ -29,7 +29,11 @@
    not exscm_ on purpose.  */
 
 #include "defs.h"
+
+/* Standard C includes.  */
 #include <signal.h>
+
+/* Local non-gdb includes.  */
 #include "guile-internal.h"
 
 /* The <gdb:exception> smob.

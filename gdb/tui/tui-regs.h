@@ -22,7 +22,7 @@
 #ifndef TUI_TUI_REGS_H
 #define TUI_TUI_REGS_H
 
-#include "tui/tui-data.h"  /* For struct tui_register_display_type.  */
+#include "tui/tui-data.h"
 
 extern void tui_check_register_values (struct frame_info *);
 extern void tui_show_registers (struct reggroup *group);

@@ -19,12 +19,15 @@
 #ifndef GDBSERVER_LINUX_LOW_H
 #define GDBSERVER_LINUX_LOW_H
 
-#include "nat/linux-nat.h"
-#include "nat/gdb_thread_db.h"
 #include <signal.h>
 
-#include "gdbthread.h"
+/* Local subdirectory includes.  */
+#include "nat/gdb_thread_db.h"
+#include "nat/linux-nat.h"
+
+/* Local includes.  */
 #include "gdb_proc_service.h"
+#include "gdbthread.h"
 
 /* Included for ptrace type definitions.  */
 #include "nat/linux-ptrace.h"

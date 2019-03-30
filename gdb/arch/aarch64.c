@@ -16,13 +16,16 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "common/common-defs.h"
-#include "aarch64.h"
+#include "arch/aarch64.h"
+
+/* Standard C includes.  */
 #include <stdlib.h>
 
+/* Local non-gdb includes.  */
 #include "../features/aarch64-core.c"
 #include "../features/aarch64-fpu.c"
-#include "../features/aarch64-sve.c"
 #include "../features/aarch64-pauth.c"
+#include "../features/aarch64-sve.c"
 
 /* See arch/aarch64.h.  */
 

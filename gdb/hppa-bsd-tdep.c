@@ -18,16 +18,18 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "objfiles.h"
-#include "target.h"
-#include "value.h"
+#include "hppa-bsd-tdep.h"
 
+/* Local non-gdb includes.  */
 #include "elf/common.h"
 
-#include "hppa-tdep.h"
-#include "hppa-bsd-tdep.h"
+/* Local includes.  */
 #include "dwarf2-frame.h"
+#include "hppa-tdep.h"
+#include "objfiles.h"
 #include "solib-svr4.h"
+#include "target.h"
+#include "value.h"
 
 static CORE_ADDR
 hppabsd_find_global_pointer (struct gdbarch *gdbarch, struct value *function)

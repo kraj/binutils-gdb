@@ -18,7 +18,7 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "py-stopevent.h"
+#include "python/py-stopevent.h"
 
 gdbpy_ref<>
 create_stop_event_object (PyTypeObject *py_type)

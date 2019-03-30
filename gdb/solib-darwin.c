@@ -18,28 +18,30 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+#include "solib-darwin.h"
 
-#include "symtab.h"
+/* Local non-gdb includes.  */
 #include "bfd.h"
-#include "symfile.h"
-#include "objfiles.h"
-#include "gdbcore.h"
-#include "target.h"
-#include "inferior.h"
-#include "regcache.h"
-#include "gdbthread.h"
-#include "gdb_bfd.h"
-
-#include "solist.h"
-#include "solib.h"
-#include "solib-svr4.h"
-
-#include "bfd-target.h"
 #include "elf-bfd.h"
-#include "exec.h"
-#include "auxv.h"
 #include "mach-o.h"
 #include "mach-o/external.h"
+
+/* Local includes.  */
+#include "auxv.h"
+#include "bfd-target.h"
+#include "exec.h"
+#include "gdb_bfd.h"
+#include "gdbcore.h"
+#include "gdbthread.h"
+#include "inferior.h"
+#include "objfiles.h"
+#include "regcache.h"
+#include "solib-svr4.h"
+#include "solib.h"
+#include "solist.h"
+#include "symfile.h"
+#include "symtab.h"
+#include "target.h"
 
 struct gdb_dyld_image_info
 {

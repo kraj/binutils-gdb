@@ -21,14 +21,20 @@
 #ifndef GDBSERVER_TARGET_H
 #define GDBSERVER_TARGET_H
 
-#include <sys/types.h> /* for mode_t */
-#include "target/target.h"
+#include <sys/types.h>
+
+/* Standard C++ includes.  */
+#include <vector>
+
+/* Local non-gdb includes.  */
+#include "mem-break.h"
+
+/* Local subdirectory includes.  */
+#include "common/btrace-common.h"
 #include "target/resume.h"
+#include "target/target.h"
 #include "target/wait.h"
 #include "target/waitstatus.h"
-#include "mem-break.h"
-#include "common/btrace-common.h"
-#include <vector>
 
 struct emit_ops;
 struct buffer;

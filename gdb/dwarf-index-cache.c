@@ -20,17 +20,24 @@
 #include "defs.h"
 #include "dwarf-index-cache.h"
 
-#include "build-id.h"
+/* Standard C includes.  */
+#include <stdlib.h>
+
+/* Standard C++ includes.  */
+#include <string>
+
+/* Local subdirectory includes.  */
 #include "cli/cli-cmds.h"
-#include "command.h"
-#include "common/scoped_mmap.h"
 #include "common/pathstuff.h"
+#include "common/scoped_mmap.h"
+#include "common/selftest.h"
+
+/* Local includes.  */
+#include "build-id.h"
+#include "command.h"
 #include "dwarf-index-write.h"
 #include "dwarf2read.h"
 #include "objfiles.h"
-#include "common/selftest.h"
-#include <string>
-#include <stdlib.h>
 
 /* When set to 1, show debug messages about the index cache.  */
 static int debug_index_cache = 0;

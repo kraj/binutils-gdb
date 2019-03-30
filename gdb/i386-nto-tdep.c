@@ -20,16 +20,17 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "frame.h"
-#include "osabi.h"
-#include "regcache.h"
-#include "target.h"
 
+/* Local includes.  */
+#include "frame.h"
 #include "i386-tdep.h"
 #include "i387-tdep.h"
 #include "nto-tdep.h"
-#include "solib.h"
+#include "osabi.h"
+#include "regcache.h"
 #include "solib-svr4.h"
+#include "solib.h"
+#include "target.h"
 
 #ifndef X86_CPU_FXSR
 #define X86_CPU_FXSR (1L << 12)

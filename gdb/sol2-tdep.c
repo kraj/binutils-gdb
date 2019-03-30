@@ -18,12 +18,13 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+#include "sol2-tdep.h"
+
+/* Local includes.  */
 #include "frame.h"
-#include "symtab.h"
 #include "inferior.h"
 #include "objfiles.h"
-
-#include "sol2-tdep.h"
+#include "symtab.h"
 
 CORE_ADDR
 sol2_skip_solib_resolver (struct gdbarch *gdbarch, CORE_ADDR pc)

@@ -18,29 +18,37 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "frame.h"
+#include "tilegx-tdep.h"
+
+/* Standard C++ includes.  */
+#include <algorithm>
+
+/* Local non-gdb includes.  */
+#include "dis-asm.h"
+#include "opcode/tilegx.h"
+
+/* Local subdirectory includes.  */
+#include "common/byte-vector.h"
+
+/* Local includes.  */
+#include "arch-utils.h"
+#include "dwarf2-frame.h"
 #include "frame-base.h"
 #include "frame-unwind.h"
-#include "dwarf2-frame.h"
-#include "trad-frame.h"
-#include "symtab.h"
-#include "gdbtypes.h"
+#include "frame.h"
 #include "gdbcmd.h"
 #include "gdbcore.h"
-#include "value.h"
-#include "dis-asm.h"
+#include "gdbtypes.h"
 #include "inferior.h"
-#include "arch-utils.h"
-#include "regcache.h"
-#include "regset.h"
-#include "osabi.h"
 #include "linux-tdep.h"
 #include "objfiles.h"
+#include "osabi.h"
+#include "regcache.h"
+#include "regset.h"
 #include "solib-svr4.h"
-#include "tilegx-tdep.h"
-#include "opcode/tilegx.h"
-#include <algorithm>
-#include "common/byte-vector.h"
+#include "symtab.h"
+#include "trad-frame.h"
+#include "value.h"
 
 struct tilegx_frame_cache
 {

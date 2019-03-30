@@ -18,39 +18,48 @@
 
 #include "server.h"
 #include "linux-low.h"
-#include "nat/linux-osdata.h"
-#include "common/agent.h"
-#include "tdesc.h"
-#include "common/rsp-low.h"
-#include "common/signals-state-save-restore.h"
-#include "nat/linux-nat.h"
-#include "nat/linux-waitpid.h"
-#include "common/gdb_wait.h"
-#include "nat/gdb_ptrace.h"
-#include "nat/linux-ptrace.h"
-#include "nat/linux-procfs.h"
-#include "nat/linux-personality.h"
+
+/* Standard C includes.  */
+#include <ctype.h>
+#include <dirent.h>
+#include <fcntl.h>
+#include <inttypes.h>
+#include <pwd.h>
+#include <sched.h>
 #include <signal.h>
 #include <sys/ioctl.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <sys/syscall.h>
-#include <sched.h>
-#include <ctype.h>
-#include <pwd.h>
-#include <sys/types.h>
-#include <dirent.h>
 #include <sys/stat.h>
-#include <sys/vfs.h>
+#include <sys/syscall.h>
+#include <sys/types.h>
 #include <sys/uio.h>
-#include "common/filestuff.h"
-#include "tracepoint.h"
+#include <sys/vfs.h>
+#include <unistd.h>
+
+/* Local non-gdb includes.  */
 #include "hostio.h"
-#include <inttypes.h>
+#include "tdesc.h"
+
+/* Local subdirectory includes.  */
+#include "common/agent.h"
 #include "common/common-inferior.h"
-#include "nat/fork-inferior.h"
 #include "common/environ.h"
+#include "common/filestuff.h"
+#include "common/gdb_wait.h"
+#include "common/rsp-low.h"
 #include "common/scoped_restore.h"
+#include "common/signals-state-save-restore.h"
+#include "nat/fork-inferior.h"
+#include "nat/gdb_ptrace.h"
+#include "nat/linux-nat.h"
+#include "nat/linux-osdata.h"
+#include "nat/linux-personality.h"
+#include "nat/linux-procfs.h"
+#include "nat/linux-ptrace.h"
+#include "nat/linux-waitpid.h"
+
+/* Local includes.  */
+#include "tracepoint.h"
+
 #ifndef ELFMAG0
 /* Don't include <linux/elf.h> here.  If it got included by gdb_proc_service.h
    then ELFMAG0 will have been defined.  If it didn't get included by

@@ -32,14 +32,16 @@
    they are processed in remote_resume.  */
 
 #include "defs.h"
-#include "remote.h"
 #include "remote-notif.h"
-#include "observable.h"
+
+/* Local includes.  */
 #include "event-loop.h"
-#include "target.h"
+#include "gdbcmd.h"
 #include "inferior.h"
 #include "infrun.h"
-#include "gdbcmd.h"
+#include "observable.h"
+#include "remote.h"
+#include "target.h"
 
 int notif_debug = 0;
 

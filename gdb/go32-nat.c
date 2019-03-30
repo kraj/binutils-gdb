@@ -83,37 +83,43 @@
 
 #include "defs.h"
 
-#include <fcntl.h>
-
-#include "x86-nat.h"
-#include "inferior.h"
-#include "infrun.h"
-#include "gdbthread.h"
-#include "common/gdb_wait.h"
-#include "gdbcore.h"
-#include "command.h"
-#include "gdbcmd.h"
-#include "floatformat.h"
-#include "buildsym-legacy.h"
-#include "i387-tdep.h"
-#include "i386-tdep.h"
-#include "nat/x86-cpuid.h"
-#include "value.h"
-#include "regcache.h"
-#include "top.h"
-#include "cli/cli-utils.h"
-#include "inf-child.h"
-
+/* Standard C includes.  */
 #include <ctype.h>
-#include <unistd.h>
-#include <sys/utsname.h>
-#include <io.h>
+#include <debug/dbgcom.h>
+#include <debug/v2load.h>
 #include <dos.h>
 #include <dpmi.h>
+#include <fcntl.h>
 #include <go32.h>
+#include <io.h>
 #include <sys/farptr.h>
-#include <debug/v2load.h>
-#include <debug/dbgcom.h>
+#include <sys/utsname.h>
+#include <unistd.h>
+
+/* Local non-gdb includes.  */
+#include "floatformat.h"
+
+/* Local subdirectory includes.  */
+#include "cli/cli-utils.h"
+#include "common/gdb_wait.h"
+#include "nat/x86-cpuid.h"
+
+/* Local includes.  */
+#include "buildsym-legacy.h"
+#include "command.h"
+#include "gdbcmd.h"
+#include "gdbcore.h"
+#include "gdbthread.h"
+#include "i386-tdep.h"
+#include "i387-tdep.h"
+#include "inf-child.h"
+#include "inferior.h"
+#include "infrun.h"
+#include "regcache.h"
+#include "top.h"
+#include "value.h"
+#include "x86-nat.h"
+
 #if __DJGPP_MINOR__ > 2
 #include <debug/redir.h>
 #endif

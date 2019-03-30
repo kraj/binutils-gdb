@@ -18,8 +18,12 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "utils.h"
+
+/* Local subdirectory includes.  */
 #include "common/selftest.h"
+
+/* Local includes.  */
+#include "utils.h"
 
 namespace selftests {
 namespace utils {

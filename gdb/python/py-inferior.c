@@ -18,17 +18,23 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+
+/* Local non-gdb includes.  */
+#include "py-event.h"
+#include "py-stopevent.h"
+#include "python-internal.h"
+
+/* Local subdirectory includes.  */
+#include "common/gdb_signals.h"
+
+/* Local includes.  */
+#include "arch-utils.h"
 #include "gdbcore.h"
 #include "gdbthread.h"
 #include "inferior.h"
+#include "language.h"
 #include "objfiles.h"
 #include "observable.h"
-#include "python-internal.h"
-#include "arch-utils.h"
-#include "language.h"
-#include "common/gdb_signals.h"
-#include "py-event.h"
-#include "py-stopevent.h"
 
 struct threadlist_entry {
   thread_object *thread_obj;

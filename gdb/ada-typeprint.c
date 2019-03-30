@@ -17,24 +17,32 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "gdb_obstack.h"
-#include "bfd.h"		/* Binary File Description */
-#include "symtab.h"
-#include "gdbtypes.h"
-#include "expression.h"
-#include "value.h"
-#include "gdbcore.h"
-#include "target.h"
-#include "command.h"
-#include "gdbcmd.h"
-#include "language.h"
-#include "demangle.h"
-#include "c-lang.h"
-#include "cli/cli-style.h"
-#include "typeprint.h"
-#include "target-float.h"
-#include "ada-lang.h"
+
+/* Standard C includes.  */
 #include <ctype.h>
+
+/* Local non-gdb includes.  */
+#include "bfd.h"
+#include "demangle.h"
+
+/* Local subdirectory includes.  */
+#include "cli/cli-style.h"
+
+/* Local includes.  */
+#include "ada-lang.h"
+#include "c-lang.h"
+#include "command.h"
+#include "expression.h"
+#include "gdb_obstack.h"
+#include "gdbcmd.h"
+#include "gdbcore.h"
+#include "gdbtypes.h"
+#include "language.h"
+#include "symtab.h"
+#include "target-float.h"
+#include "target.h"
+#include "typeprint.h"
+#include "value.h"
 
 static int print_selected_record_field_types (struct type *, struct type *,
 					      int, int,

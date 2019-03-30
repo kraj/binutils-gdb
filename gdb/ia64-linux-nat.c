@@ -19,24 +19,28 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "inferior.h"
-#include "target.h"
-#include "gdbcore.h"
-#include "regcache.h"
-#include "ia64-tdep.h"
-#include "linux-nat.h"
 
+/* Standard C includes.  */
+#include <asm/ptrace_offsets.h>
 #include <signal.h>
-#include "nat/gdb_ptrace.h"
-#include "common/gdb_wait.h"
+#include <sys/procfs.h>
 #ifdef HAVE_SYS_REG_H
 #include <sys/reg.h>
 #endif
 #include <sys/syscall.h>
 #include <sys/user.h>
 
-#include <asm/ptrace_offsets.h>
-#include <sys/procfs.h>
+/* Local subdirectory includes.  */
+#include "common/gdb_wait.h"
+#include "nat/gdb_ptrace.h"
+
+/* Local includes.  */
+#include "gdbcore.h"
+#include "ia64-tdep.h"
+#include "inferior.h"
+#include "linux-nat.h"
+#include "regcache.h"
+#include "target.h"
 
 /* Prototypes for supply_gregset etc.  */
 #include "gregset.h"

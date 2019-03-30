@@ -18,17 +18,21 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+
+/* Local non-gdb includes.  */
 #include "mi-cmds.h"
 #include "mi-getopt.h"
 #include "mi-interp.h"
-#include "ui-out.h"
-#include "symtab.h"
-#include "source.h"
+
+/* Local includes.  */
+#include "gdb_regex.h"
 #include "objfiles.h"
 #include "psymtab.h"
 #include "solib.h"
 #include "solist.h"
-#include "gdb_regex.h"
+#include "source.h"
+#include "symtab.h"
+#include "ui-out.h"
 
 /* Return to the client the absolute path and line number of the 
    current file being executed.  */

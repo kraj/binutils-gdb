@@ -21,9 +21,13 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-#include "exceptions.h"
-#include "common/scoped_restore.h"
 #include <chrono>
+
+/* Local subdirectory includes.  */
+#include "common/scoped_restore.h"
+
+/* Local includes.  */
+#include "exceptions.h"
 
 extern void initialize_utils (void);
 

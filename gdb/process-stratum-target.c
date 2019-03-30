@@ -19,6 +19,8 @@
 
 #include "defs.h"
 #include "process-stratum-target.h"
+
+/* Local includes.  */
 #include "inferior.h"
 
 process_stratum_target::~process_stratum_target ()

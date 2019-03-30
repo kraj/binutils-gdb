@@ -19,8 +19,10 @@
 #ifndef GDBSERVER_NOTIF_H
 #define GDBSERVER_NOTIF_H
 
-#include "target.h"
 #include "common/queue.h"
+
+/* Local includes.  */
+#include "target.h"
 
 /* Structure holding information related to a single event.  We
    keep a queue of these to push to GDB.  It can be extended if

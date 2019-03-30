@@ -20,8 +20,10 @@
 #ifndef PYTHON_PY_RECORD_H
 #define PYTHON_PY_RECORD_H
 
-#include "inferior.h"
 #include "python-internal.h"
+
+/* Local includes.  */
+#include "inferior.h"
 #include "record.h"
 
 /* Python Record object.  */

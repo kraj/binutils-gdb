@@ -18,17 +18,23 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+
+/* Local non-gdb includes.  */
+#include "compile-c.h"
+#include "compile-internal.h"
+#include "compile.h"
 #include "dwarf2.h"
+
+/* Local subdirectory includes.  */
+#include "common/gdb_vecs.h"
+
+/* Local includes.  */
+#include "block.h"
+#include "dwarf2-frame.h"
 #include "dwarf2expr.h"
 #include "dwarf2loc.h"
 #include "ui-file.h"
 #include "utils.h"
-#include "compile-internal.h"
-#include "compile-c.h"
-#include "compile.h"
-#include "block.h"
-#include "dwarf2-frame.h"
-#include "common/gdb_vecs.h"
 #include "value.h"
 
 

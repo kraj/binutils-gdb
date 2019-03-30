@@ -20,24 +20,27 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "symtab.h"
+#include "tui/tui-stack.h"
+
+/* Local subdirectory includes.  */
+#include "tui/tui-data.h"
+#include "tui/tui-file.h"
+#include "tui/tui-source.h"
+#include "tui/tui-wingeneral.h"
+#include "tui/tui-winsource.h"
+#include "tui/tui.h"
+
+/* Local includes.  */
 #include "breakpoint.h"
-#include "frame.h"
 #include "command.h"
+#include "frame.h"
+#include "gdb-demangle.h"
+#include "gdb_curses.h"
 #include "inferior.h"
+#include "source.h"
+#include "symtab.h"
 #include "target.h"
 #include "top.h"
-#include "gdb-demangle.h"
-#include "source.h"
-#include "tui/tui.h"
-#include "tui/tui-data.h"
-#include "tui/tui-stack.h"
-#include "tui/tui-wingeneral.h"
-#include "tui/tui-source.h"
-#include "tui/tui-winsource.h"
-#include "tui/tui-file.h"
-
-#include "gdb_curses.h"
 
 /* Get a printable name for the function at the address.
    The symbol name is demangled if demangling is turned on.

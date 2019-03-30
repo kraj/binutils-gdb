@@ -18,10 +18,12 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "common/common-defs.h"
-#include "common/common-regcache.h"
-#include "arch/arm.h"
-#include "arm-linux.h"
+#include "arch/arm-linux.h"
+
+/* Local subdirectory includes.  */
 #include "arch/arm-get-next-pcs.h"
+#include "arch/arm.h"
+#include "common/common-regcache.h"
 
 /* Calculate the offset from stack pointer of the pc register on the stack
    in the case of a sigreturn or sigreturn_rt syscall.  */

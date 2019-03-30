@@ -18,16 +18,18 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "gdbcore.h"
-#include "inferior.h"
-#include "regcache.h"
 
-#include <sys/types.h>
-#include <sys/ptrace.h>
+/* Standard C includes.  */
 #include <machine/reg.h>
+#include <sys/ptrace.h>
+#include <sys/types.h>
 
-#include "m68k-tdep.h"
+/* Local includes.  */
+#include "gdbcore.h"
 #include "inf-ptrace.h"
+#include "inferior.h"
+#include "m68k-tdep.h"
+#include "regcache.h"
 
 struct m68k_bsd_nat_target final : public inf_ptrace_target
 {

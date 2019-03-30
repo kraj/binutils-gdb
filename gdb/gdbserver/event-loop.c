@@ -19,8 +19,12 @@
 /* Based on src/gdb/event-loop.c.  */
 
 #include "server.h"
+#include "event-loop.h"
 
+/* Standard C includes.  */
 #include <sys/types.h>
+
+/* Local subdirectory includes.  */
 #include "common/gdb_sys_time.h"
 
 #ifdef USE_WIN32API

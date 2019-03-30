@@ -18,10 +18,11 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "regcache.h"
-
-#include "alpha-tdep.h"
 #include "alpha-bsd-tdep.h"
+
+/* Local includes.  */
+#include "alpha-tdep.h"
+#include "regcache.h"
 
 /* Conviently, GDB uses the same register numbering as the
    ptrace register structure used by BSD on Alpha.  */

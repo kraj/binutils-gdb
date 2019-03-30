@@ -16,14 +16,20 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "symtab.h"
-#include <ctype.h>
-#include "gdb_regex.h"
-#include "completer.h"
-#include "ui-out.h"
-#include "cli/cli-cmds.h"
 #include "cli/cli-decode.h"
+
+/* Standard C includes.  */
+#include <ctype.h>
+
+/* Local subdirectory includes.  */
+#include "cli/cli-cmds.h"
 #include "common/gdb_optional.h"
+
+/* Local includes.  */
+#include "completer.h"
+#include "gdb_regex.h"
+#include "symtab.h"
+#include "ui-out.h"
 
 /* Prototypes for local functions.  */
 

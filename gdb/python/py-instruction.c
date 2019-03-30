@@ -18,7 +18,7 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "py-instruction.h"
+#include "python/py-instruction.h"
 
 /* See py-instruction.h.  */
 

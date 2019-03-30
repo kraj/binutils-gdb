@@ -18,16 +18,18 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "target.h"
 
-#include <sys/types.h>
-#include <sys/ptrace.h>
+/* Standard C includes.  */
 #include <machine/reg.h>
+#include <sys/ptrace.h>
+#include <sys/types.h>
 
+/* Local includes.  */
 #include "fbsd-nat.h"
-#include "riscv-tdep.h"
-#include "riscv-fbsd-tdep.h"
 #include "inf-ptrace.h"
+#include "riscv-fbsd-tdep.h"
+#include "riscv-tdep.h"
+#include "target.h"
 
 struct riscv_fbsd_nat_target final : public fbsd_nat_target
 {

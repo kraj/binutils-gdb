@@ -19,8 +19,12 @@
 
 #include "defs.h"
 #include "event-loop.h"
-#include "event-top.h"
+
+/* Local subdirectory includes.  */
 #include "common/queue.h"
+
+/* Local includes.  */
+#include "event-top.h"
 #include "ser-event.h"
 
 #ifdef HAVE_POLL

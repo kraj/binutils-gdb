@@ -18,32 +18,35 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "gdbcore.h"
-#include "target.h"
-#include "solib-svr4.h"
-#include "osabi.h"
-#include "mips-tdep.h"
+#include "mips-linux-tdep.h"
+
+/* Local subdirectory includes.  */
+#include "common/gdb_signals.h"
+#include "features/mips-dsp-linux.c"
+#include "features/mips-linux.c"
+#include "features/mips64-dsp-linux.c"
+#include "features/mips64-linux.c"
+
+/* Local includes.  */
 #include "frame.h"
-#include "regcache.h"
-#include "trad-frame.h"
-#include "tramp-frame.h"
+#include "gdbcore.h"
 #include "gdbtypes.h"
+#include "glibc-tdep.h"
+#include "linux-tdep.h"
+#include "mips-tdep.h"
 #include "objfiles.h"
+#include "osabi.h"
+#include "regcache.h"
+#include "regset.h"
+#include "solib-svr4.h"
 #include "solib.h"
 #include "solist.h"
 #include "symtab.h"
 #include "target-descriptions.h"
-#include "regset.h"
-#include "mips-linux-tdep.h"
-#include "glibc-tdep.h"
-#include "linux-tdep.h"
+#include "target.h"
+#include "trad-frame.h"
+#include "tramp-frame.h"
 #include "xml-syscall.h"
-#include "common/gdb_signals.h"
-
-#include "features/mips-linux.c"
-#include "features/mips-dsp-linux.c"
-#include "features/mips64-linux.c"
-#include "features/mips64-dsp-linux.c"
 
 static struct target_so_ops mips_svr4_so_ops;
 

@@ -18,35 +18,45 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "symtab.h"
-#include "frame.h"
-#include "command.h"
-#include "symfile.h"
-#include "objfiles.h"
-#include "source.h"
+#include "linespec.h"
+
+/* Standard C includes.  */
+#include <ctype.h>
+
+/* Standard C++ includes.  */
+#include <algorithm>
+
+/* Local non-gdb includes.  */
 #include "demangle.h"
-#include "value.h"
+#include "filenames.h"
+
+/* Local subdirectory includes.  */
+#include "cli/cli-utils.h"
+#include "common/def-vector.h"
+#include "common/function-view.h"
+#include "mi/mi-cmds.h"
+
+/* Local includes.  */
+#include "ada-lang.h"
+#include "arch-utils.h"
+#include "block.h"
+#include "command.h"
 #include "completer.h"
 #include "cp-abi.h"
 #include "cp-support.h"
-#include "parser-defs.h"
-#include "block.h"
-#include "objc-lang.h"
-#include "linespec.h"
-#include "language.h"
+#include "frame.h"
 #include "interps.h"
-#include "mi/mi-cmds.h"
-#include "target.h"
-#include "arch-utils.h"
-#include <ctype.h>
-#include "cli/cli-utils.h"
-#include "filenames.h"
-#include "ada-lang.h"
-#include "stack.h"
+#include "language.h"
 #include "location.h"
-#include "common/function-view.h"
-#include "common/def-vector.h"
-#include <algorithm>
+#include "objc-lang.h"
+#include "objfiles.h"
+#include "parser-defs.h"
+#include "source.h"
+#include "stack.h"
+#include "symfile.h"
+#include "symtab.h"
+#include "target.h"
+#include "value.h"
 
 /* An enumeration of the various things a user might attempt to
    complete for a linespec location.  */

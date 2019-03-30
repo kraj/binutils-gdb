@@ -18,26 +18,30 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "inferior.h"
-#include "gdbcore.h"
-#include "arch-utils.h"
-#include "regcache.h"
-#include "frame.h"
-#include "frame-unwind.h"
-#include "frame-base.h"
-#include "trad-frame.h"
+#include "frv-tdep.h"
+
+/* Local non-gdb includes.  */
+#include "../opcodes/frv-desc.h"
 #include "dis-asm.h"
-#include "sim-regno.h"
-#include "gdb/sim-frv.h"
-#include "../opcodes/frv-desc.h"	/* for the H_SPR_... enums */
-#include "symtab.h"
 #include "elf-bfd.h"
 #include "elf/frv.h"
-#include "osabi.h"
+#include "gdb/sim-frv.h"
+
+/* Local includes.  */
+#include "arch-utils.h"
+#include "frame-base.h"
+#include "frame-unwind.h"
+#include "frame.h"
+#include "gdbcore.h"
 #include "infcall.h"
-#include "solib.h"
-#include "frv-tdep.h"
+#include "inferior.h"
 #include "objfiles.h"
+#include "osabi.h"
+#include "regcache.h"
+#include "sim-regno.h"
+#include "solib.h"
+#include "symtab.h"
+#include "trad-frame.h"
 
 struct frv_unwind_cache		/* was struct frame_extra_info */
   {

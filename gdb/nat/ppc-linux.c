@@ -16,13 +16,16 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "common/common-defs.h"
-#include "ppc-linux.h"
-#include "nat/gdb_ptrace.h"
-#include <elf.h>
+#include "nat/ppc-linux.h"
 
+/* Standard C includes.  */
+#include <elf.h>
 #ifdef HAVE_GETAUXVAL
 #include <sys/auxv.h>
 #endif
+
+/* Local subdirectory includes.  */
+#include "nat/gdb_ptrace.h"
 
 #ifdef __powerpc64__
 

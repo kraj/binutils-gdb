@@ -21,16 +21,20 @@
    conventions, et.al.  */
 
 #include "defs.h"
+
+/* Local non-gdb includes.  */
+#include "guile-internal.h"
+
+/* Local includes.  */
 #include "arch-utils.h"
 #include "charset.h"
 #include "cp-abi.h"
-#include "target-float.h"
 #include "infcall.h"
-#include "symtab.h" /* Needed by language.h.  */
 #include "language.h"
+#include "symtab.h"
+#include "target-float.h"
 #include "valprint.h"
 #include "value.h"
-#include "guile-internal.h"
 
 /* The <gdb:value> smob.  */
 

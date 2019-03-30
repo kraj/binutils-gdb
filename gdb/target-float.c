@@ -18,9 +18,13 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "gdbtypes.h"
-#include "floatformat.h"
 #include "target-float.h"
+
+/* Local non-gdb includes.  */
+#include "floatformat.h"
+
+/* Local includes.  */
+#include "gdbtypes.h"
 
 
 /* Target floating-point operations.

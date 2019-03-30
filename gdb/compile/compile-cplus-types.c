@@ -19,21 +19,29 @@
 
 
 #include "defs.h"
-#include "common/preprocessor.h"
-#include "gdbtypes.h"
-#include "compile-internal.h"
-#include "compile-cplus.h"
-#include "common/gdb_assert.h"
-#include "symtab.h"
-#include "source.h"
-#include "cp-support.h"
-#include "cp-abi.h"
-#include "objfiles.h"
-#include "block.h"
-#include "gdbcmd.h"
-#include "c-lang.h"
-#include "compile-c.h"
+
+/* Standard C++ includes.  */
 #include <algorithm>
+
+/* Local non-gdb includes.  */
+#include "compile-c.h"
+#include "compile-cplus.h"
+#include "compile-internal.h"
+
+/* Local subdirectory includes.  */
+#include "common/gdb_assert.h"
+#include "common/preprocessor.h"
+
+/* Local includes.  */
+#include "block.h"
+#include "c-lang.h"
+#include "cp-abi.h"
+#include "cp-support.h"
+#include "gdbcmd.h"
+#include "gdbtypes.h"
+#include "objfiles.h"
+#include "source.h"
+#include "symtab.h"
 
 /* Default compile flags for C++.  */
 

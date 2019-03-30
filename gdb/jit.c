@@ -18,29 +18,34 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-
 #include "jit.h"
+
+/* Standard C includes.  */
+#include <sys/stat.h>
+
+/* Local non-gdb includes.  */
+#include "filenames.h"
 #include "jit-reader.h"
+#include "readline/tilde.h"
+
+/* Local includes.  */
 #include "block.h"
 #include "breakpoint.h"
 #include "command.h"
+#include "completer.h"
 #include "dictionary.h"
-#include "filenames.h"
 #include "frame-unwind.h"
+#include "gdb-dlfcn.h"
+#include "gdb_bfd.h"
 #include "gdbcmd.h"
 #include "gdbcore.h"
 #include "inferior.h"
-#include "observable.h"
 #include "objfiles.h"
+#include "observable.h"
 #include "regcache.h"
 #include "symfile.h"
 #include "symtab.h"
 #include "target.h"
-#include "gdb-dlfcn.h"
-#include <sys/stat.h>
-#include "gdb_bfd.h"
-#include "readline/tilde.h"
-#include "completer.h"
 
 static const char *jit_reader_dir = NULL;
 

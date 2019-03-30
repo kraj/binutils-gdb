@@ -17,16 +17,20 @@
 
 #include "defs.h"
 #include "solib-aix.h"
-#include "solist.h"
-#include "inferior.h"
+
+/* Local subdirectory includes.  */
+#include "common/scope-exit.h"
+
+/* Local includes.  */
 #include "gdb_bfd.h"
+#include "gdbcmd.h"
 #include "gdbcore.h"
+#include "inferior.h"
 #include "objfiles.h"
+#include "observable.h"
+#include "solist.h"
 #include "symtab.h"
 #include "xcoffread.h"
-#include "observable.h"
-#include "gdbcmd.h"
-#include "common/scope-exit.h"
 
 /* Variable controlling the output of the debugging traces for
    this module.  */

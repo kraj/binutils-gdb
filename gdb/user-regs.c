@@ -21,11 +21,15 @@
 
 #include "defs.h"
 #include "user-regs.h"
-#include "gdbtypes.h"
-#include "frame.h"
+
+/* Local subdirectory includes.  */
+#include "cli/cli-cmds.h"
+
+/* Local includes.  */
 #include "arch-utils.h"
 #include "command.h"
-#include "cli/cli-cmds.h"
+#include "frame.h"
+#include "gdbtypes.h"
 
 /* A table of user registers.
 

@@ -21,17 +21,23 @@
    have "ext_lang" in the name, and no other symbol in gdb does.  */
 
 #include "defs.h"
+#include "extension.h"
+
+/* Standard C includes.  */
 #include <signal.h>
-#include "target.h"
+
+/* Local subdirectory includes.  */
+#include "cli/cli-script.h"
+#include "guile/guile.h"
+#include "python/python.h"
+
+/* Local includes.  */
 #include "auto-load.h"
 #include "breakpoint.h"
 #include "event-top.h"
-#include "extension.h"
 #include "extension-priv.h"
 #include "observable.h"
-#include "cli/cli-script.h"
-#include "python/python.h"
-#include "guile/guile.h"
+#include "target.h"
 
 /* Iterate over all external extension languages, regardless of whether the
    support has been compiled in or not.

@@ -18,14 +18,20 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "bfd.h"
-#include "gdb_bfd.h"
 #include "build-id.h"
-#include "common/gdb_vecs.h"
-#include "symfile.h"
-#include "objfiles.h"
+
+/* Local non-gdb includes.  */
+#include "bfd.h"
 #include "filenames.h"
+
+/* Local subdirectory includes.  */
+#include "common/gdb_vecs.h"
+
+/* Local includes.  */
+#include "gdb_bfd.h"
 #include "gdbcore.h"
+#include "objfiles.h"
+#include "symfile.h"
 
 /* See build-id.h.  */
 

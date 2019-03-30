@@ -18,18 +18,20 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+#include "ravenscar-thread.h"
+
+/* Local includes.  */
+#include "ada-lang.h"
+#include "command.h"
+#include "gdbcmd.h"
 #include "gdbcore.h"
 #include "gdbthread.h"
-#include "ada-lang.h"
-#include "target.h"
 #include "inferior.h"
-#include "command.h"
-#include "ravenscar-thread.h"
-#include "observable.h"
-#include "gdbcmd.h"
-#include "top.h"
-#include "regcache.h"
 #include "objfiles.h"
+#include "observable.h"
+#include "regcache.h"
+#include "target.h"
+#include "top.h"
 
 /* This module provides support for "Ravenscar" tasks (Ada) when
    debugging on bare-metal targets.

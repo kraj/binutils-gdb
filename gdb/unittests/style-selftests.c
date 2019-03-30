@@ -18,7 +18,11 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+
+/* Local subdirectory includes.  */
 #include "common/selftest.h"
+
+/* Local includes.  */
 #include "ui-style.h"
 
 namespace selftests {

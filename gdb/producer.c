@@ -19,6 +19,8 @@
 
 #include "defs.h"
 #include "producer.h"
+
+/* Local subdirectory includes.  */
 #include "common/selftest.h"
 
 /* See producer.h.  */

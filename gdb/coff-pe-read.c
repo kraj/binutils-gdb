@@ -22,21 +22,25 @@
    Contributed by Raoul M. Gough (RaoulGough@yahoo.co.uk).  */
 
 #include "defs.h"
-
 #include "coff-pe-read.h"
 
-#include "bfd.h"
-#include "gdbtypes.h"
+/* Standard C includes.  */
+#include <ctype.h>
 
-#include "command.h"
-#include "gdbcmd.h"
-#include "symtab.h"
-#include "symfile.h"
-#include "objfiles.h"
-#include "common/common-utils.h"
+/* Local non-gdb includes.  */
+#include "bfd.h"
 #include "coff/internal.h"
 
-#include <ctype.h>
+/* Local subdirectory includes.  */
+#include "common/common-utils.h"
+
+/* Local includes.  */
+#include "command.h"
+#include "gdbcmd.h"
+#include "gdbtypes.h"
+#include "objfiles.h"
+#include "symfile.h"
+#include "symtab.h"
 
 /* Internal section information */
 

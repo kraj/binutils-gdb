@@ -19,6 +19,8 @@
 
 #include "common/common-defs.h"
 #include "arch/ppc-linux-common.h"
+
+/* Local subdirectory includes.  */
 #include "arch/ppc-linux-tdesc.h"
 
 /* Decimal Floating Point bit in AT_HWCAP.

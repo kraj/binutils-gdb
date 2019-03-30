@@ -22,21 +22,27 @@
 /* Originally by Steve Chamberlain, sac@cygnus.com */
 
 #include "defs.h"
-#include "frame.h"		/* required by inferior.h */
-#include "inferior.h"
-#include "infrun.h"
-#include "target.h"
-#include "gdbcore.h"
-#include "command.h"
-#include "completer.h"
-#include "regcache.h"
-#include "top.h"
-#include <signal.h>
-#include <sys/types.h>
+#include "windows-nat.h"
+
+/* Standard C includes.  */
 #include <fcntl.h>
-#include <windows.h>
 #include <imagehlp.h>
 #include <psapi.h>
+#include <signal.h>
+#include <sys/types.h>
+#include <windows.h>
+
+/* Local includes.  */
+#include "command.h"
+#include "completer.h"
+#include "frame.h"
+#include "gdbcore.h"
+#include "inferior.h"
+#include "infrun.h"
+#include "regcache.h"
+#include "target.h"
+#include "top.h"
+
 #ifdef __CYGWIN__
 #include <wchar.h>
 #include <sys/cygwin.h>

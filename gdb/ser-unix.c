@@ -18,20 +18,24 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "serial.h"
-#include "ser-base.h"
 #include "ser-unix.h"
 
+/* Standard C includes.  */
 #include <fcntl.h>
-#include <sys/types.h>
-#include "terminal.h"
 #include <sys/socket.h>
+#include <sys/types.h>
+#include <termios.h>
+
+/* Local subdirectory includes.  */
+#include "common/filestuff.h"
 #include "common/gdb_sys_time.h"
 
+/* Local includes.  */
 #include "gdb_select.h"
 #include "gdbcmd.h"
-#include "common/filestuff.h"
-#include <termios.h>
+#include "ser-base.h"
+#include "serial.h"
+#include "terminal.h"
 
 struct hardwire_ttystate
   {

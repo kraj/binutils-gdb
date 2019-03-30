@@ -17,33 +17,43 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "server.h"
-#include "gdbthread.h"
-#include "common/agent.h"
-#include "notif.h"
-#include "tdesc.h"
-#include "common/rsp-low.h"
-#include "common/signals-state-save-restore.h"
+#include "server.h"
+
+/* Standard C includes.  */
 #include <ctype.h>
-#include <unistd.h>
 #if HAVE_SIGNAL_H
 #include <signal.h>
 #endif
+#include <unistd.h>
+
+/* Standard C++ includes.  */
+#include <vector>
+
+/* Local non-gdb includes.  */
+#include "dll.h"
+#include "filenames.h"
+#include "hostio.h"
+#include "notif.h"
+#include "tdesc.h"
+
+/* Local subdirectory includes.  */
+#include "common/agent.h"
+#include "common/btrace-common.h"
+#include "common/common-inferior.h"
+#include "common/environ.h"
+#include "common/filestuff.h"
 #include "common/gdb_vecs.h"
 #include "common/gdb_wait.h"
-#include "common/btrace-common.h"
-#include "common/filestuff.h"
-#include "tracepoint.h"
-#include "dll.h"
-#include "hostio.h"
-#include <vector>
-#include "common/common-inferior.h"
 #include "common/job-control.h"
-#include "common/environ.h"
-#include "filenames.h"
 #include "common/pathstuff.h"
-
-#include "common/selftest.h"
+#include "common/rsp-low.h"
 #include "common/scope-exit.h"
+#include "common/selftest.h"
+#include "common/signals-state-save-restore.h"
+
+/* Local includes.  */
+#include "gdbthread.h"
+#include "tracepoint.h"
 
 #define require_running_or_return(BUF)		\
   if (!target_running ())			\

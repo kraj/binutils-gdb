@@ -21,6 +21,8 @@
    conventions, et.al.  */
 
 #include "defs.h"
+
+/* Local non-gdb includes.  */
 #include "guile-internal.h"
 
 /* Define VARIABLES in the gdb module.  */

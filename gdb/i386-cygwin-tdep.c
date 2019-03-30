@@ -18,14 +18,16 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "osabi.h"
-#include "i386-tdep.h"
-#include "windows-tdep.h"
-#include "regset.h"
+
+/* Local includes.  */
 #include "gdb_obstack.h"
-#include "xml-support.h"
 #include "gdbcore.h"
+#include "i386-tdep.h"
 #include "inferior.h"
+#include "osabi.h"
+#include "regset.h"
+#include "windows-tdep.h"
+#include "xml-support.h"
 
 /* Core file support.  */
 

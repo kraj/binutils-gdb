@@ -20,23 +20,31 @@
 
 #include "defs.h"
 #include "cp-support.h"
+
+/* Standard C includes.  */
+#include <signal.h>
+
+/* Local non-gdb includes.  */
 #include "demangle.h"
-#include "gdbcmd.h"
-#include "dictionary.h"
-#include "objfiles.h"
-#include "frame.h"
-#include "symtab.h"
+#include "safe-ctype.h"
+
+/* Local subdirectory includes.  */
+#include "common/gdb_setjmp.h"
+#include "common/selftest.h"
+
+/* Local includes.  */
 #include "block.h"
 #include "complaints.h"
-#include "gdbtypes.h"
-#include "expression.h"
-#include "value.h"
 #include "cp-abi.h"
+#include "dictionary.h"
+#include "expression.h"
+#include "frame.h"
+#include "gdbcmd.h"
+#include "gdbtypes.h"
 #include "namespace.h"
-#include <signal.h>
-#include "common/gdb_setjmp.h"
-#include "safe-ctype.h"
-#include "common/selftest.h"
+#include "objfiles.h"
+#include "symtab.h"
+#include "value.h"
 
 #define d_left(dc) (dc)->u.s_binary.left
 #define d_right(dc) (dc)->u.s_binary.right

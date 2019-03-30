@@ -18,9 +18,13 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+
+/* Local non-gdb includes.  */
+#include "python-internal.h"
+
+/* Local includes.  */
 #include "gdbthread.h"
 #include "inferior.h"
-#include "python-internal.h"
 
 extern PyTypeObject thread_object_type
     CPYCHECKER_TYPE_OBJECT_FOR_TYPEDEF ("thread_object");

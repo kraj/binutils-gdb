@@ -18,18 +18,24 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "server.h"
-#include "linux-low.h"
 
-#include "elf/common.h"
-#include <sys/uio.h>
-#include <elf.h>
+/* Standard C includes.  */
 #include <asm/ptrace.h>
+#include <elf.h>
+#include <sys/uio.h>
 
+/* Local non-gdb includes.  */
+#include "elf/common.h"
+#include "linux-low.h"
+#include "linux-ppc-tdesc-init.h"
+
+/* Local subdirectory includes.  */
 #include "arch/ppc-linux-common.h"
 #include "arch/ppc-linux-tdesc.h"
-#include "nat/ppc-linux.h"
 #include "nat/linux-ptrace.h"
-#include "linux-ppc-tdesc-init.h"
+#include "nat/ppc-linux.h"
+
+/* Local includes.  */
 #include "ax.h"
 #include "tracepoint.h"
 

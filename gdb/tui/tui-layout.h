@@ -22,8 +22,8 @@
 #ifndef TUI_TUI_LAYOUT_H
 #define TUI_TUI_LAYOUT_H
 
-#include "tui/tui.h"
 #include "tui/tui-data.h"
+#include "tui/tui.h"
 
 extern void tui_add_win_to_layout (enum tui_win_type);
 extern int tui_default_win_height (enum tui_win_type, 

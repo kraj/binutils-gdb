@@ -20,16 +20,20 @@
 
 
 #include "defs.h"
+
+/* Local non-gdb includes.  */
 #include "python-internal.h"
+
+/* Local includes.  */
+#include "arch-utils.h"
+#include "block.h"
 #include "breakpoint.h"
 #include "frame.h"
 #include "gdbthread.h"
-#include "arch-utils.h"
-#include "language.h"
-#include "observable.h"
 #include "inferior.h"
-#include "block.h"
+#include "language.h"
 #include "location.h"
+#include "observable.h"
 
 /* Function that is called when a Python finish bp is found out of scope.  */
 static const char outofscope_func[] = "out_of_scope";

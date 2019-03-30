@@ -18,12 +18,13 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+
+/* Local includes.  */
 #include "gdbcore.h"
 #include "regcache.h"
-#include "target.h"
-
-#include "sparc64-tdep.h"
 #include "sparc-nat.h"
+#include "sparc64-tdep.h"
+#include "target.h"
 
 /* NetBSD is different from the other OSes that support both SPARC and
    UltraSPARC in that the result of ptrace(2) depends on whether the

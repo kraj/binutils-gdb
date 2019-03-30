@@ -18,9 +18,13 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "common/selftest.h"
-#include "common/array-view.h"
+
+/* Standard C++ includes.  */
 #include <array>
+
+/* Local subdirectory includes.  */
+#include "common/array-view.h"
+#include "common/selftest.h"
 
 namespace selftests {
 namespace array_view_tests {

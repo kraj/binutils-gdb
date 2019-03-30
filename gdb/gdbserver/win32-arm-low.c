@@ -16,6 +16,8 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "server.h"
+
+/* Local non-gdb includes.  */
 #include "win32-low.h"
 
 #ifndef CONTEXT_FLOATING_POINT

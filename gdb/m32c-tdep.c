@@ -18,24 +18,28 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+
+/* Local non-gdb includes.  */
+#include "dis-asm.h"
 #include "elf-bfd.h"
 #include "elf/m32c.h"
 #include "gdb/sim-m32c.h"
-#include "dis-asm.h"
-#include "gdbtypes.h"
-#include "regcache.h"
+
+/* Local includes.  */
 #include "arch-utils.h"
-#include "frame.h"
-#include "frame-unwind.h"
 #include "dwarf2-frame.h"
 #include "dwarf2expr.h"
-#include "symtab.h"
+#include "frame-unwind.h"
+#include "frame.h"
 #include "gdbcore.h"
-#include "value.h"
-#include "reggroups.h"
-#include "prologue-value.h"
-#include "target.h"
+#include "gdbtypes.h"
 #include "objfiles.h"
+#include "prologue-value.h"
+#include "regcache.h"
+#include "reggroups.h"
+#include "symtab.h"
+#include "target.h"
+#include "value.h"
 
 
 /* The m32c tdep structure.  */

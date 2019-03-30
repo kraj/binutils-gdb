@@ -18,11 +18,14 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "serial.h"
-#include "ser-base.h"
 
+/* Standard C includes.  */
 #include <sys/socket.h>
 #include <sys/un.h>
+
+/* Local includes.  */
+#include "ser-base.h"
+#include "serial.h"
 
 #ifndef UNIX_PATH_MAX
 #define UNIX_PATH_MAX sizeof(((struct sockaddr_un *) NULL)->sun_path)

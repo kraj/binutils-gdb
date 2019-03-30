@@ -18,9 +18,13 @@
 
 #include "defs.h"
 #include "source-cache.h"
-#include "common/scoped_fd.h"
-#include "source.h"
+
+/* Local subdirectory includes.  */
 #include "cli/cli-style.h"
+#include "common/scoped_fd.h"
+
+/* Local includes.  */
+#include "source.h"
 
 #ifdef HAVE_SOURCE_HIGHLIGHT
 /* If Gnulib redirects 'open' and 'close' to its replacements

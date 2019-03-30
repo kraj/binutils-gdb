@@ -18,8 +18,10 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "common/selftest.h"
+
+/* Local subdirectory includes.  */
 #include "common/scoped_restore.h"
+#include "common/selftest.h"
 
 namespace selftests {
 namespace scoped_restore_tests {

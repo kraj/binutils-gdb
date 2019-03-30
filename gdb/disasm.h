@@ -20,6 +20,8 @@
 #define DISASM_H
 
 #include "dis-asm.h"
+
+/* Local subdirectory includes.  */
 #include "common/enum-flags.h"
 
 enum gdb_disassembly_flag

@@ -20,11 +20,15 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "symtab.h"
-#include "tui/tui.h"
 #include "tui/tui-data.h"
+
+/* Local subdirectory includes.  */
 #include "tui/tui-wingeneral.h"
+#include "tui/tui.h"
+
+/* Local includes.  */
 #include "gdb_curses.h"
+#include "symtab.h"
 
 /****************************
 ** GLOBAL DECLARATIONS

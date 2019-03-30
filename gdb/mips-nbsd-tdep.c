@@ -20,18 +20,18 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+#include "mips-nbsd-tdep.h"
+
+/* Local includes.  */
 #include "gdbcore.h"
+#include "mips-tdep.h"
+#include "nbsd-tdep.h"
+#include "osabi.h"
 #include "regcache.h"
 #include "regset.h"
+#include "solib-svr4.h"
 #include "target.h"
 #include "value.h"
-#include "osabi.h"
-
-#include "nbsd-tdep.h"
-#include "mips-nbsd-tdep.h"
-#include "mips-tdep.h"
-
-#include "solib-svr4.h"
 
 /* Shorthand for some register numbers used below.  */
 #define MIPS_PC_REGNUM  MIPS_EMBED_PC_REGNUM

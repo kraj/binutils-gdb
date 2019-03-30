@@ -18,15 +18,24 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+#include "utils.h"
+
+/* Standard C includes.  */
 #include <ctype.h>
-#include "common/gdb_wait.h"
-#include "event-top.h"
-#include "gdbthread.h"
-#include "fnmatch.h"
-#include "gdb_bfd.h"
 #ifdef HAVE_SYS_RESOURCE_H
 #include <sys/resource.h>
 #endif /* HAVE_SYS_RESOURCE_H */
+
+/* Local non-gdb includes.  */
+#include "fnmatch.h"
+
+/* Local subdirectory includes.  */
+#include "common/gdb_wait.h"
+
+/* Local includes.  */
+#include "event-top.h"
+#include "gdb_bfd.h"
+#include "gdbthread.h"
 
 #ifdef TUI
 #include "tui/tui.h"		/* For tui_get_command_dimension.   */

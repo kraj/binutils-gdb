@@ -21,13 +21,17 @@
    conventions, et.al.  */
 
 #include "defs.h"
+
+/* Local non-gdb includes.  */
+#include "guile-internal.h"
+
+/* Local includes.  */
 #include "charset.h"
-#include "symtab.h" /* Needed by language.h.  */
 #include "language.h"
 #include "objfiles.h"
-#include "value.h"
+#include "symtab.h"
 #include "valprint.h"
-#include "guile-internal.h"
+#include "value.h"
 
 /* Return type of print_string_repr.  */
 

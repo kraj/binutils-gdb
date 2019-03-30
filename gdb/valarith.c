@@ -18,15 +18,19 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "value.h"
-#include "symtab.h"
-#include "gdbtypes.h"
-#include "expression.h"
-#include "target.h"
-#include "language.h"
-#include "target-float.h"
-#include "infcall.h"
+
+/* Local subdirectory includes.  */
 #include "common/byte-vector.h"
+
+/* Local includes.  */
+#include "expression.h"
+#include "gdbtypes.h"
+#include "infcall.h"
+#include "language.h"
+#include "symtab.h"
+#include "target-float.h"
+#include "target.h"
+#include "value.h"
 
 /* Define whether or not the C operator '/' truncates towards zero for
    differently signed operands (truncation direction is undefined in C).  */

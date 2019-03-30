@@ -20,49 +20,58 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "arch-utils.h"
-#include "target.h"
-#include "inferior.h"
-#include "infrun.h"
-#include "top.h"
-#include "gdbthread.h"
+#include "mi/mi-main.h"
+
+/* Standard C includes.  */
+#include <ctype.h>
+
+/* Standard C++ includes.  */
+#include <algorithm>
+#include <chrono>
+#include <map>
+#include <set>
+
+/* Local non-gdb includes.  */
 #include "mi-cmds.h"
-#include "mi-parse.h"
-#include "mi-getopt.h"
+#include "mi-common.h"
 #include "mi-console.h"
-#include "ui-out.h"
+#include "mi-getopt.h"
 #include "mi-out.h"
-#include "interps.h"
+#include "mi-parse.h"
+
+/* Local subdirectory includes.  */
+#include "common/byte-vector.h"
+#include "common/gdb_optional.h"
+#include "common/gdb_splay_tree.h"
+#include "common/rsp-low.h"
+#include "common/run-time-clock.h"
+
+/* Local includes.  */
+#include "ada-lang.h"
+#include "arch-utils.h"
+#include "ctf.h"
 #include "event-loop.h"
 #include "event-top.h"
-#include "gdbcore.h"		/* For write_memory().  */
-#include "value.h"
-#include "regcache.h"
-#include "frame.h"
-#include "mi-main.h"
-#include "mi-common.h"
-#include "language.h"
-#include "valprint.h"
-#include "osdata.h"
-#include "common/gdb_splay_tree.h"
-#include "tracepoint.h"
-#include "ctf.h"
-#include "ada-lang.h"
-#include "linespec.h"
 #include "extension.h"
+#include "frame.h"
 #include "gdbcmd.h"
+#include "gdbcore.h"
+#include "gdbthread.h"
+#include "inferior.h"
+#include "infrun.h"
+#include "interps.h"
+#include "language.h"
+#include "linespec.h"
 #include "observable.h"
-#include "common/gdb_optional.h"
-#include "common/byte-vector.h"
-
-#include <ctype.h>
-#include "common/run-time-clock.h"
-#include <chrono>
+#include "osdata.h"
 #include "progspace-and-thread.h"
-#include "common/rsp-low.h"
-#include <algorithm>
-#include <set>
-#include <map>
+#include "regcache.h"
+#include "target.h"
+#include "top.h"
+#include "tracepoint.h"
+#include "ui-out.h"
+#include "valprint.h"
+#include "value.h"
 
 enum
   {

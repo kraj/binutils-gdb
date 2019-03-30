@@ -23,6 +23,7 @@
 #include <string>
 #include <vector>
 
+/* Local non-gdb includes.  */
 #include "poison.h"
 
 /* If possible, define FUNCTION_NAME, a macro containing the name of

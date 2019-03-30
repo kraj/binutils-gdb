@@ -18,11 +18,12 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+
+/* Local includes.  */
 #include "arch-utils.h"
 #include "osabi.h"
-
-#include "vax-tdep.h"
 #include "solib-svr4.h"
+#include "vax-tdep.h"
 
 /* NetBSD ELF.  */
 

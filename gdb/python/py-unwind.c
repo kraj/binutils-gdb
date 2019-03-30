@@ -18,16 +18,20 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+
+/* Local non-gdb includes.  */
+#include "python-internal.h"
+
+/* Local includes.  */
 #include "arch-utils.h"
 #include "frame-unwind.h"
 #include "gdb_obstack.h"
 #include "gdbcmd.h"
 #include "language.h"
 #include "observable.h"
-#include "python-internal.h"
 #include "regcache.h"
-#include "valprint.h"
 #include "user-regs.h"
+#include "valprint.h"
 
 #define TRACE_PY_UNWIND(level, args...) if (pyuw_debug >= level)  \
   { fprintf_unfiltered (gdb_stdlog, args); }

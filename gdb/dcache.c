@@ -19,11 +19,15 @@
 
 #include "defs.h"
 #include "dcache.h"
+
+/* Local non-gdb includes.  */
+#include "splay-tree.h"
+
+/* Local includes.  */
 #include "gdbcmd.h"
 #include "gdbcore.h"
-#include "target-dcache.h"
 #include "inferior.h"
-#include "splay-tree.h"
+#include "target-dcache.h"
 
 /* Commands with a prefix of `{set,show} dcache'.  */
 static struct cmd_list_element *dcache_set_list = NULL;

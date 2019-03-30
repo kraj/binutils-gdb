@@ -17,10 +17,13 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#include "common-defs.h"
-#include "xml-utils.h"
-#include "buffer.h"
+#include "common/common-defs.h"
+#include "common/buffer.h"
+
+/* Local non-gdb includes.  */
 #include "inttypes.h"
+#include "xml-utils.h"
+
 void
 buffer_grow (struct buffer *buffer, const char *data, size_t size)
 {

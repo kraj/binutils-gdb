@@ -16,10 +16,12 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "common/common-defs.h"
-#include "amd64.h"
-#include "common/x86-xstate.h"
+#include "arch/amd64.h"
+
+/* Standard C includes.  */
 #include <stdlib.h>
 
+/* Local non-gdb includes.  */
 #include "../features/i386/64bit-avx.c"
 #include "../features/i386/64bit-avx512.c"
 #include "../features/i386/64bit-core.c"
@@ -28,8 +30,10 @@
 #include "../features/i386/64bit-pkeys.c"
 #include "../features/i386/64bit-segments.c"
 #include "../features/i386/64bit-sse.c"
-
 #include "../features/i386/x32-core.c"
+
+/* Local subdirectory includes.  */
+#include "common/x86-xstate.h"
 
 /* Create amd64 target descriptions according to XCR0.  If IS_X32 is
    true, create the x32 ones.  If IS_LINUX is true, create target

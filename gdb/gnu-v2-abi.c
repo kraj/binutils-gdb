@@ -20,14 +20,20 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "symtab.h"
-#include "gdbtypes.h"
-#include "value.h"
+
+/* Standard C includes.  */
+#include <ctype.h>
+
+/* Local non-gdb includes.  */
 #include "demangle.h"
-#include "gdb-demangle.h"
+
+/* Local includes.  */
 #include "cp-abi.h"
 #include "cp-support.h"
-#include <ctype.h>
+#include "gdb-demangle.h"
+#include "gdbtypes.h"
+#include "symtab.h"
+#include "value.h"
 
 struct cp_abi_ops gnu_v2_abi_ops;
 

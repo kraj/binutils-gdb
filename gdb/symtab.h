@@ -21,16 +21,20 @@
 #define SYMTAB_H 1
 
 #include <array>
-#include <vector>
 #include <string>
-#include "common/gdb_vecs.h"
-#include "gdbtypes.h"
-#include "gdb_regex.h"
+#include <vector>
+
+/* Local subdirectory includes.  */
 #include "common/enum-flags.h"
 #include "common/function-view.h"
 #include "common/gdb_optional.h"
+#include "common/gdb_vecs.h"
 #include "common/next-iterator.h"
+
+/* Local includes.  */
 #include "completer.h"
+#include "gdb_regex.h"
+#include "gdbtypes.h"
 
 /* Opaque declarations.  */
 struct ui_file;

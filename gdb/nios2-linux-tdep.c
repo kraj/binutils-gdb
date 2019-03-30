@@ -18,17 +18,19 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+
+/* Local includes.  */
 #include "frame.h"
+#include "glibc-tdep.h"
+#include "linux-tdep.h"
+#include "nios2-tdep.h"
 #include "osabi.h"
+#include "regcache.h"
+#include "regset.h"
 #include "solib-svr4.h"
+#include "symtab.h"
 #include "trad-frame.h"
 #include "tramp-frame.h"
-#include "symtab.h"
-#include "regset.h"
-#include "regcache.h"
-#include "linux-tdep.h"
-#include "glibc-tdep.h"
-#include "nios2-tdep.h"
 
 /* Core file and register set support.  */
 

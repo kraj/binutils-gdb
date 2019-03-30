@@ -17,10 +17,14 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "osdata.h"
+
+/* Local non-gdb includes.  */
 #include "mi-cmds.h"
+
+/* Local includes.  */
 #include "ada-lang.h"
 #include "arch-utils.h"
+#include "osdata.h"
 
 /* Implement the "-info-ada-exceptions" GDB/MI command.  */
 

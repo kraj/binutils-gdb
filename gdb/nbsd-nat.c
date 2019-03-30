@@ -18,7 +18,6 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-
 #include "nbsd-nat.h"
 
 /* Return the name of a file that can be opened to get the symbols for

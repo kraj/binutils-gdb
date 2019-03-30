@@ -18,28 +18,34 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "symtab.h"
-#include "gdbtypes.h"
-#include "value.h"
-#include "frame.h"
-#include "inferior.h"
-#include "gdbcore.h"
-#include "target.h"
+
+/* Local non-gdb includes.  */
 #include "demangle.h"
-#include "language.h"
-#include "gdbcmd.h"
-#include "regcache.h"
-#include "cp-abi.h"
-#include "block.h"
-#include "infcall.h"
-#include "dictionary.h"
-#include "cp-support.h"
-#include "target-float.h"
-#include "tracepoint.h"
-#include "observable.h"
-#include "objfiles.h"
-#include "extension.h"
+
+/* Local subdirectory includes.  */
 #include "common/byte-vector.h"
+
+/* Local includes.  */
+#include "block.h"
+#include "cp-abi.h"
+#include "cp-support.h"
+#include "dictionary.h"
+#include "extension.h"
+#include "frame.h"
+#include "gdbcmd.h"
+#include "gdbcore.h"
+#include "gdbtypes.h"
+#include "infcall.h"
+#include "inferior.h"
+#include "language.h"
+#include "objfiles.h"
+#include "observable.h"
+#include "regcache.h"
+#include "symtab.h"
+#include "target-float.h"
+#include "target.h"
+#include "tracepoint.h"
+#include "value.h"
 
 extern unsigned int overload_debug;
 /* Local functions.  */

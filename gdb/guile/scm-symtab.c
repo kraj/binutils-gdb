@@ -21,11 +21,15 @@
    conventions, et.al.  */
 
 #include "defs.h"
-#include "symtab.h"
-#include "source.h"
-#include "objfiles.h"
-#include "block.h"
+
+/* Local non-gdb includes.  */
 #include "guile-internal.h"
+
+/* Local includes.  */
+#include "block.h"
+#include "objfiles.h"
+#include "source.h"
+#include "symtab.h"
 
 /* A <gdb:symtab> smob.  */
 

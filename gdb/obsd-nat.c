@@ -18,16 +18,20 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "gdbthread.h"
-#include "inferior.h"
-#include "target.h"
+#include "obsd-nat.h"
 
-#include <sys/types.h>
+/* Standard C includes.  */
 #include <sys/ptrace.h>
+#include <sys/types.h>
+
+/* Local subdirectory includes.  */
 #include "common/gdb_wait.h"
 
+/* Local includes.  */
+#include "gdbthread.h"
 #include "inf-child.h"
-#include "obsd-nat.h"
+#include "inferior.h"
+#include "target.h"
 
 /* OpenBSD 5.2 and later include rthreads which uses a thread model
    that maps userland threads directly onto kernel threads in a 1:1

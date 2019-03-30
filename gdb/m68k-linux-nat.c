@@ -18,32 +18,35 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "frame.h"
-#include "inferior.h"
-#include "language.h"
-#include "gdbcore.h"
-#include "regcache.h"
-#include "target.h"
-#include "linux-nat.h"
 
-#include "m68k-tdep.h"
-
-#include <sys/dir.h>
-#include <signal.h>
-#include "nat/gdb_ptrace.h"
-#include <sys/user.h>
-#include <sys/ioctl.h>
+/* Standard C includes.  */
 #include <fcntl.h>
+#include <signal.h>
+#include <sys/dir.h>
+#include <sys/file.h>
+#include <sys/ioctl.h>
 #include <sys/procfs.h>
-
 #ifdef HAVE_SYS_REG_H
 #include <sys/reg.h>
 #endif
-
-#include <sys/file.h>
 #include <sys/stat.h>
+#include <sys/user.h>
 
+/* Local non-gdb includes.  */
 #include "floatformat.h"
+
+/* Local subdirectory includes.  */
+#include "nat/gdb_ptrace.h"
+
+/* Local includes.  */
+#include "frame.h"
+#include "gdbcore.h"
+#include "inferior.h"
+#include "language.h"
+#include "linux-nat.h"
+#include "m68k-tdep.h"
+#include "regcache.h"
+#include "target.h"
 
 /* Prototypes for supply_gregset etc.  */
 #include "gregset.h"

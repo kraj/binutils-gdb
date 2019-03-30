@@ -25,6 +25,7 @@
 
 #include <vector>
 
+/* Local subdirectory includes.  */
 #include "common/enum-flags.h"
 
 class ui_out_level;

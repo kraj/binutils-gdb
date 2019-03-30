@@ -17,11 +17,13 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#include "common-defs.h"
-#include "pathstuff.h"
-#include "host-defs.h"
+#include "common/common-defs.h"
+#include "common/pathstuff.h"
+
+/* Local non-gdb includes.  */
 #include "filenames.h"
 #include "gdb_tilde_expand.h"
+#include "host-defs.h"
 
 #ifdef USE_WIN32API
 #include <windows.h>

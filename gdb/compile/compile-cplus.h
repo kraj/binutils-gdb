@@ -17,8 +17,10 @@
 #ifndef COMPILE_COMPILE_CPLUS_H
 #define COMPILE_COMPILE_CPLUS_H
 
-#include "common/enum-flags.h"
 #include "gcc-cp-plugin.h"
+
+/* Local subdirectory includes.  */
+#include "common/enum-flags.h"
 
 struct type;
 struct block;

@@ -15,13 +15,16 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#include "common/tdesc.h"
-#include "tic6x.h"
 #include "common/common-defs.h"
+#include "arch/tic6x.h"
 
+/* Local non-gdb includes.  */
+#include "../features/tic6x-c6xp.c"
 #include "../features/tic6x-core.c"
 #include "../features/tic6x-gp.c"
-#include "../features/tic6x-c6xp.c"
+
+/* Local subdirectory includes.  */
+#include "common/tdesc.h"
 
 /* Create tic6x target descriptions according to FEATURE.  */
 

@@ -19,47 +19,49 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-
-#include "frame.h"
-#include "inferior.h"
-#include "gdbcmd.h"
-#include "gdbcore.h"
-#include "dis-asm.h"
-#include "regcache.h"
-#include "reggroups.h"
-#include "value.h"
-#include "arch-utils.h"
-#include "osabi.h"
-#include "frame-unwind.h"
-#include "frame-base.h"
-#include "trad-frame.h"
-#include "objfiles.h"
-#include "dwarf2.h"
-#include "dwarf2-frame.h"
-#include "gdbtypes.h"
-#include "prologue-value.h"
-#include "target-descriptions.h"
-#include "user-regs.h"
-#include "language.h"
-#include "infcall.h"
-#include "ax.h"
-#include "ax-gdb.h"
-#include "common/selftest.h"
-
 #include "aarch64-tdep.h"
-#include "aarch64-ravenscar-thread.h"
 
+/* Standard C++ includes.  */
+#include <algorithm>
+
+/* Local non-gdb includes.  */
+#include "dis-asm.h"
+#include "dwarf2.h"
 #include "elf-bfd.h"
 #include "elf/aarch64.h"
+#include "opcode/aarch64.h"
 
+/* Local subdirectory includes.  */
+#include "arch/aarch64-insn.h"
+#include "common/selftest.h"
 #include "common/vec.h"
 
-#include "record.h"
+/* Local includes.  */
+#include "aarch64-ravenscar-thread.h"
+#include "arch-utils.h"
+#include "ax-gdb.h"
+#include "ax.h"
+#include "dwarf2-frame.h"
+#include "frame-base.h"
+#include "frame-unwind.h"
+#include "frame.h"
+#include "gdbcmd.h"
+#include "gdbcore.h"
+#include "gdbtypes.h"
+#include "infcall.h"
+#include "inferior.h"
+#include "language.h"
+#include "objfiles.h"
+#include "osabi.h"
+#include "prologue-value.h"
 #include "record-full.h"
-#include "arch/aarch64-insn.h"
-
-#include "opcode/aarch64.h"
-#include <algorithm>
+#include "record.h"
+#include "regcache.h"
+#include "reggroups.h"
+#include "target-descriptions.h"
+#include "trad-frame.h"
+#include "user-regs.h"
+#include "value.h"
 
 #define submask(x) ((1L << ((x) + 1)) - 1)
 #define bit(obj,st) (((obj) >> (st)) & 1)

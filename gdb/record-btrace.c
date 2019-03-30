@@ -20,27 +20,35 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "record.h"
 #include "record-btrace.h"
-#include "gdbthread.h"
-#include "target.h"
-#include "gdbcmd.h"
-#include "disasm.h"
-#include "observable.h"
-#include "cli/cli-utils.h"
-#include "source.h"
-#include "ui-out.h"
-#include "symtab.h"
-#include "filenames.h"
-#include "regcache.h"
-#include "frame-unwind.h"
-#include "hashtab.h"
-#include "infrun.h"
-#include "event-loop.h"
-#include "inf-loop.h"
-#include "common/vec.h"
-#include "inferior.h"
+
+/* Standard C++ includes.  */
 #include <algorithm>
+
+/* Local non-gdb includes.  */
+#include "filenames.h"
+#include "hashtab.h"
+
+/* Local subdirectory includes.  */
+#include "cli/cli-utils.h"
+#include "common/vec.h"
+
+/* Local includes.  */
+#include "disasm.h"
+#include "event-loop.h"
+#include "frame-unwind.h"
+#include "gdbcmd.h"
+#include "gdbthread.h"
+#include "inf-loop.h"
+#include "inferior.h"
+#include "infrun.h"
+#include "observable.h"
+#include "record.h"
+#include "regcache.h"
+#include "source.h"
+#include "symtab.h"
+#include "target.h"
+#include "ui-out.h"
 
 static const target_info record_btrace_target_info = {
   "record-btrace",

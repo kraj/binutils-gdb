@@ -20,25 +20,32 @@
 /* This file is derived from c-valprint.c */
 
 #include "defs.h"
-#include "gdb_obstack.h"
-#include "symtab.h"
-#include "gdbtypes.h"
-#include "expression.h"
-#include "value.h"
-#include "command.h"
-#include "gdbcmd.h"
-#include "gdbcore.h"
+
+/* Local non-gdb includes.  */
 #include "demangle.h"
-#include "valprint.h"
-#include "typeprint.h"
-#include "language.h"
-#include "target.h"
+
+/* Local subdirectory includes.  */
+#include "common/byte-vector.h"
+
+/* Local includes.  */
 #include "annotate.h"
-#include "p-lang.h"
+#include "command.h"
 #include "cp-abi.h"
 #include "cp-support.h"
+#include "expression.h"
+#include "gdb_obstack.h"
+#include "gdbcmd.h"
+#include "gdbcore.h"
+#include "gdbtypes.h"
+#include "language.h"
 #include "objfiles.h"
-#include "common/byte-vector.h"
+#include "p-lang.h"
+#include "symtab.h"
+#include "target.h"
+#include "typeprint.h"
+#include "valprint.h"
+#include "value.h"
+
 
 
 /* Decorations for Pascal.  */

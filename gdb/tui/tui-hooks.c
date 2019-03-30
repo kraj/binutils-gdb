@@ -18,37 +18,43 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "symtab.h"
-#include "inferior.h"
-#include "command.h"
+#include "tui/tui-hooks.h"
+
+/* Standard C includes.  */
+#include <fcntl.h>
+#include <unistd.h>
+
+/* Local non-gdb includes.  */
 #include "bfd.h"
-#include "symfile.h"
-#include "objfiles.h"
-#include "target.h"
-#include "gdbcore.h"
+
+/* Local subdirectory includes.  */
+#include "tui/tui-data.h"
+#include "tui/tui-io.h"
+#include "tui/tui-layout.h"
+#include "tui/tui-regs.h"
+#include "tui/tui-stack.h"
+#include "tui/tui-win.h"
+#include "tui/tui-windata.h"
+#include "tui/tui-winsource.h"
+#include "tui/tui.h"
+
+/* Local includes.  */
+#include "breakpoint.h"
+#include "command.h"
 #include "event-loop.h"
 #include "event-top.h"
 #include "frame.h"
-#include "breakpoint.h"
-#include "ui-out.h"
-#include "top.h"
+#include "gdb_curses.h"
+#include "gdbcore.h"
+#include "inferior.h"
+#include "objfiles.h"
 #include "observable.h"
 #include "source.h"
-#include <unistd.h>
-#include <fcntl.h>
-
-#include "tui/tui.h"
-#include "tui/tui-hooks.h"
-#include "tui/tui-data.h"
-#include "tui/tui-layout.h"
-#include "tui/tui-io.h"
-#include "tui/tui-regs.h"
-#include "tui/tui-win.h"
-#include "tui/tui-stack.h"
-#include "tui/tui-windata.h"
-#include "tui/tui-winsource.h"
-
-#include "gdb_curses.h"
+#include "symfile.h"
+#include "symtab.h"
+#include "target.h"
+#include "top.h"
+#include "ui-out.h"
 
 /* This redefines CTRL if it is not already defined, so it must come
    after terminal state releated include files like <term.h> and

@@ -18,12 +18,18 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "server.h"
-#include <signal.h>
-#include <limits.h>
+
+/* Standard C includes.  */
 #include <inttypes.h>
-#include "linux-low.h"
+#include <limits.h>
+#include <signal.h>
+
+/* Local non-gdb includes.  */
 #include "i387-fp.h"
+#include "linux-low.h"
 #include "x86-low.h"
+
+/* Local subdirectory includes.  */
 #include "common/x86-xstate.h"
 #include "nat/gdb_ptrace.h"
 

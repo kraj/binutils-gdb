@@ -18,20 +18,21 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+
+/* Local includes.  */
 #include "arch-utils.h"
 #include "frame.h"
 #include "gdbcore.h"
-#include "regcache.h"
-#include "regset.h"
-#include "osabi.h"
-#include "symtab.h"
-#include "trad-frame.h"
-#include "tramp-frame.h"
-
 #include "i386-tdep.h"
 #include "i387-tdep.h"
 #include "nbsd-tdep.h"
+#include "osabi.h"
+#include "regcache.h"
+#include "regset.h"
 #include "solib-svr4.h"
+#include "symtab.h"
+#include "trad-frame.h"
+#include "tramp-frame.h"
 
 /* From <machine/reg.h>.  */
 static int i386nbsd_r_reg_offset[] =

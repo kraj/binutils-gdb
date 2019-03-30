@@ -19,31 +19,37 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "frame.h"
-#include "frame-unwind.h"
-#include "frame-base.h"
-#include "symtab.h"
-#include "gdbtypes.h"
-#include "gdbcore.h"
-#include "value.h"
-#include "reggroups.h"
-#include "inferior.h"
-#include "osabi.h"
-#include "arch-utils.h"
-#include "regcache.h"
-#include "dis-asm.h"
-#include "user-regs.h"
-#include "elf-bfd.h"
-#include "dwarf2-frame.h"
-#include "remote.h"
-#include "target-descriptions.h"
-
 #include "nds32-tdep.h"
-#include "elf/nds32.h"
-#include "opcode/nds32.h"
+
+/* Standard C++ includes.  */
 #include <algorithm>
 
+/* Local non-gdb includes.  */
+#include "dis-asm.h"
+#include "elf-bfd.h"
+#include "elf/nds32.h"
+#include "opcode/nds32.h"
+
+/* Local subdirectory includes.  */
 #include "features/nds32.c"
+
+/* Local includes.  */
+#include "arch-utils.h"
+#include "dwarf2-frame.h"
+#include "frame-base.h"
+#include "frame-unwind.h"
+#include "frame.h"
+#include "gdbcore.h"
+#include "gdbtypes.h"
+#include "inferior.h"
+#include "osabi.h"
+#include "regcache.h"
+#include "reggroups.h"
+#include "remote.h"
+#include "symtab.h"
+#include "target-descriptions.h"
+#include "user-regs.h"
+#include "value.h"
 
 /* Simple macros for instruction analysis.  */
 #define CHOP_BITS(insn, n)	(insn & ~__MASK (n))

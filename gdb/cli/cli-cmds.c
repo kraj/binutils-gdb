@@ -18,39 +18,42 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "arch-utils.h"
+#include "cli/cli-cmds.h"
+
+/* Local non-gdb includes.  */
+#include "filenames.h"
 #include "readline/readline.h"
 #include "readline/tilde.h"
-#include "completer.h"
-#include "target.h"	/* For baud_rate, remote_debug and remote_timeout.  */
-#include "common/gdb_wait.h"	/* For shell escape implementation.  */
-#include "gdb_regex.h"	/* Used by apropos_command.  */
-#include "gdb_vfork.h"
-#include "linespec.h"
-#include "expression.h"
-#include "frame.h"
-#include "value.h"
-#include "language.h"
-#include "filenames.h"	/* For DOSish file names.  */
-#include "objfiles.h"
-#include "source.h"
-#include "disasm.h"
-#include "tracepoint.h"
-#include "common/filestuff.h"
-#include "location.h"
-#include "block.h"
 
-#include "ui-out.h"
-
-#include "top.h"
+/* Local subdirectory includes.  */
 #include "cli/cli-decode.h"
 #include "cli/cli-script.h"
 #include "cli/cli-setshow.h"
-#include "cli/cli-cmds.h"
 #include "cli/cli-utils.h"
-
-#include "extension.h"
+#include "common/filestuff.h"
+#include "common/gdb_wait.h"
 #include "common/pathstuff.h"
+
+/* Local includes.  */
+#include "arch-utils.h"
+#include "block.h"
+#include "completer.h"
+#include "disasm.h"
+#include "expression.h"
+#include "extension.h"
+#include "frame.h"
+#include "gdb_regex.h"
+#include "gdb_vfork.h"
+#include "language.h"
+#include "linespec.h"
+#include "location.h"
+#include "objfiles.h"
+#include "source.h"
+#include "target.h"
+#include "top.h"
+#include "tracepoint.h"
+#include "ui-out.h"
+#include "value.h"
 
 #ifdef TUI
 #include "tui/tui.h"	/* For tui_active et.al.  */

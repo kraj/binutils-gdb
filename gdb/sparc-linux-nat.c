@@ -17,16 +17,18 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "regcache.h"
 
+/* Standard C includes.  */
 #include <sys/procfs.h>
-#include "gregset.h"
 
-#include "sparc-tdep.h"
-#include "sparc-nat.h"
+/* Local includes.  */
+#include "gregset.h"
 #include "inferior.h"
-#include "target.h"
 #include "linux-nat.h"
+#include "regcache.h"
+#include "sparc-nat.h"
+#include "sparc-tdep.h"
+#include "target.h"
 
 class sparc_linux_nat_target final : public linux_nat_target
 {

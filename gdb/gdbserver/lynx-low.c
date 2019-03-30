@@ -16,20 +16,25 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "server.h"
-#include "target.h"
 #include "lynx-low.h"
 
+/* Standard C includes.  */
 #include <limits.h>
-#include <sys/ptrace.h>
-#include <sys/piddef.h> /* Provides PIDGET, TIDGET, BUILDPID, etc.  */
-#include <unistd.h>
-#include <sys/ioctl.h>
-#include <sys/types.h>
-#include "common/gdb_wait.h"
 #include <signal.h>
-#include "common/filestuff.h"
+#include <sys/ioctl.h>
+#include <sys/piddef.h>
+#include <sys/ptrace.h>
+#include <sys/types.h>
+#include <unistd.h>
+
+/* Local subdirectory includes.  */
 #include "common/common-inferior.h"
+#include "common/filestuff.h"
+#include "common/gdb_wait.h"
 #include "nat/fork-inferior.h"
+
+/* Local includes.  */
+#include "target.h"
 
 int using_threads = 1;
 

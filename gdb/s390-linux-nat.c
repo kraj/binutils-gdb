@@ -20,29 +20,37 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "regcache.h"
-#include "inferior.h"
-#include "target.h"
-#include "linux-nat.h"
-#include "auxv.h"
-#include "gregset.h"
-#include "regset.h"
-#include "nat/linux-ptrace.h"
-#include "gdbcmd.h"
 
-#include "s390-tdep.h"
-#include "s390-linux-tdep.h"
-#include "elf/common.h"
-
+/* Standard C includes.  */
 #include <asm/ptrace.h>
-#include "nat/gdb_ptrace.h"
 #include <asm/types.h>
+#include <elf.h>
 #include <sys/procfs.h>
 #include <sys/ucontext.h>
-#include <elf.h>
+
+/* Standard C++ includes.  */
 #include <algorithm>
+
+/* Local non-gdb includes.  */
+#include "elf/common.h"
+
+/* Local subdirectory includes.  */
+#include "nat/gdb_ptrace.h"
+#include "nat/linux-ptrace.h"
+
+/* Local includes.  */
+#include "auxv.h"
+#include "gdbcmd.h"
+#include "gregset.h"
 #include "inf-ptrace.h"
+#include "inferior.h"
+#include "linux-nat.h"
 #include "linux-tdep.h"
+#include "regcache.h"
+#include "regset.h"
+#include "s390-linux-tdep.h"
+#include "s390-tdep.h"
+#include "target.h"
 
 /* Per-thread arch-specific data.  */
 

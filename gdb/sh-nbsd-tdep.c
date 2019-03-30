@@ -20,13 +20,14 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "gdbcore.h"
-#include "regset.h"
-#include "value.h"
-#include "osabi.h"
 
+/* Local includes.  */
+#include "gdbcore.h"
+#include "osabi.h"
+#include "regset.h"
 #include "sh-tdep.h"
 #include "solib-svr4.h"
+#include "value.h"
 
 /* Convert a register number into an offset into a ptrace
    register structure.  */

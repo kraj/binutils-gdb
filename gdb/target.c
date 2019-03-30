@@ -21,34 +21,44 @@
 
 #include "defs.h"
 #include "target.h"
-#include "target-dcache.h"
+
+/* Standard C includes.  */
+#include <signal.h>
+
+/* Standard C++ includes.  */
+#include <algorithm>
+#include <unordered_map>
+
+/* Local non-gdb includes.  */
+#include "bfd.h"
+#include "gdb/fileio.h"
+
+/* Local subdirectory includes.  */
+#include "common/agent.h"
+#include "common/byte-vector.h"
+
+/* Local includes.  */
+#include "auxv.h"
+#include "dcache.h"
+#include "event-top.h"
+#include "exec.h"
 #include "gdbcmd.h"
-#include "symtab.h"
+#include "gdbcore.h"
+#include "gdbthread.h"
 #include "inferior.h"
 #include "infrun.h"
-#include "bfd.h"
-#include "symfile.h"
-#include "objfiles.h"
-#include "dcache.h"
-#include <signal.h>
-#include "regcache.h"
-#include "gdbcore.h"
-#include "target-descriptions.h"
-#include "gdbthread.h"
-#include "solib.h"
-#include "exec.h"
 #include "inline-frame.h"
-#include "tracepoint.h"
-#include "gdb/fileio.h"
-#include "common/agent.h"
-#include "auxv.h"
+#include "objfiles.h"
+#include "regcache.h"
+#include "solib.h"
+#include "symfile.h"
+#include "symtab.h"
+#include "target-dcache.h"
 #include "target-debug.h"
-#include "top.h"
-#include "event-top.h"
-#include <algorithm>
-#include "common/byte-vector.h"
+#include "target-descriptions.h"
 #include "terminal.h"
-#include <unordered_map>
+#include "top.h"
+#include "tracepoint.h"
 
 static void generic_tls_error (void) ATTRIBUTE_NORETURN;
 

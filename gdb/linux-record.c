@@ -18,12 +18,14 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "target.h"
-#include "gdbtypes.h"
-#include "regcache.h"
-#include "record.h"
-#include "record-full.h"
 #include "linux-record.h"
+
+/* Local includes.  */
+#include "gdbtypes.h"
+#include "record-full.h"
+#include "record.h"
+#include "regcache.h"
+#include "target.h"
 
 /* These macros are the values of the first argument of system call
    "sys_ptrace".  The values of these macros were obtained from Linux

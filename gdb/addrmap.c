@@ -18,9 +18,13 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "splay-tree.h"
-#include "gdb_obstack.h"
 #include "addrmap.h"
+
+/* Local non-gdb includes.  */
+#include "splay-tree.h"
+
+/* Local includes.  */
+#include "gdb_obstack.h"
 
 
 /* The "abstract class".  */

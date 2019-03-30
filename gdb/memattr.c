@@ -18,17 +18,23 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+#include "memattr.h"
+
+/* Standard C++ includes.  */
+#include <algorithm>
+
+/* Local subdirectory includes.  */
+#include "cli/cli-utils.h"
+#include "common/vec.h"
+
+/* Local includes.  */
+#include "breakpoint.h"
 #include "command.h"
 #include "gdbcmd.h"
-#include "memattr.h"
-#include "target.h"
-#include "target-dcache.h"
-#include "value.h"
 #include "language.h"
-#include "common/vec.h"
-#include "breakpoint.h"
-#include "cli/cli-utils.h"
-#include <algorithm>
+#include "target-dcache.h"
+#include "target.h"
+#include "value.h"
 
 static std::vector<mem_region> user_mem_region_list, target_mem_region_list;
 static std::vector<mem_region> *mem_region_list = &target_mem_region_list;

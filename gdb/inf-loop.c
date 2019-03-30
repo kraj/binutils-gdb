@@ -18,18 +18,20 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "inferior.h"
-#include "infrun.h"
+#include "inf-loop.h"
+
+/* Local includes.  */
+#include "continuations.h"
 #include "event-loop.h"
 #include "event-top.h"
-#include "inf-loop.h"
-#include "remote.h"
-#include "language.h"
 #include "gdbthread.h"
-#include "continuations.h"
+#include "inferior.h"
+#include "infrun.h"
 #include "interps.h"
-#include "top.h"
+#include "language.h"
 #include "observable.h"
+#include "remote.h"
+#include "top.h"
 
 /* General function to handle events in the inferior.  */
 

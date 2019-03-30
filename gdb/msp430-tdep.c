@@ -21,23 +21,26 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "arch-utils.h"
-#include "prologue-value.h"
-#include "target.h"
-#include "regcache.h"
-#include "dis-asm.h"
-#include "gdbtypes.h"
-#include "frame.h"
-#include "frame-unwind.h"
-#include "frame-base.h"
-#include "value.h"
-#include "gdbcore.h"
-#include "dwarf2-frame.h"
-#include "reggroups.h"
 
+/* Local non-gdb includes.  */
+#include "dis-asm.h"
+#include "elf-bfd.h"
 #include "elf/msp430.h"
 #include "opcode/msp430-decode.h"
-#include "elf-bfd.h"
+
+/* Local includes.  */
+#include "arch-utils.h"
+#include "dwarf2-frame.h"
+#include "frame-base.h"
+#include "frame-unwind.h"
+#include "frame.h"
+#include "gdbcore.h"
+#include "gdbtypes.h"
+#include "prologue-value.h"
+#include "regcache.h"
+#include "reggroups.h"
+#include "target.h"
+#include "value.h"
 
 /* Register Numbers.  */
 

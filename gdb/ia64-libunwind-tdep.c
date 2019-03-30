@@ -20,23 +20,25 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-
-#include "inferior.h"
-#include "frame.h"
-#include "frame-base.h"
-#include "frame-unwind.h"
-#include "gdbcore.h"
-#include "gdbtypes.h"
-#include "symtab.h"
-#include "objfiles.h"
-#include "regcache.h"
-
-#include <dlfcn.h>
-
 #include "ia64-libunwind-tdep.h"
 
-#include "complaints.h"
+/* Standard C includes.  */
+#include <dlfcn.h>
+
+/* Local subdirectory includes.  */
 #include "common/preprocessor.h"
+
+/* Local includes.  */
+#include "complaints.h"
+#include "frame-base.h"
+#include "frame-unwind.h"
+#include "frame.h"
+#include "gdbcore.h"
+#include "gdbtypes.h"
+#include "inferior.h"
+#include "objfiles.h"
+#include "regcache.h"
+#include "symtab.h"
 
 /* IA-64 is the only target that currently uses ia64-libunwind-tdep.
    Note how UNW_TARGET, UNW_OBJ, etc. are compile time constants below.

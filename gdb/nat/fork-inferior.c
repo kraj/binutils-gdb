@@ -18,16 +18,20 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "common/common-defs.h"
-#include "fork-inferior.h"
-#include "target/waitstatus.h"
-#include "common/filestuff.h"
-#include "target/target.h"
-#include "common/common-inferior.h"
+#include "nat/fork-inferior.h"
+
+/* Standard C++ includes.  */
+#include <vector>
+
+/* Local subdirectory includes.  */
 #include "common/common-gdbthread.h"
+#include "common/common-inferior.h"
+#include "common/filestuff.h"
+#include "common/gdb_tilde_expand.h"
 #include "common/pathstuff.h"
 #include "common/signals-state-save-restore.h"
-#include "common/gdb_tilde_expand.h"
-#include <vector>
+#include "target/target.h"
+#include "target/waitstatus.h"
 
 extern char **environ;
 

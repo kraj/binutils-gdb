@@ -20,10 +20,10 @@
 #ifndef NAT_AARCH64_SVE_LINUX_PTRACE_H
 #define NAT_AARCH64_SVE_LINUX_PTRACE_H
 
-#include <signal.h>
-#include <sys/utsname.h>
-#include <sys/ptrace.h>
 #include <asm/ptrace.h>
+#include <signal.h>
+#include <sys/ptrace.h>
+#include <sys/utsname.h>
 
 #ifndef SVE_SIG_ZREGS_SIZE
 #include "aarch64-sve-linux-sigcontext.h"

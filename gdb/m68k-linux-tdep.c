@@ -18,24 +18,29 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "gdbcore.h"
+
+/* Local non-gdb includes.  */
+#include "elf/common.h"
+
+/* Local includes.  */
+#include "auxv.h"
+#include "frame-unwind.h"
 #include "frame.h"
-#include "target.h"
+#include "gdbcore.h"
 #include "gdbtypes.h"
+#include "glibc-tdep.h"
+#include "linux-tdep.h"
+#include "m68k-tdep.h"
+#include "objfiles.h"
+#include "observable.h"
 #include "osabi.h"
 #include "regcache.h"
-#include "objfiles.h"
-#include "symtab.h"
-#include "m68k-tdep.h"
-#include "trad-frame.h"
-#include "frame-unwind.h"
-#include "glibc-tdep.h"
-#include "solib-svr4.h"
-#include "auxv.h"
-#include "observable.h"
-#include "elf/common.h"
-#include "linux-tdep.h"
 #include "regset.h"
+#include "solib-svr4.h"
+#include "symtab.h"
+#include "target.h"
+#include "trad-frame.h"
+
 
 /* Offsets (in target ints) into jmp_buf.  */
 

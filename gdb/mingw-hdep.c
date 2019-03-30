@@ -18,14 +18,18 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "main.h"
-#include "serial.h"
-#include "event-loop.h"
 
-#include "gdb_select.h"
+/* Standard C includes.  */
+#include <windows.h>
+
+/* Local non-gdb includes.  */
 #include "readline/readline.h"
 
-#include <windows.h>
+/* Local includes.  */
+#include "event-loop.h"
+#include "gdb_select.h"
+#include "main.h"
+#include "serial.h"
 
 /* Return an absolute file name of the running GDB, if possible, or
    ARGV0 if not.  The return value is in malloc'ed storage.  */

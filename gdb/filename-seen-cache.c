@@ -19,6 +19,8 @@
 
 #include "defs.h"
 #include "filename-seen-cache.h"
+
+/* Local non-gdb includes.  */
 #include "filenames.h"
 
   /* Initial size of the table.  It automagically grows from here.  */

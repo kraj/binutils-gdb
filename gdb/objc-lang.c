@@ -21,31 +21,38 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "symtab.h"
-#include "gdbtypes.h"
-#include "expression.h"
-#include "parser-defs.h"
-#include "language.h"
-#include "varobj.h"
-#include "c-lang.h"
 #include "objc-lang.h"
-#include "complaints.h"
-#include "value.h"
-#include "symfile.h"
-#include "objfiles.h"
-#include "target.h"		/* for target_has_execution */
-#include "gdbcore.h"
-#include "gdbcmd.h"
-#include "frame.h"
-#include "gdb_regex.h"
-#include "regcache.h"
-#include "block.h"
-#include "infcall.h"
-#include "valprint.h"
+
+/* Standard C includes.  */
+#include <ctype.h>
+
+/* Standard C++ includes.  */
+#include <algorithm>
+
+/* Local subdirectory includes.  */
 #include "cli/cli-utils.h"
 
-#include <ctype.h>
-#include <algorithm>
+/* Local includes.  */
+#include "block.h"
+#include "c-lang.h"
+#include "complaints.h"
+#include "expression.h"
+#include "frame.h"
+#include "gdb_regex.h"
+#include "gdbcmd.h"
+#include "gdbcore.h"
+#include "gdbtypes.h"
+#include "infcall.h"
+#include "language.h"
+#include "objfiles.h"
+#include "parser-defs.h"
+#include "regcache.h"
+#include "symfile.h"
+#include "symtab.h"
+#include "target.h"
+#include "valprint.h"
+#include "value.h"
+#include "varobj.h"
 
 struct objc_object {
   CORE_ADDR isa;

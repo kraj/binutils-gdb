@@ -19,17 +19,21 @@
 
 
 #include "defs.h"
-#include "compile-internal.h"
+
+/* Local non-gdb includes.  */
 #include "compile-c.h"
-#include "symtab.h"
-#include "parser-defs.h"
-#include "block.h"
-#include "objfiles.h"
+#include "compile-internal.h"
 #include "compile.h"
-#include "value.h"
+
+/* Local includes.  */
+#include "block.h"
+#include "dwarf2loc.h"
 #include "exceptions.h"
 #include "gdbtypes.h"
-#include "dwarf2loc.h"
+#include "objfiles.h"
+#include "parser-defs.h"
+#include "symtab.h"
+#include "value.h"
 
 
 

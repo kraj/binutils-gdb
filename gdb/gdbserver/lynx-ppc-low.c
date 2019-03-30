@@ -16,9 +16,13 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "server.h"
-#include "lynx-low.h"
+
+/* Standard C includes.  */
 #include <limits.h>
 #include <sys/ptrace.h>
+
+/* Local non-gdb includes.  */
+#include "lynx-low.h"
 
 /* The following two typedefs are defined in a .h file which is not
    in the standard include path (/sys/include/family/ppc/ucontext.h),

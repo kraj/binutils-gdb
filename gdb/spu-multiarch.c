@@ -19,20 +19,21 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "gdbcore.h"
-#include "gdbcmd.h"
+
+/* Local includes.  */
 #include "arch-utils.h"
-#include "observable.h"
+#include "gdbcmd.h"
+#include "gdbcore.h"
 #include "inferior.h"
-#include "regcache.h"
-#include "symfile.h"
 #include "objfiles.h"
+#include "observable.h"
+#include "ppc-linux-tdep.h"
+#include "ppc-tdep.h"
+#include "regcache.h"
 #include "solib.h"
 #include "solist.h"
-
-#include "ppc-tdep.h"
-#include "ppc-linux-tdep.h"
 #include "spu-tdep.h"
+#include "symfile.h"
 
 /* The SPU multi-architecture support target.  */
 

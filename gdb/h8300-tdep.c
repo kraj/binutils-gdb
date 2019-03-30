@@ -23,15 +23,19 @@
  */
 
 #include "defs.h"
-#include "value.h"
-#include "arch-utils.h"
-#include "regcache.h"
-#include "gdbcore.h"
-#include "objfiles.h"
+
+/* Local non-gdb includes.  */
 #include "dis-asm.h"
+
+/* Local includes.  */
+#include "arch-utils.h"
 #include "dwarf2-frame.h"
 #include "frame-base.h"
 #include "frame-unwind.h"
+#include "gdbcore.h"
+#include "objfiles.h"
+#include "regcache.h"
+#include "value.h"
 
 enum gdb_regnum
 {

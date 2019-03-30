@@ -23,21 +23,26 @@
    necessary.  */
 
 #include "defs.h"
-#include "regcache.h"
+#include "inf-child.h"
+
+/* Standard C includes.  */
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
+
+/* Local subdirectory includes.  */
+#include "common/agent.h"
+#include "common/fileio.h"
+#include "common/filestuff.h"
+#include "common/gdb_wait.h"
+
+/* Local includes.  */
+#include "inferior.h"
 #include "memattr.h"
+#include "regcache.h"
 #include "symtab.h"
 #include "target.h"
-#include "inferior.h"
-#include <sys/stat.h>
-#include "inf-child.h"
-#include "common/fileio.h"
-#include "common/agent.h"
-#include "common/gdb_wait.h"
-#include "common/filestuff.h"
-
-#include <sys/types.h>
-#include <fcntl.h>
-#include <unistd.h>
 
 static const target_info inf_child_target_info = {
   "native",

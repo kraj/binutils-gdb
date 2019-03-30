@@ -20,8 +20,8 @@
 #ifndef RECORD_H
 #define RECORD_H
 
-#include "target/waitstatus.h" /* For enum target_stop_reason.  */
 #include "common/enum-flags.h"
+#include "target/waitstatus.h"
 
 struct cmd_list_element;
 struct inferior;

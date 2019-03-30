@@ -19,22 +19,26 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "gdbcore.h"
-#include "target.h"
-#include "inferior.h"
-#include "inf-child.h"
-#include "inf-ptrace.h"
-#include "regcache.h"
-#include "symfile.h"
-#include "common/gdb_wait.h"
-#include "gdbthread.h"
-#include "gdb_bfd.h"
 
-#include "nat/gdb_ptrace.h"
+/* Standard C includes.  */
 #include <asm/ptrace.h>
 #include <sys/types.h>
 
+/* Local subdirectory includes.  */
+#include "common/gdb_wait.h"
+#include "nat/gdb_ptrace.h"
+
+/* Local includes.  */
+#include "gdb_bfd.h"
+#include "gdbcore.h"
+#include "gdbthread.h"
+#include "inf-child.h"
+#include "inf-ptrace.h"
+#include "inferior.h"
+#include "regcache.h"
 #include "spu-tdep.h"
+#include "symfile.h"
+#include "target.h"
 
 /* PPU side system calls.  */
 #define INSTR_SC	0x44000002

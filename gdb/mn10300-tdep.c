@@ -18,23 +18,26 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "arch-utils.h"
-#include "dis-asm.h"
-#include "gdbtypes.h"
-#include "regcache.h"
-#include "gdbcore.h"	/* For write_memory_unsigned_integer.  */
-#include "value.h"
-#include "frame.h"
-#include "frame-unwind.h"
-#include "frame-base.h"
-#include "symtab.h"
-#include "dwarf2-frame.h"
-#include "osabi.h"
-#include "infcall.h"
-#include "prologue-value.h"
-#include "target.h"
-
 #include "mn10300-tdep.h"
+
+/* Local non-gdb includes.  */
+#include "dis-asm.h"
+
+/* Local includes.  */
+#include "arch-utils.h"
+#include "dwarf2-frame.h"
+#include "frame-base.h"
+#include "frame-unwind.h"
+#include "frame.h"
+#include "gdbcore.h"
+#include "gdbtypes.h"
+#include "infcall.h"
+#include "osabi.h"
+#include "prologue-value.h"
+#include "regcache.h"
+#include "symtab.h"
+#include "target.h"
+#include "value.h"
 
 
 /* The am33-2 has 64 registers.  */

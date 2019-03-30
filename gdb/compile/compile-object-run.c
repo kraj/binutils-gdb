@@ -18,15 +18,19 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "compile-object-run.h"
-#include "value.h"
+#include "compile/compile-object-run.h"
+
+/* Local non-gdb includes.  */
+#include "compile-internal.h"
+#include "compile.h"
+
+/* Local includes.  */
+#include "block.h"
+#include "dummy-frame.h"
 #include "infcall.h"
 #include "objfiles.h"
-#include "compile-internal.h"
-#include "dummy-frame.h"
-#include "block.h"
 #include "valprint.h"
-#include "compile.h"
+#include "value.h"
 
 /* Helper for do_module_cleanup.  */
 

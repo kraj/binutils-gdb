@@ -18,24 +18,32 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+#include "python/python.h"
+
+/* Standard C includes.  */
+#include <ctype.h>
+
+/* Local non-gdb includes.  */
+#include "readline/tilde.h"
+
+/* Local subdirectory includes.  */
+#include "cli/cli-script.h"
+#include "cli/cli-utils.h"
+
+/* Local includes.  */
 #include "arch-utils.h"
 #include "command.h"
-#include "ui-out.h"
-#include "cli/cli-script.h"
-#include "gdbcmd.h"
-#include "progspace.h"
-#include "objfiles.h"
-#include "value.h"
-#include "language.h"
 #include "event-loop.h"
-#include "serial.h"
-#include "readline/tilde.h"
-#include "python.h"
 #include "extension-priv.h"
-#include "cli/cli-utils.h"
-#include <ctype.h>
+#include "gdbcmd.h"
+#include "language.h"
 #include "location.h"
+#include "objfiles.h"
+#include "progspace.h"
 #include "ser-event.h"
+#include "serial.h"
+#include "ui-out.h"
+#include "value.h"
 
 /* Declared constants and enum for python stack printing.  */
 static const char python_excp_none[] = "none";

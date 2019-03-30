@@ -19,8 +19,10 @@
 #ifndef GDBSERVER_INFERIORS_H
 #define GDBSERVER_INFERIORS_H
 
-#include "common/gdb_vecs.h"
 #include <list>
+
+/* Local subdirectory includes.  */
+#include "common/gdb_vecs.h"
 
 struct thread_info;
 struct regcache;

@@ -21,13 +21,16 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "expression.h"		/* For language.h */
-#include "language.h"
 #include "ui-out.h"
 
-#include <vector>
+/* Standard C++ includes.  */
 #include <memory>
 #include <string>
+#include <vector>
+
+/* Local includes.  */
+#include "expression.h"
+#include "language.h"
 
 namespace {
 

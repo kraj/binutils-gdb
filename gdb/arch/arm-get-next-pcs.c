@@ -18,10 +18,14 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "common/common-defs.h"
-#include "common/gdb_vecs.h"
-#include "common/common-regcache.h"
+#include "arch/arm-get-next-pcs.h"
+
+/* Local non-gdb includes.  */
 #include "arm.h"
-#include "arm-get-next-pcs.h"
+
+/* Local subdirectory includes.  */
+#include "common/common-regcache.h"
+#include "common/gdb_vecs.h"
 
 /* See arm-get-next-pcs.h.  */
 

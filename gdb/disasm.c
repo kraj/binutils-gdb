@@ -18,19 +18,27 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "arch-utils.h"
-#include "target.h"
-#include "value.h"
-#include "ui-out.h"
 #include "disasm.h"
-#include "gdbcore.h"
-#include "gdbcmd.h"
-#include "dis-asm.h"
-#include "source.h"
-#include "safe-ctype.h"
+
+/* Standard C++ includes.  */
 #include <algorithm>
+
+/* Local non-gdb includes.  */
+#include "dis-asm.h"
+#include "safe-ctype.h"
+
+/* Local subdirectory includes.  */
 #include "common/gdb_optional.h"
+
+/* Local includes.  */
+#include "arch-utils.h"
+#include "gdbcmd.h"
+#include "gdbcore.h"
+#include "source.h"
+#include "target.h"
+#include "ui-out.h"
 #include "valprint.h"
+#include "value.h"
 
 /* Disassemble functions.
    FIXME: We should get rid of all the duplicate code in gdb that does

@@ -19,15 +19,19 @@
 
 #include "common/common-defs.h"
 #include "nat/linux-namespaces.h"
-#include "common/filestuff.h"
+
+/* Standard C includes.  */
 #include <fcntl.h>
+#include <sched.h>
+#include <signal.h>
+#include <sys/socket.h>
+#include <sys/stat.h>
 #include <sys/syscall.h>
 #include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/socket.h>
+
+/* Local subdirectory includes.  */
+#include "common/filestuff.h"
 #include "common/gdb_wait.h"
-#include <signal.h>
-#include <sched.h>
 #include "common/scope-exit.h"
 
 /* See nat/linux-namespaces.h.  */

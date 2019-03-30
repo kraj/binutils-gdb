@@ -18,17 +18,19 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+
+/* Standard C includes.  */
+#include <machine/reg.h>
+#include <sys/ptrace.h>
+#include <sys/types.h>
+
+/* Local includes.  */
+#include "inf-ptrace.h"
 #include "inferior.h"
+#include "mips-tdep.h"
+#include "obsd-nat.h"
 #include "regcache.h"
 #include "target.h"
-
-#include <sys/types.h>
-#include <sys/ptrace.h>
-#include <machine/reg.h>
-
-#include "mips-tdep.h"
-#include "inf-ptrace.h"
-#include "obsd-nat.h"
 
 /* Shorthand for some register numbers used below.  */
 #define MIPS_PC_REGNUM	MIPS_EMBED_PC_REGNUM

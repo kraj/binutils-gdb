@@ -18,26 +18,32 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "observable.h"
+
+/* Standard C includes.  */
+#include <fcntl.h>
+#include <signal.h>
+#include <sys/ioctl.h>
+#include <sys/procfs.h>
+#include <sys/types.h>
+#include <sys/uio.h>
+#include <sys/user.h>
+
+/* Local subdirectory includes.  */
+#include "common/gdb_wait.h"
+#include "nat/gdb_ptrace.h"
+#include "nat/linux-ptrace.h"
+
+/* Local includes.  */
 #include "frame.h"
-#include "inferior.h"
-#include "gdbthread.h"
 #include "gdbcore.h"
+#include "gdbthread.h"
+#include "inf-ptrace.h"
+#include "inferior.h"
+#include "linux-nat.h"
+#include "observable.h"
 #include "regcache.h"
 #include "regset.h"
 #include "target.h"
-#include "linux-nat.h"
-#include <sys/types.h>
-#include <signal.h>
-#include <sys/user.h>
-#include <sys/ioctl.h>
-#include <sys/uio.h>
-#include "common/gdb_wait.h"
-#include <fcntl.h>
-#include <sys/procfs.h>
-#include "nat/gdb_ptrace.h"
-#include "nat/linux-ptrace.h"
-#include "inf-ptrace.h"
 
 /* Prototypes for supply_gregset etc.  */
 #include "gregset.h"

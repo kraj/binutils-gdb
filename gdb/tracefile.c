@@ -19,10 +19,14 @@
 
 #include "defs.h"
 #include "tracefile.h"
+
+/* Local subdirectory includes.  */
+#include "common/byte-vector.h"
+
+/* Local includes.  */
 #include "ctf.h"
 #include "exec.h"
 #include "regcache.h"
-#include "common/byte-vector.h"
 
 /* Helper macros.  */
 

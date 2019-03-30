@@ -24,11 +24,17 @@
    to a styles of demangling, and GDB specific.  */
 
 #include "defs.h"
-#include "cli/cli-utils.h" /* for skip_to_space */
-#include "command.h"
-#include "gdbcmd.h"
+
+/* Local non-gdb includes.  */
 #include "demangle.h"
+
+/* Local subdirectory includes.  */
+#include "cli/cli-utils.h"
+
+/* Local includes.  */
+#include "command.h"
 #include "gdb-demangle.h"
+#include "gdbcmd.h"
 #include "language.h"
 
 /* Select the default C++ demangling style to use.  The default is "auto",

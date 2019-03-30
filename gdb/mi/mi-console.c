@@ -25,7 +25,7 @@
    "&".  */
 
 #include "defs.h"
-#include "mi-console.h"
+#include "mi/mi-console.h"
 
 /* Create a console that wraps the given output stream RAW with the
    string PREFIX and quoting it with QUOTE.  */

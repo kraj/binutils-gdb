@@ -18,31 +18,41 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "arch-utils.h"
-#include "symtab.h"
-#include "gdbtypes.h"
 #include "value.h"
-#include "gdbcore.h"
-#include "command.h"
-#include "gdbcmd.h"
-#include "target.h"
-#include "language.h"
-#include "demangle.h"
-#include "regcache.h"
-#include "block.h"
-#include "target-float.h"
-#include "objfiles.h"
-#include "valprint.h"
-#include "cli/cli-decode.h"
-#include "extension.h"
+
+/* Standard C includes.  */
 #include <ctype.h>
-#include "tracepoint.h"
-#include "cp-abi.h"
-#include "user-regs.h"
+
+/* Standard C++ includes.  */
 #include <algorithm>
-#include "completer.h"
-#include "common/selftest.h"
+
+/* Local non-gdb includes.  */
+#include "demangle.h"
+
+/* Local subdirectory includes.  */
+#include "cli/cli-decode.h"
 #include "common/array-view.h"
+#include "common/selftest.h"
+
+/* Local includes.  */
+#include "arch-utils.h"
+#include "block.h"
+#include "command.h"
+#include "completer.h"
+#include "cp-abi.h"
+#include "extension.h"
+#include "gdbcmd.h"
+#include "gdbcore.h"
+#include "gdbtypes.h"
+#include "language.h"
+#include "objfiles.h"
+#include "regcache.h"
+#include "symtab.h"
+#include "target-float.h"
+#include "target.h"
+#include "tracepoint.h"
+#include "user-regs.h"
+#include "valprint.h"
 
 /* Definition of a user function.  */
 struct internal_function

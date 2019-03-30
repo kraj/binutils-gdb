@@ -20,26 +20,30 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "osabi.h"
-#include "regcache.h"
-#include "regset.h"
-#include "gdbtypes.h"
+#include "rs6000-aix-tdep.h"
+
+/* Local subdirectory includes.  */
+#include "common/xml-utils.h"
+
+/* Local includes.  */
+#include "breakpoint.h"
+#include "frame-unwind.h"
 #include "gdbcore.h"
-#include "target.h"
-#include "value.h"
+#include "gdbtypes.h"
 #include "infcall.h"
 #include "objfiles.h"
-#include "breakpoint.h"
-#include "rs6000-tdep.h"
+#include "osabi.h"
 #include "ppc-tdep.h"
-#include "rs6000-aix-tdep.h"
-#include "xcoffread.h"
-#include "solib.h"
+#include "regcache.h"
+#include "regset.h"
+#include "rs6000-tdep.h"
 #include "solib-aix.h"
+#include "solib.h"
 #include "target-float.h"
-#include "common/xml-utils.h"
+#include "target.h"
 #include "trad-frame.h"
-#include "frame-unwind.h"
+#include "value.h"
+#include "xcoffread.h"
 
 /* If the kernel has to deliver a signal, it pushes a sigcontext
    structure on the stack and then calls the signal handler, passing

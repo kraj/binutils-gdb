@@ -18,20 +18,24 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "inferior.h"
-#include "regcache.h"
-#include "target.h"
+#include "sparc-nat.h"
 
-#include <signal.h>
-#include <sys/ptrace.h>
-#include "common/gdb_wait.h"
+/* Standard C includes.  */
 #ifdef HAVE_MACHINE_REG_H
 #include <machine/reg.h>
 #endif
+#include <signal.h>
+#include <sys/ptrace.h>
 
-#include "sparc-tdep.h"
-#include "sparc-nat.h"
+/* Local subdirectory includes.  */
+#include "common/gdb_wait.h"
+
+/* Local includes.  */
 #include "inf-ptrace.h"
+#include "inferior.h"
+#include "regcache.h"
+#include "sparc-tdep.h"
+#include "target.h"
 
 /* With some trickery we can use the code in this file for most (if
    not all) ptrace(2) based SPARC systems, which includes SunOS 4,

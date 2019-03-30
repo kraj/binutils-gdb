@@ -17,31 +17,38 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "frame.h"
-#include "inferior.h"
-#include "symtab.h"
-#include "value.h"
-#include "gdbcmd.h"
-#include "language.h"
-#include "gdbcore.h"
-#include "symfile.h"
-#include "objfiles.h"
-#include "gdbtypes.h"
-#include "target.h"
-#include "regcache.h"
+#include "or1k-tdep.h"
+
+/* Standard C includes.  */
+#include <inttypes.h>
+
+/* Local non-gdb includes.  */
+#include "dis-asm.h"
 #include "safe-ctype.h"
-#include "block.h"
-#include "reggroups.h"
+
+/* Local includes.  */
 #include "arch-utils.h"
-#include "frame-unwind.h"
-#include "frame-base.h"
+#include "block.h"
 #include "dwarf2-frame.h"
-#include "trad-frame.h"
+#include "frame-base.h"
+#include "frame-unwind.h"
+#include "frame.h"
+#include "gdbcmd.h"
+#include "gdbcore.h"
+#include "gdbtypes.h"
+#include "inferior.h"
+#include "language.h"
+#include "objfiles.h"
+#include "regcache.h"
+#include "reggroups.h"
 #include "regset.h"
 #include "remote.h"
+#include "symfile.h"
+#include "symtab.h"
 #include "target-descriptions.h"
-#include <inttypes.h>
-#include "dis-asm.h"
+#include "target.h"
+#include "trad-frame.h"
+#include "value.h"
 
 /* OpenRISC specific includes.  */
 #include "or1k-tdep.h"

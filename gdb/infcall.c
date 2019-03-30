@@ -19,29 +19,35 @@
 
 #include "defs.h"
 #include "infcall.h"
-#include "breakpoint.h"
-#include "tracepoint.h"
-#include "target.h"
-#include "regcache.h"
-#include "inferior.h"
-#include "infrun.h"
+
+/* Standard C++ includes.  */
+#include <algorithm>
+
+/* Local subdirectory includes.  */
+#include "common/scope-exit.h"
+
+/* Local includes.  */
+#include "ada-lang.h"
 #include "block.h"
-#include "gdbcore.h"
-#include "language.h"
-#include "objfiles.h"
-#include "gdbcmd.h"
+#include "breakpoint.h"
 #include "command.h"
 #include "dummy-frame.h"
-#include "ada-lang.h"
-#include "f-lang.h"
-#include "gdbthread.h"
 #include "event-top.h"
-#include "observable.h"
-#include "top.h"
+#include "f-lang.h"
+#include "gdbcmd.h"
+#include "gdbcore.h"
+#include "gdbthread.h"
+#include "inferior.h"
+#include "infrun.h"
 #include "interps.h"
+#include "language.h"
+#include "objfiles.h"
+#include "observable.h"
+#include "regcache.h"
+#include "target.h"
 #include "thread-fsm.h"
-#include <algorithm>
-#include "common/scope-exit.h"
+#include "top.h"
+#include "tracepoint.h"
 
 /* If we can't find a function's name from its address,
    we print this instead.  */

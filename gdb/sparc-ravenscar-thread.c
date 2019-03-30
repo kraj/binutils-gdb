@@ -18,12 +18,14 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+#include "sparc-ravenscar-thread.h"
+
+/* Local includes.  */
 #include "gdbcore.h"
-#include "regcache.h"
-#include "sparc-tdep.h"
 #include "inferior.h"
 #include "ravenscar-thread.h"
-#include "sparc-ravenscar-thread.h"
+#include "regcache.h"
+#include "sparc-tdep.h"
 
 struct sparc_ravenscar_ops : public ravenscar_arch_ops
 {

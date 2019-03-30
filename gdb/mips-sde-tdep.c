@@ -18,17 +18,19 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "osabi.h"
+
+/* Local non-gdb includes.  */
 #include "elf-bfd.h"
+
+/* Local includes.  */
 #include "block.h"
-#include "symtab.h"
-
-#include "frame.h"
-#include "frame-unwind.h"
 #include "frame-base.h"
-#include "trad-frame.h"
-
+#include "frame-unwind.h"
+#include "frame.h"
 #include "mips-tdep.h"
+#include "osabi.h"
+#include "symtab.h"
+#include "trad-frame.h"
 
 /* Fill in the register cache *THIS_CACHE for THIS_FRAME for use
    in the SDE frame unwinder.  */

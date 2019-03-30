@@ -18,15 +18,17 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "symtab.h"
-#include "gdbtypes.h"
-#include "expression.h"
-#include "parser-defs.h"
-#include "language.h"
-#include "varobj.h"
 #include "m2-lang.h"
+
+/* Local includes.  */
 #include "c-lang.h"
+#include "expression.h"
+#include "gdbtypes.h"
+#include "language.h"
+#include "parser-defs.h"
+#include "symtab.h"
 #include "valprint.h"
+#include "varobj.h"
 
 static void m2_printchar (int, struct type *, struct ui_file *);
 static void m2_emit_char (int, struct type *, struct ui_file *, int);

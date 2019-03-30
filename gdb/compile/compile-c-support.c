@@ -18,17 +18,23 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "compile-internal.h"
+
+/* Local non-gdb includes.  */
 #include "compile-c.h"
 #include "compile-cplus.h"
+#include "compile-internal.h"
 #include "compile.h"
-#include "gdb-dlfcn.h"
-#include "c-lang.h"
-#include "macrotab.h"
-#include "macroscope.h"
-#include "regcache.h"
+
+/* Local subdirectory includes.  */
 #include "common/function-view.h"
 #include "common/preprocessor.h"
+
+/* Local includes.  */
+#include "c-lang.h"
+#include "gdb-dlfcn.h"
+#include "macroscope.h"
+#include "macrotab.h"
+#include "regcache.h"
 
 /* See compile-internal.h.  */
 

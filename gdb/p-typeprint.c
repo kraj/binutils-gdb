@@ -19,19 +19,25 @@
 /* This file is derived from p-typeprint.c */
 
 #include "defs.h"
-#include "gdb_obstack.h"
-#include "bfd.h"		/* Binary File Description */
-#include "symtab.h"
-#include "gdbtypes.h"
+
+/* Standard C includes.  */
+#include <ctype.h>
+
+/* Local non-gdb includes.  */
+#include "bfd.h"
+
+/* Local includes.  */
 #include "expression.h"
-#include "value.h"
+#include "gdb-demangle.h"
+#include "gdb_obstack.h"
 #include "gdbcore.h"
-#include "target.h"
+#include "gdbtypes.h"
 #include "language.h"
 #include "p-lang.h"
+#include "symtab.h"
+#include "target.h"
 #include "typeprint.h"
-#include "gdb-demangle.h"
-#include <ctype.h>
+#include "value.h"
 
 static void pascal_type_print_varspec_suffix (struct type *, struct ui_file *,
 					      int, int, int,

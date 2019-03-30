@@ -21,17 +21,21 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "frame.h"
+
+/* Local non-gdb includes.  */
+#include "dis-asm.h"
+
+/* Local includes.  */
+#include "arch-utils.h"
+#include "dwarf2-frame.h"
 #include "frame-base.h"
 #include "frame-unwind.h"
-#include "dwarf2-frame.h"
-#include "gdbtypes.h"
-#include "value.h"
-#include "dis-asm.h"
-#include "arch-utils.h"
-#include "regcache.h"
-#include "osabi.h"
+#include "frame.h"
 #include "gdbcore.h"
+#include "gdbtypes.h"
+#include "osabi.h"
+#include "regcache.h"
+#include "value.h"
 
 enum gdb_regnum
 {

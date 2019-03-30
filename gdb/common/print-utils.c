@@ -17,8 +17,9 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#include "common-defs.h"
-#include "print-utils.h"
+#include "common/common-defs.h"
+#include "common/print-utils.h"
+
 /* Temporary storage using circular buffer.  */
 
 /* Number of cells in the circular buffer.  */

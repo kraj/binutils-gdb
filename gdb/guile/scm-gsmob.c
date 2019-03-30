@@ -42,9 +42,13 @@
    lifetime-tracking is required.  */
 
 #include "defs.h"
-#include "hashtab.h"
-#include "objfiles.h"
+
+/* Local non-gdb includes.  */
 #include "guile-internal.h"
+#include "hashtab.h"
+
+/* Local includes.  */
+#include "objfiles.h"
 
 /* We need to call this.  Undo our hack to prevent others from calling it.  */
 #undef scm_make_smob_type

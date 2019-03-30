@@ -18,12 +18,16 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+#include "ppc64-tdep.h"
+
+/* Local non-gdb includes.  */
+#include "elf-bfd.h"
+
+/* Local includes.  */
 #include "frame.h"
 #include "gdbcore.h"
 #include "infrun.h"
 #include "ppc-tdep.h"
-#include "ppc64-tdep.h"
-#include "elf-bfd.h"
 
 /* Macros for matching instructions.  Note that, since all the
    operands are masked off before they're or-ed into the instruction,

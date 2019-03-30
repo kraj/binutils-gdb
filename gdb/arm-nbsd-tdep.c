@@ -18,10 +18,13 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "osabi.h"
 
+/* Local subdirectory includes.  */
 #include "arch/arm.h"
+
+/* Local includes.  */
 #include "arm-tdep.h"
+#include "osabi.h"
 #include "solib-svr4.h"
 
 /* Description of the longjmp buffer.  */

@@ -18,8 +18,10 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "common/xml-utils.h"
+
+/* Local subdirectory includes.  */
 #include "common/selftest.h"
+#include "common/xml-utils.h"
 
 namespace selftests {
 namespace xml_utils {

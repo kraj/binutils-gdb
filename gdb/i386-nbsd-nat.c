@@ -18,12 +18,13 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+
+/* Local includes.  */
 #include "gdbcore.h"
+#include "i386-bsd-nat.h"
+#include "i386-tdep.h"
 #include "regcache.h"
 #include "target.h"
-
-#include "i386-tdep.h"
-#include "i386-bsd-nat.h"
 
 /* Support for debugging kernel virtual memory images.  */
 

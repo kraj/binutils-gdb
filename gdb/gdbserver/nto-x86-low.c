@@ -18,14 +18,21 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "server.h"
+
+/* Standard C includes.  */
+#include <x86/context.h>
+
+/* Local non-gdb includes.  */
 #include "nto-low.h"
 #include "regdef.h"
-#include "regcache.h"
-
-#include <x86/context.h>
-#include "common/x86-xstate.h"
-#include "arch/i386.h"
 #include "x86-tdesc.h"
+
+/* Local subdirectory includes.  */
+#include "arch/i386.h"
+#include "common/x86-xstate.h"
+
+/* Local includes.  */
+#include "regcache.h"
 
 const unsigned char x86_breakpoint[] = { 0xCC };
 #define x86_breakpoint_len 1

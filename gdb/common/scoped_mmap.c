@@ -17,10 +17,17 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#include "defs.h"
-#include "scoped_mmap.h"
+#include "common/common-defs.h"
+#include "common/scoped_mmap.h"
+
+/* Local non-gdb includes.  */
 #include "scoped_fd.h"
+
+/* Local subdirectory includes.  */
 #include "common/filestuff.h"
+
+/* Local includes.  */
+#include "defs.h"
 
 #ifdef HAVE_SYS_MMAN_H
 

@@ -18,13 +18,15 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-
 #include "osabi.h"
-#include "arch-utils.h"
-#include "gdbcmd.h"
-#include "command.h"
 
+/* Local non-gdb includes.  */
 #include "elf-bfd.h"
+
+/* Local includes.  */
+#include "arch-utils.h"
+#include "command.h"
+#include "gdbcmd.h"
 
 #ifndef GDB_OSABI_DEFAULT
 #define GDB_OSABI_DEFAULT GDB_OSABI_UNKNOWN

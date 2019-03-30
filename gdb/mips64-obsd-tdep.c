@@ -18,16 +18,17 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+
+/* Local includes.  */
 #include "gdbtypes.h"
+#include "mips-tdep.h"
+#include "obsd-tdep.h"
 #include "osabi.h"
 #include "regcache.h"
 #include "regset.h"
+#include "solib-svr4.h"
 #include "trad-frame.h"
 #include "tramp-frame.h"
-
-#include "obsd-tdep.h"
-#include "mips-tdep.h"
-#include "solib-svr4.h"
 
 /* The MIPS64 Floating-Point Quad-Precision format is similar to
    big-endian IA-64 Quad-Precision format.  */

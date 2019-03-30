@@ -18,18 +18,22 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "gdbcore.h"
-#include "regcache.h"
-#include "mn10300-tdep.h"
+
+/* Local non-gdb includes.  */
 #include "bfd.h"
 #include "elf-bfd.h"
+
+/* Local includes.  */
+#include "frame.h"
+#include "gdbcore.h"
+#include "linux-tdep.h"
+#include "mn10300-tdep.h"
 #include "osabi.h"
+#include "regcache.h"
 #include "regset.h"
 #include "solib-svr4.h"
-#include "frame.h"
 #include "trad-frame.h"
 #include "tramp-frame.h"
-#include "linux-tdep.h"
 
 /* Transliterated from <asm-mn10300/elf.h>...  */
 #define MN10300_ELF_NGREG 28

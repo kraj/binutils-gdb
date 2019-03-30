@@ -18,24 +18,26 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+
+/* Local includes.  */
+#include "frame-unwind.h"
 #include "frame.h"
-#include "inferior.h"
-#include "symtab.h"
-#include "target.h"
-#include "gdbcore.h"
 #include "gdbcmd.h"
-#include "symfile.h"
+#include "gdbcore.h"
+#include "inferior.h"
+#include "linux-tdep.h"
+#include "microblaze-tdep.h"
 #include "objfiles.h"
-#include "regcache.h"
-#include "value.h"
 #include "osabi.h"
+#include "regcache.h"
 #include "regset.h"
 #include "solib-svr4.h"
-#include "microblaze-tdep.h"
+#include "symfile.h"
+#include "symtab.h"
+#include "target.h"
 #include "trad-frame.h"
-#include "frame-unwind.h"
 #include "tramp-frame.h"
-#include "linux-tdep.h"
+#include "value.h"
 
 static int
 microblaze_linux_memory_remove_breakpoint (struct gdbarch *gdbarch, 

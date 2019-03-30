@@ -1,9 +1,9 @@
 #ifndef TRACEFILE_H
 #define TRACEFILE_H 1
 
-#include "tracepoint.h"
-#include "target.h"
 #include "process-stratum-target.h"
+#include "target.h"
+#include "tracepoint.h"
 
 struct trace_file_writer;
 

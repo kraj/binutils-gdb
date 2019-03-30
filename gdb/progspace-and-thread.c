@@ -17,6 +17,8 @@
 
 #include "defs.h"
 #include "progspace-and-thread.h"
+
+/* Local includes.  */
 #include "inferior.h"
 
 /* See progspace-and-thread.h  */

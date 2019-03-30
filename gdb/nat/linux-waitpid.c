@@ -18,6 +18,7 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "common/common-defs.h"
+#include "nat/linux-waitpid.h"
 
 #ifdef GDBSERVER
 /* FIXME: server.h is required for the definition of debug_threads

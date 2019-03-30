@@ -19,17 +19,21 @@
 #if !defined (BREAKPOINT_H)
 #define BREAKPOINT_H 1
 
-#include "frame.h"
-#include "value.h"
+#include <vector>
+
+/* Local subdirectory includes.  */
+#include "cli/cli-script.h"
+#include "common/array-view.h"
+#include "common/break-common.h"
 #include "common/vec.h"
+
+/* Local includes.  */
 #include "ax.h"
 #include "command.h"
-#include "common/break-common.h"
-#include "probe.h"
+#include "frame.h"
 #include "location.h"
-#include <vector>
-#include "common/array-view.h"
-#include "cli/cli-script.h"
+#include "probe.h"
+#include "value.h"
 
 struct block;
 struct gdbpy_breakpoint_object;

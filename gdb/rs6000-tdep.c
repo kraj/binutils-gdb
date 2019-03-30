@@ -18,57 +18,24 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "frame.h"
-#include "inferior.h"
-#include "infrun.h"
-#include "symtab.h"
-#include "target.h"
-#include "gdbcore.h"
-#include "gdbcmd.h"
-#include "objfiles.h"
-#include "arch-utils.h"
-#include "regcache.h"
-#include "regset.h"
-#include "target-float.h"
-#include "value.h"
-#include "parser-defs.h"
-#include "osabi.h"
-#include "infcall.h"
-#include "sim-regno.h"
-#include "gdb/sim-ppc.h"
-#include "reggroups.h"
-#include "dwarf2-frame.h"
-#include "target-descriptions.h"
-#include "user-regs.h"
-#include "record-full.h"
-#include "auxv.h"
+#include "rs6000-tdep.h"
 
-#include "coff/internal.h"	/* for libcoff.h */
-#include "libcoff.h"		/* for xcoff_data */
+/* Standard C++ includes.  */
+#include <algorithm>
+
+/* Local non-gdb includes.  */
+#include "coff/internal.h"
 #include "coff/xcoff.h"
-#include "libxcoff.h"
-
+#include "dis-asm.h"
 #include "elf-bfd.h"
 #include "elf/ppc.h"
 #include "elf/ppc64.h"
+#include "gdb/sim-ppc.h"
+#include "libcoff.h"
+#include "libxcoff.h"
 
-#include "solib-svr4.h"
-#include "ppc-tdep.h"
-#include "ppc-ravenscar-thread.h"
-
-#include "dis-asm.h"
-
-#include "trad-frame.h"
-#include "frame-unwind.h"
-#include "frame-base.h"
-
-#include "ax.h"
-#include "ax-gdb.h"
-#include <algorithm>
-
+/* Local subdirectory includes.  */
 #include "features/rs6000/powerpc-32.c"
-#include "features/rs6000/powerpc-altivec32.c"
-#include "features/rs6000/powerpc-vsx32.c"
 #include "features/rs6000/powerpc-403.c"
 #include "features/rs6000/powerpc-403gc.c"
 #include "features/rs6000/powerpc-405.c"
@@ -78,13 +45,48 @@
 #include "features/rs6000/powerpc-603.c"
 #include "features/rs6000/powerpc-604.c"
 #include "features/rs6000/powerpc-64.c"
-#include "features/rs6000/powerpc-altivec64.c"
-#include "features/rs6000/powerpc-vsx64.c"
 #include "features/rs6000/powerpc-7400.c"
 #include "features/rs6000/powerpc-750.c"
 #include "features/rs6000/powerpc-860.c"
+#include "features/rs6000/powerpc-altivec32.c"
+#include "features/rs6000/powerpc-altivec64.c"
 #include "features/rs6000/powerpc-e500.c"
+#include "features/rs6000/powerpc-vsx32.c"
+#include "features/rs6000/powerpc-vsx64.c"
 #include "features/rs6000/rs6000.c"
+
+/* Local includes.  */
+#include "arch-utils.h"
+#include "auxv.h"
+#include "ax-gdb.h"
+#include "ax.h"
+#include "dwarf2-frame.h"
+#include "frame-base.h"
+#include "frame-unwind.h"
+#include "frame.h"
+#include "gdbcmd.h"
+#include "gdbcore.h"
+#include "infcall.h"
+#include "inferior.h"
+#include "infrun.h"
+#include "objfiles.h"
+#include "osabi.h"
+#include "parser-defs.h"
+#include "ppc-ravenscar-thread.h"
+#include "ppc-tdep.h"
+#include "record-full.h"
+#include "regcache.h"
+#include "reggroups.h"
+#include "regset.h"
+#include "sim-regno.h"
+#include "solib-svr4.h"
+#include "symtab.h"
+#include "target-descriptions.h"
+#include "target-float.h"
+#include "target.h"
+#include "trad-frame.h"
+#include "user-regs.h"
+#include "value.h"
 
 /* Determine if regnum is an SPE pseudo-register.  */
 #define IS_SPE_PSEUDOREG(tdep, regnum) ((tdep)->ppc_ev0_regnum >= 0 \

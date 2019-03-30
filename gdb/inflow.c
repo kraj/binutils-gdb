@@ -17,28 +17,32 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "frame.h"
-#include "inferior.h"
-#include "command.h"
-#include "serial.h"
-#include "terminal.h"
-#include "target.h"
-#include "gdbthread.h"
-#include "observable.h"
-#include <signal.h>
-#include <fcntl.h>
-#include "gdb_select.h"
-
 #include "inflow.h"
-#include "gdbcmd.h"
-#ifdef HAVE_TERMIOS_H
-#include <termios.h>
-#endif
-#include "common/job-control.h"
 
+/* Standard C includes.  */
+#include <fcntl.h>
+#include <signal.h>
 #ifdef HAVE_SYS_IOCTL_H
 #include <sys/ioctl.h>
 #endif
+#ifdef HAVE_TERMIOS_H
+#include <termios.h>
+#endif
+
+/* Local subdirectory includes.  */
+#include "common/job-control.h"
+
+/* Local includes.  */
+#include "command.h"
+#include "frame.h"
+#include "gdb_select.h"
+#include "gdbcmd.h"
+#include "gdbthread.h"
+#include "inferior.h"
+#include "observable.h"
+#include "serial.h"
+#include "target.h"
+#include "terminal.h"
 
 #ifndef O_NOCTTY
 #define O_NOCTTY 0

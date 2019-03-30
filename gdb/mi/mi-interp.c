@@ -18,26 +18,33 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "interps.h"
-#include "event-top.h"
+#include "mi/mi-interp.h"
+
+/* Local non-gdb includes.  */
+#include "mi-cmds.h"
+#include "mi-common.h"
+#include "mi-console.h"
+#include "mi-main.h"
+#include "mi-out.h"
+
+/* Local subdirectory includes.  */
+#include "cli/cli-interp.h"
+
+/* Local includes.  */
+#include "cli-out.h"
 #include "event-loop.h"
+#include "event-top.h"
+#include "gdbthread.h"
 #include "inferior.h"
 #include "infrun.h"
-#include "ui-out.h"
-#include "top.h"
-#include "mi-main.h"
-#include "mi-cmds.h"
-#include "mi-out.h"
-#include "mi-console.h"
-#include "mi-common.h"
-#include "observable.h"
-#include "gdbthread.h"
-#include "solist.h"
+#include "interps.h"
 #include "objfiles.h"
-#include "tracepoint.h"
-#include "cli-out.h"
+#include "observable.h"
+#include "solist.h"
 #include "thread-fsm.h"
-#include "cli/cli-interp.h"
+#include "top.h"
+#include "tracepoint.h"
+#include "ui-out.h"
 
 /* These are the interpreter setup, etc. functions for the MI
    interpreter.  */

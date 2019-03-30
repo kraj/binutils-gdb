@@ -20,8 +20,8 @@
 #ifndef PSYMPRIV_H
 #define PSYMPRIV_H
 
-#include "psymtab.h"
 #include "objfiles.h"
+#include "psymtab.h"
 
 /* A partial_symbol records the name, domain, and address class of
    symbols whose types we have not parsed yet.  For functions, it also

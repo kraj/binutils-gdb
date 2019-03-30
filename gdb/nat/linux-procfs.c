@@ -17,10 +17,14 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "common/common-defs.h"
-#include "linux-procfs.h"
-#include "common/filestuff.h"
+#include "nat/linux-procfs.h"
+
+/* Standard C includes.  */
 #include <dirent.h>
 #include <sys/stat.h>
+
+/* Local subdirectory includes.  */
+#include "common/filestuff.h"
 
 /* Return the TGID of LWPID from /proc/pid/status.  Returns -1 if not
    found.  */

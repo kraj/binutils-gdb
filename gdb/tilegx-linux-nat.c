@@ -18,15 +18,19 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "inferior.h"
-#include "gdbcore.h"
-#include "regcache.h"
-#include "linux-nat.h"
-#include "inf-ptrace.h"
 
+/* Standard C includes.  */
+#include <sys/procfs.h>
+
+/* Local subdirectory includes.  */
 #include "nat/gdb_ptrace.h"
 
-#include <sys/procfs.h>
+/* Local includes.  */
+#include "gdbcore.h"
+#include "inf-ptrace.h"
+#include "inferior.h"
+#include "linux-nat.h"
+#include "regcache.h"
 
 /* Defines ps_err_e, struct ps_prochandle.  */
 #include "gdb_proc_service.h"

@@ -18,11 +18,15 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "gdb_bfd.h"
-#include "symfile.h"
-#include "objfiles.h"
-#include "gdbcore.h"
+
+/* Standard C++ includes.  */
 #include <algorithm>
+
+/* Local includes.  */
+#include "gdb_bfd.h"
+#include "gdbcore.h"
+#include "objfiles.h"
+#include "symfile.h"
 
 #ifdef HAVE_LIBLZMA
 

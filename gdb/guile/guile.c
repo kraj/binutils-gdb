@@ -21,21 +21,24 @@
    conventions, et.al.  */
 
 #include "defs.h"
-#include "breakpoint.h"
+#include "guile/guile.h"
+
+/* Standard C includes.  */
+#include <signal.h>
+
+/* Local subdirectory includes.  */
 #include "cli/cli-cmds.h"
 #include "cli/cli-script.h"
 #include "cli/cli-utils.h"
+#include "common/version.h"
+
+/* Local includes.  */
+#include "breakpoint.h"
 #include "command.h"
+#include "extension-priv.h"
 #include "gdbcmd.h"
 #include "top.h"
-#include "extension-priv.h"
 #include "utils.h"
-#include "common/version.h"
-#ifdef HAVE_GUILE
-#include "guile.h"
-#include "guile-internal.h"
-#endif
-#include <signal.h>
 
 /* The Guile version we're using.
    We *could* use the macros in libguile/version.h but that would preclude

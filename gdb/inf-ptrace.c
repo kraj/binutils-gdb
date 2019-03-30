@@ -18,20 +18,25 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "command.h"
-#include "inferior.h"
-#include "inflow.h"
-#include "terminal.h"
-#include "gdbcore.h"
-#include "regcache.h"
-#include "nat/gdb_ptrace.h"
-#include "common/gdb_wait.h"
+#include "inf-ptrace.h"
+
+/* Standard C includes.  */
 #include <signal.h>
 
-#include "inf-ptrace.h"
-#include "inf-child.h"
-#include "gdbthread.h"
+/* Local subdirectory includes.  */
+#include "common/gdb_wait.h"
 #include "nat/fork-inferior.h"
+#include "nat/gdb_ptrace.h"
+
+/* Local includes.  */
+#include "command.h"
+#include "gdbcore.h"
+#include "gdbthread.h"
+#include "inf-child.h"
+#include "inferior.h"
+#include "inflow.h"
+#include "regcache.h"
+#include "terminal.h"
 #include "utils.h"
 
 

@@ -18,21 +18,23 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+
+/* Local includes.  */
 #include "dwarf2-frame.h"
-#include "frame.h"
 #include "frame-unwind.h"
-#include "gdbtypes.h"
-#include "regset.h"
+#include "frame.h"
 #include "gdbarch.h"
 #include "gdbcore.h"
+#include "gdbtypes.h"
+#include "linux-tdep.h"
 #include "osabi.h"
 #include "regcache.h"
+#include "regset.h"
 #include "solib-svr4.h"
 #include "symtab.h"
 #include "trad-frame.h"
 #include "tramp-frame.h"
 #include "xml-syscall.h"
-#include "linux-tdep.h"
 
 /* The syscall's XML filename for sparc 32-bit.  */
 #define XML_SYSCALL_FILENAME_SPARC32 "syscalls/sparc-linux.xml"

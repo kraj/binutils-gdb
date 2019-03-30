@@ -18,9 +18,14 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "server.h"
+
+/* Standard C includes.  */
+#include <arch/abi.h>
+
+/* Local non-gdb includes.  */
 #include "linux-low.h"
 
-#include <arch/abi.h>
+/* Local subdirectory includes.  */
 #include "nat/gdb_ptrace.h"
 
 /* Defined in auto-generated file reg-tilegx.c.  */

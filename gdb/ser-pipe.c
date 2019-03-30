@@ -19,19 +19,22 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "serial.h"
+
+/* Standard C includes.  */
+#include <fcntl.h>
+#include <signal.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+
+/* Local subdirectory includes.  */
+#include "common/filestuff.h"
+#include "common/gdb_sys_time.h"
+
+/* Local includes.  */
+#include "gdb_vfork.h"
 #include "ser-base.h"
 #include "ser-unix.h"
-
-#include "gdb_vfork.h"
-
-#include <sys/types.h>
-#include <sys/socket.h>
-#include "common/gdb_sys_time.h"
-#include <fcntl.h>
-#include "common/filestuff.h"
-
-#include <signal.h>
+#include "serial.h"
 
 static int pipe_open (struct serial *scb, const char *name);
 static void pipe_close (struct serial *scb);

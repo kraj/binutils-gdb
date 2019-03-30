@@ -18,12 +18,16 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "common/common-defs.h"
-#include "nat/gdb_ptrace.h"
-#include <sys/user.h>
-#include "target/waitstatus.h"
-#include "nat/x86-linux.h"
-#include "nat/x86-dregs.h"
 #include "nat/x86-linux-dregs.h"
+
+/* Standard C includes.  */
+#include <sys/user.h>
+
+/* Local subdirectory includes.  */
+#include "nat/gdb_ptrace.h"
+#include "nat/x86-dregs.h"
+#include "nat/x86-linux.h"
+#include "target/waitstatus.h"
 
 /* Return the offset of REGNUM in the u_debugreg field of struct
    user.  */

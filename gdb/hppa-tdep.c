@@ -21,12 +21,18 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+#include "hppa-tdep.h"
+
+/* Local non-gdb includes.  */
 #include "bfd.h"
-#include "inferior.h"
-#include "regcache.h"
-#include "completer.h"
-#include "osabi.h"
+
+/* Local includes.  */
 #include "arch-utils.h"
+#include "completer.h"
+#include "inferior.h"
+#include "osabi.h"
+#include "regcache.h"
+
 /* For argument passing to the inferior.  */
 #include "symtab.h"
 #include "dis-asm.h"

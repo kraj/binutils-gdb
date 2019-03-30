@@ -18,9 +18,13 @@
 
 #include "defs.h"
 #include "tui/tui-file.h"
-#include "tui/tui-io.h"
-#include "tui/tui-command.h"
+
+/* Local non-gdb includes.  */
 #include "tui.h"
+
+/* Local subdirectory includes.  */
+#include "tui/tui-command.h"
+#include "tui/tui-io.h"
 
 tui_file::tui_file (FILE *stream)
   : stdio_file (stream)

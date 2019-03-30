@@ -19,6 +19,8 @@
 
 #include "defs.h"
 #include "memrange.h"
+
+/* Standard C++ includes.  */
 #include <algorithm>
 
 int

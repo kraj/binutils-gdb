@@ -20,19 +20,25 @@
 #if !defined (OBJFILES_H)
 #define OBJFILES_H
 
-#include "hashtab.h"
-#include "gdb_obstack.h"	/* For obstack internals.  */
-#include "objfile-flags.h"
-#include "symfile.h"
-#include "progspace.h"
-#include "registry.h"
-#include "gdb_bfd.h"
-#include "psymtab.h"
 #include <bitset>
 #include <vector>
+
+/* Local non-gdb includes.  */
+#include "hashtab.h"
+
+/* Local subdirectory includes.  */
 #include "common/next-iterator.h"
 #include "common/safe-iterator.h"
+
+/* Local includes.  */
 #include "bcache.h"
+#include "gdb_bfd.h"
+#include "gdb_obstack.h"
+#include "objfile-flags.h"
+#include "progspace.h"
+#include "psymtab.h"
+#include "registry.h"
+#include "symfile.h"
 
 struct htab;
 struct objfile_data;

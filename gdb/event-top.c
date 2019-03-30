@@ -20,26 +20,32 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "top.h"
+#include "event-top.h"
+
+/* Standard C includes.  */
+#include <signal.h>
+
+/* Local subdirectory includes.  */
+#include "cli/cli-script.h"
+#include "common/buffer.h"
+
+/* Local includes.  */
+#include "annotate.h"
+#include "continuations.h"
+#include "event-loop.h"
+#include "gdb_select.h"
+#include "gdbcmd.h"
+#include "gdbthread.h"
 #include "inferior.h"
 #include "infrun.h"
-#include "target.h"
-#include "terminal.h"		/* for job_control */
-#include "event-loop.h"
-#include "event-top.h"
 #include "interps.h"
-#include <signal.h>
-#include "cli/cli-script.h"     /* for reset_command_nest_depth */
 #include "main.h"
-#include "gdbthread.h"
-#include "observable.h"
-#include "continuations.h"
-#include "gdbcmd.h"		/* for dont_repeat() */
-#include "annotate.h"
 #include "maint.h"
-#include "common/buffer.h"
+#include "observable.h"
 #include "ser-event.h"
-#include "gdb_select.h"
+#include "target.h"
+#include "terminal.h"
+#include "top.h"
 
 /* readline include files.  */
 #include "readline/readline.h"

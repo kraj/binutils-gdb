@@ -19,19 +19,20 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "frame.h"
+
+/* Local includes.  */
 #include "frame-unwind.h"
+#include "frame.h"
 #include "gdbcore.h"
 #include "gdbtypes.h"
+#include "nbsd-tdep.h"
 #include "osabi.h"
 #include "regcache.h"
 #include "regset.h"
 #include "solib-svr4.h"
+#include "sparc-tdep.h"
 #include "symtab.h"
 #include "trad-frame.h"
-
-#include "sparc-tdep.h"
-#include "nbsd-tdep.h"
 
 /* Macros to extract fields from SPARC instructions.  */
 #define X_RS1(i) (((i) >> 14) & 0x1f)

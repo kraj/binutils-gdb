@@ -19,15 +19,21 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "value.h"
+
+/* Standard C++ includes.  */
+#include <algorithm>
+
+/* Local non-gdb includes.  */
+#include "demangle.h"
+
+/* Local includes.  */
+#include "c-lang.h"
 #include "cp-abi.h"
 #include "cp-support.h"
-#include "demangle.h"
 #include "objfiles.h"
-#include "valprint.h"
-#include "c-lang.h"
 #include "typeprint.h"
-#include <algorithm>
+#include "valprint.h"
+#include "value.h"
 
 static struct cp_abi_ops gnu_v3_abi_ops;
 

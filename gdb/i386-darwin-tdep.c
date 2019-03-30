@@ -19,23 +19,26 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "frame.h"
-#include "inferior.h"
-#include "gdbcore.h"
-#include "target.h"
-#include "symtab.h"
-#include "regcache.h"
-#include "objfiles.h"
-
-#include "i387-tdep.h"
-#include "i386-tdep.h"
-#include "osabi.h"
-#include "ui-out.h"
 #include "i386-darwin-tdep.h"
-#include "solib.h"
-#include "solib-darwin.h"
-#include "dwarf2-frame.h"
+
+/* Standard C++ includes.  */
 #include <algorithm>
+
+/* Local includes.  */
+#include "dwarf2-frame.h"
+#include "frame.h"
+#include "gdbcore.h"
+#include "i386-tdep.h"
+#include "i387-tdep.h"
+#include "inferior.h"
+#include "objfiles.h"
+#include "osabi.h"
+#include "regcache.h"
+#include "solib-darwin.h"
+#include "solib.h"
+#include "symtab.h"
+#include "target.h"
+#include "ui-out.h"
 
 /* Offsets into the struct i386_thread_state where we'll find the saved regs.
    From <mach/i386/thread_status.h> and i386-tdep.h.  */

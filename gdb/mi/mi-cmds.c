@@ -19,9 +19,13 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "top.h"
-#include "mi-cmds.h"
+#include "mi/mi-cmds.h"
+
+/* Local non-gdb includes.  */
 #include "mi-main.h"
+
+/* Local includes.  */
+#include "top.h"
 
 struct mi_cmd;
 static struct mi_cmd **lookup_table (const char *command);

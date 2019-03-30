@@ -17,8 +17,10 @@
 #ifndef COMPILE_COMPILE_C_H
 #define COMPILE_COMPILE_C_H
 
-#include "common/enum-flags.h"
 #include "gcc-c-plugin.h"
+
+/* Local subdirectory includes.  */
+#include "common/enum-flags.h"
 
 /* enum-flags wrapper.  */
 

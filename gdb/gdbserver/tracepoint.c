@@ -18,16 +18,25 @@
 
 #include "server.h"
 #include "tracepoint.h"
-#include "gdbthread.h"
-#include "common/rsp-low.h"
 
+/* Standard C includes.  */
 #include <ctype.h>
 #include <fcntl.h>
-#include <unistd.h>
-#include <chrono>
 #include <inttypes.h>
-#include "ax.h"
+#include <unistd.h>
+
+/* Standard C++ includes.  */
+#include <chrono>
+
+/* Local non-gdb includes.  */
 #include "tdesc.h"
+
+/* Local subdirectory includes.  */
+#include "common/rsp-low.h"
+
+/* Local includes.  */
+#include "ax.h"
+#include "gdbthread.h"
 
 #define IPA_SYM_STRUCT_NAME ipa_sym_addresses
 #include "common/agent.h"

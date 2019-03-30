@@ -18,21 +18,25 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "gdbcore.h"
-#include "osabi.h"
-#include "target.h"
-#include "objfiles.h"
-#include "solib-svr4.h"
-#include "glibc-tdep.h"
-#include "frame-unwind.h"
-#include "trad-frame.h"
+
+/* Local non-gdb includes.  */
+#include "elf/common.h"
+
+/* Local includes.  */
 #include "dwarf2-frame.h"
-#include "value.h"
-#include "regset.h"
-#include "regcache.h"
+#include "frame-unwind.h"
+#include "gdbcore.h"
+#include "glibc-tdep.h"
 #include "hppa-tdep.h"
 #include "linux-tdep.h"
-#include "elf/common.h"
+#include "objfiles.h"
+#include "osabi.h"
+#include "regcache.h"
+#include "regset.h"
+#include "solib-svr4.h"
+#include "target.h"
+#include "trad-frame.h"
+#include "value.h"
 
 /* Map DWARF DBX register numbers to GDB register numbers.  */
 static int

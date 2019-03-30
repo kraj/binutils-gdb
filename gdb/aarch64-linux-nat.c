@@ -20,29 +20,33 @@
 
 #include "defs.h"
 
-#include "inferior.h"
-#include "gdbcore.h"
-#include "regcache.h"
-#include "linux-nat.h"
-#include "target-descriptions.h"
+/* Standard C includes.  */
+#include <asm/ptrace.h>
+#include <sys/utsname.h>
+
+/* Local non-gdb includes.  */
+#include "elf/common.h"
+#include "elf/external.h"
+
+/* Local subdirectory includes.  */
+#include "nat/aarch64-linux-hw-point.h"
+#include "nat/aarch64-linux.h"
+#include "nat/aarch64-sve-linux-ptrace.h"
+#include "nat/gdb_ptrace.h"
+
+/* Local includes.  */
+#include "aarch32-linux-nat.h"
+#include "aarch64-linux-tdep.h"
+#include "aarch64-tdep.h"
 #include "auxv.h"
 #include "gdbcmd.h"
-#include "aarch64-tdep.h"
-#include "aarch64-linux-tdep.h"
-#include "aarch32-linux-nat.h"
-#include "nat/aarch64-linux.h"
-#include "nat/aarch64-linux-hw-point.h"
-#include "nat/aarch64-sve-linux-ptrace.h"
-
-#include "elf/external.h"
-#include "elf/common.h"
-
-#include "nat/gdb_ptrace.h"
-#include <sys/utsname.h>
-#include <asm/ptrace.h>
-
+#include "gdbcore.h"
 #include "gregset.h"
+#include "inferior.h"
+#include "linux-nat.h"
 #include "linux-tdep.h"
+#include "regcache.h"
+#include "target-descriptions.h"
 
 /* Defines ps_err_e, struct ps_prochandle.  */
 #include "gdb_proc_service.h"

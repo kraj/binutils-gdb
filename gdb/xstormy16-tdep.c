@@ -18,22 +18,28 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "frame.h"
+
+/* Local non-gdb includes.  */
+#include "dis-asm.h"
+
+/* Local subdirectory includes.  */
+#include "common/byte-vector.h"
+
+/* Local includes.  */
+#include "arch-utils.h"
+#include "dwarf2-frame.h"
 #include "frame-base.h"
 #include "frame-unwind.h"
-#include "dwarf2-frame.h"
-#include "symtab.h"
-#include "gdbtypes.h"
+#include "frame.h"
 #include "gdbcmd.h"
 #include "gdbcore.h"
-#include "value.h"
-#include "dis-asm.h"
+#include "gdbtypes.h"
 #include "inferior.h"
-#include "arch-utils.h"
-#include "regcache.h"
-#include "osabi.h"
 #include "objfiles.h"
-#include "common/byte-vector.h"
+#include "osabi.h"
+#include "regcache.h"
+#include "symtab.h"
+#include "value.h"
 
 enum gdb_regnum
 {

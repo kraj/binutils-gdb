@@ -18,18 +18,19 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "frame.h"
+
+/* Local includes.  */
+#include "fbsd-tdep.h"
 #include "frame-unwind.h"
+#include "frame.h"
 #include "gdbcore.h"
 #include "osabi.h"
 #include "regcache.h"
 #include "regset.h"
+#include "solib-svr4.h"
+#include "sparc64-tdep.h"
 #include "target.h"
 #include "trad-frame.h"
-
-#include "sparc64-tdep.h"
-#include "fbsd-tdep.h"
-#include "solib-svr4.h"
 
 /* From <machine/reg.h>.  */
 const struct sparc_gregmap sparc64fbsd_gregmap =

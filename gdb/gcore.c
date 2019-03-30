@@ -18,26 +18,36 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+#include "gcore.h"
+
+/* Standard C includes.  */
+#include <fcntl.h>
+
+/* Standard C++ includes.  */
+#include <algorithm>
+
+/* Local non-gdb includes.  */
 #include "elf-bfd.h"
-#include "infcall.h"
-#include "inferior.h"
-#include "gdbcore.h"
-#include "objfiles.h"
-#include "solib.h"
-#include "symfile.h"
+#include "readline/tilde.h"
+
+/* Local subdirectory includes.  */
+#include "cli/cli-decode.h"
+#include "common/byte-vector.h"
+#include "common/gdb_unlinker.h"
+#include "common/scope-exit.h"
+
+/* Local includes.  */
 #include "arch-utils.h"
 #include "completer.h"
-#include "gcore.h"
-#include "cli/cli-decode.h"
-#include <fcntl.h>
+#include "gdb_bfd.h"
+#include "gdbcore.h"
+#include "infcall.h"
+#include "inferior.h"
+#include "objfiles.h"
 #include "regcache.h"
 #include "regset.h"
-#include "gdb_bfd.h"
-#include "readline/tilde.h"
-#include <algorithm>
-#include "common/gdb_unlinker.h"
-#include "common/byte-vector.h"
-#include "common/scope-exit.h"
+#include "solib.h"
+#include "symfile.h"
 
 /* The largest amount of memory to read from the target at once.  We
    must throttle it to limit the amount of memory used by GDB during

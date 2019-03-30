@@ -18,26 +18,31 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "value.h"
-#include "language.h"		/* For value_true */
-#include <ctype.h>
-
-#include "ui-out.h"
-#include "top.h"
-#include "breakpoint.h"
-#include "tracepoint.h"
-#include "cli/cli-cmds.h"
-#include "cli/cli-decode.h"
 #include "cli/cli-script.h"
 
+/* Standard C includes.  */
+#include <ctype.h>
+
+/* Standard C++ includes.  */
+#include <vector>
+
+/* Local subdirectory includes.  */
+#include "cli/cli-cmds.h"
+#include "cli/cli-decode.h"
+#include "common/gdb_string_view.h"
+#include "compile/compile.h"
+#include "guile/guile.h"
+#include "python/python.h"
+
+/* Local includes.  */
+#include "breakpoint.h"
 #include "extension.h"
 #include "interps.h"
-#include "compile/compile.h"
-#include "common/gdb_string_view.h"
-#include "python/python.h"
-#include "guile/guile.h"
-
-#include <vector>
+#include "language.h"
+#include "top.h"
+#include "tracepoint.h"
+#include "ui-out.h"
+#include "value.h"
 
 /* Prototypes for local functions.  */
 

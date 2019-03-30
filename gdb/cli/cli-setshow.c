@@ -16,18 +16,24 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "readline/tilde.h"
-#include "value.h"
+#include "cli/cli-setshow.h"
+
+/* Standard C includes.  */
 #include <ctype.h>
+
+/* Local non-gdb includes.  */
+#include "readline/tilde.h"
+
+/* Local subdirectory includes.  */
+#include "cli/cli-cmds.h"
+#include "cli/cli-decode.h"
+#include "cli/cli-utils.h"
+
+/* Local includes.  */
 #include "arch-utils.h"
 #include "observable.h"
-
 #include "ui-out.h"
-
-#include "cli/cli-decode.h"
-#include "cli/cli-cmds.h"
-#include "cli/cli-setshow.h"
-#include "cli/cli-utils.h"
+#include "value.h"
 
 /* Return true if the change of command parameter should be notified.  */
 

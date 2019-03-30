@@ -19,13 +19,15 @@
 
 #include "defs.h"
 #include "tramp-frame.h"
+
+/* Local includes.  */
+#include "frame-base.h"
 #include "frame-unwind.h"
 #include "gdbcore.h"
-#include "symtab.h"
 #include "objfiles.h"
+#include "symtab.h"
 #include "target.h"
 #include "trad-frame.h"
-#include "frame-base.h"
 
 struct frame_data
 {

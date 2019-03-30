@@ -18,9 +18,13 @@
 
 #include "server.h"
 #include "ax.h"
+
+/* Local subdirectory includes.  */
 #include "common/format.h"
-#include "tracepoint.h"
 #include "common/rsp-low.h"
+
+/* Local includes.  */
+#include "tracepoint.h"
 
 static void ax_vdebug (const char *, ...) ATTRIBUTE_PRINTF (1, 2);
 

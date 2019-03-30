@@ -19,24 +19,34 @@
 
 #include "defs.h"
 #include "probe.h"
-#include "command.h"
+
+/* Standard C includes.  */
+#include <ctype.h>
+
+/* Standard C++ includes.  */
+#include <algorithm>
+
+/* Local non-gdb includes.  */
+#include "filenames.h"
+
+/* Local subdirectory includes.  */
 #include "cli/cli-cmds.h"
 #include "cli/cli-utils.h"
-#include "objfiles.h"
-#include "symtab.h"
-#include "progspace.h"
-#include "filenames.h"
-#include "linespec.h"
-#include "gdb_regex.h"
-#include "frame.h"
-#include "arch-utils.h"
-#include "value.h"
-#include "ax.h"
-#include "ax-gdb.h"
-#include "location.h"
-#include <ctype.h>
-#include <algorithm>
 #include "common/gdb_optional.h"
+
+/* Local includes.  */
+#include "arch-utils.h"
+#include "ax-gdb.h"
+#include "ax.h"
+#include "command.h"
+#include "frame.h"
+#include "gdb_regex.h"
+#include "linespec.h"
+#include "location.h"
+#include "objfiles.h"
+#include "progspace.h"
+#include "symtab.h"
+#include "value.h"
 
 /* Class that implements the static probe methods for "any" probe.  */
 

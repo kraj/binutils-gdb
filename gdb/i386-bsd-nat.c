@@ -18,20 +18,23 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "inferior.h"
-#include "regcache.h"
+#include "i386-bsd-nat.h"
 
-#include <signal.h>
-#include <sys/types.h>
-#include <sys/ptrace.h>
-#include <machine/reg.h>
+/* Standard C includes.  */
 #include <machine/frame.h>
+#include <machine/reg.h>
+#include <signal.h>
+#include <sys/ptrace.h>
+#include <sys/types.h>
 
+/* Local includes.  */
 #include "i386-tdep.h"
 #include "i387-tdep.h"
-#include "x86-bsd-nat.h"
-#include "i386-bsd-nat.h"
 #include "inf-ptrace.h"
+#include "inferior.h"
+#include "regcache.h"
+#include "x86-bsd-nat.h"
+
 
 
 /* In older BSD versions we cannot get at some of the segment

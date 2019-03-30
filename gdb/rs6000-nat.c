@@ -18,38 +18,42 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "inferior.h"
-#include "target.h"
-#include "gdbcore.h"
-#include "symfile.h"
-#include "objfiles.h"
-#include "bfd.h"
-#include "gdb-stabs.h"
-#include "regcache.h"
-#include "arch-utils.h"
-#include "inf-child.h"
-#include "inf-ptrace.h"
-#include "ppc-tdep.h"
-#include "rs6000-tdep.h"
-#include "rs6000-aix-tdep.h"
-#include "exec.h"
-#include "observable.h"
-#include "xcoffread.h"
 
+/* Standard C includes.  */
+#include <a.out.h>
+#include <fcntl.h>
+#include <signal.h>
+#include <sys/core.h>
+#include <sys/dir.h>
+#include <sys/file.h>
+#include <sys/ioctl.h>
 #include <sys/ptrace.h>
 #include <sys/reg.h>
-
-#include <sys/dir.h>
-#include <sys/user.h>
-#include <signal.h>
-#include <sys/ioctl.h>
-#include <fcntl.h>
-
-#include <a.out.h>
-#include <sys/file.h>
 #include <sys/stat.h>
+#include <sys/user.h>
+
+/* Local non-gdb includes.  */
+#include "bfd.h"
+
+/* Local includes.  */
+#include "arch-utils.h"
+#include "exec.h"
+#include "gdb-stabs.h"
 #include "gdb_bfd.h"
-#include <sys/core.h>
+#include "gdbcore.h"
+#include "inf-child.h"
+#include "inf-ptrace.h"
+#include "inferior.h"
+#include "objfiles.h"
+#include "observable.h"
+#include "ppc-tdep.h"
+#include "regcache.h"
+#include "rs6000-aix-tdep.h"
+#include "rs6000-tdep.h"
+#include "symfile.h"
+#include "target.h"
+#include "xcoffread.h"
+
 #define __LDINFO_PTRACE32__	/* for __ld_info32 */
 #define __LDINFO_PTRACE64__	/* for __ld_info64 */
 #include <sys/ldr.h>

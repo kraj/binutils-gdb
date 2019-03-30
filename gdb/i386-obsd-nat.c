@@ -18,18 +18,20 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "gdbcore.h"
-#include "regcache.h"
-#include "target.h"
 
-#include <sys/sysctl.h>
+/* Standard C includes.  */
 #include <machine/frame.h>
 #include <machine/pcb.h>
+#include <sys/sysctl.h>
 
-#include "i386-tdep.h"
-#include "i386-bsd-nat.h"
-#include "obsd-nat.h"
+/* Local includes.  */
 #include "bsd-kvm.h"
+#include "gdbcore.h"
+#include "i386-bsd-nat.h"
+#include "i386-tdep.h"
+#include "obsd-nat.h"
+#include "regcache.h"
+#include "target.h"
 
 static int
 i386obsd_supply_pcb (struct regcache *regcache, struct pcb *pcb)

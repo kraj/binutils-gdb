@@ -23,8 +23,10 @@
 #ifndef X86_NAT_H
 #define X86_NAT_H 1
 
-#include "breakpoint.h"
 #include "nat/x86-dregs.h"
+
+/* Local includes.  */
+#include "breakpoint.h"
 #include "target.h"
 
 /* Hardware-assisted breakpoints and watchpoints.  */

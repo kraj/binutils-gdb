@@ -18,16 +18,18 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+
+/* Standard C includes.  */
+#include <machine/reg.h>
+#include <sys/ptrace.h>
+#include <sys/types.h>
+
+/* Local includes.  */
+#include "inf-ptrace.h"
 #include "inferior.h"
 #include "regcache.h"
 #include "target.h"
-
-#include <sys/types.h>
-#include <sys/ptrace.h>
-#include <machine/reg.h>
-
 #include "vax-tdep.h"
-#include "inf-ptrace.h"
 
 struct vax_bsd_nat_target final : public inf_ptrace_target
 {

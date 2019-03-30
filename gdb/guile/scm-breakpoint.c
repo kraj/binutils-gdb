@@ -21,17 +21,23 @@
    conventions, et.al.  */
 
 #include "defs.h"
-#include "value.h"
+
+/* Local non-gdb includes.  */
+#include "guile-internal.h"
+
+/* Local subdirectory includes.  */
+#include "cli/cli-script.h"
+
+/* Local includes.  */
+#include "ada-lang.h"
+#include "arch-utils.h"
 #include "breakpoint.h"
 #include "gdbcmd.h"
 #include "gdbthread.h"
-#include "observable.h"
-#include "cli/cli-script.h"
-#include "ada-lang.h"
-#include "arch-utils.h"
 #include "language.h"
-#include "guile-internal.h"
 #include "location.h"
+#include "observable.h"
+#include "value.h"
 
 /* The <gdb:breakpoint> smob.
    N.B.: The name of this struct is known to breakpoint.h.

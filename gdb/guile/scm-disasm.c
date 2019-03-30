@@ -21,12 +21,16 @@
    conventions, et.al.  */
 
 #include "defs.h"
+
+/* Local non-gdb includes.  */
+#include "dis-asm.h"
+#include "guile-internal.h"
+
+/* Local includes.  */
 #include "arch-utils.h"
 #include "disasm.h"
-#include "dis-asm.h"
 #include "gdbarch.h"
-#include "gdbcore.h" /* Why is memory_error here? */
-#include "guile-internal.h"
+#include "gdbcore.h"
 
 static SCM port_keyword;
 static SCM offset_keyword;

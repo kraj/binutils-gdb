@@ -18,16 +18,18 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "osabi.h"
-#include "linux-tdep.h"
+
+/* Local includes.  */
 #include "glibc-tdep.h"
-#include "solib-svr4.h"
-#include "symtab.h"
+#include "linux-tdep.h"
+#include "osabi.h"
 #include "regcache.h"
 #include "regset.h"
-#include "tramp-frame.h"
-#include "trad-frame.h"
+#include "solib-svr4.h"
+#include "symtab.h"
 #include "tilegx-tdep.h"
+#include "trad-frame.h"
+#include "tramp-frame.h"
 
 /* Signal trampoline support.  */
 

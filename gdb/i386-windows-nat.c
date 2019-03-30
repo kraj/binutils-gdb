@@ -16,11 +16,14 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+
+/* Standard C includes.  */
+#include <windows.h>
+
+/* Local includes.  */
+#include "i386-tdep.h"
 #include "windows-nat.h"
 #include "x86-nat.h"
-#include "i386-tdep.h"
-
-#include <windows.h>
 
 #define context_offset(x) ((int)&(((CONTEXT *)NULL)->x))
 static const int mappings[] =

@@ -17,6 +17,8 @@
 
 #include "defs.h"
 #include "gdb_regex.h"
+
+/* Local subdirectory includes.  */
 #include "common/def-vector.h"
 
 compiled_regex::compiled_regex (const char *regex, int cflags,

@@ -24,9 +24,11 @@
 #if !defined (GDBCMD_H)
 #define GDBCMD_H 1
 
+#include "cli/cli-script.h"
+
+/* Local includes.  */
 #include "command.h"
 #include "ui-out.h"
-#include "cli/cli-script.h"
 
 /* Chain containing all defined commands.  */
 

@@ -20,10 +20,13 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "user-regs.h"
+
+/* Local includes.  */
 #include "frame.h"
 #include "gdbtypes.h"
+#include "user-regs.h"
 #include "value.h"
+
 static struct value *
 value_of_builtin_frame_fp_reg (struct frame_info *frame, const void *baton)
 {

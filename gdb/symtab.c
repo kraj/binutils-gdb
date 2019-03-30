@@ -19,56 +19,63 @@
 
 #include "defs.h"
 #include "symtab.h"
-#include "gdbtypes.h"
-#include "gdbcore.h"
-#include "frame.h"
-#include "target.h"
-#include "value.h"
-#include "symfile.h"
-#include "objfiles.h"
-#include "gdbcmd.h"
-#include "gdb_regex.h"
-#include "expression.h"
-#include "language.h"
-#include "demangle.h"
-#include "inferior.h"
-#include "source.h"
-#include "filenames.h"		/* for FILENAME_CMP */
-#include "objc-lang.h"
-#include "d-lang.h"
-#include "ada-lang.h"
-#include "go-lang.h"
-#include "p-lang.h"
-#include "addrmap.h"
-#include "cli/cli-utils.h"
-#include "cli/cli-style.h"
-#include "fnmatch.h"
-#include "hashtab.h"
-#include "typeprint.h"
 
-#include "gdb_obstack.h"
-#include "block.h"
-#include "dictionary.h"
-
-#include <sys/types.h>
+/* Standard C includes.  */
+#include <ctype.h>
 #include <fcntl.h>
 #include <sys/stat.h>
-#include <ctype.h>
+#include <sys/types.h>
+
+/* Standard C++ includes.  */
+#include <algorithm>
+
+/* Local non-gdb includes.  */
+#include "demangle.h"
+#include "filenames.h"
+#include "fnmatch.h"
+#include "hashtab.h"
+
+/* Local subdirectory includes.  */
+#include "cli/cli-style.h"
+#include "cli/cli-utils.h"
+#include "common/gdb_optional.h"
+#include "common/pathstuff.h"
+
+/* Local includes.  */
+#include "ada-lang.h"
+#include "addrmap.h"
+#include "arch-utils.h"
+#include "block.h"
+#include "completer.h"
 #include "cp-abi.h"
 #include "cp-support.h"
-#include "observable.h"
-#include "solist.h"
-#include "macrotab.h"
-#include "macroscope.h"
-
-#include "parser-defs.h"
-#include "completer.h"
-#include "progspace-and-thread.h"
-#include "common/gdb_optional.h"
+#include "d-lang.h"
+#include "dictionary.h"
+#include "expression.h"
 #include "filename-seen-cache.h"
-#include "arch-utils.h"
-#include <algorithm>
-#include "common/pathstuff.h"
+#include "frame.h"
+#include "gdb_obstack.h"
+#include "gdb_regex.h"
+#include "gdbcmd.h"
+#include "gdbcore.h"
+#include "gdbtypes.h"
+#include "go-lang.h"
+#include "inferior.h"
+#include "language.h"
+#include "macroscope.h"
+#include "macrotab.h"
+#include "objc-lang.h"
+#include "objfiles.h"
+#include "observable.h"
+#include "p-lang.h"
+#include "parser-defs.h"
+#include "progspace-and-thread.h"
+#include "solist.h"
+#include "source.h"
+#include "symfile.h"
+#include "target.h"
+#include "typeprint.h"
+#include "value.h"
 
 /* Forward declarations for local functions.  */
 

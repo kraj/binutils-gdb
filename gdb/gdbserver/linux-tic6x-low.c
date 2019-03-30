@@ -20,13 +20,19 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "server.h"
-#include "linux-low.h"
-#include "arch/tic6x.h"
-#include "tdesc.h"
 
-#include "nat/gdb_ptrace.h"
+/* Standard C includes.  */
 #include <endian.h>
 
+/* Local non-gdb includes.  */
+#include "linux-low.h"
+#include "tdesc.h"
+
+/* Local subdirectory includes.  */
+#include "arch/tic6x.h"
+#include "nat/gdb_ptrace.h"
+
+/* Local includes.  */
 #include "gdb_proc_service.h"
 
 #ifndef PTRACE_GET_THREAD_AREA

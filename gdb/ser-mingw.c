@@ -18,18 +18,19 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "serial.h"
+
+/* Standard C includes.  */
+#include <conio.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <windows.h>
+
+/* Local includes.  */
+#include "command.h"
 #include "ser-base.h"
 #include "ser-tcp.h"
-
-#include <windows.h>
-#include <conio.h>
-
-#include <fcntl.h>
-#include <unistd.h>
-#include <sys/types.h>
-
-#include "command.h"
+#include "serial.h"
 
 struct ser_windows_state
 {

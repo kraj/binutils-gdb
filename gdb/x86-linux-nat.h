@@ -20,10 +20,12 @@
 #ifndef X86_LINUX_NAT_H
 #define X86_LINUX_NAT_H 1
 
-#include "gdb_proc_service.h"  /* For ps_err_e.  */
+#include "nat/x86-linux.h"
+
+/* Local includes.  */
+#include "gdb_proc_service.h"
 #include "linux-nat.h"
 #include "x86-nat.h"
-#include "nat/x86-linux.h"
 
 struct x86_linux_nat_target : public x86_nat_target<linux_nat_target>
 {

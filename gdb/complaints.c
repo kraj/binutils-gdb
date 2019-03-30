@@ -19,9 +19,13 @@
 
 #include "defs.h"
 #include "complaints.h"
+
+/* Standard C++ includes.  */
+#include <unordered_map>
+
+/* Local includes.  */
 #include "command.h"
 #include "gdbcmd.h"
-#include <unordered_map>
 
 /* Map format strings to counters.  */
 

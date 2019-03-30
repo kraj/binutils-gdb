@@ -18,12 +18,14 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+
+/* Local includes.  */
+#include "fbsd-nat.h"
 #include "regcache.h"
+#include "sparc-nat.h"
+#include "sparc64-tdep.h"
 #include "target.h"
 
-#include "fbsd-nat.h"
-#include "sparc64-tdep.h"
-#include "sparc-nat.h"
 
 
 /* Support for debugging kernel virtual memory images.  */

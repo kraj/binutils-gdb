@@ -18,21 +18,27 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "compile-object-load.h"
-#include "compile-internal.h"
-#include "command.h"
-#include "objfiles.h"
-#include "gdbcore.h"
-#include "readline/tilde.h"
-#include "bfdlink.h"
-#include "gdbcmd.h"
-#include "regcache.h"
-#include "inferior.h"
-#include "gdbthread.h"
-#include "compile.h"
-#include "block.h"
-#include "arch-utils.h"
+#include "compile/compile-object-load.h"
+
+/* Standard C++ includes.  */
 #include <algorithm>
+
+/* Local non-gdb includes.  */
+#include "bfdlink.h"
+#include "compile-internal.h"
+#include "compile.h"
+#include "readline/tilde.h"
+
+/* Local includes.  */
+#include "arch-utils.h"
+#include "block.h"
+#include "command.h"
+#include "gdbcmd.h"
+#include "gdbcore.h"
+#include "gdbthread.h"
+#include "inferior.h"
+#include "objfiles.h"
+#include "regcache.h"
 
 /* Add inferior mmap memory range ADDR..ADDR+SIZE (exclusive) to the
    list.  */

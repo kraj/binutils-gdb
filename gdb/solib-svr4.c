@@ -18,33 +18,33 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-
-#include "elf/external.h"
-#include "elf/common.h"
-#include "elf/mips.h"
-
-#include "symtab.h"
-#include "bfd.h"
-#include "symfile.h"
-#include "objfiles.h"
-#include "gdbcore.h"
-#include "target.h"
-#include "inferior.h"
-#include "infrun.h"
-#include "regcache.h"
-#include "gdbthread.h"
-#include "observable.h"
-
-#include "solist.h"
-#include "solib.h"
 #include "solib-svr4.h"
 
-#include "bfd-target.h"
+/* Local non-gdb includes.  */
+#include "bfd.h"
 #include "elf-bfd.h"
-#include "exec.h"
+#include "elf/common.h"
+#include "elf/external.h"
+#include "elf/mips.h"
+
+/* Local includes.  */
 #include "auxv.h"
+#include "bfd-target.h"
+#include "exec.h"
 #include "gdb_bfd.h"
+#include "gdbcore.h"
+#include "gdbthread.h"
+#include "inferior.h"
+#include "infrun.h"
+#include "objfiles.h"
+#include "observable.h"
 #include "probe.h"
+#include "regcache.h"
+#include "solib.h"
+#include "solist.h"
+#include "symfile.h"
+#include "symtab.h"
+#include "target.h"
 
 static struct link_map_offsets *svr4_fetch_link_map_offsets (void);
 static int svr4_have_link_map_offsets (void);

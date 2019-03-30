@@ -18,18 +18,19 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "inferior.h"
-#include "regcache.h"
-#include "target.h"
 
-#include <sys/types.h>
-#include <sys/ptrace.h>
+/* Standard C includes.  */
 #include <machine/reg.h>
+#include <sys/ptrace.h>
+#include <sys/types.h>
 
+/* Local includes.  */
 #include "hppa-tdep.h"
 #include "inf-ptrace.h"
-
+#include "inferior.h"
 #include "obsd-nat.h"
+#include "regcache.h"
+#include "target.h"
 
 struct hppa_obsd_nat_target final : public obsd_nat_target
 {

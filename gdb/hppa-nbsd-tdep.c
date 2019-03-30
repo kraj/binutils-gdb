@@ -18,15 +18,15 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+
+/* Local includes.  */
+#include "hppa-bsd-tdep.h"
+#include "hppa-tdep.h"
 #include "osabi.h"
 #include "regcache.h"
 #include "regset.h"
-
 #include "trad-frame.h"
 #include "tramp-frame.h"
-
-#include "hppa-tdep.h"
-#include "hppa-bsd-tdep.h"
 
 /* From <machine/mcontext.h>.  */
 static int hppanbsd_mc_reg_offset[] =

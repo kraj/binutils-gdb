@@ -17,13 +17,19 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "server.h"
-#include "linux-low.h"
-#include "arch/arm.h"
-#include "arch/arm-linux.h"
-#include "arch/arm-get-next-pcs.h"
-#include "linux-aarch32-low.h"
 
+/* Standard C includes.  */
 #include <sys/uio.h>
+
+/* Local non-gdb includes.  */
+#include "linux-aarch32-low.h"
+#include "linux-low.h"
+
+/* Local subdirectory includes.  */
+#include "arch/arm-get-next-pcs.h"
+#include "arch/arm-linux.h"
+#include "arch/arm.h"
+
 /* Don't include elf.h if linux/elf.h got included by gdb_proc_service.h.
    On Bionic elf.h and linux/elf.h have conflicting definitions.  */
 #ifndef ELFMAG0

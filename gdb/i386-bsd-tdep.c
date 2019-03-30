@@ -18,13 +18,14 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+
+/* Local includes.  */
 #include "arch-utils.h"
 #include "frame.h"
 #include "gdbcore.h"
-#include "regcache.h"
-#include "osabi.h"
-
 #include "i386-tdep.h"
+#include "osabi.h"
+#include "regcache.h"
 
 /* Support for signal handlers.  */
 

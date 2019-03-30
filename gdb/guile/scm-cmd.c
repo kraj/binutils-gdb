@@ -21,12 +21,20 @@
    conventions, et.al.  */
 
 #include "defs.h"
+
+/* Standard C includes.  */
 #include <ctype.h>
-#include "charset.h"
-#include "gdbcmd.h"
-#include "cli/cli-decode.h"
-#include "completer.h"
+
+/* Local non-gdb includes.  */
 #include "guile-internal.h"
+
+/* Local subdirectory includes.  */
+#include "cli/cli-decode.h"
+
+/* Local includes.  */
+#include "charset.h"
+#include "completer.h"
+#include "gdbcmd.h"
 
 /* The <gdb:command> smob.
 

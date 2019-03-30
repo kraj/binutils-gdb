@@ -17,13 +17,19 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "common/common-defs.h"
-#include "linux-ptrace.h"
-#include "linux-procfs.h"
-#include "linux-waitpid.h"
-#include "common/buffer.h"
+#include "nat/linux-ptrace.h"
+
+/* Standard C includes.  */
 #ifdef HAVE_SYS_PROCFS_H
 #include <sys/procfs.h>
 #endif
+
+/* Local non-gdb includes.  */
+#include "linux-procfs.h"
+#include "linux-waitpid.h"
+
+/* Local subdirectory includes.  */
+#include "common/buffer.h"
 
 /* Stores the ptrace options supported by the running kernel.
    A value of -1 means we did not check for features yet.  A value

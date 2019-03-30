@@ -18,6 +18,9 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+#include "amd64-bsd-nat.h"
+
+/* Local includes.  */
 #include "inferior.h"
 #include "regcache.h"
 #include "target.h"

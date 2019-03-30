@@ -17,9 +17,13 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+
+/* Local non-gdb includes.  */
 #include "mi-cmds.h"
-#include "symtab.h"
+
+/* Local includes.  */
 #include "objfiles.h"
+#include "symtab.h"
 #include "ui-out.h"
 
 /* Print the list of all pc addresses and lines of code for the
