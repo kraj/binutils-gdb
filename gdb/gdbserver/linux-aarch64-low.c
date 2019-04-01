@@ -135,6 +135,23 @@ aarch64_store_fpregset (struct regcache *regcache, const void *buf)
   supply_register (regcache, AARCH64_FPCR_REGNUM, &regset->fpcr);
 }
 
+/* Store the pauth registers to regcache.  */
+
+static void
+aarch64_store_pauthregset (struct regcache *regcache, const void *buf)
+{
+  uint64_t *pauth_regset = (uint64_t *) buf;
+  int pauth_base = find_regno (regcache->tdesc, "pauth_dmask");
+
+  if (pauth_base == 0)
+    return;
+
+  supply_register (regcache, AARCH64_PAUTH_DMASK_REGNUM (pauth_base),
+		   &pauth_regset[0]);
+  supply_register (regcache, AARCH64_PAUTH_CMASK_REGNUM (pauth_base),
+		   &pauth_regset[1]);
+}
+
 /* Enable miscellaneous debugging output.  The name is historical - it
    was originally used to debug LinuxThreads support.  */
 extern int debug_threads;
@@ -485,6 +502,9 @@ aarch64_linux_new_fork (struct process_info *parent,
   *child->priv->arch_private = *parent->priv->arch_private;
 }
 
+/* Matches HWCAP_PACA in kernel header arch/arm64/include/uapi/asm/hwcap.h.  */
+#define AARCH64_HWCAP_PACA (1 << 30)
+
 /* Implementation of linux_target_ops method "arch_setup".  */
 
 static void
@@ -501,7 +521,10 @@ aarch64_arch_setup (void)
   if (is_elf64)
     {
       uint64_t vq = aarch64_sve_get_vq (tid);
-      current_process ()->tdesc = aarch64_linux_read_description (vq);
+      unsigned long hwcap = linux_get_hwcap (8);
+      bool pauth_p = hwcap & AARCH64_HWCAP_PACA;
+
+      current_process ()->tdesc = aarch64_linux_read_description (vq, pauth_p);
     }
   else
     current_process ()->tdesc = tdesc_arm_with_neon;
@@ -534,6 +557,9 @@ static struct regset_info aarch64_regsets[] =
     sizeof (struct user_fpsimd_state), FP_REGS,
     aarch64_fill_fpregset, aarch64_store_fpregset
   },
+  { PTRACE_GETREGSET, PTRACE_SETREGSET, NT_ARM_PAC_MASK,
+    AARCH64_PAUTH_REGS_SIZE, OPTIONAL_REGS,
+    NULL, aarch64_store_pauthregset },
   NULL_REGSET
 };
 
@@ -560,6 +586,9 @@ static struct regset_info aarch64_sve_regsets[] =
     SVE_PT_SIZE (AARCH64_MAX_SVE_VQ, SVE_PT_REGS_SVE), EXTENDED_REGS,
     aarch64_sve_regs_copy_from_regcache, aarch64_sve_regs_copy_to_regcache
   },
+  { PTRACE_GETREGSET, PTRACE_SETREGSET, NT_ARM_PAC_MASK,
+    AARCH64_PAUTH_REGS_SIZE, OPTIONAL_REGS,
+    NULL, aarch64_store_pauthregset },
   NULL_REGSET
 };
 

@@ -1,3 +1,52 @@
+2019-03-30  Andrew Waterman  <andrew@sifive.com>
+
+	* elfnn-riscv.c (_bfd_riscv_relax_call): Only check ARCH_SIZE for
+	rd == X_RA case.
+
+2019-03-29  Max Filippov  <jcmvbkbc@gmail.com>
+
+	* elf32-xtensa.c (shrink_dynamic_reloc_sections): Add
+	info->export_dynamic to the conditional.
+
+2019-03-28  Alan Modra  <amodra@gmail.com>
+
+	PR 24392
+	* configure.ac: Invoke AC_CHECK_SIZEOF(int).
+	* configure: Regenerate.
+	* coffgen.c (coff_get_reloc_upper_bound): Replace gcc diagnostic
+	workaround with SIZEOF_LONG vs. SIZEOF_INT check.
+	* elf.c (_bfd_elf_get_reloc_upper_bound): Likewise.
+	* elf64-sparc.c (elf64_sparc_get_reloc_upper_bound): Likewise.
+	* mach-o.c (bfd_mach_o_get_reloc_upper_bound): Likewise.
+
+2019-03-21  Jim Wilson  <jimw@sifive.com>
+
+	PR 24365
+	* elfnn-riscv.c (riscv_elf_relocate_section): For STT_SECTION check,
+	verify sym non-NULL before using.  Add identical check using h.
+
+2019-03-21  Sudakshina Das  <sudi.das@arm.com>
+
+	* elf-bfd.h (struct elf_backend_data): Add argument to
+	merge_gnu_properties.
+	* elf-properties.c (elf_merge_gnu_properties): Add argument to
+	itself and while calling bed->merge_gnu_properties.
+	(elf_merge_gnu_property_list): Update the calls for
+	elf_merge_gnu_properties.
+	* elfnn-aarch64.c (elfNN_aarch64_merge_gnu_properties): Update handling
+	of --force-bti warning and add argument.
+	* elfxx-aarch64.c (_bfd_aarch64_elf_link_setup_gnu_properties): Add
+	warning.
+	* elfxx-x86.c (_bfd_x86_elf_merge_gnu_properties): Add argument.
+	* elfxx-x86.h (_bfd_x86_elf_merge_gnu_properties): Likewise in
+	declaration.
+
+2019-03-20  Sudakshina Das  <sudi.das@arm.com>
+
+	* elfxx-aarch64.c (_bfd_aarch64_elf_link_fixup_gnu_properties): Define.
+	* elfxx-aarch64.h (_bfd_aarch64_elf_link_fixup_gnu_properties): Declare.
+	(elf_backend_fixup_gnu_properties): Define for AArch64.
+
 2019-03-18  Alan Modra  <amodra@gmail.com>
 
 	PR 24355

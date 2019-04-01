@@ -4082,7 +4082,7 @@ dw2_lookup_symbol (struct objfile *objfile, int block_index,
       struct symbol *sym, *with_opaque = NULL;
       struct compunit_symtab *stab = dw2_instantiate_symtab (per_cu, false);
       const struct blockvector *bv = COMPUNIT_BLOCKVECTOR (stab);
-      struct block *block = BLOCKVECTOR_BLOCK (bv, block_index);
+      const struct block *block = BLOCKVECTOR_BLOCK (bv, block_index);
 
       sym = block_find_symbol (block, name, domain,
 			       block_find_non_opaque_type_preferred,
@@ -4227,7 +4227,7 @@ static void
 dw2_map_matching_symbols (struct objfile *objfile,
 			  const char * name, domain_enum domain,
 			  int global,
-			  int (*callback) (struct block *,
+			  int (*callback) (const struct block *,
 					   struct symbol *, void *),
 			  void *data, symbol_name_match_type match,
 			  symbol_compare_ftype *ordered_compare)
@@ -6083,7 +6083,7 @@ dw2_debug_names_lookup_symbol (struct objfile *objfile, int block_index_int,
       struct symbol *sym, *with_opaque = NULL;
       struct compunit_symtab *stab = dw2_instantiate_symtab (per_cu, false);
       const struct blockvector *bv = COMPUNIT_BLOCKVECTOR (stab);
-      struct block *block = BLOCKVECTOR_BLOCK (bv, block_index);
+      const struct block *block = BLOCKVECTOR_BLOCK (bv, block_index);
 
       sym = block_find_symbol (block, name, domain,
 			       block_find_non_opaque_type_preferred,
@@ -18749,6 +18749,25 @@ partial_die_info::read (const struct die_reader_specs *reader,
 
 	case DW_AT_main_subprogram:
 	  main_subprogram = DW_UNSND (&attr);
+	  break;
+
+	case DW_AT_ranges:
+	  {
+	    /* It would be nice to reuse dwarf2_get_pc_bounds here,
+	       but that requires a full DIE, so instead we just
+	       reimplement it.  */
+	    int need_ranges_base = tag != DW_TAG_compile_unit;
+	    unsigned int ranges_offset = (DW_UNSND (&attr)
+					  + (need_ranges_base
+					     ? cu->ranges_base
+					     : 0));
+
+	    /* Value of the DW_AT_ranges attribute is the offset in the
+	       .debug_ranges section.  */
+	    if (dwarf2_ranges_read (ranges_offset, &lowpc, &highpc, cu,
+				    nullptr))
+	      has_pc_info = 1;
+	  }
 	  break;
 
 	default:

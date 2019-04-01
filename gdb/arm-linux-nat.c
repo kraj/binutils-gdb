@@ -38,6 +38,7 @@
 #include <sys/procfs.h>
 
 #include "nat/linux-ptrace.h"
+#include "linux-tdep.h"
 
 /* Prototypes for supply_gregset etc.  */
 #include "gregset.h"
@@ -533,7 +534,7 @@ ps_get_thread_area (struct ps_prochandle *ph,
 const struct target_desc *
 arm_linux_nat_target::read_description ()
 {
-  CORE_ADDR arm_hwcap = 0;
+  CORE_ADDR arm_hwcap = linux_get_hwcap (this);
 
   if (have_ptrace_getregset == TRIBOOL_UNKNOWN)
     {
@@ -549,11 +550,6 @@ arm_linux_nat_target::read_description ()
 	have_ptrace_getregset = TRIBOOL_FALSE;
       else
 	have_ptrace_getregset = TRIBOOL_TRUE;
-    }
-
-  if (target_auxv_search (this, AT_HWCAP, &arm_hwcap) != 1)
-    {
-      return this->beneath ()->read_description ();
     }
 
   if (arm_hwcap & HWCAP_IWMMXT)
@@ -1005,8 +1001,8 @@ arm_linux_insert_hw_breakpoint1 (const struct arm_linux_hw_breakpoint* bpt,
         iterate_over_lwps (pid_ptid,
 			   [=] (struct lwp_info *info)
 			   {
-			     return update_registers_callback (info, watch,
-							       index);
+			     return update_registers_callback (info, watchpoint,
+							       i);
 			   });
         break;
       }
@@ -1024,7 +1020,6 @@ arm_linux_remove_hw_breakpoint1 (const struct arm_linux_hw_breakpoint *bpt,
   gdb_byte count, i;
   ptid_t pid_ptid;
   struct arm_linux_hw_breakpoint* bpts;
-  struct update_registers_data data;
 
   pid = inferior_ptid.pid ();
   pid_ptid = ptid_t (pid);
@@ -1043,10 +1038,13 @@ arm_linux_remove_hw_breakpoint1 (const struct arm_linux_hw_breakpoint *bpt,
   for (i = 0; i < count; ++i)
     if (arm_linux_hw_breakpoint_equal (bpt, bpts + i))
       {
-        data.watch = watchpoint;
-        data.index = i;
         bpts[i].control = arm_hwbp_control_disable (bpts[i].control);
-        iterate_over_lwps (pid_ptid, update_registers_callback, &data);
+	iterate_over_lwps (pid_ptid,
+			   [=] (struct lwp_info *info)
+			   {
+			     return update_registers_callback (info, watchpoint,
+							       i);
+			   });
         break;
       }
 

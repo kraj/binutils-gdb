@@ -1,9 +1,9 @@
 #name: Warn with one missing GNU NOTE BTI input
-#source: property-bti-pac1.s
 #source: property-bti-pac2.s
+#source: property-bti-pac1.s
 #as: -mabi=lp64 -defsym __property_pac__=1
 #ld: -shared --force-bti
-#warning: .*: warning: BTI turned on by --force-bti.*$
+#warning: .*property-bti-pac2.*: warning: BTI turned on by --force-bti.*$
 #readelf: -n
 
 # Should warn about the missing input BTI NOTE but should

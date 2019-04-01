@@ -382,10 +382,10 @@ nonfatal (const char *msg)
 static const char *
 sanitize_string (const char * in)
 {
-  static char *        buffer = NULL;
-  static unsigned int  buffer_len = 0;
-  const char *         original = in;
-  char *               out;
+  static char *  buffer = NULL;
+  static size_t  buffer_len = 0;
+  const char *   original = in;
+  char *         out;
 
   /* Paranoia.  */
   if (in == NULL)
@@ -1991,6 +1991,7 @@ disassemble_bytes (struct disassemble_info * inf,
 		   disassembling code of course, and when -D is in effect.  */
 		inf->stop_vma = section->vma + stop_offset;
 
+	      inf->stop_offset = stop_offset;
 	      octets = (*disassemble_fn) (section->vma + addr_offset, inf);
 
 	      inf->stop_vma = 0;
@@ -2679,6 +2680,7 @@ load_specific_debug_section (enum dwarf_section_display_enum debug,
   bfd *abfd = (bfd *) file;
   bfd_byte *contents;
   bfd_size_type amt;
+  size_t alloced;
 
   if (section->start != NULL)
     {
@@ -2694,8 +2696,9 @@ load_specific_debug_section (enum dwarf_section_display_enum debug,
   section->address = bfd_get_section_vma (abfd, sec);
   section->user_data = sec;
   section->size = bfd_get_section_size (sec);
-  amt = section->size + 1;
-  if (amt == 0)
+  /* PR 24360: On 32-bit hosts sizeof (size_t) < sizeof (bfd_size_type). */
+  alloced = amt = section->size + 1;
+  if (alloced != amt || alloced == 0)
     {
       section->start = NULL;
       free_debug_section (debug);
@@ -2704,7 +2707,7 @@ load_specific_debug_section (enum dwarf_section_display_enum debug,
 	      (unsigned long long) section->size);
       return FALSE;
     }
-  section->start = contents = malloc (amt);
+  section->start = contents = malloc (alloced);
   if (section->start == NULL
       || !bfd_get_full_section_contents (abfd, sec, &contents))
     {
@@ -3629,7 +3632,7 @@ dump_relocs_in_section (bfd *abfd,
 			asection *section,
 			void *dummy ATTRIBUTE_UNUSED)
 {
-  arelent **relpp;
+  arelent **relpp = NULL;
   long relcount;
   long relsize;
 

@@ -2059,7 +2059,9 @@ riscv_elf_relocate_section (bfd *output_bfd,
 	     all relocs to update these addends.  This is also ambiguous, as
 	     we do allow offsets to be added to the target address, which are
 	     not to be used to find the auipc address.  */
-	  if ((ELF_ST_TYPE (sym->st_info) == STT_SECTION) && rel->r_addend)
+	  if (((sym != NULL && (ELF_ST_TYPE (sym->st_info) == STT_SECTION))
+	       || (h != NULL && h->type == STT_SECTION))
+	      && rel->r_addend)
 	    {
 	      r = bfd_reloc_dangerous;
 	      break;
@@ -3414,9 +3416,12 @@ _bfd_riscv_relax_call (bfd *abfd, asection *sec, asection *sym_sec,
   auipc = bfd_get_32 (abfd, contents + rel->r_offset);
   jalr = bfd_get_32 (abfd, contents + rel->r_offset + 4);
   rd = (jalr >> OP_SH_RD) & OP_MASK_RD;
-  rvc = rvc && VALID_RVC_J_IMM (foff) && ARCH_SIZE == 32;
+  rvc = rvc && VALID_RVC_J_IMM (foff);
 
-  if (rvc && (rd == 0 || rd == X_RA))
+  /* C.J exists on RV32 and RV64, but C.JAL is RV32-only.  */
+  rvc = rvc && (rd == 0 || (rd == X_RA && ARCH_SIZE == 32));
+
+  if (rvc)
     {
       /* Relax to C.J[AL] rd, addr.  */
       r_type = R_RISCV_RVC_JUMP;

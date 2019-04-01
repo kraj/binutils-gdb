@@ -627,6 +627,26 @@ aarch64_linux_iterate_over_regset_sections (struct gdbarch *gdbarch,
   else
     cb (".reg2", AARCH64_LINUX_SIZEOF_FPREGSET, AARCH64_LINUX_SIZEOF_FPREGSET,
 	&aarch64_linux_fpregset, NULL, cb_data);
+
+
+  if (tdep->has_pauth ())
+    {
+      /* Create this on the fly in order to handle the variable location.  */
+      const struct regcache_map_entry pauth_regmap[] =
+	{
+	  { 2, AARCH64_PAUTH_DMASK_REGNUM (tdep->pauth_reg_base), 8},
+	  { 0 }
+	};
+
+      const struct regset aarch64_linux_pauth_regset =
+	{
+	  pauth_regmap, regcache_supply_regset, regcache_collect_regset
+	};
+
+      cb (".reg-aarch-pauth", AARCH64_LINUX_SIZEOF_PAUTH,
+	  AARCH64_LINUX_SIZEOF_PAUTH, &aarch64_linux_pauth_regset,
+	  "pauth registers", cb_data);
+    }
 }
 
 /* Implement the "core_read_description" gdbarch method.  */
@@ -635,12 +655,10 @@ static const struct target_desc *
 aarch64_linux_core_read_description (struct gdbarch *gdbarch,
 				     struct target_ops *target, bfd *abfd)
 {
-  CORE_ADDR aarch64_hwcap = 0;
+  CORE_ADDR hwcap = linux_get_hwcap (target);
 
-  if (target_auxv_search (target, AT_HWCAP, &aarch64_hwcap) != 1)
-    return NULL;
-
-  return aarch64_read_description (aarch64_linux_core_read_vq (gdbarch, abfd));
+  return aarch64_read_description (aarch64_linux_core_read_vq (gdbarch, abfd),
+				   hwcap & AARCH64_HWCAP_PACA);
 }
 
 /* Implementation of `gdbarch_stap_is_single_operand', as defined in

@@ -31,6 +31,9 @@ struct regset;
 /* AArch64 Dwarf register numbering.  */
 #define AARCH64_DWARF_X0   0
 #define AARCH64_DWARF_SP  31
+#define AARCH64_DWARF_PAUTH_RA_STATE  34
+#define AARCH64_DWARF_PAUTH_DMASK  35
+#define AARCH64_DWARF_PAUTH_CMASK  36
 #define AARCH64_DWARF_V0  64
 #define AARCH64_DWARF_SVE_VG   46
 #define AARCH64_DWARF_SVE_FFR  47
@@ -87,9 +90,18 @@ struct gdbarch_tdep
   {
     return vq != 0;
   }
+
+  int pauth_reg_base;
+  int pauth_ra_state_regnum;
+
+  /* Returns true if the target supports pauth.  */
+  bool has_pauth () const
+  {
+    return pauth_reg_base != -1;
+  }
 };
 
-const target_desc *aarch64_read_description (uint64_t vq);
+const target_desc *aarch64_read_description (uint64_t vq, bool pauth_p);
 
 extern int aarch64_process_record (struct gdbarch *gdbarch,
                                struct regcache *regcache, CORE_ADDR addr);

@@ -3,6 +3,28 @@
 
 *** Changes since GDB 8.3
 
+* New built-in convenience variables $_gdb_major and $_gdb_minor
+  provide the GDB version.  They are handy for conditionally using
+  features available only in or since specific GDB versions, in
+  scripts that should work error-free with many different versions,
+  such as in system-wide init files.
+
+* GDB now supports Thread Local Storage (TLS) variables on several
+  FreeBSD architectures (amd64, i386, powerpc, riscv).  Other
+  architectures require kernel changes.  TLS is not yet supported for
+  amd64 and i386 process core dumps.
+
+* Support for Pointer Authentication on AArch64 Linux.
+
+* Python API
+
+  ** The gdb.Value type has a new method 'format_string' which returns a
+     string representing the value.  The formatting is controlled by the
+     optional keyword arguments: 'raw', 'pretty_arrays', 'pretty_structs',
+     'array_indexes', 'symbols', 'unions', 'deref_refs', 'actual_objects',
+     'static_members', 'max_elements', 'repeat_threshold', and 'format'.
+
+
 *** Changes in GDB 8.3
 
 * GDB and GDBserver now support access to additional registers on

@@ -3562,7 +3562,7 @@ resolve_subexp (expression_up *expp, int *pos, int deprocedure_p,
 
           n_candidates =
             ada_lookup_symbol_list (ada_decoded_op_name (op),
-                                    (struct block *) NULL, VAR_DOMAIN,
+				    NULL, VAR_DOMAIN,
                                     &candidates);
 
           i = ada_resolve_function (candidates.data (), n_candidates, argvec,
@@ -4758,7 +4758,7 @@ standard_lookup (const char *name, const struct block *block,
                  domain_enum domain)
 {
   /* Initialize it just to avoid a GCC false warning.  */
-  struct block_symbol sym = {NULL, NULL};
+  struct block_symbol sym = {};
 
   if (lookup_cached_symbol (name, domain, &sym.symbol, NULL))
     return sym.symbol;
@@ -5416,7 +5416,8 @@ struct match_data
    other has been found.  */
 
 static int
-aux_add_nonlocal_symbols (struct block *block, struct symbol *sym, void *data0)
+aux_add_nonlocal_symbols (const struct block *block, struct symbol *sym,
+			  void *data0)
 {
   struct match_data *data = (struct match_data *) data0;
   
@@ -5917,7 +5918,7 @@ ada_lookup_symbol_nonlocal (const struct language_defn *langdef,
 	return sym;
     }
 
-  return (struct block_symbol) {NULL, NULL};
+  return {};
 }
 
 
@@ -8499,11 +8500,11 @@ ada_template_to_fixed_record_type_1 (struct type *type,
   if (TYPE_LENGTH (type) <= 0)
     {
       if (TYPE_NAME (rtype))
-	warning (_("Invalid type size for `%s' detected: %d."),
-		 TYPE_NAME (rtype), TYPE_LENGTH (type));
+	warning (_("Invalid type size for `%s' detected: %s."),
+		 TYPE_NAME (rtype), pulongest (TYPE_LENGTH (type)));
       else
-	warning (_("Invalid type size for <unnamed> detected: %d."),
-		 TYPE_LENGTH (type));
+	warning (_("Invalid type size for <unnamed> detected: %s."),
+		 pulongest (TYPE_LENGTH (type)));
     }
   else
     {
@@ -13560,7 +13561,7 @@ ada_add_global_exceptions (compiled_regex *preg,
 
 	  for (i = GLOBAL_BLOCK; i <= STATIC_BLOCK; i++)
 	    {
-	      struct block *b = BLOCKVECTOR_BLOCK (bv, i);
+	      const struct block *b = BLOCKVECTOR_BLOCK (bv, i);
 	      struct block_iterator iter;
 	      struct symbol *sym;
 

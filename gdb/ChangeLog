@@ -1,3 +1,409 @@
+2019-04-01  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* infrun.c (stop_all_threads): If debug_infrun, always
+	trace the wait status after wait_one, using
+	target_waitstatus_to_string and target_pid_to_str.
+	(handle_inferior_event): Replace various trace of
+	wait status kind by a single trace.
+	* gdb/gnu-nat.c (gnu_nat_target::wait): Replace local
+	wait status kind image by target_waitstatus_to_string.
+	* target/waitstatus.c (target_waitstatus_to_string): Fix
+	obsolete comment.
+
+2019-04-01  Tom Tromey  <tromey@adacore.com>
+
+	PR symtab/23331:
+	* dwarf2read.c (partial_die_info::read): Handle DW_AT_ranges.
+
+2019-04-01  Sergio Durigan Junior  <sergiodj@redhat.com>
+	    Pedro Alves  <palves@redhat.com>
+
+	* top.c (quit_force): Call 'finalize_values'.
+	* value.c (finalize_values): New function.
+	* value.h (finalize_values): Declare.
+
+2019-03-30  Eli Zaretskii  <eliz@gnu.org>
+
+	* NEWS: Announce $_gdb_major and $_gdb_minor.
+
+	* top.c (init_gdb_version_vars): New function.
+	(gdb_init): Call init_gdb_version_vars.
+
+2019-03-29  Tom Tromey  <tromey@adacore.com>
+
+	* printcmd.c (_initialize_printcmd): Add usage lines.  Update some
+	help text.  Remove dead code.
+
+2019-03-29  Keith Seitz  <keiths@redhat.com>
+
+	From Siddhesh Poyarekar:
+	* f-lang.h (f77_get_upperbound): Return LONGEST.
+	(f77_get_lowerbound): Likewise.
+	* f-typeprint.c (f_type_print_varspec_suffix): Expand
+	UPPER_BOUND and LOWER_BOUND to LONGEST.  Use plongest to format
+	print them.
+	(f_type_print_base): Expand UPPER_BOUND to LONGEST.  Use
+	plongest to format print it.
+	* f-valprint.c (f77_get_lowerbound): Return LONGEST.
+	(f77_get_upperbound): Likewise.
+	(f77_get_dynamic_length_of_aggregate): Expand UPPER_BOUND,
+	LOWER_BOUND to LONGEST.
+	(f77_create_arrayprint_offset_tbl): Likewise.
+
+2019-03-29  Keith Seitz  <keiths@redhat.com>
+
+	* ada-lang.c (ada_template_to_fixed_record_type_1): Use
+	%s/pulongest for TYPE_LENGTH instead of %d in format
+	strings.
+	* ada-typerint.c (ada_print_type): Likewise.
+	* amd64-windows-tdep.c (amd64_windows_store_arg_in_reg): Likewise.
+	* compile/compile-c-support.c (generate_register_struct): Likewise.
+	* gdbtypes.c (recursive_dump_type): Likewise.
+	* gdbtypes.h (struct type) <length>: Change type to ULONGEST.
+	* m2-typeprint.c (m2_array):  Use %s/pulongest for TYPE_LENGTH
+	instead of %d in format strings.
+	* riscv-tdep.c (riscv_type_alignment): Cast second argument
+	to std::min to ULONGEST.
+	* symmisc.c (print_symbol): Use %s/pulongest for TYPE_LENGTH
+	instead of %d in format strings.
+	* tracepoint.c (info_scope_command): Likewise.
+	* typeprint.c (print_offset_data::update)
+	(print_offset_data::finish): Likewise.
+	* xtensa-tdep.c (xtensa_store_return_value)
+	(xtensa_push_dummy_call): Likewise.
+
+2019-03-28  Jon Turney  <jon.turney@dronecode.org.uk>
+
+	* windows-nat.c (display_selector): Fixed format specifications
+	for 64-bit Cygwin.
+
+2019-03-28  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* infrun.c (follow_exec): Call target_terminal::ours_for_output.
+
+2019-03-28  Sandra Loosemore  <sandra@codesourcery.com>
+
+	* nios2-tdep.h (struct gdbarch_tdep): Add is_kernel_helper.
+	* nios2-tdep.c (nios2_get_next_pc): Skip over kernel helpers.
+	* nios2-linux-tdep.c (nios2_linux_is_kernel_helper): New.
+	(nios2_linux_init_abi): Install it.
+
+2019-03-28  Alan Hayward  <alan.hayward@arm.com>
+
+	* aarch64-tdep.c (aarch64_vnv_type): Use vector types.
+
+2019-03-28  Alan Hayward  <alan.hayward@arm.com>
+
+	* features/aarch64-sve.c (create_feature_aarch64_sve): Add q view.
+
+2019-03-24  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+	    Tom Tromey  <tromey@adacore.com>
+
+	* minsyms.c (minimal_symbol_upper_bound): Fix buffer overflow.
+
+2019-03-26  Joel Brobecker  <brobecker@adacore.com>
+
+	* gdb-gdb.py.in (StructMainTypePrettyPrinter.bound_img): New method.
+	(StructMainTypePrettyPrinter.bounds_img): Use new "bound_img"
+	method to compute the bounds of range types. Also print "[evaluated]"
+	if the bounds' values come from a dynamic evaluation.
+
+2019-03-26  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* cp-valprint.c (cp_print_value_fields): Don't print trailing
+	whitespace when pretty printing is on.
+
+2019-03-26  Alan Hayward  <alan.hayward@arm.com>
+
+        * ppc-linux-nat.c: Add include.
+
+2019-03-26  Alan Hayward  <alan.hayward@arm.com>
+
+        * NEWS: Mention AArch64 Pointer Authentication.
+
+2019-03-26  Alan Hayward  <alan.hayward@arm.com>
+
+        * arm-linux-nat.c: Add include.
+
+2019-03-25  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* source-cache.c (source_cache::get_source_lines): Re-read
+	fullname after calling open_source_file.
+
+2019-03-25  John Baldwin  <jhb@FreeBSD.org>
+
+	* NEWS: Mention TLS support for FreeBSD.
+
+2019-03-25  Tom Tromey  <tromey@adacore.com>
+
+	* minsyms.c (BUNCH_SIZE): Update comment.
+	(~minimal_symbol_reader): Remove old comment.
+	(compact_minimal_symbols): Update comment.
+	(minimal_symbol_reader::install): Remove old comment.  Update
+	other comments.
+
+2019-03-25  Alan Hayward  <alan.hayward@arm.com>
+
+	* s390-linux-nat.c: Add include.
+
+2019-03-25  Alan Hayward  <alan.hayward@arm.com>
+
+	* aarch64-linux-nat.c (aarch64_linux_nat_target::read_description):
+	Call linux_get_hwcap.
+	* aarch64-linux-tdep.c (aarch64_linux_core_read_description):
+	Likewise.
+	(aarch64_linux_get_hwcap): Remove function.
+	* aarch64-linux-tdep.h (aarch64_linux_get_hwcap): Remove
+	declaration.
+	* arm-linux-nat.c (arm_linux_nat_target::read_description):Call
+	linux_get_hwcap.
+	* arm-linux-tdep.c (arm_linux_core_read_description): Likewise.
+	* linux-tdep.c (linux_get_hwcap): Add function.
+	(linux_get_hwcap2): Likewise.
+	* linux-tdep.h (linux_get_hwcap): Add declaration.
+	(linux_get_hwcap2): Likewise.
+	* ppc-linux-nat.c (ppc_linux_get_hwcap): Remove function.
+	(ppc_linux_get_hwcap2): Likewise.
+	(ppc_linux_nat_target::region_ok_for_hw_watchpoint): Call
+	linux_get_hwcap.
+	(ppc_linux_nat_target::insert_watchpoint): Likewise.
+	(ppc_linux_nat_target::watchpoint_addr_within_range): Likewise.
+	(ppc_linux_nat_target::read_description): Likewise.
+	* ppc-linux-tdep.c (ppc_linux_core_read_description): Likewise.
+	* s390-linux-nat.c: Likewise.
+	* s390-linux-tdep.c (s390_core_read_description): Likewise.
+
+2019-03-24  Tom Tromey  <tom@tromey.com>
+
+	* ada-lang.c (standard_lookup): Simplify initialization.
+	(ada_lookup_symbol_nonlocal): Simplify return.
+	* solib-spu.c (spu_lookup_lib_symbol): Simplify return.
+	* solib-darwin.c (darwin_lookup_lib_symbol): Simplify return.
+	* solib-svr4.c (elf_lookup_lib_symbol): Simplify return.
+	* rust-lang.c (rust_lookup_symbol_nonlocal): Simplify
+	initialization.
+	* solib.c (solib_global_lookup): Simplify.
+	* symtab.c (null_block_symbol): Remove.
+	(symbol_cache_lookup): Simplify returns.
+	(lookup_language_this): Simplify returns.
+	(lookup_symbol_aux): Simplify return.
+	(lookup_local_symbol): Simplify returns.
+	(lookup_global_symbol_from_objfile): Simplify return.
+	(lookup_symbol_in_objfile_symtabs)
+	(lookup_symbol_in_objfile_from_linkage_name): Simplify return.
+	(lookup_symbol_via_quick_fns, lookup_symbol_in_static_block)
+	(lookup_static_symbol, lookup_global_symbol): Simplify return.
+	* cp-namespace.c (cp_lookup_bare_symbol)
+	(cp_search_static_and_baseclasses, cp_lookup_symbol_via_imports)
+	(cp_lookup_symbol_via_all_imports, cp_lookup_nested_symbol_1)
+	(cp_lookup_nested_symbol): Don't use null_block_symbol.
+	(cp_lookup_symbol_via_imports): Simplify initialization.
+	(find_symbol_in_baseclass): Likewise.
+	* symtab.h (null_block_symbol): Remove.
+	* d-namespace.c (d_lookup_symbol): Don't use null_block_symbol.
+	(d_lookup_nested_symbol, d_lookup_symbol_imports)
+	(d_lookup_symbol_module): Likewise.
+	(find_symbol_in_baseclass): Simplify initialization.
+
+2019-03-24  Tom Tromey  <tom@tromey.com>
+
+	* expression.h: Don't include symtab.h.
+	(struct block): Forward declare.
+
+2019-03-24  Tom Tromey  <tom@tromey.com>
+
+	* c-exp.y (typebase): Remove casts.
+	* gdbtypes.c (lookup_unsigned_typename, )
+	(lookup_signed_typename): Remove cast.
+	* eval.c (parse_to_comma_and_eval): Remove cast.
+	* parse.c (write_dollar_variable): Remove cast.
+	* block.h (struct block) <superblock>: Now const.
+	* symfile-debug.c (debug_qf_map_matching_symbols): Update.
+	* psymtab.c (psym_map_matching_symbols): Make "block" const.
+	(map_block): Make "block" const.
+	* symfile.h (struct quick_symbol_functions)
+	<map_matching_symbols>: Constify block argument to "callback".
+	* symtab.c (basic_lookup_transparent_type_quick): Make "block"
+	const.
+	(find_pc_sect_compunit_symtab): Make "b" const.
+	(find_symbol_at_address): Likewise.
+	(search_symbols): Likewise.
+	* dwarf2read.c (dw2_lookup_symbol): Make "block" const.
+	(dw2_debug_names_lookup_symbol): Likewise.
+	(dw2_map_matching_symbols): Update.
+	* p-valprint.c (pascal_val_print): Remove "block".
+	* ada-lang.c (ada_add_global_exceptions): Make "b" const.
+	(aux_add_nonlocal_symbols): Make "block" const.
+	(resolve_subexp): Remove cast.
+	* linespec.c (iterate_over_all_matching_symtabs): Make "block"
+	const.
+	(iterate_over_file_blocks): Likewise.
+	* f-exp.y (%union) <bval>: Remove.
+	* coffread.c (patch_opaque_types): Make "b" const.
+	* spu-tdep.c (spu_catch_start): Make "block" const.
+	* c-valprint.c (print_unpacked_pointer): Remove "block".
+	* symmisc.c (dump_symtab_1): Make "b" const.
+	(block_depth): Make "block" const.
+	* d-exp.y (%union) <bval>: Remove.
+	* cp-support.h (cp_lookup_rtti_type): Update.
+	* cp-support.c (cp_lookup_rtti_type): Make "block" const.
+	* psymtab.c (psym_lookup_symbol): Make "block" const.
+	(maintenance_check_psymtabs): Make "b" const.
+	* python/py-framefilter.c (extract_sym): Make "sym_block" const.
+	(enumerate_locals, enumerate_args): Update.
+	* python/py-symtab.c (stpy_global_block): Make "block" const.
+	(stpy_static_block): Likewise.
+	* inline-frame.c (block_starting_point_at): Make "new_block"
+	const.
+	* block.c (find_block_in_blockvector): Make return type const.
+	(blockvector_for_pc_sect): Make "b" const.
+	(find_block_in_blockvector): Make "b" const.
+
+2019-03-23  Tom Tromey  <tom@tromey.com>
+
+	* varobj.c (varobj_create): Update.
+	* symfile.c (clear_symtab_users): Don't reset innermost_block.
+	* printcmd.c (display_command, do_one_display): Don't reset
+	innermost_block.
+	* parser-defs.h (enum innermost_block_tracker_type): Move to
+	expression.h.
+	(innermost_block): Update comment.
+	* parse.c (parse_exp_1): Add tracker_types parameter.
+	(parse_exp_in_context): Rename from parse_exp_in_context_1.  Add
+	tracker_types parameter.  Reset innermost_block.
+	(parse_exp_in_context): Remove.
+	(parse_expression_for_completion): Update.
+	* objfiles.c (~objfile): Don't reset expression_context_block or
+	innermost_block.
+	* expression.h (enum innermost_block_tracker_type): Move from
+	parser-defs.h.
+	(parse_exp_1): Add tracker_types parameter.
+	* breakpoint.c (set_breakpoint_condition, watch_command_1): Don't
+	reset innermost_block.
+
+2019-03-23  Tom Tromey  <tom@tromey.com>
+
+	* objfiles.h: Include bcache.h.
+
+2019-03-23  Tom Tromey  <tom@tromey.com>
+
+	* linespec.c (get_current_search_block): Use
+	scoped_restore_current_language.
+	* symmisc.c (dump_symtab): Use scoped_restore_current_language.
+
+2019-03-22  Alan Hayward  <alan.hayward@arm.com>
+	    Jiong Wang  <jiong.wang@arm.com>
+
+	* aarch64-linux-tdep.c
+	(aarch64_linux_iterate_over_regset_sections): Check for pauth
+	section.
+	* aarch64-linux-tdep.h (AARCH64_LINUX_SIZEOF_PAUTH): New define.
+
+2019-03-22  Alan Hayward  <alan.hayward@arm.com>
+	    Jiong Wang  <jiong.wang@arm.com>
+
+	* aarch64-tdep.c (aarch64_analyze_prologue): Check for pauth
+	instructions.
+	(aarch64_analyze_prologue_test): Add PACIASP test.
+	(aarch64_prologue_prev_register): Unmask PC value.
+
+2019-03-22  Alan Hayward  <alan.hayward@arm.com>
+	    Jiong Wang  <jiong.wang@arm.com>
+
+	* aarch64-tdep.c (aarch64_frame_unmask_address): New function.
+	(aarch64_dwarf2_prev_register): Unmask PC value.
+	(aarch64_dwarf2_frame_init_reg): Init pauth registers.
+	(aarch64_execute_dwarf_cfa_vendor_op): Check for
+	DW_CFA_AARCH64_negate_ra_state.
+	(aarch64_gdbarch_init): Add aarch64_execute_dwarf_cfa_vendor_op.
+
+2019-03-22  Alan Hayward  <alan.hayward@arm.com>
+	    Jiong Wang  <jiong.wang@arm.com>
+
+	* aarch64-tdep.c (aarch64_dwarf_reg_to_regnum): Check for pauth
+	registers.
+	(aarch64_pseudo_register_name): Likewise.
+	(aarch64_pseudo_register_type): Likewise.
+	(aarch64_pseudo_register_reggroup_p): Likewise.
+	(aarch64_gdbarch_init): Add pauth registers.
+	* aarch64-tdep.h (AARCH64_DWARF_PAUTH_RA_STATE): New define.
+	(AARCH64_DWARF_PAUTH_DMASK): Likewise.
+	(AARCH64_DWARF_PAUTH_CMASK): Likewise.
+	(struct gdbarch_tdep): Add regnum for ra_state.
+
+2019-03-22  Alan Hayward  <alan.hayward@arm.com>
+	    Jiong Wang  <jiong.wang@arm.com>
+
+	* arch/aarch64.h (AARCH64_PAUTH_REGS_SIZE): New define.
+
+2019-03-22  Alan Hayward  <alan.hayward@arm.com>
+	    Jiong Wang  <jiong.wang@arm.com>
+
+	* aarch64-linux-nat.c (fetch_pauth_masks_from_thread): New
+	function.
+	(aarch64_linux_nat_target::fetch_registers): Read pauth registers.
+	* aarch64-tdep.c (aarch64_cannot_store_register): New function.
+	(aarch64_gdbarch_init): Add puth registers.
+	* aarch64-tdep.h (struct gdbarch_tdep): Add pauth features.
+	* arch/aarch64.h (AARCH64_PAUTH_DMASK_REGNUM): New define.
+	(AARCH64_PAUTH_CMASK_REGNUM): Likewise.
+
+2019-03-22  Alan Hayward  <alan.hayward@arm.com>
+	    Jiong Wang  <jiong.wang@arm.com>
+
+	* aarch64-linux-nat.c
+	(aarch64_linux_nat_target::read_description): Read PACA hwcap.
+	* aarch64-linux-tdep.c
+	(aarch64_linux_core_read_description): Likewise.
+	(aarch64_linux_get_hwcap): New function.
+	* aarch64-linux-tdep.h (AARCH64_HWCAP_PACA): New define.
+	(aarch64_linux_get_hwcap): New declaration.
+
+2019-03-22  Alan Hayward  <alan.hayward@arm.com>
+	    Jiong Wang  <jiong.wang@arm.com>
+
+	* aarch64-linux-nat.c
+	(aarch64_linux_nat_target::read_description): Add pauth param.
+	* aarch64-linux-tdep.c
+	(aarch64_linux_core_read_description): Likewise.
+	* aarch64-tdep.c (struct target_desc): Add in pauth.
+	(aarch64_read_description): Add pauth param.
+	(aarch64_gdbarch_init): Likewise.
+	* aarch64-tdep.h (aarch64_read_description): Likewise.
+	* arch/aarch64.c (aarch64_create_target_description): Likewise.
+	* arch/aarch64.h (aarch64_create_target_description): Likewise.
+	* features/Makefile: Add new files.
+	* features/aarch64-pauth.c: New file.
+	* features/aarch64-pauth.xml: New file.
+
+2019-03-20  Tom Tromey  <tromey@adacore.com>
+
+	* infrun.c (handle_inferior_event): Rename from
+	handle_inferior_event_1.  Create a scoped_value_mark.
+	(handle_inferior_event): Remove.
+
+2019-03-19  Tom Tromey  <tromey@adacore.com>
+
+	* mi/mi-interp.c (mi_on_normal_stop_1): Only show displays once.
+	* infrun.h (print_stop_event): Add "displays" parameter.
+	* infrun.c (print_stop_event): Add "displays" parameter.
+
+2019-03-19  Pedro Alves  <palves@redhat.com>
+
+	* tui/tui-out.c (tui_ui_out::do_field_string): Simplify.
+	(tui_ui_out::do_text): Add comments.  Reset M_LINE to 0 instead of
+	to -1.  Fix TABs vs spaces.
+	(tui_ui_out::tui_ui_out): Don't initialize fields here.
+	* tui/tui-out.h (tui_ui_out) Add intro comments.
+	<m_line, m_start_of_line>: In-class initialize, and add describing
+	comment.
+
+2019-03-18  Alan Hayward  <alan.hayward@arm.com>
+
+	* arm-linux-nat.c (arm_linux_insert_hw_breakpoint1): Fix
+	variable names.
+	(arm_linux_remove_hw_breakpoint1): Use a gdb::function_view.
+
 2019-03-18  Pedro Alves  <palves@redhat.com>
 	    Eli Zaretskii <eliz@gnu.org>
 

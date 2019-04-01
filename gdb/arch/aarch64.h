@@ -24,9 +24,10 @@
 
 /* Create the aarch64 target description.  A non zero VQ value indicates both
    the presence of SVE and the Vector Quotient - the number of 128bit chunks in
-   an SVE Z register.  */
+   an SVE Z register.  HAS_PAUTH_P indicates the presence of the PAUTH
+   feature.  */
 
-target_desc *aarch64_create_target_description (uint64_t vq);
+target_desc *aarch64_create_target_description (uint64_t vq, bool has_pauth_p);
 
 /* Register numbers of various important registers.
    Note that on SVE, the Z registers reuse the V register numbers and the V
@@ -64,6 +65,10 @@ enum aarch64_regnum
 #define AARCH64_H0_REGNUM (AARCH64_S0_REGNUM + 32)
 #define AARCH64_B0_REGNUM (AARCH64_H0_REGNUM + 32)
 #define AARCH64_SVE_V0_REGNUM (AARCH64_B0_REGNUM + 32)
+
+#define AARCH64_PAUTH_DMASK_REGNUM(pauth_reg_base) (pauth_reg_base)
+#define AARCH64_PAUTH_CMASK_REGNUM(pauth_reg_base) (pauth_reg_base + 1)
+#define AARCH64_PAUTH_REGS_SIZE (16)
 
 #define AARCH64_X_REGS_NUM 31
 #define AARCH64_V_REGS_NUM 32

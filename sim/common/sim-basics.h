@@ -144,9 +144,10 @@ typedef enum {
 #include "sim-bits.h"
 #include "sim-endian.h"
 #include "sim-signal.h"
-#include "sim-arange.h"
 
 #include "sim-utils.h"
+
+#include "libiberty.h"
 
 /* Note: Only the simpler interfaces are defined here.  More heavy
    weight objects, such as core and events, are defined in the more

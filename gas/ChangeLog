@@ -1,3 +1,144 @@
+2019-04-01  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+
+	* config/tc-arm.c (arm_ext_table): New struct type.
+	(arm_arch_option_table): Add new 'arm_ext_table' field.
+	(ARM_EXT,ARM_ADD,ARM_REMOVE, ALL_FP): New macros.
+	(armv5te_ext_table, armv7ve_ext_table, armv7a_ext_table,
+	armv7r_ext_table, armv7em_ext_table, armv8a_ext_table,
+	armv81a_ext_table, armv82a_ext_table, armv84a_ext_table,
+	armv85a_ext_table, armv8m_main_ext_table,
+	armv8r_ext_table): New architecture extension tables.
+	(ARM_ARCH_OPT): Add new default field.
+	(ARM_ARCH_OPT2): New macro.
+	(arm_archs): Extend some architectures with the new architecture
+	extension tables mentioned above.
+	(arm_extensions): Add DEPRECATED comment with instructions to
+	use new table.
+	(arm_parse_extension): Change to use new extension tables.
+	(arm_parse_cpu): Don't change existing behavior.
+	(arm_parse_arch): Change to use new extension tables.
+	* doc/c-arm.texi: Document new architecture extensions.
+	* testsuite/gas/arm/attr-mfpu-neon-fp16.d: Change test to use new
+	extension option rather than -mfpu and change expected behaviour to
+	sane outputs.
+	* testsuite/gas/arm/armv8-2-fp16-scalar-bad-ext.d: New.
+	* testsuite/gas/arm/armv8-2-fp16-scalar-ext.d: New.
+	* testsuite/gas/arm/armv8-2-fp16-scalar-thumb-ext.d: New.
+	* testsuite/gas/arm/armv8-2-fp16-simd-ext.d: New.
+	* testsuite/gas/arm/armv8-2-fp16-simd-thumb-ext.d: New.
+	* testsuite/gas/arm/armv8-2-fp16-simd-warning-ext.d: New.
+	* testsuite/gas/arm/armv8-2-fp16-simd-warning-thumb-ext.d: New.
+	* testsuite/gas/arm/armv8_2+rdma-ext.d: New.
+	* testsuite/gas/arm/armv8_2-a-fp16-thumb2-ext.d: New.
+	* testsuite/gas/arm/armv8_2-a-fp16_ext.d: New.
+	* testsuite/gas/arm/armv8_3-a-fp-bad-ext.d: New.
+	* testsuite/gas/arm/armv8_3-a-fp-ext.d: New.
+	* testsuite/gas/arm/armv8_3-a-fp16-ext.d: New.
+	* testsuite/gas/arm/armv8_3-a-simd-bad-ext.d: New.
+	* testsuite/gas/arm/armv8_4-a-fp16-ext.d: New.
+	* testsuite/gas/arm/armv8m.main+fp.d: New.
+	* testsuite/gas/arm/armv8m.main+fp.dp.d: New.
+	* testsuite/gas/arm/attr-ext-fpv5-d16.d: New.
+	* testsuite/gas/arm/attr-ext-fpv5.d: New.
+	* testsuite/gas/arm/attr-ext-idiv.d: New.
+	* testsuite/gas/arm/attr-ext-mp.d: New.
+	* testsuite/gas/arm/attr-ext-neon-fp16.d: New.
+	* testsuite/gas/arm/attr-ext-neon-vfpv3.d: New.
+	* testsuite/gas/arm/attr-ext-neon-vfpv4.d: New.
+	* testsuite/gas/arm/attr-ext-sec.d: New.
+	* testsuite/gas/arm/attr-ext-vfpv3-d16-fp16.d: New.
+	* testsuite/gas/arm/attr-ext-vfpv3-d16.d: New.
+	* testsuite/gas/arm/attr-ext-vfpv3-fp16.d: New.
+	* testsuite/gas/arm/attr-ext-vfpv3.d: New.
+	* testsuite/gas/arm/attr-ext-vfpv3xd-fp.d: New.
+	* testsuite/gas/arm/attr-ext-vfpv3xd.d: New.
+	* testsuite/gas/arm/attr-ext-vfpv4-d16.d: New.
+	* testsuite/gas/arm/attr-ext-vfpv4-sp-d16.d: New.
+	* testsuite/gas/arm/attr-ext-vfpv4.d: New.
+	* testsuite/gas/arm/dotprod-mandatory-ext.d: New.
+	* testsuite/gas/arm/fpv5-d16.s: New.
+	* testsuite/gas/arm/fpv5-sp-d16.s: New.
+
+2019-03-28  Alan Modra  <amodra@gmail.com>
+
+	PR 24390
+	* testsuite/gas/ppc/476.d: Update mtfsb*.
+	* testsuite/gas/ppc/a2.d: Likewise.
+
+2019-03-21  Alan Modra  <amodra@gmail.com>
+
+	* emul.h (struct emulation): Delete strip_underscore.
+	* emul-target.h (emul_strip_underscore): Don't define.
+	(emul_struct_name): Update initialization.
+
+2019-03-21  Alan Modra  <amodra@gmail.com>
+
+	* config/tc-d10v.c (md_apply_fix): Apply BFD_RELOC_8.
+	* config/tc-pdp11.c (md_apply_fix): Likewise.
+	* config/tc-d30v.c (md_apply_fix): Don't emit errors for BFD_RELOC_8,
+	BFD_RELOC_16, and BFD_RELOC_64.
+	* testsuite/gas/all/gas.exp: Move target exclusions for forward
+	test, but not cr16, to..
+	* testsuite/gas/all/forward.d: ..here, with explanation.  Remove
+	d10v, d30v, and pdp11 xfails.
+
+2019-03-19  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* config/tc-i386.c (optimize_encoding): Don't check AVX for
+	EVEX vector load/store optimization.  Check both operands for
+	ZMM register.  Update EVEX vector load/store opcode check.
+	Choose EVEX Disp8 over VEX Disp32.
+	* testsuite/gas/i386/optimize-1.d: Updated.
+	* testsuite/gas/i386/optimize-1a.d: Likewise.
+	* testsuite/gas/i386/optimize-2.d: Likewise.
+	* testsuite/gas/i386/optimize-4.d: Likewise.
+	* testsuite/gas/i386/optimize-5.d: Likewise.
+	* testsuite/gas/i386/x86-64-optimize-2.d: Likewise.
+	* testsuite/gas/i386/x86-64-optimize-2a.d: Likewise.
+	* testsuite/gas/i386/x86-64-optimize-2b.d: Likewise.
+	* testsuite/gas/i386/x86-64-optimize-3.d: Likewise.
+	* testsuite/gas/i386/x86-64-optimize-5.d: Likewise.
+	* testsuite/gas/i386/x86-64-optimize-6.d: Likewise.
+	* testsuite/gas/i386/optimize-1.s: Add ZMM register load
+	test.
+	* testsuite/gas/i386/x86-64-optimize-2.s: Likewise.
+
+2019-03-19  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR gas/24352
+	* config/tc-i386.c (optimize_encoding): Check only
+	cpu_arch_flags.bitfield.cpuavx512vl.
+	* testsuite/gas/i386/i386.exp: Run x86-64-optimize-2b.
+	* testsuite/gas/i386/x86-64-optimize-2.d: Revert the last
+	change.
+	* testsuite/gas/i386/x86-64-optimize-2b.d: New file.
+	* testsuite/gas/i386/x86-64-optimize-2b.s: Likewise.
+
+2019-03-19  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR gas/24359
+	* testsuite/gas/i386/i386.exp: Change optimize-6a, optimize-7,
+	x86-64-optimize-7a and x86-64-optimize-8 tests to run_list_test.
+	Remove optimize-6c and x86-64-optimize-7c tests.
+	* testsuite/gas/i386/noavx-3.l: Updated.
+	* testsuite/gas/i386/noavx-4.d: Likewise.
+	* testsuite/gas/i386/noavx-5.d: Likewise.
+	* testsuite/gas/i386/noavx-3.s: Add AVX512F tests.
+	* testsuite/gas/i386/noavx-4.s: Remove AVX512F tests.
+	* testsuite/gas/i386/nosse-5.s: Likewise.
+	* testsuite/gas/i386/optimize-6a.d: Removed.
+	* testsuite/gas/i386/optimize-6c.d: Likewise.
+	* testsuite/gas/i386/optimize-7.d: Likewise.
+	* testsuite/gas/i386/x86-64-optimize-7a.d: Likewise.
+	* testsuite/gas/i386/x86-64-optimize-7c.d: Likewise.
+	* testsuite/gas/i386/x86-64-optimize-8.d: Likewise.
+	* testsuite/gas/i386/optimize-6a.l: New file.
+	* testsuite/gas/i386/optimize-6a.s: Likewise.
+	* testsuite/gas/i386/optimize-7.l: Likewise.
+	* testsuite/gas/i386/x86-64-optimize-7a.l: Likewise.
+	* testsuite/gas/i386/x86-64-optimize-7a.s: Likewise.
+	* testsuite/gas/i386/x86-64-optimize-8.l: Likewise.
+
 2019-03-18  Alan Modra  <amodra@gmail.com>
 
 	* config/m68k-parse.y (yylex): Use temp_ilp and restore_ilp.

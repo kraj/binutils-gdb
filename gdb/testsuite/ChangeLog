@@ -1,3 +1,86 @@
+2019-04-01  Tom Tromey  <tromey@adacore.com>
+
+	PR symtab/23331:
+	* gdb.dwarf2/dw2-ranges-main.c: New file.
+	* gdb.dwarf2/dw2-ranges-psym.c: New file.
+	* gdb.dwarf2/dw2-ranges-psym.exp: New file.
+
+2019-03-30  Simon Marchi <simark@simark.ca>
+
+	* gdb.base/default.exp: Add values for $_gdb_major and
+	$_gdb_minor.
+
+2019-03-29  Tom Tromey  <tromey@adacore.com>
+
+	* gdb.base/help.exp: Tighten apropos regexp.
+
+2019-03-29  Keith Seitz  <keiths@redhat.com>
+
+	* gdb.fortran/array-bounds.exp: New file.
+	* gdb.fortran/array-bounds.f90: New file.
+
+2019-03-28  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* gdb.multi/multi-term-settings.c (main): Increase alarm timer.
+
+2019-03-28  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* gdb.multi/hello.c (main): Increase alarm timer.
+
+2019-03-28  Sandra Loosemore  <sandra@codesourcery.com>
+
+	* gdb.threads/watchpoint-fork.exp (test): Use large timeout
+	factor when no hardware watchpoint support.
+
+2019-03-28  Alan Hayward  <alan.hayward@arm.com>
+	    Pedro Alves  <palves@redhat.com>
+
+	* boards/local-board.exp: set sysroot to /.
+
+2019-03-27  Alan Hayward  <alan.hayward@arm.com>
+
+	* gdb.base/interrupt-daemon-attach.c (main): Add alarm and sleep
+	in child.
+
+2019-03-26  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.python/py-prettyprint.c (struct container) <is_map_p>: New
+	field.
+	(make_container): Initialise new field.
+	* gdb.python/py-prettyprint.exp: Add new tests.
+	* gdb.python/py-prettyprint.py (class ContainerPrinter)
+	<display_hint>: New method.
+
+2019-03-26  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.python/py-prettyprint.exp: Use gdb_breakpoint and
+	gdb_continue_to_breakpoint more throughout this test.
+	(run_lang_tests) Supply unique test names, and use
+	gdb_test_no_output.
+
+2019-03-26  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.base/finish-pretty.exp: Update expected results.
+	* gdb.base/pretty-print.c: New file.
+	* gdb.base/pretty-print.exp: New file.
+
+2019-03-25  Pedro Alves  <palves@redhat.com>
+
+	* lib/gdb.exp (gdb_test_multiple): Split appends to $code and
+	move comments outside list.  Append '-i "" eof' section.
+
+2019-03-22  Alan Hayward  <alan.hayward@arm.com>
+
+	* README: Add pie options.
+	* gdb.base/break-interp.exp: Ensure pie is disabled.
+	* gdb.base/dump.exp: Likewise.
+	* lib/gdb.exp (gdb_compile): Add pie option.
+
+2019-03-19  Tom Tromey  <tromey@adacore.com>
+
+	* gdb.mi/mi2-cli-display.c: New file.
+	* gdb.mi/mi2-cli-display.exp: New file.
+
 2019-03-18  Joel Brobecker  <brobecker@adacore.com>
 	    Tom Tromey  <tromey@adacore.com>
 

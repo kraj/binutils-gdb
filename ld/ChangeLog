@@ -1,3 +1,82 @@
+2019-03-29  Max Filippov  <jcmvbkbc@gmail.com>
+
+	* testsuite/ld-xtensa/relax-undef-weak-pie-export-dynamic.d: New
+	test definition.
+	* testsuite/ld-xtensa/xtensa.exp
+	(relax-undef-weak-pie-export-dynamic): Add new test.
+
+2019-03-26  Martin Liska  <mliska@suse.cz>
+
+	* plugin.c (get_symbols): Add lto_kind_str, lto_resolution_str,
+	lto_visibility_str and use then to inform about plugin-symbols.
+	* testsuite/ld-plugin/plugin-12.d: Adjust expected pattern.
+
+2019-03-25  Tamar Christina  <tamar.christina@arm.com>
+
+	* testsuite/ld-arm/jump-reloc-veneers-cond-long.d: Update disassembly.
+	* testsuite/ld-arm/jump-reloc-veneers-long.d: Update disassembly.
+
+2019-03-21  Sudakshina Das  <sudi.das@arm.com>
+
+	* testsuite/ld-aarch64/aarch64-elf.exp: Add new test.
+	* testsuite/ld-aarch64/bti-plt-1.s: Add .ifdef for PAC note section.
+	* testsuite/ld-aarch64/bti-plt-6.d: Update warning.
+	* testsuite/ld-aarch64/bti-plt-7.d: Likewise.
+	* testsuite/ld-aarch64/bti-warn.d: New test.
+
+2019-03-21  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/ld-elf/fini2.s: Reduce alignment.
+	* testsuite/ld-elf/fini3.s: Likewise.
+	* testsuite/ld-elf/finin.s: Likewise.
+	* testsuite/ld-elf/init2.s: Likewise.
+	* testsuite/ld-elf/init3.s: Likewise.
+	* testsuite/ld-elf/initn.s: Likewise.
+	* testsuite/ld-elf/pr14156a.d: Don't xfail m68hc1*-* or xgate-*.
+	* testsuite/ld-elf/pr14156b.d: Don't xfail xgate-*.
+
+2019-03-21  Alan Modra  <amodra@gmail.com>
+
+	* scripttempl/alpha.sc, * scripttempl/armbpabi.sc,
+	* scripttempl/crisaout.sc, * scripttempl/elf32cr16.sc,
+	* scripttempl/elf32crx.sc, * scripttempl/elf32xc16x.sc,
+	* scripttempl/elf32xc16xl.sc, * scripttempl/elf32xc16xs.sc,
+	* scripttempl/elf64hppa.sc, * scripttempl/elf_chaos.sc,
+	* scripttempl/elfarc.sc, * scripttempl/elfarcv2.sc,
+	* scripttempl/elfd30v.sc, * scripttempl/elfm68hc11.sc,
+	* scripttempl/elfm68hc12.sc, * scripttempl/elfm9s12z.sc,
+	* scripttempl/elfmicroblaze.sc, * scripttempl/elfxgate.sc,
+	* scripttempl/elfxtensa.sc, * scripttempl/epiphany_4x4.sc,
+	* scripttempl/ft32.sc, * scripttempl/i386beos.sc,
+	* scripttempl/iq2000.sc, * scripttempl/mcorepe.sc,
+	* scripttempl/mep.sc, * scripttempl/mips.sc, * scripttempl/moxie.sc,
+	* scripttempl/pe.sc, * scripttempl/pep.sc, * scripttempl/ppcpe.sc,
+	* scripttempl/tic4xcoff.sc, * scripttempl/tic80coff.sc,
+	* scripttempl/v850.sc, * scripttempl/v850_rh850.sc,
+	* scripttempl/visium.sc, * scripttempl/xstormy16.sc: Add KEEP and
+	SORT_NONE to .init and .fini wildcards.
+	* scripttempl/elf32xc16x.sc,
+	* scripttempl/elf32xc16xl.sc,
+	* scripttempl/elf32xc16xs.sc: Add .fini wildcard.
+	* scripttempl/elf_chaos.sc: Add .init output section.
+	* scripttempl/elfd30v.sc: Remove duplicate .init.
+	* scripttempl/elfm68hc11.sc, * scripttempl/elfm68hc12.sc,
+	* scripttempl/elfm9s12z.sc, * scripttempl/elfxgate.sc: Remove
+	duplicate .init, and add .fini wildcard.
+	* scripttempl/ppcpe.sc (INIT, FINI): Delete.
+	* ldlang.c (update_wild_statements): Special case .init and
+	.fini in the wildcard, not the output section.
+
+2019-03-21  Alan Modra  <amodra@gmail.com>
+
+	* emulparams/elf32lm32fd.sh (DYNAMIC_LINK): Undef.
+
+2019-03-21  Alan Modra  <amodra@gmail.com>
+
+	* ldlang.c (lang_size_sections_1): Set SEC_KEEP on
+	create_object_symbols_section.
+	* testsuite/ld-elf/pr22319.d: Don't xfail dlx.
+
 2019-03-18  Alan Modra  <amodra@gmail.com>
 
 	* testsuite/ld-elf/merge.d: Remove csky from xfails, add moxie.

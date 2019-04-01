@@ -1,3 +1,39 @@
+2019-03-28  Alan Modra  <amodra@gmail.com>
+
+	PR 24390
+	* ppc-opc.c (BTF): Define.
+	(powerpc_opcodes): Use for mtfsb*.
+	* ppc-dis.c (print_insn_powerpc): Print fields with both
+	PPC_OPERAND_CR_REG and PPC_OPERAND_CR_BIT as a plain number.
+
+2019-03-25  Tamar Christina  <tamar.christina@arm.com>
+
+	* arm-dis.c (struct arm_private_data): Remove has_mapping_symbols.
+	(mapping_symbol_for_insn): Implement new algorithm.
+	(print_insn): Remove duplicate code.
+
+2019-03-25  Tamar Christina  <tamar.christina@arm.com>
+
+	* aarch64-dis.c (print_insn_aarch64):
+	Implement override.
+
+2019-03-25  Tamar Christina  <tamar.christina@arm.com>
+
+	* aarch64-dis.c (print_insn_aarch64): Update the mapping symbol search
+	order.
+
+2019-03-25  Tamar Christina  <tamar.christina@arm.com>
+
+	* aarch64-dis.c (last_stop_offset): New.
+	(print_insn_aarch64): Use stop_offset.
+
+2019-03-19  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR gas/24359
+	* i386-gen.c (cpu_flag_init): Add CPU_ANY_AVX512F_FLAGS to
+	CPU_ANY_AVX2_FLAGS.
+	* i386-init.h: Regenerated.
+
 2019-03-18  H.J. Lu  <hongjiu.lu@intel.com>
 
 	PR gas/24348

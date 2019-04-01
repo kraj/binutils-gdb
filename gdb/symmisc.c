@@ -52,7 +52,7 @@ FILE *std_err;
 
 /* Prototypes for local functions */
 
-static int block_depth (struct block *);
+static int block_depth (const struct block *);
 
 static void print_symbol (struct gdbarch *gdbarch, struct symbol *symbol,
 			  int depth, ui_file *outfile);
@@ -278,7 +278,7 @@ dump_symtab_1 (struct symtab *symtab, struct ui_file *outfile)
   struct linetable *l;
   const struct blockvector *bv;
   struct symbol *sym;
-  struct block *b;
+  const struct block *b;
   int depth;
 
   fprintf_filtered (outfile, "\nSymtab for file %s\n",
@@ -384,13 +384,9 @@ dump_symtab (struct symtab *symtab, struct ui_file *outfile)
   if (symtab->language != language_unknown
       && symtab->language != language_auto)
     {
-      enum language saved_lang;
-
-      saved_lang = set_language (symtab->language);
-
+      scoped_restore_current_language save_lang;
+      set_language (symtab->language);
       dump_symtab_1 (symtab, outfile);
-
-      set_language (saved_lang);
     }
   else
     dump_symtab_1 (symtab, outfile);
@@ -587,8 +583,8 @@ print_symbol (struct gdbarch *gdbarch, struct symbol *symbol,
 	    unsigned i;
 	    struct type *type = check_typedef (SYMBOL_TYPE (symbol));
 
-	    fprintf_filtered (outfile, "const %u hex bytes:",
-			      TYPE_LENGTH (type));
+	    fprintf_filtered (outfile, "const %s hex bytes:",
+			      pulongest (TYPE_LENGTH (type)));
 	    for (i = 0; i < TYPE_LENGTH (type); i++)
 	      fprintf_filtered (outfile, " %02x",
 				(unsigned) SYMBOL_VALUE_BYTES (symbol)[i]);
@@ -954,7 +950,7 @@ maintenance_expand_symtabs (const char *args, int from_tty)
 /* Return the nexting depth of a block within other blocks in its symtab.  */
 
 static int
-block_depth (struct block *block)
+block_depth (const struct block *block)
 {
   int i = 0;
 

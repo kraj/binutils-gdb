@@ -1087,6 +1087,10 @@ follow_exec (ptid_t ptid, char *exec_file_target)
   int pid = ptid.pid ();
   ptid_t process_ptid;
 
+  /* Switch terminal for any messages produced e.g. by
+     breakpoint_re_set.  */
+  target_terminal::ours_for_output ();
+
   /* This is an exec event that we actually wish to pay attention to.
      Refresh our symbol table to the newly exec'd program, remove any
      momentary bp's, etc.
@@ -4354,24 +4358,21 @@ stop_all_threads (void)
 	    pass = -1;
 
 	  event_ptid = wait_one (&ws);
-
-	  if (ws.kind == TARGET_WAITKIND_NO_RESUMED)
+	  if (debug_infrun)
 	    {
-	      /* All resumed threads exited.  */
+	      fprintf_unfiltered (gdb_stdlog,
+				  "infrun: stop_all_threads %s %s\n",
+				  target_waitstatus_to_string (&ws).c_str (),
+				  target_pid_to_str (event_ptid).c_str ());
 	    }
-	  else if (ws.kind == TARGET_WAITKIND_THREAD_EXITED
-		   || ws.kind == TARGET_WAITKIND_EXITED
-		   || ws.kind == TARGET_WAITKIND_SIGNALLED)
-	    {
-	      if (debug_infrun)
-		{
-		  ptid_t ptid = ptid_t (ws.value.integer);
 
-		  fprintf_unfiltered (gdb_stdlog,
-				      "infrun: %s exited while "
-				      "stopping threads\n",
-				      target_pid_to_str (ptid).c_str ());
-		}
+	  if (ws.kind == TARGET_WAITKIND_NO_RESUMED
+	      || ws.kind == TARGET_WAITKIND_THREAD_EXITED
+	      || ws.kind == TARGET_WAITKIND_EXITED
+	      || ws.kind == TARGET_WAITKIND_SIGNALLED)
+	    {
+	      /* All resumed threads exited
+		 or one thread/process exited/signalled.  */
 	    }
 	  else
 	    {
@@ -4591,9 +4592,18 @@ handle_no_resumed (struct execution_control_state *ecs)
    once).  */
 
 static void
-handle_inferior_event_1 (struct execution_control_state *ecs)
+handle_inferior_event (struct execution_control_state *ecs)
 {
+  /* Make sure that all temporary struct value objects that were
+     created during the handling of the event get deleted at the
+     end.  */
+  scoped_value_mark free_values;
+
   enum stop_kind stop_soon;
+
+  if (debug_infrun)
+    fprintf_unfiltered (gdb_stdlog, "infrun: handle_inferior_event %s\n",
+			target_waitstatus_to_string (&ecs->ws).c_str ());
 
   if (ecs->ws.kind == TARGET_WAITKIND_IGNORE)
     {
@@ -4606,16 +4616,12 @@ handle_inferior_event_1 (struct execution_control_state *ecs)
 	 not stopped, and we are ignoring the event.  Another possible
 	 circumstance is any event which the lower level knows will be
 	 reported multiple times without an intervening resume.  */
-      if (debug_infrun)
-	fprintf_unfiltered (gdb_stdlog, "infrun: TARGET_WAITKIND_IGNORE\n");
       prepare_to_wait (ecs);
       return;
     }
 
   if (ecs->ws.kind == TARGET_WAITKIND_THREAD_EXITED)
     {
-      if (debug_infrun)
-	fprintf_unfiltered (gdb_stdlog, "infrun: TARGET_WAITKIND_THREAD_EXITED\n");
       prepare_to_wait (ecs);
       return;
     }
@@ -4634,9 +4640,6 @@ handle_inferior_event_1 (struct execution_control_state *ecs)
     {
       /* No unwaited-for children left.  IOW, all resumed children
 	 have exited.  */
-      if (debug_infrun)
-	fprintf_unfiltered (gdb_stdlog, "infrun: TARGET_WAITKIND_NO_RESUMED\n");
-
       stop_print_frame = 0;
       stop_waiting (ecs);
       return;
@@ -4729,8 +4732,6 @@ handle_inferior_event_1 (struct execution_control_state *ecs)
   switch (ecs->ws.kind)
     {
     case TARGET_WAITKIND_LOADED:
-      if (debug_infrun)
-        fprintf_unfiltered (gdb_stdlog, "infrun: TARGET_WAITKIND_LOADED\n");
       context_switch (ecs);
       /* Ignore gracefully during startup of the inferior, as it might
          be the shell which has just loaded some objects, otherwise
@@ -4808,8 +4809,6 @@ handle_inferior_event_1 (struct execution_control_state *ecs)
 		      _("unhandled stop_soon: %d"), (int) stop_soon);
 
     case TARGET_WAITKIND_SPURIOUS:
-      if (debug_infrun)
-        fprintf_unfiltered (gdb_stdlog, "infrun: TARGET_WAITKIND_SPURIOUS\n");
       if (handle_stop_requested (ecs))
 	return;
       context_switch (ecs);
@@ -4818,8 +4817,6 @@ handle_inferior_event_1 (struct execution_control_state *ecs)
       return;
 
     case TARGET_WAITKIND_THREAD_CREATED:
-      if (debug_infrun)
-        fprintf_unfiltered (gdb_stdlog, "infrun: TARGET_WAITKIND_THREAD_CREATED\n");
       if (handle_stop_requested (ecs))
 	return;
       context_switch (ecs);
@@ -4829,16 +4826,6 @@ handle_inferior_event_1 (struct execution_control_state *ecs)
 
     case TARGET_WAITKIND_EXITED:
     case TARGET_WAITKIND_SIGNALLED:
-      if (debug_infrun)
-	{
-	  if (ecs->ws.kind == TARGET_WAITKIND_EXITED)
-	    fprintf_unfiltered (gdb_stdlog,
-				"infrun: TARGET_WAITKIND_EXITED\n");
-	  else
-	    fprintf_unfiltered (gdb_stdlog,
-				"infrun: TARGET_WAITKIND_SIGNALLED\n");
-	}
-
       inferior_ptid = ecs->ptid;
       set_current_inferior (find_inferior_ptid (ecs->ptid));
       set_current_program_space (current_inferior ()->pspace);
@@ -4903,14 +4890,6 @@ Cannot fill $_exitsignal with the correct signal number.\n"));
          the above cases end in a continue or goto.  */
     case TARGET_WAITKIND_FORKED:
     case TARGET_WAITKIND_VFORKED:
-      if (debug_infrun)
-	{
-	  if (ecs->ws.kind == TARGET_WAITKIND_FORKED)
-	    fprintf_unfiltered (gdb_stdlog, "infrun: TARGET_WAITKIND_FORKED\n");
-	  else
-	    fprintf_unfiltered (gdb_stdlog, "infrun: TARGET_WAITKIND_VFORKED\n");
-	}
-
       /* Check whether the inferior is displaced stepping.  */
       {
 	struct regcache *regcache = get_thread_regcache (ecs->event_thread);
@@ -5071,10 +5050,6 @@ Cannot fill $_exitsignal with the correct signal number.\n"));
       /* Done with the shared memory region.  Re-insert breakpoints in
 	 the parent, and keep going.  */
 
-      if (debug_infrun)
-	fprintf_unfiltered (gdb_stdlog,
-			    "infrun: TARGET_WAITKIND_VFORK_DONE\n");
-
       context_switch (ecs);
 
       current_inferior ()->waiting_for_vfork_done = 0;
@@ -5089,8 +5064,6 @@ Cannot fill $_exitsignal with the correct signal number.\n"));
       return;
 
     case TARGET_WAITKIND_EXECD:
-      if (debug_infrun)
-        fprintf_unfiltered (gdb_stdlog, "infrun: TARGET_WAITKIND_EXECD\n");
 
       /* Note we can't read registers yet (the stop_pc), because we
 	 don't yet know the inferior's post-exec architecture.
@@ -5139,9 +5112,6 @@ Cannot fill $_exitsignal with the correct signal number.\n"));
       /* Be careful not to try to gather much state about a thread
          that's in a syscall.  It's frequently a losing proposition.  */
     case TARGET_WAITKIND_SYSCALL_ENTRY:
-      if (debug_infrun)
-        fprintf_unfiltered (gdb_stdlog,
-			    "infrun: TARGET_WAITKIND_SYSCALL_ENTRY\n");
       /* Getting the current syscall number.  */
       if (handle_syscall_event (ecs) == 0)
 	process_event_stop_test (ecs);
@@ -5153,22 +5123,15 @@ Cannot fill $_exitsignal with the correct signal number.\n"));
          syscall.  Stepping one instruction seems to get it back
          into user code.)  */
     case TARGET_WAITKIND_SYSCALL_RETURN:
-      if (debug_infrun)
-        fprintf_unfiltered (gdb_stdlog,
-			    "infrun: TARGET_WAITKIND_SYSCALL_RETURN\n");
       if (handle_syscall_event (ecs) == 0)
 	process_event_stop_test (ecs);
       return;
 
     case TARGET_WAITKIND_STOPPED:
-      if (debug_infrun)
-        fprintf_unfiltered (gdb_stdlog, "infrun: TARGET_WAITKIND_STOPPED\n");
       handle_signal_stop (ecs);
       return;
 
     case TARGET_WAITKIND_NO_HISTORY:
-      if (debug_infrun)
-        fprintf_unfiltered (gdb_stdlog, "infrun: TARGET_WAITKIND_NO_HISTORY\n");
       /* Reverse execution: target ran out of history info.  */
 
       /* Switch to the stopped thread.  */
@@ -5187,22 +5150,6 @@ Cannot fill $_exitsignal with the correct signal number.\n"));
       stop_waiting (ecs);
       return;
     }
-}
-
-/* A wrapper around handle_inferior_event_1, which also makes sure
-   that all temporary struct value objects that were created during
-   the handling of the event get deleted at the end.  */
-
-static void
-handle_inferior_event (struct execution_control_state *ecs)
-{
-  struct value *mark = value_mark ();
-
-  handle_inferior_event_1 (ecs);
-  /* Purge all temporary values created during the event handling,
-     as it could be a long time before we return to the command level
-     where such values would otherwise be purged.  */
-  value_free_to_mark (mark);
 }
 
 /* Restart threads back to what they were trying to do back when we
@@ -7856,7 +7803,7 @@ print_stop_location (struct target_waitstatus *ws)
 /* See infrun.h.  */
 
 void
-print_stop_event (struct ui_out *uiout)
+print_stop_event (struct ui_out *uiout, bool displays)
 {
   struct target_waitstatus last;
   ptid_t last_ptid;
@@ -7870,7 +7817,8 @@ print_stop_event (struct ui_out *uiout)
     print_stop_location (&last);
 
     /* Display the auto-display expressions.  */
-    do_displays ();
+    if (displays)
+      do_displays ();
   }
 
   tp = inferior_thread ();
