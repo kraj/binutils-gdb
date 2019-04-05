@@ -1,3 +1,64 @@
+2019-04-05  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/gas/ppc/bc.s,
+	* testsuite/gas/ppc/bcat.d,
+	* testsuite/gas/ppc/bcaterr.d,
+	* testsuite/gas/ppc/bcaterr.l,
+	* testsuite/gas/ppc/bcy.d,
+	* testsuite/gas/ppc/bcyerr.d,
+	* testsuite/gas/ppc/bcyerr.l: New tests.
+	* testsuite/gas/ppc/ppc.exp: Run them.
+
+2019-04-05  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/gas/ppc/476.d: Remove trailing spaces.
+	* testsuite/gas/ppc/a2.d: Likewise.
+	* testsuite/gas/ppc/booke.d: Likewise.
+	* testsuite/gas/ppc/booke_xcoff.d: Likewise.
+	* testsuite/gas/ppc/e500.d: Likewise.
+	* testsuite/gas/ppc/e500mc.d: Likewise.
+	* testsuite/gas/ppc/e6500.d: Likewise.
+	* testsuite/gas/ppc/htm.d: Likewise.
+	* testsuite/gas/ppc/power6.d: Likewise.
+	* testsuite/gas/ppc/power8.d: Likewise.
+	* testsuite/gas/ppc/power9.d: Likewise.
+	* testsuite/gas/ppc/vle.d: Likewise.
+
+2019-04-04  Peter Bergner  <bergner@linux.ibm.com>
+
+	PR gas/24349
+	* testsuite/gas/ppc/power8.s: (bdnztar, bdnztarl, bdztar, bdztarl,
+	btar, btarl, bdnztar-, bdnztarl-, bdnztar+, bdnztarl+, bdztar-,
+	bdztarl-, bdztar+, bdztarl+, bgetar, bnltar, bgetarl, bnltarl,
+	bletar, bngtar, bletarl, bngtarl, bnetar, bnetarl, bnstar, bnutar,
+	bnstarl, bnutarl, bgetar-, bnltar-, bgetarl-, bnltarl-, bletar-,
+	bngtar-, bletarl-, bngtarl-, bnetar-, bnetarl-, bnstar-, bnutar-,
+	bnstarl-, bnutarl-, bgetar+, bnltar+, bgetarl+, bnltarl+, bletar+,
+	bngtar+, bletarl+, bngtarl+, bnetar+, bnetarl+, bnstar+, bnutar+,
+	bnstarl+, bnutarl+, blttar, blttarl, bgttar, bgttarl, beqtar,
+	beqtarl, bsotar, buntar, bsotarl, buntarl, blttar-, blttarl-,
+	bgttar-, bgttarl-, beqtar-, beqtarl-, bsotar-, buntar-, bsotarl-,
+	buntarl-, blttar+, blttarl+, bgttar+, bgttarl+, beqtar+, beqtarl+,
+	bsotar+, buntar+, bsotarl+, buntarl+, bdnzftar, bdnzftarl, bdzftar,
+	bdzftarl, bftar, bftarl, bftar-, bftarl-, bftar+, bftarl+, bdnzttar,
+	bdnzttarl, bdzttar, bdzttarl, bttar, bttarl, bttar-, bttarl-, bttar+,
+	bttarl+): Add tests of extended mnemonics.
+	* testsuite/gas/ppc/power8.d: Likewise.  Update previous bctar tests
+	to expect new extended mnemonics.
+	* testsuite/gas/ppc/a2.s: <bc, bc-, bc+, bcl, bcl-, bcl+>: Update test
+	to not use illegal BO value.  Use a more convenient BI value.
+	* testsuite/gas/ppc/a2.d: Update tests for new expect output.
+
+2019-04-03  Max Filippov  <jcmvbkbc@gmail.com>
+
+	* config/tc-xtensa.c (convert_frag_immed): Drop
+	convert_frag_immed_finish_loop invocation.
+	(convert_frag_immed_finish_loop): Drop declaration and
+	definition.
+	* config/xtensa-relax.c (widen_spec_list): Replace loop
+	widening that uses addi/addmi with widening that uses l32r
+	and const16.
+
 2019-04-01  Andre Vieira  <andre.simoesdiasvieira@arm.com>
 
 	* config/tc-arm.c (arm_ext_table): New struct type.

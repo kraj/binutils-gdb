@@ -48,7 +48,7 @@
 #include "frame.h"
 #include "block.h"
 
-#define parse_type(ps) builtin_type (parse_gdbarch (ps))
+#define parse_type(ps) builtin_type (ps->gdbarch ())
 
 /* Remap normal yacc parser interface names (yyparse, yylex, yyerror,
    etc).  */
@@ -745,7 +745,7 @@ ada_parse (struct parser_state *par_state)
 static void
 yyerror (const char *msg)
 {
-  error (_("Error in expression, near `%s'."), lexptr);
+  error (_("Error in expression, near `%s'."), pstate->lexptr);
 }
 
 /* Emit expression to access an instance of SYM, in block BLOCK (if
@@ -757,7 +757,7 @@ write_var_from_sym (struct parser_state *par_state,
 		    struct symbol *sym)
 {
   if (symbol_read_needs_frame (sym))
-    innermost_block.update (block, INNERMOST_BLOCK_FOR_SYMBOLS);
+    par_state->block_tracker->update (block, INNERMOST_BLOCK_FOR_SYMBOLS);
 
   write_exp_elt_opcode (par_state, OP_VAR_VALUE);
   write_exp_elt_block (par_state, block);
@@ -1027,8 +1027,8 @@ static struct type*
 find_primitive_type (struct parser_state *par_state, char *name)
 {
   struct type *type;
-  type = language_lookup_primitive_type (parse_language (par_state),
-					 parse_gdbarch (par_state),
+  type = language_lookup_primitive_type (par_state->language (),
+					 par_state->gdbarch (),
 					 name);
   if (type == NULL && strcmp ("system__address", name) == 0)
     type = type_system_address (par_state);
@@ -1203,7 +1203,7 @@ write_var_or_type (struct parser_state *par_state,
   int name_len;
 
   if (block == NULL)
-    block = expression_context_block;
+    block = par_state->expression_context_block;
 
   encoded_name = ada_encode (name0.ptr);
   name_len = strlen (encoded_name);
@@ -1343,7 +1343,7 @@ write_var_or_type (struct parser_state *par_state,
 
       if (!have_full_symbols () && !have_partial_symbols () && block == NULL)
 	error (_("No symbol table is loaded.  Use the \"file\" command."));
-      if (block == expression_context_block)
+      if (block == par_state->expression_context_block)
 	error (_("No definition of \"%s\" in current context."), name0.ptr);
       else
 	error (_("No definition of \"%s\" in specified context."), name0.ptr);
@@ -1376,7 +1376,8 @@ write_name_assoc (struct parser_state *par_state, struct stoken name)
   if (strchr (name.ptr, '.') == NULL)
     {
       std::vector<struct block_symbol> syms;
-      int nsyms = ada_lookup_symbol_list (name.ptr, expression_context_block,
+      int nsyms = ada_lookup_symbol_list (name.ptr,
+					  par_state->expression_context_block,
 					  VAR_DOMAIN, &syms);
 
       if (nsyms != 1 || SYMBOL_CLASS (syms[0].symbol) == LOC_TYPEDEF)
@@ -1442,8 +1443,8 @@ type_long_double (struct parser_state *par_state)
 static struct type *
 type_char (struct parser_state *par_state)
 {
-  return language_string_char_type (parse_language (par_state),
-				    parse_gdbarch (par_state));
+  return language_string_char_type (par_state->language (),
+				    par_state->gdbarch ());
 }
 
 static struct type *
@@ -1456,8 +1457,8 @@ static struct type *
 type_system_address (struct parser_state *par_state)
 {
   struct type *type 
-    = language_lookup_primitive_type (parse_language (par_state),
-				      parse_gdbarch (par_state),
+    = language_lookup_primitive_type (par_state->language (),
+				      par_state->gdbarch (),
 				      "system__address");
   return  type != NULL ? type : parse_type (par_state)->builtin_data_ptr;
 }

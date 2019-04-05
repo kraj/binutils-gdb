@@ -65,7 +65,7 @@
 #include "charset.h"
 #include "block.h"
 
-#define parse_type(ps) builtin_type (parse_gdbarch (ps))
+#define parse_type(ps) builtin_type (ps->gdbarch ())
 
 /* Remap normal yacc parser interface names (yyparse, yylex, yyerror,
    etc).  */
@@ -246,7 +246,7 @@ exp	:	exp '.' name_not_typename
 	;
 
 exp	:	exp '.' name_not_typename COMPLETE
-			{ mark_struct_expression (pstate);
+			{ pstate->mark_struct_expression ();
 			  write_exp_elt_opcode (pstate, STRUCTOP_STRUCT);
 			  write_exp_string (pstate, $3.stoken);
 			  write_exp_elt_opcode (pstate, STRUCTOP_STRUCT); }
@@ -254,7 +254,7 @@ exp	:	exp '.' name_not_typename COMPLETE
 
 exp	:	exp '.' COMPLETE
 			{ struct stoken s;
-			  mark_struct_expression (pstate);
+			  pstate->mark_struct_expression ();
 			  write_exp_elt_opcode (pstate, STRUCTOP_STRUCT);
 			  s.ptr = "";
 			  s.length = 0;
@@ -269,31 +269,31 @@ exp	:	exp '[' exp1 ']'
 exp	:	exp '('
 			/* This is to save the value of arglist_len
 			   being accumulated by an outer function call.  */
-			{ start_arglist (); }
+			{ pstate->start_arglist (); }
 		arglist ')'	%prec LEFT_ARROW
 			{ write_exp_elt_opcode (pstate, OP_FUNCALL);
 			  write_exp_elt_longcst (pstate,
-						 (LONGEST) end_arglist ());
+						 pstate->end_arglist ());
 			  write_exp_elt_opcode (pstate, OP_FUNCALL); }
 	;
 
 lcurly	:	'{'
-			{ start_arglist (); }
+			{ pstate->start_arglist (); }
 	;
 
 arglist	:
 	;
 
 arglist	:	exp
-			{ arglist_len = 1; }
+			{ pstate->arglist_len = 1; }
 	;
 
 arglist	:	arglist ',' exp   %prec ABOVE_COMMA
-			{ arglist_len++; }
+			{ pstate->arglist_len++; }
 	;
 
 rcurly	:	'}'
-			{ $$ = end_arglist () - 1; }
+			{ $$ = pstate->end_arglist () - 1; }
 	;
 
 exp	:	lcurly type rcurly exp  %prec UNARY
@@ -552,7 +552,7 @@ variable:	name_not_typename
 			  if (sym.symbol)
 			    {
 			      if (symbol_read_needs_frame (sym.symbol))
-				innermost_block.update (sym);
+				pstate->block_tracker->update (sym);
 
 			      write_exp_elt_opcode (pstate, OP_VAR_VALUE);
 			      write_exp_elt_block (pstate, sym.block);
@@ -603,7 +603,7 @@ type  /* Implements (approximately): [*] type-specifier */
 					      expression_context_block); }
 */
 	|	BYTE_KEYWORD
-			{ $$ = builtin_go_type (parse_gdbarch (pstate))
+			{ $$ = builtin_go_type (pstate->gdbarch ())
 			    ->builtin_uint8; }
 	;
 
@@ -664,7 +664,7 @@ parse_number (struct parser_state *par_state,
   if (parsed_float)
     {
       const struct builtin_go_type *builtin_go_types
-	= builtin_go_type (parse_gdbarch (par_state));
+	= builtin_go_type (par_state->gdbarch ());
 
       /* Handle suffixes: 'f' for float32, 'l' for long double.
 	 FIXME: This appears to be an extension -- do we want this?  */
@@ -803,10 +803,10 @@ parse_number (struct parser_state *par_state,
 
   un = (ULONGEST)n >> 2;
   if (long_p == 0
-      && (un >> (gdbarch_int_bit (parse_gdbarch (par_state)) - 2)) == 0)
+      && (un >> (gdbarch_int_bit (par_state->gdbarch ()) - 2)) == 0)
     {
       high_bit
-        = ((ULONGEST)1) << (gdbarch_int_bit (parse_gdbarch (par_state)) - 1);
+        = ((ULONGEST)1) << (gdbarch_int_bit (par_state->gdbarch ()) - 1);
 
       /* A large decimal (not hex or octal) constant (between INT_MAX
 	 and UINT_MAX) is a long or unsigned long, according to ANSI,
@@ -818,10 +818,10 @@ parse_number (struct parser_state *par_state,
       signed_type = parse_type (par_state)->builtin_int;
     }
   else if (long_p <= 1
-	   && (un >> (gdbarch_long_bit (parse_gdbarch (par_state)) - 2)) == 0)
+	   && (un >> (gdbarch_long_bit (par_state->gdbarch ()) - 2)) == 0)
     {
       high_bit
-	= ((ULONGEST)1) << (gdbarch_long_bit (parse_gdbarch (par_state)) - 1);
+	= ((ULONGEST)1) << (gdbarch_long_bit (par_state->gdbarch ()) - 1);
       unsigned_type = parse_type (par_state)->builtin_unsigned_long;
       signed_type = parse_type (par_state)->builtin_long;
     }
@@ -829,11 +829,11 @@ parse_number (struct parser_state *par_state,
     {
       int shift;
       if (sizeof (ULONGEST) * HOST_CHAR_BIT
-	  < gdbarch_long_long_bit (parse_gdbarch (par_state)))
+	  < gdbarch_long_long_bit (par_state->gdbarch ()))
 	/* A long long does not fit in a LONGEST.  */
 	shift = (sizeof (ULONGEST) * HOST_CHAR_BIT - 1);
       else
-	shift = (gdbarch_long_long_bit (parse_gdbarch (par_state)) - 1);
+	shift = (gdbarch_long_long_bit (par_state->gdbarch ()) - 1);
       high_bit = (ULONGEST) 1 << shift;
       unsigned_type = parse_type (par_state)->builtin_unsigned_long_long;
       signed_type = parse_type (par_state)->builtin_long_long;
@@ -1001,6 +1001,9 @@ static int saw_name_at_eof;
    do field name completion.  */
 static int last_was_structop;
 
+/* Depth of parentheses.  */
+static int paren_depth;
+
 /* Read one token, getting characters through lexptr.  */
 
 static int
@@ -1017,14 +1020,14 @@ lex_one_token (struct parser_state *par_state)
 
  retry:
 
-  prev_lexptr = lexptr;
+  par_state->prev_lexptr = par_state->lexptr;
 
-  tokstart = lexptr;
+  tokstart = par_state->lexptr;
   /* See if it is a special token of length 3.  */
   for (i = 0; i < sizeof (tokentab3) / sizeof (tokentab3[0]); i++)
     if (strncmp (tokstart, tokentab3[i].oper, 3) == 0)
       {
-	lexptr += 3;
+	par_state->lexptr += 3;
 	yylval.opcode = tokentab3[i].opcode;
 	return tokentab3[i].token;
       }
@@ -1033,7 +1036,7 @@ lex_one_token (struct parser_state *par_state)
   for (i = 0; i < sizeof (tokentab2) / sizeof (tokentab2[0]); i++)
     if (strncmp (tokstart, tokentab2[i].oper, 2) == 0)
       {
-	lexptr += 2;
+	par_state->lexptr += 2;
 	yylval.opcode = tokentab2[i].opcode;
 	/* NOTE: -> doesn't exist in Go, so we don't need to watch for
 	   setting last_was_structop here.  */
@@ -1056,13 +1059,13 @@ lex_one_token (struct parser_state *par_state)
     case ' ':
     case '\t':
     case '\n':
-      lexptr++;
+      par_state->lexptr++;
       goto retry;
 
     case '[':
     case '(':
       paren_depth++;
-      lexptr++;
+      par_state->lexptr++;
       return c;
 
     case ']':
@@ -1070,21 +1073,21 @@ lex_one_token (struct parser_state *par_state)
       if (paren_depth == 0)
 	return 0;
       paren_depth--;
-      lexptr++;
+      par_state->lexptr++;
       return c;
 
     case ',':
-      if (comma_terminates
+      if (pstate->comma_terminates
           && paren_depth == 0)
 	return 0;
-      lexptr++;
+      par_state->lexptr++;
       return c;
 
     case '.':
       /* Might be a floating point number.  */
-      if (lexptr[1] < '0' || lexptr[1] > '9')
+      if (par_state->lexptr[1] < '0' || par_state->lexptr[1] > '9')
 	{
-	  if (parse_completion)
+	  if (pstate->parse_completion)
 	    last_was_structop = 1;
 	  goto symbol;		/* Nope, must be a symbol. */
 	}
@@ -1145,7 +1148,7 @@ lex_one_token (struct parser_state *par_state)
 	    err_copy[p - tokstart] = 0;
 	    error (_("Invalid number \"%s\"."), err_copy);
 	  }
-	lexptr = p;
+	par_state->lexptr = p;
 	return toktype;
       }
 
@@ -1159,7 +1162,7 @@ lex_one_token (struct parser_state *par_state)
 	if (strncmp (p, "entry", len) == 0 && !isalnum (p[len])
 	    && p[len] != '_')
 	  {
-	    lexptr = &p[len];
+	    par_state->lexptr = &p[len];
 	    return ENTRY;
 	  }
       }
@@ -1182,7 +1185,7 @@ lex_one_token (struct parser_state *par_state)
     case '{':
     case '}':
     symbol:
-      lexptr++;
+      par_state->lexptr++;
       return c;
 
     case '\'':
@@ -1190,8 +1193,8 @@ lex_one_token (struct parser_state *par_state)
     case '`':
       {
 	int host_len;
-	int result = parse_string_or_char (tokstart, &lexptr, &yylval.tsval,
-					   &host_len);
+	int result = parse_string_or_char (tokstart, &par_state->lexptr,
+					   &yylval.tsval, &host_len);
 	if (result == CHAR)
 	  {
 	    if (host_len == 0)
@@ -1199,7 +1202,7 @@ lex_one_token (struct parser_state *par_state)
 	    else if (host_len > 2 && c == '\'')
 	      {
 		++tokstart;
-		namelen = lexptr - tokstart - 1;
+		namelen = par_state->lexptr - tokstart - 1;
 		goto tryname;
 	      }
 	    else if (host_len > 1)
@@ -1252,7 +1255,7 @@ lex_one_token (struct parser_state *par_state)
 	return 0;
     }
 
-  lexptr += namelen;
+  par_state->lexptr += namelen;
 
   tryname:
 
@@ -1273,7 +1276,7 @@ lex_one_token (struct parser_state *par_state)
   if (*tokstart == '$')
     return DOLLAR_VARIABLE;
 
-  if (parse_completion && *lexptr == '\0')
+  if (pstate->parse_completion && *par_state->lexptr == '\0')
     saw_name_at_eof = 1;
   return NAME;
 }
@@ -1400,8 +1403,8 @@ classify_name (struct parser_state *par_state, const struct block *block)
   copy = copy_name (yylval.sval);
 
   /* Try primitive types first so they win over bad/weird debug info.  */
-  type = language_lookup_primitive_type (parse_language (par_state),
-					 parse_gdbarch (par_state),
+  type = language_lookup_primitive_type (par_state->language (),
+					 par_state->gdbarch (),
 					 copy);
   if (type != NULL)
     {
@@ -1528,14 +1531,14 @@ yylex (void)
 	      return classify_unsafe_function (name2.value.sval);
 	    }
 
-	  if (package_name_p (copy, expression_context_block))
+	  if (package_name_p (copy, pstate->expression_context_block))
 	    {
 	      popping = 1;
 	      yylval.sval = build_packaged_name (current.value.sval.ptr,
 						 current.value.sval.length,
 						 name2.value.sval.ptr,
 						 name2.value.sval.length);
-	      return classify_packaged_name (expression_context_block);
+	      return classify_packaged_name (pstate->expression_context_block);
 	    }
 	}
 
@@ -1549,7 +1552,7 @@ yylex (void)
 
   popping = 1;
   yylval = current.value;
-  return classify_name (pstate, expression_context_block);
+  return classify_name (pstate, pstate->expression_context_block);
 }
 
 int
@@ -1566,6 +1569,7 @@ go_parse (struct parser_state *par_state)
   /* Initialize some state used by the lexer.  */
   last_was_structop = 0;
   saw_name_at_eof = 0;
+  paren_depth = 0;
 
   token_fifo.clear ();
   popping = 0;
@@ -1577,8 +1581,8 @@ go_parse (struct parser_state *par_state)
 static void
 yyerror (const char *msg)
 {
-  if (prev_lexptr)
-    lexptr = prev_lexptr;
+  if (pstate->prev_lexptr)
+    pstate->lexptr = pstate->prev_lexptr;
 
-  error (_("A %s in expression, near `%s'."), msg, lexptr);
+  error (_("A %s in expression, near `%s'."), msg, pstate->lexptr);
 }

@@ -125,7 +125,8 @@ static int num_defns_collected (struct obstack *);
 static struct block_symbol *defns_collected (struct obstack *, int);
 
 static struct value *resolve_subexp (expression_up *, int *, int,
-                                     struct type *);
+                                     struct type *, int,
+				     innermost_block_tracker *);
 
 static void replace_operator_with_call (expression_up *, int, int, int,
                                         struct symbol *, const struct block *);
@@ -225,7 +226,7 @@ static int find_struct_field (const char *, struct type *, int,
 
 static int ada_resolve_function (struct block_symbol *, int,
                                  struct value **, int, const char *,
-                                 struct type *);
+                                 struct type *, int);
 
 static int ada_is_direct_array_type (struct type *);
 
@@ -3220,7 +3221,8 @@ ada_decoded_op_name (enum exp_opcode op)
    return type is preferred.  May change (expand) *EXP.  */
 
 static void
-resolve (expression_up *expp, int void_context_p)
+resolve (expression_up *expp, int void_context_p, int parse_completion,
+	 innermost_block_tracker *tracker)
 {
   struct type *context_type = NULL;
   int pc = 0;
@@ -3228,7 +3230,7 @@ resolve (expression_up *expp, int void_context_p)
   if (void_context_p)
     context_type = builtin_type ((*expp)->gdbarch)->builtin_void;
 
-  resolve_subexp (expp, &pc, 1, context_type);
+  resolve_subexp (expp, &pc, 1, context_type, parse_completion, tracker);
 }
 
 /* Resolve the operator of the subexpression beginning at
@@ -3242,7 +3244,8 @@ resolve (expression_up *expp, int void_context_p)
 
 static struct value *
 resolve_subexp (expression_up *expp, int *pos, int deprocedure_p,
-                struct type *context_type)
+                struct type *context_type, int parse_completion,
+		innermost_block_tracker *tracker)
 {
   int pc = *pos;
   int i;
@@ -3267,19 +3270,20 @@ resolve_subexp (expression_up *expp, int *pos, int deprocedure_p,
       else
         {
           *pos += 3;
-          resolve_subexp (expp, pos, 0, NULL);
+          resolve_subexp (expp, pos, 0, NULL, parse_completion, tracker);
         }
       nargs = longest_to_int (exp->elts[pc + 1].longconst);
       break;
 
     case UNOP_ADDR:
       *pos += 1;
-      resolve_subexp (expp, pos, 0, NULL);
+      resolve_subexp (expp, pos, 0, NULL, parse_completion, tracker);
       break;
 
     case UNOP_QUAL:
       *pos += 3;
-      resolve_subexp (expp, pos, 1, check_typedef (exp->elts[pc + 1].type));
+      resolve_subexp (expp, pos, 1, check_typedef (exp->elts[pc + 1].type),
+		      parse_completion, tracker);
       break;
 
     case OP_ATR_MODULUS:
@@ -3310,11 +3314,12 @@ resolve_subexp (expression_up *expp, int *pos, int deprocedure_p,
         struct value *arg1;
 
         *pos += 1;
-        arg1 = resolve_subexp (expp, pos, 0, NULL);
+        arg1 = resolve_subexp (expp, pos, 0, NULL, parse_completion, tracker);
         if (arg1 == NULL)
-          resolve_subexp (expp, pos, 1, NULL);
+          resolve_subexp (expp, pos, 1, NULL, parse_completion, tracker);
         else
-          resolve_subexp (expp, pos, 1, value_type (arg1));
+          resolve_subexp (expp, pos, 1, value_type (arg1), parse_completion,
+			  tracker);
         break;
       }
 
@@ -3402,7 +3407,8 @@ resolve_subexp (expression_up *expp, int *pos, int deprocedure_p,
 
   argvec = XALLOCAVEC (struct value *, nargs + 1);
   for (i = 0; i < nargs; i += 1)
-    argvec[i] = resolve_subexp (expp, pos, 1, NULL);
+    argvec[i] = resolve_subexp (expp, pos, 1, NULL, parse_completion,
+				tracker);
   argvec[i] = NULL;
   exp = expp->get ();
 
@@ -3471,7 +3477,7 @@ resolve_subexp (expression_up *expp, int *pos, int deprocedure_p,
               i = ada_resolve_function
                 (candidates.data (), n_candidates, NULL, 0,
                  SYMBOL_LINKAGE_NAME (exp->elts[pc + 2].symbol),
-                 context_type);
+                 context_type, parse_completion);
               if (i < 0)
                 error (_("Could not find a match for %s"),
                        SYMBOL_PRINT_NAME (exp->elts[pc + 2].symbol));
@@ -3486,7 +3492,7 @@ resolve_subexp (expression_up *expp, int *pos, int deprocedure_p,
 
           exp->elts[pc + 1].block = candidates[i].block;
           exp->elts[pc + 2].symbol = candidates[i].symbol;
-	  innermost_block.update (candidates[i]);
+	  tracker->update (candidates[i]);
         }
 
       if (deprocedure_p
@@ -3522,7 +3528,7 @@ resolve_subexp (expression_up *expp, int *pos, int deprocedure_p,
                   (candidates.data (), n_candidates,
                    argvec, nargs,
                    SYMBOL_LINKAGE_NAME (exp->elts[pc + 5].symbol),
-                   context_type);
+                   context_type, parse_completion);
                 if (i < 0)
                   error (_("Could not find a match for %s"),
                          SYMBOL_PRINT_NAME (exp->elts[pc + 5].symbol));
@@ -3530,7 +3536,7 @@ resolve_subexp (expression_up *expp, int *pos, int deprocedure_p,
 
             exp->elts[pc + 4].block = candidates[i].block;
             exp->elts[pc + 5].symbol = candidates[i].symbol;
-	    innermost_block.update (candidates[i]);
+	    tracker->update (candidates[i]);
           }
       }
       break;
@@ -3566,7 +3572,8 @@ resolve_subexp (expression_up *expp, int *pos, int deprocedure_p,
                                     &candidates);
 
           i = ada_resolve_function (candidates.data (), n_candidates, argvec,
-				    nargs, ada_decoded_op_name (op), NULL);
+				    nargs, ada_decoded_op_name (op), NULL,
+				    parse_completion);
           if (i < 0)
             break;
 
@@ -3733,7 +3740,8 @@ return_match (struct type *func_type, struct type *context_type)
 static int
 ada_resolve_function (struct block_symbol syms[],
                       int nsyms, struct value **args, int nargs,
-                      const char *name, struct type *context_type)
+                      const char *name, struct type *context_type,
+		      int parse_completion)
 {
   int fallback;
   int k;

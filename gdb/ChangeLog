@@ -1,3 +1,321 @@
+2019-04-04  Tom Tromey  <tom@tromey.com>
+
+	* varobj.c (varobj_create): Update.
+	* rust-exp.y (struct rust_parser) <update_innermost_block,
+	lookup_symbol>: New methods.
+	(rust_parser::update_innermost_block, rust_parser::lookup_symbol):
+	Rename.
+	(rust_parser::rust_lookup_type)
+	(rust_parser::convert_ast_to_expression, rust_lex_tests): Update.
+	* printcmd.c (display_command, do_one_display): Update.
+	* parser-defs.h (struct parser_state) <parser_state>: Add
+	"tracker" parameter.
+	(block_tracker): New member.
+	(class innermost_block_tracker) <innermost_block_tracker>: Add
+	"types" parameter.
+	<reset>: Remove method.
+	(innermost_block): Don't declare.
+	(null_post_parser): Update.
+	* parse.c (innermost_block): Remove global.
+	(write_dollar_variable): Update.
+	(parse_exp_1, parse_exp_in_context): Add "tracker" parameter.
+	Remove "tracker_types" parameter.
+	(parse_expression): Add "tracker" parameter.
+	(parse_expression_for_completion): Update.
+	(null_post_parser): Add "tracker" parameter.
+	* p-exp.y: Update rules.
+	* m2-exp.y: Update rules.
+	* language.h (struct language_defn) <la_post_parser>: Add
+	"tracker" parameter.
+	* go-exp.y: Update rules.
+	* f-exp.y: Update rules.
+	* expression.h (parse_expression, parse_exp_1): Add "tracker"
+	parameter.
+	* d-exp.y: Update rules.
+	* c-exp.y: Update rules.
+	* breakpoint.c (set_breakpoint_condition): Create an
+	innermost_block_tracker.
+	(watch_command_1): Likewise.
+	* ada-lang.c (resolve): Add "tracker" parameter.
+	(resolve_subexp): Likewise.
+	* ada-exp.y (write_var_from_sym): Update.
+
+2019-04-04  Tom Tromey  <tom@tromey.com>
+
+	* type-stack.h: New file.
+	* type-stack.c: New file.
+	* parser-defs.h (enum type_pieces, union type_stack_elt): Move to
+	type-stack.h.
+	(insert_into_type_stack, insert_type, push_type, push_type_int)
+	(insert_type_address_space, pop_type, pop_type_int)
+	(pop_typelist, pop_type_stack, append_type_stack)
+	(push_type_stack, get_type_stack, push_typelist)
+	(follow_type_instance_flags, follow_types): Don't declare.
+	* parse.c (type_stack): Remove global.
+	(parse_exp_in_context): Update.
+	(insert_into_type_stack, insert_type, push_type, push_type_int)
+	(insert_type_address_space, pop_type, pop_type_int)
+	(pop_typelist, pop_type_stack, append_type_stack)
+	(push_type_stack, get_type_stack, push_typelist)
+	(follow_type_instance_flags, follow_types): Remove (moved to
+	type-stack.c).
+	* f-exp.y (type_stack): New global.
+	Update rules.
+	(push_kind_type, f_parse): Update.
+	* d-exp.y (type_stack): New global.
+	Update rules.
+	(d_parse): Update.
+	* c-exp.y (struct c_parse_state) <type_stack>: New member.
+	Update rules.
+	* Makefile.in (COMMON_SFILES): Add type-stack.c.
+	(HFILES_NO_SRCDIR): Add type-stack.h.
+
+2019-04-04  Tom Tromey  <tom@tromey.com>
+
+	* rust-exp.y (rust_parser::lex_identifier, rustyylex)
+	(rust_parser::convert_ast_to_expression, rust_parse)
+	(rust_lex_test_completion, rust_lex_tests): Update.
+	* parser-defs.h (struct expr_completion_state): New.
+	(struct parser_state) <parser_state>: Add completion parameter.
+	<mark_struct_expression, mark_completion_tag>: New methods.
+	<parse_completion, m_completion_state>: New members.
+	(prefixify_expression, null_post_parser): Update.
+	(mark_struct_expression, mark_completion_tag): Don't declare.
+	* parse.c (parse_completion, expout_last_struct)
+	(expout_tag_completion_type, expout_completion_name): Remove
+	globals.
+	(parser_state::mark_struct_expression)
+	(parser_state::mark_completion_tag): Now methods.
+	(prefixify_expression): Add last_struct parameter.
+	(prefixify_subexp): Likewise.
+	(parse_exp_1): Update.
+	(parse_exp_in_context): Add cstate parameter.  Update.
+	(parse_expression_for_completion): Create an
+	expr_completion_state.
+	(null_post_parser): Add "completion" parameter.
+	* p-exp.y: Update rules.
+	(yylex): Update.
+	* language.h (struct language_defn) <la_post_parser>: Add
+	"completing" parameter.
+	* go-exp.y: Update rules.
+	(lex_one_token): Update.
+	* expression.h (parse_completion): Don't declare.
+	* d-exp.y: Update rules.
+	(lex_one_token): Update rules.
+	* c-exp.y: Update rules.
+	(lex_one_token): Update.
+	* ada-lang.c (resolve): Add "parse_completion" parameter.
+	(resolve_subexp): Likewise.
+	(ada_resolve_function): Likewise.
+
+2019-04-04  Tom Tromey  <tom@tromey.com>
+
+	* parser-defs.h (struct parser_state) <start_arglist,
+	end_arglist>: New methods.
+	<arglist_len, m_funcall_chain>: New members.
+	(arglist_len, start_arglist, end_arglist): Don't declare.
+	* parse.c (arglist_len, funcall_chain): Remove global.
+	(start_arglist, end_arglist): Remove functions.
+	(parse_exp_in_context): Update.
+	* p-exp.y: Update rules.
+	* m2-exp.y: Update rules.
+	* go-exp.y: Update rules.
+	* f-exp.y: Update rules.
+	* d-exp.y: Update rules.
+	* c-exp.y: Update rules.
+
+2019-04-04  Tom Tromey  <tom@tromey.com>
+
+	* rust-exp.y (struct rust_parser) <lex_hex, lex_escape,
+	lex_operator, push_back>: New methods.
+	Update all rules.
+	(rust_parser::lex_hex, lex_escape): Rename and update.
+	(rust_parser::lex_string, rust_parser::lex_identifier): Update.
+	(rust_parser::lex_operator): Rename and update.
+	(rust_parser::lex_number, rustyylex, rustyyerror)
+	(rust_lex_test_init, rust_lex_test_sequence)
+	(rust_lex_test_push_back, rust_lex_tests): Update.
+	* parser-defs.h (struct parser_state) <parser_state>: Add "input"
+	parameter.
+	<lexptr, prev_lexptr>: New members.
+	(lexptr, prev_lexptr): Don't declare.
+	* parse.c (lexptr, prev_lexptr): Remove globals.
+	(parse_exp_in_context): Update.
+	* p-exp.y (yylex, yyerror): Update.
+	* m2-exp.y (parse_number, yylex, yyerror): Update.
+	* go-exp.y (lex_one_token, yyerror): Update.
+	* f-exp.y (match_string_literal, yylex, yyerror): Update.
+	* d-exp.y (lex_one_token, yyerror): Update.
+	* c-exp.y (scan_macro_expansion, finished_macro_expansion)
+	(lex_one_token, yyerror): Update.
+	* ada-lex.l (YY_INPUT): Update.
+	(rewind_to_char): Update.
+	* ada-exp.y (yyerror): Update.
+
+2019-04-04  Tom Tromey  <tom@tromey.com>
+
+	* rust-exp.y (rustyylex, rust_lex_tests): Update.
+	* parser-defs.h (struct parser_state) <parser_state>: Add new
+	parameter.
+	<comma_terminates>: New member.
+	(comma_terminates): Don't declare global.
+	* parse.c (comma_terminates): Remove global.
+	(parse_exp_in_context): Update.
+	* p-exp.y (yylex): Update.
+	* m2-exp.y (yylex): Update.
+	* go-exp.y (lex_one_token): Update.
+	* f-exp.y (yylex): Update.
+	* d-exp.y (lex_one_token): Update.
+	* c-exp.y (lex_one_token): Update.
+	* ada-lex.l: Update.
+
+2019-04-04  Tom Tromey  <tom@tromey.com>
+
+	* rust-exp.y (struct rust_parser) <paren_depth>: New member.
+	(rustyylex, rust_lex_test_init, rust_lex_test_one)
+	(rust_lex_test_sequence, rust_lex_test_push_back): Update.
+	* parser-defs.h (paren_depth): Don't declare.
+	* parse.c (paren_depth): Remove global.
+	(parse_exp_in_context): Update.
+	* p-exp.y (paren_depth): New global.
+	(pascal_parse): Initialize it.
+	* m2-exp.y (paren_depth): New global.
+	(m2_parse): Initialize it.
+	* go-exp.y (paren_depth): New global.
+	(go_parse): Initialize it.
+	* f-exp.y (paren_depth): New global.
+	(f_parse): Initialize it.
+	* d-exp.y (paren_depth): New global.
+	(d_parse): Initialize it.
+	* c-exp.y (paren_depth): New global.
+	(c_parse): Initialize it.
+	* ada-lex.l (paren_depth): New global.
+	(lexer_init): Initialize it.
+
+2019-04-04  Tom Tromey  <tom@tromey.com>
+
+	* rust-exp.y (rust_parser::crate_name, rust_parser::super_name)
+	(rust_parser::convert_ast_to_type)
+	(rust_parser::convert_ast_to_expression, rust_lex_tests): Update.
+	* parser-defs.h (struct parser_state) <parser_state>: Add
+	parameters.  Initialize new members.
+	<expression_context_block, expression_context_pc>: New members.
+	* parse.c (expression_context_block, expression_context_pc):
+	Remove globals.
+	(parse_exp_in_context): Update.
+	* p-exp.y: Update all rules.
+	(yylex): Update.
+	* m2-exp.y: Update all rules.
+	(yylex): Update.
+	* go-exp.y (yylex): Update.
+	* f-exp.y (yylex): Update.
+	* d-exp.y: Update all rules.
+	(yylex): Update.
+	* c-exp.y: Update all rules.
+	(lex_one_token, classify_name, yylex, c_parse): Update.
+	* ada-exp.y (write_var_or_type, write_name_assoc): Update.
+
+2019-04-04  Tom Tromey  <tom@tromey.com>
+
+	* gdbarch.h, gdbarch.c: Rebuild.
+	* gdbarch.sh (dtrace_parse_probe_argument): Change type.
+	* stap-probe.h: 
+	(struct stap_parse_info): Replace "parser_state" with
+	"expr_builder".
+	* parser-defs.h (struct expr_builder): Rename from "parser_state".
+	(parser_state): New class.
+	* parse.c (expr_builder): Rename.
+	(expr_builder::release): Rename.
+	(write_exp_elt, write_exp_elt_opcode, write_exp_elt_sym)
+	(write_exp_elt_msym, write_exp_elt_block, write_exp_elt_objfile)
+	(write_exp_elt_longcst, write_exp_elt_floatcst)
+	(write_exp_elt_type, write_exp_elt_intern, write_exp_string)
+	(write_exp_string_vector, write_exp_bitstring)
+	(write_exp_msymbol, mark_struct_expression)
+	(write_dollar_variable)
+	(insert_type_address_space, increase_expout_size): Replace
+	"parser_state" with "expr_builder".
+	* dtrace-probe.c: Replace "parser_state" with "expr_builder".
+	* amd64-linux-tdep.c (amd64_dtrace_parse_probe_argument): Replace
+	"parser_state" with "expr_builder".
+
+2019-04-04  Tom Tromey  <tom@tromey.com>
+
+	* rust-exp.y: Replace "parse_language" with method call.
+	* p-exp.y: 
+	(yylex): Replace "parse_language" with method call.
+	* m2-exp.y: 
+	(yylex): Replace "parse_language" with method call.
+	* go-exp.y (classify_name): Replace "parse_language" with method
+	call.
+	* f-exp.y (yylex): Replace "parse_language" with method call.
+	* d-exp.y (lex_one_token): Replace "parse_language" with method
+	call.
+	* c-exp.y: 
+	(lex_one_token, classify_name, yylex): Replace "parse_language"
+	with method call.
+	* ada-exp.y (find_primitive_type, type_char)
+	(type_system_address): Replace "parse_language" with method call.
+
+2019-04-04  Tom Tromey  <tom@tromey.com>
+
+	* rust-exp.y: Replace "parse_gdbarch" with method call.
+	* parse.c (write_dollar_variable, insert_type_address_space):
+	Replace "parse_gdbarch" with method call.
+	* p-exp.y (parse_type, yylex): Replace "parse_gdbarch" with method
+	call.
+	* objc-lang.c (end_msglist): Replace "parse_gdbarch" with method
+	call.
+	* m2-exp.y (parse_type, parse_m2_type, yylex): Replace
+	"parse_gdbarch" with method call.
+	* go-exp.y (parse_type, classify_name): Replace "parse_gdbarch"
+	with method call.
+	* f-exp.y (parse_type, parse_f_type, yylex): Replace
+	"parse_gdbarch" with method call.
+	* d-exp.y (parse_type, parse_d_type, lex_one_token): Replace
+	"parse_gdbarch" with method call.
+	* c-exp.y (parse_type, parse_number, classify_name): Replace
+	"parse_gdbarch" with method call.
+	* ada-lex.l: Replace "parse_gdbarch" with method call.
+	* ada-exp.y (parse_type, find_primitive_type, type_char)
+	(type_system_address): Replace "parse_gdbarch" with method call.
+
+2019-04-04  Tom Tromey  <tom@tromey.com>
+
+	* dtrace-probe.c (dtrace_probe::build_arg_exprs): Update.
+	* stap-probe.c (stap_parse_argument): Update.
+	* stap-probe.h (struct stap_parse_info) <stap_parse_info>: Remove
+	initial_size parameter.
+	* rust-exp.y (rust_lex_tests): Update.
+	* parse.c (parser_state): Update.
+	(parse_exp_in_context): Update.
+	* parser-defs.h (struct parser_state) <parser_state>: Remove
+	"initial_size" parameter.
+
+2019-04-04  Tom Tromey  <tom@tromey.com>
+
+	* parser-defs.h (increase_expout_size): Don't declare.
+	* parse.c (increase_expout_size): Now static.
+
+2019-04-04  Thomas Schwinge  <thomas@codesourcery.com>
+
+	* gnu-nat.c (gnu_nat_target::wait): Fix
+	target_waitstatus_to_string call.
+
+2019-04-01  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* eval.c (evaluate_subexp_standard): Handle internal functions
+	during Fortran function call handling.
+
+2019-04-01  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* NEWS: Mention new internal functions.
+	* dwarf2read.c (dwarf2_init_complex_target_type): New function.
+	(read_base_type): Use dwarf2_init_complex_target_type.
+	* value.c (creal_internal_fn): New function.
+	(cimag_internal_fn): New function.
+	(_initialize_values): Register new internal functions.
+
 2019-04-01  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
 
 	* infrun.c (stop_all_threads): If debug_infrun, always

@@ -110,7 +110,9 @@ typedef gdb::unique_xmalloc_ptr<expression> expression_up;
 
 /* From parse.c */
 
-extern expression_up parse_expression (const char *);
+class innermost_block_tracker;
+extern expression_up parse_expression (const char *,
+				       innermost_block_tracker * = nullptr);
 
 extern expression_up parse_expression_with_language (const char *string,
 						     enum language lang);
@@ -118,14 +120,10 @@ extern expression_up parse_expression_with_language (const char *string,
 extern struct type *parse_expression_for_completion
     (const char *, gdb::unique_xmalloc_ptr<char> *, enum type_code *);
 
+class innermost_block_tracker;
 extern expression_up parse_exp_1 (const char **, CORE_ADDR pc,
 				  const struct block *, int,
-				  innermost_block_tracker_types
-				    = INNERMOST_BLOCK_FOR_SYMBOLS);
-
-/* For use by parsers; set if we want to parse an expression and
-   attempt completion.  */
-extern int parse_completion;
+				  innermost_block_tracker * = nullptr);
 
 /* From eval.c */
 

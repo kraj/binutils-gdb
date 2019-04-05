@@ -54,9 +54,10 @@
 #include "block.h"
 #include <ctype.h>
 #include <algorithm>
+#include "type-stack.h"
 
-#define parse_type(ps) builtin_type (parse_gdbarch (ps))
-#define parse_f_type(ps) builtin_f_type (parse_gdbarch (ps))
+#define parse_type(ps) builtin_type (ps->gdbarch ())
+#define parse_f_type(ps) builtin_f_type (ps->gdbarch ())
 
 /* Remap normal yacc parser interface names (yyparse, yylex, yyerror,
    etc).  */
@@ -67,6 +68,12 @@
    expression.  */
 
 static struct parser_state *pstate = NULL;
+
+/* Depth of parentheses.  */
+static int paren_depth;
+
+/* The current type stack.  */
+static struct type_stack *type_stack;
 
 int yyparse (void);
 
@@ -242,12 +249,12 @@ exp	:	KIND '(' exp ')'       %prec UNARY
    later in eval.c.  */
 
 exp	:	exp '(' 
-			{ start_arglist (); }
+			{ pstate->start_arglist (); }
 		arglist ')'	
 			{ write_exp_elt_opcode (pstate,
 						OP_F77_UNDETERMINED_ARGLIST);
 			  write_exp_elt_longcst (pstate,
-						 (LONGEST) end_arglist ());
+						 pstate->end_arglist ());
 			  write_exp_elt_opcode (pstate,
 					      OP_F77_UNDETERMINED_ARGLIST); }
 	;
@@ -260,15 +267,15 @@ arglist	:
 	;
 
 arglist	:	exp
-			{ arglist_len = 1; }
+			{ pstate->arglist_len = 1; }
 	;
 
 arglist :	subrange
-			{ arglist_len = 1; }
+			{ pstate->arglist_len = 1; }
 	;
    
 arglist	:	arglist ',' exp   %prec ABOVE_COMMA
-			{ arglist_len++; }
+			{ pstate->arglist_len++; }
 	;
 
 /* There are four sorts of subrange types in F90.  */
@@ -473,7 +480,7 @@ variable:	name_not_typename
 			  if (sym.symbol)
 			    {
 			      if (symbol_read_needs_frame (sym.symbol))
-				innermost_block.update (sym);
+				pstate->block_tracker->update (sym);
 			      write_exp_elt_opcode (pstate, OP_VAR_VALUE);
 			      write_exp_elt_block (pstate, sym.block);
 			      write_exp_elt_sym (pstate, sym.symbol);
@@ -512,7 +519,7 @@ ptype	:	typebase
 		  struct type *range_type;
 		  
 		  while (!done)
-		    switch (pop_type ())
+		    switch (type_stack->pop ())
 		      {
 		      case tp_end:
 			done = 1;
@@ -524,7 +531,7 @@ ptype	:	typebase
 			follow_type = lookup_lvalue_reference_type (follow_type);
 			break;
 		      case tp_array:
-			array_size = pop_type_int ();
+			array_size = type_stack->pop_int ();
 			if (array_size != -1)
 			  {
 			    range_type =
@@ -544,7 +551,7 @@ ptype	:	typebase
 			break;
 		      case tp_kind:
 			{
-			  int kind_val = pop_type_int ();
+			  int kind_val = type_stack->pop_int ();
 			  follow_type
 			    = convert_to_kind_type (follow_type, kind_val);
 			}
@@ -555,13 +562,13 @@ ptype	:	typebase
 	;
 
 abs_decl:	'*'
-			{ push_type (tp_pointer); $$ = 0; }
+			{ type_stack->push (tp_pointer); $$ = 0; }
 	|	'*' abs_decl
-			{ push_type (tp_pointer); $$ = $2; }
+			{ type_stack->push (tp_pointer); $$ = $2; }
 	|	'&'
-			{ push_type (tp_reference); $$ = 0; }
+			{ type_stack->push (tp_reference); $$ = 0; }
 	|	'&' abs_decl
-			{ push_type (tp_reference); $$ = $2; }
+			{ type_stack->push (tp_reference); $$ = $2; }
 	|	direct_abs_decl
 	;
 
@@ -572,9 +579,9 @@ direct_abs_decl: '(' abs_decl ')'
 	|	'*' INT
 			{ push_kind_type ($2.val, $2.type); }
 	| 	direct_abs_decl func_mod
-			{ push_type (tp_function); }
+			{ type_stack->push (tp_function); }
 	|	func_mod
-			{ push_type (tp_function); }
+			{ type_stack->push (tp_function); }
 	;
 
 func_mod:	'(' ')'
@@ -763,22 +770,22 @@ parse_number (struct parser_state *par_state,
      are the same size.  So we shift it twice, with fewer bits
      each time, for the same result.  */
   
-  if ((gdbarch_int_bit (parse_gdbarch (par_state))
-       != gdbarch_long_bit (parse_gdbarch (par_state))
+  if ((gdbarch_int_bit (par_state->gdbarch ())
+       != gdbarch_long_bit (par_state->gdbarch ())
        && ((n >> 2)
-	   >> (gdbarch_int_bit (parse_gdbarch (par_state))-2))) /* Avoid
+	   >> (gdbarch_int_bit (par_state->gdbarch ())-2))) /* Avoid
 							    shift warning */
       || long_p)
     {
       high_bit = ((ULONGEST)1)
-      << (gdbarch_long_bit (parse_gdbarch (par_state))-1);
+      << (gdbarch_long_bit (par_state->gdbarch ())-1);
       unsigned_type = parse_type (par_state)->builtin_unsigned_long;
       signed_type = parse_type (par_state)->builtin_long;
     }
   else 
     {
       high_bit =
-	((ULONGEST)1) << (gdbarch_int_bit (parse_gdbarch (par_state)) - 1);
+	((ULONGEST)1) << (gdbarch_int_bit (par_state->gdbarch ()) - 1);
       unsigned_type = parse_type (par_state)->builtin_unsigned_int;
       signed_type = parse_type (par_state)->builtin_int;
     }    
@@ -818,8 +825,8 @@ push_kind_type (LONGEST val, struct type *type)
       ival = static_cast <int> (val);
     }
 
-  push_type_int (ival);
-  push_type (tp_kind);
+  type_stack->push (ival);
+  type_stack->push (tp_kind);
 }
 
 /* Called when a type has a '(kind=N)' modifier after it, for example
@@ -1002,14 +1009,14 @@ growbuf_by_size (int count)
 static int
 match_string_literal (void)
 {
-  const char *tokptr = lexptr;
+  const char *tokptr = pstate->lexptr;
 
   for (tempbufindex = 0, tokptr++; *tokptr != '\0'; tokptr++)
     {
       CHECKBUF (1);
-      if (*tokptr == *lexptr)
+      if (*tokptr == *pstate->lexptr)
 	{
-	  if (*(tokptr + 1) == *lexptr)
+	  if (*(tokptr + 1) == *pstate->lexptr)
 	    tokptr++;
 	  else
 	    break;
@@ -1024,7 +1031,7 @@ match_string_literal (void)
       tempbuf[tempbufindex] = '\0';
       yylval.sval.ptr = tempbuf;
       yylval.sval.length = tempbufindex;
-      lexptr = ++tokptr;
+      pstate->lexptr = ++tokptr;
       return STRING_LITERAL;
     }
 }
@@ -1041,21 +1048,21 @@ yylex (void)
   
  retry:
  
-  prev_lexptr = lexptr;
+  pstate->prev_lexptr = pstate->lexptr;
  
-  tokstart = lexptr;
+  tokstart = pstate->lexptr;
 
   /* First of all, let us make sure we are not dealing with the
      special tokens .true. and .false. which evaluate to 1 and 0.  */
 
-  if (*lexptr == '.')
+  if (*pstate->lexptr == '.')
     {
       for (int i = 0; i < ARRAY_SIZE (boolean_values); i++)
 	{
 	  if (strncasecmp (tokstart, boolean_values[i].name,
 			   strlen (boolean_values[i].name)) == 0)
 	    {
-	      lexptr += strlen (boolean_values[i].name);
+	      pstate->lexptr += strlen (boolean_values[i].name);
 	      yylval.lval = boolean_values[i].value;
 	      return BOOLEAN_LITERAL;
 	    }
@@ -1068,7 +1075,7 @@ yylex (void)
 		     strlen (dot_ops[i].oper)) == 0)
       {
 	gdb_assert (!dot_ops[i].case_sensitive);
-	lexptr += strlen (dot_ops[i].oper);
+	pstate->lexptr += strlen (dot_ops[i].oper);
 	yylval.opcode = dot_ops[i].opcode;
 	return dot_ops[i].token;
       }
@@ -1077,7 +1084,7 @@ yylex (void)
 
   if (strncmp (tokstart, "**", 2) == 0)
     {
-      lexptr += 2;
+      pstate->lexptr += 2;
       yylval.opcode = BINOP_EXP;
       return STARSTAR;
     }
@@ -1090,7 +1097,7 @@ yylex (void)
     case ' ':
     case '\t':
     case '\n':
-      lexptr++;
+      pstate->lexptr++;
       goto retry;
       
     case '\'':
@@ -1101,25 +1108,25 @@ yylex (void)
       
     case '(':
       paren_depth++;
-      lexptr++;
+      pstate->lexptr++;
       return c;
       
     case ')':
       if (paren_depth == 0)
 	return 0;
       paren_depth--;
-      lexptr++;
+      pstate->lexptr++;
       return c;
       
     case ',':
-      if (comma_terminates && paren_depth == 0)
+      if (pstate->comma_terminates && paren_depth == 0)
 	return 0;
-      lexptr++;
+      pstate->lexptr++;
       return c;
       
     case '.':
       /* Might be a floating point number.  */
-      if (lexptr[1] < '0' || lexptr[1] > '9')
+      if (pstate->lexptr[1] < '0' || pstate->lexptr[1] > '9')
 	goto symbol;		/* Nope, must be a symbol.  */
       /* FALL THRU.  */
       
@@ -1183,7 +1190,7 @@ yylex (void)
 	    err_copy[p - tokstart] = 0;
 	    error (_("Invalid number \"%s\"."), err_copy);
 	  }
-	lexptr = p;
+	pstate->lexptr = p;
 	return toktype;
       }
       
@@ -1208,7 +1215,7 @@ yylex (void)
     case '{':
     case '}':
     symbol:
-      lexptr++;
+      pstate->lexptr++;
       return c;
     }
   
@@ -1229,7 +1236,7 @@ yylex (void)
   if (namelen == 2 && tokstart[0] == 'i' && tokstart[1] == 'f')
     return 0;
   
-  lexptr += namelen;
+  pstate->lexptr += namelen;
   
   /* Catch specific keywords.  */
 
@@ -1274,9 +1281,9 @@ yylex (void)
 	   way we can refer to it unconditionally below.  */
 	memset (&is_a_field_of_this, 0, sizeof (is_a_field_of_this));
 
-	result = lookup_symbol (tmp, expression_context_block,
+	result = lookup_symbol (tmp, pstate->expression_context_block,
 				lookup_domains[i],
-				parse_language (pstate)->la_language
+				pstate->language ()->la_language
 				== language_cplus
 				  ? &is_a_field_of_this : NULL);
 	if (result.symbol && SYMBOL_CLASS (result.symbol) == LOC_TYPEDEF)
@@ -1290,8 +1297,8 @@ yylex (void)
       }
 
     yylval.tsym.type
-      = language_lookup_primitive_type (parse_language (pstate),
-					parse_gdbarch (pstate), tmp);
+      = language_lookup_primitive_type (pstate->language (),
+					pstate->gdbarch (), tmp);
     if (yylval.tsym.type != NULL)
       return TYPENAME;
     
@@ -1328,6 +1335,11 @@ f_parse (struct parser_state *par_state)
 							parser_debug);
   gdb_assert (par_state != NULL);
   pstate = par_state;
+  paren_depth = 0;
+
+  struct type_stack stack;
+  scoped_restore restore_type_stack = make_scoped_restore (&type_stack,
+							   &stack);
 
   return yyparse ();
 }
@@ -1335,8 +1347,8 @@ f_parse (struct parser_state *par_state)
 static void
 yyerror (const char *msg)
 {
-  if (prev_lexptr)
-    lexptr = prev_lexptr;
+  if (pstate->prev_lexptr)
+    pstate->lexptr = pstate->prev_lexptr;
 
-  error (_("A %s in expression, near `%s'."), msg, lexptr);
+  error (_("A %s in expression, near `%s'."), msg, pstate->lexptr);
 }

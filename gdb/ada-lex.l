@@ -73,16 +73,19 @@ static void rewind_to_char (int);
 
 #undef YY_INPUT
 #define YY_INPUT(BUF, RESULT, MAX_SIZE) \
-    if ( *lexptr == '\000' ) \
+    if ( *pstate->lexptr == '\000' ) \
       (RESULT) = YY_NULL; \
     else \
       { \
-        *(BUF) = *lexptr; \
+        *(BUF) = *pstate->lexptr; \
         (RESULT) = 1; \
-	lexptr += 1; \
+	pstate->lexptr += 1; \
       }
 
 static int find_dot_all (const char *);
+
+/* Depth of parentheses.  */
+static int paren_depth;
 
 %}
 
@@ -229,7 +232,7 @@ false		{ return FALSEKEYWORD; }
 
 [-&*+./:<>=|;\[\]] { return yytext[0]; }
 
-","		{ if (paren_depth == 0 && comma_terminates)
+","		{ if (paren_depth == 0 && pstate->comma_terminates)
 		    {
 		      rewind_to_char (',');
 		      return 0;
@@ -305,6 +308,7 @@ static void
 lexer_init (FILE *inp)
 {
   BEGIN INITIAL;
+  paren_depth = 0;
   yyrestart (inp);
 }
 
@@ -370,11 +374,11 @@ processInt (struct parser_state *par_state, const char *base0,
       exp -= 1;
     }
 
-  if ((result >> (gdbarch_int_bit (parse_gdbarch (par_state))-1)) == 0)
+  if ((result >> (gdbarch_int_bit (par_state->gdbarch ())-1)) == 0)
     yylval.typed_val.type = type_int (par_state);
-  else if ((result >> (gdbarch_long_bit (parse_gdbarch (par_state))-1)) == 0)
+  else if ((result >> (gdbarch_long_bit (par_state->gdbarch ())-1)) == 0)
     yylval.typed_val.type = type_long (par_state);
-  else if (((result >> (gdbarch_long_bit (parse_gdbarch (par_state))-1)) >> 1) == 0)
+  else if (((result >> (gdbarch_long_bit (par_state->gdbarch ())-1)) >> 1) == 0)
     {
       /* We have a number representable as an unsigned integer quantity.
          For consistency with the C treatment, we will treat it as an
@@ -384,7 +388,7 @@ processInt (struct parser_state *par_state, const char *base0,
          assignment does the trick (no, it doesn't; read the reference manual).
        */
       yylval.typed_val.type
-	= builtin_type (parse_gdbarch (par_state))->builtin_unsigned_long;
+	= builtin_type (par_state->gdbarch ())->builtin_unsigned_long;
       if (result & LONGEST_SIGN)
 	yylval.typed_val.val =
 	  (LONGEST) (result & ~LONGEST_SIGN)
@@ -624,9 +628,9 @@ processAttribute (const char *str)
 static void
 rewind_to_char (int ch)
 {
-  lexptr -= yyleng;
-  while (toupper (*lexptr) != toupper (ch))
-    lexptr -= 1;
+  pstate->lexptr -= yyleng;
+  while (toupper (*pstate->lexptr) != toupper (ch))
+    pstate->lexptr -= 1;
   yyrestart (NULL);
 }
 
