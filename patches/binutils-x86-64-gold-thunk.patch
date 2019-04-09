@@ -1,4 +1,4 @@
-From b99d239dc3c0d2e2a5b841a9e610d2ed0cbb5a41 Mon Sep 17 00:00:00 2001
+From ef4aec994faea6bce939dd1781a7d1332ccb3b64 Mon Sep 17 00:00:00 2001
 From: "H.J. Lu" <hjl.tools@gmail.com>
 Date: Tue, 23 Jan 2018 12:09:12 -0800
 Subject: [PATCH 2/2] gold: Initial R_X86_64_THUNK_GOTPCRELX support
@@ -24,7 +24,7 @@ gold/
  2 files changed, 11 insertions(+), 2 deletions(-)
 
 diff --git a/elfcpp/x86_64.h b/elfcpp/x86_64.h
-index 0f1dc9af60..b4a25eb37f 100644
+index d42fd266ba..77b5972c43 100644
 --- a/elfcpp/x86_64.h
 +++ b/elfcpp/x86_64.h
 @@ -98,6 +98,8 @@ enum
@@ -37,7 +37,7 @@ index 0f1dc9af60..b4a25eb37f 100644
    R_X86_64_GNU_VTINHERIT = 250,
    R_X86_64_GNU_VTENTRY = 251
 diff --git a/gold/x86_64.cc b/gold/x86_64.cc
-index dd2a215878..2adae39dd5 100644
+index c06a282247..21133e36d3 100644
 --- a/gold/x86_64.cc
 +++ b/gold/x86_64.cc
 @@ -1165,7 +1165,8 @@ class Target_x86_64 : public Sized_target<size, false>
@@ -101,5 +101,5 @@ index dd2a215878..2adae39dd5 100644
        // Convert
        // mov foo@GOTPCREL(%rip), %reg
 -- 
-2.19.2
+2.20.1
 

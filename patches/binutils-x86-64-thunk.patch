@@ -1,4 +1,4 @@
-From ca48c3f4eb34bef91e8ed62a8c6c35b17c8bad22 Mon Sep 17 00:00:00 2001
+From 8c94211b4ffea2ab35b1f0b58a02677bf3a86048 Mon Sep 17 00:00:00 2001
 From: "H.J. Lu" <hjl.tools@gmail.com>
 Date: Mon, 22 Jan 2018 11:51:28 -0800
 Subject: [PATCH 1/2] x86-64: Add R_X86_64_THUNK_GOTPCRELX
@@ -162,10 +162,10 @@ ld/
  create mode 100644 ld/testsuite/ld-x86-64/gotpcrel4d.S
 
 diff --git a/bfd/bfd-in2.h b/bfd/bfd-in2.h
-index 6d92c51cb9..3cdcb1bf63 100644
+index 33a29406ae..20f51ead2a 100644
 --- a/bfd/bfd-in2.h
 +++ b/bfd/bfd-in2.h
-@@ -3338,6 +3338,7 @@ instruction.  */
+@@ -3375,6 +3375,7 @@ instruction.  */
    BFD_RELOC_X86_64_PLT32_BND,
    BFD_RELOC_X86_64_GOTPCRELX,
    BFD_RELOC_X86_64_REX_GOTPCRELX,
@@ -174,7 +174,7 @@ index 6d92c51cb9..3cdcb1bf63 100644
  /* ns32k relocations  */
    BFD_RELOC_NS32K_IMM_8,
 diff --git a/bfd/elf64-x86-64.c b/bfd/elf64-x86-64.c
-index 4dcab43478..b3040c410e 100644
+index 6790228271..2a58cbb2ee 100644
 --- a/bfd/elf64-x86-64.c
 +++ b/bfd/elf64-x86-64.c
 @@ -173,12 +173,15 @@ static reloc_howto_type x86_64_elf_howto_table[] =
@@ -458,7 +458,7 @@ index 4dcab43478..b3040c410e 100644
    *r_type_p = r_type;
    irel->r_info = htab->r_info (r_symndx,
  			       r_type | R_X86_64_converted_reloc_bit);
-@@ -1950,13 +2119,17 @@ elf_x86_64_check_relocs (bfd *abfd, struct bfd_link_info *info,
+@@ -1951,13 +2120,17 @@ elf_x86_64_check_relocs (bfd *abfd, struct bfd_link_info *info,
        converted_reloc = FALSE;
        if ((r_type == R_X86_64_GOTPCREL
  	   || r_type == R_X86_64_GOTPCRELX
@@ -479,7 +479,7 @@ index 4dcab43478..b3040c410e 100644
  	    goto error_return;
  
  	  if (converted_reloc)
-@@ -1997,6 +2170,7 @@ elf_x86_64_check_relocs (bfd *abfd, struct bfd_link_info *info,
+@@ -1998,6 +2171,7 @@ elf_x86_64_check_relocs (bfd *abfd, struct bfd_link_info *info,
  	case R_X86_64_GOTPCREL:
  	case R_X86_64_GOTPCRELX:
  	case R_X86_64_REX_GOTPCRELX:
@@ -487,7 +487,7 @@ index 4dcab43478..b3040c410e 100644
  	case R_X86_64_TLSGD:
  	case R_X86_64_GOT64:
  	case R_X86_64_GOTPCREL64:
-@@ -2563,6 +2737,7 @@ elf_x86_64_relocate_section (bfd *output_bfd,
+@@ -2631,6 +2805,7 @@ elf_x86_64_relocate_section (bfd *output_bfd,
  	    case R_X86_64_GOTPCREL:
  	    case R_X86_64_GOTPCRELX:
  	    case R_X86_64_REX_GOTPCRELX:
@@ -495,7 +495,7 @@ index 4dcab43478..b3040c410e 100644
  	    case R_X86_64_GOTPCREL64:
  	      base_got = htab->elf.sgot;
  	      off = h->got.offset;
-@@ -2785,6 +2960,7 @@ skip_ifunc:
+@@ -2853,6 +3028,7 @@ skip_ifunc:
  	case R_X86_64_GOTPCREL:
  	case R_X86_64_GOTPCRELX:
  	case R_X86_64_REX_GOTPCRELX:
@@ -503,7 +503,7 @@ index 4dcab43478..b3040c410e 100644
  	case R_X86_64_GOTPCREL64:
  	  /* Use global offset table entry as symbol value.  */
  	case R_X86_64_GOTPLT64:
-@@ -2894,6 +3070,7 @@ skip_ifunc:
+@@ -2962,6 +3138,7 @@ skip_ifunc:
  	  if (r_type != R_X86_64_GOTPCREL
  	      && r_type != R_X86_64_GOTPCRELX
  	      && r_type != R_X86_64_REX_GOTPCRELX
@@ -512,7 +512,7 @@ index 4dcab43478..b3040c410e 100644
  	    relocation -= htab->elf.sgotplt->output_section->vma
  			  - htab->elf.sgotplt->output_offset;
 diff --git a/bfd/libbfd.h b/bfd/libbfd.h
-index 1189e63358..c109034603 100644
+index 36284d71a9..20860f06cd 100644
 --- a/bfd/libbfd.h
 +++ b/bfd/libbfd.h
 @@ -1373,6 +1373,7 @@ static const char *const bfd_reloc_code_real_names[] = { "@@uninitialized@@",
@@ -524,7 +524,7 @@ index 1189e63358..c109034603 100644
    "BFD_RELOC_NS32K_IMM_16",
    "BFD_RELOC_NS32K_IMM_32",
 diff --git a/bfd/reloc.c b/bfd/reloc.c
-index 1686780669..0114a6236b 100644
+index e6446a7809..bdfebd85df 100644
 --- a/bfd/reloc.c
 +++ b/bfd/reloc.c
 @@ -2660,6 +2660,8 @@ ENUMX
@@ -537,10 +537,10 @@ index 1686780669..0114a6236b 100644
    x86-64/elf relocations
  
 diff --git a/gas/config/tc-i386.c b/gas/config/tc-i386.c
-index 8e25e6c7a0..110e8e95e6 100644
+index 4816b54f93..bed30e8eeb 100644
 --- a/gas/config/tc-i386.c
 +++ b/gas/config/tc-i386.c
-@@ -415,6 +415,9 @@ struct _i386_insn
+@@ -426,6 +426,9 @@ struct _i386_insn
      /* Have NOTRACK prefix.  */
      const char *notrack_prefix;
  
@@ -550,7 +550,7 @@ index 8e25e6c7a0..110e8e95e6 100644
      /* Error message.  */
      enum i386_error error;
    };
-@@ -3282,6 +3285,7 @@ tc_i386_fix_adjustable (fixS *fixP ATTRIBUTE_UNUSED)
+@@ -3296,6 +3299,7 @@ tc_i386_fix_adjustable (fixS *fixP ATTRIBUTE_UNUSED)
        || fixP->fx_r_type == BFD_RELOC_X86_64_GOTPCREL
        || fixP->fx_r_type == BFD_RELOC_X86_64_GOTPCRELX
        || fixP->fx_r_type == BFD_RELOC_X86_64_REX_GOTPCRELX
@@ -558,7 +558,7 @@ index 8e25e6c7a0..110e8e95e6 100644
        || fixP->fx_r_type == BFD_RELOC_X86_64_TLSGD
        || fixP->fx_r_type == BFD_RELOC_X86_64_TLSLD
        || fixP->fx_r_type == BFD_RELOC_X86_64_DTPOFF32
-@@ -8422,6 +8426,7 @@ output_disp (fragS *insn_start_frag, offsetT insn_start_off)
+@@ -8510,6 +8514,7 @@ output_disp (fragS *insn_start_frag, offsetT insn_start_off)
  		 R_386_GOT32X for "sym*GOT" operand in 32-bit mode.  */
  	      if (i.prefix[DATA_PREFIX] == 0
  		  && (generate_relax_relocations
@@ -566,7 +566,7 @@ index 8e25e6c7a0..110e8e95e6 100644
  		      || (!object_64bit
  			  && i.rm.mode == 0
  			  && i.rm.regmem == 5))
-@@ -8440,7 +8445,14 @@ output_disp (fragS *insn_start_frag, offsetT insn_start_off)
+@@ -8528,7 +8533,14 @@ output_disp (fragS *insn_start_frag, offsetT insn_start_off)
  		      fixP->fx_tcbit = i.rex != 0;
  		      if (i.base_reg
  			  && (i.base_reg->reg_num == RegIP))
@@ -582,7 +582,7 @@ index 8e25e6c7a0..110e8e95e6 100644
  		    }
  		  else
  		    fixP->fx_tcbit2 = 1;
-@@ -8655,6 +8667,9 @@ lex_got (enum bfd_reloc_code_real *rel,
+@@ -8743,6 +8755,9 @@ lex_got (enum bfd_reloc_code_real *rel,
      { STRING_COMMA_LEN ("GOTOFF"),   { BFD_RELOC_386_GOTOFF,
  				       BFD_RELOC_X86_64_GOTOFF64 },
        OPERAND_TYPE_IMM64_DISP64 },
@@ -592,7 +592,7 @@ index 8e25e6c7a0..110e8e95e6 100644
      { STRING_COMMA_LEN ("GOTPCREL"), { _dummy_first_bfd_reloc_code_real,
  				       BFD_RELOC_X86_64_GOTPCREL },
        OPERAND_TYPE_IMM32_32S_DISP32 },
-@@ -9437,6 +9452,7 @@ i386_finalize_displacement (segT exp_seg ATTRIBUTE_UNUSED, expressionS *exp,
+@@ -9534,6 +9549,7 @@ i386_finalize_displacement (segT exp_seg ATTRIBUTE_UNUSED, expressionS *exp,
       to be relative to the beginning of the section.  */
    if (i.reloc[this_operand] == BFD_RELOC_386_GOTOFF
        || i.reloc[this_operand] == BFD_RELOC_X86_64_GOTPCREL
@@ -600,7 +600,7 @@ index 8e25e6c7a0..110e8e95e6 100644
        || i.reloc[this_operand] == BFD_RELOC_X86_64_GOTOFF64)
      {
        if (exp->X_op != O_symbol)
-@@ -9448,7 +9464,10 @@ i386_finalize_displacement (segT exp_seg ATTRIBUTE_UNUSED, expressionS *exp,
+@@ -9545,7 +9561,10 @@ i386_finalize_displacement (segT exp_seg ATTRIBUTE_UNUSED, expressionS *exp,
  	section_symbol (S_GET_SEGMENT (exp->X_add_symbol));
        exp->X_op = O_subtract;
        exp->X_op_symbol = GOT_symbol;
@@ -612,7 +612,7 @@ index 8e25e6c7a0..110e8e95e6 100644
  	i.reloc[this_operand] = BFD_RELOC_32_PCREL;
        else if (i.reloc[this_operand] == BFD_RELOC_X86_64_GOTOFF64)
  	i.reloc[this_operand] = BFD_RELOC_64;
-@@ -11781,9 +11800,11 @@ i386_validate_fix (fixS *fixp)
+@@ -11880,9 +11899,11 @@ i386_validate_fix (fixS *fixp)
  		abort ();
  #if defined (OBJ_ELF) || defined (OBJ_MAYBE_ELF)
  	      if (fixp->fx_tcbit2)
@@ -627,7 +627,7 @@ index 8e25e6c7a0..110e8e95e6 100644
  	      else
  #endif
  		fixp->fx_r_type = BFD_RELOC_X86_64_GOTPCREL;
-@@ -11805,6 +11826,8 @@ i386_validate_fix (fixS *fixp)
+@@ -11904,6 +11925,8 @@ i386_validate_fix (fixS *fixp)
  	  && fixp->fx_tcbit2)
  	fixp->fx_r_type = BFD_RELOC_386_GOT32X;
      }
@@ -636,7 +636,7 @@ index 8e25e6c7a0..110e8e95e6 100644
  #endif
  }
  
-@@ -11842,6 +11865,7 @@ tc_gen_reloc (asection *section ATTRIBUTE_UNUSED, fixS *fixp)
+@@ -11941,6 +11964,7 @@ tc_gen_reloc (asection *section ATTRIBUTE_UNUSED, fixS *fixp)
      case BFD_RELOC_X86_64_GOTPCREL:
      case BFD_RELOC_X86_64_GOTPCRELX:
      case BFD_RELOC_X86_64_REX_GOTPCRELX:
@@ -644,7 +644,7 @@ index 8e25e6c7a0..110e8e95e6 100644
      case BFD_RELOC_386_PLT32:
      case BFD_RELOC_386_GOT32:
      case BFD_RELOC_386_GOT32X:
-@@ -11999,6 +12023,7 @@ tc_gen_reloc (asection *section ATTRIBUTE_UNUSED, fixS *fixp)
+@@ -12098,6 +12122,7 @@ tc_gen_reloc (asection *section ATTRIBUTE_UNUSED, fixS *fixp)
  	  case BFD_RELOC_X86_64_GOTPCREL:
  	  case BFD_RELOC_X86_64_GOTPCRELX:
  	  case BFD_RELOC_X86_64_REX_GOTPCRELX:
@@ -653,7 +653,7 @@ index 8e25e6c7a0..110e8e95e6 100644
  	  case BFD_RELOC_X86_64_TLSLD:
  	  case BFD_RELOC_X86_64_GOTTPOFF:
 diff --git a/gas/config/tc-i386.h b/gas/config/tc-i386.h
-index e172158799..0b1af9efba 100644
+index 1f740e419c..c9f18d7a63 100644
 --- a/gas/config/tc-i386.h
 +++ b/gas/config/tc-i386.h
 @@ -176,7 +176,8 @@ extern int tc_i386_fix_adjustable (struct fix *);
@@ -667,13 +667,13 @@ index e172158799..0b1af9efba 100644
  extern int i386_parse_name (char *, expressionS *, char *);
  #define md_parse_name(s, e, m, c) i386_parse_name (s, e, c)
 diff --git a/gas/testsuite/gas/i386/i386.exp b/gas/testsuite/gas/i386/i386.exp
-index e721069bab..40738a99b0 100644
+index aa0ad7dc4b..d63afd1aba 100644
 --- a/gas/testsuite/gas/i386/i386.exp
 +++ b/gas/testsuite/gas/i386/i386.exp
-@@ -1047,6 +1047,8 @@ if [expr ([istarget "i*86-*-*"] || [istarget "x86_64-*-*"]) && [gas_64_check]] t
- 
+@@ -1062,6 +1062,8 @@ if [expr ([istarget "i*86-*-*"] || [istarget "x86_64-*-*"]) && [gas_64_check]] t
  	run_dump_test "evex-no-scale-64"
  	run_dump_test "x86-64-property-1"
+ 	run_dump_test "x86-64-property-2"
 +
 +	run_dump_test "x86-64-localpic-2"
      }
@@ -808,7 +808,7 @@ index 0000000000..22279b5052
 +	.quad 0
 +	movq	foo@GOTPCREL_THUNK(%rip), %rax
 diff --git a/gas/write.h b/gas/write.h
-index 4f510d6d5a..d50bd9d9e7 100644
+index e67fba092c..b426831db9 100644
 --- a/gas/write.h
 +++ b/gas/write.h
 @@ -61,6 +61,7 @@ struct fix
@@ -820,7 +820,7 @@ index 4f510d6d5a..d50bd9d9e7 100644
    /* Has this relocation already been applied?  */
    unsigned fx_done : 1;
 diff --git a/include/elf/x86-64.h b/include/elf/x86-64.h
-index 8d364ab650..2f0d92237a 100644
+index 338886649d..5b33ca8a1b 100644
 --- a/include/elf/x86-64.h
 +++ b/include/elf/x86-64.h
 @@ -82,6 +82,9 @@ START_RELOC_NUMBERS (elf_x86_64_reloc_type)
@@ -1443,7 +1443,7 @@ index 0000000000..642ccda287
 +__FUNCTION__.2215:
 +	.string	"bar"
 diff --git a/ld/testsuite/ld-x86-64/mpx.exp b/ld/testsuite/ld-x86-64/mpx.exp
-index 7822221d23..54e1d7f565 100644
+index 64740845ca..07388e66e2 100644
 --- a/ld/testsuite/ld-x86-64/mpx.exp
 +++ b/ld/testsuite/ld-x86-64/mpx.exp
 @@ -88,6 +88,41 @@ run_cc_link_tests [list \
@@ -1489,10 +1489,10 @@ index 7822221d23..54e1d7f565 100644
  
  set run_tests {
 diff --git a/ld/testsuite/ld-x86-64/x86-64.exp b/ld/testsuite/ld-x86-64/x86-64.exp
-index b51ad7cebc..72ab9582e9 100644
+index 47d92c9ab1..b056f485f3 100644
 --- a/ld/testsuite/ld-x86-64/x86-64.exp
 +++ b/ld/testsuite/ld-x86-64/x86-64.exp
-@@ -922,6 +922,54 @@ if { [isnative] && [which $CC] != 0 } {
+@@ -928,6 +928,54 @@ if { [isnative] && [which $CC] != 0 } {
  	    {{objdump {-dw} gotpcrel1.dd}} \
  	    "gotpcrel1" \
  	] \
@@ -1547,7 +1547,7 @@ index b51ad7cebc..72ab9582e9 100644
  	[list \
  	    "Build pr19319.so" \
  	    "-shared" \
-@@ -1365,6 +1413,22 @@ if { [isnative] && [which $CC] != 0 } {
+@@ -1380,6 +1428,22 @@ if { [isnative] && [which $CC] != 0 } {
  	    "gotpcrel1" \
  	    "gotpcrel1.out" \
  	] \
@@ -1571,5 +1571,5 @@ index b51ad7cebc..72ab9582e9 100644
  	    "Run property 1" \
  	    "" \
 -- 
-2.19.2
+2.20.1
 
