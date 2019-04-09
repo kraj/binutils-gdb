@@ -161,41 +161,31 @@ try_open_exec_file (const char *exec_file_host, struct inferior *inf,
      Even without a symbol file, the remote-based debugging session should
      continue normally instead of ending abruptly.  Hence we catch thrown
      errors/exceptions in the following code.  */
-  std::string saved_message;
-  TRY
+  try
     {
       /* We must do this step even if exec_file_host is NULL, so that
 	 exec_file_attach will clear state.  */
       exec_file_attach (exec_file_host, add_flags & SYMFILE_VERBOSE);
     }
-  CATCH (err, RETURN_MASK_ERROR)
+  catch (const gdb_exception_error &err)
     {
       if (err.message != NULL)
-	warning ("%s", err.message);
+	warning ("%s", err.what ());
 
       prev_err = err;
-
-      /* Save message so it doesn't get trashed by the catch below.  */
-      if (err.message != NULL)
-	{
-	  saved_message = err.message;
-	  prev_err.message = saved_message.c_str ();
-	}
     }
-  END_CATCH
 
   if (exec_file_host != NULL)
     {
-      TRY
+      try
 	{
 	  symbol_file_add_main (exec_file_host, add_flags);
 	}
-      CATCH (err, RETURN_MASK_ERROR)
+      catch (const gdb_exception_error &err)
 	{
 	  if (!exception_print_same (prev_err, err))
-	    warning ("%s", err.message);
+	    warning ("%s", err.what ());
 	}
-      END_CATCH
     }
 }
 

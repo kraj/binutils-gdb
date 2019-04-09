@@ -1195,11 +1195,11 @@ call_site_find_chain (struct gdbarch *gdbarch, CORE_ADDR caller_pc,
 {
   struct call_site_chain *retval = NULL;
 
-  TRY
+  try
     {
       retval = call_site_find_chain_1 (gdbarch, caller_pc, callee_pc);
     }
-  CATCH (e, RETURN_MASK_ERROR)
+  catch (const gdb_exception_error &e)
     {
       if (e.error == NO_ENTRY_VALUE_ERROR)
 	{
@@ -1209,9 +1209,8 @@ call_site_find_chain (struct gdbarch *gdbarch, CORE_ADDR caller_pc,
 	  return NULL;
 	}
       else
-	throw_exception (e);
+	throw;
     }
-  END_CATCH
 
   return retval;
 }
@@ -2164,11 +2163,11 @@ dwarf2_evaluate_loc_desc_full (struct type *type, struct frame_info *frame,
   ctx.ref_addr_size = dwarf2_per_cu_ref_addr_size (per_cu);
   ctx.offset = dwarf2_per_cu_text_offset (per_cu);
 
-  TRY
+  try
     {
       ctx.eval (data, size);
     }
-  CATCH (ex, RETURN_MASK_ERROR)
+  catch (const gdb_exception_error &ex)
     {
       if (ex.error == NOT_AVAILABLE_ERROR)
 	{
@@ -2186,9 +2185,8 @@ dwarf2_evaluate_loc_desc_full (struct type *type, struct frame_info *frame,
 	  return allocate_optimized_out_value (subobj_type);
 	}
       else
-	throw_exception (ex);
+	throw;
     }
-  END_CATCH
 
   if (ctx.pieces.size () > 0)
     {
@@ -2382,11 +2380,11 @@ dwarf2_locexpr_baton_eval (const struct dwarf2_locexpr_baton *dlbaton,
   ctx.ref_addr_size = dwarf2_per_cu_ref_addr_size (dlbaton->per_cu);
   ctx.offset = dwarf2_per_cu_text_offset (dlbaton->per_cu);
 
-  TRY
+  try
     {
       ctx.eval (dlbaton->data, dlbaton->size);
     }
-  CATCH (ex, RETURN_MASK_ERROR)
+  catch (const gdb_exception_error &ex)
     {
       if (ex.error == NOT_AVAILABLE_ERROR)
 	{
@@ -2399,9 +2397,8 @@ dwarf2_locexpr_baton_eval (const struct dwarf2_locexpr_baton *dlbaton,
 	  return 0;
 	}
       else
-	throw_exception (ex);
+	throw;
     }
-  END_CATCH
 
   switch (ctx.location)
     {

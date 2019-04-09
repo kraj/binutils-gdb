@@ -19,8 +19,9 @@
 
 #include "common-defs.h"
 #include "common-exceptions.h"
+#include <forward_list>
 
-const struct gdb_exception exception_none = { (enum return_reason) 0, GDB_NO_ERROR, NULL };
+const struct gdb_exception exception_none;
 
 /* Possible catcher states.  */
 enum catcher_state {
@@ -42,62 +43,21 @@ enum catcher_action {
 
 struct catcher
 {
-  enum catcher_state state;
+  enum catcher_state state = CATCHER_CREATED;
   /* Jump buffer pointing back at the exception handler.  */
   jmp_buf buf;
   /* Status buffer belonging to the exception handler.  */
-  struct gdb_exception exception;
-  /* Back link.  */
-  struct catcher *prev;
+  struct gdb_exception exception = exception_none;
 };
 
 /* Where to go for throw_exception().  */
-static struct catcher *current_catcher;
-
-#if GDB_XCPT == GDB_XCPT_SJMP
-
-/* Return length of current_catcher list.  */
-
-static int
-catcher_list_size (void)
-{
-  int size;
-  struct catcher *catcher;
-
-  for (size = 0, catcher = current_catcher;
-       catcher != NULL;
-       catcher = catcher->prev)
-    ++size;
-
-  return size;
-}
-
-#endif
+static std::forward_list<struct catcher> catchers;
 
 jmp_buf *
-exceptions_state_mc_init (void)
+exceptions_state_mc_init ()
 {
-  struct catcher *new_catcher = XCNEW (struct catcher);
-
-  /* Start with no exception.  */
-  new_catcher->exception = exception_none;
-
-  /* Push this new catcher on the top.  */
-  new_catcher->prev = current_catcher;
-  current_catcher = new_catcher;
-  new_catcher->state = CATCHER_CREATED;
-
-  return &new_catcher->buf;
-}
-
-static void
-catcher_pop (void)
-{
-  struct catcher *old_catcher = current_catcher;
-
-  current_catcher = old_catcher->prev;
-
-  xfree (old_catcher);
+  catchers.emplace_front ();
+  return &catchers.front ().buf;
 }
 
 /* Catcher state machine.  Returns non-zero if the m/c should be run
@@ -106,14 +66,14 @@ catcher_pop (void)
 static int
 exceptions_state_mc (enum catcher_action action)
 {
-  switch (current_catcher->state)
+  switch (catchers.front ().state)
     {
     case CATCHER_CREATED:
       switch (action)
 	{
 	case CATCH_ITER:
 	  /* Allow the code to run the catcher.  */
-	  current_catcher->state = CATCHER_RUNNING;
+	  catchers.front ().state = CATCHER_RUNNING;
 	  return 1;
 	default:
 	  internal_error (__FILE__, __LINE__, _("bad state"));
@@ -125,10 +85,10 @@ exceptions_state_mc (enum catcher_action action)
 	  /* No error/quit has occured.  */
 	  return 0;
 	case CATCH_ITER_1:
-	  current_catcher->state = CATCHER_RUNNING_1;
+	  catchers.front ().state = CATCHER_RUNNING_1;
 	  return 1;
 	case CATCH_THROWING:
-	  current_catcher->state = CATCHER_ABORTING;
+	  catchers.front ().state = CATCHER_ABORTING;
 	  /* See also throw_exception.  */
 	  return 1;
 	default:
@@ -141,10 +101,10 @@ exceptions_state_mc (enum catcher_action action)
 	  /* The did a "break" from the inner while loop.  */
 	  return 0;
 	case CATCH_ITER_1:
-	  current_catcher->state = CATCHER_RUNNING;
+	  catchers.front ().state = CATCHER_RUNNING;
 	  return 0;
 	case CATCH_THROWING:
-	  current_catcher->state = CATCHER_ABORTING;
+	  catchers.front ().state = CATCHER_ABORTING;
 	  /* See also throw_exception.  */
 	  return 1;
 	default:
@@ -172,8 +132,8 @@ int
 exceptions_state_mc_catch (struct gdb_exception *exception,
 			   int mask)
 {
-  *exception = current_catcher->exception;
-  catcher_pop ();
+  *exception = std::move (catchers.front ().exception);
+  catchers.pop_front ();
 
   if (exception->reason < 0)
     {
@@ -205,51 +165,6 @@ exceptions_state_mc_action_iter_1 (void)
   return exceptions_state_mc (CATCH_ITER_1);
 }
 
-#if GDB_XCPT != GDB_XCPT_SJMP
-
-/* How many nested TRY blocks we have.  See exception_messages and
-   throw_it.  */
-
-static int try_scope_depth;
-
-/* Called on entry to a TRY scope.  */
-
-void *
-exception_try_scope_entry (void)
-{
-  ++try_scope_depth;
-  return nullptr;
-}
-
-/* Called on exit of a TRY scope, either normal exit or exception
-   exit.  */
-
-void
-exception_try_scope_exit (void *saved_state)
-{
-  --try_scope_depth;
-}
-
-/* Called by the default catch block.  IOW, we'll get here before
-   jumping out to the next outermost scope an exception if a GDB
-   exception is not caught.  */
-
-void
-exception_rethrow (void)
-{
-  throw;
-}
-
-/* Copy the 'gdb_exception' portion of FROM to TO.  */
-
-static void
-gdb_exception_sliced_copy (struct gdb_exception *to, const struct gdb_exception *from)
-{
-  *to = *from;
-}
-
-#endif /* !GDB_XCPT_SJMP */
-
 /* Return EXCEPTION to the nearest containing CATCH_SJLJ block.  */
 
 void
@@ -259,100 +174,33 @@ throw_exception_sjlj (struct gdb_exception exception)
      that call via setjmp's return value.  Note that REASON can't be
      zero, by definition in common-exceptions.h.  */
   exceptions_state_mc (CATCH_THROWING);
-  current_catcher->exception = exception;
-  longjmp (current_catcher->buf, exception.reason);
+  catchers.front ().exception = exception;
+  longjmp (catchers.front ().buf, exception.reason);
 }
-
-#if GDB_XCPT != GDB_XCPT_SJMP
 
 /* Implementation of throw_exception that uses C++ try/catch.  */
 
-static ATTRIBUTE_NORETURN void
-throw_exception_cxx (struct gdb_exception exception)
+void
+throw_exception (const gdb_exception &exception)
 {
   if (exception.reason == RETURN_QUIT)
-    {
-      gdb_exception_RETURN_MASK_QUIT ex;
-
-      gdb_exception_sliced_copy (&ex, &exception);
-      throw ex;
-    }
+    throw gdb_exception_quit (exception);
   else if (exception.reason == RETURN_ERROR)
-    {
-      gdb_exception_RETURN_MASK_ERROR ex;
-
-      gdb_exception_sliced_copy (&ex, &exception);
-      throw ex;
-    }
+    throw gdb_exception_error (exception);
   else
     gdb_assert_not_reached ("invalid return reason");
 }
-
-#endif
-
-void
-throw_exception (struct gdb_exception exception)
-{
-#if GDB_XCPT == GDB_XCPT_SJMP
-  throw_exception_sjlj (exception);
-#else
-  throw_exception_cxx (exception);
-#endif
-}
-
-/* A stack of exception messages.
-   This is needed to handle nested calls to throw_it: we don't want to
-   xfree space for a message before it's used.
-   This can happen if we throw an exception during a cleanup:
-   An outer TRY_CATCH may have an exception message it wants to print,
-   but while doing cleanups further calls to throw_it are made.
-
-   This is indexed by the size of the current_catcher list.
-   It is a dynamically allocated array so that we don't care how deeply
-   GDB nests its TRY_CATCHs.  */
-static char **exception_messages;
-
-/* The number of currently allocated entries in exception_messages.  */
-static int exception_messages_size;
 
 static void ATTRIBUTE_NORETURN ATTRIBUTE_PRINTF (3, 0)
 throw_it (enum return_reason reason, enum errors error, const char *fmt,
 	  va_list ap)
 {
-  struct gdb_exception e;
-  char *new_message;
-#if GDB_XCPT == GDB_XCPT_SJMP
-  int depth = catcher_list_size ();
-#else
-  int depth = try_scope_depth;
-#endif
-
-  gdb_assert (depth > 0);
-
-  /* Note: The new message may use an old message's text.  */
-  new_message = xstrvprintf (fmt, ap);
-
-  if (depth > exception_messages_size)
-    {
-      int old_size = exception_messages_size;
-
-      exception_messages_size = depth + 10;
-      exception_messages = XRESIZEVEC (char *, exception_messages,
-				       exception_messages_size);
-      memset (exception_messages + old_size, 0,
-	      (exception_messages_size - old_size) * sizeof (char *));
-    }
-
-  xfree (exception_messages[depth - 1]);
-  exception_messages[depth - 1] = new_message;
-
-  /* Create the exception.  */
-  e.reason = reason;
-  e.error = error;
-  e.message = new_message;
-
-  /* Throw the exception.  */
-  throw_exception (e);
+  if (reason == RETURN_QUIT)
+    throw gdb_exception_quit (fmt, ap);
+  else if (reason == RETURN_ERROR)
+    throw gdb_exception_error (error, fmt, ap);
+  else
+    gdb_assert_not_reached ("invalid return reason");
 }
 
 void

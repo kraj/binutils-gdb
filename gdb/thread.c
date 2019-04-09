@@ -540,12 +540,12 @@ find_thread_ptid (inferior *inf, ptid_t ptid)
 /* See gdbthread.h.  */
 
 struct thread_info *
-find_thread_by_handle (struct value *thread_handle, struct inferior *inf)
+find_thread_by_handle (gdb::array_view<const gdb_byte> handle,
+		       struct inferior *inf)
 {
-  return target_thread_handle_to_thread_info
-	   (value_contents_all (thread_handle),
-	    TYPE_LENGTH (value_type (thread_handle)),
-	    inf);
+  return target_thread_handle_to_thread_info (handle.data (),
+					      handle.size (),
+					      inf);
 }
 
 /*
@@ -1459,7 +1459,7 @@ thr_try_catch_cmd (thread_info *thr, const char *cmd, int from_tty,
 		   const qcs_flags &flags)
 {
   switch_to_thread (thr);
-  TRY
+  try
     {
       std::string cmd_result = execute_command_to_string (cmd, from_tty);
       if (!flags.silent || cmd_result.length () > 0)
@@ -1471,7 +1471,7 @@ thr_try_catch_cmd (thread_info *thr, const char *cmd, int from_tty,
 	  printf_filtered ("%s", cmd_result.c_str ());
 	}
     }
-  CATCH (ex, RETURN_MASK_ERROR)
+  catch (const gdb_exception_error &ex)
     {
       if (!flags.silent)
 	{
@@ -1480,12 +1480,11 @@ thr_try_catch_cmd (thread_info *thr, const char *cmd, int from_tty,
 			     print_thread_id (thr),
 			     target_pid_to_str (inferior_ptid).c_str ());
 	  if (flags.cont)
-	    printf_filtered ("%s\n", ex.message);
+	    printf_filtered ("%s\n", ex.what ());
 	  else
-	    throw_exception (ex);
+	    throw;
 	}
     }
-  END_CATCH;
 }
 
 /* Apply a GDB command to a list of threads.  List syntax is a whitespace

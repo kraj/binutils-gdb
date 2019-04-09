@@ -528,21 +528,20 @@ captured_main (int argc, char *argv[])
 int
 main (int argc, char *argv[])
 {
-  TRY
+  try
     {
       captured_main (argc, argv);
     }
-  CATCH (exception, RETURN_MASK_ALL)
+  catch (const gdb_exception &exception)
     {
       if (exception.reason == RETURN_ERROR)
 	{
 	  fflush (stdout);
-	  fprintf (stderr, "%s\n", exception.message);
+	  fprintf (stderr, "%s\n", exception.what ());
 	}
 
       exit (1);
     }
-  END_CATCH
 
   gdb_assert_not_reached ("captured_main should never return");
 }

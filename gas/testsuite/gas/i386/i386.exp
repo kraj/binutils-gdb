@@ -423,6 +423,9 @@ if [expr ([istarget "i*86-*-*"] ||  [istarget "x86_64-*-*"]) && [gas_32_check]] 
     run_dump_test "avx512bitalg-intel"
     run_dump_test "avx512bitalg_vl"
     run_dump_test "avx512bitalg_vl-intel"
+    run_dump_test "avx512_bf16"
+    run_dump_test "avx512_bf16_vl"
+    run_list_test "avx512_bf16_vl-inval"
     run_list_test "sg"
     run_dump_test "clzero"
     run_dump_test "disassem"
@@ -546,6 +549,7 @@ if [expr ([istarget "i*86-*-*"] ||  [istarget "x86_64-*-*"]) && [gas_32_check]] 
 
 	run_dump_test "evex-no-scale-32"
 	run_dump_test "property-1"
+	run_dump_test "property-2"
 
 	if { [gas_64_check] } then {
 	    run_dump_test "att-regs"
@@ -937,6 +941,9 @@ if [expr ([istarget "i*86-*-*"] || [istarget "x86_64-*-*"]) && [gas_64_check]] t
     run_dump_test "x86-64-avx512bitalg-intel"
     run_dump_test "x86-64-avx512bitalg_vl"
     run_dump_test "x86-64-avx512bitalg_vl-intel"
+    run_dump_test "x86-64-avx512_bf16"
+    run_dump_test "x86-64-avx512_bf16_vl"
+    run_list_test "x86-64-avx512_bf16_vl-inval"
     run_dump_test "x86-64-clzero"
     run_dump_test "x86-64-mwaitx-bdver4"
     run_list_test "x86-64-mwaitx-reg"
@@ -995,8 +1002,6 @@ if [expr ([istarget "i*86-*-*"] || [istarget "x86_64-*-*"]) && [gas_64_check]] t
     if { ![istarget "*-*-aix*"]
       && ![istarget "*-*-beos*"]
       && ![istarget "*-*-*bsd*"]
-      && ![istarget "*-*-chaos*"]
-      && ![istarget "*-*-kaos*"]
       && ![istarget "*-*-lynx*"]
       && ![istarget "*-*-moss*"]
       && ![istarget "*-*-nto-qnx*"]
@@ -1056,6 +1061,7 @@ if [expr ([istarget "i*86-*-*"] || [istarget "x86_64-*-*"]) && [gas_64_check]] t
 
 	run_dump_test "evex-no-scale-64"
 	run_dump_test "x86-64-property-1"
+	run_dump_test "x86-64-property-2"
     }
 
     set ASFLAGS "$old_ASFLAGS"

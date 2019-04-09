@@ -3000,11 +3000,16 @@ containing the address where the pattern was found, or @code{None} if
 the pattern could not be found.
 @end defun
 
+@findex Inferior.thread_from_handle
 @findex Inferior.thread_from_thread_handle
-@defun Inferior.thread_from_thread_handle (thread_handle)
-Return the thread object corresponding to @var{thread_handle}, a thread
+@defun Inferior.thread_from_handle (handle)
+Return the thread object corresponding to @var{handle}, a thread
 library specific data structure such as @code{pthread_t} for pthreads
 library implementations.
+
+The function @code{Inferior.thread_from_thread_handle} provides
+the same functionality, but use of @code{Inferior.thread_from_thread_handle}
+is deprecated.
 @end defun
 
 @node Events In Python
@@ -3332,6 +3337,14 @@ Return a Boolean indicating whether the thread is running.
 
 @defun InferiorThread.is_exited ()
 Return a Boolean indicating whether the thread is exited.
+@end defun
+
+@defun InferiorThread.handle ()
+Return the thread object's handle, represented as a Python @code{bytes}
+object.  A @code{gdb.Value} representation of the handle may be
+constructed via @code{gdb.Value(bufobj, type)} where @var{bufobj} is
+the Python @code{bytes} representation of the handle and @var{type} is
+a @code{gdb.Type} for the handle type.
 @end defun
 
 @node Recordings In Python

@@ -105,6 +105,7 @@ public:
   thread_info *thread_handle_to_thread_info (const gdb_byte *thread_handle,
 					     int handle_len,
 					     inferior *inf) override;
+  gdb::byte_vector thread_info_to_thread_handle (struct thread_info *) override;
 };
 
 static char *libthread_db_search_path;
@@ -497,12 +498,12 @@ static int
 thread_db_find_new_threads_silently (thread_info *stopped)
 {
 
-  TRY
+  try
     {
       thread_db_find_new_threads_2 (stopped, true);
     }
 
-  CATCH (except, RETURN_MASK_ERROR)
+  catch (const gdb_exception_error &except)
     {
       if (libthread_db_debug)
 	exception_fprintf (gdb_stdlog, except,
@@ -532,7 +533,6 @@ thread_db_find_new_threads_silently (thread_info *stopped)
 	  return 1;
 	}
     }
-  END_CATCH
 
   return 0;
 }
@@ -757,7 +757,7 @@ check_thread_db (struct thread_db_info *info, bool log_progress)
      fail.  */
   linux_stop_and_wait_all_lwps ();
 
-  TRY
+  try
     {
       td_err_e err = td_ta_thr_iter_p (info->thread_agent,
 				       check_thread_db_callback,
@@ -773,7 +773,7 @@ check_thread_db (struct thread_db_info *info, bool log_progress)
       if (!tdb_testinfo->threads_seen)
 	error (_("no threads seen"));
     }
-  CATCH (except, RETURN_MASK_ERROR)
+  catch (const gdb_exception_error &except)
     {
       if (warning_pre_print)
 	fputs_unfiltered (warning_pre_print, gdb_stderr);
@@ -783,7 +783,6 @@ check_thread_db (struct thread_db_info *info, bool log_progress)
 
       test_passed = false;
     }
-  END_CATCH
 
   if (test_passed && log_progress)
     debug_printf (_("libthread_db integrity checks passed.\n"));
@@ -1509,7 +1508,7 @@ find_new_threads_once (struct thread_db_info *info, int iteration,
   /* See comment in thread_db_update_thread_list.  */
   gdb_assert (info->td_ta_thr_iter_p != NULL);
 
-  TRY
+  try
     {
       /* Iterate over all user-space threads to discover new threads.  */
       err = info->td_ta_thr_iter_p (info->thread_agent,
@@ -1520,7 +1519,7 @@ find_new_threads_once (struct thread_db_info *info, int iteration,
 				    TD_SIGNO_MASK,
 				    TD_THR_ANY_USER_FLAGS);
     }
-  CATCH (except, RETURN_MASK_ERROR)
+  catch (const gdb_exception_error &except)
     {
       if (libthread_db_debug)
 	{
@@ -1528,7 +1527,6 @@ find_new_threads_once (struct thread_db_info *info, int iteration,
 			     "Warning: find_new_threads_once: ");
 	}
     }
-  END_CATCH
 
   if (libthread_db_debug)
     {
@@ -1693,6 +1691,24 @@ thread_db_target::thread_handle_to_thread_info (const gdb_byte *thread_handle,
     }
 
   return NULL;
+}
+
+/* Return the thread handle associated the thread_info pointer TP.  */
+
+gdb::byte_vector
+thread_db_target::thread_info_to_thread_handle (struct thread_info *tp)
+{
+  thread_db_thread_info *priv = get_thread_db_thread_info (tp);
+
+  if (priv == NULL)
+    return gdb::byte_vector ();
+
+  int handle_size = sizeof (priv->tid);
+  gdb::byte_vector rv (handle_size);
+
+  memcpy (rv.data (), &priv->tid, handle_size);
+
+  return rv;
 }
 
 /* Get the address of the thread local variable in load module LM which

@@ -101,11 +101,11 @@ frame_unwind_try_unwinder (struct frame_info *this_frame, void **this_cache,
 
   frame_prepare_for_sniffer (this_frame, unwinder);
 
-  TRY
+  try
     {
       res = unwinder->sniffer (unwinder, this_frame, this_cache);
     }
-  CATCH (ex, RETURN_MASK_ALL)
+  catch (const gdb_exception &ex)
     {
       /* Catch all exceptions, caused by either interrupt or error.
 	 Reset *THIS_CACHE.  */
@@ -120,9 +120,8 @@ frame_unwind_try_unwinder (struct frame_info *this_frame, void **this_cache,
 	     should always accept the frame.  */
 	  return 0;
 	}
-      throw_exception (ex);
+      throw;
     }
-  END_CATCH
 
   if (res)
     return 1;

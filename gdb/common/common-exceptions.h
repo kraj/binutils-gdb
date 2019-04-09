@@ -22,6 +22,8 @@
 
 #include <setjmp.h>
 #include <new>
+#include <memory>
+#include <string>
 
 /* Reasons for calling throw_exceptions().  NOTE: all reason values
    must be different from zero.  enum value 0 is reserved for internal
@@ -110,26 +112,57 @@ enum errors {
 
 struct gdb_exception
 {
+  gdb_exception ()
+    : reason ((enum return_reason) 0),
+      error (GDB_NO_ERROR)
+  {
+  }
+
+  gdb_exception (enum return_reason r, enum errors e)
+    : reason (r),
+      error (e)
+  {
+  }
+
+  gdb_exception (enum return_reason r, enum errors e,
+		 const char *fmt, va_list ap)
+    ATTRIBUTE_PRINTF (4, 0)
+    : reason (r),
+      error (e),
+      message (std::make_shared<std::string> (string_vprintf (fmt, ap)))
+  {
+  }
+
+  /* The copy constructor exists so that we can mark it "noexcept",
+     which is a good practice for any sort of exception object.  */
+  gdb_exception (const gdb_exception &other) noexcept
+    : reason (other.reason),
+      error (other.error),
+      message (other.message)
+  {
+  }
+
+  /* The assignment operator exists so that we can mark it "noexcept",
+     which is a good practice for any sort of exception object.  */
+  gdb_exception &operator= (const gdb_exception &other) noexcept
+  {
+    reason = other.reason;
+    error = other.error;
+    message = other.message;
+    return *this;
+  }
+
+  /* Return the contents of the exception message, as a C string.  The
+     string remains owned by the exception object.  */
+  const char *what () const noexcept
+  {
+    return message->c_str ();
+  }
+
   enum return_reason reason;
   enum errors error;
-  const char *message;
+  std::shared_ptr<std::string> message;
 };
-
-/* The different exception mechanisms that TRY/CATCH can map to.  */
-
-/* Make GDB exceptions use setjmp/longjmp behind the scenes.  */
-#define GDB_XCPT_SJMP 1
-
-/* Make GDB exceptions use try/catch behind the scenes.  */
-#define GDB_XCPT_TRY 2
-
-/* Specify this mode to build with TRY/CATCH mapped directly to raw
-   try/catch.  GDB won't work correctly, but building that way catches
-   code tryin to break/continue out of the try block, along with
-   spurious code between the TRY and the CATCH block.  */
-#define GDB_XCPT_RAW_TRY 3
-
-#define GDB_XCPT GDB_XCPT_TRY
 
 /* Functions to drive the sjlj-based exceptions state machine.  Though
    declared here by necessity, these functions should be considered
@@ -140,14 +173,6 @@ extern jmp_buf *exceptions_state_mc_init (void);
 extern int exceptions_state_mc_action_iter (void);
 extern int exceptions_state_mc_action_iter_1 (void);
 extern int exceptions_state_mc_catch (struct gdb_exception *, int);
-
-/* Same, but for the C++ try/catch-based TRY/CATCH mechanism.  */
-
-#if GDB_XCPT != GDB_XCPT_SJMP
-extern void *exception_try_scope_entry (void);
-extern void exception_try_scope_exit (void *saved_state);
-extern void exception_rethrow (void) ATTRIBUTE_NORETURN;
-#endif
 
 /* Macro to wrap up standard try/catch behavior.
 
@@ -160,24 +185,21 @@ extern void exception_rethrow (void) ATTRIBUTE_NORETURN;
 
    *INDENT-OFF*
 
-   TRY
+   TRY_SJLJ
      {
      }
-   CATCH (e, RETURN_MASK_ERROR)
+   CATCH_SJLJ (e, RETURN_MASK_ERROR)
      {
        switch (e.reason)
          {
            case RETURN_ERROR: ...
          }
      }
-   END_CATCH
+   END_CATCH_SJLJ
 
-  Note that the SJLJ version of the macros are actually named
-  TRY_SJLJ/CATCH_SJLJ in order to make it possible to call them even
-  when TRY/CATCH are mapped to C++ try/catch.  The SJLJ variants are
-  needed in some cases where gdb exceptions need to cross third-party
-  library code compiled without exceptions support (e.g.,
-  readline).  */
+   The SJLJ variants are needed in some cases where gdb exceptions
+   need to cross third-party library code compiled without exceptions
+   support (e.g., readline).  */
 
 #define TRY_SJLJ \
      { \
@@ -196,99 +218,39 @@ extern void exception_rethrow (void) ATTRIBUTE_NORETURN;
 #define END_CATCH_SJLJ				\
   }
 
-#if GDB_XCPT == GDB_XCPT_SJMP
-
-/* If using SJLJ-based exceptions for all exceptions, then provide
-   standard aliases.  */
-
-#define TRY TRY_SJLJ
-#define CATCH CATCH_SJLJ
-#define END_CATCH END_CATCH_SJLJ
-
-#endif /* GDB_XCPT_SJMP */
-
-#if GDB_XCPT == GDB_XCPT_TRY || GDB_XCPT == GDB_XCPT_RAW_TRY
-
-/* Prevent error/quit during TRY from calling cleanups established
-   prior to here.  This pops out the scope in either case of normal
-   exit or exception exit.  */
-struct exception_try_scope
-{
-  exception_try_scope ()
-  {
-    saved_state = exception_try_scope_entry ();
-  }
-  ~exception_try_scope ()
-  {
-    exception_try_scope_exit (saved_state);
-  }
-
-  void *saved_state;
-};
-
-#if GDB_XCPT == GDB_XCPT_TRY
-
-/* We still need to wrap TRY/CATCH in C++ so that cleanups and C++
-   exceptions can coexist.
-
-   The TRY blocked is wrapped in a do/while(0) so that break/continue
-   within the block works the same as in C.
-
-   END_CATCH makes sure that even if the CATCH block doesn't want to
-   catch the exception, we stop at every frame in the unwind chain to
-   run its cleanups, which may e.g., have pointers to stack variables
-   that are going to be destroyed.
-
-   There's an outer scope around the whole TRY/END_CATCH in order to
-   cause a compilation error if you forget to add the END_CATCH at the
-   end a TRY/CATCH construct.  */
-
-#define TRY								\
-  {									\
-    try									\
-      {									\
-	exception_try_scope exception_try_scope_instance;		\
-	do								\
-	  {
-
-#define CATCH(EXCEPTION, MASK)						\
-	  } while (0);							\
-	}								\
-    catch (struct gdb_exception ## _ ## MASK &EXCEPTION)
-
-#define END_CATCH				\
-    catch (...)					\
-      {						\
-	exception_rethrow ();			\
-      }						\
-  }
-
-#else
-
-#define TRY try
-#define CATCH(EXCEPTION, MASK) \
-  catch (struct gdb_exception ## _ ## MASK &EXCEPTION)
-#define END_CATCH
-
-#endif
-
 /* The exception types client code may catch.  They're just shims
    around gdb_exception that add nothing but type info.  Which is used
    is selected depending on the MASK argument passed to CATCH.  */
 
-struct gdb_exception_RETURN_MASK_ALL : public gdb_exception
+struct gdb_exception_error : public gdb_exception
 {
+  gdb_exception_error (enum errors e, const char *fmt, va_list ap)
+    ATTRIBUTE_PRINTF (3, 0)
+    : gdb_exception (RETURN_ERROR, e, fmt, ap)
+  {
+  }
+
+  explicit gdb_exception_error (const gdb_exception &ex) noexcept
+    : gdb_exception (ex)
+  {
+    gdb_assert (ex.reason == RETURN_ERROR);
+  }
 };
 
-struct gdb_exception_RETURN_MASK_ERROR : public gdb_exception_RETURN_MASK_ALL
+struct gdb_exception_quit : public gdb_exception
 {
-};
+  gdb_exception_quit (const char *fmt, va_list ap)
+    ATTRIBUTE_PRINTF (2, 0)
+    : gdb_exception (RETURN_QUIT, GDB_NO_ERROR, fmt, ap)
+  {
+  }
 
-struct gdb_exception_RETURN_MASK_QUIT : public gdb_exception_RETURN_MASK_ALL
-{
+  explicit gdb_exception_quit (const gdb_exception &ex) noexcept
+    : gdb_exception (ex)
+  {
+    gdb_assert (ex.reason == RETURN_QUIT);
+  }
 };
-
-#endif /* GDB_XCPT_TRY || GDB_XCPT_RAW_TRY */
 
 /* An exception type that inherits from both std::bad_alloc and a gdb
    exception.  This is necessary because operator new can only throw
@@ -297,15 +259,13 @@ struct gdb_exception_RETURN_MASK_QUIT : public gdb_exception_RETURN_MASK_ALL
    spread around the codebase.  */
 
 struct gdb_quit_bad_alloc
-  : public gdb_exception_RETURN_MASK_QUIT,
+  : public gdb_exception_quit,
     public std::bad_alloc
 {
-  explicit gdb_quit_bad_alloc (gdb_exception ex)
-    : std::bad_alloc ()
+  explicit gdb_quit_bad_alloc (const gdb_exception &ex) noexcept
+    : gdb_exception_quit (ex),
+      std::bad_alloc ()
   {
-    gdb_exception *self = this;
-
-    *self = ex;
   }
 };
 
@@ -314,7 +274,7 @@ struct gdb_quit_bad_alloc
 /* Throw an exception (as described by "struct gdb_exception"),
    landing in the inner most containing exception handler established
    using TRY/CATCH.  */
-extern void throw_exception (struct gdb_exception exception)
+extern void throw_exception (const gdb_exception &exception)
      ATTRIBUTE_NORETURN;
 
 /* Throw an exception by executing a LONG JUMP to the inner most

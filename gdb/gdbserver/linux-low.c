@@ -1531,7 +1531,7 @@ linux_detach_one_lwp (struct lwp_info *lwp)
   /* Preparing to resume may try to write registers, and fail if the
      lwp is zombie.  If that happens, ignore the error.  We'll handle
      it below, when detach fails with ESRCH.  */
-  TRY
+  try
     {
       /* Flush any pending changes to the process's registers.  */
       regcache_invalidate_thread (thread);
@@ -1540,12 +1540,11 @@ linux_detach_one_lwp (struct lwp_info *lwp)
       if (the_low_target.prepare_to_resume != NULL)
 	the_low_target.prepare_to_resume (lwp);
     }
-  CATCH (ex, RETURN_MASK_ERROR)
+  catch (const gdb_exception_error &ex)
     {
       if (!check_ptrace_stopped_lwp_gone (lwp))
-	throw_exception (ex);
+	throw;
     }
-  END_CATCH
 
   lwpid = lwpid_of (thread);
   if (ptrace (PTRACE_DETACH, lwpid, (PTRACE_TYPE_ARG3) 0,
@@ -4508,16 +4507,15 @@ static void
 linux_resume_one_lwp (struct lwp_info *lwp,
 		      int step, int signal, siginfo_t *info)
 {
-  TRY
+  try
     {
       linux_resume_one_lwp_throw (lwp, step, signal, info);
     }
-  CATCH (ex, RETURN_MASK_ERROR)
+  catch (const gdb_exception_error &ex)
     {
       if (!check_ptrace_stopped_lwp_gone (lwp))
-	throw_exception (ex);
+	throw;
     }
-  END_CATCH
 }
 
 /* This function is called once per thread via for_each_thread.
@@ -7427,11 +7425,10 @@ linux_get_pc_64bit (struct regcache *regcache)
   return pc;
 }
 
-/* Fetch the entry MATCH from the auxv vector, where entries are length
-   WORDSIZE.  If no entry was found, return zero.  */
+/* See linux-low.h.  */
 
-static CORE_ADDR
-linux_get_auxv (int wordsize, CORE_ADDR match)
+int
+linux_get_auxv (int wordsize, CORE_ADDR match, CORE_ADDR *valp)
 {
   gdb_byte *data = (gdb_byte *) alloca (2 * wordsize);
   int offset = 0;
@@ -7442,15 +7439,21 @@ linux_get_auxv (int wordsize, CORE_ADDR match)
     {
       if (wordsize == 4)
 	{
-	  uint32_t *data_p = (uint32_t *)data;
+	  uint32_t *data_p = (uint32_t *) data;
 	  if (data_p[0] == match)
-	    return data_p[1];
+	    {
+	      *valp = data_p[1];
+	      return 1;
+	    }
 	}
       else
 	{
-	  uint64_t *data_p = (uint64_t *)data;
+	  uint64_t *data_p = (uint64_t *) data;
 	  if (data_p[0] == match)
-	    return data_p[1];
+	    {
+	      *valp = data_p[1];
+	      return 1;
+	    }
 	}
 
       offset += 2 * wordsize;
@@ -7464,7 +7467,9 @@ linux_get_auxv (int wordsize, CORE_ADDR match)
 CORE_ADDR
 linux_get_hwcap (int wordsize)
 {
-  return linux_get_auxv (wordsize, AT_HWCAP);
+  CORE_ADDR hwcap = 0;
+  linux_get_auxv (wordsize, AT_HWCAP, &hwcap);
+  return hwcap;
 }
 
 /* See linux-low.h.  */
@@ -7472,7 +7477,9 @@ linux_get_hwcap (int wordsize)
 CORE_ADDR
 linux_get_hwcap2 (int wordsize)
 {
-  return linux_get_auxv (wordsize, AT_HWCAP2);
+  CORE_ADDR hwcap2 = 0;
+  linux_get_auxv (wordsize, AT_HWCAP2, &hwcap2);
+  return hwcap2;
 }
 
 static struct target_ops linux_target_ops = {

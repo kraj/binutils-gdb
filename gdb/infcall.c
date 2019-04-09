@@ -597,7 +597,7 @@ run_inferior_call (struct call_thread_fsm *sm,
   /* We want to print return value, please...  */
   call_thread->control.proceed_to_finish = 1;
 
-  TRY
+  try
     {
       proceed (real_pc, GDB_SIGNAL_0);
 
@@ -605,11 +605,10 @@ run_inferior_call (struct call_thread_fsm *sm,
 	 target supports asynchronous execution.  */
       wait_sync_command_done ();
     }
-  CATCH (e, RETURN_MASK_ALL)
+  catch (const gdb_exception &e)
     {
       caught_error = e;
     }
-  END_CATCH
 
   /* If GDB has the prompt blocked before, then ensure that it remains
      so.  normal_stop calls async_enable_stdin, so reset the prompt
@@ -1193,7 +1192,7 @@ An error occurred while in a function called from GDB.\n\
 Evaluation of the expression containing the function\n\
 (%s) will be abandoned.\n\
 When the function is done executing, GDB will silently stop."),
-		       e.message, name);
+		       e.what (), name);
 	case RETURN_QUIT:
 	default:
 	  throw_exception (e);

@@ -1050,16 +1050,15 @@ process_next_line (const char *p, struct command_line **command,
 
   if (validator)
     {
-      TRY
+      try
 	{
 	  validator ((*command)->line);
 	}
-      CATCH (ex, RETURN_MASK_ALL)
+      catch (const gdb_exception &ex)
 	{
 	  free_command_lines (command);
-	  throw_exception (ex);
+	  throw;
 	}
-      END_CATCH
     }
 
   /* Nothing special.  */
@@ -1540,19 +1539,19 @@ script_from_file (FILE *stream, const char *file)
 
   scoped_restore save_async = make_scoped_restore (&current_ui->async, 0);
 
-  TRY
+  try
     {
       read_command_file (stream);
     }
-  CATCH (e, RETURN_MASK_ERROR)
+  catch (const gdb_exception_error &e)
     {
       /* Re-throw the error, but with the file name information
 	 prepended.  */
       throw_error (e.error,
 		   _("%s:%d: Error in sourced command file:\n%s"),
-		   source_file_name.c_str (), source_line_number, e.message);
+		   source_file_name.c_str (), source_line_number,
+		   e.what ());
     }
-  END_CATCH
 }
 
 /* Print the definition of user command C to STREAM.  Or, if C is a

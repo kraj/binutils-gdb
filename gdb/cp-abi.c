@@ -73,22 +73,21 @@ baseclass_offset (struct type *type, int index, const gdb_byte *valaddr,
 
   gdb_assert (current_cp_abi.baseclass_offset != NULL);
 
-  TRY
+  try
     {
       res = (*current_cp_abi.baseclass_offset) (type, index, valaddr,
 						embedded_offset,
 						address, val);
     }
-  CATCH (ex, RETURN_MASK_ERROR)
+  catch (const gdb_exception_error &ex)
     {
       if (ex.error != NOT_AVAILABLE_ERROR)
-	throw_exception (ex);
+	throw;
 
       throw_error (NOT_AVAILABLE_ERROR,
 		   _("Cannot determine virtual baseclass offset "
 		     "of incomplete object"));
     }
-  END_CATCH
 
   return res;
 }
@@ -112,15 +111,14 @@ value_rtti_type (struct value *v, int *full,
 
   if ((current_cp_abi.rtti_type) == NULL)
     return NULL;
-  TRY
+  try
     {
       ret = (*current_cp_abi.rtti_type) (v, full, top, using_enc);
     }
-  CATCH (e, RETURN_MASK_ERROR)
+  catch (const gdb_exception_error &e)
     {
       return NULL;
     }
-  END_CATCH
 
   return ret;
 }

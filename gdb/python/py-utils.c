@@ -240,7 +240,7 @@ gdbpy_convert_exception (struct gdb_exception exception)
   else
     exc_class = gdbpy_gdb_error;
 
-  PyErr_Format (exc_class, "%s", exception.message);
+  PyErr_Format (exc_class, "%s", exception.what ());
 }
 
 /* Converts OBJ to a CORE_ADDR value.
@@ -254,15 +254,14 @@ get_addr_from_python (PyObject *obj, CORE_ADDR *addr)
   if (gdbpy_is_value_object (obj))
     {
 
-      TRY
+      try
 	{
 	  *addr = value_as_address (value_object_to_value (obj));
 	}
-      CATCH (except, RETURN_MASK_ALL)
+      catch (const gdb_exception &except)
 	{
 	  GDB_PY_SET_HANDLE_EXCEPTION (except);
 	}
-      END_CATCH
     }
   else
     {
