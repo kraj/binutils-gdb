@@ -1,0 +1,800 @@
+From 4a93c4f4c8b34ae66fe6404344bb4f71d3ec0ce0 Mon Sep 17 00:00:00 2001
+From: "H.J. Lu" <hjl.tools@gmail.com>
+Date: Sat, 6 Apr 2019 07:59:49 -0700
+Subject: [PATCH] x86: Add -z cet-report=[none|warning|error]
+
+Add -z cet-report=[none|warning|error] to report the missing Intel
+Indirect Branch Tracking (IBT) and Shadow Stack (SHSTK) properties
+in input .note.gnu.property section.  -z cet-report=none, which is
+the default, will make the linker not report missing properties in
+input files.  -z cet-report=warning will make the linker issue a
+warning for missing properties in input files.  -z cet-report=error
+will make the linker issue an error for missing properties in input
+files.  Note that -z ibt will turn off the missing IBT property report
+and -z shstk will turn off the missing SHSTK property report.
+Supported for Linux/i386 and Linux/x86_64.
+
+bfd/
+
+	* elf-linker-x86.h (elf_x86_cet_report): New.
+	(elf_linker_x86_params): Add cet_report.
+	* elfxx-x86.c (_bfd_x86_elf_link_setup_gnu_properties): Report
+	missing IBT and SHSTK properties if needed.
+
+ld/
+
+	* ld.texi: Document -z cet-report=[none|warning|error].
+	* emulparams/cet.sh: Add -z cet-report=[none|warning|error].
+	* testsuite/ld-i386/i386.exp: Run -z cet-report=[warning|error]
+	tests.
+	* testsuite/ld-x86-64/x86-64.exp: Likewise.
+	* testsuite/ld-i386/property-x86-cet1.d: New file.
+	* testsuite/ld-i386/property-x86-cet2a.d: Likewise.
+	* testsuite/ld-i386/property-x86-cet2b.d: Likewise.
+	* testsuite/ld-i386/property-x86-cet3a.d: Likewise.
+	* testsuite/ld-i386/property-x86-cet3b.d: Likewise.
+	* testsuite/ld-i386/property-x86-cet4a.d: Likewise.
+	* testsuite/ld-i386/property-x86-cet4b.d: Likewise.
+	* testsuite/ld-i386/property-x86-cet5a.d: Likewise.
+	* testsuite/ld-i386/property-x86-cet5b.d: Likewise.
+	* testsuite/ld-i386/property-x86-cet6.d: Likewise.
+	* testsuite/ld-x86-64/property-x86-cet.s: Likewise.
+	* testsuite/ld-x86-64/property-x86-cet1-x32.d: Likewise.
+	* testsuite/ld-x86-64/property-x86-cet1.d: Likewise.
+	* testsuite/ld-x86-64/property-x86-cet2a-x32.d: Likewise.
+	* testsuite/ld-x86-64/property-x86-cet2a.d: Likewise.
+	* testsuite/ld-x86-64/property-x86-cet2b-x32.d: Likewise.
+	* testsuite/ld-x86-64/property-x86-cet2b.d: Likewise.
+	* testsuite/ld-x86-64/property-x86-cet3a-x32.d: Likewise.
+	* testsuite/ld-x86-64/property-x86-cet3a.d: Likewise.
+	* testsuite/ld-x86-64/property-x86-cet3b-x32.d: Likewise.
+	* testsuite/ld-x86-64/property-x86-cet3b.d: Likewise.
+	* testsuite/ld-x86-64/property-x86-cet4a-x32.d: Likewise.
+	* testsuite/ld-x86-64/property-x86-cet4a.d: Likewise.
+	* testsuite/ld-x86-64/property-x86-cet4b-x32.d: Likewise.
+	* testsuite/ld-x86-64/property-x86-cet4b.d: Likewise.
+	* testsuite/ld-x86-64/property-x86-cet5a-x32.d: Likewise.
+	* testsuite/ld-x86-64/property-x86-cet5a.d: Likewise.
+	* testsuite/ld-x86-64/property-x86-cet5b-x32.d: Likewise.
+	* testsuite/ld-x86-64/property-x86-cet5b.d: Likewise.
+	* testsuite/ld-x86-64/property-x86-cet6-x32.d: Likewise.
+	* testsuite/ld-x86-64/property-x86-cet6.d: Likewise.
+
+x
+---
+ bfd/elf-linker-x86.h                          | 13 ++++
+ bfd/elfxx-x86.c                               | 60 ++++++++++++++++++-
+ ld/emulparams/cet.sh                          | 19 ++++++
+ ld/ld.texi                                    | 15 +++++
+ ld/testsuite/ld-i386/i386.exp                 | 10 ++++
+ ld/testsuite/ld-i386/property-x86-cet1.d      | 11 ++++
+ ld/testsuite/ld-i386/property-x86-cet2a.d     | 15 +++++
+ ld/testsuite/ld-i386/property-x86-cet2b.d     |  7 +++
+ ld/testsuite/ld-i386/property-x86-cet3a.d     |  4 ++
+ ld/testsuite/ld-i386/property-x86-cet3b.d     |  4 ++
+ ld/testsuite/ld-i386/property-x86-cet4a.d     |  4 ++
+ ld/testsuite/ld-i386/property-x86-cet4b.d     |  4 ++
+ ld/testsuite/ld-i386/property-x86-cet5a.d     | 10 ++++
+ ld/testsuite/ld-i386/property-x86-cet5b.d     | 11 ++++
+ ld/testsuite/ld-i386/property-x86-cet6.d      |  5 ++
+ ld/testsuite/ld-x86-64/property-x86-cet.s     | 27 +++++++++
+ .../ld-x86-64/property-x86-cet1-x32.d         | 11 ++++
+ ld/testsuite/ld-x86-64/property-x86-cet1.d    | 11 ++++
+ .../ld-x86-64/property-x86-cet2a-x32.d        | 15 +++++
+ ld/testsuite/ld-x86-64/property-x86-cet2a.d   | 15 +++++
+ .../ld-x86-64/property-x86-cet2b-x32.d        |  7 +++
+ ld/testsuite/ld-x86-64/property-x86-cet2b.d   |  7 +++
+ .../ld-x86-64/property-x86-cet3a-x32.d        |  4 ++
+ ld/testsuite/ld-x86-64/property-x86-cet3a.d   |  4 ++
+ .../ld-x86-64/property-x86-cet3b-x32.d        |  4 ++
+ ld/testsuite/ld-x86-64/property-x86-cet3b.d   |  4 ++
+ .../ld-x86-64/property-x86-cet4a-x32.d        |  4 ++
+ ld/testsuite/ld-x86-64/property-x86-cet4a.d   |  4 ++
+ .../ld-x86-64/property-x86-cet4b-x32.d        |  4 ++
+ ld/testsuite/ld-x86-64/property-x86-cet4b.d   |  4 ++
+ .../ld-x86-64/property-x86-cet5a-x32.d        | 10 ++++
+ ld/testsuite/ld-x86-64/property-x86-cet5a.d   | 10 ++++
+ .../ld-x86-64/property-x86-cet5b-x32.d        | 11 ++++
+ ld/testsuite/ld-x86-64/property-x86-cet5b.d   | 11 ++++
+ .../ld-x86-64/property-x86-cet6-x32.d         |  5 ++
+ ld/testsuite/ld-x86-64/property-x86-cet6.d    |  5 ++
+ ld/testsuite/ld-x86-64/x86-64.exp             | 20 +++++++
+ 37 files changed, 387 insertions(+), 2 deletions(-)
+ create mode 100644 ld/testsuite/ld-i386/property-x86-cet1.d
+ create mode 100644 ld/testsuite/ld-i386/property-x86-cet2a.d
+ create mode 100644 ld/testsuite/ld-i386/property-x86-cet2b.d
+ create mode 100644 ld/testsuite/ld-i386/property-x86-cet3a.d
+ create mode 100644 ld/testsuite/ld-i386/property-x86-cet3b.d
+ create mode 100644 ld/testsuite/ld-i386/property-x86-cet4a.d
+ create mode 100644 ld/testsuite/ld-i386/property-x86-cet4b.d
+ create mode 100644 ld/testsuite/ld-i386/property-x86-cet5a.d
+ create mode 100644 ld/testsuite/ld-i386/property-x86-cet5b.d
+ create mode 100644 ld/testsuite/ld-i386/property-x86-cet6.d
+ create mode 100644 ld/testsuite/ld-x86-64/property-x86-cet.s
+ create mode 100644 ld/testsuite/ld-x86-64/property-x86-cet1-x32.d
+ create mode 100644 ld/testsuite/ld-x86-64/property-x86-cet1.d
+ create mode 100644 ld/testsuite/ld-x86-64/property-x86-cet2a-x32.d
+ create mode 100644 ld/testsuite/ld-x86-64/property-x86-cet2a.d
+ create mode 100644 ld/testsuite/ld-x86-64/property-x86-cet2b-x32.d
+ create mode 100644 ld/testsuite/ld-x86-64/property-x86-cet2b.d
+ create mode 100644 ld/testsuite/ld-x86-64/property-x86-cet3a-x32.d
+ create mode 100644 ld/testsuite/ld-x86-64/property-x86-cet3a.d
+ create mode 100644 ld/testsuite/ld-x86-64/property-x86-cet3b-x32.d
+ create mode 100644 ld/testsuite/ld-x86-64/property-x86-cet3b.d
+ create mode 100644 ld/testsuite/ld-x86-64/property-x86-cet4a-x32.d
+ create mode 100644 ld/testsuite/ld-x86-64/property-x86-cet4a.d
+ create mode 100644 ld/testsuite/ld-x86-64/property-x86-cet4b-x32.d
+ create mode 100644 ld/testsuite/ld-x86-64/property-x86-cet4b.d
+ create mode 100644 ld/testsuite/ld-x86-64/property-x86-cet5a-x32.d
+ create mode 100644 ld/testsuite/ld-x86-64/property-x86-cet5a.d
+ create mode 100644 ld/testsuite/ld-x86-64/property-x86-cet5b-x32.d
+ create mode 100644 ld/testsuite/ld-x86-64/property-x86-cet5b.d
+ create mode 100644 ld/testsuite/ld-x86-64/property-x86-cet6-x32.d
+ create mode 100644 ld/testsuite/ld-x86-64/property-x86-cet6.d
+
+diff --git a/bfd/elf-linker-x86.h b/bfd/elf-linker-x86.h
+index bd14b7114b..0a6f167d0a 100644
+--- a/bfd/elf-linker-x86.h
++++ b/bfd/elf-linker-x86.h
+@@ -18,6 +18,16 @@
+    Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston,
+    MA 02110-1301, USA.  */
+ 
++/* Missing IBT and SHSTK property report control.  */
++enum elf_x86_cet_report
++{
++  cet_report_none	= 0,	    /* Do nonthing.  */
++  cet_report_warning	= 1 << 0,   /* Issue a warning.  */
++  cet_report_error	= 1 << 1,   /* Issue an error.  */
++  cet_report_ibt	= 1 << 2,   /* Report missing IBT property.  */
++  cet_report_shstk	= 1 << 3    /* Report missing SHSTK property.  */
++};
++
+ /* Used to pass x86-specific linker options from ld to bfd.  */
+ struct elf_linker_x86_params
+ {
+@@ -39,6 +49,9 @@ struct elf_linker_x86_params
+   /* TRUE if generate a 1-byte NOP as suffix for x86 call instruction.  */
+   unsigned int call_nop_as_suffix : 1;
+ 
++  /* Report missing IBT and SHSTK properties.  */
++  enum elf_x86_cet_report cet_report;
++
+   /* The 1-byte NOP for x86 call instruction.  */
+   char call_nop_byte;
+ };
+diff --git a/bfd/elfxx-x86.c b/bfd/elfxx-x86.c
+index 8d08a69d22..e661ad30c1 100644
+--- a/bfd/elfxx-x86.c
++++ b/bfd/elfxx-x86.c
+@@ -2583,9 +2583,17 @@ _bfd_x86_elf_link_setup_gnu_properties
+ 
+   features = 0;
+   if (htab->params->ibt)
+-    features = GNU_PROPERTY_X86_FEATURE_1_IBT;
++    {
++      features = GNU_PROPERTY_X86_FEATURE_1_IBT;
++      htab->params->cet_report &= ~cet_report_ibt;
++    }
+   if (htab->params->shstk)
+-    features |= GNU_PROPERTY_X86_FEATURE_1_SHSTK;
++    {
++      features |= GNU_PROPERTY_X86_FEATURE_1_SHSTK;
++      htab->params->cet_report &= ~cet_report_shstk;
++    }
++  if (!(htab->params->cet_report & (cet_report_ibt | cet_report_shstk)))
++    htab->params->cet_report = cet_report_none;
+ 
+   if (ebfd != NULL)
+     {
+@@ -2626,6 +2634,54 @@ error_alignment:
+ 	}
+     }
+ 
++  if (htab->params->cet_report)
++    {
++      /* Report missing IBT and SHSTK properties.  */
++      bfd *abfd;
++      const char *msg;
++      elf_property_list *p;
++      bfd_boolean missing_ibt, missing_shstk;
++      bfd_boolean check_ibt
++	= !!(htab->params->cet_report & cet_report_ibt);
++      bfd_boolean check_shstk
++	= !!(htab->params->cet_report & cet_report_shstk);
++
++      if ((htab->params->cet_report & cet_report_warning))
++	msg = _("%P: %pB: warning: missing %s\n");
++      else
++	msg = _("%X%P: %pB: error: missing %s\n");
++
++      for (abfd = info->input_bfds; abfd != NULL; abfd = abfd->link.next)
++	if (!(abfd->flags & (DYNAMIC | BFD_PLUGIN | BFD_LINKER_CREATED))
++	    && bfd_get_flavour (abfd) == bfd_target_elf_flavour)
++	  {
++	    for (p = elf_properties (abfd); p; p = p->next)
++	      if (p->property.pr_type == GNU_PROPERTY_X86_FEATURE_1_AND)
++		break;
++
++	    missing_ibt = check_ibt;
++	    missing_shstk = check_shstk;
++	    if (p)
++	      {
++		missing_ibt &= !(p->property.u.number
++				 & GNU_PROPERTY_X86_FEATURE_1_IBT);
++		missing_shstk &= !(p->property.u.number
++				   & GNU_PROPERTY_X86_FEATURE_1_SHSTK);
++	      }
++	    if (missing_ibt || missing_shstk)
++	      {
++		const char *missing;
++		if (missing_ibt && missing_shstk)
++		  missing = _("IBT and SHSTK properties");
++		else if (missing_ibt)
++		  missing = _("IBT property");
++		else
++		  missing = _("SHSTK property");
++		info->callbacks->einfo (msg, abfd, missing);
++	      }
++	  }
++    }
++
+   pbfd = _bfd_elf_link_setup_gnu_properties (info);
+ 
+   htab->r_info = init_table->r_info;
+diff --git a/ld/emulparams/cet.sh b/ld/emulparams/cet.sh
+index 1d45b16283..f9a83ec099 100644
+--- a/ld/emulparams/cet.sh
++++ b/ld/emulparams/cet.sh
+@@ -5,6 +5,9 @@ PARSE_AND_LIST_OPTIONS_CET='
+   -z ibt                      Generate GNU_PROPERTY_X86_FEATURE_1_IBT\n"));
+   fprintf (file, _("\
+   -z shstk                    Generate GNU_PROPERTY_X86_FEATURE_1_SHSTK\n"));
++  fprintf (file, _("\
++  -z cet-report=[none|warning|error] (default: none)\n\
++                              Report missing IBT and SHSTK properties\n"));
+ '
+ PARSE_AND_LIST_ARGS_CASE_Z_CET='
+       else if (strcmp (optarg, "ibtplt") == 0)
+@@ -13,6 +16,22 @@ PARSE_AND_LIST_ARGS_CASE_Z_CET='
+ 	params.ibt = TRUE;
+       else if (strcmp (optarg, "shstk") == 0)
+ 	params.shstk = TRUE;
++      else if (strncmp (optarg, "cet-report=", 11) == 0)
++	{
++	  if (strcmp (optarg + 11, "none") == 0)
++	    params.cet_report = cet_report_none;
++	  else if (strcmp (optarg + 11, "warning") == 0)
++	    params.cet_report = (cet_report_warning
++				 | cet_report_ibt
++				 | cet_report_shstk);
++	  else if (strcmp (optarg + 11, "error") == 0)
++	    params.cet_report = (cet_report_error
++				 | cet_report_ibt
++				 | cet_report_shstk);
++	  else
++	    einfo (_("%F%P: invalid option for -z cet-report=: %s\n"),
++		   optarg + 11);
++	}
+ '
+ 
+ PARSE_AND_LIST_OPTIONS="$PARSE_AND_LIST_OPTIONS $PARSE_AND_LIST_OPTIONS_CET"
+diff --git a/ld/ld.texi b/ld/ld.texi
+index 0bcbec463f..8e2ce869f8 100644
+--- a/ld/ld.texi
++++ b/ld/ld.texi
+@@ -1137,6 +1137,21 @@ to a locally defined function, foo, via its GOT slot.
+ @option{call-nop=suffix-@var{byte}} generates @code{call foo @var{byte}}.
+ Supported for i386 and x86_64.
+ 
++@item cet-report=none
++@itemx cet-report=warning
++@itemx cet-report=error
++Specify how to report the missing GNU_PROPERTY_X86_FEATURE_1_IBT and
++GNU_PROPERTY_X86_FEATURE_1_SHSTK properties in input .note.gnu.property
++section.  @option{cet-report=none}, which is the default, will make the
++linker not report missing properties in input files.
++@option{cet-report=warning} will make the linker issue a warning for
++missing properties in input files.  @option{cet-report=error} will make
++the linker issue an error for missing properties in input files.
++Note that @option{ibt} will turn off the missing
++GNU_PROPERTY_X86_FEATURE_1_IBT property report and @option{shstk} will
++turn off the missing GNU_PROPERTY_X86_FEATURE_1_SHSTK property report.
++Supported for Linux/i386 and Linux/x86_64.
++
+ @item combreloc
+ @itemx nocombreloc
+ Combine multiple dynamic relocation sections and sort to improve
+diff --git a/ld/testsuite/ld-i386/i386.exp b/ld/testsuite/ld-i386/i386.exp
+index 1a1a7500e9..e9c2cfb9f6 100644
+--- a/ld/testsuite/ld-i386/i386.exp
++++ b/ld/testsuite/ld-i386/i386.exp
+@@ -460,6 +460,16 @@ run_dump_test "property-x86-shstk3a"
+ run_dump_test "property-x86-shstk3b"
+ run_dump_test "property-x86-shstk4"
+ run_dump_test "property-x86-shstk5"
++run_dump_test "property-x86-cet1"
++run_dump_test "property-x86-cet2a"
++run_dump_test "property-x86-cet2b"
++run_dump_test "property-x86-cet3a"
++run_dump_test "property-x86-cet3b"
++run_dump_test "property-x86-cet4a"
++run_dump_test "property-x86-cet4b"
++run_dump_test "property-x86-cet5a"
++run_dump_test "property-x86-cet5b"
++run_dump_test "property-x86-cet6"
+ run_dump_test "pie1"
+ run_dump_test "pie1-nacl"
+ run_dump_test "pr21884"
+diff --git a/ld/testsuite/ld-i386/property-x86-cet1.d b/ld/testsuite/ld-i386/property-x86-cet1.d
+new file mode 100644
+index 0000000000..ed95d53f93
+--- /dev/null
++++ b/ld/testsuite/ld-i386/property-x86-cet1.d
+@@ -0,0 +1,11 @@
++#source: ../ld-x86-64/property-x86-cet.s
++#as: --32 -mx86-used-note=yes
++#ld: -r -m elf_i386 -z cet-report=error
++#readelf: -n
++
++Displaying notes found in: .note.gnu.property
++  Owner                 Data size	Description
++  GNU                  0x00000024	NT_GNU_PROPERTY_TYPE_0
++      Properties: x86 feature: IBT, SHSTK
++	x86 ISA used: <None>
++	x86 feature used: x86
+diff --git a/ld/testsuite/ld-i386/property-x86-cet2a.d b/ld/testsuite/ld-i386/property-x86-cet2a.d
+new file mode 100644
+index 0000000000..e049244b8c
+--- /dev/null
++++ b/ld/testsuite/ld-i386/property-x86-cet2a.d
+@@ -0,0 +1,15 @@
++#source: property-x86-empty.s
++#source: property-x86-ibt.s
++#source: property-x86-shstk.s
++#source: property-x86-3.s
++#as: --32 -mx86-used-note=yes
++#ld: -r -m elf_i386 -z cet-report=warning
++#warning: .*: warning: missing IBT and SHSTK properties.*: warning: missing SHSTK property.*: warning: missing IBT property.*: warning: missing IBT and SHSTK properties
++#readelf: -n
++
++Displaying notes found in: .note.gnu.property
++  Owner                 Data size	Description
++  GNU                  0x00000024	NT_GNU_PROPERTY_TYPE_0
++      Properties: x86 ISA needed: SSE, SSE3, SSE4_1, AVX
++	x86 ISA used: CMOV, SSE, SSSE3, SSE4_1
++	x86 feature used: x86
+diff --git a/ld/testsuite/ld-i386/property-x86-cet2b.d b/ld/testsuite/ld-i386/property-x86-cet2b.d
+new file mode 100644
+index 0000000000..fb3295db85
+--- /dev/null
++++ b/ld/testsuite/ld-i386/property-x86-cet2b.d
+@@ -0,0 +1,7 @@
++#source: property-x86-empty.s
++#source: property-x86-ibt.s
++#source: property-x86-shstk.s
++#source: property-x86-3.s
++#as: --32 -mx86-used-note=yes
++#ld: -r -m elf_i386 -z cet-report=error
++#error: .*: error: missing IBT and SHSTK properties.*: error: missing SHSTK property.*: error: missing IBT property.*: error: missing IBT and SHSTK properties
+diff --git a/ld/testsuite/ld-i386/property-x86-cet3a.d b/ld/testsuite/ld-i386/property-x86-cet3a.d
+new file mode 100644
+index 0000000000..d535953920
+--- /dev/null
++++ b/ld/testsuite/ld-i386/property-x86-cet3a.d
+@@ -0,0 +1,4 @@
++#source: property-x86-ibt.s
++#as: --32 -mx86-used-note=yes
++#ld: -r -m elf_i386 -z cet-report=error
++#error: .*: error: missing SHSTK property
+diff --git a/ld/testsuite/ld-i386/property-x86-cet3b.d b/ld/testsuite/ld-i386/property-x86-cet3b.d
+new file mode 100644
+index 0000000000..0d5aa99427
+--- /dev/null
++++ b/ld/testsuite/ld-i386/property-x86-cet3b.d
+@@ -0,0 +1,4 @@
++#source: property-x86-ibt.s
++#as: --32 -mx86-used-note=yes
++#ld: -r -m elf_i386 -z cet-report=error -z ibt
++#error: .*: error: missing SHSTK property
+diff --git a/ld/testsuite/ld-i386/property-x86-cet4a.d b/ld/testsuite/ld-i386/property-x86-cet4a.d
+new file mode 100644
+index 0000000000..f4de75e7bd
+--- /dev/null
++++ b/ld/testsuite/ld-i386/property-x86-cet4a.d
+@@ -0,0 +1,4 @@
++#source: property-x86-shstk.s
++#as: --32 -mx86-used-note=yes
++#ld: -r -m elf_i386 -z cet-report=error
++#error: .*: error: missing IBT property
+diff --git a/ld/testsuite/ld-i386/property-x86-cet4b.d b/ld/testsuite/ld-i386/property-x86-cet4b.d
+new file mode 100644
+index 0000000000..9bec35a06a
+--- /dev/null
++++ b/ld/testsuite/ld-i386/property-x86-cet4b.d
+@@ -0,0 +1,4 @@
++#source: property-x86-shstk.s
++#as: --32 -mx86-used-note=yes
++#ld: -r -m elf_i386 -z cet-report=error -z shstk
++#error: .*: error: missing IBT property
+diff --git a/ld/testsuite/ld-i386/property-x86-cet5a.d b/ld/testsuite/ld-i386/property-x86-cet5a.d
+new file mode 100644
+index 0000000000..a809a53081
+--- /dev/null
++++ b/ld/testsuite/ld-i386/property-x86-cet5a.d
+@@ -0,0 +1,10 @@
++#source: property-x86-empty.s
++#as: --32 -mx86-used-note=yes
++#ld: -r -m elf_i386 -z cet-report=error -z cet-report=none
++#readelf: -n
++
++Displaying notes found in: .note.gnu.property
++  Owner                 Data size	Description
++  GNU                  0x00000018	NT_GNU_PROPERTY_TYPE_0
++      Properties: x86 ISA used: <None>
++	x86 feature used: x86
+diff --git a/ld/testsuite/ld-i386/property-x86-cet5b.d b/ld/testsuite/ld-i386/property-x86-cet5b.d
+new file mode 100644
+index 0000000000..cce37df641
+--- /dev/null
++++ b/ld/testsuite/ld-i386/property-x86-cet5b.d
+@@ -0,0 +1,11 @@
++#source: property-x86-empty.s
++#as: --32 -mx86-used-note=yes
++#ld: -r -m elf_i386 -z cet-report=error -z ibt -z shstk
++#readelf: -n
++
++Displaying notes found in: .note.gnu.property
++  Owner                 Data size	Description
++  GNU                  0x00000024	NT_GNU_PROPERTY_TYPE_0
++      Properties: x86 feature: IBT, SHSTK
++	x86 ISA used: <None>
++	x86 feature used: x86
+diff --git a/ld/testsuite/ld-i386/property-x86-cet6.d b/ld/testsuite/ld-i386/property-x86-cet6.d
+new file mode 100644
+index 0000000000..bb4974db83
+--- /dev/null
++++ b/ld/testsuite/ld-i386/property-x86-cet6.d
+@@ -0,0 +1,5 @@
++#source: start.s
++#as: --32 -mx86-used-note=no
++#ld: -r -m elf_i386 -z cet-report=warning
++#warning: .*: warning: missing IBT and SHSTK properties
++#readelf: -n
+diff --git a/ld/testsuite/ld-x86-64/property-x86-cet.s b/ld/testsuite/ld-x86-64/property-x86-cet.s
+new file mode 100644
+index 0000000000..15989d6901
+--- /dev/null
++++ b/ld/testsuite/ld-x86-64/property-x86-cet.s
+@@ -0,0 +1,27 @@
++	.section ".note.gnu.property", "a"
++.ifdef __64_bit__
++	.p2align 3
++.else
++	.p2align 2
++.endif
++	.long 1f - 0f		/* name length */
++	.long 5f - 2f		/* data length */
++	.long 5			/* note type */
++0:	.asciz "GNU"		/* vendor name */
++1:
++.ifdef __64_bit__
++	.p2align 3
++.else
++	.p2align 2
++.endif
++2:	.long 0xc0000002	/* pr_type.  */
++	.long 4f - 3f		/* pr_datasz.  */
++3:
++	.long 0x3
++4:
++.ifdef __64_bit__
++	.p2align 3
++.else
++	.p2align 2
++.endif
++5:
+diff --git a/ld/testsuite/ld-x86-64/property-x86-cet1-x32.d b/ld/testsuite/ld-x86-64/property-x86-cet1-x32.d
+new file mode 100644
+index 0000000000..c317bffbb4
+--- /dev/null
++++ b/ld/testsuite/ld-x86-64/property-x86-cet1-x32.d
+@@ -0,0 +1,11 @@
++#source: property-x86-cet.s
++#as: --x32 -mx86-used-note=yes
++#ld: -r -m elf32_x86_64 -z cet-report=error
++#readelf: -n
++
++Displaying notes found in: .note.gnu.property
++  Owner                 Data size	Description
++  GNU                  0x00000024	NT_GNU_PROPERTY_TYPE_0
++      Properties: x86 feature: IBT, SHSTK
++	x86 ISA used: <None>
++	x86 feature used: x86
+diff --git a/ld/testsuite/ld-x86-64/property-x86-cet1.d b/ld/testsuite/ld-x86-64/property-x86-cet1.d
+new file mode 100644
+index 0000000000..06451775ef
+--- /dev/null
++++ b/ld/testsuite/ld-x86-64/property-x86-cet1.d
+@@ -0,0 +1,11 @@
++#source: property-x86-cet.s
++#as: --64 -defsym __64_bit__=1 -mx86-used-note=yes
++#ld: -r -melf_x86_64 -z cet-report=error
++#readelf: -n
++
++Displaying notes found in: .note.gnu.property
++  Owner                 Data size	Description
++  GNU                  0x00000030	NT_GNU_PROPERTY_TYPE_0
++      Properties: x86 feature: IBT, SHSTK
++	x86 ISA used: <None>
++	x86 feature used: x86
+diff --git a/ld/testsuite/ld-x86-64/property-x86-cet2a-x32.d b/ld/testsuite/ld-x86-64/property-x86-cet2a-x32.d
+new file mode 100644
+index 0000000000..b070f52bf9
+--- /dev/null
++++ b/ld/testsuite/ld-x86-64/property-x86-cet2a-x32.d
+@@ -0,0 +1,15 @@
++#source: property-x86-empty.s
++#source: property-x86-ibt.s
++#source: property-x86-shstk.s
++#source: property-x86-3.s
++#as: --x32 -mx86-used-note=yes
++#ld: -r -m elf32_x86_64 -z cet-report=warning
++#warning: .*: warning: missing IBT and SHSTK properties.*: warning: missing SHSTK property.*: warning: missing IBT property
++#readelf: -n
++
++Displaying notes found in: .note.gnu.property
++  Owner                 Data size	Description
++  GNU                  0x00000024	NT_GNU_PROPERTY_TYPE_0
++      Properties: x86 ISA needed: CMOV, SSE, SSSE3, SSE4_1
++	x86 ISA used: SSE, SSE3, SSE4_1, AVX
++	x86 feature used: x86
+diff --git a/ld/testsuite/ld-x86-64/property-x86-cet2a.d b/ld/testsuite/ld-x86-64/property-x86-cet2a.d
+new file mode 100644
+index 0000000000..18d24b6010
+--- /dev/null
++++ b/ld/testsuite/ld-x86-64/property-x86-cet2a.d
+@@ -0,0 +1,15 @@
++#source: property-x86-empty.s
++#source: property-x86-ibt.s
++#source: property-x86-shstk.s
++#source: property-x86-3.s
++#as: --64 -defsym __64_bit__=1 -mx86-used-note=yes
++#ld: -r -melf_x86_64 -z cet-report=warning
++#warning: .*: warning: missing IBT and SHSTK properties.*: warning: missing SHSTK property.*: warning: missing IBT property.*: warning: missing IBT and SHSTK properties
++#readelf: -n
++
++Displaying notes found in: .note.gnu.property
++  Owner                 Data size	Description
++  GNU                  0x00000030	NT_GNU_PROPERTY_TYPE_0
++      Properties: x86 ISA needed: CMOV, SSE, SSSE3, SSE4_1
++	x86 ISA used: SSE, SSE3, SSE4_1, AVX
++	x86 feature used: x86
+diff --git a/ld/testsuite/ld-x86-64/property-x86-cet2b-x32.d b/ld/testsuite/ld-x86-64/property-x86-cet2b-x32.d
+new file mode 100644
+index 0000000000..9e986c205c
+--- /dev/null
++++ b/ld/testsuite/ld-x86-64/property-x86-cet2b-x32.d
+@@ -0,0 +1,7 @@
++#source: property-x86-empty.s
++#source: property-x86-ibt.s
++#source: property-x86-shstk.s
++#source: property-x86-3.s
++#as: --x32 -mx86-used-note=yes
++#ld: -r -m elf32_x86_64 -z cet-report=error
++#error: .*: error: missing IBT and SHSTK properties.*: error: missing SHSTK property.*: error: missing IBT property.*: error: missing IBT and SHSTK properties
+diff --git a/ld/testsuite/ld-x86-64/property-x86-cet2b.d b/ld/testsuite/ld-x86-64/property-x86-cet2b.d
+new file mode 100644
+index 0000000000..97095b3ec2
+--- /dev/null
++++ b/ld/testsuite/ld-x86-64/property-x86-cet2b.d
+@@ -0,0 +1,7 @@
++#source: property-x86-empty.s
++#source: property-x86-ibt.s
++#source: property-x86-shstk.s
++#source: property-x86-3.s
++#as: --64 -defsym __64_bit__=1 -mx86-used-note=yes
++#ld: -r -melf_x86_64 -z cet-report=error
++#error: .*: error: missing IBT and SHSTK properties.*: error: missing SHSTK property.*: error: missing IBT property.*: error: missing IBT and SHSTK properties
+diff --git a/ld/testsuite/ld-x86-64/property-x86-cet3a-x32.d b/ld/testsuite/ld-x86-64/property-x86-cet3a-x32.d
+new file mode 100644
+index 0000000000..91de5a00a4
+--- /dev/null
++++ b/ld/testsuite/ld-x86-64/property-x86-cet3a-x32.d
+@@ -0,0 +1,4 @@
++#source: property-x86-ibt.s
++#as: --x32 -mx86-used-note=yes
++#ld: -r -m elf32_x86_64 -z cet-report=error
++#error: .*: error: missing SHSTK property
+diff --git a/ld/testsuite/ld-x86-64/property-x86-cet3a.d b/ld/testsuite/ld-x86-64/property-x86-cet3a.d
+new file mode 100644
+index 0000000000..3e085f597d
+--- /dev/null
++++ b/ld/testsuite/ld-x86-64/property-x86-cet3a.d
+@@ -0,0 +1,4 @@
++#source: property-x86-ibt.s
++#as: --64 -defsym __64_bit__=1 -mx86-used-note=yes
++#ld: -r -melf_x86_64 -z cet-report=error
++#error: .*: error: missing SHSTK property
+diff --git a/ld/testsuite/ld-x86-64/property-x86-cet3b-x32.d b/ld/testsuite/ld-x86-64/property-x86-cet3b-x32.d
+new file mode 100644
+index 0000000000..f56ce82c4e
+--- /dev/null
++++ b/ld/testsuite/ld-x86-64/property-x86-cet3b-x32.d
+@@ -0,0 +1,4 @@
++#source: property-x86-ibt.s
++#as: --x32 -mx86-used-note=yes
++#ld: -r -m elf32_x86_64 -z cet-report=error -z ibt
++#error: .*: error: missing SHSTK property
+diff --git a/ld/testsuite/ld-x86-64/property-x86-cet3b.d b/ld/testsuite/ld-x86-64/property-x86-cet3b.d
+new file mode 100644
+index 0000000000..812c27e287
+--- /dev/null
++++ b/ld/testsuite/ld-x86-64/property-x86-cet3b.d
+@@ -0,0 +1,4 @@
++#source: property-x86-ibt.s
++#as: --64 -defsym __64_bit__=1 -mx86-used-note=yes
++#ld: -r -melf_x86_64 -z cet-report=error -z ibt
++#error: .*: error: missing SHSTK property
+diff --git a/ld/testsuite/ld-x86-64/property-x86-cet4a-x32.d b/ld/testsuite/ld-x86-64/property-x86-cet4a-x32.d
+new file mode 100644
+index 0000000000..371d4b5ec1
+--- /dev/null
++++ b/ld/testsuite/ld-x86-64/property-x86-cet4a-x32.d
+@@ -0,0 +1,4 @@
++#source: property-x86-shstk.s
++#as: --x32 -mx86-used-note=yes
++#ld: -r -m elf32_x86_64 -z cet-report=error
++#error: .*: error: missing IBT property
+diff --git a/ld/testsuite/ld-x86-64/property-x86-cet4a.d b/ld/testsuite/ld-x86-64/property-x86-cet4a.d
+new file mode 100644
+index 0000000000..c199017898
+--- /dev/null
++++ b/ld/testsuite/ld-x86-64/property-x86-cet4a.d
+@@ -0,0 +1,4 @@
++#source: property-x86-shstk.s
++#as: --64 -defsym __64_bit__=1 -mx86-used-note=yes
++#ld: -r -melf_x86_64 -z cet-report=error
++#error: .*: error: missing IBT property
+diff --git a/ld/testsuite/ld-x86-64/property-x86-cet4b-x32.d b/ld/testsuite/ld-x86-64/property-x86-cet4b-x32.d
+new file mode 100644
+index 0000000000..e25791b7a6
+--- /dev/null
++++ b/ld/testsuite/ld-x86-64/property-x86-cet4b-x32.d
+@@ -0,0 +1,4 @@
++#source: property-x86-shstk.s
++#as: --x32 -mx86-used-note=yes
++#ld: -r -m elf32_x86_64 -z cet-report=error -z shstk
++#error: .*: error: missing IBT property
+diff --git a/ld/testsuite/ld-x86-64/property-x86-cet4b.d b/ld/testsuite/ld-x86-64/property-x86-cet4b.d
+new file mode 100644
+index 0000000000..9796116dee
+--- /dev/null
++++ b/ld/testsuite/ld-x86-64/property-x86-cet4b.d
+@@ -0,0 +1,4 @@
++#source: property-x86-shstk.s
++#as: --64 -defsym __64_bit__=1 -mx86-used-note=yes
++#ld: -r -melf_x86_64 -z cet-report=error -z shstk
++#error: .*: error: missing IBT property
+diff --git a/ld/testsuite/ld-x86-64/property-x86-cet5a-x32.d b/ld/testsuite/ld-x86-64/property-x86-cet5a-x32.d
+new file mode 100644
+index 0000000000..dbbc68cbe3
+--- /dev/null
++++ b/ld/testsuite/ld-x86-64/property-x86-cet5a-x32.d
+@@ -0,0 +1,10 @@
++#source: property-x86-empty.s
++#as: --x32 -mx86-used-note=yes
++#ld: -r -m elf32_x86_64 -z cet-report=error -z cet-report=none
++#readelf: -n
++
++Displaying notes found in: .note.gnu.property
++  Owner                 Data size	Description
++  GNU                  0x00000018	NT_GNU_PROPERTY_TYPE_0
++      Properties: x86 ISA used: <None>
++	x86 feature used: x86
+diff --git a/ld/testsuite/ld-x86-64/property-x86-cet5a.d b/ld/testsuite/ld-x86-64/property-x86-cet5a.d
+new file mode 100644
+index 0000000000..68703406cb
+--- /dev/null
++++ b/ld/testsuite/ld-x86-64/property-x86-cet5a.d
+@@ -0,0 +1,10 @@
++#source: property-x86-empty.s
++#as: --64 -defsym __64_bit__=1 -mx86-used-note=yes
++#ld: -r -melf_x86_64 -z cet-report=error -z cet-report=none
++#readelf: -n
++
++Displaying notes found in: .note.gnu.property
++  Owner                 Data size	Description
++  GNU                  0x00000020	NT_GNU_PROPERTY_TYPE_0
++      Properties: x86 ISA used: <None>
++	x86 feature used: x86
+diff --git a/ld/testsuite/ld-x86-64/property-x86-cet5b-x32.d b/ld/testsuite/ld-x86-64/property-x86-cet5b-x32.d
+new file mode 100644
+index 0000000000..576ba22a99
+--- /dev/null
++++ b/ld/testsuite/ld-x86-64/property-x86-cet5b-x32.d
+@@ -0,0 +1,11 @@
++#source: property-x86-empty.s
++#as: --x32 -mx86-used-note=yes
++#ld: -r -m elf32_x86_64 -z cet-report=error -z ibt -z shstk
++#readelf: -n
++
++Displaying notes found in: .note.gnu.property
++  Owner                 Data size	Description
++  GNU                  0x00000024	NT_GNU_PROPERTY_TYPE_0
++      Properties: x86 feature: IBT, SHSTK
++	x86 ISA used: <None>
++	x86 feature used: x86
+diff --git a/ld/testsuite/ld-x86-64/property-x86-cet5b.d b/ld/testsuite/ld-x86-64/property-x86-cet5b.d
+new file mode 100644
+index 0000000000..9f9d96edf2
+--- /dev/null
++++ b/ld/testsuite/ld-x86-64/property-x86-cet5b.d
+@@ -0,0 +1,11 @@
++#source: property-x86-empty.s
++#as: --64 -defsym __64_bit__=1 -mx86-used-note=yes
++#ld: -r -melf_x86_64 -z cet-report=error -z ibt -z shstk
++#readelf: -n
++
++Displaying notes found in: .note.gnu.property
++  Owner                 Data size	Description
++  GNU                  0x00000030	NT_GNU_PROPERTY_TYPE_0
++      Properties: x86 feature: IBT, SHSTK
++	x86 ISA used: <None>
++	x86 feature used: x86
+diff --git a/ld/testsuite/ld-x86-64/property-x86-cet6-x32.d b/ld/testsuite/ld-x86-64/property-x86-cet6-x32.d
+new file mode 100644
+index 0000000000..4b74e59493
+--- /dev/null
++++ b/ld/testsuite/ld-x86-64/property-x86-cet6-x32.d
+@@ -0,0 +1,5 @@
++#source: start.s
++#as: --x32 -mx86-used-note=no
++#ld: -r -m elf32_x86_64 -z cet-report=warning
++#warning: .*: warning: missing IBT and SHSTK properties
++#readelf: -n
+diff --git a/ld/testsuite/ld-x86-64/property-x86-cet6.d b/ld/testsuite/ld-x86-64/property-x86-cet6.d
+new file mode 100644
+index 0000000000..632cbc709f
+--- /dev/null
++++ b/ld/testsuite/ld-x86-64/property-x86-cet6.d
+@@ -0,0 +1,5 @@
++#source: start.s
++#as: --64 -defsym __64_bit__=1 -mx86-used-note=no
++#ld: -r -melf_x86_64 -z cet-report=warning
++#warning: .*: warning: missing IBT and SHSTK properties
++#readelf: -n
+diff --git a/ld/testsuite/ld-x86-64/x86-64.exp b/ld/testsuite/ld-x86-64/x86-64.exp
+index 47d92c9ab1..408e52a9f2 100644
+--- a/ld/testsuite/ld-x86-64/x86-64.exp
++++ b/ld/testsuite/ld-x86-64/x86-64.exp
+@@ -387,6 +387,26 @@ run_dump_test "property-x86-shstk4"
+ run_dump_test "property-x86-shstk4-x32"
+ run_dump_test "property-x86-shstk5"
+ run_dump_test "property-x86-shstk5-x32"
++run_dump_test "property-x86-cet1"
++run_dump_test "property-x86-cet1-x32"
++run_dump_test "property-x86-cet2a"
++run_dump_test "property-x86-cet2a-x32"
++run_dump_test "property-x86-cet2b"
++run_dump_test "property-x86-cet2b-x32"
++run_dump_test "property-x86-cet3a"
++run_dump_test "property-x86-cet3a-x32"
++run_dump_test "property-x86-cet3b"
++run_dump_test "property-x86-cet3b-x32"
++run_dump_test "property-x86-cet4a"
++run_dump_test "property-x86-cet4a-x32"
++run_dump_test "property-x86-cet4b"
++run_dump_test "property-x86-cet4b-x32"
++run_dump_test "property-x86-cet5a"
++run_dump_test "property-x86-cet5a-x32"
++run_dump_test "property-x86-cet5b"
++run_dump_test "property-x86-cet5b-x32"
++run_dump_test "property-x86-cet6"
++run_dump_test "property-x86-cet6-x32"
+ run_dump_test "pr21884"
+ run_dump_test "pr21884-nacl"
+ run_dump_test "pr22071"
+-- 
+2.20.1
+

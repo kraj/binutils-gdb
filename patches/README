@@ -25,6 +25,7 @@ patches="
 0001-gold-Ignore-gnu.build.attributes-section.patch
 0001-Don-t-claim-a-fat-IR-object-if-no-IR-object-should-b.patch
 0001-LTO-Properly-handle-wrapper-symbols-in-IR.patch
+0001-x86-Add-z-cet-report-none-warning-error.patch
 	binutils-lto-mixed.patch
 	binutils-lto-mixed-test.patch
 	binutils-lto-mixed-plugin.patch
