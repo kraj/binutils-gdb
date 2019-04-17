@@ -300,7 +300,7 @@ internal_vproblem (struct internal_problem *problem,
 
   /* Don't allow infinite error/warning recursion.  */
   {
-    static char msg[] = "Recursive internal problem.\n";
+    static const char msg[] = "Recursive internal problem.\n";
 
     switch (dejavu)
       {
@@ -1550,10 +1550,6 @@ prompt_for_continue (void)
      need to save the ---Type <return>--- line at the top of the screen.  */
   reinitialize_more_filter ();
   pagination_disabled_for_command = disable_pagination;
-
-  /* Restore the current styling.  */
-  if (can_emit_style_escape (gdb_stdout))
-    emit_style_escape (applied_style);
 
   dont_repeat ();		/* Forget prev cmd -- CR won't repeat it.  */
 }

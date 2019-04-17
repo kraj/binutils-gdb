@@ -1,5 +1,6 @@
 #source: relax-3.s
 #objdump: -dwr
+#notarget: *-*-solaris*
 
 .*: +file format .*
 

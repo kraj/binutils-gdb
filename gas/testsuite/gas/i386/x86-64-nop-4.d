@@ -1,6 +1,7 @@
 #source: nop-4.s
 #objdump: -drw
 #name: x86-64 .nops 4
+#notarget: *-*-solaris*
 
 .*: +file format .*
 

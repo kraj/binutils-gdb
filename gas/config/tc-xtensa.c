@@ -497,6 +497,7 @@ static fixS *xg_append_jump (fragS *fragP, symbolS *sym, offsetT offset);
 static void xtensa_maybe_create_literal_pool_frag (bfd_boolean, bfd_boolean);
 static bfd_boolean auto_litpools = FALSE;
 static int auto_litpool_limit = 0;
+static bfd_boolean xtensa_is_init_fini (segT seg);
 
 /* Alignment Functions.  */
 
@@ -1530,7 +1531,6 @@ xtensa_literal_pseudo (int ignored ATTRIBUTE_UNUSED)
   emit_state state;
   char *p, *base_name;
   char c;
-  segT dest_seg;
 
   if (inside_directive (directive_literal))
     {
@@ -1546,20 +1546,9 @@ xtensa_literal_pseudo (int ignored ATTRIBUTE_UNUSED)
   saved_insn_labels = insn_labels;
   insn_labels = NULL;
 
-  /* If we are using text-section literals, then this is the right value... */
-  dest_seg = now_seg;
-
   base_name = input_line_pointer;
 
   xtensa_switch_to_literal_fragment (&state);
-
-  /* ...but if we aren't using text-section-literals, then we
-     need to put them in the section we just switched to.  */
-  if (use_literal_section || directive_state[directive_absolute_literals])
-    dest_seg = now_seg;
-
-  /* FIXME, despite the previous comments, dest_seg is unused...  */
-  (void) dest_seg;
 
   /* All literals are aligned to four-byte boundaries.  */
   frag_align (2, 0, 0);
@@ -4797,7 +4786,6 @@ xtensa_mark_literal_pool_location (void)
 {
   /* Any labels pointing to the current location need
      to be adjusted to after the literal pool.  */
-  emit_state s;
   fragS *pool_location;
 
   if (use_literal_section)
@@ -4818,19 +4806,7 @@ xtensa_mark_literal_pool_location (void)
 		RELAX_LITERAL_POOL_END, NULL, 0, NULL);
   xtensa_set_frag_assembly_state (frag_now);
 
-  /* Now put a frag into the literal pool that points to this location.  */
   set_literal_pool_location (now_seg, pool_location);
-  xtensa_switch_to_non_abs_literal_fragment (&s);
-  frag_align (2, 0, 0);
-  record_alignment (now_seg, 2);
-
-  /* Close whatever frag is there.  */
-  frag_variant (rs_fill, 0, 0, 0, NULL, 0, NULL);
-  xtensa_set_frag_assembly_state (frag_now);
-  frag_now->tc_frag_data.literal_frag = pool_location;
-  frag_variant (rs_fill, 0, 0, 0, NULL, 0, NULL);
-  xtensa_restore_emit_state (&s);
-  xtensa_set_frag_assembly_state (frag_now);
 }
 
 
@@ -4914,29 +4890,32 @@ get_expanded_loop_offset (xtensa_opcode opcode)
 static fragS *
 get_literal_pool_location (segT seg)
 {
-  struct litpool_seg *lps = litpool_seg_list.next;
-  struct litpool_frag *lpf;
-  for ( ; lps && lps->seg->id != seg->id; lps = lps->next)
-    ;
-  if (lps)
+  if (auto_litpools)
     {
-      for (lpf = lps->frag_list.prev; lpf->fragP; lpf = lpf->prev)
-	{ /* Skip "candidates" for now.  */
-	  if (lpf->fragP->fr_subtype == RELAX_LITERAL_POOL_BEGIN &&
-	      lpf->priority == 1)
-	    return lpf->fragP;
-	}
-      /* Must convert a lower-priority pool.  */
-      for (lpf = lps->frag_list.prev; lpf->fragP; lpf = lpf->prev)
+      struct litpool_seg *lps = litpool_seg_list.next;
+      struct litpool_frag *lpf;
+      for ( ; lps && lps->seg->id != seg->id; lps = lps->next)
+	;
+      if (lps)
 	{
-	  if (lpf->fragP->fr_subtype == RELAX_LITERAL_POOL_BEGIN)
-	    return lpf->fragP;
-	}
-      /* Still no match -- try for a low priority pool.  */
-      for (lpf = lps->frag_list.prev; lpf->fragP; lpf = lpf->prev)
-	{
-	  if (lpf->fragP->fr_subtype == RELAX_LITERAL_POOL_CANDIDATE_BEGIN)
-	    return lpf->fragP;
+	  for (lpf = lps->frag_list.prev; lpf->fragP; lpf = lpf->prev)
+	    { /* Skip "candidates" for now.  */
+	      if (lpf->fragP->fr_subtype == RELAX_LITERAL_POOL_BEGIN &&
+		  lpf->priority == 1)
+		return lpf->fragP;
+	    }
+	  /* Must convert a lower-priority pool.  */
+	  for (lpf = lps->frag_list.prev; lpf->fragP; lpf = lpf->prev)
+	    {
+	      if (lpf->fragP->fr_subtype == RELAX_LITERAL_POOL_BEGIN)
+		return lpf->fragP;
+	    }
+	  /* Still no match -- try for a low priority pool.  */
+	  for (lpf = lps->frag_list.prev; lpf->fragP; lpf = lpf->prev)
+	    {
+	      if (lpf->fragP->fr_subtype == RELAX_LITERAL_POOL_CANDIDATE_BEGIN)
+		return lpf->fragP;
+	    }
 	}
     }
   return seg_info (seg)->tc_segment_info_data.literal_pool_loc;
@@ -5334,6 +5313,9 @@ md_begin (void)
   /* Set up the assembly state.  */
   if (!frag_now->tc_frag_data.is_assembly_state_set)
     xtensa_set_frag_assembly_state (frag_now);
+
+  if (!use_literal_section)
+    xtensa_mark_literal_pool_location ();
 }
 
 
@@ -5933,6 +5915,11 @@ xtensa_elf_section_change_hook (void)
   /* Set up the assembly state.  */
   if (!frag_now->tc_frag_data.is_assembly_state_set)
     xtensa_set_frag_assembly_state (frag_now);
+
+  if (!use_literal_section
+      && seg_info (now_seg)->tc_segment_info_data.literal_pool_loc == NULL
+      && !xtensa_is_init_fini (now_seg))
+    xtensa_mark_literal_pool_location ();
 }
 
 
@@ -8308,7 +8295,7 @@ next_instrs_are_b_retw (fragS *fragP)
   static xtensa_insnbuf insnbuf = NULL;
   static xtensa_insnbuf slotbuf = NULL;
   xtensa_isa isa = xtensa_default_isa;
-  int offset = 0;
+  unsigned int offset = 0;
   int slot;
   bfd_boolean branch_seen = FALSE;
 
@@ -8701,7 +8688,7 @@ unrelaxed_frag_min_insn_count (fragS *fragP)
   xtensa_isa isa = xtensa_default_isa;
   static xtensa_insnbuf insnbuf = NULL;
   int insn_count = 0;
-  int offset = 0;
+  unsigned int offset = 0;
 
   if (!fragP->tc_frag_data.is_insn)
     return insn_count;
@@ -8754,7 +8741,7 @@ unrelaxed_frag_has_b_j (fragS *fragP)
 {
   static xtensa_insnbuf insnbuf = NULL;
   xtensa_isa isa = xtensa_default_isa;
-  int offset = 0;
+  unsigned int offset = 0;
 
   if (!fragP->tc_frag_data.is_insn)
     return FALSE;
@@ -11173,29 +11160,9 @@ static bfd_boolean xtensa_is_init_fini (segT seg)
 }
 
 static void
-xtensa_move_literals (void)
+xtensa_assign_litpool_addresses (void)
 {
-  seg_list *segment;
-  frchainS *frchain_from, *frchain_to;
-  fragS *search_frag, *next_frag, *literal_pool, *insert_after;
-  fragS **frag_splice;
-  emit_state state;
-  segT dest_seg;
-  fixS *fix, *next_fix, **fix_splice;
-  sym_list *lit;
   struct litpool_seg *lps;
-  const char *init_name = INIT_SECTION_NAME;
-  const char *fini_name = FINI_SECTION_NAME;
-  int init_name_len = strlen(init_name);
-  int fini_name_len = strlen(fini_name);
-
-  mark_literal_frags (literal_head->next);
-
-  if (use_literal_section)
-    return;
-
-  /* Assign addresses (rough estimates) to the potential literal pool locations
-     and create new ones if the gaps are too large.  */
 
   for (lps = litpool_seg_list.next; lps; lps = lps->next)
     {
@@ -11252,7 +11219,35 @@ xtensa_move_literals (void)
 	    }
 	}
     }
+}
 
+static void
+xtensa_move_literals (void)
+{
+  seg_list *segment;
+  frchainS *frchain_from, *frchain_to;
+  fragS *search_frag, *next_frag, *literal_pool, *insert_after;
+  fragS **frag_splice;
+  emit_state state;
+  segT dest_seg;
+  fixS *fix, *next_fix, **fix_splice;
+  sym_list *lit;
+  const char *init_name = INIT_SECTION_NAME;
+  const char *fini_name = FINI_SECTION_NAME;
+  int init_name_len = strlen(init_name);
+  int fini_name_len = strlen(fini_name);
+
+  mark_literal_frags (literal_head->next);
+
+  if (use_literal_section)
+    return;
+
+  /* Assign addresses (rough estimates) to the potential literal pool locations
+     and create new ones if the gaps are too large.  */
+
+  xtensa_assign_litpool_addresses ();
+
+  /* Walk through the literal segments.  */
   for (segment = literal_head->next; segment; segment = segment->next)
     {
       const char *seg_name = segment_name (segment->seg);
@@ -11278,12 +11273,7 @@ xtensa_move_literals (void)
 	}
 
       if (!search_frag)
-	{
-	  search_frag = frchain_from->frch_root;
-	  as_bad_where (search_frag->fr_file, search_frag->fr_line,
-			_("literal pool location required for text-section-literals; specify with .literal_position"));
-	  continue;
-	}
+	continue;
 
       gas_assert (search_frag->tc_frag_data.literal_frag->fr_subtype
 	      == RELAX_LITERAL_POOL_BEGIN);

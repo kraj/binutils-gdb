@@ -111,7 +111,8 @@
 #define TAG_CPU_ARCH_V8R	15
 #define TAG_CPU_ARCH_V8M_BASE	16
 #define TAG_CPU_ARCH_V8M_MAIN	17
-#define MAX_TAG_CPU_ARCH	TAG_CPU_ARCH_V8M_MAIN
+#define TAG_CPU_ARCH_V8_1M_MAIN 21
+#define MAX_TAG_CPU_ARCH	TAG_CPU_ARCH_V8_1M_MAIN
 /* Pseudo-architecture to allow objects to be compatible with the subset of
    armv4t and armv6-m.  This value should never be stored in object files.  */
 #define TAG_CPU_ARCH_V4T_PLUS_V6_M (MAX_TAG_CPU_ARCH + 1)
@@ -240,6 +241,9 @@ START_RELOC_NUMBERS (elf_arm_reloc_type)
   RELOC_NUMBER (R_ARM_THM_ALU_ABS_G1_NC,133)
   RELOC_NUMBER (R_ARM_THM_ALU_ABS_G2_NC,134)
   RELOC_NUMBER (R_ARM_THM_ALU_ABS_G3_NC,135)
+  RELOC_NUMBER (R_ARM_THM_BF16,		136)
+  RELOC_NUMBER (R_ARM_THM_BF12,		137)
+  RELOC_NUMBER (R_ARM_THM_BF18,		138)
 
   RELOC_NUMBER (R_ARM_IRELATIVE,      	160)
   RELOC_NUMBER (R_ARM_GOTFUNCDESC,    	161)

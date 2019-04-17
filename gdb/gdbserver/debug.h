@@ -19,19 +19,24 @@
 #ifndef GDBSERVER_DEBUG_H
 #define GDBSERVER_DEBUG_H
 
-/* We declare debug format variables here, and debug_threads but no other
-   debug content variables (e.g., not remote_debug) because while this file
-   is not currently used by IPA it may be some day, and IPA may have its own
-   set of debug content variables.  It's ok to declare debug_threads here
-   because it is misnamed - a better name is debug_basic or some such,
-   which can work for any program, gdbserver or IPA.  If/when this file is
-   used with IPA it is recommended to fix debug_thread's name.  */
+#if !defined (IN_PROCESS_AGENT)
+extern int remote_debug;
+
+/* Switch all debug output to DEBUG_FILE.  If DEBUG_FILE is nullptr or an
+   empty string, or if the file cannot be opened, then debug output is sent to
+   stderr.  */
+void debug_set_output (const char *debug_file);
+#endif
+
 extern int debug_threads;
 extern int debug_timestamp;
 
 void debug_flush (void);
 void do_debug_enter (const char *function_name);
 void do_debug_exit (const char *function_name);
+
+/* Async signal safe debug output function that calls write directly.  */
+size_t debug_write (const void *buf, size_t nbyte);
 
 /* These macros are for use in major functions that produce a lot of
    debugging output.  They help identify in the mass of debugging output

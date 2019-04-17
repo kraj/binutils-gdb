@@ -1,6 +1,7 @@
 #as: -mx86-used-note=no
 #objdump: -Drw
 #name: x86-64 relocs
+#notarget: *-*-solaris*
 
 .*: +file format .*x86-64.*
 

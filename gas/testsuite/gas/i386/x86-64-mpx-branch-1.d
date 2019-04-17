@@ -1,6 +1,7 @@
 #as: -J
 #objdump: -dwr
 #name: x86-64 MPX branch
+#notarget: *-*-solaris*
 
 .*: +file format .*
 

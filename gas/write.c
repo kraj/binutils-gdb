@@ -143,8 +143,8 @@ static int n_fixups;
 
 static fixS *
 fix_new_internal (fragS *frag,		/* Which frag?  */
-		  int where,		/* Where in that frag?  */
-		  int size,		/* 1, 2, or 4 usually.  */
+		  unsigned long where,	/* Where in that frag?  */
+		  unsigned long size,	/* 1, 2, or 4 usually.  */
 		  symbolS *add_symbol,	/* X_add_symbol.  */
 		  symbolS *sub_symbol,	/* X_op_symbol.  */
 		  offsetT offset,	/* X_add_number.  */
@@ -164,7 +164,7 @@ fix_new_internal (fragS *frag,		/* Which frag?  */
   /* We've made fx_size a narrow field; check that it's wide enough.  */
   if (fixP->fx_size != size)
     {
-      as_bad (_("field fx_size too small to hold %d"), size);
+      as_bad (_("field fx_size too small to hold %lu"), size);
       abort ();
     }
   fixP->fx_addsy = add_symbol;
@@ -174,9 +174,7 @@ fix_new_internal (fragS *frag,		/* Which frag?  */
   fixP->fx_dot_frag = dot_frag;
   fixP->fx_pcrel = pcrel;
   fixP->fx_r_type = r_type;
-  fixP->fx_im_disp = 0;
   fixP->fx_pcrel_adjust = 0;
-  fixP->fx_bit_fixP = 0;
   fixP->fx_addnumber = 0;
   fixP->fx_tcbit = 0;
   fixP->fx_tcbit2 = 0;
@@ -228,10 +226,10 @@ fix_new_internal (fragS *frag,		/* Which frag?  */
 /* Create a fixup relative to a symbol (plus a constant).  */
 
 fixS *
-fix_new (fragS *frag,		/* Which frag?  */
-	 int where,			/* Where in that frag?  */
-	 int size,			/* 1, 2, or 4 usually.  */
-	 symbolS *add_symbol,	/* X_add_symbol.  */
+fix_new (fragS *frag,			/* Which frag?  */
+	 unsigned long where,		/* Where in that frag?  */
+	 unsigned long size,		/* 1, 2, or 4 usually.  */
+	 symbolS *add_symbol,		/* X_add_symbol.  */
 	 offsetT offset,		/* X_add_number.  */
 	 int pcrel,			/* TRUE if PC-relative relocation.  */
 	 RELOC_ENUM r_type		/* Relocation type.  */)
@@ -246,8 +244,8 @@ fix_new (fragS *frag,		/* Which frag?  */
 
 fixS *
 fix_new_exp (fragS *frag,		/* Which frag?  */
-	     int where,			/* Where in that frag?  */
-	     int size,			/* 1, 2, or 4 usually.  */
+	     unsigned long where,	/* Where in that frag?  */
+	     unsigned long size,	/* 1, 2, or 4 usually.  */
 	     expressionS *exp,		/* Expression.  */
 	     int pcrel,			/* TRUE if PC-relative relocation.  */
 	     RELOC_ENUM r_type		/* Relocation type.  */)
@@ -313,7 +311,7 @@ fix_new_exp (fragS *frag,		/* Which frag?  */
    as for fix_new, except that WHERE is implicitly 0.  */
 
 fixS *
-fix_at_start (fragS *frag, int size, symbolS *add_symbol,
+fix_at_start (fragS *frag, unsigned long size, symbolS *add_symbol,
 	      offsetT offset, int pcrel, RELOC_ENUM r_type)
 {
   return fix_new_internal (frag, 0, size, add_symbol,
@@ -502,8 +500,8 @@ skip_align:
       md_convert_frag (stdoutput, sec, fragP);
 
       gas_assert (fragP->fr_next == NULL
-	      || ((offsetT) (fragP->fr_next->fr_address - fragP->fr_address)
-		  == fragP->fr_fix));
+		  || (fragP->fr_next->fr_address - fragP->fr_address
+		      == fragP->fr_fix));
 
       /* After md_convert_frag, we make the frag into a ".space 0".
 	 md_convert_frag() should set up any fixSs and constants
@@ -1093,7 +1091,7 @@ fixup_segment (fixS *fixP, segT this_segment)
 	    symbol_mark_used_in_reloc (fixP->fx_subsy);
 	}
 
-      if (!fixP->fx_bit_fixP && !fixP->fx_no_overflow && fixP->fx_size != 0)
+      if (!fixP->fx_no_overflow && fixP->fx_size != 0)
 	{
 	  if (fixP->fx_size < sizeof (valueT))
 	    {
@@ -1131,7 +1129,7 @@ fixup_segment (fixS *fixP, segT this_segment)
 			  (long) add_number,
 			  (long) (fragP->fr_address + fixP->fx_where));
 #endif
-	}			/* Not a bit fix.  */
+	}
 
 #ifdef TC_VALIDATE_FIX
     skip:  ATTRIBUTE_UNUSED_LABEL
@@ -1264,7 +1262,7 @@ write_relocs (bfd *abfd, asection *sec, void *xxx ATTRIBUTE_UNUSED)
   for (fixp = seginfo->fix_root; fixp != (fixS *) NULL; fixp = fixp->fx_next)
     {
       int fx_size, slack;
-      offsetT loc;
+      valueT loc;
       arelent **reloc;
 #ifndef RELOC_EXPANSION_POSSIBLE
       arelent *rel;
@@ -3142,14 +3140,6 @@ print_fixup (fixS *fixp)
     fprintf (stderr, " pcrel");
   if (fixp->fx_pcrel_adjust)
     fprintf (stderr, " pcrel_adjust=%d", fixp->fx_pcrel_adjust);
-  if (fixp->fx_im_disp)
-    {
-#ifdef TC_NS32K
-      fprintf (stderr, " im_disp=%d", fixp->fx_im_disp);
-#else
-      fprintf (stderr, " im_disp");
-#endif
-    }
   if (fixp->fx_tcbit)
     fprintf (stderr, " tcbit");
   if (fixp->fx_done)

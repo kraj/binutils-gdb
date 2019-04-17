@@ -665,6 +665,7 @@ aarch64_analyze_prologue_test (void)
     };
     instruction_reader_test reader (insns);
 
+    trad_frame_reset_saved_regs (gdbarch, cache.saved_regs);
     CORE_ADDR end = aarch64_analyze_prologue (gdbarch, 0, 128, &cache, reader);
 
     SELF_CHECK (end == 4 * 5);
@@ -707,6 +708,7 @@ aarch64_analyze_prologue_test (void)
       };
       instruction_reader_test reader (insns);
 
+      trad_frame_reset_saved_regs (gdbarch, cache.saved_regs);
       CORE_ADDR end = aarch64_analyze_prologue (gdbarch, 0, 128, &cache,
 						reader);
 
@@ -3190,36 +3192,53 @@ aarch64_cannot_store_register (struct gdbarch *gdbarch, int regnum)
 static struct gdbarch *
 aarch64_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
 {
-  struct gdbarch_tdep *tdep;
-  struct gdbarch *gdbarch;
-  struct gdbarch_list *best_arch;
-  struct tdesc_arch_data *tdesc_data = NULL;
-  const struct target_desc *tdesc = info.target_desc;
-  int i;
-  int valid_p = 1;
-  const struct tdesc_feature *feature_core;
-  const struct tdesc_feature *feature_fpu;
-  const struct tdesc_feature *feature_sve;
+  const struct tdesc_feature *feature_core, *feature_fpu, *feature_sve;
   const struct tdesc_feature *feature_pauth;
-  int num_regs = 0;
-  int num_pseudo_regs = 0;
-  int first_pauth_regnum = -1;
-  int pauth_ra_state_offset = -1;
+  bool valid_p = true;
+  int i, num_regs = 0, num_pseudo_regs = 0;
+  int first_pauth_regnum = -1, pauth_ra_state_offset = -1;
 
-  /* Ensure we always have a target description.  */
-  if (!tdesc_has_registers (tdesc))
-    tdesc = aarch64_read_description (0, false);
+  /* Use the vector length passed via the target info.  Here -1 is used for no
+     SVE, and 0 is unset.  If unset then use the vector length from the existing
+     tdesc.  */
+  uint64_t vq = 0;
+  if (info.id == (int *) -1)
+    vq = 0;
+  else if (info.id != 0)
+    vq = (uint64_t) info.id;
+  else
+    vq = aarch64_get_tdesc_vq (info.target_desc);
+
+  if (vq > AARCH64_MAX_SVE_VQ)
+    internal_error (__FILE__, __LINE__, _("VQ out of bounds: %ld (max %d)"),
+		    vq, AARCH64_MAX_SVE_VQ);
+
+  /* If there is already a candidate, use it.  */
+  for (gdbarch_list *best_arch = gdbarch_list_lookup_by_info (arches, &info);
+       best_arch != nullptr;
+       best_arch = gdbarch_list_lookup_by_info (best_arch->next, &info))
+    {
+      struct gdbarch_tdep *tdep = gdbarch_tdep (best_arch->gdbarch);
+      if (tdep && tdep->vq == vq)
+	return best_arch->gdbarch;
+    }
+
+  /* Ensure we always have a target descriptor, and that it is for the given VQ
+     value.  */
+  const struct target_desc *tdesc = info.target_desc;
+  if (!tdesc_has_registers (tdesc) || vq != aarch64_get_tdesc_vq (tdesc))
+    tdesc = aarch64_read_description (vq, false);
   gdb_assert (tdesc);
 
-  feature_core = tdesc_find_feature (tdesc, "org.gnu.gdb.aarch64.core");
+  feature_core = tdesc_find_feature (tdesc,"org.gnu.gdb.aarch64.core");
   feature_fpu = tdesc_find_feature (tdesc, "org.gnu.gdb.aarch64.fpu");
   feature_sve = tdesc_find_feature (tdesc, "org.gnu.gdb.aarch64.sve");
   feature_pauth = tdesc_find_feature (tdesc, "org.gnu.gdb.aarch64.pauth");
 
-  if (feature_core == NULL)
-    return NULL;
+  if (feature_core == nullptr)
+    return nullptr;
 
-  tdesc_data = tdesc_data_alloc ();
+  struct tdesc_arch_data *tdesc_data = tdesc_data_alloc ();
 
   /* Validate the description provides the mandatory core R registers
      and allocate their numbers.  */
@@ -3231,9 +3250,9 @@ aarch64_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
   num_regs = AARCH64_X0_REGNUM + i;
 
   /* Add the V registers.  */
-  if (feature_fpu != NULL)
+  if (feature_fpu != nullptr)
     {
-      if (feature_sve != NULL)
+      if (feature_sve != nullptr)
 	error (_("Program contains both fpu and SVE features."));
 
       /* Validate the description provides the mandatory V registers
@@ -3247,7 +3266,7 @@ aarch64_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
     }
 
   /* Add the SVE registers.  */
-  if (feature_sve != NULL)
+  if (feature_sve != nullptr)
     {
       /* Validate the description provides the mandatory SVE registers
 	 and allocate their numbers.  */
@@ -3260,7 +3279,7 @@ aarch64_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
       num_pseudo_regs += 32;	/* add the Vn register pseudos.  */
     }
 
-  if (feature_fpu != NULL || feature_sve != NULL)
+  if (feature_fpu != nullptr || feature_sve != nullptr)
     {
       num_pseudo_regs += 32;	/* add the Qn scalar register pseudos */
       num_pseudo_regs += 32;	/* add the Dn scalar register pseudos */
@@ -3288,40 +3307,23 @@ aarch64_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
   if (!valid_p)
     {
       tdesc_data_cleanup (tdesc_data);
-      return NULL;
+      return nullptr;
     }
 
   /* AArch64 code is always little-endian.  */
   info.byte_order_for_code = BFD_ENDIAN_LITTLE;
 
-  /* If there is already a candidate, use it.  */
-  for (best_arch = gdbarch_list_lookup_by_info (arches, &info);
-       best_arch != NULL;
-       best_arch = gdbarch_list_lookup_by_info (best_arch->next, &info))
-    {
-      /* Found a match.  */
-      break;
-    }
-
-  if (best_arch != NULL)
-    {
-      if (tdesc_data != NULL)
-	tdesc_data_cleanup (tdesc_data);
-      return best_arch->gdbarch;
-    }
-
-  tdep = XCNEW (struct gdbarch_tdep);
-  gdbarch = gdbarch_alloc (&info, tdep);
+  struct gdbarch_tdep *tdep = XCNEW (struct gdbarch_tdep);
+  struct gdbarch *gdbarch = gdbarch_alloc (&info, tdep);
 
   /* This should be low enough for everything.  */
   tdep->lowest_pc = 0x20;
   tdep->jb_pc = -1;		/* Longjump support not enabled by default.  */
   tdep->jb_elt_size = 8;
-  tdep->vq = aarch64_get_tdesc_vq (tdesc);
+  tdep->vq = vq;
   tdep->pauth_reg_base = first_pauth_regnum;
   tdep->pauth_ra_state_regnum = (feature_pauth == NULL) ? -1
 				: pauth_ra_state_offset + num_regs;
-
 
   set_gdbarch_push_dummy_call (gdbarch, aarch64_push_dummy_call);
   set_gdbarch_frame_align (gdbarch, aarch64_frame_align);

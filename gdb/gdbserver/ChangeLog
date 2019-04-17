@@ -1,3 +1,38 @@
+2019-04-17  Alan Hayward  <alan.hayward@arm.com>
+
+	* ax.c (ax_vdebug): Call debug_printf.
+	* debug.c (debug_write): New function.
+	* debug.h (debug_write): New declaration.
+	* linux-low.c (sigchld_handler): Call debug_write.
+
+2019-04-17  Alan Hayward  <alan.hayward@arm.com>
+
+	* debug.c (debug_set_output): New function.
+	(debug_vprintf): Send output to debug_file.
+	(debug_flush): Likewise.
+	* debug.h (debug_set_output): New declaration.
+	* server.c (handle_monitor_command): Add debug-file option.
+	(captured_main): Likewise.
+
+2019-04-17  Alan Hayward  <alan.hayward@arm.com>
+
+	* debug.c (remote_debug): Add definition.
+	* debug.h (remote_debug): Add declaration.
+	* hostio.c (remote_debug): Remove declaration.
+	* remote-utils.c (struct ui_file): Likewise.
+	(remote_debug): Likewise.
+	* remote-utils.h (remote_debug): Likewise,
+	* server.c (remote_debug): Remove definition.
+
+2019-04-10  Kevin Buettner  <kevinb@redhat.com>
+
+	* linux-x86-low.c (x86_fill_gregset): Sign extend EAX value
+	when using a 64-bit gdbserver.
+
+2019-04-09  Tom Tromey  <tromey@adacore.com>
+
+	* linux-low.c (select_event_lwp): Use find_thread_in_random.
+
 2019-04-08  Tom Tromey  <tom@tromey.com>
 
 	* linux-low.c (linux_detach_one_lwp): Replace throw_exception with

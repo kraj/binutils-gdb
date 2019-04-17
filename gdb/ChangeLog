@@ -1,3 +1,182 @@
+2019-04-17  Tom Tromey  <tromey@adacore.com>
+
+	* dwarf2read.c (dwarf2_init_complex_target_type): Check "tt"
+	against nullptr before use.
+
+2019-04-17  Alan Hayward  <alan.hayward@arm.com>
+
+	* nat/linux-waitpid.c (linux_debug): Call debug_vprintf.
+
+2019-04-17  Jim Wilson  <jimw@sifive.com>
+	    Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* riscv-tdep.c (riscv_breakpoint_kind_from_pc): Hanndle case where
+	code read might fail, assume 4-byte breakpoint in that case.
+
+2019-04-15  Leszek Swirski  <leszeks@google.com>
+
+	* amd64-tdep.c (amd64_classify_aggregate): Use cp_pass_by_reference
+	rather than a hand-rolled POD check when checking for forced MEMORY
+	classification.
+
+2019-04-15  Alan Hayward  <alan.hayward@arm.com>
+
+	* aarch64-linux-nat.c (store_sveregs_to_thread): Set vector length.
+	* nat/aarch64-sve-linux-ptrace.c (aarch64_sve_set_vq): New
+	function.
+	(aarch64_sve_regs_copy_to_reg_buf): Remove VG checks.
+	(aarch64_sve_regs_copy_from_reg_buf): Likewise.
+	* nat/aarch64-sve-linux-ptrace.h (aarch64_sve_set_vq): New
+	declaration.
+
+2019-04-15  Alan Hayward  <alan.hayward@arm.com>
+
+	* aarch64-linux-nat.c
+	(aarch64_linux_nat_target::thread_architecture): Add override.
+	* aarch64-tdep.c (aarch64_gdbarch_init): Ensure different tdesc for
+	each VQ.
+
+2019-04-15  Alan Hayward  <alan.hayward@arm.com>
+
+	* aarch64-tdep.c (aarch64_gdbarch_init): Move gdbarch lookup.
+
+2019-04-13  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* dwarf2read.c (dwarf2_init_complex_target_type): Handle complex
+	target types of size 96-bits, add some additional comments, and
+	check that the builtin type we found was the correct size.
+
+2019-04-12  Eli Zaretskii  <eliz@gnu.org>
+
+	* utils.c (prompt_for_continue): Don't restore the styling at the
+	end, as applied_style has the wrong value.  This fixes styling in
+	long lists of file names that are interrupted by the "Continue?"
+	prompt.
+
+2019-04-12  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* ada-lang.c (ada_language_defn): Remove use of LANG_MAGIC.
+	* c-lang.c (c_language_defn): Likewise.
+	(cplus_language_defn): Likewise.
+	(asm_language_defn): Likewise.
+	(minimal_language_defn): Likewise.
+	* d-lang.c (d_language_defn): Likewise.
+	* f-lang.c (f_language_defn): Likewise.
+	* go-lang.c (go_language_defn): Likewise.
+	* language.c (unknown_language_defn): Likewise.
+	(auto_language_defn): Likewise.
+	* language.h (struct language_defn): Remove la_magic field.
+	(LANG_MAGIC): Delete.
+	* m2-lang.c (m2_language_defn): Remove use of LANG_MAGIC.
+	* objc-lang.c (objc_language_defn): Likewise.
+	* opencl-lang.c (opencl_language_defn): Likewise.
+	* p-lang.c (pascal_language_defn): Likewise.
+	* rust-lang.c (rust_language_defn): Likewise.
+
+2019-04-11  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* riscv-tdep.c (riscv_type_align): New function.
+	(riscv_type_alignment): Delete.
+	(riscv_arg_location): Use 'type_align'.
+	(riscv_gdbarch_init): Register riscv_type_align gdbarch function.
+
+2019-04-11  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdbtypes.c (type_align): A struct with no non-static fields also
+	has alignment of 1.
+
+2019-04-11  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* riscv-tdep.c (riscv_call_arg_complex_float): Fix offset of first
+	component to 0.
+	(riscv_struct_info::riscv_struct_info): Initialise m_offsets
+	member.
+	(riscv_struct_info::analyse): New implementation using new
+	analyse_inner member function.
+	(riscv_struct_info::field_offset): New member function.
+	(riscv_struct_info::m_offsets): New member variable.
+	(riscv_struct_info::analyse_inner): New private member function,
+	takes the old implementation of riscv_struct_info::analyse but
+	extended to track field offsets.
+	(riscv_call_arg_struct): Update the struct folding special cases
+	to handle cases where empty C++ structs, which are non-zero
+	length, are found.
+	(riscv_arg_location): Initialise the length of each location, a
+	non-zero length now indicates the location is in use.
+	(riscv_push_dummy_call): Allow for the first location having a
+	non-zero offset when setting up arguments.
+	(riscv_return_value): Likewise, but for return values.
+
+2019-04-11  Tom Tromey  <tromey@adacore.com>
+
+	* utils.c (internal_vproblem): Make "msg" const.
+
+2019-04-11  Alan Hayward  <alan.hayward@arm.com>
+
+	* aarch64-tdep.c (aarch64_analyze_prologue_test): Reset saved regs.
+	* trad-frame.c (trad_frame_reset_saved_regs): New function.
+	(trad_frame_alloc_saved_regs): Call trad_frame_reset_saved_regs.
+	* trad-frame.h (trad_frame_reset_saved_regs): New declaration.
+
+2019-04-10  Kevin Buettner  <kevinb@redhat.com>
+
+	* amd64-linux-nat.c (amd64_linux_collect_native_gregset): New
+	function.
+	(fill_gregset): Call amd64_linux_collect_native_gregset instead
+	of amd64_collect_native_gregset.
+	(amd64_linux_nat_target::store_registers): Likewise.
+
+2019-04-10  Tom Tromey  <tom@tromey.com>
+
+	* symtab.c (lookup_global_symbol_from_objfile)
+	(lookup_symbol_in_objfile_from_linkage_name): Use the iterator.
+	* objfiles.h (class separate_debug_iterator): New.
+	(class separate_debug_range): New.
+	(struct objfile) <separate_debug_objfiles>: New method.
+	(objfile_separate_debug_iterate): Don't declare.
+	* objfiles.c (separate_debug_iterator::operator++): Rename from
+	objfile_separate_debug_iterate.
+	(objfile_relocate, objfile_rebase, objfile_has_symbols): Use the
+	iterator.
+	* minsyms.c (lookup_minimal_symbol_by_pc_section): Use the
+	iterator.
+
+2019-04-10  Tom Tromey  <tom@tromey.com>
+
+	* symfile.c (reread_symbols): Remove old comment.
+	* objfiles.c (free_all_objfiles): Fix a typo.
+
+2019-04-10  Tom Tromey  <tom@tromey.com>
+
+	* ia64-tdep.c (ia64_get_dyn_info_list): Use foreach.
+	* minsyms.c (lookup_minimal_symbol): Use foreach.
+	(lookup_minimal_symbol_text, lookup_minimal_symbol_by_pc_name)
+	(lookup_minimal_symbol_solib_trampoline): Likewise.
+	* symfile.c (reread_symbols): Use foreach.
+
+2019-04-09  Ivan Begert  <ivanbegert@gmail.com>
+	    Tom Tromey  <tromey@adacore.com>
+
+	PR rust/24414:
+	* rust-exp.y (rust_parser::lex_number): Use strtoulst.
+	(rust_lex_int_test): Change "value" to be LONGEST.
+	(rust_lex_tests): Add test for long integer literal.
+
+2019-04-09  Tom Tromey  <tromey@adacore.com>
+
+	* remote.c (remote_target::remote_add_inferior): Change fake_pid_p
+	to bool.
+	(extended_remote_target::attach): Update.
+	(remote_target::remote_notice_new_inferior): Update.
+	(remote_target::add_current_inferior_and_thread): Update.
+	* inferior.c (exit_inferior_1): Use "false".
+	* corelow.c (add_to_thread_list): Make fake_pid_p bool.
+
+2019-04-09  Simon Marchi  <simon.marchi@efficios.com>
+
+	* infcmd.c (run_command_1): Pass -qualified to tbreak when using
+	the "start" command.
+
 2019-04-08  Kevin Buettner  <kevinb@redhat.com>
 
 	* python/py-inferior.c (infpy_thread_from_thread_handle):

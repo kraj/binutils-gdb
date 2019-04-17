@@ -2274,6 +2274,7 @@ enum bfd_architecture
 #define bfd_mach_arm_8R        24
 #define bfd_mach_arm_8M_BASE   25
 #define bfd_mach_arm_8M_MAIN   26
+#define bfd_mach_arm_8_1M_MAIN 27
   bfd_arch_nds32,     /* Andes NDS32.  */
 #define bfd_mach_n1            1
 #define bfd_mach_n1h           2
@@ -3563,6 +3564,24 @@ field in the instruction.  */
 /* ARM 26-bit pc-relative branch for B or conditional BL instruction.  */
   BFD_RELOC_ARM_PCREL_JUMP,
 
+/* ARM 5-bit pc-relative branch for Branch Future instructions.  */
+  BFD_RELOC_THUMB_PCREL_BRANCH5,
+
+/* ARM 6-bit pc-relative branch for BFCSEL instruction.  */
+  BFD_RELOC_THUMB_PCREL_BFCSEL,
+
+/* ARM 17-bit pc-relative branch for Branch Future instructions.  */
+  BFD_RELOC_ARM_THUMB_BF17,
+
+/* ARM 13-bit pc-relative branch for BFCSEL instruction.  */
+  BFD_RELOC_ARM_THUMB_BF13,
+
+/* ARM 19-bit pc-relative branch for Branch Future Link instruction.  */
+  BFD_RELOC_ARM_THUMB_BF19,
+
+/* ARM 12-bit pc-relative branch for Low Overhead Loop instructions.  */
+  BFD_RELOC_ARM_THUMB_LOOP12,
+
 /* Thumb 7-, 9-, 12-, 20-, 23-, and 25-bit pc-relative branches.
 The lowest bit must be zero and is not stored in the instruction.
 Note that the corresponding ELF R_ARM_THM_JUMPnn constant has an
@@ -3703,6 +3722,7 @@ pc-relative or some form of GOT-indirect relocation.  */
   BFD_RELOC_ARM_CP_OFF_IMM_S2,
   BFD_RELOC_ARM_T32_CP_OFF_IMM,
   BFD_RELOC_ARM_T32_CP_OFF_IMM_S2,
+  BFD_RELOC_ARM_T32_VLDR_VSTR_OFF_IMM,
   BFD_RELOC_ARM_ADR_IMM,
   BFD_RELOC_ARM_LDR_IMM,
   BFD_RELOC_ARM_LITERAL,

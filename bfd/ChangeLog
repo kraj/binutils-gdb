@@ -1,3 +1,148 @@
+2019-04-17  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* elf64-x86-64.c (elf_x86_64_need_pic): Suggest -fPIE when not
+	building shared object.
+	* elfxx-x86.c (_bfd_x86_elf_size_dynamic_sections): Likewise.
+
+2019-04-17  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/24458
+	* elfxx-x86.h (SYMBOL_DEFINED_NON_SHARED_P): Also check x86
+	linker_def.
+
+2019-04-15  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	* reloc.c (BFD_RELOC_ARM_T32_VLDR_VSTR_OFF_IMM): New internal
+	relocation.
+	* bfd-in2.h: Regenerate.
+	* libbfd.h: Likewise.
+
+2019-04-15  Sudakshina Das  <sudi.das@arm.com>
+
+	* reloc.c (BFD_RELOC_ARM_THUMB_LOOP12): New.
+	* bfd-in2.h: Regenerated.
+	* libbfd.h: Regenerated.
+
+2019-04-15  Sudakshina Das  <sudi.das@arm.com>
+
+	* reloc.c (BFD_RELOC_THUMB_PCREL_BFCSEL): New relocation.
+	* bfd-in2.h: Regenerated.
+	* libbfd.h: Likewise.
+
+2019-04-15  Sudakshina Das  <sudi.das@arm.com>
+
+	* reloc.c (BFD_RELOC_ARM_THUMB_BF13): New.
+	* bfd-in2.h: Regenerated.
+	* libbfd.h: Regenerated.
+	* elf32-arm.c (elf32_arm_howto_table_1): New entry for R_ARM_THM_BF13.
+	(elf32_arm_reloc_map elf32_arm_reloc_map): Map BFD_RELOC_ARM_THUMB_BF13
+	and R_ARM_THM_BF12 together.
+	(elf32_arm_final_link_relocate): New switch case for R_ARM_THM_BF13.
+
+2019-04-15  Sudakshina Das  <sudi.das@arm.com>
+
+	* reloc.c (BFD_RELOC_ARM_THUMB_BF19): New
+	* libbfd.h: Regenerated.
+	* bfd-in2.h: Regenerated.
+	* bfd-elf32-arm.c (elf32_arm_howto_table_1): New entry for R_ARM_THM_BF18.
+	(elf32_arm_reloc_map elf32_arm_reloc_map): Map BFD_RELOC_ARM_THUMB_BF19
+	and R_ARM_THM_BF18 together.
+	(elf32_arm_final_link_relocate): New switch case for R_ARM_THM_BF19.
+
+2019-04-15  Sudakshina Das  <sudi.das@arm.com>
+
+	* reloc.c (BFD_RELOC_ARM_THUMB_BF17): New enum.
+	* bfd-in2.h: Regenerated.
+	* libbfd.h: Regenerated.
+	* bfd-elf32-arm.c (elf32_arm_howto_table_1): New entry for R_ARM_THM_BF16.
+	(elf32_arm_reloc_map elf32_arm_reloc_map): Map BFD_RELOC_ARM_THUMB_BF17
+	and R_ARM_THM_BF16 together.
+	(get_value_helper): New reloc helper.
+	(elf32_arm_final_link_relocate): New switch case for R_ARM_THM_BF16.
+
+2019-04-15  Sudakshina Das  <sudi.das@arm.com>
+
+	* reloc.c (BFD_RELOC_THUMB_PCREL_BRANCH5): New enum.
+	* bfd-in2.h: Regenerate.
+	* libbfd.h: Regenerate.
+
+2019-04-15  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	* archures.c (bfd_mach_arm_8_1M_MAIN): Define.
+	* bfd-in2.h: Regenerate.
+	* cpu-arm.c (arch_info_struct): Add entry for Armv8.1-M Mainline.
+	* elf32-arm.c (using_thumb_only): Return true for Armv8.1-M Mainline
+	and update assert.
+	(using_thumb2): Likewise.
+	(using_thumb2_bl): Update assert.
+	(arch_has_arm_nop): Likewise.
+	(bfd_arm_get_mach_from_attributes): Add case for Armv8.1-M Mainline.
+	(tag_cpu_arch_combine): Add logic for Armv8.1-M Mainline merging.
+
+2019-04-11  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* elf-linker-x86.h (elf_x86_cet_report): New.
+	(elf_linker_x86_params): Add cet_report.
+	* elfxx-x86.c (_bfd_x86_elf_link_setup_gnu_properties): Report
+	missing IBT and SHSTK properties if needed.
+
+2019-04-11  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/24436
+	* elf-m10300.c (mn10300_elf_check_relocs): Remove BFD_ASSERT of
+	"h != NULL".  Don't check "h != NULL" before calling.
+	bfd_elf_gc_record_vtentry.
+	* elf32-arm.c (elf32_arm_check_relocs): Likewise.
+	* elf32-bfin.c (bfin_check_relocs): Likewise.
+	* elf32-cris.c (cris_elf_check_relocs): Likewise.
+	* elf32-csky.c (csky_elf_check_relocs): Likewise.
+	* elf32-d10v.c (elf32_d10v_check_relocs): Likewise.
+	* elf32-dlx.c (elf32_dlx_check_relocs): Likewise.
+	* elf32-fr30.c (fr30_elf_check_relocs): Likewise.
+	* elf32-frv.c (elf32_frv_check_relocs): Likewise.
+	* elf32-hppa.c (elf32_hppa_check_relocs): Likewise.
+	* elf32-i386.c (elf_i386_check_relocs): Likewise.
+	* elf32-iq2000.c (iq2000_elf_check_relocs): Likewise.
+	* elf32-m32r.c (m32r_elf_check_relocs): Likewise.
+	* elf32-m68hc1x.c (elf32_m68hc11_check_relocs): Likewise.
+	* elf32-m68k.c (elf_m68k_check_relocs): Likewise.
+	* elf32-mcore.c (mcore_elf_check_relocs): Likewise.
+	* elf32-metag.c (elf_metag_check_relocs): Likewise.
+	* elf32-or1k.c (or1k_elf_check_relocs): Likewise.
+	* elf32-ppc.c (ppc_elf_check_relocs): Likewise.
+	* elf32-s390.c (elf_s390_check_relocs): Likewise.
+	* elf32-sh.c (sh_elf_check_relocs): Likewise.
+	* elf32-v850.c (v850_elf_check_relocs): Likewise.
+	* elf32-vax.c (elf_vax_check_relocs): Likewise.
+	* elf32-xstormy16.c (xstormy16_elf_check_relocs): Likewise.
+	* elf32-xtensa.c (elf_xtensa_check_relocs): Likewise.
+	* elf64-mmix.c (mmix_elf_check_relocs): Likewise.
+	* elf64-ppc.c (ppc64_elf_check_relocs): Likewise.
+	* elf64-s390.c (elf_s390_check_relocs): Likewise.
+	* elf64-x86-64.c (elf_s390_check_relocs): Likewise.
+	* elfxx-mips.c (_bfd_mips_elf_check_relocs): Likewise.
+	* elfxx-sparc.c (_bfd_sparc_elf_check_relocs): Likewise.
+	* elflink.c (bfd_elf_gc_record_vtinherit): Check for corrupt
+	VTENTRY entry.
+
+2019-04-11  Alan Modra  <amodra@gmail.com>
+
+	PR 24435
+	* elflink.c (elf_link_add_object_symbols): Don't read partial
+	dynamic entries from fuzzed objects.
+
+2019-04-11  Tamar Christina  <tamar.christina@arm.com>
+
+	PR ld/24302
+	* elfnn-aarch64.c (elfNN_aarch64_size_dynamic_sections): Don't emit
+	DT_TLSDESC_GOT and DT_TLSDESC_PLT when DF_BIND_NOW.
+	(elfNN_aarch64_finish_dynamic_sections): Don't write PLT if DF_BIND_NOW.
+
+2019-04-10  Michael Forney  <mforney@mforney.org>
+
+	PR 24427
+	* doc/chew.c (free_words): Correctly free "push_text" strings.
+
 2019-04-08  H.J. Lu  <hongjiu.lu@intel.com>
 
 	* config.bfd: Remove i[3-7]86-*-kaos* and i[3-7]86-*-chaos targets.

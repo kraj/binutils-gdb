@@ -1742,6 +1742,46 @@ static reloc_howto_type elf32_arm_howto_table_1[] =
 	 0x00000000,		/* src_mask.  */
 	 0x00000000,		/* dst_mask.  */
 	 FALSE),		/* pcrel_offset.  */
+  /* Relocations for Armv8.1-M Mainline.  */
+  HOWTO (R_ARM_THM_BF16,	/* type.  */
+	 0,			/* rightshift.  */
+	 1,			/* size (0 = byte, 1 = short, 2 = long).  */
+	 16,			/* bitsize.  */
+	 TRUE,			/* pc_relative.  */
+	 0,			/* bitpos.  */
+	 complain_overflow_dont,/* do not complain_on_overflow.  */
+	 bfd_elf_generic_reloc,	/* special_function.  */
+	 "R_ARM_THM_BF16",	/* name.  */
+	 FALSE,			/* partial_inplace.  */
+	 0x001f0ffe,		/* src_mask.  */
+	 0x001f0ffe,		/* dst_mask.  */
+	 TRUE),			/* pcrel_offset.  */
+  HOWTO (R_ARM_THM_BF12,	/* type.  */
+	 0,			/* rightshift.  */
+	 1,			/* size (0 = byte, 1 = short, 2 = long).  */
+	 12,			/* bitsize.  */
+	 TRUE,			/* pc_relative.  */
+	 0,			/* bitpos.  */
+	 complain_overflow_dont,/* do not complain_on_overflow.  */
+	 bfd_elf_generic_reloc,	/* special_function.  */
+	 "R_ARM_THM_BF12",	/* name.  */
+	 FALSE,			/* partial_inplace.  */
+	 0x00010ffe,		/* src_mask.  */
+	 0x00010ffe,		/* dst_mask.  */
+	 TRUE),			/* pcrel_offset.  */
+  HOWTO (R_ARM_THM_BF18,	/* type.  */
+	 0,			/* rightshift.  */
+	 1,			/* size (0 = byte, 1 = short, 2 = long).  */
+	 18,			/* bitsize.  */
+	 TRUE,			/* pc_relative.  */
+	 0,			/* bitpos.  */
+	 complain_overflow_dont,/* do not complain_on_overflow.  */
+	 bfd_elf_generic_reloc,	/* special_function.  */
+	 "R_ARM_THM_BF18",	/* name.  */
+	 FALSE,			/* partial_inplace.  */
+	 0x007f0ffe,		/* src_mask.  */
+	 0x007f0ffe,		/* dst_mask.  */
+	 TRUE),			/* pcrel_offset.  */
 };
 
 /* 160 onwards: */
@@ -2053,7 +2093,10 @@ static const struct elf32_arm_reloc_map elf32_arm_reloc_map[] =
     {BFD_RELOC_ARM_THUMB_ALU_ABS_G3_NC, R_ARM_THM_ALU_ABS_G3_NC},
     {BFD_RELOC_ARM_THUMB_ALU_ABS_G2_NC, R_ARM_THM_ALU_ABS_G2_NC},
     {BFD_RELOC_ARM_THUMB_ALU_ABS_G1_NC, R_ARM_THM_ALU_ABS_G1_NC},
-    {BFD_RELOC_ARM_THUMB_ALU_ABS_G0_NC, R_ARM_THM_ALU_ABS_G0_NC}
+    {BFD_RELOC_ARM_THUMB_ALU_ABS_G0_NC, R_ARM_THM_ALU_ABS_G0_NC},
+    {BFD_RELOC_ARM_THUMB_BF17, R_ARM_THM_BF16},
+    {BFD_RELOC_ARM_THUMB_BF13, R_ARM_THM_BF12},
+    {BFD_RELOC_ARM_THUMB_BF19, R_ARM_THM_BF18}
   };
 
 static reloc_howto_type *
@@ -3835,13 +3878,14 @@ using_thumb_only (struct elf32_arm_link_hash_table *globals)
   arch = bfd_elf_get_obj_attr_int (globals->obfd, OBJ_ATTR_PROC, Tag_CPU_arch);
 
   /* Force return logic to be reviewed for each new architecture.  */
-  BFD_ASSERT (arch <= TAG_CPU_ARCH_V8M_MAIN);
+  BFD_ASSERT (arch <= TAG_CPU_ARCH_V8_1M_MAIN);
 
   if (arch == TAG_CPU_ARCH_V6_M
       || arch == TAG_CPU_ARCH_V6S_M
       || arch == TAG_CPU_ARCH_V7E_M
       || arch == TAG_CPU_ARCH_V8M_BASE
-      || arch == TAG_CPU_ARCH_V8M_MAIN)
+      || arch == TAG_CPU_ARCH_V8M_MAIN
+      || arch == TAG_CPU_ARCH_V8_1M_MAIN)
     return TRUE;
 
   return FALSE;
@@ -3862,14 +3906,15 @@ using_thumb2 (struct elf32_arm_link_hash_table *globals)
   arch = bfd_elf_get_obj_attr_int (globals->obfd, OBJ_ATTR_PROC, Tag_CPU_arch);
 
   /* Force return logic to be reviewed for each new architecture.  */
-  BFD_ASSERT (arch <= TAG_CPU_ARCH_V8M_MAIN);
+  BFD_ASSERT (arch <= TAG_CPU_ARCH_V8_1M_MAIN);
 
   return (arch == TAG_CPU_ARCH_V6T2
 	  || arch == TAG_CPU_ARCH_V7
 	  || arch == TAG_CPU_ARCH_V7E_M
 	  || arch == TAG_CPU_ARCH_V8
 	  || arch == TAG_CPU_ARCH_V8R
-	  || arch == TAG_CPU_ARCH_V8M_MAIN);
+	  || arch == TAG_CPU_ARCH_V8M_MAIN
+	  || arch == TAG_CPU_ARCH_V8_1M_MAIN);
 }
 
 /* Determine whether Thumb-2 BL instruction is available.  */
@@ -3881,7 +3926,7 @@ using_thumb2_bl (struct elf32_arm_link_hash_table *globals)
     bfd_elf_get_obj_attr_int (globals->obfd, OBJ_ATTR_PROC, Tag_CPU_arch);
 
   /* Force return logic to be reviewed for each new architecture.  */
-  BFD_ASSERT (arch <= TAG_CPU_ARCH_V8M_MAIN);
+  BFD_ASSERT (arch <= TAG_CPU_ARCH_V8_1M_MAIN);
 
   /* Architecture was introduced after ARMv6T2 (eg. ARMv6-M).  */
   return (arch == TAG_CPU_ARCH_V6T2
@@ -4101,7 +4146,7 @@ arch_has_arm_nop (struct elf32_arm_link_hash_table *globals)
 					     Tag_CPU_arch);
 
   /* Force return logic to be reviewed for each new architecture.  */
-  BFD_ASSERT (arch <= TAG_CPU_ARCH_V8M_MAIN);
+  BFD_ASSERT (arch <= TAG_CPU_ARCH_V8_1M_MAIN);
 
   return (arch == TAG_CPU_ARCH_V6T2
 	  || arch == TAG_CPU_ARCH_V6K
@@ -10248,6 +10293,59 @@ identify_add_or_sub (bfd_vma insn)
   return 0;
 }
 
+/* Helper function to compute the Addend for Armv8.1-M Mainline relocations.  */
+static bfd_vma
+get_value_helper (bfd_vma plt_offset,
+		  asection *splt,
+		  asection *input_section,
+		  asection *sym_sec,
+		  struct elf_link_hash_entry * h,
+		  struct bfd_link_info *info,
+		  bfd *input_bfd,
+		  Elf_Internal_Rela *rel,
+		  const char *sym_name,
+		  unsigned char st_type,
+		  struct elf32_arm_link_hash_table *globals,
+		  bfd_boolean *unresolved_reloc_p)
+{
+  bfd_vma value = 0;
+  enum arm_st_branch_type branch_type;
+  enum elf32_arm_stub_type stub_type = arm_stub_none;
+  struct elf32_arm_stub_hash_entry *stub_entry;
+  struct elf32_arm_link_hash_entry *hash
+    = (struct elf32_arm_link_hash_entry *)h;
+
+
+  if (plt_offset != (bfd_vma) -1)
+    {
+      value = (splt->output_section->vma
+	       + splt->output_offset
+	       + plt_offset);
+      value -= PLT_THUMB_STUB_SIZE;
+      *unresolved_reloc_p = FALSE;
+    }
+
+  stub_type = arm_type_of_stub (info, input_section, rel,
+				st_type, &branch_type,
+				hash, value, sym_sec,
+				input_bfd, sym_name);
+
+  if (stub_type != arm_stub_none)
+    {
+      stub_entry = elf32_arm_get_stub_entry (input_section,
+					     sym_sec, h,
+					     rel, globals,
+					     stub_type);
+	    if (stub_entry != NULL)
+	      {
+		value = (stub_entry->stub_offset
+			 + stub_entry->stub_sec->output_offset
+			 + stub_entry->stub_sec->output_section->vma);
+	      }
+	  }
+  return value;
+}
+
 /* Perform a relocation as part of a final link.  */
 
 static bfd_reloc_status_type
@@ -12854,6 +12952,141 @@ elf32_arm_final_link_relocate (reloc_howto_type *	    howto,
       *unresolved_reloc_p = FALSE;
       return bfd_reloc_ok;
 
+    case R_ARM_THM_BF16:
+      {
+	bfd_vma relocation;
+	bfd_vma upper_insn = bfd_get_16 (input_bfd, hit_data);
+	bfd_vma lower_insn = bfd_get_16 (input_bfd, hit_data + 2);
+
+	if (globals->use_rel)
+	  {
+	    bfd_vma immA  = (upper_insn & 0x001f);
+	    bfd_vma immB  = (lower_insn & 0x07fe) >> 1;
+	    bfd_vma immC  = (lower_insn & 0x0800) >> 11;
+	    addend  = (immA << 12);
+	    addend |= (immB << 2);
+	    addend |= (immC << 1);
+	    addend |= 1;
+	    /* Sign extend.  */
+	    addend = (addend & 0x10000) ? addend - (1 << 17) : addend;
+	  }
+
+	value = get_value_helper (plt_offset, splt, input_section, sym_sec, h,
+				  info, input_bfd, rel, sym_name, st_type,
+				  globals, unresolved_reloc_p);
+
+	relocation  = value + addend;
+	relocation -= (input_section->output_section->vma
+		       + input_section->output_offset
+		       + rel->r_offset);
+
+	/* Put RELOCATION back into the insn.  */
+	{
+	  bfd_vma immA = (relocation & 0x0001f000) >> 12;
+	  bfd_vma immB = (relocation & 0x00000ffc) >> 2;
+	  bfd_vma immC = (relocation & 0x00000002) >> 1;
+
+	  upper_insn = (upper_insn & 0xffe0) | immA;
+	  lower_insn = (lower_insn & 0xf001) | (immC << 11) | (immB << 1);
+	}
+
+	/* Put the relocated value back in the object file:  */
+	bfd_put_16 (input_bfd, upper_insn, hit_data);
+	bfd_put_16 (input_bfd, lower_insn, hit_data + 2);
+
+	return bfd_reloc_ok;
+      }
+
+    case R_ARM_THM_BF12:
+      {
+	bfd_vma relocation;
+	bfd_vma upper_insn = bfd_get_16 (input_bfd, hit_data);
+	bfd_vma lower_insn = bfd_get_16 (input_bfd, hit_data + 2);
+
+	if (globals->use_rel)
+	  {
+	    bfd_vma immA  = (upper_insn & 0x0001);
+	    bfd_vma immB  = (lower_insn & 0x07fe) >> 1;
+	    bfd_vma immC  = (lower_insn & 0x0800) >> 11;
+	    addend  = (immA << 12);
+	    addend |= (immB << 2);
+	    addend |= (immC << 1);
+	    addend |= 1;
+	    /* Sign extend.  */
+	    addend = (addend & 0x1000) ? addend - (1 << 13) : addend;
+	  }
+
+	value = get_value_helper (plt_offset, splt, input_section, sym_sec, h,
+				  info, input_bfd, rel, sym_name, st_type,
+				  globals, unresolved_reloc_p);
+
+	relocation  = value + addend;
+	relocation -= (input_section->output_section->vma
+		       + input_section->output_offset
+		       + rel->r_offset);
+
+	/* Put RELOCATION back into the insn.  */
+	{
+	  bfd_vma immA = (relocation & 0x00001000) >> 12;
+	  bfd_vma immB = (relocation & 0x00000ffc) >> 2;
+	  bfd_vma immC = (relocation & 0x00000002) >> 1;
+
+	  upper_insn = (upper_insn & 0xfffe) | immA;
+	  lower_insn = (lower_insn & 0xf001) | (immC << 11) | (immB << 1);
+	}
+
+	/* Put the relocated value back in the object file:  */
+	bfd_put_16 (input_bfd, upper_insn, hit_data);
+	bfd_put_16 (input_bfd, lower_insn, hit_data + 2);
+
+	return bfd_reloc_ok;
+      }
+
+    case R_ARM_THM_BF18:
+      {
+	bfd_vma relocation;
+	bfd_vma upper_insn = bfd_get_16 (input_bfd, hit_data);
+	bfd_vma lower_insn = bfd_get_16 (input_bfd, hit_data + 2);
+
+	if (globals->use_rel)
+	  {
+	    bfd_vma immA  = (upper_insn & 0x007f);
+	    bfd_vma immB  = (lower_insn & 0x07fe) >> 1;
+	    bfd_vma immC  = (lower_insn & 0x0800) >> 11;
+	    addend  = (immA << 12);
+	    addend |= (immB << 2);
+	    addend |= (immC << 1);
+	    addend |= 1;
+	    /* Sign extend.  */
+	    addend = (addend & 0x40000) ? addend - (1 << 19) : addend;
+	  }
+
+	value = get_value_helper (plt_offset, splt, input_section, sym_sec, h,
+				  info, input_bfd, rel, sym_name, st_type,
+				  globals, unresolved_reloc_p);
+
+	relocation  = value + addend;
+	relocation -= (input_section->output_section->vma
+		       + input_section->output_offset
+		       + rel->r_offset);
+
+	/* Put RELOCATION back into the insn.  */
+	{
+	  bfd_vma immA = (relocation & 0x0007f000) >> 12;
+	  bfd_vma immB = (relocation & 0x00000ffc) >> 2;
+	  bfd_vma immC = (relocation & 0x00000002) >> 1;
+
+	  upper_insn = (upper_insn & 0xff80) | immA;
+	  lower_insn = (lower_insn & 0xf001) | (immC << 11) | (immB << 1);
+	}
+
+	/* Put the relocated value back in the object file:  */
+	bfd_put_16 (input_bfd, upper_insn, hit_data);
+	bfd_put_16 (input_bfd, lower_insn, hit_data + 2);
+
+	return bfd_reloc_ok;
+      }
+
     default:
       return bfd_reloc_notsupported;
     }
@@ -13719,6 +13952,8 @@ bfd_arm_get_mach_from_attributes (bfd * abfd)
 	return bfd_mach_arm_8M_BASE;
     case TAG_CPU_ARCH_V8M_MAIN:
 	return bfd_mach_arm_8M_MAIN;
+    case TAG_CPU_ARCH_V8_1M_MAIN:
+	return bfd_mach_arm_8_1M_MAIN;
 
     default:
       /* Force entry to be added for any new known Tag_CPU_arch value.  */
@@ -14131,6 +14366,31 @@ tag_cpu_arch_combine (bfd *ibfd, int oldtag, int *secondary_compat_out,
       T(V8M_MAIN),	/* V8-M BASELINE.  */
       T(V8M_MAIN)	/* V8-M MAINLINE.  */
     };
+  const int v8_1m_mainline[] =
+    {
+      -1,		/* PRE_V4.  */
+      -1,		/* V4.  */
+      -1,		/* V4T.  */
+      -1,		/* V5T.  */
+      -1,		/* V5TE.  */
+      -1,		/* V5TEJ.  */
+      -1,		/* V6.  */
+      -1,		/* V6KZ.  */
+      -1,		/* V6T2.  */
+      -1,		/* V6K.  */
+      T(V8_1M_MAIN),	/* V7.  */
+      T(V8_1M_MAIN),	/* V6_M.  */
+      T(V8_1M_MAIN),	/* V6S_M.  */
+      T(V8_1M_MAIN),	/* V7E_M.  */
+      -1,		/* V8.  */
+      -1,		/* V8R.  */
+      T(V8_1M_MAIN),	/* V8-M BASELINE.  */
+      T(V8_1M_MAIN),	/* V8-M MAINLINE.  */
+      -1,		/* Unused (18).  */
+      -1,		/* Unused (19).  */
+      -1,		/* Unused (20).  */
+      T(V8_1M_MAIN)	/* V8.1-M MAINLINE.  */
+    };
   const int v4t_plus_v6_m[] =
     {
       -1,		/* PRE_V4.  */
@@ -14151,6 +14411,10 @@ tag_cpu_arch_combine (bfd *ibfd, int oldtag, int *secondary_compat_out,
       -1,		/* V8R.  */
       T(V8M_BASE),	/* V8-M BASELINE.  */
       T(V8M_MAIN),	/* V8-M MAINLINE.  */
+      -1,		/* Unused (18).  */
+      -1,		/* Unused (19).  */
+      -1,		/* Unused (20).  */
+      T(V8_1M_MAIN),	/* V8.1-M MAINLINE.  */
       T(V4T_PLUS_V6_M)	/* V4T plus V6_M.  */
     };
   const int *comb[] =
@@ -14165,6 +14429,10 @@ tag_cpu_arch_combine (bfd *ibfd, int oldtag, int *secondary_compat_out,
       v8r,
       v8m_baseline,
       v8m_mainline,
+      NULL,
+      NULL,
+      NULL,
+      v8_1m_mainline,
       /* Pseudo-architecture.  */
       v4t_plus_v6_m
     };
@@ -15380,9 +15648,7 @@ elf32_arm_check_relocs (bfd *abfd, struct bfd_link_info *info,
 	/* This relocation describes which C++ vtable entries are actually
 	   used.  Record for later use during GC.  */
 	case R_ARM_GNU_VTENTRY:
-	  BFD_ASSERT (h != NULL);
-	  if (h != NULL
-	      && !bfd_elf_gc_record_vtentry (abfd, sec, h, rel->r_offset))
+	  if (!bfd_elf_gc_record_vtentry (abfd, sec, h, rel->r_offset))
 	    return FALSE;
 	  break;
 	}

@@ -5135,6 +5135,7 @@ process_omitted_operand (enum aarch64_opnd type, const aarch64_opcode *opcode,
     case AARCH64_OPND_Rm:
     case AARCH64_OPND_Rt:
     case AARCH64_OPND_Rt2:
+    case AARCH64_OPND_Rt_SP:
     case AARCH64_OPND_Rs:
     case AARCH64_OPND_Ra:
     case AARCH64_OPND_Rt_SYS:
@@ -5511,6 +5512,7 @@ parse_operands (char *str, const aarch64_opcode *opcode)
 
 	case AARCH64_OPND_Rd_SP:
 	case AARCH64_OPND_Rn_SP:
+	case AARCH64_OPND_Rt_SP:
 	case AARCH64_OPND_SVE_Rn_SP:
 	case AARCH64_OPND_Rm_SP:
 	  po_int_reg_or_fail (REG_TYPE_R_SP);
@@ -8331,15 +8333,18 @@ aarch64_after_parse_args (void)
 const char *
 elf64_aarch64_target_format (void)
 {
-  if (strcmp (TARGET_OS, "cloudabi") == 0)
-    {
-      /* FIXME: What to do for ilp32_p ?  */
-      return target_big_endian ? "elf64-bigaarch64-cloudabi" : "elf64-littleaarch64-cloudabi";
-    }
+#ifdef TE_CLOUDABI
+  /* FIXME: What to do for ilp32_p ?  */
+  if (target_big_endian)
+    return "elf64-bigaarch64-cloudabi";
+  else
+    return "elf64-littleaarch64-cloudabi";
+#else
   if (target_big_endian)
     return ilp32_p ? "elf32-bigaarch64" : "elf64-bigaarch64";
   else
     return ilp32_p ? "elf32-littleaarch64" : "elf64-littleaarch64";
+#endif
 }
 
 void

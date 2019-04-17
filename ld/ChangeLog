@@ -1,3 +1,309 @@
+2019-04-17  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* testsuite/ld-i386/i386.exp: Run pr18801a and pr18801b instead
+	of pr18801.
+	* testsuite/ld-x86-64/x86-64.exp: Likewise.
+	* testsuite/ld-i386/pr18801.d: Removed.
+	* testsuite/ld-x86-64/pr18801.d: Likewise.
+	* testsuite/ld-i386/pr18801a.d: New file.
+	* testsuite/ld-i386/pr18801b.d: Likewise.
+	* testsuite/ld-x86-64/pr18801a.d: Likewise.
+	* testsuite/ld-x86-64/pr18801b.d: Likewise.
+	* testsuite/ld-x86-64/pie2.d: Suggest -fPIE instead of -fPIC.
+	* testsuite/ld-x86-64/pie2.d: Likewise.
+	* testsuite/ld-x86-64/pr19719.d: Likewise.
+	* testsuite/ld-x86-64/pr19807-2a.d: Likewise.
+	* testsuite/ld-x86-64/pr19969.d: Likewise.
+	* testsuite/ld-x86-64/pr21997-1a.err: Likewise.
+	* testsuite/ld-x86-64/pr21997-1b.err: Likewise.
+	* testsuite/ld-x86-64/pr22001-1a.err: Likewise.
+	* testsuite/ld-x86-64/pr22001-1b.err: Likewise.
+	* testsuite/ld-x86-64/pr22791-1.err: Likewise.
+
+2019-04-17  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/24458
+	* testsuite/ld-x86-64/x86-64.exp: Run PR ld/24458 tests.
+	* testsuite/ld-x86-64/pr24458.s: New file.
+	* testsuite/ld-x86-64/pr24458a-x32.d: Likewise.
+	* testsuite/ld-x86-64/pr24458a.d: Likewise.
+	* testsuite/ld-x86-64/pr24458b-x32.d: Likewise.
+	* testsuite/ld-x86-64/pr24458b.d: Likewise.
+	* testsuite/ld-x86-64/pr24458c-x32.d: Likewise.
+	* testsuite/ld-x86-64/pr24458c.d: Likewise.
+
+2019-04-17  Jozef Lawrynowicz  <jozef.l@mittosystems.com>
+
+	* config/tc-msp430.c (msp430_make_init_symbols): Define __crt0_init_bss
+	symbol when .lower.bss or .either.bss sections exist.
+	Define __crt0_movedata when .lower.data or .either.data sections exist.
+	* testsuite/gas/msp430/either-data-bss-sym.d: New test.
+	* testsuite/gas/msp430/low-data-bss-sym.d: New test.
+	* testsuite/gas/msp430/either-data-bss-sym.s: New test source.
+	* testsuite/gas/msp430/low-data-bss-sym.s: New test source.
+	* testsuite/gas/msp430/msp430.exp: Run new tests.
+	Enable large code model when running -mdata-region={upper,either}
+	tests.
+
+2019-04-16  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/ld-scripts/pr20302.d: Don't run for ns32k-*-*.
+	* testsuite/ld-scripts/section-match-1.d: Likewise.
+	* testsuite/ld-undefined/require-defined.exp: Likewise.
+
+2019-04-15  Faraz Shahbazker  <fshahbazker@wavecomp.com>
+
+	* testsuite/ld-gc/gc.exp: Skip print-map-discarded test for non-ELF
+	targets.
+
+2019-04-15  Sudakshina Das  <sudi.das@arm.com>
+
+	* testsuite/ld-arm/bfcsel.s: New.
+	* testsuite/ld-arm/bfcsel.d: New.
+	* testsuite/ld-arm/arm-elf.exp: Add above test.
+
+2019-04-15  Sudakshina Das  <sudi.das@arm.com>
+
+	* testsuite/ld-arm/bfl.s: New.
+	* testsuite/ld-arm/bfl.d: New.
+	* testsuite/ld-arm/arm-elf.exp: Add above test.
+
+2019-04-15  Sudakshina Das  <sudi.das@arm.com>
+
+	* testsuite/ld-arm/bf.s: New.
+	* testsuite/ld-arm/bf.d: New.
+	* testsuite/ld-arm/arm-elf.exp: Add above test.
+
+2019-04-15  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	* testsuite/ld-arm/attr-merge-13.attr: New test.
+	* testsuite/ld-arm/attr-merge-13a.s: New test.
+	* testsuite/ld-arm/attr-merge-13b.s: New test.
+
+2019-04-13  Alan Modra  <amodra@gmail.com>
+
+	* Makefile.am (GENSCRIPTS): Pass LIB_PATH as a parameter.  Add
+	DEPDIR parameter.
+	(ELF_DEPS, ELF_GEN_DEPS, ELF_X86_DEPS): Delete.
+	(ALL_EMULATION_SOURCES, ALL_64_EMULATION_SOURCES): Depend on
+	$GEN_DEPENDS.
+	(e*.c): Delete all dependencies, instead include dependencies
+	from $DEPDIR/*.Pc.
+	* Makefile.in: Regenerate.
+	* configure.ac (source_sh): Define and use function.
+	* configure: Regenerate.
+	* emulparams/aarch64cloudabib.sh, * emulparams/aarch64elf32b.sh,
+	* emulparams/aarch64elfb.sh, * emulparams/aarch64fbsdb.sh,
+	* emulparams/aarch64linux32b.sh, * emulparams/aarch64linuxb.sh,
+	* emulparams/arcelf.sh, * emulparams/arcelf_prof.sh,
+	* emulparams/arclinux.sh, * emulparams/arclinux_nps.sh,
+	* emulparams/arclinux_prof.sh, * emulparams/arcv2elf.sh,
+	* emulparams/arcv2elfx.sh, * emulparams/armelf_fbsd.sh,
+	* emulparams/armelf_linux_eabi.sh,
+	* emulparams/armelf_linux_fdpiceabi.sh,
+	* emulparams/armelf_nacl.sh, * emulparams/armelf_nbsd.sh,
+	* emulparams/armelf_vxworks.sh, * emulparams/armelfb.sh,
+	* emulparams/armelfb_fbsd.sh, * emulparams/armelfb_fuchsia.sh,
+	* emulparams/armelfb_linux.sh, * emulparams/armelfb_linux_eabi.sh,
+	* emulparams/armelfb_linux_fdpiceabi.sh,
+	* emulparams/armelfb_nacl.sh, * emulparams/armelfb_nbsd.sh,
+	* emulparams/armsymbian.sh, * emulparams/cskyelf_linux.sh,
+	* emulparams/elf32_sparc_sol2.sh,
+	* emulparams/elf32_sparc_vxworks.sh, * emulparams/elf32_tic6x_be.sh,
+	* emulparams/elf32_tic6x_elf_be.sh,
+	* emulparams/elf32_tic6x_elf_le.sh,
+	* emulparams/elf32_tic6x_linux_be.sh,
+	* emulparams/elf32_tic6x_linux_le.sh,
+	* emulparams/elf32_x86_64.sh, * emulparams/elf32_x86_64_nacl.sh,
+	* emulparams/elf32b4300.sh, * emulparams/elf32bfinfd.sh,
+	* emulparams/elf32bmipn32.sh, * emulparams/elf32bsmip.sh,
+	* emulparams/elf32btsmip.sh, * emulparams/elf32btsmip_fbsd.sh,
+	* emulparams/elf32btsmipn32.sh, * emulparams/elf32btsmipn32_fbsd.sh,
+	* emulparams/elf32ebmip.sh, * emulparams/elf32ebmipvxworks.sh,
+	* emulparams/elf32elmip.sh, * emulparams/elf32elmipvxworks.sh,
+	* emulparams/elf32frvfd.sh, * emulparams/elf32l4300.sh,
+	* emulparams/elf32lm32fd.sh, * emulparams/elf32lmip.sh,
+	* emulparams/elf32lppc.sh, * emulparams/elf32lppclinux.sh,
+	* emulparams/elf32lppcnto.sh, * emulparams/elf32lppcsim.sh,
+	* emulparams/elf32lr5900.sh, * emulparams/elf32lr5900n32.sh,
+	* emulparams/elf32lriscv.sh, * emulparams/elf32lriscv_ilp32.sh,
+	* emulparams/elf32lriscv_ilp32f.sh, * emulparams/elf32lsmip.sh,
+	* emulparams/elf32ltsmip.sh, * emulparams/elf32ltsmip_fbsd.sh,
+	* emulparams/elf32ltsmipn32.sh, * emulparams/elf32ltsmipn32_fbsd.sh,
+	* emulparams/elf32microblazeel.sh, * emulparams/elf32or1k_linux.sh,
+	* emulparams/elf32ppc.sh, * emulparams/elf32ppc_fbsd.sh,
+	* emulparams/elf32ppccommon.sh, * emulparams/elf32ppclinux.sh,
+	* emulparams/elf32ppcnto.sh, * emulparams/elf32ppcsim.sh,
+	* emulparams/elf32ppcvxworks.sh, * emulparams/elf32ppcwindiss.sh,
+	* emulparams/elf32tilegx_be.sh, * emulparams/elf64_ia64_fbsd.sh,
+	* emulparams/elf64_sparc_fbsd.sh, * emulparams/elf64_sparc_sol2.sh,
+	* emulparams/elf64alpha_fbsd.sh, * emulparams/elf64alpha_nbsd.sh,
+	* emulparams/elf64bmip-defs.sh, * emulparams/elf64bmip.sh,
+	* emulparams/elf64btsmip.sh, * emulparams/elf64btsmip_fbsd.sh,
+	* emulparams/elf64lppc.sh, * emulparams/elf64lriscv-defs.sh,
+	* emulparams/elf64lriscv.sh, * emulparams/elf64lriscv_lp64.sh,
+	* emulparams/elf64lriscv_lp64f.sh, * emulparams/elf64ltsmip.sh,
+	* emulparams/elf64ltsmip_fbsd.sh, * emulparams/elf64ppc.sh,
+	* emulparams/elf64ppc_fbsd.sh, * emulparams/elf64rdos.sh,
+	* emulparams/elf64tilegx_be.sh, * emulparams/elf_i386.sh,
+	* emulparams/elf_i386_be.sh, * emulparams/elf_i386_fbsd.sh,
+	* emulparams/elf_i386_ldso.sh, * emulparams/elf_i386_nacl.sh,
+	* emulparams/elf_i386_sol2.sh, * emulparams/elf_i386_vxworks.sh,
+	* emulparams/elf_iamcu.sh, * emulparams/elf_k1om.sh,
+	* emulparams/elf_k1om_fbsd.sh, * emulparams/elf_l1om.sh,
+	* emulparams/elf_l1om_fbsd.sh, * emulparams/elf_x86_64.sh,
+	* emulparams/elf_x86_64_cloudabi.sh,
+	* emulparams/elf_x86_64_fbsd.sh, * emulparams/elf_x86_64_nacl.sh,
+	* emulparams/elf_x86_64_sol2.sh, * emulparams/h8300helf.sh,
+	* emulparams/h8300helf_linux.sh, * emulparams/h8300hnelf.sh,
+	* emulparams/h8300self.sh, * emulparams/h8300self_linux.sh,
+	* emulparams/h8300snelf.sh, * emulparams/h8300sxelf.sh,
+	* emulparams/h8300sxelf_linux.sh, * emulparams/h8300sxnelf.sh,
+	* emulparams/hppanbsd.sh, * emulparams/hppaobsd.sh,
+	* emulparams/m32rlelf.sh, * emulparams/m32rlelf_linux.sh,
+	* emulparams/m68kelfnbsd.sh, * emulparams/mn10300.sh,
+	* emulparams/msp430X.sh, * emulparams/nds32belf.sh,
+	* emulparams/nds32belf16m.sh, * emulparams/nds32belf_linux.sh,
+	* emulparams/pjlelf.sh, * emulparams/ppclynx.sh,
+	* emulparams/score7_elf.sh, * emulparams/shelf_fd.sh,
+	* emulparams/shelf_linux.sh, * emulparams/shelf_nbsd.sh,
+	* emulparams/shelf_uclinux.sh, * emulparams/shelf_vxworks.sh,
+	* emulparams/shl.sh, * emulparams/shlelf.sh,
+	* emulparams/shlelf_fd.sh, * emulparams/shlelf_nbsd.sh,
+	* emulparams/shlelf_vxworks.sh: Use source_sh.
+	* genscripts.sh: Adjust for changed parameters.  Emit dependencies
+	for e*.c to .deps/*.Pc.
+	(source_sh): New function, use it throughout to source scripts.
+	* genscrba.sh (source_em): Use source_sh.
+
+2019-04-13  Alan Modra  <amodra@gmail.com>
+
+	* configure.ac (TDIRS): Build up tdirs in this variable and
+	AC_SUBST, also using AM_SUBST_NOTMAKE.
+	* configure: Regenerate.
+	* Makefile.am (DISTCLEANFILES): Remove tdirs.
+	* Makefile.in: Regenerate.
+
+2019-04-12  Nick Clifton  <nickc@redhat.com>
+
+	PR 24450
+	* ld.texi (Output Section Attributes): Add ALIGN_WITH_INPUT to
+	example of section attributes.
+
+2019-04-11  Faraz Shahbazker  <fshahbazker@wavecomp.com>
+
+	* NEWS: Mention new option --no-print-map-discarded.
+	* ld.h (ld_config_type) <print_map_discarded>: New field.
+	* ldlang.c (lang_map): Conditionally output discarded sections
+	in map files based on configuration option.
+	* ldlex.h (option_values) <OPTION_PRINT_MAP_DISCARDED,
+	OPTION_NO_PRINT_MAP_DISCARDED>: New.
+	* ldmain.c (main): Enabled print_map_discarded by default.
+	* lexsup.c (ld_options): Add new command-line options.
+	(parse_args) <OPTION_NO_PRINT_MAP_DISCARDED,
+	OPTION_PRINT_MAP_DISCARDED>: New cases.
+	* ld.texi: Document new options.
+	* testsuite/ld-gc/gc.exp: Add new test.
+	* testsuite/ld-gc/skip-map-discarded.s: New file.
+	* testsuite/ld-gc/skip-map-discarded.d: New file.
+	* testsuite/ld-gc/skip-map-discarded.map: New file.
+
+2019-04-11  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* ld.texi: Document -z cet-report=[none|warning|error].
+	* emulparams/cet.sh: Add -z cet-report=[none|warning|error].
+	* testsuite/ld-i386/i386.exp: Run -z cet-report=[warning|error]
+	tests.
+	* testsuite/ld-x86-64/x86-64.exp: Likewise.
+	* testsuite/ld-i386/property-x86-cet1.d: New file.
+	* testsuite/ld-i386/property-x86-cet2a.d: Likewise.
+	* testsuite/ld-i386/property-x86-cet2b.d: Likewise.
+	* testsuite/ld-i386/property-x86-cet3a.d: Likewise.
+	* testsuite/ld-i386/property-x86-cet3b.d: Likewise.
+	* testsuite/ld-i386/property-x86-cet4a.d: Likewise.
+	* testsuite/ld-i386/property-x86-cet4b.d: Likewise.
+	* testsuite/ld-i386/property-x86-cet5a.d: Likewise.
+	* testsuite/ld-i386/property-x86-cet5b.d: Likewise.
+	* testsuite/ld-i386/property-x86-cet6.d: Likewise.
+	* testsuite/ld-x86-64/property-x86-cet.s: Likewise.
+	* testsuite/ld-x86-64/property-x86-cet1-x32.d: Likewise.
+	* testsuite/ld-x86-64/property-x86-cet1.d: Likewise.
+	* testsuite/ld-x86-64/property-x86-cet2a-x32.d: Likewise.
+	* testsuite/ld-x86-64/property-x86-cet2a.d: Likewise.
+	* testsuite/ld-x86-64/property-x86-cet2b-x32.d: Likewise.
+	* testsuite/ld-x86-64/property-x86-cet2b.d: Likewise.
+	* testsuite/ld-x86-64/property-x86-cet3a-x32.d: Likewise.
+	* testsuite/ld-x86-64/property-x86-cet3a.d: Likewise.
+	* testsuite/ld-x86-64/property-x86-cet3b-x32.d: Likewise.
+	* testsuite/ld-x86-64/property-x86-cet3b.d: Likewise.
+	* testsuite/ld-x86-64/property-x86-cet4a-x32.d: Likewise.
+	* testsuite/ld-x86-64/property-x86-cet4a.d: Likewise.
+	* testsuite/ld-x86-64/property-x86-cet4b-x32.d: Likewise.
+	* testsuite/ld-x86-64/property-x86-cet4b.d: Likewise.
+	* testsuite/ld-x86-64/property-x86-cet5a-x32.d: Likewise.
+	* testsuite/ld-x86-64/property-x86-cet5a.d: Likewise.
+	* testsuite/ld-x86-64/property-x86-cet5b-x32.d: Likewise.
+	* testsuite/ld-x86-64/property-x86-cet5b.d: Likewise.
+	* testsuite/ld-x86-64/property-x86-cet6-x32.d: Likewise.
+	* testsuite/ld-x86-64/property-x86-cet6.d: Likewise.
+
+2019-04-11  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* testsuite/config/default.exp (STATIC_PIE_LDFLAGS): New.  Set
+	to "-static-pie" if target compiler supports it.
+	* testsuite/ld-elf/elf.exp: Run -static-pie tests if
+	$STATIC_PIE_LDFLAGS isn't empty.
+	* testsuite/ld-ifunc/ifunc.exp: Likewise.
+
+2019-04-11  Tamar Christina  <tamar.christina@arm.com>
+
+	PR ld/24302
+	* testsuite/ld-aarch64/aarch64-elf.exp: Add new test.
+	* testsuite/ld-aarch64/tls-relax-gdesc-le-now.d: New test.
+
+2019-04-10  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* scripttempl/elf.sc (CREATE_PIC): New.  Set for CREATE_SHLIB or
+	CREATE_PIE.
+	(__rel_iplt_start): Don't define for CREATE_PIC.
+	(__rel_iplt_end): Likewise.
+	(__rela_iplt_start): Likewise.
+	(__rela_iplt_end): Likewise.
+
+2019-04-10  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/ld-elf/shared.exp: Don't xfail PR ld/20995 for
+	powerpc-nto.
+
+2019-04-10  Alan Modra  <amodra@gmail.com>
+
+	* emultempl/cskyelf.em (csk_elf_before_parse): New function,
+	setting use_branch_stub false for linux.
+	(csky_elf_create_output_section_statements): Do emit this
+	function and all others in the file for linux, plus the branch
+	option control.  Disable branch stubs when non-ELF.
+
+2019-04-10  Alan Modra  <amodra@gmail.com>
+
+	* Makefile.am (eskyelf.c, eskyelf_linux.c): Depend on cskyelf.em.
+	(ecskyelf_linux.c): Depend on cskyelf.sh.
+	(eelf32microblazeel.c): Depend on elf32microblaze.sh.
+	* Makefile.in: Regenerate.
+	* emulparams/cskyelf.sh: Comment regarding cskelf_linux.sh.
+	(PAGE_SIZE): Don't define.
+	* emulparams/cskyelf_linux.sh: Source sckyelf.sh, leaving just
+	the differing variable defs/undefs.
+	* emulparams/elf32mcore.sh (PAGE_SIZE): Don't define.
+	* emulparams/elf32microblaze.sh: Comment re. elf32microblazeel.sh.
+	(OUTPUT_FORMAT): Use BIG_OUTPUT_FORMAT.
+	(PAGE_SIZE): Don't define.
+	* emulparams/elf32microblazeel.sh: Source elf32microblaze.sh,
+	leaving just the differing OUTPUT_FORMAT.
+
+2019-04-10  Alan Modra  <amodra@gmail.com>
+
+	* po/BLD-POTFILES.in: Regenerate.
+
 2019-04-08  H.J. Lu  <hongjiu.lu@intel.com>
 
 	* testsuite/ld-elf/shared.exp: XFAIL PR ld/20995 tests for

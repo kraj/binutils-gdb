@@ -1,3 +1,31 @@
+2019-04-15  Leszek Swirski  <leszeks@google.com>
+
+	* gdb.arch/amd64-eval.cc: New file.
+	* gdb.arch/amd64-eval.exp: New file.
+
+2019-04-11  Alan Hayward  <alan.hayward@arm.com>
+
+	* gdb.server/sysroot.c: New test.
+	* gdb.server/sysroot.exp: New file.
+	* lib/gdbserver-support.exp (gdb_target_cmd): Add additional text
+	matching param.
+
+2019-04-11  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.base/align.exp: Extend test to cover structures containing
+	only static fields.
+
+2019-04-11  Tom de Vries  <tdevries@suse.de>
+
+	* boards/cc-with-dwz-m.exp: New file.
+	* boards/cc-with-dwz.exp: New file.
+	* boards/cc-with-tweaks.exp: Note that check-gdb doesn't work.
+
+2019-04-09  Simon Marchi  <simon.marchi@efficios.com>
+
+	* gdb.base/start-cpp.exp: New file.
+	* gdb.base/start-cpp.cc: New file.
+
 2019-04-08  Kevin Buettner  <kevinb@redhat.com>
 
 	* gdb.python/py-thrhandle.exp: Adjust tests to call

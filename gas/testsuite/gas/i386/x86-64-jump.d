@@ -1,5 +1,6 @@
 #objdump: -drw
 #name: x86-64 jump
+#notarget: *-*-solaris*
 
 .*: +file format .*
 

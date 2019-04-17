@@ -2427,19 +2427,12 @@ remove_symbol_file_command (const char *args, int from_tty)
 void
 reread_symbols (void)
 {
-  struct objfile *objfile;
   long new_modtime;
   struct stat new_statbuf;
   int res;
   std::vector<struct objfile *> new_objfiles;
 
-  /* With the addition of shared libraries, this should be modified,
-     the load time should be saved in the partial symbol tables, since
-     different tables may come from different source files.  FIXME.
-     This routine should then walk down each partial symbol table
-     and see if the symbol table that it originates from has been changed.  */
-
-  for (objfile = object_files; objfile; objfile = objfile->next)
+  for (objfile *objfile : current_program_space->objfiles ())
     {
       if (objfile->obfd == NULL)
 	continue;
