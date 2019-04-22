@@ -114,6 +114,8 @@
                        ;; there can be conflicts with symbols, which
                        ;; would require to reorder the insns and also
                        ;; could lead to confusing situations.
+                       ;; XXX the frame pointer fp is read-only, so it should
+                       ;; go in a different hardware.
            (;; ABI names.  Take priority when disassembling.
             (a 0) (r1 1) (r2 2) (r3 3) (r4 4) (r5 5) (r6 6)
             (r7 7) (r8 8) (r9 9) (fp 10)
