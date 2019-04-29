@@ -1,0 +1,256 @@
+From afcbb7158d2ca410daa94215d58be8051cfbb97a Mon Sep 17 00:00:00 2001
+From: "H.J. Lu" <hjl.tools@gmail.com>
+Date: Fri, 26 Apr 2019 12:06:37 -0700
+Subject: [PATCH 3/3] ld: Add -z prefer-min-page-size tests
+
+---
+ ld/testsuite/ld-elf/minpage1.d  | 11 +++++++++++
+ ld/testsuite/ld-elf/minpage1.s  | 16 ++++++++++++++++
+ ld/testsuite/ld-elf/minpage2.d  | 11 +++++++++++
+ ld/testsuite/ld-elf/minpage3.t  | 10 ++++++++++
+ ld/testsuite/ld-elf/minpage3a.d | 13 +++++++++++++
+ ld/testsuite/ld-elf/minpage3b.d | 13 +++++++++++++
+ ld/testsuite/ld-elf/minpage3c.d | 14 ++++++++++++++
+ ld/testsuite/ld-elf/minpage4.d  | 10 ++++++++++
+ ld/testsuite/ld-elf/minpage4.t  |  9 +++++++++
+ ld/testsuite/ld-elf/minpage5.d  | 19 +++++++++++++++++++
+ ld/testsuite/ld-elf/minpage5.s  |  8 ++++++++
+ ld/testsuite/ld-elf/minpage5.t  | 15 +++++++++++++++
+ 12 files changed, 149 insertions(+)
+ create mode 100644 ld/testsuite/ld-elf/minpage1.d
+ create mode 100644 ld/testsuite/ld-elf/minpage1.s
+ create mode 100644 ld/testsuite/ld-elf/minpage2.d
+ create mode 100644 ld/testsuite/ld-elf/minpage3.t
+ create mode 100644 ld/testsuite/ld-elf/minpage3a.d
+ create mode 100644 ld/testsuite/ld-elf/minpage3b.d
+ create mode 100644 ld/testsuite/ld-elf/minpage3c.d
+ create mode 100644 ld/testsuite/ld-elf/minpage4.d
+ create mode 100644 ld/testsuite/ld-elf/minpage4.t
+ create mode 100644 ld/testsuite/ld-elf/minpage5.d
+ create mode 100644 ld/testsuite/ld-elf/minpage5.s
+ create mode 100644 ld/testsuite/ld-elf/minpage5.t
+
+diff --git a/ld/testsuite/ld-elf/minpage1.d b/ld/testsuite/ld-elf/minpage1.d
+new file mode 100644
+index 0000000000..5de5b84076
+--- /dev/null
++++ b/ld/testsuite/ld-elf/minpage1.d
+@@ -0,0 +1,11 @@
++#source: minpage1.s
++#ld: -z separate-code -z prefer-min-page-size -z max-page-size=0x200000
++#readelf: -l --wide
++# Require 4K minimum page size.
++#target: x86_64-*-linux* i?86-*-linux*
++
++#...
++  LOAD+.*0x1000
++  LOAD+.*0x200000
++  LOAD+.*0x1000
++#pass
+diff --git a/ld/testsuite/ld-elf/minpage1.s b/ld/testsuite/ld-elf/minpage1.s
+new file mode 100644
+index 0000000000..210cebae83
+--- /dev/null
++++ b/ld/testsuite/ld-elf/minpage1.s
+@@ -0,0 +1,16 @@
++	.globl main
++	.globl start
++	.globl _start
++	.globl __start
++	.text
++main:
++start:
++_start:
++__start:
++	.space 0x10000000
++
++	.section .rodata,"a",%progbits
++	.space 0x1000
++
++	.data
++	.long	0
+diff --git a/ld/testsuite/ld-elf/minpage2.d b/ld/testsuite/ld-elf/minpage2.d
+new file mode 100644
+index 0000000000..1fb99c17b4
+--- /dev/null
++++ b/ld/testsuite/ld-elf/minpage2.d
+@@ -0,0 +1,11 @@
++#source: minpage1.s
++#ld: -z separate-code -z prefer-min-page-size -z max-page-size=0x100000
++#readelf: -l --wide
++# Require 4K minimum page size.
++#target: x86_64-*-linux* i?86-*-linux*
++
++#...
++  LOAD+.*0x1000
++  LOAD+.*0x100000
++  LOAD+.*0x1000
++#pass
+diff --git a/ld/testsuite/ld-elf/minpage3.t b/ld/testsuite/ld-elf/minpage3.t
+new file mode 100644
+index 0000000000..e3b42e72b2
+--- /dev/null
++++ b/ld/testsuite/ld-elf/minpage3.t
+@@ -0,0 +1,10 @@
++SECTIONS
++{
++  . = SIZEOF_HEADERS;
++  .rodata : {*(.rodata)}
++  . = ALIGN(CONSTANT (MAXPAGESIZE));
++  .text : {*(.text)}
++  . = ALIGN(CONSTANT (MAXPAGESIZE));
++  .data : {*(.data)}
++  /DISCARD/ : {*(*)}
++}
+diff --git a/ld/testsuite/ld-elf/minpage3a.d b/ld/testsuite/ld-elf/minpage3a.d
+new file mode 100644
+index 0000000000..4c716aced6
+--- /dev/null
++++ b/ld/testsuite/ld-elf/minpage3a.d
+@@ -0,0 +1,13 @@
++#source: minpage1.s
++#ld: -z separate-code -z prefer-min-page-size -z max-page-size=0x10000000 -T minpage3.t
++#readelf: -lS --wide
++# Require 4K minimum page size.
++#target: x86_64-*-linux* i?86-*-linux*
++
++#...
++  \[[ 0-9]+\] \.data[ \t]+PROGBITS[ \t]+0*20000000[ \t]+[ \t0-9a-f]+WA?.*
++#...
++  LOAD+.*0x1000
++  LOAD+.*0x10000000
++  LOAD+.*0x1000
++#pass
+diff --git a/ld/testsuite/ld-elf/minpage3b.d b/ld/testsuite/ld-elf/minpage3b.d
+new file mode 100644
+index 0000000000..4313d896b0
+--- /dev/null
++++ b/ld/testsuite/ld-elf/minpage3b.d
+@@ -0,0 +1,13 @@
++#source: minpage1.s
++#ld: -T minpage3.t -z separate-code -z prefer-min-page-size -z max-page-size=0x10000000
++#readelf: -lS --wide
++# Require 4K minimum page size.
++#target: x86_64-*-linux* i?86-*-linux*
++
++#...
++  \[[ 0-9]+\] \.data[ \t]+PROGBITS[ \t]+0*20000000[ \t]+[ \t0-9a-f]+WA?.*
++#...
++  LOAD+.*0x1000
++  LOAD+.*0x10000000
++  LOAD+.*0x1000
++#pass
+diff --git a/ld/testsuite/ld-elf/minpage3c.d b/ld/testsuite/ld-elf/minpage3c.d
+new file mode 100644
+index 0000000000..62bb7b0ac1
+--- /dev/null
++++ b/ld/testsuite/ld-elf/minpage3c.d
+@@ -0,0 +1,14 @@
++#source: minpage1.s
++#as: --32
++#ld: -m elf_i386 -z separate-code -z prefer-min-page-size -z max-page-size=0x10000000 -T minpage3.t
++#readelf: -lS --wide
++# Require 4K minimum page size.
++#target: x86_64-*-linux* i?86-*-linux*
++
++#...
++  \[[ 0-9]+\] \.data[ \t]+PROGBITS[ \t]+0*20000000[ \t]+[ \t0-9a-f]+WA?.*
++#...
++  LOAD+.*0x1000
++  LOAD+.*0x10000000
++  LOAD+.*0x1000
++#pass
+diff --git a/ld/testsuite/ld-elf/minpage4.d b/ld/testsuite/ld-elf/minpage4.d
+new file mode 100644
+index 0000000000..37d5eef372
+--- /dev/null
++++ b/ld/testsuite/ld-elf/minpage4.d
+@@ -0,0 +1,10 @@
++#source: minpage1.s
++#as: --32
++#ld: -z separate-code -z prefer-min-page-size -z max-page-size=0x200000 -T minpage4.t
++#readelf: -l --wide
++# Require 4K minimum page size.
++#target: x86_64-*-linux* i?86-*-linux*
++
++#...
++  LOAD+.*0x1000
++#pass
+diff --git a/ld/testsuite/ld-elf/minpage4.t b/ld/testsuite/ld-elf/minpage4.t
+new file mode 100644
+index 0000000000..42089e3390
+--- /dev/null
++++ b/ld/testsuite/ld-elf/minpage4.t
+@@ -0,0 +1,9 @@
++OUTPUT_FORMAT("elf32-i386")
++OUTPUT_ARCH(i386)
++ENTRY(_start)
++SECTIONS
++{
++  .text : {*(.text)}
++  .data : {*(.data)}
++  /DISCARD/ : {*(*)}
++}
+diff --git a/ld/testsuite/ld-elf/minpage5.d b/ld/testsuite/ld-elf/minpage5.d
+new file mode 100644
+index 0000000000..e2e1160497
+--- /dev/null
++++ b/ld/testsuite/ld-elf/minpage5.d
+@@ -0,0 +1,19 @@
++#source: minpage5.s
++#as: --32
++#ld: -z separate-code -z prefer-min-page-size -z max-page-size=0x200000 -T minpage5.t
++#objcopy_linked_file: -R .foo
++#readelf: -l --wide
++# Require 4K minimum page size.
++#target: x86_64-*-linux* i?86-*-linux*
++
++#...
++Program Headers:
++  Type.*
++  LOAD +0x[0-9a-f]+ .*0x1000
++  NOTE +0x[0-9a-f]+ .*
++
++#...
++  Segment Sections...
++   00[ \t]+.text *
++   01[ \t]+.note *
++#pass
+diff --git a/ld/testsuite/ld-elf/minpage5.s b/ld/testsuite/ld-elf/minpage5.s
+new file mode 100644
+index 0000000000..93d6b36fed
+--- /dev/null
++++ b/ld/testsuite/ld-elf/minpage5.s
+@@ -0,0 +1,8 @@
++	.globl _entry
++	.text
++_entry:
++	.byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
++	.section .foo,"awx",%progbits
++	.byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
++	.section .note,"",%note
++	.byte 0
+diff --git a/ld/testsuite/ld-elf/minpage5.t b/ld/testsuite/ld-elf/minpage5.t
+new file mode 100644
+index 0000000000..7f19343e90
+--- /dev/null
++++ b/ld/testsuite/ld-elf/minpage5.t
+@@ -0,0 +1,15 @@
++OUTPUT_FORMAT("elf32-i386")
++OUTPUT_ARCH(i386)
++ENTRY(_entry)
++PHDRS
++{
++  data PT_LOAD;
++  note PT_NOTE;
++}
++SECTIONS
++{
++  .text : { *(.text) } :data
++  .foo : { *(.foo) } :data
++  .note : { *(.note) } :note
++  /DISCARD/ : { *(*) }
++}
+-- 
+2.20.1
+
