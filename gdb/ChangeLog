@@ -1,3 +1,564 @@
+2019-04-27  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	Support style in 'frame|thread apply'
+
+	* gdbcmd.h (execute_command_to_string): New term_out parameter.
+	* record.c (record_start, record_stop): Update callers of
+	execute_command_to_string with false.
+	* guile/guile.c (gdbscm_execute_gdb_command): Likewise.
+	* ui-file.h (class ui_file): New term_out and can_emit_style_escape
+	methods.
+	(class string_file): New constructor with term_out parameter.
+	Override methods term_out and can_emit_style_escape.  New member
+	term_out.
+	(class stdio_file): Override can_emit_style_escape.
+	(class tee_file): Override term_out and can_emit_style_escape.
+	* utils.h (can_emit_style_escape): Remove.
+	* utils.c (can_emit_style_escape): Likewise.
+	Update all callers of can_emit_style_escape (SOMESTREAM) to
+	SOMESTREAM->can_emit_style_escape.
+	* source-cache.c (source_cache::get_source_lines): Likewise.
+	* stack.c (frame_apply_command_count): Call execute_command_to_string
+	passing the term_out characteristic of the current gdb_stdout.
+	* thread.c (thr_try_catch_cmd): Likewise.
+	* top.c (execute_command_to_string): pass term_out parameter
+	to construct the string_file for the command output.
+	* ui-file.c (term_cli_styling): New function (most code moved
+	from utils.c can_emit_style_escape).
+	(string_file::string_file, string_file::can_emit_style_escape,
+	stdio_file::can_emit_style_escape, tee_file::term_out,
+	tee_file::can_emit_style_escape): New functions.
+
+2019-04-27  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* NEWS: Mention the new set|show may-call-functions.
+	* infcall.c (may_call_functions_p): New variable.
+	(show_may_call_functions_p): New function.
+	(call_function_by_hand_dummy): Throws an error if not
+	may-call-functions.
+	(_initialize_infcall): Call add_setshow_boolean_cmd for
+	may-call-functions.
+
+2019-04-25  Keith Seitz  <keiths@redhat.com>
+
+	PR c++/24367
+	* cp-support.c (inspect_type): Don't attempt substitutions
+	of symbol with the same name.
+
+2019-04-25  Tom Tromey  <tromey@adacore.com>
+
+	PR gdb/24475:
+	* event-top.c (gdb_rl_callback_handler): Make "gdb_rl_expt"
+	static.
+
+2019-04-25  Tom Tromey  <tromey@adacore.com>
+
+	* xml-support.c (struct gdb_xml_parser) <set_error>: Take an
+	rvalue reference.
+	(gdb_xml_start_element_wrapper, gdb_xml_end_element_wrapper)
+	(gdb_xml_parser::parse): Use std::move.
+	* python/python-internal.h (gdbpy_convert_exception): Take a const
+	reference.
+	* python/py-value.c (valpy_getitem, valpy_nonzero): Use
+	std::move.
+	* python/py-utils.c (gdbpy_convert_exception): Take a const
+	reference.
+	* python/py-inferior.c (infpy_write_memory, infpy_search_memory):
+	Use std::move.
+	* python/py-breakpoint.c (bppy_set_condition, bppy_set_commands):
+	Use std::move.
+	* mi/mi-main.c (mi_print_exception): Take a const reference.
+	* main.c (handle_command_errors): Take a const reference.
+	* linespec.c (parse_linespec): Use std::move.
+	* infcall.c (run_inferior_call): Use std::move.
+	(call_function_by_hand_dummy): Use std::move.
+	* exec.c (try_open_exec_file): Use std::move.
+	* exceptions.h (exception_print, exception_fprintf)
+	(exception_print_same): Update.
+	* exceptions.c (print_exception, exception_print)
+	(exception_fprintf, exception_print_same): Change parameters to
+	const reference.
+	* event-top.c (gdb_rl_callback_read_char_wrapper): Update.
+	* common/new-op.c: Use std::move.
+	* common/common-exceptions.h (struct gdb_exception): Add move
+	constructor.
+	(struct gdb_exception_error, struct gdb_exception_quit, struct
+	gdb_quit_bad_alloc): Change constructor to move constructor.
+	(throw_exception): Change parameter to rvalue reference.
+	* common/common-exceptions.c (throw_exception): Take rvalue
+	reference.
+	* cli/cli-interp.c (safe_execute_command): Use std::move.
+	* breakpoint.c (insert_bp_location, location_to_sals): Use
+	std::move.
+
+2019-04-25  Tom Tromey  <tromey@adacore.com>
+
+	* guile/scm-exception.c (gdbscm_scm_from_gdb_exception)
+	(gdbscm_throw_gdb_exception): Take a gdbscm_gdb_exception.
+	* guile/scm-block.c, guile/scm-breakpoint.c, guile/scm-cmd.c,
+	guile/scm-disasm.c, guile/scm-frame.c, guile/scm-lazy-string.c,
+	guile/scm-math.c, guile/scm-param.c, guile/scm-ports.c,
+	guile/scm-symbol.c, guile/scm-symtab.c, guile/scm-type.c,
+	guile/scm-value.c: Use unpack.
+	* guile/guile-internal.h (gdbscm_scm_from_gdb_exception): Take a
+	gdbscm_gdb_exception.
+	(gdbscm_throw_gdb_exception): Likewise.
+	(struct gdbscm_gdb_exception): New.
+	(unpack): New function.
+	(gdbscm_wrap): Use unpack.
+
+2019-04-25  Tom Tromey  <tromey@adacore.com>
+
+	* event-top.c (gdb_rl_callback_read_char_wrapper_noexcept)
+	(gdb_rl_callback_handler): Use std::move.
+	* common/common-exceptions.h (struct gdb_exception): Add move
+	assignment operator.
+	(throw_exception_sjlj): Change "exception" to const reference.
+	* common/common-exceptions.c (exceptions_state_mc_catch): Update.
+	(throw_exception_sjlj): Change "exception" to const reference.
+
+2019-04-25  Tom Tromey  <tromey@adacore.com>
+
+	* xml-support.c (gdb_xml_parser::gdb_xml_parser): Update.
+	* python/py-value.c (valpy_getitem, valpy_nonzero): Update.
+	* python/py-inferior.c (infpy_write_memory, infpy_search_memory):
+	Update.
+	* python/py-breakpoint.c (bppy_set_condition, bppy_set_commands):
+	Update.
+	* mi/mi-interp.c (mi_interp::exec): Update.
+	* linespec.c (parse_linespec): Update.
+	* infcall.c (run_inferior_call): Update.
+	* guile/scm-value.c (gdbscm_value_to_lazy_string): Update.
+	* guile/scm-symbol.c (gdbscm_lookup_symbol)
+	(gdbscm_lookup_global_symbol): Update.
+	* guile/scm-param.c (gdbscm_parameter_value): Update.
+	* guile/scm-frame.c (gdbscm_frame_read_register)
+	(gdbscm_frame_read_var): Update.
+	* guile/scm-breakpoint.c (gdbscm_register_breakpoint_x): Update.
+	* exec.c (try_open_exec_file): Update.
+	* event-top.c (gdb_rl_callback_read_char_wrapper_noexcept)
+	(gdb_rl_callback_handler): Update.
+	* common/common-exceptions.h (exception_none): Don't declare.
+	* common/common-exceptions.c (exception_none): Don't define.
+	(struct catcher) <exception>: Update.
+	* cli/cli-interp.c (safe_execute_command): Update.
+	* breakpoint.c (insert_bp_location, location_to_sals): Update.
+
+2019-04-25  Ali Tamur  <tamur@google.com>
+
+	* dwarf2read.c (skip_one_die): Add DW_FORM_strx.
+	(read_attribute_value): Likewise.
+	(dwarf2_read_addr_index): Update comment.
+	(read_str_index): Add DW_FORM_strx.
+	(dwarf2_string_attr): Likewise.
+	(dwarf2_const_value_attr): Likewise.
+	(dump_die_shallow): Likewise.
+	(dwarf2_fetch_constant_bytes): Likewise.
+	(skip_form_bytes): Likewise.
+	* testsuite/lib/dwarf.exp (_handle_DW_FORM): Add DW_FORM_strx.
+
+2019-04-25  Sergio Durigan Junior  <sergiodj@redhat.com>
+
+	PR corefiles/11608
+	PR corefiles/18187
+	* linux-tdep.c (dump_mapping_p): Add new parameters ADDR and
+	OFFSET.  Verify if current mapping contains an ELF header.
+	(linux_find_memory_regions_full): Adjust call to
+	dump_mapping_p.
+
+2019-04-25  Sandra Loosemore  <sandra@codesourcery.com>
+	    Kang Li <kanglictf@gmail.com>
+
+	PR gdb/21600
+
+	* dwarf2-frame.c (read_initial_length): Be consistent about using
+	unsigned representation of length.
+	(decode_frame_entry_1): Likewise.  Check for wraparound of
+	end pointer as well as buffer overflow.
+
+2019-04-24  Sergio Durigan Junior  <sergiodj@redhat.com>
+
+	* aarch64-tdep.c (aarch64_gdbarch_init): Use "pulongest" to print
+	"vq".
+
+2019-04-24  Tom Tromey  <tromey@adacore.com>
+
+	* amd64-tdep.c (amd64_has_unaligned_fields): Ignore bitfields.
+
+2019-04-23  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* s12z-tdep.c (s12z_unwind_pc): Delete.
+	(s12z_unwind_sp): Delete.
+	(s12z_gdbarch_init): Don't register deleted functions with
+	gdbarch.
+
+2019-04-23  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* rl78-tdep.c (rl78_unwind_sp): Delete.
+	(rl78_gdbarch_init): Don't register deleted function with gdbarch.
+
+2019-04-23  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* xstormy16-tdep.c (xstormy16_unwind_sp): Delete.
+	(xstormy16_unwind_pc): Delete.
+	(xstormy16_dummy_id): Delete.
+	(xstormy16_gdbarch_init): Don't register deleted functions with
+	gdbarch.
+
+2019-04-23  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* vax-tdep.c (vax_unwind_pc): Delete.
+	(vax_gdbarch_init): Don't register deleted function with gdbarch.
+
+2019-04-23  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* v850-tdep.c (v850_unwind_sp): Delete.
+	(v850_unwind_pc): Delete.
+	(v850_dummy_id): Delete.
+	(v850_gdbarch_init): Don't register deleted functions with
+	gdbarch.
+
+2019-04-23  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* tilegx-tdep.c (tilegx_unwind_sp): Delete.
+	(tilegx_unwind_pc): Delete.
+	(tilegx_unwind_dummy_id): Delete.
+	(tilegx_gdbarch_init): Don't register deleted functions with
+	gdbarch.
+
+2019-04-23  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* tic6x-tdep.c (tic6x_unwind_sp): Delete.
+	(tic6x_dummy_id): Delete.
+	(tic6x_gdbarch_init): Don't register deleted functions with
+	gdbarch.
+
+2019-04-23  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* sparc-tdep.c (sparc_unwind_pc): Delete.
+	(sparc32_gdbarch_init): Don't register deleted function with
+	gdbarch.
+
+2019-04-23  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* sh-tdep.c (sh_unwind_sp): Delete.
+	(sh_unwind_pc): Delete.
+	(sh_dummy_id): Delete.
+	(sh_gdbarch_init): Don't register deleted functions with
+	gdbarch.
+
+2019-04-23  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* score-tdep.c (score_unwind_sp): Delete.
+	(score_unwind_pc): Delete.
+	(score_dummy_id): Delete.
+	(score_gdbarch_init): Don't register deleted functions with
+	gdbarch.
+
+2019-04-23  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* rx-tdep.c (rx_unwind_pc): Delete.
+	(rx_unwind_sp): Delete.
+	(rx_dummy_id): Delete.
+	(rx_gdbarch_init): Don't register deleted functions with
+	gdbarch.  Update comment.
+
+2019-04-23  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* rs6000-tdep.c (rs6000_unwind_pc): Delete.
+	(rs6000_dummy_id): Delete.
+	(rs6000_gdbarch_init): Don't register deleted functions with
+	gdbarch.
+
+2019-04-23  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* or1k-tdep.c (or1k_dummy_id): Delete.
+	(or1k_gdbarch_init): Don't register deleted function with gdbarch.
+
+2019-04-23  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* nios2-tdep.c (nios2_dummy_id): Delete.
+	(nios2_unwind_sp): Delete.
+	(nios2_gdbarch_init): Don't register deleted functions with
+	gdbarch.
+
+2019-04-23  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* nds32-tdep.c (nds32_dummy_id): Delete.
+	(nds32_unwind_pc): Delete.
+	(nds32_unwind_sp): Delete.
+	(nds32_gdbarch_init): Don't register deleted functions with
+	gdbarch.
+
+2019-04-23  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* msp430-tdep.c (msp430_unwind_pc): Delete.
+	(msp430_unwind_sp): Delete.
+	(msp430_dummy_id): Delete.
+	(msp430_gdbarch_init): Don't register deleted functions with
+	gdbarch.
+
+2019-04-23  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* moxie-tdep.c (moxie_unwind_sp): Delete.
+	(moxie_unwind_pc): Delete.
+	(moxie_dummy_id): Delete.
+	(moxie_gdbarch_init): Don't register deleted functions with
+	gdbarch.
+
+2019-04-23  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* mn10300-tdep.c (mn10300_dummy_id): Delete.
+	(mn10300_unwind_pc): Delete.
+	(mn10300_unwind_sp): Delete.
+	(mn10300_push_dummy_call): Use gdbarch_unwind_sp not
+	mn10300_unwind_sp.
+	(mn10300_frame_unwind_init): Don't register deleted functions with
+	gdbarch.
+
+2019-04-23  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* mep-tdep.c (mep_unwind_pc): Delete.
+	(mep_unwind_sp): Delete.
+	(mep_dummy_id): Delete.
+	(mep_gdbarch_init): Don't register deleted functions with
+	gdbarch.
+
+2019-04-23  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* m68hc11-tdep.c (m68hc11_unwind_pc): Delete.
+	(m68hc11_unwind_sp): Delete.
+	(m68hc11_gdbarch_init): Don't register deleted functions with
+	gdbarch.
+
+2019-04-23  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* m32r-tdep.c (m32r_unwind_sp): Delete.
+	(m32r_unwind_pc): Delete.
+	(m32r_dummy_id): Delete.
+	(m32r_gdbarch_init): Don't register deleted functions with
+	gdbarch.
+
+2019-04-23  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* m32c-tdep.c (m32c_unwind_pc): Delete.
+	(m32c_unwind_sp): Delete.
+	(m32c_dummy_id): Delete.
+	(m32c_gdbarch_init): Don't register deleted functions with
+	gdbarch.
+
+2019-04-23  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb/lm32-tdep.c (lm32_unwind_sp): Delete.
+	(lm32_unwind_pc): Delete.
+	(lm32_dummy_id): Delete.
+	(lm32_gdbarch_init): Don't register deleted functions with
+	gdbarch.
+
+2019-04-23  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb/iq2000-tdep.c (iq2000_unwind_sp): Delete.
+	(iq2000_unwind_pc): Delete.
+	(iq2000_dummy_id): Delete.
+	(iq2000_gdbarch_init): Don't register deleted functions with
+	gdbarch.
+
+2019-04-23  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* nds32-tdep.c (nds32_type_align): Delete.
+	(nds32_push_dummy_call): Use type_align instead.
+
+2019-04-23  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* arm-tdep.c (arm_type_align): Only handle vector override case.
+	(arm_push_dummy_call): Use type_align.
+	(arm_gdbarch_init): Register arm_type_align gdbarch function.
+
+2019-04-23  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* aarch64-tdep.c (aarch64_type_align): Only handle vector override
+	case.
+	(pass_on_stack): Use type_align.
+	(aarch64_gdbarch_init): Register aarch64_type_align gdbarch
+	function.
+
+2019-04-23  Tom Tromey  <tromey@adacore.com>
+
+	* dwarf2read.c (line_header::file_name_at): Remove unused
+	overload.
+
+2019-04-23  Tom de Vries  <tdevries@suse.de>
+
+	PR gdb/24438
+	* contrib/cc-with-tweaks.sh: Remove superfluous .alt file after dwz
+	invocation.
+
+
+2019-03-27  Ali Tamur  <tamur@google.com>
+
+	* dwarf2-frame.c(dwarf_expr_executor::get_addr_index): Update comment
+	* dwarf2expr.c(dwarf_expr_context::execute_stack_op): Add DW_OP_addrx
+	* dwarf2expr.h(dwarf_expr_context::offset): Update comment
+	(dwarf_expr_context::get_addr_index): Likewise
+	* dwarf2loc.c(dwarf_evaluate_loc_desc::get_addr_index): Likewise
+	(symbol_needs_eval_context::get_addr_index): Likewise
+	(disassemble_dwarf_expression): Add DW_OP_addrx
+	* dwarf2read.c(attr_value_as_address): Add DW_FORM_addrx
+	(read_cutu_die_from_dwo): Update comment
+	(skip_one_die): Add DW_FORM_addrx
+	(read_attribute_value): Likewise
+	(var_decode_location): Add DW_OP_addrx
+	(dwarf2_const_value_attr): Add DW_FORM_addrx
+	(dump_die_shallow): Likewise
+	(dwarf2_fetch_constant_bytes): Likewise
+	(decode_locdesc): Add DW_OP_addrx
+	(skip_form_bytes): Add DW_FORM_addrx
+
+2019-04-22  Ali Tamur  <tamur@google.com>
+
+	* MAINTAINERS (Write After Approval): Add self.
+
+2019-04-22  Simon Marchi  <simon.marchi@efficios.com>
+
+	* solib-svr4.c (get_svr4_info): Add pspace parameter.
+	(svr4_keep_data_in_core): Pass current_program_space to get_svr4_info.
+	(open_symbol_file_object): Likewise.
+	(svr4_default_sos): Add info parameter.
+	(svr4_read_so_list): Likewise.
+	(svr4_current_sos_direct): Adjust functions calls to pass down
+	info.
+	(svr4_current_sos_1): Add info parameter.
+	(svr4_current_sos): Call get_svr4_info, pass info down to
+	svr4_current_sos_1.
+	(svr4_fetch_objfile_link_map): Pass objfile->pspace to
+	get_svr4_info.
+	(svr4_in_dynsym_resolve_code): Pass current_program_space to
+	get_svr4_info.
+	(probes_table_htab_remove_objfile_probes): Pass objfile->pspace
+	to get_svr4_info.
+	(probes_table_remove_objfile_probes): Likewise.
+	(register_solib_event_probe): Add info parameter.
+	(solist_update_incremental): Pass info parameter down to
+	svr4_read_so_list.
+	(disable_probes_interface): Add info parameter.
+	(svr4_handle_solib_event): Pass current_program_space to
+	get_svr4_info.  Adjust disable_probes_interface cleanup.
+	(svr4_create_probe_breakpoints): Add info parameter, pass it
+	down to register_solib_event_probe.
+	(svr4_create_solib_event_breakpoints): Add info parameter,
+	pass it down to svr4_create_probe_breakpoints.
+	(enable_break): Pass info down to
+	svr4_create_solib_event_breakpoints.
+	(svr4_solib_create_inferior_hook): Pass current_program_space to
+	get_svr4_info.
+	(svr4_clear_solib): Likewise.
+
+2019-04-22  Pedro Alves  <palves@redhat.com>
+
+	* solib-svr4.c (svr4_free_objfile_observer): New.
+	(probe_and_action::objfile): New field.
+	(probes_table_htab_remove_objfile_probes)
+	(probes_table_remove_objfile_probes): New functions.
+	(register_solib_event_probe): Add 'objfile' parameter.  Store it
+	in the new probe_and_action.  Don't store the probe in 'lookup'.
+	(svr4_create_probe_breakpoints): Pass objfile to
+	register_solib_event_probe.
+	(_initialize_svr4_solib): Register a free_objfile observer.
+
+2019-04-19  Tom Tromey  <tom@tromey.com>
+
+	* common/queue.h: Remove.
+
+2019-04-19  Tom Tromey  <tom@tromey.com>
+
+	* event-loop.c: Don't include "common/queue.h".
+
+2019-04-19  Tom Tromey  <tom@tromey.com>
+
+	* remote.c (remote_target): Use delete.
+	* remote-notif.h: Include <list>, not "common/queue.h".
+	(notif_client_p): Remove typedef.
+	(remote_notif_state): Add constructor, destructor, initializer.
+	<notif_queue>: Now a std::list.
+	(remote_notif_state_xfree): Don't declare.
+	* remote-notif.c (remote_notif_process, handle_notification)
+	(remote_notif_state_allocate): Update.
+	(~remote_notif_state): Rename from remote_notif_state_xfree.
+
+2019-04-19  Tom Tromey  <tom@tromey.com>
+
+	* symfile.c (reread_symbols): Update.
+	* objfiles.c (objfile_register_static_link)
+	(objfile_lookup_static_link): Update
+	(~objfile) Don't delete static_links.
+	* objfiles.h (struct objfile) <static_links>: Now an htab_up.
+
+2019-04-19  Tom Tromey  <tom@tromey.com>
+
+	* type-stack.h (struct type_stack) <insert>: Constify string.
+	* type-stack.c (type_stack::insert): Constify string.
+	* gdbtypes.h (lookup_template_type): Update.
+	(address_space_name_to_int): Update.
+	* gdbtypes.c (address_space_name_to_int): Make space_identifier
+	const.
+	(lookup_template_type): Make name const.
+	* c-exp.y: Update rules.
+	(lex_one_token, classify_name, classify_inner_name)
+	(c_print_token): Update.
+	* p-exp.y: Update rules.
+	(yylex): Update.
+	* f-exp.y: Update rules.
+	(yylex): Update.
+	* d-exp.y: Update rules.
+	(lex_one_token, classify_name, classify_inner_name): Update.
+	* parse.c (write_dollar_variable, copy_name): Return std::string.
+	* parser-defs.h (copy_name): Change return type.
+	* m2-exp.y: Update rules.
+	(yylex): Update.
+	* go-exp.y (lex_one_token): Update.
+	Update rules.
+	(classify_unsafe_function, classify_packaged_name)
+	(classify_name, yylex): Update.
+
+2019-04-19  Sergei Trofimovich <siarheit@google.com>
+
+	* configure.ac: add --enable-source-highlight switch.
+	* configure: Regenerate.
+	* top.c (print_gdb_version): plumb --enable-source-highlight
+	status to "show configuration".
+
+2019-04-19  Tom Tromey  <tromey@adacore.com>
+
+	* ada-lang.c (ada_is_variant_part, ada_to_fixed_type_1):
+	Check ADA_TYPE_P.
+	(empty_record, ada_template_to_fixed_record_type_1)
+	(template_to_static_fixed_type)
+	(to_record_with_fixed_variant_part): Use INIT_NONE_SPECIFIC.
+	* cp-abi.c (value_rtti_type): Check HAVE_CPLUS_STRUCT.
+	* gdbtypes.h (INIT_NONE_SPECIFIC, ADA_TYPE_P): New
+	macros.
+
+2019-04-19  Ilya Yu. Malakhov  <malakhov@mcst.ru>
+
+	PR symtab/24423:
+	* source.c (print_source_lines_base): Advance "iter" when a
+	control character is seen.
+
+2019-04-19  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* inferior.h (struct infcall_suspend_state_deleter):
+	Catch exception in destructor to avoid crash.
+
+2019-04-19  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* cli/cli-cmds.c (_initialize_cli_cmds): Move "shell" "!" alias
+	close to the add_com "shell".
+
+2019-04-18  Tom Tromey  <tromey@adacore.com>
+
+	* process-stratum-target.h (class process_stratum_target)
+	<stratum>: Add "final".
+
 2019-04-17  Tom Tromey  <tromey@adacore.com>
 
 	* dwarf2read.c (dwarf2_init_complex_target_type): Check "tt"

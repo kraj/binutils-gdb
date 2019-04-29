@@ -19,7 +19,7 @@
 # MA 02110-1301, USA.
 
 # Check to see if the C and C++ compilers work
-if { [which $CC] == 0 || [which $CXX] == 0 } {
+if { ![check_compiler_available] || [which $CXX] == 0 } {
     return
 }
 
@@ -231,6 +231,9 @@ set lto_link_tests [list \
    {pr23958.c} \
    "" \
    "libpr23958.so"] \
+  [list "Build pr24406-2b.o" \
+   "" "-O2 -fno-lto" \
+   {pr24406-2b.c}] \
 ]
 
 if { [at_least_gcc_version 4 7] } {
@@ -322,6 +325,18 @@ set lto_link_elf_tests [list \
   [list {Build pr22220main.o} \
    {} {-flto} \
    {pr22220main.cc} {} {} {c++}] \
+  [list "Build pr24486a.o" \
+   "$plug_opt" "-flto -O2" \
+   {pr24486a.c} {} "" "c"] \
+  [list "Build pr24486b.so" \
+   "-shared" "-O2 -fpic" \
+   {pr24486b.c} {} "pr24486b.so" "c"] \
+  [list "Build pr24486c.so" \
+   "-shared -Wl,--no-as-needed tmpdir/pr24486b.so" "-O2 -fpic" \
+   {pr24486c.c} {} "pr24486c.so" "c"] \
+  [list "PR ld/24486" \
+   "-O2 -flto tmpdir/pr24486a.o tmpdir/pr24486c.so -Wl,--as-needed tmpdir/pr24486b.so" "" \
+   {dummy.c} {} "pr24486.exe"] \
 ]
 
 # PR 14918 checks that libgcc is not spuriously included in a shared link of
@@ -434,6 +449,15 @@ set lto_run_tests [list \
    "-O2 -flto" "" \
    {dummy.c} "pr22751" "pass.out" "-flto -O2" "c" "" \
    "-Wl,--whole-archive tmpdir/pr22751.a -Wl,--no-whole-archive"] \
+  [list "Run pr24406-1" \
+   "-O2 -flto" "" \
+   {pr24406-1.c} "pr24406-1" "pass.out" "-flto -O2" "c" "" \
+   "-Wl,--wrap=read"] \
+  [list "Run pr24406-2" \
+   "-O2 -flto" "" \
+   {pr24406-2a.c} "pr24406-2" "pass.out" \
+   "-flto -O2" "c" "" \
+   "tmpdir/pr24406-2b.o -Wl,--wrap=cook"] \
 ]
 
 if { [at_least_gcc_version 4 7] } {

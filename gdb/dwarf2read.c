@@ -1036,14 +1036,6 @@ struct line_header
     return &file_names[vec_index];
   }
 
-  /* Const version of the above.  */
-  const file_entry *file_name_at (unsigned int index) const
-  {
-    if (index >= file_names.size ())
-      return NULL;
-    return &file_names[index];
-  }
-
   /* Offset of line number information in .debug_line section.  */
   sect_offset sect_off {};
 
@@ -2134,7 +2126,8 @@ attr_value_as_address (struct attribute *attr)
 {
   CORE_ADDR addr;
 
-  if (attr->form != DW_FORM_addr && attr->form != DW_FORM_GNU_addr_index)
+  if (attr->form != DW_FORM_addr && attr->form != DW_FORM_addrx
+      && attr->form != DW_FORM_GNU_addr_index)
     {
       /* Aside from a few clearly defined exceptions, attributes that
 	 contain an address must always be in DW_FORM_addr form.
@@ -7229,7 +7222,8 @@ read_cutu_die_from_dwo (struct dwarf2_per_cu_data *this_cu,
       comp_dir = dwarf2_attr (stub_comp_unit_die, DW_AT_comp_dir, cu);
 
       /* There should be a DW_AT_addr_base attribute here (if needed).
-	 We need the value before we can process DW_FORM_GNU_addr_index.  */
+	 We need the value before we can process DW_FORM_GNU_addr_index
+         or DW_FORM_addrx.  */
       cu->addr_base = 0;
       attr = dwarf2_attr (stub_comp_unit_die, DW_AT_GNU_addr_base, cu);
       if (attr)
@@ -9366,6 +9360,8 @@ skip_one_die (const struct die_reader_specs *reader, const gdb_byte *info_ptr,
 	case DW_FORM_block4:
 	  info_ptr += 4 + read_4_bytes (abfd, info_ptr);
 	  break;
+	case DW_FORM_addrx:
+	case DW_FORM_strx:
 	case DW_FORM_sdata:
 	case DW_FORM_udata:
 	case DW_FORM_ref_udata:
@@ -19279,6 +19275,7 @@ read_attribute_value (const struct die_reader_specs *reader,
     case DW_FORM_implicit_const:
       DW_SND (attr) = implicit_const;
       break;
+    case DW_FORM_addrx:
     case DW_FORM_GNU_addr_index:
       if (reader->dwo_file == NULL)
 	{
@@ -19291,6 +19288,7 @@ read_attribute_value (const struct die_reader_specs *reader,
       DW_ADDR (attr) = read_addr_index_from_leb128 (cu, info_ptr, &bytes_read);
       info_ptr += bytes_read;
       break;
+    case DW_FORM_strx:
     case DW_FORM_GNU_str_index:
       if (reader->dwo_file == NULL)
 	{
@@ -19886,7 +19884,7 @@ dwarf2_read_addr_index (struct dwarf2_per_cu_data *per_cu,
 			    addr_size);
 }
 
-/* Given a DW_FORM_GNU_str_index, fetch the string.
+/* Given a DW_FORM_GNU_str_index or DW_FORM_strx, fetch the string.
    This is only used by the Fission support.  */
 
 static const char *
@@ -19903,7 +19901,7 @@ read_str_index (const struct die_reader_specs *reader, ULONGEST str_index)
     &reader->dwo_file->sections.str_offsets;
   const gdb_byte *info_ptr;
   ULONGEST str_offset;
-  static const char form_name[] = "DW_FORM_GNU_str_index";
+  static const char form_name[] = "DW_FORM_GNU_str_index or DW_FORM_strx";
 
   dwarf2_read_section (objfile, str_section);
   dwarf2_read_section (objfile, str_offsets_section);
@@ -20069,6 +20067,7 @@ dwarf2_string_attr (struct die_info *die, unsigned int name, struct dwarf2_cu *c
     {
       if (attr->form == DW_FORM_strp || attr->form == DW_FORM_line_strp
 	  || attr->form == DW_FORM_string
+	  || attr->form == DW_FORM_strx
 	  || attr->form == DW_FORM_GNU_str_index
 	  || attr->form == DW_FORM_GNU_strp_alt)
 	str = DW_STRING (attr);
@@ -21360,13 +21359,14 @@ var_decode_location (struct attribute *attr, struct symbol *sym,
 
   /* Handle one degenerate form of location expression specially, to
      preserve GDB's previous behavior when section offsets are
-     specified.  If this is just a DW_OP_addr or DW_OP_GNU_addr_index
-     then mark this symbol as LOC_STATIC.  */
+     specified.  If this is just a DW_OP_addr, DW_OP_addrx, or
+     DW_OP_GNU_addr_index then mark this symbol as LOC_STATIC.  */
 
   if (attr_form_is_block (attr)
       && ((DW_BLOCK (attr)->data[0] == DW_OP_addr
 	   && DW_BLOCK (attr)->size == 1 + cu_header->addr_size)
-	  || (DW_BLOCK (attr)->data[0] == DW_OP_GNU_addr_index
+	  || ((DW_BLOCK (attr)->data[0] == DW_OP_GNU_addr_index
+               || DW_BLOCK (attr)->data[0] == DW_OP_addrx)
 	      && (DW_BLOCK (attr)->size
 		  == 1 + leb128_size (&DW_BLOCK (attr)->data[1])))))
     {
@@ -21863,6 +21863,7 @@ dwarf2_const_value_attr (const struct attribute *attr, struct type *type,
   switch (attr->form)
     {
     case DW_FORM_addr:
+    case DW_FORM_addrx:
     case DW_FORM_GNU_addr_index:
       {
 	gdb_byte *data;
@@ -21890,6 +21891,7 @@ dwarf2_const_value_attr (const struct attribute *attr, struct type *type,
       break;
     case DW_FORM_string:
     case DW_FORM_strp:
+    case DW_FORM_strx:
     case DW_FORM_GNU_str_index:
     case DW_FORM_GNU_strp_alt:
       /* DW_STRING is already allocated on the objfile obstack, point
@@ -22839,6 +22841,7 @@ dump_die_shallow (struct ui_file *f, int indent, struct die_info *die)
       switch (die->attrs[i].form)
 	{
 	case DW_FORM_addr:
+	case DW_FORM_addrx:
 	case DW_FORM_GNU_addr_index:
 	  fprintf_unfiltered (f, "address: ");
 	  fputs_filtered (hex_string (DW_ADDR (&die->attrs[i])), f);
@@ -22893,6 +22896,7 @@ dump_die_shallow (struct ui_file *f, int indent, struct die_info *die)
 	case DW_FORM_string:
 	case DW_FORM_strp:
 	case DW_FORM_line_strp:
+	case DW_FORM_strx:
 	case DW_FORM_GNU_str_index:
 	case DW_FORM_GNU_strp_alt:
 	  fprintf_unfiltered (f, "string: \"%s\" (%s canonicalized)",
@@ -23308,6 +23312,7 @@ dwarf2_fetch_constant_bytes (sect_offset sect_off,
   switch (attr->form)
     {
     case DW_FORM_addr:
+    case DW_FORM_addrx:
     case DW_FORM_GNU_addr_index:
       {
 	gdb_byte *tem;
@@ -23320,6 +23325,7 @@ dwarf2_fetch_constant_bytes (sect_offset sect_off,
       break;
     case DW_FORM_string:
     case DW_FORM_strp:
+    case DW_FORM_strx:
     case DW_FORM_GNU_str_index:
     case DW_FORM_GNU_strp_alt:
       /* DW_STRING is already allocated on the objfile obstack, point
@@ -23912,6 +23918,7 @@ decode_locdesc (struct dwarf_block *blk, struct dwarf2_cu *cu)
 	case DW_OP_GNU_uninit:
 	  break;
 
+	case DW_OP_addrx:
 	case DW_OP_GNU_addr_index:
 	case DW_OP_GNU_const_index:
 	  stack[++stacki] = read_addr_index_from_leb128 (cu, &data[i],
@@ -24282,7 +24289,9 @@ skip_form_bytes (bfd *abfd, const gdb_byte *bytes, const gdb_byte *buffer_end,
       bytes += 4 + read_4_bytes (abfd, bytes);
       break;
 
+    case DW_FORM_addrx:
     case DW_FORM_sdata:
+    case DW_FORM_strx:
     case DW_FORM_udata:
     case DW_FORM_GNU_addr_index:
     case DW_FORM_GNU_str_index:

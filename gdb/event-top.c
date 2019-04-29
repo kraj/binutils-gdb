@@ -164,7 +164,7 @@ void (*after_char_processing_hook) (void);
 static struct gdb_exception
 gdb_rl_callback_read_char_wrapper_noexcept () noexcept
 {
-  struct gdb_exception gdb_expt = exception_none;
+  struct gdb_exception gdb_expt;
 
   /* C++ exceptions can't normally be thrown across readline (unless
      it is built with -fexceptions, but it won't by default on many
@@ -178,7 +178,7 @@ gdb_rl_callback_read_char_wrapper_noexcept () noexcept
     }
   CATCH_SJLJ (ex, RETURN_MASK_ALL)
     {
-      gdb_expt = ex;
+      gdb_expt = std::move (ex);
     }
   END_CATCH_SJLJ
 
@@ -193,7 +193,7 @@ gdb_rl_callback_read_char_wrapper (gdb_client_data client_data)
 
   /* Rethrow using the normal EH mechanism.  */
   if (gdb_expt.reason < 0)
-    throw_exception (gdb_expt);
+    throw_exception (std::move (gdb_expt));
 }
 
 /* GDB's readline callback handler.  Calls the current INPUT_HANDLER,
@@ -205,16 +205,20 @@ gdb_rl_callback_read_char_wrapper (gdb_client_data client_data)
 static void
 gdb_rl_callback_handler (char *rl) noexcept
 {
-  struct gdb_exception gdb_rl_expt = exception_none;
+  /* This is static to avoid undefined behavior when calling longjmp
+     -- gdb_exception has a destructor with side effects.  */
+  static struct gdb_exception gdb_rl_expt;
   struct ui *ui = current_ui;
 
   try
     {
+      /* Ensure the exception is reset on each call.  */
+      gdb_rl_expt = {};
       ui->input_handler (gdb::unique_xmalloc_ptr<char> (rl));
     }
-  catch (const gdb_exception &ex)
+  catch (gdb_exception &ex)
     {
-      gdb_rl_expt = ex;
+      gdb_rl_expt = std::move (ex);
     }
 
   /* If we caught a GDB exception, longjmp out of the readline

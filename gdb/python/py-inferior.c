@@ -546,7 +546,7 @@ infpy_read_memory (PyObject *self, PyObject *args, PyObject *kw)
 static PyObject *
 infpy_write_memory (PyObject *self, PyObject *args, PyObject *kw)
 {
-  struct gdb_exception except = exception_none;
+  struct gdb_exception except;
   Py_ssize_t buf_len;
   const gdb_byte *buffer;
   CORE_ADDR addr, length;
@@ -574,9 +574,9 @@ infpy_write_memory (PyObject *self, PyObject *args, PyObject *kw)
     {
       write_memory_with_notification (addr, buffer, length);
     }
-  catch (const gdb_exception &ex)
+  catch (gdb_exception &ex)
     {
-      except = ex;
+      except = std::move (ex);
     }
 
   GDB_PY_HANDLE_EXCEPTION (except);
@@ -682,7 +682,7 @@ get_char_buffer (PyObject *self, Py_ssize_t segment, char **ptrptr)
 static PyObject *
 infpy_search_memory (PyObject *self, PyObject *args, PyObject *kw)
 {
-  struct gdb_exception except = exception_none;
+  struct gdb_exception except;
   CORE_ADDR start_addr, length;
   static const char *keywords[] = { "address", "length", "pattern", NULL };
   PyObject *start_addr_obj, *length_obj;
@@ -728,9 +728,9 @@ infpy_search_memory (PyObject *self, PyObject *args, PyObject *kw)
 				    buffer, pattern_size,
 				    &found_addr);
     }
-  catch (const gdb_exception &ex)
+  catch (gdb_exception &ex)
     {
-      except = ex;
+      except = std::move (ex);
     }
 
   GDB_PY_HANDLE_EXCEPTION (except);

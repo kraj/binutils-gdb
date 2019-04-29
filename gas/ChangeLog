@@ -1,3 +1,90 @@
+2019-04-29  John Darrington <john@darrington.wattle.id.au>
+
+        * testsuite/gas/s12z/truncated.d: New file.
+	* testsuite/gas/s12z/truncated.s: New file.
+	* testsuite/gas/s12z/s12z.exp: Add new test.
+
+2019-04-26  Andrew Bennett  <andrew.bennett@imgtec.com>
+	    Faraz Shahbazker  <fshahbazker@wavecomp.com>
+
+	* config/tc-mips.c (macro) <M_LLWP_AB, M_LLDP_AB, M_SCWP_AB,
+	M_SCDP_AB>: New cases and expansions for paired instructions.
+	* testsuite/gas/mips/llpscp-32.s: New test source.
+	* testsuite/gas/mips/llpscp-64.s: Likewise.
+	* testsuite/gas/mips/llpscp-32.d: New test.
+	* testsuite/gas/mips/llpscp-64.d: Likewise.
+	* testsuite/gas/mips/mips.exp: Run the new tests.
+	* testsuite/gas/mips/r6.s: Add new instructions to test source.
+	* testsuite/gas/mips/r6-64.s: Likewise.
+	* testsuite/gas/mips/r6-64-n32.d: Check new instructions.
+	* testsuite/gas/mips/r6-64-n64.d: Likewise.
+	* testsuite/gas/mips/r6-n32.d: Likewise.
+	* testsuite/gas/mips/r6-n64.d: Likwwise.
+	* testsuite/gas/mips/r6.d: Likewise.
+
+2019-04-26  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR gas/24485
+	* config/tc-i386.c (process_suffix): Don't add DATA_PREFIX_OPCODE
+	to IRET for .code16gcc.
+	* testsuite/gas/i386/jump16.s: Add IRET tests.
+	* testsuite/gas/i386/jump16.d: Updated.
+
+2019-04-25  Alexandre Oliva  <aoliva@redhat.com>
+	    Alan Modra  <amodra@gmail.com>
+
+	PR gas/24444
+	* frags.c (frag_gtoffset_p): New.
+	* frags.h (frag_gtoffset_p): Declare it.
+	* expr.c (resolve_expression): Use it.
+
+2019-04-24  Alan Modra  <amodra@gmail.com>
+
+	PR 24444
+	* symbols.c (resolve_symbol_value): When handling symbols
+	marked as sy_flags.resolved, return correct value for the
+	case of expression symbols left as an O_symbol expression.
+	Merge O_symbol code handling undefined and common symbols with
+	code handling special cases of expression symbols.  Use
+	seg_left to test for undefined and common symbols.  Don't
+	leave an O_symbol expression when X_add_symbol resolves to
+	the absolute_section.  Init final_val later.
+	* testsuite/gas/mmix/basep-7.d: Adjust expected output.
+
+2019-04-24  John Darrington <john@darrington.wattle.id.au>
+
+	* testsuite/gas/s12z/bit-manip-invalid.s: Extend test for BSET
+	and BCLR instructions with an invalid mode.
+	* testsuite/gas/s12z/bit-manip-invalid.d: ditto.
+
+2019-04-19  Nick Clifton  <nickc@redhat.com>
+
+	PR 24464
+	* config/tc-rx.h (md_relax_frag): Pass the max_iterations variable
+	to the relaxation function.
+	* config/tc-rx.c (rx_relax_frag): Add new parameter - the maximum
+	number of iterations.  Make sure that our internal iteration limit
+	does not exceed this external iteration limit.
+
+2019-04-18  Matthew Fortune  <matthew.fortune@mips.com>
+
+	* config/tc-mips.c (match_non_zero_reg_operand): Update
+	warning message.
+	* testsuite/gas/mips/r6-branch-constraints.l: Likewise.
+
+2019-04-18  Jozef Lawrynowicz  <jozef.l@mittosystems.com>
+
+	* config/tc-msp430.c (msp430_make_init_symbols): Define
+	__crt0_run_{preinit,init,fini}_array symbols if
+	.{preinit,init,fini}_array sections exist.
+	* testsuite/gas/msp430/fini-array.d: New test.
+	* testsuite/gas/msp430/init-array.d: New test.
+	* testsuite/gas/msp430/preinit-array.d: New test.
+	* testsuite/gas/msp430/fini-array.s: New test source.
+	* testsuite/gas/msp430/init-array.s: New test source.
+	* testsuite/gas/msp430/preinit-array.s: New test source.
+	* testsuite/gas/msp430/msp430.exp: Add new tests to driver.
+
 2019-04-17  Jozef Lawrynowicz  <jozef.l@mittosystems.com>
 
 	* config/tc-msp430.c (msp430_make_init_symbols): Define __crt0_init_bss

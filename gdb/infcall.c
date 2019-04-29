@@ -55,6 +55,17 @@
    asynchronous inferior function call implementation, and that in
    turn means restructuring the code so that it is event driven.  */
 
+static int may_call_functions_p = 1;
+static void
+show_may_call_functions_p (struct ui_file *file, int from_tty,
+			   struct cmd_list_element *c,
+			   const char *value)
+{
+  fprintf_filtered (file,
+		    _("Permission to call functions in the program is %s.\n"),
+		    value);
+}
+
 /* How you should pass arguments to a function depends on whether it
    was defined in K&R style or prototype style.  If you define a
    function using the K&R syntax that takes a `float' argument, then
@@ -568,7 +579,7 @@ static struct gdb_exception
 run_inferior_call (struct call_thread_fsm *sm,
 		   struct thread_info *call_thread, CORE_ADDR real_pc)
 {
-  struct gdb_exception caught_error = exception_none;
+  struct gdb_exception caught_error;
   int saved_in_infcall = call_thread->control.in_infcall;
   ptid_t call_thread_ptid = call_thread->ptid;
   enum prompt_state saved_prompt_state = current_ui->prompt_state;
@@ -605,9 +616,9 @@ run_inferior_call (struct call_thread_fsm *sm,
 	 target supports asynchronous execution.  */
       wait_sync_command_done ();
     }
-  catch (const gdb_exception &e)
+  catch (gdb_exception &e)
     {
-      caught_error = e;
+      caught_error = std::move (e);
     }
 
   /* If GDB has the prompt blocked before, then ensure that it remains
@@ -707,6 +718,10 @@ call_function_by_hand_dummy (struct value *function,
   ptid_t call_thread_ptid;
   struct gdb_exception e;
   char name_buf[RAW_FUNCTION_ADDRESS_SIZE];
+
+  if (!may_call_functions_p)
+    error (_("Cannot call functions in the program: "
+	     "may-call-functions is off."));
 
   if (!target_has_execution)
     noprocess ();
@@ -1195,7 +1210,7 @@ When the function is done executing, GDB will silently stop."),
 		       e.what (), name);
 	case RETURN_QUIT:
 	default:
-	  throw_exception (e);
+	  throw_exception (std::move (e));
 	}
     }
 
@@ -1359,6 +1374,17 @@ When the function is done executing, GDB will silently stop."),
 void
 _initialize_infcall (void)
 {
+  add_setshow_boolean_cmd ("may-call-functions", no_class,
+			   &may_call_functions_p, _("\
+Set permission to call functions in the program."), _("\
+Show permission to call functions in the program."), _("\
+When this permission is on, GDB may call functions in the program.\n\
+Otherwise, any sort of attempt to call a function in the program\n\
+will result in an error."),
+			   NULL,
+			   show_may_call_functions_p,
+			   &setlist, &showlist);
+
   add_setshow_boolean_cmd ("coerce-float-to-double", class_obscure,
 			   &coerce_float_to_double_p, _("\
 Set coercion of floats to doubles when calling functions."), _("\

@@ -1,3 +1,101 @@
+2019-04-29  Tom de Vries  <tdevries@suse.de>
+
+	* lib/opencl.exp (skip_opencl_tests): Add missing "with" in regexp.
+
+2019-04-27  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* gdb.base/callexit.exp: Test may-call-functions off.
+
+2019-04-25  Keith Seitz  <keiths@redhat.com>
+
+	PR c++/24367
+	* gdb.cp/meth-typedefs.cc (incomplete_struct)
+	(another_incomplete_struct, test_incomplete): New definitions.
+	(main): Use new definitions.
+	* gdb.cp/meth-typedefs.exp: Add new tests for `test_incomplete'
+	functions.
+
+2019-04-25  Sergio Durigan Junior  <sergiodj@redhat.com>
+
+	PR corefiles/11608
+	PR corefiles/18187
+	* gdb.base/coredump-filter-build-id.exp: New file.
+
+2019-04-25  Alan Hayward  <alan.hayward@arm.com>
+
+        * Makefile.in: Pass through GDBSERVER_DEBUG.
+        * README (Testsuite Parameters): Add GDBSERVER_DEBUG.
+        (gdbserver,debug): Add board setting.
+        * gdb.trace/tspeed.exp: Skip when debugging.
+        * lib/gdb.exp (gdbserver_debug_enabled): New procedure.
+        * lib/gdbserver-support.exp: Likewise
+
+2019-04-24  Tom Tromey  <tromey@adacore.com>
+
+	* lib/gdb.exp (gdb_compile): Don't add -fno-stack-protector for
+	Rust.
+
+2019-04-24  Tom Tromey  <tromey@adacore.com>
+
+	* gdb.arch/amd64-eval.exp: Test bitfield return.
+	* gdb.arch/amd64-eval.cc (struct Bitfields): New.
+	(class Foo) <return_bitfields>: New method.
+	(main): Call it.
+
+2019-04-23  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.cp/many-args.cc: New file.
+	* gdb.cp/many-args.exp: New file.
+
+2019-04-23  Tom de Vries  <tdevries@suse.de>
+
+	PR gdb/24433
+	* gdb.btrace/reconnect.exp: Fix stepi 19 pattern.
+
+2019-04-23  Alan Hayward  <alan.hayward@arm.com>
+
+	* gdb.trace/backtrace.exp: Use nopie flag.
+	* gdb.trace/circ.exp: Likewise.
+	* gdb.trace/collection.exp: Likewise.
+	* gdb.trace/ftrace.exp: Likewise.
+	* gdb.trace/mi-trace-unavailable.exp: Likewise.
+	* gdb.trace/mi-traceframe-changed.exp: Likewise.
+	* gdb.trace/qtro.exp: Likewise.
+	* gdb.trace/read-memory.exp: Likewise.
+	* gdb.trace/report.exp: Likewise.
+	* gdb.trace/tfile.exp: Likewise.
+	* gdb.trace/tfind.exp: Likewise.
+	* gdb.trace/unavailable.exp: Likewise.
+
+2019-04-22  Pedro Alves  <palves@redhat.com>
+
+	* gdb.base/solib-probes-nosharedlibrary.c,
+	gdb.base/solib-probes-nosharedlibrary.exp: New files.
+
+2019-04-19  Tom Tromey  <tromey@adacore.com>
+
+	* gdb.ada/ptype_union.c: New file.
+	* gdb.ada/ptype_union.exp: New file.
+
+2019-04-19  Tom Tromey  <tromey@adacore.com>
+
+	PR symtab/24423:
+	* gdb.base/list0.h (foo): Add a control-l character.
+
+2019-04-18  Tom de Vries  <tdevries@suse.de>
+
+	PR gdb/24433
+	* boards/local-board.exp: Set sysroot to "".
+
+2019-04-18  Tom de Vries  <tdevries@suse.de>
+	    Pedro Alves  <palves@redhat.com>
+
+	PR gdb/24454
+	* gdb.threads/vfork-follow-child-exec.c: New file.
+	* gdb.threads/vfork-follow-child-exec.exp: New file.
+	* gdb.threads/vfork-follow-child-exit.c: New file.
+	* gdb.threads/vfork-follow-child-exit.exp: New file.
+
 2019-04-15  Leszek Swirski  <leszeks@google.com>
 
 	* gdb.arch/amd64-eval.cc: New file.

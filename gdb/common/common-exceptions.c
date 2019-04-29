@@ -21,8 +21,6 @@
 #include "common-exceptions.h"
 #include <forward_list>
 
-const struct gdb_exception exception_none;
-
 /* Possible catcher states.  */
 enum catcher_state {
   /* Initial state, a new catcher has just been created.  */
@@ -47,7 +45,7 @@ struct catcher
   /* Jump buffer pointing back at the exception handler.  */
   jmp_buf buf;
   /* Status buffer belonging to the exception handler.  */
-  struct gdb_exception exception = exception_none;
+  struct gdb_exception exception;
 };
 
 /* Where to go for throw_exception().  */
@@ -168,25 +166,26 @@ exceptions_state_mc_action_iter_1 (void)
 /* Return EXCEPTION to the nearest containing CATCH_SJLJ block.  */
 
 void
-throw_exception_sjlj (struct gdb_exception exception)
+throw_exception_sjlj (const struct gdb_exception &exception)
 {
   /* Jump to the nearest CATCH_SJLJ block, communicating REASON to
      that call via setjmp's return value.  Note that REASON can't be
      zero, by definition in common-exceptions.h.  */
   exceptions_state_mc (CATCH_THROWING);
+  enum return_reason reason = exception.reason;
   catchers.front ().exception = exception;
-  longjmp (catchers.front ().buf, exception.reason);
+  longjmp (catchers.front ().buf, reason);
 }
 
 /* Implementation of throw_exception that uses C++ try/catch.  */
 
 void
-throw_exception (const gdb_exception &exception)
+throw_exception (gdb_exception &&exception)
 {
   if (exception.reason == RETURN_QUIT)
-    throw gdb_exception_quit (exception);
+    throw gdb_exception_quit (std::move (exception));
   else if (exception.reason == RETURN_ERROR)
-    throw gdb_exception_error (exception);
+    throw gdb_exception_error (std::move (exception));
   else
     gdb_assert_not_reached ("invalid return reason");
 }

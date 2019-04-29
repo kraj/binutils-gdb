@@ -903,7 +903,7 @@ get_field_type (PyObject *field)
 static PyObject *
 valpy_getitem (PyObject *self, PyObject *key)
 {
-  struct gdb_exception except = exception_none;
+  struct gdb_exception except;
   value_object *self_value = (value_object *) self;
   gdb::unique_xmalloc_ptr<char> field;
   struct type *base_class_type = NULL, *field_type = NULL;
@@ -1031,9 +1031,9 @@ valpy_getitem (PyObject *self, PyObject *key)
       if (res_val)
 	result = value_to_value_object (res_val);
     }
-  catch (const gdb_exception &ex)
+  catch (gdb_exception &ex)
     {
-      except = ex;
+      except = std::move (ex);
     }
 
   GDB_PY_HANDLE_EXCEPTION (except);
@@ -1480,7 +1480,7 @@ valpy_absolute (PyObject *self)
 static int
 valpy_nonzero (PyObject *self)
 {
-  struct gdb_exception except = exception_none;
+  struct gdb_exception except;
   value_object *self_value = (value_object *) self;
   struct type *type;
   int nonzero = 0; /* Appease GCC warning.  */
@@ -1498,9 +1498,9 @@ valpy_nonzero (PyObject *self)
 	/* All other values are True.  */
 	nonzero = 1;
     }
-  catch (const gdb_exception &ex)
+  catch (gdb_exception &ex)
     {
-      except = ex;
+      except = std::move (ex);
     }
 
   /* This is not documented in the Python documentation, but if this

@@ -56,8 +56,8 @@ extern "C" {
    code field in BREAK is 20 bits; yet MIPS assemblers and debuggers
    only use ten bits).  An optional two-operand form of break/sdbbp
    allows the lower ten bits to be set too, and MIPS32 and later
-   architectures allow 20 bits to be set with a signal operand
-   (using CODE20).
+   architectures allow 20 bits to be set with a single operand for
+   the sdbbp instruction (using CODE20).
 
    The syscall instruction uses CODE20.
 
@@ -1628,7 +1628,9 @@ enum
   M_LI_SS,
   M_LL_AB,
   M_LLD_AB,
+  M_LLDP_AB,
   M_LLE_AB,
+  M_LLWP_AB,
   M_LQ_AB,
   M_LW_AB,
   M_LWE_AB,
@@ -1679,7 +1681,9 @@ enum
   M_SAAD_AB,
   M_SC_AB,
   M_SCD_AB,
+  M_SCDP_AB,
   M_SCE_AB,
+  M_SCWP_AB,
   M_SD_AB,
   M_SDC1_AB,
   M_SDC2_AB,
