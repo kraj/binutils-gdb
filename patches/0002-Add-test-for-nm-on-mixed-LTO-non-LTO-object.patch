@@ -1,4 +1,4 @@
-From 572333ba13fdeef3f7769bf11e169800f9170f22 Mon Sep 17 00:00:00 2001
+From 389d05762eddf6c0625a4bc1ee66de81bf1427ae Mon Sep 17 00:00:00 2001
 From: "H.J. Lu" <hjl.tools@gmail.com>
 Date: Fri, 7 Mar 2014 10:51:47 -0800
 Subject: [PATCH 2/3] Add test for nm on mixed LTO/non-LTO object
@@ -10,10 +10,10 @@ Subject: [PATCH 2/3] Add test for nm on mixed LTO/non-LTO object
  1 file changed, 12 insertions(+)
 
 diff --git a/ld/testsuite/ld-plugin/lto.exp b/ld/testsuite/ld-plugin/lto.exp
-index 3e6b918..ba46d26 100644
+index a079046163..fb8ead4c0b 100644
 --- a/ld/testsuite/ld-plugin/lto.exp
 +++ b/ld/testsuite/ld-plugin/lto.exp
-@@ -540,6 +540,18 @@ run_dump_test "lto-5r"
+@@ -681,6 +681,18 @@ run_dump_test "lto-5r"
  remote_exec host "mv" "tmpdir/dump tmpdir/lto-5.o"
  run_dump_test "lto-10r"
  remote_exec host "mv" "tmpdir/dump tmpdir/lto-10.o"
@@ -33,5 +33,5 @@ index 3e6b918..ba46d26 100644
  run_cc_link_tests $lto_link_symbol_tests
  
 -- 
-2.9.4
+2.20.1
 

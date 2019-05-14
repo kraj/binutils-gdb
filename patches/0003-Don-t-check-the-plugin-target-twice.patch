@@ -1,4 +1,4 @@
-From 6d4b8a6ff6f46ffa7da573e61bd535c35f943cbd Mon Sep 17 00:00:00 2001
+From d81f382ce1b77ee184a6149f53824d0d8f7149b9 Mon Sep 17 00:00:00 2001
 From: "H.J. Lu" <hjl.tools@gmail.com>
 Date: Sun, 8 Feb 2015 17:53:24 -0800
 Subject: [PATCH 3/3] Don't check the plugin target twice
@@ -15,7 +15,7 @@ don't check it twice.
  1 file changed, 10 insertions(+), 4 deletions(-)
 
 diff --git a/bfd/format.c b/bfd/format.c
-index 981933529b..38c1094591 100644
+index 01862d30d6..b4acb58e82 100644
 --- a/bfd/format.c
 +++ b/bfd/format.c
 @@ -48,6 +48,8 @@ SUBSECTION
@@ -61,5 +61,5 @@ index 981933529b..38c1094591 100644
  #endif
  
 -- 
-2.19.2
+2.20.1
 
