@@ -39,6 +39,13 @@ show may-call-functions
   an error when a command (such as print expression) calls a function
   in the program.
 
+set print max-depth
+show print max-depth
+  Allows deeply nested structures to be simplified when printing by
+  replacing deeply nested parts (beyond the max-depth) with ellipses.
+  The default max-depth is 20, but this can be set to unlimited to get
+  the old behavior back.
+
 *** Changes in GDB 8.3
 
 * GDB and GDBserver now support access to additional registers on

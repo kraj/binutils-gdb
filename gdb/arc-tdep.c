@@ -1720,7 +1720,7 @@ static const struct frame_base arc_normal_base = {
    Returns TRUE if input tdesc was valid and in this case it will assign TDESC
    and TDESC_DATA output parameters.  */
 
-static int
+static bool
 arc_tdesc_init (struct gdbarch_info info, const struct target_desc **tdesc,
 		struct tdesc_arch_data **tdesc_data)
 {
@@ -1746,7 +1746,7 @@ arc_tdesc_init (struct gdbarch_info info, const struct target_desc **tdesc,
      tag.  */
   /* Cannot use arc_mach_is_arcv2 (), because gdbarch is not created yet.  */
   const int is_arcv2 = (info.bfd_arch_info->mach == bfd_mach_arc_arcv2);
-  int is_reduced_rf;
+  bool is_reduced_rf;
   const char *const *core_regs;
   const char *core_feature_name;
 
@@ -1803,10 +1803,10 @@ arc_tdesc_init (struct gdbarch_info info, const struct target_desc **tdesc,
 	{
 	  arc_print (_("Error: ARC v2 target description supplied for "
 		       "non-ARCv2 target.\n"));
-	  return FALSE;
+	  return false;
 	}
 
-      is_reduced_rf = FALSE;
+      is_reduced_rf = false;
       core_feature_name = core_v2_feature_name;
       core_regs = core_v2_register_names;
     }
@@ -1819,10 +1819,10 @@ arc_tdesc_init (struct gdbarch_info info, const struct target_desc **tdesc,
 	    {
 	      arc_print (_("Error: ARC v2 target description supplied for "
 			   "non-ARCv2 target.\n"));
-	      return FALSE;
+	      return false;
 	    }
 
-	  is_reduced_rf = TRUE;
+	  is_reduced_rf = true;
 	  core_feature_name = core_reduced_v2_feature_name;
 	  core_regs = core_v2_register_names;
 	}
@@ -1836,10 +1836,10 @@ arc_tdesc_init (struct gdbarch_info info, const struct target_desc **tdesc,
 		{
 		  arc_print (_("Error: ARCompact target description supplied "
 			       "for non-ARCompact target.\n"));
-		  return FALSE;
+		  return false;
 		}
 
-	      is_reduced_rf = FALSE;
+	      is_reduced_rf = false;
 	      core_feature_name = core_arcompact_feature_name;
 	      core_regs = core_arcompact_register_names;
 	    }
@@ -1847,7 +1847,7 @@ arc_tdesc_init (struct gdbarch_info info, const struct target_desc **tdesc,
 	    {
 	      arc_print (_("Error: Couldn't find core register feature in "
 			   "supplied target description."));
-	      return FALSE;
+	      return false;
 	    }
 	}
     }
@@ -1882,7 +1882,7 @@ arc_tdesc_init (struct gdbarch_info info, const struct target_desc **tdesc,
 	  arc_print (_("Error: Cannot find required register `%s' in "
 		       "feature `%s'.\n"), core_regs[i], core_feature_name);
 	  tdesc_data_cleanup (tdesc_data_loc);
-	  return FALSE;
+	  return false;
 	}
     }
 
@@ -1894,7 +1894,7 @@ arc_tdesc_init (struct gdbarch_info info, const struct target_desc **tdesc,
       arc_print (_("Error: Cannot find required feature `%s' in supplied "
 		   "target description.\n"), aux_minimal_feature_name);
       tdesc_data_cleanup (tdesc_data_loc);
-      return FALSE;
+      return false;
     }
 
   for (int i = ARC_FIRST_AUX_REGNUM; i <= ARC_LAST_AUX_REGNUM; i++)
@@ -1907,14 +1907,14 @@ arc_tdesc_init (struct gdbarch_info info, const struct target_desc **tdesc,
 		       "in feature `%s'.\n"),
 		     name, tdesc_feature_name (feature));
 	  tdesc_data_cleanup (tdesc_data_loc);
-	  return FALSE;
+	  return false;
 	}
     }
 
   *tdesc = tdesc_loc;
   *tdesc_data = tdesc_data_loc;
 
-  return TRUE;
+  return true;
 }
 
 /* Implement the type_align gdbarch function.  */

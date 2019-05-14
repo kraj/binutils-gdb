@@ -39,10 +39,6 @@
 #include "common/gdb_sys_time.h"
 
 #ifdef USE_WIN32API
-#if _WIN32_WINNT < 0x0501
-# undef _WIN32_WINNT
-# define _WIN32_WINNT 0x0501
-#endif
 #include <ws2tcpip.h>
 #ifndef ETIMEDOUT
 #define ETIMEDOUT WSAETIMEDOUT
@@ -323,7 +319,7 @@ net_open (struct serial *scb, const char *name)
     {
       got_connrefused = false;
 
-      for (struct addrinfo *iter = ainfo; iter != NULL; iter = iter->ai_next)
+      for (addrinfo *iter = ainfo; iter != NULL; iter = iter->ai_next)
 	{
 	  /* Iterate over the list of possible addresses to connect
 	     to.  For each, we'll try to connect and see if it

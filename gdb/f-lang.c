@@ -246,7 +246,7 @@ struct value *
 evaluate_subexp_f (struct type *expect_type, struct expression *exp,
 		   int *pos, enum noside noside)
 {
-  struct value *arg1 = NULL;
+  struct value *arg1 = NULL, *arg2 = NULL;
   enum exp_opcode op;
   int pc;
   struct type *type;
@@ -284,7 +284,116 @@ evaluate_subexp_f (struct type *expect_type, struct expression *exp,
 	}
       error (_("ABS of type %s not supported"), TYPE_SAFE_NAME (type));
 
-    case UNOP_KIND:
+    case BINOP_MOD:
+      arg1 = evaluate_subexp (NULL_TYPE, exp, pos, noside);
+      arg2 = evaluate_subexp (value_type (arg1), exp, pos, noside);
+      if (noside == EVAL_SKIP)
+	return eval_skip_value (exp);
+      type = value_type (arg1);
+      if (TYPE_CODE (type) != TYPE_CODE (value_type (arg2)))
+	error (_("non-matching types for parameters to MOD ()"));
+      switch (TYPE_CODE (type))
+	{
+	case TYPE_CODE_FLT:
+	  {
+	    double d1
+	      = target_float_to_host_double (value_contents (arg1),
+					     value_type (arg1));
+	    double d2
+	      = target_float_to_host_double (value_contents (arg2),
+					     value_type (arg2));
+	    double d3 = fmod (d1, d2);
+	    return value_from_host_double (type, d3);
+	  }
+	case TYPE_CODE_INT:
+	  {
+	    LONGEST v1 = value_as_long (arg1);
+	    LONGEST v2 = value_as_long (arg2);
+	    if (v2 == 0)
+	      error (_("calling MOD (N, 0) is undefined"));
+	    LONGEST v3 = v1 - (v1 / v2) * v2;
+	    return value_from_longest (value_type (arg1), v3);
+	  }
+	}
+      error (_("MOD of type %s not supported"), TYPE_SAFE_NAME (type));
+
+    case UNOP_FORTRAN_CEILING:
+      {
+	arg1 = evaluate_subexp (NULL_TYPE, exp, pos, noside);
+	if (noside == EVAL_SKIP)
+	  return eval_skip_value (exp);
+	type = value_type (arg1);
+	if (TYPE_CODE (type) != TYPE_CODE_FLT)
+	  error (_("argument to CEILING must be of type float"));
+	double val
+	  = target_float_to_host_double (value_contents (arg1),
+					 value_type (arg1));
+	val = ceil (val);
+	return value_from_host_double (type, val);
+      }
+
+    case UNOP_FORTRAN_FLOOR:
+      {
+	arg1 = evaluate_subexp (NULL_TYPE, exp, pos, noside);
+	if (noside == EVAL_SKIP)
+	  return eval_skip_value (exp);
+	type = value_type (arg1);
+	if (TYPE_CODE (type) != TYPE_CODE_FLT)
+	  error (_("argument to FLOOR must be of type float"));
+	double val
+	  = target_float_to_host_double (value_contents (arg1),
+					 value_type (arg1));
+	val = floor (val);
+	return value_from_host_double (type, val);
+      }
+
+    case BINOP_FORTRAN_MODULO:
+      {
+	arg1 = evaluate_subexp (NULL_TYPE, exp, pos, noside);
+	arg2 = evaluate_subexp (value_type (arg1), exp, pos, noside);
+	if (noside == EVAL_SKIP)
+	  return eval_skip_value (exp);
+	type = value_type (arg1);
+	if (TYPE_CODE (type) != TYPE_CODE (value_type (arg2)))
+	  error (_("non-matching types for parameters to MODULO ()"));
+        /* MODULO(A, P) = A - FLOOR (A / P) * P */
+	switch (TYPE_CODE (type))
+	  {
+	  case TYPE_CODE_INT:
+	    {
+	      LONGEST a = value_as_long (arg1);
+	      LONGEST p = value_as_long (arg2);
+	      LONGEST result = a - (a / p) * p;
+	      if (result != 0 && (a < 0) != (p < 0))
+		result += p;
+	      return value_from_longest (value_type (arg1), result);
+	    }
+	  case TYPE_CODE_FLT:
+	    {
+	      double a
+		= target_float_to_host_double (value_contents (arg1),
+					       value_type (arg1));
+	      double p
+		= target_float_to_host_double (value_contents (arg2),
+					       value_type (arg2));
+	      double result = fmod (a, p);
+	      if (result != 0 && (a < 0.0) != (p < 0.0))
+		result += p;
+	      return value_from_host_double (type, result);
+	    }
+	  }
+	error (_("MODULO of type %s not supported"), TYPE_SAFE_NAME (type));
+      }
+
+    case BINOP_FORTRAN_CMPLX:
+      arg1 = evaluate_subexp (NULL_TYPE, exp, pos, noside);
+      arg2 = evaluate_subexp (value_type (arg1), exp, pos, noside);
+      if (noside == EVAL_SKIP)
+	return eval_skip_value (exp);
+      type = builtin_f_type(exp->gdbarch)->builtin_complex_s16;
+      return value_literal_complex (arg1, arg2, type);
+
+    case UNOP_FORTRAN_KIND:
       arg1 = evaluate_subexp (NULL, exp, pos, EVAL_AVOID_SIDE_EFFECTS);
       type = value_type (arg1);
 
@@ -308,6 +417,197 @@ evaluate_subexp_f (struct type *expect_type, struct expression *exp,
   return nullptr;
 }
 
+/* Return true if TYPE is a string.  */
+
+static bool
+f_is_string_type_p (struct type *type)
+{
+  type = check_typedef (type);
+  return (TYPE_CODE (type) == TYPE_CODE_STRING
+	  || (TYPE_CODE (type) == TYPE_CODE_ARRAY
+	      && TYPE_CODE (TYPE_TARGET_TYPE (type)) == TYPE_CODE_CHAR));
+}
+
+/* Special expression lengths for Fortran.  */
+
+static void
+operator_length_f (const struct expression *exp, int pc, int *oplenp,
+		   int *argsp)
+{
+  int oplen = 1;
+  int args = 0;
+
+  switch (exp->elts[pc - 1].opcode)
+    {
+    default:
+      operator_length_standard (exp, pc, oplenp, argsp);
+      return;
+
+    case UNOP_FORTRAN_KIND:
+    case UNOP_FORTRAN_FLOOR:
+    case UNOP_FORTRAN_CEILING:
+      oplen = 1;
+      args = 1;
+      break;
+
+    case BINOP_FORTRAN_CMPLX:
+    case BINOP_FORTRAN_MODULO:
+      oplen = 1;
+      args = 2;
+      break;
+    }
+
+  *oplenp = oplen;
+  *argsp = args;
+}
+
+/* Helper for PRINT_SUBEXP_F.  Arguments are as for PRINT_SUBEXP_F, except
+   the extra argument NAME which is the text that should be printed as the
+   name of this operation.  */
+
+static void
+print_unop_subexp_f (struct expression *exp, int *pos,
+		     struct ui_file *stream, enum precedence prec,
+		     const char *name)
+{
+  (*pos)++;
+  fprintf_filtered (stream, "%s(", name);
+  print_subexp (exp, pos, stream, PREC_SUFFIX);
+  fputs_filtered (")", stream);
+}
+
+/* Helper for PRINT_SUBEXP_F.  Arguments are as for PRINT_SUBEXP_F, except
+   the extra argument NAME which is the text that should be printed as the
+   name of this operation.  */
+
+static void
+print_binop_subexp_f (struct expression *exp, int *pos,
+		      struct ui_file *stream, enum precedence prec,
+		      const char *name)
+{
+  (*pos)++;
+  fprintf_filtered (stream, "%s(", name);
+  print_subexp (exp, pos, stream, PREC_SUFFIX);
+  fputs_filtered (",", stream);
+  print_subexp (exp, pos, stream, PREC_SUFFIX);
+  fputs_filtered (")", stream);
+}
+
+/* Special expression printing for Fortran.  */
+
+static void
+print_subexp_f (struct expression *exp, int *pos,
+		struct ui_file *stream, enum precedence prec)
+{
+  int pc = *pos;
+  enum exp_opcode op = exp->elts[pc].opcode;
+
+  switch (op)
+    {
+    default:
+      print_subexp_standard (exp, pos, stream, prec);
+      return;
+
+    case UNOP_FORTRAN_KIND:
+      print_unop_subexp_f (exp, pos, stream, prec, "KIND");
+      return;
+
+    case UNOP_FORTRAN_FLOOR:
+      print_unop_subexp_f (exp, pos, stream, prec, "FLOOR");
+      return;
+
+    case UNOP_FORTRAN_CEILING:
+      print_unop_subexp_f (exp, pos, stream, prec, "CEILING");
+      return;
+
+    case BINOP_FORTRAN_CMPLX:
+      print_binop_subexp_f (exp, pos, stream, prec, "CMPLX");
+      return;
+
+    case BINOP_FORTRAN_MODULO:
+      print_binop_subexp_f (exp, pos, stream, prec, "MODULO");
+      return;
+    }
+}
+
+/* Special expression names for Fortran.  */
+
+static const char *
+op_name_f (enum exp_opcode opcode)
+{
+  switch (opcode)
+    {
+    default:
+      return op_name_standard (opcode);
+
+#define OP(name)	\
+    case name:		\
+      return #name ;
+#include "fortran-operator.def"
+#undef OP
+    }
+}
+
+/* Special expression dumping for Fortran.  */
+
+static int
+dump_subexp_body_f (struct expression *exp,
+		    struct ui_file *stream, int elt)
+{
+  int opcode = exp->elts[elt].opcode;
+  int oplen, nargs, i;
+
+  switch (opcode)
+    {
+    default:
+      return dump_subexp_body_standard (exp, stream, elt);
+
+    case UNOP_FORTRAN_KIND:
+    case UNOP_FORTRAN_FLOOR:
+    case UNOP_FORTRAN_CEILING:
+    case BINOP_FORTRAN_CMPLX:
+    case BINOP_FORTRAN_MODULO:
+      operator_length_f (exp, (elt + 1), &oplen, &nargs);
+      break;
+    }
+
+  elt += oplen;
+  for (i = 0; i < nargs; i += 1)
+    elt = dump_subexp (exp, stream, elt);
+
+  return elt;
+}
+
+/* Special expression checking for Fortran.  */
+
+static int
+operator_check_f (struct expression *exp, int pos,
+		  int (*objfile_func) (struct objfile *objfile,
+				       void *data),
+		  void *data)
+{
+  const union exp_element *const elts = exp->elts;
+
+  switch (elts[pos].opcode)
+    {
+    case UNOP_FORTRAN_KIND:
+    case UNOP_FORTRAN_FLOOR:
+    case UNOP_FORTRAN_CEILING:
+    case BINOP_FORTRAN_CMPLX:
+    case BINOP_FORTRAN_MODULO:
+      /* Any references to objfiles are held in the arguments to this
+	 expression, not within the expression itself, so no additional
+	 checking is required here, the outer expression iteration code
+	 will take care of checking each argument.  */
+      break;
+
+    default:
+      return operator_check_standard (exp, pos, objfile_func, data);
+    }
+
+  return 0;
+}
+
 static const char *f_extensions[] =
 {
   ".f", ".F", ".for", ".FOR", ".ftn", ".FTN", ".fpp", ".FPP",
@@ -318,11 +618,11 @@ static const char *f_extensions[] =
 /* Expression processing for Fortran.  */
 static const struct exp_descriptor exp_descriptor_f =
 {
-  print_subexp_standard,
-  operator_length_standard,
-  operator_check_standard,
-  op_name_standard,
-  dump_subexp_body_standard,
+  print_subexp_f,
+  operator_length_f,
+  operator_check_f,
+  op_name_f,
+  dump_subexp_body_f,
   evaluate_subexp_f
 };
 
@@ -377,7 +677,9 @@ extern const struct language_defn f_language_defn =
   default_search_name_hash,
   &default_varobj_ops,
   NULL,
-  NULL
+  NULL,
+  f_is_string_type_p,
+  "(...)"			/* la_struct_too_deep_ellipsis */
 };
 
 static void *
@@ -387,7 +689,7 @@ build_fortran_types (struct gdbarch *gdbarch)
     = GDBARCH_OBSTACK_ZALLOC (gdbarch, struct builtin_f_type);
 
   builtin_f_type->builtin_void
-    = arch_type (gdbarch, TYPE_CODE_VOID, TARGET_CHAR_BIT, "VOID");
+    = arch_type (gdbarch, TYPE_CODE_VOID, TARGET_CHAR_BIT, "void");
 
   builtin_f_type->builtin_character
     = arch_type (gdbarch, TYPE_CODE_CHAR, TARGET_CHAR_BIT, "character");

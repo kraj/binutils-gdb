@@ -4509,7 +4509,7 @@ You cannot raise an exception interactively.
 You cannot install an exception handler interactively.
 @end itemize
 
-@item exception
+@item exception @r{[}@var{name}@r{]}
 @kindex catch exception
 @cindex Ada exception catching
 @cindex catch Ada exceptions
@@ -4527,7 +4527,11 @@ called @code{Constraint_Error} is defined in package @code{Pck}, then
 the command to use to catch such exceptions is @kbd{catch exception
 Pck.Constraint_Error}.
 
-@item handlers
+@item exception unhandled
+@kindex catch exception unhandled
+An exception that was raised but is not handled by the program.
+
+@item handlers @r{[}@var{name}@r{]}
 @kindex catch handlers
 @cindex Ada exception handlers catching
 @cindex catch Ada exceptions when handled
@@ -4546,10 +4550,6 @@ user-defined one.  For instance, assuming an exception called
  @code{Constraint_Error} is defined in package @code{Pck}, then the
 command to use to catch such exceptions handling is
 @kbd{catch handlers Pck.Constraint_Error}.
-
-@item exception unhandled
-@kindex catch exception unhandled
-An exception that was raised but is not handled by the program.
 
 @item assert
 @kindex catch assert
@@ -4727,8 +4727,8 @@ A call to @code{fork}.
 @kindex catch vfork
 A call to @code{vfork}.
 
-@item load @r{[}regexp@r{]}
-@itemx unload @r{[}regexp@r{]}
+@item load @r{[}@var{regexp}@r{]}
+@itemx unload @r{[}@var{regexp}@r{]}
 @kindex catch load
 @kindex catch unload
 The loading or unloading of a shared library.  If @var{regexp} is
@@ -10571,6 +10571,64 @@ is 10.
 @item show print repeats
 Display the current threshold for printing repeated identical
 elements.
+
+@item set print max-depth @var{depth}
+@item set print max-depth unlimited
+@cindex printing nested structures
+Set the threshold after which nested structures are replaced with
+ellipsis, this can make visualising deeply nested structures easier.
+
+For example, given this C code
+
+@smallexample
+typedef struct s1 @{ int a; @} s1;
+typedef struct s2 @{ s1 b; @} s2;
+typedef struct s3 @{ s2 c; @} s3;
+typedef struct s4 @{ s3 d; @} s4;
+
+s4 var = @{ @{ @{ @{ 3 @} @} @} @};
+@end smallexample
+
+The following table shows how different values of @var{depth} will
+effect how @code{var} is printed by @value{GDBN}:
+
+@multitable @columnfractions .3 .7
+@headitem @var{depth} setting @tab Result of @samp{p var}
+@item unlimited
+@tab @code{$1 = @{d = @{c = @{b = @{a = 3@}@}@}@}}
+@item @code{0}
+@tab @code{$1 = @{...@}}
+@item @code{1}
+@tab @code{$1 = @{d = @{...@}@}}
+@item @code{2}
+@tab @code{$1 = @{d = @{c = @{...@}@}@}}
+@item @code{3}
+@tab @code{$1 = @{d = @{c = @{b = @{...@}@}@}@}}
+@item @code{4}
+@tab @code{$1 = @{d = @{c = @{b = @{a = 3@}@}@}@}}
+@end multitable
+
+To see the contents of structures that have been hidden the user can
+either increase the print max-depth, or they can print the elements of
+the structure that are visible, for example
+
+@smallexample
+(gdb) set print max-depth 2
+(gdb) p var
+$1 = @{d = @{c = @{...@}@}@}
+(gdb) p var.d
+$2 = @{c = @{b = @{...@}@}@}
+(gdb) p var.d.c
+$3 = @{b = @{a = 3@}@}
+@end smallexample
+
+The pattern used to replace nested structures varies based on
+language, for most languages @code{@{...@}} is used, but Fortran uses
+@code{(...)}.
+
+@item show print max-depth
+Display the current threshold after which nested structures are
+replaces with ellipsis.
 
 @item set print null-stop
 @cindex @sc{null} elements in arrays
@@ -17803,15 +17861,16 @@ bitfields:
 /* XXX  3-bit hole   */
 /* XXX  4-byte hole  */
 /*    8      |     8 */    int64_t a5;
-/*   16:27   |     4 */    int a6 : 5;
-/*   16:56   |     8 */    int64_t a7 : 3;
+/*   16: 0   |     4 */    int a6 : 5;
+/*   16: 5   |     8 */    int64_t a7 : 3;
+"/* XXX  7-byte padding  */
 
                            /* total size (bytes):   24 */
                          @}
 @end smallexample
 
-Note how the offset information is now extended to also include how
-many bits are left to be used in each bitfield.
+Note how the offset information is now extended to also include the
+first bit of the bitfield.
 @end table
 
 @kindex ptype
@@ -19949,9 +20008,13 @@ uses two different methods of looking for the debug file:
 @item
 For the ``debug link'' method, @value{GDBN} looks up the named file in
 the directory of the executable file, then in a subdirectory of that
-directory named @file{.debug}, and finally under each one of the global debug
-directories, in a subdirectory whose name is identical to the leading
-directories of the executable's absolute file name.
+directory named @file{.debug}, and finally under each one of the
+global debug directories, in a subdirectory whose name is identical to
+the leading directories of the executable's absolute file name.  (On
+MS-Windows/MS-DOS, the drive letter of the executable's leading
+directories is converted to a one-letter subdirectory, i.e.@:
+@file{d:/usr/bin/} is converted to @file{/d/usr/bin/}, because Windows
+filesystems disallow colons in file names.)
 
 @item
 For the ``build ID'' method, @value{GDBN} looks in the
@@ -36724,7 +36787,7 @@ print a message showing how many tests were run, and how many failed.
 If a @var{filter} is passed, only the tests with @var{filter} in their
 name will by ran.
 
-@kindex "maint info selftests"
+@kindex maint info selftests
 @cindex self tests
 @item maint info selftests
 List the selftests compiled in to @value{GDBN}.

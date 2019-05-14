@@ -238,9 +238,6 @@ set_fatal_syntax_error (const char *error)
   set_error (AARCH64_OPDE_FATAL_SYNTAX_ERROR, error);
 }
 
-/* Number of littlenums required to hold an extended precision number.  */
-#define MAX_LITTLENUMS 6
-
 /* Return value for certain parsers when the parsing fails; those parsers
    return the information of the parsed result, e.g. register number, on
    success.  */
@@ -449,6 +446,7 @@ get_reg_expected_msg (aarch64_reg_type reg_type)
 
 /* Some well known registers that we refer to directly elsewhere.  */
 #define REG_SP	31
+#define REG_ZR	31
 
 /* Instructions take 4 bytes in the object file.  */
 #define INSN_SIZE	4
@@ -3393,6 +3391,7 @@ parse_shifter_operand_reloc (char **str, aarch64_opnd_info *operand,
      [base,Zm.D,(S|U)XTW {#imm}] // ignores top 32 bits of Zm.D elements
      [Zn.S,#imm]
      [Zn.D,#imm]
+     [Zn.S{, Xm}]
      [Zn.S,Zm.S{,LSL #imm}]      // in ADR
      [Zn.D,Zm.D{,LSL #imm}]      // in ADR
      [Zn.D,Zm.D,(S|U)XTW {#imm}] // in ADR
@@ -3558,6 +3557,7 @@ parse_address_main (char **str, aarch64_opnd_info *operand,
 		return FALSE;
 	    }
 	  /* We only accept:
+	     [base,Xm]  # For vector plus scalar SVE2 indexing.
 	     [base,Xm{,LSL #imm}]
 	     [base,Xm,SXTX {#imm}]
 	     [base,Wm,(S|U)XTW {#imm}]  */
@@ -3571,7 +3571,10 @@ parse_address_main (char **str, aarch64_opnd_info *operand,
 		  return FALSE;
 		}
 	      if (aarch64_get_qualifier_esize (*base_qualifier)
-		  != aarch64_get_qualifier_esize (*offset_qualifier))
+		  != aarch64_get_qualifier_esize (*offset_qualifier)
+		  && (operand->type != AARCH64_OPND_SVE_ADDR_ZX
+		      || *base_qualifier != AARCH64_OPND_QLF_S_S
+		      || *offset_qualifier != AARCH64_OPND_QLF_X))
 		{
 		  set_syntax_error (_("offset has different size from base"));
 		  return FALSE;
@@ -3689,7 +3692,9 @@ parse_address_main (char **str, aarch64_opnd_info *operand,
     }
 
   /* If at this point neither .preind nor .postind is set, we have a
-     bare [Rn]{!}; reject [Rn]! accept [Rn] as a shorthand for [Rn,#0].  */
+     bare [Rn]{!}; reject [Rn]! accept [Rn] as a shorthand for [Rn,#0].
+     For SVE2 vector plus scalar offsets, allow [Zn.<T>] as shorthand for
+     [Zn.<T>, xzr].  */
   if (operand->addr.preind == 0 && operand->addr.postind == 0)
     {
       if (operand->addr.writeback)
@@ -3700,8 +3705,17 @@ parse_address_main (char **str, aarch64_opnd_info *operand,
 	}
 
       operand->addr.preind = 1;
-      inst.reloc.exp.X_op = O_constant;
-      inst.reloc.exp.X_add_number = 0;
+      if (operand->type == AARCH64_OPND_SVE_ADDR_ZX)
+	{
+	  operand->addr.offset.is_reg = 1;
+	  operand->addr.offset.regno = REG_ZR;
+	  *offset_qualifier = AARCH64_OPND_QLF_X;
+	}
+      else
+	{
+	  inst.reloc.exp.X_op = O_constant;
+	  inst.reloc.exp.X_add_number = 0;
+	}
     }
 
   *str = p;
@@ -5637,6 +5651,8 @@ parse_operands (char *str, const aarch64_opcode *opcode)
 
 	case AARCH64_OPND_SVE_Zm3_INDEX:
 	case AARCH64_OPND_SVE_Zm3_22_INDEX:
+	case AARCH64_OPND_SVE_Zm3_11_INDEX:
+	case AARCH64_OPND_SVE_Zm4_11_INDEX:
 	case AARCH64_OPND_SVE_Zm4_INDEX:
 	case AARCH64_OPND_SVE_Zn_INDEX:
 	  reg_type = REG_TYPE_ZN;
@@ -5752,6 +5768,7 @@ parse_operands (char *str, const aarch64_opcode *opcode)
 	case AARCH64_OPND_CCMP_IMM:
 	case AARCH64_OPND_SIMM5:
 	case AARCH64_OPND_FBITS:
+	case AARCH64_OPND_TME_UIMM16:
 	case AARCH64_OPND_UIMM4:
 	case AARCH64_OPND_UIMM4_ADDG:
 	case AARCH64_OPND_UIMM10:
@@ -5766,8 +5783,10 @@ parse_operands (char *str, const aarch64_opcode *opcode)
 	case AARCH64_OPND_SVE_LIMM_MOV:
 	case AARCH64_OPND_SVE_SHLIMM_PRED:
 	case AARCH64_OPND_SVE_SHLIMM_UNPRED:
+	case AARCH64_OPND_SVE_SHLIMM_UNPRED_22:
 	case AARCH64_OPND_SVE_SHRIMM_PRED:
 	case AARCH64_OPND_SVE_SHRIMM_UNPRED:
+	case AARCH64_OPND_SVE_SHRIMM_UNPRED_22:
 	case AARCH64_OPND_SVE_SIMM5:
 	case AARCH64_OPND_SVE_SIMM5B:
 	case AARCH64_OPND_SVE_SIMM6:
@@ -5781,6 +5800,7 @@ parse_operands (char *str, const aarch64_opcode *opcode)
 	case AARCH64_OPND_IMM_ROT3:
 	case AARCH64_OPND_SVE_IMM_ROT1:
 	case AARCH64_OPND_SVE_IMM_ROT2:
+	case AARCH64_OPND_SVE_IMM_ROT3:
 	  po_imm_nc_or_fail ();
 	  info->imm.value = val;
 	  break;
@@ -6415,6 +6435,33 @@ parse_operands (char *str, const aarch64_opcode *opcode)
 	    }
 	  info->qualifier = offset_qualifier;
 	  goto regoff_addr;
+
+	case AARCH64_OPND_SVE_ADDR_ZX:
+	  /* [Zn.<T>{, <Xm>}].  */
+	  po_misc_or_fail (parse_sve_address (&str, info, &base_qualifier,
+					      &offset_qualifier));
+	  /* Things to check:
+	      base_qualifier either S_S or S_D
+	      offset_qualifier must be X
+	      */
+	  if ((base_qualifier != AARCH64_OPND_QLF_S_S
+	       && base_qualifier != AARCH64_OPND_QLF_S_D)
+	      || offset_qualifier != AARCH64_OPND_QLF_X)
+	    {
+	      set_syntax_error (_("invalid addressing mode"));
+	      goto failure;
+	    }
+	  info->qualifier = base_qualifier;
+	  if (!info->addr.offset.is_reg || info->addr.pcrel
+	      || !info->addr.preind || info->addr.writeback
+	      || info->shifter.operator_present != 0)
+	    {
+	      set_syntax_error (_("invalid addressing mode"));
+	      goto failure;
+	    }
+	  info->shifter.kind = AARCH64_MOD_LSL;
+	  break;
+
 
 	case AARCH64_OPND_SVE_ADDR_ZI_U5:
 	case AARCH64_OPND_SVE_ADDR_ZI_U5x2:
@@ -8845,6 +8892,8 @@ static const struct aarch64_option_cpu_value_table aarch64_features[] = {
 			AARCH64_FEATURE (AARCH64_FEATURE_F16
 					 | AARCH64_FEATURE_SIMD
 					 | AARCH64_FEATURE_COMPNUM, 0)},
+  {"tme",		AARCH64_FEATURE (AARCH64_FEATURE_TME, 0),
+			AARCH64_ARCH_NONE},
   {"compnum",		AARCH64_FEATURE (AARCH64_FEATURE_COMPNUM, 0),
 			AARCH64_FEATURE (AARCH64_FEATURE_F16
 					 | AARCH64_FEATURE_SIMD, 0)},
@@ -8871,6 +8920,19 @@ static const struct aarch64_option_cpu_value_table aarch64_features[] = {
 			AARCH64_ARCH_NONE},
   {"memtag",		AARCH64_FEATURE (AARCH64_FEATURE_MEMTAG, 0),
 			AARCH64_ARCH_NONE},
+  {"sve2",		AARCH64_FEATURE (AARCH64_FEATURE_SVE2, 0),
+			AARCH64_FEATURE (AARCH64_FEATURE_SVE, 0)},
+  {"sve2-sm4",		AARCH64_FEATURE (AARCH64_FEATURE_SVE2_SM4, 0),
+			AARCH64_FEATURE (AARCH64_FEATURE_SVE2
+					 | AARCH64_FEATURE_SM4, 0)},
+  {"sve2-aes",		AARCH64_FEATURE (AARCH64_FEATURE_SVE2_AES, 0),
+			AARCH64_FEATURE (AARCH64_FEATURE_SVE2
+					 | AARCH64_FEATURE_AES, 0)},
+  {"sve2-sha3",		AARCH64_FEATURE (AARCH64_FEATURE_SVE2_SHA3, 0),
+			AARCH64_FEATURE (AARCH64_FEATURE_SVE2
+					 | AARCH64_FEATURE_SHA3, 0)},
+  {"bitperm",		AARCH64_FEATURE (AARCH64_FEATURE_SVE2_BITPERM, 0),
+			AARCH64_FEATURE (AARCH64_FEATURE_SVE2, 0)},
   {NULL,		AARCH64_ARCH_NONE, AARCH64_ARCH_NONE},
 };
 

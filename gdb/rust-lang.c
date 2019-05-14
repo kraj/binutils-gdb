@@ -226,6 +226,26 @@ rust_chartype_p (struct type *type)
 	  && TYPE_UNSIGNED (type));
 }
 
+/* Return true if TYPE is a string type.  */
+
+static bool
+rust_is_string_type_p (struct type *type)
+{
+  LONGEST low_bound, high_bound;
+
+  type = check_typedef (type);
+  return ((TYPE_CODE (type) == TYPE_CODE_STRING)
+	  || (TYPE_CODE (type) == TYPE_CODE_PTR
+	      && (TYPE_CODE (TYPE_TARGET_TYPE (type)) == TYPE_CODE_ARRAY
+		  && rust_u8_type_p (TYPE_TARGET_TYPE (TYPE_TARGET_TYPE (type)))
+		  && get_array_bounds (TYPE_TARGET_TYPE (type), &low_bound,
+				       &high_bound)))
+	  || (TYPE_CODE (type) == TYPE_CODE_STRUCT
+	      && !rust_enum_p (type)
+	      && rust_slice_type_p (type)
+	      && strcmp (TYPE_NAME (type), "&str") == 0));
+}
+
 /* If VALUE represents a trait object pointer, return the underlying
    pointer with the correct (i.e., runtime) type.  Otherwise, return
    NULL.  */
@@ -358,6 +378,14 @@ val_print_struct (struct type *type, int embedded_offset,
 
   if (rust_slice_type_p (type) && strcmp (TYPE_NAME (type), "&str") == 0)
     {
+      /* If what we are printing here is actually a string within a
+	 structure then VAL will be the original parent value, while TYPE
+	 will be the type of the structure representing the string we want
+	 to print.
+	 However, RUST_VAL_PRINT_STR looks up the fields of the string
+	 inside VAL, assuming that VAL is the string.
+	 So, recreate VAL as a value representing just the string.  */
+      val = value_at_lazy (type, value_address (val) + embedded_offset);
       rust_val_print_str (stream, val, options);
       return;
     }
@@ -2141,5 +2169,7 @@ extern const struct language_defn rust_language_defn =
   default_search_name_hash,
   &default_varobj_ops,
   NULL,
-  NULL
+  NULL,
+  rust_is_string_type_p,
+  "{...}"			/* la_struct_too_deep_ellipsis */
 };

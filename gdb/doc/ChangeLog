@@ -1,3 +1,37 @@
+2019-05-14  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.texinfo (Maintenance Commands): Remove superfluous
+	quoting on command index entry for "maint info selftests".
+
+2019-05-10  Tom Tromey  <tromey@adacore.com>
+
+	* python.texi (Pretty Printing API): Mention lazy computation for
+	"children".
+
+2019-05-10  Tom Tromey  <tromey@adacore.com>
+
+	* gdb.texinfo (Set Catchpoints): Add text for parameter to "catch
+	exception" and "catch handlers".  Move "catch exception unhandled"
+	text.  Use @var for "catch load" and "catch unload"
+
+2019-05-08  Tom Tromey  <tromey@adacore.com>
+
+	* gdb.texinfo (Symbols): Document change to ptype/o.
+
+2019-05-03  Eli Zaretskii  <eliz@gnu.org>
+
+	* gdb.texinfo (Separate Debug Files): Document how the
+	subdirectory of the global debug directory is computed on
+	MS-Windows/MS-DOS.
+
+2019-04-29  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.texinfo (Print Settings): Document 'print max-depth'.
+	* guile.texi (Guile Pretty Printing API): Document that 'print
+	max-depth' can effect the display of a values children.
+	* python.texi (Pretty Printing API): Likewise.
+	(Values From Inferior): Document max_depth keyword.
+
 2019-04-27  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
 
 	* gdb.texinfo (Calling): Document the new

@@ -279,10 +279,21 @@ c_get_string (struct value *value, gdb::unique_xmalloc_ptr<gdb_byte> *buffer,
   /* If the string lives in GDB's memory instead of the inferior's,
      then we just need to copy it to BUFFER.  Also, since such strings
      are arrays with known size, FETCHLIMIT will hold the size of the
-     array.  */
+     array.
+
+     An array is assumed to live in GDB's memory, so we take this path
+     here.
+
+     However, it's possible for the caller to request more array
+     elements than apparently exist -- this can happen when using the
+     C struct hack.  So, only do this if either no length was
+     specified, or the length is within the existing bounds.  This
+     avoids running off the end of the value's contents.  */
   if ((VALUE_LVAL (value) == not_lval
-       || VALUE_LVAL (value) == lval_internalvar)
-      && fetchlimit != UINT_MAX)
+       || VALUE_LVAL (value) == lval_internalvar
+       || TYPE_CODE (type) == TYPE_CODE_ARRAY)
+      && fetchlimit != UINT_MAX
+      && (*length < 0 || *length <= fetchlimit))
     {
       int i;
       const gdb_byte *contents = value_contents (value);
@@ -306,7 +317,19 @@ c_get_string (struct value *value, gdb::unique_xmalloc_ptr<gdb_byte> *buffer,
     }
   else
     {
-      CORE_ADDR addr = value_as_address (value);
+      /* value_as_address does not return an address for an array when
+	 c_style_arrays is false, so we handle that specially
+	 here.  */
+      CORE_ADDR addr;
+      if (TYPE_CODE (type) == TYPE_CODE_ARRAY)
+	{
+	  if (VALUE_LVAL (value) != lval_memory)
+	    error (_("Attempt to take address of value "
+		     "not located in memory."));
+	  addr = value_address (value);
+	}
+      else
+	addr = value_as_address (value);
 
       /* Prior to the fix for PR 16196 read_string would ignore fetchlimit
 	 if length > 0.  The old "broken" behaviour is the behaviour we want:
@@ -715,6 +738,42 @@ c_watch_location_expression (struct type *type, CORE_ADDR addr)
     (xstrprintf ("* (%s *) %s", name.c_str (), core_addr_to_string (addr)));
 }
 
+/* See c-lang.h.  */
+
+bool
+c_is_string_type_p (struct type *type)
+{
+  type = check_typedef (type);
+  while (TYPE_CODE (type) == TYPE_CODE_REF)
+    {
+      type = TYPE_TARGET_TYPE (type);
+      type = check_typedef (type);
+    }
+
+  switch (TYPE_CODE (type))
+    {
+    case TYPE_CODE_ARRAY:
+      {
+	/* See if target type looks like a string.  */
+	struct type *array_target_type = TYPE_TARGET_TYPE (type);
+	return (TYPE_LENGTH (type) > 0
+		&& TYPE_LENGTH (array_target_type) > 0
+		&& c_textual_element_type (array_target_type, 0));
+      }
+    case TYPE_CODE_STRING:
+      return true;
+    case TYPE_CODE_PTR:
+      {
+	struct type *element_type = TYPE_TARGET_TYPE (type);
+	return c_textual_element_type (element_type, 0);
+      }
+    default:
+      break;
+    }
+
+  return false;
+}
+
 
 /* Table mapping opcodes into strings for printing operators
    and precedences of the operators.  */
@@ -873,7 +932,9 @@ extern const struct language_defn c_language_defn =
   default_search_name_hash,
   &c_varobj_ops,
   c_get_compile_context,
-  c_compute_program
+  c_compute_program,
+  c_is_string_type_p,
+  "{...}"			/* la_struct_too_deep_ellipsis */
 };
 
 enum cplus_primitive_types {
@@ -1017,7 +1078,9 @@ extern const struct language_defn cplus_language_defn =
   cp_search_name_hash,
   &cplus_varobj_ops,
   cplus_get_compile_context,
-  cplus_compute_program
+  cplus_compute_program,
+  c_is_string_type_p,
+  "{...}"			/* la_struct_too_deep_ellipsis */
 };
 
 static const char *asm_extensions[] =
@@ -1070,7 +1133,9 @@ extern const struct language_defn asm_language_defn =
   default_search_name_hash,
   &default_varobj_ops,
   NULL,
-  NULL
+  NULL,
+  c_is_string_type_p,
+  "{...}"			/* la_struct_too_deep_ellipsis */
 };
 
 /* The following language_defn does not represent a real language.
@@ -1123,5 +1188,7 @@ extern const struct language_defn minimal_language_defn =
   default_search_name_hash,
   &default_varobj_ops,
   NULL,
-  NULL
+  NULL,
+  c_is_string_type_p,
+  "{...}"			/* la_struct_too_deep_ellipsis */
 };

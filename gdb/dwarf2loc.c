@@ -36,6 +36,7 @@
 #include "dwarf2.h"
 #include "dwarf2expr.h"
 #include "dwarf2loc.h"
+#include "dwarf2read.h"
 #include "dwarf2-frame.h"
 #include "compile/compile.h"
 #include "common/selftest.h"
@@ -2493,8 +2494,12 @@ dwarf2_evaluate_property (const struct dynamic_prop *prop,
 	struct value *val;
 
 	for (pinfo = addr_stack; pinfo != NULL; pinfo = pinfo->next)
-	  if (pinfo->type == baton->referenced_type)
-	    break;
+	  {
+	    /* This approach lets us avoid checking the qualifiers.  */
+	    if (TYPE_MAIN_TYPE (pinfo->type)
+		== TYPE_MAIN_TYPE (baton->referenced_type))
+	      break;
+	  }
 	if (pinfo == NULL)
 	  error (_("cannot find reference address for offset property"));
 	if (pinfo->valaddr != NULL)

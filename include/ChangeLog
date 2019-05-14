@@ -1,3 +1,74 @@
+2019-05-09  Matthew Malcomson  <matthew.malcomson@arm.com>
+
+	* opcode/aarch64.h (enum aarch64_opnd): New SVE_SHLIMM_UNPRED_22
+	operand.
+
+2019-05-09  Matthew Malcomson  <matthew.malcomson@arm.com>
+
+	* opcode/aarch64.h (enum aarch64_insn_class): Add sve_size_tsz_bhs
+	iclass.
+
+2019-05-09  Matthew Malcomson  <matthew.malcomson@arm.com>
+
+	* opcode/aarch64.h (enum aarch64_opnd): New SVE_Zm4_11_INDEX operand.
+
+2019-05-09  Matthew Malcomson  <matthew.malcomson@arm.com>
+
+	* opcode/aarch64.h (enum aarch64_insn_class): Add sve_shift_tsz_bhsd
+	iclass.
+
+2019-05-09  Matthew Malcomson  <matthew.malcomson@arm.com>
+
+	* opcode/aarch64.h (enum aarch64_opnd): New SVE_SHRIMM_UNPRED_22
+	operand.
+	(enum aarch64_insn_class): Add sve_shift_tsz_hsd iclass.
+
+2019-05-09  Matthew Malcomson  <matthew.malcomson@arm.com>
+
+	* opcode/aarch64.h (enum aarch64_insn_class): Add sve_size_013 iclass.
+
+2019-05-09  Matthew Malcomson  <matthew.malcomson@arm.com>
+
+	* opcode/aarch64.h (enum aarch64_insn_class): Add sve_size_bh iclass.
+
+2019-05-09  Matthew Malcomson  <matthew.malcomson@arm.com>
+
+	* opcode/aarch64.h (enum aarch64_insn_class): Add sve_size_sd2 iclass.
+
+2019-05-09  Matthew Malcomson  <matthew.malcomson@arm.com>
+
+	* opcode/aarch64.h (enum aarch64_opnd): New SVE_ADDR_ZX operand.
+
+2019-05-09  Matthew Malcomson  <matthew.malcomson@arm.com>
+
+	* opcode/aarch64.h (enum aarch64_opnd): New SVE_Zm3_11_INDEX operand.
+
+2019-05-09  Matthew Malcomson  <matthew.malcomson@arm.com>
+
+	* opcode/aarch64.h (enum aarch64_insn_class): Add sve_size_hsd2 iclass.
+
+2019-05-09  Matthew Malcomson  <matthew.malcomson@arm.com>
+
+	* opcode/aarch64.h (enum aarch64_opnd): New SVE_IMM_ROT3 operand.
+
+2019-05-09  Matthew Malcomson  <matthew.malcomson@arm.com>
+
+	* opcode/aarch64.h (AARCH64_FEATURE_SVE2
+	AARCH64_FEATURE_SVE2_AES, AARCH64_FEATURE_SVE2_BITPERM,
+	AARCH64_FEATURE_SVE2_SM4, AARCH64_FEATURE_SVE2_SHA3): New
+	feature macros.
+
+2019-05-06  Andrew Bennett  <andrew.bennett@imgtec.com>
+	    Faraz Shahbazker  <fshahbazker@wavecomp.com>
+
+	* opcode/mips.h (ASE_EVA_R6): New macro.
+	(M_LLWPE_AB, M_SCWPE_AB): New enum values.
+
+2019-05-01  Sudakshina Das  <sudi.das@arm.com>
+
+	* opcode/aarch64.h (AARCH64_FEATURE_TME): New.
+	(enum aarch64_opnd): Add AARCH64_OPND_TME_UIMM16.
+
 2019-04-26  Andrew Bennett  <andrew.bennett@imgtec.com>
 	    Faraz Shahbazker  <fshahbazker@wavecomp.com>
 

@@ -86,7 +86,15 @@ typedef uint32_t aarch64_insn;
 #define AARCH64_FEATURE_SSBS		0x800000000000ULL
 /* Memory Tagging Extension.  */
 #define AARCH64_FEATURE_MEMTAG		0x1000000000000ULL
+/* Transactional Memory Extension.  */
+#define AARCH64_FEATURE_TME		0x2000000000000ULL
 
+/* SVE2 instructions.  */
+#define AARCH64_FEATURE_SVE2		0x000000010
+#define AARCH64_FEATURE_SVE2_AES		0x000000080
+#define AARCH64_FEATURE_SVE2_BITPERM	0x000000100
+#define AARCH64_FEATURE_SVE2_SM4		0x000000200
+#define AARCH64_FEATURE_SVE2_SHA3	0x000000400
 
 /* Architectures are the sum of the base and extensions.  */
 #define AARCH64_ARCH_V8		AARCH64_FEATURE (AARCH64_FEATURE_V8, \
@@ -329,6 +337,7 @@ enum aarch64_opnd
   AARCH64_OPND_SVE_ADDR_RX_LSL1,    /* SVE [<Xn|SP>, <Xm>, LSL #1].  */
   AARCH64_OPND_SVE_ADDR_RX_LSL2,    /* SVE [<Xn|SP>, <Xm>, LSL #2].  */
   AARCH64_OPND_SVE_ADDR_RX_LSL3,    /* SVE [<Xn|SP>, <Xm>, LSL #3].  */
+  AARCH64_OPND_SVE_ADDR_ZX,	    /* SVE [Zn.<T>{, <Xm>}].  */
   AARCH64_OPND_SVE_ADDR_RZ,	    /* SVE [<Xn|SP>, Zm.D].  */
   AARCH64_OPND_SVE_ADDR_RZ_LSL1,    /* SVE [<Xn|SP>, Zm.D, LSL #1].  */
   AARCH64_OPND_SVE_ADDR_RZ_LSL2,    /* SVE [<Xn|SP>, Zm.D, LSL #2].  */
@@ -364,6 +373,7 @@ enum aarch64_opnd
   AARCH64_OPND_SVE_I1_ZERO_ONE,	/* SVE choice between 0.0 and 1.0.  */
   AARCH64_OPND_SVE_IMM_ROT1,	/* SVE 1-bit rotate operand (90 or 270).  */
   AARCH64_OPND_SVE_IMM_ROT2,	/* SVE 2-bit rotate operand (N*90).  */
+  AARCH64_OPND_SVE_IMM_ROT3,	/* SVE cadd 1-bit rotate (90 or 270).  */
   AARCH64_OPND_SVE_INV_LIMM,	/* SVE inverted logical immediate.  */
   AARCH64_OPND_SVE_LIMM,	/* SVE logical immediate.  */
   AARCH64_OPND_SVE_LIMM_MOV,	/* SVE logical immediate for MOV.  */
@@ -382,8 +392,10 @@ enum aarch64_opnd
   AARCH64_OPND_SVE_Rn_SP,	/* Integer Rn or SP, alt. SVE position.  */
   AARCH64_OPND_SVE_SHLIMM_PRED,	  /* SVE shift left amount (predicated).  */
   AARCH64_OPND_SVE_SHLIMM_UNPRED, /* SVE shift left amount (unpredicated).  */
+  AARCH64_OPND_SVE_SHLIMM_UNPRED_22,	/* SVE 3 bit shift left unpred.  */
   AARCH64_OPND_SVE_SHRIMM_PRED,	  /* SVE shift right amount (predicated).  */
   AARCH64_OPND_SVE_SHRIMM_UNPRED, /* SVE shift right amount (unpredicated).  */
+  AARCH64_OPND_SVE_SHRIMM_UNPRED_22,	/* SVE 3 bit shift right unpred.  */
   AARCH64_OPND_SVE_SIMM5,	/* SVE signed 5-bit immediate.  */
   AARCH64_OPND_SVE_SIMM5B,	/* SVE secondary signed 5-bit immediate.  */
   AARCH64_OPND_SVE_SIMM6,	/* SVE signed 6-bit immediate.  */
@@ -403,12 +415,15 @@ enum aarch64_opnd
   AARCH64_OPND_SVE_Zm_16,	/* SVE vector register in Zm, bits [20,16].  */
   AARCH64_OPND_SVE_Zm3_INDEX,	/* z0-z7[0-3] in Zm, bits [20,16].  */
   AARCH64_OPND_SVE_Zm3_22_INDEX, /* z0-z7[0-7] in Zm3_INDEX plus bit 22.  */
+  AARCH64_OPND_SVE_Zm3_11_INDEX, /* z0-z7[0-7] in Zm3_INDEX plus bit 11.  */
+  AARCH64_OPND_SVE_Zm4_11_INDEX, /* z0-z15[0-3] in Zm plus bit 11.  */
   AARCH64_OPND_SVE_Zm4_INDEX,	/* z0-z15[0-1] in Zm, bits [20,16].  */
   AARCH64_OPND_SVE_Zn,		/* SVE vector register in Zn.  */
   AARCH64_OPND_SVE_Zn_INDEX,	/* Indexed SVE vector register, for DUP.  */
   AARCH64_OPND_SVE_ZnxN,	/* SVE vector register list in Zn.  */
   AARCH64_OPND_SVE_Zt,		/* SVE vector register in Zt.  */
   AARCH64_OPND_SVE_ZtxN,	/* SVE vector register list in Zt.  */
+  AARCH64_OPND_TME_UIMM16,	/* TME unsigned 16-bit immediate.  */
   AARCH64_OPND_SM3_IMM2,	/* SM3 encodes lane in bits [13, 14].  */
 };
 
@@ -580,7 +595,14 @@ enum aarch64_insn_class
   sve_size_bhs,
   sve_size_bhsd,
   sve_size_hsd,
+  sve_size_hsd2,
   sve_size_sd,
+  sve_size_bh,
+  sve_size_sd2,
+  sve_size_013,
+  sve_shift_tsz_hsd,
+  sve_shift_tsz_bhsd,
+  sve_size_tsz_bhs,
   testbranch,
   cryptosm3,
   cryptosm4,

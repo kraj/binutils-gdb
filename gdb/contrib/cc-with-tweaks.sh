@@ -42,7 +42,8 @@
 # -Z invoke objcopy --compress-debug-sections
 # -z compress using dwz
 # -m compress using dwz -m
-# -i make an index
+# -i make an index (.gdb_index)
+# -n make a dwarf5 index (.debug_names)
 # -p create .dwp files (Fission), you need to also use gcc option -gsplit-dwarf
 # If nothing is given, no changes are made
 
@@ -77,6 +78,7 @@ next_is_output_file=no
 output_file=a.out
 
 want_index=false
+index_options=""
 want_dwz=false
 want_multi=false
 want_dwp=false
@@ -87,6 +89,7 @@ while [ $# -gt 0 ]; do
 	-Z) want_objcopy_compress=true ;;
 	-z) want_dwz=true ;;
 	-i) want_index=true ;;
+	-n) want_index=true; index_options=-dwarf-5;;
 	-m) want_multi=true ;;
 	-p) want_dwp=true ;;
 	*) break ;;
@@ -170,17 +173,48 @@ if [ "$want_index" = true ]; then
     # Filter out these messages which would stop dejagnu testcase run:
     # echo "$myname: No index was created for $file" 1>&2
     # echo "$myname: [Was there no debuginfo? Was there already an index?]" 1>&2
-    GDB=$GDB $GDB_ADD_INDEX "$output_file" 2>&1|grep -v "^${GDB_ADD_INDEX##*/}: " >&2
+    GDB=$GDB $GDB_ADD_INDEX $index_options "$output_file" 2>&1 \
+	| grep -v "^${GDB_ADD_INDEX##*/}: " >&2
     rc=${PIPESTATUS[0]}
     [ $rc != 0 ] && exit $rc
 fi
 
 if [ "$want_dwz" = true ]; then
-    $DWZ "$output_file" > /dev/null 2>&1
+    # Validate dwz's result by checking if the executable was modified.
+    cp "$output_file" "${output_file}.copy"
+    $DWZ "$output_file" > /dev/null
+    cmp "$output_file" "$output_file.copy" > /dev/null
+    cmp_rc=$?
+    rm -f "${output_file}.copy"
+
+    case $cmp_rc in
+    0)
+	echo "$myname: dwz did not modify ${output_file}."
+        exit 1
+	;;
+    1)
+	# File was modified, great.
+	;;
+    *)
+	# Other cmp error, it presumably has already printed something on
+	# stderr.
+	exit 1
+	;;
+    esac
 elif [ "$want_multi" = true ]; then
+    # Remove the dwz output file if it exists, so we don't mistake it for a
+    # new file in case dwz fails.
+    rm -f "${output_file}.dwz"
+
     cp $output_file ${output_file}.alt
-    $DWZ -m ${output_file}.dwz "$output_file" ${output_file}.alt > /dev/null 2>&1
+    $DWZ -m ${output_file}.dwz "$output_file" ${output_file}.alt > /dev/null
     rm -f ${output_file}.alt
+
+    # Validate dwz's work by checking if the expected output file exists.
+    if [ ! -f "${output_file}.dwz" ]; then
+	echo "$myname: dwz file ${output_file}.dwz missing."
+	exit 1
+    fi
 fi
 
 if [ "$want_dwp" = true ]; then

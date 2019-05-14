@@ -294,6 +294,9 @@ const aarch64_field fields[] =
     {  0,  5 }, /* SVE_Zt: SVE vector register, bits [4,0].  */
     {  5,  1 }, /* SVE_i1: single-bit immediate.  */
     { 22,  1 }, /* SVE_i3h: high bit of 3-bit immediate.  */
+    { 11,  1 }, /* SVE_i3l: low bit of 3-bit immediate.  */
+    { 19,  2 }, /* SVE_i3h2: two high bits of 3bit immediate, bits [20,19].  */
+    { 20,  1 }, /* SVE_i2h: high bit of 2bit immediate, bits.  */
     { 16,  3 }, /* SVE_imm3: 3-bit immediate field.  */
     { 16,  4 }, /* SVE_imm4: 4-bit immediate field.  */
     {  5,  5 }, /* SVE_imm5: 5-bit immediate field.  */
@@ -309,7 +312,10 @@ const aarch64_field fields[] =
     {  0,  4 }, /* SVE_prfop: prefetch operation for SVE PRF[BHWD].  */
     { 16,  1 }, /* SVE_rot1: 1-bit rotation amount.  */
     { 10,  2 }, /* SVE_rot2: 2-bit rotation amount.  */
+    { 10,  1 }, /* SVE_rot3: 1-bit rotation amount at bit 10.  */
     { 22,  1 }, /* SVE_sz: 1-bit element size select.  */
+    { 17,  2 }, /* SVE_size: 2-bit element size, bits [18,17].  */
+    { 30,  1 }, /* SVE_sz2: 1-bit element size select.  */
     { 16,  4 }, /* SVE_tsz: triangular size select.  */
     { 22,  2 }, /* SVE_tszh: triangular size select high, bits [23,22].  */
     {  8,  2 }, /* SVE_tszl_8: triangular size select low, bits [9,8].  */
@@ -1513,6 +1519,8 @@ operand_general_constraint_met_p (const aarch64_opnd_info *opnds, int idx,
 	{
 	case AARCH64_OPND_SVE_Zm3_INDEX:
 	case AARCH64_OPND_SVE_Zm3_22_INDEX:
+	case AARCH64_OPND_SVE_Zm3_11_INDEX:
+	case AARCH64_OPND_SVE_Zm4_11_INDEX:
 	case AARCH64_OPND_SVE_Zm4_INDEX:
 	  size = get_operand_fields_width (get_operand_from_code (type));
 	  shift = get_operand_specific_data (&aarch64_operands[type]);
@@ -1894,6 +1902,17 @@ operand_general_constraint_met_p (const aarch64_opnd_info *opnds, int idx,
 	  max_value = 7;
 	  goto sve_imm_offset;
 
+	case AARCH64_OPND_SVE_ADDR_ZX:
+	  /* Everything is already ensured by parse_operands or
+	     aarch64_ext_sve_addr_rr_lsl (because this is a very specific
+	     argument type).  */
+	  assert (opnd->addr.offset.is_reg);
+	  assert (opnd->addr.preind);
+	  assert ((aarch64_operands[type].flags & OPD_F_NO_ZR) == 0);
+	  assert (opnd->shifter.kind == AARCH64_MOD_LSL);
+	  assert (opnd->shifter.operator_present == 0);
+	  break;
+
 	case AARCH64_OPND_SVE_ADDR_R:
 	case AARCH64_OPND_SVE_ADDR_RR:
 	case AARCH64_OPND_SVE_ADDR_RR_LSL1:
@@ -2125,6 +2144,7 @@ operand_general_constraint_met_p (const aarch64_opnd_info *opnds, int idx,
 	case AARCH64_OPND_NZCV:
 	case AARCH64_OPND_CCMP_IMM:
 	case AARCH64_OPND_EXCEPTION:
+	case AARCH64_OPND_TME_UIMM16:
 	case AARCH64_OPND_UIMM4:
 	case AARCH64_OPND_UIMM4_ADDG:
 	case AARCH64_OPND_UIMM7:
@@ -2230,6 +2250,7 @@ operand_general_constraint_met_p (const aarch64_opnd_info *opnds, int idx,
 
 	case AARCH64_OPND_IMM_ROT3:
 	case AARCH64_OPND_SVE_IMM_ROT1:
+	case AARCH64_OPND_SVE_IMM_ROT3:
 	  if (opnd->imm.value != 90 && opnd->imm.value != 270)
 	    {
 	      set_other_error (mismatch_detail, idx,
@@ -2510,6 +2531,7 @@ operand_general_constraint_met_p (const aarch64_opnd_info *opnds, int idx,
 
 	case AARCH64_OPND_SVE_SHLIMM_PRED:
 	case AARCH64_OPND_SVE_SHLIMM_UNPRED:
+	case AARCH64_OPND_SVE_SHLIMM_UNPRED_22:
 	  size = aarch64_get_qualifier_esize (opnds[idx - 1].qualifier);
 	  if (!value_in_range_p (opnd->imm.value, 0, 8 * size - 1))
 	    {
@@ -2521,13 +2543,18 @@ operand_general_constraint_met_p (const aarch64_opnd_info *opnds, int idx,
 
 	case AARCH64_OPND_SVE_SHRIMM_PRED:
 	case AARCH64_OPND_SVE_SHRIMM_UNPRED:
-	  size = aarch64_get_qualifier_esize (opnds[idx - 1].qualifier);
-	  if (!value_in_range_p (opnd->imm.value, 1, 8 * size))
+	case AARCH64_OPND_SVE_SHRIMM_UNPRED_22:
 	    {
-	      set_imm_out_of_range_error (mismatch_detail, idx, 1, 8 * size);
-	      return 0;
-	    }
-	  break;
+	      unsigned int index =
+		(type == AARCH64_OPND_SVE_SHRIMM_UNPRED_22) ? 2 : 1;
+	      size = aarch64_get_qualifier_esize (opnds[idx - index].qualifier);
+	      if (!value_in_range_p (opnd->imm.value, 1, 8 * size))
+		{
+		  set_imm_out_of_range_error (mismatch_detail, idx, 1, 8*size);
+		  return 0;
+		}
+	      break;
+	   }
 
 	default:
 	  break;
@@ -3299,6 +3326,8 @@ aarch64_print_operand (char *buf, size_t size, bfd_vma pc,
 
     case AARCH64_OPND_SVE_Zm3_INDEX:
     case AARCH64_OPND_SVE_Zm3_22_INDEX:
+    case AARCH64_OPND_SVE_Zm3_11_INDEX:
+    case AARCH64_OPND_SVE_Zm4_11_INDEX:
     case AARCH64_OPND_SVE_Zm4_INDEX:
     case AARCH64_OPND_SVE_Zn_INDEX:
       snprintf (buf, size, "z%d.%s[%" PRIi64 "]", opnd->reglane.regno,
@@ -3326,11 +3355,14 @@ aarch64_print_operand (char *buf, size_t size, bfd_vma pc,
     case AARCH64_OPND_IMMR:
     case AARCH64_OPND_IMMS:
     case AARCH64_OPND_FBITS:
+    case AARCH64_OPND_TME_UIMM16:
     case AARCH64_OPND_SIMM5:
     case AARCH64_OPND_SVE_SHLIMM_PRED:
     case AARCH64_OPND_SVE_SHLIMM_UNPRED:
+    case AARCH64_OPND_SVE_SHLIMM_UNPRED_22:
     case AARCH64_OPND_SVE_SHRIMM_PRED:
     case AARCH64_OPND_SVE_SHRIMM_UNPRED:
+    case AARCH64_OPND_SVE_SHRIMM_UNPRED_22:
     case AARCH64_OPND_SVE_SIMM5:
     case AARCH64_OPND_SVE_SIMM5B:
     case AARCH64_OPND_SVE_SIMM6:
@@ -3344,6 +3376,7 @@ aarch64_print_operand (char *buf, size_t size, bfd_vma pc,
     case AARCH64_OPND_IMM_ROT3:
     case AARCH64_OPND_SVE_IMM_ROT1:
     case AARCH64_OPND_SVE_IMM_ROT2:
+    case AARCH64_OPND_SVE_IMM_ROT3:
       snprintf (buf, size, "#%" PRIi64, opnd->imm.value);
       break;
 
@@ -3571,6 +3604,13 @@ aarch64_print_operand (char *buf, size_t size, bfd_vma pc,
       print_register_offset_address
 	(buf, size, opnd, get_64bit_int_reg_name (opnd->addr.base_regno, 1),
 	 get_offset_int_reg_name (opnd));
+      break;
+
+    case AARCH64_OPND_SVE_ADDR_ZX:
+      print_register_offset_address
+	(buf, size, opnd,
+	 get_addr_sve_reg_name (opnd->addr.base_regno, opnd->qualifier),
+	 get_64bit_int_reg_name (opnd->addr.offset.regno, 0));
       break;
 
     case AARCH64_OPND_SVE_ADDR_RZ:
@@ -4865,7 +4905,9 @@ verify_constraints (const struct aarch64_inst *inst,
 	{
 	  /* Check to see if the MOVPRFX SVE instruction is followed by an SVE
 	     instruction for better error messages.  */
-	  if (!opcode->avariant || !(*opcode->avariant & AARCH64_FEATURE_SVE))
+	  if (!opcode->avariant
+	      || !(*opcode->avariant &
+		   (AARCH64_FEATURE_SVE | AARCH64_FEATURE_SVE2)))
 	    {
 	      mismatch_detail->kind = AARCH64_OPDE_SYNTAX_ERROR;
 	      mismatch_detail->error = _("SVE instruction expected after "

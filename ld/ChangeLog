@@ -1,3 +1,54 @@
+2019-05-09  Dimitar Dimitrov  <dimitar@dinux.eu>
+
+	* scripttempl/pru.sc (__init_array_begin, __init_array_begin):
+	Rename.
+
+2019-05-08  Pekka Seppänen  <pexu@sourceware.mail.kapsi.fi>
+
+	PR 24536
+	* ldbuildid.c (generate_build_id): Cast return value from
+	GetProcAddress in order to avoid a compile time warning.
+
+2019-05-06  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/ld-undefined/weak-undef.exp: Don't xfail pj.
+
+2019-05-04  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/ld-scripts/fill.d: Don't xfail m32c
+	* testsuite/ld-scripts/fill16.d: Likewise.
+
+2019-05-04  Alan Modra  <amodra@gmail.com>
+
+	PR 24511
+	* testsuite/ld-elf/pr14156a.d: Allow for .init/.fini being a
+	data section on hppa64.
+	* testsuite/ld-elf/pr14156b.d: Likewise.
+	* testsuite/ld-scripts/pr18963.t: Map standard sections to set
+	output section flags.
+	* testsuite/ld-scripts/sane1.t: Likewise.
+	* testsuite/ld-elf/init-fini-arrays.s: Reference __init_array_start
+	and __fini_array_start.  Define __start et al.
+	* testsuite/ld-elf/pr24511.d: New test.
+
+2019-04-30  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/ld-powerpc/elfv2exe.d: Update.
+	* testsuite/ld-powerpc/elfv2so.d: Update.
+	* testsuite/ld-powerpc/tocopt.d: Update.
+	* testsuite/ld-powerpc/tocopt.s: Update.
+	* testsuite/ld-powerpc/tocopt5.d: Update.
+	* testsuite/ld-powerpc/tocopt5.s: Update.
+	* testsuite/ld-powerpc/tocopt7.d: Update.
+	* testsuite/ld-powerpc/tocopt7.s: Update.
+	* testsuite/ld-powerpc/tocopt8.d: Update.
+	* testsuite/ld-powerpc/tocopt8.s: Update.
+
+2019-04-30  Alan Modra  <amodra@gmail.com>
+
+	* ld.texi (How GNU properties are merged): Avoid pod2man error.
+	Correct example.
+
 2019-04-26  H.J. Lu  <hongjiu.lu@intel.com>
 
 	PR ld/24486

@@ -578,18 +578,7 @@ extern void copy_integer_to_size (gdb_byte *dest, int dest_size,
 				  const gdb_byte *source, int source_size,
 				  bool is_signed, enum bfd_endian byte_order);
 
-/* From valops.c */
-
-extern int watchdog;
-
-/* From dwarf2read.c */
-
-ULONGEST read_unsigned_leb128 (bfd *, const gdb_byte *, unsigned int *);
-
 /* Hooks for alternate command interfaces.  */
-
-/* * The name of the interpreter if specified on the command line.  */
-extern char *interpreter_p;
 
 struct target_waitstatus;
 struct cmd_list_element;

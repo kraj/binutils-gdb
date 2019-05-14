@@ -68,13 +68,20 @@ f_print_type (struct type *type, const char *varstring, struct ui_file *stream,
   f_type_print_base (type, stream, show, level);
   code = TYPE_CODE (type);
   if ((varstring != NULL && *varstring != '\0')
-  /* Need a space if going to print stars or brackets;
-     but not if we will print just a type name.  */
-      || ((show > 0 || TYPE_NAME (type) == 0)
-          && (code == TYPE_CODE_PTR || code == TYPE_CODE_FUNC
+      /* Need a space if going to print stars or brackets; but not if we
+	 will print just a type name.  */
+      || ((show > 0
+	   || TYPE_NAME (type) == 0)
+          && (code == TYPE_CODE_FUNC
 	      || code == TYPE_CODE_METHOD
 	      || code == TYPE_CODE_ARRAY
-	      || code == TYPE_CODE_REF)))
+	      || ((code == TYPE_CODE_PTR
+		   || code == TYPE_CODE_REF)
+		  && (TYPE_CODE (TYPE_TARGET_TYPE (type)) == TYPE_CODE_FUNC
+		      || (TYPE_CODE (TYPE_TARGET_TYPE (type))
+			  == TYPE_CODE_METHOD)
+		      || (TYPE_CODE (TYPE_TARGET_TYPE (type))
+			  == TYPE_CODE_ARRAY))))))
     fputs_filtered (" ", stream);
   f_type_print_varspec_prefix (type, stream, show, 0);
 
@@ -222,16 +229,33 @@ f_type_print_varspec_suffix (struct type *type, struct ui_file *stream,
     case TYPE_CODE_REF:
       f_type_print_varspec_suffix (TYPE_TARGET_TYPE (type), stream, 0, 1, 0,
 				   arrayprint_recurse_level);
-      fprintf_filtered (stream, ")");
+      fprintf_filtered (stream, " )");
       break;
 
     case TYPE_CODE_FUNC:
-      f_type_print_varspec_suffix (TYPE_TARGET_TYPE (type), stream, 0,
-				   passed_a_ptr, 0, arrayprint_recurse_level);
-      if (passed_a_ptr)
-	fprintf_filtered (stream, ")");
+      {
+	int i, nfields = TYPE_NFIELDS (type);
 
-      fprintf_filtered (stream, "()");
+	f_type_print_varspec_suffix (TYPE_TARGET_TYPE (type), stream, 0,
+				     passed_a_ptr, 0, arrayprint_recurse_level);
+	if (passed_a_ptr)
+	  fprintf_filtered (stream, ") ");
+	fprintf_filtered (stream, "(");
+	if (nfields == 0 && TYPE_PROTOTYPED (type))
+	  f_print_type (builtin_f_type (get_type_arch (type))->builtin_void,
+			"", stream, -1, 0, 0);
+	else
+	  for (i = 0; i < nfields; i++)
+	    {
+	      if (i > 0)
+		{
+		  fputs_filtered (", ", stream);
+		  wrap_here ("    ");
+		}
+	      f_print_type (TYPE_FIELD_TYPE (type, i), "", stream, -1, 0, 0);
+	    }
+	fprintf_filtered (stream, ")");
+      }
       break;
 
     case TYPE_CODE_UNDEF:
@@ -328,7 +352,11 @@ f_type_print_base (struct type *type, struct ui_file *stream, int show,
       break;
 
     case TYPE_CODE_VOID:
-      fprintfi_filtered (level, stream, "VOID");
+      {
+	gdbarch *gdbarch = get_type_arch (type);
+	struct type *void_type = builtin_f_type (gdbarch)->builtin_void;
+	fprintfi_filtered (level, stream, "%s", TYPE_NAME (void_type));
+      }
       break;
 
     case TYPE_CODE_UNDEF:
@@ -412,4 +440,7 @@ f_type_print_base (struct type *type, struct ui_file *stream, int show,
 	error (_("Invalid type code (%d) in symbol table."), TYPE_CODE (type));
       break;
     }
+
+  if (TYPE_IS_ALLOCATABLE (type))
+    fprintf_filtered (stream, ", allocatable");
 }

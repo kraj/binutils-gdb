@@ -150,6 +150,16 @@ is_pascal_string_type (struct type *type,int *length_pos,
   return 0;
 }
 
+/* This is a wrapper around IS_PASCAL_STRING_TYPE that returns true if TYPE
+   is a string.  */
+
+static bool
+pascal_is_string_type_p (struct type *type)
+{
+  return is_pascal_string_type (type, nullptr, nullptr, nullptr,
+				nullptr, nullptr) > 0;
+}
+
 static void pascal_one_char (int, struct ui_file *, int *);
 
 /* Print the character C on STREAM as part of the contents of a literal
@@ -459,5 +469,7 @@ extern const struct language_defn pascal_language_defn =
   default_search_name_hash,
   &default_varobj_ops,
   NULL,
-  NULL
+  NULL,
+  pascal_is_string_type_p,
+  "{...}"			/* la_struct_too_deep_ellipsis */
 };

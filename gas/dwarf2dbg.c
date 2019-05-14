@@ -442,7 +442,16 @@ set_or_check_view (struct line_entry *e, struct line_entry *p,
       gas_assert (r == p);
       /* Set or check views until we find a defined or absent view.  */
       do
-	set_or_check_view (r, r->next, NULL);
+	{
+	  /* Do not define the head of a (sub?)segment view while
+	     handling others.  It would be defined too early, without
+	     regard to the last view of other subsegments.
+	     set_or_check_view will be called for every head segment
+	     that needs it.  */
+	  if (r == h)
+	    break;
+	  set_or_check_view (r, r->next, NULL);
+	}
       while (r->next && r->next->loc.view && !S_IS_DEFINED (r->next->loc.view)
 	     && (r = r->next));
 
@@ -454,6 +463,11 @@ set_or_check_view (struct line_entry *e, struct line_entry *p,
 	 simplify the view expressions, until we do so to P.  */
       do
 	{
+	  /* The head view of a subsegment may remain undefined while
+	     handling other elements, before it is linked to the last
+	     view of the previous subsegment.  */
+	  if (r == h)
+	    continue;
 	  gas_assert (S_IS_DEFINED (r->loc.view));
 	  resolve_expression (symbol_get_value_expression (r->loc.view));
 	}
@@ -480,9 +494,11 @@ dwarf2_gen_line_info_1 (symbolS *label, struct dwarf2_line_info *loc)
 
   lss = get_line_subseg (now_seg, now_subseg, TRUE);
 
-  if (loc->view)
+  /* Subseg heads are chained to previous subsegs in
+     dwarf2_finish.  */
+  if (loc->view && lss->head)
     set_or_check_view (e,
-		       !lss->head ? NULL : (struct line_entry *)lss->ptail,
+		       (struct line_entry *)lss->ptail,
 		       lss->head);
 
   *lss->ptail = e;
@@ -735,8 +751,14 @@ get_filenum (const char *filename, unsigned int num)
       unsigned int old = files_allocated;
 
       files_allocated = i + 32;
-      files = XRESIZEVEC (struct file_entry, files, files_allocated);
+      /* Catch wraparound.  */
+      if (files_allocated <= old)
+	{
+	  as_bad (_("file number %u is too big"), i);
+	  return 0;
+	}
 
+      files = XRESIZEVEC (struct file_entry, files, files_allocated);
       memset (files + old, 0, (i + 32 - old) * sizeof (struct file_entry));
     }
 
@@ -787,13 +809,18 @@ dwarf2_directive_filename (void)
      being supplied.  Turn off gas generated debug info.  */
   debug_type = DEBUG_NONE;
 
-  if (num < (int) files_in_use && files[num].filename != 0)
+  if (num < (offsetT) files_in_use && files[num].filename != 0)
     {
       as_bad (_("file number %ld already allocated"), (long) num);
       return NULL;
     }
+  else if (num < 0)
+    {
+      as_bad (_("file number %ld is too small!"), (long) num);
+      return NULL;
+    }
 
-  get_filenum (filename, num);
+  get_filenum (filename, (unsigned int) num);
 
   return filename;
 }
@@ -1176,7 +1203,7 @@ size_inc_line_addr (int line_delta, addressT addr_delta)
     {
       if (addr_delta == MAX_SPECIAL_ADDR_DELTA)
 	len = 1;
-      else
+      else if (addr_delta)
 	len = 1 + sizeof_leb128 (addr_delta, 0);
       return len + 3;
     }
@@ -1240,7 +1267,7 @@ emit_inc_line_addr (int line_delta, addressT addr_delta, char *p, int len)
     {
       if (addr_delta == MAX_SPECIAL_ADDR_DELTA)
 	*p++ = DW_LNS_const_add_pc;
-      else
+      else if (addr_delta)
 	{
 	  *p++ = DW_LNS_advance_pc;
 	  p += output_leb128 (p, addr_delta, 0);
@@ -2218,8 +2245,19 @@ dwarf2_finish (void)
       struct line_subseg *lss = s->head;
       struct line_entry **ptail = lss->ptail;
 
+      /* Reset the initial view of the first subsection of the
+	 section.  */
+      if (lss->head && lss->head->loc.view)
+	set_or_check_view (lss->head, NULL, NULL);
+
       while ((lss = lss->next) != NULL)
 	{
+	  /* Link the first view of subsequent subsections to the
+	     previous view.  */
+	  if (lss->head && lss->head->loc.view)
+	    set_or_check_view (lss->head,
+			       !s->head ? NULL : (struct line_entry *)ptail,
+			       s->head ? s->head->head : NULL);
 	  *ptail = lss->head;
 	  ptail = lss->ptail;
 	}

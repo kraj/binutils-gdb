@@ -2806,8 +2806,63 @@ aarch64_decode_variant_using_iclass (aarch64_inst *inst)
       variant = i - 1;
       break;
 
+    case sve_size_bh:
     case sve_size_sd:
       variant = extract_field (FLD_SVE_sz, inst->value, 0);
+      break;
+
+    case sve_size_sd2:
+      variant = extract_field (FLD_SVE_sz2, inst->value, 0);
+      break;
+
+    case sve_size_hsd2:
+      i = extract_field (FLD_SVE_size, inst->value, 0);
+      if (i < 1)
+	return FALSE;
+      variant = i - 1;
+      break;
+
+    case sve_size_013:
+      i = extract_field (FLD_size, inst->value, 0);
+      if (i == 2)
+	return FALSE;
+      if (i == 3)
+	variant = 2;
+      else
+	variant = i;
+      break;
+
+    case sve_shift_tsz_bhsd:
+      i = extract_fields (inst->value, 0, 2, FLD_SVE_tszh, FLD_SVE_tszl_19);
+      if (i == 0)
+	return FALSE;
+      while (i != 1)
+	{
+	  i >>= 1;
+	  variant += 1;
+	}
+      break;
+
+    case sve_size_tsz_bhs:
+      i = extract_fields (inst->value, 0, 2, FLD_SVE_sz, FLD_SVE_tszl_19);
+      while (i != 1)
+	{
+	  if (i & 1)
+	    return FALSE;
+	  i >>= 1;
+	  variant += 1;
+	}
+      break;
+
+    case sve_shift_tsz_hsd:
+      i = extract_fields (inst->value, 0, 2, FLD_SVE_sz, FLD_SVE_tszl_19);
+      if (i == 0)
+	return FALSE;
+      while (i != 1)
+	{
+	  i >>= 1;
+	  variant += 1;
+	}
       break;
 
     default:

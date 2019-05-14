@@ -2227,7 +2227,7 @@ mips_set_ase (const struct mips_ase *ase, struct mips_set_options *opts,
 
   /* Clear combination ASE flags, which need to be recalculated based on
      updated regular ASE settings.  */
-  opts->ase &= ~(ASE_MIPS16E2_MT | ASE_XPA_VIRT);
+  opts->ase &= ~(ASE_MIPS16E2_MT | ASE_XPA_VIRT | ASE_EVA_R6);
 
   if (enabled_p)
     opts->ase |= ase->flags;
@@ -2244,6 +2244,15 @@ mips_set_ase (const struct mips_ase *ase, struct mips_set_options *opts,
     {
       opts->ase |= ASE_MIPS16E2_MT;
       mask |= ASE_MIPS16E2_MT;
+    }
+
+  /* The EVA Extension has instructions which are only valid when the R6 ISA
+     is enabled.  This sets the ASE_EVA_R6 flag when both EVA and R6 ISA are
+     present.  */
+  if (((opts->ase & ASE_EVA) != 0) && ISA_IS_R6 (opts->isa))
+    {
+      opts->ase |= ASE_EVA_R6;
+      mask |= ASE_EVA_R6;
     }
 
   return mask;
@@ -10341,7 +10350,10 @@ macro (struct mips_cl_insn *ip, char *str)
     case M_ADD_I:
       s = "addi";
       s2 = "add";
-      goto do_addi;
+      if (ISA_IS_R6 (mips_opts.isa))
+	goto do_addi_i;
+      else
+	goto do_addi;
     case M_ADDU_I:
       s = "addiu";
       s2 = "addu";
@@ -10350,10 +10362,11 @@ macro (struct mips_cl_insn *ip, char *str)
       dbl = 1;
       s = "daddi";
       s2 = "dadd";
-      if (!mips_opts.micromips)
+      if (!mips_opts.micromips && !ISA_IS_R6 (mips_opts.isa))
 	goto do_addi;
       if (imm_expr.X_add_number >= -0x200
-	  && imm_expr.X_add_number < 0x200)
+	  && imm_expr.X_add_number < 0x200
+	  && !ISA_IS_R6 (mips_opts.isa))
 	{
 	  macro_build (NULL, s, "t,r,.", op[0], op[1],
 		       (int) imm_expr.X_add_number);
@@ -12017,6 +12030,7 @@ macro (struct mips_cl_insn *ip, char *str)
       goto ld;
     case M_LLDP_AB:
     case M_LLWP_AB:
+    case M_LLWPE_AB:
       s = ip->insn_mo->name;
       fmt = "t,d,s";
       ll_sc_paired = 1;
@@ -12125,6 +12139,7 @@ macro (struct mips_cl_insn *ip, char *str)
       goto ld_st;
     case M_SCDP_AB:
     case M_SCWP_AB:
+    case M_SCWPE_AB:
       s = ip->insn_mo->name;
       fmt = "t,d,s";
       ll_sc_paired = 1;
@@ -13705,7 +13720,10 @@ macro (struct mips_cl_insn *ip, char *str)
     case M_SUB_I:
       s = "addi";
       s2 = "sub";
-      goto do_subi;
+      if (ISA_IS_R6 (mips_opts.isa))
+	goto do_subi_i;
+      else
+	goto do_subi;
     case M_SUBU_I:
       s = "addiu";
       s2 = "subu";
@@ -13714,10 +13732,11 @@ macro (struct mips_cl_insn *ip, char *str)
       dbl = 1;
       s = "daddi";
       s2 = "dsub";
-      if (!mips_opts.micromips)
+      if (!mips_opts.micromips && !ISA_IS_R6 (mips_opts.isa))
 	goto do_subi;
       if (imm_expr.X_add_number > -0x200
-	  && imm_expr.X_add_number <= 0x200)
+	  && imm_expr.X_add_number <= 0x200
+	  && !ISA_IS_R6 (mips_opts.isa))
 	{
 	  macro_build (NULL, s, "t,r,.", op[0], op[1],
 		       (int) -imm_expr.X_add_number);
@@ -14231,7 +14250,7 @@ mips_lookup_insn (struct hash_control *hash, const char *start,
       opend = dot != NULL ? dot - name : length;
       if (opend >= 3 && name[opend - 2] == '1' && name[opend - 1] == '6')
 	suffix = 2;
-      else if (name[opend - 2] == '3' && name[opend - 1] == '2')
+      else if (opend >= 2 && name[opend - 2] == '3' && name[opend - 1] == '2')
 	suffix = 4;
       else
 	suffix = 0;
@@ -15245,6 +15264,12 @@ mips_after_parse_args (void)
   file_mips_opts.arch = arch_info->cpu;
   file_mips_opts.isa = arch_info->isa;
   file_mips_opts.init_ase = arch_info->ase;
+
+  /* The EVA Extension has instructions which are only valid when the R6 ISA
+     is enabled.  This sets the ASE_EVA_R6 flag when both EVA and R6 ISA are
+     present.  */
+  if (((file_mips_opts.ase & ASE_EVA) != 0) && ISA_IS_R6 (file_mips_opts.isa))
+    file_mips_opts.ase |= ASE_EVA_R6;
 
   /* Set up initial mips_opts state.  */
   mips_opts = file_mips_opts;

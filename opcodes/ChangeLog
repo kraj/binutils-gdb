@@ -1,3 +1,208 @@
+2019-05-10  Nick Clifton  <nickc@redhat.com>
+
+	PR 24538
+	* ia64-opc.c (ia64_find_matching_opcode): Check for reaching the
+	end of the table prematurely.
+
+2019-05-10  Faraz Shahbazker  <fshahbazker@wavecomp.com>
+
+        * mips-opc.c (mips_opcodes): Enable ADD, SUB, DADD and DSUB
+	macros for R6.
+
+2019-05-11  Alan Modra  <amodra@gmail.com>
+
+	* ppc-dis.c (print_insn_powerpc) Don't skip optional operands
+	when -Mraw is in effect.
+
+2019-05-09  Matthew Malcomson  <matthew.malcomson@arm.com>
+
+	* aarch64-dis-2.c: Regenerate.
+	* aarch64-tbl.h (OP_SVE_BBU): New variant set.
+	(OP_SVE_BBB): New variant set.
+	(OP_SVE_DDDD): New variant set.
+	(OP_SVE_HHH): New variant set.
+	(OP_SVE_HHHU): New variant set.
+	(OP_SVE_SSS): New variant set.
+	(OP_SVE_SSSU): New variant set.
+	(OP_SVE_SHH): New variant set.
+	(OP_SVE_SBBU): New variant set.
+	(OP_SVE_DSS): New variant set.
+	(OP_SVE_DHHU): New variant set.
+	(OP_SVE_VMV_HSD_BHS): New variant set.
+	(OP_SVE_VVU_HSD_BHS): New variant set.
+	(OP_SVE_VVVU_SD_BH): New variant set.
+	(OP_SVE_VVVU_BHSD): New variant set.
+	(OP_SVE_VVV_QHD_DBS): New variant set.
+	(OP_SVE_VVV_HSD_BHS): New variant set.
+	(OP_SVE_VVV_HSD_BHS2): New variant set.
+	(OP_SVE_VVV_BHS_HSD): New variant set.
+	(OP_SVE_VV_BHS_HSD): New variant set.
+	(OP_SVE_VVV_SD): New variant set.
+	(OP_SVE_VVU_BHS_HSD): New variant set.
+	(OP_SVE_VZVV_SD): New variant set.
+	(OP_SVE_VZVV_BH): New variant set.
+	(OP_SVE_VZV_SD): New variant set.
+	(aarch64_opcode_table): Add sve2 instructions.
+
+2019-05-09  Matthew Malcomson  <matthew.malcomson@arm.com>
+
+	* aarch64-asm-2.c: Regenerated.
+	* aarch64-dis-2.c: Regenerated.
+	* aarch64-opc-2.c: Regenerated.
+	* aarch64-opc.c (operand_general_constraint_met_p): Constraint checking
+	for SVE_SHLIMM_UNPRED_22.
+	(aarch64_print_operand): Add printing for SVE_SHLIMM_UNPRED_22.
+	* aarch64-tbl.h (AARCH64_OPERANDS): Use new SVE_SHLIMM_UNPRED_22
+	operand.
+
+2019-05-09  Matthew Malcomson  <matthew.malcomson@arm.com>
+
+	* aarch64-asm.c (aarch64_encode_variant_using_iclass): Handle
+	sve_size_tsz_bhs iclass encode.
+	* aarch64-dis.c (aarch64_decode_variant_using_iclass): Handle
+	sve_size_tsz_bhs iclass decode.
+
+2019-05-09  Matthew Malcomson  <matthew.malcomson@arm.com>
+
+	* aarch64-asm-2.c: Regenerated.
+	* aarch64-dis-2.c: Regenerated.
+	* aarch64-opc-2.c: Regenerated.
+	* aarch64-opc.c (operand_general_constraint_met_p): Constraint checking
+	for SVE_Zm4_11_INDEX.
+	(aarch64_print_operand): Add printing for SVE_Zm4_11_INDEX.
+	(fields): Handle SVE_i2h field.
+	* aarch64-opc.h (enum aarch64_field_kind): New SVE_i2h field.
+	* aarch64-tbl.h (AARCH64_OPERANDS): Use new SVE_Zm4_11_INDEX operand.
+
+2019-05-09  Matthew Malcomson  <matthew.malcomson@arm.com>
+
+	* aarch64-asm.c (aarch64_encode_variant_using_iclass): Handle
+	sve_shift_tsz_bhsd iclass encode.
+	* aarch64-dis.c (aarch64_decode_variant_using_iclass): Handle
+	sve_shift_tsz_bhsd iclass decode.
+
+2019-05-09  Matthew Malcomson  <matthew.malcomson@arm.com>
+
+	* aarch64-asm-2.c: Regenerated.
+	* aarch64-dis-2.c: Regenerated.
+	* aarch64-opc-2.c: Regenerated.
+	* aarch64-asm.c (aarch64_ins_sve_shrimm):
+	(aarch64_encode_variant_using_iclass): Handle
+	sve_shift_tsz_hsd iclass encode.
+	* aarch64-dis.c (aarch64_decode_variant_using_iclass): Handle
+	sve_shift_tsz_hsd iclass decode.
+	* aarch64-opc.c (operand_general_constraint_met_p): Constraint checking
+	for SVE_SHRIMM_UNPRED_22.
+	(aarch64_print_operand): Add printing for SVE_SHRIMM_UNPRED_22.
+	* aarch64-tbl.h (AARCH64_OPERANDS): Use new SVE_SHRIMM_UNPRED_22
+	operand.
+
+2019-05-09  Matthew Malcomson  <matthew.malcomson@arm.com>
+
+	* aarch64-asm.c (aarch64_encode_variant_using_iclass): Handle
+	sve_size_013 iclass encode.
+	* aarch64-dis.c (aarch64_decode_variant_using_iclass): Handle
+	sve_size_013 iclass decode.
+
+2019-05-09  Matthew Malcomson  <matthew.malcomson@arm.com>
+
+	* aarch64-asm.c (aarch64_encode_variant_using_iclass): Handle
+	sve_size_bh iclass encode.
+	* aarch64-dis.c (aarch64_decode_variant_using_iclass): Handle
+	sve_size_bh iclass decode.
+
+2019-05-09  Matthew Malcomson  <matthew.malcomson@arm.com>
+
+	* aarch64-asm.c (aarch64_encode_variant_using_iclass): Handle
+	sve_size_sd2 iclass encode.
+	* aarch64-dis.c (aarch64_decode_variant_using_iclass): Handle
+	sve_size_sd2 iclass decode.
+	* aarch64-opc.c (fields): Handle SVE_sz2 field.
+	* aarch64-opc.h (enum aarch64_field_kind): New SVE_sz2 field.
+
+2019-05-09  Matthew Malcomson  <matthew.malcomson@arm.com>
+
+	* aarch64-asm-2.c: Regenerated.
+	* aarch64-dis-2.c: Regenerated.
+	* aarch64-opc-2.c: Regenerated.
+	* aarch64-opc.c (operand_general_constraint_met_p): Constraint checking
+	for SVE_ADDR_ZX.
+	(aarch64_print_operand): Add printing for SVE_ADDR_ZX.
+	* aarch64-tbl.h (AARCH64_OPERANDS): Use new SVE_ADDR_ZX operand.
+
+2019-05-09  Matthew Malcomson  <matthew.malcomson@arm.com>
+
+	* aarch64-asm-2.c: Regenerated.
+	* aarch64-dis-2.c: Regenerated.
+	* aarch64-opc-2.c: Regenerated.
+	* aarch64-opc.c (operand_general_constraint_met_p): Constraint checking
+	for SVE_Zm3_11_INDEX.
+	(aarch64_print_operand): Add printing for SVE_Zm3_11_INDEX.
+	(fields): Handle SVE_i3l and SVE_i3h2 fields.
+	* aarch64-opc.h (enum aarch64_field_kind): New SVE_i3l and SVE_i3h2
+	fields.
+	* aarch64-tbl.h (AARCH64_OPERANDS): Use new SVE_Zm3_11_INDEX operand.
+
+2019-05-09  Matthew Malcomson  <matthew.malcomson@arm.com>
+
+	* aarch64-asm.c (aarch64_encode_variant_using_iclass): Handle
+	sve_size_hsd2 iclass encode.
+	* aarch64-dis.c (aarch64_decode_variant_using_iclass): Handle
+	sve_size_hsd2 iclass decode.
+	* aarch64-opc.c (fields): Handle SVE_size field.
+	* aarch64-opc.h (enum aarch64_field_kind): New SVE_size field.
+
+2019-05-09  Matthew Malcomson  <matthew.malcomson@arm.com>
+
+	* aarch64-asm-2.c: Regenerated.
+	* aarch64-dis-2.c: Regenerated.
+	* aarch64-opc-2.c: Regenerated.
+	* aarch64-opc.c (operand_general_constraint_met_p): Constraint checking
+	for SVE_IMM_ROT3.
+	(aarch64_print_operand): Add printing for SVE_IMM_ROT3.
+	(fields): Handle SVE_rot3 field.
+	* aarch64-opc.h (enum aarch64_field_kind): New SVE_rot3 field.
+	* aarch64-tbl.h (AARCH64_OPERANDS): Use new SVE_IMM_ROT3 operand.
+
+2019-05-09  Matthew Malcomson  <matthew.malcomson@arm.com>
+
+	* aarch64-opc.c (verify_constraints): Check for movprfx for sve2
+	instructions.
+
+2019-05-09  Matthew Malcomson  <matthew.malcomson@arm.com>
+
+	* aarch64-tbl.h
+	(aarch64_feature_sve2, aarch64_feature_sve2aes,
+	aarch64_feature_sve2sha3, aarch64_feature_sve2sm4,
+	aarch64_feature_sve2bitperm): New feature sets.
+	(SVE2, SVE2_AES, SVE2_SHA3, SVE2_SM4, SVE2_BITPERM): New macros
+	for feature set addresses.
+	(SVE2_INSN, SVE2_INSNC, SVE2AES_INSN, SVE2SHA3_INSN,
+	SVE2SM4_INSN, SVE2SM4_INSNC, SVE2BITPERM_INSN): New macros.
+
+2019-05-06  Andrew Bennett  <andrew.bennett@imgtec.com>
+	    Faraz Shahbazker  <fshahbazker@wavecomp.com>
+
+	* mips-dis.c (mips_calculate_combination_ases): Add ISA
+	argument and set ASE_EVA_R6 appropriately.
+	(set_default_mips_dis_options): Pass ISA to above.
+	(parse_mips_dis_option): Likewise.
+	* mips-opc.c (EVAR6): New macro.
+	(mips_builtin_opcodes): Add llwpe, scwpe.
+
+2019-05-01  Sudakshina Das  <sudi.das@arm.com>
+
+	* aarch64-asm-2.c: Regenerated.
+	* aarch64-dis-2.c: Regenerated.
+	* aarch64-opc-2.c: Regenerated.
+	* aarch64-opc.c (operand_general_constraint_met_p): Add case for
+	AARCH64_OPND_TME_UIMM16.
+	(aarch64_print_operand): Likewise.
+	* aarch64-tbl.h (QL_IMM_NIL): New.
+	(TME): New.
+	(_TME_INSN): New.
+	(struct aarch64_opcode): Add tstart, tcommit, ttest and tcancel.
+
 2019-04-29  John Darrington  <john@darrington.wattle.id.au>
 
         * s12z-opc.c (shift_discrim): Return OP_INVALID when reading fails.

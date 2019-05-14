@@ -1,3 +1,773 @@
+2019-05-14  Tom Tromey  <tromey@adacore.com>
+
+	* solib.c (info_sharedlibrary_command): Style the file name.
+
+2019-05-14  Alan Hayward  <alan.hayward@arm.com>
+
+	* aarch64-tdep.c (aarch64_vnh_type): Add half view.
+	(aarch64_vnv_type): Likewise.
+	* target-descriptions.c (make_gdb_type): Add TDESC_TYPE_IEEE_HALF.
+	* common/tdesc.c: Likewise.
+	* common/tdesc.h (enum tdesc_type_kind): Likewise.
+	* features/aarch64-fpu.c (create_feature_aarch64_fpu): Regenerate.
+	* features/aarch64-fpu.xml: Add ieee half view.
+	* features/aarch64-sve.c (create_feature_aarch64_fpu): Likewise.
+	* gdbtypes.c (gdbtypes_post_init): Add builtin_half
+	* gdbtypes.h (struct builtin_type): Likewise.
+	(struct objfile_type): Likewise.
+
+2019-05-12  Paul Naert  <paul.naert@polymtl.ca>
+
+	* language.c (language_sniff_from_mangled_name): Fix "langauge"
+	typo.
+	* location.h (string_to_event_location): Likewise.
+
+2019-05-11  Joel Brobecker  <brobecker@adacore.com>
+
+	GDB 8.3 released.
+
+2019-05-10  Simon Marchi  <simon.marchi@efficios.com>
+
+	* breakpoint.h (fix_multi_location_breakpoint_output_globally):
+	New variable declaration.
+	* breakpoint.c (fix_multi_location_breakpoint_output_globally):
+	New variable.
+	(print_one_breakpoint): Use ui_out::test_flags and new global
+	variable to compute use_fixed_output.
+	* mi/mi-main.h (mi_multi_location_breakpoint_output_fixed):
+	Remove.
+	* mi/mi-main.c (fix_multi_location_breakpoint_output): Remove.
+	(mi_multi_location_breakpoint_output_fixed): Remove.
+	(mi_cmd_fix_multi_location_breakpoint_output): Adjust to set the
+	new variable.
+	* mi/mi-out.c (mi_ui_out::mi_ui_out): Set
+	fix_multi_location_breakpoint_output flag if version >= 3.
+	* ui-out.h (enum ui_out_flag)
+	<fix_multi_location_breakpoint_output>: New enumerator.
+
+2019-05-10  Simon Marchi  <simon.marchi@efficios.com>
+
+	* contrib/cc-with-tweaks.sh: Validate dwz's work.
+
+2019-05-10  Tom Tromey  <tromey@adacore.com>
+
+	* ada-lang.c (catch_ada_completer): New function.
+	(_initialize_ada_language): Use it.
+
+2019-05-10  Tom Tromey  <tromey@adacore.com>
+
+	* thread.c (print_thread_info): Make "requested_threads" const.
+	* gdbthread.h (print_thread_info): Make "requested_threads"
+	const.
+	* ada-tasks.c (print_ada_task_info): Make "taskno_str" const.
+	* ada-lang.h (print_ada_task_info): Make "taskno_str" const.
+
+2019-05-08  Tom Tromey  <tom@tromey.com>
+
+	* gdbtypes.c (objfile_type_data): Change type.
+	(objfile_type, _initialize_gdbtypes): Update.
+
+2019-05-08  Tom Tromey  <tom@tromey.com>
+
+	* dwarf2-frame.c (dwarf2_frame_objfile_data): Change type.
+	(dwarf2_frame_find_fde, dwarf2_build_frame_info)
+	(_initialize_dwarf2_frame): Update.
+
+2019-05-08  Tom Tromey  <tom@tromey.com>
+
+	* objc-lang.c (objc_objfile_data): Change type.
+	(find_methods): Update.
+	(_initialize_objc_lang): Remove.
+
+2019-05-08  Tom Tromey  <tom@tromey.com>
+
+	* stabsread.c (rs6000_builtin_type_data): Change type.
+	(rs6000_builtin_type, _initialize_stabsread): Update.
+
+2019-05-08  Tom Tromey  <tom@tromey.com>
+
+	* mips-tdep.c (mips_pdr_data): Remove.
+	(_initialize_mips_tdep): Update.
+
+2019-05-08  Tom Tromey  <tom@tromey.com>
+
+	* hppa-tdep.c (hppa_objfile_priv_data): Change type.
+	(hppa_init_objfile_priv_data, read_unwind_info)
+	(find_unwind_entry, _initialize_hppa_tdep): Update.
+
+2019-05-08  Tom Tromey  <tom@tromey.com>
+
+	* elfread.c (elf_objfile_gnu_ifunc_cache_data): Change type.
+	(elf_gnu_ifunc_record_cache): Update.  Don't allocate hash table
+	on obstack.
+	(elf_gnu_ifunc_resolve_by_cache, _initialize_elfread): Update.
+
+2019-05-08  Tom Tromey  <tom@tromey.com>
+
+	* mdebugread.c (basic_type_data): Change type.
+	(basic_type, _initialize_mdebugread): Update.
+
+2019-05-08  Tom Tromey  <tom@tromey.com>
+
+	* common/gdb_unique_ptr.h (struct noop_deleter): New.
+
+2019-05-08  Tom Tromey  <tom@tromey.com>
+
+	* nto-tdep.c (nto_inferior_data_reg): Change type.
+	(nto_inferior_data): Update.
+	(nto_inferior_data_cleanup, nto_new_inferior_data)
+	(_initialize_nto_tdep): Remove.
+	* nto-tdep.h (struct nto_inferior_data): Add initializers.
+
+2019-05-08  Tom Tromey  <tom@tromey.com>
+
+	* ada-lang.c (struct ada_inferior_data): Add initializers.
+	(ada_inferior_data): Change type.
+	(ada_inferior_data_cleanup): Remove.
+	(get_ada_inferior_data, ada_inferior_exit)
+	(struct ada_pspace_data): Add initializers, destructor.
+	(ada_pspace_data_handle): Change type.
+	(get_ada_pspace_data): Update.
+	(ada_pspace_data_cleanup): Remove.
+
+2019-05-08  Tom Tromey  <tom@tromey.com>
+
+	* coffread.c (struct coff_symfile_info): Add initializers.
+	(coff_objfile_data_key): Move lower.  Change type.
+	(coff_symfile_init, coff_symfile_read, _initialize_coffread):
+	Update.
+	(coff_free_info): Remove.
+
+2019-05-08  Tom Tromey  <tom@tromey.com>
+
+	* fbsd-tdep.c (struct fbsd_pspace_data): Add initializers.
+	(fbsd_pspace_data_handle): Move lower.  Change type.
+	(get_fbsd_pspace_data): Update.
+	(fbsd_pspace_data_cleanup): Remove.
+	(_initialize_fbsd_tdep): Update.
+
+2019-05-08  Tom Tromey  <tom@tromey.com>
+
+	* ada-tasks.c (ada_tasks_pspace_data_handle): Change type.
+	(get_ada_tasks_pspace_data): Update.
+	(ada_tasks_pspace_data_cleanup): Remove.
+	(_initialize_tasks): Update.
+	(ada_tasks_inferior_data_handle): Change type.
+	(get_ada_tasks_inferior_data): Update.
+	(ada_tasks_inferior_data_cleanup): Remove.
+	(struct ada_tasks_pspace_data): Add initializers.
+
+2019-05-08  Tom Tromey  <tom@tromey.com>
+
+	* symfile.h (struct sym_probe_fns) <sym_get_probes>: Change type.
+	* symfile-debug.c (debug_sym_get_probes): Change type.
+	* stap-probe.c (handle_stap_probe):
+	(stap_static_probe_ops::get_probes): Change type.
+	* probe.h (class static_probe_ops) <get_probes>: Change type.
+	* probe.c (class any_static_probe_ops) <get_probes>: Change type.
+	(parse_probes_in_pspace): Update.
+	(find_probes_in_objfile, find_probe_by_pc, collect_probes):
+	Update.
+	(any_static_probe_ops::get_probes): Change type.
+	* elfread.c (elfread_data): New typedef.
+	(probe_key): Change type.
+	(elf_get_probes): Likewise.  Update.
+	(probe_key_free): Remove.
+	(_initialize_elfread): Update.
+	* dtrace-probe.c (class dtrace_static_probe_ops) <get_probes>:
+	Change type.
+	(dtrace_process_dof_probe, dtrace_process_dof)
+	(dtrace_static_probe_ops::get_probe): Change type.
+
+2019-05-08  Tom Tromey  <tom@tromey.com>
+
+	* xcoffread.c (struct xcoff_symfile_info): Rename from
+	coff_symfile_info.  Add initializers.
+	(xcoff_objfile_data_key): Move lower.  Change type.
+	(XCOFF_DATA): Rewrite.
+	(xcoff_free_info): Remove.
+	(xcoff_symfile_init, _initialize_xcoffread, read_xcoff_symtab)
+	(read_symbol, read_symbol_lineno, find_linenos, init_stringtab)
+	(xcoff_initial_scan): Update.
+
+2019-05-08  Tom Tromey  <tom@tromey.com>
+
+	* solib-svr4.c (struct svr4_info): Add initializers and
+	destructor.
+	<probes_table>: Now an htab_up.
+	(solib_svr4_pspace_data): Change type.
+	(free_probes_table): Simplify.
+	(~svr4_info): Rename from svr4_pspace_data_cleanup.
+	(get_svr4_info, probes_table_htab_remove_objfile_probes)
+	(probes_table_remove_objfile_probes, register_solib_event_probe)
+	(solib_event_probe_at, svr4_update_solib_event_breakpoint)
+	(_initialize_svr4_solib): Update.
+
+2019-05-08  Tom Tromey  <tom@tromey.com>
+
+	* remote.c (remote_pspace_data): Change type.
+	(remote_pspace_data_cleanup): Remove.
+	(get_remote_exec_file, set_pspace_remote_exec_file)
+	(_initialize_remote): Update.
+
+2019-05-08  Tom Tromey  <tom@tromey.com>
+
+	* breakpoint.c (breakpoint_objfile_key): Change type.
+	(get_breakpoint_objfile_data): Update.
+	(free_breakpoint_objfile_data): Remove.
+	(_initialize_breakpoint): Update.
+
+2019-05-08  Tom Tromey  <tom@tromey.com>
+
+	* linux-tdep.c (struct linux_info): Add initializers.
+	(linux_inferior_data): Move.  Change type.
+	(invalidate_linux_cache_inf): Update.
+	(linux_inferior_data_cleanup): Remove.
+	(get_linux_inferior_data, _initialize_linux_tdep): Update.
+
+2019-05-08  Tom Tromey  <tom@tromey.com>
+
+	* auxv.c (auxv_inferior_data): Move.  Change type.
+	(auxv_inferior_data_cleanup): Remove.
+	(invalidate_auxv_cache_inf): Rewrite.
+	(get_auxv_inferior_data, _initialize_auxv): Update.
+
+2019-05-08  Tom Tromey  <tom@tromey.com>
+
+	* symfile-debug.c (struct debug_sym_fns_data): Add initializers.
+	(symfile_debug_objfile_data_key): Change type.
+	(symfile_debug_installed, debug_qf_has_symbols)
+	(debug_qf_find_last_source_symtab)
+	(debug_qf_forget_cached_source_info)
+	(debug_qf_map_symtabs_matching_filename, debug_qf_lookup_symbol)
+	(debug_qf_print_stats, debug_qf_dump)
+	(debug_qf_expand_symtabs_for_function)
+	(debug_qf_expand_all_symtabs)
+	(debug_qf_expand_symtabs_with_fullname)
+	(debug_qf_map_matching_symbols)
+	(debug_qf_expand_symtabs_matching)
+	(debug_qf_find_pc_sect_compunit_symtab)
+	(debug_qf_map_symbol_filenames)
+	(debug_qf_find_compunit_symtab_by_address, debug_sym_get_probes)
+	(debug_sym_new_init, debug_sym_init, debug_sym_read)
+	(debug_sym_read_psymbols, debug_sym_finish, debug_sym_offsets)
+	(debug_sym_read_linetable, debug_sym_relocate): Update.
+	(symfile_debug_free_objfile): Remove.
+	(install_symfile_debug_logging, _initialize_symfile_debug):
+	Update.
+
+2019-05-08  Tom Tromey  <tom@tromey.com>
+
+	* dwarf2read.h (struct dwarf2_per_objfile): Don't inherit from
+	allocate_on_obstack.
+	* dwarf2read.c (dwarf2_objfile_data_key): Change type.
+	(get_dwarf2_per_objfile): Update.
+	(set_dwarf2_per_objfile): Remove.
+	(dwarf2_has_info, dwarf2_get_section_info): Update.
+	(dwarf2_free_objfile): Remove.
+	(_initialize_dwarf2_read): Update.
+
+2019-05-08  Tom Tromey  <tom@tromey.com>
+
+	* auto-load.c (struct auto_load_pspace_info): Add destructor and
+	initializers.
+	<unsupported_script_warning_printed,
+	script_not_found_warning_printed>: Now bool.
+	(auto_load_pspace_data): Change type.
+	(~auto_load_pspace_info): Rename from
+	auto_load_pspace_data_cleanup.
+	(get_auto_load_pspace_data, init_loaded_scripts_info)
+	(clear_section_scripts, maybe_print_unsupported_script_warning)
+	(maybe_print_script_not_found_warning, _initialize_auto_load):
+	Update.
+
+2019-05-08  Tom Tromey  <tom@tromey.com>
+
+	* objfiles.c (objfile_pspace_info): Add destructor and
+	initializers.
+	(objfiles_pspace_data): Change type.
+	(~objfile_pspace_info): Rename from objfiles_pspace_data_cleanup.
+	(get_objfile_pspace_data): Update.
+	(objfiles_bfd_data): Change type.
+	(get_objfile_bfd_data): Update.
+	(objfile_bfd_data_free, _initialize_objfiles): Remove.
+
+2019-05-08  Tom Tromey  <tom@tromey.com>
+
+	* break-catch-syscall.c (catch_syscall_inferior_data): Move.
+	Change type.
+	(get_catch_syscall_inferior_data): Update.
+	(catch_syscall_inferior_data_cleanup): Remove.
+	(_initialize_break_catch_syscall): Update.
+
+2019-05-08  Tom Tromey  <tom@tromey.com>
+
+	* inflow.c (struct terminal_info): Add destructor and
+	initializers.
+	(inflow_inferior_data): Change type.
+	(~terminal_info): Rename from inflow_inferior_data_cleanup.
+	(get_inflow_inferior_data, inflow_inferior_exit)
+	(swap_terminal_info, _initialize_inflow): Update.
+
+2019-05-08  Tom Tromey  <tom@tromey.com>
+
+	* target-dcache.c (target_dcache_cleanup): Remove.
+	(target_dcache_aspace_key): Change type.
+	(target_dcache_init_p, target_dcache_invalidate)
+	(target_dcache_get, target_dcache_get_or_init)
+	(_initialize_target_dcache): Update.
+	* dcache.h (struct dcache_deleter): New.
+
+2019-05-08  Tom Tromey  <tom@tromey.com>
+
+	* symtab.c (struct symbol_cache): Add destructor and
+	initializers.
+	(symbol_cache_key): Move.  Change type.
+	(make_symbol_cache, free_symbol_cache): Remove.
+	(get_symbol_cache): Update.
+	(symbol_cache_cleanup): Remove.
+	(ALL_PSPACES, symbol_cache_flush)
+	(maintenance_print_symbol_cache)
+	(maintenance_print_symbol_cache_statistics, _initialize_symtab):
+	Update.
+
+2019-05-08  Tom Tromey  <tom@tromey.com>
+
+	* symtab.c (struct main_info): Add destructor and initializers.
+	(main_progspace_key): Move.  Change type.
+	(get_main_info): Update.
+	(main_info_cleanup): Remove.
+	(_initialize_symtab): Update.
+
+2019-05-08  Tom Tromey  <tom@tromey.com>
+
+	* registry.h (DECLARE_REGISTRY): Define the _key class.
+
+2019-05-08  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* NEWS: Merge two 'New commands' sections.
+
+2019-05-08  Joel Brobecker  <brobecker@adacore.com>
+
+	* ada-valprint.c (ada_val_print_gnat_array): Remove language
+	parameter and use Ada language definition instead.
+	(ada_val_print_ptr): Remove unused language parameter.
+	(ada_val_print_num): Remove language parameter and use Ada language
+	definition instead.
+	(ada_val_print_enum, ada_val_print_flt): Remove unused language
+	parameter.
+	(ada_val_print_struct_union, ada_val_print_ref): Remove language
+	parameter and use Ada language definition instead.
+	(ada_val_print_1): Update all ada_val_print_xxx calls.
+	Remove language parameter.
+	(ada_val_print): Update ada_val_print_1 call.
+
+2019-05-08  Tom Tromey  <tromey@adacore.com>
+
+	* remote.c (remote_hw_watchpoint_limit)
+	(remote_hw_watchpoint_length_limit, remote_hw_breakpoint_limit):
+	Now static.
+
+2019-05-08  Tom Tromey  <tromey@adacore.com>
+
+	* maint.c (_initialize_maint_cmds): Move initialization code to
+	remote.c.
+	(watchdog, show_watchdog): Move to remote.c.
+	* remote.c (watchdog, show_watchdog): Move from maint.c.  Make
+	"watchdog" static.
+	(_initialize_remote): Move initialization code from maint.c.
+	* defs.h (watchdog): Don't declare.
+
+2019-05-08  Tom Tromey  <tromey@adacore.com>
+
+	* tui/tui-interp.c: Include main.h.
+	* interps.c: Include main.h.
+	* main.h (interpreter_p): Declare.
+	* defs.h (interpreter_p): Don't declare.
+
+2019-05-08  Tom Tromey  <tromey@adacore.com>
+
+	* dwarf2loc.c: Include dwarf2read.h.
+	* defs.h (read_unsigned_leb128): Don't declare.
+	* dwarf2read.h (read_unsigned_leb128): Declare.
+
+2019-05-08  Tom Tromey  <tromey@adacore.com>
+
+	* utils.c (fputs_maybe_filtered): Call can_emit_style_escape as a
+	method.
+
+2019-05-08  Tom Tromey  <tromey@adacore.com>
+
+	* utils.c (fputs_maybe_filtered): Reset style after paging, even
+	when no wrap column is set.
+
+2019-05-08  Tom Tromey  <tromey@adacore.com>
+
+	* c-lang.c (c_get_string): Handle non-C-style arrays.
+
+2019-05-08  Tom Tromey  <tromey@adacore.com>
+
+	* typeprint.c (print_offset_data::update): Print the bit offset,
+	not the number of bits remaining.
+
+2019-05-08  Tom Tromey  <tromey@adacore.com>
+
+	* typeprint.c (print_offset_data::maybe_print_hole): Add extra
+	padding at end of comment.
+
+2019-05-08  Tom Tromey  <tromey@adacore.com>
+
+	* dwarf2loc.c (dwarf2_evaluate_property) <PROP_ADDR_OFFSET>:
+	Compare main types.
+
+2019-05-06  Tom Tromey  <tom@tromey.com>
+
+	* common/scoped_mmap.c: Include common-defs.h.
+	* common/scoped_mmap.h: Don't include config.h.
+
+2019-05-04  Tom Tromey  <tom@tromey.com>
+
+	* aarch64-tdep.c (stack_item_t): Remove typedef and DEF_VEC.
+	(struct aarch64_call_info): Add initializers.
+	<si>: Now a std::vector.
+	(pass_on_stack, aarch64_push_dummy_call): Update.
+
+2019-05-04  Simon Marchi  <simon.marchi@efficios.com>
+	    Tom Tromey  <tom@tromey.com>
+
+	* ppc-linux-nat.c (thread_points_p): Remove typedef and DEF_VEC.
+	(ppc_threads): Now a std::vector.  Now static.
+	(hwdebug_find_thread_points_by_tid)
+	(ppc_linux_nat_target::low_new_thread, ppc_linux_thread_exit):
+	Update.
+
+2019-05-04  Tom Tromey  <tom@tromey.com>
+
+	* arc-tdep.c (arc_tdesc_init): Return bool.
+
+2019-05-04  Tom Tromey  <tom@tromey.com>
+
+	* arm-linux-nat.c (arm_linux_nat_target::can_use_hw_breakpoint):
+	Use gdb_assert_not_reached.
+
+2019-05-04  Tom Tromey  <tom@tromey.com>
+
+	* compile/compile-cplus-types.c (compile_cplus_convert_enum): Use
+	"false".
+
+2019-05-04  Tom Tromey  <tom@tromey.com>
+
+	* arc-tdep.c (arc_tdesc_init): Use bool.
+
+2019-05-04  Tom Tromey  <tom@tromey.com>
+
+	* stack.c (select_frame_for_mi): Use "false", not "FALSE".
+
+2019-05-04  Tom Tromey  <tom@tromey.com>
+
+	* cli/cli-cmds.c (valid_command_p): Return bool.
+
+2019-05-04  Tom Tromey  <tom@tromey.com>
+
+	* cli/cli-decode.c (valid_user_defined_cmd_name_p): Return bool.
+	* command.h (valid_user_defined_cmd_name_p): Channge return type.
+
+2019-05-04  Raul Tambre  <raul@tambre.ee>
+
+	* python/lib/gdb/prompt.py (_ExtendedPrompt)
+	<before_prompt_hook, get_show_string>: Fix incorrect use of 'is'
+	operator for comparison.
+
+2019-05-04  Tom Tromey  <tom@tromey.com>
+
+	* psymtab.c (psymbol_name_matches, match_partial_symbol)
+	(lookup_partial_symbol, print_partial_symbols)
+	(recursively_search_psymtabs, sort_pst_symbols, psymbol_hash)
+	(psymbol_compare): Update.
+	(add_psymbol_to_bcache): Clear the entire psymbol.
+	(maintenance_check_psymtabs): Update.
+	* psympriv.h (struct partial_symbol): Don't derive from
+	general_symbol_info.
+	<obj_section, unrelocated_address, address,
+	set_unrelocated_address>: Update.
+	<ginfo>: New member.
+	* dwarf-index-write.c (write_psymbols, debug_names::insert)
+	(debug_names::write_psymbols): Update.
+
+2019-05-04  Tom de Vries  <tdevries@suse.de>
+
+	* contrib/cc-with-tweaks.sh: Support -n arg.
+
+2019-05-04  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* corelow.c (core_target::detach): Ensure frame cache and
+	register caches are cleared.
+	inferior.c (exit_inferior_1): Likewise.
+
+2019-05-03  Sandra Loosemore  <sandra@codesourcery.com>
+	    Tom Tromey  <tom@tromey.com>
+
+	* dictionary.c (collate_pending_symbols_by_language): Remove
+	"struct" from foreach.
+	* symtab.c (lookup_global_symbol_from_objfile)
+	(lookup_symbol_in_objfile_from_linkage_name): Remove "struct" from
+	foreach.
+	* ser-tcp.c (net_open): Remove "struct" from foreach.
+	* objfiles.c (objfile_relocate, objfile_rebase)
+	(objfile_has_symbols): Remove "struct" from foreach.
+	* minsyms.c (lookup_minimal_symbol_by_pc_section): Remove "struct"
+	from foreach.
+	* dwarf2read.c (handle_struct_member_die): Remove "struct" from
+	foreach.
+	* darwin-nat.c (thread_info_from_private_thread_info): Remove
+	"struct" from foreach.
+	* ada-lang.c (create_excep_cond_exprs)
+	(ada_exception_catchpoint_cond_string): Remove "struct" from
+	foreach.
+
+2019-05-03  Tom Tromey  <tromey@adacore.com>
+
+	* ada-exp.y (convert_char_literal): Check suffix of each
+	enumerator.
+
+2019-05-03  Dilyan Palauzov  <dilyan.palauzov@aegee.org>
+
+	PR ada/21406:
+	* ada-exp.y (yywrap): Don't define.
+	* ada-lex.l (%option): Add noyywrap
+	(yywrap): Remove.
+
+2019-05-03  Eli Zaretskii  <eliz@gnu.org>
+
+	* common/common-defs.h [__MINGW32__ || __CYGWIN__]: Define
+	_WIN32_WINNT to the XP level, unless already defined to a higher
+	level.
+
+	* unittests/parse-connection-spec-selftests.c:
+	* ser-tcp.c:
+	* common/netstuff.c [USE_WIN32API]:  Remove the _WIN32_WINNT
+	override.
+
+	* symfile.c (find_separate_debug_file): Remove colon from the
+	drive spec of DOS/Windows file names of the target, so that the
+	file name produced from DEBUGDIR and the target's directory will
+	be valid on DOS/Windows systems.
+
+2019-05-02  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* rust-lang.c (val_print_struct): Handle printing structures
+	containing strings.
+
+2019-05-02  Tom Tromey  <tromey@adacore.com>
+
+	* valarith.c (_initialize_valarith): Remove.
+
+2019-05-01  Tom Tromey  <tromey@adacore.com>
+
+	* ada-lang.c (ada_value_primitive_field): Treat more fields as
+	bitfields.
+
+2019-05-01  Tom Tromey  <tromey@adacore.com>
+
+	* ada-lang.c (ada_value_assign): Correctly compute starting offset
+	for big-endian copies.
+
+2019-04-30  Ali Tamur  <tamur@google.com>
+	* gdb/dwarf2read.c (read_3_bytes): New declaration.
+	(read_attribute_value): Added DW_FORM_strx1-4 cases.
+	(read_3_bytes): New function.
+
+2019-04-30  Joel Brobecker  <brobecker@adacore.com>
+
+	* windows-nat.c (main_thread_id): Delete.
+	(handle_output_debug_string): Replace main_thread_id by
+	current_event.dwThreadId.
+	(fake_create_process): Likewise.
+	(get_windows_debug_event) <CREATE_PROCESS_DEBUG_EVENT>:
+	Do not set main_thread_id.
+	<LOAD_DLL_DEBUG_EVENT>: Replace main_thread_id by
+	current_event.dwThreadId.
+	<UNLOAD_DLL_DEBUG_EVENT>: Likewise.
+
+2019-04-30  Joel Brobecker  <brobecker@adacore.com>
+
+	* windows-nat.c (get_windows_debug_event) <EXIT_PROCESS_DEBUG_EVENT>:
+	Use current_event.dwThreadId instead of main_thread_id.
+
+2019-04-30  Tom Tromey  <tromey@adacore.com>
+
+	* ada-lang.c (ada_lookup_simple_minsyms): New function.
+	(create_excep_cond_exprs): Iterate over program spaces.
+	(ada_exception_catchpoint_cond_string): Examine all minimal
+	symbols for exception types.
+
+2019-04-30  Tom Tromey  <tromey@adacore.com>
+
+	PR c++/24470:
+	* dwarf2read.c (process_structure_scope): Handle case where type
+	has template parameters but no symbol was created.
+
+2019-04-30  Andrew Burgess  <andrew.burgess@embecosm.com>
+	    Chris January  <chris.january@arm.com>
+
+	* f-typeprint.c (f_type_print_base): Print 'allocatable' type
+	qualifier.
+	* gdbtypes.h (TYPE_IS_ALLOCATABLE): Define.
+
+2019-04-30  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* f-typeprint.c (f_print_type): Update rules for printing
+	whitespace.
+	(f_type_print_varspec_suffix): Likewise.
+
+2019-04-30  Andrew Burgess  <andrew.burgess@embecosm.com>
+	    Chris January  <chris.january@arm.com>
+
+	* f-typeprint.c (f_type_print_varspec_suffix): Handle printing
+	function arguments.
+
+2019-04-30  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* f-lang.c (build_fortran_types): Change name of void type to
+	lower case.
+	* f-typeprint.c (f_type_print_base): Print the name of the void
+	type, rather than a fixed string.
+	* f-valprint.c (f_decorations): Use lower case void string.
+
+2019-04-30  Andrew Burgess  <andrew.burgess@embecosm.com>
+	    Chris January  <chris.january@arm.com>
+
+	* dwarf2read.c (dwarf2_init_complex_target_type): Use different
+	types for Fortran.
+
+2019-04-30  Andrew Burgess  <andrew.burgess@embecosm.com>
+	    Chris January  <chris.january@arm.com>
+	    David Lecomber  <david.lecomber@arm.com>
+
+	* f-exp.y (BINOP_INTRINSIC): New token.
+	(exp): New parser rule handling BINOP_INTRINSIC.
+	(f77_keywords): Add new builtin procedures.
+	* f-lang.c (evaluate_subexp_f): Handle BINOP_MOD, UNOP_FORTRAN_CEILING,
+	UNOP_FORTRAN_FLOOR, BINOP_FORTRAN_MODULO, BINOP_FORTRAN_CMPLX.
+	(operator_length_f): Handle UNOP_FORTRAN_CEILING,
+	UNOP_FORTRAN_FLOOR, BINOP_FORTRAN_MODULO, BINOP_FORTRAN_CMPLX.
+	(print_unop_subexp_f): New function.
+	(print_binop_subexp_f): New function.
+	(print_subexp_f): Handle UNOP_FORTRAN_CEILING, UNOP_FORTRAN_FLOOR,
+	BINOP_FORTRAN_MODULO, BINOP_FORTRAN_CMPLX.
+	(dump_subexp_body_f): Likewise.
+	(operator_check_f): Likewise.
+	* fortran-operator.def: Add UNOP_FORTRAN_CEILING, UNOP_FORTRAN_FLOOR,
+	BINOP_FORTRAN_MODULO, BINOP_FORTRAN_CMPLX
+
+2019-04-30  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb/expprint.c (dump_subexp_body_standard): Remove use of
+	UNOP_KIND.
+	* gdb/expression.h (exp_opcode): Include 'fortran-operator.def'.
+	* gdb/f-exp.y (exp): Rename UNOP_KIND to UNOP_FORTRAN_KIND.
+	* gdb/f-lang.c (evaluate_subexp_f): Likewise.
+	(operator_length_f): New fuction.
+	(print_subexp_f): New function.
+	(op_name_f): New function.
+	(dump_subexp_body_f): New function.
+	(operator_check_f): New function.
+	(exp_descriptor_f): Replace standard expression handling functions
+	with new functions.
+	* gdb/fortran-operator.def: New file.
+	* gdb/parse.c (operator_length_standard): Remove use of UNOP_KIND.
+	* gdb/std-operator.def: Remove UNOP_KIND.
+
+2019-04-30  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* std-operator.def: Remove unbalanced, stray double quote
+	character.
+
+2019-04-29  Andrew Burgess  <andrew.burgess@embecosm.com>
+	    Chris January  <chris.january@arm.com>
+	    Daniel Everett  <daniel.everett@arm.com>
+	    Nick Forrington  <nick.forrington@arm.com>
+	    Richard Bunt  <richard.bunt@arm.com>
+
+	* cp-valprint.c (cp_print_value_fields): Allow an additional level
+	of depth when printing anonymous structs or unions.
+	* guile/scm-pretty-print.c (gdbscm_apply_val_pretty_printer):
+	Don't print either the top-level value, or the children if the
+	max-depth is exceeded.
+	(ppscm_print_children): When printing the key of a map, allow one
+	extra level of depth.
+	* python/py-prettyprint.c (gdbpy_apply_val_pretty_printer): Don't
+	print either the top-level value, or the children if the max-depth
+	is exceeded.
+	(print_children): When printing the key of a map, allow one extra
+	level of depth.
+	* python/py-value.c (valpy_format_string): Add max_depth keyword.
+	* valprint.c: (PRINT_MAX_DEPTH_DEFAULT): Define.
+	(user_print_options): Initialise max_depth field.
+	(val_print_scalar_or_string_type_p): New function.
+	(val_print): Check to see if the max depth has been reached.
+	(val_print_check_max_depth): Define new function.
+	(show_print_max_depth): New function.
+	(_initialize_valprint): Add 'print max-depth' option.
+	* valprint.h (struct value_print_options) <max_depth>: New field.
+	(val_print_check_max_depth): Declare new function.
+	* NEWS: Document new feature.
+
+2019-04-29  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* ada-lang.c (ada_language_defn): Initialise new field.
+	* c-lang.c (c_is_string_type_p): New function.
+	(c_language_defn): Initialise new field.
+	(cplus_language_defn): Initialise new field.
+	(asm_language_defn): Initialise new field.
+	(minimal_language_defn): Initialise new field.
+	* c-lang.h (c_is_string_type_p): Declare new function.
+	* d-lang.c (d_language_defn): Initialise new field.
+	* f-lang.c (f_is_string_type_p): New function.
+	(f_language_defn): Initialise new field.
+	* go-lang.c (go_is_string_type_p): New function.
+	(go_language_defn): Initialise new field.
+	* language.c (default_is_string_type_p): New function.
+	(unknown_language_defn): Initialise new field.
+	(auto_language_defn): Initialise new field.
+	* language.h (struct language_defn) <la_is_string_type_p>: New
+	member variable.
+	(default_is_string_type_p): Declare new function.
+	* m2-lang.c (m2_language_defn): Initialise new field.
+	* objc-lang.c (objc_language_defn): Initialise new field.
+	* opencl-lang.c (opencl_language_defn): Initialise new field.
+	* p-lang.c (pascal_is_string_type_p): New function.
+	(pascal_language_defn): Initialise new field.
+	* rust-lang.c (rust_is_string_type_p): New function.
+	(rust_language_defn): Initialise new field.
+
+2019-04-29  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* language.h (struct language_defn) <la_struct_too_deep_ellipsis>:
+	New field.
+	* ada-lang.c (ada_language_defn): Initialise new field.
+	* c-lang.c (c_language_defn): Likewise.
+	(cplus_language_defn): Likewise.
+	(asm_language_defn): Likewise.
+	(minimal_language_defn): Likewise.
+	* d-lang.c (d_language_defn): Likewise.
+	* f-lang.c (f_language_defn): Likewise.
+	* go-lang.c (go_language_defn): Likewise.
+	* language.c (unknown_language_defn): Likewise.
+	(auto_language_defn): Likewise.
+	* m2-lang.c (m2_language_defn): Likewise.
+	* objc-lang.c (objc_language_defn): Likewise.
+	* opencl-lang.c (opencl_language_defn): Likewise.
+	* p-lang.c (pascal_language_defn): Likewise.
+	* rust-lang.c (rust_language_defn): Likewise.
+
+2019-04-29  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* ada-lang.c (ada_is_character_type): Change return type to bool.
+	(ada_is_string_type): Likewise.
+	* ada-lang.h (ada_is_character_type): Update declaration
+	(ada_is_string_type): Likewise.
+
 2019-04-27  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
 
 	Support style in 'frame|thread apply'

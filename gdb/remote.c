@@ -969,7 +969,8 @@ public:
 };
 
 /* Per-program-space data key.  */
-static const struct program_space_data *remote_pspace_data;
+static const struct program_space_key<char, gdb::xfree_deleter<char>>
+  remote_pspace_data;
 
 /* The variable registered as the control variable used by the
    remote exec-file commands.  While the remote exec-file setting is
@@ -1229,16 +1230,6 @@ remote_target::get_remote_state ()
   return &m_remote_state;
 }
 
-/* Cleanup routine for the remote module's pspace data.  */
-
-static void
-remote_pspace_data_cleanup (struct program_space *pspace, void *arg)
-{
-  char *remote_exec_file = (char *) arg;
-
-  xfree (remote_exec_file);
-}
-
 /* Fetch the remote exec-file from the current program space.  */
 
 static const char *
@@ -1246,9 +1237,7 @@ get_remote_exec_file (void)
 {
   char *remote_exec_file;
 
-  remote_exec_file
-    = (char *) program_space_data (current_program_space,
-				   remote_pspace_data);
+  remote_exec_file = remote_pspace_data.get (current_program_space);
   if (remote_exec_file == NULL)
     return "";
 
@@ -1259,13 +1248,12 @@ get_remote_exec_file (void)
 
 static void
 set_pspace_remote_exec_file (struct program_space *pspace,
-			char *remote_exec_file)
+			     const char *remote_exec_file)
 {
-  char *old_file = (char *) program_space_data (pspace, remote_pspace_data);
+  char *old_file = remote_pspace_data.get (pspace);
 
   xfree (old_file);
-  set_program_space_data (pspace, remote_pspace_data,
-			  xstrdup (remote_exec_file));
+  remote_pspace_data.set (pspace, xstrdup (remote_exec_file));
 }
 
 /* The "set/show remote exec-file" set command hook.  */
@@ -9461,6 +9449,20 @@ remote_target::read_frame (gdb::char_vector *buf_p)
     }
 }
 
+/* Set this to the maximum number of seconds to wait instead of waiting forever
+   in target_wait().  If this timer times out, then it generates an error and
+   the command is aborted.  This replaces most of the need for timeouts in the
+   GDB test suite, and makes it possible to distinguish between a hung target
+   and one with slow communications.  */
+
+static int watchdog = 0;
+static void
+show_watchdog (struct ui_file *file, int from_tty,
+	       struct cmd_list_element *c, const char *value)
+{
+  fprintf_filtered (file, _("Watchdog timer is %s.\n"), value);
+}
+
 /* Read a packet from the remote machine, with error checking, and
    store it in *BUF.  Resize *BUF if necessary to hold the result.  If
    FOREVER, wait forever rather than timing out; this is used (in
@@ -10364,9 +10366,9 @@ remote_target::remove_watchpoint (CORE_ADDR addr, int len,
 }
 
 
-int remote_hw_watchpoint_limit = -1;
-int remote_hw_watchpoint_length_limit = -1;
-int remote_hw_breakpoint_limit = -1;
+static int remote_hw_watchpoint_limit = -1;
+static int remote_hw_watchpoint_length_limit = -1;
+static int remote_hw_breakpoint_limit = -1;
 
 int
 remote_target::region_ok_for_hw_watchpoint (CORE_ADDR addr, int len)
@@ -14263,10 +14265,6 @@ _initialize_remote (void)
   remote_g_packet_data_handle =
     gdbarch_data_register_pre_init (remote_g_packet_data_init);
 
-  remote_pspace_data
-    = register_program_space_data_with_cleanup (NULL,
-						remote_pspace_data_cleanup);
-
   add_target (remote_target_info, remote_target::open);
   add_target (extended_remote_target_info, extended_remote_target::open);
 
@@ -14751,6 +14749,16 @@ stepping is supported by the target.  The default is on."),
 			   show_range_stepping,
 			   &setlist,
 			   &showlist);
+
+  add_setshow_zinteger_cmd ("watchdog", class_maintenance, &watchdog, _("\
+Set watchdog timer."), _("\
+Show watchdog timer."), _("\
+When non-zero, this timeout is used instead of waiting forever for a target\n\
+to finish a low-level step or continue operation.  If the specified amount\n\
+of time passes without a response from the target, an error occurs."),
+			    NULL,
+			    show_watchdog,
+			    &setlist, &showlist);
 
   /* Eventually initialize fileio.  See fileio.c */
   initialize_remote_fileio (remote_set_cmdlist, remote_show_cmdlist);

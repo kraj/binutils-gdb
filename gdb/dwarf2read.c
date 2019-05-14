@@ -108,7 +108,7 @@ static int check_physname = 0;
 /* When non-zero, do not reject deprecated .gdb_index sections.  */
 static int use_deprecated_index_sections = 0;
 
-static const struct objfile_data *dwarf2_objfile_data_key;
+static const struct objfile_key<dwarf2_per_objfile> dwarf2_objfile_data_key;
 
 /* The "aclass" indices for various kinds of computed DWARF symbols.  */
 
@@ -281,18 +281,7 @@ struct mapped_debug_names final : public mapped_index_base
 dwarf2_per_objfile *
 get_dwarf2_per_objfile (struct objfile *objfile)
 {
-  return ((struct dwarf2_per_objfile *)
-	  objfile_data (objfile, dwarf2_objfile_data_key));
-}
-
-/* Set the dwarf2_per_objfile associated to OBJFILE.  */
-
-void
-set_dwarf2_per_objfile (struct objfile *objfile,
-			struct dwarf2_per_objfile *dwarf2_per_objfile)
-{
-  gdb_assert (get_dwarf2_per_objfile (objfile) == NULL);
-  set_objfile_data (objfile, dwarf2_objfile_data_key, dwarf2_per_objfile);
+  return dwarf2_objfile_data_key.get (objfile);
 }
 
 /* Default names of the debugging sections.  */
@@ -1531,6 +1520,9 @@ static int read_1_signed_byte (bfd *, const gdb_byte *);
 
 static unsigned int read_2_bytes (bfd *, const gdb_byte *);
 
+/* Read the next three bytes (little-endian order) as an unsigned integer.  */
+static unsigned int read_3_bytes (bfd *, const gdb_byte *);
+
 static unsigned int read_4_bytes (bfd *, const gdb_byte *);
 
 static ULONGEST read_8_bytes (bfd *, const gdb_byte *);
@@ -2248,13 +2240,9 @@ dwarf2_has_info (struct objfile *objfile,
     = get_dwarf2_per_objfile (objfile);
 
   if (dwarf2_per_objfile == NULL)
-    {
-      /* Initialize per-objfile state.  */
-      dwarf2_per_objfile
-	= new (&objfile->objfile_obstack) struct dwarf2_per_objfile (objfile,
-								     names);
-      set_dwarf2_per_objfile (objfile, dwarf2_per_objfile);
-    }
+    dwarf2_per_objfile = dwarf2_objfile_data_key.emplace (objfile, objfile,
+							  names);
+
   return (!dwarf2_per_objfile->info.is_virtual
 	  && dwarf2_per_objfile->info.s.section != NULL
 	  && !dwarf2_per_objfile->abbrev.is_virtual
@@ -2586,9 +2574,7 @@ dwarf2_get_section_info (struct objfile *objfile,
                          asection **sectp, const gdb_byte **bufp,
                          bfd_size_type *sizep)
 {
-  struct dwarf2_per_objfile *data
-    = (struct dwarf2_per_objfile *) objfile_data (objfile,
-						  dwarf2_objfile_data_key);
+  struct dwarf2_per_objfile *data = dwarf2_objfile_data_key.get (objfile);
   struct dwarf2_section_info *info;
 
   /* We may see an objfile without any DWARF, in which case we just
@@ -15959,7 +15945,7 @@ handle_struct_member_die (struct die_info *child_die, struct type *type,
 	 field for our sole member child.  */
       struct attribute *discr = dwarf2_attr (child_die, DW_AT_discr_value, cu);
 
-      for (struct die_info *variant_child = child_die->child;
+      for (die_info *variant_child = child_die->child;
 	   variant_child != NULL;
 	   variant_child = sibling_die (variant_child))
 	{
@@ -16212,13 +16198,34 @@ process_structure_scope (struct die_info *die, struct dwarf2_cu *cu)
 
       if (has_template_parameters)
 	{
-	  /* Make sure that the symtab is set on the new symbols.
-	     Even though they don't appear in this symtab directly,
-	     other parts of gdb assume that symbols do, and this is
-	     reasonably true.  */
-	  for (int i = 0; i < TYPE_N_TEMPLATE_ARGUMENTS (type); ++i)
-	    symbol_set_symtab (TYPE_TEMPLATE_ARGUMENT (type, i),
-			       symbol_symtab (sym));
+	  struct symtab *symtab;
+	  if (sym != nullptr)
+	    symtab = symbol_symtab (sym);
+	  else if (cu->line_header != nullptr)
+	    {
+	      /* Any related symtab will do.  */
+	      symtab
+		= cu->line_header->file_name_at (file_name_index (1))->symtab;
+	    }
+	  else
+	    {
+	      symtab = nullptr;
+	      complaint (_("could not find suitable "
+			   "symtab for template parameter"
+			   " - DIE at %s [in module %s]"),
+			 sect_offset_str (die->sect_off),
+			 objfile_name (objfile));
+	    }
+
+	  if (symtab != nullptr)
+	    {
+	      /* Make sure that the symtab is set on the new symbols.
+		 Even though they don't appear in this symtab directly,
+		 other parts of gdb assume that symbols do, and this is
+		 reasonably true.  */
+	      for (int i = 0; i < TYPE_N_TEMPLATE_ARGUMENTS (type); ++i)
+		symbol_set_symtab (TYPE_TEMPLATE_ARGUMENT (type, i), symtab);
+	    }
 	}
     }
 }
@@ -17545,17 +17552,37 @@ dwarf2_init_complex_target_type (struct dwarf2_cu *cu,
   /* Try to find a suitable floating point builtin type of size BITS.
      We're going to use the name of this type as the name for the complex
      target type that we are about to create.  */
-  switch (bits)
+  switch (cu->language)
     {
-    case 32:
-      tt = builtin_type (gdbarch)->builtin_float;
+    case language_fortran:
+      switch (bits)
+	{
+	case 32:
+	  tt = builtin_f_type (gdbarch)->builtin_real;
+	  break;
+	case 64:
+	  tt = builtin_f_type (gdbarch)->builtin_real_s8;
+	  break;
+	case 96:	/* The x86-32 ABI specifies 96-bit long double.  */
+	case 128:
+	  tt = builtin_f_type (gdbarch)->builtin_real_s16;
+	  break;
+	}
       break;
-    case 64:
-      tt = builtin_type (gdbarch)->builtin_double;
-      break;
-    case 96:	/* The x86-32 ABI specifies 96-bit long double.  */
-    case 128:
-      tt = builtin_type (gdbarch)->builtin_long_double;
+    default:
+      switch (bits)
+	{
+	case 32:
+	  tt = builtin_type (gdbarch)->builtin_float;
+	  break;
+	case 64:
+	  tt = builtin_type (gdbarch)->builtin_double;
+	  break;
+	case 96:	/* The x86-32 ABI specifies 96-bit long double.  */
+	case 128:
+	  tt = builtin_type (gdbarch)->builtin_long_double;
+	  break;
+	}
       break;
     }
 
@@ -19289,6 +19316,10 @@ read_attribute_value (const struct die_reader_specs *reader,
       info_ptr += bytes_read;
       break;
     case DW_FORM_strx:
+    case DW_FORM_strx1:
+    case DW_FORM_strx2:
+    case DW_FORM_strx3:
+    case DW_FORM_strx4:
     case DW_FORM_GNU_str_index:
       if (reader->dwo_file == NULL)
 	{
@@ -19299,12 +19330,34 @@ read_attribute_value (const struct die_reader_specs *reader,
 		 bfd_get_filename (abfd));
 	}
       {
-	ULONGEST str_index =
-	  read_unsigned_leb128 (abfd, info_ptr, &bytes_read);
-
+	ULONGEST str_index;
+	if (form == DW_FORM_strx1)
+	  {
+	    str_index = read_1_byte (abfd, info_ptr);
+	    info_ptr += 1;
+	  }
+	else if (form == DW_FORM_strx2)
+	  {
+	    str_index = read_2_bytes (abfd, info_ptr);
+	    info_ptr += 2;
+	  }
+	else if (form == DW_FORM_strx3)
+	  {
+	    str_index = read_3_bytes (abfd, info_ptr);
+	    info_ptr += 3;
+	  }
+	else if (form == DW_FORM_strx4)
+	  {
+	    str_index = read_4_bytes (abfd, info_ptr);
+	    info_ptr += 4;
+	  }
+	else
+	  {
+	    str_index = read_unsigned_leb128 (abfd, info_ptr, &bytes_read);
+	    info_ptr += bytes_read;
+	  }
 	DW_STRING (attr) = read_str_index (reader, str_index);
 	DW_STRING_IS_CANONICAL (attr) = 0;
-	info_ptr += bytes_read;
       }
       break;
     default:
@@ -19372,6 +19425,19 @@ static int
 read_2_signed_bytes (bfd *abfd, const gdb_byte *buf)
 {
   return bfd_get_signed_16 (abfd, buf);
+}
+
+static unsigned int
+read_3_bytes (bfd *abfd, const gdb_byte *buf)
+{
+  unsigned int result = 0;
+  for (int i = 0; i < 3; ++i)
+    {
+      unsigned char byte = bfd_get_8 (abfd, buf);
+      buf++;
+      result |= ((unsigned int) byte << (i * 8));
+    }
+  return result;
 }
 
 static unsigned int
@@ -25350,17 +25416,6 @@ free_one_cached_comp_unit (struct dwarf2_per_cu_data *target_per_cu)
     }
 }
 
-/* Cleanup function for the dwarf2_per_objfile data.  */
-
-static void
-dwarf2_free_objfile (struct objfile *objfile, void *datum)
-{
-  struct dwarf2_per_objfile *dwarf2_per_objfile
-    = static_cast<struct dwarf2_per_objfile *> (datum);
-
-  delete dwarf2_per_objfile;
-}
-
 /* A set of CU "per_cu" pointer, DIE offset, and GDB type pointer.
    We store these in a hash table separate from the DIEs, and preserve them
    when the DIEs are flushed out of cache.
@@ -25678,9 +25733,6 @@ show_check_physname (struct ui_file *file, int from_tty,
 void
 _initialize_dwarf2_read (void)
 {
-  dwarf2_objfile_data_key
-    = register_objfile_data_with_cleanup (nullptr, dwarf2_free_objfile);
-
   add_prefix_cmd ("dwarf", class_maintenance, set_dwarf_cmd, _("\
 Set DWARF specific variables.\n\
 Configure DWARF variables such as the cache size"),

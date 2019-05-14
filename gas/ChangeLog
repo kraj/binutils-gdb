@@ -1,3 +1,253 @@
+2019-05-14  Nick Clifton  <nickc@redhat.com>
+
+	PR 24538
+	* config/tc-i386-intel.c (i386_intel_simplify_register): Reject
+	illegal register numbers.
+
+2019-05-10  Nick Clifton  <nickc@redhat.com>
+
+	PR 24538
+	* macro.c (get_any_string): Increase size of buffer used to hold
+	decimal value of expression result.
+	* dw2gencfi.c (get_debugseg_name): Handle an empty name.
+	* dwarf2dbg.c (get_filenum): Catch integer wraparound when
+	extending allocate file array.
+	(dwarf2_directive_filename): Add extra checks of the computed file
+	number.
+	* config/tc-arm.c (arm_tc_equal_in_insn): Insert copy of name into
+	warning hash table.
+	(s_arm_eabi_attribute): Check for obj_elf_vendor_attribute
+	returning -1.
+	* config/tc-i386.c (i386_output_nops): Catch an attempt to
+	generate nops of negative lengths.
+	* as.h (MAX_LITTLENUMS): Move definition to here from...
+	* config/atof-ieee.c: ...here.
+	* config/tc-aarch64.c: ...here.
+	* config/tc-arc.c: ...here.
+	* config/tc-arm.c: ...here.
+	* config/tc-epiphany.c: ...here.
+	* config/tc-i386.c: ...here.
+	* config/tc-ia64.c: ...here.  (And correct the value).
+	* config/tc-m32c.c: ...here.
+	* config/tc-m32r.c: ...here.
+	* config/tc-metag.c: ...here.
+	* config/tc-microblaze.c: ...here.
+	* config/tc-nds32.c: ...here.
+	* config/tc-or1k.c: ...here.
+	* config/tc-score.c: ...here.
+	* config/tc-score7.c: ...here.
+	* config/tc-tic4x.c: ...here.
+	* config/tc-tilegx.c: ...here.
+	* config/tc-tilepro.c: ...here.
+	* config/tc-visium.c: ...here.
+	* config/tc-sh.c (md_assemble): Add check for an instruction with
+	no opcodes.
+	* config/tc-mips.c (mips_lookup_insn): Add check for very short
+	instruction name.
+	* config/tc-tic54x.c: Use unsigned chars to access is_end_of_line
+	array.
+	(tic54x_start_line_hook): Check for an empty line.
+	(next_line_shows_parallel): Do not walk off the end of the string.
+	(tic54x_macro_start): Check for too much macro nesting.
+	(tic54x_start_label): Add label_start parameter.  Use this
+	parameter to check the first character of the label.
+
+	* config/tc-tic54x.h (TC_START_LABEL_WITHOUT_COLON): Pass
+	line_start variable to tic54x_start_label.
+
+2019-05-10  Faraz Shahbazker  <fshahbazker@wavecomp.com>
+
+	* config/tc-mips.c (macro) <M_ADD_I, M_SUB_I, M_DADD_I, M_DSUB_I>:
+	Add expansions for MIPS r6.
+	* testsuite/gas/mips/add.s: Enable tests for R6.
+	* testsuite/gas/mips/daddi.s: Annotate to test DADD for R6.
+	* testsuite/gas/mips/mipsr6@add.d: Likewise.
+	* gas/testsuite/gas/mips/mipsr6@dadd.d: New test.
+	* gas/testsuite/gas/mips/mips.exp: Run the new test.
+
+2019-05-09  Matthew Malcomson  <matthew.malcomson@arm.com>
+
+	* testsuite/gas/aarch64/sve2.d: Remove file format restriction.
+
+2019-05-09  Matthew Malcomson  <matthew.malcomson@arm.com>
+
+	* testsuite/gas/aarch64/illegal-sve2-aes.d: New test.
+	* testsuite/gas/aarch64/illegal-sve2-bitperm.d: New test.
+	* testsuite/gas/aarch64/illegal-sve2-sha3.d: Test new instructions.
+	* testsuite/gas/aarch64/illegal-sve2-sm4.d: Test new instructions.
+	* testsuite/gas/aarch64/illegal-sve2-sve1ext.d: Test new instructions.
+	* testsuite/gas/aarch64/illegal-sve2-sve1ext.l: Test new instructions.
+	* testsuite/gas/aarch64/illegal-sve2.d: Test new instructions.
+	* testsuite/gas/aarch64/illegal-sve2.l: Test new instructions.
+	* testsuite/gas/aarch64/illegal-sve2.s: Test new instructions.
+	* testsuite/gas/aarch64/sve1-extended-sve2.s: New test.
+	* testsuite/gas/aarch64/sve2.d: Test new instructions.
+	* testsuite/gas/aarch64/sve2.s: Test new instructions.
+
+2019-05-09  Matthew Malcomson  <matthew.malcomson@arm.com>
+
+	* config/tc-aarch64.c (parse_operands): Handle new SVE_SHLIMM_UNPRED_22
+	operand.
+
+2019-05-09  Matthew Malcomson  <matthew.malcomson@arm.com>
+
+	* config/tc-aarch64.c (parse_operands): Handle new SVE_Zm4_11_INDEX
+	operand.
+
+2019-05-09  Matthew Malcomson  <matthew.malcomson@arm.com>
+
+	* config/tc-aarch64.c (parse_operands): Handle new SVE_SHRIMM_UNPRED_22
+	operand.
+
+2019-05-09  Matthew Malcomson  <matthew.malcomson@arm.com>
+
+	* config/tc-aarch64.c (REG_ZR): Macro specifying zero register.
+	(parse_address_main): Account for new addressing mode [Zn.S, Xm].
+	(parse_operands): Handle new SVE_ADDR_ZX operand.
+
+2019-05-09  Matthew Malcomson  <matthew.malcomson@arm.com>
+
+	* config/tc-aarch64.c (parse_operands): Handle new SVE_Zm3_11_INDEX
+	operand.
+
+2019-05-09  Matthew Malcomson  <matthew.malcomson@arm.com>
+
+	* config/tc-aarch64.c (parse_operands): Handle new SVE_IMM_ROT3 operand.
+
+2019-05-09  Matthew Malcomson  <matthew.malcomson@arm.com>
+
+	* config/tc-aarch64.c: Add command line architecture feature flags
+	"sve2", "sve2-sm4", "sve2-aes", "sve2-sha3", "bitperm".
+	* doc/c-aarch64.texi: Document new architecture feature flags.
+
+2019-05-08  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/gas/elf/dwarf2-1.s,
+	* testsuite/gas/elf/dwarf2-2.s,
+	* testsuite/gas/elf/dwarf2-5.s,
+	* testsuite/gas/elf/dwarf2-7.s,
+	* testsuite/gas/elf/dwarf2-8.s,
+	* testsuite/gas/elf/dwarf2-9.s,
+	* testsuite/gas/elf/dwarf2-10.s,
+	* testsuite/gas/elf/dwarf2-11.s,
+	* testsuite/gas/elf/dwarf2-12.s,
+	* testsuite/gas/elf/dwarf2-13.s,
+	* testsuite/gas/elf/dwarf2-14.s,
+	* testsuite/gas/elf/dwarf2-15.s,
+	* testsuite/gas/elf/dwarf2-16.s,
+	* testsuite/gas/elf/dwarf2-17.s,
+	* testsuite/gas/elf/dwarf2-18.s,
+	* testsuite/gas/elf/dwarf2-19.s: Double size of align and simulated
+	instructions.
+	* testsuite/gas/elf/dwarf2-1.d,
+	* testsuite/gas/elf/dwarf2-2.d,
+	* testsuite/gas/elf/dwarf2-5.d,
+	* testsuite/gas/elf/dwarf2-7.d,
+	* testsuite/gas/elf/dwarf2-8.d,
+	* testsuite/gas/elf/dwarf2-9.d,
+	* testsuite/gas/elf/dwarf2-10.d,
+	* testsuite/gas/elf/dwarf2-11.d,
+	* testsuite/gas/elf/dwarf2-12.d,
+	* testsuite/gas/elf/dwarf2-13.d,
+	* testsuite/gas/elf/dwarf2-14.d,
+	* testsuite/gas/elf/dwarf2-15.d,
+	* testsuite/gas/elf/dwarf2-16.d,
+	* testsuite/gas/elf/dwarf2-17.d,
+	* testsuite/gas/elf/dwarf2-18.d,
+	* testsuite/gas/elf/dwarf2-19.d: Use xfail rather than notarget.
+	Remove avr, pru, tile, xtensa from xfails.  Update expected output.
+	* testsuite/gas/elf/elf.exp: Sort targets.
+	(dump_opts): Pass {as -mno-relax} for riscv, {as -mno-link-relax}
+	for avr and pru, and {as --no-link-relax} for xtensa to dwarf tests.
+	* testsuite/gas/elf/section2.e-miwmmxt: Delete unused file.
+
+2019-05-08  Alan Modra  <amodra@gmail.com>
+
+	* config/tc-xtensa.c (opt_linkrelax): New variable.
+	(md_parse_option): Set it here.
+	(md_begin): Copy opt_linkrelax to linkrelax.
+
+2019-05-07  Alexandre Oliva <aoliva@redhat.com>
+
+	* testsuite/gas/elf/dwarf2-18.d: Xfail mep-*.
+	* testsuite/gas/elf/dwarf2-19.d: Likewise.
+
+2019-05-07  Alan Modra  <amodra@gmail.com>
+
+	* symbols.c (use_complex_relocs_for): Formatting.  Factor out
+	X_add_symbol tests.
+
+2019-05-06  Andrew Bennett  <andrew.bennett@imgtec.com>
+	    Faraz Shahbazker  <fshahbazker@wavecomp.com>
+
+	* config/tc-mips.c (mips_set_ase): Handle ASE_EVA_R6.
+	(macro) <M_LLWPE_AB, M_SCWPE_AB>: New cases.
+	(mips_after_parse_args): Translate EVA to EVA_R6.
+	* testsuite/gas/mips/ase-errors-1.s: Add new instructions.
+	* testsuite/gas/mips/eva.s: Likewise.
+	* testsuite/gas/mips/ase-errors-1.l: Check errors for
+	 new instructions.
+	* testsuite/gas/mips/mipsr6@eva.d: Check new test cases.
+
+2019-05-06  Alan Modra  <amodra@gmail.com>
+
+	* symbols.c (symbol_relc_make_sym): Do not access sym->sy_value
+	directly.
+
+2019-05-06  Alan Modra  <amodra@gmail.com>
+
+	* config/tc-ppc.c (ppc_fix_adjustable): Exclude all GOT and PLT
+	relocs, and VLE sdarel relocs.
+	* testsuite/gas/ppc/power4.d: Adjust.
+
+2019-05-05  Alexandre Oliva <aoliva@redhat.com>
+
+	* dwarf2dbg.c (set_or_check_view): Skip heads when assigning
+	views of prior locs.
+	(dwarf2_gen_line_info_1): Skip heads.
+	(size_inc_line_addr, emit_inc_line_addr): Drop
+	DW_LNS_advance_pc for zero addr delta.
+	(dwarf2_finish): Assign views for heads of segments.
+	* testsuite/gas/elf/dwarf2-19.d: New.
+	* testsuite/gas/elf/dwarf2-19.s: New.
+	* testsuite/gas/elf/elf.exp: Test it.
+
+2019-05-04  Alan Modra  <amodra@gmail.com>
+
+	* config/tc-m32c.c (insn_size): Delete static var.
+	(md_begin): Don't set it.
+	(m32c_md_end): Delete.
+	(md_assemble): Add insn_size auto var.
+	* config/tc-m32c.h (md_end): Don't define.
+	(m32c_md_end): Delete.
+	(NOP_OPCODE, HANDLE_ALIGN, MAX_MEM_FOR_RS_ALIGN_CODE): Define.
+	* testsuite/gas/all/align.d: Remove m32c from notarget list.
+	* testsuite/gas/all/incbin.d: Likewise.
+	* testsuite/gas/elf/dwarf2-11.d: Likewise.
+	* testsuite/gas/macros/semi.d: Likewise.
+	* testsuite/gas/all/gas.exp (do_comment): Similarly.
+
+2019-05-02  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR gas/24485
+	* config/tc-i386.c (process_suffix): Issue a warning to IRET
+	without a suffix for .code16gcc.
+	* testsuite/gas/i386/jump16.s: Add tests for iretX.
+	* testsuite/gas/i386/jump16.d: Updated.
+	* testsuite/gas/i386/jump16.e: New file.
+
+2019-05-01  Sudakshina Das  <sudi.das@arm.com>
+
+	* config/tc-aarch64.c (parse_operands): Add case for
+	AARCH64_OPND_TME_UIMM16.
+	(aarch64_features): Add "tme".
+	* doc/c-aarch64.texi: Document the same.
+	* testsuite/gas/aarch64/tme-invalid.d: New test.
+	* testsuite/gas/aarch64/tme-invalid.l: New test.
+	* testsuite/gas/aarch64/tme-invalid.s: New test.
+	* testsuite/gas/aarch64/tme.d: New test.
+	* testsuite/gas/aarch64/tme.s: New test.
+
 2019-04-29  John Darrington <john@darrington.wattle.id.au>
 
         * testsuite/gas/s12z/truncated.d: New file.

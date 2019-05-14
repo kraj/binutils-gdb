@@ -1,3 +1,195 @@
+2019-05-14  Tom Tromey  <tromey@adacore.com>
+
+	* gdb.base/info-shared.exp (check_info_shared): Add "info shared"
+	styling test.
+
+2019-05-14  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.dwarf2/dw2-skip-prologue.S (.debug_loc): Fix base address
+	selection entry encoding.
+
+2019-05-10  Tom Tromey  <tromey@adacore.com>
+
+	* gdb.ada/info_exc.exp: Add "complete" test.
+
+2019-05-09  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.arch/amd64-tailcall-self.S: Make DW_FORM_ref4 references
+	CU-relative.
+
+2019-05-09  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.arch/amd64-entry-value-paramref.S: Make DW_FORM_ref4 references
+	CU-relative.
+
+2019-05-08  Joel Brobecker  <brobecker@adacore.com>
+
+	* gdb.ada/frame_arg_lang.exp: New testcase.
+	* gdb.ada/frame_arg_lang/bla.adb: New file.
+	* gdb.ada/frame_arg_lang/pck.ads: New file.
+	* gdb.ada/frame_arg_lang/pck.adb: New file.
+	* gdb.ada/frame_arg_lang/foo.c: New file.
+
+2019-05-08  Tom Tromey  <tromey@adacore.com>
+
+	* gdb.python/py-value.exp (test_value_in_inferior): Add Ada test.
+
+2019-05-08  Tom Tromey  <tromey@adacore.com>
+
+	* gdb.base/ptype-offsets.exp: Update tests.
+
+2019-05-08  Tom Tromey  <tromey@adacore.com>
+
+	* gdb.base/ptype-offsets.exp: Use string_to_regexp.  Fix test
+	cases.
+	* gdb.base/ptype-offsets.cc (struct abc) <my_int_type>: Now
+	"short".
+
+2019-05-08  Tom Tromey  <tromey@adacore.com>
+
+	* gdb.ada/vla.exp: New file.
+	* gdb.ada/vla/vla.adb: New file.
+
+2019-05-07  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.base/index-cache.exp (ls_host): Fix return statement.
+
+2019-05-07  Tom de Vries  <tdevries@suse.de>
+
+	PR testsuite/24522
+	* gdb.dlang/watch-loc.c: Fix debug_info_offset in .debug_aranges
+	section.
+
+2019-05-07  Tom de Vries  <tdevries@suse.de>
+
+	PR testsuite/24522
+	* gdb.dwarf2/dw2-case-insensitive-debug.S: Fix debug_info_offset in
+	.debug_aranges section.
+
+2019-05-07  Tom de Vries  <tdevries@suse.de>
+
+	PR testsuite/24159
+	* lib/dwarf.exp: Fix handling of DW_FORM_ref_addr.
+
+2019-05-06  Tom de Vries  <tdevries@suse.de>
+
+	* lib/gdb.exp (exec_has_index_section): New proc.
+	* gdb.base/index-cache.exp: Handle case that binfile contains an index
+	section.
+
+2019-05-04  Tom de Vries  <tdevries@suse.de>
+
+	* boards/cc-with-debug-names.exp: New file.
+
+2019-05-03  Tom Tromey  <tromey@adacore.com>
+
+	* gdb.ada/char_enum/pck.ads (Global_Enum_Type): New type.
+	* gdb.ada/char_enum/foo.adb: Use Global_Enum_Type.
+	* gdb.ada/char_enum.exp: Add test.
+
+2019-05-03  Tom de Vries  <tdevries@suse.de>
+
+	* boards/cc-with-gdb-index.exp: New file.
+
+2019-05-02  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.rust/simple.exp: Add new test case.
+	* gdb.rust/simple.rs (struct StringAtOffset): New struct.
+	(main): Initialise an instance of the new struct.
+
+2019-05-01  Tom Tromey  <tromey@adacore.com>
+
+	* gdb.ada/packed_array_assign/aggregates.ads (Nested_Packed): New
+	record.
+	(NPR): New variable.
+	* gdb.ada/packed_array_assign.exp: Add nested packed assignment
+	test.
+
+2019-05-01  Tom Tromey  <tromey@adacore.com>
+
+	* gdb.ada/packed_array_assign.exp: Add packed assignment
+	regression test.
+
+2019-05-01  Tom de Vries  <tdevries@suse.de>
+
+	* boards/cc-with-tweaks.exp: Generate gdb.sh, and pass it in env(GDB).
+
+2019-05-01  Tom de Vries  <tdevries@suse.de>
+
+	* boards/dwarf4-gdb-index.exp: Use cc-with-tweaks.exp.
+
+2019-04-30  Ali Tamur  <tamur@google.com>
+
+	* lib/dwarf.exp(): Added DW_FORM_strx1-4.
+
+2019-04-30  Tom Tromey  <tromey@adacore.com>
+
+	* lib/ada.exp (find_ada_tool): New proc.
+	* lib/gdb.exp (gdb_compile_shlib): Allow .o files as inputs.
+	* gdb.ada/catch_ex_std.exp: New file.
+	* gdb.ada/catch_ex_std/foo.adb: New file.
+	* gdb.ada/catch_ex_std/some_package.adb: New file.
+	* gdb.ada/catch_ex_std/some_package.ads: New file.
+
+2019-04-30  Tom Tromey  <tromey@adacore.com>
+
+	PR c++/24470:
+	* gdb.cp/temargs.cc: Add test code from PR.
+
+2019-04-30  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.fortran/vla-datatypes.exp: Update expected results.
+	* gdb.fortran/vla-ptype.exp: Likewise.
+	* gdb.fortran/vla-type.exp: Likewise.
+	* gdb.fortran/vla-value.exp: Likewise.
+
+2019-04-30  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.fortran/ptr-indentation.exp: Update expected results.
+	* gdb.fortran/ptype-on-functions.exp: Likewise.
+	* gdb.fortran/vla-ptr-info.exp: Likewise.
+	* gdb.fortran/vla-value.exp: Likewise.
+
+2019-04-30  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.fortran/ptype-on-functions.exp: New file.
+	* gdb.fortran/ptype-on-functions.f90: New file.
+
+2019-04-30  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.fortran/exprs.exp (test_convenience_variables): Expect lower
+	case void string.
+
+2019-04-30  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.fortran/complex.exp: Expand.
+	* gdb.fortran/complex.f: Renamed to...
+	* gdb.fortran/complex.f90: ...this, and extended to add more
+	complex values.
+
+2019-04-30  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.fortran/intrinsics.exp: Extend to cover MOD, CEILING, FLOOR,
+	MODULO, CMPLX.
+
+2019-04-29  Andrew Burgess  <andrew.burgess@embecosm.com>
+	    Richard Bunt  <richard.bunt@arm.com>
+
+	* gdb.base/max-depth.c: New file.
+	* gdb.base/max-depth.exp: New file.
+	* gdb.python/py-nested-maps.c: New file.
+	* gdb.python/py-nested-maps.exp: New file.
+	* gdb.python/py-nested-maps.py: New file.
+	* gdb.python/py-format-string.exp (test_max_depth): New proc.
+	(test_all_common): Call test_max_depth.
+	* gdb.fortran/max-depth.exp: New file.
+	* gdb.fortran/max-depth.f90: New file.
+	* gdb.go/max-depth.exp: New file.
+	* gdb.go/max-depth.go: New file.
+	* gdb.modula2/max-depth.exp: New file.
+	* gdb.modula2/max-depth.c: New file.
+	* lib/gdb.exp (get_print_expr_at_depths): New proc.
+
 2019-04-29  Tom de Vries  <tdevries@suse.de>
 
 	* lib/opencl.exp (skip_opencl_tests): Add missing "with" in regexp.
