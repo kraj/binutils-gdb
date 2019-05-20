@@ -439,6 +439,11 @@ extern void
 				       struct cmd_list_element **set_list,
 				       struct cmd_list_element **show_list);
 
+/* Move command OLD_NAME from OLD_LIST to NEW_LIST and rename it from
+   OLD_NAME to NEW_NAME.  */
+extern void rename_cmd (const char *old_name, cmd_list_element **old_list,
+			const char *new_name, cmd_list_element **new_list);
+
 /* Do a "show" command for each thing on a command list.  */
 
 extern void cmd_show_list (struct cmd_list_element *, int, const char *);
