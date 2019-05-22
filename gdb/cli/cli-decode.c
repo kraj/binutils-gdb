@@ -545,6 +545,8 @@ add_setshow_enum_cmd (const char *name,
 
   set_cmd_context (c, context);
   set_cmd_context (show, context);
+
+  set_cmd_completer (show, nullptr);
 }
 
 const char * const auto_boolean_enums[] = { "on", "off", "auto", NULL };
@@ -564,14 +566,16 @@ add_setshow_auto_boolean_cmd (const char *name,
 			      struct cmd_list_element **set_list,
 			      struct cmd_list_element **show_list)
 {
-  struct cmd_list_element *c;
+  cmd_list_element *set, *show;
 
   add_setshow_cmd_full (name, theclass, var_auto_boolean, var,
 			set_doc, show_doc, help_doc,
 			set_func, show_func,
 			set_list, show_list,
-			&c, NULL);
-  c->enums = auto_boolean_enums;
+			&set, &show);
+  set->enums = auto_boolean_enums;
+
+  set_cmd_completer (show, nullptr);
 }
 
 /* Add element named NAME to both the set and show command LISTs (the
@@ -588,14 +592,16 @@ add_setshow_boolean_cmd (const char *name, enum command_class theclass, int *var
 			 struct cmd_list_element **show_list)
 {
   static const char *boolean_enums[] = { "on", "off", NULL };
-  struct cmd_list_element *c;
+  cmd_list_element *set, *show;
 
   add_setshow_cmd_full (name, theclass, var_boolean, var,
 			set_doc, show_doc, help_doc,
 			set_func, show_func,
 			set_list, show_list,
-			&c, NULL);
-  c->enums = boolean_enums;
+			&set, &show);
+  set->enums = boolean_enums;
+
+  set_cmd_completer (show, nullptr);
 }
 
 /* Add element named NAME to both the set and show command LISTs (the
@@ -610,14 +616,16 @@ add_setshow_filename_cmd (const char *name, enum command_class theclass,
 			  struct cmd_list_element **set_list,
 			  struct cmd_list_element **show_list)
 {
-  struct cmd_list_element *set_result;
+  struct cmd_list_element *set_result, *show_result;
 
   add_setshow_cmd_full (name, theclass, var_filename, var,
 			set_doc, show_doc, help_doc,
 			set_func, show_func,
 			set_list, show_list,
-			&set_result, NULL);
+			&set_result, &show_result);
   set_cmd_completer (set_result, filename_completer);
+
+  set_cmd_completer (show_result, nullptr);
 }
 
 /* Add element named NAME to both the set and show command LISTs (the
@@ -632,11 +640,17 @@ add_setshow_string_cmd (const char *name, enum command_class theclass,
 			struct cmd_list_element **set_list,
 			struct cmd_list_element **show_list)
 {
+  cmd_list_element *set_cmd, *show_cmd;
+
   add_setshow_cmd_full (name, theclass, var_string, var,
 			set_doc, show_doc, help_doc,
 			set_func, show_func,
 			set_list, show_list,
-			NULL, NULL);
+			&set_cmd, &show_cmd);
+
+  /* Disable the default symbol completer.  */
+  set_cmd_completer (set_cmd, nullptr);
+  set_cmd_completer (show_cmd, nullptr);
 }
 
 /* Add element named NAME to both the set and show command LISTs (the
@@ -651,13 +665,18 @@ add_setshow_string_noescape_cmd (const char *name, enum command_class theclass,
 				 struct cmd_list_element **set_list,
 				 struct cmd_list_element **show_list)
 {
-  struct cmd_list_element *set_cmd;
+  cmd_list_element *set_cmd, *show_cmd;
 
   add_setshow_cmd_full (name, theclass, var_string_noescape, var,
 			set_doc, show_doc, help_doc,
 			set_func, show_func,
 			set_list, show_list,
-			&set_cmd, NULL);
+			&set_cmd, &show_cmd);
+
+  /* Disable the default symbol completer.  */
+  set_cmd_completer (set_cmd, nullptr);
+  set_cmd_completer (show_cmd, nullptr);
+
   return set_cmd;
 }
 
@@ -673,16 +692,16 @@ add_setshow_optional_filename_cmd (const char *name, enum command_class theclass
 				   struct cmd_list_element **set_list,
 				   struct cmd_list_element **show_list)
 {
-  struct cmd_list_element *set_result;
+  cmd_list_element *set_result, *show_result;
  
   add_setshow_cmd_full (name, theclass, var_optional_filename, var,
 			set_doc, show_doc, help_doc,
 			set_func, show_func,
 			set_list, show_list,
-			&set_result, NULL);
+			&set_result, &show_result);
 		
   set_cmd_completer (set_result, filename_completer);
-
+  set_cmd_completer (show_result, nullptr);
 }
 
 /* Completes on literal "unlimited".  Used by integer commands that
@@ -717,15 +736,16 @@ add_setshow_integer_cmd (const char *name, enum command_class theclass,
 			 struct cmd_list_element **set_list,
 			 struct cmd_list_element **show_list)
 {
-  struct cmd_list_element *set;
+  cmd_list_element *set, *show;
 
   add_setshow_cmd_full (name, theclass, var_integer, var,
 			set_doc, show_doc, help_doc,
 			set_func, show_func,
 			set_list, show_list,
-			&set, NULL);
+			&set, &show);
 
   set_cmd_completer (set, integer_unlimited_completer);
+  set_cmd_completer (show, nullptr);
 }
 
 /* Add element named NAME to both the set and show command LISTs (the
@@ -742,15 +762,16 @@ add_setshow_uinteger_cmd (const char *name, enum command_class theclass,
 			  struct cmd_list_element **set_list,
 			  struct cmd_list_element **show_list)
 {
-  struct cmd_list_element *set;
+  cmd_list_element *set, *show;
 
   add_setshow_cmd_full (name, theclass, var_uinteger, var,
 			set_doc, show_doc, help_doc,
 			set_func, show_func,
 			set_list, show_list,
-			&set, NULL);
+			&set, &show);
 
   set_cmd_completer (set, integer_unlimited_completer);
+  set_cmd_completer (show, nullptr);
 }
 
 /* Add element named NAME to both the set and show command LISTs (the
@@ -767,11 +788,15 @@ add_setshow_zinteger_cmd (const char *name, enum command_class theclass,
 			  struct cmd_list_element **set_list,
 			  struct cmd_list_element **show_list)
 {
+  cmd_list_element *show;
+
   add_setshow_cmd_full (name, theclass, var_zinteger, var,
 			set_doc, show_doc, help_doc,
 			set_func, show_func,
 			set_list, show_list,
-			NULL, NULL);
+			NULL, &show);
+
+  set_cmd_completer (show, nullptr);
 }
 
 void
@@ -786,15 +811,16 @@ add_setshow_zuinteger_unlimited_cmd (const char *name,
 				     struct cmd_list_element **set_list,
 				     struct cmd_list_element **show_list)
 {
-  struct cmd_list_element *set;
+  cmd_list_element *set, *show;
 
   add_setshow_cmd_full (name, theclass, var_zuinteger_unlimited, var,
 			set_doc, show_doc, help_doc,
 			set_func, show_func,
 			set_list, show_list,
-			&set, NULL);
+			&set, &show);
 
   set_cmd_completer (set, integer_unlimited_completer);
+  set_cmd_completer (show, nullptr);
 }
 
 /* Add element named NAME to both the set and show command LISTs (the
@@ -811,11 +837,15 @@ add_setshow_zuinteger_cmd (const char *name, enum command_class theclass,
 			   struct cmd_list_element **set_list,
 			   struct cmd_list_element **show_list)
 {
+  cmd_list_element *show;
+
   add_setshow_cmd_full (name, theclass, var_zuinteger, var,
 			set_doc, show_doc, help_doc,
 			set_func, show_func,
 			set_list, show_list,
-			NULL, NULL);
+			NULL, &show);
+
+  set_cmd_completer (show, nullptr);
 }
 
 /* Remove the command named NAME from the command list.  Return the
