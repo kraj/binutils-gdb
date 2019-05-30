@@ -413,6 +413,11 @@ do_set_command (const char *arg, int from_tty, struct cmd_list_element *c)
 	if (nmatches > 1)
 	  error (_("Ambiguous item \"%s\"."), arg);
 
+	const char *after = skip_spaces (arg + len);
+	if (*after != '\0')
+	  error (_("Garbage after item \"%.*s\": \"%s\""),
+		 len, arg, after);
+
 	if (*(const char **) c->var != match)
 	  {
 	    *(const char **) c->var = match;
