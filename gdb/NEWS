@@ -57,6 +57,10 @@ set logging debugredirect [on|off]
   By default, GDB debug output will go to both the terminal and the logfile.
   Set if you want debug output to go only to the log file.
 
+maint test-settings KIND
+  A set of commands used by the testsuite for exercising the settings
+  infrastructure.
+
 * New MI commands
 
 -complete
