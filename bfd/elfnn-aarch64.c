@@ -2628,10 +2628,7 @@ struct elf_aarch64_link_hash_table
   int fix_erratum_835769;
 
   /* Fix erratum 843419.  */
-  int fix_erratum_843419;
-
-  /* Enable ADRP->ADR rewrite for erratum 843419 workaround.  */
-  int fix_erratum_843419_adr;
+  erratum_84319_opts fix_erratum_843419;
 
   /* Don't apply link-time values for dynamic relocations.  */
   int no_apply_dynamic_relocs;
@@ -2683,6 +2680,9 @@ struct elf_aarch64_link_hash_table
   unsigned int bfd_count;
   unsigned int top_index;
   asection **input_list;
+
+  /* JUMP_SLOT relocs for variant PCS symbols may be present.  */
+  int variant_pcs;
 
   /* The offset into splt of the PLT entry for the TLS descriptor
      resolver.  Special values are 0, if not necessary (or not found
@@ -2896,6 +2896,31 @@ elfNN_aarch64_copy_indirect_symbol (struct bfd_link_info *info,
     }
 
   _bfd_elf_link_hash_copy_indirect (info, dir, ind);
+}
+
+/* Merge non-visibility st_other attributes.  */
+
+static void
+elfNN_aarch64_merge_symbol_attribute (struct elf_link_hash_entry *h,
+				      const Elf_Internal_Sym *isym,
+				      bfd_boolean definition ATTRIBUTE_UNUSED,
+				      bfd_boolean dynamic ATTRIBUTE_UNUSED)
+{
+  unsigned int isym_sto = isym->st_other & ~ELF_ST_VISIBILITY (-1);
+  unsigned int h_sto = h->other & ~ELF_ST_VISIBILITY (-1);
+
+  if (isym_sto == h_sto)
+    return;
+
+  if (isym_sto & ~STO_AARCH64_VARIANT_PCS)
+    /* Not fatal, this callback cannot fail.  */
+    _bfd_error_handler (_("unknown attribute for symbol `%s': 0x%02x"),
+			h->root.root.string, isym_sto);
+
+  /* Note: Ideally we would warn about any attribute mismatch, but
+     this api does not allow that without substantial changes.  */
+  if (isym_sto & STO_AARCH64_VARIANT_PCS)
+    h->other |= STO_AARCH64_VARIANT_PCS;
 }
 
 /* Destroy an AArch64 elf linker hash table.  */
@@ -3229,7 +3254,10 @@ _bfd_aarch64_add_stub_entry_after (const char *stub_name,
   asection *stub_sec;
   struct elf_aarch64_stub_hash_entry *stub_entry;
 
-  stub_sec = _bfd_aarch64_get_stub_for_link_section (link_section, htab);
+  stub_sec = NULL;
+  /* Only create the actual stub if we will end up needing it.  */
+  if (htab->fix_erratum_843419 & ERRAT_ADRP)
+    stub_sec = _bfd_aarch64_get_stub_for_link_section (link_section, htab);
   stub_entry = aarch64_stub_hash_lookup (&htab->stub_hash_table, stub_name,
 					 TRUE, FALSE);
   if (stub_entry == NULL)
@@ -3374,14 +3402,15 @@ aarch64_build_one_stub (struct bfd_hash_entry *gen_entry,
    we know stub section sizes.  */
 
 static bfd_boolean
-aarch64_size_one_stub (struct bfd_hash_entry *gen_entry,
-		       void *in_arg ATTRIBUTE_UNUSED)
+aarch64_size_one_stub (struct bfd_hash_entry *gen_entry, void *in_arg)
 {
   struct elf_aarch64_stub_hash_entry *stub_entry;
+  struct elf_aarch64_link_hash_table *htab;
   int size;
 
   /* Massage our args to the form they really have.  */
   stub_entry = (struct elf_aarch64_stub_hash_entry *) gen_entry;
+  htab = (struct elf_aarch64_link_hash_table *) in_arg;
 
   switch (stub_entry->stub_type)
     {
@@ -3395,7 +3424,11 @@ aarch64_size_one_stub (struct bfd_hash_entry *gen_entry,
       size = sizeof (aarch64_erratum_835769_stub);
       break;
     case aarch64_stub_erratum_843419_veneer:
-      size = sizeof (aarch64_erratum_843419_stub);
+      {
+	if (htab->fix_erratum_843419 == ERRAT_ADR)
+	  return TRUE;
+	size = sizeof (aarch64_erratum_843419_stub);
+      }
       break;
     default:
       abort ();
@@ -4060,8 +4093,10 @@ _bfd_aarch64_resize_stubs (struct elf_aarch64_link_hash_table *htab)
       /* Ensure all stub sections have a size which is a multiple of
 	 4096.  This is important in order to ensure that the insertion
 	 of stub sections does not in itself move existing code around
-	 in such a way that new errata sequences are created.  */
-      if (htab->fix_erratum_843419)
+	 in such a way that new errata sequences are created.  We only do this
+	 when the ADRP workaround is enabled.  If only the ADR workaround is
+	 enabled then the stubs workaround won't ever be used.  */
+      if (htab->fix_erratum_843419 & ERRAT_ADRP)
 	if (section->size)
 	  section->size = BFD_ALIGN (section->size, 0x1000);
     }
@@ -4284,7 +4319,7 @@ elfNN_aarch64_size_stubs (bfd *output_bfd,
       (*htab->layout_sections_again) ();
     }
 
-  if (htab->fix_erratum_843419)
+  if (htab->fix_erratum_843419 != ERRAT_NONE)
     {
       bfd *input_bfd;
 
@@ -4755,7 +4790,7 @@ bfd_elfNN_aarch64_set_options (struct bfd *output_bfd,
 			       int no_enum_warn,
 			       int no_wchar_warn, int pic_veneer,
 			       int fix_erratum_835769,
-			       int fix_erratum_843419,
+			       erratum_84319_opts fix_erratum_843419,
 			       int no_apply_dynamic_relocs,
 			       aarch64_bti_pac_info bp_info)
 {
@@ -4764,8 +4799,10 @@ bfd_elfNN_aarch64_set_options (struct bfd *output_bfd,
   globals = elf_aarch64_hash_table (link_info);
   globals->pic_veneer = pic_veneer;
   globals->fix_erratum_835769 = fix_erratum_835769;
+  /* If the default options are used, then ERRAT_ADR will be set by default
+     which will enable the ADRP->ADR workaround for the erratum 843419
+     workaround.  */
   globals->fix_erratum_843419 = fix_erratum_843419;
-  globals->fix_erratum_843419_adr = TRUE;
   globals->no_apply_dynamic_relocs = no_apply_dynamic_relocs;
 
   BFD_ASSERT (is_aarch64_elf (output_bfd));
@@ -5235,9 +5272,18 @@ _bfd_aarch64_erratum_843419_branch_to_stub (struct bfd_hash_entry *gen_entry,
       || stub_entry->stub_type != aarch64_stub_erratum_843419_veneer)
     return TRUE;
 
-  insn = bfd_getl32 (contents + stub_entry->target_value);
-  bfd_putl32 (insn,
-	      stub_entry->stub_sec->contents + stub_entry->stub_offset);
+  BFD_ASSERT (((htab->fix_erratum_843419 & ERRAT_ADRP) && stub_entry->stub_sec)
+	      || (htab->fix_erratum_843419 & ERRAT_ADR));
+
+  /* Only update the stub section if we have one.  We should always have one if
+     we're allowed to use the ADRP errata workaround, otherwise it is not
+     required.  */
+  if (stub_entry->stub_sec)
+    {
+      insn = bfd_getl32 (contents + stub_entry->target_value);
+      bfd_putl32 (insn,
+		  stub_entry->stub_sec->contents + stub_entry->stub_offset);
+    }
 
   place = (section->output_section->vma + section->output_offset
 	   + stub_entry->adrp_offset);
@@ -5251,14 +5297,16 @@ _bfd_aarch64_erratum_843419_branch_to_stub (struct bfd_hash_entry *gen_entry,
      ((bfd_vma) _bfd_aarch64_decode_adrp_imm (insn) << 12, 33)
      - (place & 0xfff));
 
-  if (htab->fix_erratum_843419_adr
+  if ((htab->fix_erratum_843419 & ERRAT_ADR)
       && (imm >= AARCH64_MIN_ADRP_IMM  && imm <= AARCH64_MAX_ADRP_IMM))
     {
       insn = (_bfd_aarch64_reencode_adr_imm (AARCH64_ADR_OP, imm)
 	      | AARCH64_RT (insn));
       bfd_putl32 (insn, contents + stub_entry->adrp_offset);
+      /* Stub is not needed, don't map it out.  */
+      stub_entry->stub_type = aarch64_stub_none;
     }
-  else
+  else if (htab->fix_erratum_843419 & ERRAT_ADRP)
     {
       bfd_vma veneered_insn_loc;
       bfd_vma veneer_entry_loc;
@@ -5284,6 +5332,21 @@ _bfd_aarch64_erratum_843419_branch_to_stub (struct bfd_hash_entry *gen_entry,
       branch_offset &= 0x3ffffff;
       branch_insn |= branch_offset;
       bfd_putl32 (branch_insn, contents + stub_entry->target_value);
+    }
+  else
+    {
+      abfd = stub_entry->target_section->owner;
+      _bfd_error_handler
+	(_("%pB: error: erratum 843419 immediate 0x%" BFD_VMA_FMT "x "
+	   "out of range for ADR (input file too large) and "
+	   "--fix-cortex-a53-843419=adr used.  Run the linker with "
+	   "--fix-cortex-a53-843419=full instead"), abfd, imm);
+      bfd_set_error (bfd_error_bad_value);
+      /* This function is called inside a hashtable traversal and the error
+	 handlers called above turn into non-fatal errors.  Which means this
+	 case ld returns an exit code 0 and also produces a broken object file.
+	 To prevent this, issue a hard abort.  */
+      BFD_FAIL ();
     }
   return TRUE;
 }
@@ -6154,7 +6217,7 @@ static void
 clear_erratum_843419_entry (struct elf_aarch64_link_hash_table *globals,
 			    bfd_vma adrp_offset, asection *input_section)
 {
-  if (globals->fix_erratum_843419)
+  if (globals->fix_erratum_843419 & ERRAT_ADRP)
     {
       struct erratum_843419_branch_to_stub_clear_data data;
       data.adrp_offset = adrp_offset;
@@ -8536,6 +8599,12 @@ elfNN_aarch64_allocate_dynrelocs (struct elf_link_hash_entry *h, void *inf)
 	     updated.  */
 
 	  htab->root.srelplt->reloc_count++;
+
+	  /* Mark the DSO in case R_<CLS>_JUMP_SLOT relocs against
+	     variant PCS symbols are present.  */
+	  if (h->other & STO_AARCH64_VARIANT_PCS)
+	    htab->variant_pcs = 1;
+
 	}
       else
 	{
@@ -9122,6 +9191,10 @@ elfNN_aarch64_size_dynamic_sections (bfd *output_bfd ATTRIBUTE_UNUSED,
 	      || !add_dynamic_entry (DT_PLTRELSZ, 0)
 	      || !add_dynamic_entry (DT_PLTREL, DT_RELA)
 	      || !add_dynamic_entry (DT_JMPREL, 0))
+	    return FALSE;
+
+	  if (htab->variant_pcs
+	      && !add_dynamic_entry (DT_AARCH64_VARIANT_PCS, 0))
 	    return FALSE;
 
 	  if (htab->tlsdesc_plt
@@ -10047,6 +10120,9 @@ const struct elf_size_info elfNN_aarch64_size_info =
 
 #define elf_backend_copy_indirect_symbol	\
   elfNN_aarch64_copy_indirect_symbol
+
+#define elf_backend_merge_symbol_attribute	\
+  elfNN_aarch64_merge_symbol_attribute
 
 /* Create .dynbss, and .rela.bss sections in DYNOBJ, and set up shortcuts
    to them in our hash.  */

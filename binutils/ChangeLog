@@ -1,3 +1,163 @@
+2019-06-03  Nick Clifton  <nickc@redhat.com>
+
+	Revert:
+	2019-05-29  Nick Clifton  <nickc@redhat.com>
+
+	* configure.ac (LIBCTF): Export.  Set to empty for non-ELF based
+	targets.
+	(HAVE_LIBCTF): Define if libctf support is available.
+	* Makefile.am (LIBCTF): Set value to @LIBCTF@.
+	* objdump.c: Make CTF code conditional upon HAVE_LIBCTF being
+	defined.
+	* readelf.c: Likewise.
+	* configure: Regenerate.
+	* Makefile.in: Regenerate.
+	* config.in: Regenerate.
+
+2019-05-30  Nick Alcock  <nick.alcock@oracle.com>
+
+	* objdump.c (make_ctfsect): Drop cts_type, cts_flags, and
+	cts_offset.
+	* readelf.c (shdr_to_ctf_sect): Likewise.
+
+2019-05-30  Nick Clifton  <nickc@redhat.com>
+
+	PR 24627
+	* readelf.c (process_version_sections): Add 0x prefix to address
+	display.  Correct indentation.
+
+2019-05-30  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/lib/binutils-common.exp (supports_gnu_unique): Add
+	s12z to targets not supporting this feature.
+
+2019-05-30  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/lib/binutils-common.exp (run_dump_test): Support
+	tcl procedures for xfail args.
+
+2019-05-29  Nick Clifton  <nickc@redhat.com>
+
+	* README-how-to-make-a-release: Add libctf to list of directories
+	that need updates in their ChangeLogs.
+
+2019-05-29  Nick Clifton  <nickc@redhat.com>
+
+	* configure.ac (LIBCTF): Export.  Set to empty for non-ELF based
+	targets.
+	(HAVE_LIBCTF): Define if libctf support is available.
+	* Makefile.am (LIBCTF): Set value to @LIBCTF@.
+	* objdump.c: Make CTF code conditional upon HAVE_LIBCTF being
+	defined.
+	* readelf.c: Likewise.
+	* configure: Regenerate.
+	* Makefile.in: Regenerate.
+	* config.in: Regenerate.
+
+2019-05-28  Nick Alcock  <nick.alcock@oracle.com>
+
+	* MAINTAINERS: Add myself as CTF maintainer.
+
+2019-05-28  Nick Alcock  <nick.alcock@oracle.com>
+
+	* objdump.c (ctf-api.h): New include.
+	(dump_ctf_section_info): New variable.
+	(dump_ctf_section_name): Likewise.
+	(usage): Describe new options.
+	(enum option_values): Add OPTION_CTF and OPTION_CTF_PARENT.
+	(main): Use them to add --ctf and --ctf-parent.
+	(read_section_stabs): Add new parameter, entsize_ptr.
+	(find_stabs_section): Adjust accordingly.
+	(make_ctfsect): New.
+	(dump_ctf_indent_lines): New.
+	(dump_ctf_archive_member): New.
+	(dump_ctf): New.
+	(dump_bfd): Call it.  Free resources afterwards.
+	* readelf.c (ctf-api.h): New include.
+	(CTF_DUMP): New.
+	(static bfd_boolean do_ctf): Likewise.
+	(dump_ctf_parent_name): Likewise.
+	(dump_ctf_symtab_name): Likewise.
+	(dump_ctf_strtab_name): Likewise.
+	(OPTION_CTF_DUMP): Likewise.
+	(OPTION_CTF_PARENT): Likewise.
+	(OPTION_CTF_SYMBOLS): Likewise.
+	(OPTION_CTF_STRINGS): Likewise.
+	(options): Add them.
+	(usage): Likewise.
+	(parse_args): Handle the new options, requesting CTF_DUMP.
+	(process_section_contents): Handle CTF_DUMP.
+	(shdr_to_ctf_sect): New.
+	(dump_ctf_indent_lines): New.
+	(dump_section_as_ctf): New.
+	(main): Free resources.
+	* Makefile.am (LIBCTF): New variable.
+	(objdump_DEPENDENCIES): Use it.
+	(readelf_DEPENDENCIES): Likewise.
+	(objdump_LDADD): Likewise.
+	(readelf_LDADD): Likewise.
+	* aclocal.m4: Regenerated.
+	* Makefile.in: Likewise.
+
+	* doc/binutils.texi (objdump): Document the new options.
+	(readelf): Likewise.
+	* doc/ctf.options.texi: New.
+	* doc/Makefile.in: Regenerated.
+	* NEWS: Mention the new feature.
+
+2019-05-27  Alan Modra  <amodra@gmail.com>
+
+	* readelf.c (process_section_groups): Continue processing groups
+	when sh_entsize exceeds group size.
+
+2019-05-24  Szabolcs Nagy  <szabolcs.nagy@arm.com>
+
+	* readelf.c (get_aarch64_dynamic_type): Handle DT_AARCH64_VARIANT_PCS.
+	(get_aarch64_symbol_other): New, handles STO_AARCH64_VARIANT_PCS.
+	(get_symbol_other): Call get_aarch64_symbol_other.
+
+2019-05-24  Alan Modra  <amodra@gmail.com>
+
+	* objdump.c (disassemble_bytes): Set WIDE_OUTPUT in flags.
+
+2019-05-23  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* MAINTAINERS: Add myself as the maintainer for BPF.
+
+2019-05-23  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* readelf.c: Include elf/bpf.h.
+	(guess_is_rela): Hanle EM_BPF.
+	(dump_relocations): Likewise.
+	(is_32bit_abs_reloc): Likewise.
+	* testsuite/binutils-all/nm.exp: Add bpf-*-* to the list of
+	ELF targets.
+
+2019-05-21  Tamar Christina  <tamar.christina@arm.com>
+
+	* dwarf.c (dwarf_regnames_aarch64): Add SVE registers.
+	* testsuite/binutils-all/aarch64/sve-dwarf-registers.d: New test.
+	* testsuite/binutils-all/aarch64/sve-dwarf-registers.s: New test.
+
+2019-05-20  Faraz Shahbazker  <fshahbazker@wavecomp.com>
+
+	PR 14798
+	* testsuite/binutils-all/readelf.ss-mips: Update reference output.
+	* testsuite/binutils-all/readelf.ss-tmips: Likewise.
+
+2019-05-20  Nick Clifton  <nickc@redhat.com>
+
+	* po/ca.po: Updated Catalan translation.
+
+2019-05-16  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+
+	* NEWS: Mention Armv8.1-M Mainline and MVE.
+
+2019-05-16  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+
+	* readelf.c (arm_attr_tag_MVE_arch): New array for Tag_MVE_arch values.
+	(arm_attr_public_tag arm_attr_public_tags): Add case for Tag_MVE_arch.
+
 2019-05-14  Jamey Hicks  <jamey.hicks@gmail.com>
 
 	PR 19921

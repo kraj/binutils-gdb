@@ -16,7 +16,7 @@
 
 * Support for Pointer Authentication on AArch64 Linux.
 
-* Two new convernience functions $_cimag and $_creal that extract the
+* Two new convenience functions $_cimag and $_creal that extract the
   imaginary and real parts respectively from complex numbers.
 
 * Python API
@@ -27,7 +27,22 @@
      'array_indexes', 'symbols', 'unions', 'deref_refs', 'actual_objects',
      'static_members', 'max_elements', 'repeat_threshold', and 'format'.
 
+  ** gdb.Type has a new property 'objfile' which returns the objfile the
+     type was defined in.
+
+* New built-in convenience variables $_shell_exitcode and $_shell_exitsignal
+  provide the exitcode or exit status of the shell commands launched by
+  GDB commands such as "shell", "pipe" and "make".
+
 * New commands
+
+| [COMMAND] | SHELL_COMMAND
+| -d DELIM COMMAND DELIM SHELL_COMMAND
+pipe [COMMAND] | SHELL_COMMAND
+pipe -d DELIM COMMAND DELIM SHELL_COMMAND
+  Executes COMMAND and sends its output to SHELL_COMMAND.
+  With no COMMAND, repeat the last executed command
+  and send its output to SHELL_COMMAND.
 
 set may-call-functions [on|off]
 show may-call-functions
@@ -39,12 +54,67 @@ show may-call-functions
   an error when a command (such as print expression) calls a function
   in the program.
 
+set print finish [on|off]
+show print finish
+  This controls whether the `finish' command will display the value
+  that is returned by the current function.  When `off', the value is
+  still entered into the value history, but it is not printed.  The
+  default is `on'.
+
 set print max-depth
 show print max-depth
   Allows deeply nested structures to be simplified when printing by
   replacing deeply nested parts (beyond the max-depth) with ellipses.
   The default max-depth is 20, but this can be set to unlimited to get
   the old behavior back.
+
+set logging debugredirect [on|off]
+  By default, GDB debug output will go to both the terminal and the logfile.
+  Set if you want debug output to go only to the log file.
+
+set style title foreground COLOR
+set style title background COLOR
+set style title intensity VALUE
+  Control the styling of titles.
+
+set style highlight foreground COLOR
+set style highlight background COLOR
+set style highlight intensity VALUE
+  Control the styling of highlightings.
+
+* Changed commands
+
+help
+  The "help" command uses the title style to enhance the
+  readibility of its output by styling the classes and
+  command names.
+
+apropos [-v] REGEXP
+  Similarly to "help", the "apropos" command also uses the
+  title style for the command names.  "apropos" accepts now
+  a flag "-v" (verbose) to show the full documentation
+  of matching commands and to use the highlight style to mark
+  the documentation parts matching REGEXP.
+
+show style
+  The "show style" and its subcommands are now styling
+  a style name in their output using its own style, to help
+  the user visualize the different styles.
+
+
+* New MI commands
+
+-complete
+  This lists all the possible completions for the rest of the line, if it
+  were to be given as a command itself.  This is intended for use by MI
+  frontends in cases when separate CLI and MI channels cannot be used.
+
+* Testsuite
+
+  The testsuite now creates the files gdb.cmd (containing the arguments
+  used to launch GDB) and gdb.in (containing all the commands sent to
+  GDB) in the output directory for each test script.  Multiple invocations
+  are appended with .1, .2, .3 etc.
 
 *** Changes in GDB 8.3
 

@@ -1,3 +1,265 @@
+2019-05-30  Nick Clifton  <nickc@redhat.com>
+
+	PR 24627
+	* testsuite/ld-elf/ver_def.vd: Update expected output.
+
+2019-05-30  Alan Modra  <amodra@gmail.com>
+
+	PR 24596
+	* emulparams/m9s12zelf.sh (TEMPLATE_NAME): Set to generic.
+	(EXTRA_EM_FILE): Define to genelf.
+	* testsuite/lib/ld-lib.exp (uses_genelf): Add s12z.
+
+2019-05-30  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/lib/ld-lib.exp (run_ld_link_tests): Support procedure
+	calls in optional "xfail" args.
+	(run_ld_link_exec_tests): Likewise.
+	(is_generic): New.
+	(uses_genelf): Rename from is_generic_elf.  Delete bogus semicolons.
+	* testsuite/ld-scripts/align.exp: Rename is_generic_elf call.
+	* testsuite/ld-elf/elf.exp: Use is_generic and uses_genelf.  Delete
+	xfail_implib var.
+	* testsuite/ld-elf/sec64k.exp: Use is_generic.
+	* testsuite/ld-elf/shared.exp: Likewise.
+	* testsuite/ld-discard/extern.d: Use is_generic in xfail.
+	* testsuite/ld-discard/start.d: Likewise.
+	* testsuite/ld-discard/static.d: Likewise.
+	* testsuite/ld-elf/attributes.d: Likewise.
+	* testsuite/ld-elf/group1.d: Likewise.
+	* testsuite/ld-elf/group3b.d: Likewise.
+	* testsuite/ld-elf/group8a.d: Likewise.
+	* testsuite/ld-elf/group8b.d: Likewise.
+	* testsuite/ld-elf/group9a.d: Likewise.
+	* testsuite/ld-elf/group9b.d: Likewise.
+	* testsuite/ld-elf/linkonce2.d: Likewise.
+	* testsuite/ld-elf/merge2.d: Likewise.
+	* testsuite/ld-elf/merge3.d: Likewise.
+	* testsuite/ld-elf/pr12851.d: Likewise.
+	* testsuite/ld-elf/pr12975.d: Likewise.
+	* testsuite/ld-elf/pr13177.d: Likewise.
+	* testsuite/ld-elf/pr13195.d: Likewise.
+	* testsuite/ld-elf/pr17550c.d: Likewise.
+	* testsuite/ld-elf/pr17550d.d: Likewise.
+	* testsuite/ld-elf/pr17615.d: Likewise.
+	* testsuite/ld-elf/pr21562a.d: Likewise.
+	* testsuite/ld-elf/pr21562b.d: Likewise.
+	* testsuite/ld-elf/pr21562c.d: Likewise.
+	* testsuite/ld-elf/pr21562d.d: Likewise.
+	* testsuite/ld-elf/pr21562i.d: Likewise.
+	* testsuite/ld-elf/pr21562j.d: Likewise.
+	* testsuite/ld-elf/pr21562k.d: Likewise.
+	* testsuite/ld-elf/pr21562l.d: Likewise.
+	* testsuite/ld-elf/pr21562m.d: Likewise.
+	* testsuite/ld-elf/pr21562n.d: Likewise.
+	* testsuite/ld-elf/pr22677.d: Likewise.
+	* testsuite/ld-elf/pr22836-1a.d: Likewise.
+	* testsuite/ld-elf/pr22836-1b.d: Likewise.
+	* testsuite/ld-elf/warn3.d: Likewise.
+	* testsuite/ld-elf/warn1.d: Likewise and xfail sparc solaris
+	targets rather than notarget.
+	* testsuite/ld-elf/compressed1d.d: Use uses_genelf in xfail.
+	* testsuite/ld-elf/orphan-10.d: Likewise.
+	* testsuite/ld-elf/orphan-9.d: Likewise.
+	* testsuite/ld-elf/orphan-region.d: Likewise.
+	* testsuite/ld-elf/orphan.d: Likewise.
+	* testsuite/ld-elf/orphan3.d: Likewise.
+	* testsuite/ld-elf/pr20528a.d: Likewise.
+	* testsuite/ld-elf/pr20528b.d: Likewise.
+	* testsuite/ld-elf/pr23658-1a.d: Likewise.
+	* testsuite/ld-elf/pr23658-1b.d: Likewise.
+	* testsuite/ld-elf/pr349.d: Likewise.
+	* testsuite/ld-elf/warn2.d: Likewise and xfail sparc solaris
+	targets rather than notarget.
+	* testsuite/ld-elf/merge.d: Correct ms1-*-* to mt-*-*.
+
+2019-05-28  Faraz Shahbazker  <fshahbazker@wavecomp.com>
+
+	* testsuite/ld-mips-elf/undefweak-overflow.s: Remove test case
+	for pcrel_hi/pcrel_lo.
+	* testsuite/ld-mips-elf/undefweak-overflow.d: Update to match.
+	* testsuite/ld-mips-elf/reloc-pcrel-r6.s: New test source.
+	* testsuite/ld-mips-elf/reloc-pcrel-r6.d: New test linker script.
+	* testsuite/ld-mips-elf/reloc-pcrel-r6.ld: New test.
+	* testsuite/ld-mips-elf/mips-elf.exp: Run the new test.
+
+2019-05-28  Alan Modra  <amodra@gmail.com>
+
+	PR 24596
+	* emultempl/pe.em (gld_${EMULATION_NAME}_after_open): Check that
+	the output is coff before accessing coff tdata.
+	* emultempl/pep.em (gld_${EMULATION_NAME}_after_open): Likewise.
+
+2019-05-28  Szabolcs Nagy  <szabolcs.nagy@arm.com>
+
+	* testsuite/ld-aarch64/variant_pcs-now.d: Use --hash-style=sysv.
+	* testsuite/ld-aarch64/variant_pcs-shared.d: Likewise.
+
+2019-05-27  Alan Modra  <amodra@gmail.com>
+
+	PR 24596
+	* emultempl/genelf.em (gld${EMULATION_NAME}_after_open): Set
+	BFS_KEEP on group signature symbol.
+
+2019-04-24  Szabolcs Nagy  <szabolcs.nagy@arm.com>
+
+	* testsuite/ld-aarch64/aarch64-elf.exp: Add new tests.
+	* testsuite/ld-aarch64/variant_pcs-1.s: New asm for tests.
+	* testsuite/ld-aarch64/variant_pcs-2.s: New asm for tests.
+	* testsuite/ld-aarch64/variant_pcs-now.d: New test.
+	* testsuite/ld-aarch64/variant_pcs-r.d: New test.
+	* testsuite/ld-aarch64/variant_pcs-shared.d: New test.
+	* testsuite/ld-aarch64/variant_pcs.ld: New linker script for tests.
+
+2019-05-24  Alan Modra  <amodra@gmail.com>
+
+	* po/BLD-POTFILES.in: Regenerate.
+
+2019-05-24  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/ld-powerpc/notoc2.d,
+	* testsuite/ld-powerpc/notoc2.s: New test.
+	* testsuite/ld-powerpc/powerpc.exp: Run it.
+
+2019-05-24  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/ld-powerpc/pcrelopt.s,
+	* testsuite/ld-powerpc/pcrelopt.d,
+	* testsuite/ld-powerpc/pcrelopt.sec: New test.
+	* testsuite/ld-powerpc/powerpc.exp: Run it.
+
+2019-05-23  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* Makefile.am (ALL_64_EMULATION_SOURCES): Add eelf64bpf.c.
+	* Makefile.in (prefix): Regenerate.
+	* configure.tgt (targ_extra_ofiles): Add case for bpf-*-* targets.
+	* emulparams/elf64bpf.sh: New file.
+	* testsuite/lib/ld-lib.exp (check_gc_sections_available): Add
+	bpf-*-* to the list of targets not supporting gc-sections.
+	* testsuite/ld-bpf/bar.s: New file.
+	* testsuite/ld-bpf/jump-1.d: Likewise.
+	* testsuite/ld-bpf/foo.s: Likewise.
+	* testsuite/ld-bpf/call-1.d: Likewise.
+	* testsuite/ld-bpf/bpf.exp: Likewise.
+	* testsuite/ld-bpf/baz.s: Likewise.
+
+2019-05-23  Alan Modra  <amodra@gmail.com>
+
+	PR 24576
+	* ldfile.c (enum script_open_style): New.
+	(struct script_name_list): New.
+	(ldfile_open_command_file_1): Take a script_open_style param
+	rather than booleans.  Adjust callers.  Only fail when -T or
+	default -T script is invoked twice.
+	(ldfile_try_open_bfd): Revert last change.
+
+2019-05-22  Julius Werner  <jwerner@chromium.org>
+	    Nick Clifton  <nickc@redhat.com>
+
+	PR 24576
+	* ld/ldfile.c: (ldfile_open_command_file_1): Add new parameter -
+	is_script.  If true check that the file has not already been
+	parsed as a linker script.
+	(ldfile_open_script_file): New function.
+	(ldfile_try_open_bfd): Use the new function in place of
+	ldfile_open_command_line.
+	* ldmain.c (main): Likewise.
+	* lexsup.c (parse_args): Use the new function for opening linker
+	scripts with the -T option.
+	* ldfile.h (ldfile_open_script_file): Add prototype.
+
+2019-05-21  Faraz Shahbazker  <fshahbazker@wavecomp.com>
+
+	* testsuite/ld-mips-elf/pic-reloc-5.s: Add tests for
+	%tprel_hi and %tprel_lo relocations.
+	* testsuite/ld-mips-elf/pic-reloc-6.s: Likewise.
+	* testsuite/ld-mips-elf/pic-reloc-5.d: Update accordingly.
+	* testsuite/ld-mips-elf/pic-reloc-6.d: Likewise.
+	* testsuite/ld-mips-elf/pic-reloc-tls.ld: New test linker
+	script file.
+
+2019-05-21  Faraz Shahbazker  <fshahbazker@wavecomp.com>
+
+	* testsuite/ld-mips-elf/pic-reloc-5.d: New test.
+	* testsuite/ld-mips-elf/pic-reloc-6.d: New test.
+	* testsuite/ld-mips-elf/pic-reloc-7.d: New test.
+	* testsuite/ld-mips-elf/pic-reloc-5.s: New test source.
+	* testsuite/ld-mips-elf/pic-reloc-6.s: New test source.
+	* testsuite/ld-mips-elf/pic-reloc-7.s: New test source.
+	* testsuite/ld-mips-elf/mips-elf.exp: Run the new tests.
+
+2019-05-21  Matthew Fortune  <matthew.fortune@mips.com>
+	    Faraz Shahbazker  <fshahbazker@wavecomp.com>
+
+	* emultempl/mipself.em (compact_branches): New static variable.
+	(mips_create_output_section_statements): Call
+	_bfd_mips_elf_compact_branches.
+	(PARSE_AND_LIST_PROLOGUE): Add OPTION_COMPACT_BRANCHES and
+	OPTION_NO_COMPACT_BRANCHES.
+	(PARSE_AND_LIST_LONGOPTS): Add compact-branches,
+	no-compact-branches.
+	(PARSE_AND_LIST_OPTIONS): Add --compact-branches,
+	--no-compact-branches.
+	(PARSE_AND_LIST_ARGS_CASES): Handle the above.
+	* ld.texinfo: Document --compact-branches, --no-compact-branches.
+	* testsuite/ld-mips-elf/pic-and-nonpic-1-r6.dd: New test.
+	* testsuite/ld-mips-elf/pic-and-nonpic-1-r6.nd: New test.
+	* testsuite/ld-mips-elf/pic-and-nonpic-3a-r6.dd: New test.
+	* testsuite/ld-mips-elf/pic-and-nonpic-3a-r6.gd: New test.
+	* testsuite/ld-mips-elf/pic-and-nonpic-1a-r6.s: New test source.
+	* testsuite/ld-mips-elf/pic-and-nonpic-3a-r6.s: New test source.
+	* testsuite/ld-mips-elf/mips-elf.exp: Run the new tests.
+
+2019-05-21  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+
+	* testsuite/ld-arm/arm-elf.exp: Add tests
+	* testsuite/ld-arm/bfs-0.s: New test.
+	* testsuite/ld-arm/bfs-1.s: New test.
+	* testsuite/ld-arm/branch-futures.d: New test.
+
+2019-05-21  Tamar Christina  <tamar.christina@arm.com>
+
+	PR ld/24373
+	* emultempl/aarch64elf.em (PARSE_AND_LIST_LONGOPTS): Add optional args
+	to flags.
+	* NEWS: Add changes to flag.
+	(PARSE_AND_LIST_OPTIONS): Update help descriptions.
+	(PARSE_AND_LIST_ARGS_CASES): Add new options to parser.
+	* testsuite/ld-aarch64/aarch64-elf.exp: Add new run_dump_tests.
+	* testsuite/ld-aarch64/erratum843419-adr.d: New test.
+	* testsuite/ld-aarch64/erratum843419-adrp.d: New test.
+	* testsuite/ld-aarch64/erratum843419-far-adr.d: New test.
+	* testsuite/ld-aarch64/erratum843419-far-full.d: New test.
+	* testsuite/ld-aarch64/erratum843419-far.s: New test.
+	* testsuite/ld-aarch64/erratum843419-full.d: New test.
+	* testsuite/ld-aarch64/erratum843419-near.s: New test.
+	* testsuite/ld-aarch64/erratum843419-no-args.d: New test.
+
+2019-05-21  Senthil Kumar Selvaraj  <senthilkumar.selvaraj@microchip.com>
+
+	PR ld/24571
+	* ld/testsuite/ld-avr/relax-insn-at-range-boundary.d: New test.
+	* ld/testsuite/ld-avr/relax-insn-at-range-boundary.s: New test.
+
+2019-05-21  Senthil Kumar Selvaraj  <senthilkumar.selvaraj@microchip.com>
+
+	PR ld/24564
+	* testsuite/ld-avr/wraparound-range-boundary.d: New test.
+	* testsuite/ld-avr/wraparound-range-boundary.s: New test.
+
+2019-05-20  Faraz Shahbazker  <fshahbazker@wavecomp.com>
+
+	PR 14798
+	* testsuite/ld-mips-elf/reloc-6a.s: Specify .text section for
+	global code symbols.
+	* testsuite/ld-mips-elf/reloc-6b.s: Likewise.
+
+2019-05-17  Alan Modra  <amodra@gmail.com>
+
+	PR 24567
+	* plugin.c (plugin_notice): Do not let a common symbol override
+	a non-common definition in IR.
+
 2019-05-09  Dimitar Dimitrov  <dimitar@dinux.eu>
 
 	* scripttempl/pru.sc (__init_array_begin, __init_array_begin):

@@ -1,3 +1,1265 @@
+2019-06-04  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR binutils/24626
+	* testsuite/gas/i386/disassem.s: Add tests for reserved VEX.vvvv
+	and EVEX.vvvv.
+	* testsuite/gas/i386/x86-64-disassem.s: Likewise.
+	* testsuite/gas/i386/disassem.d: Updated.
+	* testsuite/gas/i386/x86-64-disassem.d: Likewise.
+
+2019-06-04  Igor Tsimbalist  <igor.v.tsimbalist@intel.com>
+	    Lili Cui  <lili.cui@intel.com>
+
+	* config/tc-i386.c (cpu_arch): Add .avx512_vp2intersect.
+	(cpu_noarch): Likewise.
+	* doc/c-i386.texi: Document avx512_vp2intersect.
+	* testsuite/gas/i386/i386.exp: Run vp2intersect tests.
+	* testsuite/gas/i386/vp2intersect-intel.d: New test.
+	* testsuite/gas/i386/vp2intersect.d: Likewise.
+	* testsuite/gas/i386/vp2intersect.s: Likewise.
+	* testsuite/gas/i386/vp2intersect-inval-bcast.l: Likewise.
+	* testsuite/gas/i386/vp2intersect-inval-bcast.s: Likewise.
+	* testsuite/gas/i386/x86-64-vp2intersect-intel.d: Likewise.
+	* testsuite/gas/i386/x86-64-vp2intersect.d: Likewise.
+	* testsuite/gas/i386/x86-64-vp2intersect.s: Likewise.
+	* testsuite/gas/i386/x86-64-vp2intersect-inval-bcast.l: Likewise.
+	* testsuite/gas/i386/x86-64-vp2intersect-inval-bcast.s: Likewise.
+
+2019-06-04  Xuepeng Guo  <xuepeng.guo@intel.com>
+	    Lili Cui  <lili.cui@intel.com>
+
+	* i386-dis.c (enum): Add MOD_0F38F8_PREFIX_1 and
+	MOD_0F38F8_PREFIX_3.
+	(prefix_table): New instructions (see prefix above).
+	(mod_table): New instructions (see prefix above).
+	* i386-gen.c (cpu_flag_init): Add entries for enqcmd.
+	(cpu_flags): Add a bitfield for enqmcd.
+	* i386-init.h: Regenerated.
+	* i386-opc.h (enum): Add CpuENQCMD.
+	(i386_cpu_flags): Add a bitfield for cpuenqcmd.
+	* i386-opc.tbl: Add enqcmd and enqcmds instructions.
+	* i386-init.h: Regenerated.
+	* i386-tbl.h: Regenerated.
+
+2019-05-30  Jim Wilson  <jimw@sifive.com>
+
+	* config/tc-riscv.c (riscv_ip) <'u'>: Move O_constant check inside if
+	statement.  Delete O_symbol and O_constant check after if statement.
+	* testsuite/gas/riscv/auipc-parsing.s: Test lui with missing %hi.
+	* testsuite/gas/riscv/auipc-parsing.l: Update.
+
+2019-05-28  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR gas/24625
+	* testsuite/gas/i386/inval-avx512f.s: Add tests for AVX512_BF16
+	instructions with invalid broadcast.
+	* testsuite/gas/i386/x86-64-inval-avx512f.s: Likewise.
+	* testsuite/gas/i386/inval-avx512f.l: Updated.
+	* testsuite/gas/i386/x86-64-inval-avx512f.l: Likewise.
+
+2019-05-27  Alan Modra  <amodra@gmail.com>
+
+	* config/tc-ppc.c (is_ppc64_target): New function.
+	(md_show_usage): Split up usage message.  Don't show -a64 when
+	unsupported.
+	testsuite/gas/ppc/ppc.exp (supports_ppc64): New.
+	(prefix-reloc): Only run for ppc64.
+
+2019-05-24  Szabolcs Nagy  <szabolcs.nagy@arm.com>
+
+	* config/tc-aarch64.c (aarch64_elf_copy_symbol_attributes): Define.
+	* config/tc-aarch64.h (aarch64_elf_copy_symbol_attributes): Declare.
+	(OBJ_COPY_SYMBOL_ATTRIBUTES): Define.
+	* testsuite/gas/aarch64/symbol-variant_pcs-3.d: New test.
+	* testsuite/gas/aarch64/symbol-variant_pcs-3.s: New test.
+
+2019-05-24  Szabolcs Nagy  <szabolcs.nagy@arm.com>
+
+	* config/tc-aarch64.c (s_variant_pcs): New function.
+	* doc/c-aarch64.texi: Document .variant_pcs.
+	* testsuite/gas/aarch64/symbol-variant_pcs-1.d: New test.
+	* testsuite/gas/aarch64/symbol-variant_pcs-1.s: New test.
+	* testsuite/gas/aarch64/symbol-variant_pcs-2.d: New test.
+	* testsuite/gas/aarch64/symbol-variant_pcs-2.s: New test.
+
+2019-05-24  Alan Modra  <amodra@gmail.com>
+
+	* po/POTFILES.in: Regenerate.
+
+2019-05-24  Alan Modra  <amodra@gmail.com>
+
+	* config/tc-ppc.c (ppc_elf_suffix): Support @pcrel, @got@pcrel,
+	@plt@pcrel, @higher34, @highera34, @highest34, and @highesta34.
+	(fixup_size): Handle new powerxx relocs.
+	(md_assemble): Warn for @pcrel on non-prefix insns.
+	Accept @l, @h and @ha on prefix insns, and infer reloc without
+	any @ suffix.  Translate powerxx relocs to suit DQ and DS field
+	instructions.  Include operand tests as well as opcode test to
+	translate BFD_RELOC_HI16_S to BFD_RELOC_PPC_16DX_HA.
+	(ppc_fix_adjustable): Return false for pcrel GOT and PLT relocs.
+	(md_apply_fix): Handle new powerxx relocs.
+	* config/tc-ppc.h (TC_FORCE_RELOCATION_SUB_LOCAL): Accept
+	BFD_RELOC_PPC64_ADDR16_HIGHER34, BFD_RELOC_PPC64_ADDR16_HIGHERA34,
+	BFD_RELOC_PPC64_ADDR16_HIGHEST34, BFD_RELOC_PPC64_ADDR16_HIGHESTA34,
+	BFD_RELOC_PPC64_D34, and BFD_RELOC_PPC64_D28.
+	* testsuite/gas/ppc/prefix-reloc.d,
+	* testsuite/gas/ppc/prefix-reloc.s: New test.
+	* testsuite/gas/ppc/ppc.exp: Run it.
+
+2019-05-24  Peter Bergner  <bergner@linux.ibm.com>
+	    Alan Modra  <amodra@gmail.com>
+
+	* config/tc-ppc.c (ppc_insert_operand): Only sign extend fields that
+	are 32-bits or smaller.
+	* messages.c (as_internal_value_out_of_range): Do not truncate
+	variables and use BFD_VMA_FMT to print them.
+	* testsuite/gas/ppc/prefix-pcrel.s,
+	* testsuite/gas/ppc/prefix-pcrel.d: New test.
+	* testsuite/gas/ppc/ppc.exp: Run it.
+
+2019-05-24  Peter Bergner  <bergner@linux.ibm.com>
+	    Alan Modra  <amodra@gmail.com>
+
+	* config/tc-ppc.c (ppc_setup_opcodes): Handle prefix_opcodes.
+	(struct insn_label_list): New.
+	(insn_labels, free_insn_labels): New variables.
+	(ppc_record_label, ppc_clear_labels, ppc_start_line_hook): New funcs.
+	(ppc_frob_label, ppc_new_dot_label): Move functions earlier in file
+	and call ppc_record_label.
+	(md_assemble): Handle 64-bit prefix instructions.  Align labels
+	that are on the same line as a prefix instruction.
+	* config/tc-ppc.h (tc_frob_label, ppc_frob_label): Move to
+	later in the file.
+	(md_start_line_hook): Define.
+	(ppc_start_line_hook): Declare.
+	* testsuite/gas/ppc/prefix-align.d,
+	* testsuite/gas/ppc/prefix-align.s: New test.
+	* testsuite/gas/ppc/ppc.exp: Run new test.
+
+2019-05-23  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* configure.ac: Handle bpf-*-* targets.
+	* configure.tgt (generic_target): Likewise.
+	* configure: Regenerate.
+	* Makefile.am (TARGET_CPU_CFILES): Add tc-bpf.c.
+	(TARGET_CPU_HFILES): Add tc-bpf.h.
+	* Makefile.in: Regenerated.
+	* config/tc-bpf.c: New file.
+	* config/tc-bpf.h: Likewise.
+	* doc/Makefile.am (CPU_DOCS): Add c-bpf.texi.
+	* doc/Makefile.in: Regenerated.
+	* doc/all.texi: set BPF.
+	* doc/as.texi: Add eBPF contents.
+	* doc/c-bpf.texi: New file.
+	* testsuite/gas/bpf/alu.d: New file.
+	* testsuite/gas/bpf/mem-be.d: Likewise.
+	* testsuite/gas/bpf/mem.s: Likewise.
+	* testsuite/gas/bpf/mem.d: Likewise.
+	* testsuite/gas/bpf/lddw-be.d: Likewise.
+	* testsuite/gas/bpf/lddw.s: Likewise.
+	* testsuite/gas/bpf/lddw.d: Likewise.
+	* testsuite/gas/bpf/jump-be.d: Likewise.
+	* testsuite/gas/bpf/jump.s: Likewise.
+	* testsuite/gas/bpf/jump.d: Likewise.
+	* testsuite/gas/bpf/exit-be.d: Likewise.
+	* testsuite/gas/bpf/exit.s: Likewise.
+	* testsuite/gas/bpf/exit.d: Likewise.
+	* testsuite/gas/bpf/call-be.d: Likewise.
+	* testsuite/gas/bpf/call.s: Likewise.
+	* testsuite/gas/bpf/call.d: Likewise.
+	* testsuite/gas/bpf/bpf.exp: Likewise.
+	* testsuite/gas/bpf/atomic-be.d: Likewise.
+	* testsuite/gas/bpf/atomic.s: Likewise.
+	* testsuite/gas/bpf/atomic.d: Likewise.
+	* testsuite/gas/bpf/alu-be.d: Likewise.
+	* testsuite/gas/bpf/alu32-be.d: Likewise.
+	* testsuite/gas/bpf/alu32.s: Likewise.
+	* testsuite/gas/bpf/alu32.d: Likewise.
+	* testsuite/gas/bpf/alu.s: Likewise.
+	* testsuite/gas/all/gas.exp: Introduce a nop_type for eBPF.
+	* testsuite/gas/all/org-1.s: Support nop_type 6.
+	* testsuite/gas/all/org-1.l: Updated to reflect changes in
+	org-1.s.
+
+2019-05-22  John Darrington <john@darrington.wattle.id.au>
+
+	* config/tc-s12z.c (s12z_strtol): New function. (md_show_usage): Update.
+	(md_parse_option): new case OPTION_DOLLAR_HEX. (s12z_init_after_args):
+	(<global>): Use s12z_strtol instead of strtol.
+	* doc/c-s12z.texi (S12Z Options): Document new option -mdollar-hex.
+	* testsuite/gas/s12z/dollar-hex.d: New file.
+	* testsuite/gas/s12z/dollar-hex.s: New file.
+	* testsuite/gas/s12z/s12z.exp: Add them.
+
+2019-05-21  Sudakshina Das  <sudi.das@arm.com>
+
+	* config/tc-arm.c (parse_operands): Update case OP_RVC to
+	parse p0 and P0.
+	(do_vmrs): Add checks for valid operands with respect to
+	cpu and fpu options.
+	(do_vmsr): Likewise.
+	(reg_names): New reg_names for FPSCR_nzcvqc, VPR, FPCXT_NS
+	and FPCXT_S.
+	* testsuite/gas/arm/armv8_1-m-spec-reg.d: New.
+	* testsuite/gas/arm/armv8_1-m-spec-reg.s: New.
+	* testsuite/gas/arm/armv8_1-m-spec-reg-bad1.d: New.
+	* testsuite/gas/arm/armv8_1-m-spec-reg-bad2.d: New.
+	* testsuite/gas/arm/armv8_1-m-spec-reg-bad3.d: New.
+	* testsuite/gas/arm/armv8_1-m-spec-reg-bad1.l: New.
+	* testsuite/gas/arm/armv8_1-m-spec-reg-bad2.l: New.
+	* testsuite/gas/arm/armv8_1-m-spec-reg-bad3.l: New.
+	* testsuite/gas/arm/vfp1xD.d: Updated to allow new valid values.
+	* testsuite/gas/arm/vfp1xD_t2.d: Likewise.
+
+2019-05-21  Sudakshina Das  <sudi.das@arm.com>
+
+	* config/tc-arm.c (TOGGLE_BIT): New.
+	(T16_32_TAB): New entries for cinc, cinv, cneg, csinc,
+	csinv, csneg, cset, csetm and csel.
+	(operand_parse_code): New OP_RR_ZR.
+	(parse_operand): Handle case for OP_RR_ZR.
+	(do_t_cond): New.
+	(insns): New instructions for cinc, cinv, cneg, csinc,
+	csinv, csneg, cset, csetm, csel.
+	* testsuite/gas/arm/armv8_1-m-cond-bad.d: New test.
+	* testsuite/gas/arm/armv8_1-m-cond-bad.l: New test.
+	* testsuite/gas/arm/armv8_1-m-cond-bad.s: New test.
+	* testsuite/gas/arm/armv8_1-m-cond.d: New test.
+	* testsuite/gas/arm/armv8_1-m-cond.s: New test.
+
+2019-05-21  Sudakshina Das  <sudi.das@arm.com>
+
+	* config/tc-arm.c (operand_parse_code): New entries for
+	OP_RRnpcsp_I32 (register or integer operands).
+	(do_mve_scalar_shift): New.
+	(insns): New instructions for asrl, lsll, lsrl, sqrshrl, sqrshr, sqshl
+	sqshll, srshr, srshrl, uqrshll, uqrshl, uqshll, uqshl, urshrl and urshr.
+	* testsuite/gas/arm/mve-shift.d: New.
+	* testsuite/gas/arm/mve-shift.s: New.
+	* testsuite/gas/arm/mve-shift-bad.d: New.
+	* testsuite/gas/arm/mve-shift-bad.s: New.
+	* testsuite/gas/arm/mve-shift-bad.l: New.
+
+2019-05-21  Faraz Shahbazker  <fshahbazker@wavecomp.com>
+
+	* testsuite/gas/mips/r6-branch-constraints.s: Rename to ...
+	* testsuite/gas/mips/r6-reg-constraints.s: this and add test
+	case for DAUI.
+	* testsuite/gas/mips/r6-branch-constraints.l: Rename to ...
+	* testsuite/gas/mips/r6-reg-constraints.l: this and add test
+	for DAUI.
+	* testsuite/gas/mips/mips.exp: Rename test from
+	r6-branch-constraints to r6-reg-constraints.
+
+2019-05-21  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+
+	PR 24559
+	* config/tc-arm.c (move_or_literal_pool): Set size_req to 0 for MOVW
+	replacement.
+	* testsuite/gas/arm/load-pseudo.s: New test input.
+	* testsuite/gas/arm/m0-load-pseudo.d: New test.
+	* testsuite/gas/arm/m23-load-pseudo.d: New test.
+	* testsuite/gas/arm/m33-load-pseudo.d: New test.
+
+2019-05-21  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+
+	* testsuite/gas/arm/armv8_1-m-bf.d: Allow different branch target naming
+	conventions.
+	* testsuite/gas/arm/armv8_1-m-bfl.d: Likewise.
+	* testsuite/gas/arm/armv8_1-m-bfcsel.d: Likewise.
+	* testsuite/gas/arm/armv8_1-m-loloop.d: Likewise.
+	* testsuite/gas/arm/armv8_1-m-bf-rel.d: Skip for vxworks.
+	* testsuite/gas/arm/armv8_1-m-bf-rela.d: New test.
+	* testsuite/gas/arm/armv8_1-m-bfl-rel.d: Skip for vxworks.
+	* testsuite/gas/arm/armv8_1-m-bfl-rela.d: New test.
+
+2019-05-21  John Darrington <john@darrington.wattle.id.au>
+
+	* expr.c (literal_prefix_dollar_hex): New variable.
+	(operand)[case '$']: Use the new variable instead of the old macro.
+	Also, move this instance of "case '$'" next to the other one, and
+	enable it only in the complementary proprocessor case.
+	* expr.h (literal_prefix_dollar_hex): Declare it.
+	* config/tc-epiphany.c (md_begin): Assign literal_prefix_dollar_hex.
+	* config/tc-ip2k.c:      ditto
+	* config/tc-mt.c:        ditto
+	* config/tc-epiphany.h (LITERAL_PREFIXDOLLAR_HEX): Remove macro definition.
+	* config/tc-ip2k.h:      ditto
+	* config/tc-mt.h:        ditto
+
+2019-05-20  Faraz Shahbazker  <fshahbazker@wavecomp.com>
+
+	PR 14798
+	* config/tc-mips.c (s_mips_globl): Only treat symbols that are
+	not explicitly labelled as BSF_OBJECTs for IRIX targets.
+	* testsuite/gas/mips/pr14798.s: New test source.
+	* testsuite/gas/mips/pr14798-irix.d: New test.
+	* testsuite/gas/mips/pr14798.d: Likewise.
+	* testsuite/gas/mips/mips.exp: Run the new tests.
+
+2019-05-17  John Darrington  <john@darrington.wattle.id.au>
+
+	* doc/c-arm.texi (ARM Options): Remove "(r)" and "(tm)"
+	* doc/c-bfin.texi (Blackfin Syntax): Remove "(r)"
+
+2019-05-16  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+
+	* config/tc-arm.c (check_simd_pred_availability): Refactor.
+	(do_neon_dyadic_i_su): Refactor use of check_simd_pred_availability.
+	(do_neon_dyadic_i64_su): Likewise.
+	(do_neon_shl): Likewise.
+	(do_neon_qshl): Likewise.
+	(do_neon_rshl): Likewise.
+	(do_neon_logic): Likewise.
+	(do_neon_dyadic_if_su): Likewise.
+	(do_neon_addsub_if_i): Likewise.
+	(do_neon_mac_maybe_scalar): Likewise.
+	(do_neon_fmac): Likewise.
+	(do_neon_mul): Likewise.
+	(do_neon_qdmulh): Likewise.
+	(do_neon_qrdmlah): Likewise.
+	(do_neon_abs_neg): Likewise.
+	(do_neon_sli): Likewise.
+	(do_neon_sri): Likewise.
+	(do_neon_qshlu_imm): Likewise.
+	(do_neon_cvt_1): Likewise.
+	(do_neon_cvttb_1): Likewise.
+	(do_neon_mvn): Likewise.
+	(do_neon_rev): Likewise.
+	(do_neon_dup): Likewise.
+	(do_neon_mov): Likewise.
+	(do_neon_rshift_round_imm): Likewise.
+	(do_neon_sat_abs_neg): Likewise.
+	(do_neon_cls): Likewise.
+	(do_neon_clz): Likewise.
+	(do_vmaxnm): Likewise.
+	(do_vrint_1): Likewise.
+	(do_vcmla): Likewise.
+	(do_vcadd): Likewise.
+
+2019-05-16  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+
+	* NEWS: Mention Armv8.1-M Mainline and MVE.
+
+2019-05-16  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+
+	* testsuite/gas/arm/mve-tailpredloop.d: New test.
+	* testsuite/gas/arm/mve-tailpredloop.s: New test.
+	* testsuite/gas/arm/mve-vabav.d: New test.
+	* testsuite/gas/arm/mve-vabav.s: New test.
+	* testsuite/gas/arm/mve-vabd.d: New test.
+	* testsuite/gas/arm/mve-vabd.s: New test.
+	* testsuite/gas/arm/mve-vabsneg.d: New test.
+	* testsuite/gas/arm/mve-vabsneg.s: New test.
+	* testsuite/gas/arm/mve-vadc.d: New test.
+	* testsuite/gas/arm/mve-vadc.s: New test.
+	* testsuite/gas/arm/mve-vaddlv.d: New test.
+	* testsuite/gas/arm/mve-vaddlv.s: New test.
+	* testsuite/gas/arm/mve-vaddsub.d: New test.
+	* testsuite/gas/arm/mve-vaddsub.s: New test.
+	* testsuite/gas/arm/mve-vaddv.d: New test.
+	* testsuite/gas/arm/mve-vaddv.s: New test.
+	* testsuite/gas/arm/mve-vand.d: New test.
+	* testsuite/gas/arm/mve-vand.s: New test.
+	* testsuite/gas/arm/mve-vbic.d: New test.
+	* testsuite/gas/arm/mve-vbic.s: New test.
+	* testsuite/gas/arm/mve-vbrsr.d: New test.
+	* testsuite/gas/arm/mve-vbrsr.s: New test.
+	* testsuite/gas/arm/mve-vcadd.d: New test.
+	* testsuite/gas/arm/mve-vcadd.s: New test.
+	* testsuite/gas/arm/mve-vcls.d: New test.
+	* testsuite/gas/arm/mve-vcls.s: New test.
+	* testsuite/gas/arm/mve-vclz.d: New test.
+	* testsuite/gas/arm/mve-vclz.s: New test.
+	* testsuite/gas/arm/mve-vcmla.d: New test.
+	* testsuite/gas/arm/mve-vcmla.s: New test.
+	* testsuite/gas/arm/mve-vcmp.d: New test.
+	* testsuite/gas/arm/mve-vcmp.s: New test.
+	* testsuite/gas/arm/mve-vcmul.d: New test.
+	* testsuite/gas/arm/mve-vcmul.s: New test.
+	* testsuite/gas/arm/mve-vcvt-1.d: New test.
+	* testsuite/gas/arm/mve-vcvt-1.s: New test.
+	* testsuite/gas/arm/mve-vcvt-2.d: New test.
+	* testsuite/gas/arm/mve-vcvt-2.s: New test.
+	* testsuite/gas/arm/mve-vcvt-3.d: New test.
+	* testsuite/gas/arm/mve-vcvt-3.s: New test.
+	* testsuite/gas/arm/mve-vcvt-4.d: New test.
+	* testsuite/gas/arm/mve-vcvt-4.s: New test.
+	* testsuite/gas/arm/mve-vddup.d: New test.
+	* testsuite/gas/arm/mve-vddup.s: New test.
+	* testsuite/gas/arm/mve-vdup.d: New test.
+	* testsuite/gas/arm/mve-vdup.s: New test.
+	* testsuite/gas/arm/mve-veor.d: New test.
+	* testsuite/gas/arm/mve-veor.s: New test.
+	* testsuite/gas/arm/mve-vfma-vfms.d: New test.
+	* testsuite/gas/arm/mve-vfma-vfms.s: New test.
+	* testsuite/gas/arm/mve-vfmas.d: New test.
+	* testsuite/gas/arm/mve-vfmas.s: New test.
+	* testsuite/gas/arm/mve-vhadd-vhsub-vrhadd.d: New test.
+	* testsuite/gas/arm/mve-vhadd-vhsub-vrhadd.s: New test.
+	* testsuite/gas/arm/mve-vhcadd.d: New test.
+	* testsuite/gas/arm/mve-vhcadd.s: New test.
+	* testsuite/gas/arm/mve-vmax-vmin.d: New test.
+	* testsuite/gas/arm/mve-vmax-vmin.s: New test.
+	* testsuite/gas/arm/mve-vmaxa-vmina.d: New test.
+	* testsuite/gas/arm/mve-vmaxa-vmina.s: New test.
+	* testsuite/gas/arm/mve-vmaxnm-vminnm.d: New test.
+	* testsuite/gas/arm/mve-vmaxnm-vminnm.s: New test.
+	* testsuite/gas/arm/mve-vmaxnma-vminnma.s: New test.
+	* testsuite/gas/arm/mve-vmaxnmv-vminnmv.d: New test.
+	* testsuite/gas/arm/mve-vmaxnmv-vminnmv.s: New test.
+	* testsuite/gas/arm/mve-vmaxv-vminv.d: New test.
+	* testsuite/gas/arm/mve-vmaxv-vminv.s: New test.
+	* testsuite/gas/arm/mve-vmla.d: New test.
+	* testsuite/gas/arm/mve-vmla.s: New test.
+	* testsuite/gas/arm/mve-vmladav.d: New test.
+	* testsuite/gas/arm/mve-vmladav.s: New test.
+	* testsuite/gas/arm/mve-vmlaldav.d: New test.
+	* testsuite/gas/arm/mve-vmlaldav.s: New test.
+	* testsuite/gas/arm/mve-vmlalv.d: New test.
+	* testsuite/gas/arm/mve-vmlalv.s: New test.
+	* testsuite/gas/arm/mve-vmlas.d: New test.
+	* testsuite/gas/arm/mve-vmlas.s: New test.
+	* testsuite/gas/arm/mve-vmlav.d: New test.
+	* testsuite/gas/arm/mve-vmlav.s: New test.
+	* testsuite/gas/arm/mve-vmlsdav.d: New test.
+	* testsuite/gas/arm/mve-vmlsdav.s: New test.
+	* testsuite/gas/arm/mve-vmlsldav.d: New test.
+	* testsuite/gas/arm/mve-vmlsldav.s: New test.
+	* testsuite/gas/arm/mve-vmov-1.d: New test.
+	* testsuite/gas/arm/mve-vmov-1.s: New test.
+	* testsuite/gas/arm/mve-vmov-2.d: New test.
+	* testsuite/gas/arm/mve-vmov-2.s: New test.
+	* testsuite/gas/arm/mve-vmul.d: New test.
+	* testsuite/gas/arm/mve-vmul.s: New test.
+	* testsuite/gas/arm/mve-vmulh.d: New test.
+	* testsuite/gas/arm/mve-vmulh.s: New test.
+	* testsuite/gas/arm/mve-vmullbt.d: New test.
+	* testsuite/gas/arm/mve-vmullbt.s: New test.
+	* testsuite/gas/arm/mve-vmvn.d: New test.
+	* testsuite/gas/arm/mve-vmvn.s: New test.
+	* testsuite/gas/arm/mve-vorn.d: New test.
+	* testsuite/gas/arm/mve-vorn.s: New test.
+	* testsuite/gas/arm/mve-vorr.d: New test.
+	* testsuite/gas/arm/mve-vorr.s: New test.
+	* testsuite/gas/arm/mve-vpnot.d: New test.
+	* testsuite/gas/arm/mve-vpnot.s: New test.
+	* testsuite/gas/arm/mve-vpsel.d: New test.
+	* testsuite/gas/arm/mve-vpsel.s: New test.
+	* testsuite/gas/arm/mve-vpt.d: New test.
+	* testsuite/gas/arm/mve-vpt.s: New test.
+	* testsuite/gas/arm/mve-vqabsneg.s: New test.
+	* testsuite/gas/arm/mve-vqaddsub.d: New test.
+	* testsuite/gas/arm/mve-vqaddsub.s: New test.
+	* testsuite/gas/arm/mve-vqdmladh.d: New test.
+	* testsuite/gas/arm/mve-vqdmladh.s: New test.
+	* testsuite/gas/arm/mve-vqdmlah.d: New test.
+	* testsuite/gas/arm/mve-vqdmlah.s: New test.
+	* testsuite/gas/arm/mve-vqdmlash.d: New test.
+	* testsuite/gas/arm/mve-vqdmlash.s: New test.
+	* testsuite/gas/arm/mve-vqdmlsdh.d: New test.
+	* testsuite/gas/arm/mve-vqdmlsdh.s: New test.
+	* testsuite/gas/arm/mve-vqdmulh.d: New test.
+	* testsuite/gas/arm/mve-vqdmulh.s: New test.
+	* testsuite/gas/arm/mve-vqdmull.d: New test.
+	* testsuite/gas/arm/mve-vqdmull.s: New test.
+	* testsuite/gas/arm/mve-vqmovn.d: New test.
+	* testsuite/gas/arm/mve-vqmovn.s: New test.
+	* testsuite/gas/arm/mve-vqrshl.d: New test.
+	* testsuite/gas/arm/mve-vqrshl.s: New test.
+	* testsuite/gas/arm/mve-vqrshrn.d: New test.
+	* testsuite/gas/arm/mve-vqrshrn.s: New test.
+	* testsuite/gas/arm/mve-vqshl.d: New test.
+	* testsuite/gas/arm/mve-vqshl.s: New test.
+	* testsuite/gas/arm/mve-vrev.d: New test.
+	* testsuite/gas/arm/mve-vrev.s: New test.
+	* testsuite/gas/arm/mve-vrint.d: New test.
+	* testsuite/gas/arm/mve-vrint.s: New test.
+	* testsuite/gas/arm/mve-vrmlaldavh.d: New test.
+	* testsuite/gas/arm/mve-vrmlaldavh.s: New test.
+	* testsuite/gas/arm/mve-vrshl.d: New test.
+	* testsuite/gas/arm/mve-vrshl.s: New test.
+	* testsuite/gas/arm/mve-vsbc.d: New test.
+	* testsuite/gas/arm/mve-vsbc.s: New test.
+	* testsuite/gas/arm/mve-vshl.d: New test.
+	* testsuite/gas/arm/mve-vshl.s: New test.
+	* testsuite/gas/arm/mve-vshlc.d: New test.
+	* testsuite/gas/arm/mve-vshlc.s: New test.
+	* testsuite/gas/arm/mve-vshll.d: New test.
+	* testsuite/gas/arm/mve-vshll.s: New test.
+	* testsuite/gas/arm/mve-vshr.d: New test.
+	* testsuite/gas/arm/mve-vshr.s: New test.
+	* testsuite/gas/arm/mve-vshrn.d: New test.
+	* testsuite/gas/arm/mve-vshrn.s: New test.
+	* testsuite/gas/arm/mve-vsli.d: New test.
+	* testsuite/gas/arm/mve-vsli.s: New test.
+	* testsuite/gas/arm/mve-vsri.d: New test.
+	* testsuite/gas/arm/mve-vsri.s: New test.
+	* testsuite/gas/arm/mve-vstld.d: New test.
+	* testsuite/gas/arm/mve-vstld.s: New test.
+	* testsuite/gas/arm/mve-vstrldr-1.d: New test.
+	* testsuite/gas/arm/mve-vstrldr-1.s: New test.
+	* testsuite/gas/arm/mve-vstrldr-2.d: New test.
+	* testsuite/gas/arm/mve-vstrldr-2.s: New test.
+	* testsuite/gas/arm/mve-vstrldr-3.d: New test.
+	* testsuite/gas/arm/mve-vstrldr-3.s: New test.
+
+2019-05-16  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+
+	* config/tc-arm.c (T16_32_TAB): Add new instructions.
+	(do_t_loloop): Changed to handle tail predication variants.
+	(md_apply_fix): Likewise.
+	(insns): Add entries for MVE mnemonics.
+	* testsuite/gas/arm/mve-tailpredloop-bad.d: New test.
+	* testsuite/gas/arm/mve-tailpredloop-bad.l: New test.
+	* testsuite/gas/arm/mve-tailpredloop-bad.s: New test.
+	* testsuite/gas/arm/mve-tailpredloop.d: New test.
+
+2019-05-16  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+
+	* config/tc-arm.c (do_mve_vshll): New encoding function.
+	(do_mve_vshlc): Likewise.
+	(insns): Add entries for MVE mnemonics.
+	* testsuite/gas/arm/mve-vshlc-bad.d: New test.
+	* testsuite/gas/arm/mve-vshlc-bad.l: New test.
+	* testsuite/gas/arm/mve-vshlc-bad.s: New test.
+	* testsuite/gas/arm/mve-vshll-bad.d: New test.
+	* testsuite/gas/arm/mve-vshll-bad.l: New test.
+	* testsuite/gas/arm/mve-vshll-bad.s: New test.
+
+2019-05-16  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+
+	* config/tc-arm.c (enum operand_parse_code): Add new operand.
+	(parse_operands): Handle new operand.
+	(do_neon_shl_imm): Accept MVE variants.
+	(do_neon_shl): Likewise.
+	(do_neon_qshl_imm): Likewise.
+	(do_neon_qshl): Likewise.
+	(do_neon_qshlu_imm): Likewise.
+	(insns): Likewise.
+	* testsuite/gas/arm/mve-vqshl-bad.d: New test.
+	* testsuite/gas/arm/mve-vqshl-bad.l: New test.
+	* testsuite/gas/arm/mve-vqshl-bad.s: New test.
+	* testsuite/gas/arm/mve-vshl-bad.d: New test.
+	* testsuite/gas/arm/mve-vshl-bad.l: New test.
+	* testsuite/gas/arm/mve-vshl-bad.s: New test.
+
+2019-05-16  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+
+	* config/tc-arm.c (do_neon_sli): Accept MVE variants.
+	(do_neon_sri): Likewise.
+	(do_neon_rev): Likewise.
+	(do_neon_rshift_round_imm): Likewise.
+	(insns): Likewise.
+	* testsuite/gas/arm/mve-vrev-bad.d: New test.
+	* testsuite/gas/arm/mve-vrev-bad.l: New test.
+	* testsuite/gas/arm/mve-vrev-bad.s: New test.
+	* testsuite/gas/arm/mve-vshr-bad.d: New test.
+	* testsuite/gas/arm/mve-vshr-bad.l: New test.
+	* testsuite/gas/arm/mve-vshr-bad.s: New test.
+	* testsuite/gas/arm/mve-vsli-bad.d: New test.
+	* testsuite/gas/arm/mve-vsli-bad.l: New test.
+	* testsuite/gas/arm/mve-vsli-bad.s: New test.
+	* testsuite/gas/arm/mve-vsri-bad.d: New test.
+	* testsuite/gas/arm/mve-vsri-bad.l: New test.
+	* testsuite/gas/arm/mve-vsri-bad.s: New test.
+
+2019-05-16  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+
+	* config/tc-arm.c (do_vrint_1): Accept MVE variants.
+	(insns): Change entries to accept MVE variants.
+	* testsuite/gas/arm/mve-vrint-bad.d: New test.
+	* testsuite/gas/arm/mve-vrint-bad.l: New test.
+	* testsuite/gas/arm/mve-vrint-bad.s: New test.
+
+2019-05-16  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+
+	* config/tc-arm.c (M_MNEM_vshrnt, M_MNEM_vshrnb, M_MNEM_vrshrnt,
+	 M_MNEM_vqshrnt, M_MNEM_vqshrnb, M_MNEM_vqshrunt, M_MNEM_vqshrunb,
+	 M_MNEM_vrshrnb, M_MNEM_vqrshrnt, M_MNEM_vqrshrnb, M_MNEM_vqrshrunt,
+	 M_MNEM_vqrshrunb): New instruction encodings.
+	(do_mve_vshrn): New encoding function.
+	(insns): Add entries for MVE mnemonics.
+	* testsuite/gas/arm/mve-vqrshrn-bad.d: New test.
+	* testsuite/gas/arm/mve-vqrshrn-bad.l: New test.
+	* testsuite/gas/arm/mve-vqrshrn-bad.s: New test.
+	* testsuite/gas/arm/mve-vshrn-bad.d: New test.
+	* testsuite/gas/arm/mve-vshrn-bad.l: New test.
+	* testsuite/gas/arm/mve-vshrn-bad.s: New test.
+
+2019-05-16  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+
+	* config/tc-arm.c (M_MNEM_vqmovnt, M_MNEM_vqmovnb,
+	 M_MNEM_vqmovunt, M_MNEM_vqmovunb): New instruction encodings.
+	(do_mve_vqmovn): New encoding function.
+	(do_neon_rshl): Change to accepte MVE variants.
+	(insns): Change entries and add new for MVE mnemonics.
+	* testsuite/gas/arm/mve-vqmovn-bad.d: New test.
+	* testsuite/gas/arm/mve-vqmovn-bad.l: New test.
+	* testsuite/gas/arm/mve-vqmovn-bad.s: New test.
+	* testsuite/gas/arm/mve-vqrshl-bad.d: New test.
+	* testsuite/gas/arm/mve-vqrshl-bad.l: New test.
+	* testsuite/gas/arm/mve-vqrshl-bad.s: New test.
+	* testsuite/gas/arm/mve-vrshl-bad.d: New test.
+	* testsuite/gas/arm/mve-vrshl-bad.l: New test.
+	* testsuite/gas/arm/mve-vrshl-bad.s: New test.
+
+2019-05-16  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+
+	* config/tc-arm.c (enum operand_parse_code): Add new operand.
+	(parse_operands): Handle new operand.
+	(do_mve_vqdmull): New encoding function.
+	(insns): Add entry for MVE mnemonics.
+	* testsuite/gas/arm/mve-vqdmull-bad.d: New test.
+	* testsuite/gas/arm/mve-vqdmull-bad.l: New test.
+	* testsuite/gas/arm/mve-vqdmull-bad.s: New test.
+
+2019-05-16  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+
+	* config/tc-arm.c (enum operand_parse_code): Add new operand.
+	(parse_operands): Handle new operand.
+	(mve_encode_qqr): Handle new instructions.
+	(do_neon_qdmulh): Add support for MVE variants.
+	(do_neon_qrdmlah): Likewise.
+	(do_mve_vqdmlah): New encoding function.
+	(insns): Change entries and add new entries for MVE mnemonics.
+	* testsuite/gas/arm/mve-vqdmulh-bad.d: New test.
+	* testsuite/gas/arm/mve-vqdmulh-bad.l: New test.
+	* testsuite/gas/arm/mve-vqdmulh-bad.s: New test.
+
+2019-05-16  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+
+	* config/tc-arm.c (do_mve_vqdmladh): New encoding function.
+	(insns): Add entries for MVE mnemonics.
+	* testsuite/gas/arm/mve-vqdmladh-bad.d: New test.
+	* testsuite/gas/arm/mve-vqdmladh-bad.l: New test.
+	* testsuite/gas/arm/mve-vqdmladh-bad.s: New test.
+	* testsuite/gas/arm/mve-vqdmlsdh-bad.d: New test.
+	* testsuite/gas/arm/mve-vqdmlsdh-bad.l: New test.
+	* testsuite/gas/arm/mve-vqdmlsdh-bad.s: New test.
+
+2019-05-16  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+
+	* config/tc-arm.c (do_mve_vpsel): New encoding function.
+	(do_mve_vpnot): Likewise.
+	(insns): Add entries for MVE mnemonics.
+	* testsuite/gas/arm/mve-vpnot-bad.d: New test.
+	* testsuite/gas/arm/mve-vpnot-bad.l: New test.
+	* testsuite/gas/arm/mve-vpnot-bad.s: New test.
+	* testsuite/gas/arm/mve-vpsel-bad.d: New test.
+	* testsuite/gas/arm/mve-vpsel-bad.l: New test.
+	* testsuite/gas/arm/mve-vpsel-bad.s: New test.
+
+2019-05-16  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+
+	* config/tc-arm.c (do_neon_mvn): Change to accept MVE variants.
+	(do_neon_sat_abs_neg): Likewise.
+	(insns): Likewise.
+	* testsuite/gas/arm/mve-vmvn-bad.d: New test.
+	* testsuite/gas/arm/mve-vmvn-bad.l: New test.
+	* testsuite/gas/arm/mve-vmvn-bad.s: New test.
+	* testsuite/gas/arm/mve-vqabsneg-bad.d: New test.
+	* testsuite/gas/arm/mve-vqabsneg-bad.l: New test.
+	* testsuite/gas/arm/mve-vqabsneg-bad.s: New test.
+
+2019-05-16  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+
+	* config/tc-arm.c (do_mve_vmlas): New encoding function.
+	(do_mve_vmulh): Likewise.
+	(insns): Add entries for MVE mnemonics.
+	* testsuite/gas/arm/mve-vmlas-bad.d: New test.
+	* testsuite/gas/arm/mve-vmlas-bad.l: New test.
+	* testsuite/gas/arm/mve-vmlas-bad.s: New test.
+	* testsuite/gas/arm/mve-vmulh-bad.d: New test.
+	* testsuite/gas/arm/mve-vmulh-bad.l: New test.
+	* testsuite/gas/arm/mve-vmulh-bad.s: New test.
+
+2019-05-16  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+
+	* config/tc-arm.c (enum operand_parse_code): New operand.
+	(parse_operands): Handle new operand.
+	(mve_encode_qqr): Handle new instructions.
+	(do_neon_dyadic_i64_su): Accept MVE variants.
+	(neon_dyadic_misc): Likewise.
+	(do_neon_mac_maybe_scalar): Likewise.
+	(do_neon_mul): Likewise.
+	(insns): Change to accept MVE variants.
+	* testsuite/gas/arm/mve-vmla-bad.d: New test.
+	* testsuite/gas/arm/mve-vmla-bad.l: New test.
+	* testsuite/gas/arm/mve-vmla-bad.s: New test.
+	* testsuite/gas/arm/mve-vmul-bad-1.d: New test.
+	* testsuite/gas/arm/mve-vmul-bad-1.l: New test.
+	* testsuite/gas/arm/mve-vmul-bad-1.s: New test.
+	* testsuite/gas/arm/mve-vmul-bad-2.d: New test.
+	* testsuite/gas/arm/mve-vmul-bad-2.l: New test.
+	* testsuite/gas/arm/mve-vmul-bad-2.s: New test.
+	* testsuite/gas/arm/mve-vqaddsub-bad.d: New test.
+	* testsuite/gas/arm/mve-vqaddsub-bad.l: New test.
+	* testsuite/gas/arm/mve-vqaddsub-bad.s: New test.
+
+2019-05-16  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+
+	* config/tc-arm.c (M_MNEM_vmlaldav, M_MNEM_vmlaldava,
+	 M_MNEM_vmlaldavx, M_MNEM_vmlaldavax, M_MNEM_vmlsldav,
+	 M_MNEM_vmlsldava, M_MNEM_vmlsldavx, M_MNEM_vmlsldavax,
+	 M_MNEM_vrmlaldavhx, M_MNEM_vrmlaldavhax, M_MNEM_vrmlsldavh,
+	 M_MNEM_vrmlsldavha, M_MNEM_vrmlsldavhx, M_MNEM_vrmlsldavhax): New
+	instruction encodings.
+	(NEON_SHAPE_DEF): New shape
+	(mve_encode_rrqq): New encoding helper function.
+	(do_mve_vmlaldav): New encoding function.
+	(do_mve_vrmlaldavh): New encoding function.
+	(insns): Add entries for MVE mnemonics.
+	* testsuite/gas/arm/mve-vmlaldav-bad.d: New test.
+	* testsuite/gas/arm/mve-vmlaldav-bad.l: New test.
+	* testsuite/gas/arm/mve-vmlaldav-bad.s: New test.
+	* testsuite/gas/arm/mve-vmlalv-bad.d: New test.
+	* testsuite/gas/arm/mve-vmlalv-bad.l: New test.
+	* testsuite/gas/arm/mve-vmlalv-bad.s: New test.
+	* testsuite/gas/arm/mve-vmlsldav-bad.d: New test.
+	* testsuite/gas/arm/mve-vmlsldav-bad.l: New test.
+	* testsuite/gas/arm/mve-vmlsldav-bad.s: New test.
+	* testsuite/gas/arm/mve-vrmlaldavh-bad.d: New test.
+	* testsuite/gas/arm/mve-vrmlaldavh-bad.l: New test.
+	* testsuite/gas/arm/mve-vrmlaldavh-bad.s: New test.
+
+2019-05-16  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+
+	* config/tc-arm.c (M_MNEM_vmaxv, M_MNEM_vmaxav, M_MNEM_vminv,
+	 M_MNEM_vminav): New instruction encodings.
+	(do_mve_vmaxv): New encoding function.
+	(insns): Add entries for new MVE mnemonics.
+	* testsuite/gas/arm/mve-vmaxv-vminv-bad.d: New test.
+	* testsuite/gas/arm/mve-vmaxv-vminv-bad.l: New test.
+	* testsuite/gas/arm/mve-vmaxv-vminv-bad.s: New test.
+
+2019-05-16  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+
+	* config/tc-arm.c (do_mve_vmaxnmv): New encoding function.
+	(insns): Add entries for new mnemonics.
+	* testsuite/gas/arm/mve-vmaxnmv-vminnmv-bad.d: New test.
+	* testsuite/gas/arm/mve-vmaxnmv-vminnmv-bad.l: New test.
+	* testsuite/gas/arm/mve-vmaxnmv-vminnmv-bad.s: New test.
+
+2019-05-16  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+
+	* config/tc-arm.c (do_mve_vmaxa_vmina): New encoding function.
+	(do_mve_vmaxnma_vminnma): Likewise.
+	(do_neon_dyadic_if_su): Change to support MVE variants.
+	(do_vmaxnm): Likewise.
+	(insns): Change to accept MVE variants and add new.
+	* testsuite/gas/arm/mve-vmax-vmin-bad.d: New test.
+	* testsuite/gas/arm/mve-vmax-vmin-bad.l: New test.
+	* testsuite/gas/arm/mve-vmax-vmin-bad.s: New test.
+	* testsuite/gas/arm/mve-vmaxa-vmina-bad.d: New test.
+	* testsuite/gas/arm/mve-vmaxa-vmina-bad.l: New test.
+	* testsuite/gas/arm/mve-vmaxa-vmina-bad.s: New test.
+	* testsuite/gas/arm/mve-vmaxnm-vminnm-bad.d: New test.
+	* testsuite/gas/arm/mve-vmaxnm-vminnm-bad.l: New test.
+	* testsuite/gas/arm/mve-vmaxnm-vminnm-bad.s: New test.
+	* testsuite/gas/arm/mve-vmaxnma-vminnma-bad.d: New test.
+	* testsuite/gas/arm/mve-vmaxnma-vminnma-bad.l: New test.
+	* testsuite/gas/arm/mve-vmaxnma-vminnma-bad.s: New test.
+
+2019-05-16  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+
+	* config/tc-arm.c (enum operand_parse_code): New operand.
+	(parse_operands): Handle new operand.
+	(mve_encode_qqr): Change to support new instructions.
+	(enum vfp_or_neon_is_neon_bits): Moved.
+	(vfp_or_neon_is_neon): Moved.
+	(check_simd_pred_availability): Moved.
+	(do_neon_dyadic_i_su): Changed to support MVE variants.
+	(neon_dyadic_misc): Changed mve_encode_qqr call.
+	(do_mve_vbrsr): Likewise.
+	(do_mve_vhcadd): New encoding function.
+	(insns): Change existing to accept MVE variants and add new.
+	* testsuite/gas/arm/mve-vhadd-vhsub-vrhadd-bad.d: New test.
+	* testsuite/gas/arm/mve-vhadd-vhsub-vrhadd-bad.l: New test.
+	* testsuite/gas/arm/mve-vhadd-vhsub-vrhadd-bad.s: New test.
+	* testsuite/gas/arm/mve-vhcadd-bad.d: New test.
+	* testsuite/gas/arm/mve-vhcadd-bad.l: New test.
+	* testsuite/gas/arm/mve-vhcadd-bad.s: New test.
+
+2019-05-16  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+
+	* config/tc-arm.c (do_neon_fmac): Change to support MVE variants.
+	(insns): Change to accept MVE variants.
+	* testsuite/gas/arm/mve-vfma-vfms-bad.d: New test.
+	* testsuite/gas/arm/mve-vfma-vfms-bad.l: New test.
+	* testsuite/gas/arm/mve-vfma-vfms-bad.s: New test.
+
+2019-05-16  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+
+	* config/tc-arm.c (M_MNEM_vddup, M_MNEM_vdwdup, M_MNEM_vidup,
+	 M_MNEM_viwdup): New instruction encodings.
+	(NEON_SHAPE_DEF): New shapes.
+	(do_mve_viddup): New encoding function.
+	(do_neon_dup): Change to support new MVE variants.
+	(insns): Change existing to accept MVE variants and add new.
+	* testsuite/gas/arm/mve-vddup-bad.d: New test.
+	* testsuite/gas/arm/mve-vddup-bad.l: New test.
+	* testsuite/gas/arm/mve-vddup-bad.s: New test.
+	* testsuite/gas/arm/mve-vdup-bad.d: New test.
+	* testsuite/gas/arm/mve-vdup-bad.l: New test.
+	* testsuite/gas/arm/mve-vdup-bad.s: New test.
+	* testsuite/gas/arm/mve-vidup-bad.d: New test.
+	* testsuite/gas/arm/mve-vidup-bad.l: New test.
+	* testsuite/gas/arm/mve-vidup-bad.s: New test.
+
+2019-05-16  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+
+	* config/tc-arm.c (do_mve_vfmas): New encoding function.
+	(do_neon_cls): Change to support MVE variants.
+	(do_neon_clz): Change to support MVE variants.
+	(insns): Change to support MVE variants and add new.
+	* testsuite/gas/arm/mve-vcls-bad.d: New test.
+	* testsuite/gas/arm/mve-vcls-bad.l: New test.
+	* testsuite/gas/arm/mve-vcls-bad.s: New test.
+	* testsuite/gas/arm/mve-vclz-bad.d: New test.
+	* testsuite/gas/arm/mve-vclz-bad.l: New test.
+	* testsuite/gas/arm/mve-vclz-bad.s: New test.
+	* testsuite/gas/arm/mve-vfmas-bad.d: New test.
+	* testsuite/gas/arm/mve-vfmas-bad.l: New test.
+	* testsuite/gas/arm/mve-vfmas-bad.s: New test.
+
+2019-05-16  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+
+	* config/tc-arm.c (enum operand_parse_code): New operands.
+	(parse_operands): Handle new operands.
+	(do_mve_vcmul): New encoding function.
+	(do_vcmla): Change to support MVE variants.
+	(do_vcadd): Change to support MVE variants.
+	(insns): Change existing to support MVE variants and add new.
+	* testsuite/gas/arm/mve-vcadd-bad-1.d: New test.
+	* testsuite/gas/arm/mve-vcadd-bad-1.l: New test.
+	* testsuite/gas/arm/mve-vcadd-bad-1.s: New test.
+	* testsuite/gas/arm/mve-vcadd-bad-2.d: New test.
+	* testsuite/gas/arm/mve-vcadd-bad-2.l: New test.
+	* testsuite/gas/arm/mve-vcadd-bad-2.s: New test.
+	* testsuite/gas/arm/mve-vcmla-bad-1.d: New test.
+	* testsuite/gas/arm/mve-vcmla-bad-1.l: New test.
+	* testsuite/gas/arm/mve-vcmla-bad-1.s: New test.
+	* testsuite/gas/arm/mve-vcmla-bad-2.d: New test.
+	* testsuite/gas/arm/mve-vcmla-bad-2.l: New test.
+	* testsuite/gas/arm/mve-vcmla-bad-2.s: New test.
+	* testsuite/gas/arm/mve-vcmul-bad-1.d: New test.
+	* testsuite/gas/arm/mve-vcmul-bad-1.l: New test.
+	* testsuite/gas/arm/mve-vcmul-bad-1.s: New test.
+	* testsuite/gas/arm/mve-vcmul-bad-2.d: New test.
+	* testsuite/gas/arm/mve-vcmul-bad-2.l: New test.
+	* testsuite/gas/arm/mve-vcmul-bad-2.s: New test.
+
+2019-05-16  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+
+	* config/tc-arm.c (enum operand_parse_code): New operands.
+	(parse_operands): Handle new operands.
+	(enum vfp_or_neon_is_neon_bits): Moved
+	(vfp_or_neon_is_neon): Moved
+	(check_simd_pred_availability): Moved.
+	(do_neon_logic): Change to accept MVE variants.
+	(insns): Changed to accept MVE variants.
+	* testsuite/gas/arm/mve-vand-bad.d: New test.
+	* testsuite/gas/arm/mve-vand-bad.l: New test.
+	* testsuite/gas/arm/mve-vand-bad.s: New test.
+	* testsuite/gas/arm/mve-vbic-bad.d: New test.
+	* testsuite/gas/arm/mve-vbic-bad.l: New test.
+	* testsuite/gas/arm/mve-vbic-bad.s: New test.
+	* testsuite/gas/arm/mve-veor-bad.d: New test.
+	* testsuite/gas/arm/mve-veor-bad.l: New test.
+	* testsuite/gas/arm/mve-veor-bad.s: New test.
+	* testsuite/gas/arm/mve-vorn-bad.d: New test.
+	* testsuite/gas/arm/mve-vorn-bad.l: New test.
+	* testsuite/gas/arm/mve-vorn-bad.s: New test.
+	* testsuite/gas/arm/mve-vorr-bad.d: New test.
+	* testsuite/gas/arm/mve-vorr-bad.l: New test.
+	* testsuite/gas/arm/mve-vorr-bad.s: New test.
+
+2019-05-16  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+
+	* config/tc-arm.c (M_MNEM_vaddlv, M_MNEM_vaddlva, M_MNEM_vaddv,
+	 M_MNEM_vaddva): New instruction encodings.
+	(mve_encode_rq): New encoding helper function.
+	(do_mve_vaddlv): New encoding function.
+	(do_mve_vaddv): New encoding function.
+	* testsuite/gas/arm/mve-vaddlv-bad.d: New test.
+	* testsuite/gas/arm/mve-vaddlv-bad.l: New test.
+	* testsuite/gas/arm/mve-vaddlv-bad.s: New test.
+	* testsuite/gas/arm/mve-vaddv-bad.d: New test.
+	* testsuite/gas/arm/mve-vaddv-bad.l: New test.
+	* testsuite/gas/arm/mve-vaddv-bad.s: New test.
+
+2019-05-16  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+
+	* config/tc-arm.c (M_MNEM_vadc, M_MNEM_vadci, M_MNEM_vbrsr):
+	New instruction encodings.
+	(do_mve_vadc): New encoding instruction.
+	(do_mve_vbrsr): Likewise.
+	(do_mve_vsbc): Likewise.
+	* testsuite/gas/arm/mve-vadc-bad.d: New test.
+	* testsuite/gas/arm/mve-vadc-bad.l: New test.
+	* testsuite/gas/arm/mve-vadc-bad.s: New test.
+	* testsuite/gas/arm/mve-vbrsr-bad.d: New test.
+	* testsuite/gas/arm/mve-vbrsr-bad.l: New test.
+	* testsuite/gas/arm/mve-vbrsr-bad.s: New test.
+	* testsuite/gas/arm/mve-vsbc-bad.d: New test.
+	* testsuite/gas/arm/mve-vsbc-bad.l: New test.
+	* testsuite/gas/arm/mve-vsbc-bad.s: New test.
+
+2019-05-16  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+
+	* config/tc-arm.c (MVE_BAD_QREG): New error message.
+	(enum operand_parse_code): Define new operand.
+	(parse_operands): Handle new operand.
+	(do_mve_vpt): Change for VPT blocks.
+	(NEON_SHAPE_DEF): New shape.
+	(neon_logbits): Moved.
+	(LOW4): Moved
+	(HI1): Moved
+	(mve_get_vcmp_vpt_cond): New function to translate vpt conditions.
+	(do_mve_vcmp): New encoding function.
+	(do_vfp_nsyn_cmp): Changed to support MVE variants.
+	(insns): Change to support MVE variants of vcmp and add vpt.
+	* testsuite/gas/arm/mve-vcmp-bad-1.d: New test.
+	* testsuite/gas/arm/mve-vcmp-bad-1.l: New test.
+	* testsuite/gas/arm/mve-vcmp-bad-1.s: New test.
+	* testsuite/gas/arm/mve-vcmp-bad-2.d: New test.
+	* testsuite/gas/arm/mve-vcmp-bad-2.l: New test.
+	* testsuite/gas/arm/mve-vcmp-bad-2.s: New test.
+	* testsuite/gas/arm/mve-vpt-bad-1.d: New test.
+	* testsuite/gas/arm/mve-vpt-bad-1.l: New test.
+	* testsuite/gas/arm/mve-vpt-bad-1.s: New test.
+	* testsuite/gas/arm/mve-vpt-bad-2.d: New test.
+	* testsuite/gas/arm/mve-vpt-bad-2.l: New test.
+	* testsuite/gas/arm/mve-vpt-bad-2.s: New test.
+
+2019-05-16  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+
+	* config/tc-arm.c (struct arm_it): Expand isscalar field to be able to
+	distinguish between types of scalar.
+	(parse_typed_reg_or_scalar): Change to accept MVE scalar variants.
+	(parse_scalar): Likewise.
+	(parse_neon_mov): Accept MVE variant.
+	(po_scalar_or_goto): Make use reg_type.
+	(parse_operands): Change uses of po_scalar_or_goto.
+	(do_vfp_sp_monadic): Change to accept MVE variants.
+	(do_vfp_reg_from_sp): Likewise.
+	(do_vfp_sp_from_reg): Likewise.
+	(do_vfp_dp_rd_rm): Likewise.
+	(do_vfp_dp_rd_rn_rm): Likewise.
+	(do_vfp_dp_rm_rd_rn): Likewise.
+	(M_MNEM_vmovlt, M_MNEM_vmovlb, M_MNEM_vmovnt, M_MNEM_vmovnb): New
+	instruction encodings.
+	(NEON_SHAPE_DEF): New shape.
+	(do_mve_mov): New encoding fuction.
+	(do_mve_movn): Likewise.
+	(do_mve_movl): Likewise.
+	(do_neon_mov): Change to accept MVE variants.
+	(mcCE): New MACRO.
+	(insns): Accept new MVE variants and instructions.
+	* testsuite/gas/arm/mve-vmov-bad-1.d: New test.
+	* testsuite/gas/arm/mve-vmov-bad-1.l: New test.
+	* testsuite/gas/arm/mve-vmov-bad-1.s: New test.
+	* testsuite/gas/arm/mve-vmov-bad-2.d: New test.
+	* testsuite/gas/arm/mve-vmov-bad-2.l: New test.
+	* testsuite/gas/arm/mve-vmov-bad-2.s: New test.
+
+2019-05-16  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+
+	* config/tc-arm.c (enum operand_parse_code): Add new operand.
+	(parse_operands): Handle new operand.
+	(do_neon_cvt_1): Handle MVE variants.
+	(do_neon_cvttb_1): Likewise.
+	(insns): Accept MVE variants.
+	* testsuite/gas/arm/mve-vcvt-bad-1.d: New test.
+	* testsuite/gas/arm/mve-vcvt-bad-1.l: New test.
+	* testsuite/gas/arm/mve-vcvt-bad-1.s: New test.
+	* testsuite/gas/arm/mve-vcvt-bad-2.d: New test.
+	* testsuite/gas/arm/mve-vcvt-bad-2.l: New test.
+	* testsuite/gas/arm/mve-vcvt-bad-2.s: New test.
+	* testsuite/gas/arm/mve-vcvt-bad-3.d: New test.
+	* testsuite/gas/arm/mve-vcvt-bad-3.l: New test.
+	* testsuite/gas/arm/mve-vcvt-bad-3.s: New test.
+	* testsuite/gas/arm/mve-vcvt-bad-4.d: New test.
+	* testsuite/gas/arm/mve-vcvt-bad-4.l: New test.
+	* testsuite/gas/arm/mve-vcvt-bad-4.s: New test.
+	* testsuite/gas/arm/mve-vcvt-bad.d: New test.
+	* testsuite/gas/arm/mve-vcvt-bad.l: New test.
+	* testsuite/gas/arm/mve-vcvt-bad.s: New test.
+
+2019-05-16  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+
+	* config/tc-arm.c (struct arm_it): Make immisreg field larger to hold
+	type of register.
+	(enum shift_kind): Add SHIFT_UXTW shift kind.
+	(enum parse_shift_mode): Add SHIFT_UXTW_IMMEDIATE shift mode.
+	(parse_shift): Handle new shift type.
+	(parse_address_main): Accept new addressing modes.
+	(M_MNEM_vstrb, M_MNEM_vstrh, M_MNEM_vstrw, M_MNEM_vstrd,
+	 M_MNEM_vldrb, M_MNEM_vldrh, M_MNEM_vldrw, M_MNEM_vldrd): New
+	instruction encodings.
+	(do_mve_vstr_vldr_QI): New encoding functions.
+	(do_mve_vstr_vldr_RQ): Likewise.
+	(do_mve_vstr_vldr_RI): Likewise.
+	(do_mve_vstr_vldr): Likewise.
+	* testsuite/gas/arm/mve-vldr-bad-1.d: New test.
+	* testsuite/gas/arm/mve-vldr-bad-1.l: New test.
+	* testsuite/gas/arm/mve-vldr-bad-1.s: New test.
+	* testsuite/gas/arm/mve-vldr-bad-2.d: New test.
+	* testsuite/gas/arm/mve-vldr-bad-2.l: New test.
+	* testsuite/gas/arm/mve-vldr-bad-2.s: New test.
+	* testsuite/gas/arm/mve-vldr-bad-3.d: New test.
+	* testsuite/gas/arm/mve-vldr-bad-3.l: New test.
+	* testsuite/gas/arm/mve-vldr-bad-3.s: New test.
+	* testsuite/gas/arm/mve-vstr-bad-1.d: New test.
+	* testsuite/gas/arm/mve-vstr-bad-1.l: New test.
+	* testsuite/gas/arm/mve-vstr-bad-1.s: New test.
+	* testsuite/gas/arm/mve-vstr-bad-2.d: New test.
+	* testsuite/gas/arm/mve-vstr-bad-2.l: New test.
+	* testsuite/gas/arm/mve-vstr-bad-2.s: New test.
+	* testsuite/gas/arm/mve-vstr-bad-3.d: New test.
+	* testsuite/gas/arm/mve-vstr-bad-3.l: New test.
+	* testsuite/gas/arm/mve-vstr-bad-3.s: New test.
+
+2019-05-16  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+
+	* config/tc-arm.c (enum it_instruction_type): Add MVE_UNPREDICABLE_INSN.
+	(BAD_EL_TYPE): New error message.
+	(parse_neon_el_struct_list): Adapt to be able to accept MVE variant.
+	(parse_address_main): Likewise.
+	(group_reloc_type): Add GROUP_MVE.
+	(enum operand_parse_code): Add new operands.
+	(parse_operands): Handle new operands.
+	(M_MNEM_vst20, M_MNEM_vst21, M_MNEM_vst40, M_MNEM_vst41, M_MNEM_vst42,
+	 M_MNEM_vst43, M_MNEM_vld20, M_MNEM_vld21, M_MNEM_vld40, M_MNEM_vld41,
+	 M_MNEM_vld42, M_MNEM_vld43): New encodings.
+	(do_mve_vst_vld): New encoding function.
+	(do_neon_ld_st_interleave): Use BAD_EL_TYPE.
+	(it_fsm_pre_encode): Handle new it_instruction_type
+	(handle_pred_state): Likewise.
+	* testsuite/gas/arm/mve-vstld-bad.d: New test.
+	* testsuite/gas/arm/mve-vstld-bad.l: New test.
+	* testsuite/gas/arm/mve-vstld-bad.s: New test.
+
+2019-05-16  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+
+	* config/tc-arm.c (BAD_MVE_AUTO): New error message.
+	(BAD_MVE_SRCDEST): Likewise.
+	(mark_feature_used): Diagnose MVE only instructions when in
+	auto-detection mode or -march=all.
+	(enum operand_parse_code): Define new operand.
+	(parse_operands): Handle new operand.
+	(M_MNEM_vmullt, M_MNEM_vmullb): New encodings.
+	(mve_encode_qqq): New encoding helper function.
+	(do_mve_vmull): New encoding function.
+	(insns): Handle new instructions.
+	* testsuite/gas/arm/mve-vmullbt-bad.d: New test.
+	* testsuite/gas/arm/mve-vmullbt-bad.l: New test.
+	* testsuite/gas/arm/mve-vmullbt-bad.s: New test.
+
+2019-05-16  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+
+	* config/tc-arm.c (struct asm_opcode): Make avalue a full int.
+	(BAD_ODD, BAD_EVEN, BAD_SIMD_TYPE): New errors.
+	(enum operand_parse_code): Handle new operands.
+	(parse_operands): Likewise.
+	(M_MNEM_vabav, M_MNEM_vmladav, M_MNEM_vmladava, M_MNEM_vmladavx,
+	 M_MNEM_vmladavax, M_MNEM_vmlsdav, M_MNEM_vmlsdava, M_MNEM_vmlsdavx,
+	 M_MNEM_vmlsdavax): Define new encodings.
+	(NEON_SHAPE_DEF): Add new shape.
+	(neon_check_type): Use BAD_SIMD_TYPE.
+	(mve_encode_rqq): New encoding helper function.
+	(do_mve_vabav, do_mve_vmladav): New encoding functions.
+	(mCEF): New MACRO.
+	* testsuite/gas/arm/mve-vabav-bad.d: New test.
+	* testsuite/gas/arm/mve-vabav-bad.l: New test.
+	* testsuite/gas/arm/mve-vabav-bad.s: New test.
+	* testsuite/gas/arm/mve-vmladav-bad.d: New test.
+	* testsuite/gas/arm/mve-vmladav-bad.l: New test.
+	* testsuite/gas/arm/mve-vmladav-bad.s: New test.
+	* testsuite/gas/arm/mve-vmlav-bad.d: New test.
+	* testsuite/gas/arm/mve-vmlav-bad.l: New test.
+	* testsuite/gas/arm/mve-vmlav-bad.s: New test.
+	* testsuite/gas/arm/mve-vmlsdav-bad.d: New test.
+	* testsuite/gas/arm/mve-vmlsdav-bad.l: New test.
+	* testsuite/gas/arm/mve-vmlsdav-bad.s: New test.
+
+2019-05-16  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+
+	* config/tc-arm.c (do_neon_abs_neg): Make it accept MVE variant.
+	(insns): Change vabs and vneg entries to accept MVE variants.
+	* testsuite/gas/arm/mve-vabsneg-bad-1.d: New test.
+	* testsuite/gas/arm/mve-vabsneg-bad-1.l: New test.
+	* testsuite/gas/arm/mve-vabsneg-bad-1.s: New test.
+	* testsuite/gas/arm/mve-vabsneg-bad-2.d: New test.
+	* testsuite/gas/arm/mve-vabsneg-bad-2.l: New test.
+	* testsuite/gas/arm/mve-vabsneg-bad-2.s: New test.
+
+2019-05-16  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+
+	* config/tc-arm.c (enum it_instruction_type): Rename to...
+	(enum pred_instruction_type): ... this. Include VPT types.
+	(it_insn_type): Rename to ...
+	(pred_insn_type): .. this.
+	(arm_it): Change comment.
+	(enum arm_reg_type): Add new value.
+	(reg_expected_msgs): New entry.
+	(asm_opcode): Add mayBeVecPred member.
+	(BAD_SYNTAX, BAD_NOT_VPT, BAD_OUT_VPT, BAD_VPT_COND, MVE_NOT_IT,
+	 MVE_NOT_VPT, MVE_BAD_PC, MVE_BAD_SP): New diagnostic MACROS.
+	(arm_vcond_hsh): New table for vector condition codes.
+	(now_it): Rename to ...
+	(now_pred): ... this.
+	(now_it_compatible): Rename to ...
+	(now_pred_compatible): ... this.
+	(in_it_block): Rename to ...
+	(in_pred_block): ... this.
+	(handle_it_state): Rename to ...
+	(handle_pred_state): ... this. And change it to accept VPT blocks.
+	(set_it_insn_type): Rename to ...
+	(set_pred_insn_type): ... this.
+	(set_it_insn_type_nonvoid): Rename to ...
+	(set_pred_insn_type_nonvoid): ... this.
+	(set_it_insn_type_last): Rename to ...
+	(set_pred_insn_type_last): ... this.
+	(record_feature_use): Moved.
+	(mark_feature_used): Likewise.
+	(parse_typed_reg_or_scalar): Add new case for REG_TYPE_MQ.
+	(emit_insn): Use renamed functions and variables.
+	(enum operand_parse_code): Add new operands.
+	(parse_operands): Handle new operands.
+	(do_scalar_fp16_v82_encode): Change predication detection.
+	(do_it): Use renamed functions and variables.
+	(do_t_add_sub): Likewise.
+	(do_t_arit3): Likewise.
+	(do_t_arit3c): Likewise.
+	(do_t_blx): Likewise.
+	(do_t_branch): Likewise.
+	(do_t_bkpt_hlt1): Likewise.
+	(do_t_branch23): Likewise.
+	(do_t_bx): Likewise.
+	(do_t_bxj): Likewise.
+	(do_t_cond): Likewise.
+	(do_t_csdb): Likewise.
+	(do_t_cps): Likewise.
+	(do_t_cpsi): Likewise.
+	(do_t_cbz): Likewise.
+	(do_t_it): Likewise.
+	(do_mve_vpt): New function to handle VPT blocks.
+	(encode_thumb2_multi): Use renamed functions and variables.
+	(do_t_ldst): Use renamed functions and variables.
+	(do_t_mov_cmp): Likewise.
+	(do_t_mvn_tst): Likewise.
+	(do_t_mul): Likewise.
+	(do_t_nop): Likewise.
+	(do_t_neg): Likewise.
+	(do_t_rsb): Likewise.
+	(do_t_setend): Likewise.
+	(do_t_shift): Likewise.
+	(do_t_smc): Likewise.
+	(do_t_tb): Likewise.
+	(do_t_udf): Likewise.
+	(do_t_loloop): Likewise.
+	(do_neon_cvt_1): Likewise.
+	(do_vfp_nsyn_cvt_fpv8): Likewise.
+	(do_vsel): Likewise.
+	(do_vmaxnm): Likewise.
+	(do_vrint_1): Likewise.
+	(do_crypto_2op_1): Likewise.
+	(do_crypto_3op_1): Likewise.
+	(do_crc32_1): Likewise.
+	(it_fsm_pre_encode): Likewise.
+	(it_fsm_post_encode): Likewise.
+	(force_automatic_it_block_close): Likewise.
+	(check_it_blocks_finished): Likewise.
+	(check_pred_blocks_finished): Likewise.
+	(arm_cleanup): Likewise.
+	(now_it_add_mask): Rename to ...
+	(now_pred_add_mask): ... this. And use new variables and functions.
+	(NEON_ENC_TAB): Add entries for vabdl, vaddl and vsubl.
+	(N_I_MVE, N_F_MVE, N_SU_MVE): New MACROs.
+	(neon_check_type): Generalize error message.
+	(mve_encode_qqr): New MVE generic encoding function.
+	(neon_dyadic_misc): Change to accept MVE variants.
+	(do_neon_dyadic_if_su): Likewise.
+	(do_neon_addsub_if_i): Likewise.
+	(do_neon_dyadic_long): Likewise.
+	(vfp_or_neon_is_neon): Add extra checks.
+	(check_simd_pred_availability): Helper function to check SIMD
+	instruction availability with respect to predication.
+	(enum opcode_tag): New suffix value.
+	(opcode_lookup): Change to handle VPT blocks.
+	(new_automatic_it_block): Rename to ...
+	(close_automatic_it_block): ...this.
+	(TxCE, TxC3, TxC3w, TUE, TUEc, TUF, CE, C3, ToC, ToU,
+	 toC, toU, CL, cCE, cCL, C3E, xCM_, UE, UF, NUF, nUF,
+	 NCE_tag, NCE, NCEF, nCE_tag, nCE, nCEF): Add default value for new
+	field.
+	(mCEF, mnCEF, mnCE, MNUF, mnUF, mToC, MNCE, MNCEF): New MACROs.
+	(insns): Redefine vadd, vsub, cabd, vabdl, vaddl, vsubl to accept MVE
+	variants. Add entries for vscclrm, and vpst.
+	(md_begin): Add arm_vcond_hsh initialization.
+	* config/tc-arm.h (enum it_state): Rename to...
+	(enum pred_state): ...this.
+	(struct current_it): Rename to...
+	(struct current_pred): ...this.
+	(enum pred_type): New enum.
+	(struct arm_segment_info_type): Use current_pred.
+	* testsuite/gas/arm/armv8_3-a-fp-bad.l: Update error message.
+	* testsuite/gas/arm/armv8_3-a-simd-bad.l: Update error message.
+	* testsuite/gas/arm/dotprod-illegal.l: Update error message.
+	* testsuite/gas/arm/mve-vaddsubabd-bad-1.d: New test.
+	* testsuite/gas/arm/mve-vaddsubabd-bad-1.l: New test.
+	* testsuite/gas/arm/mve-vaddsubabd-bad-1.s: New test.
+	* testsuite/gas/arm/mve-vaddsubabd-bad-2.d: New test.
+	* testsuite/gas/arm/mve-vaddsubabd-bad-2.l: New test.
+	* testsuite/gas/arm/mve-vaddsubabd-bad-2.s: New test.
+	* testsuite/gas/arm/mve-vpst-bad.d: New test.
+	* testsuite/gas/arm/mve-vpst-bad.l: New test.
+	* testsuite/gas/arm/mve-vpst-bad.s: New test.
+	* testsuite/gas/arm/neon-ldst-es-bad.l: Updated error message.
+
+2019-05-16  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+
+	* config/tc-arm.c (mve_ext, mve_fp_ext): New features.
+	(armv8_1m_main_ext_table): Add new extensions.
+	(aeabi_set_public_attributes): Translate new features to new build attributes.
+	(arm_convert_symbolic_attribute): Add Tag_MVE_arch.
+	* doc/c-arm.texi: Document new extensions and new build attribute.
+
+2019-05-15  John Darrington <john@darrington.wattle.id.au>
+
+	* config/tc-s12z.c (register_prefix): New variable.  (md_show_usage,
+	md_parse_option):  parse the new option.
+	(lex_reg_name): Scan the prefix if one is set.
+	* doc/c-s12z.texi (S12Z-Opts): Document the new option.
+	* testsuite/gas/s12z/reg-prefix.d: New file.
+	* testsuite/gas/s12z/reg-prefix.s: New file.
+	* testsuite/gas/s12z/s12z.exp: Add them.
+
+2019-05-14  John Darrington <john@darrington.wattle.id.au>
+
+	* doc/as.texi (Machine Dependencies): Fix misaligned menu entry.
+
+2019-05-15  Alan Modra  <amodra@gmail.com>
+
+	* config/tc-csky.c (md_convert_frag): Initialise trailing
+	padding for COND_JUMP_PIC.
+
+2019-05-15  Alan Modra  <amodra@gmail.com>
+
+	* dwarf2dbg.c: Whitespace fixes.
+	(get_filenum): Don't strdup "file".  Adjust error message.
+	(dwarf2_directive_filename): Use an unsigned type for "num".
+	Catch truncation of file number and overflow of get_filenum
+	XRESIZEVEC multiplication.  Delete dead code.
+
+2019-05-15  Alan Modra  <amodra@gmail.com>
+
+	PR 24538
+	* config/tc-tic54x.c (tic54x_start_line_hook): Do skip end of line
+	chars in setting endp.
+
 2019-05-14  Nick Clifton  <nickc@redhat.com>
 
 	PR 24538
@@ -250,7 +1512,7 @@
 
 2019-04-29  John Darrington <john@darrington.wattle.id.au>
 
-        * testsuite/gas/s12z/truncated.d: New file.
+	* testsuite/gas/s12z/truncated.d: New file.
 	* testsuite/gas/s12z/truncated.s: New file.
 	* testsuite/gas/s12z/s12z.exp: Add new test.
 
@@ -503,7 +1765,7 @@
 	* testsuite/gas/arm/archv8m_1m-cmse-main.s: Likewise.
 
 2019-04-15  Sudakshina Das  <sudi.das@arm.com>
-            Andre Vieira  <andre.simoesdiasvieira@arm.com>
+	    Andre Vieira  <andre.simoesdiasvieira@arm.com>
 
 	* config/tc-arm.c (operand_parse_code): Add OP_LR and OP_oLR
 	for the LR operand and optional LR operand.
@@ -525,7 +1787,7 @@
 	* testsuite/gas/arm/armv8_1-m-tloop-bad.l: New.
 
 2019-04-15  Sudakshina Das  <sudi.das@arm.com>
-            Andre Vieira  <andre.simoesdiasvieira@arm.com>
+	    Andre Vieira  <andre.simoesdiasvieira@arm.com>
 
 	* config/tc-arm.c (T16_32_TAB): New entriy for bfcsel.
 	(do_t_v8_1_branch): New switch case for bfcsel.
@@ -546,7 +1808,7 @@
 	(tc_gen_reloc): Likewise.
 
 2019-04-15  Sudakshina Das  <sudi.das@arm.com>
-            Andre Vieira  <andre.simoesdiasvieira@arm.com>
+	    Andre Vieira  <andre.simoesdiasvieira@arm.com>
 
 	* config/tc-arm.c (T16_32_TAB): New entrie for bfl.
 	(do_t_v8_1_branch): New switch case for bfl.
@@ -578,7 +1840,7 @@
 	* testsuite/gas/arm/armv8_1-m-bf-exchange-bad.d: New
 
 2019-04-15  Sudakshina Das  <sudi.das@arm.com>
-            Andre Vieira  <andre.simoesdiasvieira@arm.com>
+	    Andre Vieira  <andre.simoesdiasvieira@arm.com>
 
 	* config/tc-arm.c (T16_32_TAB): New entries for bf.
 	(do_t_branch_future): New.
@@ -654,11 +1916,11 @@
 	* testsuite/gas/mips/mips.exp: Run the new test.
 
 2019-04-12  John Darrington <john@darrington.wattle.id.au>
-	
+
 	config/tc-s12z.h: Remove definition of macro TC_M68K
 
 2019-04-01  John Darrington <john@darrington.wattle.id.au>
-	
+
 	config/tc-s12z.c: Use bfd_boolean where appropriate.
 
 2019-04-11  Max Filippov  <jcmvbkbc@gmail.com>
@@ -1286,7 +2548,7 @@
 
 2019-01-31  John Darrington <john@darrington.wattle.id.au>
 
-        * config/tc-s12z.c (lex_imm): Add new argument exp_o.
+	* config/tc-s12z.c (lex_imm): Add new argument exp_o.
 	(emit_reloc): New function.
 	(md_apply_fix): [BFD_RELOC_S12Z_OPR] Recognise that it
 	can be either 2 bytes or 3 bytes long.
@@ -1539,7 +2801,7 @@
 
 2019-01-09  John Darrington <john@darrington.wattle.id.au>
 
-        * testsuite/gas/s12z/jsr.s: New case.
+	* testsuite/gas/s12z/jsr.s: New case.
 	* testsuite/gas/s12z/jsr.d: New case.
 
 2019-01-09  Andrew Paprocki  <andrew@ishiboo.com>

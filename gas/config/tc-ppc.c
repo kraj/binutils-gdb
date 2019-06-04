@@ -1320,76 +1320,146 @@ md_parse_option (int c, const char *arg)
   return 1;
 }
 
+static int
+is_ppc64_target (const bfd_target *targ, void *data ATTRIBUTE_UNUSED)
+{
+  switch (targ->flavour)
+    {
+#ifdef OBJ_ELF
+    case bfd_target_elf_flavour:
+      return strncmp (targ->name, "elf64-powerpc", 13) == 0;
+#endif
+#ifdef OBJ_XCOFF
+    case bfd_target_xcoff_flavour:
+      return (strcmp (targ->name, "aixcoff64-rs6000") == 0
+	      || strcmp (targ->name, "aix5coff64-rs6000") == 0);
+#endif
+    default:
+      return 0;
+    }
+}
+
 void
 md_show_usage (FILE *stream)
 {
   fprintf (stream, _("\
-PowerPC options:\n\
--a32                    generate ELF32/XCOFF32\n\
--a64                    generate ELF64/XCOFF64\n\
--u                      ignored\n\
--mpwrx, -mpwr2          generate code for POWER/2 (RIOS2)\n\
--mpwr                   generate code for POWER (RIOS1)\n\
--m601                   generate code for PowerPC 601\n\
+PowerPC options:\n"));
+  fprintf (stream, _("\
+-a32                    generate ELF32/XCOFF32\n"));
+  if (bfd_iterate_over_targets (is_ppc64_target, NULL))
+    fprintf (stream, _("\
+-a64                    generate ELF64/XCOFF64\n"));
+  fprintf (stream, _("\
+-u                      ignored\n"));
+  fprintf (stream, _("\
+-mpwrx, -mpwr2          generate code for POWER/2 (RIOS2)\n"));
+  fprintf (stream, _("\
+-mpwr                   generate code for POWER (RIOS1)\n"));
+  fprintf (stream, _("\
+-m601                   generate code for PowerPC 601\n"));
+  fprintf (stream, _("\
 -mppc, -mppc32, -m603, -m604\n\
-                        generate code for PowerPC 603/604\n\
--m403                   generate code for PowerPC 403\n\
--m405                   generate code for PowerPC 405\n\
--m440                   generate code for PowerPC 440\n\
--m464                   generate code for PowerPC 464\n\
--m476                   generate code for PowerPC 476\n\
+                        generate code for PowerPC 603/604\n"));
+  fprintf (stream, _("\
+-m403                   generate code for PowerPC 403\n"));
+  fprintf (stream, _("\
+-m405                   generate code for PowerPC 405\n"));
+  fprintf (stream, _("\
+-m440                   generate code for PowerPC 440\n"));
+  fprintf (stream, _("\
+-m464                   generate code for PowerPC 464\n"));
+  fprintf (stream, _("\
+-m476                   generate code for PowerPC 476\n"));
+  fprintf (stream, _("\
 -m7400, -m7410, -m7450, -m7455\n\
-                        generate code for PowerPC 7400/7410/7450/7455\n\
+                        generate code for PowerPC 7400/7410/7450/7455\n"));
+  fprintf (stream, _("\
 -m750cl, -mgekko, -mbroadway\n\
-                        generate code for PowerPC 750cl/Gekko/Broadway\n\
+                        generate code for PowerPC 750cl/Gekko/Broadway\n"));
+  fprintf (stream, _("\
 -m821, -m850, -m860     generate code for PowerPC 821/850/860\n"));
   fprintf (stream, _("\
--mppc64, -m620          generate code for PowerPC 620/625/630\n\
--mppc64bridge           generate code for PowerPC 64, including bridge insns\n\
--mbooke                 generate code for 32-bit PowerPC BookE\n\
--ma2                    generate code for A2 architecture\n\
--mpower4, -mpwr4        generate code for Power4 architecture\n\
+-mppc64, -m620          generate code for PowerPC 620/625/630\n"));
+  fprintf (stream, _("\
+-mppc64bridge           generate code for PowerPC 64, including bridge insns\n"));
+  fprintf (stream, _("\
+-mbooke                 generate code for 32-bit PowerPC BookE\n"));
+  fprintf (stream, _("\
+-ma2                    generate code for A2 architecture\n"));
+  fprintf (stream, _("\
+-mpower4, -mpwr4        generate code for Power4 architecture\n"));
+  fprintf (stream, _("\
 -mpower5, -mpwr5, -mpwr5x\n\
-                        generate code for Power5 architecture\n\
--mpower6, -mpwr6        generate code for Power6 architecture\n\
--mpower7, -mpwr7        generate code for Power7 architecture\n\
--mpower8, -mpwr8        generate code for Power8 architecture\n\
--mpower9, -mpwr9        generate code for Power9 architecture\n\
--mcell                  generate code for Cell Broadband Engine architecture\n\
--mcom                   generate code for Power/PowerPC common instructions\n\
+                        generate code for Power5 architecture\n"));
+  fprintf (stream, _("\
+-mpower6, -mpwr6        generate code for Power6 architecture\n"));
+  fprintf (stream, _("\
+-mpower7, -mpwr7        generate code for Power7 architecture\n"));
+  fprintf (stream, _("\
+-mpower8, -mpwr8        generate code for Power8 architecture\n"));
+  fprintf (stream, _("\
+-mpower9, -mpwr9        generate code for Power9 architecture\n"));
+  fprintf (stream, _("\
+-mcell                  generate code for Cell Broadband Engine architecture\n"));
+  fprintf (stream, _("\
+-mcom                   generate code for Power/PowerPC common instructions\n"));
+  fprintf (stream, _("\
 -many                   generate code for any architecture (PWR/PWRX/PPC)\n"));
   fprintf (stream, _("\
--maltivec               generate code for AltiVec\n\
--mvsx                   generate code for Vector-Scalar (VSX) instructions\n\
--me300                  generate code for PowerPC e300 family\n\
--me500, -me500x2        generate code for Motorola e500 core complex\n\
--me500mc,               generate code for Freescale e500mc core complex\n\
--me500mc64,             generate code for Freescale e500mc64 core complex\n\
--me5500,                generate code for Freescale e5500 core complex\n\
--me6500,                generate code for Freescale e6500 core complex\n\
--mspe                   generate code for Motorola SPE instructions\n\
--mspe2                  generate code for Freescale SPE2 instructions\n\
--mvle                   generate code for Freescale VLE instructions\n\
--mtitan                 generate code for AppliedMicro Titan core complex\n\
--mregnames              Allow symbolic names for registers\n\
+-maltivec               generate code for AltiVec\n"));
+  fprintf (stream, _("\
+-mvsx                   generate code for Vector-Scalar (VSX) instructions\n"));
+  fprintf (stream, _("\
+-me300                  generate code for PowerPC e300 family\n"));
+  fprintf (stream, _("\
+-me500, -me500x2        generate code for Motorola e500 core complex\n"));
+  fprintf (stream, _("\
+-me500mc,               generate code for Freescale e500mc core complex\n"));
+  fprintf (stream, _("\
+-me500mc64,             generate code for Freescale e500mc64 core complex\n"));
+  fprintf (stream, _("\
+-me5500,                generate code for Freescale e5500 core complex\n"));
+  fprintf (stream, _("\
+-me6500,                generate code for Freescale e6500 core complex\n"));
+  fprintf (stream, _("\
+-mspe                   generate code for Motorola SPE instructions\n"));
+  fprintf (stream, _("\
+-mspe2                  generate code for Freescale SPE2 instructions\n"));
+  fprintf (stream, _("\
+-mvle                   generate code for Freescale VLE instructions\n"));
+  fprintf (stream, _("\
+-mtitan                 generate code for AppliedMicro Titan core complex\n"));
+  fprintf (stream, _("\
+-mregnames              Allow symbolic names for registers\n"));
+  fprintf (stream, _("\
 -mno-regnames           Do not allow symbolic names for registers\n"));
 #ifdef OBJ_ELF
   fprintf (stream, _("\
--mrelocatable           support for GCC's -mrelocatble option\n\
--mrelocatable-lib       support for GCC's -mrelocatble-lib option\n\
--memb                   set PPC_EMB bit in ELF flags\n\
+-mrelocatable           support for GCC's -mrelocatble option\n"));
+  fprintf (stream, _("\
+-mrelocatable-lib       support for GCC's -mrelocatble-lib option\n"));
+  fprintf (stream, _("\
+-memb                   set PPC_EMB bit in ELF flags\n"));
+  fprintf (stream, _("\
 -mlittle, -mlittle-endian, -le\n\
-                        generate code for a little endian machine\n\
+                        generate code for a little endian machine\n"));
+  fprintf (stream, _("\
 -mbig, -mbig-endian, -be\n\
-                        generate code for a big endian machine\n\
--msolaris               generate code for Solaris\n\
--mno-solaris            do not generate code for Solaris\n\
--K PIC                  set EF_PPC_RELOCATABLE_LIB in ELF flags\n\
--V                      print assembler version number\n\
+                        generate code for a big endian machine\n"));
+  fprintf (stream, _("\
+-msolaris               generate code for Solaris\n"));
+  fprintf (stream, _("\
+-mno-solaris            do not generate code for Solaris\n"));
+  fprintf (stream, _("\
+-K PIC                  set EF_PPC_RELOCATABLE_LIB in ELF flags\n"));
+  fprintf (stream, _("\
+-V                      print assembler version number\n"));
+  fprintf (stream, _("\
 -Qy, -Qn                ignored\n"));
 #endif
   fprintf (stream, _("\
--nops=count             when aligning, more than COUNT nops uses a branch\n\
+-nops=count             when aligning, more than COUNT nops uses a branch\n"));
+  fprintf (stream, _("\
 -ppc476-workaround      warn if emitting data to code sections\n"));
 }
 
@@ -1673,6 +1743,50 @@ ppc_setup_opcodes (void)
     for (op = powerpc_opcodes; op < op_end; op++)
       hash_insert (ppc_hash, op->name, (void *) op);
 
+  op_end = prefix_opcodes + prefix_num_opcodes;
+  for (op = prefix_opcodes; op < op_end; op++)
+    {
+      if (ENABLE_CHECKING)
+	{
+	  unsigned int new_opcode = PPC_PREFIX_SEG (op[0].opcode);
+
+#ifdef PRINT_OPCODE_TABLE
+	  printf ("%-14s\t#%04u\tmajor op/2: 0x%x\top: 0x%llx\tmask: 0x%llx\tflags: 0x%llx\n",
+		  op->name, (unsigned int) (op - prefix_opcodes),
+		  new_opcode, (unsigned long long) op->opcode,
+		  (unsigned long long) op->mask, (unsigned long long) op->flags);
+#endif
+
+	  /* The major opcodes had better be sorted.  Code in the disassembler
+	     assumes the insns are sorted according to major opcode.  */
+	  if (op != prefix_opcodes
+	      && new_opcode < PPC_PREFIX_SEG (op[-1].opcode))
+	    {
+	      as_bad (_("major opcode is not sorted for %s"), op->name);
+	      bad_insn = TRUE;
+	    }
+	  bad_insn |= insn_validate (op);
+	}
+
+      if ((ppc_cpu & op->flags) != 0
+	  && !(ppc_cpu & op->deprecated))
+	{
+	  const char *retval;
+
+	  retval = hash_insert (ppc_hash, op->name, (void *) op);
+	  if (retval != NULL)
+	    {
+	      as_bad (_("duplicate instruction %s"),
+		      op->name);
+	      bad_insn = TRUE;
+	    }
+	}
+    }
+
+  if ((ppc_cpu & PPC_OPCODE_ANY) != 0)
+    for (op = prefix_opcodes; op < op_end; op++)
+      hash_insert (ppc_hash, op->name, (void *) op);
+
   op_end = vle_opcodes + vle_num_opcodes;
   for (op = vle_opcodes; op < op_end; op++)
     {
@@ -1943,8 +2057,10 @@ ppc_insert_operand (uint64_t insn,
 	 hand but only up to 32 bits.  This shouldn't really be valid,
 	 but, to permit this code to assemble on a 64-bit host, we
 	 sign extend the 32-bit value to 64 bits if so doing makes the
-	 value valid.  */
+	 value valid.  We only do this for operands that are 32-bits or
+	 smaller.  */
       if (val > max
+	  && (operand->bitm & ~0xffffffffULL) == 0
 	  && (val - (1LL << 32)) >= min
 	  && (val - (1LL << 32)) <= max
 	  && ((val - (1LL << 32)) & (right - 1)) == 0)
@@ -1953,6 +2069,7 @@ ppc_insert_operand (uint64_t insn,
       /* Similarly, people write expressions like ~(1<<15), and expect
 	 this to be OK for a 32-bit unsigned value.  */
       else if (val < min
+	       && (operand->bitm & ~0xffffffffULL) == 0
 	       && (val + (1LL << 32)) >= min
 	       && (val + (1LL << 32)) <= max
 	       && ((val + (1LL << 32)) & (right - 1)) == 0)
@@ -2104,6 +2221,13 @@ ppc_elf_suffix (char **str_p, expressionS *exp_p)
     MAP64 ("tprel@highest",	BFD_RELOC_PPC64_TPREL16_HIGHEST),
     MAP64 ("tprel@highesta",	BFD_RELOC_PPC64_TPREL16_HIGHESTA),
     MAP64 ("notoc",		BFD_RELOC_PPC64_REL24_NOTOC),
+    MAP64 ("pcrel",		BFD_RELOC_PPC64_PCREL34),
+    MAP64 ("got@pcrel",		BFD_RELOC_PPC64_GOT_PCREL34),
+    MAP64 ("plt@pcrel",		BFD_RELOC_PPC64_PLT_PCREL34),
+    MAP64 ("higher34",		BFD_RELOC_PPC64_ADDR16_HIGHER34),
+    MAP64 ("highera34",		BFD_RELOC_PPC64_ADDR16_HIGHERA34),
+    MAP64 ("highest34",		BFD_RELOC_PPC64_ADDR16_HIGHEST34),
+    MAP64 ("highesta34",	BFD_RELOC_PPC64_ADDR16_HIGHESTA34),
     { (char *) 0, 0, 0, 0,	BFD_RELOC_NONE }
   };
 
@@ -2740,6 +2864,90 @@ ppc_apuinfo_section_add (unsigned int apu, unsigned int version)
 #undef APUID
 #endif
 
+/* Various frobbings of labels and their addresses.  */
+
+/* Symbols labelling the current insn.  */
+struct insn_label_list
+{
+  struct insn_label_list *next;
+  symbolS *label;
+};
+
+static struct insn_label_list *insn_labels;
+static struct insn_label_list *free_insn_labels;
+
+static void
+ppc_record_label (symbolS *sym)
+{
+  struct insn_label_list *l;
+
+  if (free_insn_labels == NULL)
+    l = XNEW (struct insn_label_list);
+  else
+    {
+      l = free_insn_labels;
+      free_insn_labels = l->next;
+    }
+
+  l->label = sym;
+  l->next = insn_labels;
+  insn_labels = l;
+}
+
+static void
+ppc_clear_labels (void)
+{
+  while (insn_labels != NULL)
+    {
+      struct insn_label_list *l = insn_labels;
+      insn_labels = l->next;
+      l->next = free_insn_labels;
+      free_insn_labels = l;
+    }
+}
+
+void
+ppc_start_line_hook (void)
+{
+  ppc_clear_labels ();
+}
+
+void
+ppc_new_dot_label (symbolS *sym)
+{
+  ppc_record_label (sym);
+#ifdef OBJ_XCOFF
+  /* Anchor this label to the current csect for relocations.  */
+  symbol_get_tc (sym)->within = ppc_current_csect;
+#endif
+}
+
+void
+ppc_frob_label (symbolS *sym)
+{
+  ppc_record_label (sym);
+
+#ifdef OBJ_XCOFF
+  /* Set the class of a label based on where it is defined.  This handles
+     symbols without suffixes.  Also, move the symbol so that it follows
+     the csect symbol.  */
+  if (ppc_current_csect != (symbolS *) NULL)
+    {
+      if (symbol_get_tc (sym)->symbol_class == -1)
+	symbol_get_tc (sym)->symbol_class = symbol_get_tc (ppc_current_csect)->symbol_class;
+
+      symbol_remove (sym, &symbol_rootP, &symbol_lastP);
+      symbol_append (sym, symbol_get_tc (ppc_current_csect)->within,
+		     &symbol_rootP, &symbol_lastP);
+      symbol_get_tc (ppc_current_csect)->within = sym;
+      symbol_get_tc (sym)->within = ppc_current_csect;
+    }
+#endif
+
+#ifdef OBJ_ELF
+  dwarf2_emit_label (sym);
+#endif
+}
 
 /* We need to keep a list of fixups.  We can't simply generate them as
    we go, because that would require us to first create the frag, and
@@ -2800,6 +3008,10 @@ fixup_size (bfd_reloc_code_real_type reloc, bfd_boolean *pc_relative)
     case BFD_RELOC_PPC64_ADDR16_DS:
     case BFD_RELOC_PPC64_ADDR16_HIGH:
     case BFD_RELOC_PPC64_ADDR16_HIGHA:
+    case BFD_RELOC_PPC64_ADDR16_HIGHER34:
+    case BFD_RELOC_PPC64_ADDR16_HIGHERA34:
+    case BFD_RELOC_PPC64_ADDR16_HIGHEST34:
+    case BFD_RELOC_PPC64_ADDR16_HIGHESTA34:
     case BFD_RELOC_PPC64_ADDR16_LO_DS:
     case BFD_RELOC_PPC64_DTPREL16_DS:
     case BFD_RELOC_PPC64_DTPREL16_HIGH:
@@ -2887,9 +3099,13 @@ fixup_size (bfd_reloc_code_real_type reloc, bfd_boolean *pc_relative)
     case BFD_RELOC_PPC64_REL16_HIGH:
     case BFD_RELOC_PPC64_REL16_HIGHA:
     case BFD_RELOC_PPC64_REL16_HIGHER:
+    case BFD_RELOC_PPC64_REL16_HIGHER34:
     case BFD_RELOC_PPC64_REL16_HIGHERA:
+    case BFD_RELOC_PPC64_REL16_HIGHERA34:
     case BFD_RELOC_PPC64_REL16_HIGHEST:
+    case BFD_RELOC_PPC64_REL16_HIGHEST34:
     case BFD_RELOC_PPC64_REL16_HIGHESTA:
+    case BFD_RELOC_PPC64_REL16_HIGHESTA34:
 #ifdef OBJ_XCOFF
     case BFD_RELOC_PPC_B16:
 #endif
@@ -2969,12 +3185,21 @@ fixup_size (bfd_reloc_code_real_type reloc, bfd_boolean *pc_relative)
     case BFD_RELOC_64:
     case BFD_RELOC_64_PLTOFF:
     case BFD_RELOC_PPC64_ADDR64_LOCAL:
+    case BFD_RELOC_PPC64_D28:
+    case BFD_RELOC_PPC64_D34:
+    case BFD_RELOC_PPC64_D34_LO:
+    case BFD_RELOC_PPC64_D34_HI30:
+    case BFD_RELOC_PPC64_D34_HA30:
     case BFD_RELOC_PPC64_TOC:
       size = 8;
       break;
 
     case BFD_RELOC_64_PCREL:
     case BFD_RELOC_64_PLT_PCREL:
+    case BFD_RELOC_PPC64_GOT_PCREL34:
+    case BFD_RELOC_PPC64_PCREL28:
+    case BFD_RELOC_PPC64_PCREL34:
+    case BFD_RELOC_PPC64_PLT_PCREL34:
       size = 8;
       pcrel = TRUE;
       break;
@@ -3074,6 +3299,7 @@ md_assemble (char *str)
       else
 	ppc_macro (s, macro);
 
+      ppc_clear_labels ();
       return;
     }
 
@@ -3533,24 +3759,47 @@ md_assemble (char *str)
 		  reloc = BFD_RELOC_PPC_TPREL16;
 		  break;
 
-		case BFD_RELOC_LO16:
-		  if ((operand->bitm | 0xf) != 0xffff
-		      || operand->shift != 0
+		case BFD_RELOC_PPC64_PCREL34:
+		  if (operand->bitm == 0xfffffffULL)
+		    {
+		      reloc = BFD_RELOC_PPC64_PCREL28;
+		      break;
+		    }
+		  /* Fall through.  */
+		case BFD_RELOC_PPC64_GOT_PCREL34:
+		case BFD_RELOC_PPC64_PLT_PCREL34:
+		  if (operand->bitm != 0x3ffffffffULL
 		      || (operand->flags & PPC_OPERAND_NEGATIVE) != 0)
+		    as_warn (_("%s unsupported on this instruction"), "@pcrel");
+		  break;
+
+		case BFD_RELOC_LO16:
+		  if (operand->bitm == 0x3ffffffffULL
+		      && (operand->flags & PPC_OPERAND_NEGATIVE) == 0)
+		    reloc = BFD_RELOC_PPC64_D34_LO;
+		  else if ((operand->bitm | 0xf) != 0xffff
+			   || operand->shift != 0
+			   || (operand->flags & PPC_OPERAND_NEGATIVE) != 0)
 		    as_warn (_("%s unsupported on this instruction"), "@l");
 		  break;
 
 		case BFD_RELOC_HI16:
-		  if (operand->bitm != 0xffff
-		      || operand->shift != 0
-		      || (operand->flags & PPC_OPERAND_NEGATIVE) != 0)
+		  if (operand->bitm == 0x3ffffffffULL
+		      && (operand->flags & PPC_OPERAND_NEGATIVE) == 0)
+		    reloc = BFD_RELOC_PPC64_D34_HI30;
+		  else if (operand->bitm != 0xffff
+			   || operand->shift != 0
+			   || (operand->flags & PPC_OPERAND_NEGATIVE) != 0)
 		    as_warn (_("%s unsupported on this instruction"), "@h");
 		  break;
 
 		case BFD_RELOC_HI16_S:
-		  if (operand->bitm == 0xffff
-		      && operand->shift == (int) PPC_OPSHIFT_INV
-		      && opcode->opcode == (19 << 26) + (2 << 1))
+		  if (operand->bitm == 0x3ffffffffULL
+		      && (operand->flags & PPC_OPERAND_NEGATIVE) == 0)
+		    reloc = BFD_RELOC_PPC64_D34_HA30;
+		  else if (operand->bitm == 0xffff
+			   && operand->shift == (int) PPC_OPSHIFT_INV
+			   && opcode->opcode == (19 << 26) + (2 << 1))
 		    /* addpcis.  */
 		    reloc = BFD_RELOC_PPC_16DX_HA;
 		  else if (operand->bitm != 0xffff
@@ -3606,6 +3855,10 @@ md_assemble (char *str)
 		}
 #endif
 	    }
+	  else if (operand->bitm == 0x3ffffffffULL)
+	    reloc = BFD_RELOC_PPC64_D34;
+	  else if (operand->bitm == 0xfffffffULL)
+	    reloc = BFD_RELOC_PPC64_D28;
 
 	  /* For the absolute forms of branches, convert the PC
 	     relative form back into the absolute.  */
@@ -3655,53 +3908,69 @@ md_assemble (char *str)
 		case BFD_RELOC_16:
 		  reloc = BFD_RELOC_PPC64_ADDR16_DS;
 		  break;
+
 		case BFD_RELOC_LO16:
 		  reloc = BFD_RELOC_PPC64_ADDR16_LO_DS;
 		  break;
+
 		case BFD_RELOC_16_GOTOFF:
 		  reloc = BFD_RELOC_PPC64_GOT16_DS;
 		  break;
+
 		case BFD_RELOC_LO16_GOTOFF:
 		  reloc = BFD_RELOC_PPC64_GOT16_LO_DS;
 		  break;
+
 		case BFD_RELOC_LO16_PLTOFF:
 		  reloc = BFD_RELOC_PPC64_PLT16_LO_DS;
 		  break;
+
 		case BFD_RELOC_16_BASEREL:
 		  reloc = BFD_RELOC_PPC64_SECTOFF_DS;
 		  break;
+
 		case BFD_RELOC_LO16_BASEREL:
 		  reloc = BFD_RELOC_PPC64_SECTOFF_LO_DS;
 		  break;
+
 		case BFD_RELOC_PPC_TOC16:
 		  reloc = BFD_RELOC_PPC64_TOC16_DS;
 		  break;
+
 		case BFD_RELOC_PPC64_TOC16_LO:
 		  reloc = BFD_RELOC_PPC64_TOC16_LO_DS;
 		  break;
+
 		case BFD_RELOC_PPC64_PLTGOT16:
 		  reloc = BFD_RELOC_PPC64_PLTGOT16_DS;
 		  break;
+
 		case BFD_RELOC_PPC64_PLTGOT16_LO:
 		  reloc = BFD_RELOC_PPC64_PLTGOT16_LO_DS;
 		  break;
+
 		case BFD_RELOC_PPC_DTPREL16:
 		  reloc = BFD_RELOC_PPC64_DTPREL16_DS;
 		  break;
+
 		case BFD_RELOC_PPC_DTPREL16_LO:
 		  reloc = BFD_RELOC_PPC64_DTPREL16_LO_DS;
 		  break;
+
 		case BFD_RELOC_PPC_TPREL16:
 		  reloc = BFD_RELOC_PPC64_TPREL16_DS;
 		  break;
+
 		case BFD_RELOC_PPC_TPREL16_LO:
 		  reloc = BFD_RELOC_PPC64_TPREL16_LO_DS;
 		  break;
+
 		case BFD_RELOC_PPC_GOT_DTPREL16:
 		case BFD_RELOC_PPC_GOT_DTPREL16_LO:
 		case BFD_RELOC_PPC_GOT_TPREL16:
 		case BFD_RELOC_PPC_GOT_TPREL16_LO:
 		  break;
+
 		default:
 		  as_bad (_("unsupported relocation for DS offset field"));
 		  break;
@@ -3828,14 +4097,50 @@ md_assemble (char *str)
   if ((frag_now_fix () & addr_mask) != 0)
     as_bad (_("instruction address is not a multiple of %d"), addr_mask + 1);
 
-  /* Differentiate between two and four byte insns.  */
+  /* Differentiate between two, four, and eight byte insns.  */
   insn_length = 4;
   if ((ppc_cpu & PPC_OPCODE_VLE) != 0 && PPC_OP_SE_VLE (insn))
     insn_length = 2;
+  else if ((opcode->flags & PPC_OPCODE_POWERXX) != 0
+	   && PPC_PREFIX_P (insn))
+    {
+      struct insn_label_list *l;
+
+      insn_length = 8;
+
+      /* 8-byte prefix instructions are not allowed to cross 64-byte
+	 boundaries.  */
+      frag_align_code (6, 4);
+      record_alignment (now_seg, 6);
+
+      /* Update "dot" in any expressions used by this instruction, and
+	 a label attached to the instruction.  By "attached" we mean
+	 on the same source line as the instruction and without any
+	 intervening semicolons.  */
+      dot_value = frag_now_fix ();
+      dot_frag = frag_now;
+      for (l = insn_labels; l != NULL; l = l->next)
+	{
+	  symbol_set_frag (l->label, dot_frag);
+	  S_SET_VALUE (l->label, dot_value);
+	}
+    }
+
+  ppc_clear_labels ();
 
   f = frag_more (insn_length);
   frag_now->insn_addr = addr_mask;
-  md_number_to_chars (f, insn, insn_length);
+
+  /* The prefix part of an 8-byte instruction always occupies the lower
+     addressed word in a doubleword, regardless of endianness.  */
+  if (!target_big_endian && insn_length == 8)
+    {
+      md_number_to_chars (f, PPC_GET_PREFIX (insn), 4);
+      md_number_to_chars (f + 4, PPC_GET_SUFFIX (insn), 4);
+    }
+  else
+    md_number_to_chars (f, insn, insn_length);
+
   last_insn = insn;
   last_seg = now_seg;
   last_subseg = now_subseg;
@@ -6118,30 +6423,6 @@ ppc_symbol_new_hook (symbolS *sym)
     as_bad (_("unrecognized symbol suffix"));
 }
 
-/* Set the class of a label based on where it is defined.  This
-   handles symbols without suffixes.  Also, move the symbol so that it
-   follows the csect symbol.  */
-
-void
-ppc_frob_label (symbolS *sym)
-{
-  if (ppc_current_csect != (symbolS *) NULL)
-    {
-      if (symbol_get_tc (sym)->symbol_class == -1)
-	symbol_get_tc (sym)->symbol_class = symbol_get_tc (ppc_current_csect)->symbol_class;
-
-      symbol_remove (sym, &symbol_rootP, &symbol_lastP);
-      symbol_append (sym, symbol_get_tc (ppc_current_csect)->within,
-		     &symbol_rootP, &symbol_lastP);
-      symbol_get_tc (ppc_current_csect)->within = sym;
-      symbol_get_tc (sym)->within = ppc_current_csect;
-    }
-
-#ifdef OBJ_ELF
-  dwarf2_emit_label (sym);
-#endif
-}
-
 /* This variable is set by ppc_frob_symbol if any absolute symbols are
    seen.  It tells ppc_adjust_symtab whether it needs to look through
    the symbols.  */
@@ -6673,14 +6954,6 @@ ppc_force_relocation (fixS *fix)
 
   return generic_force_reloc (fix);
 }
-
-void
-ppc_new_dot_label (symbolS *sym)
-{
-  /* Anchor this label to the current csect for relocations.  */
-  symbol_get_tc (sym)->within = ppc_current_csect;
-}
-
 #endif /* OBJ_XCOFF */
 
 #ifdef OBJ_ELF
@@ -6767,6 +7040,7 @@ ppc_fix_adjustable (fixS *fix)
 	  && fix->fx_r_type != BFD_RELOC_PPC64_GOT16_LO_DS
 	  && fix->fx_r_type != BFD_RELOC_16_GOT_PCREL
 	  && fix->fx_r_type != BFD_RELOC_32_GOTOFF
+	  && fix->fx_r_type != BFD_RELOC_PPC64_GOT_PCREL34
 	  && fix->fx_r_type != BFD_RELOC_24_PLT_PCREL
 	  && fix->fx_r_type != BFD_RELOC_32_PLTOFF
 	  && fix->fx_r_type != BFD_RELOC_32_PLT_PCREL
@@ -6776,6 +7050,7 @@ ppc_fix_adjustable (fixS *fix)
 	  && fix->fx_r_type != BFD_RELOC_64_PLTOFF
 	  && fix->fx_r_type != BFD_RELOC_64_PLT_PCREL
 	  && fix->fx_r_type != BFD_RELOC_PPC64_PLT16_LO_DS
+	  && fix->fx_r_type != BFD_RELOC_PPC64_PLT_PCREL34
 	  && fix->fx_r_type != BFD_RELOC_PPC64_PLTGOT16
 	  && fix->fx_r_type != BFD_RELOC_PPC64_PLTGOT16_LO
 	  && fix->fx_r_type != BFD_RELOC_PPC64_PLTGOT16_HI
@@ -6984,8 +7259,32 @@ md_apply_fix (fixS *fixP, valueT *valP, segT seg)
 	  fixP->fx_r_type = BFD_RELOC_PPC64_REL16_HIGHESTA;
 	  break;
 
+	case BFD_RELOC_PPC64_ADDR16_HIGHER34:
+	  fixP->fx_r_type = BFD_RELOC_PPC64_REL16_HIGHER34;
+	  break;
+
+	case BFD_RELOC_PPC64_ADDR16_HIGHERA34:
+	  fixP->fx_r_type = BFD_RELOC_PPC64_REL16_HIGHERA34;
+	  break;
+
+	case BFD_RELOC_PPC64_ADDR16_HIGHEST34:
+	  fixP->fx_r_type = BFD_RELOC_PPC64_REL16_HIGHEST34;
+	  break;
+
+	case BFD_RELOC_PPC64_ADDR16_HIGHESTA34:
+	  fixP->fx_r_type = BFD_RELOC_PPC64_REL16_HIGHESTA34;
+	  break;
+
 	case BFD_RELOC_PPC_16DX_HA:
 	  fixP->fx_r_type = BFD_RELOC_PPC_REL16DX_HA;
+	  break;
+
+	case BFD_RELOC_PPC64_D34:
+	  fixP->fx_r_type = BFD_RELOC_PPC64_PCREL34;
+	  break;
+
+	case BFD_RELOC_PPC64_D28:
+	  fixP->fx_r_type = BFD_RELOC_PPC64_PCREL28;
 	  break;
 
 	default:
@@ -7234,6 +7533,8 @@ md_apply_fix (fixS *fixP, valueT *valP, segT seg)
 	case BFD_RELOC_PPC_VLE_SDAREL_HI16D:
 	case BFD_RELOC_PPC_VLE_SDAREL_HA16A:
 	case BFD_RELOC_PPC_VLE_SDAREL_HA16D:
+	case BFD_RELOC_PPC64_GOT_PCREL34:
+	case BFD_RELOC_PPC64_PLT_PCREL34:
 	  gas_assert (fixP->fx_addsy != NULL);
 	  /* Fallthru */
 
@@ -7285,9 +7586,12 @@ md_apply_fix (fixS *fixP, valueT *valP, segT seg)
 #else
 #define APPLY_RELOC 1
 #endif
+      /* We need to call the insert function even when fieldval is
+	 zero if the insert function would translate that zero to a
+	 bit pattern other than all zeros.  */
       if ((fieldval != 0 && APPLY_RELOC) || operand->insert != NULL)
 	{
-	  unsigned long insn;
+	  uint64_t insn;
 	  unsigned char *where;
 
 	  /* Fetch the instruction, insert the fully resolved operand
@@ -7295,34 +7599,56 @@ md_apply_fix (fixS *fixP, valueT *valP, segT seg)
 	  where = (unsigned char *) fixP->fx_frag->fr_literal + fixP->fx_where;
 	  if (target_big_endian)
 	    {
-	      if (fixP->fx_size == 4)
-		insn = bfd_getb32 (where);
-	      else
+	      if (fixP->fx_size < 4)
 		insn = bfd_getb16 (where);
+	      else
+		{
+		  insn = bfd_getb32 (where);
+		  if (fixP->fx_size > 4)
+		    insn = insn << 32 | bfd_getb32 (where + 4);
+		}
 	    }
 	  else
 	    {
-	      if (fixP->fx_size == 4)
-		insn = bfd_getl32 (where);
-	      else
+	      if (fixP->fx_size < 4)
 		insn = bfd_getl16 (where);
+	      else
+		{
+		  insn = bfd_getl32 (where);
+		  if (fixP->fx_size > 4)
+		    insn = insn << 32 | bfd_getl32 (where + 4);
+		}
 	    }
 	  insn = ppc_insert_operand (insn, operand, fieldval,
 				     fixP->tc_fix_data.ppc_cpu,
 				     fixP->fx_file, fixP->fx_line);
 	  if (target_big_endian)
 	    {
-	      if (fixP->fx_size == 4)
-		bfd_putb32 (insn, where);
-	      else
+	      if (fixP->fx_size < 4)
 		bfd_putb16 (insn, where);
+	      else
+		{
+		  if (fixP->fx_size > 4)
+		    {
+		      bfd_putb32 (insn, where + 4);
+		      insn >>= 32;
+		    }
+		  bfd_putb32 (insn, where);
+		}
 	    }
 	  else
 	    {
-	      if (fixP->fx_size == 4)
-		bfd_putl32 (insn, where);
-	      else
+	      if (fixP->fx_size < 4)
 		bfd_putl16 (insn, where);
+	      else
+		{
+		  if (fixP->fx_size > 4)
+		    {
+		      bfd_putl32 (insn, where + 4);
+		      insn >>= 32;
+		    }
+		  bfd_putl32 (insn, where);
+		}
 	    }
 	}
 

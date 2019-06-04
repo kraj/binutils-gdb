@@ -171,10 +171,6 @@ extern char *ppc_canonicalize_symbol_name (char *);
 #define tc_symbol_new_hook(sym) ppc_symbol_new_hook (sym)
 extern void ppc_symbol_new_hook (symbolS *);
 
-/* Set the symbol class of a label based on the csect.  */
-#define tc_frob_label(sym) ppc_frob_label (sym)
-extern void ppc_frob_label (symbolS *);
-
 /* TOC relocs requires special handling.  */
 #define tc_fix_adjustable(FIX) ppc_fix_adjustable (FIX)
 extern int ppc_fix_adjustable (struct fix *);
@@ -206,10 +202,10 @@ do {								\
 extern void ppc_xcoff_end (void);
 #define md_end ppc_xcoff_end
 
+#endif /* OBJ_XCOFF */
+
 #define tc_new_dot_label(sym) ppc_new_dot_label (sym)
 extern void ppc_new_dot_label (symbolS *);
-
-#endif /* OBJ_XCOFF */
 
 extern const char       ppc_symbol_chars[];
 #define tc_symbol_chars ppc_symbol_chars
@@ -277,10 +273,24 @@ extern int ppc_force_relocation (struct fix *);
      || (FIX)->fx_r_type == BFD_RELOC_PPC64_HIGHER_S		\
      || (FIX)->fx_r_type == BFD_RELOC_PPC64_HIGHEST		\
      || (FIX)->fx_r_type == BFD_RELOC_PPC64_HIGHEST_S		\
-     || (FIX)->fx_r_type == BFD_RELOC_PPC_16DX_HA))
+     || (FIX)->fx_r_type == BFD_RELOC_PPC64_ADDR16_HIGHER34	\
+     || (FIX)->fx_r_type == BFD_RELOC_PPC64_ADDR16_HIGHERA34	\
+     || (FIX)->fx_r_type == BFD_RELOC_PPC64_ADDR16_HIGHEST34	\
+     || (FIX)->fx_r_type == BFD_RELOC_PPC64_ADDR16_HIGHESTA34	\
+     || (FIX)->fx_r_type == BFD_RELOC_PPC_16DX_HA		\
+     || (FIX)->fx_r_type == BFD_RELOC_PPC64_D34			\
+     || (FIX)->fx_r_type == BFD_RELOC_PPC64_D28))
 #endif
 
 #define TC_VALIDATE_FIX_SUB(FIX, SEG) 0
+
+/* Various frobbings of labels and their addresses.  */
+#define md_start_line_hook() ppc_start_line_hook ()
+extern void ppc_start_line_hook (void);
+
+/* Set the symbol class of a label based on the csect.  */
+#define tc_frob_label(sym) ppc_frob_label (sym)
+extern void ppc_frob_label (symbolS *);
 
 /* call md_pcrel_from_section, not md_pcrel_from */
 #define MD_PCREL_FROM_SECTION(FIX, SEC) md_pcrel_from_section(FIX, SEC)

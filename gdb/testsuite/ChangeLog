@@ -1,3 +1,197 @@
+2019-06-04  Christian Biesinger  <cbiesinger@google.com>
+
+	* gdb/testsuite/gdb.python/py-type.exp: Test for new
+	  gdb.Type.objfile property.
+
+2019-06-03  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* lib/gdb.exp (help_list_trailer): New regexp variable
+	factorizing the help trailer message.
+	(test_class_help): Use help_list_trailer.  Add LIST_OF_COMMANDS
+	arg to allow to better factorize various tests.
+	(test_user_defined_class_help): Factorizes testing 'help user-defined'.
+	(test_prefix_command_help): Use help_list_trailer.
+	* gdb.python/py-cmd.exp: Use test_user_defined_class_help.
+	* gdb.guile/scm-cmd.exp: Likewise.
+	* gdb.trace/tracecmd.exp: Update caller of test_class_help.
+	* gdb.base/help.exp: Use test_user_defined_class_help.
+	* gdb.base/style.exp: Add tests for styling of help and apropos.
+	* lib/gdb-utils.exp (style): Add title and highlight styles.
+
+2019-05-31  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* gdb.base/shell.exp: Test pipe command, $_shell_exitcode,
+	$_shell_exitsignal.
+	* gdb.base/default.exp: Update for new convenience variables.
+
+2019-05-29  Tom Tromey  <tromey@adacore.com>
+
+	* gdb.ada/complete.exp (test_gdb_no_completion): Add "/" and "-"
+	to "break complete ada" test case's regexp.
+
+2019-05-29  Tom Tromey  <tromey@adacore.com>
+
+	PR c++/20020:
+	* gdb.cp/constexpr-field.exp: New file.
+	* gdb.cp/constexpr-field.cc: New file.
+
+2019-05-29  Tom Tromey  <tromey@adacore.com>
+
+	* gdb.base/finish.exp (finish_no_print): New proc.
+	(finish_tests): Call it.
+
+2019-05-24  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.dwarf2/gdb-add-index.exp: New file.
+
+2019-05-22  Tom Tromey  <tromey@adacore.com>
+
+	* gdb.base/info-shared.exp (check_info_shared): Use "style".
+	* gdb.base/style.exp: Use "style".
+	* lib/gdb-utils.exp (style): New proc.
+
+2019-05-22  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.base/align.exp: Require c++11.
+
+2019-05-22  Tom de Vries  <tdevries@suse.de>
+
+	PR testsuite/24586
+	* gdb.python/py-mi-var-info-path-expression.exp: Call
+	mi_skip_python_tests to check if python is supported.
+
+2019-05-22  Alan Hayward  <alan.hayward@arm.com>
+
+	* gdb.arch/aarch64-pauth.c: New test.
+	* gdb.arch/aarch64-pauth.exp: New file.
+
+2019-05-22  Alan Hayward  <alan.hayward@arm.com>
+
+	* README (Re-running Tests Outside The Testsuite): New section.
+
+2019-05-21  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.arch/amd64-eval.exp: Require c++11.
+	* gdb.base/max-depth.exp: Same.
+	* gdb.compile/compile-cplus-array-decay.exp: Same.
+	* gdb.cp/meth-typedefs.exp: Same.
+	* gdb.cp/subtypes.exp: Same.
+	* gdb.cp/temargs.exp: Same.
+
+2019-05-21  Alan Hayward  <alan.hayward@arm.com>
+
+	* lib/gdbserver-support.exp (gdbserver_run): Mark kill as optional.
+
+2019-05-18  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	PR gdb/18644
+	* gdb.fortran/complex.exp: Remove setup_kfail calls.
+	* gdb.fortran/printing-types.exp: Add new test.
+	* gdb.fortran/printing-types.f90: Add 16-byte real variable for
+	testing.
+	* gdb.fortran/type-kinds.exp (test_cast_1_to_type_kind): Remove
+	setup_kfail call.
+
+2019-05-17  Alan Hayward  <alan.hayward@arm.com>
+
+	* README (Running the Testsuite): Change example.
+	(Testsuite Parameters): Remove TRANSCRIPT.
+	* lib/gdb.exp: Remove TRANSCRIPT check.
+
+2019-05-17  Alan Hayward  <alan.hayward@arm.com>
+
+	* README (Testsuite Parameters): Add replay logging to
+	GDBSERVER_DEBUG.
+	(gdbserver,debug): Refer to GDBSERVER_DEBUG.
+	* lib/gdbserver-support.exp (gdbserver_start): Treat gdbserverdebug
+	as a comma separated list.
+	(gdb_debug_init): Override procedure.
+
+2019-05-17  Alan Hayward  <alan.hayward@arm.com>
+
+	* lib/gdb.exp (default_gdb_spawn): Call gdb_write_cmd_file.
+	(gdb_write_cmd_file): New procedure.
+	* lib/gdbserver-support.exp (gdbserver_start): Call
+	gdbserver_write_cmd_file.
+	(gdbserver_write_cmd_file): New procedure.
+
+2019-05-17  Alan Hayward  <alan.hayward@arm.com>
+
+	* lib/gdb.exp (gdb_unload): Mark Y as an answer.
+	(delete_breakpoints): Likewise.
+	(gdb_run_cmd): Likewise.
+	(gdb_start_cmd): Likewise.
+	(gdb_starti_cmd): Likewise.
+	(gdb_internal_error_resync): Likewise.
+	(gdb_test_multiple): Likewise.
+	(gdb_reinitialize_dir): Likewise.
+	(default_gdb_exit): Likewise.
+	(gdb_file_cmd): Mark kill as optional.
+	(default_gdb_start): Call gdb_stdin_log_init.
+	(send_gdb): Call gdb_stdin_log_write.
+	(rerun_to_main): Mark Y as an answer.
+	(gdb_stdin_log_init): New function.
+	(gdb_stdin_log_write): Likewise.
+
+2019-05-17  Alan Hayward  <alan.hayward@arm.com>
+
+	* gdb.base/breakpoint-in-ro-region.exp: Disable when debugging.
+	* gdb.base/debug-expr.exp: Likewise.
+	* gdb.base/foll-fork.exp: Likewise.
+	* gdb.base/foll-vfork.exp: Likewise.
+	* gdb.base/fork-print-inferior-events.exp: Likewise.
+	* gdb.base/gdb-sigterm.exp: Likewise.
+	* gdb.base/gdbinit-history.exp: Likewise.
+	* gdb.base/osabi.exp: Likewise.
+	* gdb.base/sss-bp-on-user-bp-2.exp: Likewise.
+	* gdb.base/ui-redirect.exp: Likewise.
+	* gdb.gdb/unittest.exp: Likewise.
+	* gdb.mi/mi-break.exp: Disable separate-mi-tty when debugging.
+	* gdb.mi/mi-watch.exp: Likewise.
+	* gdb.mi/new-ui-mi-sync.exp: Likewise.
+	* gdb.mi/user-selected-context-sync.exp: Likewise.
+	* gdb.python/python.exp: Disable debug test when debugging.
+	* gdb.threads/check-libthread-db.exp: Disable when debugging.
+	* gdb.threads/signal-while-stepping-over-bp-other-thread.exp:
+	Likewise.
+	* gdb.threads/stepi-random-signal.exp: Likewise.
+
+2019-05-17  Alan Hayward  <alan.hayward@arm.com>
+
+	* Makefile.in: Pass through GDB_DEBUG.
+	* README (Testsuite Parameters): Add GDB_DEBUG.
+	(gdb,debug): Add board setting.
+	* lib/gdb.exp (default_gdb_start): Start debugging.
+	(gdb_debug_enabled): New procedure.
+	(gdb_debug_init): Likewise.
+
+2019-05-17  Alan Hayward  <alan.hayward@arm.com>
+	
+	* Makefile.in: Pass through GDB_DEBUG.
+	* README (Testsuite Parameters): Add GDB_DEBUG.
+	(gdb,debug): Add board setting.
+	* lib/gdb.exp (default_gdb_start): Start debugging.
+	(gdb_debug_enabled): New procedure.
+	(gdb_debug_init): Likewise.
+
+2019-05-17  Alan Hayward  <alan.hayward@arm.com>
+
+	* gdb.base/ui-redirect.exp: Add debug redirect tests.
+
+2019-05-17  Alan Hayward  <alan.hayward@arm.com>
+
+	* gdb.base/ui-redirect.exp: Test redirection.
+
+2019-01-28  Jan Vrany  <jan.vrany@fit.cvut.cz>
+
+	* gdb.mi/mi-complete.exp: New file.
+	* gdb.mi/mi-complete.cc: Likewise.
+
+2019-05-15  Bernhard Heckel  <bernhard.heckel@intel.com>
+
+	* gdb.fortran/vla-sizeof.exp: Add tests of sizeof applied to
+	indexed and sliced arrays, and pointers to arrays.
+
 2019-05-14  Tom Tromey  <tromey@adacore.com>
 
 	* gdb.base/info-shared.exp (check_info_shared): Add "info shared"

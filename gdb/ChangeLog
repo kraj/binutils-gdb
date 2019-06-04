@@ -1,3 +1,364 @@
+2019-06-04  Christian Biesinger  <cbiesinger@google.com>
+
+	Add objfile property to gdb.Type.
+	* gdb/NEWS: Mention Python API addition.
+	* gdb/python/py-type.c (typy_get_objfile): New method.
+
+2019-06-03  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* NEWS: Mention the new set|show style [title|highlight].
+	Mention changes to "show style", "help" and "apropos".
+
+2019-06-03  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* cli/cli-decode.h (apropos_cmd): Add verbose argument.
+	* cli/cli-decode.c (apropos_cmd): Likewise.  Use print_doc_of_command
+	instead of print_help_for_command.
+	(print_doc_of_command): New function.
+	(help_list): Add 'apropos -v word' suggestion.
+	(print_help_for_command): Style the command name using title style.
+	* cli/cli-cmds.c (apropos_command): Parse optional -v flag.
+	(_initialize_cli_cmds): Describe -v in apropos_command help.
+
+2019-06-03  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* cli/cli-style.h (cli_style_option): Add name in constructor,
+	add m_name class member, add constructor with intensity,
+	add name class function.
+	(cli_style_option::add_setshow_commands): Remove name argument.
+	(highlight_style, title_style): New styles.
+	* cli/cli-style.c (do_show): New function that shows a style
+	characteristic styling the style name with itself.
+	(set_style_name): New function.
+	(STYLE_ADD_SETSHOW_COMMANDS): Remove NAME arguments.
+	Update all callers according to the changes in cli/cli-style.h.
+	* utils.h (fputs_highlighted): New function.
+	* utils.c (fputs_highlighted): Likewise.
+
+2019-05-31  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* NEWS: Mention new pipe command and new convenience variables.
+
+2019-05-31  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* cli/cli-cmds.c (pipe_command): New function.
+	(_initialize_cli_cmds): Call add_com for pipe_command.
+	Define | as an alias for pipe.
+	(exit_status_set_internal_vars): New function.
+	(shell_escape): Call exit_status_set_internal_vars.
+	cli/cli-decode.c (find_command_name_length): Recognize | as
+	a single character command.
+
+2019-05-31  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* gdbcmd.h (execute_command_to_ui_file): New declaration.
+	top.c (execute_command_to_ui_file): New function, mostly a copy
+	of execute_command_to_string.
+	(execute_command_to_string): Implement by calling
+	execute_command_to_ui_file.
+
+2019-05-31  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* top.h (saved_command_line): Remove declaration.
+	* top.c (previous_saved_command_line, previous_repeat_arguments):
+	New variables.
+	(saved_command_line): Make static, define together with other
+	'repeat variables'.
+	(dont_repeat): Clear repeat_arguments.
+	(repeat_previous, get_saved_command_line, save_command_line):
+	New functions.
+	(gdb_init): Initialize saved_command_line
+	and previous_saved_command_line.
+	* main.c (captured_main_1): Remove saved_command_line initialization.
+	* event-top.c (handle_line_of_input): Update to use
+	the new 'repeat' related functions instead of direct access to
+	saved_command_line.
+	* command.h (repeat_previous, get_saved_command_line,
+	save_command_line): New declarations.
+	(dont_repeat): Add comment.
+
+2019-05-30  Tom Tromey  <tromey@adacore.com>
+
+	* gdbtypes.h (struct range_bounds) <flag_upper_bound_is_count>:
+	Fix comment.
+	(TYPE_ARRAY_UPPER_BOUND_IS_UNDEFINED): Rewrite comment.
+
+2019-05-30  Jan Vrany  <jan.vrany@fit.cvut.cz>
+
+	PR cli/24587
+	* completer.c (complete): Initialize variable word.
+
+2019-05-29  Sergio Durigan Junior  <sergiodj@redhat.com>
+
+	Ref.: https://bugzilla.redhat.com/show_bug.cgi?id=1708192
+	Ref.: https://bugzilla.redhat.com/show_bug.cgi?id=1715008
+	* dwarf2read.c (dwarf_decode_macro_bytes): Move check to see if
+	'body' is NULL to the outter 'if', protecting the '!is_define'
+	situation as well.
+
+2019-05-29  Tom Tromey  <tromey@adacore.com>
+
+	* dwarf2read.c (partial_die_parent_scope): Call dwarf_tag_name.
+	(dwarf_unknown): New function.
+	(dwarf_tag_name, dwarf_attr_name, dwarf_form_name)
+	(dwarf_type_encoding_name): Use dwarf_unknown.
+
+2019-05-29  Tom Tromey  <tromey@adacore.com>
+
+	PR c++/20020:
+	* cp-valprint.c (cp_print_value_fields): Call
+	cp_print_static_field inside "try".
+
+2019-05-29  Tom Tromey  <tromey@adacore.com>
+
+	* inflow.c (struct terminal_info): Add default operator=.
+	* configure: Rebuild.
+	* warning.m4 (AM_GDB_WARNINGS): Add -Wdeprecated-copy,
+	-Wdeprecated-copy-dtor, -Wredundant-move.
+
+2019-05-29  Tom Tromey  <tromey@adacore.com>
+
+	* NEWS: Add entry.
+	* infcmd.c (print_return_value_1): Handle finish_print
+	option.
+	(show_print_finish): New function.
+	(_initialize_infcmd): Add "set/show print finish" commands.
+	* valprint.c (user_print_options): Initialize new member.
+	* valprint.h (struct value_print_options) <finish_print>: New
+	member.
+
+2019-05-28  Tom Tromey  <tromey@adacore.com>
+
+	* ada-lang.c (ada_remove_Xbn_suffix)
+	(find_old_style_renaming_symbol)
+	(parse_old_style_renaming): Remove.
+	(ada_find_renaming_symbol): Don't call
+	find_old_style_renaming_symbol.
+	(ada_is_renaming_symbol): Rename from
+	ada_find_renaming_symbol.  Remove "block" parameter.  Return
+	bool.  Now static.
+	(ada_read_var_value): Update and simplify.
+	* ada-exp.y (write_var_or_type): Remove old code.
+
+2019-05-28  Alan Hayward  <alan.hayward@arm.com>
+
+	* event-top.c: Remove include comment.
+	* inflow.c (class scoped_ignore_sigttou): Move from here...
+	* inflow.h (class scoped_ignore_sigttou): ...to here.
+	* ser-unix.c (hardwire_drain_output): Block SIGTTOU during drain.
+	* top.c:  Remove include comment.
+
+2019-05-27  Tom Tromey  <tom@tromey.com>
+
+	* NEWS: Fix typo.
+
+2019-05-22  Tom Tromey  <tromey@adacore.com>
+
+	* target.c (target_follow_exec): Constify parameter.
+	* target-delegates.c: Rebuild.
+	* remote.c (remote_target::follow_exec): Constify parameter.
+	* infrun.c (follow_exec): Constify parameter.
+	* target.h (struct target_ops) <follow_exec>: Constify parameter.
+	(target_follow_exec): Likewise.
+
+2019-05-22  Alan Hayward  <alan.hayward@arm.com>
+
+	* aarch64-tdep.c (aarch64_execute_dwarf_cfa_vendor_op): Treat
+	DW_CFA_AARCH64_negate_ra_state as nop on non pauth targets.
+
+2019-05-22  Alan Hayward  <alan.hayward@arm.com>
+
+	* NEWS: Add debugredirect and testsuite sections.
+
+2019-05-22  Simon Cook  <simon.cook@embecosm.com>
+
+	* riscv-tdep.c (riscv_gdbarch_init): Support determining flen from
+	target descriptions using exclusively floating point register name
+	aliases.
+
+2019-05-21  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	PR gdb/18644:
+	* f-lang.c (build_fortran_types): Handle the case where
+	gdbarch_floatformat_for_type returns a nullptr.
+
+2019-05-21  Tom de Vries  <tdevries@suse.de>
+
+	PR cli/24587
+	* cli/cli-cmds.c (complete_command): Fix use of unitialized variable.
+
+2019-05-18  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	PR gdb/18644:
+	* f-lang.c (build_fortran_types): Use floatformats_ia64_quad for
+	16-byte floats.
+	* i386-tdep.c (i386_floatformat_for_type): Use
+	floatformats_ia64_quad for the 16-byte floating point component
+	within a fortran 32-byte complex number.
+
+2019-05-18  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* dwarf2read.c (struct cu_partial_die_info): Add constructor,
+	delete default constructor.
+	(find_partial_die): Update to return const struct.
+	(partial_die_parent_scope): Move variable declaration into scope
+	of its use and change its type to auto.
+	(guess_partial_die_structure_name): Likewise.
+	(partial_die_info::fixup): Likewise.
+
+2019-05-17  Tom Tromey  <tromey@adacore.com>
+
+	* source.c (find_and_open_source): Remove cast.
+
+2019-05-17  Tom Tromey  <tromey@adacore.com>
+
+	* annotate.c (annotate_source): Make "filename" const.
+	* annotate.h (annotate_source): Use const.
+
+2019-05-17  Alan Hayward  <alan.hayward@arm.com>
+
+	* disasm.c (set_disassembler_options): Send errors to stderr.
+
+2019-05-17  Alan Hayward  <alan.hayward@arm.com>
+
+	* cli/cli-interp.c (struct saved_output_files): Add saved entry.
+	(cli_interp_base::set_logging): Check debug_redirect.
+	* cli/cli-interp.h (set_logging): Add debug_redirect parameter.
+	* cli/cli-logging.c (debug_redirect): Add static variable.
+	(pop_output_files): Add default param.
+	(handle_redirections): Print debug setting.
+	(show_logging_command): Likewise.
+	(_initialize_cli_logging): Add debugredirect command.
+	* interps.c (current_interp_set_logging): Add debug_redirect
+	parameter.
+	* interps.h (set_logging): Add debug_redirect parameter.
+	(current_interp_set_logging): Likewise.
+	* mi/mi-common.h: Likewise.
+	* mi/mi-interp.c (mi_interp::set_logging): Likewise.
+
+2019-05-17  Alan Hayward  <alan.hayward@arm.com>
+	    Tom Tromey  <tromey@adacore.com>
+
+	* cli/cli-interp.c (cli_interp_base::set_logging): Create tee_file
+	directly.
+	* cli/cli-interp.h (make_logging_output): Remove declaration.
+	* cli/cli-logging.c (make_logging_output): Remove function.
+	* mi/mi-interp.c (mi_interp::set_logging): Create tee_file
+	directly.
+	* ui-file.c (tee_file::tee_file): Remove bools.
+	(tee_file::~tee_file): Remove deletes.
+	* ui-file.h (tee_file): Remove bools.
+
+2019-01-28  Jan Vrany  <jan.vrany@fit.cvut.cz>
+
+	* mi/mi-cmds.h (mi_cmd_complete): New function.
+	* mi/mi-main.c (mi_cmd_complete): Likewise.
+	* mi/mi-cmds.c: Define new MI command -complete.
+	* NEWS: Mention new -complete command.
+
+2019-01-24  Jan Vrany  <jan.vrany@fit.cvut.cz>
+
+	* completer.h (complete): New function.
+	* completer.c (complete): Likewise.
+	* cli/cli-cmds.c: (complete_command): Update to use new complete()
+	function defined in completer.h.
+
+2019-05-17  Jan Vrany  <jan.vrany@fit.cvut.cz>
+
+       * MAINTAINERS (Write After Approval): Add myself.
+
+2019-05-17  Tom de Vries  <tdevries@suse.de>
+
+	PR gdb/24094
+	* dwarf2read.c (struct cu_partial_die_info): New struct.
+	(find_partial_die): Return cu_partial_die_info.
+	(partial_die_parent_scope, guess_partial_die_structure_name)
+	(partial_die_info::fixup): Handle new return type of find_partial_die.
+
+2019-05-16  Sergio Durigan Junior  <sergiodj@redhat.com>
+
+	* stap-probe.c (stap_parse_register_operand): Make "regname" an
+	"std::string", simplifying the algorithm.
+
+2019-05-16  Sergio Durigan Junior  <sergiodj@redhat.com>
+
+	* stap-probe.c (handle_stap_probe): Fix complaint formatting.
+	(stap_static_probe_ops::get_probes): Likewise.
+
+2019-05-16  Sergio Durigan Junior  <sergiodj@redhat.com>
+
+	* stap-probe.c (stap_parse_register_operand): Make "if (*p->arg ==
+	'-')" and "else if".
+	(stap_parse_single_operand): Join checks for
+	"gdbarch_stap_parse_special_token_p" and
+	"gdbarch_stap_parse_special_token" in the same "if" statement.
+	Invert check when verifying for operation on register
+	displacement.
+
+2019-05-16  Sergio Durigan Junior  <sergiodj@redhat.com>
+
+	* stap-probe.c (stap_get_opcode): Update comment.
+	(stap_get_expected_argument_type): Likewise.
+	(handle_stap_probe): Likewise.
+
+2019-05-16  Sergio Durigan Junior  <sergiodj@redhat.com>
+
+	* i386-tdep.c (i386_stap_parse_special_token_triplet): Change
+	return type to 'bool'.  Adjust comment.  Use 'bool' when
+	appropriate.
+	(i386_stap_parse_special_token_three_arg_disp): Likewise.
+	* stap-probe.c (stap_parse_argument_1): Likewise.
+	(stap_is_operator): Likewise.
+	(stap_is_generic_prefix): Likewise.
+	(stap_is_register_prefix): Likewise.
+	(stap_is_register_indirection_prefix): Likewise.
+	(stap_is_integer_prefix): Likewise.
+	(stap_generic_check_suffix): Likewise.
+	(stap_check_integer_suffix): Likewise.
+	(stap_check_register_suffix): Likewise.
+	(stap_check_register_indirection_suffix): Likewise.
+	(stap_parse_register_operand): Likewise.
+	(stap_parse_single_operand): Likewise.
+	(stap_parse_argument_1): Likewise.
+	(stap_probe::get_argument_count): Likewise.
+	(stap_is_operator): Likewise.
+
+2019-05-16  Tom Tromey  <tromey@adacore.com>
+
+	* darwin-nat.c (thread_info_from_private_thread_info): Add struct
+	keyword to foreach.
+
+2019-05-15  Simon Marchi  <simon.marchi@efficios.com>
+
+	* linux-thread-db.c (try_thread_db_load_1): Change return type
+	to bool.
+	(try_thread_db_load): Likewise.
+	(try_thread_db_load_from_pdir_1): Likewise.
+	(try_thread_db_load_from_pdir): Likewise.
+	(try_thread_db_load_from_sdir): Likewise.
+	(try_thread_db_load_from_dir): Likewise.
+	(thread_db_load_search): Likewise.
+	(has_libpthread): Likewise.
+	(thread_db_load): Likewise.
+
+2019-05-15  Sergio Durigan Junior  <sergiodj@redhat.com>
+
+	Ref.: https://bugzilla.redhat.com/show_bug.cgi?id=1708192
+	* dwarf2read.c (parse_macro_definition): Check whether 'body' is
+	NULL, and complain/return if that's the case.
+
+2019-05-15  John Darrington <john@darrington.wattle.id.au>
+
+	* s12z-tdep.c (push_pull_get_stack_adjustment): New function.
+	(advance, posn, abstract_read_memory): New functions.
+	[struct mem_read_abstraction]: New struct.
+	(s12z_frame_cache): Use opcodes API to interpret stack frame code.
+
+2019-05-14  Tom Tromey  <tromey@adacore.com>
+
+	* ada-lang.c (coerce_unspec_val_to_type): Only set address when
+	value is not lval_memory.
+
 2019-05-14  Tom Tromey  <tromey@adacore.com>
 
 	* solib.c (info_sharedlibrary_command): Style the file name.

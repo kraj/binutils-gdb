@@ -53,6 +53,7 @@ case $targ in
     echo "*** Use or1k-*-elf or or1k-*-linux as the target instead" >&2
     exit 1
     ;;
+ c30-*-*aout* | tic30-*-*aout* | \
  null)
     if test "x$enable_obsolete" != xyes; then
       echo "*** Configuration $targ is obsolete." >&2
@@ -479,6 +480,14 @@ case "${targ}" in
   d30v-*-*)
     targ_defvec=d30v_elf32_vec
     ;;
+
+#ifdef BFD64
+  bpf-*-none)
+    targ_defvec=bpf_elf64_le_vec
+    targ_selvecs=bpf_elf64_be_vec
+    targ_underscore=yes
+    ;;
+#endif
 
   epiphany-*-*)
     targ_defvec=epiphany_elf32_vec
@@ -1420,6 +1429,12 @@ case "${targ}" in
     ;;
 
 # END OF targmatch.h
+  bpf-*-*)
+    echo "*** Configuration $targ is not fully supported." >&2
+    echo "*** Use bpf or bpf-*-none as the target instead." >&2
+    exit 1
+    ;;
+
   *)
     echo 1>&2 "*** BFD does not support target ${targ}."
     echo 1>&2 "*** Look in bfd/config.bfd for supported targets."

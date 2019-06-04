@@ -1279,25 +1279,43 @@ mi_interp::interp_ui_out ()
    the consoles to use the supplied ui-file(s).  */
 
 void
-mi_interp::set_logging (ui_file_up logfile, bool logging_redirect)
+mi_interp::set_logging (ui_file_up logfile, bool logging_redirect,
+			bool debug_redirect)
 {
   struct mi_interp *mi = this;
 
   if (logfile != NULL)
     {
       mi->saved_raw_stdout = mi->raw_stdout;
-      mi->raw_stdout = make_logging_output (mi->raw_stdout,
-					    std::move (logfile),
-					    logging_redirect);
 
+      /* If something is being redirected, then grab logfile.  */
+      ui_file *logfile_p = nullptr;
+      if (logging_redirect || debug_redirect)
+	{
+	  logfile_p = logfile.get ();
+	  mi->saved_raw_file_to_delete = logfile_p;
+	}
+
+      /* If something is not being redirected, then a tee containing both the
+	 logfile and stdout.  */
+      ui_file *tee = nullptr;
+      if (!logging_redirect || !debug_redirect)
+	{
+	  tee = new tee_file (mi->raw_stdout, std::move (logfile));
+	  mi->saved_raw_file_to_delete = tee;
+	}
+
+      mi->raw_stdout = logging_redirect ? logfile_p : tee;
+      mi->raw_stdlog = debug_redirect ? logfile_p : tee;
     }
   else
     {
-      delete mi->raw_stdout;
+      delete mi->saved_raw_file_to_delete;
       mi->raw_stdout = mi->saved_raw_stdout;
-      mi->saved_raw_stdout = NULL;
+      mi->saved_raw_stdout = nullptr;
+      mi->saved_raw_file_to_delete = nullptr;
     }
-  
+
   mi->out->set_raw (mi->raw_stdout);
   mi->err->set_raw (mi->raw_stdout);
   mi->log->set_raw (mi->raw_stdout);

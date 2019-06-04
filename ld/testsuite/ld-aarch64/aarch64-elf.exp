@@ -87,6 +87,12 @@ run_ld_link_tests eh-frame-merge-lp64
 
 run_dump_test "erratum843419"
 run_dump_test "erratum843419_tls_ie"
+run_dump_test "erratum843419-adr"
+run_dump_test "erratum843419-adrp"
+run_dump_test "erratum843419-far-adr"
+run_dump_test "erratum843419-far-full"
+run_dump_test "erratum843419-full"
+run_dump_test "erratum843419-no-args"
 
 # Relocation Tests
 run_dump_test_lp64 "weak-undefined"
@@ -377,6 +383,10 @@ run_dump_test "property-bti-pac2"
 run_dump_test "property-bti-pac3"
 run_dump_test "bti-plt-1"
 run_dump_test "bti-plt-2"
+
+run_dump_test_lp64 "variant_pcs-r"
+run_dump_test_lp64 "variant_pcs-shared"
+run_dump_test_lp64 "variant_pcs-now"
 
 set aarch64elflinktests {
   {"ld-aarch64/so with global symbol" "-shared" "" "" {copy-reloc-so.s}

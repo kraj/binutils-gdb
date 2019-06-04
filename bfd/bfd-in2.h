@@ -1034,12 +1034,21 @@ typedef struct
   aarch64_enable_bti_type bti_type;
 } aarch64_bti_pac_info;
 
+/* An enum to define what kind of erratum fixes we should apply.  This gives the
+   user a bit more control over the sequences we generate.  */
+typedef enum
+{
+  ERRAT_NONE  = (1 << 0),  /* No erratum workarounds allowed.  */
+  ERRAT_ADR   = (1 << 1),  /* Erratum workarounds using ADR allowed.  */
+  ERRAT_ADRP  = (1 << 2),  /* Erratum workarounds using ADRP are allowed.  */
+} erratum_84319_opts;
+
 extern void bfd_elf64_aarch64_set_options
-  (bfd *, struct bfd_link_info *, int, int, int, int, int, int,
+  (bfd *, struct bfd_link_info *, int, int, int, int, erratum_84319_opts, int,
    aarch64_bti_pac_info);
 
 extern void bfd_elf32_aarch64_set_options
-  (bfd *, struct bfd_link_info *, int, int, int, int, int, int,
+  (bfd *, struct bfd_link_info *, int, int, int, int, erratum_84319_opts, int,
    aarch64_bti_pac_info);
 
 /* ELF AArch64 mapping symbol support.  */
@@ -2348,6 +2357,8 @@ enum bfd_architecture
  bfd_arch_iq2000,     /* Vitesse IQ2000.  */
 #define bfd_mach_iq2000        1
 #define bfd_mach_iq10          2
+  bfd_arch_bpf,       /* Linux eBPF.  */
+#define bfd_mach_bpf           1
   bfd_arch_epiphany,  /* Adapteva EPIPHANY.  */
 #define bfd_mach_epiphany16    1
 #define bfd_mach_epiphany32    2
@@ -3487,6 +3498,23 @@ instruction.  */
   BFD_RELOC_PPC64_ADDR64_LOCAL,
   BFD_RELOC_PPC64_ENTRY,
   BFD_RELOC_PPC64_REL24_NOTOC,
+  BFD_RELOC_PPC64_D34,
+  BFD_RELOC_PPC64_D34_LO,
+  BFD_RELOC_PPC64_D34_HI30,
+  BFD_RELOC_PPC64_D34_HA30,
+  BFD_RELOC_PPC64_PCREL34,
+  BFD_RELOC_PPC64_GOT_PCREL34,
+  BFD_RELOC_PPC64_PLT_PCREL34,
+  BFD_RELOC_PPC64_ADDR16_HIGHER34,
+  BFD_RELOC_PPC64_ADDR16_HIGHERA34,
+  BFD_RELOC_PPC64_ADDR16_HIGHEST34,
+  BFD_RELOC_PPC64_ADDR16_HIGHESTA34,
+  BFD_RELOC_PPC64_REL16_HIGHER34,
+  BFD_RELOC_PPC64_REL16_HIGHERA34,
+  BFD_RELOC_PPC64_REL16_HIGHEST34,
+  BFD_RELOC_PPC64_REL16_HIGHESTA34,
+  BFD_RELOC_PPC64_D28,
+  BFD_RELOC_PPC64_PCREL28,
 
 /* PowerPC and PowerPC64 thread-local storage relocations.  */
   BFD_RELOC_PPC_TLS,
@@ -6641,6 +6669,13 @@ assembler and not (currently) written to any object files.  */
   BFD_RELOC_TILEGX_IMM8_X1_TLS_ADD,
   BFD_RELOC_TILEGX_IMM8_Y0_TLS_ADD,
   BFD_RELOC_TILEGX_IMM8_Y1_TLS_ADD,
+
+/* Linux eBPF relocations.  */
+  BFD_RELOC_BPF_64,
+  BFD_RELOC_BPF_32,
+  BFD_RELOC_BPF_16,
+  BFD_RELOC_BPF_DISP16,
+  BFD_RELOC_BPF_DISP32,
 
 /* Adapteva EPIPHANY - 8 bit signed pc-relative displacement  */
   BFD_RELOC_EPIPHANY_SIMM8,

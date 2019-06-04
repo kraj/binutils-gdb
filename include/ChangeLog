@@ -1,3 +1,206 @@
+2019-06-03  Nick Alcock  <nick.alcock@oracle.com>
+
+	* ctf.h (ctf_enum.cte_value): Fix type to int32_t.
+
+2019-05-29  Nick Alcock  <nick.alcock@oracle.com>
+
+	* ctf-api.h (ctf_sect_t): Drop cts_type, cts_flags, and cts_offset.
+	(ctf_id_t): This is now an unsigned type.
+	(CTF_ERR): Cast it to ctf_id_t.  Note that it should only be used
+	for ctf_id_t-returning functions.
+
+2019-05-28  Nick Alcock  <nick.alcock@oracle.com>
+
+	* ctf-api.h (ctf_dump_decorate_f): New.
+	(ctf_dump_state_t): new.
+	(ctf_dump): New.
+
+2019-05-28  Nick Alcock  <nick.alcock@oracle.com>
+
+	* ctf-api.h (ctf_label_f): New.
+	(ctf_label_set): New.
+	(ctf_label_get): New.
+	(ctf_label_topmost): New.
+	(ctf_label_info): New.
+	(ctf_label_iter): New.
+
+2019-05-28  Nick Alcock  <nick.alcock@oracle.com>
+
+	* ctf-api.h (ctf_version): New.
+
+2019-05-28  Nick Alcock  <nick.alcock@oracle.com>
+
+	* ctf-api.h (ctf_func_info): New.
+	(ctf_func_args): Likewise.
+	(ctf_lookup_by_symbol): Likewise.
+	(ctf_lookup_by_symbol): Likewise.
+	(ctf_lookup_variable): Likewise.
+
+2019-05-28  Nick Alcock  <nick.alcock@oracle.com>
+
+	* ctf-api.h (ctf_visit_f): New definition.
+	(ctf_member_f): Likewise.
+	(ctf_enum_f): Likewise.
+	(ctf_variable_f): Likewise.
+	(ctf_type_f): Likewise.
+	(ctf_type_isparent): Likewise.
+	(ctf_type_ischild): Likewise.
+	(ctf_type_resolve): Likewise.
+	(ctf_type_aname): Likewise.
+	(ctf_type_lname): Likewise.
+	(ctf_type_name): Likewise.
+	(ctf_type_sizee): Likewise.
+	(ctf_type_align): Likewise.
+	(ctf_type_kind): Likewise.
+	(ctf_type_reference): Likewise.
+	(ctf_type_pointer): Likewise.
+	(ctf_type_encoding): Likewise.
+	(ctf_type_visit): Likewise.
+	(ctf_type_cmp): Likewise.
+	(ctf_type_compat): Likewise.
+	(ctf_member_info): Likewise.
+	(ctf_array_info): Likewise.
+	(ctf_enum_name): Likewise.
+	(ctf_enum_value): Likewise.
+	(ctf_member_iter): Likewise.
+	(ctf_enum_iter): Likewise.
+	(ctf_type_iter): Likewise.
+	(ctf_variable_iter): Likewise.
+
+2019-05-28  Nick Alcock  <nick.alcock@oracle.com>
+
+	* ctf-api.h (struct bfd): New forward.
+	(ctf_fdopen): New.
+	(ctf_bfdopen): Likewise.
+	(ctf_open): Likewise.
+	(ctf_arc_open): Likewise.
+
+2019-05-28  Nick Alcock  <nick.alcock@oracle.com>
+
+	* ctf.h (CTFA_MAGIC): New.
+	(struct ctf_archive): New.
+	(struct ctf_archive_modent): Likewise.
+	* ctf-api.h (ctf_archive_member_f): New.
+	(ctf_archive_raw_member_f): Likewise.
+	(ctf_arc_write): Likewise.
+	(ctf_arc_close): Likewise.
+	(ctf_arc_open_by_name): Likewise.
+	(ctf_archive_iter): Likewise.
+	(ctf_archive_raw_iter): Likewise.
+	(ctf_get_arc): Likewise.
+
+2019-05-28  Nick Alcock  <nick.alcock@oracle.com>
+
+	* ctf-api.h (ctf_file_close): New declaration.
+	(ctf_getdatasect): Likewise.
+	(ctf_parent_file): Likewise.
+	(ctf_parent_name): Likewise.
+	(ctf_parent_name_set): Likewise.
+	(ctf_import): Likewise.
+	(ctf_setmodel): Likewise.
+	(ctf_getmodel): Likewise.
+	(ctf_setspecific): Likewise.
+	(ctf_getspecific): Likewise.
+
+2019-05-28  Nick Alcock  <nick.alcock@oracle.com>
+
+	* ctf-api.h (zlib.h): New include.
+	(ctf_sect_t): New.
+	(ctf_sect_names_t): Likewise.
+	(ctf_encoding_t): Likewise.
+	(ctf_membinfo_t): Likewise.
+	(ctf_arinfo_t): Likewise.
+	(ctf_funcinfo_t): Likewise.
+	(ctf_lblinfo_t): Likewise.
+	(ctf_snapshot_id_t): Likewise.
+	(CTF_FUNC_VARARG): Likewise.
+	(ctf_simple_open): Likewise.
+	(ctf_bufopen): Likewise.
+	(ctf_create): Likewise.
+	(ctf_add_array): Likewise.
+	(ctf_add_const): Likewise.
+	(ctf_add_enum_encoded): Likewise.
+	(ctf_add_enum): Likewise.
+	(ctf_add_float): Likewise.
+	(ctf_add_forward): Likewise.
+	(ctf_add_function): Likewise.
+	(ctf_add_integer): Likewise.
+	(ctf_add_slice): Likewise.
+	(ctf_add_pointer): Likewise.
+	(ctf_add_type): Likewise.
+	(ctf_add_typedef): Likewise.
+	(ctf_add_restrict): Likewise.
+	(ctf_add_struct): Likewise.
+	(ctf_add_union): Likewise.
+	(ctf_add_struct_sized): Likewise.
+	(ctf_add_union_sized): Likewise.
+	(ctf_add_volatile): Likewise.
+	(ctf_add_enumerator): Likewise.
+	(ctf_add_member): Likewise.
+	(ctf_add_member_offset): Likewise.
+	(ctf_add_member_encoded): Likewise.
+	(ctf_add_variable): Likewise.
+	(ctf_set_array): Likewise.
+	(ctf_update): Likewise.
+	(ctf_snapshot): Likewise.
+	(ctf_rollback): Likewise.
+	(ctf_discard): Likewise.
+	(ctf_write): Likewise.
+	(ctf_gzwrite): Likewise.
+	(ctf_compress_write): Likewise.
+
+2019-05-28  Nick Alcock  <nick.alcock@oracle.com>
+
+	* ctf-api.h (ctf_errno): New declaration.
+	(ctf_errmsg): Likewise.
+
+2019-05-28  Nick Alcock  <nick.alcock@oracle.com>
+
+	* ctf-api.h (ctf_setdebug): New.
+	(ctf_getdebug): Likewise.
+
+2019-05-28  Nick Alcock  <nick.alcock@oracle.com>
+
+	* ctf-api.h: New file.
+
+2019-05-28  Nick Alcock  <nick.alcock@oracle.com>
+
+	* ctf.h: New file.
+
+2019-05-24  Szabolcs Nagy  <szabolcs.nagy@arm.com>
+
+	* elf/aarch64.h (DT_AARCH64_VARIANT_PCS): Define.
+	(STO_AARCH64_VARIANT_PCS): Define.
+
+2019-05-24  Alan Modra  <amodra@gmail.com>
+
+	* elf/ppc64.h (R_PPC64_PLTSEQ_NOTOC, R_PPC64_PLTCALL_NOTOC),
+	(R_PPC64_PCREL_OPT, R_PPC64_D34, R_PPC64_D34_LO, R_PPC64_D34_HI30),
+	(R_PPC64_D34_HA30, R_PPC64_PCREL34, R_PPC64_GOT_PCREL34),
+	(R_PPC64_PLT_PCREL34, R_PPC64_PLT_PCREL34_NOTOC),
+	(R_PPC64_ADDR16_HIGHER34, R_PPC64_ADDR16_HIGHERA34),
+	(R_PPC64_ADDR16_HIGHEST34, R_PPC64_ADDR16_HIGHESTA34),
+	(R_PPC64_REL16_HIGHER34, R_PPC64_REL16_HIGHERA34),
+	(R_PPC64_REL16_HIGHEST34, R_PPC64_REL16_HIGHESTA34),
+	(R_PPC64_D28, R_PPC64_PCREL28): Define.
+
+2019-05-24  Peter Bergner  <bergner@linux.ibm.com>
+	    Alan Modra  <amodra@gmail.com>
+
+	* dis-asm.h (WIDE_OUTPUT): Define.
+	* opcode/ppc.h (prefix_opcodes, prefix_num_opcodes): Declare.
+	(PPC_OPCODE_POWERXX, PPC_GET_PREFIX, PPC_GET_SUFFIX),
+	(PPC_PREFIX_P, PPC_PREFIX_SEG): Define.
+
+2019-05-23  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* elf/bpf.h: New file.
+
+2019-05-16  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+
+	* elf/arm.h (Tag_MVE_arch): Define new enum value.
+	* opcode/arm.h (FPU_MVE, FPU_MVE_FP): New MACROs for new features.
+
 2019-05-09  Matthew Malcomson  <matthew.malcomson@arm.com>
 
 	* opcode/aarch64.h (enum aarch64_opnd): New SVE_SHLIMM_UNPRED_22

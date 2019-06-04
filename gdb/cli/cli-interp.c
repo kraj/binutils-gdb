@@ -395,15 +395,17 @@ struct saved_output_files
   ui_file *log;
   ui_file *targ;
   ui_file *targerr;
+  ui_file *file_to_delete;
 };
 static saved_output_files saved_output;
 
 /* See cli-interp.h.  */
 
 void
-cli_interp_base::set_logging (ui_file_up logfile, bool logging_redirect)
+cli_interp_base::set_logging (ui_file_up logfile, bool logging_redirect,
+			      bool debug_redirect)
 {
-  if (logfile != NULL)
+  if (logfile != nullptr)
     {
       saved_output.out = gdb_stdout;
       saved_output.err = gdb_stderr;
@@ -411,22 +413,34 @@ cli_interp_base::set_logging (ui_file_up logfile, bool logging_redirect)
       saved_output.targ = gdb_stdtarg;
       saved_output.targerr = gdb_stdtargerr;
 
-      /* A raw pointer since ownership is transferred to
-	 gdb_stdout.  */
-      ui_file *output = make_logging_output (gdb_stdout,
-					     std::move (logfile),
-					     logging_redirect);
-      gdb_stdout = output;
-      gdb_stdlog = output;
-      gdb_stderr = output;
-      gdb_stdtarg = output;
-      gdb_stdtargerr = output;
+      /* If something is being redirected, then grab logfile.  */
+      ui_file *logfile_p = nullptr;
+      if (logging_redirect || debug_redirect)
+	{
+	  logfile_p = logfile.get ();
+	  saved_output.file_to_delete = logfile_p;
+	}
+
+      /* If something is not being redirected, then a tee containing both the
+	 logfile and stdout.  */
+      ui_file *tee = nullptr;
+      if (!logging_redirect || !debug_redirect)
+	{
+	  tee = new tee_file (gdb_stdout, std::move (logfile));
+	  saved_output.file_to_delete = tee;
+	}
+
+      gdb_stdout = logging_redirect ? logfile_p : tee;
+      gdb_stdlog = debug_redirect ? logfile_p : tee;
+      gdb_stderr = logging_redirect ? logfile_p : tee;
+      gdb_stdtarg = logging_redirect ? logfile_p : tee;
+      gdb_stdtargerr = logging_redirect ? logfile_p : tee;
     }
   else
     {
-      /* Only delete one of the files -- they are all set to the same
-	 value.  */
-      delete gdb_stdout;
+      /* Delete the correct file.  If it's the tee then the logfile will also
+	 be deleted.  */
+      delete saved_output.file_to_delete;
 
       gdb_stdout = saved_output.out;
       gdb_stderr = saved_output.err;
@@ -434,11 +448,12 @@ cli_interp_base::set_logging (ui_file_up logfile, bool logging_redirect)
       gdb_stdtarg = saved_output.targ;
       gdb_stdtargerr = saved_output.targerr;
 
-      saved_output.out = NULL;
-      saved_output.err = NULL;
-      saved_output.log = NULL;
-      saved_output.targ = NULL;
-      saved_output.targerr = NULL;
+      saved_output.out = nullptr;
+      saved_output.err = nullptr;
+      saved_output.log = nullptr;
+      saved_output.targ = nullptr;
+      saved_output.targerr = nullptr;
+      saved_output.file_to_delete = nullptr;
     }
 }
 
