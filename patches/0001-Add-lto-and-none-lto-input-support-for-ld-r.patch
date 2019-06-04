@@ -1,4 +1,4 @@
-From 58468865efeb8e399e8eb16fdf2df8263f96509e Mon Sep 17 00:00:00 2001
+From 63a0c475332d295c8fc88c4e7fa0dcd002ef2806 Mon Sep 17 00:00:00 2001
 From: "H.J. Lu" <hjl.tools@gmail.com>
 Date: Mon, 4 Nov 2013 09:17:45 -0800
 Subject: [PATCH 1/3] Add lto and none-lto input support for ld -r
@@ -364,10 +364,10 @@ ld/testsuite/
  create mode 100644 ld/testsuite/ld-plugin/lto-4r-d.d
 
 diff --git a/bfd/bfd-in2.h b/bfd/bfd-in2.h
-index 0070b7ccf3..34eb1e18d3 100644
+index c610fe5f00..3ae5957b81 100644
 --- a/bfd/bfd-in2.h
 +++ b/bfd/bfd-in2.h
-@@ -1186,6 +1186,9 @@ bfd_boolean bfd_fill_in_gnu_debuglink_section
+@@ -1195,6 +1195,9 @@ bfd_boolean bfd_fill_in_gnu_debuglink_section
  
  char *bfd_follow_build_id_debuglink (bfd *abfd, const char *dir);
  
@@ -377,7 +377,7 @@ index 0070b7ccf3..34eb1e18d3 100644
  /* Extracted from libbfd.c.  */
  
  /* Byte swapping macros for user section data.  */
-@@ -1769,6 +1772,9 @@ extern asection _bfd_std_section[4];
+@@ -1778,6 +1781,9 @@ extern asection _bfd_std_section[4];
  #define BFD_COM_SECTION_NAME "*COM*"
  #define BFD_IND_SECTION_NAME "*IND*"
  
@@ -387,7 +387,7 @@ index 0070b7ccf3..34eb1e18d3 100644
  /* Pointer to the common section.  */
  #define bfd_com_section_ptr (&_bfd_std_section[0])
  /* Pointer to the undefined section.  */
-@@ -6980,7 +6986,8 @@ enum bfd_lto_object_type
+@@ -7015,7 +7021,8 @@ enum bfd_lto_object_type
      lto_non_object,
      lto_non_ir_object,
      lto_ir_object,
@@ -397,7 +397,7 @@ index 0070b7ccf3..34eb1e18d3 100644
    };
  
  struct bfd
-@@ -7163,7 +7170,7 @@ struct bfd
+@@ -7198,7 +7205,7 @@ struct bfd
    unsigned int lto_output : 1;
  
    /* LTO object type.  */
@@ -406,7 +406,7 @@ index 0070b7ccf3..34eb1e18d3 100644
  
    /* Set to dummy BFD created when claimed by a compiler plug-in
       library.  */
-@@ -7190,6 +7197,9 @@ struct bfd
+@@ -7225,6 +7232,9 @@ struct bfd
    /* The last section on the section list.  */
    struct bfd_section *section_last;
  
@@ -416,7 +416,7 @@ index 0070b7ccf3..34eb1e18d3 100644
    /* The number of sections.  */
    unsigned int section_count;
  
-@@ -7502,6 +7512,8 @@ bfd_boolean bfd_convert_section_contents
+@@ -7537,6 +7547,8 @@ bfd_boolean bfd_convert_section_contents
     (bfd *ibfd, asection *isec, bfd *obfd,
      bfd_byte **ptr, bfd_size_type *ptr_size);
  
@@ -501,7 +501,7 @@ index f185e4f380..19dd02eff2 100644
 +  return NULL;
 +}
 diff --git a/bfd/elf.c b/bfd/elf.c
-index 952e4bfe11..7d6225b963 100644
+index b463f1df8b..3ebf888c24 100644
 --- a/bfd/elf.c
 +++ b/bfd/elf.c
 @@ -2652,6 +2652,7 @@ static const struct bfd_elf_special_section special_sections_g[] =
@@ -919,10 +919,10 @@ index 28b9d3bf92..cd19eeb2c3 100644
        if (gsym != NULL)
  	{
 diff --git a/binutils/readelf.c b/binutils/readelf.c
-index 1ea4cef158..38ea95a7a0 100644
+index febfd1a082..f49548fb08 100644
 --- a/binutils/readelf.c
 +++ b/binutils/readelf.c
-@@ -4264,6 +4264,7 @@ get_section_type_name (Filedata * filedata, unsigned int sh_type)
+@@ -4278,6 +4278,7 @@ get_section_type_name (Filedata * filedata, unsigned int sh_type)
      case 0x7ffffffd:		return "AUXILIARY";
      case 0x7fffffff:		return "FILTER";
      case SHT_GNU_LIBLIST:	return "GNU_LIBLIST";
@@ -980,7 +980,7 @@ index 75c4fb7e9d..580dbe4060 100644
  /* The next three section types are defined by Solaris, and are named
     SHT_SUNW*.  We use them in GNU code, so we also define SHT_GNU*
 diff --git a/ld/emultempl/aarch64elf.em b/ld/emultempl/aarch64elf.em
-index bfe8d1b179..c3b3d08135 100644
+index b59623ec65..2da96f892d 100644
 --- a/ld/emultempl/aarch64elf.em
 +++ b/ld/emultempl/aarch64elf.em
 @@ -279,7 +279,7 @@ gld${EMULATION_NAME}_after_allocation (void)
@@ -1001,7 +1001,7 @@ index bfe8d1b179..c3b3d08135 100644
  }
  
  /* This is a convenient point to tell BFD about target specific flags.
-@@ -472,4 +472,4 @@ LDEMUL_CREATE_OUTPUT_SECTION_STATEMENTS=aarch64_elf_create_output_section_statem
+@@ -494,4 +494,4 @@ LDEMUL_CREATE_OUTPUT_SECTION_STATEMENTS=aarch64_elf_create_output_section_statem
  LDEMUL_BEFORE_PARSE=gld"${EMULATION_NAME}"_before_parse
  
  # Call the extra arm-elf function
@@ -1290,7 +1290,7 @@ index 71395bc6c4..3d07ad4bc9 100644
  
  #endif
 diff --git a/ld/ldfile.c b/ld/ldfile.c
-index fcadc08c73..574b5ad678 100644
+index 7f60319390..423d549f0a 100644
 --- a/ld/ldfile.c
 +++ b/ld/ldfile.c
 @@ -316,7 +316,9 @@ success:
@@ -2463,7 +2463,7 @@ index 32a7a6409e..65ee8413ed 100644
    OPTION_DEFAULT_SCRIPT,
    OPTION_PRINT_OUTPUT_FORMAT,
 diff --git a/ld/ldmain.c b/ld/ldmain.c
-index f2d04078af..6458237570 100644
+index 6b25fb2c37..dfc0dd3bfd 100644
 --- a/ld/ldmain.c
 +++ b/ld/ldmain.c
 @@ -224,6 +224,9 @@ main (int argc, char **argv)
@@ -2496,7 +2496,7 @@ index f2d04078af..6458237570 100644
 -  if (saved_script_handle == NULL
 -      && command_line.default_script != NULL)
 -    {
--      ldfile_open_command_file (command_line.default_script);
+-      ldfile_open_script_file (command_line.default_script);
 -      parser_input = input_script;
 -      yyparse ();
 -    }
@@ -2576,7 +2576,7 @@ index f2d04078af..6458237570 100644
 +  if (saved_script_handle == NULL
 +      && command_line.default_script != NULL)
 +    {
-+      ldfile_open_command_file (command_line.default_script);
++      ldfile_open_script_file (command_line.default_script);
 +      parser_input = input_script;
 +      yyparse ();
 +    }
@@ -2612,7 +2612,7 @@ index b1db894a89..530ecf63ce 100644
 +
  #endif
 diff --git a/ld/lexsup.c b/ld/lexsup.c
-index dacb9623b4..5b5e851246 100644
+index 2539356baa..e84cdb5b5e 100644
 --- a/ld/lexsup.c
 +++ b/ld/lexsup.c
 @@ -174,6 +174,9 @@ static const struct ld_option ld_options[] =
@@ -2636,7 +2636,7 @@ index dacb9623b4..5b5e851246 100644
  	case 'q':
  	  link_info.emitrelocations = TRUE;
 diff --git a/ld/plugin.c b/ld/plugin.c
-index e3ca324069..9d86c771f1 100644
+index fcd864a117..f344b4faa5 100644
 --- a/ld/plugin.c
 +++ b/ld/plugin.c
 @@ -56,6 +56,9 @@ extern int errno;
