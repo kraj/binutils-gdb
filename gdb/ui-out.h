@@ -103,6 +103,26 @@ private:
   int m_val;
 };
 
+struct styled_string
+{
+  styled_string (ui_out_style_kind style, const char *str)
+    : m_style (style),
+      m_str (str)
+  {
+  }
+
+  /* We need this because we can't pass a reference via
+     va_args.  */
+  const styled_string *ptr () const { return this; }
+
+  ui_out_style_kind style () const {return m_style; }
+  const char *str () const {return m_str; }
+
+private:
+  ui_out_style_kind m_style;
+  const char *m_str;
+};
+
 /* Wrap a ui_out_style_kind in a pointer to a temporary.  */
 
 /* XXX: Make a template?  */

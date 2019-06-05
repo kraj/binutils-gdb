@@ -256,6 +256,7 @@ format_pieces::format_pieces (const char **arg, bool gdb_extensions)
 	      {
 		switch (f[1])
 		  {
+		  case 's':
 		  case 'S':
 		  case 'F':
 		  case 'N':

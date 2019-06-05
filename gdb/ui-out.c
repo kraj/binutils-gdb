@@ -612,6 +612,12 @@ ui_out::message (const char *format, ...)
 		field_int (field->name (), field->val ());
 	      }
 	      break;
+	    case 's':
+	      {
+		styled_string *ss = va_arg (args, styled_string *);
+		call_do_message (ss->style (), "%s", ss->str ());
+	      }
+	      break;
 	    case 'S':
 	      style = *va_arg (args, ui_out_style_kind *);
 	      break;

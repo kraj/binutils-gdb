@@ -4603,10 +4603,9 @@ print_symbol_info (enum search_domain kind,
 
       if (filename_cmp (last, s_filename) != 0)
 	{
-	  current_uiout->message ("\nFile %pS%s%pN:\n",
-				  ptr (ui_out_style_kind::FILE),
-				  s_filename,
-				  nullptr);
+	  current_uiout->message
+	    (_("\nFile %ps:\n"),
+	     styled_string (ui_out_style_kind::FILE, s_filename).ptr ());
 	}
 
       if (SYMBOL_LINE (sym) != 0)
@@ -4653,15 +4652,14 @@ print_msymbol_info (struct bound_minimal_symbol msymbol)
     tmp = hex_string_custom (BMSYMBOL_VALUE_ADDRESS (msymbol),
 			     16);
 
-  current_uiout->message (_("%pS%s%pN  %pS%s%pN\n"),
-			  ptr (ui_out_style_kind::ADDRESS),
-			  tmp,
-			  nullptr,
-			  (msymbol.minsym->text_p ()
-			   ? ptr (ui_out_style_kind::FUNCTION)
-			   : ptr (ui_out_style_kind::DEFAULT)),
-			   MSYMBOL_PRINT_NAME (msymbol.minsym),
-			  nullptr);
+  ui_out_style_kind sym_style = (msymbol.minsym->text_p ()
+				 ? ui_out_style_kind::FUNCTION
+				 : ui_out_style_kind::DEFAULT);
+
+  current_uiout->message
+    (_("%ps  %ps\n"),
+     styled_string (ui_out_style_kind::ADDRESS, tmp).ptr (),
+     styled_string (sym_style, MSYMBOL_PRINT_NAME (msymbol.minsym)).ptr ());
 }
 
 /* This is the guts of the commands "info functions", "info types", and
