@@ -59,8 +59,9 @@ protected:
     override ATTRIBUTE_PRINTF (6,0);
   virtual void do_spaces (int numspaces) override;
   virtual void do_text (const char *string) override;
-  virtual void do_message (const char *format, va_list args) override
-    ATTRIBUTE_PRINTF (2,0);
+  virtual void do_message (ui_out_style_kind style,
+			   const char *format, va_list args) override
+    ATTRIBUTE_PRINTF (3,0);
   virtual void do_wrap_hint (const char *identstring) override;
   virtual void do_flush () override;
   virtual void do_redirect (struct ui_file *outstream) override;

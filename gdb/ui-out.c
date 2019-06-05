@@ -548,12 +548,12 @@ ui_out::text (const char *string)
 }
 
 void
-ui_out::call_do_message (const char *format, ...)
+ui_out::call_do_message (ui_out_style_kind style, const char *format, ...)
 {
   va_list args;
 
   va_start (args, format);
-  do_message (format, args);
+  do_message (style, format, args);
   va_end (args);
 }
 
@@ -561,6 +561,8 @@ void
 ui_out::message (const char *format, ...)
 {
   format_pieces fpieces (&format, true);
+
+  ui_out_style_kind style = ui_out_style_kind::DEFAULT;
 
   va_list args;
   va_start (args, format);
@@ -572,7 +574,7 @@ ui_out::message (const char *format, ...)
       switch (piece.argclass)
 	{
 	case string_arg:
-	  call_do_message (current_substring, va_arg (args, const char *));
+	  call_do_message (style, current_substring, va_arg (args, const char *));
 	  break;
 	case wide_string_arg:
 	  /* FIXME */
@@ -582,16 +584,16 @@ ui_out::message (const char *format, ...)
 	  break;
 	case long_long_arg:
 #ifdef PRINTF_HAS_LONG_LONG
-	  call_do_message (current_substring, va_arg (args, long long));
+	  call_do_message (style, current_substring, va_arg (args, long long));
 	  break;
 #else
 	  error (_("long long not supported in ui_out::message"));
 #endif
 	case int_arg:
-	  call_do_message (current_substring, va_arg (args, int));
+	  call_do_message (style, current_substring, va_arg (args, int));
 	  break;
 	case long_arg:
-	  call_do_message (current_substring, va_arg (args, long));
+	  call_do_message (style, current_substring, va_arg (args, long));
 	  break;
 	  /* Handle floating-point values.  */
 	case double_arg:
@@ -611,13 +613,14 @@ ui_out::message (const char *format, ...)
 	      }
 	      break;
 	    case 'S':
-	      /* Push style on stack?  */
+	      style = *va_arg (args, ui_out_style_kind *);
 	      break;
 	    case 'N':
-	      /* Pop style from stack?  */
+	      va_arg (args, void *);
+	      style = ui_out_style_kind::DEFAULT;
 	      break;
 	    default:
-	      call_do_message (current_substring, va_arg (args, void *));
+	      call_do_message (style, current_substring, va_arg (args, void *));
 	      break;
 	    }
 	  break;
@@ -629,7 +632,7 @@ ui_out::message (const char *format, ...)
 	     pass a dummy argument because some platforms have
 	     modified GCC to include -Wformat-security by default,
 	     which will warn here if there is no argument.  */
-	  call_do_message (current_substring, 0);
+	  call_do_message (style, current_substring, 0);
 	  break;
 	default:
 	  internal_error (__FILE__, __LINE__,

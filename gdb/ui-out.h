@@ -103,6 +103,24 @@ private:
   int m_val;
 };
 
+/* Wrap a ui_out_style_kind in a pointer to a temporary.  */
+
+/* XXX: Make a template?  */
+struct ptrS
+{
+  ptrS (ui_out_style_kind t) : m_t (t) {}
+
+  const ui_out_style_kind *ptr () const { return &m_t; }
+
+  ui_out_style_kind m_t;
+};
+
+static inline const ui_out_style_kind *
+ptr (ptrS &&t)
+{
+  return t.ptr ();
+}
+
 class ui_out
 {
  public:
@@ -188,8 +206,9 @@ class ui_out
     ATTRIBUTE_PRINTF (6,0) = 0;
   virtual void do_spaces (int numspaces) = 0;
   virtual void do_text (const char *string) = 0;
-  virtual void do_message (const char *format, va_list args)
-    ATTRIBUTE_PRINTF (2,0) = 0;
+  virtual void do_message (ui_out_style_kind style,
+			   const char *format, va_list args)
+    ATTRIBUTE_PRINTF (3,0) = 0;
   virtual void do_wrap_hint (const char *identstring) = 0;
   virtual void do_flush () = 0;
   virtual void do_redirect (struct ui_file *outstream) = 0;
@@ -201,7 +220,7 @@ class ui_out
   { return false; }
 
  private:
-  void call_do_message (const char *format, ...);
+  void call_do_message (ui_out_style_kind style, const char *format, ...);
 
   ui_out_flags m_flags;
 

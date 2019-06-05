@@ -118,6 +118,27 @@ cli_ui_out::do_field_skip (int fldno, int width, ui_align alignment,
 		   ui_out_style_kind::DEFAULT);
 }
 
+static ui_file_style
+style_from_style_kind (ui_out_style_kind kind)
+{
+  switch (kind)
+    {
+    case ui_out_style_kind::DEFAULT:
+      /* Nothing.  */
+      return {};
+    case ui_out_style_kind::FILE:
+      return file_name_style.style ();
+    case ui_out_style_kind::FUNCTION:
+      return function_name_style.style ();
+    case ui_out_style_kind::VARIABLE:
+      return variable_name_style.style ();
+    case ui_out_style_kind::ADDRESS:
+      return address_style.style ();
+    default:
+      gdb_assert_not_reached ("missing case");
+    }
+}
+
 /* other specific cli_field_* end up here so alignment and field
    separators are both handled by cli_field_string */
 
@@ -160,28 +181,7 @@ cli_ui_out::do_field_string (int fldno, int width, ui_align align,
 
   if (string)
     {
-      ui_file_style fstyle;
-      switch (style)
-	{
-	case ui_out_style_kind::DEFAULT:
-	  /* Nothing.  */
-	  break;
-	case ui_out_style_kind::FILE:
-	  /* Nothing.  */
-	  fstyle = file_name_style.style ();
-	  break;
-	case ui_out_style_kind::FUNCTION:
-	  fstyle = function_name_style.style ();
-	  break;
-	case ui_out_style_kind::VARIABLE:
-	  fstyle = variable_name_style.style ();
-	  break;
-	case ui_out_style_kind::ADDRESS:
-	  fstyle = address_style.style ();
-	  break;
-	default:
-	  gdb_assert_not_reached ("missing case");
-	}
+      ui_file_style fstyle = style_from_style_kind (style);
       fputs_styled (string, fstyle, m_streams.back ());
     }
 
@@ -227,12 +227,14 @@ cli_ui_out::do_text (const char *string)
 }
 
 void
-cli_ui_out::do_message (const char *format, va_list args)
+cli_ui_out::do_message (ui_out_style_kind style,
+			const char *format, va_list args)
 {
   if (m_suppress_output)
     return;
 
-  vfprintf_unfiltered (m_streams.back (), format, args);
+  ui_file_style fstyle = style_from_style_kind (style);
+  vfprintf_styled (m_streams.back (), fstyle, format, args);
 }
 
 void

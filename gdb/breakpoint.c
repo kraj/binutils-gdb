@@ -6693,9 +6693,9 @@ describe_other_breakpoints (struct gdbarch *gdbarch,
 			     (others > 1) ? "," 
 			     : ((others == 1) ? " and" : ""));
 	  }
-      printf_filtered (_("also set at pc "));
-      fputs_styled (paddress (gdbarch, pc), address_style.style (), gdb_stdout);
-      printf_filtered (".\n");
+      current_uiout->message (_("also set at pc %pS%s%pN.\n"),
+			      ptr (ui_out_style_kind::ADDRESS),
+			      paddress (gdbarch, pc), nullptr);
     }
 }
 
