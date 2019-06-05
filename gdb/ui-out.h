@@ -26,6 +26,7 @@
 #include <vector>
 
 #include "common/enum-flags.h"
+#include "ui-style.h"
 
 class ui_out_level;
 class ui_out_table;
@@ -67,22 +68,6 @@ enum ui_out_type
     ui_out_type_list
   };
 
-/* Possible kinds of styling.  */
-
-enum class ui_out_style_kind
-{
-  /* The default (plain) style.  */
-  DEFAULT,
-  /* File name.  */
-  FILE,
-  /* Function name.  */
-  FUNCTION,
-  /* Variable name.  */
-  VARIABLE,
-  /* Address.  */
-  ADDRESS
-};
-
 struct int_field
 {
   int_field (const char *name, int val)
@@ -105,7 +90,7 @@ private:
 
 struct styled_string
 {
-  styled_string (ui_out_style_kind style, const char *str)
+  styled_string (const ui_file_style &style, const char *str)
     : m_style (style),
       m_str (str)
   {
@@ -115,31 +100,13 @@ struct styled_string
      va_args.  */
   const styled_string *ptr () const { return this; }
 
-  ui_out_style_kind style () const {return m_style; }
+  const ui_file_style &style () const { return m_style; }
   const char *str () const {return m_str; }
 
 private:
-  ui_out_style_kind m_style;
+  ui_file_style m_style;
   const char *m_str;
 };
-
-/* Wrap a ui_out_style_kind in a pointer to a temporary.  */
-
-/* XXX: Make a template?  */
-struct ptrS
-{
-  ptrS (ui_out_style_kind t) : m_t (t) {}
-
-  const ui_out_style_kind *ptr () const { return &m_t; }
-
-  ui_out_style_kind m_t;
-};
-
-static inline const ui_out_style_kind *
-ptr (ptrS &&t)
-{
-  return t.ptr ();
-}
 
 class ui_out
 {
@@ -171,10 +138,10 @@ class ui_out
   void field_core_addr (const char *fldname, struct gdbarch *gdbarch,
 			CORE_ADDR address);
   void field_string (const char *fldname, const char *string,
-		     ui_out_style_kind style = ui_out_style_kind::DEFAULT);
+		     const ui_file_style &style = ui_file_style ());
   void field_string (const char *fldname, const std::string &string);
   void field_stream (const char *fldname, string_file &stream,
-		     ui_out_style_kind style = ui_out_style_kind::DEFAULT);
+		     const ui_file_style &style = ui_file_style ());
   void field_skip (const char *fldname);
   void field_fmt (const char *fldname, const char *format, ...)
     ATTRIBUTE_PRINTF (3, 4);
@@ -219,14 +186,14 @@ class ui_out
 			      const char *fldname) = 0;
   virtual void do_field_string (int fldno, int width, ui_align align,
 				const char *fldname, const char *string,
-				ui_out_style_kind style) = 0;
+				const ui_file_style &style) = 0;
   virtual void do_field_fmt (int fldno, int width, ui_align align,
 			     const char *fldname, const char *format,
 			     va_list args)
     ATTRIBUTE_PRINTF (6,0) = 0;
   virtual void do_spaces (int numspaces) = 0;
   virtual void do_text (const char *string) = 0;
-  virtual void do_message (ui_out_style_kind style,
+  virtual void do_message (const ui_file_style &style,
 			   const char *format, va_list args)
     ATTRIBUTE_PRINTF (3,0) = 0;
   virtual void do_wrap_hint (const char *identstring) = 0;
@@ -240,7 +207,8 @@ class ui_out
   { return false; }
 
  private:
-  void call_do_message (ui_out_style_kind style, const char *format, ...);
+  void call_do_message (const ui_file_style &style, const char *format,
+			...);
 
   ui_out_flags m_flags;
 

@@ -25,6 +25,7 @@
 #include "language.h"
 #include "ui-out.h"
 #include "common/format.h"
+#include "cli/cli-style.h"
 
 #include <vector>
 #include <memory>
@@ -470,12 +471,12 @@ ui_out::field_core_addr (const char *fldname, struct gdbarch *gdbarch,
 			 CORE_ADDR address)
 {
   field_string (fldname, print_core_address (gdbarch, address),
-		ui_out_style_kind::ADDRESS);
+		address_style.style ());
 }
 
 void
 ui_out::field_stream (const char *fldname, string_file &stream,
-		      ui_out_style_kind style)
+		      const ui_file_style &style)
 {
   if (!stream.empty ())
     field_string (fldname, stream.c_str (), style);
@@ -500,7 +501,7 @@ ui_out::field_skip (const char *fldname)
 
 void
 ui_out::field_string (const char *fldname, const char *string,
-		      ui_out_style_kind style)
+		      const ui_file_style &style)
 {
   int fldno;
   int width;
@@ -548,7 +549,8 @@ ui_out::text (const char *string)
 }
 
 void
-ui_out::call_do_message (ui_out_style_kind style, const char *format, ...)
+ui_out::call_do_message (const ui_file_style &style, const char *format,
+			 ...)
 {
   va_list args;
 
@@ -562,7 +564,7 @@ ui_out::message (const char *format, ...)
 {
   format_pieces fpieces (&format, true);
 
-  ui_out_style_kind style = ui_out_style_kind::DEFAULT;
+  ui_file_style style;
 
   va_list args;
   va_start (args, format);
@@ -618,13 +620,13 @@ ui_out::message (const char *format, ...)
 		call_do_message (ss->style (), "%s", ss->str ());
 	      }
 	      break;
-	    case 'S':
-	      style = *va_arg (args, ui_out_style_kind *);
-	      break;
-	    case 'N':
-	      va_arg (args, void *);
-	      style = ui_out_style_kind::DEFAULT;
-	      break;
+	    /* case 'S': */
+	    /*   style = *va_arg (args, const ui_file_style *); */
+	    /*   break; */
+	    /* case 'N': */
+	    /*   va_arg (args, void *); */
+	    /*   style = nullptr; */
+	    /*   break; */
 	    default:
 	      call_do_message (style, current_substring, va_arg (args, void *));
 	      break;

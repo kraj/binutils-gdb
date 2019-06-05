@@ -57,6 +57,7 @@
 #include "tracefile.h"
 #include "location.h"
 #include <algorithm>
+#include "cli/cli-style.h"
 
 /* readline include files */
 #include "readline/readline.h"
@@ -3690,7 +3691,7 @@ print_one_static_tracepoint_marker (int count,
     {
       uiout->text ("in ");
       uiout->field_string ("func", SYMBOL_PRINT_NAME (sym),
-			   ui_out_style_kind::FUNCTION);
+			   function_name_style.style ());
       uiout->wrap_hint (wrap_indent);
       uiout->text (" at ");
     }
@@ -3701,7 +3702,7 @@ print_one_static_tracepoint_marker (int count,
     {
       uiout->field_string ("file",
 			   symtab_to_filename_for_display (sal.symtab),
-			   ui_out_style_kind::FILE);
+			   file_name_style.style ());
       uiout->text (":");
 
       if (uiout->is_mi_like_p ())

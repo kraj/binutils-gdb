@@ -73,7 +73,7 @@ cli_ui_out::do_table_header (int width, ui_align alignment,
     return;
 
   do_field_string (0, width, alignment, 0, col_hdr.c_str (),
-		   ui_out_style_kind::DEFAULT);
+		   ui_file_style ());
 }
 
 /* Mark beginning of a list */
@@ -102,7 +102,7 @@ cli_ui_out::do_field_int (int fldno, int width, ui_align alignment,
   std::string str = string_printf ("%d", value);
 
   do_field_string (fldno, width, alignment, fldname, str.c_str (),
-		   ui_out_style_kind::DEFAULT);
+		   ui_file_style ());
 }
 
 /* used to omit a field */
@@ -115,28 +115,7 @@ cli_ui_out::do_field_skip (int fldno, int width, ui_align alignment,
     return;
 
   do_field_string (fldno, width, alignment, fldname, "",
-		   ui_out_style_kind::DEFAULT);
-}
-
-static ui_file_style
-style_from_style_kind (ui_out_style_kind kind)
-{
-  switch (kind)
-    {
-    case ui_out_style_kind::DEFAULT:
-      /* Nothing.  */
-      return {};
-    case ui_out_style_kind::FILE:
-      return file_name_style.style ();
-    case ui_out_style_kind::FUNCTION:
-      return function_name_style.style ();
-    case ui_out_style_kind::VARIABLE:
-      return variable_name_style.style ();
-    case ui_out_style_kind::ADDRESS:
-      return address_style.style ();
-    default:
-      gdb_assert_not_reached ("missing case");
-    }
+		   ui_file_style ());
 }
 
 /* other specific cli_field_* end up here so alignment and field
@@ -145,7 +124,7 @@ style_from_style_kind (ui_out_style_kind kind)
 void
 cli_ui_out::do_field_string (int fldno, int width, ui_align align,
 			     const char *fldname, const char *string,
-			     ui_out_style_kind style)
+			     const ui_file_style &style)
 {
   int before = 0;
   int after = 0;
@@ -180,10 +159,7 @@ cli_ui_out::do_field_string (int fldno, int width, ui_align align,
     spaces (before);
 
   if (string)
-    {
-      ui_file_style fstyle = style_from_style_kind (style);
-      fputs_styled (string, fstyle, m_streams.back ());
-    }
+    fputs_styled (string, style, m_streams.back ());
 
   if (after)
     spaces (after);
@@ -205,7 +181,7 @@ cli_ui_out::do_field_fmt (int fldno, int width, ui_align align,
   std::string str = string_vprintf (format, args);
 
   do_field_string (fldno, width, align, fldname, str.c_str (),
-		   ui_out_style_kind::DEFAULT);
+		   ui_file_style ());
 }
 
 void
@@ -227,14 +203,13 @@ cli_ui_out::do_text (const char *string)
 }
 
 void
-cli_ui_out::do_message (ui_out_style_kind style,
+cli_ui_out::do_message (const ui_file_style &style,
 			const char *format, va_list args)
 {
   if (m_suppress_output)
     return;
 
-  ui_file_style fstyle = style_from_style_kind (style);
-  vfprintf_styled (m_streams.back (), fstyle, format, args);
+  vfprintf_styled (m_streams.back (), style, format, args);
 }
 
 void

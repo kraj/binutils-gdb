@@ -41,6 +41,7 @@
 #include "common/vec.h"
 #include "inferior.h"
 #include <algorithm>
+#include "cli/cli-style.h"
 
 static const target_info record_btrace_target_info = {
   "record-btrace",
@@ -1091,7 +1092,7 @@ btrace_call_history_src_line (struct ui_out *uiout,
 
   uiout->field_string ("file",
 		       symtab_to_filename_for_display (symbol_symtab (sym)),
-		       ui_out_style_kind::FILE);
+		       file_name_style.style ());
 
   btrace_compute_src_line_range (bfun, &begin, &end);
   if (end < begin)
@@ -1183,13 +1184,13 @@ btrace_call_history (struct ui_out *uiout,
 
       if (sym != NULL)
 	uiout->field_string ("function", SYMBOL_PRINT_NAME (sym),
-			     ui_out_style_kind::FUNCTION);
+			     function_name_style.style ());
       else if (msym != NULL)
 	uiout->field_string ("function", MSYMBOL_PRINT_NAME (msym),
-			     ui_out_style_kind::FUNCTION);
+			     function_name_style.style ());
       else if (!uiout->is_mi_like_p ())
 	uiout->field_string ("function", "??",
-			     ui_out_style_kind::FUNCTION);
+			     function_name_style.style ());
 
       if ((flags & RECORD_PRINT_INSN_RANGE) != 0)
 	{

@@ -1115,11 +1115,9 @@ symbol_file_add_with_addrs (bfd *abfd, const char *name,
       if (deprecated_pre_add_symbol_hook)
 	deprecated_pre_add_symbol_hook (name);
       else
-	{
-	  puts_filtered (_("Reading symbols from "));
-	  fputs_styled (name, file_name_style.style (), gdb_stdout);
-	  puts_filtered ("...\n");
-	}
+	current_uiout->message (_("Reading symbols from %ps...\n"),
+				styled_string (file_name_style.style (),
+					       name).ptr ());
     }
   syms_from_objfile (objfile, addrs, add_flags);
 
@@ -1131,7 +1129,9 @@ symbol_file_add_with_addrs (bfd *abfd, const char *name,
   if ((flags & OBJF_READNOW))
     {
       if (should_print)
-	printf_filtered (_("Expanding full symbols from %s...\n"), name);
+	current_uiout->message (_("Expanding full symbols from %ps...\n"),
+				styled_string (file_name_style.style (),
+					       name).ptr ());
 
       if (objfile->sf)
 	objfile->sf->qf->expand_all_symtabs (objfile);
@@ -1143,7 +1143,9 @@ symbol_file_add_with_addrs (bfd *abfd, const char *name,
      file, and so printing it twice is just redundant.  */
   if (should_print && !objfile_has_symbols (objfile)
       && objfile->separate_debug_objfile == nullptr)
-    printf_filtered (_("(No debugging symbols found in %s)\n"), name);
+    current_uiout->message (_("(No debugging symbols found in %ps)\n"),
+			    styled_string (file_name_style.style (),
+					   name).ptr ());
 
   if (should_print)
     {

@@ -4605,7 +4605,7 @@ print_symbol_info (enum search_domain kind,
 	{
 	  current_uiout->message
 	    (_("\nFile %ps:\n"),
-	     styled_string (ui_out_style_kind::FILE, s_filename).ptr ());
+	     styled_string (file_name_style.style (), s_filename).ptr ());
 	}
 
       if (SYMBOL_LINE (sym) != 0)
@@ -4652,13 +4652,13 @@ print_msymbol_info (struct bound_minimal_symbol msymbol)
     tmp = hex_string_custom (BMSYMBOL_VALUE_ADDRESS (msymbol),
 			     16);
 
-  ui_out_style_kind sym_style = (msymbol.minsym->text_p ()
-				 ? ui_out_style_kind::FUNCTION
-				 : ui_out_style_kind::DEFAULT);
+  ui_file_style sym_style = (msymbol.minsym->text_p ()
+			     ? function_name_style.style ()
+			     : ui_file_style ());
 
   current_uiout->message
     (_("%ps  %ps\n"),
-     styled_string (ui_out_style_kind::ADDRESS, tmp).ptr (),
+     styled_string (address_style.style (), tmp).ptr (),
      styled_string (sym_style, MSYMBOL_PRINT_NAME (msymbol.minsym)).ptr ());
 }
 

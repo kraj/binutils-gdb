@@ -5836,14 +5836,14 @@ print_breakpoint_location (struct breakpoint *b,
 	{
 	  uiout->text ("in ");
 	  uiout->field_string ("func", SYMBOL_PRINT_NAME (sym),
-			       ui_out_style_kind::FUNCTION);
+			       function_name_style.style ());
 	  uiout->text (" ");
 	  uiout->wrap_hint (wrap_indent_at_field (uiout, "what"));
 	  uiout->text ("at ");
 	}
       uiout->field_string ("file",
 			   symtab_to_filename_for_display (loc->symtab),
-			   ui_out_style_kind::FILE);
+			   file_name_style.style ());
       uiout->text (":");
 
       if (uiout->is_mi_like_p ())
@@ -6693,9 +6693,9 @@ describe_other_breakpoints (struct gdbarch *gdbarch,
 			     (others > 1) ? "," 
 			     : ((others == 1) ? " and" : ""));
 	  }
-      current_uiout->message (_("also set at pc %pS%s%pN.\n"),
-			      ptr (ui_out_style_kind::ADDRESS),
-			      paddress (gdbarch, pc), nullptr);
+      current_uiout->message (_("also set at pc %ps.\n"),
+			      styled_string (address_style.style (),
+					     paddress (gdbarch, pc)).ptr ());
     }
 }
 
@@ -13355,12 +13355,12 @@ update_static_tracepoint (struct breakpoint *b, struct symtab_and_line sal)
 	  if (sym)
 	    {
 	      uiout->field_string ("func", SYMBOL_PRINT_NAME (sym),
-				   ui_out_style_kind::FUNCTION);
+				   function_name_style.style ());
 	      uiout->text (" at ");
 	    }
 	  uiout->field_string ("file",
 			       symtab_to_filename_for_display (sal2.symtab),
-			       ui_out_style_kind::FILE);
+			       file_name_style.style ());
 	  uiout->text (":");
 
 	  if (uiout->is_mi_like_p ())
