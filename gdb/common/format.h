@@ -70,7 +70,7 @@ class format_pieces
 {
 public:
 
-  format_pieces (const char **arg);
+  format_pieces (const char **arg, bool gdb_extensions = false);
   ~format_pieces () = default;
 
   DISABLE_COPY_AND_ASSIGN (format_pieces);

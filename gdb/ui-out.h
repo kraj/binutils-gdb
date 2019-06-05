@@ -83,6 +83,26 @@ enum class ui_out_style_kind
   ADDRESS
 };
 
+struct int_field
+{
+  int_field (const char *name, int val)
+    : m_name (name),
+      m_val (val)
+  {
+  }
+
+  /* We need this because we can't pass a reference via
+     va_args.  */
+  const int_field *ptr () const { return this; }
+
+  const char *name () const {return m_name; }
+  int val () const {return m_val; }
+
+private:
+  const char *m_name;
+  int m_val;
+};
+
 class ui_out
 {
  public:
@@ -181,6 +201,7 @@ class ui_out
   { return false; }
 
  private:
+  void call_do_message (const char *format, ...);
 
   ui_out_flags m_flags;
 

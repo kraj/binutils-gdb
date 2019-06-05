@@ -24,6 +24,7 @@
 #include "expression.h"		/* For language.h */
 #include "language.h"
 #include "ui-out.h"
+#include "common/format.h"
 
 #include <vector>
 #include <memory>
@@ -547,12 +548,95 @@ ui_out::text (const char *string)
 }
 
 void
-ui_out::message (const char *format, ...)
+ui_out::call_do_message (const char *format, ...)
 {
   va_list args;
 
   va_start (args, format);
   do_message (format, args);
+  va_end (args);
+}
+
+void
+ui_out::message (const char *format, ...)
+{
+  format_pieces fpieces (&format, true);
+
+  va_list args;
+  va_start (args, format);
+
+  for (auto &&piece : fpieces)
+    {
+      const char *current_substring = piece.string;
+
+      switch (piece.argclass)
+	{
+	case string_arg:
+	  call_do_message (current_substring, va_arg (args, const char *));
+	  break;
+	case wide_string_arg:
+	  /* FIXME */
+	  break;
+	case wide_char_arg:
+	  /* FIXME */
+	  break;
+	case long_long_arg:
+#ifdef PRINTF_HAS_LONG_LONG
+	  call_do_message (current_substring, va_arg (args, long long));
+	  break;
+#else
+	  error (_("long long not supported in ui_out::message"));
+#endif
+	case int_arg:
+	  call_do_message (current_substring, va_arg (args, int));
+	  break;
+	case long_arg:
+	  call_do_message (current_substring, va_arg (args, long));
+	  break;
+	  /* Handle floating-point values.  */
+	case double_arg:
+	case long_double_arg:
+	case dec32float_arg:
+	case dec64float_arg:
+	case dec128float_arg:
+	  /* FIXME */
+	  break;
+	case ptr_arg:
+	  switch (current_substring[2])
+	    {
+	    case 'F':
+	      {
+		int_field *field = va_arg (args, int_field *);
+		field_int (field->name (), field->val ());
+	      }
+	      break;
+	    case 'S':
+	      /* Push style on stack?  */
+	      break;
+	    case 'N':
+	      /* Pop style from stack?  */
+	      break;
+	    default:
+	      call_do_message (current_substring, va_arg (args, void *));
+	      break;
+	    }
+	  break;
+	case literal_piece:
+	  /* Print a portion of the format string that has no
+	     directives.  Note that this will not include any ordinary
+	     %-specs, but it might include "%%".  That is why we use
+	     printf_filtered and not puts_filtered here.  Also, we
+	     pass a dummy argument because some platforms have
+	     modified GCC to include -Wformat-security by default,
+	     which will warn here if there is no argument.  */
+	  call_do_message (current_substring, 0);
+	  break;
+	default:
+	  internal_error (__FILE__, __LINE__,
+			  _("failed internal consistency check"));
+	}
+    }
+
   va_end (args);
 }
 

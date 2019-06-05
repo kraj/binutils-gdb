@@ -20,7 +20,7 @@
 #include "common-defs.h"
 #include "format.h"
 
-format_pieces::format_pieces (const char **arg)
+format_pieces::format_pieces (const char **arg, bool gdb_extensions)
 {
   const char *s;
   char *f, *string;
@@ -251,6 +251,19 @@ format_pieces::format_pieces (const char **arg)
 	      bad = 1;
 	    if (seen_hash || seen_zero || seen_space || seen_plus)
 	      bad = 1;
+
+	    if (gdb_extensions)
+	      {
+		switch (f[1])
+		  {
+		  case 'S':
+		  case 'F':
+		  case 'N':
+		    f++;
+		    break;
+		  }
+	      }
+
 	    break;
 
 	  case 's':

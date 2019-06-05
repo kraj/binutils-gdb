@@ -4927,10 +4927,10 @@ watchpoint_check (bpstat bs)
 	  if (uiout->is_mi_like_p ())
 	    uiout->field_string
 	      ("reason", async_reason_lookup (EXEC_ASYNC_WATCHPOINT_SCOPE));
-	  uiout->text ("\nWatchpoint ");
-	  uiout->field_int ("wpnum", b->number);
-	  uiout->text (" deleted because the program has left the block in\n"
-		       "which its expression is valid.\n");
+	  uiout->message ("\nWatchpoint %pF deleted because the program has "
+			  "left the block in\n"
+			  "which its expression is valid.\n",
+			  int_field ("wpnum", b->number).ptr ());
 	}
 
       /* Make sure the watchpoint's commands aren't executed.  */
@@ -6245,9 +6245,8 @@ print_one_breakpoint_location (struct breakpoint *b,
   if (!part_of_multiple && b->ignore_count)
     {
       annotate_field (8);
-      uiout->text ("\tignore next ");
-      uiout->field_int ("ignore", b->ignore_count);
-      uiout->text (" hits\n");
+      uiout->message ("\tignore next %pF hits\n",
+		      int_field ("ignore", b->ignore_count).ptr ());
     }
 
   /* Note that an enable count of 1 corresponds to "enable once"
@@ -12428,18 +12427,18 @@ bkpt_print_it (bpstat bs)
   annotate_breakpoint (b->number);
   maybe_print_thread_hit_breakpoint (uiout);
 
-  if (bp_temp)
-    uiout->text ("Temporary breakpoint ");
-  else
-    uiout->text ("Breakpoint ");
   if (uiout->is_mi_like_p ())
     {
       uiout->field_string ("reason",
 			   async_reason_lookup (EXEC_ASYNC_BREAKPOINT_HIT));
       uiout->field_string ("disp", bpdisp_text (b->disposition));
     }
-  uiout->field_int ("bkptno", b->number);
-  uiout->text (", ");
+  if (bp_temp)
+    uiout->message ("Temporary breakpoint %pF, ",
+		    int_field ("bkptno", b->number).ptr ());
+  else
+    uiout->message ("Breakpoint %pF, ",
+		    int_field ("bkptno", b->number).ptr ());
 
   return PRINT_SRC_AND_LOC;
 }
