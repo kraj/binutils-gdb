@@ -68,11 +68,24 @@ enum ui_out_type
     ui_out_type_list
   };
 
+enum class field_kind
+  {
+    INT,
+    STRING,
+  };
+
 /* An int field, to be passed to %pF in format strings.  */
 
-struct int_field_s
+struct base_field_s
 {
   const char *name;
+  field_kind kind;
+};
+
+/* An int field, to be passed to %pF in format strings.  */
+
+struct int_field_s : base_field_s
+{
   int val;
 };
 
@@ -85,7 +98,29 @@ int_field (const char *name, int val,
 	   int_field_s &&tmp = {})
 {
   tmp.name = name;
+  tmp.kind = field_kind::INT;
   tmp.val = val;
+  return &tmp;
+}
+
+/* A string field, to be passed to %pF in format strings.  */
+
+struct string_field_s : base_field_s
+{
+  const char *str;
+};
+
+/* Construct a temporary string_field_s on the caller's stack and
+   return a pointer to the constructed object.  We use this because
+   it's not possible to pass a reference via va_args.  */
+
+static inline string_field_s *
+string_field (const char *name, const char *str,
+	      string_field_s &&tmp = {})
+{
+  tmp.name = name;
+  tmp.kind = field_kind::STRING;
+  tmp.str = str;
   return &tmp;
 }
 

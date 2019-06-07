@@ -6193,10 +6193,9 @@ print_one_breakpoint_location (struct breakpoint *b,
 	  && breakpoint_condition_evaluation_mode ()
 	  == condition_evaluation_target)
 	{
-	  uiout->text (" (");
-	  uiout->field_string ("evaluated-by",
-			       bp_condition_evaluator (b));
-	  uiout->text (" evals)");
+	  uiout->message (" (%pF evals)",
+			  string_field ("evaluated-by",
+					bp_condition_evaluator (b)));
 	}
       uiout->text ("\n");
     }
@@ -12752,10 +12751,9 @@ tracepoint_print_one_detail (const struct breakpoint *self,
     {
       gdb_assert (self->type == bp_static_tracepoint);
 
-      uiout->text ("\tmarker id is ");
-      uiout->field_string ("static-tracepoint-marker-string-id",
-			   tp->static_trace_marker_id);
-      uiout->text ("\n");
+      uiout->message ("\tmarker id is %pF\n",
+		      string_field ("static-tracepoint-marker-string-id",
+				    tp->static_trace_marker_id));
     }
 }
 
