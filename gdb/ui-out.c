@@ -618,11 +618,14 @@ ui_out::vmessage (const char *format, va_list args)
 	      }
 	      break;
 	    case 'S':
-	      style = *va_arg (args, const ui_file_style *);
-	      break;
-	    case 'N':
-	      va_arg (args, void *);
-	      style = {};
+	      {
+		const ui_file_style *style_p
+		  = va_arg (args, const ui_file_style *);
+		if (style_p != nullptr)
+		  style = *style_p;
+		else
+		  style = {};
+	      }
 	      break;
 	    default:
 	      call_do_message (style, current_substring, va_arg (args, void *));
