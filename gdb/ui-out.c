@@ -607,8 +607,22 @@ ui_out::vmessage (const char *format, va_list args)
 	    {
 	    case 'F':
 	      {
-		int_field_s *field = va_arg (args, int_field_s *);
-		field_int (field->name, field->val);
+		base_field_s *bf = va_arg (args, base_field_s *);
+		switch (bf->kind)
+		  {
+		  case field_kind::INT:
+		    {
+		      auto *f = (int_field_s *) bf;
+		      field_int (f->name, f->val);
+		    }
+		    break;
+		  case field_kind::STRING:
+		    {
+		      auto *f = (string_field_s *) bf;
+		      field_string (f->name, f->str);
+		    }
+		    break;
+		  }
 	      }
 	      break;
 	    case 's':
