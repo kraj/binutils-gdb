@@ -620,13 +620,13 @@ ui_out::message (const char *format, ...)
 		call_do_message (ss->style (), "%s", ss->str ());
 	      }
 	      break;
-	    /* case 'S': */
-	    /*   style = *va_arg (args, const ui_file_style *); */
-	    /*   break; */
-	    /* case 'N': */
-	    /*   va_arg (args, void *); */
-	    /*   style = nullptr; */
-	    /*   break; */
+	    case 'S':
+	      style = *va_arg (args, const ui_file_style *);
+	      break;
+	    case 'N':
+	      va_arg (args, void *);
+	      style = {};
+	      break;
 	    default:
 	      call_do_message (style, current_substring, va_arg (args, void *));
 	      break;
