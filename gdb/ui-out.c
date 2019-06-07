@@ -607,14 +607,14 @@ ui_out::vmessage (const char *format, va_list args)
 	    {
 	    case 'F':
 	      {
-		int_field *field = va_arg (args, int_field *);
-		field_int (field->name (), field->val ());
+		int_field_s *field = va_arg (args, int_field_s *);
+		field_int (field->name, field->val);
 	      }
 	      break;
 	    case 's':
 	      {
-		styled_string *ss = va_arg (args, styled_string *);
-		call_do_message (ss->style (), "%s", ss->str ());
+		styled_string_s *ss = va_arg (args, styled_string_s *);
+		call_do_message (ss->style, "%s", ss->str);
 	      }
 	      break;
 	    case 'S':

@@ -122,7 +122,7 @@ show_pp_source_pos (struct ui_file *stream,
   std::string fullname = macro_source_fullname (file);
   fprintf_filtered (stream, "%ps:%d\n",
 		    styled_string (file_name_style.style (),
-				   fullname.c_str ()).ptr (),
+				   fullname.c_str ()),
 		    line);
 
   while (file->included_by)

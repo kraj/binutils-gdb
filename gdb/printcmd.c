@@ -2190,7 +2190,7 @@ print_variable_and_value (const char *name, struct symbol *var,
     name = SYMBOL_PRINT_NAME (var);
 
   fprintf_filtered (stream, "%s%ps = ", n_spaces (2 * indent),
-		    styled_string (variable_name_style.style (), name).ptr ());
+		    styled_string (variable_name_style.style (), name));
 
   try
     {

@@ -4930,7 +4930,7 @@ watchpoint_check (bpstat bs)
 	  uiout->message ("\nWatchpoint %pF deleted because the program has "
 			  "left the block in\n"
 			  "which its expression is valid.\n",
-			  int_field ("wpnum", b->number).ptr ());
+			  int_field ("wpnum", b->number));
 	}
 
       /* Make sure the watchpoint's commands aren't executed.  */
@@ -6246,7 +6246,7 @@ print_one_breakpoint_location (struct breakpoint *b,
     {
       annotate_field (8);
       uiout->message ("\tignore next %pF hits\n",
-		      int_field ("ignore", b->ignore_count).ptr ());
+		      int_field ("ignore", b->ignore_count));
     }
 
   /* Note that an enable count of 1 corresponds to "enable once"
@@ -6695,7 +6695,7 @@ describe_other_breakpoints (struct gdbarch *gdbarch,
 	  }
       current_uiout->message (_("also set at pc %ps.\n"),
 			      styled_string (address_style.style (),
-					     paddress (gdbarch, pc)).ptr ());
+					     paddress (gdbarch, pc)));
     }
 }
 
@@ -12115,7 +12115,7 @@ say_where (struct breakpoint *b)
 	printf_filtered (" at %ps",
 			 styled_string (address_style.style (),
 					paddress (b->loc->gdbarch,
-						  b->loc->address)).ptr ());
+						  b->loc->address)));
       if (b->loc->symtab != NULL)
 	{
 	  /* If there is a single location, we can print the location
@@ -12126,7 +12126,7 @@ say_where (struct breakpoint *b)
 		= symtab_to_filename_for_display (b->loc->symtab);
 	      printf_filtered (": file %ps, line %d.",
 			       styled_string (file_name_style.style (),
-					      filename).ptr (),
+					      filename),
 			       b->loc->line_number);
 	    }
 	  else
@@ -12433,10 +12433,10 @@ bkpt_print_it (bpstat bs)
     }
   if (bp_temp)
     uiout->message ("Temporary breakpoint %pF, ",
-		    int_field ("bkptno", b->number).ptr ());
+		    int_field ("bkptno", b->number));
   else
     uiout->message ("Breakpoint %pF, ",
-		    int_field ("bkptno", b->number).ptr ());
+		    int_field ("bkptno", b->number));
 
   return PRINT_SRC_AND_LOC;
 }
