@@ -68,45 +68,50 @@ enum ui_out_type
     ui_out_type_list
   };
 
-struct int_field
+/* An int field, to be passed to %pF in format strings.  */
+
+struct int_field_s
 {
-  int_field (const char *name, int val)
-    : m_name (name),
-      m_val (val)
-  {
-  }
-
-  /* We need this because we can't pass a reference via
-     va_args.  */
-  const int_field *ptr () const { return this; }
-
-  const char *name () const {return m_name; }
-  int val () const {return m_val; }
-
-private:
-  const char *m_name;
-  int m_val;
+  const char *name;
+  int val;
 };
 
-struct styled_string
+/* Construct a temporary int_field_s on the caller's stack and return
+   a pointer to the constructed object.  We use this because it's not
+   possible to pass a reference via va_args.  */
+
+static inline int_field_s *
+int_field (const char *name, int val,
+	   int_field_s &&tmp = {})
 {
-  styled_string (const ui_file_style &style, const char *str)
-    : m_style (style),
-      m_str (str)
-  {
-  }
+  tmp.name = name;
+  tmp.val = val;
+  return &tmp;
+}
 
-  /* We need this because we can't pass a reference via
-     va_args.  */
-  const styled_string *ptr () const { return this; }
+/* A styled string.  */
 
-  const ui_file_style &style () const { return m_style; }
-  const char *str () const {return m_str; }
+struct styled_string_s
+{
+  /* The style.  */
+  ui_file_style style;
 
-private:
-  ui_file_style m_style;
-  const char *m_str;
+  /* The string.  */
+  const char *str;
 };
+
+/* Construct a temporary styled_string_s on the caller's stack and
+   return a pointer to the constructed object.  We use this because
+   it's not possible to pass a reference via va_args.  */
+
+static inline styled_string_s *
+styled_string (const ui_file_style &style, const char *str,
+	       styled_string_s &&tmp = {})
+{
+  tmp.style = style;
+  tmp.str = str;
+  return &tmp;
+}
 
 class ui_out
 {

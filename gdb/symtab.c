@@ -4605,7 +4605,7 @@ print_symbol_info (enum search_domain kind,
 	{
 	  current_uiout->message
 	    (_("\nFile %ps:\n"),
-	     styled_string (file_name_style.style (), s_filename).ptr ());
+	     styled_string (file_name_style.style (), s_filename));
 	}
 
       if (SYMBOL_LINE (sym) != 0)
@@ -4658,8 +4658,8 @@ print_msymbol_info (struct bound_minimal_symbol msymbol)
 
   current_uiout->message
     (_("%ps  %ps\n"),
-     styled_string (address_style.style (), tmp).ptr (),
-     styled_string (sym_style, MSYMBOL_PRINT_NAME (msymbol.minsym)).ptr ());
+     styled_string (address_style.style (), tmp),
+     styled_string (sym_style, MSYMBOL_PRINT_NAME (msymbol.minsym)));
 }
 
 /* This is the guts of the commands "info functions", "info types", and

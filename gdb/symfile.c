@@ -1117,7 +1117,7 @@ symbol_file_add_with_addrs (bfd *abfd, const char *name,
       else
 	current_uiout->message (_("Reading symbols from %ps...\n"),
 				styled_string (file_name_style.style (),
-					       name).ptr ());
+					       name));
     }
   syms_from_objfile (objfile, addrs, add_flags);
 
@@ -1130,8 +1130,7 @@ symbol_file_add_with_addrs (bfd *abfd, const char *name,
     {
       if (should_print)
 	current_uiout->message (_("Expanding full symbols from %ps...\n"),
-				styled_string (file_name_style.style (),
-					       name).ptr ());
+				styled_string (file_name_style.style (), name));
 
       if (objfile->sf)
 	objfile->sf->qf->expand_all_symtabs (objfile);
@@ -1144,8 +1143,7 @@ symbol_file_add_with_addrs (bfd *abfd, const char *name,
   if (should_print && !objfile_has_symbols (objfile)
       && objfile->separate_debug_objfile == nullptr)
     current_uiout->message (_("(No debugging symbols found in %ps)\n"),
-			    styled_string (file_name_style.style (),
-					   name).ptr ());
+			    styled_string (file_name_style.style (), name));
 
   if (should_print)
     {
