@@ -12112,23 +12112,21 @@ say_where (struct breakpoint *b)
   else
     {
       if (opts.addressprint || b->loc->symtab == NULL)
-	{
-	  printf_filtered (" at ");
-	  fputs_styled (paddress (b->loc->gdbarch, b->loc->address),
-			address_style.style (),
-			gdb_stdout);
-	}
+	printf_filtered (" at %ps",
+			 styled_string (address_style.style (),
+					paddress (b->loc->gdbarch,
+						  b->loc->address)).ptr ());
       if (b->loc->symtab != NULL)
 	{
 	  /* If there is a single location, we can print the location
 	     more nicely.  */
 	  if (b->loc->next == NULL)
 	    {
-	      puts_filtered (": file ");
-	      fputs_styled (symtab_to_filename_for_display (b->loc->symtab),
-			    file_name_style.style (),
-			    gdb_stdout);
-	      printf_filtered (", line %d.",
+	      const char *filename
+		= symtab_to_filename_for_display (b->loc->symtab);
+	      printf_filtered (": file %ps, line %d.",
+			       styled_string (file_name_style.style (),
+					      filename).ptr (),
 			       b->loc->line_number);
 	    }
 	  else
