@@ -1,7 +1,226 @@
+2019-06-19  Tom Tromey  <tromey@adacore.com>
+
+	* gdb.ada/length_cond.exp: Add intro comment.
+
+2019-06-19  Tom Tromey  <tromey@adacore.com>
+
+	* gdb.ada/length_cond.exp: New file.
+	* gdb.ada/length_cond/length_cond.adb: New file.
+	* gdb.ada/length_cond/pck.adb: New file.
+	* gdb.ada/length_cond/pck.ads: New file.
+
+2019-06-18  Tom de Vries  <tdevries@suse.de>
+
+	* boards/fission.exp (debug_flags): Add "-fuse-ld=gold".
+
+2019-06-18  Tom Tromey  <tromey@adacore.com>
+
+	* gdb.base/list0.h: Add comment explaining control character.
+
+2019-06-18  Tom de Vries  <tdevries@suse.de>
+
+	* boards/fission.exp: Break up long debug_flags line.
+
+2019-06-16  Tom de Vries  <tdevries@suse.de>
+
+	PR gdb/24445
+	* gdb.dwarf2/gdb-index.exp (add_gdb_index): Update dwz file with
+	generated index.
+
+2019-06-16  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	PR gdb/24686
+	* gdb.mi/mi-catch-cpp-exceptions.exp: Add an extra pattern to
+	improve detection of bug gdb/24541.
+
+2019-06-16  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	PR gdb/24669
+	* gdb.base/index-cache.exp (uses_readnow,
+	expecting_index_cache_use): Define global variable.
+	(test_cache_enabled_miss, test_cache_enabled_hit): Use
+	expecting_index_cache_use.
+
+2019-06-16  Bernhard Heckel  <bernhard.heckel@intel.com>
+	    Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.fortran/pointers.f90: New file.
+	* gdb.fortran/print_type.exp: New file.
+	* gdb.fortran/vla-ptype.exp: Adapt expected results.
+	* gdb.fortran/vla-type.exp: Likewise.
+	* gdb.fortran/vla-value.exp: Likewise.
+	* gdb.mi/mi-vla-fortran.exp: Likewise.
+
+2019-06-15  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.mi/mi-catch-cpp-exceptions.cc: New file.
+	* gdb.mi/mi-catch-cpp-exceptions.exp: New file.
+	* lib/mi-support.exp (mi_expect_stop): Handle 'exception-caught'
+	as a stop reason.
+
+2019-06-15  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.base/annota1.exp: Update expected results.
+	* gdb.cp/annota2.exp: Likewise.
+	* gdb.cp/annota3.exp: Likewise.
+
+2019-06-15  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.base/style-logging.exp: Remove path from test name.
+
+2019-06-14  Tom Tromey  <tromey@adacore.com>
+
+	PR gdb/24502:
+	* gdb.base/style-logging.exp: New file.
+
+2019-06-14  Tom Tromey  <tromey@adacore.com>
+
+	* gdb.base/symfile-warn.exp: New file.
+	* gdb.base/symfile-warn.c: New file.
+
+2019-06-14  Tom Tromey  <tromey@adacore.com>
+
+	* gdb.base/annotate-symlink.exp: New file.
+
+2019-06-14  Tom Tromey  <tromey@adacore.com>
+
+	* gdb.ada/set_wstr.exp: Add reassignment test.
+
+2019-06-14  Tom Tromey  <tromey@adacore.com>
+
+	* gdb.ada/formatted_ref.exp (test_p_x_addr): Check
+	'unchecked_access and 'unrestricted_access as well.
+
+2019-06-14  Tom Tromey  <tromey@adacore.com>
+
+	PR ada/24539:
+	* gdb.ada/vla.exp: Update tests.
+	* gdb.ada/vla/vla.adb (Record_Type): Use No_Component_Reordering
+	pragma.
+
+2019-06-13  Pedro Alves  <palves@redhat.com>
+
+	* gdb.base/settings.exp (test-integer): Test junk after
+	"unlimited".
+
+2019-06-13  Pedro Alves  <palves@redhat.com>
+
+	* gdb.base/options.exp (test-thread-apply): New.
+	(top level): Call it.
+
+2019-06-13  Pedro Alves  <palves@redhat.com>
+
+	* gdb.base/options.exp (test-frame-apply): New.
+	(top level): Test print commands with different "frame apply"
+	prefixes.
+
+2019-06-13  Pedro Alves  <palves@redhat.com>
+
+	* lib/completion-support.exp (test_gdb_complete_tab_multiple)
+	(test_gdb_complete_cmd_multiple, test_gdb_complete_multiple): Add
+	'max_completions' parameter and handle it.
+	(test_gdb_completion_offers_commands): New.
+
+2019-06-13  Pedro Alves  <palves@redhat.com>
+
+	* gdb.base/options.exp (test-backtrace): Test completing qualifiers.
+
+2019-06-13  Pedro Alves  <palves@redhat.com>
+
+	* gdb.base/options.exp (test-backtrace): New.
+	(top level): Call it.
+
+2019-06-13  Pedro Alves  <palves@redhat.com>
+
+	* gdb.guile/scm-frame-args.exp: Use "set print
+	raw-frame-arguments" instead of "set print raw frame-arguments".
+	* gdb.python/py-frame-args.exp: Likewise.
+
+2019-06-13  Pedro Alves  <palves@redhat.com>
+
+	* gdb.compile/compile.exp: Adjust expected output to option
+	processing changes.
+
+2019-06-13  Pedro Alves  <palves@redhat.com>
+
+	* gdb.base/options.exp: Build executable.
+	(test-print): New procedure.
+	(top level): Call it, once for "print" and another for "compile
+	print".
+
+2019-06-13  Pedro Alves  <palves@redhat.com>
+
+	* gdb.base/options.c: New file.
+	* gdb.base/options.exp: New file.
+
+2019-06-13  Pedro Alves  <palves@redhat.com>
+
+	* gdb.base/settings.exp (test-boolean, test-auto-boolean): Check
+	that "o" is ambiguous.
+
+2019-06-13  Pedro Alves  <palves@redhat.com>
+
+	* gdb.base/settings.c: New file.
+	* gdb.base/settings.exp: New file.
+
+2019-06-13  Pedro Alves  <palves@redhat.com>
+
+	* gdb.base/completion.exp: Fix comment typo.
+
+2019-06-13  Pedro Alves  <palves@redhat.com>
+
+	* gdb.multi/tids.exp: Adjust expected output.  Add "thread apply 1
+	foo --1" test.
+
+2019-06-11  Bernhard Heckel  <bernhard.heckel@intel.com>
+
+	* gdb.fortran/block-data.f: New.
+	* gdb.fortran/block-data.exp: New.
+
+2019-06-11  Tom de Vries  <tdevries@suse.de>
+
+	PR testsuite/24521
+	* gdb.multi/remove-inferiors.exp: Allow "Expanding full symbols"
+	message.
+
+2019-06-11  Tom de Vries  <tdevries@suse.de>
+
+	PR testsuite/24521
+	* gdb.dwarf2/nonvar-access.exp: Fix main high_pc.
+
+2019-06-11  Tom de Vries  <tdevries@suse.de>
+
+	* boards/readnow.exp: New file.
+
+2019-06-10  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.fortran/vla-sizeof.exp: Update expected results.
+
+2019-06-06  Amos Bird  <amosbird@gmail.com>
+
+	* gdb.base/annota1.exp (thread_switch): Add test for
+	thread-exited annotation.
+
+2019-06-06  Tom Tromey  <tromey@adacore.com>
+
+	* gdb.base/maint.exp: Expect command started/finished output.
+
+2019-06-05  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.arch/riscv-unwind-long-insn-6.s: Remove use of 'I' in
+	comment.
+	* gdb.arch/riscv-unwind-long-insn-8.s: Likewise.
+
+2019-06-05  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.arch/riscv-unwind-long-insn-6.s: New file.
+	* gdb.arch/riscv-unwind-long-insn-8.s: New file.
+	* gdb.arch/riscv-unwind-long-insn.c: New file.
+	* gdb.arch/riscv-unwind-long-insn.exp: New file.
+
 2019-06-04  Christian Biesinger  <cbiesinger@google.com>
 
-	* gdb/testsuite/gdb.python/py-type.exp: Test for new
-	  gdb.Type.objfile property.
+	* gdb.python/py-type.exp: Test for new gdb.Type.objfile property.
 
 2019-06-03  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
 
@@ -166,7 +385,7 @@
 	(gdb_debug_init): Likewise.
 
 2019-05-17  Alan Hayward  <alan.hayward@arm.com>
-	
+
 	* Makefile.in: Pass through GDB_DEBUG.
 	* README (Testsuite Parameters): Add GDB_DEBUG.
 	(gdb,debug): Add board setting.
@@ -409,12 +628,12 @@
 
 2019-04-25  Alan Hayward  <alan.hayward@arm.com>
 
-        * Makefile.in: Pass through GDBSERVER_DEBUG.
-        * README (Testsuite Parameters): Add GDBSERVER_DEBUG.
-        (gdbserver,debug): Add board setting.
-        * gdb.trace/tspeed.exp: Skip when debugging.
-        * lib/gdb.exp (gdbserver_debug_enabled): New procedure.
-        * lib/gdbserver-support.exp: Likewise
+	* Makefile.in: Pass through GDBSERVER_DEBUG.
+	* README (Testsuite Parameters): Add GDBSERVER_DEBUG.
+	(gdbserver,debug): Add board setting.
+	* gdb.trace/tspeed.exp: Skip when debugging.
+	* lib/gdb.exp (gdbserver_debug_enabled): New procedure.
+	* lib/gdbserver-support.exp: Likewise
 
 2019-04-24  Tom Tromey  <tromey@adacore.com>
 
@@ -3193,7 +3412,7 @@
 
 2017-12-07  Phil Muldoon  <pmuldoon@redhat.com>
 
-       * gdb.python/py-breakpoint.exp (test_bkpt_explicit_loc): Add new
+	* gdb.python/py-breakpoint.exp (test_bkpt_explicit_loc): Add new
 	tests for explicit locations.
 
 2017-12-06  Pedro Alves  <palves@redhat.com>
@@ -4066,8 +4285,8 @@
 	* gdb.mi/mi-vla-fortran.exp: Likewise.
 
 2017-09-08  Frank Penczek  <frank.penczek@intel.com>
-            Christoph Weinmann  <christoph.t.weinmann@intel.com>
-            Bernhard Heckel  <bernhard.heckel@intel.com>
+	    Christoph Weinmann  <christoph.t.weinmann@intel.com>
+	    Bernhard Heckel  <bernhard.heckel@intel.com>
 
 	* gdb.fortran/ptr-indentation.f90: New file.
 	* gdb.fortran/ptr-indentation.exp: New file.

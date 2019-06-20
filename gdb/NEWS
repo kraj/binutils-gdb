@@ -3,6 +3,8 @@
 
 *** Changes since GDB 8.3
 
+* 'thread-exited' event is now available in the annotations interface.
+
 * New built-in convenience variables $_gdb_major and $_gdb_minor
   provide the GDB version.  They are handy for conditionally using
   features available only in or since specific GDB versions, in
@@ -19,6 +21,10 @@
 * Two new convenience functions $_cimag and $_creal that extract the
   imaginary and real parts respectively from complex numbers.
 
+* New built-in convenience variables $_shell_exitcode and $_shell_exitsignal
+  provide the exitcode or exit status of the shell commands launched by
+  GDB commands such as "shell", "pipe" and "make".
+
 * Python API
 
   ** The gdb.Value type has a new method 'format_string' which returns a
@@ -29,10 +35,6 @@
 
   ** gdb.Type has a new property 'objfile' which returns the objfile the
      type was defined in.
-
-* New built-in convenience variables $_shell_exitcode and $_shell_exitsignal
-  provide the exitcode or exit status of the shell commands launched by
-  GDB commands such as "shell", "pipe" and "make".
 
 * New commands
 
@@ -82,6 +84,10 @@ set style highlight background COLOR
 set style highlight intensity VALUE
   Control the styling of highlightings.
 
+maint test-settings KIND
+  A set of commands used by the testsuite for exercising the settings
+  infrastructure.
+
 * Changed commands
 
 help
@@ -101,6 +107,104 @@ show style
   a style name in their output using its own style, to help
   the user visualize the different styles.
 
+set print raw-frame-arguments
+show print raw-frame-arguments
+
+  These commands replace the similarly-named "set/show print raw
+  frame-arguments" commands (now with a dash instead of a space).  The
+  old commands are now deprecated and may be removed in a future
+  release.
+
+maint test-options require-delimiter
+maint test-options unknown-is-error
+maint test-options unknown-is-operand
+maint show test-options-completion-result
+  Commands used by the testsuite to validate the command options
+  framework.
+
+* New command options, command completion
+
+  GDB now has a standard infrastructure to support dash-style command
+  options ('-OPT').  One benefit is that commands that use it can
+  easily support completion of command line arguments.  Try "CMD
+  -[TAB]" or "help CMD" to find options supported by a command.  Over
+  time, we intend to migrate most commands to this infrastructure.  A
+  number of commands got support for new command options in this
+  release:
+
+  ** The "print" and "compile print" commands now support a number of
+     options that allow overriding relevant global print settings as
+     set by "set print" subcommands:
+
+      -address [on|off]
+      -array [on|off]
+      -array-indexes [on|off]
+      -elements NUMBER|unlimited
+      -null-stop [on|off]
+      -object [on|off]
+      -pretty [on|off]
+      -repeats NUMBER|unlimited
+      -static-members [on|off]
+      -symbol [on|off]
+      -union [on|off]
+      -vtbl [on|off]
+
+     Note that because the "print"/"compile print" commands accept
+     arbitrary expressions which may look like options (including
+     abbreviations), if you specify any command option, then you must
+     use a double dash ("--") to mark the end of argument processing.
+
+  ** The "backtrace" command now supports a number of options that
+     allow overriding relevant global print settings as set by "set
+     backtrace" and "set print" subcommands:
+
+      -entry-values no|only|preferred|if-needed|both|compact|default
+      -frame-arguments all|scalars|none
+      -raw-frame-arguments [on|off]
+      -past-main [on|off]
+      -past-entry [on|off]
+
+     In addition, the full/no-filters/hide qualifiers are now also
+     exposed as command options too:
+
+      -full
+      -no-filters
+      -hide
+
+  ** The "frame apply", "tfaas" and "faas" commands similarly now
+     support the following options:
+
+      -past-main [on|off]
+      -past-entry [on|off]
+
+   All options above can also be abbreviated.  The argument of boolean
+   (on/off) options can be 0/1 too, and also the argument is assumed
+   "on" if omitted.  This allows writing compact command invocations,
+   like for example:
+
+    (gdb) p -r -p -o 0 -- *myptr
+
+   The above is equivalent to:
+
+    (gdb) print -raw -pretty -object off -- *myptr
+
+* Completion improvements
+
+  ** GDB can now complete the options of the "thread apply all" and
+     "taas" commands, and their "-ascending" option can now be
+     abbreviated.
+
+  ** GDB can now complete the options of the "compile file" and
+     "compile code" commands.  The "compile file" command now
+     completes on filenames.
+
+  ** GDB can now complete the backtrace command's
+     "full/no-filters/hide" qualifiers.
+
+* In settings, you can now abbreviate "unlimited".
+
+  E.g., "set print elements u" is now equivalent to "set print
+  elements unlimited".
 
 * New MI commands
 
@@ -108,6 +212,10 @@ show style
   This lists all the possible completions for the rest of the line, if it
   were to be given as a command itself.  This is intended for use by MI
   frontends in cases when separate CLI and MI channels cannot be used.
+
+-catch-throw, -catch-rethrow, and -catch-catch
+  These can be used to catch C++ exceptions in a similar fashion to
+  the CLI commands 'catch throw', 'catch rethrow', and 'catch catch'.
 
 * Testsuite
 

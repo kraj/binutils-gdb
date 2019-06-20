@@ -509,6 +509,9 @@ add_setshow_cmd_full (const char *name,
 			      full_show_doc, show_list);
   show->doc_allocated = 1;
   show->show_value_func = show_func;
+  /* Disable the default symbol completer.  Doesn't make much sense
+     for the "show" command to complete on anything.  */
+  set_cmd_completer (show, nullptr);
 
   if (set_result != NULL)
     *set_result = set;
@@ -548,6 +551,7 @@ add_setshow_enum_cmd (const char *name,
   set_cmd_context (show, context);
 }
 
+/* See cli-decode.h.  */
 const char * const auto_boolean_enums[] = { "on", "off", "auto", NULL };
 
 /* Add an auto-boolean command named NAME to both the set and show
@@ -575,11 +579,16 @@ add_setshow_auto_boolean_cmd (const char *name,
   c->enums = auto_boolean_enums;
 }
 
+/* See cli-decode.h.  */
+const char * const boolean_enums[] = { "on", "off", NULL };
+
 /* Add element named NAME to both the set and show command LISTs (the
    list for set/show or some sublist thereof).  CLASS is as in
    add_cmd.  VAR is address of the variable which will contain the
-   value.  SET_DOC and SHOW_DOC are the documentation strings.  */
-void
+   value.  SET_DOC and SHOW_DOC are the documentation strings.
+   Returns the new command element.  */
+
+cmd_list_element *
 add_setshow_boolean_cmd (const char *name, enum command_class theclass, int *var,
 			 const char *set_doc, const char *show_doc,
 			 const char *help_doc,
@@ -588,7 +597,6 @@ add_setshow_boolean_cmd (const char *name, enum command_class theclass, int *var
 			 struct cmd_list_element **set_list,
 			 struct cmd_list_element **show_list)
 {
-  static const char *boolean_enums[] = { "on", "off", NULL };
   struct cmd_list_element *c;
 
   add_setshow_cmd_full (name, theclass, var_boolean, var,
@@ -597,6 +605,8 @@ add_setshow_boolean_cmd (const char *name, enum command_class theclass, int *var
 			set_list, show_list,
 			&c, NULL);
   c->enums = boolean_enums;
+
+  return c;
 }
 
 /* Add element named NAME to both the set and show command LISTs (the
@@ -633,11 +643,16 @@ add_setshow_string_cmd (const char *name, enum command_class theclass,
 			struct cmd_list_element **set_list,
 			struct cmd_list_element **show_list)
 {
+  cmd_list_element *set_cmd;
+
   add_setshow_cmd_full (name, theclass, var_string, var,
 			set_doc, show_doc, help_doc,
 			set_func, show_func,
 			set_list, show_list,
-			NULL, NULL);
+			&set_cmd, NULL);
+
+  /* Disable the default symbol completer.  */
+  set_cmd_completer (set_cmd, nullptr);
 }
 
 /* Add element named NAME to both the set and show command LISTs (the
@@ -659,6 +674,10 @@ add_setshow_string_noescape_cmd (const char *name, enum command_class theclass,
 			set_func, show_func,
 			set_list, show_list,
 			&set_cmd, NULL);
+
+  /* Disable the default symbol completer.  */
+  set_cmd_completer (set_cmd, nullptr);
+
   return set_cmd;
 }
 

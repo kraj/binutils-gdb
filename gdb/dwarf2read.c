@@ -212,7 +212,7 @@ struct mapped_index final : public mapped_index_base
   bool symbol_name_slot_invalid (offset_type idx) const override
   {
     const auto &bucket = this->symbol_table[idx];
-    return bucket.name == 0 && bucket.vec;
+    return bucket.name == 0 && bucket.vec == 0;
   }
 
   /* Convenience method to get at the name of the symbol at IDX in the
@@ -873,32 +873,6 @@ struct dwp_file
      This is only needed for the DWP V1 file format.  */
   unsigned int num_sections = 0;
   asection **elf_sections = nullptr;
-};
-
-/* This represents a '.dwz' file.  */
-
-struct dwz_file
-{
-  dwz_file (gdb_bfd_ref_ptr &&bfd)
-    : dwz_bfd (std::move (bfd))
-  {
-  }
-
-  /* A dwz file can only contain a few sections.  */
-  struct dwarf2_section_info abbrev {};
-  struct dwarf2_section_info info {};
-  struct dwarf2_section_info str {};
-  struct dwarf2_section_info line {};
-  struct dwarf2_section_info macro {};
-  struct dwarf2_section_info gdb_index {};
-  struct dwarf2_section_info debug_names {};
-
-  /* The dwz's BFD.  */
-  gdb_bfd_ref_ptr dwz_bfd;
-
-  /* If we loaded the index from an external file, this contains the
-     resources associated to the open file, memory mapping, etc.  */
-  std::unique_ptr<index_cache_resource> index_cache_res;
 };
 
 /* Struct used to pass misc. parameters to read_die_and_children, et
@@ -2668,11 +2642,9 @@ locate_dwz_sections (bfd *abfd, asection *sectp, void *arg)
     }
 }
 
-/* Open the separate '.dwz' debug file, if needed.  Return NULL if
-   there is no .gnu_debugaltlink section in the file.  Error if there
-   is such a section but the file cannot be found.  */
+/* See dwarf2read.h.  */
 
-static struct dwz_file *
+struct dwz_file *
 dwarf2_get_dwz_file (struct dwarf2_per_objfile *dwarf2_per_objfile)
 {
   const char *filename;
@@ -9018,11 +8990,15 @@ add_partial_symbol (struct partial_die_info *pdi, struct dwarf2_cu *cu)
 			   0, cu->language, objfile);
       break;
     case DW_TAG_module:
-      add_psymbol_to_list (actual_name, strlen (actual_name),
-			   built_actual_name != NULL,
-			   MODULE_DOMAIN, LOC_TYPEDEF, -1,
-			   psymbol_placement::GLOBAL,
-			   0, cu->language, objfile);
+      /* With Fortran 77 there might be a "BLOCK DATA" module
+         available without any name.  If so, we skip the module as it
+         doesn't bring any value.  */
+      if (actual_name != nullptr)
+	add_psymbol_to_list (actual_name, strlen (actual_name),
+			     built_actual_name != NULL,
+			     MODULE_DOMAIN, LOC_TYPEDEF, -1,
+			     psymbol_placement::GLOBAL,
+			     0, cu->language, objfile);
       break;
     case DW_TAG_class_type:
     case DW_TAG_interface_type:
@@ -13746,6 +13722,10 @@ read_func_scope (struct die_info *die, struct dwarf2_cu *cu)
   newobj->name = new_symbol (die, read_type_die (die, cu), cu,
 			     (struct symbol *) templ_func);
 
+  if (dwarf2_flag_true_p (die, DW_AT_main_subprogram, cu))
+    set_objfile_main_name (objfile, SYMBOL_LINKAGE_NAME (newobj->name),
+			   cu->language);
+
   /* If there is a location expression for DW_AT_frame_base, record
      it.  */
   attr = dwarf2_attr (die, DW_AT_frame_base, cu);
@@ -14308,7 +14288,7 @@ read_variable (struct die_info *die, struct dwarf2_cu *cu)
       struct die_info *origin_die
 	= follow_die_ref (die, abstract_origin, &origin_cu);
       dwarf2_per_objfile *dpo = cu->per_cu->dwarf2_per_objfile;
-      dpo->abstract_to_concrete[origin_die].push_back (die);
+      dpo->abstract_to_concrete[origin_die->sect_off].push_back (die->sect_off);
     }
 }
 
@@ -16951,9 +16931,6 @@ read_module_type (struct die_info *die, struct dwarf2_cu *cu)
   struct type *type;
 
   module_name = dwarf2_name (die, cu);
-  if (!module_name)
-    complaint (_("DW_TAG_module has no name, offset %s"),
-               sect_offset_str (die->sect_off));
   type = init_type (objfile, TYPE_CODE_MODULE, 0, module_name);
 
   return set_die_type (die, type, cu);
@@ -23279,14 +23256,19 @@ dwarf2_fetch_die_loc_sect_off (sect_offset sect_off,
 
   attr = dwarf2_attr (die, DW_AT_location, cu);
   if (!attr && resolve_abstract_p
-      && (dwarf2_per_objfile->abstract_to_concrete.find (die)
+      && (dwarf2_per_objfile->abstract_to_concrete.find (die->sect_off)
 	  != dwarf2_per_objfile->abstract_to_concrete.end ()))
     {
       CORE_ADDR pc = (*get_frame_pc) (baton);
 
-      for (const auto &cand : dwarf2_per_objfile->abstract_to_concrete[die])
+      for (const auto &cand_off
+	     : dwarf2_per_objfile->abstract_to_concrete[die->sect_off])
 	{
-	  if (!cand->parent
+	  struct dwarf2_cu *cand_cu = cu;
+	  struct die_info *cand
+	    = follow_die_offset (cand_off, per_cu->is_dwz, &cand_cu);
+	  if (!cand
+	      || !cand->parent
 	      || cand->parent->tag != DW_TAG_subprogram)
 	    continue;
 

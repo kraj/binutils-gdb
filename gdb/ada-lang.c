@@ -872,8 +872,7 @@ ada_get_decoded_type (struct type *type)
 enum language
 ada_update_initial_language (enum language lang)
 {
-  if (lookup_minimal_symbol ("adainit", (const char *) NULL,
-                             (struct objfile *) NULL).minsym != NULL)
+  if (lookup_minimal_symbol ("adainit", NULL, NULL).minsym != NULL)
     return language_ada;
 
   return lang;
@@ -10486,7 +10485,11 @@ ada_evaluate_subexp (struct type *expect_type, struct expression *exp,
       arg2 = evaluate_subexp (type, exp, pos, noside);
       if (noside == EVAL_SKIP || noside == EVAL_AVOID_SIDE_EFFECTS)
         return arg1;
-      if (ada_is_fixed_point_type (value_type (arg1)))
+      if (VALUE_LVAL (arg1) == lval_internalvar)
+	{
+	  /* Nothing.  */
+	}
+      else if (ada_is_fixed_point_type (value_type (arg1)))
         arg2 = cast_to_fixed (value_type (arg1), arg2);
       else if (ada_is_fixed_point_type (value_type (arg2)))
         error
@@ -11052,8 +11055,34 @@ ada_evaluate_subexp (struct type *expect_type, struct expression *exp,
 
         if (noside == EVAL_SKIP)
           goto nosideret;
+	else if (noside == EVAL_AVOID_SIDE_EFFECTS)
+	  {
+	    if (type_arg == NULL)
+	      type_arg = value_type (arg1);
 
-        if (type_arg == NULL)
+            if (ada_is_constrained_packed_array_type (type_arg))
+	      type_arg = decode_constrained_packed_array_type (type_arg);
+
+	    if (!discrete_type_p (type_arg))
+	      {
+		switch (op)
+		  {
+		  default:          /* Should never happen.  */
+		    error (_("unexpected attribute encountered"));
+		  case OP_ATR_FIRST:
+		  case OP_ATR_LAST:
+		    type_arg = ada_index_type (type_arg, tem,
+					       ada_attribute_name (op));
+		    break;
+		  case OP_ATR_LENGTH:
+		    type_arg = builtin_type (exp->gdbarch)->builtin_int;
+		    break;
+		  }
+	      }
+
+	    return value_zero (type_arg, not_lval);
+	  }
+        else if (type_arg == NULL)
           {
             arg1 = ada_coerce_ref (arg1);
 
@@ -11069,9 +11098,6 @@ ada_evaluate_subexp (struct type *expect_type, struct expression *exp,
 		if (type == NULL)
 		  type = builtin_type (exp->gdbarch)->builtin_int;
 	      }
-
-            if (noside == EVAL_AVOID_SIDE_EFFECTS)
-              return allocate_value (type);
 
             switch (op)
               {
@@ -11129,9 +11155,6 @@ ada_evaluate_subexp (struct type *expect_type, struct expression *exp,
 		if (type == NULL)
 		  type = builtin_type (exp->gdbarch)->builtin_int;
 	      }
-
-            if (noside == EVAL_AVOID_SIDE_EFFECTS)
-              return allocate_value (type);
 
             switch (op)
               {
@@ -13195,8 +13218,7 @@ catch_ada_completer (struct cmd_list_element *cmd, completion_tracker &tracker,
   for (const ada_exc_info &info : exceptions)
     {
       if (startswith (info.name, word))
-	tracker.add_completion
-	  (gdb::unique_xmalloc_ptr<char> (xstrdup (info.name)));
+	tracker.add_completion (make_unique_xstrdup (info.name));
     }
 }
 
@@ -14408,14 +14430,15 @@ overloads selection menu is activated"),
 
   add_catch_command ("exception", _("\
 Catch Ada exceptions, when raised.\n\
-Usage: catch exception [ ARG ]\n\
-\n\
+Usage: catch exception [ARG] [if CONDITION]\n\
 Without any argument, stop when any Ada exception is raised.\n\
 If ARG is \"unhandled\" (without the quotes), only stop when the exception\n\
 being raised does not have a handler (and will therefore lead to the task's\n\
 termination).\n\
 Otherwise, the catchpoint only stops when the name of the exception being\n\
-raised is the same as ARG."),
+raised is the same as ARG.\n\
+CONDITION is a boolean expression that is evaluated to see whether the\n\
+exception should cause a stop."),
 		     catch_ada_exception_command,
 		     catch_ada_completer,
 		     CATCH_PERMANENT,
@@ -14423,14 +14446,20 @@ raised is the same as ARG."),
 
   add_catch_command ("handlers", _("\
 Catch Ada exceptions, when handled.\n\
-With an argument, catch only exceptions with the given name."),
+Usage: catch handlers [ARG] [if CONDITION]\n\
+Without any argument, stop when any Ada exception is handled.\n\
+With an argument, catch only exceptions with the given name.\n\
+CONDITION is a boolean expression that is evaluated to see whether the\n\
+exception should cause a stop."),
 		     catch_ada_handlers_command,
                      catch_ada_completer,
 		     CATCH_PERMANENT,
 		     CATCH_TEMPORARY);
   add_catch_command ("assert", _("\
 Catch failed Ada assertions, when raised.\n\
-With an argument, catch only exceptions with the given name."),
+Usage: catch assert [if CONDITION]\n\
+CONDITION is a boolean expression that is evaluated to see whether the\n\
+exception should cause a stop."),
 		     catch_assert_command,
                      NULL,
 		     CATCH_PERMANENT,
@@ -14448,6 +14477,7 @@ and exceeds this limit will cause an error."),
   add_info ("exceptions", info_exceptions_command,
 	    _("\
 List all Ada exception names.\n\
+Usage: info exceptions [REGEXP]\n\
 If a regular expression is passed as an argument, only those matching\n\
 the regular expression are listed."));
 

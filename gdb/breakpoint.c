@@ -85,14 +85,6 @@
 #include "common/array-view.h"
 #include "common/gdb_optional.h"
 
-/* Enums for exception-handling support.  */
-enum exception_event_kind
-{
-  EX_EVENT_THROW,
-  EX_EVENT_RETHROW,
-  EX_EVENT_CATCH
-};
-
 /* Prototypes for local functions.  */
 
 static void map_breakpoint_numbers (const char *,
@@ -941,10 +933,7 @@ condition_completer (struct cmd_list_element *cmd,
 	  xsnprintf (number, sizeof (number), "%d", b->number);
 
 	  if (strncmp (number, text, len) == 0)
-	    {
-	      gdb::unique_xmalloc_ptr<char> copy (xstrdup (number));
-	      tracker.add_completion (std::move (copy));
-	    }
+	    tracker.add_completion (make_unique_xstrdup (number));
 	}
 
       return;
@@ -9504,7 +9493,7 @@ stopin_command (const char *arg, int from_tty)
 {
   int badInput = 0;
 
-  if (arg == (char *) NULL)
+  if (arg == NULL)
     badInput = 1;
   else if (*arg != '*')
     {
@@ -9537,7 +9526,7 @@ stopat_command (const char *arg, int from_tty)
 {
   int badInput = 0;
 
-  if (arg == (char *) NULL || *arg == '*')	/* no line number */
+  if (arg == NULL || *arg == '*')	/* no line number */
     badInput = 1;
   else
     {
@@ -10899,10 +10888,7 @@ watch_maybe_just_location (const char *arg, int accessflag, int from_tty)
   if (arg
       && (check_for_argument (&arg, "-location", sizeof ("-location") - 1)
 	  || check_for_argument (&arg, "-l", sizeof ("-l") - 1)))
-    {
-      arg = skip_spaces (arg);
-      just_location = 1;
-    }
+    just_location = 1;
 
   watch_command_1 (arg, accessflag, from_tty, just_location, 0);
 }
@@ -11029,7 +11015,7 @@ until_break_command (const char *arg, int from_tty, int anywhere)
 			get_last_displayed_symtab (),
 			get_last_displayed_line ())
        : decode_line_1 (location.get (), DECODE_LINE_FUNFIRSTLINE,
-			NULL, (struct symtab *) NULL, 0));
+			NULL, NULL, 0));
 
   if (sals.size () != 1)
     error (_("Couldn't get information on specified line."));
@@ -13744,8 +13730,7 @@ decode_location_default (struct breakpoint *b,
   struct linespec_result canonical;
 
   decode_line_full (location, DECODE_LINE_FUNFIRSTLINE, search_pspace,
-		    (struct symtab *) NULL, 0,
-		    &canonical, multiple_symbols_all,
+		    NULL, 0, &canonical, multiple_symbols_all,
 		    b->filter);
 
   /* We should get 0 or 1 resulting SALs.  */
@@ -15117,7 +15102,7 @@ functions in all scopes.  For C++, this means in all namespaces and\n\
 classes.  For Ada, this means in all packages.  E.g., in C++,\n\
 \"func()\" matches \"A::func()\", \"A::B::func()\", etc.  The\n\
 \"-qualified\" flag overrides this behavior, making GDB interpret the\n\
-specified name as a complete fully-qualified name instead.\n"
+specified name as a complete fully-qualified name instead."
 
 /* This help string is used for the break, hbreak, tbreak and thbreak
    commands.  It is defined as a macro to prevent duplication.
@@ -15138,7 +15123,7 @@ stack frame.  This is useful for breaking on return to a stack frame.\n\
 \n\
 THREADNUM is the number from \"info threads\".\n\
 CONDITION is a boolean expression.\n\
-\n" LOCATION_HELP_STRING "\n\
+\n" LOCATION_HELP_STRING "\n\n\
 Multiple breakpoints at one place are permitted, and useful if their\n\
 conditions are different.\n\
 \n\
@@ -15510,7 +15495,7 @@ With a subcommand you can enable temporarily."),
 Enable some breakpoints.\n\
 Give breakpoint numbers (separated by spaces) as arguments.\n\
 This is used to cancel the effect of the \"disable\" command.\n\
-May be abbreviated to simply \"enable\".\n"),
+May be abbreviated to simply \"enable\"."),
 		   &enablebreaklist, "enable breakpoints ", 1, &enablelist);
 
   add_cmd ("once", no_class, enable_once_command, _("\
@@ -15586,7 +15571,7 @@ Argument may be a linespec, explicit, or address location as described below.\n\
 \n\
 With no argument, clears all breakpoints in the line that the selected frame\n\
 is executing in.\n"
-"\n" LOCATION_HELP_STRING "\n\
+"\n" LOCATION_HELP_STRING "\n\n\
 See also the \"delete\" command which clears breakpoints by number."));
   add_com_alias ("cl", "clear", class_breakpoint, 1);
 
@@ -15786,7 +15771,7 @@ tracing library.  You can inspect it when analyzing the trace buffer,\n\
 by printing the $_sdata variable like any other convenience variable.\n\
 \n\
 CONDITION is a boolean expression.\n\
-\n" LOCATION_HELP_STRING "\n\
+\n" LOCATION_HELP_STRING "\n\n\
 Multiple tracepoints at one place are permitted, and useful if their\n\
 conditions are different.\n\
 \n\

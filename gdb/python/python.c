@@ -1759,8 +1759,7 @@ argument, and if the command is an expression, the result will be\n\
 printed.  For example:\n\
 \n\
     (gdb) python-interactive 2 + 3\n\
-    5\n\
-")
+    5")
 #else /* HAVE_PYTHON */
 	   _("\
 Start a Python interactive prompt.\n\
@@ -1876,7 +1875,7 @@ do_finish_initialization (const struct extension_language_defn *extlang)
       warning (_("\n"
 		 "Could not load the Python gdb module from `%s'.\n"
 		 "Limited Python support is available from the _gdb module.\n"
-		 "Suggest passing --data-directory=/path/to/gdb/data-directory.\n"),
+		 "Suggest passing --data-directory=/path/to/gdb/data-directory."),
 	       gdb_pythondir.c_str ());
       /* We return "success" here as we've already emitted the
 	 warning.  */

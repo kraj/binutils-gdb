@@ -1,6 +1,52 @@
+2019-06-18  Simon Marchi  <simon.marchi@efficios.com>
+
+	* gdb.texinfo (Invoking GDB): Remove sentence about how GDB
+	deals with a file that has the same name as the specified pid to
+	attach to.  Add example using -p option.
+	(gdb man): Remove same sentence as in previous item.
+
+2019-06-15  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.texinfo (GDB/MI Catchpoint Commands): Add menu entry to new
+	node.
+	(C++ Exception GDB/MI Catchpoint Commands): New node to describe
+	new MI commands.
+
+2019-06-13  Pedro Alves  <palves@redhat.com>
+
+	* gdb.texinfo (Command Completion): Mention command options too.
+	(Command Options): New node.
+	(Threads): Add anchors.  Extend descriptions of the "taas" and
+	"tfaas" commands.
+	(Backtrace): Describe new options of the "backtrace" command.  Add
+	anchors.
+	(Frame Apply): Describe new options of the "frame apply" and
+	"faas" commands.  Add anchors.
+	(Data): Describe new options of the "print" command.  Add anchors.
+	(Compiling and Injecting Code): Mention options of the "compile
+	print" command.
+	(Maintenance Commands): Mention "maint test-options" subcommands
+	and the "maint show test-options-completion-result" command.
+
+2019-06-13  Pedro Alves  <palves@redhat.com>
+
+	* gdb.texinfo (Print Settings): Document "set/show print
+	raw-frame-arguments" instead of "set/show print raw
+	frame-arguments".
+
+2019-06-13  Pedro Alves  <palves@redhat.com>
+
+	* gdb.texinfo (Maintenance Commands): Document "maint
+	test-settings" commands.
+
+2019-06-06  Amos Bird  <amosbird@gmail.com>
+
+	* annotate.texinfo (Multi-threaded Apps): Add entry for thread-exited
+	annotation.
+
 2019-06-04  Christian Biesinger  <cbiesinger@google.com>
 
-	* gdb/doc/python.texi: Document new gdb.Type.objfile property.
+	* python.texi: Document new gdb.Type.objfile property.
 
 2019-06-03  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
 

@@ -198,11 +198,9 @@ tui_clear_win_detail (struct tui_win_info *win_info)
 	  wmove (win_info->generic.handle, 0, 0);
 	  break;
 	case DATA_WIN:
-	  win_info->detail.data_display_info.data_content =
-	    (tui_win_content) NULL;
+	  win_info->detail.data_display_info.data_content = NULL;
 	  win_info->detail.data_display_info.data_content_count = 0;
-	  win_info->detail.data_display_info.regs_content =
-	    (tui_win_content) NULL;
+	  win_info->detail.data_display_info.regs_content = NULL;
 	  win_info->detail.data_display_info.regs_content_count = 0;
 	  win_info->detail.data_display_info.regs_column_count = 1;
 	  win_info->detail.data_display_info.display_regs = FALSE;
@@ -424,8 +422,7 @@ tui_alloc_generic_win_info (void)
 {
   struct tui_gen_win_info *win = XNEW (struct tui_gen_win_info);
 
-  if (win != NULL)
-    tui_init_generic_part (win);
+  tui_init_generic_part (win);
 
   return win;
 }
@@ -508,8 +505,7 @@ init_win_info (struct tui_win_info *win_info)
     {
     case SRC_WIN:
     case DISASSEM_WIN:
-      win_info->detail.source_info.execution_info
-	= (struct tui_gen_win_info *) NULL;
+      win_info->detail.source_info.execution_info = NULL;
       win_info->detail.source_info.has_locator = FALSE;
       win_info->detail.source_info.horizontal_offset = 0;
       win_info->detail.source_info.gdbarch = NULL;
@@ -518,9 +514,9 @@ init_win_info (struct tui_win_info *win_info)
       win_info->detail.source_info.fullname = NULL;
       break;
     case DATA_WIN:
-      win_info->detail.data_display_info.data_content = (tui_win_content) NULL;
+      win_info->detail.data_display_info.data_content = NULL;
       win_info->detail.data_display_info.data_content_count = 0;
-      win_info->detail.data_display_info.regs_content = (tui_win_content) NULL;
+      win_info->detail.data_display_info.regs_content = NULL;
       win_info->detail.data_display_info.regs_content_count = 0;
       win_info->detail.data_display_info.regs_column_count = 1;
       win_info->detail.data_display_info.display_regs = FALSE;
@@ -537,11 +533,8 @@ tui_alloc_win_info (enum tui_win_type type)
 {
   struct tui_win_info *win_info = XNEW (struct tui_win_info);
 
-  if (win_info != NULL)
-    {
-      win_info->generic.type = type;
-      init_win_info (win_info);
-    }
+  win_info->generic.type = type;
+  init_win_info (win_info);
 
   return win_info;
 }
@@ -602,15 +595,9 @@ tui_add_content_elements (struct tui_gen_win_info *win_info,
       for (i = index_start; (i < num_elements + index_start); i++)
 	{
 	  element_ptr = XNEW (struct tui_win_element);
-	  if (element_ptr != NULL)
-	    {
-	      win_info->content[i] = element_ptr;
-	      init_content_element (element_ptr, win_info->type);
-	      win_info->content_size++;
-	    }
-	  else	/* Things must be really hosed now!  We ran out of
-		   memory!?  */
-	    return (-1);
+	  win_info->content[i] = element_ptr;
+	  init_content_element (element_ptr, win_info->type);
+	  win_info->content_size++;
 	}
     }
 
@@ -630,7 +617,7 @@ tui_del_window (struct tui_win_info *win_info)
     case SRC_WIN:
     case DISASSEM_WIN:
       generic_win = tui_locator_win_info_ptr ();
-      if (generic_win != (struct tui_gen_win_info *) NULL)
+      if (generic_win != NULL)
 	{
 	  tui_delete_win (generic_win->handle);
 	  generic_win->handle = NULL;
@@ -642,7 +629,7 @@ tui_del_window (struct tui_win_info *win_info)
           win_info->detail.source_info.fullname = NULL;
         }
       generic_win = win_info->detail.source_info.execution_info;
-      if (generic_win != (struct tui_gen_win_info *) NULL)
+      if (generic_win != NULL)
 	{
 	  tui_delete_win (generic_win->handle);
 	  generic_win->handle = NULL;
@@ -661,7 +648,7 @@ tui_del_window (struct tui_win_info *win_info)
     default:
       break;
     }
-  if (win_info->generic.handle != (WINDOW *) NULL)
+  if (win_info->generic.handle != NULL)
     {
       tui_delete_win (win_info->generic.handle);
       win_info->generic.handle = NULL;
@@ -685,7 +672,7 @@ tui_free_window (struct tui_win_info *win_info)
           win_info->detail.source_info.fullname = NULL;
         }
       generic_win = win_info->detail.source_info.execution_info;
-      if (generic_win != (struct tui_gen_win_info *) NULL)
+      if (generic_win != NULL)
 	{
 	  tui_delete_win (generic_win->handle);
 	  generic_win->handle = NULL;
@@ -697,13 +684,11 @@ tui_free_window (struct tui_win_info *win_info)
 	{
 	  tui_free_data_content (win_info->detail.data_display_info.regs_content,
 				 win_info->detail.data_display_info.regs_content_count);
-	  win_info->detail.data_display_info.regs_content =
-	    (tui_win_content) NULL;
+	  win_info->detail.data_display_info.regs_content = NULL;
 	  win_info->detail.data_display_info.regs_content_count = 0;
 	  tui_free_data_content (win_info->detail.data_display_info.data_content,
 				 win_info->detail.data_display_info.data_content_count);
-	  win_info->detail.data_display_info.data_content =
-	    (tui_win_content) NULL;
+	  win_info->detail.data_display_info.data_content = NULL;
 	  win_info->detail.data_display_info.data_content_count = 0;
 	  win_info->detail.data_display_info.regs_column_count = 1;
 	  win_info->detail.data_display_info.display_regs = FALSE;
@@ -714,7 +699,7 @@ tui_free_window (struct tui_win_info *win_info)
     default:
       break;
     }
-  if (win_info->generic.handle != (WINDOW *) NULL)
+  if (win_info->generic.handle != NULL)
     {
       tui_delete_win (win_info->generic.handle);
       win_info->generic.handle = NULL;
@@ -772,7 +757,7 @@ tui_del_data_windows (tui_win_content content,
       struct tui_gen_win_info *generic_win
 	= &content[i]->which_element.data_window;
 
-      if (generic_win != (struct tui_gen_win_info *) NULL)
+      if (generic_win != NULL)
 	{
 	  tui_delete_win (generic_win->handle);
 	  generic_win->handle = NULL;
@@ -796,7 +781,7 @@ tui_free_data_content (tui_win_content content,
       struct tui_gen_win_info *generic_win
 	= &content[i]->which_element.data_window;
 
-      if (generic_win != (struct tui_gen_win_info *) NULL)
+      if (generic_win != NULL)
 	{
 	  tui_delete_win (generic_win->handle);
 	  generic_win->handle = NULL;
@@ -819,7 +804,7 @@ free_content (tui_win_content content,
 	      int content_size, 
 	      enum tui_win_type win_type)
 {
-  if (content != (tui_win_content) NULL)
+  if (content != NULL)
     {
       free_content_elements (content, content_size, win_type);
       xfree (content);
@@ -834,7 +819,7 @@ free_content_elements (tui_win_content content,
 		       int content_size, 
 		       enum tui_win_type type)
 {
-  if (content != (tui_win_content) NULL)
+  if (content != NULL)
     {
       int i;
 
@@ -850,7 +835,7 @@ free_content_elements (tui_win_content content,
 	      struct tui_win_element *element;
 
 	      element = content[i];
-	      if (element != (struct tui_win_element *) NULL)
+	      if (element != NULL)
 		{
 		  switch (type)
 		    {

@@ -31,7 +31,6 @@
 #include "libcoff.h"		/* FIXME secret internal data from BFD */
 #include "objfiles.h"
 #include "buildsym-legacy.h"
-#include "gdb-stabs.h"
 #include "stabsread.h"
 #include "complaints.h"
 #include "target.h"
@@ -484,12 +483,6 @@ record_minimal_symbol (minimal_symbol_reader &reader,
 static void
 coff_symfile_init (struct objfile *objfile)
 {
-  struct dbx_symfile_info *dbx;
-
-  /* Allocate struct to keep track of stab reading.  */
-  dbx = XCNEW (struct dbx_symfile_info);
-  set_objfile_data (objfile, dbx_objfile_data_key, dbx);
-
   /* Allocate struct to keep track of the symfile.  */
   coff_objfile_data_key.emplace (objfile);
 
@@ -1735,7 +1728,7 @@ process_coff_symbol (struct coff_symbol *cs,
 		&& *SYMBOL_LINKAGE_NAME (sym) != '~'
 		&& *SYMBOL_LINKAGE_NAME (sym) != '.')
 	      TYPE_NAME (SYMBOL_TYPE (sym)) =
-		concat (SYMBOL_LINKAGE_NAME (sym), (char *)NULL);
+		xstrdup (SYMBOL_LINKAGE_NAME (sym));
 
 	  add_symbol_to_list (sym, get_file_symbols ());
 	  break;
@@ -1791,11 +1784,9 @@ decode_type (struct coff_symbol *cs, unsigned int c_type,
 	  base_type = decode_type (cs, new_c_type, aux, objfile);
 	  index_type = objfile_type (objfile)->builtin_int;
 	  range_type
-	    = create_static_range_type ((struct type *) NULL,
-					index_type, 0, n - 1);
+	    = create_static_range_type (NULL, index_type, 0, n - 1);
 	  type =
-	    create_array_type ((struct type *) NULL, 
-			       base_type, range_type);
+	    create_array_type (NULL, base_type, range_type);
 	}
       return type;
     }

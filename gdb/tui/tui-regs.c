@@ -237,7 +237,7 @@ tui_show_register_group (struct reggroup *group,
       refresh_values_only = FALSE;
     }
 
-  if (display_info->regs_content != (tui_win_content) NULL)
+  if (display_info->regs_content != NULL)
     {
       if (!refresh_values_only || allocated_here)
 	{
@@ -299,7 +299,7 @@ tui_display_registers_from (int start_element_no)
 {
   struct tui_data_info *display_info = &TUI_DATA_WIN->detail.data_display_info;
 
-  if (display_info->regs_content != (tui_win_content) NULL 
+  if (display_info->regs_content != NULL
       && display_info->regs_content_count > 0)
     {
       int i = start_element_no;
@@ -358,7 +358,7 @@ tui_display_registers_from (int start_element_no)
 	      data_item_win = &display_info->regs_content[i]
                 ->which_element.data_window;
 	      data_element_ptr = &data_item_win->content[0]->which_element.data;
-              if (data_item_win->handle != (WINDOW*) NULL
+              if (data_item_win->handle != NULL
                   && (data_item_win->height != 1
                       || data_item_win->width != item_win_width
                       || data_item_win->origin.x != (item_win_width * j) + 1
@@ -368,7 +368,7 @@ tui_display_registers_from (int start_element_no)
                   data_item_win->handle = 0;
                 }
                   
-	      if (data_item_win->handle == (WINDOW *) NULL)
+	      if (data_item_win->handle == NULL)
 		{
 		  data_item_win->height = 1;
 		  data_item_win->width = item_win_width;
@@ -398,8 +398,7 @@ static void
 tui_display_reg_element_at_line (int start_element_no,
 				 int start_line_no)
 {
-  if (TUI_DATA_WIN->detail.data_display_info.regs_content
-      != (tui_win_content) NULL
+  if (TUI_DATA_WIN->detail.data_display_info.regs_content != NULL
       && TUI_DATA_WIN->detail.data_display_info.regs_content_count > 0)
     {
       int element_no = start_element_no;
@@ -520,7 +519,7 @@ static void
 tui_display_register (struct tui_data_element *data,
                       struct tui_gen_win_info *win_info)
 {
-  if (win_info->handle != (WINDOW *) NULL)
+  if (win_info->handle != NULL)
     {
       int i;
 
@@ -676,7 +675,7 @@ tui_reggroup_completer (struct cmd_list_element *ignore,
   for (tmp = extra; *tmp != NULL; ++tmp)
     {
       if (strncmp (word, *tmp, len) == 0)
-	tracker.add_completion (gdb::unique_xmalloc_ptr<char> (xstrdup (*tmp)));
+	tracker.add_completion (make_unique_xstrdup (*tmp));
     }
 }
 

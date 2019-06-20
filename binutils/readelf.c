@@ -2412,7 +2412,7 @@ get_machine_name (unsigned e_machine)
     case EM_TPC:		return "Tenor Network TPC processor";
     case EM_SNP1K:	        return "Trebia SNP 1000 processor";
       /* 100 */
-    case EM_ST200:		return "STMicroelectronics ST200 microcontroller";  
+    case EM_ST200:		return "STMicroelectronics ST200 microcontroller";
     case EM_IP2K_OLD:
     case EM_IP2K:		return "Ubicom IP2xxx 8-bit microcontrollers";
     case EM_MAX:		return "MAX Processor";
@@ -2528,7 +2528,7 @@ get_machine_name (unsigned e_machine)
     case EM_MT:                 return "Morpho Techologies MT processor";
     case EM_ALPHA:		return "Alpha";
     case EM_WEBASSEMBLY:	return "Web Assembly";
-    case EM_DLX:		return "OpenDLX";  
+    case EM_DLX:		return "OpenDLX";
     case EM_XSTORMY16:		return "Sanyo XStormy16 CPU core";
     case EM_IQ2000:       	return "Vitesse IQ2000";
     case EM_M32C_OLD:
@@ -9029,6 +9029,11 @@ decode_arm_unwind (Filedata *                 filedata,
 
       remaining = 4;
     }
+  else
+    {
+      addr.section = SHN_UNDEF;
+      addr.offset = 0;
+    }
 
   if ((word & 0x80000000) == 0)
     {
@@ -11130,6 +11135,19 @@ get_symbol_visibility (unsigned int visibility)
 }
 
 static const char *
+get_alpha_symbol_other (unsigned int other)
+{
+  switch (other)
+    {
+    case STO_ALPHA_NOPV:       return "NOPV";
+    case STO_ALPHA_STD_GPLOAD: return "STD GPLOAD";
+    default:
+      error (_("Unrecognized alpah specific other value: %u"), other);
+      return _("<unknown>");
+    }
+}
+
+static const char *
 get_solaris_symbol_visibility (unsigned int visibility)
 {
   switch (visibility)
@@ -11268,6 +11286,9 @@ get_symbol_other (Filedata * filedata, unsigned int other)
 
   switch (filedata->file_header.e_machine)
     {
+    case EM_ALPHA:
+      result = get_alpha_symbol_other (other);
+      break;
     case EM_AARCH64:
       result = get_aarch64_symbol_other (other);
       break;
@@ -11528,7 +11549,7 @@ get_symbol_version_string (Filedata *                   filedata,
 
       if (ivd.vd_ndx == (vers_data & VERSYM_VERSION))
 	{
-	  if (ivd.vd_ndx == 1 && ivd.vd_flags == VER_FLG_BASE) 
+	  if (ivd.vd_ndx == 1 && ivd.vd_flags == VER_FLG_BASE)
 	    return NULL;
 
 	  off -= ivd.vd_next;
@@ -12577,7 +12598,7 @@ is_32bit_abs_reloc (Filedata * filedata, unsigned int reloc_type)
     case EM_OR1K:
       return reloc_type == 1; /* R_OR1K_32.  */
     case EM_PARISC:
-      return (reloc_type == 1 /* R_PARISC_DIR32.  */	      
+      return (reloc_type == 1 /* R_PARISC_DIR32.  */
 	      || reloc_type == 2 /* R_PARISC_DIR21L.  */
 	      || reloc_type == 41); /* R_PARISC_SECREL32.  */
     case EM_PJ:
@@ -12717,6 +12738,8 @@ is_32bit_pcrel_reloc (Filedata * filedata, unsigned int reloc_type)
     case EM_L1OM:
     case EM_K1OM:
       return reloc_type == 2;  /* R_X86_64_PC32.  */
+    case EM_VAX:
+      return reloc_type == 4;  /* R_VAX_PCREL32.  */
     case EM_XTENSA_OLD:
     case EM_XTENSA:
       return reloc_type == 14; /* R_XTENSA_32_PCREL.  */
@@ -13970,7 +13993,7 @@ load_specific_debug_section (enum dwarf_section_display_enum  debug,
   struct dwarf_section * section = &debug_displays [debug].section;
   char buf [64];
   Filedata * filedata = (Filedata *) data;
-  
+
   if (section->start != NULL)
     {
       /* If it is already loaded, do nothing.  */
@@ -17932,7 +17955,7 @@ print_gnu_note (Filedata * filedata, Elf_Internal_Note *pnote)
     case NT_GNU_PROPERTY_TYPE_0:
       print_gnu_property_note (filedata, pnote);
       break;
-      
+
     default:
       /* Handle unrecognised types.  An error message should have already been
 	 created by get_gnu_elf_note_type(), so all that we need to do is to
@@ -18052,9 +18075,22 @@ process_netbsd_elf_note (Elf_Internal_Note * pnote)
       return TRUE;
 
     case NT_NETBSD_MARCH:
-      printf ("  NetBSD\t0x%08lx\tMARCH <%s>\n", pnote->descsz,
+      printf ("  NetBSD\t\t0x%08lx\tMARCH <%s>\n", pnote->descsz,
 	      pnote->descdata);
       return TRUE;
+
+#ifdef   NT_NETBSD_PAX
+    case NT_NETBSD_PAX:
+      version = byte_get ((unsigned char *) pnote->descdata, sizeof (version));
+      printf ("  NetBSD\t\t0x%08lx\tPaX <%s%s%s%s%s%s>\n", pnote->descsz,
+	      ((version & NT_NETBSD_PAX_MPROTECT) ? "+mprotect" : ""),
+	      ((version & NT_NETBSD_PAX_NOMPROTECT) ? "-mprotect" : ""),
+	      ((version & NT_NETBSD_PAX_GUARD) ? "+guard" : ""),
+	      ((version & NT_NETBSD_PAX_NOGUARD) ? "-guard" : ""),
+	      ((version & NT_NETBSD_PAX_ASLR) ? "+ASLR" : ""),
+	      ((version & NT_NETBSD_PAX_NOASLR) ? "-ASLR" : ""));
+      return TRUE;
+#endif
 
     default:
       printf ("  NetBSD\t0x%08lx\tUnknown note type: (0x%08lx)\n", pnote->descsz,
@@ -18099,18 +18135,29 @@ get_netbsd_elfcore_note_type (Filedata * filedata, unsigned e_type)
 {
   static char buff[64];
 
-  if (e_type == NT_NETBSDCORE_PROCINFO)
-    return _("NetBSD procinfo structure");
-
-  /* As of Jan 2002 there are no other machine-independent notes
-     defined for NetBSD core files.  If the note type is less
-     than the start of the machine-dependent note types, we don't
-     understand it.  */
-
-  if (e_type < NT_NETBSDCORE_FIRSTMACH)
+  switch (e_type)
     {
-      snprintf (buff, sizeof (buff), _("Unknown note type: (0x%08x)"), e_type);
-      return buff;
+    case NT_NETBSDCORE_PROCINFO:
+      /* NetBSD core "procinfo" structure.  */
+      return _("NetBSD procinfo structure");
+
+#ifdef NT_NETBSDCORE_AUXV
+    case NT_NETBSDCORE_AUXV:
+      return _("NetBSD ELF auxiliary vector data");
+#endif
+
+    default:
+      /* As of Jan 2002 there are no other machine-independent notes
+	 defined for NetBSD core files.  If the note type is less
+	 than the start of the machine-dependent note types, we don't
+	 understand it.  */
+
+      if (e_type < NT_NETBSDCORE_FIRSTMACH)
+	{
+	  snprintf (buff, sizeof (buff), _("Unknown note type: (0x%08x)"), e_type);
+	  return buff;
+	}
+      break;
     }
 
   switch (filedata->file_header.e_machine)
@@ -18128,6 +18175,23 @@ get_netbsd_elfcore_note_type (Filedata * filedata, unsigned e_type)
 	case NT_NETBSDCORE_FIRSTMACH + 0:
 	  return _("PT_GETREGS (reg structure)");
 	case NT_NETBSDCORE_FIRSTMACH + 2:
+	  return _("PT_GETFPREGS (fpreg structure)");
+	default:
+	  break;
+	}
+      break;
+
+    /* On SuperH, PT_GETREGS == mach+3 and PT_GETFPREGS == mach+5.
+       There's also old PT___GETREGS40 == mach + 1 for old reg
+       structure which lacks GBR.  */
+    case EM_SH:
+      switch (e_type)
+	{
+	case NT_NETBSDCORE_FIRSTMACH + 1:
+	  return _("PT___GETREGS40 (old reg structure)");
+	case NT_NETBSDCORE_FIRSTMACH + 3:
+	  return _("PT_GETREGS (reg structure)");
+	case NT_NETBSDCORE_FIRSTMACH + 5:
 	  return _("PT_GETFPREGS (fpreg structure)");
 	default:
 	  break;
@@ -18216,7 +18280,7 @@ print_stapsdt_note (Elf_Internal_Note *pnote)
     }
   else
     goto stapdt_note_too_small;
-  
+
   if (data >= data_end)
     goto stapdt_note_too_small;
   maxlen = data_end - data;
@@ -18543,7 +18607,7 @@ same_section (Filedata * filedata, unsigned long addr1, unsigned long addr2)
 
   a1 = find_section_by_address (filedata, addr1);
   a2 = find_section_by_address (filedata, addr2);
-  
+
   return a1 == a2 && a1 != NULL;
 }
 
@@ -18607,7 +18671,7 @@ print_gnu_build_attribute_description (Elf_Internal_Note *  pnote,
       start = byte_get ((unsigned char *) pnote->descdata, 8);
       end = byte_get ((unsigned char *) pnote->descdata + 8, 8);
       break;
-      
+
     default:
       error (_("    <invalid description size: %lx>\n"), pnote->descsz);
       printf (_("    <invalid descsz>"));
@@ -18902,7 +18966,7 @@ print_gnu_build_attribute_name (Elf_Internal_Note * pnote)
 
   if (do_wide && left > 0)
     printf ("%-*s", left, " ");
-    
+
   return TRUE;
 }
 
@@ -18937,6 +19001,10 @@ process_note (Elf_Internal_Note *  pnote,
     nt = get_netbsd_elfcore_note_type (filedata, pnote->type);
 
   else if (const_strneq (pnote->namedata, "NetBSD"))
+    /* NetBSD-specific core file notes.  */
+    return process_netbsd_elf_note (pnote);
+
+  else if (const_strneq (pnote->namedata, "PaX"))
     /* NetBSD-specific core file notes.  */
     return process_netbsd_elf_note (pnote);
 
@@ -19923,7 +19991,7 @@ process_archive (Filedata * filedata, bfd_boolean is_thin_archive)
 	  /* PR 24049 - we cannot use filedata->file_name as this will
 	     have already been freed.  */
 	  error (_("%s: failed to read archive header\n"), arch.file_name);
-	    
+
           ret = FALSE;
           break;
         }
@@ -20017,7 +20085,7 @@ process_archive (Filedata * filedata, bfd_boolean is_thin_archive)
 
 	  thin_filedata.handle = nested_arch.file;
 	  thin_filedata.file_name = qualified_name;
-	  
+
           if (! process_object (& thin_filedata))
 	    ret = FALSE;
         }

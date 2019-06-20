@@ -555,7 +555,7 @@ copy_token_string (linespec_token token)
   const char *str, *s;
 
   if (token.type == LSTOKEN_KEYWORD)
-    return gdb::unique_xmalloc_ptr<char> (xstrdup (LS_TOKEN_KEYWORD (token)));
+    return make_unique_xstrdup (LS_TOKEN_KEYWORD (token));
 
   str = LS_TOKEN_STOKEN (token).ptr;
   s = remove_trailing_whitespace (str, str + LS_TOKEN_STOKEN (token).length);
@@ -760,7 +760,9 @@ linespec_lexer_lex_string (linespec_parser *parser)
 	      /* Do not tokenize ABI tags such as "[abi:cxx11]".  */
 	      else if (PARSER_STREAM (parser) - start > 4
 		       && startswith (PARSER_STREAM (parser) - 4, "[abi"))
-		++(PARSER_STREAM (parser));
+		{
+		  /* Nothing.  */
+		}
 
 	      /* Do not tokenify if the input length so far is one
 		 (i.e, a single-letter drive name) and the next character
@@ -861,6 +863,7 @@ linespec_lexer_lex_string (linespec_parser *parser)
 	    }
 
 	  /* Advance the stream.  */
+	  gdb_assert (*(PARSER_STREAM (parser)) != '\0');
 	  ++(PARSER_STREAM (parser));
 	}
     }
@@ -3318,8 +3321,7 @@ decode_line_with_last_displayed (const char *string, int flags)
        ? decode_line_1 (location.get (), flags, NULL,
 			get_last_displayed_symtab (),
 			get_last_displayed_line ())
-       : decode_line_1 (location.get (), flags, NULL,
-			(struct symtab *) NULL, 0));
+       : decode_line_1 (location.get (), flags, NULL, NULL, 0));
 
   if (*string)
     error (_("Junk at end of line specification: %s"), string);

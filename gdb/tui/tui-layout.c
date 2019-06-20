@@ -300,7 +300,7 @@ tui_default_win_height (enum tui_win_type type,
 {
   int h;
 
-  if (tui_win_list[type] != (struct tui_win_info *) NULL)
+  if (tui_win_list[type] != NULL)
     h = tui_win_list[type]->generic.height;
   else
     {
@@ -384,7 +384,7 @@ Layout names are:\n\
            register window is displayed. If the\n\
            source/assembly/command (split) is displayed, \n\
            the register window is displayed with \n\
-           the window that has current logical focus.\n"));
+           the window that has current logical focus."));
   set_cmd_completer (cmd, layout_completer);
 }
 

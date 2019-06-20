@@ -1,3 +1,45 @@
+2019-06-20  Tom de Vries  <tdevries@suse.de>
+
+	* linux-s390-ipa.c (get_ipa_tdesc)[!__s390x__]: Use
+	s390_te_linux64_ft_collect_regmap for S390_TDESC_GS.
+
+2019-06-19  Tom de Vries  <tdevries@suse.de>
+
+	* debug.h (debug_write): Change return type to ssize_t.
+	* debug.c (debug_write): Same.
+
+2019-06-14  Tom Tromey  <tom@tromey.com>
+
+	* configure.ac: Use new path to gnulib.
+	* configure: Rebuild.
+	* Makefile.in (INCGNU, $(GNULIB_BUILDDIR)/Makefile): Use new path
+	to gnulib.
+
+2019-06-11  Tom Tromey  <tom@tromey.com>
+
+	* Makefile.in (SFILES): Add alloc.c.
+	(OBS): Add alloc.o.
+	(IPA_OBJS): Add alloc-ipa.o.
+	(alloc-ipa.o): New target.
+	(%.o: ../%.c): New pattern rule.
+
+2019-06-10  Tom Tromey  <tromey@adacore.com>
+
+	* remote-utils.c (look_up_one_symbol, relocate_instruction): Don't
+	end warning with a newline.
+	* linux-s390-low.c (s390_get_wordsize): Don't end warning with a
+	newline.
+	* thread-db.c (attach_thread): Don't end warning with a newline.
+	(thread_db_notice_clone): Likewise.
+	* tracepoint.c (gdb_agent_helper_thread): Don't end warning with a
+	newline.
+	* linux-x86-low.c (x86_get_min_fast_tracepoint_insn_len): Don't
+	end warning with a newline.
+
+2019-06-04  Pedro Alves  <palves@redhat.com>
+
+	* server.c (captured_main): Use make_unique_xstrdup.
+
 2019-06-02  Tom Tromey  <tom@tromey.com>
 
 	* gdbreplay.c (fromhex): Remove.
@@ -2052,7 +2094,7 @@
 2017-09-10  Sergio Durigan Junior  <sergiodj@redhat.com>
 
 	* regcache.c (get_thread_regcache): Guard calls to "memset"
-          with "!VEC_empty".
+	with "!VEC_empty".
 
 2017-09-10  Sergio Durigan Junior  <sergiodj@redhat.com>
 
@@ -2501,9 +2543,9 @@
 
 2017-04-05  Pedro Alves  <palves@redhat.com>
 
-        * remote-utils.c (remote_prepare, remote_open): Constify.
-        * remote-utils.h (remote_prepare, remote_open): Constify.
-        * server.c (captured_main): Constify 'port' handling.
+	* remote-utils.c (remote_prepare, remote_open): Constify.
+	* remote-utils.h (remote_prepare, remote_open): Constify.
+	* server.c (captured_main): Constify 'port' handling.
 
 2017-04-04  Simon Marchi  <simon.marchi@ericsson.com>
 

@@ -65,7 +65,7 @@ gdb_realpath (const char *filename)
        we might not be able to display the original casing in a given
        path.  */
     if (len > 0 && len < MAX_PATH)
-      return gdb::unique_xmalloc_ptr<char> (xstrdup (buf));
+      return make_unique_xstrdup (buf);
   }
 #else
   {
@@ -77,7 +77,7 @@ gdb_realpath (const char *filename)
 #endif
 
   /* This system is a lost cause, just dup the buffer.  */
-  return gdb::unique_xmalloc_ptr<char> (xstrdup (filename));
+  return make_unique_xstrdup (filename);
 }
 
 /* See common/pathstuff.h.  */
@@ -92,7 +92,7 @@ gdb_realpath_keepfile (const char *filename)
   /* Extract the basename of filename, and return immediately
      a copy of filename if it does not contain any directory prefix.  */
   if (base_name == filename)
-    return gdb::unique_xmalloc_ptr<char> (xstrdup (filename));
+    return make_unique_xstrdup (filename);
 
   dir_name = (char *) alloca ((size_t) (base_name - filename + 2));
   /* Allocate enough space to store the dir_name + plus one extra
@@ -135,7 +135,7 @@ gdb_abspath (const char *path)
     return gdb_tilde_expand_up (path);
 
   if (IS_ABSOLUTE_PATH (path))
-    return gdb::unique_xmalloc_ptr<char> (xstrdup (path));
+    return make_unique_xstrdup (path);
 
   /* Beware the // my son, the Emacs barfs, the botch that catch...  */
   return gdb::unique_xmalloc_ptr<char>
@@ -158,7 +158,7 @@ child_path (const char *parent, const char *child)
   /* The parent path must be a directory and the child must contain at
      least one component underneath the parent.  */
   const char *child_component;
-  if (IS_DIR_SEPARATOR (parent[parent_len - 1]))
+  if (parent_len > 0 && IS_DIR_SEPARATOR (parent[parent_len - 1]))
     {
       /* The parent path ends in a directory separator, so it is a
 	 directory.  The first child component starts after the common

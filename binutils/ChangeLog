@@ -1,3 +1,53 @@
+2019-06-14  Alan Modra  <amodra@gmail.com>
+
+	* Makefile.in: Regenerate.
+	* aclocal.m4: Regenerate.
+	* doc/Makefile.in: Regenerate.
+
+2019-06-12  Christos Zoulas  <christos@zoulas.com>
+
+	PR 24663
+	* readelf.c (process_netbsd_elf_note): Add support for
+	NT_NETBSD_PAX.
+	(process_note): Add support for PaX notes.
+
+2019-06-12  Christos Zoulas  <christos@zoulas.com>
+
+	PR 24665
+	* readelf.c (get_netbsd_elfcore_note_type): Add support for SH
+	core notes.
+
+2019-06-12  Christos Zoulas  <christos@zoulas.com>
+
+	PR 24664
+	* readelf.c (get_netbsd_elfcore_note_type): Add support for NetBSD
+	auxv notes.
+
+2019-06-11  Christos Zoulas  <christos@zoulas.com>
+
+	PR 24662
+	* readelf.c (get_alpha_symbol_other): New function.
+	(get_symbol_other): Use for Alpha symbols.
+	(is_32bit_pcrel_reloc): Add R_VAX_PCREL32.
+
+2019-06-11  Christos Zoulas  <christos@zoulas.com>
+
+	PR 24661
+	* readelf.c (decode_arm_unwind): Ensure that the local variable
+	'addr' is always initialised.
+
+2019-06-10  Christos Zoulas  <christos@zoulas.com>
+
+	PR 24651
+	* strings.c (print_strings): Use %u to print unsigned values in
+	decimal.
+
+2019-06-10  Christos Zoulas  <christos@zoulas.com>
+
+	PR 24649
+	* arsup.c (ar_open): Use asprintf in place of xmalloc and
+	sprintf.
+
 2019-06-03  Nick Clifton  <nickc@redhat.com>
 
 	Revert:

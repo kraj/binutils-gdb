@@ -421,7 +421,7 @@ strip_bg_char (const char *args, int *bg_char_p)
     }
 
   *bg_char_p = 0;
-  return gdb::unique_xmalloc_ptr<char> (xstrdup (args));
+  return make_unique_xstrdup (args);
 }
 
 /* Common actions to take after creating any sort of inferior, by any
@@ -2178,7 +2178,7 @@ path_command (const char *dirname, int from_tty)
   current_inferior ()->environment.set (path_var_name, exec_path);
   xfree (exec_path);
   if (from_tty)
-    path_info ((char *) NULL, from_tty);
+    path_info (NULL, from_tty);
 }
 
 
@@ -3394,10 +3394,10 @@ in the named register groups."));
 	    _("Execution status of the program."));
 
   add_info ("float", info_float_command,
-	    _("Print the status of the floating point unit\n"));
+	    _("Print the status of the floating point unit"));
 
   add_info ("vector", info_vector_command,
-	    _("Print the status of the vector unit\n"));
+	    _("Print the status of the vector unit"));
 
   add_prefix_cmd ("proc", class_info, info_proc_cmd,
 		  _("\

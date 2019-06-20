@@ -357,7 +357,7 @@ public:
   { m_custom_word_point = point; }
 
   /* Advance the custom word point by LEN.  */
-  void advance_custom_word_point_by (size_t len);
+  void advance_custom_word_point_by (int len);
 
   /* Whether to tell readline to skip appending a whitespace after the
      completion.  See m_suppress_append_ws.  */
@@ -532,8 +532,13 @@ extern const char *completion_find_completion_word (completion_tracker &tracker,
    completion word point for TEXT, emulating the algorithm readline
    uses to find the word point, using the current language's word
    break characters.  */
-
 const char *advance_to_expression_complete_word_point
+  (completion_tracker &tracker, const char *text);
+
+/* Assuming TEXT is an filename, find the completion word point for
+   TEXT, emulating the algorithm readline uses to find the word
+   point.  */
+extern const char *advance_to_filename_complete_word_point
   (completion_tracker &tracker, const char *text);
 
 extern char **gdb_rl_attempted_completion_function (const char *text,
@@ -605,6 +610,18 @@ extern completion_list complete_source_filenames (const char *text);
    field names.  */
 extern void complete_expression (completion_tracker &tracker,
 				 const char *text, const char *word);
+
+/* Called by custom word point completers that want to recurse into
+   the completion machinery to complete a command.  Used to complete
+   COMMAND in "thread apply all COMMAND", for example.  Note that
+   unlike command_completer, this fully recurses into the proper
+   completer for COMMAND, so that e.g.,
+
+     (gdb) thread apply all print -[TAB]
+
+   does the right thing and show the print options.  */
+extern void complete_nested_command_line (completion_tracker &tracker,
+					  const char *text);
 
 extern const char *skip_quoted_chars (const char *, const char *,
 				      const char *);

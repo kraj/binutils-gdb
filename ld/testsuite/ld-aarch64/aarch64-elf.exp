@@ -96,6 +96,8 @@ run_dump_test "erratum843419-no-args"
 
 # Relocation Tests
 run_dump_test_lp64 "weak-undefined"
+run_dump_test "emit-relocs-22"
+run_dump_test "emit-relocs-23"
 run_dump_test "emit-relocs-28"
 run_dump_test "emit-relocs-86"
 run_dump_test "emit-relocs-86-overflow"
@@ -381,6 +383,8 @@ run_dump_test_lp64 "pie-bind-locally"
 run_dump_test "property-bti-pac1"
 run_dump_test "property-bti-pac2"
 run_dump_test "property-bti-pac3"
+run_dump_test "property-bti-pac4-a"
+run_dump_test "property-bti-pac4-b"
 run_dump_test "bti-plt-1"
 run_dump_test "bti-plt-2"
 

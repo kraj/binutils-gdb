@@ -987,7 +987,10 @@ find_and_open_source (const char *filename,
       result = gdb_open_cloexec (fullname->get (), OPEN_MODE, 0);
       if (result >= 0)
 	{
-	  *fullname = gdb_realpath (fullname->get ());
+	  if (basenames_may_differ)
+	    *fullname = gdb_realpath (fullname->get ());
+	  else
+	    *fullname = gdb_abspath (fullname->get ());
 	  return scoped_fd (result);
 	}
 
@@ -1025,26 +1028,22 @@ find_and_open_source (const char *filename,
 	}
     }
 
-  gdb::unique_xmalloc_ptr<char> rewritten_filename;
-  if (IS_ABSOLUTE_PATH (filename))
-    {
-      /* If filename is absolute path, try the source path
-	 substitution on it.  */
-      rewritten_filename = rewrite_source_path (filename);
+  gdb::unique_xmalloc_ptr<char> rewritten_filename
+    = rewrite_source_path (filename);
 
-      if (rewritten_filename != NULL)
-	filename = rewritten_filename.get ();
-    }
+  if (rewritten_filename != NULL)
+    filename = rewritten_filename.get ();
 
-  result = openp (path, OPF_SEARCH_IN_PATH | OPF_RETURN_REALPATH, filename,
-		  OPEN_MODE, fullname);
+  openp_flags flags = OPF_SEARCH_IN_PATH;
+  if (basenames_may_differ)
+    flags |= OPF_RETURN_REALPATH;
+  result = openp (path, flags, filename, OPEN_MODE, fullname);
   if (result < 0)
     {
       /* Didn't work.  Try using just the basename.  */
       p = lbasename (filename);
       if (p != filename)
-	result = openp (path, OPF_SEARCH_IN_PATH | OPF_RETURN_REALPATH, p,
-			OPEN_MODE, fullname);
+	result = openp (path, flags, p, OPEN_MODE, fullname);
     }
 
   return scoped_fd (result);
@@ -1130,7 +1129,7 @@ symtab_to_filename_for_display (struct symtab *symtab)
    to be open on descriptor DESC.
    All set S->nlines to the number of such lines.  */
 
-void
+static void
 find_source_lines (struct symtab *s, int desc)
 {
   struct stat st;
@@ -1197,47 +1196,20 @@ find_source_lines (struct symtab *s, int desc)
 
 
 
-/* Get full pathname and line number positions for a symtab.
-   Set *FULLNAME to actual name of the file as found by `openp',
-   or to 0 if the file is not found.  */
-
-static void
-get_filename_and_charpos (struct symtab *s, char **fullname)
-{
-  scoped_fd desc = open_source_file (s);
-  if (desc.get () < 0)
-    {
-      if (fullname)
-	*fullname = NULL;
-      return;
-    }
-  if (fullname)
-    *fullname = s->fullname;
-  if (s->line_charpos == 0)
-    find_source_lines (s, desc.get ());
-}
-
 /* See source.h.  */
 
-int
-identify_source_line (struct symtab *s, int line, int mid_statement,
-		      CORE_ADDR pc)
+scoped_fd
+open_source_file_with_line_charpos (struct symtab *s)
 {
-  if (s->line_charpos == 0)
-    get_filename_and_charpos (s, (char **) NULL);
-  if (s->fullname == 0)
-    return 0;
-  if (line > s->nlines)
-    /* Don't index off the end of the line_charpos array.  */
-    return 0;
-  annotate_source (s->fullname, line, s->line_charpos[line - 1],
-		   mid_statement, get_objfile_arch (SYMTAB_OBJFILE (s)), pc);
+  scoped_fd fd (open_source_file (s));
+  if (fd.get () < 0)
+    return fd;
 
-  current_source_line = line;
-  current_source_symtab = s;
-  clear_lines_listed_range ();
-  return 1;
+  if (s->line_charpos == nullptr)
+    find_source_lines (s, fd.get ());
+  return fd;
 }
+
 
 
 /* Print source lines from the file of symtab S,
@@ -1524,8 +1496,8 @@ info_line_command (const char *arg, int from_tty)
 
 	  /* If this is the only line, show the source code.  If it could
 	     not find the file, don't do anything special.  */
-	  if (annotation_level && sals.size () == 1)
-	    identify_source_line (sal.symtab, sal.line, 0, start_pc);
+	  if (sals.size () == 1)
+	    annotate_source_line (sal.symtab, sal.line, 0, start_pc);
 	}
       else
 	/* Is there any case in which we get here, and have an address
@@ -1552,12 +1524,9 @@ search_command_helper (const char *regex, int from_tty, bool forward)
   if (current_source_symtab == 0)
     select_source_symtab (0);
 
-  scoped_fd desc = open_source_file (current_source_symtab);
+  scoped_fd desc (open_source_file_with_line_charpos (current_source_symtab));
   if (desc.get () < 0)
     perror_with_name (symtab_to_filename_for_display (current_source_symtab));
-
-  if (current_source_symtab->line_charpos == 0)
-    find_source_lines (current_source_symtab, desc.get ());
 
   int line = (forward
 	      ? last_line_listed + 1

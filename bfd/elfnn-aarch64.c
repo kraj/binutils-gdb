@@ -717,7 +717,7 @@ static reloc_howto_type elfNN_aarch64_howto_table[] =
      PC relative address inline.  */
 
   /* MOV[NZ]:   ((S+A-P) >>  0) & 0xffff */
-  HOWTO64 (AARCH64_R (MOVW_PREL_G0),	/* type */
+  HOWTO (AARCH64_R (MOVW_PREL_G0),	/* type */
 	 0,			/* rightshift */
 	 2,			/* size (0 = byte, 1 = short, 2 = long) */
 	 17,			/* bitsize */
@@ -732,7 +732,7 @@ static reloc_howto_type elfNN_aarch64_howto_table[] =
 	 TRUE),		/* pcrel_offset */
 
   /* MOVK:   ((S+A-P) >>  0) & 0xffff [no overflow check] */
-  HOWTO64 (AARCH64_R (MOVW_PREL_G0_NC),	/* type */
+  HOWTO (AARCH64_R (MOVW_PREL_G0_NC),	/* type */
 	 0,			/* rightshift */
 	 2,			/* size (0 = byte, 1 = short, 2 = long) */
 	 16,			/* bitsize */
@@ -747,7 +747,7 @@ static reloc_howto_type elfNN_aarch64_howto_table[] =
 	 TRUE),		/* pcrel_offset */
 
   /* MOV[NZ]:   ((S+A-P) >> 16) & 0xffff */
-  HOWTO64 (AARCH64_R (MOVW_PREL_G1),	/* type */
+  HOWTO (AARCH64_R (MOVW_PREL_G1),	/* type */
 	 16,			/* rightshift */
 	 2,			/* size (0 = byte, 1 = short, 2 = long) */
 	 17,			/* bitsize */
@@ -7956,21 +7956,27 @@ elfNN_aarch64_is_target_special_symbol (bfd *abfd ATTRIBUTE_UNUSED,
 					     BFD_AARCH64_SPECIAL_SYM_TYPE_ANY);
 }
 
-/* This is a copy of elf_find_function () from elf.c except that
+/* This is a version of _bfd_elf_find_function() from dwarf2.c except that
    AArch64 mapping symbols are ignored when looking for function names.  */
 
 static bfd_boolean
-aarch64_elf_find_function (bfd *abfd ATTRIBUTE_UNUSED,
-			   asymbol **symbols,
-			   asection *section,
-			   bfd_vma offset,
-			   const char **filename_ptr,
-			   const char **functionname_ptr)
+aarch64_elf_find_function (bfd *          abfd,
+			   asymbol **     symbols,
+			   asection *     section,
+			   bfd_vma        offset,
+			   const char **  filename_ptr,
+			   const char **  functionname_ptr)
 {
   const char *filename = NULL;
   asymbol *func = NULL;
   bfd_vma low_func = 0;
   asymbol **p;
+
+  if (symbols == NULL)
+    return FALSE;
+
+  if (bfd_get_flavour (abfd) != bfd_target_elf_flavour)
+    return FALSE;
 
   for (p = symbols; *p != NULL; p++)
     {
@@ -8855,25 +8861,6 @@ elfNN_aarch64_allocate_ifunc_dynrelocs (struct elf_link_hash_entry *h,
 }
 
 /* Allocate space in .plt, .got and associated reloc sections for
-   local dynamic relocs.  */
-
-static bfd_boolean
-elfNN_aarch64_allocate_local_dynrelocs (void **slot, void *inf)
-{
-  struct elf_link_hash_entry *h
-    = (struct elf_link_hash_entry *) *slot;
-
-  if (h->type != STT_GNU_IFUNC
-      || !h->def_regular
-      || !h->ref_regular
-      || !h->forced_local
-      || h->root.type != bfd_link_hash_defined)
-    abort ();
-
-  return elfNN_aarch64_allocate_dynrelocs (h, inf);
-}
-
-/* Allocate space in .plt, .got and associated reloc sections for
    local ifunc dynamic relocs.  */
 
 static bfd_boolean
@@ -9059,11 +9046,6 @@ elfNN_aarch64_size_dynamic_sections (bfd *output_bfd ATTRIBUTE_UNUSED,
      ifunc sym dynamic relocs.  */
   elf_link_hash_traverse (&htab->root, elfNN_aarch64_allocate_ifunc_dynrelocs,
 			  info);
-
-  /* Allocate .plt and .got entries, and space for local symbols.  */
-  htab_traverse (htab->loc_hash_table,
-		 elfNN_aarch64_allocate_local_dynrelocs,
-		 info);
 
   /* Allocate .plt and .got entries, and space for local ifunc symbols.  */
   htab_traverse (htab->loc_hash_table,
@@ -10010,14 +9992,14 @@ elfNN_aarch64_merge_gnu_properties (struct bfd_link_info *info,
       if ((aprop && !(aprop->u.number & GNU_PROPERTY_AARCH64_FEATURE_1_BTI))
 	   || !aprop)
 	{
-	  _bfd_error_handler (_("%pB: warning: BTI turned on by --force-bti when "
+	  _bfd_error_handler (_("%pB: warning: BTI turned on by -z force-bti when "
 				"all inputs do not have BTI in NOTE section."),
 			      abfd);
 	}
       if ((bprop && !(bprop->u.number & GNU_PROPERTY_AARCH64_FEATURE_1_BTI))
 	   || !bprop)
 	{
-	  _bfd_error_handler (_("%pB: warning: BTI turned on by --force-bti when "
+	  _bfd_error_handler (_("%pB: warning: BTI turned on by -z force-bti when "
 				"all inputs do not have BTI in NOTE section."),
 			      bbfd);
 	}

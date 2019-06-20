@@ -1,8 +1,805 @@
+2019-06-19  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-data.h (tui_init_content_element): Don't declare.
+
+2019-06-19  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-data.h (tui_init_win_info): Don't declare.
+
+2019-06-19  Tom de Vries  <tdevries@suse.de>
+
+	* dwarf2read.h (abstract_to_concrete): Change type to
+	std::unordered_map<sect_offset, std::vector<sect_offset>,
+	gdb::hash_enum<sect_offset>>.
+
+2019-06-19  Tom Tromey  <tromey@adacore.com>
+
+	* ada-lang.c (ada_evaluate_subexp) <case OP_ATR_FIRST>: Handle
+	EVAL_AVOID_SIDE_EFFECTS specially.
+
+2019-06-19  Tom Tromey  <tromey@adacore.com>
+
+	* source-cache.c (highlighter): New global.
+	(source_cache::get_source_lines): Create a highlighter on demand.
+
+2019-06-18  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* defs.h (deprecated_interactive_hook): Delete declaration.
+	* interps.c (clear_interpreter_hooks): Remove use of
+	deprecated_interactive_hook.
+	* top.c (deprecated_interactive_hook): Delete definition.
+	* utils.c (maybe_quit): Remove use of deprecated_interactive_hook.
+
+2019-06-18  Tom de Vries  <tdevries@suse.de>
+
+	PR gdb/24515
+	* dwarf2read.h (abstract_to_concrete): Change type from
+	std::unordered_map<die_info_ptr, std::vector<die_info_ptr>> to
+	std::unordered_map<sect_offset, std::vector<sect_offset>>.
+	* dwarf2read.c (read_variable): Update.
+	(dwarf2_fetch_die_loc_sect_off): Update.
+
+2019-06-17  Tom de Vries  <tdevries@suse.de>
+
+	PR gdb/24617
+	* common/pathstuff.c (child_path): Make sure parent_len > 0 before
+	accessing parent[parent_len - 1].
+
+2019-06-17  Paul Pluzhnikov  <ppluzhnikov@google.com>
+
+	PR gdb/24364
+	* gdb/dtrace-probe.c (dtrace_static_probe_ops::get_probe): Don't
+	call dtrace_process_dof with NULL dof.
+
+2019-06-16  Tom de Vries  <tdevries@suse.de>
+
+	PR gdb/24445
+	* contrib/gdb-add-index.sh: Update to handle dwz-m-ed executable.
+
+2019-06-16  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-wingeneral.c (tui_unhighlight_win, tui_highlight_win)
+	(make_all_visible): Use address of member.
+
+2019-06-16  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-data.c (tui_clear_win_detail, init_win_info)
+	(tui_free_window, free_content, free_content_elements): Remove
+	unnecessary cast.
+	* tui/tui-windata.c (tui_display_all_data): Remove unnecessary
+	cast.
+	* tui/tui-regs.c (tui_show_register_group)
+	(tui_display_registers_from, tui_display_reg_element_at_line):
+	Remove unnecessary cast.
+
+2019-06-16  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* linux-nat.c (normal_mask): Delete.
+	(_initialize_linux_nat): Don't initialise normal_mask.
+
+2019-06-16  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	PR gdb/24445
+	* dwarf-index-write.h (write_psymtabs_to_index): Add
+	dwz_basename parameter.
+	* dwarf-index-write.c (write_gdbindex): Move file writing to
+	write_gdbindex_1.  Change return type void.
+	(assert_file_size): Move up, remove filename parameter.
+	(write_gdbindex_1): New function.
+	(write_debug_names): Change return type to void, call
+	assert_file_size.
+	(struct index_wip_file): New struct.
+	(write_psymtabs_to_index): Add dwz_basename parameter.  Move
+	file logic to index_wip_file.  Write index for dwz file if
+	needed.
+	(save_gdb_index_command): Pass basename of dwz file, if present.
+	* dwarf-index-cache.c (index_cache::store): Obtain and pass
+	build-id of dwz file, if present.
+	* dwarf2read.c (struct dwz_file): Move to dwarf2read.h.
+	(dwarf2_get_dwz_file): Likewise.
+	* dwarf2read.h (struct dwz_file): Move from dwarf2read.c.
+	(dwarf2_get_dwz_file): Likewise.
+
+2019-06-16  Tom Tromey  <tom@tromey.com>
+
+	* coffread.c (process_coff_symbol): Use xstrdup.
+	* value.c (create_internalvar): Use xstrdup.
+
+2019-06-16  Tom Tromey  <tom@tromey.com>
+
+	* valops.c (value_cast, value_slice): Remove unnecessary cast.
+	* breakpoint.c (stopin_command, stopat_command)
+	(until_break_command, decode_location_default): Remove unnecessary
+	cast.
+	* utils.c (subset_compare): Remove unnecessary cast.
+	* ada-lang.c (ada_update_initial_language): Remove unnecessary
+	cast.
+	* linespec.c (decode_line_with_last_displayed): Remove unnecessary
+	cast.
+	* infcmd.c (path_command): Remove unnecessary cast.
+	* coffread.c (decode_type): Remove unnecessary cast.
+	* xcoffread.c (read_xcoff_symtab): Remove unnecessary cast.
+	* mipsread.c (mipscoff_symfile_read): Remove unnecessary cast.
+	* tui/tui-stack.c (tui_show_locator_content)
+	(tui_show_frame_info): Remove unnecessary cast.
+	* tui/tui-win.c (tui_scroll_forward_command)
+	(tui_scroll_backward_command, tui_set_focus, tui_set_win_height)
+	(parse_scrolling_args): Remove unnecessary cast.
+	* tui/tui-data.c (init_win_info, tui_del_window)
+	(tui_free_window, tui_del_data_windows, tui_free_data_content)
+	(free_content_elements): Remove unnecessary cast.
+	* tui/tui-windata.c (tui_first_data_item_displayed): Remove
+	unnecessary cast.
+	* tui/tui-source.c (tui_set_source_content)
+	(tui_vertical_source_scroll): Remove unnecessary cast.
+	* tui/tui-layout.c (tui_default_win_height): Remove unnecessary
+	cast.
+	* tui/tui-io.c (tui_initialize_io): Remove unnecessary cast.
+	* tui/tui-regs.c (tui_display_registers_from)
+	(tui_display_register): Remove unnecessary cast.
+	* tui/tui-wingeneral.c (tui_refresh_win, tui_delete_win)
+	(tui_unhighlight_win, tui_highlight_win, tui_make_window)
+	(make_visible): Remove unnecessary cast.
+	* tui/tui-winsource.c (tui_erase_source_content)
+	(tui_update_breakpoint_info, tui_set_exec_info_content): Remove
+	unnecessary cast.
+	* ax-gdb.c (agent_command_1): Remove unnecessary cast.
+	* cli/cli-setshow.c (cmd_show_list): Remove unnecessary cast.
+	* stabsread.c (read_type, read_array_type, read_range_type):
+	Remove unnecessary cast.
+	* mdebugread.c (mdebug_build_psymtabs): Remove unnecessary cast.
+	(parse_symbol, parse_type, upgrade_type, parse_external)
+	(parse_partial_symbols, psymtab_to_symtab_1, cross_ref): Remove
+	unnecessary cast.
+	* gdb_bfd.c (gdb_bfd_map_section): Remove unnecessary cast.
+
+2019-06-16  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-data.c (tui_alloc_generic_win_info)
+	(tui_alloc_win_info, tui_add_content_elements): Remove NULL
+	checks.
+
+2019-06-16  Bernhard Heckel  <bernhard.heckel@intel.com>
+	    Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* f-typeprint.c (f_print_type): Don't return early for not
+	associated or not allocated types.
+	(f_type_print_varspec_suffix): Add print_rank parameter and print
+	ranks of array types in case they dangling.
+	(f_type_print_base): Add print_rank parameter.
+
+2019-06-15  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* NEWS: Mention new MI commands.
+	* break-catch-throw.c (enum exception_event_kind): Move to
+	breakpoint.h.
+	(print_mention_exception_catchpoint): Output text as a single
+	message.
+	(catch_exception_command_1): Rename to...
+	(catch_exception_event): ...this, make non-static, update header
+	command, and change some parameter types.
+	(catch_catch_command): Update for changes to
+	catch_exception_command_1.
+	(catch_throw_command): Likewise.
+	(catch_rethrow_command): Likewise.
+	* breakpoint.c (enum exception_event_kind): Delete.
+	* breakpoint.h (enum exception_event_kind): Moved here from
+	break-catch-throw.c.
+	(catch_exception_event): Declare.
+	* mi/mi-cmd-catch.c (mi_cmd_catch_exception_event): New function.
+	(mi_cmd_catch_throw): New function.
+	(mi_cmd_catch_rethrow): New function.
+	(mi_cmd_catch_catch): New function.
+	* mi/mi-cmds.c (mi_cmds): Add 'catch-throw', 'catch-rethrow', and
+	'catch-catch' entries.
+	* mi/mi-cmds.h (mi_cmd_catch_throw): Declare.
+	(mi_cmd_catch_rethrow): Declare.
+	(mi_cmd_catch_catch): Declare.
+
+2019-06-15  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* annotate.c (annotate_source_line): Change return type to void,
+	update implementation to match.
+	* annotate.h (annotate_source_line): Change return type to void,
+	update header comment.
+	* stack.c (print_frame_info): Don't change what frame information
+	is printed based on whether annotations are on or not.
+
+2019-06-15  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* annotate.c: Add 'source.h' and 'objfiles.h' includes.
+	(annotate_source): Make static.
+	(annotate_source_line): Moved from source.c and renamed from
+	identify_source_line.  Update the return type.
+	* annotate.h (annotate_source): Delete declaration.
+	(annotate_source_line): Declaration moved from source.h, and
+	renamed from identify_source_line.  Return type updated.
+	* source.c (identify_source_line): Moved to annotate.c and renamed
+	to annotate_source_line.
+	(info_line_command): Remove check of annotation_level.
+	* source.h (identify_source_line): Move declaration to annotate.h
+	and rename to annotate_source_line.
+	* stack.c: Add 'annotate.h' include.
+	(print_frame_info): Remove check of annotation_level before
+	calling annotate_source_line.
+
+2019-06-15  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* source-cache.c (source_cache::get_plain_source_lines): Use
+	open_source_file_with_line_charpos instead of just
+	open_source_file, remove call to find_source_lines.
+	(source_cache::get_source_lines): Likewise.
+	* source.c (find_source_lines): Make static.
+	(get_filename_and_charpos): Renamed into...
+	(open_source_file_with_line_charpos): ..this along with changes to
+	return a scoped_fd, and some other minor clean ups.
+	(identify_source_line): Use open_source_file_with_line_charpos.
+	(search_command_helper): Use open_source_file_with_line_charpos
+	instead of just open_source_file, remove call to
+	find_source_lines.
+	* source.h (open_source_file_with_line_charpos): Declare new
+	function.
+	(find_source_lines): Delete declaration.
+
+2019-06-15  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* source.c (get_filename_and_charpos): Remove fullname
+	parameter.
+	(identify_source_line): Update call to get_filename_and_charpos.
+
+2019-06-14  Tom Tromey  <tromey@adacore.com>
+
+	PR gdb/24502:
+	* ui-style.h (skip_ansi_escape): Update comment.
+	* ui-file.h (class no_terminal_escape_file): New class.
+	* ui-file.c (no_terminal_escape_file::write)
+	(no_terminal_escape_file::puts): New methods.
+	* cli/cli-logging.c (handle_redirections): Use
+	no_terminal_escape_file.
+
+2019-06-14  Tom Tromey  <tromey@adacore.com>
+
+	* NEWS: Move convenience variable news above Python news.
+
+2019-06-14  Tom Tromey  <tom@tromey.com>
+
+	* gnulib: Move directory to top-level.
+	* configure.ac: Don't configure gnulib.
+	* configure: Rebuild.
+	* common/common-defs.h: Use new path to gnulib.
+	* Makefile.in (GNULIB_BUILDDIR): Now ../gnulib.
+	(GNULIB_H): Remove.
+	(INCGNU): Look in new gnulib location.
+	(HFILES_NO_SRCDIR): Remove gnulib files.
+	(SUBDIR, REQUIRED_SUBDIRS): Remove gnulib.
+	(generated_files): Remove GNULIB_H.
+	($(LIBGNU), all-lib): Remove targets.
+	(distclean): Don't mention GNULIB_BUILDDIR.
+	($(GNULIB_BUILDDIR)/Makefile): Remove target.
+
+2019-06-14  Tom Tromey  <tromey@adacore.com>
+
+	* symfile.c (add_symbol_file_command): Remove obsolete comment.
+	Warn if symbol file does not provide any symbols.
+
+2019-06-14  Tom Tromey  <tromey@adacore.com>
+
+	* source.c (find_and_open_source): Respect basenames_may_differ.
+
+2019-06-14  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* annotate.c (annotate_breakpoints_invalid): Make use of
+	scoped_restore_terminal_state.
+	(annotate_frames_invalid): Likewise.
+
+2019-06-14  Tom Tromey  <tromey@adacore.com>
+
+	* ada-lang.c (ada_evaluate_subexp) <case BINOP_ASSIGN>: Always
+	allow assignment to an internalvar.
+
+2019-06-14  Tom Tromey  <tromey@adacore.com>
+
+	* ada-lex.l: Allow "_" in attribute names.
+
+2019-06-14  Tom Tromey  <tromey@adacore.com>
+
+	PR gdb/24653:
+	* regcache.c (registers_changed): Don't call alloca.
+	* top.c (execute_command): Don't call alloca.
+
+2019-06-13  Pedro Alves  <palves@redhat.com>
+
+	* cli/cli-setshow.c (cli/cli-setshow.c): New parameter
+	'expression'.  When parsing an expression, error out if there's
+	junk after "unlimited".
+	(parse_cli_var_uinteger, parse_cli_var_zuinteger_unlimited)
+	(do_set_command): Adjust calls to is_unlimited_literal.
+
+2019-06-13  Pedro Alves  <palves@redhat.com>
+
+	* compile/compile.c (make_compile_options_def_group): Add braces
+	around array_view initializer.
+	* thread.c (make_thread_apply_all_options_def_group)
+	(make_thread_apply_all_options_def_group): Likewise.
+
+2019-06-13  Pedro Alves  <palves@redhat.com>
+
+	* NEWS (New commands): Mention "maint test-options
+	require-delimiter", "maint test-options unknown-is-error", "maint
+	test-options unknown-is-operand" and "maint show
+	test-options-completion-result".
+	(New command options, command completion): New section.
+	(Completion improvements): New section.
+	Mention that you can abbreviate "unlimited".
+
+2019-06-13  Pedro Alves  <palves@redhat.com>
+
+	* cli/cli-utils.c (parse_flags, parse_flags_qcs): Delete.
+	* cli/cli-utils.h (parse_flags, parse_flags_qcs): Delete.
+	* unittests/cli-utils-selftests.c (test_parse_flags)
+	(test_parse_flags_qcs): Delete.
+	(test_cli_utils): Don't call deleted functions.
+
+2019-06-13  Pedro Alves  <palves@redhat.com>
+
+	* thread.c: Include "cli/cli-option.h".
+	(tp_array_compar_ascending): Global.
+	(tp_array_compar): Delete function.
+	(tp_array_compar_ascending, tp_array_compar_descending): New
+	functions.
+	(ascending_option_def, qcs_flag_option_def)
+	(thr_qcs_flags_option_defs)
+	(make_thread_apply_all_options_def_group)
+	(make_thread_apply_options_def_group): New.
+	(thread_apply_all_command): Use gdb::option::process_options.
+	(thread_apply_command_completer)
+	(thread_apply_all_command_completer): New.
+	(thread_apply_command): Use gdb::option::process_options.
+	(_initialize_thread): Delete THREAD_APPLY_FLAGS_HELP, replace it
+	with a new THREAD_APPLY_OPTION_HELP.  Use gdb::option::build_help
+	to generate help text of "thread apply".  Adjust "taas"'s help.
+	* tid-parse.c (tid_range_parser::in_thread_range): New method.
+	* tid-parse.h (tid_range_parser::in_thread_range): New method.
+
+2019-06-13  Pedro Alves  <palves@redhat.com>
+
+	* thread.c (thread_apply_command): Check for invalid TID with
+	isdigit instead of !isalpha.
+
+2019-06-13  Pedro Alves  <palves@redhat.com>
+
+	* cli/cli-utils.c (parse_flags_qcs): Use validate_flags_qcs.
+	(validate_flags_qcs): New.
+	* cli/cli-utils.h (struct qcs_flags): Change field types to int.
+	(validate_flags_qcs): Declare.
+	* stack.c (qcs_flag_option_def, fr_qcs_flags_option_defs): New.
+	(make_frame_apply_options_def_group): New.
+	(frame_apply_command_count): Process options with
+	gdb::option::process_options.
+	(frame_apply_completer): New.
+	(frame_apply_level_completer, frame_apply_all_completer)
+	(frame_apply_completer): New.
+	(_initialize_stack): Update help of "frame apply", "frame apply
+	level", "frame apply all" and "faas" to mention supported options
+	and install command completers.
+	* stack.h (frame_apply_all_completer): Declare.
+	* thread.c: Include "stack.h".
+	(tfaas_command): Add "--".
+	(_initialize_thread): Update help "tfaas" to mention supported
+	options and install command completer.
+
+2019-06-13  Pedro Alves  <palves@redhat.com>
+
+	* completer.c (complete_nested_command_line): New.
+	(gdb_completion_word_break_characters_throw): Add assertion.
+	* completer.h (complete_nested_command_line): Declare.
+
+2019-06-13  Pedro Alves  <palves@redhat.com>
+
+	* stack.c (parse_backtrace_qualifiers): New.
+	(backtrace_command): Use it.
+	(backtrace_command_completer): Complete on qualifiers.
+
+2019-06-13  Pedro Alves  <palves@redhat.com>
+
+	* frame.c: Include "cli/cli-option.h.
+	(user_set_backtrace_options): New.
+	(backtrace_past_main, backtrace_past_entry, backtrace_limit):
+	Delete.
+	(get_prev_frame): Adjust.
+	(boolean_option_def, uinteger_option_def)
+	(set_backtrace_option_defs): New.
+	(_initialize_frame): Adjust and use
+	gdb::option::add_setshow_cmds_for_options to install "set
+	backtrace past-main" and "set backtrace past-entry".
+	* frame.h: Include "cli/cli-option.h".
+	(struct frame_print_options): Forward declare.
+	(print_frame_arguments_all, print_frame_arguments_scalars)
+	(print_frame_arguments_none): Declare.
+	(print_entry_values): Delete declaration.
+	(struct frame_print_options, user_frame_print_options): New.
+	(struct set_backtrace_options): New.
+	(set_backtrace_option_defs, user_set_backtrace_options): Declare.
+	* mi/mi-cmd-stack.c (mi_cmd_stack_list_frames)
+	(mi_cmd_stack_list_locals, mi_cmd_stack_list_args)
+	(mi_cmd_stack_list_variables): Pass down USER_FRAME_PRINT_OPTIONS.
+	(list_args_or_locals): Add frame_print_options parameter.
+	(mi_cmd_stack_info_frame): Pass down USER_FRAME_PRINT_OPTIONS.
+	* python/py-framefilter.c (enumerate_args): Pass down
+	USER_FRAME_PRINT_OPTIONS.
+	* stack.c: Include "cli/cli-option.h".
+	(print_frame_arguments_all, print_frame_arguments_scalars)
+	(print_frame_arguments_none): Declare.
+	(print_raw_frame_arguments, print_entry_values): Delete.
+	(user_frame_print_options): New.
+	(boolean_option_def, enum_option_def, frame_print_option_defs):
+	New.
+	(struct backtrace_cmd_options): New.
+	(bt_flag_option_def): New.
+	(backtrace_command_option_defs): New.
+	(print_stack_frame): Pass down USER_FRAME_PRINT_OPTIONS.
+	(print_frame_arg, read_frame_arg, print_frame_args)
+	(print_frame_info, print_frame): Add frame_print_options parameter
+	and use it.
+	(info_frame_command_core): Pass down USER_FRAME_PRINT_OPTIONS.
+	(backtrace_command_1): Add frame_print_options and
+	backtrace_cmd_options parameters and use them.
+	(make_backtrace_options_def_group): New.
+	(backtrace_command): Process command options with
+	gdb::option::process_options.
+	(backtrace_command_completer): New.
+	(_initialize_stack): Extend "backtrace"'s help to mention
+	supported options.  Install completer for "backtrace".
+	Install some settings commands with add_setshow_cmds_for_options.
+
+2019-06-13  Pedro Alves  <palves@redhat.com>
+
+	* NEWS (Changed commands): Mention set/show print raw-frame-arguments,
+	and that "set/show print raw frame-arguments" are now deprecated.
+
+	* cli/cli-decode.c (add_setshow_boolean_cmd): Now returns the
+	command.
+	* command.h (add_setshow_boolean_cmd): Return cmd_list_element *.
+	* stack.c (_initialize_stack): Install "set/show print
+	raw-frame-arguments", and deprecate "set/show print raw
+	frame-arguments".
+	* valprint.c (_initialize_valprint): Deprecate "set/show print
+	raw".
+
+2019-06-13  Pedro Alves  <palves@redhat.com>
+
+	* compile/compile.c (struct compile_options): New.
+	(compile_flag_option_def, compile_command_option_defs)
+	(make_compile_options_def_group): New.
+	(compile_file_command): Handle options with
+	gdb::option::process_options.
+	(compile_file_command_completer): New function.
+	(compile_code_command): Handle options with
+	gdb::option::process_options.
+	(compile_code_command_completer): New function.
+	(_initialize_compiler): Install completers for "compile code" and
+	"compile file".  Mention available options in "compile code" and
+	"compile code"'s help.
+	* completer.c (advance_to_completion_word): New, factored out from
+	...
+	(advance_to_expression_complete_word_point): ... this.
+	(advance_to_filename_complete_word_point): New.
+	* completer.h (advance_to_filename_complete_word_point): New
+	declaration.
+
+2019-06-13  Pedro Alves  <palves@redhat.com>
+
+	* compile/compile.c: Include "cli/cli-option.h".
+	(compile_print_value): Scope data pointer is now a
+	value_print_options pointer; adjust.
+	(compile_print_command): Process options.  Scope data pointer is
+	now a value_print_options pointer; adjust.
+	(_initialize_compile): Update "compile print"'s help to include
+	supported options.  Install a completer for "compile print".
+	* cp-valprint.c (show_vtblprint, show_objectprint)
+	(show_static_field_print): Delete.
+	(_initialize_cp_valprint): Don't install "set print
+	static-members", "set print vtbl", "set print object" here.
+	* printcmd.c: Include "cli/cli-option.h" and
+	"common/gdb_optional.h".
+	(print_command_parse_format): Rework to fill in a
+	value_print_options instead of a format_data.
+	(print_value): Change parameter type from format_data pointer to
+	value_print_options reference.  Adjust.
+	(print_command_1): Process options.  Adjust to pass down a
+	value_print_options.
+	(print_command_completer): New.
+	(_initialize_printcmd): Install print_command_completer as
+	handle_brkchars completer for the "print" command.  Update
+	"print"'s help to include supported options.
+	* valprint.c: Include "cli/cli-option.h".
+	(show_vtblprint, show_objectprint, show_static_field_print): Moved
+	here from cp-valprint.c.
+	(boolean_option_def, uinteger_option_def)
+	(value_print_option_defs, make_value_print_options_def_group):
+	New.  Use gdb::option::add_setshow_cmds_for_options to install
+	"set print elements", "set print null-stop", "set print repeats",
+	"set print pretty", "set print union", "set print array", "set
+	print address", "set print symbol", "set print array-indexes".
+	* valprint.h: Include <string> and "cli/cli-option.h".
+	(make_value_print_options_def_group): Declare.
+	(print_value): Change parameter type from format_data pointer to
+	value_print_options reference.
+	(print_command_completer): Declare.
+
+2019-06-13  Pedro Alves  <palves@redhat.com>
+
+	* Makefile.in (SUBDIR_CLI_SRCS): Add cli/cli-option.c.
+	(COMMON_SFILES): Add maint-test-settings.c.
+	* cli/cli-decode.c (boolean_enums): New global, factored out from
+	...
+	(add_setshow_boolean_cmd): ... here.
+	* cli/cli-decode.h (boolean_enums): Declare.
+	* cli/cli-option.c: New file.
+	* cli/cli-option.h: New file.
+	* cli/cli-setshow.c (parse_cli_boolean_value(const char **)): New,
+	factored out from ...
+	(parse_cli_boolean_value(const char *)): ... this.
+	(is_unlimited_literal): Change parameter type to pointer to
+	pointer.  Adjust and advance ARG pointer.
+	(parse_cli_var_uinteger, parse_cli_var_zuinteger_unlimited)
+	(parse_cli_var_enum): New, factored out from ...
+	(do_set_command): ... this.  Adjust.
+	* cli/cli-setshow.h (parse_cli_boolean_value)
+	(parse_cli_var_uinteger, parse_cli_var_zuinteger_unlimited)
+	(parse_cli_var_enum): Declare.
+	* cli/cli-utils.c: Include "cli/cli-option.h".
+	(get_ulongest): New.
+	* cli/cli-utils.h (get_ulongest): Declare.
+	(check_for_argument): New overloads.
+	* maint-test-options.c: New file.
+
+2019-06-13  Pedro Alves  <palves@redhat.com>
+
+	* cli/cli-utils.c (number_or_range_parser::get_number): Do not
+	parse a range if "-" is at the end of the string.
+
+2019-06-13  Pedro Alves  <palves@redhat.com>
+
+	* cli/cli-setshow.c (parse_auto_binary_operation)
+	(parse_cli_boolean_value): Don't allow "o".
+
+2019-06-13  Pedro Alves  <palves@redhat.com>
+
+	* Makefile.in (COMMON_SFILES): Add maint-test-settings.c.
+	* NEWS: Mention maint test-settings KIND.
+	* maint-test-settings.c: New file.
+
+2019-06-13  Pedro Alves  <palves@redhat.com>
+
+	* cli/cli-decode.c (add_setshow_cmd_full): Remove "show"
+	completer.
+	(add_setshow_string_cmd, add_setshow_string_noescape_cmd): Remove
+	"set" completers.
+
+2019-06-13  Pedro Alves  <palves@redhat.com>
+
+	* cli/cli-setshow.c (do_set_command) <var_enum>: Detect junk
+	after item.
+
+2019-06-13  Pedro Alves  <palves@redhat.com>
+
+	* cli/cli-setshow.c (is_unlimited_literal): Allow abbreviations.
+
+2019-06-13  Pedro Alves <palves@redhat.com>
+
+	* ax-gdb.c (agent_command_1): Remove skip_spaces call.
+	* breakpoint.c (watch_maybe_just_location): Remove skip_spaces
+	call.
+	* cli/cli-cmds.c (apropos_command): Remove skip_spaces call.
+	* cli/cli-utils.c (extract_info_print_args): Remove skip_spaces
+	calls.
+	(check_for_argument): Skip spaces after argument.
+
+2019-06-13  Pedro Alves  <palves@redhat.com>
+
+	* thread.c (thread_apply_command): Adjust TID parsing.
+	* tid-parse.c (tid_range_parser::finished): Ensure parsing end is
+	detected before end of string.
+	(tid_is_in_list): Error out if LIST is invalid.
+
+2019-06-13  Pedro Alves  <palves@redhat.com>
+
+	* completer.c (complete_line_internal_1): Rewind completion word
+	point.
+	(completion_tracker::advance_custom_word_point_by): Change
+	parameter type to int.
+	* completer.h (completion_tracker::advance_custom_word_point_by):
+	Likewise.
+
+2019-06-13  Pedro Alves  <palves@redhat.com>
+
+	* completer.c (advance_to_completion_word): Handle delimiters.
+
+2019-06-11  Bernhard Heckel  <bernhard.heckel@intel.com>
+
+	* dwarf2read.c (add_partial_symbol): Skip nameless modules.
+
+2019-06-11  Tom Tromey  <tom@tromey.com>
+
+	* common/common-utils.c (xmalloc, xrealloc, xcalloc)
+	(xmalloc_failed): Move to alloc.c.
+	* alloc.c: New file.
+	* Makefile.in (COMMON_SFILES): Add alloc.c.
+
+2019-06-11  Tom Tromey  <tom@tromey.com>
+
+	* nat/linux-waitpid.c: Don't include server.h.
+	(linux_debug): Remove.
+	(my_waitpid): Update.
+
+2019-06-11  Tom Tromey  <tromey@adacore.com>
+
+	* infcall.c (_initialize_infcall): Remove trailing newline from
+	help.
+	* user-regs.c (_initialize_user_regs): Remove trailing newline
+	from help.
+	* typeprint.c (_initialize_typeprint): Remove trailing newline
+	from help.
+	* reverse.c (_initialize_reverse): Remove trailing newlines from
+	help.
+	* tracepoint.c (_initialize_tracepoint): Remove trailing newlines
+	from help.
+	* language.c (add_set_language_command): Remove trailing newline
+	from help.
+	* infcmd.c (_initialize_infcmd): Remove trailing newlines from
+	help.
+	* disasm.c (_initialize_disasm): Remove trailing newline from
+	help.
+	* top.c (init_main): Remove trailing newline from help.
+	* interps.c (_initialize_interpreter): Remove trailing newline
+	from help.
+	* btrace.c (_initialize_btrace): Remove trailing newlines from
+	help.
+	* breakpoint.c (_initialize_breakpoint): Remove trailing newline
+	from help.
+	* python/python.c (_initialize_python): Remove trailing newline
+	from help.
+	* spu-tdep.c (_initialize_spu_tdep): Remove trailing newlines from
+	help.
+	* tui/tui-win.c (_initialize_tui_win): Remove trailing newlines
+	from help.  Reformat some text.
+	* tui/tui-stack.c (_initialize_tui_stack): Remove trailing newline
+	from help.
+	* tui/tui-layout.c (_initialize_tui_layout): Remove trailing
+	newline from help.
+
+2019-06-11  Tom Tromey  <tromey@adacore.com>
+
+	* darwin-nat.c (darwin_decode_exception_message)
+	(darwin_decode_message, darwin_nat_target::kill): Fix shadowing.
+
+2019-06-10  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* valops.c (value_slice): Check for not allocated or not
+	associated values.
+
+2019-06-10  Tom de Vries  <tdevries@suse.de>
+
+	PR gdb/24618
+	* dwarf2read.c (struct mapped_index::symbol_name_slot_invalid): Make
+	sure an empty slot (defined by a 32-bit zero pair) is recognized as
+	invalid.
+
+2019-06-10  Tom de Vries  <tdevries@suse.de>
+
+	PR gdb/24611
+	* linespec.c (linespec_lexer_lex_string): Remove incorrect
+	"++(PARSER_STREAM (parser))" for "[abi"-prefixed colon.  Add assert.
+
+2019-06-10  Tom de Vries  <tdevries@suse.de>
+
+	PR symtab/24545
+	* symtab.c (struct demangled_name_entry): Add language field.
+	(symbol_set_names):  Revert "[gdb/symtab] Fix language of duplicate
+	static minimal symbol".  Set and use language field.
+
+2019-06-10  Tom Tromey  <tromey@adacore.com>
+
+	* ada-lang.c (_initialize_ada_language): Update help text.
+
+2019-06-10  Tom Tromey  <tromey@adacore.com>
+
+	* m32c-tdep.c (m32c_m16c_address_to_pointer): Don't end warning
+	with a newline.
+	* guile/guile.c (handle_boot_error): Don't end warning with a
+	newline.
+	* cli/cli-cmds.c (exit_status_set_internal_vars): Don't end
+	warning with a newline.
+	* s12z-tdep.c (s12z_skip_prologue): Don't end warning with a
+	newline.
+	(s12z_frame_cache): Likewise.
+	* dwarf-index-cache.c (index_cache::store): Don't end warning with
+	a newline.
+	* solib-svr4.c (disable_probes_interface): Don't end warning with
+	a newline.
+	* nat/fork-inferior.c (fork_inferior): Don't end warning with a
+	newline.
+	* python/python.c (do_finish_initialization): Don't end warning
+	with a newline.
+
+2019-06-10  Tom Tromey  <tom@tromey.com>
+
+	* python/py-breakpoint.c (gdbpy_breakpoint_created)
+	(gdbpy_breakpoint_deleted, gdbpy_breakpoint_modified): Use
+	gdbpy_enter.
+
+2019-06-10  Tom Tromey  <tromey@adacore.com>
+
+	* elfread.c (elf_read_minimal_symbols): Don't set the dbx objfile
+	data.
+	(elf_new_init): Don't call stabsread_new_init.
+	* dbxread.c (coffstab_build_psymtabs): Set dbx objfile data.
+	(elfstab_build_psymtabs): Likewise.  Call stabsread_new_init.
+	* coffread.c (coff_symfile_init): Don't set the dbx objfile data.
+
+2019-06-10  Tom de Vries  <tdevries@suse.de>
+
+	PR symtab/16264
+	PR symtab/24517
+	* dwarf2read.c (read_func_scope): Handle DW_AT_main_subprogram.
+
+2019-06-06  Руслан Ижбулатов <lrn1986@gmail.com>
+
+	* source.c (find_and_open_source): Also rewrite relative file
+	names.
+
+2019-04-26  Amos Bird  <amosbird@gmail.com>
+
+	* annotate.c (annotate_thread_exited): Add "thread-exited"
+	annotation.
+
+2019-06-06  Tom Tromey  <tromey@adacore.com>
+
+	* maint.h (class scoped_command_stats): Use
+	DISABLE_COPY_AND_ASSIGN.
+	<print_time>: New method.
+	* maint.c (scoped_command_stats, ~scoped_command_stats): Call
+	print_time.
+	(scoped_command_stats::print_time): New method.
+
+2019-06-05  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* riscv-tdep.c (riscv_insn::decode): Gracefully ignore
+	instructions of lengths 6 or 8 bytes.
+
+2019-06-04  Pedro Alves  <palves@redhat.com>
+
+	* common/gdb_unique_ptr.h (make_unique_xstrdup): New.
+
+	* ada-lang.c (catch_ada_completer): Use make_unique_xstrdup.
+	* breakpoint.c (condition_completer): Likewise.
+	* cli/cli-dump.c (scan_expression): Likewise.
+	* common/filestuff.c (mkdir_recursive): Likewise.
+	* common/gdb_tilde_expand.c (gdb_tilde_expand_up)
+	* common/pathstuff.c (gdb_realpath, gdb_realpath_keepfile)
+	(gdb_abspath): Likewise.
+	* compile/compile-cplus-types.c
+	(compile_cplus_instance::decl_name): Likewise.
+	* completer.c (complete_explicit_location):
+	(signal_completer, reg_or_group_completer_1): Likewise.
+	* cp-support.c (cp_remove_params_if_any): Likewise.
+	* fbsd-tdep.c (fbsd_core_vnode_path): Likewise.
+	* guile/scm-safe-call.c (gdbscm_safe_eval_string): Likewise.
+	* infcmd.c (strip_bg_char): Likewise.
+	* linespec.c (copy_token_string): Likewise.
+	* mi/mi-main.c (output_cores): Likewise.
+	* psymtab.c (psymtab_search_name):
+	* symfile.c (test_set_ext_lang_command): Likewise.
+	* target.c (target_fileio_read_stralloc): Likewise.
+	* tui/tui-regs.c (tui_reggroup_completer): Likewise.
+	* value.c (complete_internalvar): Likewise.
+
 2019-06-04  Christian Biesinger  <cbiesinger@google.com>
 
 	Add objfile property to gdb.Type.
-	* gdb/NEWS: Mention Python API addition.
-	* gdb/python/py-type.c (typy_get_objfile): New method.
+	* NEWS: Mention Python API addition.
+	* python/py-type.c (typy_get_objfile): New method.
 
 2019-06-03  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
 
@@ -265,7 +1062,7 @@
 
 2019-05-17  Jan Vrany  <jan.vrany@fit.cvut.cz>
 
-       * MAINTAINERS (Write After Approval): Add myself.
+	* MAINTAINERS (Write After Approval): Add myself.
 
 2019-05-17  Tom de Vries  <tdevries@suse.de>
 
@@ -3162,15 +3959,15 @@
 
 2019-03-26  Alan Hayward  <alan.hayward@arm.com>
 
-        * ppc-linux-nat.c: Add include.
+	* ppc-linux-nat.c: Add include.
 
 2019-03-26  Alan Hayward  <alan.hayward@arm.com>
 
-        * NEWS: Mention AArch64 Pointer Authentication.
+	* NEWS: Mention AArch64 Pointer Authentication.
 
 2019-03-26  Alan Hayward  <alan.hayward@arm.com>
 
-        * arm-linux-nat.c: Add include.
+	* arm-linux-nat.c: Add include.
 
 2019-03-25  Simon Marchi  <simon.marchi@polymtl.ca>
 

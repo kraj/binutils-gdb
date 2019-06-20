@@ -1,3 +1,64 @@
+2019-06-19  Alan Modra  <amodra@gmail.com>
+
+	PR 24697
+	* elf32-ppc.c (ppc_elf_relocate_section): Don't read insn for
+	R_PPC_EMB_RELSDA.  Mask low bit of R_PPC_EMB_SDA21 r_offset.
+
+2019-06-19  Alan Modra  <amodra@gmail.com>
+
+	* elf64-ppc.c (ppc64_elf_inline_plt): Correct st_other test for
+	functions that require r2 valid to use local entry.
+	(ppc64_elf_size_stubs, ppc64_elf_relocate_section): Likewise.
+
+2019-06-17  Szabolcs Nagy  <szabolcs.nagy@arm.com>
+
+	* elfnn-aarch64.c (elfNN_aarch64_allocate_local_dynrelocs): Remove.
+	(elfNN_aarch64_size_dynamic_sections): Remove loc_hash_table traversal
+	with elfNN_aarch64_allocate_local_dynrelocs.
+
+2019-06-14  Szabolcs Nagy  <szabolcs.nagy@arm.com>
+
+	* elfnn-aarch64.c: Enable MOVW_PREL relocs for ELF32.
+
+2019-06-14  Alan Modra  <amodra@gmail.com>
+
+	* Makefile.in: Regenerate.
+	* configure: Regenerate.
+
+2019-06-14  Alan Modra  <amodra@gmail.com>
+
+	* elf64-ppc.c: Fix comments involving paddi.
+
+2019-06-12  Adam Lackorzymski  <adam@os.inf.tu-dresden.de>
+
+	PR 24643
+	* elf32-arm.c (arm_elf_find_function): Fail if the symol table is
+	absent, or the bfd is not in the ELF formart.
+	* elfnn-aarch64.c (aarch64_elf_find_function): Likewise.
+
+2019-06-10  Christos Zoulas  <christos@zoulas.com>
+
+	PR 24650
+	* elf.c (elfcore_make_auxv_note_section): New function.
+	(elfcore_grok_note): Use it.
+	(elfcore_grok_freebsd_note): Likewise.
+	(elfcore_grok_openbsd_note): Likewise.
+	(elfcore_grok_netbsd_note): Likewise.  Plus add support for
+	NT_NETBSDCORE_AUXV notes.
+
+2019-06-06  Sudakshina Das  <sudi.das@arm.com>
+
+	* elfxx-aarch64.c (_bfd_aarch64_elf_link_setup_gnu_properties): Set
+	alignment of the new gnu property section.
+
+2019-06-06  Sudakshina Das  <sudi.das@arm.com>
+
+	* bfd-in.h: Change comment.
+	* bfd-in2.h: Regenerate.
+	* elfnn-aarch64.c (elfNN_aarch64_merge_gnu_properties): Update warning.
+	* elfxx-aarch64.c (_bfd_aarch64_elf_link_setup_gnu_properties):
+	Likwise.
+
 2019-05-28  Faraz Shahbazker  <fshahbazker@wavecomp.com>
 
 	* elfxx-mips.c (mips_elf_calculate_relocation) <R_MIPS_PCHI16>:

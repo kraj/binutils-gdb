@@ -240,11 +240,6 @@ void (*deprecated_readline_end_hook) (void);
 void (*deprecated_attach_hook) (void);
 void (*deprecated_detach_hook) (void);
 
-/* Called during long calculations to allow GUI to repair window
-   damage, and to check for stop buttons, etc...  */
-
-void (*deprecated_interactive_hook) (void);
-
 /* Called when going to wait for the target.  Usually allows the GUI
    to run while waiting for target events.  */
 
@@ -559,10 +554,6 @@ execute_command (const char *p, int from_tty)
 
   auto cleanup_if_error = make_scope_exit (bpstat_clear_actions);
   scoped_value_mark cleanup = prepare_execute_command ();
-
-  /* Force cleanup of any alloca areas if using C alloca instead of
-     a builtin alloca.  */
-  alloca (0);
 
   /* This can happen when command_line_input hits end of file.  */
   if (p == NULL)
@@ -2230,7 +2221,7 @@ input settings."),
   c = add_cmd ("new-ui", class_support, new_ui_command, _("\
 Create a new UI.  It takes two arguments:\n\
 The first argument is the name of the interpreter to run.\n\
-The second argument is the terminal the UI runs on.\n"), &cmdlist);
+The second argument is the terminal the UI runs on."), &cmdlist);
   set_cmd_completer (c, interpreter_completer);
 }
 
