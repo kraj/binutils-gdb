@@ -560,14 +560,11 @@ ui_out::call_do_message (const ui_file_style &style, const char *format,
 }
 
 void
-ui_out::message (const char *format, ...)
+ui_out::vmessage (const char *format, va_list args)
 {
   format_pieces fpieces (&format, true);
 
   ui_file_style style;
-
-  va_list args;
-  va_start (args, format);
 
   for (auto &&piece : fpieces)
     {
@@ -647,6 +644,15 @@ ui_out::message (const char *format, ...)
 			  _("failed internal consistency check"));
 	}
     }
+}
+
+void
+ui_out::message (const char *format, ...)
+{
+  va_list args;
+  va_start (args, format);
+
+  vmessage (format, args);
 
   va_end (args);
 }

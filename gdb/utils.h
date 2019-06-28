@@ -435,6 +435,13 @@ extern void vfprintf_styled (struct ui_file *stream,
 			     va_list args)
   ATTRIBUTE_PRINTF (3, 0);
 
+/* Like vfprintf_styled, but do not process gdb-specific format
+   specifiers.  */
+extern void vfprintf_styled_no_gdbfmt (struct ui_file *stream,
+				       const ui_file_style &style,
+				       const char *fmt, va_list args)
+  ATTRIBUTE_PRINTF (3, 0);
+
 /* Like fputs_filtered, but styles the output according to STYLE, when
    appropriate.  */
 
