@@ -149,6 +149,7 @@ class ui_out
   void spaces (int numspaces);
   void text (const char *string);
   void message (const char *format, ...) ATTRIBUTE_PRINTF (2, 3);
+  void vmessage (const char *format, va_list args) ATTRIBUTE_PRINTF (2, 0);
   void wrap_hint (const char *identstring);
 
   void flush ();

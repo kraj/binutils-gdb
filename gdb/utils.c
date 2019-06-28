@@ -73,13 +73,15 @@
 #include "common/pathstuff.h"
 #include "cli/cli-style.h"
 #include "common/scope-exit.h"
+#include "cli-out.h"
 
 void (*deprecated_error_begin_hook) (void);
 
 /* Prototypes for local functions */
 
 static void vfprintf_maybe_filtered (struct ui_file *, const char *,
-				     va_list, int) ATTRIBUTE_PRINTF (2, 0);
+				     va_list, bool, bool)
+  ATTRIBUTE_PRINTF (2, 0);
 
 static void fputs_maybe_filtered (const char *, struct ui_file *, int);
 
@@ -2027,6 +2029,26 @@ puts_debug (char *prefix, char *string, char *suffix)
     }
 }
 
+/* Like string_vprintf, but if GDBFMT is true, also process the
+   gdb-specific format specifiers.  */
+
+static std::string string_vprintf_maybe_gdbfmt (const char *format,
+						va_list args,
+						bool gdbfmt)
+  ATTRIBUTE_PRINTF (1, 0);
+
+static std::string
+string_vprintf_maybe_gdbfmt (const char *format, va_list args, bool gdbfmt)
+{
+  if (gdbfmt)
+    {
+      string_file sfile;
+      cli_ui_out (&sfile, 0).vmessage (format, args);
+      return std::move (sfile.string ());
+    }
+  else
+    return string_vprintf (format, args);
+}
 
 /* Print a variable number of ARGS using format FORMAT.  If this
    information is going to put the amount written (since the last call
@@ -2038,15 +2060,14 @@ puts_debug (char *prefix, char *string, char *suffix)
    We implement three variants, vfprintf (takes a vararg list and stream),
    fprintf (takes a stream to write on), and printf (the usual).
 
-   Note also that a longjmp to top level may occur in this routine
-   (since prompt_for_continue may do so) so this routine should not be
-   called when cleanups are not in place.  */
+   Note also that this may throw a quit (since prompt_for_continue may
+   do so).  */
 
 static void
 vfprintf_maybe_filtered (struct ui_file *stream, const char *format,
-			 va_list args, int filter)
+			 va_list args, bool filter, bool gdbfmt)
 {
-  std::string linebuffer = string_vprintf (format, args);
+  std::string linebuffer = string_vprintf_maybe_gdbfmt (format, args, gdbfmt);
   fputs_maybe_filtered (linebuffer.c_str (), stream, filter);
 }
 
@@ -2054,13 +2075,19 @@ vfprintf_maybe_filtered (struct ui_file *stream, const char *format,
 void
 vfprintf_filtered (struct ui_file *stream, const char *format, va_list args)
 {
-  vfprintf_maybe_filtered (stream, format, args, 1);
+  vfprintf_maybe_filtered (stream, format, args, true, true);
+}
+
+static void
+vfprintf_filtered_no_gdbfmt (struct ui_file *stream, const char *format, va_list args)
+{
+  vfprintf_maybe_filtered (stream, format, args, true, false);
 }
 
 void
 vfprintf_unfiltered (struct ui_file *stream, const char *format, va_list args)
 {
-  std::string linebuffer = string_vprintf (format, args);
+  std::string linebuffer = string_vprintf_maybe_gdbfmt (format, args, true);
   if (debug_timestamp && stream == gdb_stdlog)
     {
       using namespace std::chrono;
@@ -2087,7 +2114,7 @@ vfprintf_unfiltered (struct ui_file *stream, const char *format, va_list args)
 void
 vprintf_filtered (const char *format, va_list args)
 {
-  vfprintf_maybe_filtered (gdb_stdout, format, args, 1);
+  vfprintf_maybe_filtered (gdb_stdout, format, args, true, false);
 }
 
 void
@@ -2155,6 +2182,17 @@ vfprintf_styled (struct ui_file *stream, const ui_file_style &style,
 {
   set_output_style (stream, style);
   vfprintf_filtered (stream, format, args);
+  set_output_style (stream, ui_file_style ());
+}
+
+/* See utils.h.  */
+
+void
+vfprintf_styled_no_gdbfmt (struct ui_file *stream, const ui_file_style &style,
+			   const char *format, va_list args)
+{
+  set_output_style (stream, style);
+  vfprintf_filtered_no_gdbfmt (stream, format, args);
   set_output_style (stream, ui_file_style ());
 }
 

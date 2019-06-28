@@ -209,7 +209,10 @@ cli_ui_out::do_message (const ui_file_style &style,
   if (m_suppress_output)
     return;
 
-  vfprintf_styled (m_streams.back (), style, format, args);
+  /* Use the "no_gdbfmt" variant here to avoid recursion.
+     vfprintf_styled calls into cli_ui_out::message to handle the
+     gdb-specific printf formats.  */
+  vfprintf_styled_no_gdbfmt (m_streams.back (), style, format, args);
 }
 
 void
