@@ -617,12 +617,16 @@ ui_out::vmessage (const char *format, va_list args)
 		call_do_message (ss->style (), "%s", ss->str ());
 	      }
 	      break;
-	    case 'S':
+	    case '[':
 	      style = *va_arg (args, const ui_file_style *);
 	      break;
-	    case 'N':
-	      va_arg (args, void *);
-	      style = {};
+	    case ']':
+	      {
+		void *arg = va_arg (args, void *);
+		gdb_assert (arg == nullptr);
+
+		style = {};
+	      }
 	      break;
 	    default:
 	      call_do_message (style, current_substring, va_arg (args, void *));

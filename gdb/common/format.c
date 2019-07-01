@@ -259,7 +259,8 @@ format_pieces::format_pieces (const char **arg, bool gdb_extensions)
 		  case 's':
 		  case 'S':
 		  case 'F':
-		  case 'N':
+		  case '[':
+		  case ']':
 		    f++;
 		    break;
 		  }
