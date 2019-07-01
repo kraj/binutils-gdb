@@ -189,8 +189,54 @@ class ui_out
 
   void spaces (int numspaces);
   void text (const char *string);
+
+  /* Output a printf-style formatted string.  In addition to the usual
+     printf format specs, this supports a few GDB-specific
+     formatters:
+
+     - '%pF' - output a field.
+
+       The argument is a field, wrapped in any of the base_field_s
+       subclasses.  int_field for integer fields, styled_field for
+       string fields.  This is preferred over separate
+       uiout->field_int(), uiout_>field_string() etc. calls when the
+       formatted message is translatable.  E.g.:
+
+         uiout->message (_("\nWatchpoint %pF deleted because the program has "
+                         "left the block in\n"
+                         "which its expression is valid.\n"),
+                         int_field ("wpnum", b->number));
+
+     - '%p[' - output the following text in a specified style.
+       '%p]' - output the following text in the default style.
+
+       The argument to '%p[' is a ui_file_style pointer.  The argument
+       to '%p]' must be nullptr.
+
+       This is useful when you want to output some portion of a string
+       literal in some style.  E.g.:
+
+	 uiout->message (_(" %p[<repeats %u times>%p]"),
+			 metadata_style.style ().ptr (),
+			 reps, repeats, nullptr);
+
+     - '%ps' - output a styled string.
+
+       The argument is the result of a call to styled_string.  This is
+       useful when you want to output some runtime-generated string in
+       some style.  E.g.:
+
+	 uiout->message (_("this is a target address %ps.\n"),
+			 styled_string (address_style.style (),
+					paddress (gdbarch, pc)));
+
+     Note that these all "abuse" the %p printf format spec, in order
+     to be compatible with GCC's printf format checking.  This is OK
+     because code in GDB that wants to print a host address should use
+     host_address_to_string instead of %p.  */
   void message (const char *format, ...) ATTRIBUTE_PRINTF (2, 3);
   void vmessage (const char *format, va_list args) ATTRIBUTE_PRINTF (2, 0);
+
   void wrap_hint (const char *identstring);
 
   void flush ();

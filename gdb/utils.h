@@ -349,7 +349,10 @@ extern struct ui_file *gdb_stdtargin;
 extern void set_screen_width_and_height (int width, int height);
 
 /* More generic printf like operations.  Filtered versions may return
-   non-locally on error.  */
+   non-locally on error.  As an extension over plain printf, these
+   support some GDB-specific format specifiers.  Particularly useful
+   here are the styling formatters: '%p[', '%p]' and '%ps'.  See
+   ui_out::message for details.  */
 
 extern void fputs_filtered (const char *, struct ui_file *);
 
