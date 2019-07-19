@@ -1,4 +1,4 @@
-From d81f382ce1b77ee184a6149f53824d0d8f7149b9 Mon Sep 17 00:00:00 2001
+From 20e87f4bc611fa29c9145e0f32f8f0e99c464973 Mon Sep 17 00:00:00 2001
 From: "H.J. Lu" <hjl.tools@gmail.com>
 Date: Sun, 8 Feb 2015 17:53:24 -0800
 Subject: [PATCH 3/3] Don't check the plugin target twice
@@ -11,11 +11,11 @@ don't check it twice.
 	(bfd_check_format_matches): Don't check the plugin target twice
 	if the plugin target is explicitly specified.
 ---
- bfd/format.c | 14 ++++++++++----
- 1 file changed, 10 insertions(+), 4 deletions(-)
+ bfd/format.c | 16 +++++++++++-----
+ 1 file changed, 11 insertions(+), 5 deletions(-)
 
 diff --git a/bfd/format.c b/bfd/format.c
-index 01862d30d6..b4acb58e82 100644
+index bd1f63c0c4..14ee33cbaf 100644
 --- a/bfd/format.c
 +++ b/bfd/format.c
 @@ -48,6 +48,8 @@ SUBSECTION
@@ -37,7 +37,13 @@ index 01862d30d6..b4acb58e82 100644
    const bfd_target * const *target;
    const bfd_target **matching_vector = NULL;
    const bfd_target *save_targ, *right_targ, *ar_right_targ, *match_targ;
-@@ -372,6 +371,13 @@ bfd_check_format_matches (bfd *abfd, bfd_format format, char ***matching)
+@@ -374,11 +373,18 @@ bfd_check_format_matches (bfd *abfd, bfd_format format, char ***matching)
+ 	 check the default target twice.  */
+       if (*target == &binary_vec
+ #if BFD_SUPPORTS_PLUGINS
+-	  || (match_count != 0 && *target == &plugin_vec)
++	  || (match_count != 0 && bfd_plugin_target_p (*target))
+ #endif
  	  || (!abfd->target_defaulted && *target == save_targ))
  	continue;
  
@@ -51,7 +57,7 @@ index 01862d30d6..b4acb58e82 100644
        /* If we already tried a match, the bfd is modified and may
  	 have sections attached, which will confuse the next
  	 _bfd_check_format call.  */
-@@ -398,7 +404,7 @@ bfd_check_format_matches (bfd *abfd, bfd_format format, char ***matching)
+@@ -405,7 +411,7 @@ bfd_check_format_matches (bfd *abfd, bfd_format format, char ***matching)
  	     lowest priority; objects both handled by a plugin and
  	     with an underlying object format will be claimed
  	     separately by the plugin.  */
