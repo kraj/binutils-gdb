@@ -22,14 +22,37 @@
 #ifndef TUI_TUI_DISASM_H
 #define TUI_TUI_DISASM_H
 
-#include "tui/tui.h"		/* For enum tui_status.  */
-#include "tui/tui-data.h"	/* For enum tui_scroll_direction.  */
+#include "tui/tui.h"
+#include "tui/tui-data.h"
+#include "tui-winsource.h"
 
-extern enum tui_status tui_set_disassem_content (struct gdbarch *, CORE_ADDR);
+/* A TUI disassembly window.  */
+
+struct tui_disasm_window : public tui_source_window_base
+{
+  tui_disasm_window ()
+    : tui_source_window_base (DISASSEM_WIN)
+  {
+  }
+
+  DISABLE_COPY_AND_ASSIGN (tui_disasm_window);
+
+  const char *name () const override
+  {
+    return DISASSEM_NAME;
+  }
+
+  bool location_matches_p (struct bp_location *loc, int line_no) override;
+
+protected:
+
+  void do_scroll_vertical (int num_to_scroll) override;
+};
+
+extern enum tui_status tui_set_disassem_content (tui_source_window_base *,
+						 struct gdbarch *, CORE_ADDR);
 extern void tui_show_disassem (struct gdbarch *, CORE_ADDR);
 extern void tui_show_disassem_and_update_source (struct gdbarch *, CORE_ADDR);
-extern void tui_vertical_disassem_scroll (enum tui_scroll_direction, 
-					  int);
 extern void tui_get_begin_asm_address (struct gdbarch **, CORE_ADDR *);
 
 #endif /* TUI_TUI_DISASM_H */

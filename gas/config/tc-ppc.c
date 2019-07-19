@@ -2224,6 +2224,11 @@ ppc_elf_suffix (char **str_p, expressionS *exp_p)
     MAP64 ("pcrel",		BFD_RELOC_PPC64_PCREL34),
     MAP64 ("got@pcrel",		BFD_RELOC_PPC64_GOT_PCREL34),
     MAP64 ("plt@pcrel",		BFD_RELOC_PPC64_PLT_PCREL34),
+    MAP64 ("tls@pcrel",		BFD_RELOC_PPC64_TLS_PCREL),
+    MAP64 ("got@tlsgd@pcrel",	BFD_RELOC_PPC64_GOT_TLSGD34),
+    MAP64 ("got@tlsld@pcrel",	BFD_RELOC_PPC64_GOT_TLSLD34),
+    MAP64 ("got@tprel@pcrel",	BFD_RELOC_PPC64_GOT_TPREL34),
+    MAP64 ("got@dtprel@pcrel",	BFD_RELOC_PPC64_GOT_DTPREL34),
     MAP64 ("higher34",		BFD_RELOC_PPC64_ADDR16_HIGHER34),
     MAP64 ("highera34",		BFD_RELOC_PPC64_ADDR16_HIGHERA34),
     MAP64 ("highest34",		BFD_RELOC_PPC64_ADDR16_HIGHEST34),
@@ -2608,6 +2613,12 @@ ppc_elf_end (void)
       elf_elfheader (stdoutput)->e_flags &= ~EF_PPC64_ABI;
       elf_elfheader (stdoutput)->e_flags |= ppc_abiversion & EF_PPC64_ABI;
     }
+  /* Any selection of opcodes based on ppc_cpu after gas has finished
+     parsing the file is invalid.  md_apply_fix and ppc_handle_align
+     must select opcodes based on the machine in force at the point
+     where the fixup or alignment frag was created, not the machine in
+     force at the end of file.  */
+  ppc_cpu = 0;
 }
 
 /* Validate any relocations emitted for -mrelocatable, possibly adding
@@ -3149,6 +3160,7 @@ fixup_size (bfd_reloc_code_real_type reloc, bfd_boolean *pc_relative)
     case BFD_RELOC_PPC_VLE_SDAREL_HI16D:
     case BFD_RELOC_PPC_VLE_SDAREL_LO16A:
     case BFD_RELOC_PPC_VLE_SDAREL_LO16D:
+    case BFD_RELOC_PPC64_TLS_PCREL:
     case BFD_RELOC_RVA:
       size = 4;
       break;
@@ -3190,6 +3202,8 @@ fixup_size (bfd_reloc_code_real_type reloc, bfd_boolean *pc_relative)
     case BFD_RELOC_PPC64_D34_LO:
     case BFD_RELOC_PPC64_D34_HI30:
     case BFD_RELOC_PPC64_D34_HA30:
+    case BFD_RELOC_PPC64_TPREL34:
+    case BFD_RELOC_PPC64_DTPREL34:
     case BFD_RELOC_PPC64_TOC:
       size = 8;
       break;
@@ -3197,6 +3211,10 @@ fixup_size (bfd_reloc_code_real_type reloc, bfd_boolean *pc_relative)
     case BFD_RELOC_64_PCREL:
     case BFD_RELOC_64_PLT_PCREL:
     case BFD_RELOC_PPC64_GOT_PCREL34:
+    case BFD_RELOC_PPC64_GOT_TLSGD34:
+    case BFD_RELOC_PPC64_GOT_TLSLD34:
+    case BFD_RELOC_PPC64_GOT_TPREL34:
+    case BFD_RELOC_PPC64_GOT_DTPREL34:
     case BFD_RELOC_PPC64_PCREL28:
     case BFD_RELOC_PPC64_PCREL34:
     case BFD_RELOC_PPC64_PLT_PCREL34:
@@ -3738,6 +3756,7 @@ md_assemble (char *str)
 		  break;
 
 		case BFD_RELOC_PPC_TLS:
+		case BFD_RELOC_PPC64_TLS_PCREL:
 		  if (!_bfd_elf_ppc_at_tls_transform (opcode->opcode, 0))
 		    as_bad (_("@tls may not be used with \"%s\" operands"),
 			    opcode->name);
@@ -3750,13 +3769,19 @@ md_assemble (char *str)
 		  break;
 
 		  /* We'll only use the 32 (or 64) bit form of these relocations
-		     in constants.  Instructions get the 16 bit form.  */
+		     in constants.  Instructions get the 16 or 34 bit form.  */
 		case BFD_RELOC_PPC_DTPREL:
-		  reloc = BFD_RELOC_PPC_DTPREL16;
+		  if (operand->bitm == 0x3ffffffffULL)
+		    reloc = BFD_RELOC_PPC64_DTPREL34;
+		  else
+		    reloc = BFD_RELOC_PPC_DTPREL16;
 		  break;
 
 		case BFD_RELOC_PPC_TPREL:
-		  reloc = BFD_RELOC_PPC_TPREL16;
+		  if (operand->bitm == 0x3ffffffffULL)
+		    reloc = BFD_RELOC_PPC64_TPREL34;
+		  else
+		    reloc = BFD_RELOC_PPC_TPREL16;
 		  break;
 
 		case BFD_RELOC_PPC64_PCREL34:
@@ -3768,6 +3793,10 @@ md_assemble (char *str)
 		  /* Fall through.  */
 		case BFD_RELOC_PPC64_GOT_PCREL34:
 		case BFD_RELOC_PPC64_PLT_PCREL34:
+		case BFD_RELOC_PPC64_GOT_TLSGD34:
+		case BFD_RELOC_PPC64_GOT_TLSLD34:
+		case BFD_RELOC_PPC64_GOT_TPREL34:
+		case BFD_RELOC_PPC64_GOT_DTPREL34:
 		  if (operand->bitm != 0x3ffffffffULL
 		      || (operand->flags & PPC_OPERAND_NEGATIVE) != 0)
 		    as_warn (_("%s unsupported on this instruction"), "@pcrel");
@@ -5562,6 +5591,7 @@ ppc_xcoff_end (void)
             symbol_set_value_now (dwss->end_exp.X_add_symbol);
           }
     }
+  ppc_cpu = 0;
 }
 
 #endif /* OBJ_XCOFF */
@@ -6996,7 +7026,7 @@ ppc_force_relocation (fixS *fix)
     }
 
   if (fix->fx_r_type >= BFD_RELOC_PPC_TLS
-      && fix->fx_r_type <= BFD_RELOC_PPC64_DTPREL16_HIGHESTA)
+      && fix->fx_r_type <= BFD_RELOC_PPC64_TLS_PCREL)
     return 1;
 
   return generic_force_reloc (fix);
@@ -7064,7 +7094,7 @@ ppc_fix_adjustable (fixS *fix)
 	  && fix->fx_r_type != BFD_RELOC_VTABLE_INHERIT
 	  && fix->fx_r_type != BFD_RELOC_VTABLE_ENTRY
 	  && !(fix->fx_r_type >= BFD_RELOC_PPC_TLS
-	       && fix->fx_r_type <= BFD_RELOC_PPC64_DTPREL16_HIGHESTA));
+	       && fix->fx_r_type <= BFD_RELOC_PPC64_TLS_PCREL));
 }
 #endif
 
@@ -7077,26 +7107,58 @@ ppc_frag_check (struct frag *fragP)
 		  fragP->insn_addr + 1);
 }
 
-/* Implement HANDLE_ALIGN.  This writes the NOP pattern into an
-   rs_align_code frag.  */
+/* rs_align_code frag handling.  */
+
+enum ppc_nop_encoding_for_rs_align_code
+{
+  PPC_NOP_VANILLA,
+  PPC_NOP_VLE,
+  PPC_NOP_GROUP_P6,
+  PPC_NOP_GROUP_P7
+};
+
+unsigned int
+ppc_nop_select (void)
+{
+  if ((ppc_cpu & PPC_OPCODE_VLE) != 0)
+    return PPC_NOP_VLE;
+  if ((ppc_cpu & (PPC_OPCODE_POWER9 | PPC_OPCODE_E500MC)) == 0)
+    {
+      if ((ppc_cpu & PPC_OPCODE_POWER7) != 0)
+	return PPC_NOP_GROUP_P7;
+      if ((ppc_cpu & PPC_OPCODE_POWER6) != 0)
+	return PPC_NOP_GROUP_P6;
+    }
+  return PPC_NOP_VANILLA;
+}
 
 void
 ppc_handle_align (struct frag *fragP)
 {
   valueT count = (fragP->fr_next->fr_address
 		  - (fragP->fr_address + fragP->fr_fix));
+  char *dest = fragP->fr_literal + fragP->fr_fix;
+  enum ppc_nop_encoding_for_rs_align_code nop_select = *dest & 0xff;
 
-  if ((ppc_cpu & PPC_OPCODE_VLE) != 0 && count != 0 && (count & 1) == 0)
+  /* Pad with zeros if not inserting a whole number of instructions.
+     We could pad with zeros up to an instruction boundary then follow
+     with nops but odd counts indicate data in an executable section
+     so padding with zeros is most appropriate.  */
+  if (count == 0
+      || (nop_select == PPC_NOP_VLE ? (count & 1) != 0 : (count & 3) != 0))
     {
-      char *dest = fragP->fr_literal + fragP->fr_fix;
+      *dest = 0;
+      return;
+    }
+
+  if (nop_select == PPC_NOP_VLE)
+    {
 
       fragP->fr_var = 2;
       md_number_to_chars (dest, 0x4400, 2);
     }
-  else if (count != 0 && (count & 3) == 0)
+  else
     {
-      char *dest = fragP->fr_literal + fragP->fr_fix;
-
       fragP->fr_var = 4;
 
       if (count > 4 * nop_limit && count < 0x2000000)
@@ -7125,8 +7187,7 @@ ppc_handle_align (struct frag *fragP)
 
       md_number_to_chars (dest, 0x60000000, 4);
 
-      if ((ppc_cpu & PPC_OPCODE_POWER6) != 0
-	  && (ppc_cpu & PPC_OPCODE_POWER9) == 0)
+      if (nop_select >= PPC_NOP_GROUP_P6)
 	{
 	  /* For power6, power7, and power8, we want the last nop to
 	     be a group terminating one.  Do this by inserting an
@@ -7146,18 +7207,12 @@ ppc_handle_align (struct frag *fragP)
 	      dest = group_nop->fr_literal;
 	    }
 
-	  if ((ppc_cpu & PPC_OPCODE_POWER7) != 0)
-	    {
-	      if (ppc_cpu & PPC_OPCODE_E500MC)
-		/* e500mc group terminating nop: "ori 0,0,0".  */
-		md_number_to_chars (dest, 0x60000000, 4);
-	      else
-		/* power7/power8 group terminating nop: "ori 2,2,0".  */
-		md_number_to_chars (dest, 0x60420000, 4);
-	    }
-	  else
+	  if (nop_select == PPC_NOP_GROUP_P6)
 	    /* power6 group terminating nop: "ori 1,1,0".  */
 	    md_number_to_chars (dest, 0x60210000, 4);
+	  else
+	    /* power7/power8 group terminating nop: "ori 2,2,0".  */
+	    md_number_to_chars (dest, 0x60420000, 4);
 	}
     }
 }
@@ -7471,6 +7526,12 @@ md_apply_fix (fixS *fixP, valueT *valP, segT seg)
 	case BFD_RELOC_PPC64_DTPREL16_HIGHERA:
 	case BFD_RELOC_PPC64_DTPREL16_HIGHEST:
 	case BFD_RELOC_PPC64_DTPREL16_HIGHESTA:
+	case BFD_RELOC_PPC64_TPREL34:
+	case BFD_RELOC_PPC64_DTPREL34:
+	case BFD_RELOC_PPC64_GOT_TLSGD34:
+	case BFD_RELOC_PPC64_GOT_TLSLD34:
+	case BFD_RELOC_PPC64_GOT_TPREL34:
+	case BFD_RELOC_PPC64_GOT_DTPREL34:
 	  gas_assert (fixP->fx_addsy != NULL);
 	  S_SET_THREAD_LOCAL (fixP->fx_addsy);
 	  fieldval = 0;
@@ -7541,6 +7602,7 @@ md_apply_fix (fixS *fixP, valueT *valP, segT seg)
 	case BFD_RELOC_PPC_TLS:
 	case BFD_RELOC_PPC_TLSGD:
 	case BFD_RELOC_PPC_TLSLD:
+	case BFD_RELOC_PPC64_TLS_PCREL:
 	  fieldval = 0;
 	  break;
 #endif
@@ -7794,6 +7856,7 @@ md_apply_fix (fixS *fixP, valueT *valP, segT seg)
 	case BFD_RELOC_PPC64_TPREL16_HIGHERA:
 	case BFD_RELOC_PPC64_TPREL16_HIGHEST:
 	case BFD_RELOC_PPC64_TPREL16_HIGHESTA:
+	case BFD_RELOC_PPC64_TLS_PCREL:
 	  fixP->fx_done = 0;
 	  break;
 #endif
@@ -7886,6 +7949,9 @@ tc_gen_reloc (asection *seg ATTRIBUTE_UNUSED, fixS *fixp)
   reloc->sym_ptr_ptr = XNEW (asymbol *);
   *reloc->sym_ptr_ptr = symbol_get_bfdsym (fixp->fx_addsy);
   reloc->address = fixp->fx_frag->fr_address + fixp->fx_where;
+  /* BFD_RELOC_PPC64_TLS_PCREL generates R_PPC64_TLS with an odd r_offset.  */
+  if (fixp->fx_r_type == BFD_RELOC_PPC64_TLS_PCREL)
+    reloc->address++;
   reloc->howto = bfd_reloc_type_lookup (stdoutput, fixp->fx_r_type);
   if (reloc->howto == (reloc_howto_type *) NULL)
     {

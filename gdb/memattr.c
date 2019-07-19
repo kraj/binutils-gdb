@@ -25,10 +25,11 @@
 #include "target-dcache.h"
 #include "value.h"
 #include "language.h"
-#include "common/vec.h"
+#include "gdbsupport/vec.h"
 #include "breakpoint.h"
 #include "cli/cli-utils.h"
 #include <algorithm>
+#include "gdbarch.h"
 
 static std::vector<mem_region> user_mem_region_list, target_mem_region_list;
 static std::vector<mem_region> *mem_region_list = &target_mem_region_list;

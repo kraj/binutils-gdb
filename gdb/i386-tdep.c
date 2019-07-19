@@ -46,7 +46,7 @@
 #include "remote.h"
 #include "i386-tdep.h"
 #include "i387-tdep.h"
-#include "common/x86-xstate.h"
+#include "gdbsupport/x86-xstate.h"
 #include "x86-tdep.h"
 
 #include "record.h"
@@ -64,6 +64,7 @@
 #include "parser-defs.h"
 #include <ctype.h>
 #include <algorithm>
+#include <unordered_set>
 
 /* Register names.  */
 
@@ -4385,6 +4386,29 @@ i386_stap_parse_special_token (struct gdbarch *gdbarch,
   return 0;
 }
 
+/* Implementation of 'gdbarch_stap_adjust_register', as defined in
+   gdbarch.h.  */
+
+static std::string
+i386_stap_adjust_register (struct gdbarch *gdbarch, struct stap_parse_info *p,
+			   const std::string &regname, int regnum)
+{
+  static const std::unordered_set<std::string> reg_assoc
+    = { "ax", "bx", "cx", "dx",
+	"si", "di", "bp", "sp" };
+
+  /* If we are dealing with a register whose size is less than the size
+     specified by the "[-]N@" prefix, and it is one of the registers that
+     we know has an extended variant available, then use the extended
+     version of the register instead.  */
+  if (register_size (gdbarch, regnum) < TYPE_LENGTH (p->arg_type)
+      && reg_assoc.find (regname) != reg_assoc.end ())
+    return "e" + regname;
+
+  /* Otherwise, just use the requested register.  */
+  return regname;
+}
+
 
 
 /* gdbarch gnu_triplet_regexp method.  Both arches are acceptable as GDB always
@@ -4433,6 +4457,8 @@ i386_elf_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
 				      i386_stap_is_single_operand);
   set_gdbarch_stap_parse_special_token (gdbarch,
 					i386_stap_parse_special_token);
+  set_gdbarch_stap_adjust_register (gdbarch,
+				    i386_stap_adjust_register);
 
   set_gdbarch_in_indirect_branch_thunk (gdbarch,
 					i386_in_indirect_branch_thunk);
@@ -8885,7 +8911,7 @@ i386_mpx_print_bounds (const CORE_ADDR bt_entry[4])
 
       size = (size > -1 ? size + 1 : size);
       uiout->text (", size = ");
-      uiout->field_fmt ("size", "%s", plongest (size));
+      uiout->field_string ("size", plongest (size));
 
       uiout->text (", metadata = ");
       uiout->field_core_addr ("metadata", gdbarch, bt_entry[3]);
@@ -9069,28 +9095,4 @@ Show Intel Memory Protection Extensions specific variables."),
 
   /* Tell remote stub that we support XML target description.  */
   register_remote_support_xml ("i386");
-
-#if GDB_SELF_TEST
-  struct
-  {
-    const char *xml;
-    uint64_t mask;
-  } xml_masks[] = {
-    { "i386/i386.xml", X86_XSTATE_SSE_MASK },
-    { "i386/i386-mmx.xml", X86_XSTATE_X87_MASK },
-    { "i386/i386-avx.xml", X86_XSTATE_AVX_MASK },
-    { "i386/i386-mpx.xml", X86_XSTATE_MPX_MASK },
-    { "i386/i386-avx-mpx.xml", X86_XSTATE_AVX_MPX_MASK },
-    { "i386/i386-avx-avx512.xml", X86_XSTATE_AVX_AVX512_MASK },
-    { "i386/i386-avx-mpx-avx512-pku.xml",
-      X86_XSTATE_AVX_MPX_AVX512_PKU_MASK },
-  };
-
-  for (auto &a : xml_masks)
-    {
-      auto tdesc = i386_target_description (a.mask, false);
-
-      selftests::record_xml_tdesc (a.xml, tdesc);
-    }
-#endif /* GDB_SELF_TEST */
 }

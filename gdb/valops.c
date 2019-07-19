@@ -39,7 +39,7 @@
 #include "observable.h"
 #include "objfiles.h"
 #include "extension.h"
-#include "common/byte-vector.h"
+#include "gdbsupport/byte-vector.h"
 
 extern unsigned int overload_debug;
 /* Local functions.  */
@@ -555,8 +555,9 @@ value_cast (struct type *type, struct value *arg2)
     return value_at_lazy (to_type, value_address (arg2));
   else
     {
+      if (current_language->la_language == language_ada)
+	error (_("Invalid type conversion."));
       error (_("Invalid cast."));
-      return 0;
     }
 }
 
@@ -1342,10 +1343,9 @@ address_of_variable (struct symbol *var, const struct block *b)
   return val;
 }
 
-/* Return one if VAL does not live in target memory, but should in order
-   to operate on it.  Otherwise return zero.  */
+/* See value.h.  */
 
-int
+bool
 value_must_coerce_to_target (struct value *val)
 {
   struct type *valtype;
@@ -1354,7 +1354,7 @@ value_must_coerce_to_target (struct value *val)
   if (VALUE_LVAL (val) != not_lval
       && VALUE_LVAL (val) != lval_internalvar
       && VALUE_LVAL (val) != lval_xcallable)
-    return 0;
+    return false;
 
   valtype = check_typedef (value_type (val));
 
@@ -1363,9 +1363,9 @@ value_must_coerce_to_target (struct value *val)
     case TYPE_CODE_ARRAY:
       return TYPE_VECTOR (valtype) ? 0 : 1;
     case TYPE_CODE_STRING:
-      return 1;
+      return true;
     default:
-      return 0;
+      return false;
     }
 }
 

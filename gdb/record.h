@@ -21,8 +21,9 @@
 #define RECORD_H
 
 #include "target/waitstatus.h" /* For enum target_stop_reason.  */
-#include "common/enum-flags.h"
+#include "gdbsupport/enum-flags.h"
 
+struct address_space;
 struct cmd_list_element;
 struct inferior;
 

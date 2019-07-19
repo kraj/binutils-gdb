@@ -30,6 +30,10 @@
 #include <libintl.h>
 #define _(String) gettext (String)
 
+/* Build-time checks are preferrable over runtime ones.  Use this construct
+   in preference where possible.  */
+#define static_assert(e) ((void)sizeof (struct { int _:1 - 2 * !(e); }))
+
 static const char *program_name = NULL;
 static int debug = 0;
 
@@ -435,17 +439,13 @@ static initializer operand_type_init[] =
   { "OPERAND_TYPE_TEST",
     "Test" },
   { "OPERAND_TYPE_DEBUG",
-    "FloatReg" },
+    "Debug" },
   { "OPERAND_TYPE_FLOATREG",
     "FloatReg" },
   { "OPERAND_TYPE_FLOATACC",
     "FloatAcc" },
-  { "OPERAND_TYPE_SREG2",
-    "SReg2" },
-  { "OPERAND_TYPE_SREG3",
-    "SReg3" },
-  { "OPERAND_TYPE_ACC",
-    "Acc" },
+  { "OPERAND_TYPE_SREG",
+    "SReg" },
   { "OPERAND_TYPE_JUMPABSOLUTE",
     "JumpAbsolute" },
   { "OPERAND_TYPE_REGMMX",
@@ -460,10 +460,14 @@ static initializer operand_type_init[] =
     "RegMask" },
   { "OPERAND_TYPE_ESSEG",
     "EsSeg" },
+  { "OPERAND_TYPE_ACC8",
+    "Acc|Byte" },
+  { "OPERAND_TYPE_ACC16",
+    "Acc|Word" },
   { "OPERAND_TYPE_ACC32",
-    "Reg32|Acc|Dword" },
+    "Acc|Dword" },
   { "OPERAND_TYPE_ACC64",
-    "Reg64|Acc|Qword" },
+    "Acc|Qword" },
   { "OPERAND_TYPE_DISP16_32",
     "Disp16|Disp32" },
   { "OPERAND_TYPE_ANYDISP",
@@ -484,8 +488,6 @@ static initializer operand_type_init[] =
     "Imm32|Imm32S|Imm64|Disp32" },
   { "OPERAND_TYPE_IMM32_32S_64_DISP32_64",
     "Imm32|Imm32S|Imm64|Disp32|Disp64" },
-  { "OPERAND_TYPE_VEC_IMM4",
-    "Vec_Imm4" },
   { "OPERAND_TYPE_REGBND",
     "RegBND" },
 };
@@ -639,6 +641,7 @@ static bitfield opcode_modifiers[] =
   BITFIELD (No_ldSuf),
   BITFIELD (FWait),
   BITFIELD (IsString),
+  BITFIELD (RegMem),
   BITFIELD (BNDPrefixOk),
   BITFIELD (NoTrackPrefixOk),
   BITFIELD (IsLockable),
@@ -702,12 +705,10 @@ static bitfield operand_types[] =
   BITFIELD (Control),
   BITFIELD (Debug),
   BITFIELD (Test),
-  BITFIELD (SReg2),
-  BITFIELD (SReg3),
+  BITFIELD (SReg),
   BITFIELD (Acc),
   BITFIELD (JumpAbsolute),
   BITFIELD (EsSeg),
-  BITFIELD (RegMem),
   BITFIELD (Byte),
   BITFIELD (Word),
   BITFIELD (Dword),
@@ -719,7 +720,6 @@ static bitfield operand_types[] =
   BITFIELD (Zmmword),
   BITFIELD (Unspecified),
   BITFIELD (Anysize),
-  BITFIELD (Vec_Imm4),
   BITFIELD (RegBND),
 #ifdef OTUnused
   BITFIELD (OTUnused),
@@ -1669,9 +1669,13 @@ main (int argc, char **argv)
 
   /* Check the unused bitfield in i386_cpu_flags.  */
 #ifdef CpuUnused
+  static_assert (ARRAY_SIZE (cpu_flags) == CpuMax + 2);
+
   if ((cpumax - 1) != CpuMax)
     fail (_("CpuMax != %d!\n"), cpumax);
 #else
+  static_assert (ARRAY_SIZE (cpu_flags) == CpuMax + 1);
+
   if (cpumax != CpuMax)
     fail (_("CpuMax != %d!\n"), cpumax);
 
@@ -1680,8 +1684,14 @@ main (int argc, char **argv)
     fail (_("%d unused bits in i386_cpu_flags.\n"), c);
 #endif
 
+  static_assert (ARRAY_SIZE (opcode_modifiers) == Opcode_Modifier_Num);
+
   /* Check the unused bitfield in i386_operand_type.  */
-#ifndef OTUnused
+#ifdef OTUnused
+  static_assert (ARRAY_SIZE (operand_types) == OTNum + 1);
+#else
+  static_assert (ARRAY_SIZE (operand_types) == OTNum);
+
   c = OTNumOfBits - OTMax - 1;
   if (c)
     fail (_("%d unused bits in i386_operand_type.\n"), c);

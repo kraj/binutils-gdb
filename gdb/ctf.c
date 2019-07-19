@@ -31,7 +31,8 @@
 #include "tracefile.h"
 #include <ctype.h>
 #include <algorithm>
-#include "common/filestuff.h"
+#include "gdbsupport/filestuff.h"
+#include "gdbarch.h"
 
 /* The CTF target.  */
 

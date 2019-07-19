@@ -198,12 +198,13 @@ automatically cause those extensions to be disabled.
  @tab Enable Transactional Memory Extensions.
 @item @code{sve2} @tab ARMv8-A @tab No
  @tab Enable the SVE2 Extension.
-@item @code{bitperm} @tab ARMv8-A @tab No
+@item @code{sve2-bitperm} @tab ARMv8-A @tab No
  @tab Enable SVE2 BITPERM Extension.
 @item @code{sve2-sm4} @tab ARMv8-A @tab No
  @tab Enable SVE2 SM4 Extension.
 @item @code{sve2-aes} @tab ARMv8-A @tab No
- @tab Enable SVE2 AES Extension.
+ @tab Enable SVE2 AES Extension.  This also enables the .Q->.B form of the
+ @code{pmullt} and @code{pmullb} instructions.
 @item @code{sve2-sha3} @tab ARMv8-A @tab No
  @tab Enable SVE2 SHA3 Extension.
 @end multitable

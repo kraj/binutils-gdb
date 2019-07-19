@@ -1,3 +1,307 @@
+2019-07-19  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* bpf-desc.c: Regenerated.
+
+2019-07-17  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-gen.c (static_assert): Define.
+	(main): Use it.
+	* i386-opc.h (Opcode_Modifier_Max): Rename to ...
+	(Opcode_Modifier_Num): ... this.
+	(Mem): Delete.
+
+2019-07-16  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-gen.c (operand_types): Move RegMem ...
+	(opcode_modifiers): ... here.
+	* i386-opc.h (RegMem): Move to opcode modifer enum.
+	(union i386_operand_type): Move regmem field ...
+	(struct i386_opcode_modifier): ... here.
+	* i386-opc.tbl (RegMem): Define.
+	(mov, movq): Move RegMem on segment, control, debug, and test
+	register flavors.
+	(pextrb): Move RegMem on register only flavors. Add IgnoreSize
+	to non-SSE2AVX flavor.
+	(extractps, pextrw, vcvtps2ph, vextractps, vpextrb, vpextrw):
+	Move RegMem on register only flavors. Drop IgnoreSize from
+	legacy encoding flavors.
+	(movss, movsd, vmovss, vmovsd): Drop RegMem from register only
+	flavors.
+	(vpinsrb, vpinsrw): Drop IgnoreSize where still present on
+	register only flavors.
+	(vmovd): Move RegMem and drop IgnoreSize on register only
+	flavor. Change opcode and operand order to store form.
+	* opcodes/i386-init.h, i386-tbl.h: Re-generate.
+
+2019-07-16  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-gen.c (operand_type_init, operand_types): Replace SReg
+	entries.
+	* i386-opc.h (SReg2, SReg3): Replace by ...
+	(SReg): ... this.
+	(union i386_operand_type): Replace sreg fields.
+	* i386-opc.tbl (mov, ): Use SReg.
+	(push, pop): Likewies. Drop i386 and x86-64 specific segment
+	register flavors.
+	* i386-reg.tbl (cs, ds, es, fs, gs, ss, flat): Use SReg.
+	* opcodes/i386-init.h, i386-tbl.h: Re-generate.
+
+2019-07-15  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* bpf-desc.c: Regenerate.
+	* bpf-opc.c: Likewise.
+	* bpf-opc.h: Likewise.
+
+2019-07-14  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* bpf-desc.c: Regenerate.
+	* bpf-opc.c: Likewise.
+
+2019-07-10  Hans-Peter Nilsson  <hp@bitrange.com>
+
+	* arm-dis.c (print_insn_coprocessor): Rename index to
+	index_operand.
+
+2019-07-05  Kito Cheng <kito.cheng@sifive.com>
+
+	* riscv-opc.c (riscv_insn_types): Add r4 type.
+
+	* riscv-opc.c (riscv_insn_types): Add b and j type.
+
+	* opcodes/riscv-opc.c (riscv_insn_types): Remove incorrect
+	format for sb type and correct s type.
+
+2019-07-02  Richard Sandiford  <richard.sandiford@arm.com>
+
+	* aarch64-tbl.h (aarch64_opcode): Set C_SCAN_MOVPRFX for the
+	SVE FMOV alias of FCPY.
+
+2019-07-02  Richard Sandiford  <richard.sandiford@arm.com>
+
+	* aarch64-tbl.h (aarch64_opcode_table): Add C_MAX_ELEM flags
+	to SVE fcvtzs, fcvtzu, scvtf and ucvtf entries.
+
+2019-07-02  Richard Sandiford  <richard.sandiford@arm.com>
+
+	* aarch64-opc.c (verify_constraints): Skip GPRs when scanning the
+	registers in an instruction prefixed by MOVPRFX.
+
+2019-07-01  Matthew Malcomson  <matthew.malcomson@arm.com>
+
+	* aarch64-asm.c (aarch64_encode_variant_using_iclass): Use new
+	sve_size_13 icode to account for variant behaviour of
+	pmull{t,b}.
+	* aarch64-dis-2.c: Regenerate.
+	* aarch64-dis.c (aarch64_decode_variant_using_iclass): Use new
+	sve_size_13 icode to account for variant behaviour of
+	pmull{t,b}.
+	* aarch64-tbl.h (OP_SVE_VVV_HD_BS): Add new qualifier.
+	(OP_SVE_VVV_Q_D): Add new qualifier.
+	(OP_SVE_VVV_QHD_DBS): Remove now unused qualifier.
+	(struct aarch64_opcode): Split pmull{t,b} into those requiring
+	AES and those not.
+
+2019-07-01  Jan Beulich  <jbeulich@suse.com>
+
+	* opcodes/i386-gen.c (operand_type_init): Remove
+	OPERAND_TYPE_VEC_IMM4 entry.
+	(operand_types): Remove Vec_Imm4.
+	* opcodes/i386-opc.h (Vec_Imm4): Delete.
+	(union i386_operand_type): Remove vec_imm4.
+	* i386-opc.tbl (vpermil2pd, vpermil2ps): Remove Vec_Imm4.
+	* opcodes/i386-init.h, i386-tbl.h: Re-generate.
+
+2019-07-01  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-opc.tbl (lfence, mfence, sfence, monitor, mwait, vmcall,
+	vmlaunch, vmresume, vmxoff, vmfunc, xgetbv, xsetbv, swapgs,
+	rdtscp, clgi, invlpga, skinit, stgi, vmload, vmmcall, vmrun,
+	vmsave, montmul, xsha1, xsha256, xstorerng, xcryptecb,
+	xcryptcbc, xcryptctr, xcryptcfb, xcryptofb, xstore, clac, stac,
+	monitorx, mwaitx): Drop ImmExt from operand-less forms.
+	* i386-tbl.h: Re-generate.
+
+2019-07-01  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-opc.tbl (and, or): Add Optimize to forms allowing two
+	register operands.
+	* i386-tbl.h: Re-generate.
+
+2019-07-01  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-opc.tbl (C): New.
+	(paddb, paddw, paddd, paddq, paddsb, paddsw, paddusb, paddusw,
+	pand, pcmpeqb, pcmpeqw, pcmpeqd, pmaddwd, pmulhw, pmullw,
+	por, pxor, andps, cmpeqps, cmpeqss, cmpneqps, cmpneqss,
+	cmpordps, cmpordss, cmpunordps, cmpunordss, orps, pavgb, pavgw,
+	pmaxsw, pmaxub, pminsw, pminub, pmulhuw, xorps, andpd, cmpeqpd,
+	cmpeqsd, cmpneqpd, cmpneqsd, cmpordpd, cmpordsd, cmpunordpd,
+	cmpunordsd, orpd, xorpd, pmuludq, vandpd, vandps, vcmpeq_ospd,
+	vcmpeq_osps, vcmpeq_ossd, vcmpeq_osss, vcmpeqpd, vcmpeqps,
+	vcmpeqsd, vcmpeqss, vcmpeq_uqpd, vcmpeq_uqps, vcmpeq_uqsd,
+	vcmpeq_uqss, vcmpeq_uspd, vcmpeq_usps, vcmpeq_ussd,
+	vcmpeq_usss, vcmpfalse_ospd, vcmpfalse_osps, vcmpfalse_ossd,
+	vcmpfalse_osss, vcmpfalsepd, vcmpfalseps, vcmpfalsesd,
+	vcmpfalsess, vcmpneq_oqpd, vcmpneq_oqps, vcmpneq_oqsd,
+	vcmpneq_oqss, vcmpneq_ospd, vcmpneq_osps, vcmpneq_ossd,
+	vcmpneq_osss, vcmpneqpd, vcmpneqps, vcmpneqsd, vcmpneqss,
+	vcmpneq_uspd, vcmpneq_usps, vcmpneq_ussd, vcmpneq_usss,
+	vcmpordpd, vcmpordps, vcmpordsd, vcmpord_spd, vcmpord_sps,
+	vcmpordss, vcmpord_ssd, vcmpord_sss, vcmptruepd, vcmptrueps,
+	vcmptruesd, vcmptruess, vcmptrue_uspd, vcmptrue_usps,
+	vcmptrue_ussd, vcmptrue_usss, vcmpunordpd, vcmpunordps,
+	vcmpunordsd, vcmpunord_spd, vcmpunord_sps, vcmpunordss,
+	vcmpunord_ssd, vcmpunord_sss, vorpd, vorps, vpaddsb, vpaddsw,
+	vpaddb, vpaddd, vpaddq, vpaddw, vpaddusb, vpaddusw, vpand,
+	vpavgb, vpavgw, vpcmpeqb, vpcmpeqd, vpcmpeqw, vpmaddwd,
+	vpmaxsw, vpmaxub, vpminsw, vpminub, vpmulhuw, vpmulhw, vpmullw,
+	vpmuludq, vpor, vpxor, vxorpd, vxorps): Add C to VEX-encoded
+	flavors.
+	* i386-tbl.h: Re-generate.
+
+2019-07-01  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-opc.tbl (and, or): Add Optimize to forms allowing two
+	register operands.
+	* i386-tbl.h: Re-generate.
+
+2019-07-01  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-dis-evex-prefix.h: Use PCLMUL for vpclmulqdq.
+	* i386-opc.tbl (vpclmullqlqdq, vpclmulhqlqdq, vpclmullqhqdq,
+	vpclmulhqhqdq): Add CpuVPCLMULQDQ flavors.
+	* i386-tbl.h: Re-generate.
+
+2019-07-01  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-opc.tbl (vextractps, vpextrw, vpinsrw): Remove
+	Disp8MemShift from register only templates.
+	* i386-tbl.h: Re-generate.
+
+2019-07-01  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-dis.c (EXdScalarS, MOD_EVEX_0F10_PREFIX_1,
+	MOD_EVEX_0F10_PREFIX_3, MOD_EVEX_0F11_PREFIX_1,
+	MOD_EVEX_0F11_PREFIX_3, EVEX_W_0F10_P_1_M_0,
+	EVEX_W_0F10_P_1_M_1, EVEX_W_0F10_P_3_M_0, EVEX_W_0F10_P_3_M_1,
+	EVEX_W_0F11_P_1_M_0, EVEX_W_0F11_P_1_M_1, EVEX_W_0F11_P_3_M_0,
+	EVEX_W_0F11_P_3_M_1): Delete.
+	(EVEX_W_0F10_P_1, EVEX_W_0F10_P_3, EVEX_W_0F11_P_1,
+	EVEX_W_0F11_P_3): New.
+	* i386-dis-evex-mod.h: Remove MOD_EVEX_0F10_PREFIX_1,
+	MOD_EVEX_0F10_PREFIX_3, MOD_EVEX_0F11_PREFIX_1, and
+	MOD_EVEX_0F11_PREFIX_3 table entries.
+	* i386-dis-evex-prefix.h: Adjust PREFIX_EVEX_0F10 and
+	PREFIX_EVEX_0F11 table entries.
+	* i386-dis-evex-w.h: Replace EVEX_W_0F10_P_1_M_{0,1},
+	EVEX_W_0F10_P_3_M_{0,1}, EVEX_W_0F11_P_1_M_{0,1}, and
+	EVEX_W_0F11_P_3_M_{0,1} table entries.
+
+2019-07-01  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-dis.c (EXdVex, EXdVexS, EXqVex, EXqVexS, XMVex):
+	Delete.
+
+2019-06-27  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR binutils/24719
+	* i386-dis-evex-len.h: Add EVEX_LEN_0F38C6_REG_1_PREFIX_2,
+	EVEX_LEN_0F38C6_REG_2_PREFIX_2, EVEX_LEN_0F38C6_REG_5_PREFIX_2,
+	EVEX_LEN_0F38C6_REG_6_PREFIX_2, EVEX_LEN_0F38C7_R_1_P_2_W_0,
+	EVEX_LEN_0F38C7_R_1_P_2_W_1, EVEX_LEN_0F38C7_R_2_P_2_W_0,
+	EVEX_LEN_0F38C7_R_2_P_2_W_1, EVEX_LEN_0F38C7_R_5_P_2_W_0,
+	EVEX_LEN_0F38C7_R_5_P_2_W_1, EVEX_LEN_0F38C7_R_6_P_2_W_0 and
+	EVEX_LEN_0F38C7_R_6_P_2_W_1.
+	* i386-dis-evex-prefix.h: Update PREFIX_EVEX_0F38C6_REG_1,
+	PREFIX_EVEX_0F38C6_REG_2, PREFIX_EVEX_0F38C6_REG_5 and
+	PREFIX_EVEX_0F38C6_REG_6 entries.
+	* i386-dis-evex-w.h: Update EVEX_W_0F38C7_R_1_P_2,
+	EVEX_W_0F38C7_R_2_P_2, EVEX_W_0F38C7_R_5_P_2 and
+	EVEX_W_0F38C7_R_6_P_2 entries.
+	* i386-dis.c: Add EVEX_LEN_0F38C6_REG_1_PREFIX_2,
+	EVEX_LEN_0F38C6_REG_2_PREFIX_2, EVEX_LEN_0F38C6_REG_5_PREFIX_2,
+	EVEX_LEN_0F38C6_REG_6_PREFIX_2, EVEX_LEN_0F38C7_R_1_P_2_W_0,
+	EVEX_LEN_0F38C7_R_1_P_2_W_1, EVEX_LEN_0F38C7_R_2_P_2_W_0,
+	EVEX_LEN_0F38C7_R_2_P_2_W_1, EVEX_LEN_0F38C7_R_5_P_2_W_0,
+	EVEX_LEN_0F38C7_R_5_P_2_W_1, EVEX_LEN_0F38C7_R_6_P_2_W_0 and
+	EVEX_LEN_0F38C7_R_6_P_2_W_1 enums.
+
+2019-06-27  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-dis.c (VEX_LEN_0F2A_P_1, VEX_LEN_0F2A_P_3,
+	VEX_LEN_0F2C_P_1, VEX_LEN_0F2C_P_3, VEX_LEN_0F2D_P_1,
+	VEX_LEN_0F2D_P_3): Delete.
+	(vex_len_table): Move vcvtsi2ss, vcvtsi2sd, vcvttss2si,
+	vcvttsd2si, vcvtss2si, and vcvtsd2si leaf entries ...
+	(prefix_table): ... here.
+
+2019-06-27  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-dis.c (Iq): Delete.
+	(Id): New.
+	(reg_table): Use it for lwpins, lwpval, and bextr. Use Edq for
+	TBM insns.
+	(vex_len_table): Use Edq for vcvtsi2ss, vcvtsi2sd. Use Gdq for
+	vcvttss2si, vcvttsd2si, vcvtss2si, and vcvtsd2si.
+	(OP_E_memory): Also honor needindex when deciding whether an
+	address size prefix needs printing.
+	(OP_I): Remove handling of q_mode. Add handling of d_mode.
+
+2019-06-26  Jim Wilson  <jimw@sifive.com>
+
+	PR binutils/24739
+	* riscv-dis.c (riscv_disasemble_insn): Set info->endian_code.
+	Set info->display_endian to info->endian_code.
+
+2019-06-25  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-gen.c (operand_type_init): Correct OPERAND_TYPE_DEBUG
+	entry. Drop OPERAND_TYPE_ACC entry. Add OPERAND_TYPE_ACC8 and
+	OPERAND_TYPE_ACC16 entries. Adjust OPERAND_TYPE_ACC32 and
+	OPERAND_TYPE_ACC64 entries.
+	* i386-init.h: Re-generate.
+
+2019-06-25  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-dis.c (Edqa, dqa_mode, EVEX_W_0F2A_P_1, EVEX_W_0F7B_P_1):
+	Delete.
+	(intel_operand_size, OP_E_register, OP_E_memory): Drop handling
+	of dqa_mode.
+	* i386-dis-evex-prefix.h: Move vcvtsi2ss and vcvtusi2ss leaf
+	entries here.
+	* i386-dis-evex-w.h: Drop EVEX_W_0F2A_P_1 and EVEX_W_0F7B_P_1
+	entries. Use Edq for vcvtsi2sd and vcvtusi2sd.
+
+2019-06-25  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-dis.c (OP_I64): Forword more cases to OP_I(). Drop local
+	variables.
+
+2019-06-25  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-dis.c (prefix_table): Use Edq for cvtsi2ss and cvtsi2sd.
+	Use Gdq for cvttss2si, cvttsd2si, cvtss2si, and cvtsd2si, and
+	movnti.
+	* i386-opc.tbl (movnti): Add IgnoreSize.
+	* i386-tbl.h: Re-generate.
+
+2019-06-25  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-opc.tbl (and): Mark Imm8S form for optimization.
+	* i386-tbl.h: Re-generate.
+
+2019-06-21  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* i386-dis-evex.h: Break into ...
+	* i386-dis-evex-len.h: New file.
+	* i386-dis-evex-mod.h: Likewise.
+	* i386-dis-evex-prefix.h: Likewise.
+	* i386-dis-evex-reg.h: Likewise.
+	* i386-dis-evex-w.h: Likewise.
+	* i386-dis.c: Include i386-dis-evex-reg.h, i386-dis-evex-prefix.h,
+	i386-dis-evex.h, i386-dis-evex-len.h, i386-dis-evex-w.h and
+	i386-dis-evex-mod.h.
+
 2019-06-19  H.J. Lu  <hongjiu.lu@intel.com>
 
 	PR binutils/24700

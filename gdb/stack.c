@@ -52,7 +52,7 @@
 #include "symfile.h"
 #include "extension.h"
 #include "observable.h"
-#include "common/def-vector.h"
+#include "gdbsupport/def-vector.h"
 #include "cli/cli-option.h"
 
 /* The possible choices of "set print frame-arguments", and the value
@@ -895,8 +895,8 @@ print_frame_info (const frame_print_options &fp_opts,
       if (print_level)
         {
           uiout->text ("#");
-          uiout->field_fmt_int (2, ui_left, "level",
-				frame_relative_level (frame));
+          uiout->field_fmt_signed (2, ui_left, "level",
+				   frame_relative_level (frame));
         }
       if (uiout->is_mi_like_p ())
         {
@@ -1243,8 +1243,8 @@ print_frame (const frame_print_options &fp_opts,
     if (print_level)
       {
 	uiout->text ("#");
-	uiout->field_fmt_int (2, ui_left, "level",
-			      frame_relative_level (frame));
+	uiout->field_fmt_signed (2, ui_left, "level",
+				 frame_relative_level (frame));
       }
     get_user_print_options (&opts);
     if (opts.addressprint)
@@ -1318,7 +1318,7 @@ print_frame (const frame_print_options &fp_opts,
 	annotate_frame_source_file_end ();
 	uiout->text (":");
 	annotate_frame_source_line ();
-	uiout->field_int ("line", sal.line);
+	uiout->field_signed ("line", sal.line);
 	annotate_frame_source_end ();
       }
 
@@ -2359,24 +2359,16 @@ print_frame_local_vars (struct frame_info *frame,
     }
 }
 
+/* Implement the 'info locals' command.  */
+
 void
 info_locals_command (const char *args, int from_tty)
 {
-  std::string regexp;
-  std::string t_regexp;
-  bool quiet = false;
-
-  while (args != NULL
-	 && extract_info_print_args (&args, &quiet, &regexp, &t_regexp))
-    ;
-
-  if (args != NULL)
-    report_unrecognized_option_error ("info locals", args);
+  info_print_options opts;
+  extract_info_print_options (&opts, &args);
 
   print_frame_local_vars (get_selected_frame (_("No frame selected.")),
-			  quiet,
-			  regexp.empty () ? NULL : regexp.c_str (),
-			  t_regexp.empty () ? NULL : t_regexp.c_str (),
+			  opts.quiet, args, opts.type_regexp,
 			  0, gdb_stdout);
 }
 
@@ -2474,26 +2466,16 @@ print_frame_arg_vars (struct frame_info *frame,
     }
 }
 
+/* Implement the 'info args' command.  */
+
 void
 info_args_command (const char *args, int from_tty)
 {
-  std::string regexp;
-  std::string t_regexp;
-  bool quiet = false;
-
-  while (args != NULL
-	 && extract_info_print_args (&args, &quiet, &regexp, &t_regexp))
-    ;
-
-  if (args != NULL)
-    report_unrecognized_option_error ("info args", args);
-
+  info_print_options opts;
+  extract_info_print_options (&opts, &args);
 
   print_frame_arg_vars (get_selected_frame (_("No frame selected.")),
-			quiet,
-			regexp.empty () ? NULL : regexp.c_str (),
-			t_regexp.empty () ? NULL : t_regexp.c_str (),
-			gdb_stdout);
+			opts.quiet, args, opts.type_regexp, gdb_stdout);
 }
 
 /* Return the symbol-block in which the selected frame is executing.
@@ -3441,18 +3423,20 @@ Print information about a stack frame selected by level.\n\
 Usage: info frame level LEVEL"),
 	   &info_frame_cmd_list);
 
-  add_info ("locals", info_locals_command,
-	    info_print_args_help (_("\
+  cmd = add_info ("locals", info_locals_command,
+		  info_print_args_help (_("\
 All local variables of current stack frame or those matching REGEXPs.\n\
 Usage: info locals [-q] [-t TYPEREGEXP] [NAMEREGEXP]\n\
 Prints the local variables of the current stack frame.\n"),
 				  _("local variables")));
-  add_info ("args", info_args_command,
-	    info_print_args_help (_("\
+  set_cmd_completer_handle_brkchars (cmd, info_print_command_completer);
+  cmd = add_info ("args", info_args_command,
+		  info_print_args_help (_("\
 All argument variables of current stack frame or those matching REGEXPs.\n\
 Usage: info args [-q] [-t TYPEREGEXP] [NAMEREGEXP]\n\
 Prints the argument variables of the current stack frame.\n"),
 				  _("argument variables")));
+  set_cmd_completer_handle_brkchars (cmd, info_print_command_completer);
 
   if (dbx_commands)
     add_com ("func", class_stack, func_command, _("\

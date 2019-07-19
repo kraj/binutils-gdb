@@ -93,15 +93,26 @@ cli_ui_out::do_end (ui_out_type type)
 /* output an int field */
 
 void
-cli_ui_out::do_field_int (int fldno, int width, ui_align alignment,
-			  const char *fldname, int value)
+cli_ui_out::do_field_signed (int fldno, int width, ui_align alignment,
+			     const char *fldname, LONGEST value)
 {
   if (m_suppress_output)
     return;
 
-  std::string str = string_printf ("%d", value);
+  do_field_string (fldno, width, alignment, fldname, plongest (value),
+		   ui_out_style_kind::DEFAULT);
+}
 
-  do_field_string (fldno, width, alignment, fldname, str.c_str (),
+/* output an unsigned field */
+
+void
+cli_ui_out::do_field_unsigned (int fldno, int width, ui_align alignment,
+			       const char *fldname, ULONGEST value)
+{
+  if (m_suppress_output)
+    return;
+
+  do_field_string (fldno, width, alignment, fldname, pulongest (value),
 		   ui_out_style_kind::DEFAULT);
 }
 

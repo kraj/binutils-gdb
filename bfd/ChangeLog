@@ -1,3 +1,165 @@
+2019-07-19  Alan Modra  <amodra@gmail.com>
+
+	* reloc.c (BFD_RELOC_PPC64_TPREL34, BFD_RELOC_PPC64_DTPREL34),
+	(BFD_RELOC_PPC64_GOT_TLSGD34, BFD_RELOC_PPC64_GOT_TLSLD34),
+	(BFD_RELOC_PPC64_GOT_TPREL34, BFD_RELOC_PPC64_GOT_DTPREL34),
+	(BFD_RELOC_PPC64_TLS_PCREL): New pcrel tls relocs.
+	* elf64-ppc.c (ppc64_elf_howto_raw): Add howtos for pcrel tls relocs.
+	(ppc64_elf_reloc_type_lookup): Translate pcrel tls relocs.
+	(must_be_dyn_reloc, dec_dynrel_count): Add R_PPC64_TPREL64.
+	(ppc64_elf_check_relocs): Support pcrel tls relocs.
+	(ppc64_elf_tls_optimize, ppc64_elf_relocate_section): Likewise.
+	* bfd-in2.h: Regenerate.
+	* libbfd.h: Regenerate.
+
+2019-07-18  Alan Modra  <amodra@gmail.com>
+
+	* elf64-ppc.c (ppc64_elf_relocate_section): Don't bother selecting
+	a TLS section symbol for edited relocs.  Tighten TLS symbol/reloc
+	match test.
+
+2019-07-18  Alan Modra  <amodra@gmail.com>
+
+	* elf64-ppc.c (TLS_EXPLICIT): Define as 256.
+	(ppc64_elf_check_relocs): Don't store TLS_EXPLICIT even if char
+	is more than 8 bits.
+	(ppc64_elf_tls_optimize): Likewise.  Make tls_set, tls_clear, and
+	tls_type vars unsigned int.
+	(ppc64_elf_relocate_section): Use r_type rather than TLS_EXPLICIT
+	to select r_type edit.
+
+2019-07-18  Alan Modra  <amodra@gmail.com>
+
+	* elf32-ppc.c (TLS_GDIE): Rename from TLS_TPRELGD throughout file.
+	Correct comment.
+	* elf64-ppc.c (TLS_GDIE): Likewise.
+
+2019-07-18  Alan Modra  <amodra@gmail.com>
+
+	* elf64-ppc.c (ppc64_elf_tls_optimize): Correct test for allowed
+	range of tp-relative offsets.
+
+2019-07-15  Alan Modra  <amodra@gmail.com>
+
+	* elflink.c (_bfd_elf_fix_symbol_flags): If the def for an
+	alias is no longer bfd_link_hash_defined, clear the alias.
+
+2019-07-13  Alan Modra  <amodra@gmail.com>
+
+	* elflink.c (_bfd_elf_omit_section_dynsym_default): Don't keep
+	tls_sec.
+	(_bfd_elf_init_1_index_section): Prefer not using TLS sections.
+	(_bfd_elf_init_2_index_sections): Likewise.
+	* elf64-ppc.c (ppc64_elf_relocate_section): When emitting dynamic
+	relocations for local TLS symbols, use STN_UNDEF as the relocation
+	symbol.
+	* elf32-ppc.c (ppc_elf_relocate_section): Likewise, and don't
+	leave TLS symbol value in the addend.
+
+2019-07-08  Alan Modra  <amodra@gmail.com>
+
+	PR 24785
+	* elf32-ppc.c (_bfd_elf_ppc_set_arch): Sanity check .PPC.EMB.apuinfo
+	size before reading first word.
+
+2019-07-02  Nick Clifton  <nickc@redhat.com>
+
+	PR 24717
+	* elf.c (is_debuginfo_file): New function.
+	(assign_file_positions_for_non_load_sections): Do not warn about
+	allocated sections outside of loadable segments if they are found
+	in a debuginfo file.
+	* elf-bfd.h (is_debuginfo_file): Prototype.
+
+2019-07-02  Nick Clifton  <nickc@redhat.com>
+
+	PR 24753
+	* compress.c (bfd_get_full_section_contents): Do not complain
+	about linker created sections that are larger than the file size.
+
+2019-07-02  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* bfd/elf32-arm.c (CMSE_STUB_NAME): New define.
+	(elf32_arm_get_stub_entry): Do not try to emit long-branch stubs
+	for CMSE stubs.
+	(arm_dedicated_stub_output_section_name): Use CMSE_STUB_NAME.
+
+2019-07-02  Srinath Parvathaneni  <srinath.parvathaneni@arm.com>
+
+	* elf32-arm.c (elf32_arm_gc_mark_extra_sections): Mark debug
+	sections when .text section contain secure entry functions
+	is marked.
+
+2019-07-01  Nick Clifton  <nickc@redhat.com>
+
+	PR 23839
+	* elf32-arm.c (elf32_arm_update_relocs): Do not include the
+	section VMA in the offset used to update exidx relocs.
+
+2019-06-28  Nick Clifton  <nickc@redhat.com>
+
+	PR 24708
+	* elf.c (_bfd_elf_slurp_version_tables): Check for an excessively
+	large version reference section.
+	* compress.c (bfd_get_full_section_contents): Check for an
+	uncompressed section whose size is larger than the file size.
+
+2019-06-28  Alan Modra  <amodra@gmail.com>
+
+	* format.c (bfd_check_format_matches): Don't match plugin target
+	if another target matches.  Expand comment.
+	* targets.c (_bfd_target_vector): Move plugin_vec after all other
+	non-corefile targets, outside !SELECT_VECS.
+	* config.bfd: Don't handle targ=plugin here.
+	* configure.ac: Don't add plugin to enable_targets or handle in
+	target loop setting selvecs and other target vars.
+	* configure: Regenerate.
+
+2019-06-26  Nick Clifton  <nickc@redhat.com>
+
+	PR 24703
+	* mach-o-arm.c (bfd_mach_o_arm_canonicalize_one_reloc): Add error
+	messages for failures.
+	* mach-o.c (bfd_mach_o_canonicalize_relocs): Set an bfd error code
+	if returning an error value.
+
+2019-06-25  Jan Beulich  <jbeulich@suse.com>
+
+	* elf-properties.c (elf_find_and_remove_property): Rename last
+	parameter. Mention it in comment.
+
+2019-06-24  Ilia Diachkov  <ilia.diachkov@optimitech.com>
+
+	* elfnn-riscv.c (_bfd_riscv_relax_lui): Delete early exit when
+	SEC_MERGE or SEC_CODE flags are set.
+	(_bfd_riscv_relax_section): New local symtype.  Set sym_sec and
+	symtype consistently.  Don't include sec_addr (sym_sec) in symval.
+	Add check for SEC_INFO_TYPE_MERGE and call _bfd_merged_section_offset.
+	Add sec_addr (sym_sec) after handling merge sections.
+
+2019-06-24  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/24721
+	* elf-properties.c (elf_merge_gnu_property_list): Remove the
+	property after reporting property removal.
+
+2019-06-23  Alan Modra  <amodra@gmail.com>
+
+	PR 24704
+	* elf64-ppc.c (R_PPC64_GOT16_DS): Don't set has_gotrel.
+	(ppc64_elf_edit_toc): Don't remove R_PPC64_GOT16_DS got entries.
+	Reduce range of offsets allowed for other GOT relocs.
+
+2019-06-23  Alan Modra  <amodra@gmail.com>
+
+	PR 24689
+	* elfcode.h (elf_object_p): Warning fix.
+
+2019-06-21  Alan Modra  <amodra@gmail.com>
+
+	PR 24689
+	* elfcode.h (elf_object_p): Check type of e_shstrndx section.
+
 2019-06-19  Alan Modra  <amodra@gmail.com>
 
 	PR 24697

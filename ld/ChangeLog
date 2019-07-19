@@ -1,3 +1,148 @@
+2019-07-19  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/ld-powerpc/tlsgd.d,
+	* testsuite/ld-powerpc/tlsgd.s,
+	* testsuite/ld-powerpc/tlsie.d,
+	* testsuite/ld-powerpc/tlsie.s,
+	* testsuite/ld-powerpc/tlsld.d,
+	* testsuite/ld-powerpc/tlsld.s: New tests.
+	* testsuite/ld-powerpc/powerpc.exp: Run them.
+
+2019-07-19  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/ld-powerpc/tlsldopt.d: Rename from tlsld.d.
+	* testsuite/ld-powerpc/tlsldopt.s: Rename from tlsld.s.
+	* testsuite/ld-powerpc/tlsldopt32.d: Rename from tlsld32.d.
+	* testsuite/ld-powerpc/tlsldopt32.s: Rename from tlsld32.s.
+	* testsuite/ld-powerpc/powerpc.exp: Update.
+
+2019-07-19  Alan Modra  <amodra@gmail.com>
+
+	PR 24819
+	* testsuite/ld-elf/pr24819.d: xfail for genelf targets.
+
+2019-07-18  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/24819
+	* emultempl/elf32.em (elf_orphan_compatible): Return FALSE for
+	member of output section group when doing a relocatable link.
+	* testsuite/ld-elf/pr24819.d: New file.
+	* testsuite/ld-elf/pr24819.s: Likewise.
+
+2019-07-13  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/ld-powerpc/tlsso.r: Update.
+	* testsuite/ld-powerpc/tlsso32.g: Update.
+	* testsuite/ld-powerpc/tlsso32.r: Update.
+	* testsuite/ld-powerpc/tlstocso.r: Update.
+	* testsuite/ld-cris/tls-dso-dtpoffd2.d: Update.
+	* testsuite/ld-cris/tls-dso-dtpoffd4.d: Update.
+	* testsuite/ld-cris/tls-dso-tpoffgotcomm1.d: Update.
+	* testsuite/ld-cris/tls-gd-1.d: Update.
+	* testsuite/ld-cris/tls-gd-1h.d: Update.
+	* testsuite/ld-cris/tls-gd-2.d: Update.
+	* testsuite/ld-cris/tls-gd-2h.d: Update.
+	* testsuite/ld-cris/tls-ie-10.d: Update.
+	* testsuite/ld-cris/tls-ie-11.d: Update.
+	* testsuite/ld-cris/tls-ie-8.d: Update.
+	* testsuite/ld-cris/tls-ie-9.d: Update.
+	* testsuite/ld-cris/tls-js1.d: Update.
+	* testsuite/ld-cris/tls-ld-4.d: Update.
+	* testsuite/ld-cris/tls-ld-5.d: Update.
+	* testsuite/ld-cris/tls-ld-6.d: Update.
+	* testsuite/ld-cris/tls-ld-7.d: Update.
+	* testsuite/ld-cris/tls-ldgd-14.d: Update.
+	* testsuite/ld-cris/tls-ldgd-15.d: Update.
+	* testsuite/ld-cris/tls-ldgdx-14.d: Update.
+	* testsuite/ld-cris/tls-ldgdx-15.d: Update.
+	* testsuite/ld-cris/tls-local-54.d: Update.
+	* testsuite/ld-cris/tls-local-60.d: Update.
+	* testsuite/ld-cris/tls-local-61.d: Update.
+	* testsuite/ld-cris/tls-local-63.d: Update.
+	* testsuite/ld-cris/tls-local-64.d: Update.
+	* testsuite/ld-cris/tls-ok-30.d: Update.
+	* testsuite/ld-cris/tls-ok-32.d: Update.
+	* testsuite/ld-cris/tls-ok-34.d: Update.
+	* testsuite/ld-mips-elf/tls-multi-got-1.got: Update.
+	* testsuite/ld-mips-elf/tls-multi-got-1.r: Update.
+	* testsuite/ld-mips-elf/tlsdyn-pie-o32.d: Update.
+	* testsuite/ld-mips-elf/tlsdyn-pie-o32.got: Update.
+	* testsuite/ld-mips-elf/tlslib-o32-hidden.got: Update.
+	* testsuite/ld-mips-elf/tlslib-o32-ver.got: Update.
+	* testsuite/ld-mips-elf/tlslib-o32.got: Update.
+	* testsuite/ld-s390/tlspic.rd: Update.
+	* testsuite/ld-s390/tlspic_64.rd: Update.
+	* testsuite/ld-sparc/tlssunnopic32.rd: Update.
+	* testsuite/ld-sparc/tlssunnopic64.rd: Update.
+	* testsuite/ld-sparc/tlssunpic32.rd: Update.
+	* testsuite/ld-sparc/tlssunpic64.rd: Update.
+
+2019-07-13  Alan Modra  <amodra@gmail.com>
+
+	PR 24786
+	* ldlang.h (enum section_type): Add first_overlay_section.
+	* ldlang.c (lang_add_section): Adjust switch statement.
+	(map_input_to_output_sections): Likewise.
+	(lang_size_sections_1): Always set last_os for first overlay section.
+	(lang_leave_overlay): Set sectype to first_overlay_section.
+
+2019-07-08  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/ld-powerpc/callstub-1.d: Pass -melf64ppc to ld.
+	* testsuite/ld-powerpc/callstub-2.d: Likewise.
+
+2019-07-04  Jan Beulich  <jbeulich@suse.com>
+
+	* testsuite/ld-elf/group9.s: Correct argument of .type.
+
+2019-07-02  Nick Clifton  <nickc@redhat.com>
+
+	PR 24753
+	* emultempl/aarch64elf.em (_aarch64_add_stub_section): Include the
+	LINKER_CREATED section flag when creating the stub section.
+
+2019-07-02  Srinath Parvathaneni  <srinath.parvathaneni@arm.com>
+
+	* testsuite/ld-arm/arm-elf.exp: Add tests.
+	* testsuite/ld-arm/cmse_main.s: New test.
+	* testsuite/ld-arm/cmse_main_sec_debug.d: Likewise.
+	* testsuite/ld-arm/cmse_sec_debug.s: Likewise.
+
+2019-07-01  Nick Clifton  <nickc@redhat.com>
+
+	PR 23839
+	* testsuite/ld-arm/unwind-4.d: Adjust for corrected calculation of
+	exidx relocs.
+
+2019-06-28  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/ld-powerpc/callstub-1.d,
+	* testsuite/ld-powerpc/callstub-1.s: New test.
+	* testsuite/ld-powerpc/callstub-2.d,
+	* testsuite/ld-powerpc/callstub-2.s: New test.
+	* testsuite/ld-powerpc/powerpc.exp: Run them.
+
+2019-06-25  Jan Beulich  <jbeulich@suse.com>
+
+	* plugin.c (get_lto_kind, get_lto_resolution,
+	get_lto_visibility): Rename "index" to "idx".
+
+2019-06-24  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/24721
+	* testsuite/ld-x86-64/x86-64.exp: Run PR ld/24721 tests.
+	* testsuite/ld-x86-64/pr24721-x32.d: New file.
+	* testsuite/ld-x86-64/pr24721.d: Likewise.
+	* testsuite/ld-x86-64/pr24721.map: Likewise.
+	* testsuite/ld-x86-64/pr24721a.s: Likewise.
+	* testsuite/ld-x86-64/pr24721b.s: Likewise.
+
+2019-06-23  Alan Modra  <amodra@gmail.com>
+
+	PR 24704
+	* testsuite/ld-powerpc/elfv2exe.d: Update.
+	* testsuite/ld-powerpc/elfv2so.d: Update.
+
 2019-06-14  Szabolcs Nagy  <szabolcs.nagy@arm.com>
 
 	* testsuite/ld-aarch64/aarch64-elf.exp: Add emit-relocs-22 and -23.

@@ -16,6 +16,12 @@ Disassembly of section .text:
  +[a-f0-9]+:	f6 c3 7f             	test   \$0x7f,%bl
  +[a-f0-9]+:	f7 c7 7f 00 00 00    	test   \$0x7f,%edi
  +[a-f0-9]+:	66 f7 c7 7f 00       	test   \$0x7f,%di
+ +[a-f0-9]+:	20 c9                	and    %cl,%cl
+ +[a-f0-9]+:	66 21 d2             	and    %dx,%dx
+ +[a-f0-9]+:	21 db                	and    %ebx,%ebx
+ +[a-f0-9]+:	08 e4                	or     %ah,%ah
+ +[a-f0-9]+:	66 09 ed             	or     %bp,%bp
+ +[a-f0-9]+:	09 f6                	or     %esi,%esi
  +[a-f0-9]+:	c5 f1 55 e9          	vandnpd %xmm1,%xmm1,%xmm5
  +[a-f0-9]+:	c5 f9 6f d1          	vmovdqa %xmm1,%xmm2
  +[a-f0-9]+:	c5 f9 6f d1          	vmovdqa %xmm1,%xmm2
@@ -89,4 +95,68 @@ Disassembly of section .text:
  +[a-f0-9]+:	62 f1 ff 89 6f d1    	vmovdqu16 %xmm1,%xmm2\{%k1\}\{z\}
  +[a-f0-9]+:	62 f1 7e 89 6f d1    	vmovdqu32 %xmm1,%xmm2\{%k1\}\{z\}
  +[a-f0-9]+:	62 f1 fe 89 6f d1    	vmovdqu64 %xmm1,%xmm2\{%k1\}\{z\}
+ +[a-f0-9]+:	c5 .*	vpand  %xmm2,%xmm3,%xmm4
+ +[a-f0-9]+:	c5 .*	vpand  %xmm2,%xmm3,%xmm4
+ +[a-f0-9]+:	c5 .*	vpandn %xmm2,%xmm3,%xmm4
+ +[a-f0-9]+:	c5 .*	vpandn %xmm2,%xmm3,%xmm4
+ +[a-f0-9]+:	c5 .*	vpor   %xmm2,%xmm3,%xmm4
+ +[a-f0-9]+:	c5 .*	vpor   %xmm2,%xmm3,%xmm4
+ +[a-f0-9]+:	c5 .*	vpxor  %xmm2,%xmm3,%xmm4
+ +[a-f0-9]+:	c5 .*	vpxor  %xmm2,%xmm3,%xmm4
+ +[a-f0-9]+:	c5 .*	vpand  %ymm2,%ymm3,%ymm4
+ +[a-f0-9]+:	c5 .*	vpand  %ymm2,%ymm3,%ymm4
+ +[a-f0-9]+:	c5 .*	vpandn %ymm2,%ymm3,%ymm4
+ +[a-f0-9]+:	c5 .*	vpandn %ymm2,%ymm3,%ymm4
+ +[a-f0-9]+:	c5 .*	vpor   %ymm2,%ymm3,%ymm4
+ +[a-f0-9]+:	c5 .*	vpor   %ymm2,%ymm3,%ymm4
+ +[a-f0-9]+:	c5 .*	vpxor  %ymm2,%ymm3,%ymm4
+ +[a-f0-9]+:	c5 .*	vpxor  %ymm2,%ymm3,%ymm4
+ +[a-f0-9]+:	c5 .*	vpand  0x70\(%eax\),%xmm2,%xmm3
+ +[a-f0-9]+:	c5 .*	vpand  0x70\(%eax\),%xmm2,%xmm3
+ +[a-f0-9]+:	c5 .*	vpandn 0x70\(%eax\),%xmm2,%xmm3
+ +[a-f0-9]+:	c5 .*	vpandn 0x70\(%eax\),%xmm2,%xmm3
+ +[a-f0-9]+:	c5 .*	vpor   0x70\(%eax\),%xmm2,%xmm3
+ +[a-f0-9]+:	c5 .*	vpor   0x70\(%eax\),%xmm2,%xmm3
+ +[a-f0-9]+:	c5 .*	vpxor  0x70\(%eax\),%xmm2,%xmm3
+ +[a-f0-9]+:	c5 .*	vpxor  0x70\(%eax\),%xmm2,%xmm3
+ +[a-f0-9]+:	62 .*	vpandd 0x80\(%eax\),%xmm2,%xmm3
+ +[a-f0-9]+:	62 .*	vpandq 0x80\(%eax\),%xmm2,%xmm3
+ +[a-f0-9]+:	62 .*	vpandnd 0x80\(%eax\),%xmm2,%xmm3
+ +[a-f0-9]+:	62 .*	vpandnq 0x80\(%eax\),%xmm2,%xmm3
+ +[a-f0-9]+:	62 .*	vpord  0x80\(%eax\),%xmm2,%xmm3
+ +[a-f0-9]+:	62 .*	vporq  0x80\(%eax\),%xmm2,%xmm3
+ +[a-f0-9]+:	62 .*	vpxord 0x80\(%eax\),%xmm2,%xmm3
+ +[a-f0-9]+:	62 .*	vpxorq 0x80\(%eax\),%xmm2,%xmm3
+ +[a-f0-9]+:	c5 .*	vpand  0x60\(%eax\),%ymm2,%ymm3
+ +[a-f0-9]+:	c5 .*	vpand  0x60\(%eax\),%ymm2,%ymm3
+ +[a-f0-9]+:	c5 .*	vpandn 0x60\(%eax\),%ymm2,%ymm3
+ +[a-f0-9]+:	c5 .*	vpandn 0x60\(%eax\),%ymm2,%ymm3
+ +[a-f0-9]+:	c5 .*	vpor   0x60\(%eax\),%ymm2,%ymm3
+ +[a-f0-9]+:	c5 .*	vpor   0x60\(%eax\),%ymm2,%ymm3
+ +[a-f0-9]+:	c5 .*	vpxor  0x60\(%eax\),%ymm2,%ymm3
+ +[a-f0-9]+:	c5 .*	vpxor  0x60\(%eax\),%ymm2,%ymm3
+ +[a-f0-9]+:	62 .*	vpandd 0x80\(%eax\),%ymm2,%ymm3
+ +[a-f0-9]+:	62 .*	vpandq 0x80\(%eax\),%ymm2,%ymm3
+ +[a-f0-9]+:	62 .*	vpandnd 0x80\(%eax\),%ymm2,%ymm3
+ +[a-f0-9]+:	62 .*	vpandnq 0x80\(%eax\),%ymm2,%ymm3
+ +[a-f0-9]+:	62 .*	vpord  0x80\(%eax\),%ymm2,%ymm3
+ +[a-f0-9]+:	62 .*	vporq  0x80\(%eax\),%ymm2,%ymm3
+ +[a-f0-9]+:	62 .*	vpxord 0x80\(%eax\),%ymm2,%ymm3
+ +[a-f0-9]+:	62 .*	vpxorq 0x80\(%eax\),%ymm2,%ymm3
+ +[a-f0-9]+:	62 .*	vpandd %xmm2,%xmm3,%xmm4\{%k5\}
+ +[a-f0-9]+:	62 .*	vpandq %ymm2,%ymm3,%ymm4\{%k5\}
+ +[a-f0-9]+:	62 .*	vpandnd %ymm2,%ymm3,%ymm4\{%k5\}
+ +[a-f0-9]+:	62 .*	vpandnq %xmm2,%xmm3,%xmm4\{%k5\}
+ +[a-f0-9]+:	62 .*	vpord  %xmm2,%xmm3,%xmm4\{%k5\}
+ +[a-f0-9]+:	62 .*	vporq  %ymm2,%ymm3,%ymm4\{%k5\}
+ +[a-f0-9]+:	62 .*	vpxord %ymm2,%ymm3,%ymm4\{%k5\}
+ +[a-f0-9]+:	62 .*	vpxorq %xmm2,%xmm3,%xmm4\{%k5\}
+ +[a-f0-9]+:	62 .*	vpandd \(%eax\)\{1to8\},%ymm2,%ymm3
+ +[a-f0-9]+:	62 .*	vpandq \(%eax\)\{1to2\},%xmm2,%xmm3
+ +[a-f0-9]+:	62 .*	vpandnd \(%eax\)\{1to4\},%xmm2,%xmm3
+ +[a-f0-9]+:	62 .*	vpandnq \(%eax\)\{1to4\},%ymm2,%ymm3
+ +[a-f0-9]+:	62 .*	vpord  \(%eax\)\{1to8\},%ymm2,%ymm3
+ +[a-f0-9]+:	62 .*	vporq  \(%eax\)\{1to2\},%xmm2,%xmm3
+ +[a-f0-9]+:	62 .*	vpxord \(%eax\)\{1to4\},%xmm2,%xmm3
+ +[a-f0-9]+:	62 .*	vpxorq \(%eax\)\{1to4\},%ymm2,%ymm3
 #pass

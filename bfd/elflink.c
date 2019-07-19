@@ -900,9 +900,6 @@ _bfd_elf_omit_section_dynsym_default (bfd *output_bfd ATTRIBUTE_UNUSED,
 	 SHT_PROGBITS/SHT_NOBITS.  */
     case SHT_NULL:
       htab = elf_hash_table (info);
-      if (p == htab->tls_sec)
-	return FALSE;
-
       if (htab->text_index_section != NULL)
 	return p != htab->text_index_section && p != htab->data_index_section;
 
@@ -2921,8 +2918,16 @@ _bfd_elf_fix_symbol_flags (struct elf_link_hash_entry *h,
 
       /* If the real definition is defined by a regular object file,
 	 don't do anything special.  See the longer description in
-	 _bfd_elf_adjust_dynamic_symbol, below.  */
-      if (def->def_regular)
+	 _bfd_elf_adjust_dynamic_symbol, below.  If the def is not
+	 bfd_link_hash_defined as it was when put on the alias list
+	 then it must have originally been a versioned symbol (for
+	 which a non-versioned indirect symbol is created) and later
+	 a definition for the non-versioned symbol is found.  In that
+	 case the indirection is flipped with the versioned symbol
+	 becoming an indirect pointing at the non-versioned symbol.
+	 Thus, not an alias any more.  */
+      if (def->def_regular
+	  || def->root.type != bfd_link_hash_defined)
 	{
 	  h = def;
 	  while ((h = h->u.alias) != def)
@@ -2935,7 +2940,6 @@ _bfd_elf_fix_symbol_flags (struct elf_link_hash_entry *h,
 	  BFD_ASSERT (h->root.type == bfd_link_hash_defined
 		      || h->root.type == bfd_link_hash_defweak);
 	  BFD_ASSERT (def->def_dynamic);
-	  BFD_ASSERT (def->root.type == bfd_link_hash_defined);
 	  (*bed->elf_backend_copy_indirect_symbol) (eif->info, def, h);
 	}
     }
@@ -7052,14 +7056,17 @@ void
 _bfd_elf_init_1_index_section (bfd *output_bfd, struct bfd_link_info *info)
 {
   asection *s;
+  asection *found = NULL;
 
   for (s = output_bfd->sections; s != NULL; s = s->next)
     if ((s->flags & (SEC_EXCLUDE | SEC_ALLOC)) == SEC_ALLOC
 	&& !_bfd_elf_omit_section_dynsym_default (output_bfd, info, s))
       {
-	elf_hash_table (info)->text_index_section = s;
-	break;
+	found = s;
+	if ((s->flags & SEC_THREAD_LOCAL) == 0)
+	  break;
       }
+  elf_hash_table (info)->text_index_section = found;
 }
 
 /* Find two non-excluded output sections, one for code, one for data.
@@ -7068,29 +7075,30 @@ void
 _bfd_elf_init_2_index_sections (bfd *output_bfd, struct bfd_link_info *info)
 {
   asection *s;
+  asection *found = NULL;
 
   /* Data first, since setting text_index_section changes
      _bfd_elf_omit_section_dynsym_default.  */
   for (s = output_bfd->sections; s != NULL; s = s->next)
-    if (((s->flags & (SEC_EXCLUDE | SEC_ALLOC | SEC_READONLY)) == SEC_ALLOC)
+    if ((s->flags & (SEC_EXCLUDE | SEC_ALLOC)) == SEC_ALLOC
+	&& !(s->flags & SEC_READONLY)
 	&& !_bfd_elf_omit_section_dynsym_default (output_bfd, info, s))
       {
-	elf_hash_table (info)->data_index_section = s;
-	break;
+	found = s;
+	if ((s->flags & SEC_THREAD_LOCAL) == 0)
+	  break;
       }
+  elf_hash_table (info)->data_index_section = found;
 
   for (s = output_bfd->sections; s != NULL; s = s->next)
-    if (((s->flags & (SEC_EXCLUDE | SEC_ALLOC | SEC_READONLY))
-	 == (SEC_ALLOC | SEC_READONLY))
+    if ((s->flags & (SEC_EXCLUDE | SEC_ALLOC)) == SEC_ALLOC
+	&& (s->flags & SEC_READONLY)
 	&& !_bfd_elf_omit_section_dynsym_default (output_bfd, info, s))
       {
-	elf_hash_table (info)->text_index_section = s;
+	found = s;
 	break;
       }
-
-  if (elf_hash_table (info)->text_index_section == NULL)
-    elf_hash_table (info)->text_index_section
-      = elf_hash_table (info)->data_index_section;
+  elf_hash_table (info)->text_index_section = found;
 }
 
 bfd_boolean

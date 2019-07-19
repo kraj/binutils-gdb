@@ -35,11 +35,11 @@
 #include "value.h"
 #include "language.h"
 #include "terminal.h"
-#include "common/job-control.h"
+#include "gdbsupport/job-control.h"
 #include "annotate.h"
 #include "completer.h"
 #include "top.h"
-#include "common/version.h"
+#include "gdbsupport/version.h"
 #include "serial.h"
 #include "main.h"
 #include "event-loop.h"
@@ -50,9 +50,10 @@
 #include "maint.h"
 #include "filenames.h"
 #include "frame.h"
-#include "common/buffer.h"
+#include "gdbsupport/buffer.h"
 #include "gdb_select.h"
-#include "common/scope-exit.h"
+#include "gdbsupport/scope-exit.h"
+#include "gdbarch.h"
 
 /* readline include files.  */
 #include "readline/readline.h"
@@ -106,10 +107,6 @@ gen_ret_current_ui_field_ptr (struct ui_file *, gdb_stdin)
 gen_ret_current_ui_field_ptr (struct ui_file *, gdb_stderr)
 gen_ret_current_ui_field_ptr (struct ui_file *, gdb_stdlog)
 gen_ret_current_ui_field_ptr (struct ui_out *, current_uiout)
-
-/* Initialization file name for gdb.  This is host-dependent.  */
-
-const char gdbinit[] = GDBINIT;
 
 int inhibit_gdbinit = 0;
 
@@ -340,8 +337,6 @@ open_terminal_stream (const char *name)
 static void
 new_ui_command (const char *args, int from_tty)
 {
-  gdb_file_up stream[3];
-  int i;
   int argc;
   const char *interpreter_name;
   const char *tty_name;
@@ -360,13 +355,13 @@ new_ui_command (const char *args, int from_tty)
   {
     scoped_restore save_ui = make_scoped_restore (&current_ui);
 
-    /* Open specified terminal, once for each of
-       stdin/stdout/stderr.  */
-    for (i = 0; i < 3; i++)
-      stream[i] = open_terminal_stream (tty_name);
+    /* Open specified terminal.  Note: we used to open it three times,
+       once for each of stdin/stdout/stderr, but that does not work
+       with Windows named pipes.  */
+    gdb_file_up stream = open_terminal_stream (tty_name);
 
     std::unique_ptr<ui> ui
-      (new struct ui (stream[0].get (), stream[1].get (), stream[2].get ()));
+      (new struct ui (stream.get (), stream.get (), stream.get ()));
 
     ui->async = 1;
 
@@ -376,10 +371,8 @@ new_ui_command (const char *args, int from_tty)
 
     interp_pre_command_loop (top_level_interpreter ());
 
-    /* Make sure the files are not closed.  */
-    stream[0].release ();
-    stream[1].release ();
-    stream[2].release ();
+    /* Make sure the file is not closed.  */
+    stream.release ();
 
     ui.release ();
   }
@@ -730,7 +723,7 @@ dont_repeat (void)
 
 /* See command.h  */
 
-void
+const char *
 repeat_previous ()
 {
   /* Do not repeat this command, as this command is a repeating command.  */
@@ -740,6 +733,11 @@ repeat_previous ()
      so swap it with previous_saved_command_line.  */
   std::swap (previous_saved_command_line, saved_command_line);
   std::swap (previous_repeat_arguments, repeat_arguments);
+
+  const char *prev = skip_spaces (get_saved_command_line ());
+  if (*prev == '\0')
+    error (_("No previous command to relaunch"));
+  return prev;
 }
 
 /* See command.h.  */
@@ -2259,7 +2257,6 @@ gdb_init (char *argv0)
   initialize_progspace ();
   initialize_inferiors ();
   initialize_current_architecture ();
-  init_cli_cmds();
   init_main ();			/* But that omits this file!  Do it now.  */
 
   initialize_stdin_serial ();

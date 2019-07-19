@@ -135,13 +135,13 @@ struct property_addr_info
    property. When evaluating a property that is not related to a type, it can
    be NULL.
 
-   Returns 1 if PROP could be converted and the static value is passed back
-   into VALUE, otherwise returns 0.  */
+   Returns true if PROP could be converted and the static value is passed
+   back into VALUE, otherwise returns false.  */
 
-int dwarf2_evaluate_property (const struct dynamic_prop *prop,
-			      struct frame_info *frame,
-			      struct property_addr_info *addr_stack,
-			      CORE_ADDR *value);
+bool dwarf2_evaluate_property (const struct dynamic_prop *prop,
+			       struct frame_info *frame,
+			       struct property_addr_info *addr_stack,
+			       CORE_ADDR *value);
 
 /* A helper for the compiler interface that compiles a single dynamic
    property to C code.
@@ -182,6 +182,12 @@ struct dwarf2_locexpr_baton
   /* Length of the location expression.  For optimized out expressions it is
      zero.  */
   size_t size;
+
+  /* When true this location expression is a reference and actually
+     describes the address at which the value of the attribute can be
+     found.  When false the expression provides the value of the attribute
+     directly.  */
+  bool is_reference;
 
   /* The compilation unit containing the symbol whose location
      we're computing.  */
@@ -228,23 +234,27 @@ struct dwarf2_offset_baton
 
 /* A dynamic property is either expressed as a single location expression
    or a location list.  If the property is an indirection, pointing to
-   another die, keep track of the targeted type in REFERENCED_TYPE.  */
+   another die, keep track of the targeted type in PROPERTY_TYPE.
+   Alternatively, if the property location gives the property value
+   directly then it will have PROPERTY_TYPE.  */
 
 struct dwarf2_property_baton
 {
   /* If the property is an indirection, we need to evaluate the location
-     in the context of the type REFERENCED_TYPE.
-     If NULL, the location is the actual value of the property.  */
-  struct type *referenced_type;
+     in the context of the type PROPERTY_TYPE.  If the property is supplied
+     by value then it will be of PROPERTY_TYPE.  This field should never be
+     NULL.  */
+  struct type *property_type;
   union
   {
-    /* Location expression.  */
+    /* Location expression either evaluated in the context of
+       PROPERTY_TYPE, or a value of type PROPERTY_TYPE.  */
     struct dwarf2_locexpr_baton locexpr;
 
-    /* Location list to be evaluated in the context of REFERENCED_TYPE.  */
+    /* Location list to be evaluated in the context of PROPERTY_TYPE.  */
     struct dwarf2_loclist_baton loclist;
 
-    /* The location is an offset to REFERENCED_TYPE.  */
+    /* The location is an offset to PROPERTY_TYPE.  */
     struct dwarf2_offset_baton offset_info;
   };
 };

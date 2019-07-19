@@ -1767,13 +1767,14 @@ gdb_print_insn_spu (bfd_vma memaddr, struct disassemble_info *info)
    a target address.  The overlay section is mapped iff the target
    integer at this location equals MAPPED_VAL.  */
 
-static const struct objfile_data *spu_overlay_data;
-
 struct spu_overlay_table
   {
     CORE_ADDR mapped_ptr;
     CORE_ADDR mapped_val;
   };
+
+static objfile_key<spu_overlay_table,
+		   gdb::noop_deleter<spu_overlay_table>> spu_overlay_data;
 
 /* Retrieve the overlay table for OBJFILE.  If not already cached, read
    the _ovly_table data structure from the target and initialize the
@@ -1791,7 +1792,7 @@ spu_get_overlay_table (struct objfile *objfile)
   gdb_byte *ovly_table;
   int i;
 
-  tbl = (struct spu_overlay_table *) objfile_data (objfile, spu_overlay_data);
+  tbl = spu_overlay_data.get (objfile);
   if (tbl)
     return tbl;
 
@@ -1843,7 +1844,7 @@ spu_get_overlay_table (struct objfile *objfile)
     }
 
   xfree (ovly_table);
-  set_objfile_data (objfile, spu_overlay_data, tbl);
+  spu_overlay_data.set (objfile, tbl);
   return tbl;
 }
 
@@ -1901,7 +1902,7 @@ spu_overlay_new_objfile (struct objfile *objfile)
   struct obj_section *osect;
 
   /* If we've already touched this file, do nothing.  */
-  if (!objfile || objfile_data (objfile, spu_overlay_data) != NULL)
+  if (!objfile || spu_overlay_data.get (objfile) != NULL)
     return;
 
   /* Consider only SPU objfiles.  */
@@ -2167,12 +2168,12 @@ info_spu_signal_command (const char *args, int from_tty)
 
   if (current_uiout->is_mi_like_p ())
     {
-      current_uiout->field_int ("signal1_pending", signal1_pending);
+      current_uiout->field_signed ("signal1_pending", signal1_pending);
       current_uiout->field_fmt ("signal1", "0x%s", phex_nz (signal1, 4));
-      current_uiout->field_int ("signal1_type", signal1_type);
-      current_uiout->field_int ("signal2_pending", signal2_pending);
+      current_uiout->field_signed ("signal1_type", signal1_type);
+      current_uiout->field_signed ("signal2_pending", signal2_pending);
       current_uiout->field_fmt ("signal2", "0x%s", phex_nz (signal2, 4));
-      current_uiout->field_int ("signal2_type", signal2_type);
+      current_uiout->field_signed ("signal2_type", signal2_type);
     }
   else
     {
@@ -2414,11 +2415,11 @@ info_spu_dma_cmdlist (gdb_byte *buf, int nr, enum bfd_endian byte_order)
 	if (spu_mfc_opcode[mfc_cmd_opcode])
 	  current_uiout->field_string ("opcode", spu_mfc_opcode[mfc_cmd_opcode]);
 	else
-	  current_uiout->field_int ("opcode", mfc_cmd_opcode);
+	  current_uiout->field_signed ("opcode", mfc_cmd_opcode);
 
-	current_uiout->field_int ("tag", mfc_cmd_tag);
-	current_uiout->field_int ("tid", tclass_id);
-	current_uiout->field_int ("rid", rclass_id);
+	current_uiout->field_signed ("tag", mfc_cmd_tag);
+	current_uiout->field_signed ("tid", tclass_id);
+	current_uiout->field_signed ("rid", rclass_id);
 
 	if (ea_valid_p)
 	  current_uiout->field_fmt ("ea", "0x%s", phex (mfc_ea, 8));
@@ -2765,7 +2766,6 @@ _initialize_spu_tdep (void)
 
   /* Add ourselves to objfile event chain.  */
   gdb::observers::new_objfile.attach (spu_overlay_new_objfile);
-  spu_overlay_data = register_objfile_data ();
 
   /* Install spu stop-on-load handler.  */
   gdb::observers::new_objfile.attach (spu_catch_start);

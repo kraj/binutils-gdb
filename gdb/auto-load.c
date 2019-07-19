@@ -36,11 +36,11 @@
 #include "completer.h"
 #include "fnmatch.h"
 #include "top.h"
-#include "common/filestuff.h"
+#include "gdbsupport/filestuff.h"
 #include "extension.h"
 #include "gdb/section-scripts.h"
 #include <algorithm>
-#include "common/pathstuff.h"
+#include "gdbsupport/pathstuff.h"
 
 /* The section to look in for auto-loaded scripts (in file formats that
    support sections).
@@ -500,7 +500,7 @@ file_is_auto_load_safe (const char *filename, const char *debug_fmt, ...)
 
       if (homedir == NULL)
 	homedir = "$HOME";
-      std::string homeinit = string_printf ("%s/%s", homedir, gdbinit);
+      std::string homeinit = string_printf ("%s/%s", homedir, GDBINIT);
 
       printf_filtered (_("\
 To enable execution of this file add\n\

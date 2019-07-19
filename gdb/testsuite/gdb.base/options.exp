@@ -95,19 +95,19 @@ proc make_cmd {variant} {
 # test-options xxx", with no flag/option set.  OPERAND is the expected
 # operand.
 proc expect_none {operand} {
-    return "-flag 0 -xx1 0 -xx2 0 -bool 0 -enum xxx -uint 0 -zuint-unl 0 -- $operand"
+    return "-flag 0 -xx1 0 -xx2 0 -bool 0 -enum xxx -uint 0 -zuint-unl 0 -string '' -- $operand"
 }
 
 # Return a string for the expected result of running "maint
 # test-options xxx", with -flag set.  OPERAND is the expected operand.
 proc expect_flag {operand} {
-    return "-flag 1 -xx1 0 -xx2 0 -bool 0 -enum xxx -uint 0 -zuint-unl 0 -- $operand"
+    return "-flag 1 -xx1 0 -xx2 0 -bool 0 -enum xxx -uint 0 -zuint-unl 0 -string '' -- $operand"
 }
 
 # Return a string for the expected result of running "maint
 # test-options xxx", with -bool set.  OPERAND is the expected operand.
 proc expect_bool {operand} {
-    return "-flag 0 -xx1 0 -xx2 0 -bool 1 -enum xxx -uint 0 -zuint-unl 0 -- $operand"
+    return "-flag 0 -xx1 0 -xx2 0 -bool 1 -enum xxx -uint 0 -zuint-unl 0 -string '' -- $operand"
 }
 
 # Return a string for the expected result of running "maint
@@ -116,18 +116,33 @@ proc expect_bool {operand} {
 # expected operand.
 proc expect_integer {option val operand} {
     if {$option == "uinteger"} {
-	return "-flag 0 -xx1 0 -xx2 0 -bool 0 -enum xxx -uint $val -zuint-unl 0 -- $operand"
+	return "-flag 0 -xx1 0 -xx2 0 -bool 0 -enum xxx -uint $val -zuint-unl 0 -string '' -- $operand"
     } elseif {$option == "zuinteger-unlimited"} {
-	return "-flag 0 -xx1 0 -xx2 0 -bool 0 -enum xxx -uint 0 -zuint-unl $val -- $operand"
+	return "-flag 0 -xx1 0 -xx2 0 -bool 0 -enum xxx -uint 0 -zuint-unl $val -string '' -- $operand"
     } else {
 	error "unsupported option: $option"
     }
+}
+
+# Return a string for the expected result of running "maint
+# test-options xxx", with -string set to $STR.  OPERAND is the
+# expected operand.
+proc expect_string {str operand} {
+    # Dequote the string in the expected output.
+    if { ( [string range $str 0 0] == "\""
+	   && [string range $str end end] == "\"")
+	 || ([string range $str 0 0] == "'"
+	     && [string range $str end end] == "'")} {
+	set str [string range $str 1 end-1]
+    }
+    return "-flag 0 -xx1 0 -xx2 0 -bool 0 -enum xxx -uint 0 -zuint-unl 0 -string '$str' -- $operand"
 }
 
 set all_options {
     "-bool"
     "-enum"
     "-flag"
+    "-string"
     "-uinteger"
     "-xx1"
     "-xx2"
@@ -454,6 +469,21 @@ proc_with_prefix test-thread-apply {} {
     }
 }
 
+# Basic option-machinery + "info threads" command integration tests.
+proc_with_prefix test-info-threads {} {
+    test_gdb_complete_multiple "info threads " "" "" {
+	"-gid"
+	"ID"
+    }
+
+    test_gdb_complete_unique \
+	"info threads -" \
+	"info threads -gid"
+
+    # "ID" isn't really something the user can type.
+    test_gdb_complete_none "info threads I"
+}
+
 # Miscellaneous tests.
 proc_with_prefix test-misc {variant} {
     global all_options
@@ -471,21 +501,27 @@ proc_with_prefix test-misc {variant} {
     }
 
     # Completing at "-" should list all options.
-    res_test_gdb_complete_multiple "1" "$cmd " "-" "" $all_options
+    res_test_gdb_complete_multiple \
+	"1 [expect_none "-"]" \
+	"$cmd " "-" "" $all_options
 
     # Now with a double dash.
     gdb_test "$cmd --" [expect_none ""]
 
     # "--" is recognized by options completer, gdb auto-appends a
     # space.
-    test_completer_recognizes 1 "$cmd --"
+    test_completer_recognizes \
+	"1 [expect_none "--"]" \
+	"$cmd --"
 
     # Now with a double dash, plus a dash as operand.
     gdb_test "$cmd -- -" [expect_none "-"]
     res_test_gdb_complete_none "0 -" "$cmd -- -"
 
     # Completing an unambiguous option just appends an empty space.
-    test_completer_recognizes 1 "$cmd -flag"
+    test_completer_recognizes \
+	"1 [expect_none "-flag"]" \
+	"$cmd -flag"
 
     # Try running an ambiguous option.
     if {$variant == "require-delimiter"} {
@@ -525,10 +561,14 @@ proc_with_prefix test-flag {variant} {
     set cmd [make_cmd $variant]
 
     # Completing a flag just appends a space.
-    test_completer_recognizes 1 "$cmd -flag"
+    test_completer_recognizes \
+	"1 [expect_none "-flag"]" \
+	"$cmd -flag"
 
     # Add a dash, and all options should be shown.
-    test_gdb_complete_multiple "$cmd  -flag " "-" "" $all_options
+    res_test_gdb_complete_multiple \
+	"1 [expect_flag "-"]" \
+	"$cmd  -flag " "-" "" $all_options
 
     # Basic smoke tests of accepted / not accepted values.
 
@@ -552,7 +592,7 @@ proc_with_prefix test-flag {variant} {
 
     # Extract twice the same flag, separated by one space.
     gdb_test "$cmd -xx1     -xx2 -xx1  -xx2 -xx1    -- non flags args" \
-	"-flag 0 -xx1 1 -xx2 1 -bool 0 -enum xxx -uint 0 -zuint-unl 0 -- non flags args"
+	"-flag 0 -xx1 1 -xx2 1 -bool 0 -enum xxx -uint 0 -zuint-unl 0 -string '' -- non flags args"
 
     # Extract 2 known flags in front of unknown flags.
     gdb_test "$cmd -xx1 -xx2 -a -b -c -xx1 --" \
@@ -567,7 +607,9 @@ proc_with_prefix test-flag {variant} {
     # "on/off".
 
     if {$variant == "require-delimiter"} {
-	res_test_gdb_complete_none "1" "$cmd -flag o"
+	res_test_gdb_complete_none \
+	    "1 [expect_flag "o"]" \
+	    "$cmd -flag o"
 
 	gdb_test "$cmd -flag o" [expect_none "-flag o"]
     } else {
@@ -597,23 +639,19 @@ proc_with_prefix test-boolean {variant} {
     #   E.g., "frame apply all -past-main COMMAND".
 
     if {$variant == "require-delimiter"} {
-	res_test_gdb_complete_multiple 1 "$cmd -bool " "" "" {
-	    "-bool"
-	    "-enum"
-	    "-flag"
-	    "-uinteger"
-	    "-xx1"
-	    "-xx2"
-	    "-zuinteger-unlimited"
-	    "off"
-	    "on"
-	}
+	set match_list $all_options
+	lappend match_list "off" "on"
+	res_test_gdb_complete_multiple \
+	    "1 [expect_none ""]" \
+	    "$cmd -bool " "" "" $match_list
     } else {
 	res_test_gdb_complete_none "0 " "$cmd -bool "
     }
 
     # Add another dash, and "on/off" are no longer offered:
-    res_test_gdb_complete_multiple 1 "$cmd -bool " "-" ""  $all_options
+    res_test_gdb_complete_multiple \
+	"1 [expect_bool "-"]" \
+	"$cmd -bool " "-" ""  $all_options
 
     # Basic smoke tests of accepted / not accepted values.
 
@@ -628,20 +666,25 @@ proc_with_prefix test-boolean {variant} {
     # However, the completer does recognize them if you start typing
     # the boolean value.
     foreach value {"0" "1"} {
-	test_completer_recognizes 1 "$cmd -bool $value"
+	test_completer_recognizes \
+	    "1 [expect_none ""]" \
+	    "$cmd -bool $value"
     }
     foreach value {"of" "off"} {
-	res_test_gdb_complete_unique 1 \
+	res_test_gdb_complete_unique \
+	    "1 [expect_none ""]" \
 	    "$cmd -bool $value" \
 	    "$cmd -bool off"
     }
     foreach value {"y" "ye" "yes"} {
-	res_test_gdb_complete_unique 1 \
+	res_test_gdb_complete_unique \
+	    "1 [expect_none ""]" \
 	    "$cmd -bool $value" \
 	    "$cmd -bool yes"
     }
     foreach value {"n" "no"} {
-	res_test_gdb_complete_unique 1 \
+	res_test_gdb_complete_unique \
+	    "1 [expect_none ""]" \
 	    "$cmd -bool $value" \
 	    "$cmd -bool no"
     }
@@ -653,7 +696,8 @@ proc_with_prefix test-boolean {variant} {
 	"enabl"
 	"enable"
     } {
-	res_test_gdb_complete_unique 1 \
+	res_test_gdb_complete_unique \
+	    "1 [expect_none ""]" \
 	    "$cmd -bool $value" \
 	    "$cmd -bool enable"
     }
@@ -666,13 +710,16 @@ proc_with_prefix test-boolean {variant} {
 	"disabl"
 	"disable"
     } {
-	res_test_gdb_complete_unique 1 \
+	res_test_gdb_complete_unique \
+	    "1 [expect_none ""]" \
 	    "$cmd -bool $value" \
 	    "$cmd -bool disable"
     }
 
     if {$variant == "require-delimiter"} {
-	res_test_gdb_complete_none "1" "$cmd -bool xxx"
+	res_test_gdb_complete_none \
+	    "1 [expect_none "xxx"]" \
+	    "$cmd -bool xxx"
     } else {
 	res_test_gdb_complete_none "0 xxx" "$cmd -bool xxx"
     }
@@ -748,7 +795,9 @@ proc_with_prefix test-boolean {variant} {
     # Completing after a boolean option + "o" does list "on/off",
     # though.
     if {$variant == "require-delimiter"} {
-	res_test_gdb_complete_multiple 1 "$cmd -bool " "o" "" {
+	res_test_gdb_complete_multiple \
+	    "1 [expect_none "o"]" \
+	    "$cmd -bool " "o" "" {
 	    "off"
 	    "on"
 	}
@@ -768,17 +817,22 @@ proc_with_prefix test-uinteger {variant option} {
     set cmd "[make_cmd $variant] -$option"
 
     # Test completing a uinteger option:
-    res_test_gdb_complete_multiple 1 "$cmd " "" "" {
+    res_test_gdb_complete_multiple \
+	"1 [expect_none ""]" \
+	"$cmd " "" "" {
 	"NUMBER"
 	"unlimited"
     }
 
     # NUMBER above is just a placeholder, make sure we don't complete
     # it as a valid option.
-    res_test_gdb_complete_none 1 "$cmd NU"
+    res_test_gdb_complete_none \
+	"1 [expect_none "NU"]" \
+	"$cmd NU"
 
     # "unlimited" is valid though.
-    res_test_gdb_complete_unique 1 \
+    res_test_gdb_complete_unique \
+	"1 [expect_none "u"]" \
 	"$cmd u" \
 	"$cmd unlimited"
 
@@ -800,24 +854,34 @@ proc_with_prefix test-uinteger {variant option} {
 
     # Don't offer completions until we're past the
     # -uinteger/-zuinteger-unlimited argument.
-    res_test_gdb_complete_none 1 "$cmd 1"
+    res_test_gdb_complete_none \
+	"1 [expect_none ""]" \
+	"$cmd 1"
 
     # A number of invalid values.
     foreach value {"x" "x " "1a" "1a " "1-" "1- " "unlimitedx"} {
-	res_test_gdb_complete_none 1 "$cmd $value"
+	res_test_gdb_complete_none \
+	    "1 [expect_none $value]" \
+	    "$cmd $value"
     }
 
     # Try "-1".
     if {$option == "uinteger"} {
 	# -1 is invalid uinteger.
 	foreach value {"-1" "-1 "} {
-	    res_test_gdb_complete_none 1 "$cmd $value"
+	    res_test_gdb_complete_none \
+		"1 [expect_none ""]" \
+		"$cmd $value"
 	}
     } else {
 	# -1 is valid for zuinteger-unlimited.
-	res_test_gdb_complete_none 1 "$cmd -1"
+	res_test_gdb_complete_none \
+	    "1 [expect_none ""]" \
+	    "$cmd -1"
 	if {$variant == "require-delimiter"} {
-	    res_test_gdb_complete_multiple 1 "$cmd -1 " "" "-" $all_options
+	    res_test_gdb_complete_multiple \
+		"1 [expect_integer $option "unlimited" ""]" \
+		"$cmd -1 " "" "-" $all_options
 	} else {
 	    res_test_gdb_complete_none "0 " "$cmd -1 "
 	}
@@ -831,7 +895,9 @@ proc_with_prefix test-uinteger {variant option} {
     #  - for !require-delimiter commands, completion offers nothing
     #    and returns false.
     if {$variant == "require-delimiter"} {
-	res_test_gdb_complete_multiple 1 "$cmd 1 " "" "-" $all_options
+	res_test_gdb_complete_multiple \
+	    "1 [expect_integer $option 1 ""]" \
+	    "$cmd 1 " "" "-" $all_options
     } else {
 	res_test_gdb_complete_none "0 " "$cmd 1 "
     }
@@ -839,7 +905,9 @@ proc_with_prefix test-uinteger {variant option} {
     # Test completing non-option arguments after "-uinteger 1 ".
     foreach operand {"x" "x " "1a" "1a " "1-" "1- "} {
 	if {$variant == "require-delimiter"} {
-	    res_test_gdb_complete_none 1 "$cmd 1 $operand"
+	    res_test_gdb_complete_none \
+		"1 [expect_integer $option 1 $operand]" \
+		"$cmd 1 $operand"
 	} else {
 	    res_test_gdb_complete_none "0 $operand" "$cmd 1 $operand"
 	}
@@ -849,7 +917,9 @@ proc_with_prefix test-uinteger {variant option} {
 	if {$variant == "unknown-is-operand"} {
 	    res_test_gdb_complete_none "0 $operand" "$cmd 1 $operand"
 	} else {
-	    res_test_gdb_complete_none 1 "$cmd 1 $operand"
+	    res_test_gdb_complete_none \
+		"1 [expect_integer $option 1 $operand]" \
+		"$cmd 1 $operand"
 	}
     }
 }
@@ -858,7 +928,9 @@ proc_with_prefix test-uinteger {variant option} {
 proc_with_prefix test-enum {variant} {
     set cmd [make_cmd $variant]
 
-    res_test_gdb_complete_multiple 1 "$cmd -enum " "" "" {
+    res_test_gdb_complete_multiple \
+	"1 [expect_none ""]" \
+	"$cmd -enum " "" "" {
 	"xxx"
 	"yyy"
 	"zzz"
@@ -867,12 +939,76 @@ proc_with_prefix test-enum {variant} {
     # Check that "-" where a value is expected does not show the
     # command's options.  I.e., an enum's value is not optional.
     # Check both completion and running the command.
-    res_test_gdb_complete_none 1 "$cmd -enum -"
+    res_test_gdb_complete_none \
+	"1 [expect_none "-"]" \
+	"$cmd -enum -"
     gdb_test "$cmd -enum --"\
 	"Requires an argument. Valid arguments are xxx, yyy, zzz\\."
 
     # Try passing an undefined item to an enum option.
     gdb_test "$cmd -enum www --" "Undefined item: \"www\"."
+}
+
+# String option tests.
+proc_with_prefix test-string {variant} {
+    global all_options
+
+    set cmd [make_cmd $variant]
+
+    res_test_gdb_complete_none \
+	"1 [expect_none ""]" \
+	"$cmd -string "
+
+    # Check that "-" where a value is expected does not show the
+    # command's options.  I.e., a string's value is not optional.
+    # Check both completion and running the command.
+    res_test_gdb_complete_none \
+	"1 [expect_none ""]" \
+	"$cmd -string -"
+    gdb_test "$cmd -string --"\
+	"-string requires an argument"
+    if {$variant == "require-delimiter"} {
+	gdb_test "$cmd -string" [expect_none "-string"]
+    } else {
+	gdb_test "$cmd -string"\
+	    "-string requires an argument"
+    }
+
+    foreach_with_prefix str {
+	"STR"
+	"\"STR\""
+	"\\\"STR"
+	"'STR'"
+	"\\'STR"
+	"\"STR AAA\""
+	"'STR BBB'"
+	"\"STR 'CCC' DDD\""
+	"'STR \"EEE\" FFF'"
+	"\"STR \\\"GGG\\\" HHH\""
+	"'STR \\\'III\\\' JJJ'"
+    } {
+	res_test_gdb_complete_none \
+	    "1 [expect_none ""]" \
+	    "$cmd -string ${str}"
+	gdb_test "$cmd -string ${str} --" [expect_string "${str}" ""]
+
+	# Completing at "-" after parsing STR should list all options.
+	res_test_gdb_complete_multiple \
+	    "1 [expect_string "${str}" "-"]" \
+	    "$cmd -string ${str} " "-" "" $all_options
+
+	# Check that only $STR is considered part of the string's value.
+	# I.e., that we stop parsing the string at the first
+	# whitespace or after the closing quote of $STR.
+	if {$variant == "require-delimiter"} {
+	    res_test_gdb_complete_none \
+		"1 [expect_string "${str}" "BAR"]" \
+		"$cmd -string ${str} BAR"
+	} else {
+	    res_test_gdb_complete_none "0 BAR" "$cmd -string ${str} BAR"
+	}
+	gdb_test "$cmd -string ${str} BAR --" "Unrecognized option at: BAR --"
+    }
 }
 
 # Run the options framework tests first.
@@ -888,6 +1024,7 @@ foreach_with_prefix cmd {
 	test-uinteger $cmd $subcmd
     }
     test-enum $cmd
+    test-string $cmd
 }
 
 # Run the print integration tests, both as "standalone", and under
@@ -921,3 +1058,6 @@ test-frame-apply
 
 # Basic "thread apply" integration tests.
 test-thread-apply
+
+# Basic "info threads" integration tests.
+test-info-threads

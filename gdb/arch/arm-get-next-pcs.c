@@ -17,9 +17,9 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#include "common/common-defs.h"
-#include "common/gdb_vecs.h"
-#include "common/common-regcache.h"
+#include "gdbsupport/common-defs.h"
+#include "gdbsupport/gdb_vecs.h"
+#include "gdbsupport/common-regcache.h"
 #include "arm.h"
 #include "arm-get-next-pcs.h"
 
@@ -408,7 +408,8 @@ thumb_get_next_pcs_raw (struct arm_get_next_pcs *self)
 
       /* Fetch the saved PC from the stack.  It's stored above
          all of the other registers.  */
-      unsigned long offset = bitcount (bits (inst1, 0, 7)) * INT_REGISTER_SIZE;
+      unsigned long offset = bitcount (bits (inst1, 0, 7))
+			     * ARM_INT_REGISTER_SIZE;
       sp = regcache_raw_get_unsigned (regcache, ARM_SP_REGNUM);
       nextpc = self->ops->read_mem_uint (sp + offset, 4, byte_order);
     }

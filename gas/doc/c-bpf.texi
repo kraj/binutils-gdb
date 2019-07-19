@@ -17,6 +17,7 @@
 @menu
 * BPF Options::                 Options
 * BPF Syntax::		        Syntax
+* BPF Directives::		Machine Directives
 * BPF Opcodes::			Opcodes
 @end menu
 
@@ -103,6 +104,28 @@ descriptor @samp{2} in register @samp{r1} we would do:
 @smallexample
         lddw %r1, %map_fd(2)
 @end smallexample
+
+@node BPF Directives
+@section Machine Directives
+
+@cindex machine directives, BPF
+
+The BPF version of @code{@value{AS}} supports the following additional
+machine directives:
+
+@table @code
+@cindex @code{half} directive, BPF
+@item .word
+The @code{.half} directive produces a 16 bit value.
+
+@cindex @code{word} directive, BPF
+@item .word
+The @code{.word} directive produces a 32 bit value.
+
+@cindex @code{dword} directive, BPF
+@item .dword
+The @code{.dword} directive produces a 64 bit value.
+@end table
 
 @node BPF Opcodes
 @section Opcodes
@@ -234,26 +257,26 @@ tree for more information.
 Absolute loads:
 
 @table @code
-@item ldabsdw %d, %s, imm32
+@item ldabsdw imm32
 Absolute 64-bit load.
-@item ldabsw %d, %s, imm32
+@item ldabsw imm32
 Absolute 32-bit load.
-@item ldabsh %d, %s, imm32
+@item ldabsh imm32
 Absolute 16-bit load.
-@item ldabsb %d, %s, imm32
+@item ldabsb imm32
 Absolute 8-bit load.
 @end table
 
 Indirect loads:
 
 @table @code
-@item ldinddw %d, %s, imm32
+@item ldinddw %s, imm32
 Indirect 64-bit load.
-@item ldindw %d, %s, imm32
+@item ldindw %s, imm32
 Indirect 32-bit load.
-@item ldindh %d, %s, imm32
+@item ldindh %s, imm32
 Indirect 16-bit load.
-@item ldindb %d, %s, imm32
+@item ldindb %s, imm32
 Indirect 8-bit load.
 @end table
 

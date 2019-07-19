@@ -2069,7 +2069,38 @@ obj_elf_type (int ignore ATTRIBUTE_UNUSED)
   if (*input_line_pointer == '"')
     ++input_line_pointer;
 
-  elfsym->symbol.flags |= type;
+#ifdef md_elf_symbol_type_change
+  if (!md_elf_symbol_type_change (sym, elfsym, type))
+#endif
+    {
+      flagword mask = BSF_FUNCTION | BSF_OBJECT;
+
+      if (type != BSF_FUNCTION)
+	mask |= BSF_GNU_INDIRECT_FUNCTION;
+      if (type != BSF_OBJECT)
+	{
+	  mask |= BSF_GNU_UNIQUE | BSF_THREAD_LOCAL;
+
+	  if (S_IS_COMMON (sym))
+	    {
+	      as_bad (_("cannot change type of common symbol '%s'"),
+		      S_GET_NAME (sym));
+	      mask = type = 0;
+	    }
+	}
+
+      /* Don't warn when changing to STT_NOTYPE.  */
+      if (type)
+	{
+	  flagword new = (elfsym->symbol.flags & ~mask) | type;
+
+	  if (new != (elfsym->symbol.flags | type))
+	    as_warn (_("symbol '%s' already has its type set"), S_GET_NAME (sym));
+	  elfsym->symbol.flags = new;
+	}
+      else
+	elfsym->symbol.flags &= ~mask;
+    }
 
   demand_empty_rest_of_line ();
 }
@@ -2338,23 +2369,6 @@ elf_frob_symbol (symbolS *symp, int *puntp)
 	as_bad (_("symbol `%s' can not be both weak and common"),
 		S_GET_NAME (symp));
     }
-
-#ifdef TC_MIPS
-  /* The Irix 5 and 6 assemblers set the type of any common symbol and
-     any undefined non-function symbol to STT_OBJECT.  We try to be
-     compatible, since newer Irix 5 and 6 linkers care.  However, we
-     only set undefined symbols to be STT_OBJECT if we are on Irix,
-     because that is the only time gcc will generate the necessary
-     .global directives to mark functions.  */
-
-  if (S_IS_COMMON (symp))
-    symbol_get_bfdsym (symp)->flags |= BSF_OBJECT;
-
-  if (strstr (TARGET_OS, "irix") != NULL
-      && ! S_IS_DEFINED (symp)
-      && (symbol_get_bfdsym (symp)->flags & BSF_FUNCTION) == 0)
-    symbol_get_bfdsym (symp)->flags |= BSF_OBJECT;
-#endif
 }
 
 struct group_list

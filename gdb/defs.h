@@ -25,7 +25,7 @@
 #  error gdbserver should not include gdb/defs.h
 #endif
 
-#include "common/common-defs.h"
+#include "gdbsupport/common-defs.h"
 
 #include <sys/types.h>
 #include <limits.h>
@@ -52,8 +52,8 @@
 
 #include "ui-file.h"
 
-#include "common/host-defs.h"
-#include "common/enum-flags.h"
+#include "gdbsupport/host-defs.h"
+#include "gdbsupport/enum-flags.h"
 
 /* Scope types enumerator.  List the types of scopes the compiler will
    accept.  */
@@ -300,9 +300,6 @@ EXTERN_C char *re_comp (const char *);
 
 extern void symbol_file_command (const char *, int);
 
-/* * Remote targets may wish to use this as their load function.  */
-extern void generic_load (const char *name, int from_tty);
-
 /* From top.c */
 
 typedef void initialize_file_ftype (void);
@@ -521,9 +518,6 @@ enum symbol_needs_kind
   /* The symbol needs a frame.  */
   SYMBOL_NEEDS_FRAME
 };
-
-/* Dynamic target-system-dependent parameters for GDB.  */
-#include "gdbarch.h"
 
 /* In findvar.c.  */
 

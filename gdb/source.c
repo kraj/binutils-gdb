@@ -26,7 +26,7 @@
 #include "gdbcmd.h"
 #include "frame.h"
 #include "value.h"
-#include "common/filestuff.h"
+#include "gdbsupport/filestuff.h"
 
 #include <sys/types.h>
 #include <fcntl.h>
@@ -41,10 +41,10 @@
 #include "completer.h"
 #include "ui-out.h"
 #include "readline/readline.h"
-#include "common/enum-flags.h"
-#include "common/scoped_fd.h"
+#include "gdbsupport/enum-flags.h"
+#include "gdbsupport/scoped_fd.h"
 #include <algorithm>
-#include "common/pathstuff.h"
+#include "gdbsupport/pathstuff.h"
 #include "source-cache.h"
 
 #define OPEN_MODE (O_RDONLY | O_BINARY)
@@ -1269,7 +1269,7 @@ print_source_lines_base (struct symtab *s, int line, int stopline,
 	}
       else
 	{
-	  uiout->field_int ("line", line);
+	  uiout->field_signed ("line", line);
 	  uiout->text ("\tin ");
 
 	  /* CLI expects only the "file" field.  TUI expects only the

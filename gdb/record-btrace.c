@@ -38,9 +38,10 @@
 #include "infrun.h"
 #include "event-loop.h"
 #include "inf-loop.h"
-#include "common/vec.h"
+#include "gdbsupport/vec.h"
 #include "inferior.h"
 #include <algorithm>
+#include "gdbarch.h"
 
 static const target_info record_btrace_target_info = {
   "record-btrace",
@@ -616,19 +617,11 @@ btrace_ui_out_decode_error (struct ui_out *uiout, int errcode,
   if (!(format == BTRACE_FORMAT_PT && errcode > 0))
     {
       uiout->text (_("decode error ("));
-      uiout->field_int ("errcode", errcode);
+      uiout->field_signed ("errcode", errcode);
       uiout->text (_("): "));
     }
   uiout->text (errstr);
   uiout->text (_("]\n"));
-}
-
-/* Print an unsigned int.  */
-
-static void
-ui_out_field_uint (struct ui_out *uiout, const char *fld, unsigned int val)
-{
-  uiout->field_fmt (fld, "%u", val);
 }
 
 /* A range of source lines.  */
@@ -1032,9 +1025,9 @@ btrace_call_history_insn_range (struct ui_out *uiout,
   begin = bfun->insn_offset;
   end = begin + size - 1;
 
-  ui_out_field_uint (uiout, "insn begin", begin);
+  uiout->field_unsigned ("insn begin", begin);
   uiout->text (",");
-  ui_out_field_uint (uiout, "insn end", end);
+  uiout->field_unsigned ("insn end", end);
 }
 
 /* Compute the lowest and highest source line for the instructions in BFUN
@@ -1098,13 +1091,13 @@ btrace_call_history_src_line (struct ui_out *uiout,
     return;
 
   uiout->text (":");
-  uiout->field_int ("min line", begin);
+  uiout->field_signed ("min line", begin);
 
   if (end == begin)
     return;
 
   uiout->text (",");
-  uiout->field_int ("max line", end);
+  uiout->field_signed ("max line", end);
 }
 
 /* Get the name of a branch trace function.  */
@@ -1155,7 +1148,7 @@ btrace_call_history (struct ui_out *uiout,
       msym = bfun->msym;
 
       /* Print the function index.  */
-      ui_out_field_uint (uiout, "index", bfun->number);
+      uiout->field_unsigned ("index", bfun->number);
       uiout->text ("\t");
 
       /* Indicate gaps in the trace.  */

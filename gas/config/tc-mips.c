@@ -12780,20 +12780,28 @@ macro (struct mips_cl_insn *ip, char *str)
          OFFSET_EXPR.  */
       if (imm_expr.X_op == O_constant)
 	{
-	  used_at = 1;
-	  load_register (AT, &imm_expr, FPR_SIZE == 64);
+	  tempreg = ZERO;
+	  if (((FPR_SIZE == 64 && GPR_SIZE == 64)
+	       || !ISA_HAS_MXHC1 (mips_opts.isa))
+	      && imm_expr.X_add_number != 0)
+	    {
+	      used_at = 1;
+	      tempreg = AT;
+	      load_register (AT, &imm_expr, FPR_SIZE == 64);
+	    }
 	  if (FPR_SIZE == 64 && GPR_SIZE == 64)
-	    macro_build (NULL, "dmtc1", "t,S", AT, op[0]);
+	    macro_build (NULL, "dmtc1", "t,S", tempreg, op[0]);
 	  else
 	    {
-	      if (ISA_HAS_MXHC1 (mips_opts.isa))
-	        macro_build (NULL, "mthc1", "t,G", AT, op[0]);
-	      else if (FPR_SIZE != 32)
-		as_bad (_("Unable to generate `%s' compliant code "
-			  "without mthc1"),
-			(FPR_SIZE == 64) ? "fp64" : "fpxx");
-	      else
-		macro_build (NULL, "mtc1", "t,G", AT, op[0] + 1);
+	      if (!ISA_HAS_MXHC1 (mips_opts.isa))
+		{
+		  if (FPR_SIZE != 32)
+		    as_bad (_("Unable to generate `%s' compliant code "
+			      "without mthc1"),
+			    (FPR_SIZE == 64) ? "fp64" : "fpxx");
+		  else
+		    macro_build (NULL, "mtc1", "t,G", tempreg, op[0] + 1);
+		}
 	      if (offset_expr.X_op == O_absent)
 		macro_build (NULL, "mtc1", "t,G", 0, op[0]);
 	      else
@@ -12801,6 +12809,16 @@ macro (struct mips_cl_insn *ip, char *str)
 		  gas_assert (offset_expr.X_op == O_constant);
 		  load_register (AT, &offset_expr, 0);
 		  macro_build (NULL, "mtc1", "t,G", AT, op[0]);
+		}
+	      if (ISA_HAS_MXHC1 (mips_opts.isa))
+		{
+		  if (imm_expr.X_add_number != 0)
+		    {
+		      used_at = 1;
+		      tempreg = AT;
+		      load_register (AT, &imm_expr, 0);
+		    }
+		  macro_build (NULL, "mthc1", "t,G", tempreg, op[0]);
 		}
 	    }
 	  break;
@@ -16443,7 +16461,6 @@ s_mips_globl (int x ATTRIBUTE_UNUSED)
   char *name;
   int c;
   symbolS *symbolP;
-  flagword flag;
 
   do
     {
@@ -16453,14 +16470,6 @@ s_mips_globl (int x ATTRIBUTE_UNUSED)
 
       *input_line_pointer = c;
       SKIP_WHITESPACE_AFTER_NAME ();
-
-#ifdef TE_IRIX
-      /* On Irix 5, every global symbol that is not explicitly labelled as
-         being a function is apparently labelled as being an object.  */
-      flag = BSF_OBJECT;
-#else
-      flag = BSF_NO_FLAGS;
-#endif
 
       if (!is_end_of_line[(unsigned char) *input_line_pointer]
 	  && (*input_line_pointer != ','))
@@ -16475,10 +16484,8 @@ s_mips_globl (int x ATTRIBUTE_UNUSED)
 	  (void) restore_line_pointer (c);
 
 	  if (sec != NULL && (sec->flags & SEC_CODE) != 0)
-	    flag = BSF_FUNCTION;
+	    symbol_get_bfdsym (symbolP)->flags |= BSF_FUNCTION;
 	}
-
-      symbol_get_bfdsym (symbolP)->flags |= flag;
 
       c = *input_line_pointer;
       if (c == ',')
@@ -16493,6 +16500,23 @@ s_mips_globl (int x ATTRIBUTE_UNUSED)
 
   demand_empty_rest_of_line ();
 }
+
+#ifdef TE_IRIX
+/* The Irix 5 and 6 assemblers set the type of any common symbol and
+   any undefined non-function symbol to STT_OBJECT.  We try to be
+   compatible, since newer Irix 5 and 6 linkers care.  */
+
+void
+mips_frob_symbol (symbolS *symp ATTRIBUTE_UNUSED)
+{
+  /* This late in assembly we can set BSF_OBJECT indiscriminately
+     and let elf.c:swap_out_syms sort out the symbol type.  */
+  flagword *flags = &symbol_get_bfdsym (symp)->flags;
+  if ((*flags & (BSF_GLOBAL | BSF_WEAK)) != 0
+      || !S_IS_DEFINED (symp))
+    *flags |= BSF_OBJECT;
+}
+#endif
 
 static void
 s_option (int x ATTRIBUTE_UNUSED)

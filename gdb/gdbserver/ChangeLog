@@ -1,3 +1,71 @@
+2019-07-19  Alan Hayward  <alan.hayward@arm.com>
+
+	* configure.srv: Remove Arm xml files.
+
+2019-07-19  Alan Hayward  <alan.hayward@arm.com>
+
+	* configure.srv: Add new files. Remove xml generated files.
+	* linux-aarch32-low.c (initialize_low_arch_aarch32): Don't init
+	registers.
+	* linux-aarch32-low.h (tdesc_arm_with_neon): Remove.
+	* linux-aarch32-tdesc.c: New file.
+	* linux-aarch32-tdesc.h: New file.
+	* linux-aarch64-low.c (aarch64_arch_setup): Call aarch32_linux_read_description.
+	* linux-arm-low.c (init_registers_arm, tdesc_arm)
+	(init_registers_arm_with_iwmmxt, tdesc_arm_with_iwmmxt)
+	(init_registers_arm_with_vfpv2, tdesc_arm_with_vfpv2)
+	(init_registers_arm_with_vfpv3, tdesc_arm_with_vfpv3): Remove.
+	(arm_fill_wmmxregset, arm_store_wmmxregset, arm_fill_vfpregset)
+	(arm_store_vfpregset): Call arm_linux_get_tdesc_fp_type.
+	(arm_read_description): Call arm_linux_read_description.
+	(initialize_low_arch): Don't init registers.
+	* linux-arm-tdesc.c: New file.
+	* linux-arm-tdesc.h: New file.
+
+2019-07-10  Alan Hayward  <alan.hayward@arm.com>
+
+	* linux-arm-low.c (arm_fill_wmmxregset, arm_store_wmmxregset):
+	Move counter inside for.
+	(arm_read_description): Check ptrace earlier.
+	(arm_arch_setup): Call arm_linux_init_hwbp_cap here.
+
+2019-07-09  Tom Tromey  <tom@tromey.com>
+
+	* configure: Rebuild.
+	* configure.ac: Change common to gdbsupport.
+	* acinclude.m4: Change common to gdbsupport.
+	* Makefile.in (SFILES, OBS, GDBREPLAY_OBS, IPA_OBJS)
+	(version-generated.c, gdbsupport/%-ipa.o, gdbsupport/%.o): Change
+	common to gdbsupport.
+	* ax.c, event-loop.c, fork-child.c, gdb_proc_service.h,
+	gdbreplay.c, gdbthread.h, hostio-errno.c, hostio.c, i387-fp.c,
+	inferiors.c, inferiors.h, linux-aarch64-tdesc-selftest.c,
+	linux-amd64-ipa.c, linux-i386-ipa.c, linux-low.c,
+	linux-tic6x-low.c, linux-x86-low.c, linux-x86-tdesc-selftest.c,
+	linux-x86-tdesc.c, lynx-i386-low.c, lynx-low.c, mem-break.h,
+	nto-x86-low.c, regcache.c, regcache.h, remote-utils.c, server.c,
+	server.h, spu-low.c, symbol.c, target.h, tdesc.c, tdesc.h,
+	thread-db.c, tracepoint.c, win32-i386-low.c, win32-low.c: Change
+	common to gdbsupport.
+
+2019-07-04  Alan Hayward  <alan.hayward@arm.com>
+
+	* linux-aarch32-low.c (arm_read_description, arm_regsets): Use new
+	defines.
+	* linux-arm-low.c (arm_read_description, arm_regsets): Likewise.
+
+2019-07-04  Alan Hayward  <alan.hayward@arm.com>
+
+	* configure.srv: Remove legacy xml.
+	* linux-aarch64-low.c (initialize_low_arch): Remove
+	initialize_low_tdesc call.
+	* linux-aarch64-tdesc-selftest.c: Remove file.
+	* linux-aarch64-tdesc.h (initialize_low_tdesc): Remove.
+	* linux-x86-low.c (initialize_low_arch): Remove
+	initialize_low_tdesc call.
+	* linux-x86-tdesc-selftest.c: Remove file.
+	* linux-x86-tdesc.h (initialize_low_tdesc): Remove.
+
 2019-06-20  Tom de Vries  <tdevries@suse.de>
 
 	* linux-s390-ipa.c (get_ipa_tdesc)[!__s390x__]: Use

@@ -26,11 +26,12 @@
 #include "gdb_regex.h"
 
 #include "varobj.h"
-#include "common/vec.h"
+#include "gdbsupport/vec.h"
 #include "gdbthread.h"
 #include "inferior.h"
 #include "varobj-iter.h"
 #include "parser-defs.h"
+#include "gdbarch.h"
 
 #if HAVE_PYTHON
 #include "python/python.h"

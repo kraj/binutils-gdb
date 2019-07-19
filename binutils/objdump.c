@@ -704,7 +704,26 @@ slurp_symtab (bfd *abfd)
       bfd_fatal (_("error message was"));
     }
   if (storage)
-    sy = (asymbol **) xmalloc (storage);
+    {
+      off_t filesize = bfd_get_file_size (abfd);
+
+      /* qv PR 24707.  */
+      if (filesize > 0
+	  && filesize < storage
+	  /* The MMO file format supports its own special compression
+	     technique, so its sections can be larger than the file size.  */
+	  && bfd_get_flavour (abfd) != bfd_target_mmo_flavour)	  
+	{
+	  bfd_nonfatal_message (bfd_get_filename (abfd), abfd, NULL,
+				_("error: symbol table size (%#lx) is larger than filesize (%#lx)"),
+			storage, (long) filesize);
+	  exit_status = 1;
+	  symcount = 0;
+	  return NULL;
+	}
+
+      sy = (asymbol **) xmalloc (storage);
+    }
 
   symcount = bfd_canonicalize_symtab (abfd, sy);
   if (symcount < 0)
@@ -3207,10 +3226,10 @@ static char *
 dump_ctf_indent_lines (ctf_sect_names_t sect ATTRIBUTE_UNUSED,
 		       char *s, void *arg)
 {
-  char *spaces = arg;
+  const char *blanks = arg;
   char *new_s;
 
-  if (asprintf (&new_s, "%s%s", spaces, s) < 0)
+  if (asprintf (&new_s, "%s%s", blanks, s) < 0)
     return s;
   return new_s;
 }

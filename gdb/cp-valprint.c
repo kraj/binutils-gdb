@@ -35,7 +35,8 @@
 #include "language.h"
 #include "extension.h"
 #include "typeprint.h"
-#include "common/byte-vector.h"
+#include "gdbsupport/byte-vector.h"
+#include "gdbarch.h"
 
 static struct obstack dont_print_vb_obstack;
 static struct obstack dont_print_statmem_obstack;
@@ -302,7 +303,7 @@ cp_print_value_fields (struct type *type, struct type *real_type,
 
 		      cp_print_static_field (TYPE_FIELD_TYPE (type, i),
 					     v, stream, recurse + 1,
-					     options);
+					     opts);
 		    }
 		  catch (const gdb_exception_error &ex)
 		    {

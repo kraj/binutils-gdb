@@ -59,8 +59,8 @@ static void tui_update_command (const char *, int);
 /* Create the status line to display as much information as we can on
    this single line: target name, process number, current function,
    current line, current PC, SingleKey mode.  */
-static char*
-tui_make_status_line (struct tui_locator_element *loc)
+static char *
+tui_make_status_line (struct tui_locator_window *loc)
 {
   char *string;
   char line_buf[50], *pname;
@@ -246,17 +246,13 @@ void
 tui_show_locator_content (void)
 {
   char *string;
-  struct tui_gen_win_info *locator;
+  struct tui_locator_window *locator;
 
   locator = tui_locator_win_info_ptr ();
 
   if (locator != NULL && locator->handle != NULL)
     {
-      struct tui_win_element *element;
-
-      element = locator->content[0];
-
-      string = tui_make_status_line (&element->which_element.locator);
+      string = tui_make_status_line (locator);
       wmove (locator->handle, 0, 0);
       /* We ignore the return value from wstandout and wstandend, casting
 	 them to void in order to avoid a compiler warning.  The warning
@@ -267,10 +263,9 @@ tui_show_locator_content (void)
       waddstr (locator->handle, string);
       wclrtoeol (locator->handle);
       (void) wstandend (locator->handle);
-      tui_refresh_win (locator);
+      locator->refresh_window ();
       wmove (locator->handle, 0, 0);
       xfree (string);
-      locator->content_in_use = TRUE;
     }
 }
 
@@ -279,18 +274,10 @@ tui_show_locator_content (void)
 static void
 tui_set_locator_fullname (const char *fullname)
 {
-  struct tui_gen_win_info *locator = tui_locator_win_info_ptr ();
-  struct tui_locator_element *element;
+  struct tui_locator_window *locator = tui_locator_win_info_ptr ();
 
-  if (locator->content[0] == NULL)
-    {
-      tui_set_locator_info (NULL, fullname, NULL, 0, 0);
-      return;
-    }
-
-  element = &locator->content[0]->which_element.locator;
-  element->full_name[0] = 0;
-  strcat_to_buf (element->full_name, MAX_LOCATOR_ELEMENT_LEN, fullname);
+  locator->full_name[0] = 0;
+  strcat_to_buf (locator->full_name, MAX_LOCATOR_ELEMENT_LEN, fullname);
 }
 
 /* Update the locator, with the provided arguments.
@@ -305,17 +292,8 @@ tui_set_locator_info (struct gdbarch *gdbarch,
 		      int lineno,
                       CORE_ADDR addr)
 {
-  struct tui_gen_win_info *locator = tui_locator_win_info_ptr ();
-  struct tui_locator_element *element;
+  struct tui_locator_window *locator = tui_locator_win_info_ptr ();
   int locator_changed_p = 0;
-
-  /* Allocate the locator content if necessary.  */
-  if (locator->content_size <= 0)
-    {
-      locator->content = tui_alloc_content (1, LOCATOR_WIN);
-      locator->content_size = 1;
-      locator_changed_p = 1;
-    }
 
   if (procname == NULL)
     procname = "";
@@ -323,21 +301,19 @@ tui_set_locator_info (struct gdbarch *gdbarch,
   if (fullname == NULL)
     fullname = "";
 
-  element = &locator->content[0]->which_element.locator;
-
-  locator_changed_p |= strncmp (element->proc_name, procname,
+  locator_changed_p |= strncmp (locator->proc_name, procname,
 				MAX_LOCATOR_ELEMENT_LEN) != 0;
-  locator_changed_p |= lineno != element->line_no;
-  locator_changed_p |= addr != element->addr;
-  locator_changed_p |= gdbarch != element->gdbarch;
-  locator_changed_p |= strncmp (element->full_name, fullname,
+  locator_changed_p |= lineno != locator->line_no;
+  locator_changed_p |= addr != locator->addr;
+  locator_changed_p |= gdbarch != locator->gdbarch;
+  locator_changed_p |= strncmp (locator->full_name, fullname,
 				MAX_LOCATOR_ELEMENT_LEN) != 0;
 
-  element->proc_name[0] = (char) 0;
-  strcat_to_buf (element->proc_name, MAX_LOCATOR_ELEMENT_LEN, procname);
-  element->line_no = lineno;
-  element->addr = addr;
-  element->gdbarch = gdbarch;
+  locator->proc_name[0] = (char) 0;
+  strcat_to_buf (locator->proc_name, MAX_LOCATOR_ELEMENT_LEN, procname);
+  locator->line_no = lineno;
+  locator->addr = addr;
+  locator->gdbarch = gdbarch;
   tui_set_locator_fullname (fullname);
 
   return locator_changed_p;
@@ -360,27 +336,29 @@ tui_update_locator_fullname (const char *fullname)
 int
 tui_show_frame_info (struct frame_info *fi)
 {
-  struct tui_win_info *win_info;
   int locator_changed_p;
 
   if (fi)
     {
-      int start_line, i;
-      CORE_ADDR low;
-      struct tui_gen_win_info *locator = tui_locator_win_info_ptr ();
+      struct tui_locator_window *locator = tui_locator_win_info_ptr ();
       int source_already_displayed;
       CORE_ADDR pc;
 
       symtab_and_line sal = find_frame_sal (fi);
 
-      source_already_displayed = sal.symtab != 0
-        && tui_source_is_displayed (symtab_to_fullname (sal.symtab));
+      const char *fullname = nullptr;
+      if (sal.symtab != nullptr)
+	fullname = symtab_to_fullname (sal.symtab);
+
+      source_already_displayed = (sal.symtab != 0
+				  && TUI_SRC_WIN != nullptr
+				  && TUI_SRC_WIN->showing_source_p (fullname));
 
       if (get_frame_pc_if_available (fi, &pc))
 	locator_changed_p
 	  = tui_set_locator_info (get_frame_arch (fi),
 				  (sal.symtab == 0
-				   ? "??" : symtab_to_fullname (sal.symtab)),
+				   ? "??" : fullname),
 				  tui_get_function_from_frame (fi),
 				  sal.line,
 				  pc);
@@ -396,23 +374,34 @@ tui_show_frame_info (struct frame_info *fi)
 	return 0;
 
       tui_show_locator_content ();
-      start_line = 0;
-      for (i = 0; i < (tui_source_windows ())->count; i++)
+      for (struct tui_source_window_base *win_info : tui_source_windows ())
 	{
-	  union tui_which_element *item;
-
-	  win_info = (tui_source_windows ())->list[i];
-
-	  item = &locator->content[0]->which_element;
 	  if (win_info == TUI_SRC_WIN)
 	    {
-	      start_line = (item->locator.line_no -
-			   (win_info->generic.viewport_height / 2)) + 1;
+	      int start_line = (locator->line_no -
+				(win_info->viewport_height / 2)) + 1;
 	      if (start_line <= 0)
 		start_line = 1;
+
+	      struct tui_line_or_address l;
+
+	      l.loa = LOA_LINE;
+	      l.u.line_no = start_line;
+	      if (!(source_already_displayed
+		    && tui_line_is_displayed (locator->line_no,
+					      win_info, TRUE)))
+		tui_update_source_window (win_info, get_frame_arch (fi),
+					  sal.symtab, l, TRUE);
+	      else
+		{
+		  l.u.line_no = locator->line_no;
+		  win_info->set_is_exec_point_at (l);
+		}
 	    }
 	  else
 	    {
+	      CORE_ADDR low;
+
 	      if (find_pc_partial_function (get_frame_pc (fi),
 					    NULL, &low, NULL) == 0)
 		{
@@ -423,44 +412,22 @@ tui_show_frame_info (struct frame_info *fi)
 	      else
 		low = tui_get_low_disassembly_address (get_frame_arch (fi),
 						       low, get_frame_pc (fi));
-	    }
 
-	  if (win_info == TUI_SRC_WIN)
-	    {
-	      struct tui_line_or_address l;
+	      struct tui_line_or_address a;
 
-	      l.loa = LOA_LINE;
-	      l.u.line_no = start_line;
-	      if (!(source_already_displayed
-		    && tui_line_is_displayed (item->locator.line_no,
-					      win_info, TRUE)))
+	      a.loa = LOA_ADDRESS;
+	      a.u.addr = low;
+	      if (!tui_addr_is_displayed (locator->addr,
+					  win_info, TRUE))
 		tui_update_source_window (win_info, get_frame_arch (fi),
-					  sal.symtab, l, TRUE);
+					  sal.symtab, a, TRUE);
 	      else
 		{
-		  l.u.line_no = item->locator.line_no;
-		  tui_set_is_exec_point_at (l, win_info);
+		  a.u.addr = locator->addr;
+		  win_info->set_is_exec_point_at (a);
 		}
 	    }
-	  else
-	    {
-	      if (win_info == TUI_DISASM_WIN)
-		{
-		  struct tui_line_or_address a;
 
-		  a.loa = LOA_ADDRESS;
-		  a.u.addr = low;
-		  if (!tui_addr_is_displayed (item->locator.addr,
-					      win_info, TRUE))
-		    tui_update_source_window (win_info, get_frame_arch (fi),
-					      sal.symtab, a, TRUE);
-		  else
-		    {
-		      a.u.addr = item->locator.addr;
-		      tui_set_is_exec_point_at (a, win_info);
-		    }
-		}
-	    }
 	  tui_update_exec_info (win_info);
 	}
 
@@ -475,10 +442,9 @@ tui_show_frame_info (struct frame_info *fi)
 	return 0;
 
       tui_show_locator_content ();
-      for (int i = 0; i < (tui_source_windows ())->count; i++)
+      for (struct tui_source_window_base *win_info : tui_source_windows ())
 	{
-	  win_info = (tui_source_windows ())->list[i];
-	  tui_clear_source_content (win_info, EMPTY_SOURCE_PROMPT);
+	  tui_clear_source_content (win_info);
 	  tui_update_exec_info (win_info);
 	}
 

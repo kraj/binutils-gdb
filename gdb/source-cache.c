@@ -18,9 +18,10 @@
 
 #include "defs.h"
 #include "source-cache.h"
-#include "common/scoped_fd.h"
+#include "gdbsupport/scoped_fd.h"
 #include "source.h"
 #include "cli/cli-style.h"
+#include "symtab.h"
 
 #ifdef HAVE_SOURCE_HIGHLIGHT
 /* If Gnulib redirects 'open' and 'close' to its replacements

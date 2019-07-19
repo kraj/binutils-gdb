@@ -39,12 +39,12 @@
 #include "dwarf2read.h"
 #include "dwarf2-frame.h"
 #include "compile/compile.h"
-#include "common/selftest.h"
+#include "gdbsupport/selftest.h"
 #include <algorithm>
 #include <vector>
 #include <unordered_set>
-#include "common/underlying.h"
-#include "common/byte-vector.h"
+#include "gdbsupport/underlying.h"
+#include "gdbsupport/byte-vector.h"
 
 extern int dwarf_always_disassemble;
 
@@ -2425,14 +2425,14 @@ dwarf2_locexpr_baton_eval (const struct dwarf2_locexpr_baton *dlbaton,
 
 /* See dwarf2loc.h.  */
 
-int
+bool
 dwarf2_evaluate_property (const struct dynamic_prop *prop,
 			  struct frame_info *frame,
 			  struct property_addr_info *addr_stack,
 			  CORE_ADDR *value)
 {
   if (prop == NULL)
-    return 0;
+    return false;
 
   if (frame == NULL && has_stack_frames ())
     frame = get_selected_frame (NULL);
@@ -2443,18 +2443,41 @@ dwarf2_evaluate_property (const struct dynamic_prop *prop,
       {
 	const struct dwarf2_property_baton *baton
 	  = (const struct dwarf2_property_baton *) prop->data.baton;
+	gdb_assert (baton->property_type != NULL);
 
 	if (dwarf2_locexpr_baton_eval (&baton->locexpr, frame,
 				       addr_stack ? addr_stack->addr : 0,
 				       value))
 	  {
-	    if (baton->referenced_type)
+	    if (baton->locexpr.is_reference)
 	      {
-		struct value *val = value_at (baton->referenced_type, *value);
-
+		struct value *val = value_at (baton->property_type, *value);
 		*value = value_as_address (val);
 	      }
-	    return 1;
+	    else
+	      {
+		gdb_assert (baton->property_type != NULL);
+
+		struct type *type = check_typedef (baton->property_type);
+		if (TYPE_LENGTH (type) < sizeof (CORE_ADDR)
+		    && !TYPE_UNSIGNED (type))
+		  {
+		    /* If we have a valid return candidate and it's value
+		       is signed, we have to sign-extend the value because
+		       CORE_ADDR on 64bit machine has 8 bytes but address
+		       size of an 32bit application is bytes.  */
+		    const int addr_size
+		      = (dwarf2_per_cu_addr_size (baton->locexpr.per_cu)
+			 * TARGET_CHAR_BIT);
+		    const CORE_ADDR neg_mask
+		      = (~((CORE_ADDR) 0) <<  (addr_size - 1));
+
+		    /* Check if signed bit is set and sign-extend values.  */
+		    if (*value & neg_mask)
+		      *value |= neg_mask;
+		  }
+	      }
+	    return true;
 	  }
       }
       break;
@@ -2471,12 +2494,12 @@ dwarf2_evaluate_property (const struct dynamic_prop *prop,
 	data = dwarf2_find_location_expression (&baton->loclist, &size, pc);
 	if (data != NULL)
 	  {
-	    val = dwarf2_evaluate_loc_desc (baton->referenced_type, frame, data,
+	    val = dwarf2_evaluate_loc_desc (baton->property_type, frame, data,
 					    size, baton->loclist.per_cu);
 	    if (!value_optimized_out (val))
 	      {
 		*value = value_as_address (val);
-		return 1;
+		return true;
 	      }
 	  }
       }
@@ -2484,7 +2507,7 @@ dwarf2_evaluate_property (const struct dynamic_prop *prop,
 
     case PROP_CONST:
       *value = prop->data.const_val;
-      return 1;
+      return true;
 
     case PROP_ADDR_OFFSET:
       {
@@ -2497,7 +2520,7 @@ dwarf2_evaluate_property (const struct dynamic_prop *prop,
 	  {
 	    /* This approach lets us avoid checking the qualifiers.  */
 	    if (TYPE_MAIN_TYPE (pinfo->type)
-		== TYPE_MAIN_TYPE (baton->referenced_type))
+		== TYPE_MAIN_TYPE (baton->property_type))
 	      break;
 	  }
 	if (pinfo == NULL)
@@ -2510,11 +2533,11 @@ dwarf2_evaluate_property (const struct dynamic_prop *prop,
 	  val = value_at (baton->offset_info.type,
 			  pinfo->addr + baton->offset_info.offset);
 	*value = value_as_address (val);
-	return 1;
+	return true;
       }
     }
 
-  return 0;
+  return false;
 }
 
 /* See dwarf2loc.h.  */

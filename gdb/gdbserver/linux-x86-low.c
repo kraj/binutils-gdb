@@ -24,7 +24,7 @@
 #include "linux-low.h"
 #include "i387-fp.h"
 #include "x86-low.h"
-#include "common/x86-xstate.h"
+#include "gdbsupport/x86-xstate.h"
 #include "nat/gdb_ptrace.h"
 
 #ifdef __x86_64__
@@ -38,7 +38,7 @@
 #include "elf/common.h"
 #endif
 
-#include "common/agent.h"
+#include "gdbsupport/agent.h"
 #include "tdesc.h"
 #include "tracepoint.h"
 #include "ax.h"
@@ -2909,10 +2909,6 @@ initialize_low_arch (void)
 			   amd64_linux_read_description (X86_XSTATE_SSE_MASK,
 							 false));
   tdesc_amd64_linux_no_xml->xmltarget = xmltarget_amd64_linux_no_xml;
-#endif
-
-#if GDB_SELF_TEST
-  initialize_low_tdesc ();
 #endif
 
   tdesc_i386_linux_no_xml = allocate_target_description ();

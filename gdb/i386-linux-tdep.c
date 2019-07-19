@@ -38,7 +38,7 @@
 #include "xml-syscall.h"
 
 #include "i387-tdep.h"
-#include "common/x86-xstate.h"
+#include "gdbsupport/x86-xstate.h"
 
 /* The syscall's XML filename for i386.  */
 #define XML_SYSCALL_FILENAME_I386 "syscalls/i386-linux.xml"
@@ -432,13 +432,13 @@ i386_linux_handle_segmentation_fault (struct gdbarch *gdbarch,
     uiout->field_string ("sigcode-meaning", _("Lower bound violation"));
 
   uiout->text (_(" while accessing address "));
-  uiout->field_fmt ("bound-access", "%s", paddress (gdbarch, access));
+  uiout->field_core_addr ("bound-access", gdbarch, access);
 
   uiout->text (_("\nBounds: [lower = "));
-  uiout->field_fmt ("lower-bound", "%s", paddress (gdbarch, lower_bound));
+  uiout->field_core_addr ("lower-bound", gdbarch, lower_bound);
 
   uiout->text (_(", upper = "));
-  uiout->field_fmt ("upper-bound", "%s", paddress (gdbarch, upper_bound));
+  uiout->field_core_addr ("upper-bound", gdbarch, upper_bound);
 
   uiout->text (_("]"));
 }
@@ -1081,28 +1081,4 @@ _initialize_i386_linux_tdep (void)
 {
   gdbarch_register_osabi (bfd_arch_i386, 0, GDB_OSABI_LINUX,
 			  i386_linux_init_abi);
-
-#if GDB_SELF_TEST
-  struct
-  {
-    const char *xml;
-    uint64_t mask;
-  } xml_masks[] = {
-    { "i386/i386-linux.xml", X86_XSTATE_SSE_MASK },
-    { "i386/i386-mmx-linux.xml", X86_XSTATE_X87_MASK },
-    { "i386/i386-avx-linux.xml", X86_XSTATE_AVX_MASK },
-    { "i386/i386-mpx-linux.xml", X86_XSTATE_MPX_MASK },
-    { "i386/i386-avx-mpx-linux.xml", X86_XSTATE_AVX_MPX_MASK },
-    { "i386/i386-avx-avx512-linux.xml", X86_XSTATE_AVX_AVX512_MASK },
-    { "i386/i386-avx-mpx-avx512-pku-linux.xml",
-      X86_XSTATE_AVX_MPX_AVX512_PKU_MASK },
-  };
-
-  for (auto &a : xml_masks)
-    {
-      auto tdesc = i386_linux_read_description (a.mask);
-
-      selftests::record_xml_tdesc (a.xml, tdesc);
-    }
-#endif /* GDB_SELF_TEST */
 }

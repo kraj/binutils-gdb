@@ -1086,10 +1086,11 @@ print_ada_task_info (struct ui_out *uiout,
 	uiout->field_skip ("current");
 
       /* Print the task number.  */
-      uiout->field_int ("id", taskno);
+      uiout->field_signed ("id", taskno);
 
       /* Print the Task ID.  */
-      uiout->field_fmt ("task-id", "%9lx", (long) task_info->task_id);
+      uiout->field_string ("task-id", phex_nz (task_info->task_id,
+					       sizeof (CORE_ADDR)));
 
       /* Print the associated Thread ID.  */
       if (uiout->is_mi_like_p ())
@@ -1097,7 +1098,7 @@ print_ada_task_info (struct ui_out *uiout,
 	  thread_info *thread = find_thread_ptid (task_info->ptid);
 
 	  if (thread != NULL)
-	    uiout->field_int ("thread-id", thread->global_num);
+	    uiout->field_signed ("thread-id", thread->global_num);
 	  else
 	    /* This should never happen unless there is a bug somewhere,
 	       but be resilient when that happens.  */
@@ -1107,12 +1108,12 @@ print_ada_task_info (struct ui_out *uiout,
       /* Print the ID of the parent task.  */
       parent_id = get_task_number_from_id (task_info->parent, inf);
       if (parent_id)
-        uiout->field_int ("parent-id", parent_id);
+        uiout->field_signed ("parent-id", parent_id);
       else
         uiout->field_skip ("parent-id");
 
       /* Print the base priority of the task.  */
-      uiout->field_int ("priority", task_info->priority);
+      uiout->field_signed ("priority", task_info->priority);
 
       /* Print the task current state.  */
       if (task_info->caller_task)
@@ -1129,10 +1130,9 @@ print_ada_task_info (struct ui_out *uiout,
 	uiout->field_string ("state", task_states[task_info->state]);
 
       /* Finally, print the task name.  */
-      uiout->field_fmt ("name",
-			"%s",
-			task_info->name[0] != '\0' ? task_info->name
-						   : _("<no name>"));
+      uiout->field_string ("name",
+			   task_info->name[0] != '\0' ? task_info->name
+			   : _("<no name>"));
 
       uiout->text ("\n");
     }

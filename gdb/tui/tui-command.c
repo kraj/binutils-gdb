@@ -27,66 +27,33 @@
 #include "tui/tui-command.h"
 
 #include "gdb_curses.h"
-/*****************************************
-** STATIC LOCAL FUNCTIONS FORWARD DECLS    **
-******************************************/
 
+/* See tui-command.h.  */
 
-
-/*****************************************
-** PUBLIC FUNCTIONS                        **
-******************************************/
-
-/* Dispatch the correct tui function based upon the control
-   character.  */
-unsigned int
-tui_dispatch_ctrl_char (unsigned int ch)
+void
+tui_cmd_window::clear_detail ()
 {
-  struct tui_win_info *win_info = tui_win_with_focus ();
+  wmove (handle, 0, 0);
+}
 
-  /* Handle the CTRL-L refresh for each window.  */
-  if (ch == '\f')
-    tui_refresh_all_win ();
+/* See tui-command.h.  */
 
-  /* If the command window has the logical focus, or no-one does
-     assume it is the command window; in this case, pass the character
-     on through and do nothing here.  */
-  if (win_info == NULL || win_info == TUI_CMD_WIN)
-    return ch;
+void
+tui_cmd_window::do_make_visible_with_new_height ()
+{
+#ifdef HAVE_WRESIZE
+  wresize (handle, height, width);
+#endif
+  mvwin (handle, origin.y, origin.x);
+  wmove (handle, 0, 0);
+}
 
-  switch (ch)
-    {
-    case KEY_NPAGE:
-      tui_scroll_forward (win_info, 0);
-      break;
-    case KEY_PPAGE:
-      tui_scroll_backward (win_info, 0);
-      break;
-    case KEY_DOWN:
-    case KEY_SF:
-      tui_scroll_forward (win_info, 1);
-      break;
-    case KEY_UP:
-    case KEY_SR:
-      tui_scroll_backward (win_info, 1);
-      break;
-    case KEY_RIGHT:
-      tui_scroll_left (win_info, 1);
-      break;
-    case KEY_LEFT:
-      tui_scroll_right (win_info, 1);
-      break;
-    case '\f':
-      break;
-    default:
-      /* We didn't recognize the character as a control character, so pass it
-         through.  */
-      return ch;
-    }
+/* See tui-command.h.  */
 
-  /* We intercepted the control character, so return 0 (which readline
-     will interpret as a no-op).  */
-  return 0;
+int
+tui_cmd_window::max_height () const
+{
+  return tui_term_height () - 4;
 }
 
 /* See tui-command.h.  */
@@ -94,7 +61,7 @@ tui_dispatch_ctrl_char (unsigned int ch)
 void
 tui_refresh_cmd_win (void)
 {
-  WINDOW *w = TUI_CMD_WIN->generic.handle;
+  WINDOW *w = TUI_CMD_WIN->handle;
 
   wrefresh (w);
 

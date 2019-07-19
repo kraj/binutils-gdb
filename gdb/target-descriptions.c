@@ -26,7 +26,7 @@
 #include "reggroups.h"
 #include "target.h"
 #include "target-descriptions.h"
-#include "common/vec.h"
+#include "gdbsupport/vec.h"
 #include "xml-support.h"
 #include "xml-tdesc.h"
 #include "osabi.h"
@@ -635,7 +635,7 @@ tdesc_architecture (const struct target_desc *target_desc)
   return target_desc->arch;
 }
 
-/* See common/tdesc.h.  */
+/* See gdbsupport/tdesc.h.  */
 
 const char *
 tdesc_architecture_name (const struct target_desc *target_desc)
@@ -652,7 +652,7 @@ tdesc_osabi (const struct target_desc *target_desc)
   return target_desc->osabi;
 }
 
-/* See common/tdesc.h.  */
+/* See gdbsupport/tdesc.h.  */
 
 const char *
 tdesc_osabi_name (const struct target_desc *target_desc)
@@ -1125,7 +1125,7 @@ tdesc_use_registers (struct gdbarch *gdbarch,
   set_gdbarch_register_reggroup_p (gdbarch, tdesc_register_reggroup_p);
 }
 
-/* See common/tdesc.h.  */
+/* See gdbsupport/tdesc.h.  */
 
 struct tdesc_feature *
 tdesc_create_feature (struct target_desc *tdesc, const char *name)
@@ -1182,7 +1182,7 @@ set_tdesc_property (struct target_desc *target_desc,
   target_desc->properties.emplace_back (key, value);
 }
 
-/* See common/tdesc.h.  */
+/* See gdbsupport/tdesc.h.  */
 
 void
 set_tdesc_architecture (struct target_desc *target_desc,
@@ -1198,7 +1198,7 @@ set_tdesc_architecture (struct target_desc *target_desc,
   target_desc->arch = arch;
 }
 
-/* See common/tdesc.h.  */
+/* See gdbsupport/tdesc.h.  */
 
 void
 set_tdesc_osabi (struct target_desc *target_desc, const char *name)
@@ -1563,7 +1563,7 @@ public:
     printf_unfiltered ("  Original: %s */\n\n",
 		       lbasename (m_filename_after_features.c_str ()));
 
-    printf_unfiltered ("#include \"common/tdesc.h\"\n");
+    printf_unfiltered ("#include \"gdbsupport/tdesc.h\"\n");
     printf_unfiltered ("\n");
   }
 
@@ -1658,7 +1658,7 @@ private:
   int m_next_regnum = 0;
 };
 
-/* See common/tdesc.h.  */
+/* See gdbsupport/tdesc.h.  */
 
 const char *
 tdesc_get_features_xml (const target_desc *tdesc)
@@ -1715,7 +1715,8 @@ maint_print_c_tdesc_cmd (const char *args, int from_tty)
       || startswith (filename_after_features.c_str (), "i386/x32-core.xml")
       || startswith (filename_after_features.c_str (), "riscv/")
       || startswith (filename_after_features.c_str (), "tic6x-")
-      || startswith (filename_after_features.c_str (), "aarch64"))
+      || startswith (filename_after_features.c_str (), "aarch64")
+      || startswith (filename_after_features.c_str (), "arm/"))
     {
       print_c_feature v (filename_after_features);
 

@@ -18,8 +18,8 @@
 #if !defined (COMMAND_H)
 #define COMMAND_H 1
 
-#include "common/gdb_vecs.h"
-#include "common/scoped_restore.h"
+#include "gdbsupport/gdb_vecs.h"
+#include "gdbsupport/scoped_restore.h"
 
 struct completion_tracker;
 
@@ -461,14 +461,17 @@ extern void error_no_arg (const char *) ATTRIBUTE_NORETURN;
 
 extern void dont_repeat ();
 
-/* Commands call repeat_previous if they want to repeat the previous command.
-   Such commands that repeat the previous command must indicate
-   to not repeat themselves, to avoid recursive repeat.
-   repeat_previous will mark the current command as not repeating,
-   and will ensure get_saved_command_line returns the previous command,
-   so that the currently executing command can repeat it.  */
+/* Commands call repeat_previous if they want to repeat the previous
+   command.  Such commands that repeat the previous command must
+   indicate to not repeat themselves, to avoid recursive repeat.
+   repeat_previous marks the current command as not repeating, and
+   ensures get_saved_command_line returns the previous command, so
+   that the currently executing command can repeat it.  If there's no
+   previous command, throws an error.  Otherwise, returns the result
+   of get_saved_command_line, which now points at the command to
+   repeat.  */
 
-extern void repeat_previous ();
+extern const char *repeat_previous ();
 
 /* Prevent dont_repeat from working, and return a cleanup that
    restores the previous state.  */

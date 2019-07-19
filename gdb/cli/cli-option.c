@@ -43,6 +43,9 @@ union option_value
 
   /* For var_enum options.  */
   const char *enumeration;
+
+  /* For var_string options.  This is malloc-allocated.  */
+  char *string;
 };
 
 /* Holds an options definition and its value.  */
@@ -56,7 +59,57 @@ struct option_def_and_value
 
   /* The option's value, if any.  */
   gdb::optional<option_value> value;
+
+  /* Constructor.  */
+  option_def_and_value (const option_def &option_, void *ctx_,
+			gdb::optional<option_value> &&value_ = {})
+    : option (option_),
+      ctx (ctx_),
+      value (std::move (value_))
+  {
+    clear_value (option_, value_);
+  }
+
+  /* Move constructor.  Need this because for some types the values
+     are allocated on the heap.  */
+  option_def_and_value (option_def_and_value &&rval)
+    : option (rval.option),
+      ctx (rval.ctx),
+      value (std::move (rval.value))
+  {
+    clear_value (rval.option, rval.value);
+  }
+
+  DISABLE_COPY_AND_ASSIGN (option_def_and_value);
+
+  ~option_def_and_value ()
+  {
+    if (value.has_value ())
+      {
+	if (option.type == var_string)
+	  xfree (value->string);
+      }
+  }
+
+private:
+
+  /* Clear the option_value, without releasing it.  This is used after
+     the value has been moved to some other option_def_and_value
+     instance.  This is needed because for some types the value is
+     allocated on the heap, so we must clear the pointer in the
+     source, to avoid a double free.  */
+  static void clear_value (const option_def &option,
+			   gdb::optional<option_value> &value)
+  {
+    if (value.has_value ())
+      {
+	if (option.type == var_string)
+	  value->string = nullptr;
+      }
+  }
 };
+
+static void save_option_value_in_ctx (gdb::optional<option_def_and_value> &ov);
 
 /* Info passed around when handling completion.  */
 struct parse_option_completion_info
@@ -349,11 +402,12 @@ parse_option (gdb::array_view<const option_def_group> options_group,
 	      {
 		complete_on_enum (completion->tracker,
 				  match->enums, *args, *args);
-		*args = after_arg;
+		if (completion->tracker.have_completions ())
+		  return {};
 
-		option_value val;
-		val.enumeration = nullptr;
-		return option_def_and_value {*match, match_ctx, val};
+		/* If we don't have completions, let the
+		   non-completion path throw on invalid enum value
+		   below, so that completion processing stops.  */
 	      }
 	  }
 
@@ -368,6 +422,24 @@ parse_option (gdb::array_view<const option_def_group> options_group,
 
 	option_value val;
 	val.enumeration = parse_cli_var_enum (args, match->enums);
+	return option_def_and_value {*match, match_ctx, val};
+      }
+    case var_string:
+      {
+	if (check_for_argument (args, "--"))
+	  {
+	    /* Treat e.g., "maint test-options -string --" as if there
+	       was no argument after "-string".  */
+	    error (_("-%s requires an argument"), match->name);
+	  }
+
+	const char *arg_start = *args;
+	std::string str = extract_string_maybe_quoted (args);
+	if (*args == arg_start)
+	  error (_("-%s requires an argument"), match->name);
+
+	option_value val;
+	val.string = xstrdup (str.c_str ());
 	return option_def_and_value {*match, match_ctx, val};
       }
 
@@ -456,6 +528,11 @@ complete_options (completion_tracker &tracker,
 		    (*args - text);
 		  return true;
 		}
+
+	      /* If the caller passed in a context, then it is
+		 interested in the option argument values.  */
+	      if (ov && ov->ctx != nullptr)
+		save_option_value_in_ctx (ov);
 	    }
 	  else
 	    {
@@ -499,6 +576,41 @@ complete_options (completion_tracker &tracker,
   return false;
 }
 
+/* Save the parsed value in the option's context.  */
+
+static void
+save_option_value_in_ctx (gdb::optional<option_def_and_value> &ov)
+{
+  switch (ov->option.type)
+    {
+    case var_boolean:
+      {
+	bool value = ov->value.has_value () ? ov->value->boolean : true;
+	*ov->option.var_address.boolean (ov->option, ov->ctx) = value;
+      }
+      break;
+    case var_uinteger:
+      *ov->option.var_address.uinteger (ov->option, ov->ctx)
+	= ov->value->uinteger;
+      break;
+    case var_zuinteger_unlimited:
+      *ov->option.var_address.integer (ov->option, ov->ctx)
+	= ov->value->integer;
+      break;
+    case var_enum:
+      *ov->option.var_address.enumeration (ov->option, ov->ctx)
+	= ov->value->enumeration;
+      break;
+    case var_string:
+      *ov->option.var_address.string (ov->option, ov->ctx)
+	= ov->value->string;
+      ov->value->string = nullptr;
+      break;
+    default:
+      gdb_assert_not_reached ("unhandled option type");
+    }
+}
+
 /* See cli-option.h.  */
 
 bool
@@ -534,29 +646,7 @@ process_options (const char **args,
 
       processed_any = true;
 
-      switch (ov->option.type)
-	{
-	case var_boolean:
-	  {
-	    bool value = ov->value.has_value () ? ov->value->boolean : true;
-	    *ov->option.var_address.boolean (ov->option, ov->ctx) = value;
-	  }
-	  break;
-	case var_uinteger:
-	  *ov->option.var_address.uinteger (ov->option, ov->ctx)
-	    = ov->value->uinteger;
-	  break;
-	case var_zuinteger_unlimited:
-	  *ov->option.var_address.integer (ov->option, ov->ctx)
-	    = ov->value->integer;
-	  break;
-	case var_enum:
-	  *ov->option.var_address.enumeration (ov->option, ov->ctx)
-	    = ov->value->enumeration;
-	  break;
-	default:
-	  gdb_assert_not_reached ("unhandled option type");
-	}
+      save_option_value_in_ctx (ov);
     }
 }
 
@@ -588,6 +678,8 @@ get_val_type_str (const option_def &opt, std::string &buffer)
 	  }
 	return buffer.c_str ();
       }
+    case var_string:
+      return "STRING";
     default:
       return nullptr;
     }
@@ -714,6 +806,15 @@ add_setshow_cmds_for_options (command_class cmd_class,
 				option.help_doc,
 				nullptr, option.show_cmd_cb,
 				set_list, show_list);
+	}
+      else if (option.type == var_string)
+	{
+	  add_setshow_string_cmd (option.name, cmd_class,
+				  option.var_address.string (option, data),
+				  option.set_doc, option.show_doc,
+				  option.help_doc,
+				  nullptr, option.show_cmd_cb,
+				  set_list, show_list);
 	}
       else
 	gdb_assert_not_reached (_("option type not handled"));

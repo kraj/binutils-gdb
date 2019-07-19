@@ -42,13 +42,10 @@ enum tui_win_type
   CMD_WIN,
   /* This must ALWAYS be AFTER the major windows last.  */
   MAX_MAJOR_WINDOWS,
-  /* Auxillary windows.  */
+  /* Auxiliary windows.  */
   LOCATOR_WIN,
   EXEC_INFO_WIN,
-  DATA_ITEM_WIN,
-  /* This must ALWAYS be next to last.  */
-  MAX_WINDOWS,
-  UNDEFINED_WIN		/* LAST */
+  DATA_ITEM_WIN
 };
 
 /* GENERAL TUI FUNCTIONS */
@@ -56,7 +53,7 @@ enum tui_win_type
 extern CORE_ADDR tui_get_low_disassembly_address (struct gdbarch *,
 						  CORE_ADDR, CORE_ADDR);
 extern void tui_show_assembly (struct gdbarch *gdbarch, CORE_ADDR addr);
-extern int tui_is_window_visible (enum tui_win_type type);
+extern bool tui_is_window_visible (enum tui_win_type type);
 extern int tui_get_command_dimension (unsigned int *width,
 				      unsigned int *height);
 
@@ -92,8 +89,5 @@ extern void tui_set_key_mode (enum tui_key_mode mode);
 extern int tui_active;
 
 extern void tui_show_source (const char *fullname, int line);
-
-/* tui-layout.c */
-extern enum tui_status tui_set_layout_by_name (const char *);
 
 #endif /* TUI_TUI_H */

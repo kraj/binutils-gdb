@@ -44,8 +44,8 @@
 #include "ada-lang.h"
 #include "stack.h"
 #include "location.h"
-#include "common/function-view.h"
-#include "common/def-vector.h"
+#include "gdbsupport/function-view.h"
+#include "gdbsupport/def-vector.h"
 #include <algorithm>
 
 /* An enumeration of the various things a user might attempt to
@@ -4101,7 +4101,7 @@ decode_digits_list_mode (struct linespec_state *self,
 	val.symtab = elt;
       val.pspace = SYMTAB_PSPACE (elt);
       val.pc = 0;
-      val.explicit_line = 1;
+      val.explicit_line = true;
 
       add_sal_to_sals (self, &values, &val, NULL, 0);
     }
@@ -4135,6 +4135,7 @@ decode_digits_ordinary (struct linespec_state *self,
 	  sal.pspace = SYMTAB_PSPACE (elt);
 	  sal.symtab = elt;
 	  sal.line = line;
+	  sal.explicit_line = true;
 	  sal.pc = pc;
 	  sals.push_back (std::move (sal));
 	}

@@ -21,11 +21,11 @@
 
 #include "addrmap.h"
 #include "cli/cli-decode.h"
-#include "common/byte-vector.h"
-#include "common/filestuff.h"
-#include "common/gdb_unlinker.h"
-#include "common/pathstuff.h"
-#include "common/scoped_fd.h"
+#include "gdbsupport/byte-vector.h"
+#include "gdbsupport/filestuff.h"
+#include "gdbsupport/gdb_unlinker.h"
+#include "gdbsupport/pathstuff.h"
+#include "gdbsupport/scoped_fd.h"
 #include "complaints.h"
 #include "dwarf-index-common.h"
 #include "dwarf2.h"
@@ -1638,7 +1638,7 @@ write_psymtabs_to_index (struct dwarf2_per_objfile *dwarf2_per_objfile,
   if (dwarf2_per_objfile->using_index)
     error (_("Cannot use an index to create the index"));
 
-  if (VEC_length (dwarf2_section_info_def, dwarf2_per_objfile->types) > 1)
+  if (dwarf2_per_objfile->types.size () > 1)
     error (_("Cannot make an index when the file has multiple .debug_types sections"));
 
   if (!objfile->partial_symtabs->psymtabs

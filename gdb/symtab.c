@@ -64,11 +64,11 @@
 #include "parser-defs.h"
 #include "completer.h"
 #include "progspace-and-thread.h"
-#include "common/gdb_optional.h"
+#include "gdbsupport/gdb_optional.h"
 #include "filename-seen-cache.h"
 #include "arch-utils.h"
 #include <algorithm>
-#include "common/pathstuff.h"
+#include "gdbsupport/pathstuff.h"
 
 /* Forward declarations for local functions.  */
 
@@ -3673,8 +3673,10 @@ skip_prologue_using_lineinfo (CORE_ADDR func_addr, struct symtab *symtab)
 
 /* Adjust SAL to the first instruction past the function prologue.
    If the PC was explicitly specified, the SAL is not changed.
-   If the line number was explicitly specified, at most the SAL's PC
-   is updated.  If SAL is already past the prologue, then do nothing.  */
+   If the line number was explicitly specified then the SAL can still be
+   updated, unless the language for SAL is assembler, in which case the SAL
+   will be left unchanged.
+   If SAL is already past the prologue, then do nothing.  */
 
 void
 skip_prologue_sal (struct symtab_and_line *sal)
@@ -3691,6 +3693,15 @@ skip_prologue_sal (struct symtab_and_line *sal)
 
   /* Do not change the SAL if PC was specified explicitly.  */
   if (sal->explicit_pc)
+    return;
+
+  /* In assembly code, if the user asks for a specific line then we should
+     not adjust the SAL.  The user already has instruction level
+     visibility in this case, so selecting a line other than one requested
+     is likely to be the wrong choice.  */
+  if (sal->symtab != nullptr
+      && sal->explicit_line
+      && SYMTAB_LANGUAGE (sal->symtab) == language_asm)
     return;
 
   scoped_restore_current_pspace_and_thread restore_pspace_thread;
@@ -3812,12 +3823,6 @@ skip_prologue_sal (struct symtab_and_line *sal)
 
   sal->pc = pc;
   sal->section = section;
-
-  /* Unless the explicit_line flag was set, update the SAL line
-     and symtab to correspond to the modified PC location.  */
-  if (sal->explicit_line)
-    return;
-
   sal->symtab = start_sal.symtab;
   sal->line = start_sal.line;
   sal->end = start_sal.end;
@@ -4682,6 +4687,9 @@ symtab_symbol_info (bool quiet,
 
   gdb_assert (kind <= TYPES_DOMAIN);
 
+  if (regexp != nullptr && *regexp == '\0')
+    regexp = nullptr;
+
   /* Must make sure that if we're interrupted, symbols gets freed.  */
   std::vector<symbol_search> symbols = search_symbols (regexp, kind,
 						       t_regexp, 0, NULL);
@@ -4737,47 +4745,28 @@ symtab_symbol_info (bool quiet,
     }
 }
 
+/* Implement the 'info variables' command.  */
+
 static void
 info_variables_command (const char *args, int from_tty)
 {
-  std::string regexp;
-  std::string t_regexp;
-  bool quiet = false;
+  info_print_options opts;
+  extract_info_print_options (&opts, &args);
 
-  while (args != NULL
-	 && extract_info_print_args (&args, &quiet, &regexp, &t_regexp))
-    ;
-
-  if (args != NULL)
-    report_unrecognized_option_error ("info variables", args);
-
-  symtab_symbol_info (quiet,
-		      regexp.empty () ? NULL : regexp.c_str (),
-		      VARIABLES_DOMAIN,
-		      t_regexp.empty () ? NULL : t_regexp.c_str (),
-		      from_tty);
+  symtab_symbol_info (opts.quiet, args, VARIABLES_DOMAIN,
+		      opts.type_regexp, from_tty);
 }
 
+/* Implement the 'info functions' command.  */
 
 static void
 info_functions_command (const char *args, int from_tty)
 {
-  std::string regexp;
-  std::string t_regexp;
-  bool quiet = false;
+  info_print_options opts;
+  extract_info_print_options (&opts, &args);
 
-  while (args != NULL
-	 && extract_info_print_args (&args, &quiet, &regexp, &t_regexp))
-    ;
-
-  if (args != NULL)
-    report_unrecognized_option_error ("info functions", args);
-
-  symtab_symbol_info (quiet,
-		      regexp.empty () ? NULL : regexp.c_str (),
-		      FUNCTIONS_DOMAIN,
-		      t_regexp.empty () ? NULL : t_regexp.c_str (),
-		      from_tty);
+  symtab_symbol_info (opts.quiet, args, FUNCTIONS_DOMAIN,
+		      opts.type_regexp, from_tty);
 }
 
 
@@ -5752,8 +5741,10 @@ find_main_name (void)
   set_main_name ("main", language_unknown);
 }
 
-char *
-main_name (void)
+/* See symtab.h.  */
+
+const char *
+main_name ()
 {
   struct main_info *info = get_main_info ();
 
@@ -6008,28 +5999,35 @@ symbol_set_symtab (struct symbol *symbol, struct symtab *symtab)
 void
 _initialize_symtab (void)
 {
+  cmd_list_element *c;
+
   initialize_ordinary_address_classes ();
 
-  add_info ("variables", info_variables_command,
-	    info_print_args_help (_("\
+  c = add_info ("variables", info_variables_command,
+		info_print_args_help (_("\
 All global and static variable names or those matching REGEXPs.\n\
 Usage: info variables [-q] [-t TYPEREGEXP] [NAMEREGEXP]\n\
 Prints the global and static variables.\n"),
 				  _("global and static variables")));
+  set_cmd_completer_handle_brkchars (c, info_print_command_completer);
   if (dbx_commands)
-    add_com ("whereis", class_info, info_variables_command,
-	     info_print_args_help (_("\
+    {
+      c = add_com ("whereis", class_info, info_variables_command,
+		   info_print_args_help (_("\
 All global and static variable names, or those matching REGEXPs.\n\
 Usage: whereis [-q] [-t TYPEREGEXP] [NAMEREGEXP]\n\
 Prints the global and static variables.\n"),
 				   _("global and static variables")));
+      set_cmd_completer_handle_brkchars (c, info_print_command_completer);
+    }
 
-  add_info ("functions", info_functions_command,
-	    info_print_args_help (_("\
+  c = add_info ("functions", info_functions_command,
+		info_print_args_help (_("\
 All function names or those matching REGEXPs.\n\
 Usage: info functions [-q] [-t TYPEREGEXP] [NAMEREGEXP]\n\
 Prints the functions.\n"),
 				  _("functions")));
+  set_cmd_completer_handle_brkchars (c, info_print_command_completer);
 
   /* FIXME:  This command has at least the following problems:
      1.  It prints builtin types (in a very strange and confusing fashion).

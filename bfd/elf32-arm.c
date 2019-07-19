@@ -2300,6 +2300,8 @@ typedef unsigned short int insn16;
 
 #define CMSE_PREFIX "__acle_se_"
 
+#define CMSE_STUB_NAME ".gnu.sgstubs"
+
 /* The name of the dynamic interpreter.  This is put in the .interp
    section.  */
 #define ELF_DYNAMIC_INTERPRETER     "/usr/lib/ld.so.1"
@@ -4583,6 +4585,27 @@ elf32_arm_get_stub_entry (const asection *input_section,
   if ((input_section->flags & SEC_CODE) == 0)
     return NULL;
 
+  /* If the input section is the CMSE stubs one and it needs a long
+     branch stub to reach it's final destination, give up with an
+     error message: this is not supported.  See PR ld/24709.  */
+  if (!strncmp (input_section->name, CMSE_STUB_NAME, strlen(CMSE_STUB_NAME)))
+    {
+      bfd *output_bfd = htab->obfd;
+      asection *out_sec = bfd_get_section_by_name (output_bfd, CMSE_STUB_NAME);
+
+      _bfd_error_handler (_("ERROR: CMSE stub (%s section) too far "
+			    "(%#" PRIx64 ") from destination (%#" PRIx64 ")"),
+			  CMSE_STUB_NAME,
+			  (uint64_t)out_sec->output_section->vma
+			    + out_sec->output_offset,
+			  (uint64_t)sym_sec->output_section->vma
+			    + sym_sec->output_offset
+			    + h->root.root.u.def.value);
+      /* Exit, rather than leave incompletely processed
+	 relocations.  */
+      xexit(1);
+    }
+
   /* If this input section is part of a group of sections sharing one
      stub section, then use the id of the first section in the group.
      Stub names need to include a section id, as there may well be
@@ -4676,7 +4699,7 @@ arm_dedicated_stub_output_section_name (enum elf32_arm_stub_type stub_type)
   switch (stub_type)
     {
     case arm_stub_cmse_branch_thumb_only:
-      return ".gnu.sgstubs";
+      return CMSE_STUB_NAME;
 
     default:
       BFD_ASSERT (!arm_dedicated_stub_output_section_required (stub_type));
@@ -15790,7 +15813,7 @@ elf32_arm_update_relocs (asection *o,
 	  eadi = get_arm_elf_section_data (i);
 	  edit_list = eadi->u.exidx.unwind_edit_list;
 	  edit_tail = eadi->u.exidx.unwind_edit_tail;
-	  offset = o->vma + i->output_offset;
+	  offset = i->output_offset;
 
 	  if (eadi->elf.rel.hdr &&
 	      eadi->elf.rel.hdr->sh_entsize == rel_hdr->sh_entsize)
@@ -15903,6 +15926,8 @@ elf32_arm_gc_mark_extra_sections (struct bfd_link_info *info,
   struct elf_link_hash_entry **sym_hashes;
   struct elf32_arm_link_hash_entry *cmse_hash;
   bfd_boolean again, is_v8m, first_bfd_browse = TRUE;
+  bfd_boolean debug_sec_need_to_be_marked = FALSE;
+  asection *isec;
 
   _bfd_elf_gc_mark_extra_sections (info, gc_mark_hook);
 
@@ -15964,7 +15989,24 @@ elf32_arm_gc_mark_extra_sections (struct bfd_link_info *info,
 		      if (!cmse_sec->gc_mark
 			  && !_bfd_elf_gc_mark (info, cmse_sec, gc_mark_hook))
 			return FALSE;
+		      /* The debug sections related to these secure entry
+			 functions are marked on enabling below flag.  */
+		      debug_sec_need_to_be_marked = TRUE;
 		    }
+		}
+
+	      if (debug_sec_need_to_be_marked)
+		{
+		  /* Looping over all the sections of the object file containing
+		     Armv8-M secure entry functions and marking all the debug
+		     sections.  */
+		  for (isec = sub->sections; isec != NULL; isec = isec->next)
+		    {
+		      /* If not a debug sections, skip it.  */
+		      if (!isec->gc_mark && (isec->flags & SEC_DEBUGGING))
+			isec->gc_mark = 1 ;
+		    }
+		  debug_sec_need_to_be_marked = FALSE;
 		}
 	    }
 	}

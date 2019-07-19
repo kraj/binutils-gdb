@@ -23,20 +23,48 @@
 #define TUI_TUI_SOURCE_H
 
 #include "tui/tui-data.h"
+#include "tui-winsource.h"
 
 struct symtab;
-struct tui_win_info;
 
-extern void tui_set_source_content_nil (struct tui_win_info *, 
-					const char *);
+/* A TUI source window.  */
 
-extern enum tui_status tui_set_source_content (struct symtab *, 
+struct tui_source_window : public tui_source_window_base
+{
+  tui_source_window ();
+  ~tui_source_window ();
+
+  DISABLE_COPY_AND_ASSIGN (tui_source_window);
+
+  const char *name () const override
+  {
+    return SRC_NAME;
+  }
+
+  /* Return true if the location LOC corresponds to the line number
+     LINE_NO in this source window; false otherwise.  */
+  bool location_matches_p (struct bp_location *loc, int line_no) override;
+
+  bool showing_source_p (const char *filename) const;
+
+protected:
+
+  void do_scroll_vertical (int num_to_scroll) override;
+
+private:
+
+  void style_changed ();
+
+  /* A token used to register and unregister an observer.  */
+  gdb::observers::token m_observable;
+};
+
+extern enum tui_status tui_set_source_content (tui_source_window_base *,
+					       struct symtab *, 
 					       int, int);
-extern void tui_show_symtab_source (struct gdbarch *, struct symtab *,
+extern void tui_show_symtab_source (tui_source_window_base *,
+				    struct gdbarch *, struct symtab *,
 				    struct tui_line_or_address,
 				    int);
-extern int tui_source_is_displayed (const char *);
-extern void tui_vertical_source_scroll (enum tui_scroll_direction,
-					int);
 
 #endif /* TUI_TUI_SOURCE_H */

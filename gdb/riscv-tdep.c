@@ -50,7 +50,7 @@
 #include "dwarf2-frame.h"
 #include "user-regs.h"
 #include "valprint.h"
-#include "common/common-defs.h"
+#include "gdbsupport/common-defs.h"
 #include "opcode/riscv-opc.h"
 #include "cli/cli-decode.h"
 #include "observable.h"
@@ -2916,18 +2916,6 @@ riscv_features_from_gdbarch_info (const struct gdbarch_info info)
 	features.flen = 8;
       else if (e_flags & EF_RISCV_FLOAT_ABI_SINGLE)
 	features.flen = 4;
-    }
-  else
-    {
-      const struct bfd_arch_info *binfo = info.bfd_arch_info;
-
-      if (binfo->bits_per_word == 32)
-	features.xlen = 4;
-      else if (binfo->bits_per_word == 64)
-	features.xlen = 8;
-      else
-	internal_error (__FILE__, __LINE__, _("unknown bits_per_word %d"),
-			binfo->bits_per_word);
     }
 
   return features;

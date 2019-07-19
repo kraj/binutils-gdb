@@ -18,11 +18,12 @@
 #include "defs.h"
 #include "gdbcmd.h"
 #include "regcache.h"
-#include "common/def-vector.h"
+#include "gdbsupport/def-vector.h"
 #include "valprint.h"
 #include "remote.h"
 #include "reggroups.h"
 #include "target.h"
+#include "gdbarch.h"
 
 /* Dump registers from regcache, used for dumping raw registers and
    cooked registers.  */

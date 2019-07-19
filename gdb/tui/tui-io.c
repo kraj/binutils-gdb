@@ -40,7 +40,7 @@
 #ifdef __MINGW32__
 #include <windows.h>
 #endif
-#include "common/filestuff.h"
+#include "gdbsupport/filestuff.h"
 #include "completer.h"
 #include "gdb_curses.h"
 #include <map>
@@ -179,8 +179,8 @@ do_tui_putc (WINDOW *w, char c)
 static void
 update_cmdwin_start_line ()
 {
-  TUI_CMD_WIN->detail.command_info.start_line
-    = getcury (TUI_CMD_WIN->generic.handle);
+  TUI_CMD_WIN->start_line
+    = getcury (TUI_CMD_WIN->handle);
 }
 
 /* Print a character in the curses command window.  The output is
@@ -190,7 +190,7 @@ update_cmdwin_start_line ()
 static void
 tui_putc (char c)
 {
-  WINDOW *w = TUI_CMD_WIN->generic.handle;
+  WINDOW *w = TUI_CMD_WIN->handle;
 
   do_tui_putc (w, c);
   update_cmdwin_start_line ();
@@ -461,9 +461,13 @@ tui_puts_internal (WINDOW *w, const char *string, int *height)
 {
   char c;
   int prev_col = 0;
+  bool saw_nl = false;
 
   while ((c = *string++) != 0)
     {
+      if (c == '\n')
+	saw_nl = true;
+
       if (c == '\1' || c == '\2')
 	{
 	  /* Ignore these, they are readline escape-marking
@@ -492,6 +496,8 @@ tui_puts_internal (WINDOW *w, const char *string, int *height)
 	}
     }
   update_cmdwin_start_line ();
+  if (saw_nl)
+    wrefresh (w);
 }
 
 /* Print a string in the curses command window.  The output is
@@ -502,7 +508,7 @@ void
 tui_puts (const char *string, WINDOW *w)
 {
   if (w == nullptr)
-    w = TUI_CMD_WIN->generic.handle;
+    w = TUI_CMD_WIN->handle;
   tui_puts_internal (w, string, nullptr);
 }
 
@@ -538,13 +544,13 @@ tui_redisplay_readline (void)
   
   c_pos = -1;
   c_line = -1;
-  w = TUI_CMD_WIN->generic.handle;
-  start_line = TUI_CMD_WIN->detail.command_info.start_line;
+  w = TUI_CMD_WIN->handle;
+  start_line = TUI_CMD_WIN->start_line;
   wmove (w, start_line, 0);
   prev_col = 0;
   height = 1;
   if (prompt != nullptr)
-    tui_puts_internal (TUI_CMD_WIN->generic.handle, prompt, &height);
+    tui_puts_internal (TUI_CMD_WIN->handle, prompt, &height);
 
   prev_col = getcurx (w);
   for (in = 0; in <= rl_end; in++)
@@ -580,17 +586,17 @@ tui_redisplay_readline (void)
           waddch (w, c);
 	}
       if (c == '\n')
-	TUI_CMD_WIN->detail.command_info.start_line = getcury (w);
+	TUI_CMD_WIN->start_line = getcury (w);
       col = getcurx (w);
       if (col < prev_col)
         height++;
       prev_col = col;
     }
   wclrtobot (w);
-  TUI_CMD_WIN->detail.command_info.start_line = getcury (w);
+  TUI_CMD_WIN->start_line = getcury (w);
   if (c_line >= 0)
     wmove (w, c_line, c_pos);
-  TUI_CMD_WIN->detail.command_info.start_line -= height - 1;
+  TUI_CMD_WIN->start_line -= height - 1;
 
   wrefresh (w);
   fflush(stdout);
@@ -663,7 +669,7 @@ tui_mld_puts (const struct match_list_displayer *displayer, const char *s)
 static void
 tui_mld_flush (const struct match_list_displayer *displayer)
 {
-  wrefresh (TUI_CMD_WIN->generic.handle);
+  wrefresh (TUI_CMD_WIN->handle);
 }
 
 /* TUI version of displayer.erase_entire_line.  */
@@ -671,7 +677,7 @@ tui_mld_flush (const struct match_list_displayer *displayer)
 static void
 tui_mld_erase_entire_line (const struct match_list_displayer *displayer)
 {
-  WINDOW *w = TUI_CMD_WIN->generic.handle;
+  WINDOW *w = TUI_CMD_WIN->handle;
   int cur_y = getcury (w);
 
   wmove (w, cur_y, 0);
@@ -709,7 +715,7 @@ gdb_wgetch (WINDOW *win)
 static int
 tui_mld_getc (FILE *fp)
 {
-  WINDOW *w = TUI_CMD_WIN->generic.handle;
+  WINDOW *w = TUI_CMD_WIN->handle;
   int c = gdb_wgetch (w);
 
   return c;
@@ -845,7 +851,7 @@ tui_cont_sig (int sig)
       /* Force a refresh of the screen.  */
       tui_refresh_all_win ();
 
-      wrefresh (TUI_CMD_WIN->generic.handle);
+      wrefresh (TUI_CMD_WIN->handle);
     }
   signal (sig, tui_cont_sig);
 }
@@ -906,6 +912,57 @@ tui_initialize_io (void)
 #endif
 }
 
+/* Dispatch the correct tui function based upon the control
+   character.  */
+static unsigned int
+tui_dispatch_ctrl_char (unsigned int ch)
+{
+  struct tui_win_info *win_info = tui_win_with_focus ();
+
+  /* Handle the CTRL-L refresh for each window.  */
+  if (ch == '\f')
+    tui_refresh_all_win ();
+
+  /* If no window has the focus, or if the focus window can't scroll,
+     just pass the character through.  */
+  if (win_info == NULL || !win_info->can_scroll ())
+    return ch;
+
+  switch (ch)
+    {
+    case KEY_NPAGE:
+      win_info->forward_scroll (0);
+      break;
+    case KEY_PPAGE:
+      win_info->backward_scroll (0);
+      break;
+    case KEY_DOWN:
+    case KEY_SF:
+      win_info->forward_scroll (1);
+      break;
+    case KEY_UP:
+    case KEY_SR:
+      win_info->backward_scroll (1);
+      break;
+    case KEY_RIGHT:
+      win_info->left_scroll (1);
+      break;
+    case KEY_LEFT:
+      win_info->right_scroll (1);
+      break;
+    case '\f':
+      break;
+    default:
+      /* We didn't recognize the character as a control character, so pass it
+         through.  */
+      return ch;
+    }
+
+  /* We intercepted the control character, so return 0 (which readline
+     will interpret as a no-op).  */
+  return 0;
+}
+
 /* Get a character from the command window.  This is called from the
    readline package.  */
 static int
@@ -914,7 +971,7 @@ tui_getc (FILE *fp)
   int ch;
   WINDOW *w;
 
-  w = TUI_CMD_WIN->generic.handle;
+  w = TUI_CMD_WIN->handle;
 
 #ifdef TUI_USE_PIPE_FOR_READLINE
   /* Flush readline output.  */
@@ -950,8 +1007,8 @@ tui_getc (FILE *fp)
 	  int px, py;
 	  getyx (w, py, px);
 	  px += rl_end - rl_point;
-	  py += px / TUI_CMD_WIN->generic.width;
-	  px %= TUI_CMD_WIN->generic.width;
+	  py += px / TUI_CMD_WIN->width;
+	  px %= TUI_CMD_WIN->width;
 	  wmove (w, py, px);
 	  tui_putc ('\n');
         }

@@ -1,3 +1,118 @@
+2019-07-13  Alan Modra  <amodra@gmail.com>
+
+	* powerpc.cc (xlate_pcrel_opt): New function.
+	(Target_powerpc::Relocate::relocate): Optimise PCREL34 and
+	GOT_PCREL34 sequences marked with PCREL_OPT.
+
+2019-07-13  Alan Modra  <amodra@gmail.com>
+
+	* powerpc.cc (Powerpc_relobj::make_got_relative): New function.
+	(relative_value_is_known): New functions.
+	(Target_powerpc::Relocate::relocate): Edit code using
+	GOT16_HA, GOT16_LO_DS, and GOT_PCREL34 relocs.
+
+2019-07-13  Alan Modra  <amodra@gmail.com>
+
+	* powerpc.cc (Target_powerpc): Add powerxx_stubs_ and accessor
+	functions.
+	(Target_powerpc::maybe_skip_tls_get_addr_call): Handle PLT_PCREL34
+	and PLT_PCREL34_NOTOC relocs.
+	(Powerpc_relocate_functions): Add addr34, addr34_hi, addr34_ha,
+	addr28, addr16_higher34, addr16_highera34, addr16_highest34,
+	addr16_highest34a functions.
+	(li_11_0, ori_11_11_0, sldi_11_11_34): Define.
+	(paddi_12_pc, pld_12_pc, pnop): Define.
+	(d34, ha34): New inline functions.
+	(Stub_table::add_plt_call_entry): Handle powerxx_stubs.
+	(Stub_table::add_eh_frame): Likewise.
+	(build_powerxx_offset): New function.
+	(Stub_table::plt_call_size): Handle powerxx_stubs.
+	(Stub_table::branch_stub_size): Likewise.
+	(Stub_table::do_write): Likewise.
+	(Target_powerpc::Scan::get_reference_flags): Handle new relocs.
+	(Target_powerpc::Scan::reloc_needs_plt_for_ifunc: Likewise.
+	(Target_powerpc::Scan::local, global, relocate): Likewise.
+
+2019-07-13  Alan Modra  <amodra@gmail.com>
+
+	* ehframe.cc (Fde::operator==): Delete.
+	(Cie::remove_fde): Delete.
+	(Eh_frame::remove_ehframe_for_plt): Delete fde_data and fde_length
+	parameters.  Remove all post-map plt FDEs.
+	* ehframe.h (Fde:post_map): Make const, add variant to compare plt.
+	(Fde::operator==): Delete.
+	(Cie::remove_fde): Implement here.
+	(Cie::last_fde): New accessor.
+	(Eh_frame::remove_ehframe_for_plt): Update prototype.
+	* layout.cc (Layout::remove_eh_frame_for_plt): Delete fde_data and
+	fde_length parameters.
+	* layout.h (Layout::remove_eh_frame_for_plt): Update prototype.
+	* powerpc.cc (Stub_table::tls_get_addr_opt_bctrl_): Delete.
+	(Stub_table::plt_fde_len_, plt_fde_, init_plt_fde): Delete.
+	(Stub_table::add_plt_call_entry): Don't set tls_get_addr_opt_bctrl_.
+	(eh_advance): New function.
+	(stub_sort): New function.
+	(Stub_table::add_eh_frame): Emit eh_frame for notoc plt calls and
+	branches as well as __tls_get_addr_opt plt call stub.
+	(Stub_table::remove_eh_frame): Update to suit.
+
+2019-07-13  Alan Modra  <amodra@gmail.com>
+
+	* powerpc.cc (Target_powerpc::maybe_skip_tls_get_addr_call): Handle
+	notoc calls.
+	(is_branch_reloc): Template on size.  Return true for REL24_NOTOC.
+	Update all callers.
+	(max_branch_delta): Likewise.
+	(Target_powerpc::Branch_info::make_stub): Add a stub for notoc
+	calls to functions needing a valid toc pointer.
+	(Target_powerpc::do_relax): Layout stubs again if any need resize.
+	(add_12_11_12, addi_12_11, addis_12_11, ldx_12_11_12, ori_12_12_0),
+	(oris_12_12_0, sldi_12_12_32): Define.
+	(Stub_table::Plt_stub_ent): Add notoc_ and iter_ fields.
+	(Stub_table::Branch_stub_key, Branch_stub_key_hash): Rename from
+	Branch_stub_ent and Branch_stub_ent hash.  Remove save_res_ from key.
+	(Stub_table::Branch_stub_ent): New struct.
+	(class Stub_table): Add need_resize and resizing vars.
+	(Stub_table::need_resize, branch_size): New accessors.
+	(Stub_table::set_resizing): New function.
+	(Stub_table::add_plt_call_entry): Handle notoc calls and resizing
+	on seeing such or a tocsave stubs after a normal stub using the
+	same sym.
+	(Stub_table::add_long_branch_entry): Similarly.
+	(Stub_table::find_long_branch_entry): Return a Branch_stub_ent*.
+	(Stub_table::define_stub_syms): Adjust
+	(Stub_table::build_tls_opt_head, build_tls_opt_tail): New functions.
+	(build_notoc_offset): New function.
+	(Stub_table::plt_call_size): Move out of line.  Handle notoc calls.
+	(Stub_table::branch_stub_size): Similarly.
+	(Stub_table::do_write): Separate loop for ELFv2 stubs, handling
+	notoc calls.  Simplify ELFv1 loop.  Output notoc branch stubs.
+	Use build_tls_opt_head and build_tls_opt_tail.
+	(Target_powerpc::Scan::get_reference_flags): Handle REL24_NOTOC.
+	(Target_powerpc::Scan::reloc_needs_plt_for_ifunc): Likewise,
+	and PLTSEQ_NOTOC and PLTCALL_NOTOC.
+	(Target_powerpc::Scan::local, global, relocate): Likewise.
+
+2019-06-28  Alan Modra  <amodra@gmail.com>
+
+	* powerpc.cc (Target_powerpc::Relocate::relocate): Don't look
+	at next/previous reloc when relnum is -1.
+
+2019-06-28  Alan Modra  <amodra@gmail.com>
+
+	* powerpc.cc (Stub_table::plt_error): New function.
+	(Stub_table::do_write): Use it.
+	(Output_data_glink::do_write): Don't segfault emitting linkage
+	table error.
+
+2019-06-28  Alan Modra  <amodra@gmail.com>
+
+	* powerpc.cc (Target_powerpc::Scan::get_reference_flags): Handle
+	REL16_HIGH* relocs.
+	(Target_powerpc::Scan::local): Likewise.
+	(Target_powerpc::Scan::global): Likewise.
+	(Target_powerpc::Relocate::relocate): Likewise.
+
 2019-06-10  Martin Liska  <mliska@suse.cz>
 
 	* errors.h: Include string.

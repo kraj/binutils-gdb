@@ -25,7 +25,7 @@
 #include "frame.h"
 #include "inferior.h"
 #include "breakpoint.h"
-#include "common/gdb_wait.h"
+#include "gdbsupport/gdb_wait.h"
 #include "gdbcore.h"
 #include "gdbcmd.h"
 #include "cli/cli-script.h"
@@ -63,12 +63,12 @@
 #include "solist.h"
 #include "event-loop.h"
 #include "thread-fsm.h"
-#include "common/enum-flags.h"
+#include "gdbsupport/enum-flags.h"
 #include "progspace-and-thread.h"
-#include "common/gdb_optional.h"
+#include "gdbsupport/gdb_optional.h"
 #include "arch-utils.h"
-#include "common/scope-exit.h"
-#include "common/forward-scope-exit.h"
+#include "gdbsupport/scope-exit.h"
+#include "gdbsupport/forward-scope-exit.h"
 
 /* Prototypes for local functions */
 
@@ -7690,13 +7690,13 @@ print_signal_received_reason (struct ui_out *uiout, enum gdb_signal siggnal)
       const char *name;
 
       uiout->text ("\nThread ");
-      uiout->field_fmt ("thread-id", "%s", print_thread_id (thr));
+      uiout->field_string ("thread-id", print_thread_id (thr));
 
       name = thr->name != NULL ? thr->name : target_thread_name (thr);
       if (name != NULL)
 	{
 	  uiout->text (" \"");
-	  uiout->field_fmt ("name", "%s", name);
+	  uiout->field_string ("name", name);
 	  uiout->text ("\"");
 	}
     }

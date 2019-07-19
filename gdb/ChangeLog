@@ -1,3 +1,2610 @@
+2019-07-19  Tom Tromey  <tromey@adacore.com>
+
+	* contrib/ari/gdb_ari.sh: Mention C++11, not ISO C 90.
+	(ARGSUSED, PARAMS, __func__): Remove rules.
+
+2019-07-19  Alan Hayward  <alan.hayward@arm.com>
+
+	* arm-tdep.c (_initialize_arm_tdep): Remove xml tests.
+	* features/arm/arm-with-iwmmxt.c: Remove.
+	* features/arm/arm-with-iwmmxt.xml: Remove.
+	* features/arm/arm-with-m-fpa-layout.c: Remove.
+	* features/arm/arm-with-m-fpa-layout.xml: Remove.
+	* features/arm/arm-with-m-vfp-d16.c: Remove.
+	* features/arm/arm-with-m-vfp-d16.xml: Remove.
+	* features/arm/arm-with-m.c: Remove.
+	* features/arm/arm-with-m.xml: Remove.
+	* features/arm/arm-with-neon.c: Remove.
+	* features/arm/arm-with-neon.xml: Remove.
+	* features/arm/arm-with-vfpv2.c: Remove.
+	* features/arm/arm-with-vfpv2.xml: Remove.
+	* features/arm/arm-with-vfpv3.c: Remove.
+	* features/arm/arm-with-vfpv3.xml: Remove.
+
+2019-07-19  Alan Hayward  <alan.hayward@arm.com>
+
+	* arm-tdep.c (_initialize_arm_tdep): Add xml regression tests.
+
+2019-07-19  Alan Hayward  <alan.hayward@arm.com>
+
+	* arch/aarch32.c (aarch32_create_target_description): Create
+	target descriptions using features.
+	* arch/arm.c (arm_create_target_description)
+	(arm_create_mprofile_target_description): Likewise.
+	* arm-tdep.c (_initialize_arm_tdep): Remove tdesc init calls.
+
+2019-07-19  Alan Hayward  <alan.hayward@arm.com>
+
+	* Makefile.in: Add new files.
+	* aarch32-tdep.c: New file.
+	* aarch32-tdep.h: New file.
+	* aarch64-linux-nat.c (aarch64_linux_nat_target::read_description):
+	Call aarch32_read_description.
+	* arch/aarch32.c: New file.
+	* arch/aarch32.h: New file.
+	* arch/arm.c (arm_create_target_description)
+	(arm_create_mprofile_target_description): New function.
+	* arch/arm.h (arm_fp_type, arm_m_profile_type): New enum.
+	(arm_create_target_description)
+	(arm_create_mprofile_target_description): New declaration.
+	* arm-fbsd-tdep.c (arm_fbsd_read_description_auxv): Call
+	read_description functions.
+	* arm-linux-nat.c (arm_linux_nat_target::read_description):
+	Likewise.
+	* arm-linux-tdep.c (arm_linux_core_read_description): Likewise.
+	* arm-tdep.c (tdesc_arm_list): New variable.
+	(arm_register_g_packet_guesses): Call create description functions.
+	(arm_read_description) (arm_read_mprofile_description): New
+	function.
+	* arm-tdep.h (arm_read_description)
+	(arm_read_mprofile_description): Add declaration.
+	* configure.tgt: Add new files.
+
+2019-07-18  Guillaume LABARTHE  <guillaume.labarthe@gmail.com>
+
+	* top.c (new_ui_command): Open specified terminal just once.
+
+2019-07-18  Tom Tromey  <tromey@adacore.com>
+
+	* symtab.c (main_name): Constify return type.
+	* symfile.c (set_initial_language): Update.
+	* symtab.h (main_name): Constify return type.
+
+2019-07-17  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-winsource.c (tui_update_source_window)
+	(tui_update_source_window_as_is)
+	(tui_update_source_windows_with_line): Remove return.
+	* tui/tui-disasm.c (tui_show_disassem)
+	(tui_show_disassem_and_update_source): Remove return.
+	* tui/tui.c (tui_reset): Remove return.
+	* tui/tui-wingeneral.c
+	(tui_check_and_display_highlight_if_needed): Remove return.
+
+2019-07-17  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-win.c (parse_scrolling_args): Throw separate errors.
+
+2019-07-17  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-winsource.h (struct tui_exec_info_window)
+	(struct tui_source_window_base): Move from tui-data.h.
+	* tui/tui-winsource.c: Move many method definitions from
+	elsewhere.  Remove "structuring" comments.
+	* tui/tui-wingeneral.c (tui_source_window_base::make_visible)
+	(tui_source_window_base::refresh_window): Move to
+	tui-winsource.c.
+	* tui/tui-win.c (tui_source_window_base::refresh_all)
+	(tui_source_window_base::update_tab_width)
+	(tui_source_window_base::set_new_height)
+	(tui_source_window_base::do_make_visible_with_new_height): Move to
+	tui-winsource.c.
+	* tui/tui-source.h: Update.
+	* tui/tui-source.c (tui_source_window_base::reset): Move to
+	tui-winsource.c.
+	* tui/tui-disasm.h: Update.
+	* tui/tui-data.h (struct tui_exec_info_window): Move to
+	tui-winsource.h.
+	(struct tui_source_window_base): Likewise.
+	* tui/tui-data.c (tui_source_window_base::clear_detail)
+	(tui_source_window_base, ~tui_source_window_base): Move to
+	tui-winsource.c.
+
+2019-07-17  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-win.c (tui_resize_all)
+	(tui_source_window_base::update_tab_width)
+	(tui_adjust_win_heights): Update.
+	(tui_win_info::make_invisible_and_set_new_height): Rename from
+	make_invisible_and_set_new_height.
+	* tui/tui-data.h (struct tui_win_info)
+	<make_invisible_and_set_new_height>: New method.
+
+2019-07-17  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui.c: Update.
+	* tui/tui-source.h (struct tui_source_window): Move from
+	tui-data.h.
+	* tui/tui-layout.c: Update.
+	* tui/tui-disasm.c: Update.
+	* tui/tui-data.h (struct tui_source_window): Move to
+	tui-source.h.
+
+2019-07-17  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-disasm.h (struct tui_disasm_window): Move from
+	tui-data.h.
+	* tui/tui-data.h (struct tui_disasm_window): Move to
+	tui-disasm.h.
+
+2019-07-17  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-regs.h (struct tui_data_item_window): Move from
+	tui-data.h.
+	* tui/tui-regs.c (tui_data_item_window): Move from tui-data.c.
+	* tui/tui-data.h (struct tui_data_item_window): Move to
+	tui-regs.h.
+	* tui/tui-data.c (~tui_data_item_window): Move to tui-regs.c.
+
+2019-07-17  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui.c: Update.
+	* tui/tui-win.c (tui_cmd_window::do_make_visible_with_new_height)
+	(tui_cmd_window::max_height): Move to tui-command.c.
+	* tui/tui-layout.c: Update.
+	* tui/tui-data.h (struct tui_cmd_window): Move to tui-command.h.
+	* tui/tui-data.c (tui_cmd_window::clear_detail): Move to
+	tui-command.c.
+	* tui/tui-command.h (struct tui_cmd_window): Move from
+	tui-data.h.
+	* tui/tui-command.c: Remove "structuring" comments.
+	(tui_cmd_window::clear_detail)
+	(tui_cmd_window::do_make_visible_with_new_height)
+	(tui_cmd_window::max_height): Move from elsewhere.
+
+2019-07-17  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-io.c (tui_dispatch_ctrl_char): Move from tui-command.c.
+	Now static.
+	* tui/tui-command.h (tui_dispatch_ctrl_char): Don't declare.
+	* tui/tui-command.c (tui_dispatch_ctrl_char): Move to tui-io.c.
+
+2019-07-17  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui.c: Update.
+	* tui/tui-wingeneral.c (tui_data_window::refresh_window): Move to
+	tui-regs.c.
+	* tui/tui-windata.h: Remove file.
+	* tui/tui-windata.c: Remove file.
+	* tui/tui-win.c (tui_data_window::set_new_height)
+	(tui_data_window::do_make_visible_with_new_height): Move to
+	tui-regs.c.
+	* tui/tui-regs.h (struct tui_data_window): Move from tui-data.h.
+	* tui/tui-regs.c: Remove "structuring" comments.
+	(tui_data_window::first_data_item_displayed)
+	(tui_data_window::delete_data_content_windows)
+	(tui_data_window::erase_data_content)
+	(tui_data_window::display_all_data)
+	(tui_data_window::refresh_all)
+	(tui_data_window::do_scroll_vertical)
+	(tui_data_window::clear_detail, tui_data_window::set_new_height)
+	(tui_data_window::do_make_visible_with_new_height)
+	(tui_data_window::refresh_window): Move from elsewhere.
+	(_initialize_tui_regs): Move to end of file.
+	* tui/tui-layout.c: Update.
+	* tui/tui-hooks.c: Update.
+	* tui/tui-data.h (struct tui_data_window): Move to tui-regs.h.
+	* tui/tui-data.c (tui_data_window::clear_detail): Move to
+	tui-regs.c.
+	* Makefile.in (SUBDIR_TUI_SRCS): Remove tui-windata.c.
+
+2019-07-17  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-io.c (tui_puts_internal): Call wrefresh if newline is
+	seen.
+
+2019-07-17  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-win.c (tui_source_window_base::set_new_height)
+	(tui_source_window_base::do_make_visible_with_new_height): Use
+	m_has_locator field directly.
+	* tui/tui-data.h (struct tui_win_info) <has_locator>: Remove
+	method.
+	(struct tui_source_window_base) <has_locator>: Likewise.
+
+2019-07-17  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-wingeneral.h (tui_make_visible, tui_make_invisible):
+	Don't declare.
+	* tui/tui-wingeneral.c (tui_make_visible, tui_make_invisible):
+	Remove.
+	* tui/tui-win.c (tui_source_window_base::set_new_height)
+	(tui_source_window_base::set_new_height)
+	(make_invisible_and_set_new_height)
+	(tui_source_window_base::do_make_visible_with_new_height)
+	(tui_source_window_base::do_make_visible_with_new_height):
+	Update.
+	* tui/tui-layout.c (show_source_disasm_command, show_data)
+	(show_source_or_disasm_and_command): Update.
+	* tui/tui-layout.c (show_layout): Update.
+
+2019-07-17  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-layout.c (make_data_window): Remove.
+	(show_data): Unify creation and re-initialization cases.
+
+2019-07-17  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-layout.c (make_source_window, make_disasm_window):
+	Remove.
+	(show_data): Unify creation and re-initialization cases.
+
+2019-07-17  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-layout.c (make_command_window): Remove.
+	(show_source_disasm_command, show_source_or_disasm_and_command):
+	Unify creation and re-initialization cases.
+
+2019-07-17  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-layout.c (show_source_or_disasm_and_command): Unify
+	creation and re-initialization cases.
+
+2019-07-17  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-regs.c (tui_get_register): Return void.
+
+2019-07-17  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-wingeneral.c (tui_gen_win_info::make_visible):
+	Simplify.
+
+2019-07-17  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-layout.c (show_source_disasm_command): Simplify window
+	resetting.
+
+2019-07-17  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui.h (tui_set_layout_by_name): Don't declare.
+	* tui/tui-regs.c (tui_reg_layout): New function.
+	(tui_show_registers, tui_reg_command): Use it.
+	* tui/tui-layout.c (LAYOUT_USAGE): Remove.
+	(tui_layout_command): Rename from tui_set_layout_by_name.  Change
+	parameters.
+	(tui_layout_command): Remove.
+
+2019-07-17  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-layout.h (tui/tui-layout): Return void.
+	* tui/tui-layout.c (tui_set_layout): Return void.  Add assert.
+
+2019-07-17  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-layout.c (show_source_disasm_command, show_data):
+	Update.
+	(reset_locator): Remove.
+	(show_source_or_disasm_and_command): Update.
+
+2019-07-17  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-source.c (tui_source_window_base::reset): Remove
+	win_type parameter.
+	* tui/tui-layout.c (make_command_window, make_source_window)
+	(make_disasm_window, make_data_window)
+	(show_source_disasm_command, show_data, tui_gen_win_info::reset)
+	(reset_locator, show_source_or_disasm_and_command): Update.
+	* tui/tui-data.h (struct tui_gen_win_info) <reset>: Remove
+	win_type parameter.
+	(struct tui_source_window_base) <reset>: Likewise.
+
+2019-07-17  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-layout.c (show_source_disasm_command): Use
+	reset_locator.
+	(reset_locator): New function.
+	(init_and_make_win): Remove.
+	(show_source_or_disasm_and_command): Use reset_locator.
+
+2019-07-17  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-winsource.c (tui_set_exec_info_content): Remove
+	condition.
+	* tui/tui-wingeneral.c (tui_source_window_base::make_visible):
+	Remove condition.
+	* tui/tui-source.c (tui_source_window_base::reset): New method.
+	* tui/tui-layout.c (make_command_window): Don't call
+	init_and_make_win.
+	(make_source_window, make_disasm_window): Don't call
+	make_source_or_disasm_window.
+	(make_data_window): Don't call init_and_make_win.  Change calling
+	convention.
+	(show_source_disasm_command, show_data): Simplify.
+	(make_source_or_disasm_window): Remove.
+	(show_source_or_disasm_and_command): Simplify.
+	* tui/tui-data.h (struct tui_gen_win_info) <reset>: Now virtual.
+	(struct tui_source_window_base) <reset>: Likewise.
+	<execution_info>: Remove initializer.
+	* tui/tui-data.c (tui_source_window_base): Initialize
+	execution_info.
+
+2019-07-17  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-layout.c (tui_set_layout): Remove regs_populate
+	variable.
+
+2019-07-17  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui.c (tui_rl_other_window): Update.
+	* tui/tui-wingeneral.c (tui_data_window::refresh_window): Call
+	superclass method first.  Always iterate over regs_content.
+	(tui_unhighlight_win, tui_highlight_win): Use refresh_window
+	method.
+	* tui/tui-win.c (tui_set_focus_command): Update.
+
+2019-07-17  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-win.c (tui_set_focus_command): Rename from
+	tui_set_focus.  Call tui_enable.
+	(tui_set_focus_command): Remove.
+
+2019-07-17  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-winsource.c (tui_show_exec_info_content): Don't call
+	refresh_window.
+	* tui/tui-wingeneral.c (tui_gen_win_info::refresh_window): Call
+	touchwin.
+	(tui_data_window::refresh_window): Call refresh_window on data
+	items.  Always call superclass refresh_window.
+	(tui_win_info::refresh): Remove.
+	(tui_source_window_base::refresh_window): Update.
+	(tui_refresh_all): Update.
+	* tui/tui-layout.c (show_source_disasm_command): Remove call to
+	refresh_window.
+	(show_source_or_disasm_and_command): Likewise.
+	* tui/tui-data.h (struct tui_win_info) <refresh>: Remove.
+	(struct tui_source_window_base) <refresh>: Likewise.
+
+2019-07-17  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-winsource.c (tui_clear_source_content)
+	(tui_show_source_content): Update.
+	* tui/tui-source.c (tui_source_window::showing_source_p): Check
+	whether content is empty.
+	* tui/tui-data.h (struct tui_source_window_base) <content_in_use>:
+	Remove.
+
+2019-07-17  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-winsource.c (tui_erase_source_content): Clear the
+	window's contents.
+	* tui/tui-source.h (tui_set_source_content_nil): Don't declare.
+	* tui/tui-source.c (tui_set_source_content_nil): Remove.
+
+2019-07-17  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-data.h (UNDEFINED_ITEM): Remove define.
+	(struct tui_data_item_window): Update.
+
+2019-07-17  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-data.h (MAX_CONTENT_COUNT, TUI_NULL_STR)
+	(DEFAULT_HISTORY_COUNT, WITH_LOCATOR, NO_LOCATOR): Remove
+	defines.
+
+2019-07-17  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-winsource.h (tui_erase_source_content)
+	(tui_clear_source_content): Remove "display_prompt" parameter.
+	* tui/tui-winsource.c (tui_update_source_window_as_is)
+	(tui_update_source_windows_with_addr): Update.
+	(tui_clear_source_content): Remove "display_prompt" parameter.
+	(tui_erase_source_content): Likewise.  Simplify.
+	(tui_show_source_content): Update.
+	* tui/tui-win.c (tui_resize_all, tui_adjust_win_heights): Update.
+	* tui/tui-stack.c (tui_show_frame_info): Update.
+	* tui/tui-data.h (EMPTY_SOURCE_PROMPT, NO_EMPTY_SOURCE_PROMPT):
+	Remove defines.
+
+2019-07-17  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-winsource.c (tui_update_source_window_as_is): Update.
+	* tui/tui-disasm.h (tui_set_disassem_content): Add win_info
+	parameter.
+	* tui/tui-disasm.c (tui_set_disassem_content): Add win_info
+	parameter.
+
+2019-07-17  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-winsource.c (tui_clear_source_content)
+	(tui_show_source_content, tui_show_exec_info_content)
+	(tui_clear_exec_info_content): Update.
+	* tui/tui-stack.c (tui_show_locator_content): Update.
+	(tui_show_frame_info): Update.
+	* tui/tui-source.h (tui_source_window): Don't declare.
+	* tui/tui-source.c (tui_source_window::showing_source_p): Rename
+	from tui_source_is_displayed.
+	* tui/tui-data.h (struct tui_gen_win_info) <content_in_use>:
+	Remove field.
+	(struct tui_source_window_base) <content_in_use>: New field.  Now
+	bool.
+	(struct tui_source_window) <showing_source_p>: New method.
+	(TUI_SRC_WIN): Change cast.
+	* tui/tui-data.c (tui_initialize_static_data): Update.
+
+2019-07-17  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-winsource.c (tui_update_breakpoint_info): Use
+	location_matches_p.
+	* tui/tui-source.c (tui_source_window::location_matches_p): New
+	method.
+	* tui/tui-disasm.c (tui_disasm_window::location_matches_p): New
+	method.
+	* tui/tui-data.h (struct tui_source_window_base)
+	<location_matches_p>: New method.
+	(struct tui_source_window, struct tui_disasm_window)
+	<location_matches_p>: Likewise.
+
+2019-07-17  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-win.c (tui_set_win_height_command): Rename from
+	tui_set_win_height.
+	(tui_set_win_height_command): Remove.
+
+2019-07-17  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-source.c (tui_source_window): New constructor.  Add
+	observer.
+	(~tui_source_window): New destructor.
+	(tui_source_window::style_changed): New method.
+	* tui/tui-hooks.c (tui_redisplay_source): Remove.
+	(tui_attach_detach_observers): Update.
+	* tui/tui-data.h (struct tui_source_window): Make constructor not
+	inline.  Add destructor.
+	(struct tui_source_window) <style_changed>: New method.
+	<m_observable>: New member.
+
+2019-07-17  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-data.c (tui_clear_source_windows_detail): Fix typo.
+	* tui/tui-win.c (tui_resize_all): Fix typo.
+
+2019-07-17  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-wingeneral.h (tui_refresh_all): Update.
+	* tui/tui-wingeneral.c (make_all_visible): Use foreach.
+	(tui_refresh_all): Remove "list" parameter.  Use foreach.
+	* tui/tui-win.c (window_name_completer): Use foreach.
+	(tui_refresh_all_win, tui_rehighlight_all, tui_all_windows_info)
+	(update_tab_width): Likewise.
+	* tui/tui-layout.c (show_layout): Update.
+	* tui/tui-data.h (class tui_window_iterator): New.
+	(struct all_tui_windows): New.
+	* tui/tui-data.c (tui_partial_win_by_name): Use foreach.
+
+2019-07-17  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-regs.c (tui_reg_next, tui_reg_prev): Add "current_group"
+	parameter.  Don't reference globals.
+	(tui_reg_command): Update.
+
+2019-07-17  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-regs.c (tui_show_registers): Simplify.
+
+2019-07-17  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-regs.c (tui_show_registers): Update.
+	(tui_show_register_group): Add win_info parameter.
+
+2019-07-17  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-regs.c (tui_data_window::display_reg_element_at_line):
+	Rename from tui_display_reg_element_at_line.
+	(tui_data_window::display_registers_from_line): Update.
+	* tui/tui-data.h (struct tui_data_window)
+	<display_reg_element_at_line>: New method.
+
+2019-07-17  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-regs.h (tui_display_registers_from)
+	(tui_display_registers_from_line): Don't declare.
+	* tui/tui-windata.c (tui_data_window::display_all_data)
+	(tui_data_window::refresh_all)
+	(tui_data_window::do_scroll_vertical): Update.
+	* tui/tui-regs.c (tui_data_window::display_registers_from): Rename
+	from tui_display_registers_from.
+	(tui_display_reg_element_at_line): Update.
+	(tui_data_window::display_registers_from_line): Rename from
+	tui_display_registers_from_line.
+	* tui/tui-data.h (struct tui_data_window) <display_registers_from,
+	display_registers_from_line>: New methods.
+
+2019-07-17  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-windata.h (tui_erase_data_content): Don't declare.
+	* tui/tui-windata.c (tui_data_window::erase_data_content): Rename
+	from tui_erase_data_content.
+	(tui_data_window::display_all_data)
+	(tui_data_window::refresh_all)
+	(tui_data_window::do_scroll_vertical): Update.
+	* tui/tui-regs.c (tui_show_registers): Update.
+	* tui/tui-data.h (struct tui_data_window) <erase_data_content>:
+	New method.
+
+2019-07-17  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-windata.h (tui_delete_data_content_windows): Don't
+	declare.
+	* tui/tui-windata.c
+	(tui_data_window::delete_data_content_windows): Rename from
+	tui_delete_data_content_windows.
+	(tui_data_window::display_all_data)
+	(tui_data_window::do_scroll_vertical): Update.
+	* tui/tui-data.h (struct tui_data_window)
+	<delete_data_content_windows>: New method.
+
+2019-07-17  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-windata.h (tui_refresh_data_win): Don't declare.
+	* tui/tui-regs.h (tui_first_reg_element_inline): Don't declare.
+
+2019-07-17  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-windata.h (tui_display_all_data): Don't declare.
+	* tui/tui-windata.c (tui_data_window::display_all_data): Rename
+	from tui_display_all_data.
+	* tui/tui-win.c
+	(tui_data_window::do_make_visible_with_new_height): Update.
+	* tui/tui-regs.c (tui_show_registers): Update.
+	* tui/tui-layout.c (tui_set_layout): Update.
+	* tui/tui-data.h (struct tui_data_window) <display_all_data>: New
+	method.
+
+2019-07-17  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-windata.h (tui_display_data_from): Don't declare.
+	* tui/tui-windata.c (tui_display_data_from): Remove.
+	(tui_data_window::refresh_all): Update.
+
+2019-07-17  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-windata.h (tui_display_data_from_line): Don't declare.
+	* tui/tui-windata.c (tui_display_data_from_line): Remove.
+	(tui_display_data_from, tui_data_window::do_scroll_vertical): Call
+	tui_display_registers_from_line.
+	* tui/tui-regs.h (tui_display_registers_from_line): Update.
+	* tui/tui-regs.c (tui_display_registers_from_line): Remove
+	"force_display" parameter.
+
+2019-07-17  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-regs.h (tui_first_reg_element_no_inline): Don't
+	declare.
+	* tui/tui-regs.c (tui_data_window::first_reg_element_no_inline):
+	Rename from tui_first_reg_element_no_inline.
+	(tui_display_reg_element_at_line)
+	(tui_display_registers_from_line): Update.
+	* tui/tui-data.h (struct tui_data_window)
+	<first_reg_element_no_inline>: New method.
+
+2019-07-17  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-windata.c (tui_display_data_from)
+	(tui_data_window::do_scroll_vertical): Update.
+	* tui/tui-regs.h (tui_line_from_reg_element_no): Don't declare.
+	* tui/tui-regs.c (tui_data_window::line_from_reg_element_no):
+	Rename from tui_line_from_reg_element_no.
+	(tui_display_registers_from_line): Update.
+	* tui/tui-data.h (struct tui_data_window)
+	<line_from_reg_element_no>: New method.
+
+2019-07-17  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-regs.h (tui_last_regs_line_no): Don't declare.
+	* tui/tui-regs.c (tui_data_window::last_regs_line_no): Rename from
+	tui_last_regs_line_no.
+	(tui_display_reg_element_at_line)
+	(tui_display_registers_from_line): Update.
+	* tui/tui-data.h (struct tui_data_window) <last_regs_line_no>: New
+	method.
+
+2019-07-17  Tom Tromey  <tom@tromey.com>
+
+	PR tui/24722:
+	* tui/tui-winsource.h (tui_update_all_breakpoint_info)
+	(tui_update_breakpoint_info): Add "being_deleted" parameter.
+	* tui/tui-winsource.c (tui_update_source_window_as_is): Update.
+	(tui_update_all_breakpoint_info): Add "being_deleted" parameter.
+	(tui_update_breakpoint_info): Likewise.
+	* tui/tui-hooks.c (tui_event_create_breakpoint)
+	(tui_event_delete_breakpoint, tui_event_modify_breakpoint):
+	Update.
+
+2019-07-17  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-stack.c (tui_show_frame_info): Consolidate "if"s.
+
+2019-07-17  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-winsource.c (tui_update_source_window_as_is)
+	(tui_update_source_windows_with_addr): Update.
+	* tui/tui-source.h (tui_set_source_content)
+	(tui_show_symtab_source): Add "win_info" parameter.
+	* tui/tui-source.c (tui_set_source_content): Add "win_info"
+	parameter.
+	(tui_show_symtab_source): Likewise.
+
+2019-07-17  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-wingeneral.c
+	(tui_check_and_display_highlight_if_needed): Check can_highlight.
+
+2019-07-17  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-data.h (struct tui_win_info) <can_scroll>: New method.
+	(struct tui_cmd_window) <can_scroll>: New method.
+	* tui/tui-command.c (tui_dispatch_ctrl_char): Use can_scroll
+	method.
+
+2019-07-17  Tom Tromey  <tromey@adacore.com>
+
+	* ui-out.h (class ui_out) <field_signed, field_fmt_signed,
+	do_field_signed>: Rename.  Change type of "value".
+	* ui-out.c (ui_out::field_signed): Rename from field_int.
+	Change type of "value".
+	(ui_out::field_fmt_signed): Rename from field_fmt_int.  Change
+	type of "value".
+	* tui/tui-out.h (class tui_ui_out) <do_field_signed>: Rename from
+	do_field_int.  Change type of "value".
+	* tui/tui-out.c (tui_ui_out::do_field_signed): Rename from
+	do_field_int.  Change type of "value".
+	* tracepoint.c (trace_status_mi, tfind_1)
+	(print_one_static_tracepoint_marker): Update.
+	* thread.c (print_thread_info_1, print_selected_thread_frame):
+	Update.
+	* stack.c (print_frame, print_frame_info): Update.
+	* spu-tdep.c (info_spu_signal_command, info_spu_dma_cmdlist):
+	Update.
+	* source.c (print_source_lines_base): Update.
+	* skip.c (info_skip_command): Update.
+	* record-btrace.c (btrace_ui_out_decode_error)
+	(btrace_call_history_src_line): Update.
+	* python/py-framefilter.c (py_print_single_arg, py_print_frame):
+	Update.
+	* progspace.c (print_program_space): Update.
+	* mi/mi-symbol-cmds.c (mi_cmd_symbol_list_lines): Update.
+	* mi/mi-out.h (class mi_ui_out) <do_field_signed>: Rename from
+	do_field_int.  Change type of "value".
+	* mi/mi-out.c (mi_ui_out::do_table_begin)
+	(mi_ui_out::do_table_header): Update.
+	(mi_ui_out::do_field_signed): Rename from do_field_int.  Change
+	type of "value".
+	* mi/mi-main.c (mi_cmd_thread_list_ids, print_one_inferior)
+	(mi_cmd_data_list_changed_registers, output_register)
+	(mi_cmd_data_read_memory, mi_load_progress)
+	(mi_cmd_trace_frame_collected): Update.
+	* mi/mi-interp.c (mi_on_normal_stop_1, mi_output_solib_attribs):
+	Update.
+	* mi/mi-cmd-var.c (print_varobj, mi_cmd_var_create)
+	(mi_cmd_var_delete, mi_cmd_var_info_num_children)
+	(mi_cmd_var_list_children, varobj_update_one): Update.
+	* mi/mi-cmd-stack.c (mi_cmd_stack_info_depth)
+	(mi_cmd_stack_list_args, list_arg_or_local): Update.
+	* mi/mi-cmd-file.c (mi_cmd_file_list_exec_source_file): Update.
+	* inferior.c (print_inferior): Update.
+	* gdb_bfd.c (print_one_bfd): Update.
+	* disasm.c (gdb_pretty_print_disassembler::pretty_print_insn):
+	Update.
+	* darwin-nat-info.c (darwin_debug_regions_recurse): Update.
+	* cli-out.h (class cli_ui_out) <do_field_signed>: Rename from
+	do_field_int.  Change type of "value".
+	* cli-out.c (cli_ui_out::do_field_signed): Rename from
+	do_field_int.  Change type of "value".
+	* breakpoint.c (watchpoint_check, print_breakpoint_location)
+	(print_one_breakpoint_location, print_it_catch_fork)
+	(print_one_catch_fork, print_it_catch_vfork)
+	(print_one_catch_vfork, print_it_catch_solib)
+	(print_it_catch_exec, print_it_ranged_breakpoint)
+	(print_mention_watchpoint, print_mention_masked_watchpoint)
+	(bkpt_print_it, update_static_tracepoint): Update.
+	* break-catch-throw.c (print_it_exception_catchpoint): Update.
+	* break-catch-syscall.c (print_it_catch_syscall): Update.
+	* ada-tasks.c (print_ada_task_info): Update.
+	* ada-lang.c (print_it_exception, print_mention_exception):
+	Update.
+
+2019-07-17  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	PR breakpoints/24541
+	* gdbarch.c: Regenerate.
+	* gdbarch.h: Regenerate.
+	* gdbarch.sh: Adjust return type and parameter types for
+	'stap_adjust_register'.
+	(i386_stap_adjust_register): Adjust signature and return new
+	register name.
+	* stap-probe.c (stap_parse_register_operand): Adjust use of
+	'gdbarch_stap_adjust_register'.
+
+2019-07-17  Tom Tromey  <tromey@adacore.com>
+
+	* s390-linux-nat.c (s390_watch_area): Remove typedef.  Don't
+	declare VEC.
+	(struct s390_debug_reg_state) <watch_areas, break_areas>: Now
+	std::vector.
+	(struct s390_process_info): Add initializers.
+	(s390_add_process): Use new.
+	(s390_linux_nat_target::low_forget_process): Use delete.
+	(s390_linux_nat_target::low_new_fork)
+	(s390_linux_nat_target::stopped_by_watchpoint)
+	(s390_linux_nat_target::low_prepare_to_resume)
+	(s390_linux_nat_target::insert_watchpoint)
+	(s390_linux_nat_target::insert_hw_breakpoint)
+	(s390_linux_nat_target::remove_watchpoint)
+	(s390_linux_nat_target::remove_hw_breakpoint): Update.
+
+2019-07-16  John Baldwin  <jhb@FreeBSD.org>
+
+	* aarch64-fbsd-nat.c: Include regcache.h.
+	(getregs_supplies, getfpregs_supplies): Remove unused gdbarch
+	argument.
+	(aarch64_fbsd_nat_target::fetch_registers)
+	(aarch64_fbsd_nat_target::store_registers): Remove gdbarch
+	variable.
+	* arm-fbsd-nat.c, riscv-fbsd-nat.c: Likewise.
+
+2019-07-16  John Baldwin  <jhb@FreeBSD.org>
+
+	* fbsd-nat.c: Include gdbarch.h.
+
+2019-07-15  Tom Tromey  <tromey@adacore.com>
+
+	* mi/mi-out.c (mi_ui_out::do_field_int): Use plongest.
+
+2019-07-15  Tom Tromey  <tromey@adacore.com>
+
+	* mi/mi-out.h (class mi_ui_out) <do_field_unsigned>: Declare.
+	* mi/mi-out.c (mi_ui_out::do_field_unsigned): New method.
+	* cli-out.h (class cli_ui_out) <do_field_unsigned>: Declare.
+	* cli-out.c (cli_ui_out::do_field_int): New method.
+	* ui-out.c (ui_out::field_unsigned): New method.
+	* symfile.c (generic_load): Use field_unsigned.
+	(print_transfer_performance): Likewise.
+	* record-btrace.c (ui_out_field_uint): Remove.
+	(btrace_call_history_insn_range, btrace_call_history): Use
+	field_unsigned.
+	* disasm.c (gdb_pretty_print_disassembler::pretty_print_insn): Use
+	field_unsigned.
+	* ui-out.h (class ui_out) <field_unsigned>: New method.
+	<do_field_unsigned>: Likewise.
+
+2019-07-15  Tom Tromey  <tromey@adacore.com>
+
+	* mi/mi-main.c (list_available_thread_groups): Use field_string.
+	* mi/mi-interp.c (mi_memory_changed): Use field_string.
+	* target.c (flash_erase_command): Use field_string.
+	* infrun.c (print_signal_received_reason): Use field_string.
+	* i386-tdep.c (i386_mpx_print_bounds): Use field_string.
+	* breakpoint.c (maybe_print_thread_hit_breakpoint): Use
+	field_string.
+	* ada-tasks.c (print_ada_task_info): Use field_string.
+
+2019-07-15  Tom Tromey  <tromey@adacore.com>
+
+	* target.c (flash_erase_command): Use field_core_addr.
+	* symfile.c (generic_load): Use field_core_addr.
+	* sparc64-linux-tdep.c (sparc64_linux_handle_segmentation_fault):
+	Use field_core_addr.
+	* i386-linux-tdep.c (i386_linux_handle_segmentation_fault): Use
+	field_core_addr.
+
+2019-07-12  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* dwarf2loc.c (dwarf2_evaluate_property): Sign extend property
+	value if its desired type is smaller than a CORE_ADDR and signed.
+
+2019-07-12  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* dwarf2loc.c (dwarf2_evaluate_property): Update to take account
+	of changes to field names, and use new is_reference field to
+	decide if a property is a reference or not.
+	* dwarf2loc.h (struct dwarf2_locexpr_baton): Add 'is_reference'
+	field.
+	(struct dwarf2_property_baton): Update header comment, rename
+	'referenced_type' to 'property_type' and update comments.
+	* dwarf2read.c (attr_to_dynamic_prop): Add extra parameter to hold
+	default property type, store in property baton, update to take
+	accound of renamed field.
+	(read_func_scope): Update call to attr_to_dynamic_prop.
+	(read_array_type): Likewise.
+	(dwarf2_per_cu_addr_sized_int_type): New function.
+	(read_subrange_index_type): Move type finding code to
+	dwarf2_per_cu_addr_sized_int_type.
+	(read_subrange_type): Update calls to attr_to_dynamic_prop.
+	(dwarf2_per_cu_addr_type): New function.
+	(set_die_type): Update calls to attr_to_dynamic_prop.
+
+2019-07-12  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* dwarf2read.c (read_subrange_index_type): New function.
+	(read_subrange_type): Move code into new function and call it.
+	* gdbtypes.c (create_range_type): Add some asserts.
+
+2019-07-12  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* dwarf2loc.c (dwarf2_evaluate_property): Change return type, and
+	update return statements.
+	* dwarf2loc.h (dwarf2_evaluate_property): Update return type on
+	declaration, and update comment to match.
+	* gdbtypes.c (resolve_dynamic_array): Update call to
+	dwarf2_evaluate_property to match new return type.
+
+2019-07-12  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* valarith.c (value_subscripted_rvalue): Change lowerbound
+	parameter type from int to LONGEST.
+	* value.h (value_subscripted_rvalue): Likewise in declaration.
+
+2019-07-11  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* cli/cli-utils.c (info_print_command_completer): New function.
+	* cli/cli-utils.h: Add 'completer.h' include, and forward
+	declaration for 'struct cmd_list_element'.
+	(info_print_command_completer): Declare.
+	* stack.c (_initialize_stack): Add completer for 'info locals' and
+	'info args'.
+	* symtab.c (_initialize_symtab): Add completer for 'info
+	variables' and 'info functions'.
+	* NEWS: Mention completion for additional info commands.
+
+2019-07-11  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* cli/cli-utils.c (extract_info_print_args): Delete.
+	(extract_arg_maybe_quoted): Delete.
+	(info_print_options_defs): New variable.
+	(make_info_print_options_def_group): New function.
+	(extract_info_print_options): Define new function.
+	* cli/cli-utils.h (extract_info_print_args): Delete.
+	(struct info_print_options): New structure.
+	(extract_info_print_options): Declare new function.
+	* stack.c (info_locals_command): Update to use new
+	extract_info_print_options, also add a header comment.
+	(info_args_command): Likewise.
+	* symtab.c (info_variables_command): Likewise.
+	(info_functions_command): Likewise.
+
+2019-07-11  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* cli/cli-option.c (parse_option): Use extract_string_maybe_quoted
+	to extract string arguments.
+	* common/common-utils.c (extract_string_maybe_quoted): New function.
+	* common/common-utils.h (extract_string_maybe_quoted): Declare.
+
+2019-07-11  Tom Tromey  <tromey@adacore.com>
+
+	* main.c (get_init_files): Use GDBINIT, not gdbinit.
+	* auto-load.c (file_is_auto_load_safe): Use GDBINIT, not gdbinit.
+	* top.h (gdbinit): Don't declare.
+	* cli/cli-cmds.c (init_cli_cmds): Remove, merging contents
+	into...
+	(_initialize_cli_cmds): ...here.  Use GDBINIT, not gdbinit.
+	* top.c (gdb_init): Don't call init_cli_cmds.
+	(gdbinit): Remove.
+	* cli/cli-cmds.h (init_cli_cmds): Don't declare.
+
+2019-07-11  Tom Tromey  <tromey@adacore.com>
+
+	* python/py-inferior.c (add_thread_object): Don't use thread_obj
+	after it has been moved.
+
+2019-07-10  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* valops.c (value_must_coerce_to_target): Change return type to
+	bool.
+	* value.h (value_must_coerce_to_target): Likewise.
+
+2019-07-10  Simon Marchi  <simon.marchi@efficios.com>
+
+	* breakpoint.c (is_hardware_watchpoint): Remove
+	forward-declaration.
+	(is_masked_watchpoint): Change return type to bool.
+	(is_tracepoint): Likewise.
+	(is_breakpoint): Likewise.
+	(is_hardware_watchpoint): Likewise.
+	(is_watchpoint): Likewise.
+	(is_no_memory_software_watchpoint): Likewise.
+	(is_catchpoint): Likewise.
+	(breakpoint_1): Make FILTER parameter's return type bool.
+	is_masked_watchpoint): Change return type to bool.
+	(save_breakpoints): Make FILTER parameter's return type bool.
+	* breakpoint.h (is_breakpoint): Change return type to bool.
+	(is_watchpoint): Likewise.
+	(is_catchpoint): Likewise.
+	(is_tracepoint): Likewise.
+
+2019-07-10  Tom Tromey  <tom@tromey.com>
+
+	* defs.h: Don't include gdbarch.h.
+	* aarch64-ravenscar-thread.c, aarch64-tdep.c, alpha-bsd-tdep.h,
+	alpha-linux-tdep.c, alpha-mdebug-tdep.c, arch-utils.h, arm-tdep.h,
+	ax-general.c, btrace.c, buildsym-legacy.c, buildsym.h, c-lang.c,
+	cli/cli-decode.h, cli/cli-dump.c, cli/cli-script.h,
+	cli/cli-style.h, coff-pe-read.h, compile/compile-c-support.c,
+	compile/compile-cplus.h, compile/compile-loc2c.c, corefile.c,
+	cp-valprint.c, cris-linux-tdep.c, ctf.c, d-lang.c, d-namespace.c,
+	dcache.c, dicos-tdep.c, dictionary.c, disasm-selftests.c,
+	dummy-frame.c, dummy-frame.h, dwarf2-frame-tailcall.c,
+	dwarf2expr.c, expression.h, f-lang.c, frame-base.c,
+	frame-unwind.c, frv-linux-tdep.c, gdbarch-selftests.c, gdbtypes.h,
+	go-lang.c, hppa-nbsd-tdep.c, hppa-obsd-tdep.c, i386-dicos-tdep.c,
+	i386-tdep.h, ia64-vms-tdep.c, interps.h, language.c,
+	linux-record.c, location.h, m2-lang.c, m32r-linux-tdep.c,
+	mem-break.c, memattr.c, mn10300-linux-tdep.c, nios2-linux-tdep.c,
+	objfiles.h, opencl-lang.c, or1k-linux-tdep.c, p-lang.c,
+	parser-defs.h, ppc-tdep.h, probe.h, python/py-record-btrace.c,
+	record-btrace.c, record.h, regcache-dump.c, regcache.h,
+	riscv-fbsd-tdep.c, riscv-linux-tdep.c, rust-exp.y,
+	sh-linux-tdep.c, sh-nbsd-tdep.c, source-cache.c,
+	sparc-nbsd-tdep.c, sparc-obsd-tdep.c, sparc-ravenscar-thread.c,
+	sparc64-fbsd-tdep.c, std-regs.c, target-descriptions.h,
+	target-float.c, tic6x-linux-tdep.c, tilegx-linux-tdep.c, top.c,
+	tracefile.c, trad-frame.c, type-stack.h, ui-style.c, utils.c,
+	utils.h, valarith.c, valprint.c, varobj.c, x86-tdep.c,
+	xml-support.h, xtensa-linux-tdep.c, cli/cli-cmds.h: Update.
+	* s390-linux-nat.c, procfs.c, inf-ptrace.c: Likewise.
+
+2019-07-10  Tom Tromey  <tromey@adacore.com>
+
+	* ada-lang.h (is_ada_exception_catchpoint): Declare.
+	* breakpoint.c (init_ada_exception_breakpoint): Register as
+	bp_catchpoint.
+	(print_one_breakpoint_location, print_one_breakpoint): Use
+	is_ada_exception_catchpoint.
+	* ada-lang.c (class ada_catchpoint_location): Pass
+	bp_loc_software_breakpoint to bp_location constructor.
+	(is_ada_exception_catchpoint): New function.
+
+2019-07-10  Tom Tromey  <tromey@adacore.com>
+
+	* arm-tdep.c (arm_exidx_entry_s): Remove typedef.  Don't define
+	VEC.
+	(struct arm_exidx_entry): New method operator<.
+	(struct arm_exidx_data) <section_maps>: Change type.
+	(arm_exidx_data_free): Remove.
+	(arm_exidx_data_key): Change type.  Move lower.
+	(arm_exidx_new_objfile): Update.
+	(arm_compare_exidx_entries): Remove.
+	(arm_find_exidx_entry, _initialize_arm_tdep)
+
+2019-07-10  Tom Tromey  <tromey@adacore.com>
+
+	* solib-spu.c (ocl_program_data_key): Change type.
+	(append_ocl_sos, ocl_enable_break, _initialize_spu_solib):
+	Update.
+
+2019-07-10  Tom Tromey  <tromey@adacore.com>
+
+	* solib-aix.c (lm_info_aix_p): Remove typedef.  Don't define VEC.
+	(struct solib_aix_inferior_data) <library_list>: Change type.
+	(solib_aix_inferior_data_handle): Change type.
+	(get_solib_aix_inferior_data): Update.
+	(solib_aix_free_library_list): Remove.
+	(library_list_start_library): Update.
+	(solib_aix_parse_libraries, solib_aix_get_library_list): Change
+	return type.
+	(solib_aix_get_library_list)
+	(solib_aix_solib_create_inferior_hook, solib_aix_current_sos)
+	(solib_aix_normal_stop_observer, _initialize_solib_aix): Update.
+
+2019-07-10  Tom Tromey  <tromey@adacore.com>
+
+	* solib-dsbt.c (struct dsbt_info): Add initializers.
+	(solib_dsbt_pspace_data): Change type.
+	(dsbt_pspace_data_cleanup): Remove.
+	(get_dsbt_info, _initialize_dsbt_solib): Update.
+
+2019-07-10  Tom Tromey  <tromey@adacore.com>
+
+	* spu-tdep.c (spu_overlay_data): Change type.
+	(spu_get_overlay_table, spu_overlay_new_objfile)
+	(_initialize_spu_tdep): Update.
+
+2019-07-10  Tom Tromey  <tromey@adacore.com>
+
+	* gdb-stabs.h (struct dbx_symfile_info): Add initializers and
+	destructor.
+	(dbx_objfile_data_key): Change type and declare later.
+	(DBX_SYMFILE_INFO): Rewrite.
+	* dbxread.c (dbx_objfile_data_key): Change type.
+	(dbx_symfile_init): Update.
+	(~dbx_symfile_info): Rename from dbx_free_symfile_info.  Update.
+	(coffstab_build_psymtabs, elfstab_build_psymtabs)
+	(stabsect_build_psymtabs, _initialize_dbxread): Update.
+
+2019-07-10  Tom Tromey  <tromey@adacore.com>
+
+	* jit.c (jit_program_space_key): Change type.  Move lower.
+	(get_jit_program_space_data): Update.
+	(jit_program_space_data_cleanup): Remove.
+	(jit_breakpoint_deleted, free_objfile_data, _initialize_jit):
+	Update.
+	(struct jit_program_space_data): Add initializers.
+
+2019-07-10  Tom Tromey  <tromey@adacore.com>
+
+	* solib-darwin.c (struct darwin_info): Add initializers.
+	(solib_darwin_pspace_data): Change type.
+	(darwin_pspace_data_cleanup): Remove.
+	(get_darwin_info, _initialize_darwin_solib): Update.
+
+2019-07-10  Tom Tromey  <tromey@adacore.com>
+
+	* remote-sim.c (struct sim_inferior_data): Add initializers,
+	constructor, and destructor.
+	(sim_inferior_data_key): Change type.  Move lower.
+	(check_for_duplicate_sim_descriptor): Update.
+	(get_sim_inferior_data): Use new.  Update.
+	(~sim_inferior_data_cleanup): Rename from
+	sim_inferior_data_cleanup.  Simplify.
+	(gdbsim_close_inferior, simulator_command)
+	(sim_command_completer, _initialize_remote_sim): Update.
+	(next_pid, INITIAL_PID): Move earlier.
+
+2019-07-10  Tom Tromey  <tromey@adacore.com>
+
+	* python/python-internal.h (create_thread_object): Return
+	gdbpy_ref.
+	* python/py-infthread.c (create_thread_object): Return gdbpy_ref.
+	* python/py-inferior.c (struct threadlist_entry): Add
+	constructor.
+	<thread_obj>: Now a gdbpy_ref.
+	(thread_to_thread_object): Update.
+	(add_thread_object): Use new.
+	(delete_thread_object): Use delete.
+	(infpy_threads): Update.
+	(py_free_inferior): Update.  Construct "inf_obj" after acquiring
+	GIL.
+
+2019-07-10  Tom Tromey  <tromey@adacore.com>
+
+	* valops.c (value_cast): Specialize error message for Ada.
+
+2019-07-10  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* breakpoint.c (breakpoint_1): Update doc and parameter names.
+
+2019-07-10  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* breakpoint.h (bpstat_explains_signal, bpstat_causes_stop,
+	bpstat_should_step): Return bool, adjust comments.
+	* breakpoint.c (bpstat_explains_signal, bpstat_causes_stop,
+	bpstat_should_step): Likewise.
+
+2019-07-10  Alan Hayward  <alan.hayward@arm.com>
+
+	* features/Makefile: Use feature target descriptions for Arm.
+	* features/arm/arm-core.c: Generate new file.
+	* features/arm/arm-fpa.c: Likewise.
+	* features/arm/arm-m-profile-with-fpa.xml: Likewise.
+	* features/arm/arm-m-profile.c: Likewise.
+	* features/arm/arm-vfpv2.c: Likewise.
+	* features/arm/arm-vfpv3.c: Likewise.
+	* features/arm/xscale-iwmmxt.c: Likewise.
+	* target-descriptions.c (maint_print_c_tdesc_cmd): Add Arm.
+
+2019-07-10  Alan Hayward  <alan.hayward@arm.com>
+
+	* arm-linux-nat.c (arm_linux_nat_target::read_description): Check
+	ptrace earlier.
+
+2019-07-10  Alan Hayward  <alan.hayward@arm.com>
+
+	* features/aarch64-pauth.c: Regenerate.
+
+2019-07-09  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* breakpoint.h (struct bpstat_what) <is_longjmp>: Change type to
+	bool.
+	(bpstat_what): Use false instead of 0.
+
+2019-07-09  Pedro Alves  <palves@redhat.com>
+
+	* break-catch-throw.c (is_exception_catchpoint): New.
+	* breakpoint.c (print_one_breakpoint_location): New parameter
+	'raw_loc'.  Handle it.  Use
+	is_watchpoint/is_catchpoint/is_exception_catchpoint instead of
+	looking at the breakpoint's type.
+	(print_one_breakpoint): If handling "maint info breakpoints", also
+	print locations of exception catchpoints.
+	* breakpoint.h (is_exception_catchpoint): Declare.
+
+2019-07-09  Pedro Alves  <palves@redhat.com>
+
+	* break-catch-throw.c (print_one_exception_catchpoint): Skip the
+	"addr" field.
+	(allocate_location_exception_catchpoint): New.
+	(handle_gnu_v3_exceptions): Don't reset 'type' to bp_breakpoint.
+	(initialize_throw_catchpoint_ops): Install
+	allocate_location_exception_catchpoint as allocate_location
+	method.
+	* breakpoint.c (bpstat_what) <bp_catch>: Set action to
+	BPSTAT_WHAT_SINGLE if not stopping and the location's type is not
+	bp_loc_other.
+	(breakpoint_address_is_meaningful): Delete.
+	(bl_address_is_meaningful): New.
+	(breakpoint_locations_match): Adjust comment.
+	(bp_location_from_bp_type): New, factored out of...
+	(bp_location::bp_location(breakpoint *)): ... this.
+	(bp_location::bp_location(breakpoint *, bp_loc_type)): New,
+	factored out of...
+	(bp_location::bp_location(breakpoint *)): ... this.  Reimplement.
+	(bp_loc_is_permanent): Use bl_address_is_meaningful instead of
+	breakpoint_address_is_meaningful.
+	(bp_locations_compare): Adjust comment.
+	(update_global_location_list): Use bl_address_is_meaningful
+	instead of breakpoint_address_is_meaningful.
+	* breakpoint.h (bp_location::bp_location(breakpoint *)): New
+	explicit.
+	(bp_location::bp_location(breakpoint *, bp_loc_type)): Declare.
+	* python/py-breakpoint.c (bppy_get_location): No longer check
+	whether location is null.
+
+2019-07-09  Pedro Alves  <palves@redhat.com>
+
+	PR c++/15468
+	* breakpoint.c (print_one_breakpoint_location): Remove
+	single-location assert.
+
+2019-07-09  Tom Tromey  <tom@tromey.com>
+
+	* contrib/ari/gdb_ari.sh: Change common to gdbsupport.
+	* configure: Rebuild.
+	* configure.ac: Change common to gdbsupport.
+	* gdbsupport: Rename from common.
+	* acinclude.m4: Change common to gdbsupport.
+	* Makefile.in (CONFIG_SRC_SUBDIR, COMMON_SFILES)
+	(HFILES_NO_SRCDIR, stamp-version, ALLDEPFILES): Change common to
+	gdbsupport.
+	* aarch64-tdep.c, ada-lang.c, ada-lang.h, agent.c, alloc.c,
+	amd64-darwin-tdep.c, amd64-dicos-tdep.c, amd64-fbsd-nat.c,
+	amd64-fbsd-tdep.c, amd64-linux-nat.c, amd64-linux-tdep.c,
+	amd64-nbsd-tdep.c, amd64-obsd-tdep.c, amd64-sol2-tdep.c,
+	amd64-tdep.c, amd64-windows-tdep.c, arch-utils.c,
+	arch/aarch64-insn.c, arch/aarch64.c, arch/aarch64.h, arch/amd64.c,
+	arch/amd64.h, arch/arm-get-next-pcs.c, arch/arm-linux.c,
+	arch/arm.c, arch/i386.c, arch/i386.h, arch/ppc-linux-common.c,
+	arch/riscv.c, arch/riscv.h, arch/tic6x.c, arm-tdep.c, auto-load.c,
+	auxv.c, ax-gdb.c, ax-general.c, ax.h, breakpoint.c, breakpoint.h,
+	btrace.c, btrace.h, build-id.c, build-id.h, c-lang.h, charset.c,
+	charset.h, cli/cli-cmds.c, cli/cli-cmds.h, cli/cli-decode.c,
+	cli/cli-dump.c, cli/cli-option.h, cli/cli-script.c,
+	coff-pe-read.c, command.h, compile/compile-c-support.c,
+	compile/compile-c.h, compile/compile-cplus-symbols.c,
+	compile/compile-cplus-types.c, compile/compile-cplus.h,
+	compile/compile-loc2c.c, compile/compile.c, completer.c,
+	completer.h, contrib/ari/gdb_ari.sh, corefile.c, corelow.c,
+	cp-support.c, cp-support.h, cp-valprint.c, csky-tdep.c, ctf.c,
+	darwin-nat.c, debug.c, defs.h, disasm-selftests.c, disasm.c,
+	disasm.h, dtrace-probe.c, dwarf-index-cache.c,
+	dwarf-index-cache.h, dwarf-index-write.c, dwarf2-frame.c,
+	dwarf2expr.c, dwarf2loc.c, dwarf2read.c, event-loop.c,
+	event-top.c, exceptions.c, exec.c, extension.h, fbsd-nat.c,
+	features/aarch64-core.c, features/aarch64-fpu.c,
+	features/aarch64-pauth.c, features/aarch64-sve.c,
+	features/i386/32bit-avx.c, features/i386/32bit-avx512.c,
+	features/i386/32bit-core.c, features/i386/32bit-linux.c,
+	features/i386/32bit-mpx.c, features/i386/32bit-pkeys.c,
+	features/i386/32bit-segments.c, features/i386/32bit-sse.c,
+	features/i386/64bit-avx.c, features/i386/64bit-avx512.c,
+	features/i386/64bit-core.c, features/i386/64bit-linux.c,
+	features/i386/64bit-mpx.c, features/i386/64bit-pkeys.c,
+	features/i386/64bit-segments.c, features/i386/64bit-sse.c,
+	features/i386/x32-core.c, features/riscv/32bit-cpu.c,
+	features/riscv/32bit-csr.c, features/riscv/32bit-fpu.c,
+	features/riscv/64bit-cpu.c, features/riscv/64bit-csr.c,
+	features/riscv/64bit-fpu.c, features/tic6x-c6xp.c,
+	features/tic6x-core.c, features/tic6x-gp.c, filename-seen-cache.h,
+	findcmd.c, findvar.c, fork-child.c, gcore.c, gdb_bfd.c, gdb_bfd.h,
+	gdb_proc_service.h, gdb_regex.c, gdb_select.h, gdb_usleep.c,
+	gdbarch-selftests.c, gdbthread.h, gdbtypes.h, gnu-nat.c,
+	go32-nat.c, guile/guile.c, guile/scm-ports.c,
+	guile/scm-safe-call.c, guile/scm-type.c, i386-fbsd-nat.c,
+	i386-fbsd-tdep.c, i386-go32-tdep.c, i386-linux-nat.c,
+	i386-linux-tdep.c, i386-tdep.c, i387-tdep.c,
+	ia64-libunwind-tdep.c, ia64-linux-nat.c, inf-child.c,
+	inf-ptrace.c, infcall.c, infcall.h, infcmd.c, inferior-iter.h,
+	inferior.c, inferior.h, inflow.c, inflow.h, infrun.c, infrun.h,
+	inline-frame.c, language.h, linespec.c, linux-fork.c, linux-nat.c,
+	linux-tdep.c, linux-thread-db.c, location.c, machoread.c,
+	macrotab.h, main.c, maint.c, maint.h, memattr.c, memrange.h,
+	mi/mi-cmd-break.h, mi/mi-cmd-env.c, mi/mi-cmd-stack.c,
+	mi/mi-cmd-var.c, mi/mi-interp.c, mi/mi-main.c, mi/mi-parse.h,
+	minsyms.c, mips-linux-tdep.c, namespace.h,
+	nat/aarch64-linux-hw-point.c, nat/aarch64-linux-hw-point.h,
+	nat/aarch64-linux.c, nat/aarch64-sve-linux-ptrace.c,
+	nat/amd64-linux-siginfo.c, nat/fork-inferior.c,
+	nat/linux-btrace.c, nat/linux-btrace.h, nat/linux-namespaces.c,
+	nat/linux-nat.h, nat/linux-osdata.c, nat/linux-personality.c,
+	nat/linux-procfs.c, nat/linux-ptrace.c, nat/linux-ptrace.h,
+	nat/linux-waitpid.c, nat/mips-linux-watch.c,
+	nat/mips-linux-watch.h, nat/ppc-linux.c, nat/x86-dregs.c,
+	nat/x86-dregs.h, nat/x86-linux-dregs.c, nat/x86-linux.c,
+	nto-procfs.c, nto-tdep.c, objfile-flags.h, objfiles.c, objfiles.h,
+	obsd-nat.c, observable.h, osdata.c, p-valprint.c, parse.c,
+	parser-defs.h, ppc-linux-nat.c, printcmd.c, probe.c, proc-api.c,
+	procfs.c, producer.c, progspace.h, psymtab.h,
+	python/py-framefilter.c, python/py-inferior.c, python/py-ref.h,
+	python/py-type.c, python/python.c, record-btrace.c, record-full.c,
+	record.c, record.h, regcache-dump.c, regcache.c, regcache.h,
+	remote-fileio.c, remote-fileio.h, remote-sim.c, remote.c,
+	riscv-tdep.c, rs6000-aix-tdep.c, rust-exp.y, s12z-tdep.c,
+	selftest-arch.c, ser-base.c, ser-event.c, ser-pipe.c, ser-tcp.c,
+	ser-unix.c, skip.c, solib-aix.c, solib-target.c, solib.c,
+	source-cache.c, source.c, source.h, sparc-nat.c, spu-linux-nat.c,
+	stack.c, stap-probe.c, symfile-add-flags.h, symfile.c, symfile.h,
+	symtab.c, symtab.h, target-descriptions.c, target-descriptions.h,
+	target-memory.c, target.c, target.h, target/waitstatus.c,
+	target/waitstatus.h, thread-iter.h, thread.c, tilegx-tdep.c,
+	top.c, top.h, tracefile-tfile.c, tracefile.c, tracepoint.c,
+	tracepoint.h, tui/tui-io.c, ui-file.c, ui-out.h,
+	unittests/array-view-selftests.c,
+	unittests/child-path-selftests.c, unittests/cli-utils-selftests.c,
+	unittests/common-utils-selftests.c,
+	unittests/copy_bitwise-selftests.c, unittests/environ-selftests.c,
+	unittests/format_pieces-selftests.c,
+	unittests/function-view-selftests.c,
+	unittests/lookup_name_info-selftests.c,
+	unittests/memory-map-selftests.c, unittests/memrange-selftests.c,
+	unittests/mkdir-recursive-selftests.c,
+	unittests/observable-selftests.c,
+	unittests/offset-type-selftests.c, unittests/optional-selftests.c,
+	unittests/parse-connection-spec-selftests.c,
+	unittests/ptid-selftests.c, unittests/rsp-low-selftests.c,
+	unittests/scoped_fd-selftests.c,
+	unittests/scoped_mmap-selftests.c,
+	unittests/scoped_restore-selftests.c,
+	unittests/string_view-selftests.c, unittests/style-selftests.c,
+	unittests/tracepoint-selftests.c, unittests/unpack-selftests.c,
+	unittests/utils-selftests.c, unittests/xml-utils-selftests.c,
+	utils.c, utils.h, valarith.c, valops.c, valprint.c, value.c,
+	value.h, varobj.c, varobj.h, windows-nat.c, x86-linux-nat.c,
+	xml-support.c, xml-support.h, xml-tdesc.h, xstormy16-tdep.c,
+	xtensa-linux-nat.c, dwarf2read.h: Change common to gdbsupport.
+
+2019-07-09  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* linespec.c (decode_digits_list_mode): Set explicit_line to a
+	bool value.
+	(decode_digits_ordinary): Set explicit_line field in sal.
+	* symtab.c (skip_prologue_sal): Don't skip prologue for a
+	symtab_and_line that was set on an explicit line number in
+	assembler code.  Do always update the recorded symtab and line if
+	we do skip the prologue.
+
+2019-07-09  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* breakpoint.c (set_breakpoint_location_function): Remove
+	explicit_loc parameter.
+	(momentary_breakpoint_from_master): Update call to
+	set_breakpoint_location_function.
+	(add_location_to_breakpoint): Likewise.
+
+2019-07-09  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* riscv-tdep.c (riscv_features_from_gdbarch_info): Don't modify
+	required features based on default bfd type when no specific bfd
+	is present.
+
+2019-07-08  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* NEWS: Mention that GDB printf and eval commands can now print
+	C-style and Ada-style convenience var strings without
+	calling the inferior.
+	* printcmd.c (printf_c_string): Locally print GDB internal var
+	instead of transiting via the inferior.
+	(printf_wide_c_string): Likewise.
+
+2019-07-04  Alan Hayward  <alan.hayward@arm.com>
+
+	* symfile.c (symbol_file_command): Call solib_create_inferior_hook.
+
+2019-07-04  Tom Tromey  <tom@tromey.com>
+
+	PR tui/24724:
+	* tui/tui-winsource.c (tui_clear_source_content): Update.
+	(tui_source_window_base::set_is_exec_point_at): Fix comment.
+	(tui_update_breakpoint_info): Update.
+	(tui_set_exec_info_content): Update.
+	* tui/tui-source.c (tui_set_source_content_nil): Update.
+	* tui/tui-disasm.c (tui_set_disassem_content): Don't set
+	has_break.
+	* tui/tui-data.h (enum tui_bp_flag): New.
+	(tui_bp_flags): New enum flags type.
+	(struct tui_source_element) <break_mode>: Change type.  Rename
+	from has_break.
+	(TUI_BP_ENABLED, TUI_BP_DISABLED, TUI_BP_HIT)
+	(TUI_BP_CONDITIONAL, TUI_BP_HARDWARE): Don't define.  Now enum
+	constants.
+	* tui/tui-winsource.h: Fix comment.
+
+2019-07-04  Alan Hayward  <alan.hayward@arm.com>
+
+	* aarch32-linux-nat.h (VFP_REGS_SIZE): Remove define.
+	* aarch64-linux-nat.c (fetch_fpregs_from_thread)
+	(store_fpregs_to_thread)
+	(aarch64_linux_nat_target::read_description): Use ARM_VFP3_REGS_SIZE.
+	* arch/arm.h (IWMMXT_VEC_REGISTER_SIZE, ARM_CORE_REGS_SIZE)
+	(ARM_FP_REGS_SIZE, ARM_VFP2_REGS_SIZE, ARM_VFP3_REGS_SIZE)
+	(IWMMXT_REGS_SIZE): Add define.
+	* arm-linux-nat.c (IWMMXT_REGS_SIZE): Remove define.
+	(fetch_vfp_regs, store_vfp_regs)
+	(arm_linux_nat_target::read_description): Use ARM_VFP3_REGS_SIZE.
+	* arm-tdep.c (arm_register_g_packet_guesses): Use new defines.
+
+2019-07-04  Alan Hayward  <alan.hayward@arm.com>
+
+        * arch/arm-get-next-pcs.c (thumb_get_next_pcs_raw): Use ARM_
+        defines.
+        * arch/arm-linux.c (arm_linux_sigreturn_next_pc_offset): Likewise.
+        * arch/arm.h (INT_REGISTER_SIZE) Rename from...
+        (ARM_INT_REGISTER_SIZE): ...to this.
+        (ARM_FP_REGISTER_SIZE) (ARM_VFP_REGISTER_SIZE): Add define.
+        * arm-linux-tdep.c (ARM_LINUX_JB_ELEMENT_SIZE)
+        (ARM_LINUX_SIZEOF_GREGSET, arm_linux_supply_gregset)
+        (arm_linux_collect_gregset, supply_nwfpe_register)
+        (collect_nwfpe_register, arm_linux_collect_nwfpe): Use ARM_
+        defines.
+        * arm-linux-tdep.h (ARM_LINUX_SIZEOF_NWFPE, NWFPE_FPSR_OFFSET)
+        (NWFPE_FPCR_OFFSET, NWFPE_TAGS_OFFSET): Likewise
+        * arm-nbsd-tdep.c (ARM_NBSD_JB_ELEMENT_SIZE): Likewise.
+        * arm-tdep.c (arm_push_dummy_call, arm_extract_return_value)
+        (arm_return_in_memory, arm_store_return_value)
+        (arm_get_longjmp_target, arm_register_g_packet_guesses)
+        (arm_record_ld_st_multiple): Likewise.
+        * arm-tdep.h (FP_REGISTER_SIZE, VFP_REGISTER_SIZE): Remove.
+        * arm-wince-tdep.c (ARM_WINCE_JB_ELEMENT_SIZE): Use ARM_ defines.
+
+2019-07-04  Alan Hayward  <alan.hayward@arm.com>
+
+	* aarch64-linux-tdep.c (aarch64_linux_init_abi): Use
+	AARCH64_DISPLACED_MODIFIED_INSNS.
+	* aarch64-tdep.c (struct aarch64_displaced_step_data)
+	(aarch64_displaced_step_copy_insn): Likewise.
+	* aarch64-tdep.h (DISPLACED_MODIFIED_INSNS): Rename from..
+	(AARCH64_DISPLACED_MODIFIED_INSNS): ...to this.
+	* arm-linux-tdep.c (arm_linux_cleanup_svc): Use
+	ARM_DISPLACED_MODIFIED_INSNS.
+	* arm-tdep.c (arm_gdbarch_init): Likewise.
+	* arm-tdep.h (DISPLACED_MODIFIED_INSNS): Rename from..
+	(ARM_DISPLACED_MODIFIED_INSNS): ...to this.
+	(struct arm_displaced_step_closure): Use
+	ARM_DISPLACED_MODIFIED_INSNS.
+
+2019-07-04  Alan Hayward  <alan.hayward@arm.com>
+
+	* features/Makefile: Remove unused xml files.
+	* features/aarch64.xml: Remove.
+	* features/i386/amd64-avx-avx512-linux.xml: Remove.
+	* features/i386/amd64-avx-avx512.xml: Remove.
+	* features/i386/amd64-avx-linux.xml: Remove.
+	* features/i386/amd64-avx-mpx-avx512-pku-linux.xml: Remove.
+	* features/i386/amd64-avx-mpx-avx512-pku.xml: Remove.
+	* features/i386/amd64-avx-mpx-linux.xml: Remove.
+	* features/i386/amd64-avx-mpx.xml: Remove.
+	* features/i386/amd64-avx.xml: Remove.
+	* features/i386/amd64-linux.xml: Remove.
+	* features/i386/amd64-mpx-linux.xml: Remove.
+	* features/i386/amd64-mpx.xml: Remove.
+	* features/i386/amd64.xml: Remove.
+	* features/i386/i386-avx-avx512-linux.xml: Remove.
+	* features/i386/i386-avx-avx512.xml: Remove.
+	* features/i386/i386-avx-linux.xml: Remove.
+	* features/i386/i386-avx-mpx-avx512-pku-linux.xml: Remove.
+	* features/i386/i386-avx-mpx-avx512-pku.xml: Remove.
+	* features/i386/i386-avx-mpx-linux.xml: Remove.
+	* features/i386/i386-avx-mpx.xml: Remove.
+	* features/i386/i386-avx.xml: Remove.
+	* features/i386/i386-linux.xml: Remove.
+	* features/i386/i386-mmx-linux.xml: Remove.
+	* features/i386/i386-mmx.xml: Remove.
+	* features/i386/i386-mpx-linux.xml: Remove.
+	* features/i386/i386-mpx.xml: Remove.
+	* features/i386/i386.xml: Remove.
+	* features/i386/x32-avx-avx512-linux.xml: Remove.
+	* features/i386/x32-avx-linux.xml: Remove.
+	* features/i386/x32-linux.xml: Remove.
+
+2019-07-04  Alan Hayward  <alan.hayward@arm.com>
+
+	* regformats/aarch64.dat: Remove.
+	* regformats/i386/amd64-avx-avx512-linux.dat: Remove.
+	* regformats/i386/amd64-avx-linux.dat: Remove.
+	* regformats/i386/amd64-avx-mpx-avx512-pku-linux.dat: Remove.
+	* regformats/i386/amd64-avx-mpx-linux.dat: Remove.
+	* regformats/i386/amd64-linux.dat: Remove.
+	* regformats/i386/amd64-mpx-linux.dat: Remove.
+	* regformats/i386/amd64.dat: Remove.
+	* regformats/i386/i386-avx-avx512-linux.dat: Remove.
+	* regformats/i386/i386-avx-linux.dat: Remove.
+	* regformats/i386/i386-avx-mpx-avx512-pku-linux.dat: Remove.
+	* regformats/i386/i386-avx-mpx-linux.dat: Remove.
+	* regformats/i386/i386-linux.dat: Remove.
+	* regformats/i386/i386-mmx-linux.dat: Remove.
+	* regformats/i386/i386-mpx-linux.dat: Remove.
+	* regformats/i386/i386.dat: Remove.
+	* regformats/i386/x32-avx-avx512-linux.dat: Remove.
+	* regformats/i386/x32-avx-linux.dat: Remove.
+	* regformats/i386/x32-linux.dat: Remove.
+
+2019-07-04  Alan Hayward  <alan.hayward@arm.com>
+
+	* aarch64-tdep.c: Remove xml self tests.
+	* amd64-linux-tdep.c: Likewise.
+	* amd64-tdep.c: Likewise.
+	* i386-linux-tdep.c: Likewise.
+	* i386-tdep.c: Likewise.
+
+2019-07-03  Pedro Alves  <palves@redhat.com>
+
+	PR cli/24732
+	* cli/cli-cmds.c (struct pipe_cmd_opts): New.
+	(pipe_cmd_option_defs): New.
+	(make_pipe_cmd_options_def_group): New.
+	(pipe_command): Use gdb::option::process_options.
+	(pipe_command_completer): New function.
+	(_initialize_cli_cmds): Install completer for "pipe" command.
+
+2019-07-03  Pedro Alves  <palves@redhat.com>
+
+	* cli/cli-option.c (union option_value) <string>: New field.
+	(struct option_def_and_value): Add ctor, move ctor, dtor and
+	use DISABLE_COPY_AND_ASSIGN.
+	(option_def_and_value::clear_value): New.
+	(parse_option, save_option_value_in_ctx, get_val_type_str)
+	(add_setshow_cmds_for_options): Handle var_string.
+	* cli-option.h (union option_def::var_address) <string>: New
+	field.
+	(struct string_option_def): New.
+	* maint-test-options.c (struct test_options_opts): Add default
+	ctor and use DISABLE_COPY_AND_ASSIGN.
+	<string_opt>: New field.
+	(test_options_opts::~test_options_opts): New.
+	(test_options_opts::dump): Also dump "-string".
+	(test_options_option_defs): Install "string.
+
+2019-07-03  Pedro Alves  <palves@redhat.com>
+
+	* cli/cli-option.c (parse_option) <var_enum>: Don't return an
+	option_value with a null enumeration.
+	(complete_options): Save the option values in the context.
+	(save_option_value_in_ctx): New, factored out from ...
+	(process_options): ... here.
+	* cli/cli-utils.c (get_ulongest): Don't advance PP until the end
+	of the function.
+	* maint-test-options.c (test_options_opts::dump): New, factored
+	out from ...
+	(maintenance_test_options_command_mode): ... here.
+	(maintenance_test_options_command_completion_result): Delete.
+	(maintenance_test_options_command_completion_text): Update
+	comment.
+	(maintenance_show_test_options_completion_result): Change
+	prototype.  Just print
+	maintenance_test_options_command_completion_text.
+	(save_completion_result): New.
+	(maintenance_test_options_completer_mode): Pass options context to
+	complete_options, and then save a dump.
+	(_initialize_maint_test_options): Use add_cmd to install "maint
+	show test-options-completion-result".
+
+2019-07-03  Pedro Alves  <palves@redhat.com>
+
+	* NEWS (New commands): Mention "with" and "maint with".
+	* cli/cli-cmds.c (with_command_1, with_command_completer_1)
+	(with_command, with_command_completer): New.
+	(pipe_command): Adjust to new repeat_previous
+	interface.
+	(_initialize_cli_cmds): Install the "with" command and its "w"
+	alias.
+	* cli/cli-cmds.h (with_command_1, with_command_completer_1): New
+	declarations.
+	* cli/cli-setshow.c (parse_cli_var_uinteger)
+	(parse_cli_var_zuinteger_unlimited, do_set_command): Handle empty
+	argument strings for all var_types.
+	(get_setshow_command_value_string): New, factored out from ...
+	(do_show_command): ... this.
+	* cli/cli-setshow.h: Include <string>.
+	(get_setshow_command_value_string): Declare.
+	* command.h (repeat_previous): Now returns const char *.  Adjust
+	comment.
+	* maint.c: Include "cli/cli-cmds.h".
+	(maintenance_with_cmd, maintenance_with_cmd_completer): New.
+	(_initialize_maint_cmds): Register the "maintenance with" command.
+	* top.c (repeat_previous): Move bits from pipe_command here:
+	Return the saved command line, if any; error out if there's no
+	command to relaunch.
+
+2019-07-03  Pedro Alves  <palves@redhat.com>
+
+	* NEWS (New commands): Mention "maint set/show test-settings"
+	instead of "maint test-settings".
+	* maint-test-settings.c (maintenance_test_settings_list): Delete.
+	(maintenance_test_settings_set_list): Rename to ...
+	(maintenance_set_test_settings_list): ... this.
+	(maintenance_test_settings_show_list): Rename to  ...
+	(maintenance_show_test_settings_list): ... this.
+	(maintenance_test_settings_cmd): Delete.
+	(maintenance_test_settings_set_cmd): ...
+	(maintenance_set_test_settings_cmd): ... this.
+	(maintenance_test_settings_show_cmd): ...
+	(maintenance_show_test_settings_cmd): ... this.
+	(maintenance_test_settings_show_value_cmd):
+	(maintenance_show_test_settings_value_cmd): ... this.
+	(_initialize_maint_test_settings): No longer install the "maint
+	test-settings" prefix command.  Rename "maint test-settings set"
+	to "maint set test-settings", and "maint test-settings show" to
+	"maint show test-settings".  Adjust all subcommands.
+
+2019-07-03  Pedro Alves  <palves@redhat.com>
+
+	* maint-test-settings.c: Fix file's intro comment.  Replace all
+	references to "test-options" with references to "test-settings",
+	in comments.
+
+2019-07-03  Pedro Alves  <palves@redhat.com>
+
+	* maint-test-settings.c (maintenance_test_settings_xxx)
+	(maintenance_test_settings_yyy, maintenance_test_settings_zzz):
+	New.
+	(maintenance_test_settings_enums): Use them.
+	(maintenance_test_settings_enum): Default to
+	maintenance_test_settings_xxx.
+	(_initialize_maint_test_settings): Initialize
+	MAINTENANCE_TEST_SETTINGS_FILENAME.
+
+2019-07-02  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* breakpoint.h (remove_breakpoints_inf): Change return type to
+	void, move function documentation here.
+	* breakpoint.c (remove_breakpoints_inf): Change return type to
+	void, move function documentation to header.
+
+2019-07-02  Pedro Alves  <palves@redhat.com>
+
+	* NEWS (Completion improvements): Mention "info threads".
+	* thread.c (struct info_threads_opts, info_threads_option_defs)
+	(make_info_threads_options_def_group): New.
+	(info_threads_command): Use gdb::option::process_options.
+	(info_threads_command_completer): New.
+	(_initialize_thread): Use gdb::option::build_help to build the
+	help text for "info threads".
+
+2019-07-02  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* defs.h (generic_load): Move from here...
+	* symfile.h (generic_load): ... to here.  Rename name parameter
+	to args.
+	* symfile.c (generic_load): Add comment.
+
+2019-07-01  Tom Tromey  <tromey@adacore.com>
+
+	* dwarf2read.c
+	(dw2_debug_names_iterator::find_vec_in_debug_names): Hoist
+	declaration of without_params.  Fix formatting.
+
+2019-07-01  Tom Tromey  <tromey@adacore.com>
+
+	* ada-exp.y (find_primitive_type): Update.
+	* ada-lang.h (ada_lookup_symbol): Update.
+	* ada-lang.c (ada_lookup_symbol): Remove "is_a_field_of_this"
+	parameter.
+	(ada_lookup_encoded_symbol, ada_lookup_symbol_nonlocal): Update.
+
+2019-06-28  Sergio Durigan Junior  <sergiodj@redhat.com>
+
+	PR breakpoints/24541
+	* gdbarch.c: Regenerate.
+	* gdbarch.h: Regenerate.
+	* gdbarch.sh: Add 'stap_adjust_register'.
+	* i386-tdep.c: Include '<unordered_set>'.
+	(i386_stap_adjust_register): New function.
+	(i386_elf_init_abi): Register 'i386_stap_adjust_register'.
+	* stap-probe.c (stap_parse_register_operand): Call
+	'gdbarch_stap_adjust_register'.
+
+2019-06-28  Sergio Durigan Junior  <sergiodj@redhat.com>
+
+	PR python/24742
+	https://bugzilla.redhat.com/show_bug.cgi?id=1723564
+	* python/python.c (do_start_initialization): Use 'xmalloc'
+	instead of 'PyMem_Malloc'.
+
+2019-06-28  Tom Tromey  <tromey@adacore.com>
+
+	* dwarf2read.c (partial_die_info::read): Prefer the linkage name
+	for Ada.
+
+2019-06-27  Tom Tromey  <tromey@adacore.com>
+
+	* arm-tdep.c (arm_objfile_data_key): Move lower.  Change type to
+	objfile_key.
+	(arm_find_mapping_symbol, arm_record_special_symbol)
+	(_initialize_arm_tdep): Update.
+	(arm_objfile_data_free): Remove.
+
+2019-06-27  Tom Tromey  <tromey@adacore.com>
+
+	* cp-valprint.c (cp_print_value_fields): Pass opts, not options,
+	to cp_print_static_field.
+
+2019-06-26  Tom Tromey  <tromey@adacore.com>
+
+	* minsyms.c (lookup_minimal_symbol_solib_trampoline): Remove.
+	* minsyms.h (lookup_minimal_symbol_solib_trampoline): Don't
+	declare.
+
+2019-06-26  Alan Hayward  <alan.hayward@arm.com>
+
+	* features/aarch64-core.c (create_feature_aarch64_core):
+	Regenerate.
+	* features/aarch64-core.xml: Add cpsr flags.
+
+2019-06-26  Alan Hayward  <alan.hayward@arm.com>
+
+	* arm-tdep.c (arm_gnu_triplet_regexp): New function.
+	(arm_gdbarch_init): Add arm_gnu_triplet_regexp.
+
+2019-06-25  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* arm-tdep.c (struct arm_per_objfile) <section_maps_sorted>: New
+	field.
+	(arm_find_mapping_symbol): Sort mapping symbol vectors on first
+	use.
+	(arm_record_special_symbol): Don't insert new symbol in sorted
+	position, push it at the end.
+
+2019-06-25  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* arm-tdep.c (struct arm_mapping_symbol) (operator <): New.
+	(arm_mapping_symbol_s): Remove.
+	(DEF_VEC_O(arm_mapping_symbol_s)): Remove.
+	(arm_mapping_symbol_vec): New typedef.
+	(struct arm_per_objfile): Add constructor.
+	<section_maps>: Change type to
+	std::unique_ptr<arm_mapping_symbol_vec[]>.
+	(arm_compare_mapping_symbols): Remove.
+	(arm_find_mapping_symbol): Adjust to section_maps type change.
+	(arm_objfile_data_free): Call delete on arm_per_objfile.
+	(arm_record_special_symbol): Adjust to section_maps type change.
+	Allocate arm_per_objfile with new.
+
+2019-06-25  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* cli/cli-cmds.c (alias_command): Compare the alias prefix
+	with the command prefix.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-wingeneral.c (tui_delete_win): Remove "return".
+	* tui/tui-data.c (~tui_gen_win_info): Remove "if".
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-layout.c (init_and_make_win): Assert on unrecognized
+	type.
+	* tui/tui-data.h (struct tui_gen_win_info): Make constructor
+	protected.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-winsource.c
+	(tui_source_window_base::set_is_exec_point_at): Add check against
+	LOA_ADDRESS.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-source.c (tui_set_source_content): Don't check before
+	xfree.
+	* tui/tui-disasm.c (tui_disassemble): Don't check before xfree.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-winsource.h (tui_update_source_window_as_is)
+	(tui_alloc_source_buffer, tui_line_is_displayed)
+	(tui_addr_is_displayed): Change type of win_info.
+	* tui/tui-winsource.c (tui_update_source_window_as_is)
+	(tui_clear_source_content, tui_show_source_line)
+	(tui_show_source_content, tui_source_window_base::refill)
+	(tui_source_window_base::set_is_exec_point_at)
+	(tui_source_window_base::set_is_exec_point_at)
+	(tui_update_breakpoint_info, tui_set_exec_info_content): Update.
+	(tui_alloc_source_buffer, tui_line_is_displayed)
+	(tui_addr_is_displayed): Change type of win_info.  Update.
+	* tui/tui-win.c (tui_resize_all, tui_adjust_win_heights)
+	(tui_source_window_base::do_make_visible_with_new_height):
+	Update.
+	* tui/tui-source.c (tui_set_source_content)
+	(tui_set_source_content_nil)
+	(tui_source_window::do_scroll_vertical): Update.
+	* tui/tui-layout.c (show_layout): Update.
+	* tui/tui-disasm.c (tui_set_disassem_content)
+	(tui_disasm_window::do_scroll_vertical): Update.
+	* tui/tui-data.h (tui_win_content): Remove.
+	(struct tui_gen_win_info) <content, content_size>: Remove.
+	(struct tui_source_element): Add initializers and destructor.
+	(union tui_which_element, struct tui_win_element): Remove.
+	(struct tui_source_window_base) <content>: New field.
+	(struct tui_data_window): Remove destructor.
+	(tui_alloc_content, tui_free_win_content)
+	(tui_free_all_source_wins_content): Don't declare.
+	* tui/tui-data.c (tui_initialize_static_data): Update.
+	(init_content_element, tui_alloc_content): Remove.
+	(~tui_gen_win_info): Update.
+	(~tui_data_window, tui_free_all_source_wins_content)
+	(tui_free_win_content, free_content, free_content_elements):
+	Remove.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-winsource.h (tui_clear_source_content)
+	(tui_erase_source_content, tui_show_source_content): Change type
+	of win_info.
+	* tui/tui-winsource.c (tui_clear_source_content)
+	(tui_erase_source_content, tui_show_source_content): Change type
+	of win_info.
+	* tui/tui-win.c (tui_resize_all, tui_adjust_win_heights): Update.
+	* tui/tui-source.h (tui_set_source_content_nil): Change type of
+	win_info.
+	* tui/tui-source.c (tui_set_source_content_nil): Change type of
+	win_info.
+	* tui/tui-layout.c (show_source_or_disasm_and_command): Update.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-winsource.c (tui_clear_source_content)
+	(tui_source_window_base::set_is_exec_point_at): Update.
+	* tui/tui-source.c (tui_set_source_content_nil): Update.
+	* tui/tui-data.h (struct tui_source_element) <is_exec_point>: Now
+	a bool.
+	* tui/tui-data.c (init_content_element): Update.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-wingeneral.c (tui_gen_win_info::make_visible): Update.
+	* tui/tui-win.c (make_invisible_and_set_new_height): Update.
+	* tui/tui-layout.c (init_and_make_win): Update.
+	* tui/tui.h (enum tui_win_type): Update.
+	* tui/tui-data.h (tui_win_is_auxiliary): Rename from
+	tui_win_is_auxillary.
+	* tui/tui-data.c (tui_win_is_auxiliary): Rename from
+	tui_win_is_auxillary.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-wingeneral.c (tui_data_window::refresh_window): Update.
+	* tui/tui-windata.c (tui_data_window::first_data_item_displayed)
+	(tui_delete_data_content_windows, tui_display_all_data)
+	(tui_data_window::do_scroll_vertical, tui_display_data_from):
+	Update.
+	* tui/tui-win.c (tui_data_window::set_new_height): Simplify.
+	* tui/tui-regs.c (tui_last_regs_line_no)
+	(tui_line_from_reg_element_no, tui_first_reg_element_no_inline)
+	(tui_show_registers): Update.
+	(tui_show_register_group): Return void.  Update.
+	(tui_display_registers_from, tui_display_reg_element_at_line)
+	(tui_display_registers_from_line, tui_check_register_values):
+	Update.
+	* tui/tui-data.h (union tui_which_element) <data_window>: Remove
+	member.
+	(struct tui_data_window) <regs_content>: Now a std::vector.
+	<regs_content_count>: Remove.
+	(tui_add_content_elements, tui_free_data_content): Don't declare.
+	* tui/tui-data.c (tui_data_window::clear_detail): Update.
+	(init_content_element): Remove DATA_WIN case.  Add assert.
+	(tui_add_content_elements): Remove.
+	(tui_data_window): Update.
+	(tui_free_data_content): Remove.
+	(free_content_elements): Remove DATA_WIN case.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-data.c (tui_data_item_window): Update.
+	* tui/tui-windata.h (tui_check_data_values): Don't declare.
+	* tui/tui-windata.c (tui_display_all_data)
+	(tui_display_data_from_line): Update.
+	(tui_check_data_values): Remove.
+	* tui/tui-regs.c (tui_show_register_group)
+	(tui_display_reg_element_at_line): Update.
+	* tui/tui-hooks.c (tui_register_changed)
+	(tui_refresh_frame_and_register_information): Call
+	tui_check_register_values.
+	* tui/tui-data.h (struct tui_data_window) <data_content,
+	data_content_count, data_type>: Remove.
+	(enum tui_data_type): Remove.
+
+	* tui/tui-data.c (tui_data_window::clear_detail)
+	(~tui_data_window): Update.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-windata.h (tui_first_data_item_displayed): Don't
+	declare.
+	* tui/tui-windata.c (tui_data_window::first_data_item_displayed):
+	Rename from tui_first_data_item_displayed.  Update.
+	(tui_data_window::refresh_all)
+	(tui_data_window::do_scroll_vertical): Update.
+	* tui/tui-data.h (struct tui_data_window)
+	<first_data_item_displayed>: Declare new method.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-data.h (tui_init_generic_part): Don't declare.
+	* tui/tui-data.c (tui_init_generic_part): Remove, moving
+	contents...
+	(tui_initialize_static_data): ...here.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-regs.c (tui_show_registers, tui_show_register_group)
+	(tui_display_registers_from, tui_check_register_values): Update.
+	(tui_display_register): Remove win_info parameter; update.
+	(tui_get_register): Change type of parameters.
+	* tui/tui-data.h (struct tui_data_element): Remove.
+	(union tui_which_element) <data>: Remove.
+	<data_window>: Change type.
+	(struct tui_data_item_window): New.
+	* tui/tui-data.c (init_content_element): Remove DATA_ITEM_WIN
+	case.  Add assert.
+	(~tui_data_item_window): New destructor.
+	(free_content_elements): Remove DATA_ITEM_WIN case.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui.h (enum tui_win_type) <MAX_WINDOWS, UNDEFINED_WIN>:
+	Remove.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-data.h (struct tui_command_element): Remove.
+	(union tui_which_element) <command>: Remove.
+	* tui/tui-data.c (init_content_element): Remove CMD_WIN case.  Add
+	assert.
+	(free_content_elements): Remove CMD_WIN case.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-layout.c (tui_set_layout): Update.
+	* tui/tui-data.h (struct tui_layout_def) <split>: Remove.
+	* tui/tui-data.c (layout_def): Update.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-wingeneral.c (tui_refresh_all): Update.
+	* tui/tui-win.c (tui_resize_all, tui_adjust_win_heights)
+	(tui_source_window_base::set_new_height): Update.
+	* tui/tui-stack.c (tui_make_status_line): Change parameter type.
+	Update.
+	(tui_set_locator_fullname, tui_set_locator_info)
+	(tui_show_frame_info): Update.
+	* tui/tui-source.c (tui_set_source_content)
+	(tui_source_is_displayed): Update.
+	* tui/tui-layout.c (show_source_disasm_command, show_data)
+	(show_source_or_disasm_and_command): Update.
+	* tui/tui-disasm.c (tui_set_disassem_content)
+	(tui_get_begin_asm_address): Update.
+	* tui/tui-data.h (struct tui_locator_element): Remove.
+	(union tui_which_element) <locator>: Remove.
+	(struct tui_locator_window): New.
+	(tui_locator_win_info_ptr): Change return type.
+	* tui/tui-data.c (_locator): Change type.
+	(tui_locator_win_info_ptr): Change return type.
+	(init_content_element): Remove LOCATOR_WIN case.  Add assert.
+	(tui_alloc_content): Add assert.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-winsource.c
+	(tui_exec_info_window::maybe_allocate_content): New method.
+	(tui_set_exec_info_content, tui_show_exec_info_content): Update.
+	* tui/tui-layout.c (init_and_make_win): Add EXEC_INFO_WIN case.
+	(make_source_or_disasm_window): Add cast.
+	* tui/tui-data.h (union tui_which_element) <simple_string>:
+	Remove.
+	(struct tui_source_info): New.
+	(struct tui_source_window_base) <execution_info>: Change type.
+	* tui/tui-data.c (init_content_element): Remove EXEC_INFO_WIN
+	case, and add assert.
+	(tui_alloc_content): Add assert.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-data.h (tui_alloc_win_info): Don't declare.
+	* tui/tui-layout.c (init_and_make_win): Use "new" directly.
+	* tui/tui-data.c (tui_alloc_win_info): Remove.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-win.c (tui_set_win_focus_to): Don't check window type.
+	* tui/tui-wingeneral.c (tui_unhighlight_win): Check
+	can_highlight.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-win.c (tui_source_window_base::update_tab_width): Call
+	make_visible_with_new_height method.
+	(tui_win_info::make_visible_with_new_height): New method.
+	(tui_source_window_base::do_make_visible_with_new_height)
+	(tui_data_window::do_make_visible_with_new_height)
+	(tui_cmd_window::do_make_visible_with_new_height): New methods.
+	(make_visible_with_new_height): Remove.
+	(tui_resize_all, tui_adjust_win_heights): Use
+	make_visible_with_new_height method.
+	* tui/tui-data.h (struct tui_win_info)
+	<do_make_visible_with_new_height, make_visible_with_new_height>:
+	New methods.
+	(struct tui_source_window_base, struct tui_data_window)
+	(struct tui_cmd_window) <do_make_visible_with_new_height>: New
+	methods.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-win.c (tui_source_window_base::update_tab_width): New
+	method.
+	(update_tab_width): Call update_tab_width method.
+	* tui/tui-data.h (struct tui_win_info)
+	(struct tui_source_window_base) <update_tab_width>: New methods.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-wingeneral.h (tui_make_window): Change type of "box_it"
+	parameter.
+	* tui/tui-wingeneral.c (tui_make_window): Change type of "box_it"
+	parameter.
+	(tui_gen_win_info::make_visible): Update.
+	* tui/tui-layout.c (init_and_make_win): Change type of "box_it"
+	parameter.
+	* tui/tui-data.h (enum tui_box): New enum.
+	(BOX_WINDOW, DONT_BOX_WINDOW): Remove defines.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-layout.c (make_source_or_disasm_window): Always use
+	init_and_make_win for EXEC_INFO_WIN.
+	* tui/tui-data.h (struct tui_gen_win_info) <~tui_gen_win_info>: No
+	longer inline.
+	(struct tui_win_info) <~tui_win_info>: Inline.
+	(tui_source_exec_info_win_ptr, tui_disassem_exec_info_win_ptr):
+	Don't declare.
+	* tui/tui-data.c (source_win, disasm_win): Remove globals.
+	(tui_source_exec_info_win_ptr, tui_disassem_exec_info_win_ptr):
+	Remove.
+	(tui_initialize_static_data): Update.
+	(~tui_gen_win_info): Handle more cleanup here.
+	(~tui_source_window_base): Delete "execution_info".
+	(~tui_win_info): Move code to ~tui_gen_win_info; remove.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-layout.c (make_command_window): Don't set
+	can_highlight.
+	(show_source_disasm_command): Call the reset method.
+	(show_data): Don't set can_highlight.  Call the reset method.
+	(tui_gen_win_info::reset): Rename from init_gen_win_info
+	(init_and_make_win): Simplify.  Return tui_gen_win_info.
+	(show_source_or_disasm_and_command): Call the reset method.
+	* tui/tui-data.h (struct tui_gen_win_info) <reset>: New method.
+	(struct tui_cmd_window): Set can_highlight.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-wingeneral.c (tui_gen_win_info::make_visible): Rename
+	from make_visible.
+	(tui_make_visible, tui_make_invisible): Rewrite.
+	(tui_win_info::make_visible): Remove.
+	(tui_source_window_base::make_visible): Update.
+	* tui/tui-data.h (struct tui_gen_win_info) <make_visible>: New
+	method.  Moved from...
+	(struct tui_win_info) <make_visible>: ...here.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-winsource.c
+	(tui_source_window_base::do_scroll_horizontal): Remove direction
+	parameter.
+	* tui/tui-windata.c (tui_data_window::do_scroll_vertical): Remove
+	direction parameter.
+	* tui/tui-win.c (tui_win_info::forward_scroll)
+	(tui_win_info::backward_scroll, tui_win_info::left_scroll)
+	(tui_win_info::right_scroll): Update.
+	* tui/tui-source.c (tui_source_window::do_scroll_vertical): Remove
+	direction parameter.
+	* tui/tui-disasm.c (tui_disasm_window::do_scroll_vertical): Remove
+	direction parameter.
+	* tui/tui-data.h (enum tui_scroll_direction): Remove.
+	(struct tui_win_info) <do_scroll_vertical, do_scroll_horizontal>:
+	Remove direction parameter.
+	(struct tui_source_window_base, struct tui_source_window)
+	(struct tui_disasm_window, struct tui_data_window)
+	(struct tui_cmd_window): Update.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-winsource.h (tui_set_exec_info_content)
+	(tui_show_exec_info_content, tui_erase_exec_info_content)
+	(tui_clear_exec_info_content, tui_update_exec_info): Change
+	argument to tui_source_window_base.
+	* tui/tui-winsource.c (tui_set_exec_info_content)
+	(tui_show_exec_info_content, tui_erase_exec_info_content)
+	(tui_clear_exec_info_content, tui_update_exec_info): Change
+	argument to tui_source_window_base.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-winsource.h (tui_set_exec_info_content): Return void.
+	* tui/tui-winsource.c (tui_set_exec_info_content): Return void.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-winsource.c (tui_set_exec_info_content): Remove NULL
+	check.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-winsource.h (tui_alloc_source_buffer): Change return
+	type to void.
+	* tui/tui-winsource.c (tui_alloc_source_buffer): Change return
+	type to void.
+	* tui/tui-source.c (tui_set_source_content): Update.
+	* tui/tui-disasm.c (tui_set_disassem_content): Update.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-win.c (window_name_completer, tui_set_focus)
+	(tui_all_windows_info): Use name method.
+	* tui/tui-data.h (struct tui_gen_win_info)
+	(struct tui_source_window, struct tui_disasm_window)
+	(struct tui_data_window, struct tui_cmd_window) <name>: New
+	method.
+	(tui_win_name): Don't declare.
+	* tui/tui-data.c (tui_partial_win_by_name): Use name method.
+	(tui_win_name): Remove.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-winsource.h (tui_update_source_window)
+	(tui_update_source_window_as_is): Change parameter type.
+	* tui/tui-winsource.c (tui_update_source_window): Change win_info
+	to be a tui_source_window_base.
+	(tui_update_source_window_as_is): Likewise.
+	* tui/tui-win.c (make_visible_with_new_height): Update.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-winsource.c (tui_erase_source_content)
+	(tui_show_source_content, tui_show_exec_info_content)
+	(tui_erase_exec_info_content): Use refresh_window method.
+	* tui/tui-wingeneral.h (tui_refresh_win): Don't declare.
+	* tui/tui-wingeneral.c (tui_gen_win_info::refresh_window): Rename
+	from tui_refresh_win.
+	(tui_data_window::refresh_window): New method.
+	(tui_win_info::refresh, tui_source_window_base::refresh)
+	(tui_refresh_all): Use refresh_window method.
+	* tui/tui-stack.c (tui_show_locator_content): Call refresh_window
+	method.
+	* tui/tui-regs.c (tui_display_register): Call refresh_window
+	method.
+	* tui/tui-layout.c (show_source_disasm_command)
+	(show_source_or_disasm_and_command): Call refresh_window method.
+	* tui/tui-data.h (struct tui_gen_win_info)
+	(struct tui_data_window, struct tui_cmd_window) <refresh_window>:
+	New method.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui.c (tui_rl_other_window, tui_enable)
+	(tui_is_window_visible, tui_get_command_dimension): Update.
+	* tui/tui-winsource.c (tui_update_source_window_as_is)
+	(tui_clear_source_content, tui_erase_source_content)
+	(tui_show_source_line, tui_source_window_base::refill)
+	(tui_source_window_base::do_scroll_horizontal)
+	(tui_source_window_base::set_is_exec_point_at)
+	(tui_update_breakpoint_info, tui_set_exec_info_content)
+	(tui_alloc_source_buffer, tui_line_is_displayed)
+	(tui_addr_is_displayed): Update.
+	* tui/tui-wingeneral.c (tui_unhighlight_win, tui_highlight_win)
+	(tui_check_and_display_highlight_if_needed)
+	(tui_win_info::make_visible, tui_win_info::refresh)
+	(tui_refresh_all): Update.
+	* tui/tui-windata.c (tui_first_data_item_displayed)
+	(tui_delete_data_content_windows, tui_erase_data_content)
+	(tui_display_all_data, tui_data_window::refresh_all)
+	(tui_check_data_values): Update.
+	* tui/tui-win.c (window_name_completer, tui_update_gdb_sizes)
+	(tui_set_win_focus_to, tui_win_info::forward_scroll)
+	(tui_win_info::backward_scroll, tui_refresh_all_win)
+	(tui_resize_all, tui_set_focus, tui_all_windows_info)
+	(update_tab_width, tui_set_win_height, tui_adjust_win_heights)
+	(tui_source_window_base::set_new_height)
+	(tui_data_window::set_new_height)
+	(make_invisible_and_set_new_height)
+	(make_visible_with_new_height, new_height_ok)
+	(parse_scrolling_args): Update.
+	* tui/tui-stack.c (tui_show_frame_info): Update.
+	* tui/tui-source.c (tui_set_source_content)
+	(tui_set_source_content_nil, tui_source_is_displayed)
+	(tui_source_window::do_scroll_vertical): Update.
+	* tui/tui-regs.c (tui_show_registers, tui_show_register_group)
+	(tui_display_registers_from, tui_display_reg_element_at_line)
+	(tui_check_register_values, tui_reg_command): Update.
+	* tui/tui-layout.c (tui_default_win_height)
+	(show_source_disasm_command, show_data, init_and_make_win)
+	(show_source_or_disasm_and_command): Update.
+	* tui/tui-io.c (update_cmdwin_start_line, tui_putc, tui_puts)
+	(tui_redisplay_readline, tui_mld_flush)
+	(tui_mld_erase_entire_line, tui_mld_getc, tui_cont_sig)
+	(tui_getc): Update.
+	* tui/tui-disasm.c (tui_set_disassem_content)
+	(tui_disasm_window::do_scroll_vertical): Update.
+	* tui/tui-data.h (struct tui_gen_win_info) <~tui_gen_win_info>:
+	Now virtual.
+	(struct tui_win_info): Derive from tui_gen_win_info.
+	<~tui_win_info>: Mark as override.
+	<generic>: Remove member.
+	* tui/tui-data.c (tui_cmd_window::clear_detail, tui_next_win)
+	(tui_prev_win, tui_partial_win_by_name, tui_win_info)
+	(~tui_data_window, ~tui_win_info)
+	(tui_free_all_source_wins_content): Update.
+	* tui/tui-command.c (tui_refresh_cmd_win): Update.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-layout.c (init_and_make_win): Use new.
+	* tui/tui-data.h (struct tui_gen_win_info): Add constructor,
+	destructor, initializers.
+	(tui_alloc_generic_win_info): Don't declare.
+	* tui/tui-data.c (_locator): Add argument to constructor.
+	(source_win, disasm_win): New globals.
+	(exec_info): Remove.
+	(tui_source_exec_info_win_ptr, tui_disassem_exec_info_win_ptr):
+	Update.
+	(tui_alloc_generic_win_info): Remove.
+	(init_content_element): Use new.
+	(tui_win_info::tui_win_info): Update.
+	(free_content_elements) <case DATA_WIN>: Use delete.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-wingeneral.c (tui_refresh_win): Update.
+	* tui/tui-windata.c (tui_first_data_item_displayed)
+	(tui_delete_data_content_windows): Update.
+	* tui/tui-win.c (tui_data_window::set_new_height): Update.
+	* tui/tui-regs.c (tui_show_registers, tui_show_register_group)
+	(tui_display_registers_from, tui_check_register_values): Update.
+	* tui/tui-data.h (union tui_which_element) <data_window>: Now a
+	pointer.
+	* tui/tui-data.c (init_content_element): Update.  Allocate the new
+	window.
+	(tui_free_data_content): Update.
+	(free_content_elements) <case DATA_WIN>: Free the window.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-wingeneral.c (tui_unhighlight_win, tui_highlight_win):
+	Update.
+	* tui/tui-layout.c (make_command_window)
+	(show_source_disasm_command, show_data, init_and_make_win)
+	(show_source_or_disasm_and_command): Update.
+	* tui/tui-data.h (struct tui_win_info) <set_highlight>: New
+	method.
+	<can_highight, is_highlighted>: Now bool.
+	(tui_set_win_highlight): Don't declare.
+	* tui/tui-data.c (tui_set_win_highlight): Remove.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-wingeneral.c (make_visible): Remove check of window
+	type.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-win.c (tui_win_info::max_height)
+	(tui_cmd_window::max_height): New methods.
+	(new_height_ok): Call max_height.
+	* tui/tui-data.h (struct tui_win_info, struct tui_cmd_window)
+	<max_height>: New method.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-win.c (tui_source_window_base::set_new_height)
+	(tui_data_window::set_new_height): New methods.
+	(make_invisible_and_set_new_height): Call set_new_height method.
+	* tui/tui-data.h (struct tui_win_info)
+	(struct tui_source_window_base, struct tui_data_window)
+	<set_new_height>: New method.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui.c (tui_rl_other_window): Call the refresh_all method.
+	* tui/tui-windata.c (tui_data_window::refresh_all): Rename from
+	tui_refresh_data_win.
+	* tui/tui-win.c (tui_source_window_base::refresh_all): New
+	method.
+	(tui_refresh_all_win): Call the refresh_all method.
+	(tui_set_focus): Likewise.
+	* tui/tui-data.h (struct tui_win_info) <refresh_all>: New method.
+	(struct tui_source_window_base, struct tui_data_window) <refresh>:
+	Likewise.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-winsource.h (tui_refill_source_window)
+	(tui_set_is_exec_point_at): Don't declare.
+	* tui/tui-winsource.c (tui_update_source_windows_with_addr)
+	(tui_source_window_base::refill): Rename from
+	tui_refill_source_window.
+	(tui_source_window_base::do_scroll_horizontal): Update.
+	(tui_source_window_base::set_is_exec_point_at): Rename from
+	tui_set_is_exec_point_at.
+	(tui_update_all_breakpoint_info): Update.
+	* tui/tui-stack.c (tui_show_frame_info): Update.
+	* tui/tui-layout.c (show_data): Add cast.
+	* tui/tui-hooks.c (tui_redisplay_source): Call refill method.
+	* tui/tui-data.h (struct tui_source_window_base) <refill,
+	set_is_exec_point_at>: New methods.
+	(tui_source_windows, tui_add_to_source_windows): Update types.
+	(tui_add_to_source_windows): Remove redundant declaration.
+	* tui/tui-data.c (source_windows): Store tui_source_window_base.
+	(tui_source_windows): Change return type.
+	(tui_clear_source_windows_detail): Update.
+	(tui_add_to_source_windows): Change type of parameter.
+	(tui_free_all_source_wins_content): Update.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-wingeneral.c (tui_win_info::refresh)
+	(tui_source_window_base::refresh): New methods.
+	(tui_refresh_all): Call the refresh method.
+	* tui/tui-data.h (struct tui_win_info)
+	(struct tui_source_window_base) <refresh>: New method.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui.h (tui_is_window_visible): Return bool.
+	* tui/tui.c (tui_is_window_visible): Return bool.
+	* tui/tui-wingeneral.c (tui_make_window, make_visible)
+	(tui_make_visible, tui_make_invisible)
+	(tui_win_info::make_visible)
+	(tui_source_window_base::make_visible, make_all_visible)
+	(tui_make_all_visible, tui_make_all_invisible): Update.
+	* tui/tui-windata.c (tui_delete_data_content_windows): Update.
+	* tui/tui-data.h (struct tui_gen_win_info) <is_visible>: Now
+	bool.
+	(struct tui_win_info, struct tui_source_window_base)
+	(struct tui_cmd_window) <make_visible>: Change parameter to bool.
+	* tui/tui-data.c (tui_init_generic_part): Update.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-wingeneral.c (tui_win_info::make_visible)
+	(tui_source_window_base::make_visible): New methods.
+	(make_all_visible): Make method call.
+	* tui/tui-data.h (struct tui_win_info) <make_visible>: New method.
+	(struct tui_source_window_base, struct tui_cmd_window): Override
+	make_visible.
+	(tui_win_is_source_type): Don't declare.
+	* tui/tui-data.c (tui_win_is_source_type): Remove.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-layout.c (show_source_or_disasm_and_command): Remove
+	NULL check.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-data.h (struct tui_data_window, struct tui_cmd_window):
+	Inline constructor.  Add initializers for members.
+	* tui/tui-data.c (tui_data_window, tui_cmd_window): Remove
+	constructors; now inline in class.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-regs.c (tui_show_registers): Update.
+	* tui/tui-data.h (struct tui_data_window) <display_regs>: Now
+	bool.
+	* tui/tui-data.c (tui_data_window::clear_detail)
+	(tui_data_window): Update.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-windata.c (tui_display_all_data)
+	(tui_display_data_from_line, tui_display_data_from)
+	(tui_check_data_values, tui_data_window::do_scroll_vertical):
+	Update.
+	* tui/tui-regs.c (tui_last_regs_line_no)
+	(tui_line_from_reg_element_no, tui_first_reg_element_no_inline)
+	(tui_show_registers, tui_show_register_group)
+	(tui_display_registers_from, tui_display_reg_element_at_line)
+	(tui_display_registers_from_line, tui_check_register_values)
+	(tui_reg_next, tui_reg_prev): Update.
+	* tui/tui-layout.c (tui_set_layout, show_data): Update.
+	* tui/tui-data.h (struct tui_data_info): Remove.  Move contents to
+	tui_data_window.
+	(struct tui_win_info) <detail>: Remove.  Add new fields from
+	tui_data_info.
+	(TUI_DATA_WIN): Add cast.
+	* tui/tui-data.c (tui_data_window::clear_detail, tui_data_window)
+	(~tui_data_window): Simplify.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-layout.c (show_source_disasm_command)
+	(show_source_or_disasm_and_command): Update.
+	* tui/tui-io.c (update_cmdwin_start_line)
+	(tui_redisplay_readline): Update.
+	* tui/tui-data.h (struct tui_command_info): Remove.
+	(struct tui_win_info) <detail>: Remove command_info member.
+	(struct tui_data_window) <start_line>: New member, from
+	tui_command_info.
+	(TUI_CMD_WIN): Add casts.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-winsource.c (tui_update_source_window)
+	(tui_refill_source_window)
+	(tui_source_window_base::do_scroll_horizontal)
+	(tui_update_breakpoint_info, tui_set_exec_info_content)
+	(tui_show_exec_info_content, tui_erase_exec_info_content)
+	(tui_clear_exec_info_content): Update.
+	* tui/tui-wingeneral.c (make_all_visible, tui_refresh_all):
+	Update.
+	* tui/tui-win.c (make_invisible_and_set_new_height)
+	(make_visible_with_new_height): Update.
+	* tui/tui-source.c (tui_set_source_content)
+	(tui_show_symtab_source): Update.
+	* tui/tui-layout.c (extract_display_start_addr)
+	(show_source_disasm_command, show_data)
+	(make_source_or_disasm_window)
+	(show_source_or_disasm_and_command): Update.
+	* tui/tui-disasm.c (tui_set_disassem_content): Simplify.
+	(tui_disasm_window::do_scroll_vertical): Remove shadowing
+	"gdbarch".
+	* tui/tui-data.h (struct tui_source_info): Remove.  Move contents
+	to tui_source_window_base.
+	(struct tui_win_info) <detail>: Remove source_info member.
+	(struct tui_source_window_base) <has_locator>: Inline.
+	Move contents from tui_source_info; rename has_locator member to
+	m_has_locator.
+	(TUI_SRC_WIN, TUI_DISASM_WIN): Add casts.
+	* tui/tui-data.c (tui_source_window_base::has_locator): Move to
+	header file.
+	(tui_source_window_base::clear_detail, ~tui_source_window_base):
+	Simplify.
+	(tui_free_all_source_wins_content): Cast to
+	tui_source_window_base.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-win.c (make_invisible_and_set_new_height)
+	(make_visible_with_new_height): Call has_locator method.
+	* tui/tui-layout.c (show_source_disasm_command, show_data)
+	(show_source_or_disasm_and_command): Update for bool change.
+	* tui/tui-data.h (struct tui_source_info) <has_locator>: Now bool.
+	(tui_win_info) <has_locator>: New method.
+	(struct tui_source_window_base) <has_locator>: New method.
+	(tui_win_has_locator): Don't declare.
+	* tui/tui-data.c (tui_source_window_base::has_locator): Rename
+	from tui_win_has_locator.
+	(tui_source_window_base): Use false, not FALSE.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-data.h (tui_clear_win_detail): Don't declare.
+	* tui/tui-data.c (tui_clear_source_windows_detail): Call the
+	clear_detail method directly.
+	(tui_clear_win_detail): Remove.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-disasm.c (tui_disasm_window::do_scroll_vertical): Use
+	"this", not TUI_DISASM_WIN.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-winsource.h (tui_horizontal_source_scroll):  Don't
+	declare.
+	* tui/tui-winsource.c
+	(tui_source_window_base::do_scroll_horizontal): Rename from
+	tui_horizontal_source_scroll.
+	* tui/tui-windata.h (tui_vertical_data_scroll): Don't declare.
+	* tui/tui-windata.c (tui_data_window::do_scroll_vertical): Rename
+	from tui_vertical_data_scroll.
+	* tui/tui-win.h (tui_scroll): Don't declare.
+	* tui/tui-win.c (tui_win_info::forward_scroll)
+	(tui_win_info::backward_scroll, tui_win_info::left_scroll)
+	(tui_win_info::right_scroll): Rename and update.
+	(tui_scroll_forward_command, tui_scroll_backward_command)
+	(tui_scroll_left_command, tui_scroll_right_command): Update.
+	(tui_scroll): Remove.
+	* tui/tui-source.h: Don't declare tui_vertical_source_scroll.
+	* tui/tui-source.c (tui_source_window::do_scroll_vertical): Rename
+	from tui_vertical_source_scroll.
+	* tui/tui-disasm.h (tui_vertical_disassem_scroll): Don't declare.
+	* tui/tui-disasm.c (tui_disasm_window::do_scroll_vertical): Rename
+	from tui_vertical_disassem_scroll.
+	* tui/tui-data.h (struct tui_win_info) <do_scroll_vertical,
+	do_scroll_horizontal>: New methods.
+	<forward_scroll, backward_scroll, left_scroll, right_scroll>:
+	Likewise.
+	(struct tui_source_window_base): Add do_scroll_horizontal.
+	(struct tui_source_window, struct tui_disasm_window): Add
+	do_scroll_vertical.
+	(struct tui_data_window, struct tui_cmd_window): Add
+	do_scroll_horizontal and do_scroll_vertical.
+	* tui/tui-command.c (tui_dispatch_ctrl_char): Use method calls.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-data.h (struct tui_source_window_base): New struct.
+	(struct tui_source_window): Derive from tui_source_window_base.
+	(struct tui_disasm_window): New struct.
+	* tui/tui-data.c (tui_source_window_base::clear_detail): Rename
+	from tui_source_window::clear_detail.
+	(tui_source_window_base): Rename from tui_source_window.
+	(~tui_source_window_base): Rename from ~tui_source_window.
+	(tui_alloc_win_info): Create a tui_disasm_window.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-data.h (struct tui_source_window)
+	(struct tui_data_window): Declare destructors.
+	* tui/tui-data.c (~tui_source_window, ~tui_data_window): New
+	destructors.
+	(tui_win_info): Simplify.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-winsource.c (tui_display_main)
+	(tui_update_source_windows_with_addr)
+	(tui_update_all_breakpoint_info): Update.
+	* tui/tui-win.c (tui_resize_all, tui_adjust_win_heights)
+	(new_height_ok, parse_scrolling_args): Update.
+	* tui/tui-stack.c (tui_show_frame_info): Update.
+	* tui/tui-data.h (struct tui_list): Remove.
+	(tui_source_windows): Return a reference to a std::vector.
+	* tui/tui-data.c (source_windows): Now a std::vector.
+	(tui_source_windows): Change return type.
+	(tui_clear_source_windows): Rewrite.
+	(tui_clear_source_windows_detail, tui_add_to_source_windows)
+	(tui_free_all_source_wins_content): Rewrite.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-data.h (struct tui_win_info, struct tui_source_window)
+	(struct tui_data_window, struct tui_cmd_window): Declare
+	clear_detail method.
+	* tui/tui-data.c (tui_source_window::clear_detail)
+	(tui_cmd_window::clear_detail, tui_data_window::clear_detail): New
+	methods.
+	(tui_clear_win_detail): Simplify.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-layout.c (make_source_window, make_disasm_window)
+	(make_source_or_disasm_window): Remove win_info_ptr parameter.
+	Return the new window.
+	(show_source_disasm_command, show_data)
+	(show_source_or_disasm_and_command): Update.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-layout.c (make_command_window): Remove win_info_ptr
+	parameter.  Return the new window.
+	(show_source_disasm_command): Update and remove NULL check.
+	(show_source_or_disasm_and_command): Update.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-layout.c (init_and_make_win): Remove NULL check.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-data.h (struct tui_win_info): Make constructor
+	protected.  Make destructor virtual.  Add initializers.
+	(tui_source_window, tui_data_window, tui_cmd_window): New
+	classes.
+	* tui/tui-data.c (tui_win_info): Rename from init_win_info.  Now a
+	constructor.  Add "type" parameter.
+	(tui_source_window, tui_data_window, tui_cmd_window): New
+	constructors.
+	(tui_alloc_win_info): Instantiate the appropriate subclass.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-win.c (tui_resize_all): Use delete.
+	* tui/tui-data.h (struct tui_win_info) <~tui_win_info>: Declare
+	destructor.
+	(tui_free_window): Don't declare.
+	* tui/tui-data.c (~tui_win_info): Rename from tui_free_window.
+	Update.
+
+2019-06-25  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-data.h (struct tui_win_info): Add constructor.
+	* tui/tui-data.c (tui_alloc_win_info): Use new.
+	(tui_free_window): Use delete.
+
+2019-06-22  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-windata.h (tui_first_data_element_no_in_line): Don't
+	declare.
+	* tui/tui-windata.c (tui_first_data_element_no_in_line): Remove.
+
+2019-06-22  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-data.h (tui_del_window, tui_del_data_windows): Don't
+	declare.
+	* tui/tui-data.c (tui_del_window, tui_del_data_windows): Remove.
+
+2019-06-22  Tom de Vries  <tdevries@suse.de>
+
+	* dwarf2read.c (create_addrmap_from_aranges)
+	(read_debug_names_from_section): Print ptrdiff_t using '%s' and plongest
+	instead of '%zu'.
+
+2019-06-21  Simon Marchi  <simon.marchi@efficios.com>
+
+	* dwarf2read.h (dwarf2_section_info_def): Remove.
+	(DEF_VEC_O (dwarf2_section_info_def)): Remove.
+	* dwarf2read.c (struct dwo_sections) <types>: Change type to
+	std::vector<dwarf2_section_info>.
+	(struct dwo_file) <~dwo_file>: Remove.
+	(dwarf2_per_objfile::~dwarf2_per_objfile): Don't manually free
+	types field.
+	(dwarf2_per_objfile::locate_sections): Adjust to std::vector.
+	(dwarf2_read_debug_names): Likewise.
+	(create_debug_types_hash_table): Change parameter type to
+	array_view, adjust code accordingly.
+	(dwarf2_locate_dwo_sections): Adjust to std::vector.
+	(partial_die_info::fixup): Likewise.
+	(determine_prefix): Likewise.
+	* dwarf-index-write.c (write_psymtabs_to_index): Adjust.
+
+2019-06-21  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* dwarf2read.c (struct dwo_file) <dbfd>: Change type to
+	gdb_bfd_ref_ptr.
+	<~dwo_file>: Remove call to gdb_bfd_unref.
+	(open_and_init_dwo_file): Move gdb_bfd_ref_ptr into dbfd field. Call
+	gdb_bfd_ref_ptr::get.
+
+2019-06-21  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* dwarf2read.h (struct dwarf2_per_objfile) <dwo_files>: Change
+	type to htab_up.
+	* dwarf2read.c (struct dwo_file): Initialize fields.
+	<~dwo_file>: New.
+	(free_dwo_file): Remove, move content to ~dwo_file.
+	(struct dwo_file_deleter): Remove.
+	(dwo_file_up>: Remove custom deleter.
+	(free_dwo_files): Remove.
+	(dwarf2_per_objfile::~dwarf2_per_objfile): Don't explicitly free
+	dwo_files.
+	(process_skeletonless_type_units): Call unique_ptr::get.
+	(allocate_dwo_file_hash_table): Add deleter to created hash
+	table.  Change return type to htab_up.
+	(lookup_dwo_file_slot): Don't memset dwo_file, call
+	unique_ptr::get.
+	(create_dwo_unit_in_dwp_v1): Allocate dwo_file with new.
+	(create_dwo_unit_in_dwp_v2): Likewise.
+	(open_and_init_dwo_file): Likewise.
+	(free_dwo_file_from_slot): Remove.
+
+2019-06-21  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* dwarf2read.h (struct dwarf2_section_info) <readin,
+	is_virtual>: Change type to bool.
+	* dwarf2read.c (dwarf2_read_section, create_dwp_v2_section): Use
+	true instead of 1.
+
 2019-06-19  Tom Tromey  <tom@tromey.com>
 
 	* tui/tui-data.h (tui_init_content_element): Don't declare.

@@ -40,13 +40,13 @@
 #include "maint.h"
 
 #include "filenames.h"
-#include "common/filestuff.h"
+#include "gdbsupport/filestuff.h"
 #include <signal.h>
 #include "event-top.h"
 #include "infrun.h"
-#include "common/signals-state-save-restore.h"
+#include "gdbsupport/signals-state-save-restore.h"
 #include <vector>
-#include "common/pathstuff.h"
+#include "gdbsupport/pathstuff.h"
 #include "cli/cli-style.h"
 
 /* The selected interpreter.  This will be used as a set command
@@ -260,7 +260,7 @@ get_init_files (const char **system_gdbinit,
 
       if (homedir)
 	{
-	  homeinit = xstrprintf ("%s/%s", homedir, gdbinit);
+	  homeinit = xstrprintf ("%s/%s", homedir, GDBINIT);
 	  if (stat (homeinit, &homebuf) != 0)
 	    {
 	      xfree (homeinit);
@@ -268,12 +268,12 @@ get_init_files (const char **system_gdbinit,
 	    }
 	}
 
-      if (stat (gdbinit, &cwdbuf) == 0)
+      if (stat (GDBINIT, &cwdbuf) == 0)
 	{
 	  if (!homeinit
 	      || memcmp ((char *) &homebuf, (char *) &cwdbuf,
 			 sizeof (struct stat)))
-	    localinit = gdbinit;
+	    localinit = GDBINIT;
 	}
       
       initialized = 1;

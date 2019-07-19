@@ -749,12 +749,9 @@ elf_object_p (bfd *abfd)
 		  != 0))
 	    abfd->flags &= ~D_PAGED;
 	}
-    }
 
-  /* A further sanity check.  */
-  if (i_ehdrp->e_shnum != 0)
-    {
-      if (i_ehdrp->e_shstrndx >= elf_numsections (abfd))
+      if (i_ehdrp->e_shstrndx >= elf_numsections (abfd)
+	  || i_shdrp[i_ehdrp->e_shstrndx].sh_type != SHT_STRTAB)
 	{
 	  /* PR 2257:
 	     We used to just goto got_wrong_format_error here

@@ -1,3 +1,27 @@
+2019-06-28  Nick Clifton  <nickc@redhat.com>
+
+	PR 24707
+	* objdump.c (slurp_symtab): Fail with a helpful error message if
+	the symbol table is too large.  Skip this check for MMO format
+	files.
+
+2019-06-26  Nick Clifton  <nickc@redhat.com>
+
+	PR 24703
+	* bucomm.c (bfd_nonfatal): If no bfd error code has been set then
+	indicate this in the output.
+	(bfd_nonfatal_message): Likewise.
+
+2019-06-25  Jan Beulich  <jbeulich@suse.com>
+
+	* readelf.c (dump_ctf_indent_lines): Rename local variable
+	"spaces" to "blanks".
+
+2019-06-25  Jan Beulich  <jbeulich@suse.com>
+
+	* objdump.c (dump_ctf_indent_lines): Rename local variable
+	"spaces" to "blanks".
+
 2019-06-14  Alan Modra  <amodra@gmail.com>
 
 	* Makefile.in: Regenerate.

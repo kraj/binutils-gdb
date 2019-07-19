@@ -30,9 +30,10 @@
 #include "psymtab.h"
 #include <bitset>
 #include <vector>
-#include "common/next-iterator.h"
-#include "common/safe-iterator.h"
+#include "gdbsupport/next-iterator.h"
+#include "gdbsupport/safe-iterator.h"
 #include "bcache.h"
+#include "gdbarch.h"
 
 struct htab;
 struct objfile_data;

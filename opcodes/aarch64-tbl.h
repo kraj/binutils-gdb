@@ -1958,15 +1958,18 @@
 {                                                       \
   QLF3(S_S,S_S,S_S),                                    \
 }
+#define OP_SVE_VVV_HD_BS				\
+{                                                       \
+  QLF3(S_H,S_B,S_B),                                    \
+  QLF3(S_D,S_S,S_S),                                    \
+}
 #define OP_SVE_VVV_S_B                                  \
 {                                                       \
   QLF3(S_S,S_B,S_B),                                    \
 }
-#define OP_SVE_VVV_QHD_DBS                              \
+#define OP_SVE_VVV_Q_D					\
 {                                                       \
   QLF3(S_Q,S_D,S_D),                                    \
-  QLF3(S_H,S_B,S_B),                                    \
-  QLF3(S_D,S_S,S_S),                                    \
 }
 #define OP_SVE_VVV_HSD_BHS                              \
 {                                                       \
@@ -3806,7 +3809,7 @@ struct aarch64_opcode aarch64_opcode_table[] =
   CORE_INSN ("ble", 0x5400000d, 0xff00001f, condbranch, 0, OP1 (ADDR_PCREL19), QL_PCREL_NIL, F_ALIAS | F_PSEUDO),
   /* SVE instructions.  */
   _SVE_INSN ("fmov", 0x2539c000, 0xff3fe000, sve_size_hsd, 0, OP2 (SVE_Zd, SVE_FPIMM8), OP_SVE_VU_HSD, F_ALIAS, 0),
-  _SVE_INSN ("fmov", 0x0510c000, 0xff30e000, sve_size_hsd, 0, OP3 (SVE_Zd, SVE_Pg4_16, SVE_FPIMM8), OP_SVE_VMU_HSD, F_ALIAS, 0),
+  _SVE_INSNC ("fmov", 0x0510c000, 0xff30e000, sve_size_hsd, 0, OP3 (SVE_Zd, SVE_Pg4_16, SVE_FPIMM8), OP_SVE_VMU_HSD, F_ALIAS, C_SCAN_MOVPRFX, 0),
   _SVE_INSN ("mov", 0x04603000, 0xffe0fc00, sve_misc, OP_MOV_Z_Z, OP2 (SVE_Zd, SVE_Zn), OP_SVE_DD, F_ALIAS | F_MISC, 0),
   _SVE_INSN ("mov", 0x05202000, 0xff20fc00, sve_index, OP_MOV_Z_V, OP2 (SVE_Zd, SVE_VZn), OP_SVE_VV_BHSDQ, F_ALIAS | F_MISC, 0),
   _SVE_INSN ("mov", 0x05203800, 0xff3ffc00, sve_size_bhsd, 0, OP2 (SVE_Zd, Rn_SP), OP_SVE_VR_BHSD, F_ALIAS, 0),
@@ -3958,20 +3961,20 @@ struct aarch64_opcode aarch64_opcode_table[] =
   _SVE_INSNC ("fcvt", 0x65c9a000, 0xffffe000, sve_misc, 0, OP3 (SVE_Zd, SVE_Pg3, SVE_Zn), OP_SVE_DMH, 0, C_SCAN_MOVPRFX | C_MAX_ELEM, 0),
   _SVE_INSNC ("fcvt", 0x65caa000, 0xffffe000, sve_misc, 0, OP3 (SVE_Zd, SVE_Pg3, SVE_Zn), OP_SVE_SMD, 0, C_SCAN_MOVPRFX | C_MAX_ELEM, 0),
   _SVE_INSNC ("fcvt", 0x65cba000, 0xffffe000, sve_misc, 0, OP3 (SVE_Zd, SVE_Pg3, SVE_Zn), OP_SVE_DMS, 0, C_SCAN_MOVPRFX | C_MAX_ELEM, 0),
-  _SVE_INSNC ("fcvtzs", 0x655aa000, 0xffffe000, sve_misc, 0, OP3 (SVE_Zd, SVE_Pg3, SVE_Zn), OP_SVE_HMH, 0, C_SCAN_MOVPRFX, 0),
-  _SVE_INSNC ("fcvtzs", 0x655ca000, 0xffffe000, sve_misc, 0, OP3 (SVE_Zd, SVE_Pg3, SVE_Zn), OP_SVE_SMH, 0, C_SCAN_MOVPRFX, 0),
-  _SVE_INSNC ("fcvtzs", 0x655ea000, 0xffffe000, sve_misc, 0, OP3 (SVE_Zd, SVE_Pg3, SVE_Zn), OP_SVE_DMH, 0, C_SCAN_MOVPRFX, 0),
-  _SVE_INSNC ("fcvtzs", 0x659ca000, 0xffffe000, sve_misc, 0, OP3 (SVE_Zd, SVE_Pg3, SVE_Zn), OP_SVE_SMS, 0, C_SCAN_MOVPRFX, 0),
-  _SVE_INSNC ("fcvtzs", 0x65d8a000, 0xffffe000, sve_misc, 0, OP3 (SVE_Zd, SVE_Pg3, SVE_Zn), OP_SVE_SMD, 0, C_SCAN_MOVPRFX, 0),
-  _SVE_INSNC ("fcvtzs", 0x65dca000, 0xffffe000, sve_misc, 0, OP3 (SVE_Zd, SVE_Pg3, SVE_Zn), OP_SVE_DMS, 0, C_SCAN_MOVPRFX, 0),
-  _SVE_INSNC ("fcvtzs", 0x65dea000, 0xffffe000, sve_misc, 0, OP3 (SVE_Zd, SVE_Pg3, SVE_Zn), OP_SVE_DMD, 0, C_SCAN_MOVPRFX, 0),
-  _SVE_INSNC ("fcvtzu", 0x655ba000, 0xffffe000, sve_misc, 0, OP3 (SVE_Zd, SVE_Pg3, SVE_Zn), OP_SVE_HMH, 0, C_SCAN_MOVPRFX, 0),
-  _SVE_INSNC ("fcvtzu", 0x655da000, 0xffffe000, sve_misc, 0, OP3 (SVE_Zd, SVE_Pg3, SVE_Zn), OP_SVE_SMH, 0, C_SCAN_MOVPRFX, 0),
-  _SVE_INSNC ("fcvtzu", 0x655fa000, 0xffffe000, sve_misc, 0, OP3 (SVE_Zd, SVE_Pg3, SVE_Zn), OP_SVE_DMH, 0, C_SCAN_MOVPRFX, 0),
-  _SVE_INSNC ("fcvtzu", 0x659da000, 0xffffe000, sve_misc, 0, OP3 (SVE_Zd, SVE_Pg3, SVE_Zn), OP_SVE_SMS, 0, C_SCAN_MOVPRFX, 0),
-  _SVE_INSNC ("fcvtzu", 0x65d9a000, 0xffffe000, sve_misc, 0, OP3 (SVE_Zd, SVE_Pg3, SVE_Zn), OP_SVE_SMD, 0, C_SCAN_MOVPRFX, 0),
-  _SVE_INSNC ("fcvtzu", 0x65dda000, 0xffffe000, sve_misc, 0, OP3 (SVE_Zd, SVE_Pg3, SVE_Zn), OP_SVE_DMS, 0, C_SCAN_MOVPRFX, 0),
-  _SVE_INSNC ("fcvtzu", 0x65dfa000, 0xffffe000, sve_misc, 0, OP3 (SVE_Zd, SVE_Pg3, SVE_Zn), OP_SVE_DMD, 0, C_SCAN_MOVPRFX, 0),
+  _SVE_INSNC ("fcvtzs", 0x655aa000, 0xffffe000, sve_misc, 0, OP3 (SVE_Zd, SVE_Pg3, SVE_Zn), OP_SVE_HMH, 0, C_SCAN_MOVPRFX | C_MAX_ELEM, 0),
+  _SVE_INSNC ("fcvtzs", 0x655ca000, 0xffffe000, sve_misc, 0, OP3 (SVE_Zd, SVE_Pg3, SVE_Zn), OP_SVE_SMH, 0, C_SCAN_MOVPRFX | C_MAX_ELEM, 0),
+  _SVE_INSNC ("fcvtzs", 0x655ea000, 0xffffe000, sve_misc, 0, OP3 (SVE_Zd, SVE_Pg3, SVE_Zn), OP_SVE_DMH, 0, C_SCAN_MOVPRFX | C_MAX_ELEM, 0),
+  _SVE_INSNC ("fcvtzs", 0x659ca000, 0xffffe000, sve_misc, 0, OP3 (SVE_Zd, SVE_Pg3, SVE_Zn), OP_SVE_SMS, 0, C_SCAN_MOVPRFX | C_MAX_ELEM, 0),
+  _SVE_INSNC ("fcvtzs", 0x65d8a000, 0xffffe000, sve_misc, 0, OP3 (SVE_Zd, SVE_Pg3, SVE_Zn), OP_SVE_SMD, 0, C_SCAN_MOVPRFX | C_MAX_ELEM, 0),
+  _SVE_INSNC ("fcvtzs", 0x65dca000, 0xffffe000, sve_misc, 0, OP3 (SVE_Zd, SVE_Pg3, SVE_Zn), OP_SVE_DMS, 0, C_SCAN_MOVPRFX | C_MAX_ELEM, 0),
+  _SVE_INSNC ("fcvtzs", 0x65dea000, 0xffffe000, sve_misc, 0, OP3 (SVE_Zd, SVE_Pg3, SVE_Zn), OP_SVE_DMD, 0, C_SCAN_MOVPRFX | C_MAX_ELEM, 0),
+  _SVE_INSNC ("fcvtzu", 0x655ba000, 0xffffe000, sve_misc, 0, OP3 (SVE_Zd, SVE_Pg3, SVE_Zn), OP_SVE_HMH, 0, C_SCAN_MOVPRFX | C_MAX_ELEM, 0),
+  _SVE_INSNC ("fcvtzu", 0x655da000, 0xffffe000, sve_misc, 0, OP3 (SVE_Zd, SVE_Pg3, SVE_Zn), OP_SVE_SMH, 0, C_SCAN_MOVPRFX | C_MAX_ELEM, 0),
+  _SVE_INSNC ("fcvtzu", 0x655fa000, 0xffffe000, sve_misc, 0, OP3 (SVE_Zd, SVE_Pg3, SVE_Zn), OP_SVE_DMH, 0, C_SCAN_MOVPRFX | C_MAX_ELEM, 0),
+  _SVE_INSNC ("fcvtzu", 0x659da000, 0xffffe000, sve_misc, 0, OP3 (SVE_Zd, SVE_Pg3, SVE_Zn), OP_SVE_SMS, 0, C_SCAN_MOVPRFX | C_MAX_ELEM, 0),
+  _SVE_INSNC ("fcvtzu", 0x65d9a000, 0xffffe000, sve_misc, 0, OP3 (SVE_Zd, SVE_Pg3, SVE_Zn), OP_SVE_SMD, 0, C_SCAN_MOVPRFX | C_MAX_ELEM, 0),
+  _SVE_INSNC ("fcvtzu", 0x65dda000, 0xffffe000, sve_misc, 0, OP3 (SVE_Zd, SVE_Pg3, SVE_Zn), OP_SVE_DMS, 0, C_SCAN_MOVPRFX | C_MAX_ELEM, 0),
+  _SVE_INSNC ("fcvtzu", 0x65dfa000, 0xffffe000, sve_misc, 0, OP3 (SVE_Zd, SVE_Pg3, SVE_Zn), OP_SVE_DMD, 0, C_SCAN_MOVPRFX | C_MAX_ELEM, 0),
   _SVE_INSNC ("fdiv", 0x650d8000, 0xff3fe000, sve_size_hsd, 0, OP4 (SVE_Zd, SVE_Pg3, SVE_Zd, SVE_Zm_5), OP_SVE_VMVV_HSD, 0, C_SCAN_MOVPRFX, 2),
   _SVE_INSNC ("fdivr", 0x650c8000, 0xff3fe000, sve_size_hsd, 0, OP4 (SVE_Zd, SVE_Pg3, SVE_Zd, SVE_Zm_5), OP_SVE_VMVV_HSD, 0, C_SCAN_MOVPRFX, 2),
   _SVE_INSN ("fdup", 0x2539c000, 0xff3fe000, sve_size_hsd, 0, OP2 (SVE_Zd, SVE_FPIMM8), OP_SVE_VU_HSD, F_HAS_ALIAS, 0),
@@ -4367,13 +4370,13 @@ struct aarch64_opcode aarch64_opcode_table[] =
   _SVE_INSNC ("revw", 0x05e68000, 0xffffe000, sve_misc, 0, OP3 (SVE_Zd, SVE_Pg3, SVE_Zn), OP_SVE_DMD, 0, C_SCAN_MOVPRFX, 0),
   _SVE_INSNC ("sabd", 0x040c0000, 0xff3fe000, sve_size_bhsd, 0, OP4 (SVE_Zd, SVE_Pg3, SVE_Zd, SVE_Zm_5), OP_SVE_VMVV_BHSD, 0, C_SCAN_MOVPRFX, 2),
   _SVE_INSN ("saddv", 0x04002000, 0xff3fe000, sve_size_bhs, 0, OP3 (SVE_Vd, SVE_Pg3, SVE_Zn), OP_SVE_DUV_BHS, 0, 0),
-  _SVE_INSNC ("scvtf", 0x6552a000, 0xffffe000, sve_misc, 0, OP3 (SVE_Zd, SVE_Pg3, SVE_Zn), OP_SVE_HMH, 0, C_SCAN_MOVPRFX, 0),
-  _SVE_INSNC ("scvtf", 0x6554a000, 0xffffe000, sve_misc, 0, OP3 (SVE_Zd, SVE_Pg3, SVE_Zn), OP_SVE_HMS, 0, C_SCAN_MOVPRFX, 0),
-  _SVE_INSNC ("scvtf", 0x6594a000, 0xffffe000, sve_misc, 0, OP3 (SVE_Zd, SVE_Pg3, SVE_Zn), OP_SVE_SMS, 0, C_SCAN_MOVPRFX, 0),
-  _SVE_INSNC ("scvtf", 0x65d0a000, 0xffffe000, sve_misc, 0, OP3 (SVE_Zd, SVE_Pg3, SVE_Zn), OP_SVE_DMS, 0, C_SCAN_MOVPRFX, 0),
-  _SVE_INSNC ("scvtf", 0x6556a000, 0xffffe000, sve_misc, 0, OP3 (SVE_Zd, SVE_Pg3, SVE_Zn), OP_SVE_HMD, 0, C_SCAN_MOVPRFX, 0),
-  _SVE_INSNC ("scvtf", 0x65d4a000, 0xffffe000, sve_misc, 0, OP3 (SVE_Zd, SVE_Pg3, SVE_Zn), OP_SVE_SMD, 0, C_SCAN_MOVPRFX, 0),
-  _SVE_INSNC ("scvtf", 0x65d6a000, 0xffffe000, sve_misc, 0, OP3 (SVE_Zd, SVE_Pg3, SVE_Zn), OP_SVE_DMD, 0, C_SCAN_MOVPRFX, 0),
+  _SVE_INSNC ("scvtf", 0x6552a000, 0xffffe000, sve_misc, 0, OP3 (SVE_Zd, SVE_Pg3, SVE_Zn), OP_SVE_HMH, 0, C_SCAN_MOVPRFX | C_MAX_ELEM, 0),
+  _SVE_INSNC ("scvtf", 0x6554a000, 0xffffe000, sve_misc, 0, OP3 (SVE_Zd, SVE_Pg3, SVE_Zn), OP_SVE_HMS, 0, C_SCAN_MOVPRFX | C_MAX_ELEM, 0),
+  _SVE_INSNC ("scvtf", 0x6594a000, 0xffffe000, sve_misc, 0, OP3 (SVE_Zd, SVE_Pg3, SVE_Zn), OP_SVE_SMS, 0, C_SCAN_MOVPRFX | C_MAX_ELEM, 0),
+  _SVE_INSNC ("scvtf", 0x65d0a000, 0xffffe000, sve_misc, 0, OP3 (SVE_Zd, SVE_Pg3, SVE_Zn), OP_SVE_DMS, 0, C_SCAN_MOVPRFX | C_MAX_ELEM, 0),
+  _SVE_INSNC ("scvtf", 0x6556a000, 0xffffe000, sve_misc, 0, OP3 (SVE_Zd, SVE_Pg3, SVE_Zn), OP_SVE_HMD, 0, C_SCAN_MOVPRFX | C_MAX_ELEM, 0),
+  _SVE_INSNC ("scvtf", 0x65d4a000, 0xffffe000, sve_misc, 0, OP3 (SVE_Zd, SVE_Pg3, SVE_Zn), OP_SVE_SMD, 0, C_SCAN_MOVPRFX | C_MAX_ELEM, 0),
+  _SVE_INSNC ("scvtf", 0x65d6a000, 0xffffe000, sve_misc, 0, OP3 (SVE_Zd, SVE_Pg3, SVE_Zn), OP_SVE_DMD, 0, C_SCAN_MOVPRFX | C_MAX_ELEM, 0),
   _SVE_INSNC ("sdiv", 0x04940000, 0xffbfe000, sve_size_sd, 0, OP4 (SVE_Zd, SVE_Pg3, SVE_Zd, SVE_Zm_5), OP_SVE_VMVV_SD, 0, C_SCAN_MOVPRFX, 2),
   _SVE_INSNC ("sdivr", 0x04960000, 0xffbfe000, sve_size_sd, 0, OP4 (SVE_Zd, SVE_Pg3, SVE_Zd, SVE_Zm_5), OP_SVE_VMVV_SD, 0, C_SCAN_MOVPRFX, 2),
   _SVE_INSNC ("sdot", 0x44800000, 0xffa0fc00, sve_size_sd, 0, OP3 (SVE_Zd, SVE_Zn, SVE_Zm_16), OP_SVE_VVV_SD_BH, 0, C_SCAN_MOVPRFX, 0),
@@ -4519,13 +4522,13 @@ struct aarch64_opcode aarch64_opcode_table[] =
   _SVE_INSN ("trn2", 0x05207400, 0xff20fc00, sve_size_bhsd, 0, OP3 (SVE_Zd, SVE_Zn, SVE_Zm_16), OP_SVE_VVV_BHSD, 0, 0),
   _SVE_INSNC ("uabd", 0x040d0000, 0xff3fe000, sve_size_bhsd, 0, OP4 (SVE_Zd, SVE_Pg3, SVE_Zd, SVE_Zm_5), OP_SVE_VMVV_BHSD, 0, C_SCAN_MOVPRFX, 2),
   _SVE_INSN ("uaddv", 0x04012000, 0xff3fe000, sve_size_bhsd, 0, OP3 (SVE_Vd, SVE_Pg3, SVE_Zn), OP_SVE_DUV_BHSD, 0, 0),
-  _SVE_INSNC ("ucvtf", 0x6553a000, 0xffffe000, sve_misc, 0, OP3 (SVE_Zd, SVE_Pg3, SVE_Zn), OP_SVE_HMH, 0, C_SCAN_MOVPRFX, 0),
-  _SVE_INSNC ("ucvtf", 0x6555a000, 0xffffe000, sve_misc, 0, OP3 (SVE_Zd, SVE_Pg3, SVE_Zn), OP_SVE_HMS, 0, C_SCAN_MOVPRFX, 0),
-  _SVE_INSNC ("ucvtf", 0x6595a000, 0xffffe000, sve_misc, 0, OP3 (SVE_Zd, SVE_Pg3, SVE_Zn), OP_SVE_SMS, 0, C_SCAN_MOVPRFX, 0),
-  _SVE_INSNC ("ucvtf", 0x65d1a000, 0xffffe000, sve_misc, 0, OP3 (SVE_Zd, SVE_Pg3, SVE_Zn), OP_SVE_DMS, 0, C_SCAN_MOVPRFX, 0),
-  _SVE_INSNC ("ucvtf", 0x6557a000, 0xffffe000, sve_misc, 0, OP3 (SVE_Zd, SVE_Pg3, SVE_Zn), OP_SVE_HMD, 0, C_SCAN_MOVPRFX, 0),
-  _SVE_INSNC ("ucvtf", 0x65d5a000, 0xffffe000, sve_misc, 0, OP3 (SVE_Zd, SVE_Pg3, SVE_Zn), OP_SVE_SMD, 0, C_SCAN_MOVPRFX, 0),
-  _SVE_INSNC ("ucvtf", 0x65d7a000, 0xffffe000, sve_misc, 0, OP3 (SVE_Zd, SVE_Pg3, SVE_Zn), OP_SVE_DMD, 0, C_SCAN_MOVPRFX, 0),
+  _SVE_INSNC ("ucvtf", 0x6553a000, 0xffffe000, sve_misc, 0, OP3 (SVE_Zd, SVE_Pg3, SVE_Zn), OP_SVE_HMH, 0, C_SCAN_MOVPRFX | C_MAX_ELEM, 0),
+  _SVE_INSNC ("ucvtf", 0x6555a000, 0xffffe000, sve_misc, 0, OP3 (SVE_Zd, SVE_Pg3, SVE_Zn), OP_SVE_HMS, 0, C_SCAN_MOVPRFX | C_MAX_ELEM, 0),
+  _SVE_INSNC ("ucvtf", 0x6595a000, 0xffffe000, sve_misc, 0, OP3 (SVE_Zd, SVE_Pg3, SVE_Zn), OP_SVE_SMS, 0, C_SCAN_MOVPRFX | C_MAX_ELEM, 0),
+  _SVE_INSNC ("ucvtf", 0x65d1a000, 0xffffe000, sve_misc, 0, OP3 (SVE_Zd, SVE_Pg3, SVE_Zn), OP_SVE_DMS, 0, C_SCAN_MOVPRFX | C_MAX_ELEM, 0),
+  _SVE_INSNC ("ucvtf", 0x6557a000, 0xffffe000, sve_misc, 0, OP3 (SVE_Zd, SVE_Pg3, SVE_Zn), OP_SVE_HMD, 0, C_SCAN_MOVPRFX | C_MAX_ELEM, 0),
+  _SVE_INSNC ("ucvtf", 0x65d5a000, 0xffffe000, sve_misc, 0, OP3 (SVE_Zd, SVE_Pg3, SVE_Zn), OP_SVE_SMD, 0, C_SCAN_MOVPRFX | C_MAX_ELEM, 0),
+  _SVE_INSNC ("ucvtf", 0x65d7a000, 0xffffe000, sve_misc, 0, OP3 (SVE_Zd, SVE_Pg3, SVE_Zn), OP_SVE_DMD, 0, C_SCAN_MOVPRFX | C_MAX_ELEM, 0),
   _SVE_INSNC ("udiv", 0x04950000, 0xffbfe000, sve_size_sd, 0, OP4 (SVE_Zd, SVE_Pg3, SVE_Zd, SVE_Zm_5), OP_SVE_VMVV_SD, 0, C_SCAN_MOVPRFX, 2),
   _SVE_INSNC ("udivr", 0x04970000, 0xffbfe000, sve_size_sd, 0, OP4 (SVE_Zd, SVE_Pg3, SVE_Zd, SVE_Zm_5), OP_SVE_VMVV_SD, 0, C_SCAN_MOVPRFX, 2),
   _SVE_INSNC ("udot", 0x44800400, 0xffa0fc00, sve_size_sd, 0, OP3 (SVE_Zd, SVE_Zn, SVE_Zm_16), OP_SVE_VVV_SD_BH, 0, C_SCAN_MOVPRFX, 0),
@@ -4673,6 +4676,8 @@ struct aarch64_opcode aarch64_opcode_table[] =
   SVE2_INSNC ("nbsl", 0x04e03c00, 0xffe0fc00, sve_misc, 0, OP4 (SVE_Zd, SVE_Zd, SVE_Zm_16, SVE_Zn), OP_SVE_DDDD, 0, C_SCAN_MOVPRFX, 1),
   SVE2_INSN ("nmatch", 0x45208010, 0xffa0e010,  sve_size_bh, 0, OP4 (SVE_Pd, SVE_Pg3, SVE_Zn, SVE_Zm_16), OP_SVE_VZVV_BH, 0, 0),
   SVE2_INSN ("pmul", 0x04206400, 0xffe0fc00,  sve_misc, 0, OP3 (SVE_Zd, SVE_Zn, SVE_Zm_16), OP_SVE_BBB, 0, 0),
+  SVE2_INSN ("pmullb", 0x45406800, 0xff60fc00, sve_size_13, 0, OP3 (SVE_Zd, SVE_Zn, SVE_Zm_16), OP_SVE_VVV_HD_BS, 0, 0),
+  SVE2_INSN ("pmullt", 0x45406c00, 0xff60fc00, sve_size_13, 0, OP3 (SVE_Zd, SVE_Zn, SVE_Zm_16), OP_SVE_VVV_HD_BS, 0, 0),
   SVE2_INSN ("raddhnb", 0x45206800, 0xff20fc00,  sve_size_hsd, 0, OP3 (SVE_Zd, SVE_Zn, SVE_Zm_16), OP_SVE_VVV_BHS_HSD, 0, 0),
   SVE2_INSN ("raddhnt", 0x45206c00, 0xff20fc00,  sve_size_hsd, 0, OP3 (SVE_Zd, SVE_Zn, SVE_Zm_16), OP_SVE_VVV_BHS_HSD, 0, 0),
   SVE2_INSN ("rshrnb", 0x45201800, 0xffa0fc00,  sve_shift_tsz_hsd, 0, OP3 (SVE_Zd, SVE_Zn, SVE_SHRIMM_UNPRED_22), OP_SVE_VVU_BHS_HSD, 0, 0),
@@ -4892,8 +4897,8 @@ struct aarch64_opcode aarch64_opcode_table[] =
   SVE2AES_INSN ("aese", 0x4522e000, 0xfffffc00, sve_misc, 0, OP3 (SVE_Zd, SVE_Zd, SVE_Zn), OP_SVE_BBB, 0, 1),
   SVE2AES_INSN ("aesimc", 0x4520e400, 0xffffffe0, sve_misc, 0, OP2 (SVE_Zd, SVE_Zd), OP_SVE_BB, 0, 1),
   SVE2AES_INSN ("aesmc", 0x4520e000, 0xffffffe0, sve_misc, 0, OP2 (SVE_Zd, SVE_Zd), OP_SVE_BB, 0, 1),
-  SVE2AES_INSN ("pmullb", 0x45006800, 0xff20fc00,  sve_size_013, 0, OP3 (SVE_Zd, SVE_Zn, SVE_Zm_16), OP_SVE_VVV_QHD_DBS, 0, 0),
-  SVE2AES_INSN ("pmullt", 0x45006c00, 0xff20fc00,  sve_size_013, 0, OP3 (SVE_Zd, SVE_Zn, SVE_Zm_16), OP_SVE_VVV_QHD_DBS, 0, 0),
+  SVE2AES_INSN ("pmullb", 0x45006800, 0xffe0fc00, sve_misc, 0, OP3 (SVE_Zd, SVE_Zn, SVE_Zm_16), OP_SVE_VVV_Q_D, 0, 0),
+  SVE2AES_INSN ("pmullt", 0x45006c00, 0xffe0fc00, sve_misc, 0, OP3 (SVE_Zd, SVE_Zn, SVE_Zm_16), OP_SVE_VVV_Q_D, 0, 0),
   /* SVE2_SHA3 instructions.  */
   SVE2SHA3_INSN ("rax1", 0x4520f400, 0xffe0fc00,  sve_misc, 0, OP3 (SVE_Zd, SVE_Zn, SVE_Zm_16), OP_SVE_DDD, 0, 0),
   /* SVE2_BITPERM instructions. */

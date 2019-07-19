@@ -29,7 +29,7 @@
 #include "source.h"
 #include "safe-ctype.h"
 #include <algorithm>
-#include "common/gdb_optional.h"
+#include "gdbsupport/gdb_optional.h"
 #include "valprint.h"
 
 /* Disassemble functions.
@@ -209,7 +209,7 @@ gdb_pretty_print_disassembler::pretty_print_insn (struct ui_out *uiout,
 
     if (insn->number != 0)
       {
-	uiout->field_fmt ("insn-number", "%u", insn->number);
+	uiout->field_unsigned ("insn-number", insn->number);
 	uiout->text ("\t");
       }
 
@@ -247,7 +247,7 @@ gdb_pretty_print_disassembler::pretty_print_insn (struct ui_out *uiout,
 	  uiout->field_string ("func-name", name.c_str (),
 			       ui_out_style_kind::FUNCTION);
 	uiout->text ("+");
-	uiout->field_int ("offset", offset);
+	uiout->field_signed ("offset", offset);
 	uiout->text (">:\t");
       }
     else

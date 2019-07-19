@@ -22,7 +22,55 @@
 #ifndef TUI_TUI_COMMAND_H
 #define TUI_TUI_COMMAND_H
 
-extern unsigned int tui_dispatch_ctrl_char (unsigned int);
+#include "tui/tui-data.h"
+
+/* The TUI command window.  */
+struct tui_cmd_window : public tui_win_info
+{
+  tui_cmd_window ()
+    : tui_win_info (CMD_WIN)
+  {
+    can_highlight = false;
+  }
+
+  DISABLE_COPY_AND_ASSIGN (tui_cmd_window);
+
+  void clear_detail () override;
+
+  void make_visible (bool visible) override
+  {
+  }
+
+  int max_height () const override;
+
+  void refresh_window () override
+  {
+  }
+
+  const char *name () const override
+  {
+    return CMD_NAME;
+  }
+
+  bool can_scroll () const override
+  {
+    return false;
+  }
+
+  int start_line = 0;
+
+protected:
+
+  void do_scroll_vertical (int num_to_scroll) override
+  {
+  }
+
+  void do_scroll_horizontal (int num_to_scroll) override
+  {
+  }
+
+  void do_make_visible_with_new_height () override;
+};
 
 /* Refresh the command window.  */
 extern void tui_refresh_cmd_win (void);

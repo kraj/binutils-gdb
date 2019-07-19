@@ -333,7 +333,7 @@ if [ supports_ppc64 ] then {
     run_dump_test "defsym"
     run_dump_test "tocvar"
     run_dump_test "tocnovar"
-    run_dump_test "tlsld"
+    run_dump_test "tlsldopt"
     run_dump_test "relocsort"
     run_dump_test "addpcis"
     run_dump_test "dotsym1"
@@ -341,9 +341,14 @@ if [ supports_ppc64 ] then {
     run_dump_test "dotsym3"
     run_dump_test "dotsym4"
     run_dump_test "pr23937"
+    run_dump_test "callstub-1"
+    run_dump_test "callstub-2"
+    run_dump_test "tlsgd"
+    run_dump_test "tlsld"
+    run_dump_test "tlsie"
 }
 
-run_dump_test "tlsld32"
+run_dump_test "tlsldopt32"
 
 run_ld_link_tests $ppceabitests
 

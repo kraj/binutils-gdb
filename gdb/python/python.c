@@ -93,7 +93,7 @@ const struct extension_language_defn extension_language_python =
 #include "python-internal.h"
 #include "linespec.h"
 #include "source.h"
-#include "common/version.h"
+#include "gdbsupport/version.h"
 #include "target.h"
 #include "gdbthread.h"
 #include "interps.h"
@@ -1602,7 +1602,7 @@ do_start_initialization ()
   std::string oldloc = setlocale (LC_ALL, NULL);
   setlocale (LC_ALL, "");
   progsize = strlen (progname.get ());
-  progname_copy = (wchar_t *) PyMem_Malloc ((progsize + 1) * sizeof (wchar_t));
+  progname_copy = (wchar_t *) xmalloc ((progsize + 1) * sizeof (wchar_t));
   if (!progname_copy)
     {
       fprintf (stderr, "out of memory\n");

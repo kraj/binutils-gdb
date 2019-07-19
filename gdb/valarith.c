@@ -26,7 +26,8 @@
 #include "language.h"
 #include "target-float.h"
 #include "infcall.h"
-#include "common/byte-vector.h"
+#include "gdbsupport/byte-vector.h"
+#include "gdbarch.h"
 
 /* Define whether or not the C operator '/' truncates towards zero for
    differently signed operands (truncation direction is undefined in C).  */
@@ -182,7 +183,7 @@ value_subscript (struct value *array, LONGEST index)
    to doubles, but no longer does.  */
 
 struct value *
-value_subscripted_rvalue (struct value *array, LONGEST index, int lowerbound)
+value_subscripted_rvalue (struct value *array, LONGEST index, LONGEST lowerbound)
 {
   struct type *array_type = check_typedef (value_type (array));
   struct type *elt_type = check_typedef (TYPE_TARGET_TYPE (array_type));

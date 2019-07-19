@@ -5733,11 +5733,20 @@ parse_operands (char *str, const aarch64_opcode *opcode)
 	      val = parse_vector_reg_list (&str, reg_type, &vectype);
 	      if (val == PARSE_FAIL)
 		goto failure;
+
 	      if (! reg_list_valid_p (val, /* accept_alternate */ 0))
 		{
 		  set_fatal_syntax_error (_("invalid register list"));
 		  goto failure;
 		}
+
+	      if (vectype.width != 0 && *str != ',')
+		{
+		  set_fatal_syntax_error
+		    (_("expected element type rather than vector type"));
+		  goto failure;
+		}
+
 	      info->reglist.first_regno = (val >> 2) & 0x1f;
 	      info->reglist.num_regs = (val & 0x3) + 1;
 	    }
@@ -8954,7 +8963,7 @@ static const struct aarch64_option_cpu_value_table aarch64_features[] = {
   {"sve2-sha3",		AARCH64_FEATURE (AARCH64_FEATURE_SVE2_SHA3, 0),
 			AARCH64_FEATURE (AARCH64_FEATURE_SVE2
 					 | AARCH64_FEATURE_SHA3, 0)},
-  {"bitperm",		AARCH64_FEATURE (AARCH64_FEATURE_SVE2_BITPERM, 0),
+  {"sve2-bitperm",	AARCH64_FEATURE (AARCH64_FEATURE_SVE2_BITPERM, 0),
 			AARCH64_FEATURE (AARCH64_FEATURE_SVE2, 0)},
   {NULL,		AARCH64_ARCH_NONE, AARCH64_ARCH_NONE},
 };

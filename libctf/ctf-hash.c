@@ -176,7 +176,8 @@ ctf_dynhash_insert (ctf_dynhash_t *hp, void *key, void *value)
 void
 ctf_dynhash_remove (ctf_dynhash_t *hp, const void *key)
 {
-  htab_remove_elt (hp->htab, (void *) key);
+  ctf_helem_t hep = { (void *) key, NULL, NULL, NULL };
+  htab_remove_elt (hp->htab, &hep);
 }
 
 void *
@@ -190,6 +191,55 @@ ctf_dynhash_lookup (ctf_dynhash_t *hp, const void *key)
     return (*slot)->value;
 
   return NULL;
+}
+
+typedef struct ctf_traverse_cb_arg
+{
+  ctf_hash_iter_f fun;
+  void *arg;
+} ctf_traverse_cb_arg_t;
+
+static int
+ctf_hashtab_traverse (void **slot, void *arg_)
+{
+  ctf_helem_t *helem = *((ctf_helem_t **) slot);
+  ctf_traverse_cb_arg_t *arg = (ctf_traverse_cb_arg_t *) arg_;
+
+  arg->fun (helem->key, helem->value, arg->arg);
+  return 1;
+}
+
+void
+ctf_dynhash_iter (ctf_dynhash_t *hp, ctf_hash_iter_f fun, void *arg_)
+{
+  ctf_traverse_cb_arg_t arg = { fun, arg_ };
+  htab_traverse (hp->htab, ctf_hashtab_traverse, &arg);
+}
+
+typedef struct ctf_traverse_remove_cb_arg
+{
+  struct htab *htab;
+  ctf_hash_iter_remove_f fun;
+  void *arg;
+} ctf_traverse_remove_cb_arg_t;
+
+static int
+ctf_hashtab_traverse_remove (void **slot, void *arg_)
+{
+  ctf_helem_t *helem = *((ctf_helem_t **) slot);
+  ctf_traverse_remove_cb_arg_t *arg = (ctf_traverse_remove_cb_arg_t *) arg_;
+
+  if (arg->fun (helem->key, helem->value, arg->arg))
+    htab_clear_slot (arg->htab, slot);
+  return 1;
+}
+
+void
+ctf_dynhash_iter_remove (ctf_dynhash_t *hp, ctf_hash_iter_remove_f fun,
+                         void *arg_)
+{
+  ctf_traverse_remove_cb_arg_t arg = { hp->htab, fun, arg_ };
+  htab_traverse (hp->htab, ctf_hashtab_traverse_remove, &arg);
 }
 
 void

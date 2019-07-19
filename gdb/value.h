@@ -22,7 +22,7 @@
 
 #include "frame.h"		/* For struct frame_id.  */
 #include "extension.h"
-#include "common/gdb_ref_ptr.h"
+#include "gdbsupport/gdb_ref_ptr.h"
 
 struct block;
 struct expression;
@@ -793,7 +793,10 @@ extern struct value *value_ptradd (struct value *arg1, LONGEST arg2);
 
 extern LONGEST value_ptrdiff (struct value *arg1, struct value *arg2);
 
-extern int value_must_coerce_to_target (struct value *arg1);
+/* Return true if VAL does not live in target memory, but should in order
+   to operate on it.  Otherwise return false.  */
+
+extern bool value_must_coerce_to_target (struct value *arg1);
 
 extern struct value *value_coerce_to_target (struct value *arg1);
 
@@ -1149,7 +1152,8 @@ extern struct value *find_function_in_inferior (const char *,
 extern struct value *value_allocate_space_in_inferior (int);
 
 extern struct value *value_subscripted_rvalue (struct value *array,
-					       LONGEST index, int lowerbound);
+					       LONGEST index,
+					       LONGEST lowerbound);
 
 /* User function handler.  */
 

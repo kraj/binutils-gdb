@@ -46,6 +46,21 @@ pipe -d DELIM COMMAND DELIM SHELL_COMMAND
   With no COMMAND, repeat the last executed command
   and send its output to SHELL_COMMAND.
 
+with SETTING [VALUE] [-- COMMAND]
+w SETTING [VALUE] [-- COMMAND]
+  Temporarily set SETTING, run COMMAND, and restore SETTING.
+  Usage: with SETTING -- COMMAND
+  With no COMMAND, repeats the last executed command.
+  SETTING is any GDB setting you can change with the "set"
+  subcommands.  For example, 'with language c -- print someobj'
+  temporarily switches to the C language in order to print someobj.
+  Settings can be combined: 'w lang c -- w print elements unlimited --
+  usercmd' switches to the C language and runs usercmd with no limit
+  of array elements to print.
+
+maint with SETTING [VALUE] [-- COMMAND]
+  Like "with", but works with "maintenance set" settings.
+
 set may-call-functions [on|off]
 show may-call-functions
   This controls whether GDB will attempt to call functions in
@@ -84,7 +99,8 @@ set style highlight background COLOR
 set style highlight intensity VALUE
   Control the styling of highlightings.
 
-maint test-settings KIND
+maint set test-settings KIND
+maint show test-settings KIND
   A set of commands used by the testsuite for exercising the settings
   infrastructure.
 
@@ -101,6 +117,13 @@ apropos [-v] REGEXP
   a flag "-v" (verbose) to show the full documentation
   of matching commands and to use the highlight style to mark
   the documentation parts matching REGEXP.
+
+printf
+eval
+  The GDB printf and eval commands can now print C-style and Ada-style
+  string convenience variables without calling functions in the program.
+  This allows to do formatted printing of strings without having
+  a running inferior, or when debugging a core dump.
 
 show style
   The "show style" and its subcommands are now styling
@@ -193,6 +216,10 @@ maint show test-options-completion-result
   ** GDB can now complete the options of the "thread apply all" and
      "taas" commands, and their "-ascending" option can now be
      abbreviated.
+
+  ** GDB can now complete the options of the "info threads", "info
+     functions", "info variables", "info locals", and "info args"
+     commands.
 
   ** GDB can now complete the options of the "compile file" and
      "compile code" commands.  The "compile file" command now

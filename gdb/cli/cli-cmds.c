@@ -23,7 +23,7 @@
 #include "readline/tilde.h"
 #include "completer.h"
 #include "target.h"	/* For baud_rate, remote_debug and remote_timeout.  */
-#include "common/gdb_wait.h"	/* For shell escape implementation.  */
+#include "gdbsupport/gdb_wait.h"	/* For shell escape implementation.  */
 #include "gdbcmd.h"
 #include "gdb_regex.h"	/* Used by apropos_command.  */
 #include "gdb_vfork.h"
@@ -37,7 +37,7 @@
 #include "source.h"
 #include "disasm.h"
 #include "tracepoint.h"
-#include "common/filestuff.h"
+#include "gdbsupport/filestuff.h"
 #include "location.h"
 #include "block.h"
 
@@ -52,7 +52,7 @@
 #include "cli/cli-utils.h"
 
 #include "extension.h"
-#include "common/pathstuff.h"
+#include "gdbsupport/pathstuff.h"
 
 #ifdef TUI
 #include "tui/tui.h"	/* For tui_active et.al.  */
@@ -209,6 +209,116 @@ static void
 show_command (const char *arg, int from_tty)
 {
   cmd_show_list (showlist, from_tty, "");
+}
+
+/* See cli/cli-cmds.h.  */
+
+void
+with_command_1 (const char *set_cmd_prefix,
+		cmd_list_element *setlist, const char *args, int from_tty)
+{
+  const char *delim = strstr (args, "--");
+  const char *nested_cmd = nullptr;
+
+  if (delim == args)
+    error (_("Missing setting before '--' delimiter"));
+
+  if (delim == nullptr || *skip_spaces (&delim[2]) == '\0')
+    nested_cmd = repeat_previous ();
+
+  cmd_list_element *set_cmd = lookup_cmd (&args, setlist, set_cmd_prefix,
+					  /*allow_unknown=*/ 0,
+					  /*ignore_help_classes=*/ 1);
+  gdb_assert (set_cmd != nullptr);
+
+  if (set_cmd->var == nullptr)
+    error (_("Cannot use this setting with the \"with\" command"));
+
+  std::string temp_value
+    = (delim == nullptr ? args : std::string (args, delim - args));
+
+  if (nested_cmd == nullptr)
+    nested_cmd = skip_spaces (delim + 2);
+
+  std::string org_value = get_setshow_command_value_string (set_cmd);
+
+  /* Tweak the setting to the new temporary value.  */
+  do_set_command (temp_value.c_str (), from_tty, set_cmd);
+
+  try
+    {
+      scoped_restore save_async = make_scoped_restore (&current_ui->async, 0);
+
+      /* Execute the nested command.  */
+      execute_command (nested_cmd, from_tty);
+    }
+  catch (const gdb_exception &ex)
+    {
+      /* Restore the setting and rethrow.  If restoring the setting
+	 throws, swallow the new exception and warn.  There's nothing
+	 else we can reasonably do.  */
+      try
+	{
+	  do_set_command (org_value.c_str (), from_tty, set_cmd);
+	}
+      catch (const gdb_exception &ex2)
+	{
+	  warning (_("Couldn't restore setting: %s"), ex2.what ());
+	}
+
+      throw;
+    }
+
+  /* Restore the setting.  */
+  do_set_command (org_value.c_str (), from_tty, set_cmd);
+}
+
+/* See cli/cli-cmds.h.  */
+
+void
+with_command_completer_1 (const char *set_cmd_prefix,
+			  completion_tracker &tracker,
+			  const char *text)
+{
+  tracker.set_use_custom_word_point (true);
+
+  const char *delim = strstr (text, "--");
+
+  /* If we're still not past the "--" delimiter, complete the "with"
+     command as if it was a "set" command.  */
+  if (delim == text
+      || delim == nullptr
+      || !isspace (delim[-1])
+      || !(isspace (delim[2]) || delim[2] == '\0'))
+    {
+      std::string new_text = std::string (set_cmd_prefix) + text;
+      tracker.advance_custom_word_point_by (-(int) strlen (set_cmd_prefix));
+      complete_nested_command_line (tracker, new_text.c_str ());
+      return;
+    }
+
+  /* We're past the "--" delimiter.  Complete on the sub command.  */
+  const char *nested_cmd = skip_spaces (delim + 2);
+  tracker.advance_custom_word_point_by (nested_cmd - text);
+  complete_nested_command_line (tracker, nested_cmd);
+}
+
+/* The "with" command.  */
+
+static void
+with_command (const char *args, int from_tty)
+{
+  with_command_1 ("set ", setlist, args, from_tty);
+}
+
+/* "with" command completer.  */
+
+static void
+with_command_completer (struct cmd_list_element *ignore,
+			completion_tracker &tracker,
+			const char *text, const char * /*word*/)
+{
+  with_command_completer_1 ("set ", tracker,  text);
 }
 
 
@@ -850,40 +960,71 @@ edit_command (const char *arg, int from_tty)
   xfree (p);
 }
 
+/* The options for the "pipe" command.  */
+
+struct pipe_cmd_opts
+{
+  /* For "-d".  */
+  char *delimiter = nullptr;
+
+  ~pipe_cmd_opts ()
+  {
+    xfree (delimiter);
+  }
+};
+
+static const gdb::option::option_def pipe_cmd_option_defs[] = {
+
+  gdb::option::string_option_def<pipe_cmd_opts> {
+    "d",
+    [] (pipe_cmd_opts *opts) { return &opts->delimiter; },
+    nullptr,
+    N_("Indicates to use the specified delimiter string to separate\n\
+COMMAND from SHELL_COMMAND, in alternative to |.  This is useful in\n\
+case COMMAND contains a | character."),
+  },
+
+};
+
+/* Create an option_def_group for the "pipe" command's options, with
+   OPTS as context.  */
+
+static inline gdb::option::option_def_group
+make_pipe_cmd_options_def_group (pipe_cmd_opts *opts)
+{
+  return {{pipe_cmd_option_defs}, opts};
+}
+
 /* Implementation of the "pipe" command.  */
 
 static void
 pipe_command (const char *arg, int from_tty)
 {
-  std::string delim ("|");
+  pipe_cmd_opts opts;
 
-  if (arg != nullptr && check_for_argument (&arg, "-d", 2))
-    {
-      delim = extract_arg (&arg);
-      if (delim.empty ())
-	error (_("Missing delimiter DELIM after -d"));
-    }
+  auto grp = make_pipe_cmd_options_def_group (&opts);
+  gdb::option::process_options
+    (&arg, gdb::option::PROCESS_OPTIONS_UNKNOWN_IS_OPERAND, grp);
+
+  const char *delim = "|";
+  if (opts.delimiter != nullptr)
+    delim = opts.delimiter;
 
   const char *command = arg;
   if (command == nullptr)
     error (_("Missing COMMAND"));
 
-  arg = strstr (arg, delim.c_str ());
+  arg = strstr (arg, delim);
 
   if (arg == nullptr)
     error (_("Missing delimiter before SHELL_COMMAND"));
 
   std::string gdb_cmd (command, arg - command);
 
-  arg += delim.length (); /* Skip the delimiter.  */
+  arg += strlen (delim); /* Skip the delimiter.  */
 
   if (gdb_cmd.empty ())
-    {
-      repeat_previous ();
-      gdb_cmd = skip_spaces (get_saved_command_line ());
-      if (gdb_cmd.empty ())
-	error (_("No previous command to relaunch"));
-    }
+    gdb_cmd = repeat_previous ();
 
   const char *shell_command = skip_spaces (arg);
   if (*shell_command == '\0')
@@ -912,6 +1053,43 @@ pipe_command (const char *arg, int from_tty)
     error (_("shell command \"%s\" failed: %s"), shell_command,
            safe_strerror (errno));
   exit_status_set_internal_vars (exit_status);
+}
+
+/* Completer for the pipe command.  */
+
+static void
+pipe_command_completer (struct cmd_list_element *ignore,
+			completion_tracker &tracker,
+			const char *text, const char *word_ignored)
+{
+  pipe_cmd_opts opts;
+
+  const char *org_text = text;
+  auto grp = make_pipe_cmd_options_def_group (&opts);
+  if (gdb::option::complete_options
+      (tracker, &text, gdb::option::PROCESS_OPTIONS_UNKNOWN_IS_OPERAND, grp))
+    return;
+
+  const char *delimiter = "|";
+  if (opts.delimiter != nullptr)
+    delimiter = opts.delimiter;
+
+  /* Check if we're past option values already.  */
+  if (text > org_text && !isspace (text[-1]))
+    return;
+
+  const char *delim = strstr (text, delimiter);
+
+  /* If we're still not past the delimiter, complete the gdb
+     command.  */
+  if (delim == nullptr || delim == text)
+    {
+      complete_nested_command_line (tracker, text);
+      return;
+    }
+
+  /* We're past the delimiter.  What follows is a shell command, which
+     we don't know how to complete.  */
 }
 
 static void
@@ -1518,8 +1696,8 @@ alias_command (const char *args, int from_tty)
      Example: alias spe = set print elements
 
      Otherwise ALIAS and COMMAND must have the same number of words,
-     and every word except the last must match; and the last word of
-     ALIAS is made an alias of the last word of COMMAND.
+     and every word except the last must identify the same prefix command;
+     and the last word of ALIAS is made an alias of the last word of COMMAND.
      Example: alias set print elms = set pr elem
      Note that unambiguous abbreviations are allowed.  */
 
@@ -1538,10 +1716,11 @@ alias_command (const char *args, int from_tty)
 	error (_("Mismatched command length between ALIAS and COMMAND."));
 
       /* Create copies of ALIAS and COMMAND without the last word,
-	 and use that to verify the leading elements match.  */
+	 and use that to verify the leading elements give the same
+	 prefix command.  */
       std::string alias_prefix_string (argv_to_string (alias_argv,
 						       alias_argc - 1));
-      std::string command_prefix_string (argv_to_string (alias_argv,
+      std::string command_prefix_string (argv_to_string (command_argv.get (),
 							 command_argc - 1));
       alias_prefix = alias_prefix_string.c_str ();
       command_prefix = command_prefix_string.c_str ();
@@ -1849,6 +2028,23 @@ Generic command for showing things about the debugger."),
   /* Another way to get at the same thing.  */
   add_info ("set", show_command, _("Show all GDB settings."));
 
+  c = add_com ("with", class_vars, with_command, _("\
+Temporarily set SETTING to VALUE, run COMMAND, and restore SETTING.\n\
+Usage: with SETTING [VALUE] [-- COMMAND]\n\
+Usage: w SETTING [VALUE] [-- COMMAND]\n\
+With no COMMAND, repeats the last executed command.\n\
+\n\
+SETTING is any setting you can change with the \"set\" subcommands.\n\
+E.g.:\n\
+  with language pascal -- print obj\n\
+  with print elements unlimited -- print obj\n\
+\n\
+You can change multiple settings using nested with, and use\n\
+abbreviations for commands and/or values.  E.g.:\n\
+  w la p -- w p el u -- p obj"));
+  set_cmd_completer_handle_brkchars (c, with_command_completer);
+  add_com_alias ("w", "with", class_vars, 1);
+
   add_cmd ("commands", no_set_class, show_commands, _("\
 Show the history of commands you typed.\n\
 You can supply a command number to start with, or a `+' to start after\n\
@@ -1922,6 +2118,7 @@ case COMMAND contains a | character.\n\
 \n\
 With no COMMAND, repeat the last executed command\n\
 and send its output to SHELL_COMMAND."));
+  set_cmd_completer_handle_brkchars (c, pipe_command_completer);
   add_com_alias ("|", "pipe", class_support, 0);
 
   add_com ("list", class_files, list_command, _("\
@@ -2018,15 +2215,8 @@ Make \"spe\" an alias of \"set print elements\":\n\
   alias spe = set print elements\n\
 Make \"elms\" an alias of \"elements\" in the \"set print\" command:\n\
   alias -a set print elms = set print elements"));
-}
 
-void
-init_cli_cmds (void)
-{
-  struct cmd_list_element *c;
-  char *source_help_text;
-
-  source_help_text = xstrprintf (_("\
+  const char *source_help_text = xstrprintf (_("\
 Read commands from a file named FILE.\n\
 \n\
 Usage: source [-s] [-v] FILE\n\
@@ -2035,7 +2225,7 @@ Usage: source [-s] [-v] FILE\n\
 -v: each command in FILE is echoed as it is executed.\n\
 \n\
 Note that the file \"%s\" is read automatically in this way\n\
-when GDB is started."), gdbinit);
+when GDB is started."), GDBINIT);
   c = add_cmd ("source", class_support, source_command,
 	       source_help_text, &cmdlist);
   set_cmd_completer (c, filename_completer);

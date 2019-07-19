@@ -28,7 +28,7 @@ struct parser_state;
 #include "value.h"
 #include "gdbtypes.h"
 #include "breakpoint.h"
-#include "common/vec.h"
+#include "gdbsupport/vec.h"
 
 /* Names of specific files known to be part of the runtime
    system and that might consider (confusing) debugging information.
@@ -239,7 +239,7 @@ extern char *ada_fold_name (const char *);
 
 extern struct block_symbol ada_lookup_symbol (const char *,
 					      const struct block *,
-					      domain_enum, int *);
+					      domain_enum);
 
 extern void ada_lookup_encoded_symbol
   (const char *name, const struct block *block, domain_enum domain,
@@ -377,6 +377,10 @@ extern void create_ada_exception_catchpoint
   (struct gdbarch *gdbarch, enum ada_exception_catchpoint_kind ex_kind,
    const std::string &excep_string, const std::string &cond_string, int tempflag,
    int disabled, int from_tty);
+
+/* Return true if BP is an Ada catchpoint.  */
+
+extern bool is_ada_exception_catchpoint (breakpoint *bp);
 
 /* Some information about a given Ada exception.  */
 

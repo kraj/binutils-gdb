@@ -45,7 +45,6 @@
 #include "tui/tui-regs.h"
 #include "tui/tui-win.h"
 #include "tui/tui-stack.h"
-#include "tui/tui-windata.h"
 #include "tui/tui-winsource.h"
 
 #include "gdb_curses.h"
@@ -81,7 +80,7 @@ tui_register_changed (struct frame_info *frame, int regno)
   if (tui_refreshing_registers == 0)
     {
       tui_refreshing_registers = 1;
-      tui_check_data_values (fi);
+      tui_check_register_values (fi);
       tui_refreshing_registers = 0;
     }
 }
@@ -91,7 +90,7 @@ tui_register_changed (struct frame_info *frame, int regno)
 static void
 tui_event_create_breakpoint (struct breakpoint *b)
 {
-  tui_update_all_breakpoint_info ();
+  tui_update_all_breakpoint_info (nullptr);
 }
 
 /* Breakpoint deletion hook.
@@ -99,13 +98,13 @@ tui_event_create_breakpoint (struct breakpoint *b)
 static void
 tui_event_delete_breakpoint (struct breakpoint *b)
 {
-  tui_update_all_breakpoint_info ();
+  tui_update_all_breakpoint_info (b);
 }
 
 static void
 tui_event_modify_breakpoint (struct breakpoint *b)
 {
-  tui_update_all_breakpoint_info ();
+  tui_update_all_breakpoint_info (nullptr);
 }
 
 /* Refresh TUI's frame and register information.  This is a hook intended to be
@@ -153,7 +152,7 @@ tui_refresh_frame_and_register_information (int registers_too_p)
       && (frame_info_changed_p || registers_too_p))
     {
       tui_refreshing_registers = 1;
-      tui_check_data_values (fi);
+      tui_check_register_values (fi);
       tui_refreshing_registers = 0;
     }
 }
@@ -204,18 +203,6 @@ tui_normal_stop (struct bpstats *bs, int print_frame)
   tui_refresh_frame_and_register_information (/*registers_too_p=*/1);
 }
 
-/* Observer for source_cache_cleared.  */
-
-static void
-tui_redisplay_source ()
-{
-  if (tui_is_window_visible (SRC_WIN))
-    {
-      /* Force redisplay.  */
-      tui_refill_source_window (tui_win_list[SRC_WIN]);
-    }
-}
-
 /* Token associated with observers registered while TUI hooks are
    installed.  */
 static const gdb::observers::token tui_observers_token {};
@@ -251,8 +238,6 @@ tui_attach_detach_observers (bool attach)
 		    tui_normal_stop, attach);
   attach_or_detach (gdb::observers::register_changed,
 		    tui_register_changed, attach);
-  attach_or_detach (gdb::observers::source_styling_changed,
-		    tui_redisplay_source, attach);
 }
 
 /* Install the TUI specific hooks.  */

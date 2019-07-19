@@ -40,13 +40,13 @@
 #include "inline-frame.h"
 #include "tracepoint.h"
 #include "gdb/fileio.h"
-#include "common/agent.h"
+#include "gdbsupport/agent.h"
 #include "auxv.h"
 #include "target-debug.h"
 #include "top.h"
 #include "event-top.h"
 #include <algorithm>
-#include "common/byte-vector.h"
+#include "gdbsupport/byte-vector.h"
 #include "terminal.h"
 #include <unordered_map>
 
@@ -3793,9 +3793,9 @@ flash_erase_command (const char *cmd, int from_tty)
 	  ui_out_emit_tuple tuple_emitter (current_uiout, "erased-regions");
 
           current_uiout->message (_("Erasing flash memory region at address "));
-          current_uiout->field_fmt ("address", "%s", paddress (gdbarch, m.lo));
+          current_uiout->field_core_addr ("address", gdbarch, m.lo);
           current_uiout->message (", size = ");
-          current_uiout->field_fmt ("size", "%s", hex_string (m.hi - m.lo));
+          current_uiout->field_string ("size", hex_string (m.hi - m.lo));
           current_uiout->message ("\n");
         }
     }

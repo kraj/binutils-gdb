@@ -25,7 +25,7 @@
 #include "gdbcore.h"
 #include "regcache.h"
 #include "nat/gdb_ptrace.h"
-#include "common/gdb_wait.h"
+#include "gdbsupport/gdb_wait.h"
 #include <signal.h>
 
 #include "inf-ptrace.h"
@@ -33,6 +33,7 @@
 #include "gdbthread.h"
 #include "nat/fork-inferior.h"
 #include "utils.h"
+#include "gdbarch.h"
 
 
 

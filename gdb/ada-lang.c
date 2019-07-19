@@ -49,9 +49,9 @@
 #include "valprint.h"
 #include "source.h"
 #include "observable.h"
-#include "common/vec.h"
+#include "gdbsupport/vec.h"
 #include "stack.h"
-#include "common/gdb_vecs.h"
+#include "gdbsupport/gdb_vecs.h"
 #include "typeprint.h"
 #include "namespace.h"
 
@@ -60,8 +60,8 @@
 #include "mi/mi-common.h"
 #include "arch-utils.h"
 #include "cli/cli-utils.h"
-#include "common/function-view.h"
-#include "common/byte-vector.h"
+#include "gdbsupport/function-view.h"
+#include "gdbsupport/byte-vector.h"
 #include <algorithm>
 #include <map>
 
@@ -5778,22 +5778,18 @@ ada_lookup_encoded_symbol (const char *name, const struct block *block,
   std::string verbatim = std::string ("<") + name + '>';
 
   gdb_assert (info != NULL);
-  *info = ada_lookup_symbol (verbatim.c_str (), block, domain, NULL);
+  *info = ada_lookup_symbol (verbatim.c_str (), block, domain);
 }
 
 /* Return a symbol in DOMAIN matching NAME, in BLOCK0 and enclosing
    scope and in global scopes, or NULL if none.  NAME is folded and
    encoded first.  Otherwise, the result is as for ada_lookup_symbol_list,
-   choosing the first symbol if there are multiple choices.
-   If IS_A_FIELD_OF_THIS is not NULL, it is set to zero.  */
+   choosing the first symbol if there are multiple choices.  */
 
 struct block_symbol
 ada_lookup_symbol (const char *name, const struct block *block0,
-                   domain_enum domain, int *is_a_field_of_this)
+                   domain_enum domain)
 {
-  if (is_a_field_of_this != NULL)
-    *is_a_field_of_this = 0;
-
   std::vector<struct block_symbol> candidates;
   int n_candidates;
 
@@ -5815,7 +5811,7 @@ ada_lookup_symbol_nonlocal (const struct language_defn *langdef,
 {
   struct block_symbol sym;
 
-  sym = ada_lookup_symbol (name, block_static_block (block), domain, NULL);
+  sym = ada_lookup_symbol (name, block_static_block (block), domain);
   if (sym.symbol != NULL)
     return sym;
 
@@ -12287,7 +12283,7 @@ class ada_catchpoint_location : public bp_location
 {
 public:
   ada_catchpoint_location (breakpoint *owner)
-    : bp_location (owner)
+    : bp_location (owner, bp_loc_software_breakpoint)
   {}
 
   /* The condition that checks whether the exception that was raised
@@ -12469,7 +12465,7 @@ print_it_exception (enum ada_exception_catchpoint_kind ex, bpstat bs)
 
   uiout->text (b->disposition == disp_del
 	       ? "\nTemporary catchpoint " : "\nCatchpoint ");
-  uiout->field_int ("bkptno", b->number);
+  uiout->field_signed ("bkptno", b->number);
   uiout->text (", ");
 
   /* ada_exception_name_addr relies on the selected frame being the
@@ -12550,14 +12546,11 @@ print_one_exception (enum ada_exception_catchpoint_kind ex,
   struct value_print_options opts;
 
   get_user_print_options (&opts);
+
   if (opts.addressprint)
-    {
-      annotate_field (4);
-      uiout->field_core_addr ("addr", b->loc->gdbarch, b->loc->address);
-    }
+    uiout->field_skip ("addr");
 
   annotate_field (5);
-  *last_loc = b->loc;
   switch (ex)
     {
       case ada_catch_exception:
@@ -12610,7 +12603,7 @@ print_mention_exception (enum ada_exception_catchpoint_kind ex,
 
   uiout->text (b->disposition == disp_del ? _("Temporary catchpoint ")
                                                  : _("Catchpoint "));
-  uiout->field_int ("bkptno", b->number);
+  uiout->field_signed ("bkptno", b->number);
   uiout->text (": ");
 
   switch (ex)
@@ -12874,6 +12867,17 @@ print_recreate_catch_handlers (struct breakpoint *b,
 }
 
 static struct breakpoint_ops catch_handlers_breakpoint_ops;
+
+/* See ada-lang.h.  */
+
+bool
+is_ada_exception_catchpoint (breakpoint *bp)
+{
+  return (bp->ops == &catch_exception_breakpoint_ops
+	  || bp->ops == &catch_exception_unhandled_breakpoint_ops
+	  || bp->ops == &catch_assert_breakpoint_ops
+	  || bp->ops == &catch_handlers_breakpoint_ops);
+}
 
 /* Split the arguments specified in a "catch exception" command.  
    Set EX to the appropriate catchpoint type.

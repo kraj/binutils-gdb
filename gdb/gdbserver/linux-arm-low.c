@@ -22,6 +22,8 @@
 #include "arch/arm-linux.h"
 #include "arch/arm-get-next-pcs.h"
 #include "linux-aarch32-low.h"
+#include "linux-aarch32-tdesc.h"
+#include "linux-arm-tdesc.h"
 
 #include <sys/uio.h>
 /* Don't include elf.h if linux/elf.h got included by gdb_proc_service.h.
@@ -32,19 +34,6 @@
 #include "nat/gdb_ptrace.h"
 #include <signal.h>
 #include <sys/syscall.h>
-
-/* Defined in auto-generated files.  */
-void init_registers_arm (void);
-extern const struct target_desc *tdesc_arm;
-
-void init_registers_arm_with_iwmmxt (void);
-extern const struct target_desc *tdesc_arm_with_iwmmxt;
-
-void init_registers_arm_with_vfpv2 (void);
-extern const struct target_desc *tdesc_arm_with_vfpv2;
-
-void init_registers_arm_with_vfpv3 (void);
-extern const struct target_desc *tdesc_arm_with_vfpv3;
 
 #ifndef PTRACE_GET_THREAD_AREA
 #define PTRACE_GET_THREAD_AREA 22
@@ -175,16 +164,14 @@ arm_cannot_fetch_register (int regno)
 static void
 arm_fill_wmmxregset (struct regcache *regcache, void *buf)
 {
-  int i;
-
-  if (regcache->tdesc != tdesc_arm_with_iwmmxt)
+  if (arm_linux_get_tdesc_fp_type (regcache->tdesc) != ARM_FP_TYPE_IWMMXT)
     return;
 
-  for (i = 0; i < 16; i++)
+  for (int i = 0; i < 16; i++)
     collect_register (regcache, arm_num_regs + i, (char *) buf + i * 8);
 
   /* We only have access to wcssf, wcasf, and wcgr0-wcgr3.  */
-  for (i = 0; i < 6; i++)
+  for (int i = 0; i < 6; i++)
     collect_register (regcache, arm_num_regs + i + 16,
 		      (char *) buf + 16 * 8 + i * 4);
 }
@@ -192,16 +179,14 @@ arm_fill_wmmxregset (struct regcache *regcache, void *buf)
 static void
 arm_store_wmmxregset (struct regcache *regcache, const void *buf)
 {
-  int i;
-
-  if (regcache->tdesc != tdesc_arm_with_iwmmxt)
+  if (arm_linux_get_tdesc_fp_type (regcache->tdesc) != ARM_FP_TYPE_IWMMXT)
     return;
 
-  for (i = 0; i < 16; i++)
+  for (int i = 0; i < 16; i++)
     supply_register (regcache, arm_num_regs + i, (char *) buf + i * 8);
 
   /* We only have access to wcssf, wcasf, and wcgr0-wcgr3.  */
-  for (i = 0; i < 6; i++)
+  for (int i = 0; i < 6; i++)
     supply_register (regcache, arm_num_regs + i + 16,
 		     (char *) buf + 16 * 8 + i * 4);
 }
@@ -211,13 +196,19 @@ arm_fill_vfpregset (struct regcache *regcache, void *buf)
 {
   int num;
 
-  if (regcache->tdesc == tdesc_arm_with_neon
-      || regcache->tdesc == tdesc_arm_with_vfpv3)
+  if (is_aarch32_linux_description (regcache->tdesc))
     num = 32;
-  else if (regcache->tdesc == tdesc_arm_with_vfpv2)
-    num = 16;
   else
-    return;
+    {
+      arm_fp_type fp_type = arm_linux_get_tdesc_fp_type (regcache->tdesc);
+
+      if (fp_type == ARM_FP_TYPE_VFPV3)
+	num = 32;
+      else if (fp_type == ARM_FP_TYPE_VFPV2)
+	num = 16;
+      else
+	return;
+    }
 
   arm_fill_vfpregset_num (regcache, buf, num);
 }
@@ -234,13 +225,19 @@ arm_store_vfpregset (struct regcache *regcache, const void *buf)
 {
   int num;
 
-  if (regcache->tdesc == tdesc_arm_with_neon
-      || regcache->tdesc == tdesc_arm_with_vfpv3)
+  if (is_aarch32_linux_description (regcache->tdesc))
     num = 32;
-  else if (regcache->tdesc == tdesc_arm_with_vfpv2)
-    num = 16;
   else
-    return;
+    {
+      arm_fp_type fp_type = arm_linux_get_tdesc_fp_type (regcache->tdesc);
+
+      if (fp_type == ARM_FP_TYPE_VFPV3)
+	num = 32;
+      else if (fp_type == ARM_FP_TYPE_VFPV2)
+	num = 16;
+      else
+	return;
+    }
 
   arm_store_vfpregset_num (regcache, buf, num);
 }
@@ -850,45 +847,34 @@ get_next_pcs_syscall_next_pc (struct arm_get_next_pcs *self)
 static const struct target_desc *
 arm_read_description (void)
 {
-  int pid = lwpid_of (current_thread);
   unsigned long arm_hwcap = linux_get_hwcap (4);
 
-  /* Query hardware watchpoint/breakpoint capabilities.  */
-  arm_linux_init_hwbp_cap (pid);
-
   if (arm_hwcap & HWCAP_IWMMXT)
-    return tdesc_arm_with_iwmmxt;
+    return arm_linux_read_description (ARM_FP_TYPE_IWMMXT);
 
   if (arm_hwcap & HWCAP_VFP)
     {
-      const struct target_desc *result;
-      char *buf;
+      /* Make sure that the kernel supports reading VFP registers.  Support was
+	 added in 2.6.30.  */
+      int pid = lwpid_of (current_thread);
+      errno = 0;
+      char *buf = (char *) alloca (ARM_VFP3_REGS_SIZE);
+      if (ptrace (PTRACE_GETVFPREGS, pid, 0, buf) < 0 && errno == EIO)
+	return arm_linux_read_description (ARM_FP_TYPE_NONE);
 
       /* NEON implies either no VFP, or VFPv3-D32.  We only support
 	 it with VFP.  */
       if (arm_hwcap & HWCAP_NEON)
-	result = tdesc_arm_with_neon;
+	return aarch32_linux_read_description ();
       else if ((arm_hwcap & (HWCAP_VFPv3 | HWCAP_VFPv3D16)) == HWCAP_VFPv3)
-	result = tdesc_arm_with_vfpv3;
+	return arm_linux_read_description (ARM_FP_TYPE_VFPV3);
       else
-	result = tdesc_arm_with_vfpv2;
-
-      /* Now make sure that the kernel supports reading these
-	 registers.  Support was added in 2.6.30.  */
-      errno = 0;
-      buf = (char *) xmalloc (32 * 8 + 4);
-      if (ptrace (PTRACE_GETVFPREGS, pid, 0, buf) < 0
-	  && errno == EIO)
-	result = tdesc_arm;
-
-      free (buf);
-
-      return result;
+	return arm_linux_read_description (ARM_FP_TYPE_VFPV2);
     }
 
   /* The default configuration uses legacy FPA registers, probably
      simulated.  */
-  return tdesc_arm;
+  return arm_linux_read_description (ARM_FP_TYPE_NONE);
 }
 
 static void
@@ -897,6 +883,9 @@ arm_arch_setup (void)
   int tid = lwpid_of (current_thread);
   int gpregs[18];
   struct iovec iov;
+
+  /* Query hardware watchpoint/breakpoint capabilities.  */
+  arm_linux_init_hwbp_cap (tid);
 
   current_process ()->tdesc = arm_read_description ();
 
@@ -973,14 +962,12 @@ arm_get_syscall_trapinfo (struct regcache *regcache, int *sysno)
 /* Register sets without using PTRACE_GETREGSET.  */
 
 static struct regset_info arm_regsets[] = {
-  { PTRACE_GETREGS, PTRACE_SETREGS, 0, 18 * 4,
-    GENERAL_REGS,
+  { PTRACE_GETREGS, PTRACE_SETREGS, 0,
+    ARM_CORE_REGS_SIZE + ARM_INT_REGISTER_SIZE, GENERAL_REGS,
     arm_fill_gregset, arm_store_gregset },
-  { PTRACE_GETWMMXREGS, PTRACE_SETWMMXREGS, 0, 16 * 8 + 6 * 4,
-    EXTENDED_REGS,
+  { PTRACE_GETWMMXREGS, PTRACE_SETWMMXREGS, 0, IWMMXT_REGS_SIZE, EXTENDED_REGS,
     arm_fill_wmmxregset, arm_store_wmmxregset },
-  { PTRACE_GETVFPREGS, PTRACE_SETVFPREGS, 0, 32 * 8 + 4,
-    EXTENDED_REGS,
+  { PTRACE_GETVFPREGS, PTRACE_SETVFPREGS, 0, ARM_VFP3_REGS_SIZE, EXTENDED_REGS,
     arm_fill_vfpregset, arm_store_vfpregset },
   NULL_REGSET
 };
@@ -1011,10 +998,11 @@ arm_regs_info (void)
   const struct target_desc *tdesc = current_process ()->tdesc;
 
   if (have_ptrace_getregset == 1
-      && (tdesc == tdesc_arm_with_neon || tdesc == tdesc_arm_with_vfpv3))
+      && (is_aarch32_linux_description (tdesc)
+	  || arm_linux_get_tdesc_fp_type (tdesc) == ARM_FP_TYPE_VFPV3))
     return &regs_info_aarch32;
-  else
-    return &regs_info_arm;
+
+  return &regs_info_arm;
 }
 
 struct linux_target_ops the_low_target = {
@@ -1059,13 +1047,6 @@ struct linux_target_ops the_low_target = {
 void
 initialize_low_arch (void)
 {
-  /* Initialize the Linux target descriptions.  */
-  init_registers_arm ();
-  init_registers_arm_with_iwmmxt ();
-  init_registers_arm_with_vfpv2 ();
-  init_registers_arm_with_vfpv3 ();
-
   initialize_low_arch_aarch32 ();
-
   initialize_regsets_info (&arm_regsets_info);
 }
