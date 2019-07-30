@@ -33,9 +33,6 @@
 /* Define to BFD's default target vector. */
 #undef DEFAULT_BFD_VEC
 
-/* Enable debuginfo server */
-#undef ENABLE_DBGSERVER
-
 /* Define to 1 if translation of program messages to the user's native
    language is requested. */
 #undef ENABLE_NLS
@@ -230,6 +227,9 @@
 
 /* Define if you have the babeltrace library. */
 #undef HAVE_LIBBABELTRACE
+
+/* Define if you have the dbgserver library. */
+#undef HAVE_LIBDBGSERVER
 
 /* Define if you have the expat library. */
 #undef HAVE_LIBEXPAT

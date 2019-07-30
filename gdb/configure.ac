@@ -328,13 +328,31 @@ case $host_os in
 esac
 
 # Enable dbgserver
-AC_ARG_ENABLE([dbgserver],
-AC_HELP_STRING([--enable-dbgserver],
-               [Enable debuginfo and source-file lookups with dbgserver]))
-AS_IF([test "x$enable_dbgserver" = "xyes"], [
-    AC_DEFINE([ENABLE_DBGSERVER],[1],[Enable debuginfo server])
-], [enable_dbgserver="no"])
-AM_CONDITIONAL([DBGSERVER],[test "x$enable_dbgserver" = "xyes"])
+AC_ARG_WITH([dbgserver],
+        AC_HELP_STRING([--with-dbgserver],
+                       [Enable debuginfo and source-file lookups with dbgserver (auto/yes/no)]),
+        [], [with_dbgserver=auto])
+AC_MSG_CHECKING([whether to use dbgserver])
+AC_MSG_RESULT([$with_dbgserver])
+
+if test "${with_dbgserver}" = no; then
+  AC_MSG_WARN([dbgserver support disabled; some features may be unavailable.])
+  HAVE_LIBDBGSERVER=no
+else
+  AC_LIB_HAVE_LINKFLAGS([dbgserver], [], [#include <elfutils/dbgserver-client.h>],
+                                     [const unsigned char buildid;
+                                     int buildid_len = 1;
+                                     char *path;
+                                     path = dbgclient_find_debuginfo (& buildid, buildid_len, &path);])
+  if test "$HAVE_LIBDBGSERVER" != yes; then
+    if test "$with_dbgserver" = yes; then
+      AC_MSG_ERROR([dbgserver is missing or unusable])
+    else
+      AC_MSG_WARN([dbgserver is missing or unusable; some features may be unavailable.])
+    fi
+  fi
+fi
+
 
 # Libunwind support for ia64.
 

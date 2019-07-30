@@ -48,7 +48,9 @@
 #include "auxv.h"
 #include "mdebugread.h"
 #include <dlfcn.h>
-#include "dbgserver-client.h"
+#if HAVE_LIBDBGSERVER
+#include <elfutils/dbgserver-client.h>
+#endif
 
 /* Forward declarations.  */
 extern const struct sym_fns elf_sym_fns_gdb_index;
@@ -1298,47 +1300,30 @@ elf_symfile_read (struct objfile *objfile, symfile_add_flags symfile_flags)
 	  symbol_file_add_separate (debug_bfd.get (), debugfile.c_str (),
 				    symfile_flags, objfile);
 	}
-#if ENABLE_DBGSERVER 
+#if HAVE_LIBDBGSERVER 
       else
         {
           const struct bfd_build_id *build_id;
-          static void *dbgclient_so;
-          static int (*fp_dbgclient_find_debuginfo)(const unsigned char *,
-                                                    int,
-                                                    char **);
+	  char *debugfile_path;
 
           build_id = build_id_bfd_get (objfile->obfd);
+	  int fd = dbgclient_find_debuginfo (build_id->data,
+					     build_id->size,
+					     &debugfile_path);
 
-          if (dbgclient_so == NULL)
-            dbgclient_so = dlopen ("libdbgserver.so", RTLD_LAZY);
-          if (dbgclient_so != NULL && fp_dbgclient_find_debuginfo == NULL)
-            fp_dbgclient_find_debuginfo = 
-                (__typeof__ (fp_dbgclient_find_debuginfo))
-                dlsym (dbgclient_so, "dbgclient_find_debuginfo");
+	  if (fd >= 0)
+	    {
+	      /* debuginfo successfully retrieved from server, reopen
+		 the file as a bfd instead.  */
+	      gdb_bfd_ref_ptr debug_bfd (symfile_bfd_open (debugfile_path));
 
-          if (build_id != NULL && fp_dbgclient_find_debuginfo != NULL)
-            {
-              const struct bfd_build_id *build_id;
-              char *debugfile_path;
-
-              int fd = dbgclient_find_debuginfo (build_id->data,
-                                                 build_id->size,
-                                                 &debugfile_path);
-
-              if (fd >= 0)
-                {
-                  /* debuginfo successfully retrieved from server, reopen
-                     the file as a bfd instead.  */
-                  close(fd);
-                  gdb_bfd_ref_ptr debug_bfd (symfile_bfd_open (debugfile_path));
-
-                  symbol_file_add_separate(debug_bfd.get (), debugfile_path,
-                                           symfile_flags, objfile);
-                  free(debugfile_path); 
-                }
-            }
-        }
-#endif /* ENABLE_DBGSERVER */
+	      symbol_file_add_separate(debug_bfd.get (), debugfile_path,
+				       symfile_flags, objfile);
+	      close(fd);
+	      free(debugfile_path); 
+	    }
+	}
+#endif /* LIBDBGSERVER */
     }
 }
 

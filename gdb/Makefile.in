@@ -210,7 +210,8 @@ INTL = @LIBINTL@
 INTL_DEPS = @LIBINTL_DEP@
 INTL_CFLAGS = @INCINTL@
 
-LIBDBGSERVER = /usr/local/lib/libdbgserver.so
+# Where is the dbgserver library, if any?
+LIBDBGSERVER = @LIBDBGSERVER@
 
 # Where is the ICONV library?  This will be empty if in libc or not available.
 LIBICONV = @LIBICONV@
