@@ -327,6 +327,15 @@ case $host_os in
     enable_gdbtk=no ;;
 esac
 
+# Enable dbgserver
+AC_ARG_ENABLE([dbgserver],
+AC_HELP_STRING([--enable-dbgserver],
+               [Enable debuginfo and source-file lookups with dbgserver]))
+AS_IF([test "x$enable_dbgserver" = "xyes"], [
+    AC_DEFINE([ENABLE_DBGSERVER],[1],[Enable debuginfo server])
+], [enable_dbgserver="no"])
+AM_CONDITIONAL([DBGSERVER],[test "x$enable_dbgserver" = "xyes"])
+
 # Libunwind support for ia64.
 
 AC_ARG_WITH(libunwind-ia64,

@@ -748,6 +748,8 @@ REPORT_BUGS_TEXI
 REPORT_BUGS_TO
 PKGVERSION
 CODESIGN_CERT
+DBGSERVER_FALSE
+DBGSERVER_TRUE
 HAVE_NATIVE_GCORE_TARGET
 TARGET_OBS
 subdirs
@@ -859,6 +861,7 @@ enable_64_bit_bfd
 enable_gdbmi
 enable_tui
 enable_gdbtk
+enable_dbgserver
 with_libunwind_ia64
 with_curses
 enable_profiling
@@ -1551,6 +1554,8 @@ Optional Features:
   --disable-gdbmi         disable machine-interface (MI)
   --enable-tui            enable full-screen terminal user interface (TUI)
   --enable-gdbtk          enable gdbtk graphical user interface (GUI)
+  --enable-dbgserver      Enable debuginfo and source-file lookups with
+                          dbgserver
   --enable-profiling      enable profiling of GDB
   --enable-codesign=CERT  sign gdb with 'codesign -s CERT'
   --disable-rpath         do not hardcode runtime library paths
@@ -6743,6 +6748,30 @@ case $host_os in
 $as_echo "$as_me: WARNING: gdbtk isn't supported on $host; disabling" >&2;}
     enable_gdbtk=no ;;
 esac
+
+# Enable dbgserver
+# Check whether --enable-dbgserver was given.
+if test "${enable_dbgserver+set}" = set; then :
+  enableval=$enable_dbgserver;
+fi
+
+if test "x$enable_dbgserver" = "xyes"; then :
+
+
+$as_echo "#define ENABLE_DBGSERVER 1" >>confdefs.h
+
+
+else
+  enable_dbgserver="no"
+fi
+ if test "x$enable_dbgserver" = "xyes"; then
+  DBGSERVER_TRUE=
+  DBGSERVER_FALSE='#'
+else
+  DBGSERVER_TRUE='#'
+  DBGSERVER_FALSE=
+fi
+
 
 # Libunwind support for ia64.
 
@@ -17853,6 +17882,10 @@ LTLIBOBJS=$ac_ltlibobjs
 
 if test -z "${MAINTAINER_MODE_TRUE}" && test -z "${MAINTAINER_MODE_FALSE}"; then
   as_fn_error $? "conditional \"MAINTAINER_MODE\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${DBGSERVER_TRUE}" && test -z "${DBGSERVER_FALSE}"; then
+  as_fn_error $? "conditional \"DBGSERVER\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${HAVE_PYTHON_TRUE}" && test -z "${HAVE_PYTHON_FALSE}"; then

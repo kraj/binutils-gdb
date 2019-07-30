@@ -30,6 +30,9 @@
 
 #include <sys/types.h>
 #include <fcntl.h>
+#include <dlfcn.h>
+#include "build-id.h"
+#include "dbgserver-client.h"
 #include "gdbcore.h"
 #include "gdb_regex.h"
 #include "symfile.h"
@@ -1064,6 +1067,42 @@ open_source_file (struct symtab *s)
   s->fullname = NULL;
   scoped_fd fd = find_and_open_source (s->filename, SYMTAB_DIRNAME (s),
 				       &fullname);
+
+#if ENABLE_DBGSERVER
+  if (fd.get() < 0)
+    {
+      static void *dbgclient_so;
+      static int (*fp_dbgclient_find_source)(const unsigned char *,
+                                             int,
+                                             const char *,
+                                             char **);
+      if (dbgclient_so == NULL)
+        dbgclient_so = dlopen ("libdbgserver.so", RTLD_LAZY);
+      if (dbgclient_so != NULL && fp_dbgclient_find_source == NULL)
+        fp_dbgclient_find_source = (__typeof__ (fp_dbgclient_find_source))
+                                   dlsym (dbgclient_so, 
+                                          "dbgclient_find_source");
+      if (fp_dbgclient_find_source != NULL && SYMTAB_COMPUNIT(s) != NULL)
+        {
+          const struct bfd_build_id *build_id;
+          const objfile *ofp = COMPUNIT_OBJFILE (SYMTAB_COMPUNIT (s));
+
+          build_id = build_id_bfd_get (ofp->obfd);
+
+          /* Query debuginfo-server for the source file.  */
+          if (build_id != NULL)
+            {
+              scoped_fd alt_fd ((*fp_dbgclient_find_source) (build_id->data,
+                                                             build_id->size,
+                                                             s->filename,
+                                                             NULL));
+              s->fullname = fullname.release ();
+              return alt_fd;
+            }
+        }
+    }
+#endif /* ENABLE_DBGSERVER */
+
   s->fullname = fullname.release ();
   return fd;
 }
