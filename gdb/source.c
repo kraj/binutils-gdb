@@ -1092,11 +1092,17 @@ open_source_file (struct symtab *s)
           /* Query debuginfo-server for the source file.  */
           if (build_id != NULL)
             {
+	      char *name_in_cache;
               scoped_fd alt_fd (dbgclient_find_source (build_id->data,
 						       build_id->size,
 						       suffname,
-						       NULL));
-              s->fullname = fullname.release ();
+						       &name_in_cache));
+	      if (alt_fd.get () >= 0)
+		{
+		  fullname.reset (xstrdup(name_in_cache));
+		  free (name_in_cache);
+		}
+	      s->fullname = fullname.release ();
               return alt_fd;
             }
         }
