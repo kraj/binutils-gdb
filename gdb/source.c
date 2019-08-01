@@ -1078,6 +1078,15 @@ open_source_file (struct symtab *s)
           const struct bfd_build_id *build_id;
           const objfile *ofp = COMPUNIT_OBJFILE (SYMTAB_COMPUNIT (s));
 
+	  /* prefix the comp_dir to relative file names */
+	  const char* dirname = SYMTAB_DIRNAME (s);
+	  int suffname_len = strlen(dirname) + strlen(s->filename) + 2;
+	  char *suffname = (char *) alloca(suffname_len);
+	  if (IS_DIR_SEPARATOR (s->filename[0]))
+	    xsnprintf (suffname, suffname_len, "%s", s->filename);
+	  else
+	    xsnprintf (suffname, suffname_len, "%s%s%s", dirname, SLASH_STRING, s->filename);
+	      
           build_id = build_id_bfd_get (ofp->obfd);
 
           /* Query debuginfo-server for the source file.  */
@@ -1085,7 +1094,7 @@ open_source_file (struct symtab *s)
             {
               scoped_fd alt_fd (dbgclient_find_source (build_id->data,
 						       build_id->size,
-						       s->filename,
+						       suffname,
 						       NULL));
               s->fullname = fullname.release ();
               return alt_fd;
