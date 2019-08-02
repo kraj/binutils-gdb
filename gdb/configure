@@ -7357,7 +7357,7 @@ main ()
 const unsigned char buildid;
                                      int buildid_len = 1;
                                      char *path;
-                                     path = dbgclient_find_debuginfo (& buildid, buildid_len, &path);
+                                     path = dbgserver_find_debuginfo (& buildid, buildid_len, &path);
   ;
   return 0;
 }

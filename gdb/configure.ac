@@ -343,7 +343,7 @@ else
                                      [const unsigned char buildid;
                                      int buildid_len = 1;
                                      char *path;
-                                     path = dbgclient_find_debuginfo (& buildid, buildid_len, &path);])
+                                     path = dbgserver_find_debuginfo (& buildid, buildid_len, &path);])
   if test "$HAVE_LIBDBGSERVER" != yes; then
     if test "$with_dbgserver" = yes; then
       AC_MSG_ERROR([dbgserver is missing or unusable])

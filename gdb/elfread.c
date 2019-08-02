@@ -1307,7 +1307,7 @@ elf_symfile_read (struct objfile *objfile, symfile_add_flags symfile_flags)
 	  char *debugfile_path;
 
           build_id = build_id_bfd_get (objfile->obfd);
-	  int fd = dbgclient_find_debuginfo (build_id->data,
+	  int fd = dbgserver_find_debuginfo (build_id->data,
 					     build_id->size,
 					     &debugfile_path);
 

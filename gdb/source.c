@@ -1093,7 +1093,7 @@ open_source_file (struct symtab *s)
           if (build_id != NULL)
             {
 	      char *name_in_cache;
-              scoped_fd alt_fd (dbgclient_find_source (build_id->data,
+              scoped_fd alt_fd (dbgserver_find_source (build_id->data,
 						       build_id->size,
 						       suffname,
 						       &name_in_cache));
