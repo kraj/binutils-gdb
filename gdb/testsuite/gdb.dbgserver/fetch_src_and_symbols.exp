@@ -1,0 +1,69 @@
+standard_testfile 
+
+if { [which dbgserver] == 0 } {
+    untested "cannot find dbgserver"
+    return -1
+}
+
+set cache [file join [standard_output_file {}] ".client_cache"]
+
+# make sure there isn't an old client cache lying around
+file delete -force $cache
+
+# make a copy source file that we can move around
+if { [catch {file copy -force ${srcdir}/${subdir}/${srcfile} \
+                              [standard_output_file tmp-${srcfile}]}] != 0 } { 
+    error "Could not create temporary file"
+    return -1
+}
+
+set sourcetmp [standard_output_file tmp-${srcfile}]
+set outputdir [standard_output_file {}]
+
+if { [gdb_compile "${sourcetmp}" "${binfile}" executable {debug}] != "" } {
+    return -1
+}
+
+set port 58002
+set ::env(DBGSERVER_URLS) "localhost:$port"
+set ::env(DBGSERVER_TIMEOUT) 10
+set ::env(DBGSERVER_CACHE_PATH) $cache
+
+# test that gdb cannot find source without dbgserver
+gdb_start
+gdb_load $binfile
+gdb_test_no_output "set substitute-path $outputdir /dev/null" 
+gdb_test "l" ".*Connection refused.*"
+gdb_exit
+
+# strip symbols into separate file and move it so gdb cannot find it without dbgserver
+gdb_gnu_strip_debug $binfile
+
+set debugdir [file join [standard_output_file {}] "debug"]
+set debuginfo [file join [standard_output_file {}] "fetch_src_and_symbols.debug"]
+
+file mkdir -force $debugdir
+file copy -force $debuginfo $debugdir
+file delete -force $debuginfo
+
+# test that gdb cannot find symbols without dbgserver
+gdb_start
+gdb_load $binfile
+gdb_test "file" ".*No symbol file.*"
+gdb_exit
+
+# start up dbgserver
+
+set dbgserver_pid [exec dbgserver -p $port -F $debugdir >/dev/null 2>&1 &]
+sleep 5
+
+# gdb should now be able to find the symbol and source files
+gdb_start
+gdb_load $binfile
+gdb_test_no_output "set substitute-path $outputdir /dev/null" 
+gdb_test "br main" "Breakpoint 1 at.*file.*"
+gdb_test "l" "int main().*return 0;.*"
+gdb_exit
+
+file delete -force $cache
+exec kill $dbgserver_pid
