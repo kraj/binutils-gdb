@@ -1480,6 +1480,15 @@ This GDB was configured as follows:\n\
              --without-python\n\
 "));
 #endif
+#if HAVE_LIBDBGSERVER
+  fprintf_filtered (stream, _("\
+             --with-dbgserver\n\
+"));
+#else
+   fprintf_filtered (stream, _("\
+             --without-dbgserver\n\
+"));
+#endif
 #if HAVE_GUILE
   fprintf_filtered (stream, _("\
              --with-guile\n\

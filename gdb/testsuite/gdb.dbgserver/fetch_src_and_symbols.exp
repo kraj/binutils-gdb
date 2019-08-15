@@ -17,8 +17,15 @@
 
 standard_testfile 
 
+# skip testing if dbgserver cannot be found
 if { [which dbgserver] == 0 } {
     untested "cannot find dbgserver"
+    return -1
+}
+
+# skip testing if gdb was not configured with dbgserver
+if { [string first "with-dbgserver" [exec $GDB --configuration]] == -1 } {
+    untested "gdb not configured with dbgserver"
     return -1
 }
 
