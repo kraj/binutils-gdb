@@ -3,6 +3,16 @@
 
 *** Changes since GDB 8.3
 
+* GDB can now query debuginfo server for source files and separate
+  debuginfo files when they cannot be found locally. Debuginfo server
+  is a lightweight web service that indexes debugging-related artifacts
+  according to build-id and serves them over HTTP. It can index both
+  unpackaged, locally-built files in addition to RPM files. Debuginfo
+  server is planned for inclusion with elfutils and the source code
+  (including man pages) is currently available on the 'dbgserver'
+  branch of the elfutils git repo. For more information please see
+  https://sourceware.org/git/?p=elfutils.git.
+
 * 'thread-exited' event is now available in the annotations interface.
 
 * New built-in convenience variables $_gdb_major and $_gdb_minor
