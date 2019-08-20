@@ -1085,7 +1085,10 @@ open_source_file (struct symtab *s)
 	  if (IS_DIR_SEPARATOR (s->filename[0]))
 	    xsnprintf (suffname, suffname_len, "%s", s->filename);
 	  else
-	    xsnprintf (suffname, suffname_len, "%s%s%s", dirname, SLASH_STRING, s->filename);
+            {
+	      xsnprintf (suffname, suffname_len, "%s%s%s", dirname,
+                         SLASH_STRING, s->filename);
+            }
 	      
           build_id = build_id_bfd_get (ofp->obfd);
 
