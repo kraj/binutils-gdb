@@ -1096,17 +1096,26 @@ open_source_file (struct symtab *s)
           if (build_id != NULL)
             {
 	      char *name_in_cache;
-              scoped_fd alt_fd (dbgserver_find_source (build_id->data,
-						       build_id->size,
-						       suffname,
-						       &name_in_cache));
-	      if (alt_fd.get () >= 0)
-		{
-		  fullname.reset (xstrdup(name_in_cache));
-		  free (name_in_cache);
-		}
-	      s->fullname = fullname.release ();
-              return alt_fd;
+              int dbgsrv_rc = dbgserver_find_source (build_id->data,
+                                                     build_id->size,
+                                                     suffname,
+                                                     &name_in_cache);
+              if (dbgsrv_rc >= 0)
+                {
+                  fullname.reset (xstrdup(name_in_cache));
+                  free (name_in_cache);
+                }
+              else if (dbgsrv_rc == -ENOSYS)
+                {
+                  /* -ENOSYS indicates that libdbgserver could not find
+                     any dbgserver URLs to query due to $DBGSERVER_URLS
+                     not being defined. Replace -ENOSYS with -ENOENT so
+                     that users who have not configured dbgserver see the
+                     usual error message when a source file cannot be found.  */
+                  dbgsrv_rc = -ENOENT;
+                }
+              s->fullname = fullname.release ();
+              return scoped_fd(dbgsrv_rc);
             }
         }
     }
