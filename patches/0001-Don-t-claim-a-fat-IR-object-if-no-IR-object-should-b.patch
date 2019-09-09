@@ -1,7 +1,8 @@
-From e89aff14a8d17a3c72cae8a506bc4a27c1f94d8f Mon Sep 17 00:00:00 2001
+From 014f2c40f2e4adbad6e0c1aa533807aeb04c1431 Mon Sep 17 00:00:00 2001
 From: "H.J. Lu" <hjl.tools@gmail.com>
 Date: Thu, 6 Dec 2018 11:45:41 -0800
-Subject: [PATCH] Don't claim a fat IR object if no IR object should be claimed
+Subject: [PATCH 1/3] Don't claim a fat IR object if no IR object should be
+ claimed
 
 When the linker sees an input object containing nothing but IR during
 rescan, it should ignore it (LTO phase is over).  But if the input object
@@ -43,10 +44,10 @@ ld/
  create mode 100644 ld/testsuite/ld-plugin/pr23935b.c
 
 diff --git a/bfd/bfd-in2.h b/bfd/bfd-in2.h
-index 6d92c51cb9..48f2765461 100644
+index 7b1cfbcf1a..fa62b4f6f6 100644
 --- a/bfd/bfd-in2.h
 +++ b/bfd/bfd-in2.h
-@@ -6915,6 +6915,14 @@ struct bfd_build_id
+@@ -7015,6 +7015,14 @@ struct bfd_build_id
      bfd_byte data[1];
    };
  
@@ -61,9 +62,9 @@ index 6d92c51cb9..48f2765461 100644
  struct bfd
  {
    /* The filename the application opened the BFD with.  */
-@@ -7094,6 +7102,9 @@ struct bfd
-   /* Set if this is a plugin output file.  */
-   unsigned int lto_output : 1;
+@@ -7200,6 +7208,9 @@ struct bfd
+   /* Set if this is a slim LTO object not loaded with a compiler plugin.  */
+   unsigned int lto_slim_object : 1;
  
 +  /* LTO object type.  */
 +  ENUM_BITFIELD (bfd_lto_object_type) lto_type : 2;
@@ -72,7 +73,7 @@ index 6d92c51cb9..48f2765461 100644
       library.  */
    bfd *plugin_dummy_bfd;
 diff --git a/bfd/bfd.c b/bfd/bfd.c
-index 2b658298ea..f00810f965 100644
+index f56a8d342f..c76b670ae9 100644
 --- a/bfd/bfd.c
 +++ b/bfd/bfd.c
 @@ -57,6 +57,14 @@ CODE_FRAGMENT
@@ -90,9 +91,9 @@ index 2b658298ea..f00810f965 100644
  .struct bfd
  .{
  .  {* The filename the application opened the BFD with.  *}
-@@ -236,6 +244,9 @@ CODE_FRAGMENT
- .  {* Set if this is a plugin output file.  *}
- .  unsigned int lto_output : 1;
+@@ -242,6 +250,9 @@ CODE_FRAGMENT
+ .  {* Set if this is a slim LTO object not loaded with a compiler plugin.  *}
+ .  unsigned int lto_slim_object : 1;
  .
 +.  {* LTO object type.  *}
 +.  ENUM_BITFIELD (bfd_lto_object_type) lto_type : 2;
@@ -101,7 +102,7 @@ index 2b658298ea..f00810f965 100644
  .     library.  *}
  .  bfd *plugin_dummy_bfd;
 diff --git a/bfd/format.c b/bfd/format.c
-index c4afd97d08..08a05ff84c 100644
+index 1d1363d184..957d390183 100644
 --- a/bfd/format.c
 +++ b/bfd/format.c
 @@ -46,6 +46,9 @@ SUBSECTION
@@ -200,7 +201,7 @@ index c4afd97d08..08a05ff84c 100644
  
    if (matching != NULL || *bfd_associated_vector != NULL)
      {
-@@ -471,6 +544,8 @@ bfd_check_format_matches (bfd *abfd, bfd_format format, char ***matching)
+@@ -478,6 +551,8 @@ bfd_check_format_matches (bfd *abfd, bfd_format format, char ***matching)
        if (matching_vector)
  	free (matching_vector);
  
@@ -210,10 +211,10 @@ index c4afd97d08..08a05ff84c 100644
        return TRUE;
      }
 diff --git a/ld/ldmain.c b/ld/ldmain.c
-index b7f51abc75..e5123f7a0a 100644
+index e24194ef87..277e0808b3 100644
 --- a/ld/ldmain.c
 +++ b/ld/ldmain.c
-@@ -824,7 +824,9 @@ add_archive_element (struct bfd_link_info *info,
+@@ -825,7 +825,9 @@ add_archive_element (struct bfd_link_info *info,
       BFD, but we still want to output the original BFD filename.  */
    orig_input = *input;
  #ifdef ENABLE_PLUGINS
@@ -225,10 +226,10 @@ index b7f51abc75..e5123f7a0a 100644
        /* We must offer this archive member to the plugins to claim.  */
        plugin_maybe_claim (input);
 diff --git a/ld/testsuite/ld-plugin/lto.exp b/ld/testsuite/ld-plugin/lto.exp
-index 008bde79de..5a9666fcc1 100644
+index e913c6f203..ad8ab62de2 100644
 --- a/ld/testsuite/ld-plugin/lto.exp
 +++ b/ld/testsuite/ld-plugin/lto.exp
-@@ -655,10 +655,20 @@ proc pr20103 {cflags libs} {
+@@ -685,10 +685,20 @@ proc pr20103 {cflags libs} {
  
      set testname "PR ld/20103 ($cflags $libs)"
      set exec_output [run_host_cmd "$CC" "$cflags $libs"]
@@ -251,7 +252,7 @@ index 008bde79de..5a9666fcc1 100644
      }
      if { [ regexp "plugin needed to handle lto object" $exec_output ] } {
          fail "$testname (2)"
-@@ -717,6 +727,27 @@ if { [check_lto_fat_available] } {
+@@ -747,6 +757,27 @@ if { [check_lto_fat_available] } {
  	    "-O2" \
  	    {dummy.c} {} "pr20103c" \
  	] \
@@ -296,5 +297,5 @@ index 0000000000..58ae07e869
 +#include <stdio.h>
 +int main() { printf("hi\n"); return 0; }
 -- 
-2.19.2
+2.20.1
 
