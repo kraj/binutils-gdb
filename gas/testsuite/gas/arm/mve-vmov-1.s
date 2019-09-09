@@ -130,3 +130,16 @@ vmov.i64 q0, #4278190080 @ 0x00000000FF000000
 vmov.i64 q0, #16711680 @ 0x00000000000FF0000
 vmov.i64 q0, #65280 @ 0x0000000000000FF00
 vmov.i64 q0, #255 @ 0x000000000000000FF
+
+.irp op1, q0, q1, q2, q4, q7
+.irp op2, q0, q1, q2, q4, q7
+vmov \op1, \op2
+.endr
+.endr
+
+.irp op1, d0, d1, d2, d4, d8, d15
+.irp op2, d0, d1, d2, d4, d8, d15
+vmov \op1, \op2
+vmov.f64 \op1, \op2
+.endr
+.endr

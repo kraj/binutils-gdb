@@ -373,9 +373,23 @@ riscv_elf_create_dynamic_sections (bfd *dynobj,
 
   if (!bfd_link_pic (info))
     {
+      /* Technically, this section doesn't have contents.  It is used as the
+	 target of TLS copy relocs, to copy TLS data from shared libraries into
+	 the executable.  However, if we don't mark it as loadable, then it
+	 matches the IS_TBSS test in ldlang.c, and there is no run-time address
+	 space allocated for it even though it has SEC_ALLOC.  That test is
+	 correct for .tbss, but not correct for this section.  There is also
+	 a second problem that having a section with no contents can only work
+	 if it comes after all sections with contents in the same segment,
+	 but the linker script does not guarantee that.  This is just mixed in
+	 with other .tdata.* sections.  We can fix both problems by lying and
+	 saying that there are contents.  This section is expected to be small
+	 so this should not cause a significant extra program startup cost.  */
       htab->sdyntdata =
 	bfd_make_section_anyway_with_flags (dynobj, ".tdata.dyn",
 					    (SEC_ALLOC | SEC_THREAD_LOCAL
+					     | SEC_LOAD | SEC_DATA
+					     | SEC_HAS_CONTENTS
 					     | SEC_LINKER_CREATED));
     }
 
@@ -1482,9 +1496,21 @@ perform_relocation (const reloc_howto_type *howto,
       break;
 
     case R_RISCV_RVC_LUI:
-      if (!VALID_RVC_LUI_IMM (RISCV_CONST_HIGH_PART (value)))
+      if (RISCV_CONST_HIGH_PART (value) == 0)
+	{
+	  /* Linker relaxation can convert an address equal to or greater than
+	     0x800 to slightly below 0x800.  C.LUI does not accept zero as a
+	     valid immediate.  We can fix this by converting it to a C.LI.  */
+	  bfd_vma insn = bfd_get (howto->bitsize, input_bfd,
+				  contents + rel->r_offset);
+	  insn = (insn & ~MATCH_C_LUI) | MATCH_C_LI;
+	  bfd_put (howto->bitsize, input_bfd, insn, contents + rel->r_offset);
+	  value = ENCODE_RVC_IMM (0);
+	}
+      else if (!VALID_RVC_LUI_IMM (RISCV_CONST_HIGH_PART (value)))
 	return bfd_reloc_overflow;
-      value = ENCODE_RVC_LUI_IMM (RISCV_CONST_HIGH_PART (value));
+      else
+	value = ENCODE_RVC_LUI_IMM (RISCV_CONST_HIGH_PART (value));
       break;
 
     case R_RISCV_32:
@@ -2285,7 +2311,10 @@ riscv_elf_relocate_section (bfd *output_bfd,
 	     (uint64_t) rel->r_offset,
 	     howto->name,
 	     h->root.root.string);
-	  continue;
+
+	  bfd_set_error (bfd_error_bad_value);
+	  ret = FALSE;
+	  goto out;
 	}
 
       if (r == bfd_reloc_ok)
@@ -3521,12 +3550,13 @@ _bfd_riscv_relax_lui (bfd *abfd,
 
   if (gp)
     {
-      /* If gp and the symbol are in the same output section, then
-	 consider only that section's alignment.  */
+      /* If gp and the symbol are in the same output section, which is not the
+	 abs section, then consider only that output section's alignment.  */
       struct bfd_link_hash_entry *h =
 	bfd_link_hash_lookup (link_info->hash, RISCV_GP_SYMBOL, FALSE, FALSE,
 			      TRUE);
-      if (h->u.def.section->output_section == sym_sec->output_section)
+      if (h->u.def.section->output_section == sym_sec->output_section
+	  && sym_sec->output_section != bfd_abs_section_ptr)
 	max_alignment = (bfd_vma) 1 << sym_sec->output_section->alignment_power;
     }
 
@@ -3562,11 +3592,16 @@ _bfd_riscv_relax_lui (bfd *abfd,
     }
 
   /* Can we relax LUI to C.LUI?  Alignment might move the section forward;
-     account for this assuming page alignment at worst.  */
+     account for this assuming page alignment at worst. In the presence of 
+     RELRO segment the linker aligns it by one page size, therefore sections
+     after the segment can be moved more than one page. */
+
   if (use_rvc
       && ELFNN_R_TYPE (rel->r_info) == R_RISCV_HI20
       && VALID_RVC_LUI_IMM (RISCV_CONST_HIGH_PART (symval))
-      && VALID_RVC_LUI_IMM (RISCV_CONST_HIGH_PART (symval + ELF_MAXPAGESIZE)))
+      && VALID_RVC_LUI_IMM (RISCV_CONST_HIGH_PART (symval)
+			    + (link_info->relro ? 2 * ELF_MAXPAGESIZE
+			       : ELF_MAXPAGESIZE)))
     {
       /* Replace LUI with C.LUI if legal (i.e., rd != x0 and rd != x2/sp).  */
       bfd_vma lui = bfd_get_32 (abfd, contents + rel->r_offset);
@@ -3750,11 +3785,13 @@ _bfd_riscv_relax_pc  (bfd *abfd ATTRIBUTE_UNUSED,
 
   if (gp)
     {
-      /* If gp and the symbol are in the same output section, then
-	 consider only that section's alignment.  */
+      /* If gp and the symbol are in the same output section, which is not the
+	 abs section, then consider only that output section's alignment.  */
       struct bfd_link_hash_entry *h =
-	bfd_link_hash_lookup (link_info->hash, RISCV_GP_SYMBOL, FALSE, FALSE, TRUE);
-      if (h->u.def.section->output_section == sym_sec->output_section)
+	bfd_link_hash_lookup (link_info->hash, RISCV_GP_SYMBOL, FALSE, FALSE,
+			      TRUE);
+      if (h->u.def.section->output_section == sym_sec->output_section
+	  && sym_sec->output_section != bfd_abs_section_ptr)
 	max_alignment = (bfd_vma) 1 << sym_sec->output_section->alignment_power;
     }
 

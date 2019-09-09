@@ -1,3 +1,95 @@
+2019-09-09  Phil Blundell  <pb@pbcl.net>
+
+	binutils 2.33 branch created.
+
+2019-09-03  Nick Clifton  <nickc@redhat.com>
+
+	PR 24961
+	* tic30-dis.c (get_indirect_operand): Check for bufcnt being
+	greater than zero before indexing via (bufcnt -1).
+
+2019-09-03  Nick Clifton  <nickc@redhat.com>
+
+	PR 24958
+	* mmix-dis.c (MAX_REG_NAME_LEN): Define.
+	(MAX_SPEC_REG_NAME_LEN): Define.
+	(struct mmix_dis_info): Use defined constants for array lengths.
+	(get_reg_name): New function.
+	(get_sprec_reg_name): New function.
+	(print_insn_mmix): Use new functions.
+
+2019-08-27  Srinath Parvathaneni  <srinath.parvathaneni@arm.com>
+
+	* arm-dis.c (mve_opcodes): Add entry for MVE_VMOV_VEC_TO_VEC.
+	(is_mve_undefined): Add case for MVE_VMOV_VEC_TO_VEC.
+	(print_insn_mve): Add condition to check Qm==Qn of VORR instruction.
+
+2019-08-22  Kyrylo Tkachov <kyrylo.tkachov@arm.com>
+
+	* aarch64-opc.c (aarch64_sys_regs): Update encoding of tfsre0_el1,
+	tfsr_el1, tfsr_el2, tfsr_el3, tfsr_el12.
+	(aarch64_sys_reg_supported_p): Update checks for the above.
+
+2019-08-12  Srinath Parvathaneni  <srinath.parvathaneni@arm.com>
+
+	* arm-dis.c (struct mopcode32 mve_opcodes): Modify the mask for
+	cases MVE_SQRSHRL and MVE_UQRSHLL.
+	(print_insn_mve): Add case for specifier 'k' to check
+	specific bit of the instruction.
+
+2019-08-07  Phillipe Antoine  <p.antoine@catenacyber.fr>
+
+	PR 24854
+	* arc-dis.c (arc_insn_length): Return 0 rather than aborting when
+	encountering an unknown machine type.
+	(print_insn_arc): Handle arc_insn_length returning 0.  In error
+	cases return -1 rather than calling abort.
+
+2019-08-07  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-opc.tbl (fld, fstp): Drop FloatMF from extended forms.
+	(fldcw, fnstcw, fstcw, fnstsw, fstsw): Replace FloatMF by
+	IgnoreSize.
+	* i386-tbl.h: Re-generate.
+
+2019-08-05  Barnaby Wilks  <barnaby.wilks@arm.com>
+
+	* arm-dis.c: Only accept signed variants of VQ(R)DMLAH and VQ(R)DMLASH
+	instructions.
+
+2019-07-30  Mel Chen <mel.chen@sifive.com>
+
+	* riscv-opc.c (riscv_opcodes): Set frsr, fssr, frcsr, fscsr, frrm,
+	fsrm, fsrmi, frflags, fsflags, fsflagsi to alias instructions.
+
+	* riscv-opc.c (riscv_opcodes): Adjust order of frsr, frcsr, fssr,
+	fscsr.
+
+2019-07-24  Claudiu Zissulescu  <claziss@synopsys.com>
+
+	* arc-dis.c (skip_this_opcode): Check also for 0x07 major opcodes,
+	and MPY class instructions.
+	(parse_option): Add nps400 option.
+	(print_arc_disassembler_options): Add nps400 info.
+
+2019-07-24  Claudiu Zissulescu  <claziss@synopsys.com>
+
+	* arc-ext-tbl.h (bspeek): Remove it, added to main table.
+	(bspop): Likewise.
+	(modapp): Likewise.
+	* arc-opc.c (RAD_CHK): Add.
+	* arc-tbl.h: Regenerate.
+
+2019-07-23  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* aarch64-opc.c (aarch64_sys_regs): Add gmid_el1 entry.
+	(aarch64_sys_reg_supported_p): Handle gmid_el1 encoding.
+
+2019-07-22  Barnaby Wilks  <barnaby.wilks@arm.com>
+
+	* arm-dis.c (is_mve_unpredictable): Stop marking some MVE
+	instructions as UNPREDICTABLE.
+
 2019-07-19  Jose E. Marchesi  <jose.marchesi@oracle.com>
 
 	* bpf-desc.c: Regenerated.

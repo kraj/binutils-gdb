@@ -405,21 +405,30 @@ print_scalar_formatted (const gdb_byte *valaddr, struct type *type,
 
   /* Historically gdb has printed floats by first casting them to a
      long, and then printing the long.  PR cli/16242 suggests changing
-     this to using C-style hex float format.  */
-  gdb::byte_vector converted_float_bytes;
-  if (TYPE_CODE (type) == TYPE_CODE_FLT
-      && (options->format == 'o'
-	  || options->format == 'x'
-	  || options->format == 't'
-	  || options->format == 'z'
-	  || options->format == 'd'
-	  || options->format == 'u'))
+     this to using C-style hex float format.
+
+     Biased range types must also be unbiased here; the unbiasing is
+     done by unpack_long.  */
+  gdb::byte_vector converted_bytes;
+  /* Some cases below will unpack the value again.  In the biased
+     range case, we want to avoid this, so we store the unpacked value
+     here for possible use later.  */
+  gdb::optional<LONGEST> val_long;
+  if ((TYPE_CODE (type) == TYPE_CODE_FLT
+       && (options->format == 'o'
+	   || options->format == 'x'
+	   || options->format == 't'
+	   || options->format == 'z'
+	   || options->format == 'd'
+	   || options->format == 'u'))
+      || (TYPE_CODE (type) == TYPE_CODE_RANGE
+	  && TYPE_RANGE_DATA (type)->bias != 0))
     {
-      LONGEST val_long = unpack_long (type, valaddr);
-      converted_float_bytes.resize (TYPE_LENGTH (type));
-      store_signed_integer (converted_float_bytes.data (), TYPE_LENGTH (type),
-			    byte_order, val_long);
-      valaddr = converted_float_bytes.data ();
+      val_long.emplace (unpack_long (type, valaddr));
+      converted_bytes.resize (TYPE_LENGTH (type));
+      store_signed_integer (converted_bytes.data (), TYPE_LENGTH (type),
+			    byte_order, *val_long);
+      valaddr = converted_bytes.data ();
     }
 
   /* Printing a non-float type as 'f' will interpret the data as if it were
@@ -469,7 +478,8 @@ print_scalar_formatted (const gdb_byte *valaddr, struct type *type,
       {
 	struct value_print_options opts = *options;
 
-	LONGEST val_long = unpack_long (type, valaddr);
+	if (!val_long.has_value ())
+	  val_long.emplace (unpack_long (type, valaddr));
 
 	opts.format = 0;
 	if (TYPE_UNSIGNED (type))
@@ -477,15 +487,15 @@ print_scalar_formatted (const gdb_byte *valaddr, struct type *type,
  	else
 	  type = builtin_type (gdbarch)->builtin_true_char;
 
-	value_print (value_from_longest (type, val_long), stream, &opts);
+	value_print (value_from_longest (type, *val_long), stream, &opts);
       }
       break;
 
     case 'a':
       {
-	CORE_ADDR addr = unpack_pointer (type, valaddr);
-
-	print_address (gdbarch, addr, stream);
+	if (!val_long.has_value ())
+	  val_long.emplace (unpack_long (type, valaddr));
+	print_address (gdbarch, *val_long, stream);
       }
       break;
 
@@ -529,8 +539,8 @@ print_address_symbolic (struct gdbarch *gdbarch, CORE_ADDR addr,
   int offset = 0;
   int line = 0;
 
-  if (build_address_symbolic (gdbarch, addr, do_demangle, &name, &offset,
-			      &filename, &line, &unmapped))
+  if (build_address_symbolic (gdbarch, addr, do_demangle, false, &name,
+                              &offset, &filename, &line, &unmapped))
     return 0;
 
   fputs_filtered (leadin, stream);
@@ -540,7 +550,7 @@ print_address_symbolic (struct gdbarch *gdbarch, CORE_ADDR addr,
     fputs_filtered ("<", stream);
   fputs_styled (name.c_str (), function_name_style.style (), stream);
   if (offset != 0)
-    fprintf_filtered (stream, "+%u", (unsigned int) offset);
+    fprintf_filtered (stream, "%+d", offset);
 
   /* Append source filename and line number if desired.  Give specific
      line # of this addr, if we have it; else line # of the nearest symbol.  */
@@ -564,7 +574,8 @@ print_address_symbolic (struct gdbarch *gdbarch, CORE_ADDR addr,
 int
 build_address_symbolic (struct gdbarch *gdbarch,
 			CORE_ADDR addr,  /* IN */
-			int do_demangle, /* IN */
+			bool do_demangle, /* IN */
+			bool prefer_sym_over_minsym, /* IN */
 			std::string *name, /* OUT */
 			int *offset,     /* OUT */
 			std::string *filename, /* OUT */
@@ -592,8 +603,10 @@ build_address_symbolic (struct gdbarch *gdbarch,
 	}
     }
 
-  /* First try to find the address in the symbol table, then
-     in the minsyms.  Take the closest one.  */
+  /* Try to find the address in both the symbol table and the minsyms. 
+     In most cases, we'll prefer to use the symbol instead of the
+     minsym.  However, there are cases (see below) where we'll choose
+     to use the minsym instead.  */
 
   /* This is defective in the sense that it only finds text symbols.  So
      really this is kind of pointless--we should make sure that the
@@ -630,7 +643,19 @@ build_address_symbolic (struct gdbarch *gdbarch,
 
   if (msymbol.minsym != NULL)
     {
-      if (BMSYMBOL_VALUE_ADDRESS (msymbol) > name_location || symbol == NULL)
+      /* Use the minsym if no symbol is found.
+      
+	 Additionally, use the minsym instead of a (found) symbol if
+	 the following conditions all hold:
+	   1) The prefer_sym_over_minsym flag is false.
+	   2) The minsym address is identical to that of the address under
+	      consideration.
+	   3) The symbol address is not identical to that of the address
+	      under consideration.  */
+      if (symbol == NULL ||
+           (!prefer_sym_over_minsym
+	    && BMSYMBOL_VALUE_ADDRESS (msymbol) == addr
+	    && name_location != addr))
 	{
 	  /* If this is a function (i.e. a code address), strip out any
 	     non-address bits.  For instance, display a pointer to the
@@ -643,8 +668,6 @@ build_address_symbolic (struct gdbarch *gdbarch,
 	      || MSYMBOL_TYPE (msymbol.minsym) == mst_solib_trampoline)
 	    addr = gdbarch_addr_bits_remove (gdbarch, addr);
 
-	  /* The msymbol is closer to the address than the symbol;
-	     use the msymbol instead.  */
 	  symbol = 0;
 	  name_location = BMSYMBOL_VALUE_ADDRESS (msymbol);
 	  if (do_demangle || asm_demangle)
@@ -667,7 +690,7 @@ build_address_symbolic (struct gdbarch *gdbarch,
       && name_location + max_symbolic_offset > name_location)
     return 1;
 
-  *offset = addr - name_location;
+  *offset = (LONGEST) addr - name_location;
 
   *name = name_temp;
 
@@ -1923,7 +1946,8 @@ do_one_display (struct display *d)
   if (d->block)
     {
       if (d->pspace == current_program_space)
-	within_current_scope = contained_in (get_selected_block (0), d->block);
+	within_current_scope = contained_in (get_selected_block (0), d->block,
+					     true);
       else
 	within_current_scope = 0;
     }
@@ -2085,7 +2109,7 @@ Num Enb Expression\n"));
       else if (d->format.format)
 	printf_filtered ("/%c ", d->format.format);
       puts_filtered (d->exp_string);
-      if (d->block && !contained_in (get_selected_block (0), d->block))
+      if (d->block && !contained_in (get_selected_block (0), d->block, true))
 	printf_filtered (_(" (cannot be evaluated in the current context)"));
       printf_filtered ("\n");
     }
@@ -2787,7 +2811,7 @@ Usage: output EXP\n\
 This is useful in user-defined commands."));
 
   add_prefix_cmd ("set", class_vars, set_command, _("\
-Evaluate expression EXP and assign result to variable VAR\n\
+Evaluate expression EXP and assign result to variable VAR.\n\
 Usage: set VAR = EXP\n\
 This uses assignment syntax appropriate for the current language\n\
 (VAR = EXP or VAR := EXP for example).\n\
@@ -2801,7 +2825,7 @@ You can see these environment settings with the \"show\" command."),
 		  &setlist, "set ", 1, &cmdlist);
   if (dbx_commands)
     add_com ("assign", class_vars, set_command, _("\
-Evaluate expression EXP and assign result to variable VAR\n\
+Evaluate expression EXP and assign result to variable VAR.\n\
 Usage: assign VAR = EXP\n\
 This uses assignment syntax appropriate for the current language\n\
 (VAR = EXP or VAR := EXP for example).\n\
@@ -2822,7 +2846,7 @@ history, if it is not void."));
   set_cmd_completer_handle_brkchars (c, print_command_completer);
 
   add_cmd ("variable", class_vars, set_command, _("\
-Evaluate expression EXP and assign result to variable VAR\n\
+Evaluate expression EXP and assign result to variable VAR.\n\
 Usage: set variable VAR = EXP\n\
 This uses assignment syntax appropriate for the current language\n\
 (VAR = EXP or VAR := EXP for example).\n\
@@ -2835,12 +2859,13 @@ This may usually be abbreviated to simply \"set\"."),
 
   const auto print_opts = make_value_print_options_def_group (nullptr);
 
-  static const std::string print_help = gdb::option::build_help (N_("\
+  static const std::string print_help = gdb::option::build_help (_("\
 Print value of expression EXP.\n\
 Usage: print [[OPTION]... --] [/FMT] [EXP]\n\
 \n\
 Options:\n\
-%OPTIONS%\
+%OPTIONS%\n\
+\n\
 Note: because this command accepts arbitrary expressions, if you\n\
 specify any command option, you must use a double dash (\"--\")\n\
 to mark the end of option processing.  E.g.: \"print -o -- myobj\".\n\

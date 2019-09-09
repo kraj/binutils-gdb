@@ -1,3 +1,288 @@
+2019-09-09  Phil Blundell  <pb@pbcl.net>
+
+	binutils 2.33 branch created.
+
+2019-09-06  Alan Modra  <amodra@gmail.com>
+
+	* nm.c (print_object_filename_bsd, print_object_filename_sysv),
+	(print_object_filename_posix, print_archive_filename_bsd),
+	(print_archive_filename_sysv, print_archive_filename_posix),
+	(print_archive_member_bsd, print_archive_member_sysv),
+	(print_archive_member_posix): Constify parameter.
+	(struct output_fns <print_object_filename, print_archive_filename>),
+	(<print_archive_member>): Likewise.
+	* objcopy.c (copy_archive): Add cast for make_tempdir.
+
+2019-08-29  Alan Modra  <amodra@gmail.com>
+
+	* dwarf.c (check_uvalue): Remove unnecessary pointer checks.
+
+2019-08-28  Niklas Gürtler  <profclonk@gmail.com>
+
+	PR 24942
+	* objcopy.c (SECTION_CONTEXT_SET_ALIGNMENT): New constant.
+	(struct section_list): Add alignment field.
+	(command_line_switch): Add OPTION_SET_SECTION_ALIGNMENT.
+	(copy_options): Add --set-section-alignment.
+	(copy_usage): Describe --set-section-alignment.
+	(find_section_list): Initialise the alignment field.
+	(setup_section): Handle the alignment field.
+	(copy_main): Handle OPTION_SET_SECTION_ALIGNMENT.
+	* doc/binutils.texi: Document the new feature.
+	* NEWS: Mention the new feature.
+
+2019-08-28  Nick Clifton  <nickc@redhat.com>
+
+	PR 24931
+	* objdump.c (source_comment): New static variable.
+	(option_values): Add OPTION_SOURCE_COMMENT.
+	(long_opions): Add --source-comment.
+	(print_line): If source comment is set, use it as a prefix to the
+	source code line.
+	(main): Handle OPTION_SOURCE_COMMENT.
+	* doc/binutils.texi: Document the new option.
+	* NEWS: Mention the new feature.
+	* testsuite/binutils-all/objdump.exp (test_objdump_S): Add tests
+	of the -S and --source-comment options.
+
+2019-08-27  Nick Clifton  <nickc@redhat.com>
+
+	PR 24510
+	* dwarf.c (MAX_CU_NESTING): New constant.
+	(level_type_signed): New static array.
+	(skip_attr_bytes): New function.
+	(get_type_signedness): New function.
+	(read_and_print_leb128): New function.
+	(display_discr_list): New function.
+	(read_and_display_attr_value): Add start parameter.
+	Use new functions when handling DW_AT_type and DW_AT_discr_list.
+	(read_and_display_attr): Add start parameter.  Pass to
+	read_and_display_attr_value.
+	(process_debug_info): Update call to read_and_display_attr.
+	(display_formatted_table): Likewise.
+	(display_debug_lines_decoded): Likewise.  Also add start
+	parameter.
+	(display_debug_lines): Likewise.
+	* testsuite/binutils-all/dwarf-attributes.S: Update discrimination
+	lists.
+	* testsuite/binutils-all/dwarf-attributes.W: Update expected
+	output.
+
+2019-08-26  Alan Modra  <amodra@gmail.com>
+
+	PR 24938
+	* debug.c (debug_write_type): Call empty_type for NULL type here..
+	(debug_write_type): ..rather than in just one case here.
+
+2019-08-23  Nick Clifton  <nickc@redhat.com>
+
+	PR 24829
+	* dwarf.c (check_uvalue): New function.  Ensures that a block's
+	size is valid.
+	(read_and_display_attr_value): Use check_value when processsing
+	DW_FORM_block<n> attributes.
+
+2019-08-22  Nick Clifton  <nickc@redhat.com>
+
+	PR 24921
+	* dwarf.c (process_cu_tu_index): Handle the case where a table
+	does not have any columns.
+
+2019-08-19  Alan Modra  <amodra@gmail.com>
+
+	PR 24898
+	* dwarf.c (display_debug_frames): Use the read_cie check and error
+	for augmentation data length.
+
+2019-08-17  Alan Modra  <amodra@gmail.com>
+
+	PR 24911
+	* dwarf.c (comp_addr_base): Dereference args.
+
+2019-08-16  Alan Modra  <amodra@gmail.com>
+
+	PR 24909
+	PR 23499
+	* readelf.c (get_symbol_version_string): Set sym_info earlier.
+
+2019-08-15  Nick Clifton  <nickc@redhat.com>
+
+	PR 24767
+	* doc/binutils.texi (nm): Document the 'n' symbol type.
+
+2019-08-15  Christophe Vidal  <support@krizalys.com>
+
+	* docs/binutils.texi: Fixed notice message disassembler options
+	section of the man page.
+
+2019-08-09  Mihailo Stojanovic  <mihailo.stojanovic@rt-rk.com>
+
+	* readelf.c (get_mips_dynamic_type): Return MIPS_XHASH dynamic type.
+	(get_mips_section_type_name): Return MI{S_XHASH name string.
+	(dynamic_section_mips_val): Initialize the .MIPS.xhash dynamic
+	info.
+	(process_symbol_table): Initialize the .MIPS.xhash section
+	pointer. Adjust the readelf output to support the new section.
+	(process_object): Set the .MIPS.xhash dynamic info to zero.
+
+2019-08-09  Tamar Christina  <tamar.christina@arm.com>
+
+	* testsuite/binutils-all/arm/in-order-all.d: Skip on pe, wince, coff.
+	* testsuite/binutils-all/arm/in-order.d: Likewise.
+	* testsuite/binutils-all/arm/out-of-order-all.d: Likewise.
+	* testsuite/binutils-all/arm/out-of-order.d: Likewise.
+
+2019-08-08  Nick Clifton  <nickc@redhat.com>
+
+	PR 24887
+	* readelf.c (process_notes_at): Left justify the "Data size"
+	column heading.
+	* testsuite/binutils-all/i386/empty.d: Adjust for new output format.
+	* testsuite/binutils-all/i386/ibt.d: Likewise.
+	* testsuite/binutils-all/i386/pr21231a.d: Likewise.
+	* testsuite/binutils-all/i386/pr21231b.d: Likewise.
+	* testsuite/binutils-all/i386/shstk.d: Likewise.
+	* testsuite/binutils-all/note-2-32.d: Likewise.
+	* testsuite/binutils-all/note-2-64.d: Likewise.
+	* testsuite/binutils-all/x86-64/empty-x32.d: Likewise.
+	* testsuite/binutils-all/x86-64/empty.d: Likewise.
+	* testsuite/binutils-all/x86-64/ibt-x32.d: Likewise.
+	* testsuite/binutils-all/x86-64/ibt.d: Likewise.
+	* testsuite/binutils-all/x86-64/pr21231a.d: Likewise.
+	* testsuite/binutils-all/x86-64/pr21231b.d: Likewise.
+	* testsuite/binutils-all/x86-64/pr23494a-x32.d: Likewise.
+	* testsuite/binutils-all/x86-64/pr23494a.d: Likewise.
+	* testsuite/binutils-all/x86-64/pr23494c-x32.d: Likewise.
+	* testsuite/binutils-all/x86-64/pr23494c.d: Likewise.
+	* testsuite/binutils-all/x86-64/pr23494d-x32.d: Likewise.
+	* testsuite/binutils-all/x86-64/pr23494d.d: Likewise.
+	* testsuite/binutils-all/x86-64/pr23494e-x32.d: Likewise.
+	* testsuite/binutils-all/x86-64/pr23494e.d: Likewise.
+	* testsuite/binutils-all/x86-64/shstk-x32.d: Likewise.
+	* testsuite/binutils-all/x86-64/shstk.d: Likewise.
+
+2019-08-08  Nick Clifton  <nickc@redhat.com>
+
+	* testsuite/gentestdlls.c (main): Move declaration of loop
+	variable outside of the for() statement.
+
+2019-08-08  Jordan Rupprecht  <rupprecht@google.com>
+
+	* readelf.c (process_note): Mask unknown description data bytes.
+
+2019-08-08  Alan Modra  <amodra@gmail.com>
+
+	* readelf.c (get_data): Improve overflow checks.
+
+2019-08-07  Nick Clifton  <nickc@redhat.com>
+
+	PR 24777
+	* doc/binutils.texi: Ensure consistent formating of title strings
+	for man pages.  Extend the title of the size man page to be more
+	informative.
+
+2019-08-07  Omair Majid  <omajid@redhat.com>
+
+	* testsuite/binutils-all/objdump.exp
+	(test_objdump_dotnet_assemblies): Fix test to distinguish errors
+	in parsing simple pei-i386 and pei-x86-64 vs parsing the newly
+	introduced machine types.
+	* testsuite/gentestdlls.c (write_simple_dll): New function.
+	(main): Generate simple and Linux-specific variants of pei-i386
+	and pei-x86-64 files so both can be used by tests.
+
+2019-08-07  Alan Modra  <amodra@gmail.com>
+
+	PR 24876
+	* readelf.c (dump_ia64_unwind): Check that buffer is large
+	enough for "stamp" before reading.
+
+2019-08-05  Nick Clifton  <nickc@redhat.com>
+
+	PR 24874
+	* objcopy.c (merge_gnu_build_notes): Do not insist on the first
+	note being a version note.
+	Remove spurious debugging fprintf.
+
+2019-08-05  Nick Clifton  <nickc@redhat.com>
+
+	PR 24829
+	* readelf.c (apply_relocations): Catch potential integer overflow
+	whilst checking reloc location against section size.
+
+2019-08-02  Alan Modra  <amodra@gmail.com>
+
+	PR 24871
+	* readelf.c (ABSADDR): Delete.
+	(dump_ia64_unwind): Expand ABSADDR.  Check validity of info.section.
+
+2019-07-29  Martin Liska  <mliska@suse.cz>
+
+	PR 24768
+	* nm.c (filter_symbols): Set report_plugin_err if
+	error is reported.
+	(display_rel_file): Report error for a missing LTO plugin.
+
+2019-07-26  Alan Modra  <amodra@gmail.com>
+
+	PR 24798
+	* dwarf.c (process_cu_tu_index): Avoid integer overflow on 64-bit
+	systems by casting ncols and nslots expressions to size_t.  Display
+	number of columns and slots before giving up due to buffer overflow.
+	Use %u to display unsigned ints.  Perform more pointer wrap tests.
+
+2019-07-25  Tom Tromey <tromey@adacore.com>
+
+	PR 24809
+	* dwarf.c (display_debug_names): Display the contents of the
+	augmentation string, if it is printable.
+
+2019-07-25  Nick Clifton  <nickc@redhat.com>
+
+	PR 24837
+	* readelf.c (process_mips_specific): Check for buffer overflow
+	before reading reginfo information.
+
+2019-07-24  Nick Clifton  <nickc@redhat.com>
+
+	PR 13256
+	* ar.c (decode_options): Restart option scanning if no operation
+	is detected and argument remain to be scanned.
+
+2019-07-23  Nick Clifton  <nickc@redhat.com>
+
+	PR 24818
+	* objdump.c (is_relocateable): Delete.
+	(load_specific_debug_section): Test the abfd for relocations
+	directly, rather than relying upon is_relocateable.
+	(dump_dwarf): Delete initlialization of is_relocateable.
+
+2019-07-23  Alan Modra  <amodra@gmail.com>
+
+	* readelf.c (get_parisc_segment_type): Split off hpux entries..
+	(get_ia64_segment_type): ..and these..
+	(get_hpux_segment_type): ..to here.
+	(get_segment_type): Condition GNU_MBIND on osabi.  Use
+	get_hpux_segment_type.
+	(get_symbol_binding): Do not print UNIQUE for ELFOSABI_NONE.
+	(get_symbol_type): Do not print IFUNC for ELFOSABI_NONE.
+
+2019-07-23  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/binutils-all/objcopy.exp (elf64): Correct object
+	file used to set this variable.
+
+2019-07-23  Omar Majid  <omajid@redhat.com>
+
+	* Makefile.am (AUTOMAKE_OPTIONS): Add subdir-objects
+	(GENTESTDLLSPROG): Define.
+	(TEST_PROGS): Add GENTESTDLLSPROG.
+	* Makefile.in: Regenerate.
+	* testsuite/binutils-all/objdump.exp
+	(test_objdump_dotnet_assemblies): New proc.
+	Run the new proc.
+	* testsuite/gentestdlls.c: New source file.
+
 2019-06-28  Nick Clifton  <nickc@redhat.com>
 
 	PR 24707

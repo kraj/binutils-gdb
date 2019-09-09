@@ -90,6 +90,9 @@
 /* Define to 1 if you have the `dladdr' function. */
 #undef HAVE_DLADDR
 
+/* Define to 1 if you have the <dlfcn.h> header file. */
+#undef HAVE_DLFCN_H
+
 /* Define to 1 if the system has the type `Elf32_auxv_t'. */
 #undef HAVE_ELF32_AUXV_T
 
@@ -122,9 +125,6 @@
 
 /* Define to 1 if you have the `dl' library (-ldl). */
 #undef HAVE_LIBDL
-
-/* Define to 1 if you have the `mcheck' library (-lmcheck). */
-#undef HAVE_LIBMCHECK
 
 /* Define if the target supports branch tracing. */
 #undef HAVE_LINUX_BTRACE

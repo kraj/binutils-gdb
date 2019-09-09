@@ -329,33 +329,36 @@ maintenance_info_sections (const char *arg, int from_tty)
 {
   if (exec_bfd)
     {
+      struct obj_section *osect;
+      bool allobj = false;
+
       printf_filtered (_("Exec file:\n"));
       printf_filtered ("    `%s', ", bfd_get_filename (exec_bfd));
       wrap_here ("        ");
       printf_filtered (_("file type %s.\n"), bfd_get_target (exec_bfd));
-      if (arg && *arg && match_substring (arg, "ALLOBJ"))
+
+      /* Only this function cares about the 'ALLOBJ' argument;
+	 if 'ALLOBJ' is the only argument, discard it rather than
+	 passing it down to print_objfile_section_info (which
+	 wouldn't know how to handle it).  */
+      if (arg && strcmp (arg, "ALLOBJ") == 0)
 	{
-	  struct obj_section *osect;
+	  arg = NULL;
+	  allobj = true;
+	}
 
-	  /* Only this function cares about the 'ALLOBJ' argument; 
-	     if 'ALLOBJ' is the only argument, discard it rather than
-	     passing it down to print_objfile_section_info (which 
-	     wouldn't know how to handle it).  */
-	  if (strcmp (arg, "ALLOBJ") == 0)
-	    arg = NULL;
-
-	  for (objfile *ofile : current_program_space->objfiles ())
+      for (objfile *ofile : current_program_space->objfiles ())
+	{
+	  if (allobj)
+	    printf_filtered (_("  Object file: %s\n"),
+			     bfd_get_filename (ofile->obfd));
+	  ALL_OBJFILE_OSECTIONS (ofile, osect)
 	    {
-	      printf_filtered (_("  Object file: %s\n"), 
-			       bfd_get_filename (ofile->obfd));
-	      ALL_OBJFILE_OSECTIONS (ofile, osect)
-		{
-		  print_objfile_section_info (ofile->obfd, osect, arg);
-		}
+	      if (!allobj && ofile->obfd != exec_bfd)
+		continue;
+	      print_objfile_section_info (ofile->obfd, osect, arg);
 	    }
 	}
-      else 
-	bfd_map_over_sections (exec_bfd, print_bfd_section_info, (void *) arg);
     }
 
   if (core_bfd)
@@ -1012,7 +1015,7 @@ Commands for showing internal info about the program being debugged."),
   add_alias_cmd ("i", "info", class_maintenance, 1, &maintenancelist);
 
   add_cmd ("sections", class_maintenance, maintenance_info_sections, _("\
-List the BFD sections of the exec and core files. \n\
+List the BFD sections of the exec and core files.\n\
 Arguments may be any combination of:\n\
 	[one or more section names]\n\
 	ALLOC LOAD RELOC READONLY CODE DATA ROM CONSTRUCTOR\n\
@@ -1165,21 +1168,22 @@ Commands for checking internal gdb state."),
 	   &maintenancelist);
 
   add_cmd ("deprecate", class_maintenance, maintenance_deprecate, _("\
-Deprecate a command.  Note that this is just in here so the \n\
-testsuite can check the command deprecator. You probably shouldn't use this,\n\
-rather you should use the C function deprecate_cmd().  If you decide you \n\
-want to use it: maintenance deprecate 'commandname' \"replacement\". The \n\
-replacement is optional."), &maintenancelist);
+Deprecate a command (for testing purposes).\n\
+Usage: maintenance deprecate COMMANDNAME [\"REPLACEMENT\"]\n\
+This is used by the testsuite to check the command deprecator.\n\
+You probably shouldn't use this,\n\
+rather you should use the C function deprecate_cmd()."), &maintenancelist);
 
   add_cmd ("undeprecate", class_maintenance, maintenance_undeprecate, _("\
-Undeprecate a command.  Note that this is just in here so the \n\
-testsuite can check the command deprecator. You probably shouldn't use this,\n\
-If you decide you want to use it: maintenance undeprecate 'commandname'"),
+Undeprecate a command (for testing purposes).\n\
+Usage: maintenance undeprecate COMMANDNAME\n\
+This is used by the testsuite to check the command deprecator.\n\
+You probably shouldn't use this."),
 	   &maintenancelist);
 
   add_cmd ("selftest", class_maintenance, maintenance_selftest, _("\
 Run gdb's unit tests.\n\
-Usage: maintenance selftest [filter]\n\
+Usage: maintenance selftest [FILTER]\n\
 This will run any unit tests that were built in to gdb.\n\
 If a filter is given, only the tests with that value in their name will ran."),
 	   &maintenancelist);

@@ -92,7 +92,8 @@ struct block_symbol lookup_local_symbol (const char *name,
 					 enum language language);
 
 static struct block_symbol
-  lookup_symbol_in_objfile (struct objfile *objfile, int block_index,
+  lookup_symbol_in_objfile (struct objfile *objfile,
+			    enum block_enum block_index,
 			    const char *name, const domain_enum domain);
 
 /* Type of the data stored on the program space.  */
@@ -1296,13 +1297,12 @@ set_symbol_cache_size_handler (const char *args, int from_tty,
    The result is the symbol if found, SYMBOL_LOOKUP_FAILED if a previous lookup
    failed (and thus this one will too), or NULL if the symbol is not present
    in the cache.
-   If the symbol is not present in the cache, then *BSC_PTR and *SLOT_PTR are
-   set to the cache and slot of the symbol to save the result of a full lookup
-   attempt.  */
+   *BSC_PTR and *SLOT_PTR are set to the cache and slot of the symbol, which
+   can be used to save the result of a full lookup attempt.  */
 
 static struct block_symbol
 symbol_cache_lookup (struct symbol_cache *cache,
-		     struct objfile *objfile_context, int block,
+		     struct objfile *objfile_context, enum block_enum block,
 		     const char *name, domain_enum domain,
 		     struct block_symbol_cache **bsc_ptr,
 		     struct symbol_cache_slot **slot_ptr)
@@ -1325,6 +1325,9 @@ symbol_cache_lookup (struct symbol_cache *cache,
   hash = hash_symbol_entry (objfile_context, name, domain);
   slot = bsc->symbols + hash % bsc->size;
 
+  *bsc_ptr = bsc;
+  *slot_ptr = slot;
+
   if (eq_symbol_entry (slot, objfile_context, name, domain))
     {
       if (symbol_lookup_debug)
@@ -1341,9 +1344,6 @@ symbol_cache_lookup (struct symbol_cache *cache,
     }
 
   /* Symbol is not present in the cache.  */
-
-  *bsc_ptr = bsc;
-  *slot_ptr = slot;
 
   if (symbol_lookup_debug)
     {
@@ -2223,15 +2223,18 @@ lookup_symbol_in_block (const char *name, symbol_name_match_type match_type,
 
 struct block_symbol
 lookup_global_symbol_from_objfile (struct objfile *main_objfile,
+				   enum block_enum block_index,
 				   const char *name,
 				   const domain_enum domain)
 {
+  gdb_assert (block_index == GLOBAL_BLOCK || block_index == STATIC_BLOCK);
+
   for (objfile *objfile : main_objfile->separate_debug_objfiles ())
     {
       struct block_symbol result
-        = lookup_symbol_in_objfile (objfile, GLOBAL_BLOCK, name, domain);
+        = lookup_symbol_in_objfile (objfile, block_index, name, domain);
 
-      if (result.symbol != NULL)
+      if (result.symbol != nullptr)
 	return result;
     }
 
@@ -2244,8 +2247,9 @@ lookup_global_symbol_from_objfile (struct objfile *main_objfile,
    static symbols.  */
 
 static struct block_symbol
-lookup_symbol_in_objfile_symtabs (struct objfile *objfile, int block_index,
-				  const char *name, const domain_enum domain)
+lookup_symbol_in_objfile_symtabs (struct objfile *objfile,
+				  enum block_enum block_index, const char *name,
+				  const domain_enum domain)
 {
   gdb_assert (block_index == GLOBAL_BLOCK || block_index == STATIC_BLOCK);
 
@@ -2333,7 +2337,7 @@ lookup_symbol_in_objfile_from_linkage_name (struct objfile *objfile,
    in a psymtab but not in a symtab.  */
 
 static void ATTRIBUTE_NORETURN
-error_in_psymtab_expansion (int block_index, const char *name,
+error_in_psymtab_expansion (enum block_enum block_index, const char *name,
 			    struct compunit_symtab *cust)
 {
   error (_("\
@@ -2350,8 +2354,9 @@ Internal: %s symbol `%s' found in %s psymtab but not in symtab.\n\
    the "quick" symbol table functions.  */
 
 static struct block_symbol
-lookup_symbol_via_quick_fns (struct objfile *objfile, int block_index,
-			     const char *name, const domain_enum domain)
+lookup_symbol_via_quick_fns (struct objfile *objfile,
+			     enum block_enum block_index, const char *name,
+			     const domain_enum domain)
 {
   struct compunit_symtab *cust;
   const struct blockvector *bv;
@@ -2516,10 +2521,12 @@ lookup_symbol_in_static_block (const char *name,
    BLOCK_INDEX is one of GLOBAL_BLOCK or STATIC_BLOCK.  */
 
 static struct block_symbol
-lookup_symbol_in_objfile (struct objfile *objfile, int block_index,
+lookup_symbol_in_objfile (struct objfile *objfile, enum block_enum block_index,
 			  const char *name, const domain_enum domain)
 {
   struct block_symbol result;
+
+  gdb_assert (block_index == GLOBAL_BLOCK || block_index == STATIC_BLOCK);
 
   if (symbol_lookup_debug)
     {
@@ -2559,47 +2566,9 @@ lookup_symbol_in_objfile (struct objfile *objfile, int block_index,
   return result;
 }
 
-/* See symtab.h.  */
-
-struct block_symbol
-lookup_static_symbol (const char *name, const domain_enum domain)
-{
-  struct symbol_cache *cache = get_symbol_cache (current_program_space);
-  struct block_symbol result;
-  struct block_symbol_cache *bsc;
-  struct symbol_cache_slot *slot;
-
-  /* Lookup in STATIC_BLOCK is not current-objfile-dependent, so just pass
-     NULL for OBJFILE_CONTEXT.  */
-  result = symbol_cache_lookup (cache, NULL, STATIC_BLOCK, name, domain,
-				&bsc, &slot);
-  if (result.symbol != NULL)
-    {
-      if (SYMBOL_LOOKUP_FAILED_P (result))
-	return {};
-      return result;
-    }
-
-  for (objfile *objfile : current_program_space->objfiles ())
-    {
-      result = lookup_symbol_in_objfile (objfile, STATIC_BLOCK, name, domain);
-      if (result.symbol != NULL)
-	{
-	  /* Still pass NULL for OBJFILE_CONTEXT here.  */
-	  symbol_cache_mark_found (bsc, slot, NULL, result.symbol,
-				   result.block);
-	  return result;
-	}
-    }
-
-  /* Still pass NULL for OBJFILE_CONTEXT here.  */
-  symbol_cache_mark_not_found (bsc, slot, NULL, name, domain);
-  return {};
-}
-
 /* Private data to be used with lookup_symbol_global_iterator_cb.  */
 
-struct global_sym_lookup_data
+struct global_or_static_sym_lookup_data
 {
   /* The name of the symbol we are searching for.  */
   const char *name;
@@ -2607,27 +2576,30 @@ struct global_sym_lookup_data
   /* The domain to use for our search.  */
   domain_enum domain;
 
+  /* The block index in which to search.  */
+  enum block_enum block_index;
+
   /* The field where the callback should store the symbol if found.
      It should be initialized to {NULL, NULL} before the search is started.  */
   struct block_symbol result;
 };
 
 /* A callback function for gdbarch_iterate_over_objfiles_in_search_order.
-   It searches by name for a symbol in the GLOBAL_BLOCK of the given
-   OBJFILE.  The arguments for the search are passed via CB_DATA,
-   which in reality is a pointer to struct global_sym_lookup_data.  */
+   It searches by name for a symbol in the block given by BLOCK_INDEX of the
+   given OBJFILE.  The arguments for the search are passed via CB_DATA, which
+   in reality is a pointer to struct global_or_static_sym_lookup_data.  */
 
 static int
-lookup_symbol_global_iterator_cb (struct objfile *objfile,
-				  void *cb_data)
+lookup_symbol_global_or_static_iterator_cb (struct objfile *objfile,
+					    void *cb_data)
 {
-  struct global_sym_lookup_data *data =
-    (struct global_sym_lookup_data *) cb_data;
+  struct global_or_static_sym_lookup_data *data =
+    (struct global_or_static_sym_lookup_data *) cb_data;
 
   gdb_assert (data->result.symbol == NULL
 	      && data->result.block == NULL);
 
-  data->result = lookup_symbol_in_objfile (objfile, GLOBAL_BLOCK,
+  data->result = lookup_symbol_in_objfile (objfile, data->block_index,
 					   data->name, data->domain);
 
   /* If we found a match, tell the iterator to stop.  Otherwise,
@@ -2635,25 +2607,28 @@ lookup_symbol_global_iterator_cb (struct objfile *objfile,
   return (data->result.symbol != NULL);
 }
 
-/* See symtab.h.  */
+/* This function contains the common code of lookup_{global,static}_symbol.
+   OBJFILE is only used if BLOCK_INDEX is GLOBAL_SCOPE, in which case it is
+   the objfile to start the lookup in.  */
 
-struct block_symbol
-lookup_global_symbol (const char *name,
-		      const struct block *block,
-		      const domain_enum domain)
+static struct block_symbol
+lookup_global_or_static_symbol (const char *name,
+				enum block_enum block_index,
+				struct objfile *objfile,
+				const domain_enum domain)
 {
   struct symbol_cache *cache = get_symbol_cache (current_program_space);
   struct block_symbol result;
-  struct objfile *objfile;
-  struct global_sym_lookup_data lookup_data;
+  struct global_or_static_sym_lookup_data lookup_data;
   struct block_symbol_cache *bsc;
   struct symbol_cache_slot *slot;
 
-  objfile = lookup_objfile_from_block (block);
+  gdb_assert (block_index == GLOBAL_BLOCK || block_index == STATIC_BLOCK);
+  gdb_assert (objfile == nullptr || block_index == GLOBAL_BLOCK);
 
   /* First see if we can find the symbol in the cache.
      This works because we use the current objfile to qualify the lookup.  */
-  result = symbol_cache_lookup (cache, objfile, GLOBAL_BLOCK, name, domain,
+  result = symbol_cache_lookup (cache, objfile, block_index, name, domain,
 				&bsc, &slot);
   if (result.symbol != NULL)
     {
@@ -2671,10 +2646,11 @@ lookup_global_symbol (const char *name,
     {
       memset (&lookup_data, 0, sizeof (lookup_data));
       lookup_data.name = name;
+      lookup_data.block_index = block_index;
       lookup_data.domain = domain;
       gdbarch_iterate_over_objfiles_in_search_order
 	(objfile != NULL ? get_objfile_arch (objfile) : target_gdbarch (),
-	 lookup_symbol_global_iterator_cb, &lookup_data, objfile);
+	 lookup_symbol_global_or_static_iterator_cb, &lookup_data, objfile);
       result = lookup_data.result;
     }
 
@@ -2684,6 +2660,25 @@ lookup_global_symbol (const char *name,
     symbol_cache_mark_not_found (bsc, slot, objfile, name, domain);
 
   return result;
+}
+
+/* See symtab.h.  */
+
+struct block_symbol
+lookup_static_symbol (const char *name, const domain_enum domain)
+{
+  return lookup_global_or_static_symbol (name, STATIC_BLOCK, nullptr, domain);
+}
+
+/* See symtab.h.  */
+
+struct block_symbol
+lookup_global_symbol (const char *name,
+		      const struct block *block,
+		      const domain_enum domain)
+{
+  struct objfile *objfile = lookup_objfile_from_block (block);
+  return lookup_global_or_static_symbol (name, GLOBAL_BLOCK, objfile, domain);
 }
 
 int
@@ -2718,7 +2713,8 @@ lookup_transparent_type (const char *name)
    "quick" symbol table functions.  */
 
 static struct type *
-basic_lookup_transparent_type_quick (struct objfile *objfile, int block_index,
+basic_lookup_transparent_type_quick (struct objfile *objfile,
+				     enum block_enum block_index,
 				     const char *name)
 {
   struct compunit_symtab *cust;
@@ -2748,7 +2744,8 @@ basic_lookup_transparent_type_quick (struct objfile *objfile, int block_index,
    BLOCK_INDEX is either GLOBAL_BLOCK or STATIC_BLOCK.  */
 
 static struct type *
-basic_lookup_transparent_type_1 (struct objfile *objfile, int block_index,
+basic_lookup_transparent_type_1 (struct objfile *objfile,
+				 enum block_enum block_index,
 				 const char *name)
 {
   const struct blockvector *bv;
@@ -4119,10 +4116,28 @@ operator_chars (const char *p, const char **end)
 }
 
 
+/* What part to match in a file name.  */
+
+struct filename_partial_match_opts
+{
+  /* Only match the directory name part.   */
+  int dirname = false;
+
+  /* Only match the basename part.  */
+  int basename = false;
+};
+
 /* Data structure to maintain printing state for output_source_filename.  */
 
 struct output_source_filename_data
 {
+  /* Output only filenames matching REGEXP.  */
+  std::string regexp;
+  gdb::optional<compiled_regex> c_regexp;
+  /* Possibly only match a part of the filename.  */
+  filename_partial_match_opts partial_match;
+
+
   /* Cache of what we've seen so far.  */
   struct filename_seen_cache *filename_seen_cache;
 
@@ -4154,7 +4169,27 @@ output_source_filename (const char *name,
       return;
     }
 
-  /* No; print it and reset *FIRST.  */
+  /* Does it match data->regexp?  */
+  if (data->c_regexp.has_value ())
+    {
+      const char *to_match;
+      std::string dirname;
+
+      if (data->partial_match.dirname)
+	{
+	  dirname = ldirname (name);
+	  to_match = dirname.c_str ();
+	}
+      else if (data->partial_match.basename)
+	to_match = lbasename (name);
+      else
+	to_match = name;
+
+      if (data->c_regexp->exec (to_match, 0, NULL, 0) != 0)
+	return;
+    }
+
+  /* Print it and reset *FIRST.  */
   if (! data->first)
     printf_filtered (", ");
   data->first = 0;
@@ -4173,8 +4208,74 @@ output_partial_symbol_filename (const char *filename, const char *fullname,
 			  (struct output_source_filename_data *) data);
 }
 
+using isrc_flag_option_def
+  = gdb::option::flag_option_def<filename_partial_match_opts>;
+
+static const gdb::option::option_def info_sources_option_defs[] = {
+
+  isrc_flag_option_def {
+    "dirname",
+    [] (filename_partial_match_opts *opts) { return &opts->dirname; },
+    N_("Show only the files having a dirname matching REGEXP."),
+  },
+
+  isrc_flag_option_def {
+    "basename",
+    [] (filename_partial_match_opts *opts) { return &opts->basename; },
+    N_("Show only the files having a basename matching REGEXP."),
+  },
+
+};
+
+/* Create an option_def_group for the "info sources" options, with
+   ISRC_OPTS as context.  */
+
+static inline gdb::option::option_def_group
+make_info_sources_options_def_group (filename_partial_match_opts *isrc_opts)
+{
+  return {{info_sources_option_defs}, isrc_opts};
+}
+
+/* Prints the header message for the source files that will be printed
+   with the matching info present in DATA.  SYMBOL_MSG is a message
+   that tells what will or has been done with the symbols of the
+   matching source files.  */
+
 static void
-info_sources_command (const char *ignore, int from_tty)
+print_info_sources_header (const char *symbol_msg,
+			   const struct output_source_filename_data *data)
+{
+  puts_filtered (symbol_msg);
+  if (!data->regexp.empty ())
+    {
+      if (data->partial_match.dirname)
+	printf_filtered (_("(dirname matching regular expression \"%s\")"),
+			 data->regexp.c_str ());
+      else if (data->partial_match.basename)
+	printf_filtered (_("(basename matching regular expression \"%s\")"),
+			 data->regexp.c_str ());
+      else
+	printf_filtered (_("(filename matching regular expression \"%s\")"),
+			 data->regexp.c_str ());
+    }
+  puts_filtered ("\n");
+}
+
+/* Completer for "info sources".  */
+
+static void
+info_sources_command_completer (cmd_list_element *ignore,
+				completion_tracker &tracker,
+				const char *text, const char *word)
+{
+  const auto group = make_info_sources_options_def_group (nullptr);
+  if (gdb::option::complete_options
+      (tracker, &text, gdb::option::PROCESS_OPTIONS_UNKNOWN_IS_OPERAND, group))
+    return;
+}
+
+static void
+info_sources_command (const char *args, int from_tty)
 {
   struct output_source_filename_data data;
 
@@ -4185,11 +4286,38 @@ info_sources_command (const char *ignore, int from_tty)
 
   filename_seen_cache filenames_seen;
 
+  auto group = make_info_sources_options_def_group (&data.partial_match);
+
+  gdb::option::process_options
+    (&args, gdb::option::PROCESS_OPTIONS_UNKNOWN_IS_ERROR, group);
+
+  if (args != NULL && *args != '\000')
+    data.regexp = args;
+
   data.filename_seen_cache = &filenames_seen;
-
-  printf_filtered ("Source files for which symbols have been read in:\n\n");
-
   data.first = 1;
+
+  if (data.partial_match.dirname && data.partial_match.basename)
+    error (_("You cannot give both -basename and -dirname to 'info sources'."));
+  if ((data.partial_match.dirname || data.partial_match.basename)
+      && data.regexp.empty ())
+     error (_("Missing REGEXP for 'info sources'."));
+
+  if (data.regexp.empty ())
+    data.c_regexp.reset ();
+  else
+    {
+      int cflags = REG_NOSUB;
+#ifdef HAVE_CASE_INSENSITIVE_FILE_SYSTEM
+      cflags |= REG_ICASE;
+#endif
+      data.c_regexp.emplace (data.regexp.c_str (), cflags,
+			     _("Invalid regexp"));
+    }
+
+  print_info_sources_header
+    (_("Source files for which symbols have been read in:\n"), &data);
+
   for (objfile *objfile : current_program_space->objfiles ())
     {
       for (compunit_symtab *cu : objfile->compunits ())
@@ -4204,8 +4332,8 @@ info_sources_command (const char *ignore, int from_tty)
     }
   printf_filtered ("\n\n");
 
-  printf_filtered ("Source files for which symbols "
-		   "will be read in on demand:\n\n");
+  print_info_sources_header
+    (_("Source files for which symbols will be read in on demand:\n"), &data);
 
   filenames_seen.clear ();
   data.first = 1;
@@ -4325,12 +4453,16 @@ sort_search_symbols_remove_dups (std::vector<symbol_search> *result)
 
    Within each file the results are sorted locally; each symtab's global and
    static blocks are separately alphabetized.
-   Duplicate entries are removed.  */
+   Duplicate entries are removed.
+
+   When EXCLUDE_MINSYMS is false then matching minsyms are also returned,
+   otherwise they are excluded.  */
 
 std::vector<symbol_search>
 search_symbols (const char *regexp, enum search_domain kind,
 		const char *t_regexp,
-		int nfiles, const char *files[])
+		int nfiles, const char *files[],
+		bool exclude_minsyms)
 {
   const struct blockvector *bv;
   const struct block *b;
@@ -4339,13 +4471,13 @@ search_symbols (const char *regexp, enum search_domain kind,
   struct symbol *sym;
   int found_misc = 0;
   static const enum minimal_symbol_type types[]
-    = {mst_data, mst_text, mst_abs};
+    = {mst_data, mst_text, mst_unknown};
   static const enum minimal_symbol_type types2[]
-    = {mst_bss, mst_file_text, mst_abs};
+    = {mst_bss, mst_file_text, mst_unknown};
   static const enum minimal_symbol_type types3[]
-    = {mst_file_data, mst_solib_trampoline, mst_abs};
+    = {mst_file_data, mst_solib_trampoline, mst_unknown};
   static const enum minimal_symbol_type types4[]
-    = {mst_file_bss, mst_text_gnu_ifunc, mst_abs};
+    = {mst_file_bss, mst_text_gnu_ifunc, mst_unknown};
   enum minimal_symbol_type ourtype;
   enum minimal_symbol_type ourtype2;
   enum minimal_symbol_type ourtype3;
@@ -4527,7 +4659,8 @@ search_symbols (const char *regexp, enum search_domain kind,
 				      || treg_matches_sym_type_name (*treg,
 								     sym)))
 			      || (kind == TYPES_DOMAIN
-				  && SYMBOL_CLASS (sym) == LOC_TYPEDEF))))
+				  && SYMBOL_CLASS (sym) == LOC_TYPEDEF
+				  && SYMBOL_DOMAIN (sym) != MODULE_DOMAIN))))
 		    {
 		      /* match */
 		      result.emplace_back (i, sym);
@@ -4546,6 +4679,7 @@ search_symbols (const char *regexp, enum search_domain kind,
      as we assume that a minimal symbol does not have a type.  */
 
   if ((found_misc || (nfiles == 0 && kind != FUNCTIONS_DOMAIN))
+      && !exclude_minsyms
       && !treg.has_value ())
     {
       for (objfile *objfile : current_program_space->objfiles ())
@@ -4628,7 +4762,23 @@ print_symbol_info (enum search_domain kind,
   /* Typedef that is not a C++ class.  */
   if (kind == TYPES_DOMAIN
       && SYMBOL_DOMAIN (sym) != STRUCT_DOMAIN)
-    typedef_print (SYMBOL_TYPE (sym), sym, gdb_stdout);
+    {
+      /* FIXME: For C (and C++) we end up with a difference in output here
+	 between how a typedef is printed, and non-typedefs are printed.
+	 The TYPEDEF_PRINT code places a ";" at the end in an attempt to
+	 appear C-like, while TYPE_PRINT doesn't.
+
+	 For the struct printing case below, things are worse, we force
+	 printing of the ";" in this function, which is going to be wrong
+	 for languages that don't require a ";" between statements.  */
+      if (TYPE_CODE (SYMBOL_TYPE (sym)) == TYPE_CODE_TYPEDEF)
+	typedef_print (SYMBOL_TYPE (sym), sym, gdb_stdout);
+      else
+	{
+	  type_print (SYMBOL_TYPE (sym), "", gdb_stdout, -1);
+	  printf_filtered ("\n");
+	}
+    }
   /* variable, func, or typedef-that-is-c++-class.  */
   else if (kind < TYPES_DOMAIN
 	   || (kind == TYPES_DOMAIN
@@ -4676,7 +4826,7 @@ print_msymbol_info (struct bound_minimal_symbol msymbol)
    matches.  */
 
 static void
-symtab_symbol_info (bool quiet,
+symtab_symbol_info (bool quiet, bool exclude_minsyms,
 		    const char *regexp, enum search_domain kind,
 		    const char *t_regexp, int from_tty)
 {
@@ -4692,7 +4842,8 @@ symtab_symbol_info (bool quiet,
 
   /* Must make sure that if we're interrupted, symbols gets freed.  */
   std::vector<symbol_search> symbols = search_symbols (regexp, kind,
-						       t_regexp, 0, NULL);
+						       t_regexp, 0, NULL,
+						       exclude_minsyms);
 
   if (!quiet)
     {
@@ -4745,15 +4896,87 @@ symtab_symbol_info (bool quiet,
     }
 }
 
+/* Structure to hold the values of the options used by the 'info variables'
+   and 'info functions' commands.  These correspond to the -q, -t, and -n
+   options.  */
+
+struct info_print_options
+{
+  int quiet = false;
+  int exclude_minsyms = false;
+  char *type_regexp = nullptr;
+
+  ~info_print_options ()
+  {
+    xfree (type_regexp);
+  }
+};
+
+/* The options used by the 'info variables' and 'info functions'
+   commands.  */
+
+static const gdb::option::option_def info_print_options_defs[] = {
+  gdb::option::boolean_option_def<info_print_options> {
+    "q",
+    [] (info_print_options *opt) { return &opt->quiet; },
+    nullptr, /* show_cmd_cb */
+    nullptr /* set_doc */
+  },
+
+  gdb::option::boolean_option_def<info_print_options> {
+    "n",
+    [] (info_print_options *opt) { return &opt->exclude_minsyms; },
+    nullptr, /* show_cmd_cb */
+    nullptr /* set_doc */
+  },
+
+  gdb::option::string_option_def<info_print_options> {
+    "t",
+    [] (info_print_options *opt) { return &opt->type_regexp; },
+    nullptr, /* show_cmd_cb */
+    nullptr /* set_doc */
+  }
+};
+
+/* Returns the option group used by 'info variables' and 'info
+   functions'.  */
+
+static gdb::option::option_def_group
+make_info_print_options_def_group (info_print_options *opts)
+{
+  return {{info_print_options_defs}, opts};
+}
+
+/* Command completer for 'info variables' and 'info functions'.  */
+
+static void
+info_print_command_completer (struct cmd_list_element *ignore,
+			      completion_tracker &tracker,
+			      const char *text, const char * /* word */)
+{
+  const auto group
+    = make_info_print_options_def_group (nullptr);
+  if (gdb::option::complete_options
+      (tracker, &text, gdb::option::PROCESS_OPTIONS_UNKNOWN_IS_OPERAND, group))
+    return;
+
+  const char *word = advance_to_expression_complete_word_point (tracker, text);
+  symbol_completer (ignore, tracker, text, word);
+}
+
 /* Implement the 'info variables' command.  */
 
 static void
 info_variables_command (const char *args, int from_tty)
 {
   info_print_options opts;
-  extract_info_print_options (&opts, &args);
+  auto grp = make_info_print_options_def_group (&opts);
+  gdb::option::process_options
+    (&args, gdb::option::PROCESS_OPTIONS_UNKNOWN_IS_OPERAND, grp);
+  if (args != nullptr && *args == '\0')
+    args = nullptr;
 
-  symtab_symbol_info (opts.quiet, args, VARIABLES_DOMAIN,
+  symtab_symbol_info (opts.quiet, opts.exclude_minsyms, args, VARIABLES_DOMAIN,
 		      opts.type_regexp, from_tty);
 }
 
@@ -4763,17 +4986,72 @@ static void
 info_functions_command (const char *args, int from_tty)
 {
   info_print_options opts;
-  extract_info_print_options (&opts, &args);
+  auto grp = make_info_print_options_def_group (&opts);
+  gdb::option::process_options
+    (&args, gdb::option::PROCESS_OPTIONS_UNKNOWN_IS_OPERAND, grp);
+  if (args != nullptr && *args == '\0')
+    args = nullptr;
 
-  symtab_symbol_info (opts.quiet, args, FUNCTIONS_DOMAIN,
-		      opts.type_regexp, from_tty);
+  symtab_symbol_info (opts.quiet, opts.exclude_minsyms, args,
+		      FUNCTIONS_DOMAIN, opts.type_regexp, from_tty);
 }
 
+/* Holds the -q option for the 'info types' command.  */
+
+struct info_types_options
+{
+  int quiet = false;
+};
+
+/* The options used by the 'info types' command.  */
+
+static const gdb::option::option_def info_types_options_defs[] = {
+  gdb::option::boolean_option_def<info_types_options> {
+    "q",
+    [] (info_types_options *opt) { return &opt->quiet; },
+    nullptr, /* show_cmd_cb */
+    nullptr /* set_doc */
+  }
+};
+
+/* Returns the option group used by 'info types'.  */
+
+static gdb::option::option_def_group
+make_info_types_options_def_group (info_types_options *opts)
+{
+  return {{info_types_options_defs}, opts};
+}
+
+/* Implement the 'info types' command.  */
 
 static void
-info_types_command (const char *regexp, int from_tty)
+info_types_command (const char *args, int from_tty)
 {
-  symtab_symbol_info (false, regexp, TYPES_DOMAIN, NULL, from_tty);
+  info_types_options opts;
+
+  auto grp = make_info_types_options_def_group (&opts);
+  gdb::option::process_options
+    (&args, gdb::option::PROCESS_OPTIONS_UNKNOWN_IS_OPERAND, grp);
+  if (args != nullptr && *args == '\0')
+    args = nullptr;
+  symtab_symbol_info (opts.quiet, false, args, TYPES_DOMAIN, NULL, from_tty);
+}
+
+/* Command completer for 'info types' command.  */
+
+static void
+info_types_command_completer (struct cmd_list_element *ignore,
+			      completion_tracker &tracker,
+			      const char *text, const char * /* word */)
+{
+  const auto group
+    = make_info_types_options_def_group (nullptr);
+  if (gdb::option::complete_options
+      (tracker, &text, gdb::option::PROCESS_OPTIONS_UNKNOWN_IS_OPERAND, group))
+    return;
+
+  const char *word = advance_to_expression_complete_word_point (tracker, text);
+  symbol_completer (ignore, tracker, text, word);
 }
 
 /* Breakpoint all functions matching regular expression.  */
@@ -4817,7 +5095,8 @@ rbreak_command (const char *regexp, int from_tty)
   std::vector<symbol_search> symbols = search_symbols (regexp,
 						       FUNCTIONS_DOMAIN,
 						       NULL,
-						       nfiles, files);
+						       nfiles, files,
+						       false);
 
   scoped_rbreak_breakpoints finalize;
   for (const symbol_search &p : symbols)
@@ -6006,42 +6285,53 @@ _initialize_symtab (void)
   c = add_info ("variables", info_variables_command,
 		info_print_args_help (_("\
 All global and static variable names or those matching REGEXPs.\n\
-Usage: info variables [-q] [-t TYPEREGEXP] [NAMEREGEXP]\n\
+Usage: info variables [-q] [-n] [-t TYPEREGEXP] [NAMEREGEXP]\n\
 Prints the global and static variables.\n"),
-				  _("global and static variables")));
+				      _("global and static variables"),
+				      true));
   set_cmd_completer_handle_brkchars (c, info_print_command_completer);
   if (dbx_commands)
     {
       c = add_com ("whereis", class_info, info_variables_command,
 		   info_print_args_help (_("\
 All global and static variable names, or those matching REGEXPs.\n\
-Usage: whereis [-q] [-t TYPEREGEXP] [NAMEREGEXP]\n\
+Usage: whereis [-q] [-n] [-t TYPEREGEXP] [NAMEREGEXP]\n\
 Prints the global and static variables.\n"),
-				   _("global and static variables")));
+					 _("global and static variables"),
+					 true));
       set_cmd_completer_handle_brkchars (c, info_print_command_completer);
     }
 
   c = add_info ("functions", info_functions_command,
 		info_print_args_help (_("\
 All function names or those matching REGEXPs.\n\
-Usage: info functions [-q] [-t TYPEREGEXP] [NAMEREGEXP]\n\
+Usage: info functions [-q] [-n] [-t TYPEREGEXP] [NAMEREGEXP]\n\
 Prints the functions.\n"),
-				  _("functions")));
+				      _("functions"),
+				      true));
   set_cmd_completer_handle_brkchars (c, info_print_command_completer);
 
-  /* FIXME:  This command has at least the following problems:
-     1.  It prints builtin types (in a very strange and confusing fashion).
-     2.  It doesn't print right, e.g. with
-     typedef struct foo *FOO
-     type_print prints "FOO" when we want to make it (in this situation)
-     print "struct foo *".
-     I also think "ptype" or "whatis" is more likely to be useful (but if
-     there is much disagreement "info types" can be fixed).  */
-  add_info ("types", info_types_command,
-	    _("All type names, or those matching REGEXP."));
+  c = add_info ("types", info_types_command, _("\
+All type names, or those matching REGEXP.\n\
+Usage: info types [-q] [REGEXP]\n\
+Print information about all types matching REGEXP, or all types if no\n\
+REGEXP is given.  The optional flag -q disables printing of headers."));
+  set_cmd_completer_handle_brkchars (c, info_types_command_completer);
 
-  add_info ("sources", info_sources_command,
-	    _("Source files in the program."));
+  const auto info_sources_opts = make_info_sources_options_def_group (nullptr);
+
+  static std::string info_sources_help
+    = gdb::option::build_help (_("\
+All source files in the program or those matching REGEXP.\n\
+Usage: info sources [OPTION]... [REGEXP]\n\
+By default, REGEXP is used to match anywhere in the filename.\n\
+\n\
+Options:\n\
+%OPTIONS%"),
+			       info_sources_opts);
+
+  c = add_info ("sources", info_sources_command, info_sources_help.c_str ());
+  set_cmd_completer_handle_brkchars (c, info_sources_command_completer);
 
   add_com ("rbreak", class_breakpoint, rbreak_command,
 	   _("Set a breakpoint for all functions matching REGEXP."));
@@ -6049,8 +6339,7 @@ Prints the functions.\n"),
   add_setshow_enum_cmd ("multiple-symbols", no_class,
                         multiple_symbols_modes, &multiple_symbols_mode,
                         _("\
-Set the debugger behavior when more than one symbol are possible matches\n\
-in an expression."), _("\
+Set how the debugger handles ambiguities in expressions."), _("\
 Show how the debugger handles ambiguities in expressions."), _("\
 Valid values are \"ask\", \"all\", \"cancel\", and the default is \"all\"."),
                         NULL, NULL, &setlist, &showlist);

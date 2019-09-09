@@ -2,8 +2,12 @@
 #as: --no-pad-sections
 #objdump: -s
 #name: mbind section contents
-# The RX port annoyingly reorders the sections so that they do not match the sequence expected below.
-#skip: rx-*-*
+# RX annoyingly reorders the sections so that they do not match the sequence
+# expected below.
+#xfail: rx-*-*
+# A number of targets do not support SHF_GNU_MBIND
+#xfail: arm*-*-netbsdelf* arm*-*-nto* msp430-*-* visium-*-*
+#xfail: *-*-hpux* *-*-cloudabi
 
 #...
 Contents of section .mbind.data:

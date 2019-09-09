@@ -1037,7 +1037,7 @@ const char EXP_CHARS[] = "eE";
 /* As in 0f12.456  */
 /* or	 0d1.2345e12  */
 
-const char FLT_CHARS[] = "rRsSfFdDxXeEpP";
+const char FLT_CHARS[] = "rRsSfFdDxXeEpPHh";
 
 /* Prefix characters that indicate the start of an immediate
    value.  */
@@ -1046,6 +1046,16 @@ const char FLT_CHARS[] = "rRsSfFdDxXeEpP";
 /* Separator character handling.  */
 
 #define skip_whitespace(str)  do { if (*(str) == ' ') ++(str); } while (0)
+
+enum fp_16bit_format
+{
+  ARM_FP16_FORMAT_IEEE		= 0x1,
+  ARM_FP16_FORMAT_ALTERNATIVE	= 0x2,
+  ARM_FP16_FORMAT_DEFAULT	= 0x3
+};
+
+static enum fp_16bit_format fp16_format = ARM_FP16_FORMAT_DEFAULT;
+
 
 static inline int
 skip_past_char (char ** str, char c)
@@ -1188,6 +1198,11 @@ md_atof (int type, char * litP, int * sizeP)
 
   switch (type)
     {
+    case 'H':
+    case 'h':
+      prec = 1;
+      break;
+
     case 'f':
     case 'F':
     case 's':
@@ -1222,34 +1237,29 @@ md_atof (int type, char * litP, int * sizeP)
     input_line_pointer = t;
   *sizeP = prec * sizeof (LITTLENUM_TYPE);
 
-  if (target_big_endian)
-    {
-      for (i = 0; i < prec; i++)
-	{
-	  md_number_to_chars (litP, (valueT) words[i], sizeof (LITTLENUM_TYPE));
-	  litP += sizeof (LITTLENUM_TYPE);
-	}
-    }
+  if (target_big_endian || prec == 1)
+    for (i = 0; i < prec; i++)
+      {
+	md_number_to_chars (litP, (valueT) words[i], sizeof (LITTLENUM_TYPE));
+	litP += sizeof (LITTLENUM_TYPE);
+      }
+  else if (ARM_CPU_HAS_FEATURE (cpu_variant, fpu_endian_pure))
+    for (i = prec - 1; i >= 0; i--)
+      {
+	md_number_to_chars (litP, (valueT) words[i], sizeof (LITTLENUM_TYPE));
+	litP += sizeof (LITTLENUM_TYPE);
+      }
   else
-    {
-      if (ARM_CPU_HAS_FEATURE (cpu_variant, fpu_endian_pure))
-	for (i = prec - 1; i >= 0; i--)
-	  {
-	    md_number_to_chars (litP, (valueT) words[i], sizeof (LITTLENUM_TYPE));
-	    litP += sizeof (LITTLENUM_TYPE);
-	  }
-      else
-	/* For a 4 byte float the order of elements in `words' is 1 0.
-	   For an 8 byte float the order is 1 0 3 2.  */
-	for (i = 0; i < prec; i += 2)
-	  {
-	    md_number_to_chars (litP, (valueT) words[i + 1],
-				sizeof (LITTLENUM_TYPE));
-	    md_number_to_chars (litP + sizeof (LITTLENUM_TYPE),
-				(valueT) words[i], sizeof (LITTLENUM_TYPE));
-	    litP += 2 * sizeof (LITTLENUM_TYPE);
-	  }
-    }
+    /* For a 4 byte float the order of elements in `words' is 1 0.
+       For an 8 byte float the order is 1 0 3 2.  */
+    for (i = 0; i < prec; i += 2)
+      {
+	md_number_to_chars (litP, (valueT) words[i + 1],
+			    sizeof (LITTLENUM_TYPE));
+	md_number_to_chars (litP + sizeof (LITTLENUM_TYPE),
+			    (valueT) words[i], sizeof (LITTLENUM_TYPE));
+	litP += 2 * sizeof (LITTLENUM_TYPE);
+      }
 
   return NULL;
 }
@@ -4925,6 +4935,55 @@ pe_directive_secrel (int dummy ATTRIBUTE_UNUSED)
 }
 #endif /* TE_PE */
 
+int
+arm_is_largest_exponent_ok (int precision)
+{
+  /* precision == 1 ensures that this will only return
+     true for 16 bit floats.  */
+  return (precision == 1) && (fp16_format == ARM_FP16_FORMAT_ALTERNATIVE);
+}
+
+static void
+set_fp16_format (int dummy ATTRIBUTE_UNUSED)
+{
+  char saved_char;
+  char* name;
+  enum fp_16bit_format new_format;
+
+  new_format = ARM_FP16_FORMAT_DEFAULT;
+
+  name = input_line_pointer;
+  while (*input_line_pointer && !ISSPACE (*input_line_pointer))
+    input_line_pointer++;
+
+  saved_char = *input_line_pointer;
+  *input_line_pointer = 0;
+
+  if (strcasecmp (name, "ieee") == 0)
+    new_format = ARM_FP16_FORMAT_IEEE;
+  else if (strcasecmp (name, "alternative") == 0)
+    new_format = ARM_FP16_FORMAT_ALTERNATIVE;
+  else
+    {
+      as_bad (_("unrecognised float16 format \"%s\""), name);
+      goto cleanup;
+    }
+
+  /* Only set fp16_format if it is still the default (aka not already
+     been set yet).  */
+  if (fp16_format == ARM_FP16_FORMAT_DEFAULT)
+    fp16_format = new_format;
+  else
+    {
+      if (new_format != fp16_format)
+	as_warn (_("float16 format cannot be set more than once, ignoring."));
+    }
+
+cleanup:
+  *input_line_pointer = saved_char;
+  ignore_rest_of_line ();
+}
+
 /* This table describes all the machine specific pseudo-ops the assembler
    has to support.  The fields are:
      pseudo-op name without dot
@@ -5002,9 +5061,12 @@ const pseudo_typeS md_pseudo_table[] =
   {"asmfunc",      s_ccs_asmfunc,    0},
   {"endasmfunc",   s_ccs_endasmfunc, 0},
 
+  {"float16", float_cons, 'h' },
+  {"float16_format", set_fp16_format, 0 },
+
   { 0, 0, 0 }
 };
-
+
 /* Parser functions used exclusively in instruction operands.  */
 
 /* Generic immediate-value read function for use in insn parsing.
@@ -6681,8 +6743,10 @@ parse_neon_mov (char **str, int *which_operand)
 	      inst.operands[i].present = 1;
 	    }
 	}
-      else if ((val = arm_typed_reg_parse (&ptr, REG_TYPE_NSDQ, &rtype,
-					   &optype)) != FAIL)
+      else if (((val = arm_typed_reg_parse (&ptr, REG_TYPE_NSDQ, &rtype,
+		&optype)) != FAIL)
+	       || ((val = arm_typed_reg_parse (&ptr, REG_TYPE_MQ, &rtype,
+		   &optype)) != FAIL))
 	{
 	  /* Case 0: VMOV<c><q> <Qd>, <Qm>
 	     Case 1: VMOV<c><q> <Dd>, <Dm>
@@ -6983,6 +7047,7 @@ enum operand_parse_code
   OP_I31w,	/*		   0 .. 31, optional trailing ! */
   OP_I32,	/*		   1 .. 32 */
   OP_I32z,	/*		   0 .. 32 */
+  OP_I48_I64,	/*		   48 or 64 */
   OP_I63,	/*		   0 .. 63 */
   OP_I63s,	/*		 -64 .. 63 */
   OP_I64,	/*		   1 .. 64 */
@@ -7131,6 +7196,25 @@ parse_operands (char *str, const unsigned int *pattern, bfd_boolean thumb)
       if (parse_immediate (&str, &val, min, max, popt) == FAIL)	\
 	goto failure;						\
       inst.operands[i].imm = val;				\
+    }								\
+  while (0)
+
+#define po_imm1_or_imm2_or_fail(imm1, imm2, popt)		\
+  do								\
+    {								\
+      expressionS exp;						\
+      my_get_expression (&exp, &str, popt);			\
+      if (exp.X_op != O_constant)				\
+	{							\
+	  inst.error = _("constant expression required");	\
+	  goto failure;						\
+	}							\
+      if (exp.X_add_number != imm1 && exp.X_add_number != imm2) \
+	{							\
+	  inst.error = _("immediate value 48 or 64 expected");	\
+	  goto failure;						\
+	}							\
+      inst.operands[i].imm = exp.X_add_number;			\
     }								\
   while (0)
 
@@ -7478,6 +7562,7 @@ parse_operands (char *str, const unsigned int *pattern, bfd_boolean thumb)
 	case OP_I31:	 po_imm_or_fail (  0,	  31, FALSE);	break;
 	case OP_I32:	 po_imm_or_fail (  1,	  32, FALSE);	break;
 	case OP_I32z:	 po_imm_or_fail (  0,     32, FALSE);   break;
+	case OP_I48_I64: po_imm1_or_imm2_or_fail (48, 64, FALSE); break;
 	case OP_I63s:	 po_imm_or_fail (-64,	  63, FALSE);	break;
 	case OP_I63:	 po_imm_or_fail (  0,     63, FALSE);   break;
 	case OP_I64:	 po_imm_or_fail (  1,     64, FALSE);   break;
@@ -14278,6 +14363,24 @@ v8_1_loop_reloc (int is_le)
     }
 }
 
+/* For shifts with four operands in MVE.  */
+static void
+do_mve_scalar_shift1 (void)
+{
+  unsigned int value = inst.operands[2].imm;
+
+  inst.instruction |= inst.operands[0].reg << 16;
+  inst.instruction |= inst.operands[1].reg << 8;
+
+  /* Setting the bit for saturation.  */
+  inst.instruction |= ((value == 64) ? 0: 1) << 7;
+
+  /* Assuming Rm is already checked not to be 11x1.  */
+  constraint (inst.operands[3].reg == inst.operands[0].reg, BAD_OVERLAP);
+  constraint (inst.operands[3].reg == inst.operands[1].reg, BAD_OVERLAP);
+  inst.instruction |= inst.operands[3].reg << 12;
+}
+
 /* For shifts in MVE.  */
 static void
 do_mve_scalar_shift (void)
@@ -17900,7 +18003,7 @@ do_mve_vqdmlah (void)
 {
   enum neon_shape rs = neon_select_shape (NS_QQR, NS_NULL);
   struct neon_type_el et
-    = neon_check_type (3, rs, N_EQK, N_EQK, N_SU_MVE | N_KEY);
+    = neon_check_type (3, rs, N_EQK, N_EQK, N_S_32 | N_KEY);
 
   if (inst.cond > COND_ALWAYS)
     inst.pred_insn_type = INSIDE_VPT_INSN;
@@ -17921,11 +18024,6 @@ do_mve_vqdmladh (void)
     inst.pred_insn_type = INSIDE_VPT_INSN;
   else
     inst.pred_insn_type = MVE_OUTSIDE_PRED_INSN;
-
-  if (et.size == 32
-      && (inst.operands[0].reg == inst.operands[1].reg
-	  || inst.operands[0].reg == inst.operands[2].reg))
-    as_tsktsk (BAD_MVE_SRCDEST);
 
   mve_encode_qqq (0, et.size);
 }
@@ -18195,7 +18293,7 @@ do_neon_qrdmlah (void)
     {
       enum neon_shape rs = neon_select_shape (NS_QQR, NS_NULL);
       struct neon_type_el et
-	= neon_check_type (3, rs, N_EQK, N_EQK, N_SU_MVE | N_KEY);
+	= neon_check_type (3, rs, N_EQK, N_EQK, N_S_32 | N_KEY);
 
       NEON_ENCODE (INTEGER, inst);
       mve_encode_qqr (et.size, et.type == NT_unsigned, 0);
@@ -19761,7 +19859,13 @@ do_neon_mov (void)
       et = neon_check_type (2, rs, N_EQK, N_F64 | N_KEY);
       /* It is not an error here if no type is given.  */
       inst.error = NULL;
-      if (et.type == NT_float && et.size == 64)
+
+      /* In MVE we interpret the following instructions as same, so ignoring
+	 the following type (float) and size (64) checks.
+	 a: VMOV<c><q> <Dd>, <Dm>
+	 b: VMOV<c><q>.F64 <Dd>, <Dm>.  */
+      if ((et.type == NT_float && et.size == 64)
+	  || (ARM_CPU_HAS_FEATURE (cpu_variant, mve_ext)))
 	{
 	  do_vfp_nsyn_opcode ("fcpyd");
 	  break;
@@ -25343,8 +25447,8 @@ static const struct asm_opcode insns[] =
  ToC("lsll",	ea50010d, 3, (RRe, RRo, RRnpcsp_I32), mve_scalar_shift),
  ToC("lsrl",	ea50011f, 3, (RRe, RRo, I32),	      mve_scalar_shift),
  ToC("asrl",	ea50012d, 3, (RRe, RRo, RRnpcsp_I32), mve_scalar_shift),
- ToC("uqrshll",	ea51010d, 3, (RRe, RRo, RRnpcsp),     mve_scalar_shift),
- ToC("sqrshrl",	ea51012d, 3, (RRe, RRo, RRnpcsp),     mve_scalar_shift),
+ ToC("uqrshll",	ea51010d, 4, (RRe, RRo, I48_I64, RRnpcsp), mve_scalar_shift1),
+ ToC("sqrshrl",	ea51012d, 4, (RRe, RRo, I48_I64, RRnpcsp), mve_scalar_shift1),
  ToC("uqshll",	ea51010f, 3, (RRe, RRo, I32),	      mve_scalar_shift),
  ToC("urshrl",	ea51011f, 3, (RRe, RRo, I32),	      mve_scalar_shift),
  ToC("srshrl",	ea51012f, 3, (RRe, RRo, I32),	      mve_scalar_shift),
@@ -30495,6 +30599,12 @@ static const struct arm_cpu_option_table arm_cpus[] =
   ARM_CPU_OPT ("cortex-a76",    "Cortex-A76",	       ARM_ARCH_V8_2A,
 	       ARM_FEATURE_CORE_HIGH (ARM_EXT2_FP16_INST),
 	       FPU_ARCH_CRYPTO_NEON_VFP_ARMV8_DOTPROD),
+  ARM_CPU_OPT ("cortex-a76ae",    "Cortex-A76AE",      ARM_ARCH_V8_2A,
+	       ARM_FEATURE_CORE_HIGH (ARM_EXT2_FP16_INST),
+	       FPU_ARCH_CRYPTO_NEON_VFP_ARMV8_DOTPROD),
+  ARM_CPU_OPT ("cortex-a77",    "Cortex-A77",	       ARM_ARCH_V8_2A,
+	       ARM_FEATURE_CORE_HIGH (ARM_EXT2_FP16_INST),
+	       FPU_ARCH_CRYPTO_NEON_VFP_ARMV8_DOTPROD),
   ARM_CPU_OPT ("ares",    "Ares",	       ARM_ARCH_V8_2A,
 	       ARM_FEATURE_CORE_HIGH (ARM_EXT2_FP16_INST),
 	       FPU_ARCH_CRYPTO_NEON_VFP_ARMV8_DOTPROD),
@@ -30516,6 +30626,9 @@ static const struct arm_cpu_option_table arm_cpus[] =
   ARM_CPU_OPT ("cortex-r52",	  "Cortex-R52",	       ARM_ARCH_V8R,
 	      ARM_FEATURE_COPROC (CRC_EXT_ARMV8),
 	      FPU_ARCH_NEON_VFP_ARMV8),
+  ARM_CPU_OPT ("cortex-m35p",	  "Cortex-M35P",       ARM_ARCH_V8M_MAIN,
+	       ARM_FEATURE_CORE_LOW (ARM_EXT_V5ExP | ARM_EXT_V6_DSP),
+	       FPU_NONE),
   ARM_CPU_OPT ("cortex-m33",	  "Cortex-M33",	       ARM_ARCH_V8M_MAIN,
 	       ARM_FEATURE_CORE_LOW (ARM_EXT_V5ExP | ARM_EXT_V6_DSP),
 	       FPU_NONE),
@@ -31245,6 +31358,22 @@ arm_parse_extension (const char *str, const arm_feature_set *opt_set,
 }
 
 static bfd_boolean
+arm_parse_fp16_opt (const char *str)
+{
+  if (strcasecmp (str, "ieee") == 0)
+    fp16_format = ARM_FP16_FORMAT_IEEE;
+  else if (strcasecmp (str, "alternative") == 0)
+    fp16_format = ARM_FP16_FORMAT_ALTERNATIVE;
+  else
+    {
+      as_bad (_("unrecognised float16 format \"%s\""), str);
+      return FALSE;
+    }
+
+  return TRUE;
+}
+
+static bfd_boolean
 arm_parse_cpu (const char *str)
 {
   const struct arm_cpu_option_table *opt;
@@ -31435,6 +31564,12 @@ struct arm_long_option_table arm_long_opts[] =
    arm_parse_it_mode, NULL},
   {"mccs", N_("\t\t\t  TI CodeComposer Studio syntax compatibility mode"),
    arm_ccs_mode, NULL},
+  {"mfp16-format=",
+   N_("[ieee|alternative]\n\
+                          set the encoding for half precision floating point "
+			  "numbers to IEEE\n\
+                          or Arm alternative format."),
+   arm_parse_fp16_opt, NULL },
   {NULL, NULL, 0, NULL}
 };
 
@@ -32016,6 +32151,9 @@ aeabi_set_public_attributes (void)
     virt_sec |= 2;
   if (virt_sec != 0)
     aeabi_set_attribute_int (Tag_Virtualization_use, virt_sec);
+
+  if (fp16_format != ARM_FP16_FORMAT_DEFAULT)
+    aeabi_set_attribute_int (Tag_ABI_FP_16bit_format, fp16_format);
 }
 
 /* Post relaxation hook.  Recompute ARM attributes now that relaxation is

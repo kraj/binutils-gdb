@@ -1,6 +1,6 @@
 /* util.c -- readline utility functions */
 
-/* Copyright (C) 1987-2010 Free Software Foundation, Inc.
+/* Copyright (C) 1987-2017 Free Software Foundation, Inc.
 
    This file is part of the GNU Readline Library (Readline), a library
    for reading lines of text with interactive input and history editing.      
@@ -70,8 +70,7 @@ int _rl_allow_pathname_alphabetic_chars = 0;
 static const char * const pathname_alphabetic_chars = "/-_=~.#$";
 
 int
-rl_alphabetic (c)
-     int c;
+rl_alphabetic (int c)
 {
   if (ALPHABETIC (c))
     return (1);
@@ -97,7 +96,7 @@ _rl_walphabetic (wchar_t wc)
 
 /* How to abort things. */
 int
-_rl_abort_internal ()
+_rl_abort_internal (void)
 {
   rl_ding ();
   rl_clear_message ();
@@ -108,28 +107,28 @@ _rl_abort_internal ()
   while (rl_executing_macro)
     _rl_pop_executing_macro ();
 
+  RL_UNSETSTATE (RL_STATE_MULTIKEY);	/* XXX */
+
   rl_last_func = (rl_command_func_t *)NULL;
-  longjmp (_rl_top_level, 1);
+
+  _rl_longjmp (_rl_top_level, 1);
   return (0);
 }
 
 int
-rl_abort (count, key)
-     int count, key;
+rl_abort (int count, int key)
 {
   return (_rl_abort_internal ());
 }
 
 int
-_rl_null_function (count, key)
-     int count, key;
+_rl_null_function (int count, int key)
 {
   return 0;
 }
 
 int
-rl_tty_status (count, key)
-     int count, key;
+rl_tty_status (int count, int key)
 {
 #if defined (TIOCSTAT)
   ioctl (1, TIOCSTAT, (char *)0);
@@ -143,8 +142,7 @@ rl_tty_status (count, key)
 /* Return a copy of the string between FROM and TO.
    FROM is inclusive, TO is not. */
 char *
-rl_copy_text (from, to)
-     int from, to;
+rl_copy_text (int from, int to)
 {
   register int length;
   char *copy;
@@ -163,8 +161,7 @@ rl_copy_text (from, to)
 /* Increase the size of RL_LINE_BUFFER until it has enough space to hold
    LEN characters. */
 void
-rl_extend_line_buffer (len)
-     int len;
+rl_extend_line_buffer (int len)
 {
   while (len >= rl_line_buffer_len)
     {
@@ -178,8 +175,7 @@ rl_extend_line_buffer (len)
 
 /* A function for simple tilde expansion. */
 int
-rl_tilde_expand (ignore, key)
-     int ignore, key;
+rl_tilde_expand (int ignore, int key)
 {
   register int start, end;
   char *homedir, *temp;
@@ -195,12 +191,14 @@ rl_tilde_expand (ignore, key)
       xfree (homedir);
       return (0);
     }
-  else if (rl_line_buffer[start] != '~')
+  else if (start >= 0 && rl_line_buffer[start] != '~')
     {
-      for (; !whitespace (rl_line_buffer[start]) && start >= 0; start--)
+      for (; start >= 0 && !whitespace (rl_line_buffer[start]); start--)
         ;
       start++;
     }
+  else if (start < 0)
+    start = 0;
 
   end = start;
   do
@@ -319,8 +317,7 @@ _rl_errmsg (format, arg1, arg2)
 /* Determine if s2 occurs in s1.  If so, return a pointer to the
    match in s1.  The compare is case insensitive. */
 char *
-_rl_strindex (s1, s2)
-     register const char *s1, *s2;
+_rl_strindex (const char *s1, const char *s2)
 {
   register int i, l, len;
 
@@ -334,8 +331,7 @@ _rl_strindex (s1, s2)
 /* Find the first occurrence in STRING1 of any character from STRING2.
    Return a pointer to the character in STRING1. */
 char *
-_rl_strpbrk (string1, string2)
-     const char *string1, *string2;
+_rl_strpbrk (const char *string1, const char *string2)
 {
   register const char *scan;
 #if defined (HANDLE_MULTIBYTE)
@@ -369,12 +365,11 @@ _rl_strpbrk (string1, string2)
 /* Compare at most COUNT characters from string1 to string2.  Case
    doesn't matter (strncasecmp). */
 int
-_rl_strnicmp (string1, string2, count)
-     char *string1, *string2;
-     int count;
+_rl_strnicmp (const char *string1, const char *string2, int count)
 {
-  register char *s1, *s2;
-  int d;
+  register const char *s1;
+  register const char *s2;
+  register int d;
 
   if (count <= 0 || (string1 == string2))
     return 0;
@@ -397,11 +392,11 @@ _rl_strnicmp (string1, string2, count)
 
 /* strcmp (), but caseless (strcasecmp). */
 int
-_rl_stricmp (string1, string2)
-     char *string1, *string2;
+_rl_stricmp (const char *string1, const char *string2)
 {
-  register char *s1, *s2;
-  int d;
+  register const char *s1;
+  register const char *s2;
+  register int d;
 
   s1 = string1;
   s2 = string2;
@@ -422,8 +417,7 @@ _rl_stricmp (string1, string2)
 
 /* Stupid comparison routine for qsort () ing strings. */
 int
-_rl_qsort_string_compare (s1, s2)
-  char **s1, **s2;
+_rl_qsort_string_compare (char **s1, char **s2)
 {
 #if defined (HAVE_STRCOLL)
   return (strcoll (*s1, *s2));
@@ -439,7 +433,7 @@ _rl_qsort_string_compare (s1, s2)
 }
 
 /* Function equivalents for the macros defined in chardefs.h. */
-#define FUNCTION_FOR_MACRO(f)	int (f) (c) int c; { return f (c); }
+#define FUNCTION_FOR_MACRO(f)	int (f) (int c) { return f (c); }
 
 FUNCTION_FOR_MACRO (_rl_digit_p)
 FUNCTION_FOR_MACRO (_rl_digit_value)
@@ -452,8 +446,7 @@ FUNCTION_FOR_MACRO (_rl_uppercase_p)
 /* A convenience function, to force memory deallocation to be performed
    by readline.  DLLs on Windows apparently require this. */
 void
-rl_free (mem)
-     void *mem;
+rl_free (void *mem)
 {
   if (mem)
     free (mem);
@@ -463,12 +456,12 @@ rl_free (mem)
    all `public' readline header files. */
 #undef _rl_savestring
 char *
-_rl_savestring (s)
-     const char *s;
+_rl_savestring (const char *s)
 {
   return (strcpy ((char *)xmalloc (1 + (int)strlen (s)), (s)));
 }
 
+#if defined (DEBUG)
 #if defined (USE_VARARGS)
 static FILE *_rl_tracefp;
 
@@ -502,16 +495,16 @@ _rl_trace (va_alist)
 }
 
 int
-_rl_tropen ()
+_rl_tropen (void)
 {
-  char fnbuf[128];
+  char fnbuf[128], *x;
 
   if (_rl_tracefp)
     fclose (_rl_tracefp);
 #if defined (_WIN32) && !defined (__CYGWIN__)
   /* Windows doesn't have /var/tmp, so open the trace file in the
      user's temporary directory instead.  */
-  sprintf (fnbuf, "%s/rltrace.%ld",
+  snprintf (fnbuf, sizeof (fnbuf), "%s/rltrace.%ld",
 	   (sh_get_env_value ("TEMP")
 	    ? sh_get_env_value ("TEMP")
 	    : "."),
@@ -525,7 +518,7 @@ _rl_tropen ()
 }
 
 int
-_rl_trclose ()
+_rl_trclose (void)
 {
   int r;
 
@@ -534,4 +527,52 @@ _rl_trclose ()
   return r;
 }
 
+void
+_rl_settracefp (FILE *fp)
+{
+  _rl_tracefp = fp;
+}
+#endif
+#endif /* DEBUG */
+
+
+#if HAVE_DECL_AUDIT_USER_TTY && defined (HAVE_LIBAUDIT_H) && defined (ENABLE_TTY_AUDIT_SUPPORT)
+#include <sys/socket.h>
+#include <libaudit.h>
+#include <linux/audit.h>
+#include <linux/netlink.h>
+
+/* Report STRING to the audit system. */
+void
+_rl_audit_tty (char *string)
+{
+  struct audit_message req;
+  struct sockaddr_nl addr;
+  size_t size;
+  int fd;
+
+  fd = socket (PF_NETLINK, SOCK_RAW, NETLINK_AUDIT);
+  if (fd < 0)
+    return;
+  size = strlen (string) + 1;
+
+  if (NLMSG_SPACE (size) > MAX_AUDIT_MESSAGE_LENGTH)
+    return;
+
+  memset (&req, 0, sizeof(req));
+  req.nlh.nlmsg_len = NLMSG_SPACE (size);
+  req.nlh.nlmsg_type = AUDIT_USER_TTY;
+  req.nlh.nlmsg_flags = NLM_F_REQUEST;
+  req.nlh.nlmsg_seq = 0;
+  if (size && string)
+    memcpy (NLMSG_DATA(&req.nlh), string, size);
+  memset (&addr, 0, sizeof(addr));
+
+  addr.nl_family = AF_NETLINK;
+  addr.nl_pid = 0;
+  addr.nl_groups = 0;
+
+  sendto (fd, &req, req.nlh.nlmsg_len, 0, (struct sockaddr*)&addr, sizeof(addr));
+  close (fd);
+}
 #endif

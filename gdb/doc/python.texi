@@ -90,8 +90,6 @@ containing @code{end}.  For example:
 
 @smallexample
 (@value{GDBP}) python
-Type python script
-End with a line saying just "end".
 >print 23
 >end
 23
@@ -4443,6 +4441,23 @@ searches then this function can be used to add a debug info file
 from a different place.
 @end defun
 
+@defun Objfile.lookup_global_symbol (name @r{[}, domain@r{]})
+Search for a global symbol named @var{name} in this objfile.  Optionally, the
+search scope can be restricted with the @var{domain} argument.
+The @var{domain} argument must be a domain constant defined in the @code{gdb}
+module and described in @ref{Symbols In Python}.  This function is similar to
+@code{gdb.lookup_global_symbol}, except that the search is limited to this
+objfile.
+
+The result is a @code{gdb.Symbol} object or @code{None} if the symbol
+is not found.
+@end defun
+
+@defun Objfile.lookup_static_symbol (name @r{[}, domain@r{]})
+Like @code{Objfile.lookup_global_symbol}, but searches for a global
+symbol with static linkage named @var{name} in this objfile.
+@end defun
+
 @node Frames In Python
 @subsubsection Accessing inferior stack frames from Python
 
@@ -4707,7 +4722,12 @@ A @code{gdb.Block} is iterable.  The iterator returns the symbols
 should not assume that a specific block object will always contain a
 given symbol, since changes in @value{GDBN} features and
 infrastructure may cause symbols move across blocks in a symbol
-table.
+table.  You can also use Python's @dfn{dictionary syntax} to access
+variables in this block, e.g.:
+
+@smallexample
+symbol = some_block['variable']  # symbol is of type gdb.Symbol
+@end smallexample
 
 The following block-related functions are available in the @code{gdb}
 module:
@@ -4830,6 +4850,25 @@ module and described later in this chapter.
 
 The result is a @code{gdb.Symbol} object or @code{None} if the symbol
 is not found.
+@end defun
+
+@findex gdb.lookup_static_symbol
+@defun gdb.lookup_static_symbol (name @r{[}, domain@r{]})
+This function searches for a global symbol with static linkage by name.
+The search scope can be restricted to by the domain argument.
+
+@var{name} is the name of the symbol.  It must be a string.
+The optional @var{domain} argument restricts the search to the domain type.
+The @var{domain} argument must be a domain constant defined in the @code{gdb}
+module and described later in this chapter.
+
+The result is a @code{gdb.Symbol} object or @code{None} if the symbol
+is not found.
+
+Note that this function will not find function-scoped static variables. To look
+up such variables, iterate over the variables of the function's
+@code{gdb.Block} and check that @code{block.addr_class} is
+@code{gdb.SYMBOL_LOC_STATIC}.
 @end defun
 
 A @code{gdb.Symbol} object has the following attributes:

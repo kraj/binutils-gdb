@@ -1705,7 +1705,7 @@ ppc_elf_write_section (bfd *abfd ATTRIBUTE_UNUSED,
 /* Finally we can generate the output section.  */
 
 static void
-ppc_elf_final_write_processing (bfd *abfd, bfd_boolean linker ATTRIBUTE_UNUSED)
+ppc_final_write_processing (bfd *abfd)
 {
   bfd_byte *buffer;
   asection *asec;
@@ -1755,6 +1755,13 @@ ppc_elf_final_write_processing (bfd *abfd, bfd_boolean linker ATTRIBUTE_UNUSED)
   free (buffer);
 
   apuinfo_list_finish ();
+}
+
+static bfd_boolean
+ppc_elf_final_write_processing (bfd *abfd)
+{
+  ppc_final_write_processing (abfd);
+  return _bfd_elf_final_write_processing (abfd);
 }
 
 static bfd_boolean
@@ -3089,11 +3096,6 @@ ppc_elf_check_relocs (bfd *abfd,
 
 	  /* Indirect .sdata relocation.  */
 	case R_PPC_EMB_SDAI16:
-	  if (bfd_link_pic (info))
-	    {
-	      bad_shared_reloc (abfd, r_type);
-	      return FALSE;
-	    }
 	  htab->sdata[0].sym->ref_regular = 1;
 	  if (!elf_allocate_pointer_linker_section (abfd, &htab->sdata[0],
 						    h, rel))
@@ -3107,7 +3109,7 @@ ppc_elf_check_relocs (bfd *abfd,
 
 	  /* Indirect .sdata2 relocation.  */
 	case R_PPC_EMB_SDA2I16:
-	  if (bfd_link_pic (info))
+	  if (!bfd_link_executable (info))
 	    {
 	      bad_shared_reloc (abfd, r_type);
 	      return FALSE;
@@ -3153,7 +3155,7 @@ ppc_elf_check_relocs (bfd *abfd,
 	  break;
 
 	case R_PPC_EMB_SDA2REL:
-	  if (bfd_link_pic (info))
+	  if (!bfd_link_executable (info))
 	    {
 	      bad_shared_reloc (abfd, r_type);
 	      return FALSE;
@@ -3170,11 +3172,6 @@ ppc_elf_check_relocs (bfd *abfd,
 	case R_PPC_VLE_SDA21:
 	case R_PPC_EMB_SDA21:
 	case R_PPC_EMB_RELSDA:
-	  if (bfd_link_pic (info))
-	    {
-	      bad_shared_reloc (abfd, r_type);
-	      return FALSE;
-	    }
 	  if (h != NULL)
 	    {
 	      ppc_elf_hash_entry (h)->has_sda_refs = TRUE;
@@ -3187,11 +3184,6 @@ ppc_elf_check_relocs (bfd *abfd,
 	case R_PPC_EMB_NADDR16_LO:
 	case R_PPC_EMB_NADDR16_HI:
 	case R_PPC_EMB_NADDR16_HA:
-	  if (bfd_link_pic (info))
-	    {
-	      bad_shared_reloc (abfd, r_type);
-	      return FALSE;
-	    }
 	  if (h != NULL)
 	    h->non_got_ref = TRUE;
 	  break;
@@ -8150,6 +8142,14 @@ ppc_elf_relocate_section (bfd *output_bfd,
 	      outrel.r_offset += (input_section->output_section->vma
 				  + input_section->output_offset);
 
+	      /* Optimize unaligned reloc use.  */
+	      if ((r_type == R_PPC_ADDR32 && (outrel.r_offset & 3) != 0)
+		  || (r_type == R_PPC_UADDR32 && (outrel.r_offset & 3) == 0))
+		r_type ^= R_PPC_ADDR32 ^ R_PPC_UADDR32;
+	      if ((r_type == R_PPC_ADDR16 && (outrel.r_offset & 1) != 0)
+		  || (r_type == R_PPC_UADDR16 && (outrel.r_offset & 1) == 0))
+		r_type ^= R_PPC_ADDR16 ^ R_PPC_UADDR16;
+
 	      if (skip)
 		memset (&outrel, 0, sizeof outrel);
 	      else if (!SYMBOL_REFERENCES_LOCAL (info, h))
@@ -10487,11 +10487,11 @@ ppc_elf_vxworks_add_symbol_hook (bfd *abfd,
   return ppc_elf_add_symbol_hook (abfd, info, sym, namep, flagsp, secp, valp);
 }
 
-static void
-ppc_elf_vxworks_final_write_processing (bfd *abfd, bfd_boolean linker)
+static bfd_boolean
+ppc_elf_vxworks_final_write_processing (bfd *abfd)
 {
-  ppc_elf_final_write_processing (abfd, linker);
-  elf_vxworks_final_write_processing (abfd, linker);
+  ppc_final_write_processing (abfd);
+  return elf_vxworks_final_write_processing (abfd);
 }
 
 /* On VxWorks, we emit relocations against _PROCEDURE_LINKAGE_TABLE_, so

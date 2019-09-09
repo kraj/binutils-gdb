@@ -2548,7 +2548,7 @@ reread_symbols (void)
 	  /* Clean up any state BFD has sitting around.  */
 	  {
 	    gdb_bfd_ref_ptr obfd (objfile->obfd);
-	    char *obfd_filename;
+	    const char *obfd_filename;
 
 	    obfd_filename = bfd_get_filename (objfile->obfd);
 	    /* Open the new BFD before freeing the old one, so that
@@ -2596,9 +2596,7 @@ reread_symbols (void)
 	  set_objfile_per_bfd (objfile);
 
 	  objfile->original_name
-	    = (char *) obstack_copy0 (&objfile->objfile_obstack,
-				      original_name.c_str (),
-				      original_name.size ());
+	    = obstack_strdup (&objfile->objfile_obstack, original_name);
 
 	  /* Reset the sym_fns pointer.  The ELF reader can change it
 	     based on whether .gdb_index is present, and we need it to
@@ -2882,9 +2880,7 @@ allocate_compunit_symtab (struct objfile *objfile, const char *name)
      Just save the basename to avoid path issues (too long for display,
      relative vs absolute, etc.).  */
   saved_name = lbasename (name);
-  cu->name
-    = (const char *) obstack_copy0 (&objfile->objfile_obstack, saved_name,
-				    strlen (saved_name));
+  cu->name = obstack_strdup (&objfile->objfile_obstack, saved_name);
 
   COMPUNIT_DEBUGFORMAT (cu) = "unknown";
 
@@ -3958,8 +3954,8 @@ that lies within the boundaries of this symbol file in memory."),
 	       &cmdlist);
 
   c = add_cmd ("load", class_files, load_command, _("\
-Dynamically load FILE into the running program, and record its symbols\n\
-for access from GDB.\n\
+Dynamically load FILE into the running program.\n\
+FILE symbols are recorded for access from GDB.\n\
 Usage: load [FILE] [OFFSET]\n\
 An optional load OFFSET may also be given as a literal address.\n\
 When OFFSET is provided, FILE must also be provided.  FILE can be provided\n\

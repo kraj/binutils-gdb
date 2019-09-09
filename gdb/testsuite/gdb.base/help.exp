@@ -29,13 +29,15 @@ test_class_help "aliases" {"Aliases of other commands\.\[\r\n\]+"}
 test_class_help "breakpoints" {
     "Making program stop at certain points\.\[\r\n\]+"
 }
-test_class_help "data" {"Examining data\.\[\r\n\]+"}
-test_class_help "files" {"Specifying and examining files\.\[\r\n\]+"}
-test_class_help "internals" {
-    "Maintenance commands\.\[\r\n\]+"
-    "Some gdb commands are provided just for use by gdb maintainers\.\[\r\n\]+"
-    "These commands are subject to frequent change, and may not be as\[\r\n\]+"
-    "well documented as user commands\.\[\r\n\]+"
+with_read1_timeout_factor 10 {
+    test_class_help "data" {"Examining data\.\[\r\n\]+"}
+    test_class_help "files" {"Specifying and examining files\.\[\r\n\]+"}
+    test_class_help "internals" {
+	"Maintenance commands\.\[\r\n\]+"
+	"Some gdb commands are provided just for use by gdb maintainers\.\[\r\n\]+"
+	"These commands are subject to frequent change, and may not be as\[\r\n\]+"
+	"well documented as user commands\.\[\r\n\]+"
+    }
 }
 test_class_help "obscure" {"Obscure features\.\[\r\n\]+"}
 test_class_help "running" {"Running the program\.\[\r\n\]+"}
@@ -44,25 +46,29 @@ test_class_help "stack" {
     "When the program being debugged stops, gdb selects the innermost frame\.\[\r\n\]+"
     "The commands below can be used to select other frames by number or address\.\[\r\n\]+"
 }
-test_class_help "status" {
-    "Status inquiries\.\[\r\n\]+"
-}
-test_class_help "support" {"Support facilities\.\[\r\n\]+"}
-test_class_help "tracepoints" {
-    "Tracing of program execution without stopping the program\.\[\r\n\]+"
+with_read1_timeout_factor 10 {
+    test_class_help "status" {
+	"Status inquiries\.\[\r\n\]+"
+    }
+    test_class_help "support" {"Support facilities\.\[\r\n\]+"}
+    test_class_help "tracepoints" {
+	"Tracing of program execution without stopping the program\.\[\r\n\]+"
+    }
 }
 
-test_user_defined_class_help
+with_read1_timeout_factor 10 {
+    test_user_defined_class_help
 
-# Test help of an abbreviated command.  "break" is picked at random.
-set help_breakpoint_text "Set breakpoint at specified location\..*"
-# test help breakpoint "b" abbreviation
-gdb_test "help b" $help_breakpoint_text "help breakpoint \"b\" abbreviation"
-# test help breakpoint "br" abbreviation
-gdb_test "help br" $help_breakpoint_text "help breakpoint \"br\" abbreviation"
-# test help breakpoint "bre" abbreviation
-gdb_test "help bre" $help_breakpoint_text "help breakpoint \"bre\" abbreviation"
-# test help breakpoint "brea" abbreviation
+    # Test help of an abbreviated command.  "break" is picked at random.
+    set help_breakpoint_text "Set breakpoint at specified location\..*"
+    # test help breakpoint "b" abbreviation
+    gdb_test "help b" $help_breakpoint_text "help breakpoint \"b\" abbreviation"
+    # test help breakpoint "br" abbreviation
+    gdb_test "help br" $help_breakpoint_text "help breakpoint \"br\" abbreviation"
+    # test help breakpoint "bre" abbreviation
+    gdb_test "help bre" $help_breakpoint_text "help breakpoint \"bre\" abbreviation"
+    # test help breakpoint "brea" abbreviation
+}
 gdb_test "help brea" $help_breakpoint_text "help breakpoint \"brea\" abbreviation"
 # test help breakpoint "break" abbreviation
 gdb_test "help break" $help_breakpoint_text "help breakpoint \"break\" abbreviation"
@@ -80,11 +86,11 @@ gdb_test "help commands" "Set commands to be executed when the given breakpoints
 # Test a prefix command.  "delete" is picked at random.
 # test help delete "d" abbreviation
 set expected_help_delete {
-    "Delete some breakpoints or auto-display expressions\.\[\r\n\]+"
+    "Delete all or some breakpoints\.\[\r\n\]+"
+    "Usage: delete \\\[BREAKPOINTNUM\\\]...\[\r\n\]+"
     "Arguments are breakpoint numbers with spaces in between\.\[\r\n\]+"
     "To delete all breakpoints, give no argument\.\[\r\n\]+"
     "Also a prefix command for deletion of other GDB objects\.\[\r\n\]+"
-    "The \"unset\" command is also an alias for \"delete\"\.\[\r\n\]+"
 }
 test_prefix_command_help {"d" "delete"} $expected_help_delete "help delete \"d\" abbreviation"
 # test help delete
@@ -117,8 +123,8 @@ gdb_test "help info bogus-gdb-command" "Undefined info command: \"bogus-gdb-comm
 gdb_test "help gotcha" "Undefined command: \"gotcha\"\.  Try \"help\"\." "help gotcha"
 
 # test apropos regex
-gdb_test "apropos \\\(print\[\^\[ bsiedf\\\".-\]\\\)" "handle -- Specify how to handle signals"
+gdb_test "apropos \\\(print\[\^\[ bsiedf\\\".-\]\\\)" "handle -- Specify how to handle signals\."
 # test apropos >1 word string
-gdb_test "apropos handle signal" "handle -- Specify how to handle signals"
+gdb_test "apropos handle signal" "handle -- Specify how to handle signals\."
 # test apropos apropos
 gdb_test "apropos apropos" "apropos -- Search for commands matching a REGEXP.*"

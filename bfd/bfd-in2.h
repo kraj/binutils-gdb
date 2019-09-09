@@ -525,9 +525,7 @@ extern int bfd_stat (bfd *, struct stat *);
 #endif
 extern void _bfd_warn_deprecated (const char *, const char *, int, const char *);
 
-/* Cast from const char * to char * so that caller can assign to
-   a char * without a warning.  */
-#define bfd_get_filename(abfd) ((char *) (abfd)->filename)
+#define bfd_get_filename(abfd) ((abfd)->filename)
 #define bfd_get_cacheable(abfd) ((abfd)->cacheable)
 #define bfd_get_format(abfd) ((abfd)->format)
 #define bfd_get_target(abfd) ((abfd)->xvec->name)
@@ -7180,6 +7178,9 @@ struct bfd
   /* Set if this is a thin archive.  */
   unsigned int is_thin_archive : 1;
 
+  /* Set if this archive should not cache element positions.  */
+  unsigned int no_element_cache : 1;
+
   /* Set if only required symbols should be added in the link hash table for
      this object.  Used by VMS linkers.  */
   unsigned int selective_search : 1;
@@ -7195,6 +7196,9 @@ struct bfd
 
   /* Set if this is a plugin output file.  */
   unsigned int lto_output : 1;
+
+  /* Set if this is a slim LTO object not loaded with a compiler plugin.  */
+  unsigned int lto_slim_object : 1;
 
   /* Set to dummy BFD created when claimed by a compiler plug-in
      library.  */

@@ -732,6 +732,117 @@ if {[is_elf_format]} then {
     remote_file host delete $testfile3
 }
 
+# Test objdump on .NET assemblies (PE files)
+
+proc test_objdump_dotnet_assemblies {} {
+    global OBJDUMP
+    global base_dir
+
+    set test "dotnet-assemblies"
+
+    set got [binutils_run "$base_dir/testsuite/gentestdlls" "tmpdir pei-i386 pei-x86-64"]
+    set want "wrote linux-pei-x86-64.dll"
+    # The test program is hardcoded to generate valid dlls on any target
+    if ![regexp $want $got] then {
+        fail "$test"
+    }
+
+    # First test an ordinary x86 PE format DLL.
+    set test "dotnet-assemblies (ordinary x86 DLL)"
+    set want "file format pei-i386"
+    set got [binutils_run $OBJDUMP "-x tmpdir/simple-pei-i386.dll"]
+    if ![regexp $want $got] then {
+	if [regexp "file format not recognized" $got] then {
+	    # If the target does not recognize vanilla x86 PE format files
+	    # then it cannot be expected to recognize .NET assemblies.  But
+	    # this means that these tests are unsupported, rather than failures.
+	    unsupported $test
+	} else {
+	    fail "$test"
+	}
+	# In either case, if cannot pass this test, then
+	# there is no point in running any further tests.
+	return
+    }
+    pass $test
+
+    # Next check a 32-bit .NET DLL.
+    set test "dotnet-assemblies (32-bit .NET)"
+    set got [binutils_run $OBJDUMP "-x tmpdir/linux-pei-i386.dll"]
+    if ![regexp $want $got] then {
+	fail "$test"
+    } else {
+	pass $test
+    }
+
+    # Next check an ordrinary x86_64 PE format DLL.
+    set test "dotnet-assemblies (ordinary x86_64 DLL)"
+    set want "file format pei-x86-64"
+    set got [binutils_run $OBJDUMP "-x tmpdir/simple-pei-x86-64.dll"]
+    if ![regexp $want $got] then {
+	if [regexp "file format not recognized" $got] then {
+	    # If the target does not support 64-bit PE format
+	    # files, then the following tests are unsupported.
+	    unsupported $test
+	} else {
+	    fail "$test"
+	}
+	return
+    }
+    pass $test
+
+    # Finally check a 64-bit .NET DLL.
+    set test "dotnet-assemblies (64-bit)"
+    set got [binutils_run $OBJDUMP "-x tmpdir/linux-pei-x86-64.dll"]
+    if ![regexp $want $got] then {
+	fail "$test"
+    } else {
+	pass $test
+    }
+}
+
+test_objdump_dotnet_assemblies
+
+# Test objdump -S
+
+proc test_objdump_S { } {
+    global srcdir
+    global subdir
+    global OBJDUMP
+    global OBJDUMPFLAGS
+    
+    set test "objdump -S"
+
+    if { [target_compile $srcdir/$subdir/testprog.c tmpdir/testprog executable debug] != "" } {
+	unsupported "$test (build)"
+	return
+    }
+
+    set got [binutils_run $OBJDUMP "$OBJDUMPFLAGS -S tmpdir/testprog"]
+
+    set want "static int local = 2"
+
+    if [regexp $want $got] then {
+	pass $test
+    } else {
+	fail $test
+    }
+
+    set test "objdump --source-comment"
+
+    set got [binutils_run $OBJDUMP "$OBJDUMPFLAGS --source-comment=// tmpdir/testprog"]
+
+    set want "//static int local = 2"
+
+    if [regexp $want $got] then {
+	pass $test
+    } else {
+	fail $test
+    }
+}
+
+test_objdump_S
+
 # Options which are not tested: -a -D -R -T -x -l --stabs
 # I don't see any generic way to test any of these other than -a.
 # Tests could be written for specific targets, and that should be done

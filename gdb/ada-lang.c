@@ -1395,8 +1395,7 @@ ada_decode_symbol (const struct general_symbol_info *arg)
       gsymbol->ada_mangled = 1;
 
       if (obstack != NULL)
-	*resultp
-	  = (const char *) obstack_copy0 (obstack, decoded, strlen (decoded));
+	*resultp = obstack_strdup (obstack, decoded);
       else
         {
 	  /* Sometimes, we can't find a corresponding objfile, in
@@ -2362,7 +2361,7 @@ has_negatives (struct type *type)
     case TYPE_CODE_INT:
       return !TYPE_UNSIGNED (type);
     case TYPE_CODE_RANGE:
-      return TYPE_LOW_BOUND (type) < 0;
+      return TYPE_LOW_BOUND (type) - TYPE_RANGE_DATA (type)->bias < 0;
     }
 }
 
@@ -9440,6 +9439,14 @@ ada_enum_name (const char *name)
           if (sscanf (name + 2, "%x", &v) != 1)
             return name;
         }
+      else if (((name[1] >= '0' && name[1] <= '9')
+		|| (name[1] >= 'a' && name[1] <= 'z'))
+	       && name[2] == '\0')
+	{
+	  GROW_VECT (result, result_len, 4);
+	  xsnprintf (result, result_len, "'%c'", name[1]);
+	  return result;
+	}
       else
         return name;
 
@@ -11867,9 +11874,22 @@ static CORE_ADDR ada_unhandled_exception_name_addr_from_raise (void);
 
 /* The following exception support info structure describes how to
    implement exception catchpoints with the latest version of the
-   Ada runtime (as of 2007-03-06).  */
+   Ada runtime (as of 2019-08-??).  */
 
 static const struct exception_support_info default_exception_support_info =
+{
+  "__gnat_debug_raise_exception", /* catch_exception_sym */
+  "__gnat_unhandled_exception", /* catch_exception_unhandled_sym */
+  "__gnat_debug_raise_assert_failure", /* catch_assert_sym */
+  "__gnat_begin_handler_v1", /* catch_handlers_sym */
+  ada_unhandled_exception_name_addr
+};
+
+/* The following exception support info structure describes how to
+   implement exception catchpoints with an earlier version of the
+   Ada runtime (as of 2007-03-06) using v0 of the EH ABI.  */
+
+static const struct exception_support_info exception_support_info_v0 =
 {
   "__gnat_debug_raise_exception", /* catch_exception_sym */
   "__gnat_unhandled_exception", /* catch_exception_unhandled_sym */
@@ -11938,8 +11958,34 @@ ada_has_this_exception_support (const struct exception_support_info *einfo)
   /* Make sure that the symbol we found corresponds to a function.  */
 
   if (SYMBOL_CLASS (sym) != LOC_BLOCK)
-    error (_("Symbol \"%s\" is not a function (class = %d)"),
-           SYMBOL_LINKAGE_NAME (sym), SYMBOL_CLASS (sym));
+    {
+      error (_("Symbol \"%s\" is not a function (class = %d)"),
+	     SYMBOL_LINKAGE_NAME (sym), SYMBOL_CLASS (sym));
+      return 0;
+    }
+
+  sym = standard_lookup (einfo->catch_handlers_sym, NULL, VAR_DOMAIN);
+  if (sym == NULL)
+    {
+      struct bound_minimal_symbol msym
+	= lookup_minimal_symbol (einfo->catch_handlers_sym, NULL, NULL);
+
+      if (msym.minsym && MSYMBOL_TYPE (msym.minsym) != mst_solib_trampoline)
+	error (_("Your Ada runtime appears to be missing some debugging "
+		 "information.\nCannot insert Ada exception catchpoint "
+		 "in this configuration."));
+
+      return 0;
+    }
+
+  /* Make sure that the symbol we found corresponds to a function.  */
+
+  if (SYMBOL_CLASS (sym) != LOC_BLOCK)
+    {
+      error (_("Symbol \"%s\" is not a function (class = %d)"),
+	     SYMBOL_LINKAGE_NAME (sym), SYMBOL_CLASS (sym));
+      return 0;
+    }
 
   return 1;
 }
@@ -11963,6 +12009,13 @@ ada_exception_support_info_sniffer (void)
   if (ada_has_this_exception_support (&default_exception_support_info))
     {
       data->exception_info = &default_exception_support_info;
+      return;
+    }
+
+  /* Try the v0 exception suport info.  */
+  if (ada_has_this_exception_support (&exception_support_info_v0))
+    {
+      data->exception_info = &exception_support_info_v0;
       return;
     }
 
@@ -14403,7 +14456,7 @@ _initialize_ada_language (void)
   initialize_ada_catchpoint_ops ();
 
   add_prefix_cmd ("ada", no_class, set_ada_command,
-                  _("Prefix command for changing Ada-specific settings"),
+                  _("Prefix command for changing Ada-specific settings."),
                   &set_ada_list, "set ada ", 0, &setlist);
 
   add_prefix_cmd ("ada", no_class, show_ada_command,
@@ -14412,8 +14465,8 @@ _initialize_ada_language (void)
 
   add_setshow_boolean_cmd ("trust-PAD-over-XVS", class_obscure,
                            &trust_pad_over_xvs, _("\
-Enable or disable an optimization trusting PAD types over XVS types"), _("\
-Show whether an optimization trusting PAD types over XVS types is activated"),
+Enable or disable an optimization trusting PAD types over XVS types."), _("\
+Show whether an optimization trusting PAD types over XVS types is activated."),
                            _("\
 This is related to the encoding used by the GNAT compiler.  The debugger\n\
 should normally trust the contents of PAD types, but certain older versions\n\
@@ -14427,9 +14480,9 @@ this option to \"off\" unless necessary."),
   add_setshow_boolean_cmd ("print-signatures", class_vars,
 			   &print_signatures, _("\
 Enable or disable the output of formal and return types for functions in the \
-overloads selection menu"), _("\
+overloads selection menu."), _("\
 Show whether the output of formal and return types for functions in the \
-overloads selection menu is activated"),
+overloads selection menu is activated."),
 			   NULL, NULL, NULL, &set_ada_list, &show_ada_list);
 
   add_catch_command ("exception", _("\
@@ -14491,7 +14544,7 @@ the regular expression are listed."));
                   0/*allow-unknown*/, &maintenance_set_cmdlist);
 
   add_prefix_cmd ("ada", class_maintenance, maint_show_ada_cmd,
-		  _("Show Ada maintenance-related variables"),
+		  _("Show Ada maintenance-related variables."),
                   &maint_show_ada_cmdlist, "maintenance show ada ",
                   0/*allow-unknown*/, &maintenance_show_cmdlist);
 

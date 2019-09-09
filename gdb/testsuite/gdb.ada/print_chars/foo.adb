@@ -19,6 +19,9 @@ procedure Foo is
    C : Character := 'a';
    WC : Wide_Character := 'b';
    WWC : Wide_Wide_Character := 'c';
+
+   type My_Character is new Character;
+   MC : My_Character := 'M';
 begin
    Do_Nothing (C'Address);  -- START
    Do_Nothing (WC'Address);

@@ -879,7 +879,6 @@ with_libmpfr_prefix
 with_python
 with_guile
 enable_source_highlight
-enable_libmcheck
 with_intel_pt
 with_libipt_prefix
 with_included_regex
@@ -1556,7 +1555,6 @@ Optional Features:
   --disable-rpath         do not hardcode runtime library paths
   --enable-source-highlight
                           enable source-highlight for source listings
-  --enable-libmcheck      Try linking with -lmcheck if available
   --enable-werror         treat compile warnings as errors
   --enable-build-warnings enable build-time compiler warnings if gcc is used
   --enable-gdb-build-warnings
@@ -8954,6 +8952,38 @@ fi
 
 
 if test "$with_system_readline" = yes; then
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether system readline is new enough" >&5
+$as_echo_n "checking whether system readline is new enough... " >&6; }
+if ${gdb_cv_readline_ok+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <stdio.h>
+#include <readline/readline.h>
+int
+main ()
+{
+#if RL_VERSION_MAJOR < 7
+# error "readline version 7 required"
+#endif
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  gdb_cv_readline_ok=yes
+else
+  gdb_cv_readline_ok=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $gdb_cv_readline_ok" >&5
+$as_echo "$gdb_cv_readline_ok" >&6; }
+  if test "$gdb_cv_readline_ok" != yes; then
+    as_fn_error $? "system readline is not new enough" "$LINENO" 5
+  fi
+
   READLINE=-lreadline
   READLINE_DEPS=
   READLINE_CFLAGS=
@@ -11296,6 +11326,12 @@ $as_echo "no - pkg-config not found" >&6; }
       as_fn_error $? "pkg-config was not found in your system" "$LINENO" 5
     fi
   else
+    case "$LDFLAGS" in
+      *static-libstdc*)
+        as_fn_error $? "source highlight is incompatible with -static-libstdc++; either use --disable-source-highlight or --without-static-standard-libraries" "$LINENO" 5
+        ;;
+    esac
+
     if ${pkg_config_prog_path} --exists source-highlight; then
       SRCHIGH_CFLAGS=`${pkg_config_prog_path} --cflags source-highlight`
       SRCHIGH_LIBS=`${pkg_config_prog_path} --libs source-highlight`
@@ -11315,85 +11351,6 @@ $as_echo "no" >&6; }
 fi
 
 
-
-# --------------------- #
-# Check for libmcheck.  #
-# --------------------- #
-
-# Enable -lmcheck by default (it provides cheap-enough memory mangling),
-# but turn it off if Python is enabled with threads, since -lmcheck is
-# not thread safe (http://sourceware.org/bugzilla/show_bug.cgi?id=9939),
-# and for releases.
-if test \( "${have_libpython}" = "no" -o "${python_has_threads}" = "no" \) \
-   && $development; then
-  libmcheck_default=yes
-else
-  libmcheck_default=no
-fi
-
-  # Check whether --enable-libmcheck was given.
-if test "${enable_libmcheck+set}" = set; then :
-  enableval=$enable_libmcheck; case "${enableval}" in
-      yes | y) ENABLE_LIBMCHECK="yes" ;;
-      no | n)  ENABLE_LIBMCHECK="no" ;;
-      *) as_fn_error $? "bad value ${enableval} for --enable-libmcheck" "$LINENO" 5 ;;
-    esac
-fi
-
-
-  if test -z "${ENABLE_LIBMCHECK}"; then
-    ENABLE_LIBMCHECK=${libmcheck_default}
-  fi
-
-  if test "$ENABLE_LIBMCHECK" = "yes" ; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lmcheck" >&5
-$as_echo_n "checking for main in -lmcheck... " >&6; }
-if ${ac_cv_lib_mcheck_main+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lmcheck  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-
-int
-main ()
-{
-return main ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_mcheck_main=yes
-else
-  ac_cv_lib_mcheck_main=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_mcheck_main" >&5
-$as_echo "$ac_cv_lib_mcheck_main" >&6; }
-if test "x$ac_cv_lib_mcheck_main" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBMCHECK 1
-_ACEOF
-
-  LIBS="-lmcheck $LIBS"
-
-fi
-
-  fi
-
-
-if test "$ENABLE_LIBMCHECK" = "yes" \
-	-a "${have_libpython}" != "no" \
-	-a "${python_has_threads}" = "yes" ; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: --enable-libmcheck may lead to spurious crashes if threads are used in python" >&5
-$as_echo "$as_me: WARNING: --enable-libmcheck may lead to spurious crashes if threads are used in python" >&2;}
-fi
 
 
 # Check whether --with-intel_pt was given.
@@ -12067,8 +12024,7 @@ for ac_header in nlist.h machine/reg.h poll.h sys/poll.h proc_service.h \
 		  sys/file.h sys/filio.h sys/ioctl.h sys/param.h \
 		  sys/resource.h sys/procfs.h sys/ptrace.h ptrace.h \
 		  sys/reg.h sys/debugreg.h sys/select.h \
-		  termios.h elf_hp.h \
-		  dlfcn.h
+		  termios.h elf_hp.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
 ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
@@ -13559,7 +13515,7 @@ $as_echo "#define HAVE_LANGINFO_CODESET 1" >>confdefs.h
   fi
 
 
-  for ac_header in linux/perf_event.h locale.h memory.h signal.h 		   sys/resource.h sys/socket.h 		   sys/un.h sys/wait.h 		   thread_db.h wait.h 		   termios.h
+  for ac_header in linux/perf_event.h locale.h memory.h signal.h 		   sys/resource.h sys/socket.h 		   sys/un.h sys/wait.h 		   thread_db.h wait.h 		   termios.h 		   dlfcn.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
 ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"

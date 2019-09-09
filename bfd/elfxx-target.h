@@ -497,7 +497,7 @@
 #define elf_backend_begin_write_processing	0
 #endif
 #ifndef elf_backend_final_write_processing
-#define elf_backend_final_write_processing	0
+#define elf_backend_final_write_processing	_bfd_elf_final_write_processing
 #endif
 #ifndef elf_backend_additional_program_headers
 #define elf_backend_additional_program_headers	0
@@ -734,6 +734,10 @@
 #define elf_backend_hash_symbol _bfd_elf_hash_symbol
 #endif
 
+#ifndef elf_backend_record_xhash_symbol
+#define elf_backend_record_xhash_symbol NULL
+#endif
+
 #ifndef elf_backend_is_function_type
 #define elf_backend_is_function_type _bfd_elf_is_function_type
 #endif
@@ -858,6 +862,7 @@ static struct elf_backend_data elfNN_bed =
   elf_backend_common_section,
   elf_backend_merge_symbol,
   elf_backend_hash_symbol,
+  elf_backend_record_xhash_symbol,
   elf_backend_is_function_type,
   elf_backend_maybe_function_sym,
   elf_backend_get_reloc_section,

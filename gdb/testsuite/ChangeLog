@@ -1,3 +1,513 @@
+2019-09-08  Tom Tromey  <tom@tromey.com>
+
+	* gdb.tui/resize.exp: Remove setup_xfail.
+	* gdb.tui/regs.exp: Remove setup_xfail.
+	* gdb.tui/basic.exp: Remove setup_xfail.
+
+2019-09-06  David Blaikie  <dblaikie@gmail.com>
+
+	* gdb.base/label.exp: un-XFAIL label related tests under Clang.
+	* gdb.cp/cplabel.exp: Ditto.
+	* gdb.linespec/ls-errs.exp: Ditto.
+
+2019-09-05  Tom de Vries  <tdevries@suse.de>
+
+	* lib/gdb.exp (cmp_file_string): New proc.
+	* gdb.base/ui-redirect.exp: Replace "gdb_breakpoint main" with
+	runto_main.  Verify save breakpoints output.
+
+2019-09-04  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* gdb.base/info-var.exp: Test info variables without running
+	to main, to avoid expect's buffer overflow.
+
+2019-09-03  Tom Tromey  <tromey@adacore.com>
+
+	* gdb.ada/bias.exp: New file.
+	* gdb.ada/bias/bias.adb: New file.
+	* gdb.ada/print_chars.exp: Add regression test.
+	* gdb.ada/print_chars/foo.adb (My_Character): New type.
+	(MC): New variable.
+
+2019-08-29  Sandra Loosemore  <sandra@codesourcery.com>
+
+	* gdb.base/argv0-symlink.exp: Run only on native target
+	and local host.
+
+2019-08-29  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.fortran/info-types.exp: Fix gdb_test regexp to allow more
+	diverse debug info.
+	* lib/fortran.exp (fortran_int8): New proc, based on fortran_int4.
+
+2019-08-28  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.base/info-var.exp: Allow info variables to print info for files
+	other than info-var-f1.c and info-var-f2.c.
+
+2019-08-28  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.fortran/info-types.exp: Add module.
+	* gdb.fortran/info-types.f90: Update expected results.
+
+2019-08-28  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.fortran/info-types.exp: New file.
+	* gdb.fortran/info-types.f90: New file.
+	* lib/fortran.exp (fortran_character1): New proc.
+
+2019-08-27  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.base/info-fun.exp: Extend to test the -n flag for 'info
+	functions'.  Reindent as needed.
+	* gdb.base/info-var-f1.c: New file.
+	* gdb.base/info-var-f2.c: New file.
+	* gdb.base/info-var.exp: New file.
+	* gdb.base/info-var.h: New file.
+
+2019-08-26  Tom de Vries  <tdevries@suse.de>
+
+	PR c++/24852
+	* gdb.cp/no-libstdcxx-probe.exp: New test.
+
+2019-08-26  Tom de Vries  <tdevries@suse.de>
+
+	* lib/gdb.exp (skip_libstdcxx_probe_tests_prompt): Return 1 if probe
+	* tests need to be skipped.
+	* gdb.cp/exceptprint.exp: Update call to skip_libstdcxx_probe_tests.
+	* gdb.mi/mi-catch-cpp-exceptions.exp: Update call to
+	mi_skip_libstdcxx_probe_tests.
+
+2019-08-26  Sergio Durigan Junior  <sergiodj@redhat.com>
+
+	* gdb.python/py-xmethods.exp: Use raw strings when passing
+	arguments to SimpleXMethodMatcher.
+
+2019-08-22  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.multi/multi-term-settings.exp (coretest): Make gdb_test messages
+	more informative.
+
+2019-08-21  Pedro Alves  <palves@redhat.com>
+
+	* gdb.base/with.exp: Test "with" with no arguments.
+
+2019-08-21  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.base/gdb-caching-proc.exp: Sort files.
+
+2019-08-20  Tom de Vries  <tdevries@suse.de>
+
+	* lib/pascal.exp (gdb_compile_pascal): Remove $destfile before
+	compilation.
+
+2019-08-16  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.base/compare-sections.exp ("after run to main"): Allow
+	mismatched read-only sections for PIE executables.
+
+2019-08-16  Tom Tromey  <tom@tromey.com>
+
+	* lib/tuiterm.exp (_csi_Z): New proc.
+	* gdb.tui/basic.exp: Update window positions.
+	* gdb.tui/empty.exp: Update window positions.
+
+2019-08-15  Sandra Loosemore  <sandra@codesourcery.com>
+
+	* gdb.base/examine-backward.exp: Correct regexp for
+	"examine 3 bytes backward from ${address_zero}".
+
+2019-08-15  Tom Tromey  <tom@tromey.com>
+
+	* gdb.tui/empty.exp: Enable resizing tests.
+
+2019-08-15  Tom Tromey  <tromey@adacore.com>
+
+	* gdb.ada/char_enum.exp: Add regression tests.
+	* gdb.ada/char_enum/foo.adb (Char_Enum_Type): Use '_'
+	and '0'.
+	(Char, Gchar): Update.
+	* gdb.ada/char_enum/pck.ads (Global_Enum_Type): Use '+'.
+
+2019-08-15  Christian Biesinger  <cbiesinger@google.com>
+
+	* gdb.python/python.exp: Expect a leading underscore on
+	GdbOutput{,Error}File.
+
+2019-08-15  Sandra Loosemore  <sandra@codesourcery.com>
+
+	* gdb.dwarf2/dw2-dir-file-name.exp: Skip on remote or
+	Windows host.
+
+2019-08-15  Sandra Loosemore  <sandra@codesourcery.com>
+
+	* gdb.base/batch-preserve-term-settings.exp
+	(test_terminal_settings_preserved_after_sigterm): Skip on Windows.
+
+2019-08-15  Christian Biesinger  <cbiesinger@google.com>
+
+	* lib/gdb.exp: When running on a mingw target, replace
+	/x/ with x:/.
+
+2019-08-14  Alan Hayward  <alan.hayward@arm.com>
+
+	* gdb.arch/aarch64-prologue.c: New test.
+	* gdb.arch/aarch64-prologue.exp: New file.
+
+2019-08-13  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.gdb/selftest.exp (send ^C to child process again): Accept also
+	Thread.
+
+2019-08-13  Sandra Loosemore  <sandra@codesourcery.com>
+
+	* gdb.python/py-completion.exp: Download the .py file to the host
+	and use its host pathname.  Conditionalize tests that use
+	tab completion and manipulate files on the build machine.
+	* gdb.python/py-events.exp: Download the .py file to the host
+	and use its host pathname.
+	* gdb.python/py-evsignal.exp: Likewise.
+	* gdb.python/py-evthreads.exp: Likewise.
+	* gdb.python/py-framefilter-invalidarg.exp: Match Windows
+	pathname syntax.
+	* gdb.python/py-framefilter.exp: Download the .py file to the right
+	place on the host.  Match Windows pathname syntax.
+	* gdb.python/py-mi-var-info-path-expression.exp: Download the
+	.py file to the host and use its host pathname.
+	* gdb.python/py-objfile-script.exp: Match Windows pathname syntax.
+	* gdb.python/py-objfile.exp: Expect a host pathname, not a
+	build pathname.  Skip symlink test on Windows host.  Add missing
+	newline at end of file.
+	* gdb.python/py-pp-maint.exp: Download the .py file to the host
+	and use its host pathname.
+	* gdb.python/py-pp-registration.exp: Match Windows pathname syntax.
+	* gdb.python/py-section-script.exp: Use host location of binfile
+	on safe-path.  Use correct path separator on Windows host.
+	Reorder alternatives in gdb_test_multiple to prevent matching
+	the wrong alternative on success.
+	* gdb.python/py-symtab.exp: Match Windows pathname syntax.
+
+2019-08-12  Patrick Palka  <patrick@parcs.ath.cx>
+
+	* gdb.gdb/selftest.exp (test_with_self): Update test to now
+	expect the GDB inferior to no longer immediately stop after
+	being resumed with "signal SIGINT".
+
+2019-08-09  Sandra Loosemore  <sandra@codesourcery.com>
+
+	* gdb.linespec/break-ask.exp: Generalize regexps to match
+	Windows pathnames too.
+
+2019-08-08  Tom de Vries  <tdevries@suse.de>
+
+	PR testsuite/24862
+	* lib/tuiterm.exp (_accept): Fix CSI regexp.
+
+2019-08-07  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* gdb.base/style.exp: Update tests for help doc new invariants.
+	* gdb.base/help.exp: Likewise.
+
+2019-08-06  Tom Tromey  <tom@tromey.com>
+
+	* gdb.base/style.exp: Add disassemble test.
+	* gdb.base/style.c (some_called_function): New function.
+	(main): Use it.
+
+2019-08-05  Christian Biesinger  <cbiesinger@google.com>
+
+	* gdb.python/py-block.exp: Test dictionary access on blocks.
+
+2019-08-05  Simon Marchi  <simon.marchi@efficios.com>
+
+	PR gdb/24863
+	* gdb.mi/list-thread-groups-available.exp: Increase timeout for
+	-list-thread-groups --available test when running under
+	check-read1.
+
+2019-08-05  Tom de Vries  <tdevries@suse.de>
+
+	PR testsuite/24863
+	* lib/gdb.exp (with_read1_timeout_factor): New proc.
+	* gdb.base/help.exp: Use with_read1_timeout_factor.
+	* gdb.base/info-macros.exp: Same.
+	* gdb.cp/nested-types.exp: Same.
+
+2019-08-05  Tom de Vries  <tdevries@suse.de>
+
+	* lib/gdb.exp (version_at_least): Factor out of ...
+	(tcl_version_at_least): ... here.
+	(gdb_compile): Fail if pie results in non-PIE executable.
+	(readelf_version, readelf_prints_pie): New proc.
+	(exec_is_pie): Return -1 if unknown.
+
+2019-08-05  Tom de Vries  <tdevries@suse.de>
+
+	* lib/gdb.exp (tcl_version_at_least): Fix typo.
+
+2019-08-04  Sandra Loosemore  <sandra@codesourcery.com>
+
+	* gdb.server/reconnect-ctrl-c.exp: Skip if nointerrupts.
+
+2019-08-04  Sandra Loosemore  <sandra@codesourcery.com>
+
+	* lib/completion-support.exp (test_gdb_complete_none): Skip
+	tab completion tests if no readline support.
+	(test_gdb_complete_unique_re): Likewise.
+	(test_gdb_complete_multiple): Likewise.
+
+2019-08-03  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* gdb.base/info_sources.exp: New file.
+	* gdb.base/info_sources.c: New file.
+	* gdb.base/info_sources_base.c: New file.
+
+2019-08-01  Pedro Franco de Carvalho  <pedromfc@linux.ibm.com>
+
+	* gdb.base/batch-exit-status.exp: Call test_exit_status with
+	prefix argument.
+	(test_exit_status): Add prefix argument.
+
+2019-08-01  Tom de Vries  <tdevries@suse.de>
+
+	PR testsuite/24863
+	* gdb.threads/fork-plus-threads.exp: Fix check-run1 timeout by
+	calling exp_continue for new thread and thread exited messages.
+
+2019-08-01  Tom de Vries  <tdevries@suse.de>
+
+	PR testsuite/24863
+	* gdb.base/structs.exp: Fix check-read1 timeout using
+	gdb_test_sequence.
+	* lib/gdb.exp (tcl_version_at_least, lrepeat): New proc.
+
+2019-08-01  Tom de Vries  <tdevries@suse.de>
+
+	PR testsuite/24863
+	* gdb.base/break-interp.exp: Use exp_continue after each "info files"
+	line.
+
+2019-08-01  Tom de Vries  <tdevries@suse.de>
+
+	PR testsuite/24863
+	* gdb.base/signals.exp: Fix check-read1 timeout using gdb_test_sequence.
+
+2019-07-30  Tom Tromey  <tromey@adacore.com>
+
+	* gdb.ada/display_nested.exp: New file.
+	* gdb.ada/display_nested/foo.adb: New file.
+	* gdb.ada/display_nested/pack.adb: New file.
+	* gdb.ada/display_nested/pack.ads: New file.
+
+2019-07-30  Christian Biesinger  <cbiesinger@google.com>
+
+	* gdb.python/py-symbol.c: Add a static variable and one in an anonymous
+	namespace.
+	* gdb.python/py-symbol.exp: Test gdb.lookup_static_symbol.
+
+2019-07-30  Tom de Vries  <tdevries@suse.de>
+
+	* lib/read1.c (read): Don't use unsetenv (v), use setenv (v, "", 1)
+	instead.
+
+2019-07-30  Tom de Vries  <tdevries@suse.de>
+
+	PR testsuite/24834
+	* lib/gdb.exp (gdb_compile): Fail if nopie results in PIE executable.
+	(exec_is_pie): New proc.
+
+2019-07-29  Christian Biesinger  <cbiesinger@google.com>
+
+	* gdb.python/py-objfile.exp: Fix misspelling (nonexistant -> nonexistent)
+
+2019-07-29  Christian Biesinger  <cbiesinger@google.com>
+
+	* gdb.python/py-objfile.c: Add global and static vars.
+	* gdb.python/py-objfile.exp: Test new functions Objfile.
+	  lookup_global_symbol and lookup_static_symbol.
+
+2019-07-29  Tom Tromey  <tom@tromey.com>
+
+	* lib/tuiterm.exp (Term::_csi_@): New proc.
+	(Term::_csi_X): Don't move cursor.
+
+2019-07-29  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* gdb.base/options.exp: Update backtrace - completion to
+	new option -frame-info.
+	* gdb.base/frame-args.exp: Test new 'frame-arguments presence'.
+	Test new 'set print frame-info'.  Test backtrace -frame-info
+	overriding 'set print frame-info'.
+	* gdb.python/py-framefilter.exp: Test new 'frame-arguments presence'.
+	Test new 'set print frame-info'.
+	Verify consistency of backtrace with and without filters, with and
+	without -no-filters.
+	* gdb.python/py-framefilter-invalidarg.exp: Update to new print_what
+	default.
+
+2019-07-29  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.linespec/explicit.exp: Fix completion trigger for "complete with
+	no arguments".
+
+2019-07-29  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.linespec/explicit.exp: Fix gdb_test_multiple regexps where second
+	is a substring of the first for "complete non-unique file name".
+
+2019-07-29  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.python/python.exp: Don't terminate gdb_test_multiple regexp
+	with ".*".
+
+2019-07-29  Tom de Vries  <tdevries@suse.de>
+
+	* lib/gdb.exp (skip_libstdcxx_probe_tests_prompt, gdb_is_target_1):
+	Pass prompt_regexp parameter to gdb_test_multiple calls.
+
+2019-07-29  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.base/maint.exp: Use "\r\n" instead of "\[\r\n\]+" in "maint
+          print registers" regexps.
+
+2019-07-29  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.base/define.exp: Add "\r\n" to "reset gdb_prompt" regexp.
+
+2019-07-29  Tom de Vries  <tdevries@suse.de>
+
+	PR gdb/24855
+	* lib/gdb.exp (gdb_test_multiple): Add prompt_regexp parameter.
+	(skip_python_tests_prompt): Add prompt_regexp argument to
+	gdb_test_multiple calls.
+
+2019-07-27  Tom Tromey  <tom@tromey.com>
+
+	* gdb.tui/main.exp: New file.
+
+2019-07-27  Tom Tromey  <tom@tromey.com>
+
+	* lib/tuiterm.exp (Term::clean_restart): Make "executable"
+	optional.
+	* gdb.tui/empty.exp: New file.
+
+2019-07-27  Tom Tromey  <tom@tromey.com>
+
+	* lib/tuiterm.exp (spawn): New proc.
+	(Term::resize): New proc.
+	* gdb.tui/resize.exp: New file.
+
+2019-07-27  Tom Tromey  <tom@tromey.com>
+
+	* gdb.tui/list.exp: New file.
+
+2019-07-27  Tom Tromey  <tom@tromey.com>
+
+	* gdb.tui/regs.exp: New file.
+
+2019-07-27  Tom Tromey  <tom@tromey.com>
+
+	* gdb.tui/basic.exp: Add "layout split" test.
+
+2019-07-27  Tom Tromey  <tom@tromey.com>
+
+	* gdb.tui/basic.exp: Add "layout asm" test.
+
+2019-07-27  Tom Tromey  <tom@tromey.com>
+
+	* lib/tuiterm.exp: New file.
+	* gdb.tui/basic.exp: New file.
+
+2019-07-27  Kevin Buettner  <kevinb@redhat.com>
+
+	* gdb.dwarf2/dw2-ranges-func.exp (enable_foo_cold_stepping):
+	Enable tests associated with this flag.  Adjust regex
+	referencing "foo_low" to now refer to "foo_cold" instead.
+
+2019-07-27  Kevin Buettner  <kevinb@redhat.com>
+
+	* gdb.dwarf2/dw2-ranges-func.c: Rename to...
+	* gdb.dwarf2/dw2-ranges-func-lo-cold.c: ...this.
+	* gdb.dwarf2/dw2-ranges-func-lo-cold.c (foo_low): Change name to
+	foo_cold.  Revise comments to match.
+	* gdb.dwarf2/dw2-ranges-func-hi-cold.c: New file.
+	* gdb.dwarf2/dw2-ranges-func.exp (do_test): New proc. Existing tests
+	were wrapped into this proc; Call do_test in loop from outermost
+	level.
+	(foo_low): Rename all occurrences to "foo_cold".
+	(backtrace from baz): New test.
+	(x2/i foo_cold): New test.
+	(info line *foo_cold): New test.
+
+2019-07-26  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.arch/i386-pkru.exp: Fix unterminated string.
+
+2019-07-25  Tom de Vries  <tdevries@suse.de>
+
+	PR testsuite/24830
+	* gdb.mi/mi-catch-cpp-exceptions.exp: Call
+	mi_skip_libstdcxx_probe_tests, and skip unsupported tests.
+	* lib/gdb.exp (skip_libstdcxx_probe_tests_prompt): Factor out of ...
+	(skip_libstdcxx_probe_tests): ... here.
+	* lib/mi-support.exp (mi_skip_libstdcxx_probe_tests): New proc.
+
+2019-07-24  Tom de Vries  <tdevries@suse.de>
+
+	PR testsuite/24807
+	* gdb.objc/basicclass.m: Include stdio.h.
+	* gdb.objc/nondebug.m: Same.
+	* gdb.objc/objcdecode.m: Same.
+
+2019-07-24  Tom de Vries  <tdevries@suse.de>
+
+	PR testsuite/24612
+	* gdb.base/infoline-reloc-main-from-zero.exp: Add -Wl,-N to
+	additional_flags.
+
+2019-07-24  Tom de Vries  <tdevries@suse.de>
+
+	PR testsuite/24831
+	* gdb.multi/tids.exp: Update error messages for info threads.
+
+2019-07-24  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.base/info-types.exp: Allow info types to print info for more than
+	one file.
+
+2019-07-23  Tom de Vries  <tdevries@suse.de>
+
+	PR testsuite/24842
+	* gdb.dwarf2/multidictionary.exp: Consume initial prompt after
+	gdb_spawn_with_cmdline_opts.
+
+2019-07-23  Srinath Parvathaneni  <srinath.parvathaneni@arm.com>
+
+	* gdb.arch/arm-cmse-sgstubs.c: New test.
+	* gdb.arch/arm-cmse-sgstubs.exp: New file.
+
+2019-07-23  Tom de Vries  <tdevries@suse.de>
+
+	PR testsuite/24711
+	* gdb.mi/mi-complete.exp: Wait for "set max-completions" result before
+	issuing next command.
+
+2019-07-22  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.ada/info_auto_lang.exp: Update expected results.
+	* gdb.base/info-types.c: Add additional types to check.
+	* gdb.base/info-types.exp: Update expected results.
+
+2019-07-22  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.base/info-types.c: New file.
+	* gdb.base/info-types.exp: New file.
+
+2019-07-19  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.arch/riscv-bp-infcall.c: New file.
+	* gdb.arch/riscv-bp-infcall.exp: New file.
+
 2019-07-17  Andrew Burgess  <andrew.burgess@embecosm.com>
 
 	PR breakpoints/24541

@@ -16,7 +16,9 @@
   architectures require kernel changes.  TLS is not yet supported for
   amd64 and i386 process core dumps.
 
-* Support for Pointer Authentication on AArch64 Linux.
+* Support for Pointer Authentication (PAC) on AArch64 Linux.  Return
+  addresses that required unmasking are shown in the backtrace with the
+  postfix [PAC].
 
 * Two new convenience functions $_cimag and $_creal that extract the
   imaginary and real parts respectively from complex numbers.
@@ -24,6 +26,8 @@
 * New built-in convenience variables $_shell_exitcode and $_shell_exitsignal
   provide the exitcode or exit status of the shell commands launched by
   GDB commands such as "shell", "pipe" and "make".
+
+* The RX port now supports XML target descriptions.
 
 * Python API
 
@@ -35,6 +39,20 @@
 
   ** gdb.Type has a new property 'objfile' which returns the objfile the
      type was defined in.
+
+  ** The frame information printed by the python frame filtering code
+     is now consistent with what the 'backtrace' command prints when
+     there are no filters, or when the 'backtrace' '-no-filters' option
+     is given.
+
+  ** The new function gdb.lookup_static_symbol can be used to look up
+     symbols with static linkage.
+
+  ** gdb.Objfile has new methods 'lookup_global_symbol' and
+     'lookup_static_symbol' to lookup a symbol from this objfile only.
+
+  ** gdb.Block now supports the dictionary syntax for accessing symbols in
+     this block (e.g. block['local_variable']).
 
 * New commands
 
@@ -104,6 +122,14 @@ maint show test-settings KIND
   A set of commands used by the testsuite for exercising the settings
   infrastructure.
 
+set print frame-info [short-location|location|location-and-address
+                        |source-and-location|source-line|auto]
+show print frame-info
+  This controls what frame information is printed by the commands printing
+  a frame.  This setting will e.g. influence the behaviour of 'backtrace',
+  'frame', 'stepi'.  The python frame filtering also respect this setting.
+  The 'backtrace' '-frame-info' option can override this global setting.
+
 * Changed commands
 
 help
@@ -125,10 +151,20 @@ eval
   This allows to do formatted printing of strings without having
   a running inferior, or when debugging a core dump.
 
+info sources [-dirname | -basename] [--] [REGEXP]
+  This command has now optional arguments to only print the files
+  whose names match REGEXP.  The arguments -dirname and -basename
+  allow to restrict matching respectively to the dirname and basename
+  parts of the files.
+
 show style
   The "show style" and its subcommands are now styling
   a style name in their output using its own style, to help
   the user visualize the different styles.
+
+set print frame-arguments
+  The new value 'presence' indicates to only indicate the presence of
+  arguments using ..., instead of printing argument names and values.
 
 set print raw-frame-arguments
 show print raw-frame-arguments
@@ -184,6 +220,8 @@ maint show test-options-completion-result
       -entry-values no|only|preferred|if-needed|both|compact|default
       -frame-arguments all|scalars|none
       -raw-frame-arguments [on|off]
+      -frame-info auto|source-line|location|source-and-location
+           |location-and-address|short-location
       -past-main [on|off]
       -past-entry [on|off]
 
@@ -200,6 +238,9 @@ maint show test-options-completion-result
       -past-main [on|off]
       -past-entry [on|off]
 
+  ** The new "info sources" options -dirname and -basename options
+     are using the standard '-OPT' infrastructure.
+
    All options above can also be abbreviated.  The argument of boolean
    (on/off) options can be 0/1 too, and also the argument is assumed
    "on" if omitted.  This allows writing compact command invocations,
@@ -210,6 +251,15 @@ maint show test-options-completion-result
    The above is equivalent to:
 
     (gdb) print -raw -pretty -object off -- *myptr
+
+  ** The "info types" command now supports the '-q' flag to disable
+     printing of some header information in a similar fashion to "info
+     variables" and "info functions".
+
+  ** The "info variables", "info functions", and "whereis" commands
+     now take a '-n' flag that excludes non-debug symbols (symbols
+     from the symbol table, not from the debug info such as DWARF)
+     from the results.
 
 * Completion improvements
 
@@ -244,12 +294,29 @@ maint show test-options-completion-result
   These can be used to catch C++ exceptions in a similar fashion to
   the CLI commands 'catch throw', 'catch rethrow', and 'catch catch'.
 
+* Other MI changes
+
+ ** Backtraces and frames include a new optional field addr_flags which is
+    given after the addr field.  On AArch64 this contains PAC if the address
+    has been masked in the frame.  On all other targets the field is not
+    present.
+
 * Testsuite
 
   The testsuite now creates the files gdb.cmd (containing the arguments
   used to launch GDB) and gdb.in (containing all the commands sent to
   GDB) in the output directory for each test script.  Multiple invocations
   are appended with .1, .2, .3 etc.
+
+* Building GDB and GDBserver now requires GNU make >= 3.82.
+
+  Using another implementation of the make program or an earlier version of
+  GNU make to build GDB or GDBserver is not supported.
+
+* Building GDB now requires GNU readline >= 7.0.
+
+  GDB now bundles GNU readline 8.0, but if you choose to use
+  --with-system-readline, only readline >= 7.0 can be used.
 
 *** Changes in GDB 8.3
 

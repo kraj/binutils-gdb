@@ -1,3 +1,61 @@
+2019-09-09  Phil Blundell  <pb@pbcl.net>
+
+	binutils 2.33 branch created.
+
+2019-08-30  Claudiu Zissulescu <claziss@gmail.com>
+
+	* opcode/arc.h (FASTMATH): Move it from insn_class_t to
+	insn_subclass_t enum.
+
+2019-08-22  Alan Modra  <amodra@gmail.com>
+
+	* elf/arm.h (ARM_GET_SYM_CMSE_SPCL, ARM_SET_SYM_CMSE_SPCL): Delete.
+
+2019-08-09  Mihailo Stojanovic  <mihailo.stojanovic@rt-rk.com>
+
+	* elf/mips.h (SHT_GNU_XHASH): New define.
+	(DT_GNU_XHASH): New define.
+
+2019-08-08  Yoshinori Sato  <ysato@users.sourceforge.jp>
+
+	* opcode/h8300.h (EXPAND_UNOP_EXTENDED_B): Add MODEL.
+	(EXPAND_UNOP_EXTENDED_W): Likewise.
+	(EXPAND_UNOP_EXTENDED_L): Likewise.
+	(struct h8_opcode h8_opcodes): Likewise.
+	(struct h8_opcode h8_opcodes): tas / ldm / stm supported H8S or
+	later.
+
+2019-07-24  Claudiu Zissulescu  <claziss@synopsys.com>
+
+	* opcode/arc.h (FASTMATH): Add.
+	(SWITCH): Likewise.
+
+2019-07-24  Alan Modra  <amodra@gmail.com>
+
+	* elf/internal.h (ELF_SECTION_IN_SEGMENT_1): Exclude non-alloc
+	sections in GNU_MBIND segments.
+
+2019-07-23  Omar Majid  <omajid@redhat.com>
+
+	* coff/i386.h (IMAGE_FILE_MACHINE_NATIVE_APPLE_OVERRIDE): Define.
+	(IMAGE_FILE_MACHINE_NATIVE_FREEBSD_OVERRIDE): Define.
+	(IMAGE_FILE_MACHINE_NATIVE_LINUX_OVERRIDE): Define.
+	(IMAGE_FILE_MACHINE_NATIVE_NETBSD_OVERRIDE): Define.
+	(I386_APPLE_MAGIC): Define.
+	(I386_FREEBSD_MAGIC): Define.
+	(I386_LINUX_MAGIC): Define.
+	(I386_NETBSD_MAGIC): Define.
+	(I386BADMAG): Extend macro to allow new magic numbers.
+	* coff/x86_64.h (IMAGE_FILE_MACHINE_NATIVE_APPLE_OVERRIDE): Define.
+	(IMAGE_FILE_MACHINE_NATIVE_FREEBSD_OVERRIDE): Define.
+	(IMAGE_FILE_MACHINE_NATIVE_LINUX_OVERRIDE): Define.
+	(IMAGE_FILE_MACHINE_NATIVE_NETBSD_OVERRIDE): Define.
+	(AMD64_APPLE_MAGIC): Define.
+	(AMD64_FREEBSD_MAGIC): Define.
+	(AMD64_LINUX_MAGIC): Define.
+	(AMD64_NETBSD_MAGIC): Define.
+	(AMD64BADMAG): Extend macro to allow new magic numbers.
+
 2019-07-19  Alan Modra  <amodra@gmail.com>
 
 	* elf/ppc64.h (R_PPC64_TPREL34, R_PPC64_DTPREL34),

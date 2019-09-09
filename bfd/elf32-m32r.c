@@ -3403,9 +3403,8 @@ m32r_elf_object_p (bfd *abfd)
 
 /* Store the machine number in the flags field.  */
 
-static void
-m32r_elf_final_write_processing (bfd *abfd,
-				 bfd_boolean linker ATTRIBUTE_UNUSED)
+static bfd_boolean
+m32r_elf_final_write_processing (bfd *abfd)
 {
   unsigned long val;
 
@@ -3419,6 +3418,7 @@ m32r_elf_final_write_processing (bfd *abfd,
 
   elf_elfheader (abfd)->e_flags &=~ EF_M32R_ARCH;
   elf_elfheader (abfd)->e_flags |= val;
+  return _bfd_elf_final_write_processing (abfd);
 }
 
 /* Function to keep M32R specific file flags.  */

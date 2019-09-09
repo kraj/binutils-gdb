@@ -323,9 +323,8 @@ python_interactive_command (const char *arg, int from_tty)
    A FILE * from one runtime does not necessarily operate correctly in
    the other runtime.
 
-   To work around this potential issue, we create on Windows hosts the
-   FILE object using Python routines, thus making sure that it is
-   compatible with the Python library.  */
+   To work around this potential issue, we run code in Python to load
+   the script.  */
 
 static void
 python_run_simple_file (FILE *file, const char *filename)
@@ -339,14 +338,20 @@ python_run_simple_file (FILE *file, const char *filename)
   /* Because we have a string for a filename, and are using Python to
      open the file, we need to expand any tilde in the path first.  */
   gdb::unique_xmalloc_ptr<char> full_path (tilde_expand (filename));
-  gdbpy_ref<> python_file (PyFile_FromString (full_path.get (), (char *) "r"));
-  if (python_file == NULL)
-    {
-      gdbpy_print_stack ();
-      error (_("Error while opening file: %s"), full_path.get ());
-    }
 
-  PyRun_SimpleFile (PyFile_AsFile (python_file.get ()), filename);
+  if (gdb_python_module == nullptr
+      || ! PyObject_HasAttrString (gdb_python_module, "_execute_file"))
+    error (_("Installation error: gdb._execute_file function is missing"));
+
+  gdbpy_ref<> return_value
+    (PyObject_CallMethod (gdb_python_module, "_execute_file", "s",
+			  full_path.get ()));
+  if (return_value == nullptr)
+    {
+      /* Use PyErr_PrintEx instead of gdbpy_print_stack to better match the
+         behavior of the non-Windows codepath.  */
+      PyErr_PrintEx(0);
+    }
 
 #endif /* _WIN32 */
 }
@@ -734,10 +739,10 @@ gdbpy_rbreak (PyObject *self, PyObject *args, PyObject *kw)
       const char **files = symtab_paths.vec.data ();
 
       symbols = search_symbols (regex, FUNCTIONS_DOMAIN, NULL,
-				symtab_paths.vec.size (), files);
+				symtab_paths.vec.size (), files, false);
     }
   else
-    symbols = search_symbols (regex, FUNCTIONS_DOMAIN, NULL, 0, NULL);
+    symbols = search_symbols (regex, FUNCTIONS_DOMAIN, NULL, 0, NULL, false);
 
   /* Count the number of symbols (both symbols and optionally minimal
      symbols) so we can correctly check the throttle limit.  */
@@ -1978,6 +1983,10 @@ a boolean indicating if name is a field of the current implied argument\n\
     METH_VARARGS | METH_KEYWORDS,
     "lookup_global_symbol (name [, domain]) -> symbol\n\
 Return the symbol corresponding to the given name (or None)." },
+  { "lookup_static_symbol", (PyCFunction) gdbpy_lookup_static_symbol,
+    METH_VARARGS | METH_KEYWORDS,
+    "lookup_static_symbol (name [, domain]) -> symbol\n\
+Return the static-linkage symbol corresponding to the given name (or None)." },
 
   { "lookup_objfile", (PyCFunction) gdbpy_lookup_objfile,
     METH_VARARGS | METH_KEYWORDS,

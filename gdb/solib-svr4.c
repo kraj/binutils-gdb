@@ -1756,7 +1756,7 @@ solib_event_probe_action (struct probe_and_action *pa)
        arg2: struct link_map *new (optional, for incremental updates)  */
   try
     {
-      probe_argc = pa->prob->get_argument_count (frame);
+      probe_argc = pa->prob->get_argument_count (get_frame_arch (frame));
     }
   catch (const gdb_exception_error &ex)
     {
@@ -2061,6 +2061,71 @@ svr4_create_probe_breakpoints (svr4_info *info, struct gdbarch *gdbarch,
   svr4_update_solib_event_breakpoints ();
 }
 
+/* Find all the glibc named probes.  Only if all of the probes are found, then
+   create them and return true.  Otherwise return false.  If WITH_PREFIX is set
+   then add "rtld" to the front of the probe names.  */
+static bool
+svr4_find_and_create_probe_breakpoints (svr4_info *info,
+					struct gdbarch *gdbarch,
+					struct obj_section *os,
+					bool with_prefix)
+{
+  std::vector<probe *> probes[NUM_PROBES];
+
+  for (int i = 0; i < NUM_PROBES; i++)
+    {
+      const char *name = probe_info[i].name;
+      char buf[32];
+
+      /* Fedora 17 and Red Hat Enterprise Linux 6.2-6.4 shipped with an early
+	 version of the probes code in which the probes' names were prefixed
+	 with "rtld_" and the "map_failed" probe did not exist.  The locations
+	 of the probes are otherwise the same, so we check for probes with
+	 prefixed names if probes with unprefixed names are not present.  */
+      if (with_prefix)
+	{
+	  xsnprintf (buf, sizeof (buf), "rtld_%s", name);
+	  name = buf;
+	}
+
+      probes[i] = find_probes_in_objfile (os->objfile, "rtld", name);
+
+      /* The "map_failed" probe did not exist in early
+	 versions of the probes code in which the probes'
+	 names were prefixed with "rtld_".  */
+      if (with_prefix && streq (name, "rtld_map_failed"))
+	continue;
+
+      /* Ensure at least one probe for the current name was found.  */
+      if (probes[i].empty ())
+	return false;
+
+      /* Ensure probe arguments can be evaluated.  */
+      for (probe *p : probes[i])
+	{
+	  if (!p->can_evaluate_arguments ())
+	    return false;
+	  /* This will fail if the probe is invalid.  This has been seen on Arm
+	     due to references to symbols that have been resolved away.  */
+	  try
+	    {
+	      p->get_argument_count (gdbarch);
+	    }
+	  catch (const gdb_exception_error &ex)
+	    {
+	      exception_print (gdb_stderr, ex);
+	      warning (_("Initializing probes-based dynamic linker interface "
+			 "failed.\nReverting to original interface."));
+	      return false;
+	    }
+	}
+    }
+
+  /* All probes found.  Now create them.  */
+  svr4_create_probe_breakpoints (info, gdbarch, probes, os->objfile);
+  return true;
+}
+
 /* Both the SunOS and the SVR4 dynamic linkers call a marker function
    before and after mapping and unmapping shared libraries.  The sole
    purpose of this method is to allow debuggers to set a breakpoint so
@@ -2077,74 +2142,12 @@ static void
 svr4_create_solib_event_breakpoints (svr4_info *info, struct gdbarch *gdbarch,
 				     CORE_ADDR address)
 {
-  struct obj_section *os;
+  struct obj_section *os = find_pc_section (address);
 
-  os = find_pc_section (address);
-  if (os != NULL)
-    {
-      int with_prefix;
-
-      for (with_prefix = 0; with_prefix <= 1; with_prefix++)
-	{
-	  std::vector<probe *> probes[NUM_PROBES];
-	  int all_probes_found = 1;
-	  int checked_can_use_probe_arguments = 0;
-
-	  for (int i = 0; i < NUM_PROBES; i++)
-	    {
-	      const char *name = probe_info[i].name;
-	      probe *p;
-	      char buf[32];
-
-	      /* Fedora 17 and Red Hat Enterprise Linux 6.2-6.4
-		 shipped with an early version of the probes code in
-		 which the probes' names were prefixed with "rtld_"
-		 and the "map_failed" probe did not exist.  The
-		 locations of the probes are otherwise the same, so
-		 we check for probes with prefixed names if probes
-		 with unprefixed names are not present.  */
-	      if (with_prefix)
-		{
-		  xsnprintf (buf, sizeof (buf), "rtld_%s", name);
-		  name = buf;
-		}
-
-	      probes[i] = find_probes_in_objfile (os->objfile, "rtld", name);
-
-	      /* The "map_failed" probe did not exist in early
-		 versions of the probes code in which the probes'
-		 names were prefixed with "rtld_".  */
-	      if (strcmp (name, "rtld_map_failed") == 0)
-		continue;
-
-	      if (probes[i].empty ())
-		{
-		  all_probes_found = 0;
-		  break;
-		}
-
-	      /* Ensure probe arguments can be evaluated.  */
-	      if (!checked_can_use_probe_arguments)
-		{
-		  p = probes[i][0];
-		  if (!p->can_evaluate_arguments ())
-		    {
-		      all_probes_found = 0;
-		      break;
-		    }
-		  checked_can_use_probe_arguments = 1;
-		}
-	    }
-
-	  if (all_probes_found)
-	    svr4_create_probe_breakpoints (info, gdbarch, probes, os->objfile);
-
-	  if (all_probes_found)
-	    return;
-	}
-    }
-
-  create_solib_event_breakpoint (gdbarch, address);
+  if (os == nullptr
+      || (!svr4_find_and_create_probe_breakpoints (info, gdbarch, os, false)
+	  && !svr4_find_and_create_probe_breakpoints (info, gdbarch, os, true)))
+    create_solib_event_breakpoint (gdbarch, address);
 }
 
 /* Helper function for gdb_bfd_lookup_symbol.  */
@@ -3226,7 +3229,8 @@ elf_lookup_lib_symbol (struct objfile *objfile,
   if (abfd == NULL || scan_dyntag (DT_SYMBOLIC, abfd, NULL, NULL) != 1)
     return {};
 
-  return lookup_global_symbol_from_objfile (objfile, name, domain);
+  return lookup_global_symbol_from_objfile (objfile, GLOBAL_BLOCK, name,
+					    domain);
 }
 
 void

@@ -677,18 +677,28 @@ extern struct gdbarch *frame_unwind_arch (frame_info *next_frame);
 extern struct gdbarch *frame_unwind_caller_arch (struct frame_info *frame);
 
 
-/* Values for the source flag to be used in print_frame_info_base().  */
+/* Values for the source flag to be used in print_frame_info ().
+   For all the cases below, the address is never printed if
+   'set print address' is off.  When 'set print address' is on,
+   the address is printed if the program counter is not at the
+   beginning of the source line of the frame
+   and PRINT_WHAT is != LOC_AND_ADDRESS.  */
 enum print_what
-  { 
-    /* Print only the source line, like in stepi.  */
-    SRC_LINE = -1, 
-    /* Print only the location, i.e. level, address (sometimes)
-       function, args, file, line, line num.  */
+  {
+    /* Print only the address, source line, like in stepi.  */
+    SRC_LINE = -1,
+    /* Print only the location, i.e. level, address,
+       function, args (as controlled by 'set print frame-arguments'),
+       file, line, line num.  */
     LOCATION,
     /* Print both of the above.  */
-    SRC_AND_LOC, 
-    /* Print location only, but always include the address.  */
-    LOC_AND_ADDRESS 
+    SRC_AND_LOC,
+    /* Print location only, print the address even if the program counter
+       is at the beginning of the source line.  */
+    LOC_AND_ADDRESS,
+    /* Print only level and function,
+       i.e. location only, without address, file, line, line num.  */
+    SHORT_LOCATION
   };
 
 /* Allocate zero initialized memory from the frame cache obstack.
@@ -772,6 +782,14 @@ extern const char print_frame_arguments_all[];
 extern const char print_frame_arguments_scalars[];
 extern const char print_frame_arguments_none[];
 
+/* The possible choices of "set print frame-info".  */
+extern const char print_frame_info_auto[];
+extern const char print_frame_info_source_line[];
+extern const char print_frame_info_location[];
+extern const char print_frame_info_source_and_location[];
+extern const char print_frame_info_location_and_address[];
+extern const char print_frame_info_short_location[];
+
 /* The possible choices of "set print entry-values".  */
 extern const char print_entry_values_no[];
 extern const char print_entry_values_only[];
@@ -787,6 +805,7 @@ extern const char print_entry_values_default[];
 struct frame_print_options
 {
   const char *print_frame_arguments = print_frame_arguments_scalars;
+  const char *print_frame_info = print_frame_info_auto;
   const char *print_entry_values = print_entry_values_default;
 
   /* If non-zero, don't invoke pretty-printers for frame
@@ -802,15 +821,15 @@ extern frame_print_options user_frame_print_options;
 struct frame_arg
 {
   /* Symbol for this parameter used for example for its name.  */
-  struct symbol *sym;
+  struct symbol *sym = nullptr;
 
   /* Value of the parameter.  It is NULL if ERROR is not NULL; if both VAL and
      ERROR are NULL this parameter's value should not be printed.  */
-  struct value *val;
+  struct value *val = nullptr;
 
   /* String containing the error message, it is more usually NULL indicating no
      error occured reading this parameter.  */
-  char *error;
+  gdb::unique_xmalloc_ptr<char> error;
 
   /* One of the print_entry_values_* entries as appropriate specifically for
      this frame_arg.  It will be different from print_entry_values.  With
@@ -821,7 +840,7 @@ struct frame_arg
      value - print_entry_values_compact is not permitted fi ui_out_is_mi_like_p
      (in such case print_entry_values_no and print_entry_values_only is used
      for each parameter kind specifically.  */
-  const char *entry_kind;
+  const char *entry_kind = nullptr;
 };
 
 extern void read_frame_arg (const frame_print_options &fp_opts,
@@ -929,5 +948,14 @@ extern const gdb::option::option_def set_backtrace_option_defs[2];
 
 /* The values behind the global "set backtrace ..." settings.  */
 extern set_backtrace_options user_set_backtrace_options;
+
+/* Mark that the PC value is masked for the previous frame.  */
+
+extern void set_frame_previous_pc_masked (struct frame_info *frame);
+
+/* Get whether the PC value is masked for the given frame.  */
+
+extern bool get_frame_pc_masked (const struct frame_info *frame);
+
 
 #endif /* !defined (FRAME_H)  */

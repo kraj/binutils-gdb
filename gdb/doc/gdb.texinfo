@@ -7806,6 +7806,10 @@ Related setting: @ref{set print frame-arguments}.
 @item -raw-frame-arguments [@code{on}|@code{off}]
 Set whether to print frame arguments in raw form.
 Related setting: @ref{set print raw-frame-arguments}.
+
+@item -frame-info @code{auto}|@code{source-line}|@code{location}|@code{source-and-location}|@code{location-and-address}|@code{short-location}
+Set printing of frame information.
+Related setting: @ref{set print frame-info}.
 @end table
 
 The optional @var{qualifier} is maintained for backward compatibility.
@@ -7870,6 +7874,8 @@ The value of parameter @code{data} in frame 1 has been replaced by
 only if it is a scalar (integer, pointer, enumeration, etc).  See command
 @kbd{set print frame-arguments} in @ref{Print Settings} for more details
 on how to configure the way function parameter values are printed.
+The command @kbd{set print frame-info} (@pxref{Print Settings}) controls
+what frame information is printed.
 
 @cindex optimized out, in backtrace
 @cindex function call arguments, optimized out
@@ -10816,7 +10822,7 @@ If the number is 0, then the printing is unlimited.
 @cindex printing frame argument values
 @cindex print all frame argument values
 @cindex print frame argument values for scalars only
-@cindex do not print frame argument values
+@cindex do not print frame arguments
 This command allows to control how the values of arguments are printed
 when the debugger prints a frame (@pxref{Frames}).  The possible
 values are:
@@ -10844,6 +10850,17 @@ is replaced by @code{@dots{}}.  In this case, the example above now becomes:
 #1  0x08048361 in call_me (i=@dots{}, s=@dots{}, ss=@dots{}, u=@dots{}, e=@dots{})
   at frame-args.c:23
 @end smallexample
+
+@item presence
+Only the presence of arguments is indicated by @code{@dots{}}.
+The @code{@dots{}} are not printed for function without any arguments.
+None of the argument names and values are printed.
+In this case, the example above now becomes:
+
+@smallexample
+#1  0x08048361 in call_me (@dots{}) at frame-args.c:23
+@end smallexample
+
 @end table
 
 By default, only scalar arguments are printed.  This command can be used
@@ -10854,8 +10871,8 @@ information printed in each frame, making the backtrace more readable.
 Also, it improves performance when displaying Ada frames, because
 the computation of large arguments can sometimes be CPU-intensive,
 especially in large applications.  Setting @code{print frame-arguments}
-to @code{scalars} (the default) or @code{none} avoids this computation,
-thus speeding up the display of each Ada frame.
+to @code{scalars} (the default), @code{none} or @code{presence} avoids
+this computation, thus speeding up the display of each Ada frame.
 
 @item show print frame-arguments
 Show how the value of arguments should be displayed when printing a frame.
@@ -10987,6 +11004,46 @@ entry resolution see @ref{set debug entry-values}.
 @item show print entry-values
 Show the method being used for printing of frame argument values at function
 entry.
+
+@anchor{set print frame-info}
+@item set print frame-info @var{value}
+@kindex set print frame-info
+@cindex printing frame information
+@cindex frame information, printing
+This command allows to control the information printed when
+the debugger prints a frame.  See @ref{Frames}, @ref{Backtrace},
+for a general explanation about frames and frame information.
+Note that some other settings (such as @code{set print frame-arguments}
+and @code{set print address}) are also influencing if and how some frame
+information is displayed.  In particular, the frame program counter is never
+printed if @code{set print address} is off.
+
+The possible values for @code{set print frame-info} are:
+@table @code
+@item short-location
+Print the frame level, the program counter (if not at the
+beginning of the location source line), the function, the function
+arguments.
+@item location
+Same as @code{short-location} but also print the source file and source line
+number.
+@item location-and-address
+Same as @code{location} but print the program counter even if located at the
+beginning of the location source line.
+@item source-line
+Print the program counter (if not at the beginning of the location
+source line), the line number and the source line.
+@item source-and-location
+Print what @code{location} and @code{source-line} are printing.
+@item auto
+The information printed for a frame is decided automatically
+by the @value{GDBN} command that prints a frame.
+For example, @code{frame} prints the information printed by
+@code{source-and-location} while @code{stepi} will switch between
+@code{source-line} and @code{source-and-location} depending on the program
+counter.
+The default value is @code{auto}.
+@end table
 
 @anchor{set print repeats}
 @item set print repeats @var{number-of-repeats}
@@ -18428,8 +18485,7 @@ information.  Inspecting the type of a (global) variable for which
 of such variables.
 
 @kindex info types
-@item info types @var{regexp}
-@itemx info types
+@item info types [-q] [@var{regexp}]
 Print a brief description of all types whose names match the regular
 expression @var{regexp} (or all types in your program, if you supply
 no argument).  Each complete typename is matched as though it were a
@@ -18448,6 +18504,11 @@ the manually specified language (see @ref{Manually, ,Set Language Manually}).
 This command differs from @code{ptype} in two ways: first, like
 @code{whatis}, it does not print a detailed description; second, it
 lists all source files and line numbers where a type is defined.
+
+The output from @samp{into types} is proceeded with a header line
+describing what types are being listed.  The optional flag @samp{-q},
+which stands for @samp{quiet}, disables printing this header
+information.
 
 @kindex info type-printers
 @item info type-printers
@@ -18522,8 +18583,18 @@ Print the names of all source files in your program for which there is
 debugging information, organized into two lists: files whose symbols
 have already been read, and files whose symbols will be read when needed.
 
+@item info sources [-dirname | -basename] [--] [@var{regexp}]
+Like @samp{info sources}, but only print the names of the files
+matching the provided @var{regexp}.
+By default, the @var{regexp} is used to match anywhere in the filename.
+If @code{-dirname}, only files having a dirname matching @var{regexp} are shown.
+If  @code{-basename}, only files having a basename matching @var{regexp}
+are shown.
+The matching is case-sensitive, except on operating systems that
+have case-insensitive filesystem (e.g., MS-Windows).
+
 @kindex info functions
-@item info functions [-q]
+@item info functions [-q] [-n]
 Print the names and data types of all defined functions.
 Similarly to @samp{info types}, this command groups its output by source
 files and annotates each function definition with its source line
@@ -18536,11 +18607,16 @@ to print the function name and type according to the
 language of the function, other values mean to use
 the manually specified language (see @ref{Manually, ,Set Language Manually}).
 
+The @samp{-n} flag excludes @dfn{non-debugging symbols} from the
+results.  A non-debugging symbol is a symbol that comes from the
+executable's symbol table, not from the debug information (for
+example, DWARF) associated with the executable.
+
 The optional flag @samp{-q}, which stands for @samp{quiet}, disables
 printing header information and messages explaining why no functions
 have been printed.
 
-@item info functions [-q] [-t @var{type_regexp}] [@var{regexp}]
+@item info functions [-q] [-n] [-t @var{type_regexp}] [@var{regexp}]
 Like @samp{info functions}, but only print the names and data types
 of the functions selected with the provided regexp(s).
 
@@ -18570,7 +18646,7 @@ is printed only if its name matches @var{regexp} and its type matches
 
 
 @kindex info variables
-@item info variables [-q]
+@item info variables [-q] [-n]
 Print the names and data types of all variables that are defined
 outside of functions (i.e.@: excluding local variables).
 The printed variables are grouped by source files and annotated with
@@ -18583,11 +18659,13 @@ to print the variable name and type according to the
 language of the variable, other values mean to use
 the manually specified language (see @ref{Manually, ,Set Language Manually}).
 
+The @samp{-n} flag excludes non-debugging symbols from the results.
+
 The optional flag @samp{-q}, which stands for @samp{quiet}, disables
 printing header information and messages explaining why no variables
 have been printed.
 
-@item info variables [-q] [-t @var{type_regexp}] [@var{regexp}]
+@item info variables [-q] [-n] [-t @var{type_regexp}] [@var{regexp}]
 Like @kbd{info variables}, but only print the variables selected
 with the provided regexp(s).
 
@@ -24319,6 +24397,15 @@ but the lengths of the @code{z} and @code{p} registers will not change.  This
 is a known limitation of @value{GDBN} and does not affect the execution of the
 target process.
 
+@subsubsection AArch64 Pointer Authentication.
+@cindex AArch64 Pointer Authentication.
+
+When @value{GDBN} is debugging the AArch64 architecture, and the program is
+using the v8.3-A feature Pointer Authentication (PAC), then whenever the link
+register @code{$lr} is pointing to an PAC function its value will be masked.
+When GDB prints a backtrace, any addresses that required unmasking will be
+postfixed with the marker [PAC].  When using the MI, this is printed as part
+of the @code{addr_flags} field.
 
 @node i386
 @subsection x86 Architecture-specific Issues
@@ -28846,6 +28933,11 @@ breakpoint; or the string @samp{<MULTIPLE>}, for a breakpoint with
 multiple locations.  This field will not be present if no address can
 be determined.  For example, a watchpoint does not have an address.
 
+@item addr_flags
+Optional field containing any flags related to the address.  These flags are
+architecture-dependent; see @ref{Architectures} for their meaning for a
+particular CPU.
+
 @item func
 If known, the function in which the breakpoint appears.
 If not known, this field is not present.
@@ -28946,6 +29038,11 @@ Note that this is not the same as the field @code{enable}.
 @item addr
 The address of this location as an hexidecimal number.
 
+@item addr_flags
+Optional field containing any flags related to the address.  These flags are
+architecture-dependent; see @ref{Architectures} for their meaning for a
+particular CPU.
+
 @item func
 If known, the function in which the location appears.
 If not known, this field is not present.
@@ -28997,6 +29094,11 @@ be absent if @value{GDBN} is unable to determine the function name.
 
 @item addr
 The code address for the frame.  This field is always present.
+
+@item addr_flags
+Optional field containing any flags related to the address.  These flags are
+architecture-dependent; see @ref{Architectures} for their meaning for a
+particular CPU.
 
 @item file
 The name of the source files that correspond to the frame's code
@@ -36826,7 +36928,8 @@ details.
 
 @item --with-system-readline
 Use the readline library installed on the host, rather than the
-library supplied as part of @value{GDBN}.
+library supplied as part of @value{GDBN}.  Readline 7 or newer is
+required; this is enforced by the build system.
 
 @item --with-system-zlib
 Use the zlib library installed on the host, rather than the library
@@ -43988,6 +44091,7 @@ registers using the capitalization used in the description.
 * OpenRISC 1000 Features::
 * PowerPC Features::
 * RISC-V Features::
+* RX Features::
 * S/390 and System z Features::
 * Sparc Features::
 * TIC6x Features::
@@ -44417,6 +44521,15 @@ expectation is that these registers will be in the fpu feature if the
 target has floating point hardware, but can be moved into the csr
 feature if the target has the floating point control registers, but no
 other floating point hardware.
+
+@node RX Features
+@subsection RX Features
+@cindex target descriptions, RX Features
+
+The @samp{org.gnu.gdb.rx.core} feature is required for RX
+targets.  It should contain the registers @samp{r0} through
+@samp{r15}, @samp{usp}, @samp{isp}, @samp{psw}, @samp{pc}, @samp{intb},
+@samp{bpsw}, @samp{bpc}, @samp{fintv}, @samp{fpsw}, and @samp{acc}.
 
 @node S/390 and System z Features
 @subsection S/390 and System z Features

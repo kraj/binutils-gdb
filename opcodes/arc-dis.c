@@ -181,7 +181,9 @@ skip_this_opcode (const struct arc_opcode *opcode)
 
   /* Check opcode for major 0x06, return if it is not in.  */
   if (arc_opcode_len (opcode) == 4
-      && OPCODE_32BIT_INSN (opcode->opcode) != 0x06)
+      && (OPCODE_32BIT_INSN (opcode->opcode) != 0x06
+	  /* Can be an APEX extensions.  */
+	  && OPCODE_32BIT_INSN (opcode->opcode) != 0x07))
     return FALSE;
 
   /* or not a known truble class.  */
@@ -190,6 +192,7 @@ skip_this_opcode (const struct arc_opcode *opcode)
     case FLOAT:
     case DSP:
     case ARITH:
+    case MPY:
       break;
     default:
       return FALSE;
@@ -669,7 +672,7 @@ arc_insn_length (bfd_byte msb, bfd_byte lsb, struct disassemble_info *info)
       break;
 
     default:
-      abort ();
+      return 0;
     }
 }
 
@@ -763,6 +766,23 @@ parse_option (const char *option)
 
   else if (disassembler_options_cmp (option, "fpuda") == 0)
     add_to_decodelist (FLOAT, DPA);
+
+  else if (disassembler_options_cmp (option, "nps400") == 0)
+    {
+      add_to_decodelist (ACL, NPS400);
+      add_to_decodelist (ARITH, NPS400);
+      add_to_decodelist (BITOP, NPS400);
+      add_to_decodelist (BMU, NPS400);
+      add_to_decodelist (CONTROL, NPS400);
+      add_to_decodelist (DMA, NPS400);
+      add_to_decodelist (DPI, NPS400);
+      add_to_decodelist (MEMORY, NPS400);
+      add_to_decodelist (MISC, NPS400);
+      add_to_decodelist (NET, NPS400);
+      add_to_decodelist (PMU, NPS400);
+      add_to_decodelist (PROTOCOL_DECODE, NPS400);
+      add_to_decodelist (ULTRAIP, NPS400);
+    }
 
   else if (disassembler_options_cmp (option, "fpus") == 0)
     {
@@ -989,7 +1009,6 @@ print_insn_arc (bfd_vma memaddr,
      the number of bytes objdump should display on a single line.  If
      the instruction decoder sets this, it should always set it to
      the same value in order to get reasonable looking output.  */
-
   info->bytes_per_line  = 8;
 
   /* In the next lines, we set two info variables control the way
@@ -997,7 +1016,6 @@ print_insn_arc (bfd_vma memaddr,
      8 and bytes_per_chunk is 4, the output will look like this:
      00:   00000000 00000000
      with the chunks displayed according to "display_endian".  */
-
   if (info->section
       && !(info->section->flags & SEC_CODE))
     {
@@ -1052,13 +1070,16 @@ print_insn_arc (bfd_vma memaddr,
 	  (*info->fprintf_func) (info->stream, ".word\t0x%08lx", data);
 	  break;
 	default:
-	  abort ();
+	  return -1;
 	}
       return size;
     }
 
   insn_len = arc_insn_length (buffer[highbyte], buffer[lowbyte], info);
   pr_debug ("instruction length = %d bytes\n", insn_len);
+  if (insn_len == 0)
+    return -1;
+
   arc_infop = info->private_data;
   arc_infop->insn_len = insn_len;
 
@@ -1111,7 +1132,7 @@ print_insn_arc (bfd_vma memaddr,
 
     default:
       /* There is no instruction whose length is not 2, 4, 6, or 8.  */
-      abort ();
+      return -1;
     }
 
   pr_debug ("instruction value = %llx\n", insn);
@@ -1139,24 +1160,28 @@ print_insn_arc (bfd_vma memaddr,
 	  (*info->fprintf_func) (info->stream, ".shor\t%#04llx",
 				 insn & 0xffff);
 	  break;
+
 	case 4:
 	  (*info->fprintf_func) (info->stream, ".word\t%#08llx",
 				 insn & 0xffffffff);
 	  break;
+
 	case 6:
 	  (*info->fprintf_func) (info->stream, ".long\t%#08llx",
 				 insn & 0xffffffff);
 	  (*info->fprintf_func) (info->stream, ".long\t%#04llx",
 				 (insn >> 32) & 0xffff);
 	  break;
+
 	case 8:
 	  (*info->fprintf_func) (info->stream, ".long\t%#08llx",
 				 insn & 0xffffffff);
 	  (*info->fprintf_func) (info->stream, ".long\t%#08llx",
 				 insn >> 32);
 	  break;
+
 	default:
-	  abort ();
+	  return -1;
 	}
 
       info->insn_type = dis_noninsn;
@@ -1410,6 +1435,8 @@ with -M switch (multiple options should be separated by commas):\n"));
   fpus            Recognize single precision FPU instructions.\n"));
   fprintf (stream, _("\
   fpud            Recognize double precision FPU instructions.\n"));
+  fprintf (stream, _("\
+  nps400          Recognize NPS400 instructions.\n"));
   fprintf (stream, _("\
   hex             Use only hexadecimal number to print immediates.\n"));
 }

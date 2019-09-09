@@ -416,9 +416,8 @@ elf32_xc16x_relocate_section (bfd *output_bfd,
 }
 
 
-static void
-elf32_xc16x_final_write_processing (bfd *abfd,
-				    bfd_boolean linker ATTRIBUTE_UNUSED)
+static bfd_boolean
+elf32_xc16x_final_write_processing (bfd *abfd)
 {
   unsigned long val;
 
@@ -439,6 +438,7 @@ elf32_xc16x_final_write_processing (bfd *abfd,
     }
 
   elf_elfheader (abfd)->e_flags |= val;
+  return _bfd_elf_final_write_processing (abfd);
 }
 
 static unsigned long

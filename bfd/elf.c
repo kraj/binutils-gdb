@@ -999,6 +999,18 @@ convert_zdebug_to_debug (bfd *abfd, const char *name)
   return new_name;
 }
 
+/* This a copy of lto_section defined in GCC (lto-streamer.h).  */
+
+struct lto_section
+{
+  int16_t major_version;
+  int16_t minor_version;
+  unsigned char slim_object;
+
+  /* Flags is a private field that is not defined publicly.  */
+  uint16_t flags;
+};
+
 /* Make a BFD section from an ELF section.  We store a pointer to the
    BFD section in the bfd_section field of the header.  */
 
@@ -1066,6 +1078,19 @@ _bfd_elf_make_section_from_shdr (bfd *abfd,
     flags |= SEC_THREAD_LOCAL;
   if ((hdr->sh_flags & SHF_EXCLUDE) != 0)
     flags |= SEC_EXCLUDE;
+
+  switch (elf_elfheader (abfd)->e_ident[EI_OSABI])
+    {
+      /* FIXME: We should not recognize SHF_GNU_MBIND for ELFOSABI_NONE,
+	 but binutils as of 2019-07-23 did not set the EI_OSABI header
+	 byte.  */
+    case ELFOSABI_NONE:
+    case ELFOSABI_GNU:
+    case ELFOSABI_FREEBSD:
+      if ((hdr->sh_flags & SHF_GNU_MBIND) != 0)
+	elf_tdata (abfd)->has_gnu_osabi |= elf_gnu_osabi_mbind;
+      break;
+    }
 
   if ((flags & SEC_ALLOC) == 0)
     {
@@ -1260,6 +1285,17 @@ _bfd_elf_make_section_from_shdr (bfd *abfd,
 	/* For objdump, don't rename the section.  For objcopy, delay
 	   section rename to elf_fake_sections.  */
 	newsect->flags |= SEC_ELF_RENAME;
+    }
+
+  /* GCC uses .gnu.lto_.lto.<some_hash> as a LTO bytecode information
+     section.  */
+  const char *lto_section_name = ".gnu.lto_.lto.";
+  if (strncmp (name, lto_section_name, strlen (lto_section_name)) == 0)
+    {
+      struct lto_section lsection;
+      if (bfd_get_section_contents (abfd, newsect, &lsection, 0,
+				    sizeof (struct lto_section)))
+	abfd->lto_slim_object = lsection.slim_object;
     }
 
   return TRUE;
@@ -2430,9 +2466,18 @@ bfd_section_from_shdr (bfd *abfd, unsigned int shindex)
 	else
 	  p_hdr = &esdt->rel.hdr;
 
-	/* PR 17512: file: 0b4f81b7.  */
+	/* PR 17512: file: 0b4f81b7.
+	   Also see PR 24456, for a file which deliberately has two reloc
+	   sections.  */
 	if (*p_hdr != NULL)
-	  goto fail;
+	  {
+	    _bfd_error_handler
+	      /* xgettext:c-format */
+	      (_("%pB: warning: multiple relocation sections for section %pA \
+found - ignoring all but the first"),
+	       abfd, target_sect);
+	    goto success;
+	  }
 	hdr2 = (Elf_Internal_Shdr *) bfd_alloc (abfd, sizeof (*hdr2));
 	if (hdr2 == NULL)
 	  goto fail;
@@ -4425,31 +4470,32 @@ get_program_header_size (bfd *abfd, struct bfd_link_info *info)
 
   bed = get_elf_backend_data (abfd);
 
- if ((abfd->flags & D_PAGED) != 0)
-   {
-     /* Add a PT_GNU_MBIND segment for each mbind section.  */
-     unsigned int page_align_power = bfd_log2 (bed->commonpagesize);
-     for (s = abfd->sections; s != NULL; s = s->next)
-       if (elf_section_flags (s) & SHF_GNU_MBIND)
-	 {
-	   if (elf_section_data (s)->this_hdr.sh_info
-	       > PT_GNU_MBIND_NUM)
-	     {
-	       _bfd_error_handler
-		 /* xgettext:c-format */
-		 (_("%pB: GNU_MBIN section `%pA' has invalid sh_info field: %d"),
-		     abfd, s, elf_section_data (s)->this_hdr.sh_info);
-	       continue;
-	     }
-	   /* Align mbind section to page size.  */
-	   if (s->alignment_power < page_align_power)
-	     s->alignment_power = page_align_power;
-	   segs ++;
-	 }
-   }
+  if ((abfd->flags & D_PAGED) != 0
+      && (elf_tdata (abfd)->has_gnu_osabi & elf_gnu_osabi_mbind) != 0)
+    {
+      /* Add a PT_GNU_MBIND segment for each mbind section.  */
+      unsigned int page_align_power = bfd_log2 (bed->commonpagesize);
+      for (s = abfd->sections; s != NULL; s = s->next)
+	if (elf_section_flags (s) & SHF_GNU_MBIND)
+	  {
+	    if (elf_section_data (s)->this_hdr.sh_info > PT_GNU_MBIND_NUM)
+	      {
+		_bfd_error_handler
+		  /* xgettext:c-format */
+		  (_("%pB: GNU_MBIND section `%pA' has invalid "
+		     "sh_info field: %d"),
+		   abfd, s, elf_section_data (s)->this_hdr.sh_info);
+		continue;
+	      }
+	    /* Align mbind section to page size.  */
+	    if (s->alignment_power < page_align_power)
+	      s->alignment_power = page_align_power;
+	    segs ++;
+	  }
+    }
 
- /* Let the backend count up any program headers it might need.  */
- if (bed->elf_backend_additional_program_headers)
+  /* Let the backend count up any program headers it might need.  */
+  if (bed->elf_backend_additional_program_headers)
     {
       int a;
 
@@ -5045,11 +5091,12 @@ _bfd_elf_map_sections_to_segments (bfd *abfd, struct bfd_link_info *info)
 	  pm = &m->next;
 	}
 
-      if (first_mbind && (abfd->flags & D_PAGED) != 0)
+      if (first_mbind
+	  && (abfd->flags & D_PAGED) != 0
+	  && (elf_tdata (abfd)->has_gnu_osabi & elf_gnu_osabi_mbind) != 0)
 	for (s = first_mbind; s != NULL; s = s->next)
 	  if ((elf_section_flags (s) & SHF_GNU_MBIND) != 0
-	      && (elf_section_data (s)->this_hdr.sh_info
-		  <= PT_GNU_MBIND_NUM))
+	      && elf_section_data (s)->this_hdr.sh_info <= PT_GNU_MBIND_NUM)
 	    {
 	      /* Mandated PF_R.  */
 	      unsigned long p_flags = PF_R;
@@ -6553,8 +6600,8 @@ _bfd_elf_write_object_contents (bfd *abfd)
 	  || !_bfd_elf_strtab_emit (abfd, elf_shstrtab (abfd))))
     return FALSE;
 
-  if (bed->elf_backend_final_write_processing)
-    (*bed->elf_backend_final_write_processing) (abfd, elf_linker (abfd));
+  if (!(*bed->elf_backend_final_write_processing) (abfd))
+    return FALSE;
 
   if (!bed->s->write_shdrs_and_ehdr (abfd))
     return FALSE;
@@ -7666,7 +7713,8 @@ _bfd_elf_init_private_section_data (bfd *ibfd,
 			       & (SHF_MASKOS | SHF_MASKPROC));
 
   /* Copy sh_info from input for mbind section.  */
-  if (elf_section_flags (isec) & SHF_GNU_MBIND)
+  if ((elf_tdata (ibfd)->has_gnu_osabi & elf_gnu_osabi_mbind) != 0
+      && elf_section_flags (isec) & SHF_GNU_MBIND)
     elf_section_data (osec)->this_hdr.sh_info
       = elf_section_data (isec)->this_hdr.sh_info;
 
@@ -8933,7 +8981,7 @@ _bfd_elf_find_nearest_line (bfd *abfd,
   if (_bfd_dwarf2_find_nearest_line (abfd, symbols, NULL, section, offset,
 				     filename_ptr, functionname_ptr,
 				     line_ptr, discriminator_ptr,
-				     dwarf_debug_sections, 0,
+				     dwarf_debug_sections,
 				     &elf_tdata (abfd)->dwarf2_find_line_info)
       || _bfd_dwarf1_find_nearest_line (abfd, symbols, section, offset,
 					filename_ptr, functionname_ptr,
@@ -8973,7 +9021,7 @@ _bfd_elf_find_line (bfd *abfd, asymbol **symbols, asymbol *symbol,
 {
   return _bfd_dwarf2_find_nearest_line (abfd, symbols, symbol, NULL, 0,
 					filename_ptr, NULL, line_ptr, NULL,
-					dwarf_debug_sections, 0,
+					dwarf_debug_sections,
 					&elf_tdata (abfd)->dwarf2_find_line_info);
 }
 
@@ -12103,21 +12151,42 @@ asection _bfd_elf_large_com_section
 		      "LARGE_COMMON", 0, SEC_IS_COMMON);
 
 void
-_bfd_elf_post_process_headers (bfd * abfd,
-			       struct bfd_link_info * link_info ATTRIBUTE_UNUSED)
+_bfd_elf_post_process_headers (bfd *abfd ATTRIBUTE_UNUSED,
+			       struct bfd_link_info *info ATTRIBUTE_UNUSED)
 {
-  Elf_Internal_Ehdr * i_ehdrp;	/* ELF file header, internal form.  */
+}
+
+bfd_boolean
+_bfd_elf_final_write_processing (bfd *abfd)
+{
+  Elf_Internal_Ehdr *i_ehdrp;	/* ELF file header, internal form.  */
 
   i_ehdrp = elf_elfheader (abfd);
 
-  i_ehdrp->e_ident[EI_OSABI] = get_elf_backend_data (abfd)->elf_osabi;
+  if (i_ehdrp->e_ident[EI_OSABI] == ELFOSABI_NONE)
+    i_ehdrp->e_ident[EI_OSABI] = get_elf_backend_data (abfd)->elf_osabi;
 
-  /* To make things simpler for the loader on Linux systems we set the
-     osabi field to ELFOSABI_GNU if the binary contains symbols of
-     the STT_GNU_IFUNC type or STB_GNU_UNIQUE binding.  */
-  if (i_ehdrp->e_ident[EI_OSABI] == ELFOSABI_NONE
-      && elf_tdata (abfd)->has_gnu_symbols)
-    i_ehdrp->e_ident[EI_OSABI] = ELFOSABI_GNU;
+  /* Set the osabi field to ELFOSABI_GNU if the binary contains
+     SHF_GNU_MBIND sections or symbols of STT_GNU_IFUNC type or
+     STB_GNU_UNIQUE binding.  */
+  if (elf_tdata (abfd)->has_gnu_osabi != 0)
+    {
+      if (i_ehdrp->e_ident[EI_OSABI] == ELFOSABI_NONE)
+	i_ehdrp->e_ident[EI_OSABI] = ELFOSABI_GNU;
+      else if (i_ehdrp->e_ident[EI_OSABI] != ELFOSABI_GNU
+	       && i_ehdrp->e_ident[EI_OSABI] != ELFOSABI_FREEBSD)
+	{
+	  if (elf_tdata (abfd)->has_gnu_osabi & elf_gnu_osabi_mbind)
+	    _bfd_error_handler (_("GNU_MBIND section is unsupported"));
+	  if (elf_tdata (abfd)->has_gnu_osabi & elf_gnu_osabi_ifunc)
+	    _bfd_error_handler (_("symbol type STT_GNU_IFUNC is unsupported"));
+	  if (elf_tdata (abfd)->has_gnu_osabi & elf_gnu_osabi_unique)
+	    _bfd_error_handler (_("symbol binding STB_GNU_UNIQUE is unsupported"));
+	  bfd_set_error (bfd_error_bad_value);
+	  return FALSE;
+	}
+    }
+  return TRUE;
 }
 
 

@@ -1,3 +1,509 @@
+2019-09-09  Phil Blundell  <pb@pbcl.net>
+
+	binutils 2.33 branch created.
+
+2019-09-06  Alan Modra  <amodra@gmail.com>
+
+	* aout-target.h (object_p): Formatting.
+	* bfd-in.h (bfd_get_filename): Don't cast to char*.
+	* corefile.c (generic_core_file_matches_executable_p): Constify
+	variables and remove cast.
+	* bfd-in2.h: Regenerate.
+
+2019-09-05  Alan Modra  <amodra@gmail.com>
+
+	* elf64-ppc.c (ppc64_elf_check_relocs): Interpret an addend in
+	GOT_PCREL and PLT_PCREL relocs as affecting the value stored
+	in the GOT/PLT entry rather than affecting the offset to that
+	GOI/PLT entry.
+	(ppc64_elf_edit_toc, ppc64_elf_relocate_section): Likewise.
+
+2019-09-05  Alan Modra  <amodra@gmail.com>
+
+	* elf64-ppc.c (xlate_pcrel_opt): Handle prefix loads and stores
+	in second instruction.
+	(ppc64_elf_relocate_section): Likewise.
+
+2019-09-05  Alan Modra  <amodra@gmail.com>
+
+	PR 24955
+	* libbfd-in.h (bfd_strdup): New inline function.
+	* archive.c (_bfd_get_elt_at_filepos): Use bfd_strdup.  Close
+	bfd on error.
+	* elfcode.h (_bfd_elf_bfd_from_remote_memory): Use bfd_strdup.
+	* opncls.c (bfd_fopen): Use bfd_strdup.  Close fd and stream
+	on error.
+	(bfd_openstreamr): Use bfd_strdup.
+	(bfd_openr_iovec, bfd_openw, bfd_create): Likewise.
+	* plugin.c (try_load_plugin): Use bfd_malloc.
+	* libbfd.h: Regenerate.
+
+2019-09-02  Alan Modra  <amodra@gmail.com>
+
+	PR 11983
+	* dwarf2.c (_bfd_dwarf2_slurp_debug_info): Free debug_filename
+	on success.  Tidy.
+	(read_alt_indirect_string): Likewise.
+	(read_alt_indirect_ref): Likewise.
+
+2019-08-31  Jim Wilson  <jimw@sifive.com>
+
+	PR 23825
+	* elfnn-riscv.c (riscv_elf_create_dynamic_sections): Add SEC_LOAD,
+	SEC_DATA, and SEC_HAS_CONTENTS to .tdata.dyn section.
+
+2019-08-30  Jim Wilson  <jimw@sifive.com>
+
+	* elfnn-riscv.c (riscv_elf_relocate_section): For unresolvable reloc
+	error, call bfd_set_error, set ret to FALSE, and goto out label.
+
+2019-08-30  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/24951
+	* archive.c (_bfd_get_elt_at_filepos): Copy BFD_COMPRESS,
+	BFD_DECOMPRESS and BFD_COMPRESS_GABI flags for thin archive.
+
+2019-08-29  Alan Modra  <amodra@gmail.com>
+
+	PR 24697
+	* elf32-ppc.c (ppc_elf_check_relocs): Call bad_shared_reloc
+	when !bfd_link_executable for R_PPC_EMB_SDA2I16 and
+	R_PPC_EMB_SDA2REL.  Don't call bad_shared_reloc for any other
+	reloc.
+
+2019-08-29  Alan Modra  <amodra@gmail.com>
+
+	* elf64-ppc.c (xlate_pcrel_opt): Add poff parameter.  Allow offset
+	on second insn, return it in poff.
+	(ppc64_elf_relocate_section): Add offset to paddi addend for
+	PCREL_OPT.
+
+2019-08-28  Jim Wilson  <jimw@sifive.com>
+
+	* elfnn-riscv.c (_bfd_riscv_relax_lui): Add check to exclude abs
+	section when setting max_alignment.  Update comment.
+	(_bfd_riscv_relax_pc): Likewise.
+
+2019-08-29  Alan Modra  <amodra@gmail.com>
+
+	PR 24891
+	* bfd.c (struct bfd): Add no_element_cache.
+	* archive.c (_bfd_get_elt_at_filepos): Don't add element to
+	archive cache when no_element_cache.
+	(bfd_generic_archive_p): Set no_element_cache when opening first
+	element to check format.  Close first element too.
+	(do_slurp_bsd_armap): Don't zero ardata->cache here.
+	* bfd-in2.h: Regenerate.
+
+2019-08-24  Alan Modra  <amodra@gmail.com>
+
+	* elf64-ppc.c (ppc64_elf_edit_toc): Exclude undefined weak
+	symbols from GOT optimisation.
+
+2019-08-23  Stafford Horne  <shorne@gmail.com>
+
+	* elf32-or1k.c (or1k_elf_finish_dynamic_symbol): Use correct value for
+	PLT GOT entries.
+
+2019-08-23  Nick Clifton  <nickc@redhat.com>
+
+	PR 24456
+	* elf.c (bfd_section_from_shdr): Issue an informative warning
+	message and continue processing other sections after encountering
+	a reloc section for a section which already has other relocs
+	associated with it.
+
+2019-08-23  Alan Modra  <amodra@gmail.com>
+
+	PR 24933
+	* elfxx-x86.c (_bfd_x86_elf_get_synthetic_symtab): Don't exit
+	on error without freeing plts[] contents.
+
+2019-08-22  Dennis Zhang  <dennis.zhang@arm.com>
+
+	* cpu-arm.c: New entries for Cortex-M35P, Cortex-A77, Cortex-A76AE.
+
+2019-08-22  Nick Clifton  <nickc@redhat.com>
+
+	PR 24922
+	* pei-x86_64.c (pex64_xdata_print_uwd_codes): Add checks before
+	reading data from extra records.
+
+2019-08-22  Tamar Christina  <tamar.christina@arm.com>
+
+	PR ld/24601
+	* elfnn-aarch64.c (aarch64_relocate): Handle weak TLS and undefined TLS.
+	Also Pass input_bfd to _bfd_aarch64_elf_resolve_relocation.
+	* elfxx-aarch64.c (_bfd_aarch64_elf_resolve_relocation): Use it.
+	* elfxx-aarch64.h (_bfd_aarch64_elf_resolve_relocation): Emit warning
+	for weak TLS.
+
+2019-08-22  Alan Modra  <amodra@gmail.com>
+
+	* elf32-arm.c (cmse_scan): Don't use ARM_GET_SYM_CMSE_SPCL,
+	instead recognize CMSE_PREFIX in symbol name.
+	(elf32_arm_gc_mark_extra_sections): Likewise.
+	(elf32_arm_filter_cmse_symbols): Don't test ARM_GET_SYM_CMSE_SPCL.
+	(elf32_arm_swap_symbol_in): Don't invoke ARM_SET_SYM_CMSE_SPCL.
+
+2019-08-20  Dennis Zhang  <dennis.zhang@arm.com>
+
+	* cpu-aarch64.c: New entries for Cortex-A34, Cortex-A65,
+	 Cortex-A77, cortex-A65AE, and Cortex-A76AE.
+
+2019-08-20  Tamar Christina  <tamar.christina@arm.com>
+
+	* elf32-arm.c (elf32_thumb2_plt_entry, elf32_arm_plt_thumb_stub,
+	elf32_arm_stub_long_branch_v4t_thumb_thumb,
+	elf32_arm_stub_long_branch_v4t_thumb_arm,
+	elf32_arm_stub_short_branch_v4t_thumb_arm,
+	elf32_arm_stub_long_branch_v4t_thumb_arm_pic,
+	elf32_arm_stub_long_branch_v4t_thumb_thumb_pic,
+	elf32_arm_stub_long_branch_v4t_thumb_tls_pic): Change nop to branch to
+	previous instruction.
+
+2019-08-19  Tom Tromey  <tromey@adacore.com>
+
+	* dwarf2.c (_bfd_dwarf2_find_symbol_bias): Create hash table
+	holding symbols.
+
+2019-08-19  Alan Modra  <amodra@gmail.com>
+
+	* elf64-ppc.c (struct ppc64_elf_obj_tdata): Rename has_gotrel
+	to has_optrel.
+	(struct _ppc64_elf_section_data): Likewise.
+	(ppc64_elf_check_relocs): Set has_optrel for more relocs.
+	(ppc64_elf_edit_toc): Do ha/lo insn checks in GOT loop rather
+	than TOC loop.  Check PLT16 insns too.
+
+2019-08-16  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/24905
+	* elf64-x86-64.c (elf_x86_64_check_relocs): Move PIC check for
+	PC-relative relocations back to ...
+	(elf_x86_64_relocate_section): Here.
+
+2019-08-16  Martin Liska  <mliska@suse.cz>
+
+	PR ld/24912
+	* elflink.c: Report error only for not relocatable.
+	* linker.c (_bfd_generic_link_add_one_symbol): Do not handle
+	here lto_slim_object as it's handled in caller.
+
+2019-08-16  Alan Modra  <amodra@gmail.com>
+
+	* elf32-ppc.c (ppc_elf_relocate_section): Optimize unaligned relocs.
+
+2019-08-15  Jim Wilson  <jimw@sifive.com>
+
+	* elfnn-riscv.c (perform_relocation) <R_RISCV_RVC_LUI>: If
+	RISCV_CONST_HIGH_PART (value) is zero, then convert c.lui instruction
+	to c.li instruction, and use ENCODE_RVC_IMM to set value.
+
+2019-08-15  Tom Tromey  <tromey@adacore.com>
+
+	* dwarf2.c (scan_unit_for_symbols): Check for end of CU, not end
+	of section.
+
+2019-08-14  Alan Modra  <amodra@gmail.com>
+
+	PR 24623
+	* dwarf2.c (stash_comp_unit): New function, extracted from..
+	(_bfd_dwarf2_find_nearest_line): ..here.
+	(find_abstract_instance): Parse comp units and decode line info
+	as needed.
+
+2019-08-14  Alan Modra  <amodra@gmail.com>
+
+	* dwarf2.c (comp_unit_maybe_decode_line_info): Declare.
+	(comp_unit_find_nearest_line): Use it here..
+	(_bfd_dwarf2_find_symbol_bias): ..and here.
+
+2019-08-14  Alan Modra  <amodra@gmail.com>
+
+	* dwarf2.c (_bfd_dwarf2_find_nearest_line): Remove addr_size parameter.
+	* libbfd-in.h  (_bfd_dwarf2_find_nearest_line): Update prototype.
+	* coffgen.c (coff_find_nearest_line_with_names): Adjust
+	_bfd_dwarf2_find_nearest_line calls.
+	* elf.c (_bfd_elf_find_nearest_line, _bfd_elf_find_line): Likewise.
+	* elf32-arm.c (elf32_arm_find_nearest_line): Likewise.
+	* elf64-alpha.c (elf64_alpha_find_nearest_line): Likewise.
+	* elfnn-aarch64.c (elfNN_aarch64_find_nearest_line): Likewise.
+	* elfxx-mips.c (_bfd_mips_elf_find_nearest_line): Likewise.
+	* mach-o.c (bfd_mach_o_find_nearest_line): Likewise.
+	* libbfd.h: Regenerate.
+
+2019-08-09  Mihailo Stojanovic  <mihailo.stojanovic@rt-rk.com>
+
+	* elf-bfd.h (struct elf_backend_data): New members.
+	* elflink.c (_bfd_elf_link_create_dynamic_sections): Create
+	.gnu.hash section if necessary.
+	(struct collect_gnu_hash_codes): New member.
+	(elf_gnu_hash_process_symidx): New function name.
+	(elf_renumber_gnu_hash_syms): Ignore local and undefined
+	symbols. Record xlat location for every symbol which should have
+	a .MIPS.xhash entry.
+	(bfd_elf_size_dynamic_sections): Add DT_GNU_HASH dynamic tag to
+	dynamic section if necessary.
+	(GNU_HASH_SECTION_NAME): New define.
+	(bfd_elf_size_dynsym_hash_dynstr): Get .MIPS.xhash section.
+	Update the section size info.
+	* elfxx-mips.c (struct mips_elf_hash_sort_data): New members.
+	(struct mips_elf_link_hash_entry): New member.
+	(mips_elf_link_hash_newfunc): Initialize .MIPS.xhash translation
+	table location.
+	(mips_elf_sort_hash_table): Initialize the pointer to the
+	.MIPS.xhash section.
+	(mips_elf_sort_hash_table_f): Populate the .MIPS.xhash
+	translation table entry with the symbol dynindx.
+	(_bfd_mips_elf_section_from_shdr): Add SHT_MIPS_XHASH.
+	(_bfd_mips_elf_fake_sections): Initialize .MIPS.xhash section
+	info.
+	(_bfd_mips_elf_create_dynamic_sections): Create .MIPS.xhash
+	section.
+	(_bfd_mips_elf_size_dynamic_sections): Add DT_MIPS_XHASH tag to
+	dynamic section.
+	(_bfd_mips_elf_finish_synamic_sections): Add DT_MIPS_XHASH.
+	(_bfd_mips_elf_final_write_processing): Set .MIPS.xhash section
+	sh_link info.
+	(_bfd_mips_elf_get_target_dtag): Get DT_MIPS_XHASH tag.
+	(MIPS_LIBC_ABI_XHASH): New ABI version enum value.
+	(_bfd_mips_post_process_headers): Mark the ABI version as
+	MIPS_LIBC_ABI_XHASH if there exists a .MIPS.xhash section,
+	but not a .hash section.
+	(_bfd_mips_elf_record_xhash_symbol): New function. Record a
+	position in the translation table, associated with the hash
+	entry.
+	* elfxx-mips.h (literal_reloc_p): Define
+	elf_backend_record_xhash_symbol backend hook.
+	* elfxx-target.h: Initialize elf_backend_record_xhash_symbol
+	backend hook.
+
+2019-08-07  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* elf64-bpf.c (bpf_elf_relocate_section): New function.
+	(bpf_elf_insn_disp_reloc): Delete function.
+	(elf_backend_relocate_section): Define.
+
+2019-08-07  Alan Modra  <amodra@gmail.com>
+
+	PR 24644
+	* archive64.c (_bfd_archive_64_bit_slurp_armap): Properly check
+	for overflow in expressions involving nsymz.
+
+2019-08-01  Ilia Diachkov  <ilia.diachkov@optimitech.com>
+
+	* elfnn-riscv.c (_bfd_riscv_relax_lui): Set lui relax safety area to
+	two pages in relro presence.
+
+2019-08-01  Max Filippov  <jcmvbkbc@gmail.com>
+
+	* elf32-xtensa.c (insn_num_slots, get_rsr_lend_opcode)
+	(get_wsr_lbeg_opcode): New functions.
+	(check_loop_aligned): Detect relaxed loops and adjust loop_len
+	and insn_len for the first actual instruction of the loop.
+
+2019-07-30  Alan Modra  <amodra@gmail.com>
+
+	PR 24768
+	* bfd.c (struct bfd): Add lto_slim_object flag.
+	* bfd-in2.h: Regenerate.
+
+2019-07-29  Martin Liska  <mliska@suse.cz>
+
+	PR 24768
+	* archive.c (_bfd_compute_and_write_armap): Come up with
+	report_plugin_err variable.
+	* bfd-in2.h (struct bfd): Add lto_slim_object flag.
+	* elf.c (struct lto_section): New.
+	(_bfd_elf_make_section_from_shdr): Parse content of
+	.gnu_lto_.lto section.
+	* elflink.c: Report error for a missing LTO plugin.
+	* linker.c (_bfd_generic_link_add_one_symbol): Likewise.
+
+2019-07-28  Alan Modra  <amodra@gmail.com>
+
+	PR 24857
+	PR 24339
+	* elflink.c (elf_link_add_object_symbols): Report an informative
+	error on finding local symbols with index equal or greater than
+	symbol table sh_info.  Correct comment.  Allow such symbols in
+	dynamic objects.  Abort on NULL section for symbol.
+
+2019-07-26  Alan Modra  <amodra@gmail.com>
+
+	* elf-bfd.h (struct output_elf_obj_tdata): Delete "linker" field.
+	(elf_linker): Don't define.
+	* elflink.c (bfd_elf_final_link): Don't set elf_linker.
+
+2019-07-25  YunQiang Su  <syq@debian.org>
+
+	PR 24832
+	* elfxx-mips.c (mips_set_isa_flags): Default to MIPS 3 for 64-bit
+	mips inputs.
+
+2019-07-24  Claudiu Zissulescu  <claziss@synopsys.com>
+
+	* elf32-arc.c (bfd_get_32_me): Add a small description, fix
+	formating.
+	(reloc_type_to_name): Fix formating.
+	(arc_elf_object_p): Likewise.
+	(debug_arc_reloc): Likewise.
+	(arc_do_relocation): Likewise.
+
+2019-07-24  Claudiu Zissulescu  <claziss@synopsys.com>
+
+	* elf32-arc.c (bfd_get_32_me): New function.
+	(bfd_put_32_me): Likewise.
+	(arc_elf_relax_section): Likewise.
+	(bfd_elf32_bfd_relax_section): Define.
+
+2019-07-24  Alan Modra  <amodra@gmail.com>
+
+	* elf-bfd.h (struct elf_backend_data): Return bfd_boolean from
+	elf_backend_final_write_processing, don't pass linker arg.
+	(_bfd_elf_final_write_processing): Update prototype.
+	* elf.c (_bfd_elf_write_object_contents): Adjust call.
+	(_bfd_elf_final_write_processing): Return error on incompatible
+	OSABI and has_gnu_osabi.  Remove linker arg.
+	* elf-nacl.h (nacl_final_write_processing): Update prototype.
+	* elf-vxworks.h (elf_vxworks_final_write_processing): Likewise.
+	* elfxx-mips.h (_bfd_mips_final_write_processing): Likewise.
+	(_bfd_mips_elf_final_write_processing): Likewise.
+	* elf-hppa.h (elf_hppa_final_write_processing): Return status
+	and remove linker arg.
+	* elf-m10300.c (_bfd_mn10300_elf_final_write_processing): Likewise.
+	* elf-nacl.c (nacl_final_write_processing): Likewise.
+	* elf-vxworks.c (elf_vxworks_final_write_processing): Likewise.
+	* elf32-arc.c (arc_elf_final_write_processing): Likewise.
+	* elf32-arm.c (arm_final_write_processing): Likewise.
+	(elf32_arm_final_write_processing): Likewise.
+	(elf32_arm_nacl_final_write_processing): Likewise.
+	(elf32_arm_vxworks_final_write_processing): Likewise.
+	* elf32-avr.c (bfd_elf_avr_final_write_processing): Likewise.
+	* elf32-bfin.c (elf32_bfin_final_write_processing): Likewise.
+	* elf32-cr16.c (_bfd_cr16_elf_final_write_processing): Likewise.
+	* elf32-cris.c (cris_elf_final_write_processing): Likewise.
+	* elf32-h8300.c (elf32_h8_final_write_processing): Likewise.
+	* elf32-lm32.c (lm32_elf_final_write_processing): Likewise.
+	* elf32-m32r.c (m32r_elf_final_write_processing): Likewise.
+	* elf32-m68k.c (elf_m68k_final_write_processing): Likewise.
+	* elf32-mips.c (mips_vxworks_final_write_processing): Likewise.
+	* elf32-msp430.c (bfd_elf_msp430_final_write_processing): Likewise.
+	* elf32-nds32.c (nds32_elf_final_write_processing): Likewise.
+	* elf32-or1k.c (or1k_elf_final_write_processing): Likewise.
+	* elf32-pj.c (pj_elf_final_write_processing): Likewise.
+	* elf32-ppc.c (ppc_final_write_processing): Likewise.
+	(ppc_elf_final_write_processing): Likewise.
+	(ppc_elf_vxworks_final_write_processing): Likewise.
+	* elf32-sparc.c (sparc_final_write_processing): Likewise.
+	(elf32_sparc_final_write_processing): Likewise.
+	(elf32_sparc_vxworks_final_write_processing): Likewise.
+	* elf32-v850.c (v850_elf_final_write_processing): Likewise.
+	* elf32-xc16x.c (elf32_xc16x_final_write_processing): Likewise.
+	* elf32-xtensa.c (elf_xtensa_final_write_processing): Likewise.
+	* elf64-ia64-vms.c (elf64_vms_final_write_processing): Likewise.
+	* elfnn-ia64.c (elfNN_ia64_final_write_processing): Likewise.
+	* elfxx-mips.c (_bfd_mips_final_write_processing): Likewise.
+	(_bfd_mips_elf_final_write_processing): Likewise.
+
+2019-07-24  Alan Modra  <amodra@gmail.com>
+
+	* elf-vxworks.c (elf_vxworks_final_write_processing): Don't return
+	early.
+	* elf32-arc.c (arc_elf_final_write_processing): Likewise.
+	* elf32-xtensa.c (elf_xtensa_final_write_processing): Likewise.
+
+2019-07-24  Alan Modra  <amodra@gmail.com>
+
+	* elf32-visium.c (visium_elf_post_process_headers): Don't set
+	EI_OSABI header byte here.
+	(ELF_OSABI): Define.
+
+2019-07-23  Alan Modra  <amodra@gmail.com>
+
+	* elf-bfd.h (enum elf_gnu_osabi): Add elf_gnu_osabi_mbind.
+	* elf.c (_bfd_elf_make_section_from_shdr): Set elf_gnu_osabi_mbind.
+	(get_program_header_size): Formatting.  Only test SH_GNU_MBIND
+	when elf_gnu_osabi_mbind is set.
+	(_bfd_elf_map_sections_to_segments): Likewise.
+	(_bfd_elf_init_private_section_data): Likewise.
+	(_bfd_elf_final_write_processing): Update comment.
+	* elf64-hppa.c (elf64_hppa_special_sections): Move .tbss entry.
+	(elf_backend_special_sections): Define without .tbss for linux.
+
+2019-07-23  Alan Modra  <amodra@gmail.com>
+
+	* elf-bfd.h (enum elf_gnu_osabi): Rename from elf_gnu_symbols.
+	Remove none, any, all enums.
+	(struct elf_obj_tdata): Rename has_gnu_symbols field to has_gnu_osabi.
+	(_bfd_elf_final_write_processing): Declare.
+	* elf.c (_bfd_elf_write_object_contents): Unconditionally call
+	elf_backend_final_write_processing.
+	(_bfd_elf_post_process_headers): Move body of function to..
+	(_bfd_elf_final_write_processing): ..here, but set EI_OSABI byte
+	only when not already set.  Adjust for rename.
+	* elfxx-target.h (elf_backend_final_write_processing): Default to
+	_bfd_elf_final_write_processing.
+	* elf-hppa.h (elf_hppa_final_write_processing): Call
+	_bfd_elf_final_write_processing.
+	* elf-m10300.c (_bfd_mn10300_elf_final_write_processing): Likewise.
+	* elf-nacl.c (nacl_final_write_processing): Likewise.
+	* elf-vxworks.c (elf_vxworks_final_write_processing): Likewise.
+	* elf32-arc.c (arc_elf_final_write_processing): Likewise.
+	* elf32-avr.c (bfd_elf_avr_final_write_processing): Likewise.
+	* elf32-bfin.c (elf32_bfin_final_write_processing): Likewise.
+	* elf32-cr16.c (_bfd_cr16_elf_final_write_processing): Likewise.
+	* elf32-cris.c (cris_elf_final_write_processing): Likewise.
+	* elf32-h8300.c (elf32_h8_final_write_processing): Likewise.
+	* elf32-lm32.c (lm32_elf_final_write_processing): Likewise.
+	* elf32-m32r.c (m32r_elf_final_write_processing): Likewise.
+	* elf32-m68k.c (elf_m68k_final_write_processing): Likewise.
+	* elf32-msp430.c (bfd_elf_msp430_final_write_processing): Likewise.
+	* elf32-nds32.c (nds32_elf_final_write_processing): Likewise.
+	* elf32-or1k.c (or1k_elf_final_write_processing): Likewise.
+	* elf32-pj.c (pj_elf_final_write_processing): Likewise.
+	* elf32-v850.c (v850_elf_final_write_processing): Likewise.
+	* elf32-xc16x.c (elf32_xc16x_final_write_processing): Likewise.
+	* elf32-xtensa.c (elf_xtensa_final_write_processing): Likewise.
+	* elf64-ia64-vms.c (elf64_vms_final_write_processing): Likewise.
+	* elfnn-ia64.c (elfNN_ia64_final_write_processing): Likewise.
+	* elf32-arm.c (arm_final_write_processing): Split out from..
+	(elf32_arm_final_write_processing): ..here.  Call
+	_bfd_elf_final_write_processing.
+	(elf32_arm_nacl_final_write_processing): Adjust.
+	* elfxx-mips.c (_bfd_mips_final_write_processing): Split out from..
+	(_bfd_mips_elf_final_write_processing): ..here.  Call
+	_bfd_elf_final_write_processing.
+	* elfxx-mips.h (_bfd_mips_final_write_processing): Declare.
+	* elf32-mips.c (mips_vxworks_final_write_processing): Adjust.
+	* elf32-ppc.c (ppc_final_write_processing): Split out from..
+	(ppc_elf_final_write_processing): ..here.  Call
+	_bfd_elf_final_write_processing.
+	(ppc_elf_vxworks_final_write_processing): Adjust.
+	* elf32-sparc.c (sparc_final_write_processing): Split out from..
+	(elf32_sparc_final_write_processing): ..here.  Call
+	_bfd_elf_final_write_processing.
+	(elf32_sparc_vxworks_final_write_processing): Adjust.
+	* elf32-d10v.c (elf_backend_final_write_processing): Don't define.
+	* elf32-d30v.c (elf_backend_final_write_processing): Don't define.
+	* elf32-m68hc11.c (elf_backend_final_write_processing): Don't define.
+	* elf32-m68hc12.c (elf_backend_final_write_processing): Don't define.
+	* elf32-s12z.c (elf_backend_final_write_processing): Don't define.
+	* elf32-i386.c (elf_i386_check_relocs): Don't set has_gnu_symbols.
+	* elf64-x86-64.c (elf_x86_64_check_relocs): Likewise.
+	* elflink.c (elf_link_add_object_symbols): Likewise.
+	(elf_link_output_symstrtab): Set has_gnu_osabi for symbols here
+	instead.
+
+2019-07-23  Omar Majid  <omajid@redhat.com>
+
+	* coffcode.h (coff_set_arch_mach_hook): Handle I386_APPLE_MAGIC,
+	I386_FREEBSD_MAGIC, I386_LINUX_MAGIC, I386_NETBSD_MAGIC,
+	AMD64_APPLE_MAGIC, AMD64_FREEBSD_MAGIC, AMD64_LINUX_MAGIC,
+	AMD64_NETBSD_MAGIC.
+	* peXXigen.c: Add comment about source of .NET magic numbers.
+
 2019-07-19  Alan Modra  <amodra@gmail.com>
 
 	* reloc.c (BFD_RELOC_PPC64_TPREL34, BFD_RELOC_PPC64_DTPREL34),

@@ -426,8 +426,8 @@ patch_block_stabs (struct pending *symbols, struct pending_stabs *stabs,
 	      SYMBOL_DOMAIN (sym) = VAR_DOMAIN;
 	      SYMBOL_ACLASS_INDEX (sym) = LOC_OPTIMIZED_OUT;
 	      SYMBOL_SET_LINKAGE_NAME
-		(sym, (char *) obstack_copy0 (&objfile->objfile_obstack,
-					      name, pp - name));
+		(sym, obstack_strndup (&objfile->objfile_obstack,
+				       name, pp - name));
 	      pp += 2;
 	      if (*(pp - 1) == 'F' || *(pp - 1) == 'f')
 		{
@@ -1654,12 +1654,8 @@ again:
 
 	      std::string new_name = cp_canonicalize_string (name);
 	      if (!new_name.empty ())
-		{
-		  type_name
-		    = (char *) obstack_copy0 (&objfile->objfile_obstack,
-					      new_name.c_str (),
-					      new_name.length ());
-		}
+		type_name = obstack_strdup (&objfile->objfile_obstack,
+					    new_name);
 	    }
 	  if (type_name == NULL)
 	    {
@@ -2845,7 +2841,7 @@ read_one_struct_field (struct stab_field_info *fip, const char **pp,
   struct gdbarch *gdbarch = get_objfile_arch (objfile);
 
   fip->list->field.name
-    = (const char *) obstack_copy0 (&objfile->objfile_obstack, *pp, p - *pp);
+    = obstack_strndup (&objfile->objfile_obstack, *pp, p - *pp);
   *pp = p + 1;
 
   /* This means we have a visibility for a field coming.  */
@@ -3645,7 +3641,7 @@ read_enum_type (const char **pp, struct type *type,
       p = *pp;
       while (*p != ':')
 	p++;
-      name = (char *) obstack_copy0 (&objfile->objfile_obstack, *pp, p - *pp);
+      name = obstack_strndup (&objfile->objfile_obstack, *pp, p - *pp);
       *pp = p + 1;
       n = read_huge_number (pp, ',', &nbits, 0);
       if (nbits != 0)
@@ -4293,8 +4289,7 @@ common_block_start (const char *name, struct objfile *objfile)
     }
   common_block = *get_local_symbols ();
   common_block_i = common_block ? common_block->nsyms : 0;
-  common_block_name = (char *) obstack_copy0 (&objfile->objfile_obstack, name,
-					      strlen (name));
+  common_block_name = obstack_strdup (&objfile->objfile_obstack, name);
 }
 
 /* Process a N_ECOMM symbol.  */

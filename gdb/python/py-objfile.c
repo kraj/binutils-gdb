@@ -406,7 +406,7 @@ objfpy_is_valid (PyObject *self, PyObject *args)
   Py_RETURN_TRUE;
 }
 
-/* Implementation of gdb.Objfile.add_separate_debug_file (self) -> Boolean.  */
+/* Implementation of gdb.Objfile.add_separate_debug_file (self, string). */
 
 static PyObject *
 objfpy_add_separate_debug_file (PyObject *self, PyObject *args, PyObject *kw)
@@ -425,6 +425,74 @@ objfpy_add_separate_debug_file (PyObject *self, PyObject *args, PyObject *kw)
       gdb_bfd_ref_ptr abfd (symfile_bfd_open (file_name));
 
       symbol_file_add_separate (abfd.get (), file_name, 0, obj->objfile);
+    }
+  catch (const gdb_exception &except)
+    {
+      GDB_PY_HANDLE_EXCEPTION (except);
+    }
+
+  Py_RETURN_NONE;
+}
+
+/* Implementation of
+  gdb.Objfile.lookup_global_symbol (self, string [, domain]) -> gdb.Symbol.  */
+
+static PyObject *
+objfpy_lookup_global_symbol (PyObject *self, PyObject *args, PyObject *kw)
+{
+  static const char *keywords[] = { "name", "domain", NULL };
+  objfile_object *obj = (objfile_object *) self;
+  const char *symbol_name;
+  int domain = VAR_DOMAIN;
+
+  OBJFPY_REQUIRE_VALID (obj);
+
+  if (!gdb_PyArg_ParseTupleAndKeywords (args, kw, "s|i", keywords, &symbol_name,
+					&domain))
+    return nullptr;
+
+  try
+    {
+      struct symbol *sym = lookup_global_symbol_from_objfile
+        (obj->objfile, GLOBAL_BLOCK, symbol_name, (domain_enum) domain).symbol;
+      if (sym == nullptr)
+	Py_RETURN_NONE;
+
+      return symbol_to_symbol_object (sym);
+    }
+  catch (const gdb_exception &except)
+    {
+      GDB_PY_HANDLE_EXCEPTION (except);
+    }
+
+  Py_RETURN_NONE;
+}
+
+/* Implementation of
+  gdb.Objfile.lookup_static_symbol (self, string [, domain]) -> gdb.Symbol.  */
+
+static PyObject *
+objfpy_lookup_static_symbol (PyObject *self, PyObject *args, PyObject *kw)
+{
+  static const char *keywords[] = { "name", "domain", NULL };
+  objfile_object *obj = (objfile_object *) self;
+  const char *symbol_name;
+  int domain = VAR_DOMAIN;
+
+  OBJFPY_REQUIRE_VALID (obj);
+
+  if (!gdb_PyArg_ParseTupleAndKeywords (args, kw, "s|i", keywords, &symbol_name,
+					&domain))
+    return nullptr;
+
+  try
+    {
+      struct symbol *sym = lookup_global_symbol_from_objfile
+        (obj->objfile, STATIC_BLOCK, symbol_name, (domain_enum) domain).symbol;
+      if (sym == nullptr)
+	Py_RETURN_NONE;
+
+      return symbol_to_symbol_object (sym);
     }
   catch (const gdb_exception &except)
     {
@@ -651,6 +719,16 @@ Return true if this object file is valid, false if not." },
     METH_VARARGS | METH_KEYWORDS,
     "add_separate_debug_file (file_name).\n\
 Add FILE_NAME to the list of files containing debug info for the objfile." },
+
+  { "lookup_global_symbol", (PyCFunction) objfpy_lookup_global_symbol,
+    METH_VARARGS | METH_KEYWORDS,
+    "lookup_global_symbol (name [, domain]).\n\
+Look up a global symbol in this objfile and return it." },
+
+  { "lookup_static_symbol", (PyCFunction) objfpy_lookup_static_symbol,
+    METH_VARARGS | METH_KEYWORDS,
+    "lookup_static_symbol (name [, domain]).\n\
+Look up a static-linkage global symbol in this objfile and return it." },
 
   { NULL }
 };

@@ -217,6 +217,9 @@ void
 with_command_1 (const char *set_cmd_prefix,
 		cmd_list_element *setlist, const char *args, int from_tty)
 {
+  if (args == nullptr)
+    error (_("Missing arguments."));
+
   const char *delim = strstr (args, "--");
   const char *nested_cmd = nullptr;
 
@@ -1948,7 +1951,8 @@ The commands below can be used to select other frames by number or address."),
   /* Define general commands.  */
 
   add_com ("pwd", class_files, pwd_command, _("\
-Print working directory.  This is used for your program as well."));
+Print working directory.\n\
+This is used for your program as well."));
 
   c = add_cmd ("cd", class_files, cd_command, _("\
 Set working directory to DIR for debugger.\n\
@@ -2077,11 +2081,11 @@ from the target."),
 				       &setlist, &showlist);
 
   add_prefix_cmd ("debug", no_class, set_debug,
-		  _("Generic command for setting gdb debugging flags"),
+		  _("Generic command for setting gdb debugging flags."),
 		  &setdebuglist, "set debug ", 0, &setlist);
 
   add_prefix_cmd ("debug", no_class, show_debug,
-		  _("Generic command for showing gdb debugging flags"),
+		  _("Generic command for showing gdb debugging flags."),
 		  &showdebuglist, "show debug ", 0, &showlist);
 
   c = add_com ("shell", class_support, shell_command, _("\
@@ -2181,7 +2185,7 @@ Show definitions of non-python/scheme user defined commands.\n\
 Argument is the name of the user defined command.\n\
 With no argument, show definitions of all user defined commands."), &showlist);
   add_com ("apropos", class_support, apropos_command, _("\
-Search for commands matching a REGEXP\n\
+Search for commands matching a REGEXP.\n\
 Usage: apropos [-v] REGEXP\n\
 Flag -v indicates to produce a verbose output, showing full documentation\n\
 of the matching commands."));

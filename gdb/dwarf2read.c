@@ -3881,11 +3881,9 @@ struct dw2_symtab_iterator
 {
   /* The dwarf2_per_objfile owning the CUs we are iterating on.  */
   struct dwarf2_per_objfile *dwarf2_per_objfile;
-  /* If non-zero, only look for symbols that match BLOCK_INDEX.  */
-  int want_specific_block;
-  /* One of GLOBAL_BLOCK or STATIC_BLOCK.
-     Unused if !WANT_SPECIFIC_BLOCK.  */
-  int block_index;
+  /* If set, only look for symbols that match that block.  Valid values are
+     GLOBAL_BLOCK and STATIC_BLOCK.  */
+  gdb::optional<block_enum> block_index;
   /* The kind of symbol we're looking for.  */
   domain_enum domain;
   /* The list of CUs from the index entry of the symbol,
@@ -3902,20 +3900,16 @@ struct dw2_symtab_iterator
   int global_seen;
 };
 
-/* Initialize the index symtab iterator ITER.
-   If WANT_SPECIFIC_BLOCK is non-zero, only look for symbols
-   in block BLOCK_INDEX.  Otherwise BLOCK_INDEX is ignored.  */
+/* Initialize the index symtab iterator ITER.  */
 
 static void
 dw2_symtab_iter_init (struct dw2_symtab_iterator *iter,
 		      struct dwarf2_per_objfile *dwarf2_per_objfile,
-		      int want_specific_block,
-		      int block_index,
+		      gdb::optional<block_enum> block_index,
 		      domain_enum domain,
 		      const char *name)
 {
   iter->dwarf2_per_objfile = dwarf2_per_objfile;
-  iter->want_specific_block = want_specific_block;
   iter->block_index = block_index;
   iter->domain = domain;
   iter->next = 0;
@@ -3945,9 +3939,6 @@ dw2_symtab_iter_next (struct dw2_symtab_iterator *iter)
       offset_type cu_index_and_attrs =
 	MAYBE_SWAP (iter->vec[iter->next + 1]);
       offset_type cu_index = GDB_INDEX_CU_VALUE (cu_index_and_attrs);
-      int want_static = iter->block_index != GLOBAL_BLOCK;
-      /* This value is only valid for index versions >= 7.  */
-      int is_static = GDB_INDEX_SYMBOL_STATIC_VALUE (cu_index_and_attrs);
       gdb_index_symbol_kind symbol_kind =
 	GDB_INDEX_SYMBOL_KIND_VALUE (cu_index_and_attrs);
       /* Only check the symbol attributes if they're present.
@@ -3977,9 +3968,16 @@ dw2_symtab_iter_next (struct dw2_symtab_iterator *iter)
       /* Check static vs global.  */
       if (attrs_valid)
 	{
-	  if (iter->want_specific_block
-	      && want_static != is_static)
-	    continue;
+	  bool is_static = GDB_INDEX_SYMBOL_STATIC_VALUE (cu_index_and_attrs);
+
+	  if (iter->block_index.has_value ())
+	    {
+	      bool want_static = *iter->block_index == STATIC_BLOCK;
+
+	      if (is_static != want_static)
+		continue;
+	    }
+
 	  /* Work around gold/15646.  */
 	  if (!is_static && iter->global_seen)
 	    continue;
@@ -4020,7 +4018,7 @@ dw2_symtab_iter_next (struct dw2_symtab_iterator *iter)
 }
 
 static struct compunit_symtab *
-dw2_lookup_symbol (struct objfile *objfile, int block_index,
+dw2_lookup_symbol (struct objfile *objfile, block_enum block_index,
 		   const char *name, domain_enum domain)
 {
   struct compunit_symtab *stab_best = NULL;
@@ -4032,7 +4030,7 @@ dw2_lookup_symbol (struct objfile *objfile, int block_index,
   struct dw2_symtab_iterator iter;
   struct dwarf2_per_cu_data *per_cu;
 
-  dw2_symtab_iter_init (&iter, dwarf2_per_objfile, 1, block_index, domain, name);
+  dw2_symtab_iter_init (&iter, dwarf2_per_objfile, block_index, domain, name);
 
   while ((per_cu = dw2_symtab_iter_next (&iter)) != NULL)
     {
@@ -4115,9 +4113,7 @@ dw2_expand_symtabs_for_function (struct objfile *objfile,
   struct dw2_symtab_iterator iter;
   struct dwarf2_per_cu_data *per_cu;
 
-  /* Note: It doesn't matter what we pass for block_index here.  */
-  dw2_symtab_iter_init (&iter, dwarf2_per_objfile, 0, GLOBAL_BLOCK, VAR_DOMAIN,
-			func_name);
+  dw2_symtab_iter_init (&iter, dwarf2_per_objfile, {}, VAR_DOMAIN, func_name);
 
   while ((per_cu = dw2_symtab_iter_next (&iter)) != NULL)
     dw2_instantiate_symtab (per_cu, false);
@@ -5661,14 +5657,11 @@ dwarf2_read_debug_names (struct dwarf2_per_objfile *dwarf2_per_objfile)
 class dw2_debug_names_iterator
 {
 public:
-  /* If WANT_SPECIFIC_BLOCK is true, only look for symbols in block
-     BLOCK_INDEX.  Otherwise BLOCK_INDEX is ignored.  */
   dw2_debug_names_iterator (const mapped_debug_names &map,
-			    bool want_specific_block,
-			    block_enum block_index, domain_enum domain,
+			    gdb::optional<block_enum> block_index,
+			    domain_enum domain,
 			    const char *name)
-    : m_map (map), m_want_specific_block (want_specific_block),
-      m_block_index (block_index), m_domain (domain),
+    : m_map (map), m_block_index (block_index), m_domain (domain),
       m_addr (find_vec_in_debug_names (map, name))
   {}
 
@@ -5691,13 +5684,9 @@ private:
   /* The internalized form of .debug_names.  */
   const mapped_debug_names &m_map;
 
-  /* If true, only look for symbols that match BLOCK_INDEX.  */
-  const bool m_want_specific_block = false;
-
-  /* One of GLOBAL_BLOCK or STATIC_BLOCK.
-     Unused if !WANT_SPECIFIC_BLOCK - FIRST_LOCAL_BLOCK is an invalid
-     value.  */
-  const block_enum m_block_index = FIRST_LOCAL_BLOCK;
+  /* If set, only look for symbols that match that block.  Valid values are
+     GLOBAL_BLOCK and STATIC_BLOCK.  */
+  const gdb::optional<block_enum> m_block_index;
 
   /* The kind of symbol we're looking for.  */
   const domain_enum m_domain = UNDEF_DOMAIN;
@@ -5854,8 +5843,11 @@ dw2_debug_names_iterator::next ()
       return NULL;
     }
   const mapped_debug_names::index_val &indexval = indexval_it->second;
-  bool have_is_static = false;
-  bool is_static;
+  enum class symbol_linkage {
+    unknown,
+    static_,
+    extern_,
+  } symbol_linkage_ = symbol_linkage::unknown;
   dwarf2_per_cu_data *per_cu = NULL;
   for (const mapped_debug_names::index_val::attr &attr : indexval.attr_vec)
     {
@@ -5907,14 +5899,12 @@ dw2_debug_names_iterator::next ()
 	case DW_IDX_GNU_internal:
 	  if (!m_map.augmentation_is_gdb)
 	    break;
-	  have_is_static = true;
-	  is_static = true;
+	  symbol_linkage_ = symbol_linkage::static_;
 	  break;
 	case DW_IDX_GNU_external:
 	  if (!m_map.augmentation_is_gdb)
 	    break;
-	  have_is_static = true;
-	  is_static = false;
+	  symbol_linkage_ = symbol_linkage::extern_;
 	  break;
 	}
     }
@@ -5924,11 +5914,13 @@ dw2_debug_names_iterator::next ()
     goto again;
 
   /* Check static vs global.  */
-  if (have_is_static)
+  if (symbol_linkage_ != symbol_linkage::unknown && m_block_index.has_value ())
     {
-      const bool want_static = m_block_index != GLOBAL_BLOCK;
-      if (m_want_specific_block && want_static != is_static)
-	goto again;
+	const bool want_static = *m_block_index == STATIC_BLOCK;
+	const bool symbol_is_static =
+	  symbol_linkage_ == symbol_linkage::static_;
+	if (want_static != symbol_is_static)
+	  goto again;
     }
 
   /* Match dw2_symtab_iter_next, symbol_kind
@@ -6012,10 +6004,9 @@ dw2_debug_names_iterator::next ()
 }
 
 static struct compunit_symtab *
-dw2_debug_names_lookup_symbol (struct objfile *objfile, int block_index_int,
+dw2_debug_names_lookup_symbol (struct objfile *objfile, block_enum block_index,
 			       const char *name, domain_enum domain)
 {
-  const block_enum block_index = static_cast<block_enum> (block_index_int);
   struct dwarf2_per_objfile *dwarf2_per_objfile
     = get_dwarf2_per_objfile (objfile);
 
@@ -6027,8 +6018,7 @@ dw2_debug_names_lookup_symbol (struct objfile *objfile, int block_index_int,
     }
   const auto &map = *mapp;
 
-  dw2_debug_names_iterator iter (map, true /* want_specific_block */,
-				 block_index, domain, name);
+  dw2_debug_names_iterator iter (map, block_index, domain, name);
 
   struct compunit_symtab *stab_best = NULL;
   struct dwarf2_per_cu_data *per_cu;
@@ -6091,9 +6081,7 @@ dw2_debug_names_expand_symtabs_for_function (struct objfile *objfile,
     {
       const mapped_debug_names &map = *dwarf2_per_objfile->debug_names_table;
 
-      /* Note: It doesn't matter what we pass for block_index here.  */
-      dw2_debug_names_iterator iter (map, false /* want_specific_block */,
-				     GLOBAL_BLOCK, VAR_DOMAIN, func_name);
+      dw2_debug_names_iterator iter (map, {}, VAR_DOMAIN, func_name);
 
       struct dwarf2_per_cu_data *per_cu;
       while ((per_cu = iter.next ()) != NULL)
@@ -9823,9 +9811,7 @@ fixup_go_packaging (struct dwarf2_cu *cu)
     {
       struct objfile *objfile = cu->per_cu->dwarf2_per_objfile->objfile;
       const char *saved_package_name
-	= (const char *) obstack_copy0 (&objfile->per_bfd->storage_obstack,
-					package_name,
-					strlen (package_name));
+	= obstack_strdup (&objfile->per_bfd->storage_obstack, package_name);
       struct type *type = init_type (objfile, TYPE_CODE_MODULE, 0,
 				     saved_package_name);
       struct symbol *sym;
@@ -10964,10 +10950,8 @@ dwarf2_compute_name (const char *name,
 	     INTERMEDIATE_NAME is already canonical, then we need to
 	     copy it to the appropriate obstack.  */
 	  if (canonical_name == NULL || canonical_name == intermediate_name.c_str ())
-	    name = ((const char *)
-		    obstack_copy0 (&objfile->per_bfd->storage_obstack,
-				   intermediate_name.c_str (),
-				   intermediate_name.length ()));
+	    name = obstack_strdup (&objfile->per_bfd->storage_obstack,
+				   intermediate_name);
 	  else
 	    name = canonical_name;
 	}
@@ -11087,9 +11071,7 @@ dwarf2_physname (const char *name, struct die_info *die, struct dwarf2_cu *cu)
     retval = canon;
 
   if (need_copy)
-    retval = ((const char *)
-	      obstack_copy0 (&objfile->per_bfd->storage_obstack,
-			     retval, strlen (retval)));
+    retval = obstack_strdup (&objfile->per_bfd->storage_obstack, retval);
 
   return retval;
 }
@@ -12437,10 +12419,8 @@ create_dwo_unit_in_dwp_v1 (struct dwarf2_per_objfile *dwarf2_per_objfile,
 			      virtual_dwo_name.c_str ());
 	}
       dwo_file = new struct dwo_file;
-      dwo_file->dwo_name
-	= (const char *) obstack_copy0 (&objfile->objfile_obstack,
-					virtual_dwo_name.c_str (),
-					virtual_dwo_name.size ());
+      dwo_file->dwo_name = obstack_strdup (&objfile->objfile_obstack,
+					   virtual_dwo_name);
       dwo_file->comp_dir = comp_dir;
       dwo_file->sections.abbrev = sections.abbrev;
       dwo_file->sections.line = sections.line;
@@ -12635,10 +12615,8 @@ create_dwo_unit_in_dwp_v2 (struct dwarf2_per_objfile *dwarf2_per_objfile,
 			      virtual_dwo_name.c_str ());
 	}
       dwo_file = new struct dwo_file;
-      dwo_file->dwo_name
-	= (const char *) obstack_copy0 (&objfile->objfile_obstack,
-					virtual_dwo_name.c_str (),
-					virtual_dwo_name.size ());
+      dwo_file->dwo_name = obstack_strdup (&objfile->objfile_obstack,
+					   virtual_dwo_name);
       dwo_file->comp_dir = comp_dir;
       dwo_file->sections.abbrev =
 	create_dwp_v2_section (dwarf2_per_objfile, &dwp_file->sections.abbrev,
@@ -17922,6 +17900,11 @@ read_subrange_type (struct die_info *die, struct dwarf2_cu *cu)
 	}
     }
 
+  LONGEST bias = 0;
+  struct attribute *bias_attr = dwarf2_attr (die, DW_AT_GNU_bias, cu);
+  if (bias_attr != nullptr && attr_form_is_constant (bias_attr))
+    bias = dwarf2_get_attr_constant_value (bias_attr, 0);
+
   /* Normally, the DWARF producers are expected to use a signed
      constant form (Eg. DW_FORM_sdata) to express negative bounds.
      But this is unfortunately not always the case, as witnessed
@@ -17938,7 +17921,7 @@ read_subrange_type (struct die_info *die, struct dwarf2_cu *cu)
       && !TYPE_UNSIGNED (base_type) && (high.data.const_val & negative_mask))
     high.data.const_val |= negative_mask;
 
-  range_type = create_range_type (NULL, orig_base_type, &low, &high);
+  range_type = create_range_type (NULL, orig_base_type, &low, &high, bias);
 
   if (high_bound_is_count)
     TYPE_RANGE_DATA (range_type)->flag_upper_bound_is_count = 1;
@@ -18999,10 +18982,8 @@ guess_partial_die_structure_name (struct partial_die_info *struct_pdi,
 	    {
 	      struct objfile *objfile = cu->per_cu->dwarf2_per_objfile->objfile;
 	      struct_pdi->name
-		= ((const char *)
-		   obstack_copy0 (&objfile->per_bfd->storage_obstack,
-				  actual_class_name,
-				  strlen (actual_class_name)));
+		= obstack_strdup (&objfile->per_bfd->storage_obstack,
+				  actual_class_name);
 	      xfree (actual_class_name);
 	    }
 	  break;
@@ -19084,10 +19065,7 @@ partial_die_info::fixup (struct dwarf2_cu *cu)
 	    base = demangled;
 
 	  struct objfile *objfile = cu->per_cu->dwarf2_per_objfile->objfile;
-	  name
-	    = ((const char *)
-	       obstack_copy0 (&objfile->per_bfd->storage_obstack,
-			      base, strlen (base)));
+	  name = obstack_strdup (&objfile->per_bfd->storage_obstack, base);
 	  xfree (demangled);
 	}
     }
@@ -22127,8 +22105,7 @@ build_error_marker_type (struct dwarf2_cu *cu, struct die_info *die)
 		     objfile_name (objfile),
 		     sect_offset_str (cu->header.sect_off),
 		     sect_offset_str (die->sect_off));
-  saved = (char *) obstack_copy0 (&objfile->objfile_obstack,
-				  message.c_str (), message.length ());
+  saved = obstack_strdup (&objfile->objfile_obstack, message);
 
   return init_type (objfile, TYPE_CODE_ERROR, 0, saved);
 }
@@ -22367,7 +22344,7 @@ guess_full_die_structure_name (struct die_info *die, struct dwarf2_cu *cu)
 		      if (actual_name_len > die_name_len + 2
 			  && actual_name[actual_name_len
 					 - die_name_len - 1] == ':')
-			name = (char *) obstack_copy0 (
+			name = obstack_strndup (
 			  &objfile->per_bfd->storage_obstack,
 			  actual_name, actual_name_len - die_name_len - 2);
 		    }
@@ -22411,9 +22388,9 @@ anonymous_struct_prefix (struct die_info *die, struct dwarf2_cu *cu)
     return "";
 
   struct objfile *objfile = cu->per_cu->dwarf2_per_objfile->objfile;
-  return (char *) obstack_copy0 (&objfile->per_bfd->storage_obstack,
-				 DW_STRING (attr),
-				 &base[-1] - DW_STRING (attr));
+  return obstack_strndup (&objfile->per_bfd->storage_obstack,
+			  DW_STRING (attr),
+			  &base[-1] - DW_STRING (attr));
 }
 
 /* Return the name of the namespace/class that DIE is defined within,
@@ -22664,9 +22641,7 @@ dwarf2_canonicalize_name (const char *name, struct dwarf2_cu *cu,
       if (!canon_name.empty ())
 	{
 	  if (canon_name != name)
-	    name = (const char *) obstack_copy0 (obstack,
-						 canon_name.c_str (),
-						 canon_name.length ());
+	    name = obstack_strdup (obstack, canon_name);
 	}
     }
 
@@ -22742,9 +22717,8 @@ dwarf2_name (struct die_info *die, struct dwarf2_cu *cu)
 
 	      /* FIXME: we already did this for the partial symbol... */
 	      DW_STRING (attr)
-		= ((const char *)
-		   obstack_copy0 (&objfile->per_bfd->storage_obstack,
-				  demangled, strlen (demangled)));
+		= obstack_strdup (&objfile->per_bfd->storage_obstack,
+				  demangled);
 	      DW_STRING_IS_CANONICAL (attr) = 1;
 	      xfree (demangled);
 
@@ -23242,6 +23216,9 @@ dwarf2_fetch_die_loc_sect_off (sect_offset sect_off,
 	  != dwarf2_per_objfile->abstract_to_concrete.end ()))
     {
       CORE_ADDR pc = (*get_frame_pc) (baton);
+      CORE_ADDR baseaddr
+	= ANOFFSET (objfile->section_offsets, SECT_OFF_TEXT (objfile));
+      struct gdbarch *gdbarch = get_objfile_arch (objfile);
 
       for (const auto &cand_off
 	     : dwarf2_per_objfile->abstract_to_concrete[die->sect_off])
@@ -23256,8 +23233,11 @@ dwarf2_fetch_die_loc_sect_off (sect_offset sect_off,
 
 	  CORE_ADDR pc_low, pc_high;
 	  get_scope_pc_bounds (cand->parent, &pc_low, &pc_high, cu);
-	  if (pc_low == ((CORE_ADDR) -1)
-	      || !(pc_low <= pc && pc < pc_high))
+	  if (pc_low == ((CORE_ADDR) -1))
+	    continue;
+	  pc_low = gdbarch_adjust_dwarf2_addr (gdbarch, pc_low + baseaddr);
+	  pc_high = gdbarch_adjust_dwarf2_addr (gdbarch, pc_high + baseaddr);
+	  if (!(pc_low <= pc && pc < pc_high))
 	    continue;
 
 	  die = cand;
@@ -25776,13 +25756,13 @@ _initialize_dwarf2_read (void)
 {
   add_prefix_cmd ("dwarf", class_maintenance, set_dwarf_cmd, _("\
 Set DWARF specific variables.\n\
-Configure DWARF variables such as the cache size"),
+Configure DWARF variables such as the cache size."),
                   &set_dwarf_cmdlist, "maintenance set dwarf ",
                   0/*allow-unknown*/, &maintenance_set_cmdlist);
 
   add_prefix_cmd ("dwarf", class_maintenance, show_dwarf_cmd, _("\
-Show DWARF specific variables\n\
-Show DWARF variables such as the cache size"),
+Show DWARF specific variables.\n\
+Show DWARF variables such as the cache size."),
                   &show_dwarf_cmdlist, "maintenance show dwarf ",
                   0/*allow-unknown*/, &maintenance_show_cmdlist);
 

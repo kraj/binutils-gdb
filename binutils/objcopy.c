@@ -143,10 +143,12 @@ struct section_list
 #define SECTION_CONTEXT_ALTER_LMA (1 << 5) /* Increment or decrement the section's LMA address.  */
 #define SECTION_CONTEXT_SET_FLAGS (1 << 6) /* Set the section's flags.  */
 #define SECTION_CONTEXT_REMOVE_RELOCS (1 << 7) /* Remove relocations for this section.  */
+#define SECTION_CONTEXT_SET_ALIGNMENT (1 << 8) /* Set alignment for section.  */
 
   bfd_vma		vma_val;   /* Amount to change by or set to.  */
   bfd_vma		lma_val;   /* Amount to change by or set to.  */
   flagword		flags;	   /* What to set the section flags to.	 */
+  unsigned int	        alignment; /* Alignment of output section.  */
 };
 
 static struct section_list *change_sections;
@@ -344,8 +346,9 @@ enum command_line_switch
   OPTION_REMOVE_RELOCS,
   OPTION_RENAME_SECTION,
   OPTION_REVERSE_BYTES,
-  OPTION_SECTION_ALIGNMENT,
+  OPTION_PE_SECTION_ALIGNMENT,
   OPTION_SET_SECTION_FLAGS,
+  OPTION_SET_SECTION_ALIGNMENT,
   OPTION_SET_START,
   OPTION_SREC_FORCES3,
   OPTION_SREC_LEN,
@@ -476,8 +479,9 @@ static struct option copy_options[] =
   {"remove-relocations", required_argument, 0, OPTION_REMOVE_RELOCS},
   {"rename-section", required_argument, 0, OPTION_RENAME_SECTION},
   {"reverse-bytes", required_argument, 0, OPTION_REVERSE_BYTES},
-  {"section-alignment", required_argument, 0, OPTION_SECTION_ALIGNMENT},
+  {"section-alignment", required_argument, 0, OPTION_PE_SECTION_ALIGNMENT},
   {"set-section-flags", required_argument, 0, OPTION_SET_SECTION_FLAGS},
+  {"set-section-alignment", required_argument, 0, OPTION_SET_SECTION_ALIGNMENT},
   {"set-start", required_argument, 0, OPTION_SET_START},
   {"srec-forceS3", no_argument, 0, OPTION_SREC_FORCES3},
   {"srec-len", required_argument, 0, OPTION_SREC_LEN},
@@ -610,6 +614,8 @@ copy_usage (FILE *stream, int exit_status)
                                    Warn if a named section does not exist\n\
      --set-section-flags <name>=<flags>\n\
                                    Set section <name>'s properties to <flags>\n\
+     --set-section-alignment <name>=<align>\n\
+                                   Set section <name>'s alignment to 2^<align> bytes\n\
      --add-section <name>=<file>   Add section <name> found in <file> to output\n\
      --update-section <name>=<file>\n\
                                    Update contents of section <name> with\n\
@@ -964,6 +970,7 @@ find_section_list (const char *name, bfd_boolean add, unsigned int context)
   p->vma_val = 0;
   p->lma_val = 0;
   p->flags = 0;
+  p->alignment = 0;
   p->next = change_sections;
   change_sections = p;
 
@@ -1996,7 +2003,6 @@ merge_gnu_build_notes (bfd * abfd, asection * sec, bfd_size_type size, bfd_byte 
   unsigned long       previous_open_end = 0;
   long                relsize;
 
-
   relsize = bfd_get_reloc_upper_bound (abfd, sec);
   if (relsize > 0)
     {
@@ -2013,7 +2019,8 @@ merge_gnu_build_notes (bfd * abfd, asection * sec, bfd_size_type size, bfd_byte 
     }
   
   /* Make a copy of the notes and convert to our internal format.
-     Minimum size of a note is 12 bytes.  */
+     Minimum size of a note is 12 bytes.  Also locate the version
+     notes and check them.  */
   pnote = pnotes = (objcopy_internal_note *) xcalloc ((size / 12), sizeof (* pnote));
   while (remain >= 12)
     {
@@ -2182,12 +2189,10 @@ merge_gnu_build_notes (bfd * abfd, asection * sec, bfd_size_type size, bfd_byte 
   attribute_type_byte = version_1_seen ? 1 : 3;
   val_start = attribute_type_byte + 1;
 
-  /* The first note should be the first version note.  */
-  if (pnotes[0].note.namedata[attribute_type_byte] != GNU_BUILD_ATTRIBUTE_VERSION)
-    {
-      err = _("bad GNU build attribute notes: first note not version note");
-      goto done;
-    }
+  /* We used to require that the first note be a version note,
+     but this is no longer enforced.  Due to the problems with
+     linking sections with the same name (eg .gnu.build.note.hot)
+     we cannot guarantee that the first note will be a version note.  */
 
   /* Now merge the notes.  The rules are:
      1. Preserve the ordering of the notes.
@@ -2204,8 +2209,9 @@ merge_gnu_build_notes (bfd * abfd, asection * sec, bfd_size_type size, bfd_byte 
 	with a non-empty description field must also be preserved *OR* the
 	description field of the note must be changed to contain the starting
 	address to which it refers.
-     6. Notes with the same start and end address can be deleted.  */
-  for (pnote = pnotes + 1; pnote < pnotes_end; pnote ++)
+     6. Notes with the same start and end address can be deleted.
+     7. FIXME: Elminate duplicate version notes - even function specific ones ?  */
+  for (pnote = pnotes; pnote < pnotes_end; pnote ++)
     {
       int                      note_type;
       objcopy_internal_note *  back;
@@ -2233,7 +2239,6 @@ merge_gnu_build_notes (bfd * abfd, asection * sec, bfd_size_type size, bfd_byte 
 		  && back->note.namesz == pnote->note.namesz
 		  && memcmp (back->note.namedata, pnote->note.namedata, pnote->note.namesz) == 0)
 		{
- fprintf (stderr, "DUP FUNXC\n");
 		  duplicate_found = TRUE;
 		  pnote->note.type = 0;
 		  break;
@@ -3306,7 +3311,7 @@ copy_archive (bfd *ibfd, bfd *obfd, const char *output_target,
     }
 
   /* Make a temp directory to hold the contents.  */
-  dir = make_tempdir (bfd_get_filename (obfd));
+  dir = make_tempdir ((char *) bfd_get_filename (obfd));
   if (dir == NULL)
     fatal (_("cannot create tempdir for archive copying (error: %s)"),
 	   strerror (errno));
@@ -3768,6 +3773,7 @@ setup_section (bfd *ibfd, sec_ptr isection, void *obfdarg)
   const char * name;
   char *prefix = NULL;
   bfd_boolean make_nobits;
+  unsigned int alignment;
 
   if (is_strip_section (ibfd, isection))
     return;
@@ -3874,11 +3880,18 @@ setup_section (bfd *ibfd, sec_ptr isection, void *obfdarg)
 
   osection->lma = lma;
 
+  p = find_section_list (bfd_section_name (ibfd, isection), FALSE,
+			 SECTION_CONTEXT_SET_ALIGNMENT);
+  if (p != NULL)
+    alignment = p->alignment;
+  else
+    alignment = bfd_section_alignment (ibfd, isection);
+  
   /* FIXME: This is probably not enough.  If we change the LMA we
      may have to recompute the header for the file as well.  */
   if (!bfd_set_section_alignment (obfd,
 				  osection,
-				  bfd_section_alignment (ibfd, isection)))
+				  alignment))
     {
       err = _("failed to set alignment");
       goto loser;
@@ -5264,6 +5277,33 @@ copy_main (int argc, char *argv[])
 	  }
 	  break;
 
+	case OPTION_SET_SECTION_ALIGNMENT:
+	  {
+	    struct section_list *p;
+	    const char *s;
+	    int len;
+	    char *name;
+	    int align;
+
+	    s = strchr (optarg, '=');
+	    if (s == NULL)
+	      fatal (_("bad format for %s"), "--set-section-alignment");
+	    
+	    align = atoi(s+1);
+	    if (align < 0)
+	      fatal (_("bad format for %s"), "--set-section-alignment");
+
+	    len = s - optarg;
+	    name = (char *) xmalloc (len + 1);
+	    strncpy (name, optarg, len);
+	    name[len] = '\0';
+
+	    p = find_section_list (name, TRUE, SECTION_CONTEXT_SET_ALIGNMENT);
+
+	    p->alignment = align;
+	  }
+	  break;
+	  
 	case OPTION_RENAME_SECTION:
 	  {
 	    flagword flags;
@@ -5459,7 +5499,7 @@ copy_main (int argc, char *argv[])
 	  pe_image_base = parse_vma (optarg, "--image-base");
 	  break;
 
-	case OPTION_SECTION_ALIGNMENT:
+	case OPTION_PE_SECTION_ALIGNMENT:
 	  pe_section_alignment = parse_vma (optarg,
 					    "--section-alignment");
 	  break;

@@ -581,6 +581,20 @@ AC_ARG_WITH([system-readline],
                   [use installed readline library])])
 
 if test "$with_system_readline" = yes; then
+   AC_CACHE_CHECK([whether system readline is new enough],
+     [gdb_cv_readline_ok],
+     [AC_TRY_COMPILE(
+       [#include <stdio.h>
+#include <readline/readline.h>],
+       [#if RL_VERSION_MAJOR < 7
+# error "readline version 7 required"
+#endif],
+    gdb_cv_readline_ok=yes,
+    gdb_cv_readline_ok=no)])
+  if test "$gdb_cv_readline_ok" != yes; then
+    AC_MSG_ERROR([system readline is not new enough])
+  fi
+
   READLINE=-lreadline
   READLINE_DEPS=
   READLINE_CFLAGS=
@@ -1217,6 +1231,14 @@ if test "${enable_source_highlight}" != "no"; then
       AC_MSG_ERROR([pkg-config was not found in your system])
     fi
   else
+    case "$LDFLAGS" in
+      *static-libstdc*)
+        AC_MSG_ERROR([source highlight is incompatible with -static-libstdc++; dnl
+either use --disable-source-highlight or dnl
+--without-static-standard-libraries])
+        ;;
+    esac
+
     if ${pkg_config_prog_path} --exists source-highlight; then
       SRCHIGH_CFLAGS=`${pkg_config_prog_path} --cflags source-highlight`
       SRCHIGH_LIBS=`${pkg_config_prog_path} --libs source-highlight`
@@ -1233,28 +1255,6 @@ if test "${enable_source_highlight}" != "no"; then
 fi
 AC_SUBST(SRCHIGH_LIBS)
 AC_SUBST(SRCHIGH_CFLAGS)
-
-# --------------------- #
-# Check for libmcheck.  #
-# --------------------- #
-
-# Enable -lmcheck by default (it provides cheap-enough memory mangling),
-# but turn it off if Python is enabled with threads, since -lmcheck is
-# not thread safe (http://sourceware.org/bugzilla/show_bug.cgi?id=9939),
-# and for releases.
-if test \( "${have_libpython}" = "no" -o "${python_has_threads}" = "no" \) \
-   && $development; then
-  libmcheck_default=yes
-else
-  libmcheck_default=no
-fi
-GDB_AC_LIBMCHECK(${libmcheck_default})
-
-if test "$ENABLE_LIBMCHECK" = "yes" \
-	-a "${have_libpython}" != "no" \
-	-a "${python_has_threads}" = "yes" ; then
-  AC_MSG_WARN(--enable-libmcheck may lead to spurious crashes if threads are used in python)
-fi
 
 AC_ARG_WITH(intel_pt,
   AS_HELP_STRING([--with-intel-pt], [include Intel Processor Trace support (auto/yes/no)]),
@@ -1308,8 +1308,7 @@ AC_CHECK_HEADERS([nlist.h machine/reg.h poll.h sys/poll.h proc_service.h \
 		  sys/file.h sys/filio.h sys/ioctl.h sys/param.h \
 		  sys/resource.h sys/procfs.h sys/ptrace.h ptrace.h \
 		  sys/reg.h sys/debugreg.h sys/select.h \
-		  termios.h elf_hp.h \
-		  dlfcn.h])
+		  termios.h elf_hp.h])
 AC_CHECK_HEADERS(sys/user.h, [], [],
 [#if HAVE_SYS_PARAM_H
 # include <sys/param.h>

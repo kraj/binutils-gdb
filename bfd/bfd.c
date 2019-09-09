@@ -220,6 +220,9 @@ CODE_FRAGMENT
 .  {* Set if this is a thin archive.  *}
 .  unsigned int is_thin_archive : 1;
 .
+.  {* Set if this archive should not cache element positions.  *}
+.  unsigned int no_element_cache : 1;
+.
 .  {* Set if only required symbols should be added in the link hash table for
 .     this object.  Used by VMS linkers.  *}
 .  unsigned int selective_search : 1;
@@ -235,6 +238,9 @@ CODE_FRAGMENT
 .
 .  {* Set if this is a plugin output file.  *}
 .  unsigned int lto_output : 1;
+.
+.  {* Set if this is a slim LTO object not loaded with a compiler plugin.  *}
+.  unsigned int lto_slim_object : 1;
 .
 .  {* Set to dummy BFD created when claimed by a compiler plug-in
 .     library.  *}

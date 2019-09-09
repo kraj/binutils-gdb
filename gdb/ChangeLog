@@ -1,3 +1,1621 @@
+2019-09-08  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-wingeneral.c (box_win): Truncate long window titles.
+
+2019-09-07  Simon Marchi  <simon.marchi@efficios.com>
+
+	* dwarf2read.c (struct dw2_symtab_iterator) <block_index>:
+	Change type to gdb::optional<block_enum>.
+	(dw2_symtab_iter_init): Change block_index parameter type
+	to gdb::optional<block_enum>.
+	(dw2_lookup_symbol): Change block_index parameter
+	type to block_enum.c
+	(dw2_debug_names_lookup_symbol): Likewise.
+	* psymtab.c (psym_lookup_symbol): Likewise.
+	* symfile-debug.c (debug_qf_lookup_symbol): Likewise.
+	* symfile.h (struct quick_symbol_functions) <lookup_symbol>:
+	Likewise.
+
+2019-09-06  Christian Biesinger  <cbiesinger@google.com>
+
+	* defs.h (relocate_gdb_directory): Change int to bool in
+	signature and rename flag to relocatable.
+	* main.c (relocate_path): Likewise.
+	(relocate_gdb_directory): Likewise.
+
+2019-09-06  Alan Modra  <amodra@gmail.com>
+
+	* coffread.c (coff_symfile_read): Constify filename variable.
+	* dbxread.c (dbx_symfile_init, coffstab_build_psymtabs),
+	(elfstab_build_psymtabs, stabsect_build_psymtabs): Likewise.
+	* gdb_bfd.c (gdb_bfd_close_or_warn): Likewise.
+	* solib.c (reload_shared_libraries_1): Likewise.
+	* symfile.c (reread_symbols): Likewise.
+	* solib-aix.c (solib_aix_bfd_open): Add cast for xfree of filename.
+	* solib-darwin.c (darwin_bfd_open): Likewise.
+	* symfile-mem.c (symbol_file_add_from_memory): Likewise.
+
+2019-09-03  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* psymtab.c (print_partial_symbols): Handle missing domain_enum
+	values MODULE_DOMAIN and COMMON_BLOCK_DOMAIN.
+
+2019-09-03  Tom Tromey  <tromey@adacore.com>
+
+	* ada-valprint.c (ada_val_print_num): Don't recurse for range
+	types.
+	(has_negatives): Unbias a range type bound.
+	* dwarf2read.c (read_subrange_type): Handle DW_AT_GNU_bias.
+	* gdbtypes.c (operator==): Handle new field.
+	(create_range_type): Add "bias" parameter.
+	(create_static_range_type, resolve_dynamic_range): Update.
+	* gdbtypes.h (struct range_bounds) <bias>: New member.
+	(create_range_type): Add bias parameter.
+	* printcmd.c (print_scalar_formatted): Unbias range types.
+	* value.c (unpack_long): Unbias range types.
+	(pack_long): Bias range types.
+
+2019-09-02  Alan Hayward  <alan.hayward@arm.com>
+
+	* solib-svr4.c (svr4_find_and_create_probe_breakpoints): Check all
+	probe arguments.
+
+2019-09-02  Alan Hayward  <alan.hayward@arm.com>
+
+	* break-catch-throw.c (fetch_probe_arguments): Use gdbarch.
+	* dtrace-probe.c (dtrace_probe::get_argument_count): Likewise.
+	* probe.c (probe_safe_evaluate_at_pc) (compute_probe_arg)
+	(compile_probe_arg): Likewise.
+	* probe.h (get_argument_count): Likewise.
+	* solib-svr4.c (solib_event_probe_action): Likewise.
+	* stap-probe.c (stap_probe::get_argument_count): Likewise.
+
+2019-09-02  Alan Hayward  <alan.hayward@arm.com>
+
+	* solib-svr4.c (svr4_find_and_create_probe_breakpoints): Move
+	code to here...
+	(svr4_create_solib_event_breakpoints): ...from here.
+
+2019-08-30  Sergio Durigan Junior  <sergiodj@redhat.com>
+
+	* nat/fork-inferior.c (trace_start_error): Remove "\nError: "
+	suffix from warning message.
+
+2019-08-30  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-winsource.h (struct tui_source_window_base)
+	<refresh_all>: Don't declare.
+	* tui/tui-winsource.c (tui_source_window_base::refresh_all):
+	Remove.
+	* tui/tui-win.c (tui_refresh_all_win): Don't call refresh_all or
+	tui_show_locator_content.
+	* tui/tui-regs.h (struct tui_data_window) <refresh_all>: Don't
+	declare.
+	* tui/tui-regs.c (tui_data_window::refresh_all): Remove.
+	* tui/tui-data.h (struct tui_win_info) <refresh_all>: Don't
+	declare.
+
+2019-08-30  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-io.c (tui_cont_sig): Don't call wrefresh.
+
+2019-08-30  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-stack.c (_initialize_tui_stack): Move later.
+	Remove unnecessary forward declarations.
+
+2019-08-30  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-stack.c (tui_locator_window::set_locator_fullname): Call
+	rerender.
+	(tui_update_locator_fullname, tui_show_frame_info): Don't call
+	tui_show_locator_content.
+
+2019-08-30  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-stack.c (tui_show_locator_content): Move lower.  Rewrite.
+	(tui_locator_window::rerender): Rewrite using body of previous
+	tui_show_locator_content.
+
+2019-08-30  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-stack.h (struct tui_locator_window) <set_locator_info,
+	set_locator_fullname>: New methods.
+	* tui/tui-stack.c (tui_locator_window::set_locator_fullname):
+	Rename from tui_set_locator_fullname.
+	(tui_locator_window::set_locator_info): Rename from
+	tui_set_locator_info.  Return bool.
+	(tui_update_locator_fullname, tui_show_frame_info): Update.
+
+2019-08-30  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-layout.c (show_layout): Don't call tui_refresh_all.
+
+2019-08-30  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-wingeneral.c (tui_gen_win_info::refresh_window): Don't
+	call touchwin.
+
+2019-08-30  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-wingeneral.c (box_win): Assume win_info and
+	win_info->handle cannot be NULL.
+
+2019-08-30  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-regs.h (struct tui_data_item_window) <rerender,
+	refresh_window>: Declare.
+	* tui/tui-regs.c (tui_data_window::display_registers_from): Call
+	resize.
+	(tui_data_item_window::rerender): Rename from
+	tui_display_register.
+	(tui_data_item_window::refresh_window): New method.
+	* tui/tui-layout.c (tui_gen_win_info::resize): Do nothing on
+	no-op.
+
+2019-08-30  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-regs.h (struct tui_data_window) <regs_content,
+	regs_column_count, current_group>: Move later.  Now private.
+	<get_current_group>: New method.
+	* tui/tui-regs.c (tui_reg_command): Update.
+	* tui/tui-layout.c (tui_set_layout): Update.
+
+2019-08-30  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-regs.c (tui_data_window::display_registers_from_line)
+	(tui_data_window::rerender): Don't call
+	check_and_display_highlight_if_needed.
+	(tui_data_window::refresh_all): Remove call to
+	erase_data_content.
+
+2019-08-30  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-regs.c (tui_data_window::last_regs_line_no)
+	(tui_data_window::display_registers_from)
+	(tui_data_window::display_reg_element_at_line)
+	(tui_data_window::display_registers_from_line): Remove checks of
+	"empty".
+
+2019-08-30  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-regs.h (struct tui_data_window) <display_all_data>:
+	Don't declare.
+	* tui/tui-regs.c (tui_data_window::show_registers): Call
+	rerender.
+	(tui_data_window::rerender): Rename from display_all_data.
+	(tui_data_window::rerender): Remove old implementation.
+
+2019-08-30  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-regs.c (tui_data_window::display_all_data): Change
+	text.
+	* tui/tui-data.h (NO_DATA_STRING): Remove define.
+
+2019-08-29  Bernhard Wodok  <barto@gmx.net>
+	    Sergio Durigan Junior  <sergiodj@redhat.com>
+
+	PR win32/24284
+	* mingw-hdep.c (gdb_select): Handle case when 'n' is zero.
+
+2019-08-28  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* symtab.c (search_symbols): Don't include MODULE_DOMAIN symbols
+	when searching for types.
+
+2019-08-28  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* f-lang.c (f_language_defn): Use f_print_typedef.
+	* f-lang.h (f_print_typedef): Declare.
+	* f-typeprint.c (f_print_typedef): Define.
+
+2019-08-27  Christian Biesinger  <cbiesinger@google.com>
+
+	* nat/linux-namespaces.c (mnsh_main): Initialize fd (to -1).
+
+2019-08-27  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* cli/cli-utils.c (info_print_options_defs): Delete.
+	(make_info_print_options_def_group): Delete.
+	(extract_info_print_options): Delete.
+	(info_print_command_completer): Delete.
+	(info_print_args_help): Add extra parameter, and optionally
+	include text about -n flag.
+	* cli/cli-utils.h (struct info_print_options): Delete.
+	(extract_info_print_options): Delete declaration.
+	(info_print_command_completer): Delete declaration.
+	(info_print_args_help): Add extra parameter, extend header
+	comment.
+	* python/python.c (gdbpy_rbreak): Pass additional parameter to
+	search_symbols.
+	* stack.c (struct info_print_options): New type.
+	(info_print_options_defs): New file scoped variable.
+	(make_info_print_options_def_group): New static function.
+	(info_print_command_completer): New static function.
+	(info_locals_command): Update to use new local functions.
+	(info_args_command): Likewise.
+	(_initialize_stack): Add extra parameter to calls to
+	info_print_args_help.
+	* symtab.c (search_symbols): Add extra parameter, use this to
+	possibly excluse non-debug symbols.
+	(symtab_symbol_info): Add extra parameter, which is passed on to
+	search_symbols.
+	(struct info_print_options): New type.
+	(info_print_options_defs): New file scoped variable.
+	(make_info_print_options_def_group): New static function.
+	(info_print_command_completer): New static function.
+	(info_variables_command): Update to use local functions, and pass
+	extra parameter through to symtab_symbol_info.
+	(info_functions_command): Likewise.
+	(info_types_command): Pass additional argument through to
+	symtab_symbol_info.
+	(rbreak_command): Pass extra argument to search_symbols.
+	(_initialize_symtab): Add extra arguments for calls to
+	info_print_args_help, and update help text for 'info variables',
+	'whereis', and 'info functions' commands.
+	* symtab.h (search_symbols): Add extra argument to declaration.
+	* NEWS: Mention new flags.
+
+2019-08-26  Christian Biesinger  <cbiesinger@google.com>
+
+	* symtab.c (lookup_static_symbol): Call the new function (and move
+	it down to be next to lookup_global_symbol).
+	(struct global_sym_lookup_data): Add block_enum member and rename to...
+	(struct global_or_static_sym_lookup_data): ...this.
+	(lookup_symbol_global_iterator_cb): Pass block_index instead of
+	GLOBAL_BLOCK to lookup_symbol_in_objfile and rename to...
+	(lookup_symbol_global_or_static_iterator_cb): ...this.
+	(lookup_global_or_static_symbol): New function.
+	(lookup_global_symbol): Call new function.
+
+2019-08-26  Tom de Vries  <tdevries@suse.de>
+
+	PR c++/24852
+	* break-catch-throw.c (fetch_probe_arguments): Improve error mesage
+	when pc_probe.prob == NULL.
+
+2019-08-25  Simon Marchi  <simon.marchi@efficios.com>
+
+	* dwarf2read.c (dw2_debug_names_iterator::next): Rename local
+	variable symbol_linkage to symbol_linkage_.
+
+2019-08-25  Simon Marchi  <simon.marchi@efficios.com>
+
+	* dwarf2read.c (dw2_debug_names_iterator::next): Use enum to
+	represent whether the symbol is static, dynamic, or we don't
+	know.
+
+2019-08-25  Yoshinori Sato <ysato@users.sourceforge.jp>
+
+        * gdb/rx-tdep.c (rx_register_names): New.
+        (rx_register_name): Delete.
+        (rx_psw_type): Delete.
+        (rx_fpsw_type): Delete.
+        (rx_register_type): Delete.
+        (rx_gdbarch_init): Convert target-descriptions.
+        (_initialize_rx_tdep): Add initialize_tdesc_rx.
+        * gdb/features/Makefile: Add rx.xml.
+        * gdb/features/rx.xml: New.
+        * gdb/features/rx.c: Generated.
+        * gdb/NEWS: Mention target description support.
+
+2019-08-22  Christian Biesinger  <cbiesinger@google.com>
+
+	* symtab.c (symbol_cache_lookup): Always initialize *bsc_ptr and
+	*slot_ptr.
+
+2019-08-23  Sergio Durigan Junior  <sergiodj@redhat.com>
+
+	* configure.ac: Don't check for 'dlfcn.h' (moved to
+	gdbsupport/common.m4).
+	* Makefile.in (COMMON_SFILES): Move 'gdb-dlfcn.c' to
+	'gdbsupport/'.
+	(HFILES_NO_SRCDIR): Likewise, for 'gdb-dlfcn.h'.
+	* compile/compile-c-support.c: Include
+	'gdbsupport/gdb-dlfcn.h'.
+	* gdbsupport/common.m4: Check for 'dlfcn.h'.
+	* gdb-dlfcn.c: Move to...
+	* gdbsupport/gdb-dlfcn.c: ... here.
+	* gdb-dlfcn.h: Move to...
+	* gdbsupport/gdb-dlfcn.h: ... here.
+
+2019-08-23  Sandra Loosemore  <sandra@codesourcery.com>
+
+	* nios2-tdep.c (struct reg_value): Improve comments.  Make
+	the offset field signed.
+
+2019-08-22  Christian Biesinger  <cbiesinger@google.com>
+
+	* python/lib/gdb/__init__.py (_execute_file): New function.
+	* python/python.c (python_run_simple_file): Call gdb._execute_file
+	on Windows.
+
+2019-08-22  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* f-exp.y (yylex): Remove is_a_field_of_this local variable, and
+	all uses as this was never set to anything but a zero value.
+
+2019-08-21  Bogdan Harjoc  <harjoc@gmail.com>
+
+	* cli/cli-cmds.c (with_command_1): Error out if no arguments.
+
+2019-08-21  Christian Biesinger  <cbiesinger@google.com>
+
+	* tui/tui-data.h (tui_gen_win_info): Add an =default
+	move constructor, required by some GCC versions.
+
+2019-08-21  Jinke Fan  <fanjinke51@yeah.net>
+
+	* go32-nat.c (go32_sysinfo): Add hygon_p.
+
+2019-08-20  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-regs.h (struct tui_data_window) <last_regs_line_no,
+	line_from_reg_element_no, first_reg_element_no_inline,
+	display_all_data, delete_data_content_windows,
+	erase_data_content>: Now private.
+
+2019-08-20  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-wingeneral.c (box_win): Change type of highlight_flag.
+	(tui_unhighlight_win, tui_highlight_win)
+	(tui_win_info::make_window): Update.
+	* tui/tui-data.h (HILITE, NO_HILITE): Remove.
+
+2019-08-20  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-data.h (PROC_PREFIX, LINE_PREFIX, PC_PREFIX)
+	(MIN_LINE_WIDTH, MIN_PROC_WIDTH, MAX_TARGET_WIDTH)
+	(MAX_PID_WIDTH): Move to tui-stack.c.
+	* tui/tui-stack.c (PROC_PREFIX, LINE_PREFIX, PC_PREFIX)
+	(MIN_LINE_WIDTH, MIN_PROC_WIDTH, MAX_TARGET_WIDTH)
+	(MAX_PID_WIDTH): Move from tui-data.h.
+
+2019-08-20  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-wingeneral.h (tui_make_window): Don't declare.
+	* tui/tui-wingeneral.c (box_win): Change type of win_info.
+	(box_win): Update.
+	(tui_gen_win_info::make_window): Rename from tui_make_window.
+	(tui_win_info::make_window): New method.
+	(tui_gen_win_info::make_visible): Update.
+	* tui/tui-source.c (tui_source_window::set_contents): Update.
+	* tui/tui-regs.c (tui_data_window::show_register_group): Update.
+	(tui_data_window::display_registers_from): Update.
+	* tui/tui-layout.c (tui_gen_win_info::resize): Update.
+	* tui/tui-data.h (struct tui_gen_win_info) <make_window>:
+	Declare.
+	<can_box>: Remove.
+	<title>: Remove.
+	(struct tui_win_info) <make_window>: Declare.
+	<can_box>: Now virtual.
+	<title>: New member.
+	* tui/tui-data.c (~tui_gen_win_info): Don't free title.
+	* tui/tui-command.c (tui_cmd_window::resize): Update.
+
+2019-08-20  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-regs.h (struct tui_data_window) <display_regs>: Remove.
+	* tui/tui-regs.c (tui_data_window::show_registers): Update.
+	(tui_data_window::check_register_values): Update.
+
+2019-08-20  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-regs.h (struct tui_data_window): Use
+	DISABLE_COPY_AND_ASSIGN.
+	<regs_content>: Change type, removing unique_ptr.
+	<tui_data_window>: Add move constructor.
+	* tui/tui-regs.c (tui_data_window::show_registers)
+	(tui_data_window::show_register_group)
+	(tui_data_window::display_registers_from)
+	(tui_data_window::display_registers_from)
+	(tui_data_window::first_data_item_displayed)
+	(tui_data_window::delete_data_content_windows)
+	(tui_data_window::rerender, tui_data_window::refresh_window)
+	(tui_data_window::check_register_values): Update.
+
+2019-08-20  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-regs.h (struct tui_data_window) <show_registers,
+	show_register_group>: Declare.
+	(tui_show_register_group): Don't declare.
+	* tui/tui-regs.c (tui_data_window::show_registers): Rename from
+	tui_show_registers.
+	(tui_data_window::show_register_group): Rename from
+	tui_show_register_group.
+	(tui_data_window::check_register_values, tui_reg_command):
+	Update.
+	* tui/tui-layout.c (tui_set_layout): Update.
+
+2019-08-20  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-regs.h (struct tui_data_window) <check_register_values>:
+	Declare.
+	(tui_check_register_values): Don't declare.
+	* tui/tui-regs.c (tui_data_window::check_register_values): Rename
+	from tui_check_register_values.
+	* tui/tui-hooks.c (tui_register_changed): Update.
+
+2019-08-20  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-regs.c (tui_reg_layout): Move later.
+	(tui_show_registers): Don't enable TUI mode or change layout.
+
+2019-08-20  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-regs.h (struct tui_data_item_window)
+	<~tui_data_item_window>: Remove.
+	<content>: Now a unique_xmalloc_ptr.
+	* tui/tui-regs.c (tui_register_format): Return a
+	unique_xmalloc_ptr.
+	(tui_get_register): Update.
+	(~tui_data_item_window): Remove.
+	(tui_data_window::display_registers_from, tui_display_register):
+	Update.
+	* tui/tui-io.h (tui_expand_tabs): Update.
+	* tui/tui-io.c (tui_expand_tabs): Return a unique_xmalloc_ptr.
+	Remove "col" parameter.
+
+2019-08-20  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-regs.h (struct tui_data_item_window) <value>: Remove
+	field.
+	* tui/tui-regs.c (~tui_data_item_window): Update.
+
+2019-08-20  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-regs.c (tui_register_format, tui_get_register): Move
+	earlier.
+
+2019-08-20  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-regs.c (tui_reg_command): Remove NULL check.
+
+2019-08-20  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-source.h (struct tui_source_window): Update.
+	* tui/tui-regs.c (tui_show_registers): Update.
+	* tui/tui-disasm.h (struct tui_disasm_window): Update.
+	* tui/tui-data.h (NO_SRC_STRING, NO_DISASSEM_STRING)
+	(NO_REGS_STRING): Remove defines.
+
+2019-08-20  Conrad Meyer  <cem@FreeBSD.org>
+
+	* remote.c (remote_target::remote_btrace_maybe_reopen): Avoid
+	unnecessary thread walk if remote doesn't support the packet.
+
+2019-08-19  Tom Tromey  <tromey@adacore.com>
+
+	* python/py-value.c (value_has_field): Fix indentation.
+
+2019-08-19  Tom Tromey  <tromey@adacore.com>
+
+	* printcmd.c (do_one_display, info_display_command): Update.
+	* block.h (contained_in): Return bool.  Add allow_nested
+	parameter.
+	* block.c (contained_in): Return bool.  Add allow_nested
+	parameter.
+
+2019-08-19  Tom Tromey  <tom@tromey.com>
+
+	* configure: Rebuild.
+	* configure.ac: Disallow the combination of -static-libstdc++ and
+	source highlight.
+	* source-cache.c (get_language_name): Handle rust.
+	(source_cache::get_source_lines): Ignore highlighting exceptions.
+
+2019-08-16  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui.h (enum tui_win_type) <EXEC_INFO_WIN>: Remove.
+	* tui/tui-winsource.h (struct tui_exec_info_window): Remove.
+	(struct tui_source_window_base) <make_visible, refresh_window,
+	resize>: Remove methods.
+	<execution_info>: Remove field.
+	* tui/tui-winsource.c (tui_source_window_base::do_erase_source_content)
+	(tui_show_source_line, tui_source_window_base)
+	(~tui_source_window_base): Update.
+	(tui_source_window_base::resize)
+	(tui_source_window_base::make_visible)
+	(tui_source_window_base::refresh_window): Remove.
+	(tui_source_window_base::update_exec_info): Update.
+	* tui/tui-source.c (tui_source_window::set_contents): Update.
+	* tui/tui-disasm.c (tui_disasm_window::set_contents): Update.
+
+2019-08-16  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-hooks.c (tui_remove_hooks): Don't set
+	deprecated_query_hook.
+
+2019-08-16  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-winsource.c (tui_update_source_windows_with_addr)
+	(tui_update_source_windows_with_line): Update.
+	* tui/tui-source.h (struct tui_source_window)
+	<show_symtab_source>: Declare.
+	(tui_show_symtab_source): Don't declare.
+	* tui/tui-source.c (tui_show_symtab_source): Rename from
+	tui_show_symtab_source.
+
+2019-08-16  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-winsource.h (struct tui_source_window_base)
+	<set_contents>: Declare.
+	* tui/tui-winsource.c
+	(tui_source_window_base::update_source_window_as_is): Update.
+	* tui/tui-source.h (struct tui_source_window) <set_contents>:
+	Declare.
+	(tui_set_source_content): Don't declare.
+	* tui/tui-source.c (tui_source_window::set_contents): Rename from
+	tui_set_source_content.
+	* tui/tui-disasm.h (struct tui_disasm_window) <set_contents>:
+	Declare.
+	(tui_set_disassem_content): Don't declare.
+	* tui/tui-disasm.c (tui_disasm_window::set_contents): Rename from
+	tui_set_disassem_content.
+
+2019-08-16  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-winsource.h (struct tui_source_window_base)
+	<update_breakpoint_info>: Declare.
+	(tui_update_breakpoint_info): Don't declare.
+	* tui/tui-winsource.c (tui_source_window_base::update_source_window_as_is)
+	(tui_update_all_breakpoint_info): Update.
+	(tui_source_window_base::update_breakpoint_info): Rename from
+	tui_update_breakpoint_info.
+	(tui_source_window_base::update_exec_info): Update.
+
+2019-08-16  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-winsource.h (struct tui_source_window_base)
+	<update_source_window>: Declare.
+	(tui_update_source_window): Don't declare.
+	* tui/tui-winsource.c
+	(tui_source_window_base::update_source_window): Rename from
+	tui_update_source_window.
+	(tui_source_window_base::rerender): Update.
+	* tui/tui-source.c (tui_source_window::maybe_update): Update.
+	* tui/tui-disasm.c (tui_show_disassem)
+	(tui_show_disassem_and_update_source)
+	(tui_disasm_window::maybe_update): Update.
+
+2019-08-16  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-winsource.h (struct tui_source_window_base)
+	<update_source_window_as_is>: Declare.
+	(tui_update_source_window_as_is): Don't declare.
+	* tui/tui-winsource.c (tui_update_source_window): Update
+	(tui_source_window_base::update_source_window_as_is): Rename from
+	tui_update_source_window_as_is.
+	(tui_source_window_base::refill): Update.
+	* tui/tui-source.c (tui_show_symtab_source): Update.
+	* tui/tui-disasm.c (tui_disasm_window::do_scroll_vertical):
+	Update.
+
+2019-08-16  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-winsource.h (tui_update_source_window)
+	(tui_update_source_window_as_is): Remove "noerror" parameter.
+	* tui/tui-winsource.c (tui_update_source_window)
+	(tui_update_source_window_as_is): Remove "noerror" parameter.
+	(tui_update_source_windows_with_addr)
+	(tui_update_source_windows_with_line)
+	(tui_source_window_base::rerender)
+	(tui_source_window_base::refill): Update.
+	* tui/tui-source.h (tui_set_source_content)
+	(tui_show_symtab_source): Remove "noerror" parameter.
+	* tui/tui-source.c (tui_set_source_content): Remove "noerror"
+	parameter.
+	(tui_show_symtab_source): Likewise.
+	(tui_source_window::maybe_update): Update.
+	* tui/tui-disasm.c (tui_show_disassem)
+	(tui_show_disassem_and_update_source)
+	(tui_disasm_window::do_scroll_vertical)
+	(tui_disasm_window::maybe_update): Update.
+
+2019-08-16  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui.c (tui_is_window_visible): Update.
+	* tui/tui-wingeneral.c (tui_make_window)
+	(tui_gen_win_info::make_visible, tui_refresh_all): Update.
+	* tui/tui-win.c (window_name_completer, tui_refresh_all_win)
+	(tui_set_focus_command, tui_all_windows_info, update_tab_width)
+	(tui_set_win_height_command, parse_scrolling_args): Update.
+	* tui/tui-source.c (tui_source_window::style_changed): Update.
+	* tui/tui-regs.c (tui_show_registers)
+	(tui_data_window::first_data_item_displayed)
+	(tui_data_window::delete_data_content_windows)
+	(tui_check_register_values, tui_reg_command): Update.
+	* tui/tui-disasm.c (tui_show_disassem): Update.
+	* tui/tui-data.h (struct tui_gen_win_info) <is_visible>: New
+	method.
+	<is_visible>: Remove field.
+	* tui/tui-data.c (tui_next_win, tui_prev_win)
+	(tui_delete_invisible_windows): Update.
+
+2019-08-16  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-winsource.h (struct tui_source_window_base)
+	<m_has_locator>: Remove.
+	* tui/tui-layout.c (show_source_disasm_command, show_data)
+	(show_source_or_disasm_and_command): Update.
+
+2019-08-16  Alan Hayward  <alan.hayward@arm.com>
+
+	* NEWS (Other MI changes): New subsection.
+	* aarch64-tdep.c (aarch64_get_pc_address_flags): New function.
+	(aarch64_gdbarch_init): Add aarch64_get_pc_address_flags.
+	* arch-utils.c (default_get_pc_address_flags): New function.
+	* arch-utils.h (default_get_pc_address_flags): New declaration.
+	* gdbarch.sh: Add get_pc_address_flags.
+	* gdbarch.c: Regenerate.
+	* gdbarch.h: Likewise.
+	* stack.c (print_pc): New function.
+	(print_frame_info) (print_frame): Call print_pc.
+
+2019-08-16  Tom de Vries  <tdevries@suse.de>
+
+	* maint.c (maintenance_info_sections): Also handle !ALLOBJ case using
+	print_objfile_section_info.
+
+2019-08-15  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-io.c (tui_puts_internal): Check TUI_CMD_WIN before
+	calling update_cmdwin_start_line.
+	* tui/tui-winsource.h (struct tui_source_window_base)
+	<do_make_visible_with_new_height, set_new_height>: Don't declare.
+	<rerender>: Declare.
+	* tui/tui-winsource.c (tui_source_window_base::update_tab_width):
+	Call rerender.
+	(tui_source_window_base::set_new_height): Remove.
+	(tui_source_window_base::rerender): Rename from
+	do_make_visible_with_new_height.
+	* tui/tui-win.c (tui_resize_all, tui_adjust_win_heights): Use
+	resize method.
+	(tui_win_info::make_invisible_and_set_new_height)
+	(tui_win_info::make_visible_with_new_height): Remove.
+	* tui/tui-stack.h (struct tui_locator_window) <rerender>:
+	Declare.
+	* tui/tui-stack.c (tui_locator_window::rerender): New method.
+	* tui/tui-regs.h (struct tui_data_window) <set_new_height,
+	do_make_visible_with_new_height>: Don't declare.
+	<rerender>: Declare.
+	* tui/tui-regs.c (tui_data_window::rerender): Rename from
+	set_new_height.
+	(tui_data_window::do_make_visible_with_new_height): Remove.
+	* tui/tui-layout.c (show_source_disasm_command, show_data): Don't
+	call tui_show_locator_content.
+	(tui_gen_win_info::resize): Call rerender.
+	(show_source_or_disasm_and_command): Don't call
+	tui_show_locator_content.
+	* tui/tui-data.h (struct tui_gen_win_info) <rerender>: New
+	method.
+	(struct tui_win_info) <rerender>: Declare.
+	<set_new_height, make_invisible_and_set_new_height,
+	make_visible_with_new_height>: Don't declare.
+	* tui/tui-data.c (tui_win_list::rerender): New method.
+	* tui/tui-command.h (struct tui_cmd_window)
+	<do_make_visible_with_new_height>: Don't declare.
+	* tui/tui-command.c
+	(tui_cmd_window::do_make_visible_with_new_height): Remove.
+
+2019-08-15  Tom Tromey  <tromey@adacore.com>
+
+	* ada-exp.y (convert_char_literal): Handle "Q%c" encoding.
+	* ada-lang.c (ada_enum_name): Likewise.
+
+2019-08-15  Christian Biesinger  <cbiesinger@google.com>
+
+	* python/lib/gdb/__init__.py (GdbOutputFile): Rename to have a
+	leading underscore.
+	(GdbOutputErrorFile): Likewise.
+	(global scope): Adjust constructor calls to GdbOutput{,Error}File
+	accordingly.
+	(execute_unwinders): Rename to have a leading underscore.
+	(auto_load_packages): Likewise.
+	(global scope): Adjust call to auto_load_packages accordingly.
+	(GdbSetPythonDirectory): Likewise.
+	* python/py-unwind.c (pyuw_sniffer): Call _execute_unwinders
+	instead of execute_unwinders.
+
+2019-08-15  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-layout.c (show_layout, show_source_disasm_command)
+	(show_data): Don't change window visibility.
+	(tui_gen_win_info::resize): Remove special case for command
+	window.  Use wresize, when available.
+	(show_source_or_disasm_and_command): Don't change window
+	visibility.
+	* tui/tui-command.h (struct tui_cmd_window) <resize>: Declare.
+	<make_visible>: New method.
+	* tui/tui-command.c (tui_cmd_window::resize): New method.
+
+2019-08-15  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-winsource.h (struct tui_source_window_iterator): New.
+	(struct tui_source_windows): New.
+	* tui/tui-winsource.c (tui_display_main): Update.
+	* tui/tui-win.c (tui_resize_all, tui_adjust_win_heights)
+	(new_height_ok, parse_scrolling_args): Update.
+	* tui/tui-layout.c (show_layout, show_data): Update.
+	* tui/tui-data.h (tui_source_windows, tui_clear_source_windows)
+	(tui_add_to_source_windows): Don't declare.
+	* tui/tui-data.c (source_windows, tui_source_windows)
+	(tui_clear_source_windows, tui_add_to_source_windows): Remove.
+
+2019-08-15  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-winsource.h (struct tui_source_window_base) <resize>:
+	Rename from reset.
+	* tui/tui-winsource.c (tui_source_window_base::resize): Rename.
+	* tui/tui-layout.c (show_source_disasm_command, show_data):
+	Update.
+	(tui_gen_win_info::resize): Rename.
+	(show_source_or_disasm_and_command): Update.
+	* tui/tui-data.h (struct tui_gen_win_info) <resize>: Rename from
+	reset.
+
+2019-08-15  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-stack.c (tui_initialize_static_data): Remove.
+	* tui/tui-interp.c (tui_interp::init): Don't call
+	tui_initialize_static_data.
+	* tui/tui-data.h (tui_initialize_static_data): Don't declare.
+
+2019-08-15  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-layout.c (tui_default_win_viewport_height): Don't
+	examine tui_win_list.
+
+2019-08-15  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-winsource.h (tui_clear_source_content): Don't declare.
+	* tui/tui-winsource.c (tui_update_source_window_as_is): Don't call
+	tui_clear_source_content.
+	(tui_clear_source_content): Remove.
+	(tui_source_window_base::do_erase_source_content): Hoist call to
+	content.clear().
+	* tui/tui-stack.c (tui_show_frame_info): Don't call
+	tui_clear_source_content.
+
+2019-08-15  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-winsource.h (struct tui_source_window_base)
+	<do_erase_source_content>: New method.
+	<erase_source_content>: New method.
+	(tui_erase_source_content): Don't declare.
+	* tui/tui-winsource.c (tui_clear_source_content): Update.
+	(tui_source_window_base::do_erase_source_content): Rename from
+	tui_erase_source_content.
+	(tui_source_window_base::show_source_content): Update.
+	* tui/tui-win.c (tui_resize_all, tui_adjust_win_heights): Update.
+	* tui/tui-source.h (struct tui_source_window)
+	<erase_source_content>: New method.
+	* tui/tui-disasm.h (struct tui_disasm_window)
+	<erase_source_content>: New method.
+
+2019-08-15  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-winsource.h (tui_alloc_source_buffer): Don't declare.
+	(struct tui_source_element): Add DISABLE_COPY_AND_ASSIGN, and move
+	constructor.
+	* tui/tui-winsource.c (tui_alloc_source_buffer): Remove.
+	* tui/tui-source.c (tui_set_source_content): Update.
+	* tui/tui-disasm.c (tui_set_disassem_content): Update.
+
+2019-08-15  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-winsource.h (tui_line_is_displayed): Don't declare.
+	* tui/tui-winsource.c (tui_line_is_displayed): Move to
+	tui-source.c.
+	* tui/tui-source.h (struct tui_source_window) <line_is_displayed>:
+	Declare.
+	* tui/tui-source.c (tui_source_window::line_is_displayed): New
+	method.
+	(tui_source_window::maybe_update): Update.
+
+2019-08-15  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-winsource.h (tui_addr_is_displayed): Don't declare.
+	* tui/tui-winsource.c (tui_addr_is_displayed): Move to
+	tui-disasm.c.
+	* tui/tui-disasm.h (struct tui_disasm_window) <addr_is_displayed>:
+	Declare.
+	* tui/tui-disasm.c (tui_disasm_window::addr_is_displayed): New
+	method.
+	(tui_disasm_window::maybe_update): Update.
+
+2019-08-15  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-winsource.h (struct tui_source_window_base)
+	<maybe_update>: Declare.
+	* tui/tui-stack.c (tui_show_frame_info): Call maybe_update
+	method.
+	* tui/tui-source.h (struct tui_source_window) <maybe_update>:
+	Declare.
+	* tui/tui-source.c (tui_source_window::maybe_update): New method.
+	* tui/tui-disasm.h (struct tui_disasm_window) <maybe_update>:
+	Declare.
+	* tui/tui-disasm.c (tui_disasm_window::maybe_update): New method.
+
+2019-08-15  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-stack.c (tui_make_status_line): Use string constructor.
+
+2019-08-15  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-wingeneral.c: Include tui-stack.h.
+	* tui/tui-stack.h (MAX_LOCATOR_ELEMENT_LEN)
+	(struct tui_locator_window): Move from tui-data.h.
+	* tui/tui-stack.c (_locator, tui_locator_win_info_ptr)
+	(tui_initialize_static_data): Move from tui-data.c.
+	* tui/tui-data.h (MAX_LOCATOR_ELEMENT_LEN)
+	(struct tui_locator_window): Move to tui-stack.c.
+	* tui/tui-data.c (_locator, tui_locator_win_info_ptr)
+	(tui_initialize_static_data): Move to tui-stack.c.
+
+2019-08-15  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-layout.c (show_source_disasm_command)
+	(show_source_or_disasm_and_command): Use make_visible method, not
+	tui_make_window.
+	* tui/tui-command.h (struct tui_cmd_window) <make_visible>:
+	Remove.
+
+2019-08-15  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-wingeneral.h (tui_make_window): Update.
+	* tui/tui-wingeneral.c (tui_make_window): Remove "box_it"
+	parameter.
+	(tui_gen_win_info::make_visible): Update.
+	* tui/tui-regs.c (tui_data_window::display_registers_from):
+	Update.
+	* tui/tui-layout.c (show_source_disasm_command)
+	(show_source_or_disasm_and_command): Update.
+	* tui/tui-data.h (struct tui_gen_win_info) <can_box>: New method.
+	(enum tui_box): Remove.
+	(struct tui_win_info) <can_box>: New method.
+	* tui/tui-command.h (struct tui_cmd_window) <can_box>: New
+	method.
+
+2019-08-15  Tom de Vries  <tdevries@suse.de>
+
+	* linux-nat-trad.c: Include gdbarch.h.
+
+2019-08-14  Alan Hayward  <alan.hayward@arm.com>
+
+	* aarch64-tdep.c (aarch64_analyze_prologue): Allow any valid
+	register sizes.
+
+2019-08-14  Tom Tromey  <tromey@adacore.com>
+
+	* darwin-nat.c: Include gdbarch.h.
+	* darwin-nat-info.c: Include gdbarch.h.
+
+2019-08-13  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-data.h (struct tui_gen_win_info) <last_visible_line>:
+	Remove.
+	* tui/tui-data.c (tui_initialize_static_data): Update.
+
+2019-08-13  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-winsource.h (struct tui_exec_info_window)
+	<~tui_exec_info_window, maybe_allocate_content, get_content,
+	m_content>: Remove.
+	(struct tui_source_window_base) <set_exec_info_content,
+	show_exec_info_content>: Don't declare.
+	* tui/tui-winsource.c
+	(tui_exec_info_window::maybe_allocate_content): Remove.
+	(tui_source_window_base::update_exec_info): Rename from
+	set_exec_info_content.
+	(tui_source_window_base::show_exec_info_content)
+	(tui_source_window_base::update_exec_info): Remove.
+
+2019-08-13  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-winsource.h (tui_clear_exec_info_content): Don't
+	declare.
+	* tui/tui-winsource.c (tui_update_source_window_as_is)
+	(tui_update_source_windows_with_addr, tui_erase_source_content):
+	Update.
+	(tui_clear_exec_info_content): Remove.
+
+2019-08-13  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-winsource.h (tui_erase_exec_info_content): Don't
+	declare.
+	* tui/tui-winsource.c (tui_source_window_base::refresh_all): Don't
+	call tui_erase_exec_info_content.
+	(tui_clear_exec_info_content): Rename from
+	tui_erase_exec_info_content.
+	(tui_clear_exec_info_content): Delete.
+
+2019-08-13  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-winsource.h (struct tui_source_window_base)
+	<show_exec_info_content>: Declare.
+	(tui_show_exec_info_content): Don't declare.
+	* tui/tui-winsource.c
+	(tui_source_window_base::show_exec_info_content): Rename from
+	tui_show_exec_info_content.
+	(tui_source_window_base::update_exec_info): Update.
+
+2019-08-13  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-data.h (enum tui_bp_flag, tui_bp_flags, struct tui_source_element)
+	(TUI_BP_HIT_POS, TUI_BP_BREAK_POS, TUI_EXEC_POS)
+	(TUI_EXECINFO_SIZE, tui_exec_info_content): Move ...
+	* tui/tui-winsource.h (enum tui_bp_flag, tui_bp_flags, struct
+	tui_source_element, TUI_BP_HIT_POS, TUI_BP_BREAK_POS)
+	(TUI_EXEC_POS, TUI_EXECINFO_SIZE, tui_exec_info_content):
+	... here.
+
+2019-08-13  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-winsource.h (struct tui_source_window_base)
+	<update_exec_info>: Declare.
+	(tui_update_exec_info): Don't declare.
+	* tui/tui-winsource.c (tui_update_source_window_as_is)
+	(tui_source_window_base::refresh_all)
+	(tui_update_all_breakpoint_info): Update.
+	(tui_source_window_base::update_exec_info): Rename from
+	tui_update_exec_info.
+	* tui/tui-stack.c (tui_show_frame_info): Update.
+
+2019-08-13  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-winsource.h (struct tui_source_window_base)
+	<set_exec_info_content>: Declare.
+	(tui_set_exec_info_content): Don't declare.
+	* tui/tui-winsource.c
+	(tui_source_window_base::set_exec_info_content): Rename from
+	tui_set_exec_info_content.
+	(tui_update_exec_info): Update.
+
+2019-08-13  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-winsource.h (struct tui_source_window_base)
+	<show_source_content>: Declare.
+	(tui_show_source_content): Don't declare.
+	* tui/tui-winsource.c (tui_update_source_window_as_is): Update.
+	(tui_source_window_base::show_source_content): Rename from
+	tui_show_source_content.
+	(tui_source_window_base::refresh_all): Update.
+	* tui/tui-layout.c (show_source_disasm_command)
+	(show_source_or_disasm_and_command): Update.
+
+2019-08-13  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-winsource.c (tui_erase_source_content)
+	(tui_show_source_content, tui_source_window_base::refresh_all):
+	Update.
+	* tui/tui-wingeneral.h
+	(tui_check_and_display_highlight_if_needed): Don't declare.
+	* tui/tui-wingeneral.c
+	(tui_win_info::check_and_display_highlight_if_needed): Rename from
+	check_and_display_highlight_if_needed.
+	* tui/tui-win.c (tui_rehighlight_all)
+	(tui_win_info::make_visible_with_new_height): Update.
+	* tui/tui-regs.c (tui_data_window::display_registers_from_line)
+	(tui_data_window::erase_data_content)
+	(tui_data_window::display_all_data): Update.
+	* tui/tui-data.h (struct tui_win_info)
+	<check_and_display_highlight_if_needed>: Declare.
+
+2019-08-13  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-win.c (tui_resize_all): Call
+	tui_delete_invisible_windows.
+	* tui/tui-layout.c (show_layout): Call
+	tui_delete_invisible_windows.
+	* tui/tui-data.h (tui_delete_invisible_windows): Declare.
+	* tui/tui-data.c (tui_delete_invisible_windows): New function.
+
+2019-08-13  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-disasm.c (tui_show_disassem): Add assertion.  Don't call
+	tui_add_win_to_layout.
+
+2019-08-13  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-layout.h (tui_default_win_height): Don't declare.
+	* tui/tui-layout.c (tui_default_win_height): Now static.
+
+2019-08-13  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-layout.c (show_layout): Unify all layout cases into a
+	single switch.
+	(show_source_disasm_command, show_source_or_disasm_and_command):
+	Don't check current layout.
+
+2019-08-13  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-wingeneral.c (make_all_visible): Remove.
+	(tui_make_all_invisible): Simplify.
+	* tui/tui-layout.c (tui_make_all_invisible): Move from
+	tui-wingeneral.c; simplify.
+	(show_layout): Hoist call to tui_make_all_invisible.
+	(show_data): Don't call tui_make_all_invisible.
+
+2019-08-13  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-wingeneral.h (tui_make_all_visible): Don't declare.
+	* tui/tui-wingeneral.c (tui_make_all_visible): Remove.
+
+2019-08-13  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-layout.c (current_layout, tui_current_layout): Move from
+	tui-data.c.
+	(show_source_disasm_command, show_data)
+	(show_source_or_disasm_and_command): Don't use
+	tui_set_current_layout_to.
+	* tui/tui-data.h (tui_set_current_layout_to): Don't declare.
+	* tui/tui-data.c (current_layout, tui_current_layout): Move to
+	tui-layout.c.
+	(tui_set_current_layout_to): Remove.
+
+2019-08-13  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-layout.c (tui_set_layout): Update.
+	* tui/tui-data.h (struct tui_layout_def): Remove.
+	(tui_layout_def): Don't declare.
+	* tui/tui-data.c (layout_def): Remove.
+	(tui_layout_def): Remove.
+
+2019-08-13  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-winsource.h (struct tui_source_window_base)
+	<clear_detail>: No longer "override".
+	* tui/tui-regs.h (struct tui_data_window) <clear_detail>: Remove.
+	* tui/tui-regs.c (tui_data_window::clear_detail): Remove.
+	* tui/tui-data.h (struct tui_win_info) <clear_detail>: Remove.
+	* tui/tui-command.h (struct tui_cmd_window) <clear_detail>:
+	Remove.
+	* tui/tui-command.c (tui_cmd_window::clear_detail): Remove.
+
+2019-08-13  Tom Tromey  <tromey@adacore.com>
+
+	* tracepoint.c: Don't include readline.h or history.h.
+
+2019-08-12  Tom Tromey  <tom@tromey.com>
+
+	* configure: Rebuild.
+	* configure.ac: Check for readline 7.
+	* NEWS: Mention readline 7 requirement.
+	* README: Update.
+
+2019-08-12  Tom Tromey  <tom@tromey.com>
+
+	* mingw-hdep.c (gdb_select): Remove readline hack.
+
+2019-08-09  Pedro Franco de Carvalho  <pedromfc@linux.ibm.com>
+
+	* blockframe.c (find_pc_partial_function): Set *block to nullptr
+	when the function fails.
+
+2019-08-09  Andreas Arnez  <arnez@linux.ibm.com>
+
+	* s390-tdep.c (s390_type_align): New function.
+	(s390_gdbarch_init): Set it as type_align gdbarch method.
+
+2019-08-09  Tom de Vries  <tdevries@suse.de>
+
+	PR gdb/24591
+	* dwarf2read.c (dwarf2_fetch_die_loc_sect_off): Adjust pc_high and
+	pc_low with relocation offset.
+
+2019-08-07  Tom Tromey  <tromey@adacore.com>
+
+	* stack.c (print_frame_arg, read_frame_local, read_frame_arg)
+	(print_frame_args): Update.
+	* python/py-framefilter.c (py_print_single_arg, enumerate_args):
+	Update.
+	* mi/mi-cmd-stack.c (list_arg_or_local): Update.
+	* frame.h (struct frame_arg): Add initializers.
+	<error>: Now a unique_xmalloc_ptr.
+
+2019-08-07  Alan Hayward  <alan.hayward@arm.com>
+
+	* NEWS: Expand the Pointer Authentication entry.
+	* aarch64-tdep.c (aarch64_frame_unmask_address): Rename from this.
+	(aarch64_frame_unmask_lr): ... to this.
+	(aarch64_prologue_prev_register, aarch64_dwarf2_prev_register):
+	Call aarch64_frame_unmask_lr.
+	* frame.c (struct frame_info): Add "masked" variable.
+	(frame_set_previous_pc_masked) (frame_get_pc_masked): New functions.
+	(fprint_frame): Check for masked pc.
+	* frame.h (frame_set_previous_pc_masked) (frame_get_pc_masked): New
+	declarations.
+	* python/py-framefilter.c (py_print_frame): Check for masked pc.
+	* stack.c (print_frame): Check for masked pc.
+
+2019-08-06  Tom Tromey  <tom@tromey.com>
+
+	* stabsread.c (patch_block_stabs, read_one_struct_field)
+	(read_enum_type): Use obstack_strndup.
+	* rust-exp.y (rust_parser::copy_name): Use obstack_strndup.
+	* gdb_obstack.h (obstack_strndup): Use obstack_strndup.
+	* dwarf2read.c (guess_full_die_structure_name)
+	(anonymous_struct_prefix): Use obstack_strndup.
+	* dbxread.c (cp_set_block_scope): Use obstack_strndup.
+	* c-exp.y (yylex): Use obstack_strndup.
+	* ada-exp.y (write_object_renaming, write_ambiguous_var)
+	(write_var_or_type): Use obstack_strndup.
+
+2019-08-06  Tom Tromey  <tom@tromey.com>
+
+	* symfile.c (reread_symbols): Use obstack_strdup.
+	* stabsread.c (read_type): Use obstack_strdup.
+	* gdb_obstack.h (obstack_strdup): New overload.
+	* dwarf2read.c (dwarf2_compute_name, create_dwo_unit_in_dwp_v1)
+	(create_dwo_unit_in_dwp_v2, build_error_marker_type)
+	(dwarf2_canonicalize_name): Use obstack_strdup.
+	* dbxread.c (read_dbx_symtab): Use obstack_strdup.
+	* cp-support.c (inspect_type, replace_typedefs_qualified_name):
+	Use obstack_strdup.
+
+2019-08-06  Tom Tromey  <tom@tromey.com>
+
+	* gdb_obstack.h (obstack_strdup): Define.
+	* gdb_obstack.c (obstack_strdup): Don't define.
+
+2019-08-06  Tom Tromey  <tom@tromey.com>
+
+	* xcoffread.c (SYMNAME_ALLOC, process_xcoff_symbol): Use
+	obstack_strdup.
+	* typeprint.c (typedef_hash_table::find_global_typedef): Use
+	obstack_strdup.
+	* symfile.c (allocate_compunit_symtab): Use obstack_strdup.
+	* stabsread.c (common_block_start): Use obstack_strdup.
+	* objfiles.c (set_objfile_main_name, objfile): Use
+	obstack_strdup.
+	* namespace.c (add_using_directive): Use obstack_strdup.
+	* mdebugread.c (parse_symbol, parse_type): Use obstack_strdup.
+	* jit.c (finalize_symtab): Use obstack_strdup.
+	* dwarf2read.c (fixup_go_packaging, dwarf2_physname)
+	(guess_partial_die_structure_name, partial_die_info::fixup)
+	(dwarf2_name): Use obstack_strdup.
+	* coffread.c (coff_read_struct_type, coff_read_enum_type): Use
+	obstack_strdup.
+	* c-exp.y (scan_macro_expansion): Use obstack_strdup.
+	* buildsym.c (buildsym_compunit::end_symtab_with_blockvector): Use
+	obstack_strdup.
+	* ada-lang.c (ada_decode_symbol): Use obstack_strdup.
+
+2019-08-07  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* unittests/help-doc-selftests.c: New file.
+	* Makefile.in: Add the new file.
+
+2019-08-07  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* cli/cli-decode.h (print_doc_line): Add for_value_prefix argument.
+	* cli/cli-decode.c (print_doc_line): Likewise.  It now prints
+	the full first line, except when FOR_VALUE_PREFIX.  In this case,
+	the trailing '.' is not output, and the first character is uppercased.
+	(print_help_for_command): Update call to print_doc_line.
+	(print_doc_of_command): Likewise.
+	* cli/cli-setshow.c (deprecated_show_value_hack): Likewise.
+	* cli/cli-option.c (append_indented_doc): Do not append newline.
+	(build_help_option): Append newline after first appended_indented_doc
+	only if a second call is done.
+	(build_help): Append 2 new lines before each option, except the first
+	one.
+	* compile/compile.c (_initialize_compile): Add new lines after
+	%OPTIONS%, when not at the end of the help.
+	Change help doc or code
+	producing the help doc to respect the invariants.
+	* maint-test-options.c (_initialize_maint_test_options): Likewise.
+	Also removed the new line after 'Options:', as all other commands
+	do not put an empty line between 'Options:' and the first option.
+	* printcmd.c (_initialize_printcmd): Likewise.
+	* stack.c (_initialize_stack): Likewise.
+	* interps.c (interpreter_exec_cmd): Fix "Usage:" line that was
+	incorrectly telling COMMAND is optional.
+	* ada-lang.c (_initialize_ada_language): Change help doc or code
+	producing the help doc to respect the invariants.
+	* ada-tasks.c (_initialize_ada_tasks): Likewise.
+	* breakpoint.c (_initialize_breakpoint): Likewise.
+	* cli/cli-cmds.c (_initialize_cli_cmds): Likewise.
+	* cli/cli-logging.c (_initialize_cli_logging): Likewise.
+	* cli/cli-setshow.c (_initialize_cli_setshow): Likewise.
+	* cli/cli-style.c (cli_style_option::add_setshow_commands,
+	_initialize_cli_style): Likewise.
+	* corelow.c (core_target_info): Likewise.
+	* dwarf-index-cache.c (_initialize_index_cache): Likewise.
+	* dwarf2read.c (_initialize_dwarf2_read): Likewise.
+	* filesystem.c (_initialize_filesystem): Likewise.
+	* frame.c (_initialize_frame): Likewise.
+	* gnu-nat.c (add_task_commands): Likewise.
+	* infcall.c (_initialize_infcall): Likewise.
+	* infcmd.c (_initialize_infcmd): Likewise.
+	* interps.c (_initialize_interpreter): Likewise.
+	* language.c (_initialize_language): Likewise.
+	* linux-fork.c (_initialize_linux_fork): Likewise.
+	* maint-test-settings.c (_initialize_maint_test_settings): Likewise.
+	* maint.c (_initialize_maint_cmds): Likewise.
+	* memattr.c (_initialize_mem): Likewise.
+	* printcmd.c (_initialize_printcmd): Likewise.
+	* python/lib/gdb/function/strfns.py (_MemEq, _StrLen, _StrEq,
+	_RegEx): Likewise.
+	* ravenscar-thread.c (_initialize_ravenscar): Likewise.
+	* record-btrace.c (_initialize_record_btrace): Likewise.
+	* record-full.c (_initialize_record_full): Likewise.
+	* record.c (_initialize_record): Likewise.
+	* regcache-dump.c (_initialize_regcache_dump): Likewise.
+	* regcache.c (_initialize_regcache): Likewise.
+	* remote.c (add_packet_config_cmd, init_remote_threadtests,
+	_initialize_remote): Likewise.
+	* ser-tcp.c (_initialize_ser_tcp): Likewise.
+	* serial.c (_initialize_serial): Likewise.
+	* skip.c (_initialize_step_skip): Likewise.
+	* source.c (_initialize_source): Likewise.
+	* stack.c (_initialize_stack): Likewise.
+	* symfile.c (_initialize_symfile): Likewise.
+	* symtab.c (_initialize_symtab): Likewise.
+	* target-descriptions.c (_initialize_target_descriptions): Likewise.
+	* top.c (init_main): Likewise.
+	* tracefile-tfile.c (tfile_target_info): Likewise.
+	* tracepoint.c (_initialize_tracepoint): Likewise.
+	* tui/tui-win.c (_initialize_tui_win): Likewise.
+	* utils.c (add_internal_problem_command): Likewise.
+	* valprint.c (value_print_option_defs): Likewise.
+
+2019-08-06  Frank Ch. Eigler  <fche@redhat.com>
+
+	PR build/24886
+	* configure.ac: Drop enable-libmcheck support.
+	* configure, config.in: Rebuild.
+	* libmcheck.m4: Remove.
+	* acinclude.m4: Don't include it.
+	* Makefile.in: Don't distribute it.
+	* top.c (print_gdb_configuration): Don't mention it.
+
+2019-08-06  Tom Tromey  <tom@tromey.com>
+
+	* utils.c (set_output_style): Sometimes pass stream to
+	emit_style_escape.
+	* ui-out.h (class ui_out) <can_emit_style_escape>: Declare.
+	* record-btrace.c (btrace_insn_history): Update.
+	* mi/mi-out.h (class mi_ui_out) <can_emit_style_escape>: New
+	method.
+	* disasm.h (gdb_pretty_print_disassembler): Add uiout parameter.
+	Update initializers.
+	<m_uiout>: New field.
+	<m_di>: Move lower.
+	* disasm.c (gdb_pretty_print_disassembler::pretty_print_insn):
+	Remove "uiout" parameter.
+	(dump_insns): Update.
+	* cli-out.h (class cli_ui_out) <can_emit_style_escape>: Declare.
+	* cli-out.c (cli_ui_out::can_emit_style_escape): New method.
+
+2019-08-06  Christian Biesinger  <cbiesinger@google.com>
+
+	* symtab.c (symbol_cache_lookup): Change int to enum block_enum.
+	(error_in_psymtab_expansion): Likewise.
+	(lookup_symbol_via_quick_fns): Likewise.
+	(basic_lookup_transparent_type_quick): Likewise.
+	(basic_lookup_transparent_type_1): Likewise.
+
+2019-08-06  Tom Tromey  <tromey@adacore.com>
+
+	* source.c (last_source_error): Now bool.
+	(print_source_lines_base): Make "noprint" bool.  Only open
+	source file when last_source_visited changes.
+
+2019-08-06  Tom Tromey  <tromey@adacore.com>
+
+	* annotate.c (annotate_source_line): Use g_source_cache.
+	* source-cache.c (source_cache::get_plain_source_lines): Change
+	parameters.  Populate m_offset_cache.
+	(source_cache::ensure): New method.
+	(source_cache::get_line_charpos): New method.
+	(extract_lines): Move lower.  Change parameters.
+	(source_cache::get_source_lines): Move lower.
+	* source-cache.h (class source_cache): Update comment.
+	<get_line_charpos>: New method.
+	<get_source_lines>: Update comment.
+	<clear>: Clear m_offset_cache.
+	<get_plain_source_lines>: Change parameters.
+	<ensure>: New method
+	<m_offset_cache>: New member.
+	* source.c (forget_cached_source_info_for_objfile): Update.
+	(info_source_command): Use g_source_cache.
+	(find_source_lines, open_source_file_with_line_charpos): Remove.
+	(print_source_lines_base, search_command_helper): Use g_source_cache.
+	* source.h (open_source_file_with_line_charpos): Don't declare.
+	* symtab.h (struct symtab) <nlines, line_charpos>: Remove.
+	* tui/tui-source.c (tui_source_window::do_scroll_vertical):
+	Use g_source_cache.
+
+2019-08-06  Tom Tromey  <tromey@adacore.com>
+
+	* source-cache.c (source_cache::get_plain_source_lines):
+	Remove "first_line" and "last_line" parameters.
+	(source_cache::get_source_lines): Cache plain text.
+	* source-cache.h (class source_cache)
+	<get_plain_source_lines>: Update.
+
+2019-08-06  Tom Tromey  <tromey@adacore.com>
+
+	* source-cache.c (extract_lines): No longer a method.
+	Changed type of parameter.  Include final newline.
+	(selftests::extract_lines_test): New function.
+	(_initialize_source_cache): Likewise.
+	* source-cache.h (class source_cache)
+	<extract_lines>: Don't declare.
+
+2019-08-06  Tom Tromey  <tromey@adacore.com>
+
+	* breakpoint.c (init_breakpoint_sal): Update.
+	(breakpoint): Update.
+	* breakpoint.h (struct breakpoint) <filter>: Now a
+	unique_xmalloc_ptr.
+
+2019-08-05  Christian Biesinger  <cbiesinger@google.com>
+
+	* NEWS: Mention dictionary access on blocks.
+	* python/py-block.c (blpy_getitem): New function.
+	(block_object_as_mapping): New struct.
+	(block_object_type): Use new struct for tp_as_mapping field.
+
+2019-08-05  Christian Biesinger  <cbiesinger@google.com>
+
+	* objfiles.h (objfile): Add a comment describing partial symbols.
+
+2019-08-05  Tom Tromey  <tromey@adacore.com>
+
+	* compile/compile.c (_initialize_compile): Use _(), not N_().
+	* thread.c (_initialize_thread): Use _(), not N_().
+	* stack.c (_initialize_stack): Use _(), not N_().
+	* printcmd.c (_initialize_printcmd): Use _(), not N_().
+
+2019-08-04  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* dwarf2read.c (struct dw2_symtab_iterator):
+	<want_specific_block>: Remove.
+	<block_index>: Change type to gdb::optional.
+	(dw2_symtab_iter_init): Remove WANT_SPECIFIC_BLOCK parameter,
+	change type of BLOCK_INDEX parameter to gdb::optional.
+	(dw2_symtab_iter_next): Re-write in function of gdb::optional.
+	(dw2_lookup_symbol): Don't pass argument for
+	WANT_SPECIFIC_BLOCK.
+	(dw2_expand_symtabs_for_function): Don't pass argument for
+	WANT_SPECIFIC_BLOCK, pass empty optional for BLOCK_INDEX.
+	(class dw2_debug_names_iterator)
+	<dw2_debug_names_iterator>: Remove WANT_SPECIFIC_BLOCK
+	parameter, change BLOCK_INDEX type to gdb::optional.
+	<m_want_specific_block>: Remove.
+	<m_block_index>: Change type to gdb::optional.
+	(dw2_debug_names_iterator::next): Change type of IS_STATIC to
+	gdb::optional.  Re-write in function of gdb::optional.
+	(dw2_debug_names_lookup_symbol): Don't pass argument for
+	WANT_SPECIFIC_BLOCK.
+	(dw2_debug_names_expand_symtabs_for_function): Don't pass
+	argument for WANT_SPECIFIC_BLOCK, pass empty optional for
+	BLOCK_INDEX.
+
+2019-08-03  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+        * NEWS: Mention changes to "info sources" command.
+
+2019-08-03  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* symtab.c (filename_partial_match_opts): New struct type.
+	(struct output_source_filename_data): New members
+	regexp, c_regexp, partial_match.
+	(output_source_filename): Use new members to decide to print file.
+	(info_sources_option_defs): New variable.
+	(make_info_sources_options_def_group, print_info_sources_header,
+	info_sources_command_completer):
+	New functions.
+	(info_sources_command): Read new optional arguments.
+	(_initialize_symtab): Update info sources help.
+
+2019-08-02  Alexandre Oliva <oliva@adacore.com>
+
+	* ada-lang.c (exception_support_info_v0): Renamed from...
+	(default_exception_support_info): ... this.  Create new
+	definition for v1.
+	(ada_has_this_exception_support): Look up catch_handlers_sym.
+	(ada_exception_support_info_sniffer): Try v0 after default.
+
+2019-08-01  Tom Tromey  <tromey@adacore.com>
+
+	* ia64-libunwind-tdep.h (struct libunwind_descr): Include
+	gdbarch.h.
+
+2019-08-01  Christian Biesinger  <cbiesinger@google.com>
+
+	* s12z-tdep.c: Fix include path for s12z-opc.h.
+
+2019-08-01  Alan Hayward  <alan.hayward@arm.com>
+
+	* NEWS: Require GNU make 3.82.
+
+2019-07-16  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-wingeneral.h (tui_copy_win, tui_box_win): Don't
+	declare.
+
+2019-07-30  Tom Tromey  <tromey@adacore.com>
+
+	* block.c (contained_in): Remove BLOCK_FUNCTION check.
+
+2019-07-30  Kevin Buettner  <kevinb@redhat.com>
+
+	* printcmd.c (print_address_symbolic): Print negative offsets.
+	(build_address_symbolic): Force signed arithmetic when computing
+	offset.
+
+2019-07-30  Christian Biesinger  <cbiesinger@google.com>
+
+	PR/24474: Add a function to lookup static variables.
+	* NEWS: Mention this new function.
+	* python/py-symbol.c (gdbpy_lookup_static_symbol): New function.
+	* python/python-internal.h (gdbpy_lookup_static_symbol): New function.
+	* python/python.c (python_GdbMethods): Add new function.
+
+2019-07-29  Christian Biesinger  <cbiesinger@google.com>
+
+	* NEWS: Mention new functions Objfile.lookup_{global,static}_symbol.
+	* python/py-objfile.c (objfpy_lookup_global_symbol): New function.
+	(objfpy_lookup_static_symbol): New function.
+	(objfile_object_methods): Add new functions.
+
+2019-07-29  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* NEWS: Mention 'set|show print frame-info'.  Mention new
+	'presence' value for 'frame-arguments'.  Mention new '-frame-info'
+	backtrace argument.  Mention that python frame filtering code
+	is now consistent with what 'backtrace' command prints.
+
+2019-07-29  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* frame.h (enum print_what): New value 'SHORT_LOCATION', update
+	comments.
+	(print_frame_info_auto, print_frame_info_source_line,
+	print_frame_info_location, print_frame_info_source_and_location,
+	print_frame_info_location_and_address, print_frame_info_short_location):
+	New declarations.
+	(struct frame_print_options): New member print_frame_info.
+	* extension.h (enum ext_lang_frame_args): New value CLI_PRESENCE.
+	* stack.h (get_user_print_what_frame_info): New declaration.
+	(frame_show_address): New declaration.
+	* stack.c (print_frame_arguments_choices): New value 'presence'.
+	(print_frame_info_auto, print_frame_info_source_line,
+	print_frame_info_location, print_frame_info_source_and_location,
+	print_frame_info_location_and_address, print_frame_info_short_location,
+	print_frame_info_choices, print_frame_info_print_what): New definitions.
+	(print_frame_args): Only print dots for args if print frame-arguments
+	is 'presence'.
+	(frame_print_option_defs): New element for "frame-info".
+	(get_user_print_what_frame_info): New function.
+	(frame_show_address): Make non static.  Move comment to stack.h.
+	(print_frame_info_to_print_what): New function.
+	(print_frame_info): Update comment.  Use fp_opts.print_frame_info
+	to decide what to print.
+	(backtrace_command_1): Handle the new print_frame_arguments_presence
+	value.
+	(_initialize_stack): Call add_setshow_enum_cmd for frame-info.
+	* python/py-framefilter.c (py_print_args): Handle CLI_PRESENCE.
+	(py_print_frame): In non-mi mode, use LOCATION as default for
+	print_what, similarly to frame information printed directly by
+	backtrace command. Handle frame-info user option in non MI mode.
+
+2019-07-27  Kevin Buettner  <kevinb@redhat.com>
+
+	* linux-thread-db.c (thread_db_target::thread_handle_to_thread_info):
+	Add case for debugging 32-bit target on 64-bit host.  Revise
+	comment.
+
+2019-07-27  Kevin Buettner  <kevinb@redhat.com>
+
+	* infrun.c (fill_in_stop_func): Use find_pc_partial_function
+	instead of find_function_entry_range_from_pc.
+
+2019-07-27  Kevin Buettner  <kevinb@redhat.com>
+
+	* stack.c (find_frame_funname): Remove code which preferred
+	minsym over symtab sym in "certain pathological cases".
+
+	* valprint.h (build_address_symbolic): Add "prefer_sym_over_minsym"
+	parameter.  Change type of "do_demangle" to bool.
+	* disasm.c (gdb_pretty_print_disassembler::pretty_print_insn):
+	Pass suitable "prefer_sym_over_minsym" flag to
+	build_address_symbolic().  Don't output "+" for negative offsets.
+	* printcmd.c (print_address_symbolic): Update invocation of
+	build_address_symbolic to include a "prefer_sym_over_minsym"
+	flag.
+	(build_address_symbolic): Add "prefer_sym_over_minsym" parameter.
+	Restrict cases in which use of minimal symbol is preferred to that
+	of a found symbol.  Update comments.
+
+	* dwarf2-frame.c (dwarf2_frame_cache): Don't decode FDE instructions
+	for entry pc when entry pc is out of range for that FDE.
+
+2019-07-26  Brian Callahan  <bcallah@openbsd.org>
+
+	PR gdb/24839:
+	* gdb/obsd-nat.c (obsd_nat_target::pid_to_str): Fix typo in return
+	type.
+
+2019-07-25  Christian Biesinger  <cbiesinger@google.com>
+
+	* python/py-objfile.c (add_separate_debug_file): Fix comment about
+	this function's Python signature.
+
+
+2019-07-24  Christian Biesinger  <cbiesinger@google.com>
+
+	* compile/compile-object-load.c (compile_object_load): Pass GLOBAL_SCOPE.
+	* solib-spu.c (spu_lookup_lib_symbol): Pass GLOBAL_SCOPE.
+	* solib-svr4.c (elf_lookup_lib_symbol): Pass GLOBAL_SCOPE.
+	* symtab.c (lookup_global_symbol_from_objfile): Add a scope parameter.
+	* symtab.h (lookup_global_symbol_from_objfile): Likewise.
+
+
+2019-07-24  Yoshinori Sato  <ysato@users.sourceforge.jp>
+
+	* h8300-tdep.c (h8300_register_name_common): New.
+	h8300_register_name): Use h8300_register_name_common.
+	(h8300s_register_name): Likewise.
+	(h8300sx_register_name): Likewise.
+	(h8300h_register_nam): New.
+	(h8300_gdbarch_init): Use h8300h_register_name in h8300h machine.
+
+
+2019-07-23  Srinath Parvathaneni  <srinath.parvathaneni@arm.com>
+
+	* arm-tdep.c (arm_skip_cmse_entry): New function.
+	(arm_is_sgstubs_section): New function.
+	(arm_skip_stub): Add call to arm_skip_cmse_entry function.
+
+2019-07-22  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-win.c (tui_win_info::make_invisible_and_set_new_height):
+	Don't self-assign.
+
+2019-07-22  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* c-typeprint.c (c_print_typedef): Pass -1 instead of 0 to
+	type_print.
+
+2019-07-22  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* symtab.c (search_symbols): Adjust msymbol matching type arrays
+	so that GDB doesn't match any msymbols when searching in the
+	TYPES_DOMAIN.
+	(print_symbol_info): Print using typedef_print or type_print based
+	on the type of the symbol.  Add updated FIXME comment moved from...
+	(_initialize_symtab): ... move and update FIXME comment to above.
+
+2019-07-22  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* NEWS: Mention adding -q option to "info types".
+	* symtab.c (struct info_types_options): New struct.
+	(info_types_options_defs): New variable.
+	(make_info_types_options_def_group): New function.
+	(info_types_command): Use gdb::option framework to parse options.
+	(info_types_command_completer): New function.
+	(_initialize_symtab): Extend the help text on "info types" and
+	register command completer.
+
+2019-07-21  Christian Biesinger  <cbiesinger@google.com>
+
+	* symtab.c (lookup_symbol_in_objfile_symtabs): Change int to block_enum.
+	(lookup_symbol_in_objfile): Change int to block_enum and add a
+	gdb_assert to make sure block_index is GLOBAL_BLOCK or STATIC_BLOCK.
+
+2019-07-20  Christian Biesinger  <cbiesinger@google.com>
+
+	* MAINTAINERS (Write After Approval): Add self.
+
+2019-07-19  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* riscv-tdep.c (riscv_push_dummy_code): Write a 4-byte nop
+	instruction to the dummy code region.
+
 2019-07-19  Tom Tromey  <tromey@adacore.com>
 
 	* contrib/ari/gdb_ari.sh: Mention C++11, not ISO C 90.

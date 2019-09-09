@@ -36,7 +36,7 @@
 #include "symfile.h"
 #include "symtab.h"
 #include "target.h"
-#include "gdb-dlfcn.h"
+#include "gdbsupport/gdb-dlfcn.h"
 #include <sys/stat.h>
 #include "gdb_bfd.h"
 #include "readline/tilde.h"
@@ -700,10 +700,8 @@ finalize_symtab (struct gdb_symtab *stab, struct objfile *objfile)
       SYMBOL_TYPE (block_name) = lookup_function_type (block_type);
       SYMBOL_BLOCK_VALUE (block_name) = new_block;
 
-      block_name->ginfo.name
-	= (const char *) obstack_copy0 (&objfile->objfile_obstack,
-					gdb_block_iter->name,
-					strlen (gdb_block_iter->name));
+      block_name->ginfo.name = obstack_strdup (&objfile->objfile_obstack,
+					       gdb_block_iter->name);
 
       BLOCK_FUNCTION (new_block) = block_name;
 

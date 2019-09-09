@@ -1141,10 +1141,9 @@ struct elf_backend_data
     (bfd *, struct bfd_link_info *);
 
   /* A function to do any final processing needed for the ELF file
-     before writing it out.  The LINKER argument is TRUE if this BFD
-     was created by the ELF backend linker.  */
-  void (*elf_backend_final_write_processing)
-    (bfd *, bfd_boolean linker);
+     before writing it out.  */
+  bfd_boolean (*elf_backend_final_write_processing)
+    (bfd *);
 
   /* This function is called by get_program_header_size.  It should
      return the number of additional program segments which this BFD
@@ -1392,6 +1391,13 @@ struct elf_backend_data
 
   /* Return TRUE if symbol should be hashed in the `.gnu.hash' section.  */
   bfd_boolean (*elf_hash_symbol) (struct elf_link_hash_entry *);
+
+  /* If non-NULL, called to register the location of XLAT_LOC within
+     .MIPS.xhash at which real final dynindx for H will be written.
+     If XLAT_LOC is zero, the symbol is not included in
+     .MIPS.xhash and no dynindx will be written.  */
+  void (*record_xhash_symbol)
+    (struct elf_link_hash_entry *h, bfd_vma xlat_loc);
 
   /* Return TRUE if type is a function symbol type.  */
   bfd_boolean (*is_function_type) (unsigned int type);
@@ -1801,24 +1807,18 @@ struct output_elf_obj_tdata
   /* Segment flags for the PT_GNU_STACK segment.  */
   unsigned int stack_flags;
 
-  /* This is set to TRUE if the object was created by the backend
-     linker.  */
-  bfd_boolean linker;
-
   /* Used to determine if the e_flags field has been initialized */
   bfd_boolean flags_init;
 };
 
-/* Indicate if the bfd contains symbols that have the STT_GNU_IFUNC
-   symbol type or STB_GNU_UNIQUE binding.  Used to set the osabi
-   field in the ELF header structure.  */
-enum elf_gnu_symbols
+/* Indicate if the bfd contains SHF_GNU_MBIND sections or symbols that
+   have the STT_GNU_IFUNC symbol type or STB_GNU_UNIQUE binding.  Used
+   to set the osabi field in the ELF header structure.  */
+enum elf_gnu_osabi
 {
-  elf_gnu_symbol_none = 0,
-  elf_gnu_symbol_any = 1 << 0,
-  elf_gnu_symbol_ifunc = (elf_gnu_symbol_any | 1 << 1),
-  elf_gnu_symbol_unique = (elf_gnu_symbol_any | 1 << 2),
-  elf_gnu_symbol_all = (elf_gnu_symbol_ifunc | elf_gnu_symbol_unique)
+  elf_gnu_osabi_mbind = 1 << 0,
+  elf_gnu_osabi_ifunc = 1 << 1,
+  elf_gnu_osabi_unique = 1 << 2,
 };
 
 typedef struct elf_section_list
@@ -1939,9 +1939,8 @@ struct elf_obj_tdata
      or was found via a DT_NEEDED entry.  */
   ENUM_BITFIELD (dynamic_lib_link_class) dyn_lib_class : 4;
 
-  /* Whether if the bfd contains symbols that have the STT_GNU_IFUNC
-     symbol type or STB_GNU_UNIQUE binding.  */
-  ENUM_BITFIELD (elf_gnu_symbols) has_gnu_symbols : 3;
+  /* Whether the bfd uses OS specific bits that require ELFOSABI_GNU.  */
+  ENUM_BITFIELD (elf_gnu_osabi) has_gnu_osabi : 3;
 
   /* Whether if the bfd contains the GNU_PROPERTY_NO_COPY_ON_PROTECTED
      property.  */
@@ -1971,7 +1970,6 @@ struct elf_obj_tdata
 #define elf_seg_map(bfd)	(elf_tdata(bfd) -> o->seg_map)
 #define elf_next_file_pos(bfd)	(elf_tdata(bfd) -> o->next_file_pos)
 #define elf_eh_frame_hdr(bfd)	(elf_tdata(bfd) -> o->eh_frame_hdr)
-#define elf_linker(bfd)		(elf_tdata(bfd) -> o->linker)
 #define elf_stack_flags(bfd)	(elf_tdata(bfd) -> o->stack_flags)
 #define elf_shstrtab(bfd)	(elf_tdata(bfd) -> o->strtab_ptr)
 #define elf_onesymtab(bfd)	(elf_tdata(bfd) -> symtab_section)
@@ -2336,7 +2334,9 @@ extern bfd_boolean _bfd_elf_setup_sections
 extern struct bfd_link_hash_entry *bfd_elf_define_start_stop
   (struct bfd_link_info *, const char *, asection *);
 
-extern void _bfd_elf_post_process_headers (bfd * , struct bfd_link_info *);
+extern void _bfd_elf_post_process_headers (bfd *, struct bfd_link_info *);
+
+extern bfd_boolean _bfd_elf_final_write_processing (bfd *);
 
 extern const bfd_target *bfd_elf32_object_p
   (bfd *);

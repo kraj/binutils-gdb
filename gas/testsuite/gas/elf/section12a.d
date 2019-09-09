@@ -2,8 +2,9 @@
 #as: --no-pad-sections
 #readelf: -Sg --wide
 #name: mbind sections
-# The RX port annoyingly reorders the sections so that they do not match the sequence expected below.
-#skip: rx-*-*
+# A number of targets do not support SHF_GNU_MBIND
+#xfail: arm*-*-netbsdelf* arm*-*-nto* msp430-*-* visium-*-*
+#xfail: *-*-hpux* *-*-cloudabi
 
 #...
   \[[ 0-9]+\] \.mbind\.data[ 	]+PROGBITS[ 	]+0+0 0+[0-9a-f]+ 0+1 00 WAD  0   0  1

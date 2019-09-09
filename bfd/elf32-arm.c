@@ -2329,6 +2329,11 @@ static const unsigned long dl_tlsdesc_lazy_trampoline [] =
   0x00000018, /* 4:   .word  _GLOBAL_OFFSET_TABLE_ - 2b - 8 */
 };
 
+/* NOTE: [Thumb nop sequence]
+   When adding code that transitions from Thumb to Arm the instruction that
+   should be used for the alignment padding should be 0xe7fd (b .-2) instead of
+   a nop for performance reasons.  */
+
 /* ARM FDPIC PLT entry.  */
 /* The last 5 words contain PLT lazy fragment code and data.  */
 static const bfd_vma elf32_arm_fdpic_plt_entry [] =
@@ -2446,8 +2451,8 @@ static const bfd_vma elf32_thumb2_plt_entry [] =
   0x0c00f240,		/* movw	   ip, #0xNNNN	  */
   0x0c00f2c0,		/* movt	   ip, #0xNNNN	  */
   0xf8dc44fc,		/* add	   ip, pc	  */
-  0xbf00f000		/* ldr.w   pc, [ip]	  */
-			/* nop			  */
+  0xe7fdf000		/* ldr.w   pc, [ip]	  */
+			/* b      .-2		  */
 };
 
 /* The format of the first entry in the procedure linkage table
@@ -2487,7 +2492,7 @@ static const bfd_vma elf32_arm_vxworks_shared_plt_entry[] =
 static const bfd_vma elf32_arm_plt_thumb_stub [] =
 {
   0x4778,		/* bx pc */
-  0x46c0		/* nop   */
+  0xe7fd		/* b .-2 */
 };
 
 /* The entries in a PLT when using a DLL-based target with multiple
@@ -2574,6 +2579,8 @@ typedef struct
   int		       reloc_addend;
 }  insn_sequence;
 
+/* See note [Thumb nop sequence] when adding a veneer.  */
+
 /* Arm/Thumb -> Arm/Thumb long branch stub. On V5T and above, use blx
    to reach the stub if necessary.  */
 static const insn_sequence elf32_arm_stub_long_branch_any_any[] =
@@ -2624,7 +2631,7 @@ static const insn_sequence elf32_arm_stub_long_branch_thumb2_only_pure[] =
 static const insn_sequence elf32_arm_stub_long_branch_v4t_thumb_thumb[] =
 {
   THUMB16_INSN (0x4778),	     /* bx   pc */
-  THUMB16_INSN (0x46c0),	     /* nop */
+  THUMB16_INSN (0xe7fd),	     /* b   .-2 */
   ARM_INSN (0xe59fc000),	     /* ldr  ip, [pc, #0] */
   ARM_INSN (0xe12fff1c),	     /* bx   ip */
   DATA_WORD (0, R_ARM_ABS32, 0),     /* dcd  R_ARM_ABS32(X) */
@@ -2635,7 +2642,7 @@ static const insn_sequence elf32_arm_stub_long_branch_v4t_thumb_thumb[] =
 static const insn_sequence elf32_arm_stub_long_branch_v4t_thumb_arm[] =
 {
   THUMB16_INSN (0x4778),	     /* bx   pc */
-  THUMB16_INSN (0x46c0),	     /* nop   */
+  THUMB16_INSN (0xe7fd),	     /* b   .-2 */
   ARM_INSN (0xe51ff004),	     /* ldr   pc, [pc, #-4] */
   DATA_WORD (0, R_ARM_ABS32, 0),     /* dcd   R_ARM_ABS32(X) */
 };
@@ -2645,7 +2652,7 @@ static const insn_sequence elf32_arm_stub_long_branch_v4t_thumb_arm[] =
 static const insn_sequence elf32_arm_stub_short_branch_v4t_thumb_arm[] =
 {
   THUMB16_INSN (0x4778),	     /* bx   pc */
-  THUMB16_INSN (0x46c0),	     /* nop   */
+  THUMB16_INSN (0xe7fd),	     /* b   .-2 */
   ARM_REL_INSN (0xea000000, -8),     /* b    (X-8) */
 };
 
@@ -2683,7 +2690,7 @@ static const insn_sequence elf32_arm_stub_long_branch_v4t_arm_thumb_pic[] =
 static const insn_sequence elf32_arm_stub_long_branch_v4t_thumb_arm_pic[] =
 {
   THUMB16_INSN (0x4778),	     /* bx   pc */
-  THUMB16_INSN (0x46c0),	     /* nop  */
+  THUMB16_INSN (0xe7fd),	     /* b   .-2 */
   ARM_INSN (0xe59fc000),	     /* ldr  ip, [pc, #0] */
   ARM_INSN (0xe08cf00f),	     /* add  pc, ip, pc */
   DATA_WORD (0, R_ARM_REL32, -4),     /* dcd  R_ARM_REL32(X) */
@@ -2707,7 +2714,7 @@ static const insn_sequence elf32_arm_stub_long_branch_thumb_only_pic[] =
 static const insn_sequence elf32_arm_stub_long_branch_v4t_thumb_thumb_pic[] =
 {
   THUMB16_INSN (0x4778),	     /* bx   pc */
-  THUMB16_INSN (0x46c0),	     /* nop */
+  THUMB16_INSN (0xe7fd),	     /* b   .-2 */
   ARM_INSN (0xe59fc004),	     /* ldr  ip, [pc, #4] */
   ARM_INSN (0xe08fc00c),	     /* add   ip, pc, ip */
   ARM_INSN (0xe12fff1c),	     /* bx   ip */
@@ -2728,7 +2735,7 @@ static const insn_sequence elf32_arm_stub_long_branch_any_tls_pic[] =
 static const insn_sequence elf32_arm_stub_long_branch_v4t_thumb_tls_pic[] =
 {
   THUMB16_INSN (0x4778),	     /* bx   pc */
-  THUMB16_INSN (0x46c0),	     /* nop */
+  THUMB16_INSN (0xe7fd),	     /* b   .-2 */
   ARM_INSN (0xe59f1000),	     /* ldr  r1, [pc, #0] */
   ARM_INSN (0xe081f00f),	     /* add  pc, r1, pc */
   DATA_WORD (0, R_ARM_REL32, -4),    /* dcd  R_ARM_REL32(X) */
@@ -5995,12 +6002,12 @@ cmse_scan (bfd *input_bfd, struct elf32_arm_link_hash_table *htab,
       if (i < ext_start)
 	{
 	  cmse_sym = &local_syms[i];
-	  /* Not a special symbol.  */
-	  if (!ARM_GET_SYM_CMSE_SPCL (cmse_sym->st_target_internal))
-	    continue;
 	  sym_name = bfd_elf_string_from_elf_section (input_bfd,
 						      symtab_hdr->sh_link,
 						      cmse_sym->st_name);
+	  if (!sym_name || !CONST_STRNEQ (sym_name, CMSE_PREFIX))
+	    continue;
+
 	  /* Special symbol with local binding.  */
 	  cmse_invalid = TRUE;
 	}
@@ -6008,9 +6015,7 @@ cmse_scan (bfd *input_bfd, struct elf32_arm_link_hash_table *htab,
 	{
 	  cmse_hash = elf32_arm_hash_entry (sym_hashes[i - ext_start]);
 	  sym_name = (char *) cmse_hash->root.root.root.string;
-
-	  /* Not a special symbol.  */
-	  if (!ARM_GET_SYM_CMSE_SPCL (cmse_hash->root.target_internal))
+	  if (!CONST_STRNEQ (sym_name, CMSE_PREFIX))
 	    continue;
 
 	  /* Special symbol has incorrect binding or type.  */
@@ -15983,7 +15988,8 @@ elf32_arm_gc_mark_extra_sections (struct bfd_link_info *info,
 
 		  /* Assume it is a special symbol.  If not, cmse_scan will
 		     warn about it and user can do something about it.  */
-		  if (ARM_GET_SYM_CMSE_SPCL (cmse_hash->root.target_internal))
+		  if (CONST_STRNEQ (cmse_hash->root.root.root.string,
+				    CMSE_PREFIX))
 		    {
 		      cmse_sec = cmse_hash->root.root.u.def.section;
 		      if (!cmse_sec->gc_mark
@@ -16112,7 +16118,7 @@ elf32_arm_find_nearest_line (bfd *	    abfd,
   if (_bfd_dwarf2_find_nearest_line (abfd, symbols, NULL, section, offset,
 				     filename_ptr, functionname_ptr,
 				     line_ptr, discriminator_ptr,
-				     dwarf_debug_sections, 0,
+				     dwarf_debug_sections,
 				     & elf_tdata (abfd)->dwarf2_find_line_info))
     {
       if (!*functionname_ptr)
@@ -17915,9 +17921,16 @@ elf32_arm_reloc_type_class (const struct bfd_link_info *info ATTRIBUTE_UNUSED,
 }
 
 static void
-elf32_arm_final_write_processing (bfd *abfd, bfd_boolean linker ATTRIBUTE_UNUSED)
+arm_final_write_processing (bfd *abfd)
 {
   bfd_arm_update_notes (abfd, ARM_NOTE_SECTION);
+}
+
+static bfd_boolean
+elf32_arm_final_write_processing (bfd *abfd)
+{
+  arm_final_write_processing (abfd);
+  return _bfd_elf_final_write_processing (abfd);
 }
 
 /* Return TRUE if this is an unwinding table entry.  */
@@ -18594,9 +18607,6 @@ elf32_arm_filter_cmse_symbols (bfd *abfd ATTRIBUTE_UNUSED,
 	  || (cmse_hash->root.root.type != bfd_link_hash_defined
 	      && cmse_hash->root.root.type != bfd_link_hash_defweak)
 	  || cmse_hash->root.type != STT_FUNC)
-	continue;
-
-      if (!ARM_GET_SYM_CMSE_SPCL (cmse_hash->root.target_internal))
 	continue;
 
       syms[dst_count++] = sym;
@@ -19921,9 +19931,6 @@ elf32_arm_swap_symbol_in (bfd * abfd,
 			  const void *pshn,
 			  Elf_Internal_Sym *dst)
 {
-  Elf_Internal_Shdr *symtab_hdr;
-  const char *name = NULL;
-
   if (!bfd_elf32_swap_symbol_in (abfd, psrc, pshn, dst))
     return FALSE;
   dst->st_target_internal = 0;
@@ -19951,13 +19958,6 @@ elf32_arm_swap_symbol_in (bfd * abfd,
     ARM_SET_SYM_BRANCH_TYPE (dst->st_target_internal, ST_BRANCH_LONG);
   else
     ARM_SET_SYM_BRANCH_TYPE (dst->st_target_internal, ST_BRANCH_UNKNOWN);
-
-  /* Mark CMSE special symbols.  */
-  symtab_hdr = & elf_symtab_hdr (abfd);
-  if (symtab_hdr->sh_size)
-    name = bfd_elf_sym_name (abfd, symtab_hdr, dst, NULL);
-  if (name && CONST_STRNEQ (name, CMSE_PREFIX))
-    ARM_SET_SYM_CMSE_SPCL (dst->st_target_internal);
 
   return TRUE;
 }
@@ -20593,11 +20593,11 @@ elf32_arm_nacl_modify_segment_map (bfd *abfd, struct bfd_link_info *info)
 	  && nacl_modify_segment_map (abfd, info));
 }
 
-static void
-elf32_arm_nacl_final_write_processing (bfd *abfd, bfd_boolean linker)
+static bfd_boolean
+elf32_arm_nacl_final_write_processing (bfd *abfd)
 {
-  elf32_arm_final_write_processing (abfd, linker);
-  nacl_final_write_processing (abfd, linker);
+  arm_final_write_processing (abfd);
+  return nacl_final_write_processing (abfd);
 }
 
 static bfd_vma
@@ -20748,11 +20748,11 @@ elf32_arm_vxworks_link_hash_table_create (bfd *abfd)
   return ret;
 }
 
-static void
-elf32_arm_vxworks_final_write_processing (bfd *abfd, bfd_boolean linker)
+static bfd_boolean
+elf32_arm_vxworks_final_write_processing (bfd *abfd)
 {
-  elf32_arm_final_write_processing (abfd, linker);
-  elf_vxworks_final_write_processing (abfd, linker);
+  arm_final_write_processing (abfd);
+  return elf_vxworks_final_write_processing (abfd);
 }
 
 #undef  elf32_bed

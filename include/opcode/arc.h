@@ -79,6 +79,7 @@ typedef enum
   SJLI,
   STORE,
   SUB,
+  SWITCH,
   ULTRAIP,
   XY
 } insn_class_t;
@@ -97,6 +98,7 @@ typedef enum
   DP       = (1U << 6),
   DPA      = (1U << 7),
   DPX      = (1U << 8),
+  FASTMATH = (1U << 23),
   LL64     = (1U << 9),
   MPY1E    = (1U << 10),
   MPY6E    = (1U << 11),

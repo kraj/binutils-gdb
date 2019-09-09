@@ -79,7 +79,7 @@ ppc_after_check_relocs (void)
 
       num_got = 0;
       num_plt = 0;
-      for (os = &lang_output_section_statement.head->output_section_statement;
+      for (os = &lang_os_list.head->output_section_statement;
 	   os != NULL;
 	   os = os->next)
 	{
@@ -171,7 +171,12 @@ ppc_before_allocation (void)
       bfd_vma high = 0;
       asection *o;
 
-      /* Run lang_size_sections (if not already done).  */
+      /* Run lang_size_sections even if already done, so as to pick
+	 up gld${EMULATION_NAME}_before_allocation sizing.  This
+	 matters when we have an executable bss plt which will
+	 typically be laid out near the end of the image, ie. worst
+	 case for branches at the start of .text.  */
+      expld.phase = lang_first_phase_enum;
       prelim_size_sections ();
 
       for (o = link_info.output_bfd->sections; o != NULL; o = o->next)

@@ -479,7 +479,7 @@ find_pc_sect_psymbol (struct objfile *objfile,
 
 static struct compunit_symtab *
 psym_lookup_symbol (struct objfile *objfile,
-		    int block_index, const char *name,
+		    block_enum block_index, const char *name,
 		    const domain_enum domain)
 {
   const int psymtab_index = (block_index == GLOBAL_BLOCK ? 1 : 0);
@@ -853,8 +853,14 @@ print_partial_symbols (struct gdbarch *gdbarch, struct objfile *objfile,
 	case STRUCT_DOMAIN:
 	  fputs_filtered ("struct domain, ", outfile);
 	  break;
+	case MODULE_DOMAIN:
+	  fputs_filtered ("module domain, ", outfile);
+	  break;
 	case LABEL_DOMAIN:
 	  fputs_filtered ("label domain, ", outfile);
+	  break;
+	case COMMON_BLOCK_DOMAIN:
+	  fputs_filtered ("common block domain, ", outfile);
 	  break;
 	default:
 	  fputs_filtered ("<invalid domain>, ", outfile);

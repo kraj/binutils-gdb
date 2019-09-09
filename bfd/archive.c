@@ -692,6 +692,13 @@ _bfd_get_elt_at_filepos (bfd *archive, file_ptr filepos)
 	      return NULL;
 	    }
 	  n_bfd->proxy_origin = bfd_tell (archive);
+
+	  /* Copy BFD_COMPRESS, BFD_DECOMPRESS and BFD_COMPRESS_GABI
+	     flags.  */
+	  n_bfd->flags |= archive->flags & (BFD_COMPRESS
+					    | BFD_DECOMPRESS
+					    | BFD_COMPRESS_GABI);
+
 	  return n_bfd;
 	}
 
@@ -721,7 +728,9 @@ _bfd_get_elt_at_filepos (bfd *archive, file_ptr filepos)
   else
     {
       n_bfd->origin = n_bfd->proxy_origin;
-      n_bfd->filename = xstrdup (filename);
+      n_bfd->filename = bfd_strdup (filename);
+      if (n_bfd->filename == NULL)
+	goto out;
     }
 
   n_bfd->arelt_data = new_areldata;
@@ -734,11 +743,14 @@ _bfd_get_elt_at_filepos (bfd *archive, file_ptr filepos)
   /* Copy is_linker_input.  */
   n_bfd->is_linker_input = archive->is_linker_input;
 
-  if (_bfd_add_bfd_to_archive_cache (archive, filepos, n_bfd))
+  if (archive->no_element_cache
+      || _bfd_add_bfd_to_archive_cache (archive, filepos, n_bfd))
     return n_bfd;
 
+ out:
   free (new_areldata);
   n_bfd->arelt_data = NULL;
+  bfd_close (n_bfd);
   return NULL;
 }
 
@@ -885,6 +897,7 @@ bfd_generic_archive_p (bfd *abfd)
   if (abfd->target_defaulted && bfd_has_map (abfd))
     {
       bfd *first;
+      unsigned int save;
 
       /* This archive has a map, so we may presume that the contents
 	 are object files.  Make sure that if the first file in the
@@ -897,14 +910,17 @@ bfd_generic_archive_p (bfd *abfd)
 	 normal archive, regardless of the format of the object files.
 	 We do accept an empty archive.  */
 
+      save = abfd->no_element_cache;
+      abfd->no_element_cache = 1;
       first = bfd_openr_next_archived_file (abfd, NULL);
+      abfd->no_element_cache = save;
       if (first != NULL)
 	{
 	  first->target_defaulted = FALSE;
 	  if (bfd_check_format (first, bfd_object)
 	      && first->xvec != abfd->xvec)
 	    bfd_set_error (bfd_error_wrong_object_format);
-	  /* And we ought to close `first' here too.  */
+	  bfd_close (first);
 	}
     }
 
@@ -974,7 +990,6 @@ do_slurp_bsd_armap (bfd *abfd)
       goto byebye;
     }
 
-  ardata->cache = 0;
   rbase = raw_armap + BSD_SYMDEF_COUNT_SIZE;
   stringbase = ((char *) rbase
 		+ ardata->symdef_count * BSD_SYMDEF_SIZE
@@ -2236,6 +2251,7 @@ _bfd_compute_and_write_armap (bfd *arch, unsigned int elength)
   long syms_max = 0;
   bfd_boolean ret;
   bfd_size_type amt;
+  static bfd_boolean report_plugin_err = TRUE;
 
   /* Dunno if this is the best place for this info...  */
   if (elength != 0)
@@ -2269,6 +2285,14 @@ _bfd_compute_and_write_armap (bfd *arch, unsigned int elength)
 	  long storage;
 	  long symcount;
 	  long src_count;
+
+	  if (current->lto_slim_object && report_plugin_err)
+	    {
+	      report_plugin_err = FALSE;
+	      _bfd_error_handler
+		(_("%pB: plugin needed to handle lto object"),
+		 current);
+	    }
 
 	  storage = bfd_get_symtab_upper_bound (current);
 	  if (storage < 0)
@@ -2322,10 +2346,14 @@ _bfd_compute_and_write_armap (bfd *arch, unsigned int elength)
 			  && syms[src_count]->name[1] == '_'
 			  && strcmp (syms[src_count]->name
 				     + (syms[src_count]->name[2] == '_'),
-				     "__gnu_lto_slim") == 0)
-			_bfd_error_handler
-			  (_("%pB: plugin needed to handle lto object"),
-			   current);
+				     "__gnu_lto_slim") == 0
+			  && report_plugin_err)
+			{
+			  report_plugin_err = FALSE;
+			  _bfd_error_handler
+			    (_("%pB: plugin needed to handle lto object"),
+			     current);
+			}
 		      namelen = strlen (syms[src_count]->name);
 		      amt = sizeof (char *);
 		      map[orl_count].name = (char **) bfd_alloc (arch, amt);
