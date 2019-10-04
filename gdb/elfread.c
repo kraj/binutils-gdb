@@ -48,8 +48,8 @@
 #include "auxv.h"
 #include "mdebugread.h"
 #include <dlfcn.h>
-#if HAVE_LIBDBGSERVER
-#include <elfutils/dbgserver-client.h>
+#if HAVE_LIBDEBUGINFOD
+#include <elfutils/debuginfod.h>
 #endif
 
 /* Forward declarations.  */
@@ -1300,14 +1300,14 @@ elf_symfile_read (struct objfile *objfile, symfile_add_flags symfile_flags)
 	  symbol_file_add_separate (debug_bfd.get (), debugfile.c_str (),
 				    symfile_flags, objfile);
 	}
-#if HAVE_LIBDBGSERVER 
+#if HAVE_LIBDEBUGINFOD 
       else
         {
           const struct bfd_build_id *build_id;
 	  char *debugfile_path;
 
           build_id = build_id_bfd_get (objfile->obfd);
-	  int fd = dbgserver_find_debuginfo (build_id->data,
+	  int fd = debuginfod_find_debuginfo (build_id->data,
 					     build_id->size,
 					     &debugfile_path);
 
@@ -1323,7 +1323,7 @@ elf_symfile_read (struct objfile *objfile, symfile_add_flags symfile_flags)
 	      free(debugfile_path); 
 	    }
 	}
-#endif /* LIBDBGSERVER */
+#endif /* LIBDEBUGINFOD */
     }
 }
 

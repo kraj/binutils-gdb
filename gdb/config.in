@@ -228,8 +228,8 @@
 /* Define if you have the babeltrace library. */
 #undef HAVE_LIBBABELTRACE
 
-/* Define if you have the dbgserver library. */
-#undef HAVE_LIBDBGSERVER
+/* Define if you have the debuginfod library. */
+#undef HAVE_LIBDEBUGINFOD
 
 /* Define if you have the expat library. */
 #undef HAVE_LIBEXPAT

@@ -327,28 +327,28 @@ case $host_os in
     enable_gdbtk=no ;;
 esac
 
-# Enable dbgserver
-AC_ARG_WITH([dbgserver],
-        AC_HELP_STRING([--with-dbgserver],
-                       [Enable debuginfo and source-file lookups with dbgserver (auto/yes/no)]),
-        [], [with_dbgserver=auto])
-AC_MSG_CHECKING([whether to use dbgserver])
-AC_MSG_RESULT([$with_dbgserver])
+# Enable debuginfod
+AC_ARG_WITH([debuginfod],
+        AC_HELP_STRING([--with-debuginfod],
+                       [Enable debuginfo and source-file lookups with debuginfod (auto/yes/no)]),
+        [], [with_debuginfod=auto])
+AC_MSG_CHECKING([whether to use debuginfod])
+AC_MSG_RESULT([$with_debuginfod])
 
-if test "${with_dbgserver}" = no; then
-  AC_MSG_WARN([dbgserver support disabled; some features may be unavailable.])
-  HAVE_LIBDBGSERVER=no
+if test "${with_debuginfod}" = no; then
+  AC_MSG_WARN([debuginfod support disabled; some features may be unavailable.])
+  HAVE_LIBDEBUGINFOD=no
 else
-  AC_LIB_HAVE_LINKFLAGS([dbgserver], [], [#include <elfutils/dbgserver-client.h>],
+  AC_LIB_HAVE_LINKFLAGS([debuginfod], [], [#include <elfutils/debuginfod.h>],
                                      [const unsigned char buildid;
                                      int buildid_len = 1;
                                      char *path;
-                                     path = dbgserver_find_debuginfo (& buildid, buildid_len, &path);])
-  if test "$HAVE_LIBDBGSERVER" != yes; then
-    if test "$with_dbgserver" = yes; then
-      AC_MSG_ERROR([dbgserver is missing or unusable])
+                                     path = debuginfod_find_debuginfo (& buildid, buildid_len, &path);])
+  if test "$HAVE_LIBDEBUGINFOD" != yes; then
+    if test "$with_debuginfod" = yes; then
+      AC_MSG_ERROR([debuginfod is missing or unusable])
     else
-      AC_MSG_WARN([dbgserver is missing or unusable; some features may be unavailable.])
+      AC_MSG_WARN([debuginfod is missing or unusable; some features may be unavailable.])
     fi
   fi
 fi

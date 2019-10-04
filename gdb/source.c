@@ -32,8 +32,8 @@
 #include <fcntl.h>
 #include <dlfcn.h>
 #include "build-id.h"
-#ifdef HAVE_LIBDBGSERVER
-#include <elfutils/dbgserver-client.h>
+#ifdef HAVE_LIBDEBUGINFOD
+#include <elfutils/debuginfod.h>
 #endif
 #include "gdbcore.h"
 #include "gdb_regex.h"
@@ -1070,7 +1070,7 @@ open_source_file (struct symtab *s)
   scoped_fd fd = find_and_open_source (s->filename, SYMTAB_DIRNAME (s),
 				       &fullname);
 
-#if HAVE_LIBDBGSERVER
+#if HAVE_LIBDEBUGINFOD
   if (fd.get() < 0)
     {
       if (SYMTAB_COMPUNIT(s) != NULL)
@@ -1092,11 +1092,11 @@ open_source_file (struct symtab *s)
 	      
           build_id = build_id_bfd_get (ofp->obfd);
 
-          /* Query debuginfo-server for the source file.  */
+          /* Query debuginfod for the source file.  */
           if (build_id != NULL)
             {
 	      char *name_in_cache;
-              int dbgsrv_rc = dbgserver_find_source (build_id->data,
+              int dbgsrv_rc = debuginfod_find_source (build_id->data,
                                                      build_id->size,
                                                      suffname,
                                                      &name_in_cache);
@@ -1107,10 +1107,10 @@ open_source_file (struct symtab *s)
                 }
               else if (dbgsrv_rc == -ENOSYS)
                 {
-                  /* -ENOSYS indicates that libdbgserver could not find
-                     any dbgserver URLs to query due to $DBGSERVER_URLS
+                  /* -ENOSYS indicates that libdebuginfod could not find
+                     any debuginfod URLs to query due to $DEBUGINFOD_URLS
                      not being defined. Replace -ENOSYS with -ENOENT so
-                     that users who have not configured dbgserver see the
+                     that users who have not configured debuginfod see the
                      usual error message when a source file cannot be found.  */
                   dbgsrv_rc = -ENOENT;
                 }
@@ -1119,7 +1119,7 @@ open_source_file (struct symtab *s)
             }
         }
     }
-#endif /* HAVE_LIBDBGSERVER */
+#endif /* HAVE_LIBDEBUGINFOD */
 
   s->fullname = fullname.release ();
   return fd;

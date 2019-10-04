@@ -13,19 +13,19 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# test dbgserver functionality
+# test debuginfod functionality
 
 standard_testfile 
 
-# skip testing if dbgserver cannot be found
-if { [which dbgserver] == 0 } {
-    untested "cannot find dbgserver"
+# skip testing if debuginfod cannot be found
+if { [which debuginfod] == 0 } {
+    untested "cannot find debuginfod"
     return -1
 }
 
-# skip testing if gdb was not configured with dbgserver
-if { [string first "with-dbgserver" [exec $GDB --configuration]] == -1 } {
-    untested "gdb not configured with dbgserver"
+# skip testing if gdb was not configured with debuginfod
+if { [string first "with-debuginfod" [exec $GDB --configuration]] == -1 } {
+    untested "gdb not configured with debuginfod"
     return -1
 }
 
@@ -49,18 +49,18 @@ if { [gdb_compile "${sourcetmp}" "${binfile}" executable {debug}] != "" } {
 }
 
 set port 58002
-set ::env(DBGSERVER_URLS) "localhost:$port"
-set ::env(DBGSERVER_TIMEOUT) 10
-set ::env(DBGSERVER_CACHE_PATH) $cache
+set ::env(DEBUGINFOD_URLS) "localhost:$port"
+set ::env(DEBUGINFOD_TIMEOUT) 10
+set ::env(DEBUGINFOD_CACHE_PATH) $cache
 
-# test that gdb cannot find source without dbgserver
+# test that gdb cannot find source without debuginfod
 gdb_start
 gdb_load $binfile
 gdb_test_no_output "set substitute-path $outputdir /dev/null" 
 gdb_test "l" ".*Connection refused.*"
 gdb_exit
 
-# strip symbols into separate file and move it so gdb cannot find it without dbgserver
+# strip symbols into separate file and move it so gdb cannot find it without debuginfod
 gdb_gnu_strip_debug $binfile
 
 set debugdir [file join [standard_output_file {}] "debug"]
@@ -70,15 +70,15 @@ file mkdir -force $debugdir
 file copy -force $debuginfo $debugdir
 file delete -force $debuginfo
 
-# test that gdb cannot find symbols without dbgserver
+# test that gdb cannot find symbols without debuginfod
 gdb_start
 gdb_load $binfile
 gdb_test "file" ".*No symbol file.*"
 gdb_exit
 
-# start up dbgserver
+# start up debuginfod
 
-set dbgserver_pid [exec dbgserver -p $port -F $debugdir >/dev/null 2>&1 &]
+set debuginfod_pid [exec debuginfod -p $port -F $debugdir >/dev/null 2>&1 &]
 sleep 5
 
 # gdb should now be able to find the symbol and source files
@@ -90,4 +90,4 @@ gdb_test "l" "int main().*return 0;.*"
 gdb_exit
 
 file delete -force $cache
-exec kill $dbgserver_pid
+exec kill $debuginfod_pid
