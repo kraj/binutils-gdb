@@ -1308,8 +1308,8 @@ elf_symfile_read (struct objfile *objfile, symfile_add_flags symfile_flags)
 
           build_id = build_id_bfd_get (objfile->obfd);
 	  int fd = debuginfod_find_debuginfo (build_id->data,
-					     build_id->size,
-					     &debugfile_path);
+					      build_id->size,
+					      &debugfile_path);
 
 	  if (fd >= 0)
 	    {
@@ -1317,10 +1317,10 @@ elf_symfile_read (struct objfile *objfile, symfile_add_flags symfile_flags)
 		 the file as a bfd instead.  */
 	      gdb_bfd_ref_ptr debug_bfd (symfile_bfd_open (debugfile_path));
 
-	      symbol_file_add_separate(debug_bfd.get (), debugfile_path,
-				       symfile_flags, objfile);
-	      close(fd);
-	      free(debugfile_path); 
+	      symbol_file_add_separate (debug_bfd.get (), debugfile_path,
+				        symfile_flags, objfile);
+	      close (fd);
+	      free (debugfile_path);
 	    }
 	}
 #endif /* LIBDEBUGINFOD */

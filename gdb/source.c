@@ -1071,17 +1071,17 @@ open_source_file (struct symtab *s)
 				       &fullname);
 
 #if HAVE_LIBDEBUGINFOD
-  if (fd.get() < 0)
+  if (fd.get () < 0)
     {
-      if (SYMTAB_COMPUNIT(s) != NULL)
+      if (SYMTAB_COMPUNIT (s) != NULL)
         {
           const struct bfd_build_id *build_id;
           const objfile *ofp = COMPUNIT_OBJFILE (SYMTAB_COMPUNIT (s));
 
 	  /* prefix the comp_dir to relative file names */
 	  const char* dirname = SYMTAB_DIRNAME (s);
-	  int suffname_len = strlen(dirname) + strlen(s->filename) + 2;
-	  char *suffname = (char *) alloca(suffname_len);
+	  int suffname_len = strlen (dirname) + strlen (s->filename) + 2;
+	  char *suffname = (char *) alloca (suffname_len);
 	  if (IS_DIR_SEPARATOR (s->filename[0]))
 	    xsnprintf (suffname, suffname_len, "%s", s->filename);
 	  else
@@ -1097,12 +1097,12 @@ open_source_file (struct symtab *s)
             {
 	      char *name_in_cache;
               int dbgsrv_rc = debuginfod_find_source (build_id->data,
-                                                     build_id->size,
-                                                     suffname,
-                                                     &name_in_cache);
+                                                      build_id->size,
+                                                      suffname,
+                                                      &name_in_cache);
               if (dbgsrv_rc >= 0)
                 {
-                  fullname.reset (xstrdup(name_in_cache));
+                  fullname.reset (xstrdup (name_in_cache));
                   free (name_in_cache);
                 }
               else if (dbgsrv_rc == -ENOSYS)
@@ -1115,7 +1115,7 @@ open_source_file (struct symtab *s)
                   dbgsrv_rc = -ENOENT;
                 }
               s->fullname = fullname.release ();
-              return scoped_fd(dbgsrv_rc);
+              return scoped_fd (dbgsrv_rc);
             }
         }
     }
