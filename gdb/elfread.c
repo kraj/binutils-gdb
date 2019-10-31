@@ -47,6 +47,7 @@
 #include "location.h"
 #include "auxv.h"
 #include "mdebugread.h"
+#include "gdbsupport/scoped_fd.h"
 #include <dlfcn.h>
 #if HAVE_LIBDEBUGINFOD
 #include <elfutils/debuginfod.h>
@@ -1307,9 +1308,9 @@ elf_symfile_read (struct objfile *objfile, symfile_add_flags symfile_flags)
 	  char *debugfile_path;
 
           build_id = build_id_bfd_get (objfile->obfd);
-	  scoped_fd fd = debuginfod_find_debuginfo (build_id->data,
-					            build_id->size,
-					            &debugfile_path);
+	  scoped_fd fd (debuginfod_find_debuginfo (build_id->data,
+					           build_id->size,
+					           &debugfile_path));
 
 	  if (fd.get () >= 0)
 	    {
