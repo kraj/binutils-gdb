@@ -1078,16 +1078,14 @@ open_source_file (struct symtab *s)
           const struct bfd_build_id *build_id;
           const objfile *ofp = COMPUNIT_OBJFILE (SYMTAB_COMPUNIT (s));
 
-	  /* prefix the comp_dir to relative file names */
-	  const char* dirname = SYMTAB_DIRNAME (s);
-	  int suffname_len = strlen (dirname) + strlen (s->filename) + 2;
-	  char *suffname = (char *) alloca (suffname_len);
+          std::string suffname;
 	  if (IS_DIR_SEPARATOR (s->filename[0]))
-	    xsnprintf (suffname, suffname_len, "%s", s->filename);
+	    suffname = s->filename;
 	  else
             {
-	      xsnprintf (suffname, suffname_len, "%s%s%s", dirname,
-                         SLASH_STRING, s->filename);
+              suffname = SYMTAB_DIRNAME(s);
+              suffname += SLASH_STRING;
+              suffname += s->filename;
             }
 	      
           build_id = build_id_bfd_get (ofp->obfd);
@@ -1095,27 +1093,12 @@ open_source_file (struct symtab *s)
           /* Query debuginfod for the source file.  */
           if (build_id != NULL)
             {
-	      char *name_in_cache;
-              int dbgsrv_rc = debuginfod_find_source (build_id->data,
-                                                      build_id->size,
-                                                      suffname,
-                                                      &name_in_cache);
-              if (dbgsrv_rc >= 0)
-                {
-                  fullname.reset (xstrdup (name_in_cache));
-                  free (name_in_cache);
-                }
-              else if (dbgsrv_rc == -ENOSYS)
-                {
-                  /* -ENOSYS indicates that libdebuginfod could not find
-                     any debuginfod URLs to query due to $DEBUGINFOD_URLS
-                     not being defined. Replace -ENOSYS with -ENOENT so
-                     that users who have not configured debuginfod see the
-                     usual error message when a source file cannot be found.  */
-                  dbgsrv_rc = -ENOENT;
-                }
+              scoped_fd dbgd_fd (debuginfod_find_source (build_id->data,
+                                                         build_id->size,
+                                                         suffname.c_str(),
+                                                         NULL));
               s->fullname = fullname.release ();
-              return scoped_fd (dbgsrv_rc);
+              return dbgd_fd;
             }
         }
     }
