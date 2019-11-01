@@ -1156,10 +1156,16 @@ open_source_file (struct symtab *s)
           /* Query debuginfod for the source file.  */
           if (build_id != NULL)
             {
+              char *name_in_cache;
+
               scoped_fd dbgd_fd (debuginfod_find_source (build_id->data,
                                                          build_id->size,
                                                          suffname.c_str(),
-                                                         NULL));
+                                                         &name_in_cache));
+
+              if (dbgd_fd.get () >= 0)
+                fullname.reset (name_in_cache);
+
               s->fullname = fullname.release ();
               return dbgd_fd;
             }
