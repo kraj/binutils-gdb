@@ -131,7 +131,7 @@ public:
 
   /* Return the number of arguments of the probe.  This function can
      throw an exception.  */
-  virtual unsigned get_argument_count (struct frame_info *frame) = 0;
+  virtual unsigned get_argument_count (struct gdbarch *gdbarch) = 0;
 
   /* Return 1 if the probe interface can evaluate the arguments of
      probe, zero otherwise.  See the comments on
@@ -274,7 +274,7 @@ extern std::vector<symtab_and_line> parse_probes
 extern struct bound_probe find_probe_by_pc (CORE_ADDR pc);
 
 /* Search OBJFILE for a probe with the given PROVIDER, NAME.  Return a
-   VEC of all probes that were found.  If no matching probe is found,
+   vector of all probes that were found.  If no matching probe is found,
    return an empty vector.  */
 
 extern std::vector<probe *> find_probes_in_objfile (struct objfile *objfile,

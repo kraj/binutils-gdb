@@ -20,6 +20,7 @@
 
 #include "server.h"
 #include "tracepoint.h"
+#include "gdbsupport/byte-vector.h"
 
 struct target_ops *the_target;
 
@@ -146,35 +147,17 @@ target_read_uint32 (CORE_ADDR memaddr, uint32_t *result)
   return read_inferior_memory (memaddr, (gdb_byte *) result, sizeof (*result));
 }
 
-int
-write_inferior_memory (CORE_ADDR memaddr, const unsigned char *myaddr,
-		       int len)
-{
-  /* Lacking cleanups, there is some potential for a memory leak if the
-     write fails and we go through error().  Make sure that no more than
-     one buffer is ever pending by making BUFFER static.  */
-  static unsigned char *buffer = 0;
-  int res;
-
-  if (buffer != NULL)
-    free (buffer);
-
-  buffer = (unsigned char *) xmalloc (len);
-  memcpy (buffer, myaddr, len);
-  check_mem_write (memaddr, buffer, myaddr, len);
-  res = (*the_target->write_memory) (memaddr, buffer, len);
-  free (buffer);
-  buffer = NULL;
-
-  return res;
-}
-
 /* See target/target.h.  */
 
 int
-target_write_memory (CORE_ADDR memaddr, const gdb_byte *myaddr, ssize_t len)
+target_write_memory (CORE_ADDR memaddr, const unsigned char *myaddr,
+		     ssize_t len)
 {
-  return write_inferior_memory (memaddr, myaddr, len);
+  /* Make a copy of the data because check_mem_write may need to
+     update it.  */
+  gdb::byte_vector buffer (myaddr, myaddr + len);
+  check_mem_write (memaddr, buffer.data (), myaddr, len);
+  return (*the_target->write_memory) (memaddr, buffer.data (), len);
 }
 
 ptid_t
@@ -222,7 +205,7 @@ void
 target_stop_and_wait (ptid_t ptid)
 {
   struct target_waitstatus status;
-  int was_non_stop = non_stop;
+  bool was_non_stop = non_stop;
   struct thread_resume resume_info;
 
   resume_info.thread = ptid;
@@ -230,7 +213,7 @@ target_stop_and_wait (ptid_t ptid)
   resume_info.sig = GDB_SIGNAL_0;
   (*the_target->resume) (&resume_info, 1);
 
-  non_stop = 1;
+  non_stop = true;
   mywait (ptid, &status, 0, 0);
   non_stop = was_non_stop;
 }

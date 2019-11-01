@@ -51,6 +51,7 @@ fragment <<EOF
 #include "sysdep.h"
 #include "bfd.h"
 #include "bfdlink.h"
+#include "ctf-api.h"
 #include "getopt.h"
 #include "libiberty.h"
 #include "filenames.h"
@@ -1480,7 +1481,7 @@ gld_${EMULATION_NAME}_after_open (void)
 		      {
 			struct bfd_symbol *s;
 			struct bfd_link_hash_entry * blhe;
-			char *other_bfd_filename;
+			const char *other_bfd_filename;
 			char *n;
 
 			s = (relocs[i]->sym_ptr_ptr)[0];
@@ -1510,7 +1511,7 @@ gld_${EMULATION_NAME}_after_open (void)
 			/* Rename this implib to match the other one.  */
 			n = xmalloc (strlen (other_bfd_filename) + 1);
 			strcpy (n, other_bfd_filename);
-			is->the_bfd->my_archive->filename = n;
+			bfd_set_filename (is->the_bfd->my_archive, n);
 		      }
 
 		    free (relocs);
@@ -1615,7 +1616,7 @@ gld_${EMULATION_NAME}_after_open (void)
 
 		new_name = xmalloc (strlen (is->the_bfd->filename) + 3);
 		sprintf (new_name, "%s.%c", is->the_bfd->filename, seq);
-		is->the_bfd->filename = new_name;
+		bfd_set_filename (is->the_bfd, new_name);
 
 		new_name = xmalloc (strlen (is->filename) + 3);
 		sprintf (new_name, "%s.%c", is->filename, seq);
@@ -1914,9 +1915,7 @@ gld_${EMULATION_NAME}_place_orphan (asection *s,
 		&& (nexts->flags & SEC_EXCLUDE) == 0
 		&& ((nexts->flags ^ flags) & (SEC_LOAD | SEC_ALLOC)) == 0
 		&& (nexts->owner->flags & DYNAMIC) == 0
-		&& nexts->owner->usrdata != NULL
-		&& !(((lang_input_statement_type *) nexts->owner->usrdata)
-		     ->flags.just_syms))
+		&& !bfd_input_just_syms (nexts->owner))
 	      flags = (((flags ^ SEC_READONLY)
 			| (nexts->flags ^ SEC_READONLY))
 		       ^ SEC_READONLY);
@@ -1951,8 +1950,7 @@ gld_${EMULATION_NAME}_place_orphan (asection *s,
 						       NULL);
 	  if (after == NULL)
 	    /* *ABS* is always the first output section statement.  */
-	    after = (&lang_output_section_statement.head
-		     ->output_section_statement);
+	    after = &lang_os_list.head->output_section_statement;
 	}
 
       /* All sections in an executable must be aligned to a page boundary.
@@ -1980,7 +1978,7 @@ gld_${EMULATION_NAME}_place_orphan (asection *s,
 
       ls = &(*pl)->input_section;
 
-      lname = bfd_get_section_name (ls->section->owner, ls->section);
+      lname = bfd_section_name (ls->section);
       if (strchr (lname, '\$') != NULL
 	  && (dollar == NULL || strcmp (orig_secname, lname) < 0))
 	break;
@@ -2168,6 +2166,8 @@ struct ld_emulation_xfer_struct ld_${EMULATION_NAME}_emulation =
   gld_${EMULATION_NAME}_recognized_file,
   gld_${EMULATION_NAME}_find_potential_libraries,
   NULL,	/* new_vers_pattern.  */
-  NULL	/* extra_map_file_text */
+  NULL,	/* extra_map_file_text */
+  ${LDEMUL_EMIT_CTF_EARLY-NULL},
+  ${LDEMUL_EXAMINE_STRTAB_FOR_CTF-NULL}
 };
 EOF

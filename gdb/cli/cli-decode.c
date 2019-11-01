@@ -589,7 +589,7 @@ const char * const boolean_enums[] = { "on", "off", NULL };
    Returns the new command element.  */
 
 cmd_list_element *
-add_setshow_boolean_cmd (const char *name, enum command_class theclass, int *var,
+add_setshow_boolean_cmd (const char *name, enum command_class theclass, bool *var,
 			 const char *set_doc, const char *show_doc,
 			 const char *help_doc,
 			 cmd_const_sfunc_ftype *set_func,
@@ -978,7 +978,7 @@ print_doc_of_command (struct cmd_list_element *c, const char *prefix,
   if (verbose)
     fputs_highlighted (c->doc, highlight, stream);
   else
-    print_doc_line (stream, c->doc);
+    print_doc_line (stream, c->doc, false);
   fputs_filtered ("\n", stream);
 }
 
@@ -1038,7 +1038,7 @@ apropos_cmd (struct ui_file *stream,
       command that requires subcommands.  Also called by saying just
       "help".)
 
-   I am going to split this into two seperate comamnds, help_cmd and
+   I am going to split this into two separate commands, help_cmd and
    help_list.  */
 
 void
@@ -1217,9 +1217,11 @@ help_all (struct ui_file *stream)
 
 }
 
-/* Print only the first line of STR on STREAM.  */
+/* See cli-decode.h.  */
+
 void
-print_doc_line (struct ui_file *stream, const char *str)
+print_doc_line (struct ui_file *stream, const char *str,
+		bool for_value_prefix)
 {
   static char *line_buffer = 0;
   static int line_size;
@@ -1231,11 +1233,9 @@ print_doc_line (struct ui_file *stream, const char *str)
       line_buffer = (char *) xmalloc (line_size);
     }
 
-  /* Keep printing '.' or ',' not followed by a whitespace for embedded strings
-     like '.gdbinit'.  */
+  /* Searches for the first end of line or the end of STR.  */
   p = str;
-  while (*p && *p != '\n'
-	 && ((*p != '.' && *p != ',') || (p[1] && !isspace (p[1]))))
+  while (*p && *p != '\n')
     p++;
   if (p - str > line_size - 1)
     {
@@ -1244,9 +1244,18 @@ print_doc_line (struct ui_file *stream, const char *str)
       line_buffer = (char *) xmalloc (line_size);
     }
   strncpy (line_buffer, str, p - str);
-  line_buffer[p - str] = '\0';
-  if (islower (line_buffer[0]))
-    line_buffer[0] = toupper (line_buffer[0]);
+  if (for_value_prefix)
+    {
+      if (islower (line_buffer[0]))
+	line_buffer[0] = toupper (line_buffer[0]);
+      gdb_assert (p > str);
+      if (line_buffer[p - str - 1] == '.')
+	line_buffer[p - str - 1] = '\0';
+      else
+	line_buffer[p - str] = '\0';
+    }
+  else
+    line_buffer[p - str] = '\0';
   fputs_filtered (line_buffer, stream);
 }
 
@@ -1260,7 +1269,7 @@ print_help_for_command (struct cmd_list_element *c, const char *prefix,
   fprintf_styled (stream, title_style.style (),
 		  "%s%s", prefix, c->name);
   fputs_filtered (" -- ", stream);
-  print_doc_line (stream, c->doc);
+  print_doc_line (stream, c->doc, false);
   fputs_filtered ("\n", stream);
 
   if (recurse
@@ -1561,7 +1570,7 @@ undef_cmd_error (const char *cmdtype, const char *q)
    unless ALLOW_UNKNOWN is negative.
    CMDTYPE precedes the word "command" in the error message.
 
-   If INGNORE_HELP_CLASSES is nonzero, ignore any command list
+   If IGNORE_HELP_CLASSES is nonzero, ignore any command list
    elements which are actually help classes rather than commands (i.e.
    the function field of the struct cmd_list_element is 0).  */
 

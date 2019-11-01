@@ -116,16 +116,15 @@ const struct floatformat *floatformats_ibm_long_double[BFD_ENDIAN_UNKNOWN] = {
 
 /* Should opaque types be resolved?  */
 
-static int opaque_type_resolution = 1;
+static bool opaque_type_resolution = true;
 
-/* A flag to enable printing of debugging information of C++
-   overloading.  */
+/* See gdbtypes.h.  */
 
 unsigned int overload_debug = 0;
 
 /* A flag to enable strict type checking.  */
 
-static int strict_type_checking = 1;
+static bool strict_type_checking = true;
 
 /* A function to show whether opaque types are resolved.  */
 
@@ -901,7 +900,8 @@ operator== (const range_bounds &l, const range_bounds &r)
   return (FIELD_EQ (low)
 	  && FIELD_EQ (high)
 	  && FIELD_EQ (flag_upper_bound_is_count)
-	  && FIELD_EQ (flag_bound_evaluated));
+	  && FIELD_EQ (flag_bound_evaluated)
+	  && FIELD_EQ (bias));
 
 #undef FIELD_EQ
 }
@@ -912,7 +912,8 @@ operator== (const range_bounds &l, const range_bounds &r)
 struct type *
 create_range_type (struct type *result_type, struct type *index_type,
 		   const struct dynamic_prop *low_bound,
-		   const struct dynamic_prop *high_bound)
+		   const struct dynamic_prop *high_bound,
+		   LONGEST bias)
 {
   /* The INDEX_TYPE should be a type capable of holding the upper and lower
      bounds, as such a zero sized, or void type makes no sense.  */
@@ -932,6 +933,7 @@ create_range_type (struct type *result_type, struct type *index_type,
     TYPE_ZALLOC (result_type, sizeof (struct range_bounds));
   TYPE_RANGE_DATA (result_type)->low = *low_bound;
   TYPE_RANGE_DATA (result_type)->high = *high_bound;
+  TYPE_RANGE_DATA (result_type)->bias = bias;
 
   if (low_bound->kind == PROP_CONST && low_bound->data.const_val >= 0)
     TYPE_UNSIGNED (result_type) = 1;
@@ -968,7 +970,7 @@ create_static_range_type (struct type *result_type, struct type *index_type,
   high.kind = PROP_CONST;
   high.data.const_val = high_bound;
 
-  result_type = create_range_type (result_type, index_type, &low, &high);
+  result_type = create_range_type (result_type, index_type, &low, &high, 0);
 
   return result_type;
 }
@@ -2015,9 +2017,10 @@ resolve_dynamic_range (struct type *dyn_range_type,
   static_target_type
     = resolve_dynamic_type_internal (TYPE_TARGET_TYPE (dyn_range_type),
 				     addr_stack, 0);
+  LONGEST bias = TYPE_RANGE_DATA (dyn_range_type)->bias;
   static_range_type = create_range_type (copy_type (dyn_range_type),
 					 static_target_type,
-					 &low_bound, &high_bound);
+					 &low_bound, &high_bound, bias);
   TYPE_RANGE_DATA (static_range_type)->flag_bound_evaluated = 1;
   return static_range_type;
 }
@@ -2730,7 +2733,7 @@ check_stub_method_group (struct type *type, int method_id)
     }
 }
 
-/* Ensure it is in .rodata (if available) by workarounding GCC PR 44690.  */
+/* Ensure it is in .rodata (if available) by working around GCC PR 44690.  */
 const struct cplus_struct_type cplus_struct_default = { };
 
 void

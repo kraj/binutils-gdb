@@ -30,8 +30,7 @@
 extern struct cmd_list_element *set_dwarf_cmdlist;
 extern struct cmd_list_element *show_dwarf_cmdlist;
 
-typedef struct dwarf2_per_cu_data *dwarf2_per_cu_ptr;
-DEF_VEC_P (dwarf2_per_cu_ptr);
+extern bool dwarf_always_disassemble;
 
 /* A descriptor for dwarf sections.
 
@@ -104,9 +103,12 @@ struct dwarf2_per_objfile
 {
   /* Construct a dwarf2_per_objfile for OBJFILE.  NAMES points to the
      dwarf2 section names, or is NULL if the standard ELF names are
-     used.  */
+     used.  CAN_COPY is true for formats where symbol
+     interposition is possible and so symbol values must follow copy
+     relocation rules.  */
   dwarf2_per_objfile (struct objfile *objfile,
-		      const dwarf2_debug_sections *names);
+		      const dwarf2_debug_sections *names,
+		      bool can_copy);
 
   ~dwarf2_per_objfile ();
 
@@ -205,6 +207,9 @@ public:
   /* The shared '.dwz' file, if one exists.  This is used when the
      original data was compressed using 'dwz -m'.  */
   std::unique_ptr<struct dwz_file> dwz_file;
+
+  /* Whether copy relocations are supported by this object format.  */
+  bool can_copy;
 
   /* A flag indicating whether this objfile has a section loaded at a
      VMA of 0.  */
@@ -339,6 +344,37 @@ struct dwarf2_per_cu_data
     struct dwarf2_per_cu_quick_data *quick;
   } v;
 
+  /* Return true of IMPORTED_SYMTABS is empty or not yet allocated.  */
+  bool imported_symtabs_empty () const
+  {
+    return (imported_symtabs == nullptr || imported_symtabs->empty ());
+  }
+
+  /* Push P to the back of IMPORTED_SYMTABS, allocated IMPORTED_SYMTABS
+     first if required.  */
+  void imported_symtabs_push (dwarf2_per_cu_data *p)
+  {
+    if (imported_symtabs == nullptr)
+      imported_symtabs = new std::vector <dwarf2_per_cu_data *>;
+    imported_symtabs->push_back (p);
+  }
+
+  /* Return the size of IMPORTED_SYMTABS if it is allocated, otherwise
+     return 0.  */
+  size_t imported_symtabs_size () const
+  {
+    if (imported_symtabs == nullptr)
+      return 0;
+    return imported_symtabs->size ();
+  }
+
+  /* Delete IMPORTED_SYMTABS and set the pointer back to nullptr.  */
+  void imported_symtabs_free ()
+  {
+    delete imported_symtabs;
+    imported_symtabs = nullptr;
+  }
+
   /* The CUs we import using DW_TAG_imported_unit.  This is filled in
      while reading psymtabs, used to compute the psymtab dependencies,
      and then cleared.  Then it is filled in again while reading full
@@ -356,8 +392,14 @@ struct dwarf2_per_cu_data
      .gdb_index version <=7 this also records the TUs that the CU referred
      to.  Concurrently with this change gdb was modified to emit version 8
      indices so we only pay a price for gold generated indices.
-     http://sourceware.org/bugzilla/show_bug.cgi?id=15021.  */
-  VEC (dwarf2_per_cu_ptr) *imported_symtabs;
+     http://sourceware.org/bugzilla/show_bug.cgi?id=15021.
+
+     This currently needs to be a public member due to how
+     dwarf2_per_cu_data is allocated and used.  Ideally in future things
+     could be refactored to make this private.  Until then please try to
+     avoid direct access to this member, and instead use the helper
+     functions above.  */
+  std::vector <dwarf2_per_cu_data *> *imported_symtabs;
 };
 
 /* Entry in the signatured_types hash table.  */
@@ -399,9 +441,6 @@ struct signatured_type
   struct dwo_unit *dwo_unit;
 };
 
-typedef struct signatured_type *sig_type_ptr;
-DEF_VEC_P (sig_type_ptr);
-
 ULONGEST read_unsigned_leb128 (bfd *, const gdb_byte *, unsigned int *);
 
 /* This represents a '.dwz' file.  */
@@ -415,7 +454,7 @@ struct dwz_file
 
   const char *filename () const
   {
-    return bfd_get_filename (this->dwz_bfd);
+    return bfd_get_filename (this->dwz_bfd.get ());
   }
 
   /* A dwz file can only contain a few sections.  */

@@ -1,3 +1,62 @@
+2019-09-28  Alan Modra  <amodra@gmail.com>
+
+	PR 16794
+	* i386.cc (Target_i386::Relocate::relocate <R_386_GOTOFF>): Don't
+	ignore addend, apply using pcrel32.
+	* x86_64.cc (Target_x86_64::Relocate::relocate <R_X86_64_GOTOFF64>):
+	Similarly use pcrel64.
+
+2019-09-24  Nick Clifton  <nickc@redhat.com>
+
+	* descriptors.cc: Include <string>
+
+2019-09-23  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/plugin_new_section_layout.c (new_input_hook): Correct
+	return status enum values.
+
+2019-09-20  Alan Modra  <amodra@gmail.com>
+
+	PR 24768
+	* layout.cc (Layout::Layout): Init lto_slim_object_.
+	* object.cc (Sized_relobj_file::do_layout): Wrap overlong line.
+	Don't use C cast.  Validate section size.  Don't copy contents.
+
+2019-09-20  Alan Modra  <amodra@gmail.com>
+
+	* powerpc.cc (Target_powerpc::Scan::check_non_pic): Move REL24
+	to 32-bit supported.
+
+2019-09-18  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* testsuite/Makefile.in: Re-generate.
+
+2019-09-09  Phil Blundell  <pb@pbcl.net>
+
+	binutils 2.33 branch created.
+
+2019-08-16  Martin Liska  <mliska@suse.cz>
+
+	PR ld/24912
+	* object.cc (big_endian>::do_layout): Do not report error,
+	but only set a flag.
+	(big_endian>::do_add_symbols): Report error only for when
+	relocatable.
+
+2019-08-02  Alan Modra  <amodra@gmail.com>
+
+	* powerpc.cc (Target_powerpc::Scan::get_reference_flags): Set
+	flags for new relocations, and some missing older relocs.
+	(Target_powerpc::Scan::local): Handle new pcrel tls relocs.
+	Call set_has_static_tls for tprel relocs.
+	(Target_powerpc::Scan::global): Likewise.
+	(Target_powerpc::Relocate::relocate): Handle new pcrel tls relocs.
+
+2019-08-02  Alan Modra  <amodra@gmail.com>
+
+	* powerpc.cc (Powerpc_relocate_functions::rela, rela_ua): Perform
+	signed right shift for signed overflow check.
+
 2019-07-29  Martin Liska  <mliska@suse.cz>
 
 	PR 24768

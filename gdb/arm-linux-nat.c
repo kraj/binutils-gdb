@@ -66,8 +66,6 @@
 #define PTRACE_SETHBPREGS 30
 #endif
 
-extern int arm_apcs_32;
-
 class arm_linux_nat_target final : public linux_nat_target
 {
 public:

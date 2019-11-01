@@ -141,17 +141,9 @@ static const char *print_symbol_loading_enums[] =
 };
 static const char *print_symbol_loading = print_symbol_loading_full;
 
-/* If non-zero, shared library symbols will be added automatically
-   when the inferior is created, new libraries are loaded, or when
-   attaching to the inferior.  This is almost always what users will
-   want to have happen; but for very large programs, the startup time
-   will be excessive, and so if this is a problem, the user can clear
-   this flag and then add the shared library symbols as needed.  Note
-   that there is a potential for confusion, since if the shared
-   library symbols are not loaded, commands like "info fun" will *not*
-   report all the functions that are actually present.  */
+/* See symfile.h.  */
 
-int auto_solib_add = 1;
+bool auto_solib_add = true;
 
 
 /* Return non-zero if symbol-loading messages should be printed.
@@ -208,15 +200,14 @@ find_lowest_section (bfd *abfd, asection *sect, void *obj)
 {
   asection **lowest = (asection **) obj;
 
-  if (0 == (bfd_get_section_flags (abfd, sect) & (SEC_ALLOC | SEC_LOAD)))
+  if (0 == (bfd_section_flags (sect) & (SEC_ALLOC | SEC_LOAD)))
     return;
   if (!*lowest)
     *lowest = sect;		/* First loadable section */
-  else if (bfd_section_vma (abfd, *lowest) > bfd_section_vma (abfd, sect))
+  else if (bfd_section_vma (*lowest) > bfd_section_vma (sect))
     *lowest = sect;		/* A lower loadable section */
-  else if (bfd_section_vma (abfd, *lowest) == bfd_section_vma (abfd, sect)
-	   && (bfd_section_size (abfd, (*lowest))
-	       <= bfd_section_size (abfd, sect)))
+  else if (bfd_section_vma (*lowest) == bfd_section_vma (sect)
+	   && (bfd_section_size (*lowest) <= bfd_section_size (sect)))
     *lowest = sect;
 }
 
@@ -236,10 +227,10 @@ build_section_addr_info_from_section_table (const struct target_section *start,
       struct bfd_section *asect = stp->the_bfd_section;
       bfd *abfd = asect->owner;
 
-      if (bfd_get_section_flags (abfd, asect) & (SEC_ALLOC | SEC_LOAD)
+      if (bfd_section_flags (asect) & (SEC_ALLOC | SEC_LOAD)
 	  && sap.size () < end - start)
 	sap.emplace_back (stp->addr,
-			  bfd_section_name (abfd, asect),
+			  bfd_section_name (asect),
 			  gdb_bfd_section_index (abfd, asect));
     }
 
@@ -255,9 +246,9 @@ build_section_addr_info_from_bfd (bfd *abfd)
 
   section_addr_info sap;
   for (sec = abfd->sections; sec != NULL; sec = sec->next)
-    if (bfd_get_section_flags (abfd, sec) & (SEC_ALLOC | SEC_LOAD))
-      sap.emplace_back (bfd_get_section_vma (abfd, sec),
-			bfd_get_section_name (abfd, sec),
+    if (bfd_section_flags (sec) & (SEC_ALLOC | SEC_LOAD))
+      sap.emplace_back (bfd_section_vma (sec),
+			bfd_section_name (sec),
 			gdb_bfd_section_index (abfd, sec));
 
   return sap;
@@ -361,10 +352,10 @@ place_section (bfd *abfd, asection *sect, void *obj)
   struct place_section_arg *arg = (struct place_section_arg *) obj;
   CORE_ADDR *offsets = arg->offsets->offsets, start_addr;
   int done;
-  ULONGEST align = ((ULONGEST) 1) << bfd_get_section_alignment (abfd, sect);
+  ULONGEST align = ((ULONGEST) 1) << bfd_section_alignment (sect);
 
   /* We are only interested in allocated sections.  */
-  if ((bfd_get_section_flags (abfd, sect) & SEC_ALLOC) == 0)
+  if ((bfd_section_flags (sect) & SEC_ALLOC) == 0)
     return;
 
   /* If the user specified an offset, honor it.  */
@@ -388,7 +379,7 @@ place_section (bfd *abfd, asection *sect, void *obj)
 	  continue;
 
 	/* We can only conflict with allocated sections.  */
-	if ((bfd_get_section_flags (abfd, cur_sec) & SEC_ALLOC) == 0)
+	if ((bfd_section_flags (cur_sec) & SEC_ALLOC) == 0)
 	  continue;
 
 	/* If the section offset is 0, either the section has not been placed
@@ -398,10 +389,10 @@ place_section (bfd *abfd, asection *sect, void *obj)
 	  continue;
 
 	/* If this section would overlap us, then we must move up.  */
-	if (start_addr + bfd_get_section_size (sect) > offsets[indx]
-	    && start_addr < offsets[indx] + bfd_get_section_size (cur_sec))
+	if (start_addr + bfd_section_size (sect) > offsets[indx]
+	    && start_addr < offsets[indx] + bfd_section_size (cur_sec))
 	  {
-	    start_addr = offsets[indx] + bfd_get_section_size (cur_sec);
+	    start_addr = offsets[indx] + bfd_section_size (cur_sec);
 	    start_addr = (start_addr + align - 1) & -align;
 	    done = 0;
 	    break;
@@ -413,7 +404,7 @@ place_section (bfd *abfd, asection *sect, void *obj)
   while (!done);
 
   offsets[gdb_bfd_section_index (abfd, sect)] = start_addr;
-  arg->lowest = start_addr + bfd_get_section_size (sect);
+  arg->lowest = start_addr + bfd_section_size (sect);
 }
 
 /* Store section_addr_info as prepared (made relative and with SECTINDEX
@@ -508,7 +499,7 @@ addr_info_make_relative (section_addr_info *addrs, bfd *abfd)
   int i;
 
   /* Find lowest loadable section to be used as starting point for
-     continguous sections.  */
+     contiguous sections.  */
   lower_sect = NULL;
   bfd_map_over_sections (abfd, find_lowest_section, &lower_sect);
   if (lower_sect == NULL)
@@ -518,7 +509,7 @@ addr_info_make_relative (section_addr_info *addrs, bfd *abfd)
       lower_offset = 0;
     }
   else
-    lower_offset = bfd_section_vma (bfd_get_filename (abfd), lower_sect);
+    lower_offset = bfd_section_vma (lower_sect);
 
   /* Create ADDRS_TO_ABFD_ADDRS array to map the sections in ADDRS to sections
      in ABFD.  Section names are not unique - there can be multiple sections of
@@ -666,7 +657,7 @@ default_symfile_offsets (struct objfile *objfile,
       for (cur_sec = abfd->sections; cur_sec != NULL; cur_sec = cur_sec->next)
 	/* We do not expect this to happen; just skip this step if the
 	   relocatable file has a section with an assigned VMA.  */
-	if (bfd_section_vma (abfd, cur_sec) != 0)
+	if (bfd_section_vma (cur_sec) != 0)
 	  break;
 
       if (cur_sec == NULL)
@@ -708,10 +699,10 @@ default_symfile_offsets (struct objfile *objfile,
 	  for (cur_sec = abfd->sections; cur_sec != NULL;
 	       cur_sec = cur_sec->next)
 	    {
-	      if ((bfd_get_section_flags (abfd, cur_sec) & SEC_ALLOC) == 0)
+	      if ((bfd_section_flags (cur_sec) & SEC_ALLOC) == 0)
 		continue;
 
-	      bfd_set_section_vma (abfd, cur_sec, offsets[cur_sec->index]);
+	      bfd_set_section_vma (cur_sec, offsets[cur_sec->index]);
 	      exec_set_section_address (bfd_get_filename (abfd),
 					cur_sec->index,
 					offsets[cur_sec->index]);
@@ -748,7 +739,7 @@ default_symfile_segments (bfd *abfd)
   /* Make sure there is at least one loadable section in the file.  */
   for (sect = abfd->sections; sect != NULL; sect = sect->next)
     {
-      if ((bfd_get_section_flags (abfd, sect) & SEC_ALLOC) == 0)
+      if ((bfd_section_flags (sect) & SEC_ALLOC) == 0)
 	continue;
 
       break;
@@ -756,8 +747,8 @@ default_symfile_segments (bfd *abfd)
   if (sect == NULL)
     return NULL;
 
-  low = bfd_get_section_vma (abfd, sect);
-  high = low + bfd_get_section_size (sect);
+  low = bfd_section_vma (sect);
+  high = low + bfd_section_size (sect);
 
   data = XCNEW (struct symfile_segment_data);
   data->num_segments = 1;
@@ -771,14 +762,14 @@ default_symfile_segments (bfd *abfd)
     {
       CORE_ADDR vma;
 
-      if ((bfd_get_section_flags (abfd, sect) & SEC_ALLOC) == 0)
+      if ((bfd_section_flags (sect) & SEC_ALLOC) == 0)
 	continue;
 
-      vma = bfd_get_section_vma (abfd, sect);
+      vma = bfd_section_vma (sect);
       if (vma < low)
 	low = vma;
-      if (vma + bfd_get_section_size (sect) > high)
-	high = vma + bfd_get_section_size (sect);
+      if (vma + bfd_section_size (sect) > high)
+	high = vma + bfd_section_size (sect);
 
       data->segment_info[i] = 1;
     }
@@ -880,9 +871,9 @@ init_entry_point_info (struct objfile *objfile)
 	{
 	  struct bfd_section *sect = osect->the_bfd_section;
 
-	  if (entry_point >= bfd_get_section_vma (objfile->obfd, sect)
-	      && entry_point < (bfd_get_section_vma (objfile->obfd, sect)
-				+ bfd_get_section_size (sect)))
+	  if (entry_point >= bfd_section_vma (sect)
+	      && entry_point < (bfd_section_vma (sect)
+				+ bfd_section_size (sect)))
 	    {
 	      ei->the_bfd_section_index
 		= gdb_bfd_section_index (objfile->obfd, sect);
@@ -914,10 +905,10 @@ init_entry_point_info (struct objfile *objfile)
    into a format-specific offset table --- a `struct section_offsets'.
    The sectindex field is used to control the ordering of sections
    with the same name.  Upon return, it is updated to contain the
-   correspondig BFD section index, or -1 if the section was not found.
+   corresponding BFD section index, or -1 if the section was not found.
 
    ADD_FLAGS encodes verbosity level, whether this is main symbol or
-   an extra symbol file such as dynamically loaded code, and wether
+   an extra symbol file such as dynamically loaded code, and whether
    breakpoint reset should be deferred.  */
 
 static void
@@ -1053,7 +1044,7 @@ finish_new_objfile (struct objfile *objfile, symfile_add_flags add_flags)
    For NAME description see the objfile constructor.
 
    ADD_FLAGS encodes verbosity, whether this is main symbol file or
-   extra, such as dynamically loaded code, and what to do with breakpoins.
+   extra, such as dynamically loaded code, and what to do with breakpoints.
 
    ADDRS is as described for syms_from_objfile_1, above.
    ADDRS is ignored when SYMFILE_MAINLINE bit is set in ADD_FLAGS.
@@ -1115,11 +1106,8 @@ symbol_file_add_with_addrs (bfd *abfd, const char *name,
       if (deprecated_pre_add_symbol_hook)
 	deprecated_pre_add_symbol_hook (name);
       else
-	{
-	  puts_filtered (_("Reading symbols from "));
-	  fputs_styled (name, file_name_style.style (), gdb_stdout);
-	  puts_filtered ("...\n");
-	}
+	printf_filtered (_("Reading symbols from %ps...\n"),
+			 styled_string (file_name_style.style (), name));
     }
   syms_from_objfile (objfile, addrs, add_flags);
 
@@ -1131,7 +1119,8 @@ symbol_file_add_with_addrs (bfd *abfd, const char *name,
   if ((flags & OBJF_READNOW))
     {
       if (should_print)
-	printf_filtered (_("Expanding full symbols from %s...\n"), name);
+	printf_filtered (_("Expanding full symbols from %ps...\n"),
+			 styled_string (file_name_style.style (), name));
 
       if (objfile->sf)
 	objfile->sf->qf->expand_all_symtabs (objfile);
@@ -1143,7 +1132,8 @@ symbol_file_add_with_addrs (bfd *abfd, const char *name,
      file, and so printing it twice is just redundant.  */
   if (should_print && !objfile_has_symbols (objfile)
       && objfile->separate_debug_objfile == nullptr)
-    printf_filtered (_("(No debugging symbols found in %s)\n"), name);
+    printf_filtered (_("(No debugging symbols found in %ps)\n"),
+		     styled_string (file_name_style.style (), name));
 
   if (should_print)
     {
@@ -1273,7 +1263,7 @@ symbol_file_clear (int from_tty)
 
 /* See symfile.h.  */
 
-int separate_debug_file_debug = 0;
+bool separate_debug_file_debug = false;
 
 static int
 separate_debug_file_exists (const std::string &name, unsigned long crc,
@@ -1454,7 +1444,7 @@ find_separate_debug_file (const char *dir,
 
     https://sourceware.org/ml/gdb-patches/2019-04/msg00605.html
 
-    If some of those scenarions need to be supported, we will need to
+    If some of those scenarios need to be supported, we will need to
     use a different condition for HAS_DRIVE_SPEC and a different macro
     instead of STRIP_DRIVE_SPEC, which work on Posix systems as well.  */
   std::string drive;
@@ -1886,7 +1876,7 @@ add_section_size_callback (bfd *abfd, asection *asec, void *data)
 {
   bfd_size_type *sum = (bfd_size_type *) data;
 
-  *sum += bfd_get_section_size (asec);
+  *sum += bfd_section_size (asec);
 }
 
 /* Opaque data for load_progress.  */
@@ -2009,16 +1999,16 @@ static void
 load_section_callback (bfd *abfd, asection *asec, void *data)
 {
   struct load_section_data *args = (struct load_section_data *) data;
-  bfd_size_type size = bfd_get_section_size (asec);
-  const char *sect_name = bfd_get_section_name (abfd, asec);
+  bfd_size_type size = bfd_section_size (asec);
+  const char *sect_name = bfd_section_name (asec);
 
-  if ((bfd_get_section_flags (abfd, asec) & SEC_LOAD) == 0)
+  if ((bfd_section_flags (asec) & SEC_LOAD) == 0)
     return;
 
   if (size == 0)
     return;
 
-  ULONGEST begin = bfd_section_lma (abfd, asec) + args->load_offset;
+  ULONGEST begin = bfd_section_lma (asec) + args->load_offset;
   ULONGEST end = begin + size;
   gdb_byte *buffer = (gdb_byte *) xmalloc (size);
   bfd_get_section_contents (abfd, asec, buffer, 0, size);
@@ -2528,6 +2518,9 @@ reread_symbols (void)
 	     automatically recreated by sym_read.  */
 	  free_objfile_separate_debug (objfile);
 
+	  /* Clear the stale source cache.  */
+	  forget_cached_source_info ();
+
 	  /* Remove any references to this objfile in the global
 	     value lists.  */
 	  preserve_values (objfile);
@@ -2548,7 +2541,7 @@ reread_symbols (void)
 	  /* Clean up any state BFD has sitting around.  */
 	  {
 	    gdb_bfd_ref_ptr obfd (objfile->obfd);
-	    char *obfd_filename;
+	    const char *obfd_filename;
 
 	    obfd_filename = bfd_get_filename (objfile->obfd);
 	    /* Open the new BFD before freeing the old one, so that
@@ -2596,9 +2589,7 @@ reread_symbols (void)
 	  set_objfile_per_bfd (objfile);
 
 	  objfile->original_name
-	    = (char *) obstack_copy0 (&objfile->objfile_obstack,
-				      original_name.c_str (),
-				      original_name.size ());
+	    = obstack_strdup (&objfile->objfile_obstack, original_name);
 
 	  /* Reset the sym_fns pointer.  The ELF reader can change it
 	     based on whether .gdb_index is present, and we need it to
@@ -2882,9 +2873,7 @@ allocate_compunit_symtab (struct objfile *objfile, const char *name)
      Just save the basename to avoid path issues (too long for display,
      relative vs absolute, etc.).  */
   saved_name = lbasename (name);
-  cu->name
-    = (const char *) obstack_copy0 (&objfile->objfile_obstack, saved_name,
-				    strlen (saved_name));
+  cu->name = obstack_strdup (&objfile->objfile_obstack, saved_name);
 
   COMPUNIT_DEBUGFORMAT (cu) = "unknown";
 
@@ -3000,9 +2989,8 @@ section_is_overlay (struct obj_section *section)
     {
       asection *bfd_section = section->the_bfd_section;
 
-      if (bfd_section_lma (abfd, bfd_section) != 0
-	  && bfd_section_lma (abfd, bfd_section)
-	     != bfd_section_vma (abfd, bfd_section))
+      if (bfd_section_lma (bfd_section) != 0
+	  && bfd_section_lma (bfd_section) != bfd_section_vma (bfd_section))
 	return 1;
     }
 
@@ -3073,15 +3061,14 @@ pc_in_unmapped_range (CORE_ADDR pc, struct obj_section *section)
 {
   if (section_is_overlay (section))
     {
-      bfd *abfd = section->objfile->obfd;
       asection *bfd_section = section->the_bfd_section;
 
       /* We assume the LMA is relocated by the same offset as the VMA.  */
-      bfd_vma size = bfd_get_section_size (bfd_section);
+      bfd_vma size = bfd_section_size (bfd_section);
       CORE_ADDR offset = obj_section_offset (section);
 
-      if (bfd_get_section_lma (abfd, bfd_section) + offset <= pc
-	  && pc < bfd_get_section_lma (abfd, bfd_section) + offset + size)
+      if (bfd_section_lma (bfd_section) + offset <= pc
+	  && pc < bfd_section_lma (bfd_section) + offset + size)
 	return 1;
     }
 
@@ -3129,8 +3116,8 @@ overlay_unmapped_address (CORE_ADDR pc, struct obj_section *section)
     {
       asection *bfd_section = section->the_bfd_section;
 
-      return pc + bfd_section_lma (abfd, bfd_section)
-		- bfd_section_vma (abfd, bfd_section);
+      return (pc + bfd_section_lma (bfd_section)
+	      - bfd_section_vma (bfd_section));
     }
 
   return pc;
@@ -3147,8 +3134,8 @@ overlay_mapped_address (CORE_ADDR pc, struct obj_section *section)
     {
       asection *bfd_section = section->the_bfd_section;
 
-      return pc + bfd_section_vma (abfd, bfd_section)
-		- bfd_section_lma (abfd, bfd_section);
+      return (pc + bfd_section_vma (bfd_section)
+	      - bfd_section_lma (bfd_section));
     }
 
   return pc;
@@ -3253,10 +3240,10 @@ list_overlays_command (const char *args, int from_tty)
 	      bfd_vma lma, vma;
 	      int size;
 
-	      vma = bfd_section_vma (objfile->obfd, osect->the_bfd_section);
-	      lma = bfd_section_lma (objfile->obfd, osect->the_bfd_section);
-	      size = bfd_get_section_size (osect->the_bfd_section);
-	      name = bfd_section_name (objfile->obfd, osect->the_bfd_section);
+	      vma = bfd_section_vma (osect->the_bfd_section);
+	      lma = bfd_section_lma (osect->the_bfd_section);
+	      size = bfd_section_size (osect->the_bfd_section);
+	      name = bfd_section_name (osect->the_bfd_section);
 
 	      printf_filtered ("Section %s, loaded at ", name);
 	      fputs_filtered (paddress (gdbarch, lma), gdb_stdout);
@@ -3294,8 +3281,7 @@ map_overlay_command (const char *args, int from_tty)
   /* First, find a section matching the user supplied argument.  */
   for (objfile *obj_file : current_program_space->objfiles ())
     ALL_OBJFILE_OSECTIONS (obj_file, sec)
-      if (!strcmp (bfd_section_name (obj_file->obfd, sec->the_bfd_section),
-		   args))
+      if (!strcmp (bfd_section_name (sec->the_bfd_section), args))
 	{
 	  /* Now, check to see if the section is an overlay.  */
 	  if (!section_is_overlay (sec))
@@ -3313,8 +3299,7 @@ map_overlay_command (const char *args, int from_tty)
 		{
 		  if (info_verbose)
 		    printf_unfiltered (_("Note: section %s unmapped by overlap\n"),
-				       bfd_section_name (obj_file->obfd,
-							 sec2->the_bfd_section));
+				       bfd_section_name (sec2->the_bfd_section));
 		  sec2->ovly_mapped = 0; /* sec2 overlaps sec: unmap sec2.  */
 		}
 	  return;
@@ -3342,7 +3327,7 @@ unmap_overlay_command (const char *args, int from_tty)
   /* First, find a section matching the user supplied argument.  */
   for (objfile *objfile : current_program_space->objfiles ())
     ALL_OBJFILE_OSECTIONS (objfile, sec)
-      if (!strcmp (bfd_section_name (objfile->obfd, sec->the_bfd_section), args))
+      if (!strcmp (bfd_section_name (sec->the_bfd_section), args))
 	{
 	  if (!sec->ovly_mapped)
 	    error (_("Section %s is not mapped"), args);
@@ -3551,14 +3536,14 @@ simple_overlay_update_1 (struct obj_section *osect)
   enum bfd_endian byte_order = gdbarch_byte_order (gdbarch);
 
   for (i = 0; i < cache_novlys; i++)
-    if (cache_ovly_table[i][VMA] == bfd_section_vma (obfd, bsect)
-	&& cache_ovly_table[i][LMA] == bfd_section_lma (obfd, bsect))
+    if (cache_ovly_table[i][VMA] == bfd_section_vma (bsect)
+	&& cache_ovly_table[i][LMA] == bfd_section_lma (bsect))
       {
 	read_target_long_array (cache_ovly_table_base + i * word_size,
 				(unsigned int *) cache_ovly_table[i],
 				4, word_size, byte_order);
-	if (cache_ovly_table[i][VMA] == bfd_section_vma (obfd, bsect)
-	    && cache_ovly_table[i][LMA] == bfd_section_lma (obfd, bsect))
+	if (cache_ovly_table[i][VMA] == bfd_section_vma (bsect)
+	    && cache_ovly_table[i][LMA] == bfd_section_lma (bsect))
 	  {
 	    osect->ovly_mapped = cache_ovly_table[i][MAPPED];
 	    return 1;
@@ -3619,8 +3604,8 @@ simple_overlay_update (struct obj_section *osect)
 	  asection *bsect = osect->the_bfd_section;
 
 	  for (i = 0; i < cache_novlys; i++)
-	    if (cache_ovly_table[i][VMA] == bfd_section_vma (obfd, bsect)
-		&& cache_ovly_table[i][LMA] == bfd_section_lma (obfd, bsect))
+	    if (cache_ovly_table[i][VMA] == bfd_section_vma (bsect)
+		&& cache_ovly_table[i][LMA] == bfd_section_lma (bsect))
 	      { /* obj_section matches i'th entry in ovly_table.  */
 		osect->ovly_mapped = cache_ovly_table[i][MAPPED];
 		break;		/* finished with inner for loop: break out.  */
@@ -3958,8 +3943,8 @@ that lies within the boundaries of this symbol file in memory."),
 	       &cmdlist);
 
   c = add_cmd ("load", class_files, load_command, _("\
-Dynamically load FILE into the running program, and record its symbols\n\
-for access from GDB.\n\
+Dynamically load FILE into the running program.\n\
+FILE symbols are recorded for access from GDB.\n\
 Usage: load [FILE] [OFFSET]\n\
 An optional load OFFSET may also be given as a literal address.\n\
 When OFFSET is provided, FILE must also be provided.  FILE can be provided\n\

@@ -56,7 +56,8 @@ static core_fns *sniff_core_bfd (gdbarch *core_gdbarch,
 static const target_info core_target_info = {
   "core",
   N_("Local core dump file"),
-  N_("Use a core file as a target.  Specify the filename of the core file.")
+  N_("Use a core file as a target.\n\
+Specify the filename of the core file.")
 };
 
 class core_target final : public process_stratum_target
@@ -288,10 +289,10 @@ add_to_thread_list (bfd *abfd, asection *asect, void *reg_sect_arg)
   bool fake_pid_p = false;
   struct inferior *inf;
 
-  if (!startswith (bfd_section_name (abfd, asect), ".reg/"))
+  if (!startswith (bfd_section_name (asect), ".reg/"))
     return;
 
-  core_tid = atoi (bfd_section_name (abfd, asect) + 5);
+  core_tid = atoi (bfd_section_name (asect) + 5);
 
   pid = bfd_core_file_pid (core_bfd);
   if (pid == 0)
@@ -329,7 +330,7 @@ maybe_say_no_core_file_now (int from_tty)
     printf_filtered (_("No core file now.\n"));
 }
 
-/* Backward compatability with old way of specifying core files.  */
+/* Backward compatibility with old way of specifying core files.  */
 
 void
 core_file_command (const char *filename, int from_tty)
@@ -583,7 +584,7 @@ core_target::get_core_register_section (struct regcache *regcache,
       return;
     }
 
-  size = bfd_section_size (core_bfd, section);
+  size = bfd_section_size (section);
   if (size < section_min_size)
     {
       warning (_("Section `%s' in core file too small."),
@@ -613,8 +614,7 @@ core_target::get_core_register_section (struct regcache *regcache,
 
   gdb_assert (m_core_vec != nullptr);
   m_core_vec->core_read_registers (regcache, contents, size, which,
-				   ((CORE_ADDR)
-				    bfd_section_vma (core_bfd, section)));
+				   (CORE_ADDR) bfd_section_vma (section));
 }
 
 /* Data passed to gdbarch_iterate_over_regset_sections's callback.  */
@@ -709,36 +709,6 @@ core_target::files_info ()
   print_section_info (&m_core_section_table, core_bfd);
 }
 
-struct spuid_list
-{
-  gdb_byte *buf;
-  ULONGEST offset;
-  LONGEST len;
-  ULONGEST pos;
-  ULONGEST written;
-};
-
-static void
-add_to_spuid_list (bfd *abfd, asection *asect, void *list_p)
-{
-  struct spuid_list *list = (struct spuid_list *) list_p;
-  enum bfd_endian byte_order
-    = bfd_big_endian (abfd) ? BFD_ENDIAN_BIG : BFD_ENDIAN_LITTLE;
-  int fd, pos = 0;
-
-  sscanf (bfd_section_name (abfd, asect), "SPU/%d/regs%n", &fd, &pos);
-  if (pos == 0)
-    return;
-
-  if (list->pos >= list->offset && list->pos + 4 <= list->offset + list->len)
-    {
-      store_unsigned_integer (list->buf + list->pos - list->offset,
-			      4, byte_order, fd);
-      list->written += 4;
-    }
-  list->pos += 4;
-}
-
 enum target_xfer_status
 core_target::xfer_partial (enum target_object object, const char *annex,
 			   gdb_byte *readbuf, const gdb_byte *writebuf,
@@ -767,7 +737,7 @@ core_target::xfer_partial (enum target_object object, const char *annex,
 	  if (section == NULL)
 	    return TARGET_XFER_E_IO;
 
-	  size = bfd_section_size (core_bfd, section);
+	  size = bfd_section_size (section);
 	  if (offset >= size)
 	    return TARGET_XFER_EOF;
 	  size -= offset;
@@ -802,7 +772,7 @@ core_target::xfer_partial (enum target_object object, const char *annex,
 	  if (section == NULL)
 	    return TARGET_XFER_E_IO;
 
-	  size = bfd_section_size (core_bfd, section);
+	  size = bfd_section_size (section);
 	  if (offset >= size)
 	    return TARGET_XFER_EOF;
 	  size -= offset;
@@ -864,64 +834,6 @@ core_target::xfer_partial (enum target_object object, const char *annex,
 	    }
 	}
       /* FALL THROUGH */
-
-    case TARGET_OBJECT_SPU:
-      if (readbuf && annex)
-	{
-	  /* When the SPU contexts are stored in a core file, BFD
-	     represents this with a fake section called
-	     "SPU/<annex>".  */
-
-	  struct bfd_section *section;
-	  bfd_size_type size;
-	  char sectionstr[100];
-
-	  xsnprintf (sectionstr, sizeof sectionstr, "SPU/%s", annex);
-
-	  section = bfd_get_section_by_name (core_bfd, sectionstr);
-	  if (section == NULL)
-	    return TARGET_XFER_E_IO;
-
-	  size = bfd_section_size (core_bfd, section);
-	  if (offset >= size)
-	    return TARGET_XFER_EOF;
-	  size -= offset;
-	  if (size > len)
-	    size = len;
-
-	  if (size == 0)
-	    return TARGET_XFER_EOF;
-	  if (!bfd_get_section_contents (core_bfd, section, readbuf,
-					 (file_ptr) offset, size))
-	    {
-	      warning (_("Couldn't read SPU section in core file."));
-	      return TARGET_XFER_E_IO;
-	    }
-
-	  *xfered_len = (ULONGEST) size;
-	  return TARGET_XFER_OK;
-	}
-      else if (readbuf)
-	{
-	  /* NULL annex requests list of all present spuids.  */
-	  struct spuid_list list;
-
-	  list.buf = readbuf;
-	  list.offset = offset;
-	  list.len = len;
-	  list.pos = 0;
-	  list.written = 0;
-	  bfd_map_over_sections (core_bfd, add_to_spuid_list, &list);
-
-	  if (list.written == 0)
-	    return TARGET_XFER_EOF;
-	  else
-	    {
-	      *xfered_len = (ULONGEST) list.written;
-	      return TARGET_XFER_OK;
-	    }
-	}
-      return TARGET_XFER_E_IO;
 
     case TARGET_OBJECT_SIGNAL_INFO:
       if (readbuf)

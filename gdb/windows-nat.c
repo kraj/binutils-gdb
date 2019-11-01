@@ -44,7 +44,6 @@
 #endif
 #include <algorithm>
 
-#include "buildsym-legacy.h"
 #include "filenames.h"
 #include "symfile.h"
 #include "objfiles.h"
@@ -148,7 +147,7 @@ static GetConsoleFontSize_ftype *GetConsoleFontSize;
 static int have_saved_context;	/* True if we've saved context from a
 				   cygwin signal.  */
 #ifdef __CYGWIN__
-static CONTEXT saved_context;	/* Containes the saved context from a
+static CONTEXT saved_context;	/* Contains the saved context from a
 				   cygwin signal.  */
 #endif
 
@@ -225,7 +224,6 @@ typedef struct windows_thread_info_struct
     int suspended;
     int reload_context;
     CONTEXT context;
-    STACKFRAME sf;
   }
 windows_thread_info;
 
@@ -245,16 +243,16 @@ static int saw_create;
 static int open_process_used = 0;
 
 /* User options.  */
-static int new_console = 0;
+static bool new_console = false;
 #ifdef __CYGWIN__
-static int cygwin_exceptions = 0;
+static bool cygwin_exceptions = false;
 #endif
-static int new_group = 1;
-static int debug_exec = 0;		/* show execution */
-static int debug_events = 0;		/* show events from kernel */
-static int debug_memory = 0;		/* show target memory accesses */
-static int debug_exceptions = 0;	/* show target exceptions */
-static int useshell = 0;		/* use shell for subprocesses */
+static bool new_group = true;
+static bool debug_exec = false;		/* show execution */
+static bool debug_events = false;	/* show events from kernel */
+static bool debug_memory = false;	/* show target memory accesses */
+static bool debug_exceptions = false;	/* show target exceptions */
+static bool useshell = false;		/* use shell for subprocesses */
 
 /* This vector maps GDB's idea of a register's number into an offset
    in the windows exception context vector.
@@ -520,7 +518,7 @@ windows_delete_thread (ptid_t ptid, DWORD exit_code, bool main_thread_p)
 
      Note that no notification was printed when the main thread
      was created, and thus, unless in verbose mode, we should be
-     symetrical, and avoid that notification for the main thread
+     symmetrical, and avoid that notification for the main thread
      here as well.  */
 
   if (info_verbose)
@@ -592,8 +590,8 @@ windows_fetch_one_register (struct regcache *regcache,
 void
 windows_nat_target::fetch_registers (struct regcache *regcache, int r)
 {
-  DWORD pid = regcache->ptid ().tid ();
-  windows_thread_info *th = thread_rec (pid, TRUE);
+  DWORD tid = regcache->ptid ().tid ();
+  windows_thread_info *th = thread_rec (tid, TRUE);
 
   /* Check if TH exists.  Windows sometimes uses a non-existent
      thread id in its events.  */
@@ -662,8 +660,8 @@ windows_store_one_register (const struct regcache *regcache,
 void
 windows_nat_target::store_registers (struct regcache *regcache, int r)
 {
-  DWORD pid = regcache->ptid ().tid ();
-  windows_thread_info *th = thread_rec (pid, TRUE);
+  DWORD tid = regcache->ptid ().tid ();
+  windows_thread_info *th = thread_rec (tid, TRUE);
 
   /* Check if TH exists.  Windows sometimes uses a non-existent
      thread id in its events.  */
@@ -676,19 +674,6 @@ windows_nat_target::store_registers (struct regcache *regcache, int r)
   else
     windows_store_one_register (regcache, th, r);
 }
-
-/* Encapsulate the information required in a call to
-   symbol_file_add_args.  */
-struct safe_symbol_file_add_args
-{
-  char *name;
-  int from_tty;
-  section_addr_info *addrs;
-  int mainline;
-  int flags;
-  struct ui_file *err, *out;
-  struct objfile *ret;
-};
 
 /* Maintain a linked list of "so" information.  */
 struct lm_info_windows : public lm_info_base
@@ -794,8 +779,7 @@ windows_make_so (const char *name, LPVOID load_addr)
 	 file header and the section alignment.  */
       cygwin_load_start = (CORE_ADDR) (uintptr_t) ((char *)
 						   load_addr + 0x1000);
-      cygwin_load_end = cygwin_load_start + bfd_section_size (abfd.get (),
-							      text);
+      cygwin_load_end = cygwin_load_start + bfd_section_size (text);
     }
 #endif
 
@@ -1463,8 +1447,8 @@ windows_nat_target::resume (ptid_t ptid, int step, enum gdb_signal sig)
 
   last_sig = GDB_SIGNAL_0;
 
-  DEBUG_EXEC (("gdb: windows_resume (pid=%d, tid=%ld, step=%d, sig=%d);\n",
-	       ptid.pid (), ptid.tid (), step, sig));
+  DEBUG_EXEC (("gdb: windows_resume (pid=%d, tid=0x%x, step=%d, sig=%d);\n",
+	       ptid.pid (), (unsigned) ptid.tid (), step, sig));
 
   /* Get context for currently selected thread.  */
   th = thread_rec (inferior_ptid.tid (), FALSE);

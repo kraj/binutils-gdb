@@ -169,7 +169,7 @@ in the section entitled ``GNU Free Documentation License''.
 @c man title ar create, modify, and extract from archives
 
 @smallexample
-ar [-]@var{p}[@var{mod}] [@option{--plugin} @var{name}] [@option{--target} @var{bfdname}] [@var{relpos}] [@var{count}] @var{archive} [@var{member}@dots{}]
+ar [-]@var{p}[@var{mod}] [@option{--plugin} @var{name}] [@option{--target} @var{bfdname}] [@option{--output} @var{dirname}] [@var{relpos}] [@var{count}] @var{archive} [@var{member}@dots{}]
 ar -M [ <mri-script ]
 @end smallexample
 
@@ -253,7 +253,7 @@ program.
 
 @smallexample
 @c man begin SYNOPSIS ar
-ar [@option{-X32_64}] [@option{-}]@var{p}[@var{mod}] [@option{--plugin} @var{name}] [@option{--target} @var{bfdname}] [@var{relpos}] [@var{count}] @var{archive} [@var{member}@dots{}]
+ar [@option{-X32_64}] [@option{-}]@var{p}[@var{mod}] [@option{--plugin} @var{name}] [@option{--target} @var{bfdname}] [@option{--output} @var{dirname}] [@var{relpos}] [@var{count}] @var{archive} [@var{member}@dots{}]
 @c man end
 @end smallexample
 
@@ -387,7 +387,10 @@ use the @samp{v} modifier with this operation, to request that
 If you do not specify a @var{member}, all files in the archive
 are extracted.
 
-Files cannot be extracted from a thin archive.
+Files cannot be extracted from a thin archive, and there are
+restrictions on extracting from archives created with @option{P}: The
+paths must not be absolute, may not contain @code{..}, and any
+subdirectories in the paths must exist.
 @end table
 
 A number of modifiers (@var{mod}) may immediately follow the @var{p}
@@ -463,12 +466,20 @@ Display member offsets inside the archive. Use together with the @samp{t}
 option.
 
 @item P
-Use the full path name when matching names in the archive.  @sc{gnu}
-@command{ar} can not create an archive with a full path name (such archives
-are not POSIX compliant), but other archive creators can.  This option
-will cause @sc{gnu} @command{ar} to match file names using a complete path
-name, which can be convenient when extracting a single file from an
-archive created by another tool.
+Use the full path name when matching or storing names in the archive.
+Archives created with full path names are not POSIX compliant, and
+thus may not work with tools other than up to date @sc{gnu} tools.
+Modifying such archives with @sc{gnu} @command{ar} without using
+@option{P} will remove the full path names unless the archive is a
+thin archive.  Note that @option{P} may be useful when adding files to
+a thin archive since @option{r} without @option{P} ignores the path
+when choosing which element to replace.  Thus
+@smallexample
+ar rcST archive.a subdir/file1 subdir/file2 file1
+@end smallexample
+will result in the first @code{subdir/file1} being replaced with
+@code{file1} from the current directory.  Adding @option{P} will
+prevent this replacement.
 
 @item s
 @cindex writing archive index
@@ -533,7 +544,7 @@ and then exits.
 Displays the version information of @command{ar} and then exits.
 
 @item -X32_64
-@command{ar} ignores an initial option spelt @samp{-X32_64}, for
+@command{ar} ignores an initial option spelled @samp{-X32_64}, for
 compatibility with AIX.  The behaviour produced by this option is the
 default for @sc{gnu} @command{ar}.  @command{ar} does not support any
 of the other @samp{-X} options; in particular, it does not support
@@ -568,6 +579,21 @@ The optional command-line switch @option{--target @var{bfdname}}
 specifies that the archive members are in an object code format
 different from your system's default format.  See
 @xref{Target Selection}, for more information.
+
+@item --output @var{dirname}
+The @option{--output} option can be used to specify a path to a
+directory into which archive members should be extracted.  If this
+option is not specified then the current directory will be used.
+
+Note - although the presence of this option does imply a @option{x} 
+extraction operation that option must still be included on the command
+line.
+
+Note - using this option does not allow archive members to be
+extracted to locations outside of the current directory, or one of its 
+sub-directories.  This is a security feature to prevent archives
+created with the @option{P} option from maliciously overwriting user
+files.
 @end table
 @c man end
 
@@ -844,8 +870,11 @@ The symbol is an indirect reference to another symbol.
 @item N
 The symbol is a debugging symbol.
 
+@item n
+The symbol is in the read-only data section.
+
 @item p
-The symbols is in a stack unwind section.
+The symbol is in a stack unwind section.
 
 @item R
 @itemx r
@@ -1172,6 +1201,7 @@ objcopy [@option{-F} @var{bfdname}|@option{--target=}@var{bfdname}]
         [@option{--change-section-vma} @var{sectionpattern}@{=,+,-@}@var{val}]
         [@option{--change-warnings}] [@option{--no-change-warnings}]
         [@option{--set-section-flags} @var{sectionpattern}=@var{flags}]
+        [@option{--set-section-alignment} @var{sectionpattern}=@var{align}]
         [@option{--add-section} @var{sectionname}=@var{filename}]
         [@option{--dump-section} @var{sectionname}=@var{filename}]
         [@option{--update-section} @var{sectionname}=@var{filename}]
@@ -1617,6 +1647,11 @@ to clear the @samp{contents} flag of a section which does have
 contents--just remove the section instead.  Not all flags are
 meaningful for all object file formats.
 
+@item --set-section-alignment @var{sectionpattern}=@var{align}
+Set the alignment for any sections matching @var{sectionpattern}.
+@var{align} specifies the alignment in bytes and must be a power of
+two, i.e. 1, 2, 4, 8@dots{}. 
+
 @item --add-section @var{sectionname}=@var{filename}
 Add a new section named @var{sectionname} while copying the file.  The
 contents of the new section are taken from the file @var{filename}.  The
@@ -1972,8 +2007,9 @@ for dlls.
 [This option is specific to PE targets.]
 
 @item --section-alignment @var{num}
-Sets the section alignment.  Sections in memory will always begin at
-addresses which are a multiple of this number.  Defaults to 0x1000.
+Sets the section alignment field in the PE header.  Sections in memory
+will always begin at addresses which are a multiple of this number.
+Defaults to 0x1000.
 [This option is specific to PE targets.]
 
 @item --stack @var{reserve}
@@ -2080,7 +2116,7 @@ ld(1), objdump(1), and the Info entries for @file{binutils}.
 @cindex object file information
 @kindex objdump
 
-@c man title objdump display information from object files.
+@c man title objdump display information from object files
 
 @smallexample
 @c man begin SYNOPSIS objdump
@@ -2101,6 +2137,7 @@ objdump [@option{-a}|@option{--archive-headers}]
         [@option{-j} @var{section}|@option{--section=}@var{section}]
         [@option{-l}|@option{--line-numbers}]
         [@option{-S}|@option{--source}]
+        [@option{--source-comment}[=@var{text}]]
         [@option{-m} @var{machine}|@option{--architecture=}@var{machine}]
         [@option{-M} @var{options}|@option{--disassembler-options=}@var{options}]
         [@option{-p}|@option{--private-headers}]
@@ -2124,8 +2161,6 @@ objdump [@option{-a}|@option{--archive-headers}]
         [@option{--dwarf-depth=@var{n}}]
         [@option{--dwarf-start=@var{n}}]
         [@option{--ctf-parent=}@var{section}]
-        [@option{--ctf-symbols=}@var{section}]
-        [@option{--ctf-strings=}@var{section}]
         [@option{--no-recurse-limit}|@option{--recurse-limit}]
         [@option{--special-syms}]
         [@option{--prefix=}@var{prefix}]
@@ -2448,7 +2483,7 @@ Note: @code{intel-mnemonic} implies @code{intel} and
 @itemx addr16
 @itemx data32
 @itemx data16
-Specify the default address size and operand size.  These four options
+Specify the default address size and operand size.  These five options
 will be overridden if @code{x86-64}, @code{i386} or @code{i8086}
 appear later in the option string.
 
@@ -2609,6 +2644,15 @@ non-empty sections are displayed.
 @cindex disassembly, with source
 Display source code intermixed with disassembly, if possible.  Implies
 @option{-d}.
+
+@item --source-comment[=@var{txt}]
+@cindex source disassembly
+@cindex disassembly, with source
+Like the @option{-S} option, but all source code lines are displayed
+with a prefix of @var{txt}.  Typically @var{txt} will be a comment
+string which can be used to distinguish the assembler code from the
+source code.  If @var{txt} is not provided then a default string of
+@var{``# ``} (hash followed by a space), will be used.
 
 @item --prefix=@var{prefix}
 @cindex Add prefix to absolute paths
@@ -2812,7 +2856,7 @@ nm(1), readelf(1), and the Info entries for @file{binutils}.
 @cindex archive contents
 @cindex symbol index
 
-@c man title ranlib generate index to archive.
+@c man title ranlib generate an index to an archive
 
 @smallexample
 @c man begin SYNOPSIS ranlib
@@ -2893,7 +2937,7 @@ ar(1), nm(1), and the Info entries for @file{binutils}.
 @kindex size
 @cindex section sizes
 
-@c man title size list section sizes and total size.
+@c man title size list section sizes and total size of binary files
 
 @smallexample
 @c man begin SYNOPSIS size
@@ -2909,13 +2953,13 @@ size [@option{-A}|@option{-B}|@option{-G}|@option{--format=}@var{compatibility}]
 
 @c man begin DESCRIPTION size
 
-The @sc{gnu} @command{size} utility lists the section sizes---and the total
-size---for each of the object or archive files @var{objfile} in its
-argument list.  By default, one line of output is generated for each
-object file or each module in an archive.
+The @sc{gnu} @command{size} utility lists the section sizes and the total
+size for each of the binary files @var{objfile} on its argument list.
+By default, one line of output is generated for each file or each
+module if the file is an archive.
 
-@var{objfile}@dots{} are the object files to be examined.
-If none are specified, the file @code{a.out} will be used.
+@var{objfile}@dots{} are the files to be examined.  If none are
+specified, the file @code{a.out} will be used instead.
 
 @c man end
 
@@ -3040,7 +3084,7 @@ ar(1), objdump(1), readelf(1), and the Info entries for @file{binutils}.
 @cindex printing strings
 @cindex strings, printing
 
-@c man title strings print the strings of printable characters in files.
+@c man title strings print the sequences of printable characters in files
 
 @smallexample
 @c man begin SYNOPSIS strings
@@ -3182,7 +3226,7 @@ and the Info entries for @file{binutils}.
 @cindex discarding symbols
 @cindex symbols, discarding
 
-@c man title strip Discard symbols from object files.
+@c man title strip discard symbols and other data from object files
 
 @smallexample
 @c man begin SYNOPSIS strip
@@ -3472,7 +3516,7 @@ the Info entries for @file{binutils}.
 @kindex c++filt
 @cindex demangling C++ symbols
 
-@c man title cxxfilt Demangle C++ and Java symbols.
+@c man title cxxfilt demangle C++ and Java symbols
 
 @smallexample
 @c man begin SYNOPSIS cxxfilt
@@ -3675,7 +3719,7 @@ c++filt @var{option} @var{symbol}
 @kindex addr2line
 @cindex address to file name and line number
 
-@c man title addr2line convert addresses into file names and line numbers.
+@c man title addr2line convert addresses into file names and line numbers
 
 @smallexample
 @c man begin SYNOPSIS addr2line
@@ -3855,7 +3899,7 @@ Info entries for @file{binutils}.
 utilities, since it is only useful for Windows targets.
 @end quotation
 
-@c man title windmc generates Windows message resources.
+@c man title windmc generates Windows message resources
 
 @smallexample
 @c man begin SYNOPSIS windmc
@@ -4016,7 +4060,7 @@ the Info entries for @file{binutils}.
 utilities, since it is only useful for Windows targets.
 @end quotation
 
-@c man title windres manipulate Windows resources.
+@c man title windres manipulate Windows resources
 
 @smallexample
 @c man begin SYNOPSIS windres
@@ -4222,7 +4266,7 @@ binary utilities, since it is only useful for those targets which
 support DLLs.
 @end quotation
 
-@c man title dlltool Create files needed to build and use DLLs.
+@c man title dlltool create files needed to build and use DLLs
 
 @smallexample
 @c man begin SYNOPSIS dlltool
@@ -4613,7 +4657,7 @@ The Info pages for @file{binutils}.
 @cindex ELF file information
 @kindex readelf
 
-@c man title readelf Displays information about ELF files.
+@c man title readelf display information about ELF files
 
 @smallexample
 @c man begin SYNOPSIS readelf
@@ -4830,7 +4874,8 @@ command to @command{ar}, but without using the BFD library.  @xref{ar}.
 @item --ctf-symbols=@var{section}
 @item --ctf-strings=@var{section}
 Specify the name of another section from which the CTF file can inherit
-strings and symbols.
+strings and symbols.  By default, the @code{.symtab} and its linked
+string table are used.
 
 If either of @option{--ctf-symbols} or @option{--ctf-strings} is specified, the
 other must be specified as well.
@@ -4872,7 +4917,7 @@ objdump(1), and the Info entries for @file{binutils}.
 @cindex Update ELF header
 @kindex elfedit
 
-@c man title elfedit Update ELF header and program property of ELF files.
+@c man title elfedit update ELF header and program property of ELF files
 
 @smallexample
 @c man begin SYNOPSIS elfedit

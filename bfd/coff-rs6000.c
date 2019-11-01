@@ -1169,20 +1169,6 @@ _bfd_xcoff_reloc_name_lookup (bfd *abfd ATTRIBUTE_UNUSED,
    to take care that we are not generating the new form of archives
    on AIX 4.2 or earlier systems.  */
 
-/* XCOFF archives use this as a magic string.  Note that both strings
-   have the same length.  */
-
-/* Set the magic for archive.  */
-
-bfd_boolean
-bfd_xcoff_ar_archive_set_magic (bfd *abfd ATTRIBUTE_UNUSED,
-				char *magic ATTRIBUTE_UNUSED)
-{
-  /* Not supported yet.  */
-  return FALSE;
- /* bfd_xcoff_archive_set_magic (abfd, magic); */
-}
-
 /* PR 21786:  The PE/COFF standard does not require NUL termination for any of
    the ASCII fields in the archive headers.  So in order to be able to extract
    numerical values we provide our own versions of strtol and strtoll which
@@ -1243,7 +1229,7 @@ _bfd_xcoff_slurp_armap (bfd *abfd)
 
   if (xcoff_ardata (abfd) == NULL)
     {
-      bfd_has_map (abfd) = FALSE;
+      abfd->has_armap = FALSE;
       return TRUE;
     }
 
@@ -1255,7 +1241,7 @@ _bfd_xcoff_slurp_armap (bfd *abfd)
       GET_VALUE_IN_FIELD (off, xcoff_ardata (abfd)->symoff, 10);
       if (off == 0)
 	{
-	  bfd_has_map (abfd) = FALSE;
+	  abfd->has_armap = FALSE;
 	  return TRUE;
 	}
 
@@ -1310,7 +1296,7 @@ _bfd_xcoff_slurp_armap (bfd *abfd)
       GET_VALUE_IN_FIELD (off, xcoff_ardata_big (abfd)->symoff, 10);
       if (off == 0)
 	{
-	  bfd_has_map (abfd) = FALSE;
+	  abfd->has_armap = FALSE;
 	  return TRUE;
 	}
 
@@ -1373,7 +1359,7 @@ _bfd_xcoff_slurp_armap (bfd *abfd)
     }
 
   bfd_ardata (abfd)->symdef_count = c;
-  bfd_has_map (abfd) = TRUE;
+  abfd->has_armap = TRUE;
 
   return TRUE;
 }
@@ -4057,6 +4043,7 @@ const struct xcoff_dwsect_name xcoff_dwsect_names[] = {
 #define _bfd_xcoff_bfd_lookup_section_flags bfd_generic_lookup_section_flags
 #define _bfd_xcoff_bfd_merge_sections bfd_generic_merge_sections
 #define _bfd_xcoff_bfd_is_group_section bfd_generic_is_group_section
+#define _bfd_xcoff_bfd_group_name bfd_generic_group_name
 #define _bfd_xcoff_bfd_discard_group bfd_generic_discard_group
 #define _bfd_xcoff_section_already_linked _bfd_generic_section_already_linked
 #define _bfd_xcoff_bfd_define_common_symbol _bfd_xcoff_define_common_symbol

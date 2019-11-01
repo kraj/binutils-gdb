@@ -86,11 +86,11 @@ static void async_sigterm_handler (gdb_client_data arg);
    ezannoni: as of 1999-04-29 I expect that this
    variable will not be used after gdb is changed to use the event
    loop as default engine, and event-top.c is merged into top.c.  */
-int set_editing_cmd_var;
+bool set_editing_cmd_var;
 
 /* This is used to display the notification of the completion of an
    asynchronous execution command.  */
-int exec_done_display_p = 0;
+bool exec_done_display_p = false;
 
 /* Used by the stdin event handler to compensate for missed stdin events.
    Setting this to a non-zero value inside an stdin callback makes the callback
@@ -421,7 +421,7 @@ display_gdb_prompt (const char *new_prompt)
 }
 
 /* Return the top level prompt, as specified by "set prompt", possibly
-   overriden by the python gdb.prompt_hook hook, and then composed
+   overridden by the python gdb.prompt_hook hook, and then composed
    with the prompt prefix and suffix (annotations).  */
 
 static std::string
@@ -1152,7 +1152,7 @@ handle_sigfpe (int sig)
   signal (sig, handle_sigfpe);
 }
 
-/* Event loop will call this functin to process a SIGFPE.  */
+/* Event loop will call this function to process a SIGFPE.  */
 static void
 async_float_handler (gdb_client_data arg)
 {

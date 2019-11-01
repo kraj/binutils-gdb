@@ -93,7 +93,7 @@ int proc_wait_pid = 0;
 /* The number of wait requests we've sent, and expect replies from.  */
 int proc_waits_pending = 0;
 
-int gnu_debug_flag = 0;
+bool gnu_debug_flag = false;
 
 /* Forward decls */
 
@@ -1731,7 +1731,7 @@ S_exception_raise_request (mach_port_t port, mach_port_t reply_port,
 	}
     }
   else
-    /* A supppressed exception, which ignore.  */
+    /* A suppressed exception, which ignore.  */
     {
       inf->wait.suppress = 1;
       mach_port_deallocate (mach_task_self (), reply_port);
@@ -3312,15 +3312,15 @@ This is the same as setting `task pause', `exceptions', and\n\
 
   /* Commands to show information about the task's ports.  */
   add_info ("send-rights", info_send_rights_cmd,
-	    _("Show information about the task's send rights"));
+	    _("Show information about the task's send rights."));
   add_info ("receive-rights", info_recv_rights_cmd,
-	    _("Show information about the task's receive rights"));
+	    _("Show information about the task's receive rights."));
   add_info ("port-rights", info_port_rights_cmd,
-	    _("Show information about the task's port rights"));
+	    _("Show information about the task's port rights."));
   add_info ("port-sets", info_port_sets_cmd,
-	    _("Show information about the task's port sets"));
+	    _("Show information about the task's port sets."));
   add_info ("dead-names", info_dead_names_cmd,
-	    _("Show information about the task's dead names"));
+	    _("Show information about the task's dead names."));
   add_info_alias ("ports", "port-rights", 1);
   add_info_alias ("port", "port-rights", 1);
   add_info_alias ("psets", "port-sets", 1);

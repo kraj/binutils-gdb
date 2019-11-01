@@ -21,7 +21,7 @@
 #define FRAME_H 1
 
 /* The following is the intended naming schema for frame functions.
-   It isn't 100% consistent, but it is aproaching that.  Frame naming
+   It isn't 100% consistent, but it is approaching that.  Frame naming
    schema:
 
    Prefixes:
@@ -808,9 +808,9 @@ struct frame_print_options
   const char *print_frame_info = print_frame_info_auto;
   const char *print_entry_values = print_entry_values_default;
 
-  /* If non-zero, don't invoke pretty-printers for frame
+  /* If true, don't invoke pretty-printers for frame
      arguments.  */
-  int print_raw_frame_arguments;
+  bool print_raw_frame_arguments;
 };
 
 /* The values behind the global "set print ..." settings.  */
@@ -821,15 +821,15 @@ extern frame_print_options user_frame_print_options;
 struct frame_arg
 {
   /* Symbol for this parameter used for example for its name.  */
-  struct symbol *sym;
+  struct symbol *sym = nullptr;
 
   /* Value of the parameter.  It is NULL if ERROR is not NULL; if both VAL and
      ERROR are NULL this parameter's value should not be printed.  */
-  struct value *val;
+  struct value *val = nullptr;
 
   /* String containing the error message, it is more usually NULL indicating no
      error occured reading this parameter.  */
-  char *error;
+  gdb::unique_xmalloc_ptr<char> error;
 
   /* One of the print_entry_values_* entries as appropriate specifically for
      this frame_arg.  It will be different from print_entry_values.  With
@@ -840,7 +840,7 @@ struct frame_arg
      value - print_entry_values_compact is not permitted fi ui_out_is_mi_like_p
      (in such case print_entry_values_no and print_entry_values_only is used
      for each parameter kind specifically.  */
-  const char *entry_kind;
+  const char *entry_kind = nullptr;
 };
 
 extern void read_frame_arg (const frame_print_options &fp_opts,
@@ -931,11 +931,11 @@ struct set_backtrace_options
 {
   /* Flag to indicate whether backtraces should continue past
      main.  */
-  int backtrace_past_main = 0;
+  bool backtrace_past_main = false;
 
   /* Flag to indicate whether backtraces should continue past
      entry.  */
-  int backtrace_past_entry = 0;
+  bool backtrace_past_entry = false;
 
   /* Upper bound on the number of backtrace levels.  Note this is not
      exposed as a command option, because "backtrace" and "frame
@@ -948,5 +948,14 @@ extern const gdb::option::option_def set_backtrace_option_defs[2];
 
 /* The values behind the global "set backtrace ..." settings.  */
 extern set_backtrace_options user_set_backtrace_options;
+
+/* Mark that the PC value is masked for the previous frame.  */
+
+extern void set_frame_previous_pc_masked (struct frame_info *frame);
+
+/* Get whether the PC value is masked for the given frame.  */
+
+extern bool get_frame_pc_masked (const struct frame_info *frame);
+
 
 #endif /* !defined (FRAME_H)  */

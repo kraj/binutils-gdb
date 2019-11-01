@@ -519,6 +519,29 @@ iterate_over_minimal_symbols
 
 /* See minsyms.h.  */
 
+bound_minimal_symbol
+lookup_minimal_symbol_linkage (const char *name, struct objfile *objf)
+{
+  unsigned int hash = msymbol_hash (name) % MINIMAL_SYMBOL_HASH_SIZE;
+
+  for (objfile *objfile : objf->separate_debug_objfiles ())
+    {
+      for (minimal_symbol *msymbol = objfile->per_bfd->msymbol_hash[hash];
+	   msymbol != NULL;
+	   msymbol = msymbol->hash_next)
+	{
+	  if (strcmp (MSYMBOL_LINKAGE_NAME (msymbol), name) == 0
+	      && (MSYMBOL_TYPE (msymbol) == mst_data
+		  || MSYMBOL_TYPE (msymbol) == mst_bss))
+	    return {msymbol, objfile};
+	}
+    }
+
+  return {};
+}
+
+/* See minsyms.h.  */
+
 struct bound_minimal_symbol
 lookup_minimal_symbol_text (const char *name, struct objfile *objf)
 {
@@ -714,7 +737,7 @@ lookup_minimal_symbol_by_pc_section (CORE_ADDR pc_in, struct obj_section *sectio
 	     or equal to the desired pc value, we accomplish two things:
 	     (1) the case where the pc value is larger than any minimal
 	     symbol address is trivially solved, (2) the address associated
-	     with the hi index is always the one we want when the interation
+	     with the hi index is always the one we want when the iteration
 	     terminates.  In essence, we are iterating the test interval
 	     down until the pc value is pushed out of it from the high end.
 
@@ -895,7 +918,7 @@ lookup_minimal_symbol_by_pc (CORE_ADDR pc)
 
 /* Return non-zero iff PC is in an STT_GNU_IFUNC function resolver.  */
 
-int
+bool
 in_gnu_ifunc_stub (CORE_ADDR pc)
 {
   bound_minimal_symbol msymbol
@@ -916,7 +939,7 @@ stub_gnu_ifunc_resolve_addr (struct gdbarch *gdbarch, CORE_ADDR pc)
 
 /* See elf_gnu_ifunc_resolve_name for its real implementation.  */
 
-static int
+static bool
 stub_gnu_ifunc_resolve_name (const char *function_name,
 			     CORE_ADDR *function_address_p)
 {
@@ -1063,7 +1086,7 @@ mst_str (minimal_symbol_type t)
 /* See minsyms.h.  */
 
 struct minimal_symbol *
-minimal_symbol_reader::record_full (const char *name, int name_len,
+minimal_symbol_reader::record_full (gdb::string_view name,
 				    bool copy_name, CORE_ADDR address,
 				    enum minimal_symbol_type ms_type,
 				    int section)
@@ -1077,24 +1100,22 @@ minimal_symbol_reader::record_full (const char *name, int name_len,
      lookup_minimal_symbol_by_pc would have no way of getting the
      right one.  */
   if (ms_type == mst_file_text && name[0] == 'g'
-      && (strcmp (name, GCC_COMPILED_FLAG_SYMBOL) == 0
-	  || strcmp (name, GCC2_COMPILED_FLAG_SYMBOL) == 0))
+      && (name == GCC_COMPILED_FLAG_SYMBOL
+	  || name == GCC2_COMPILED_FLAG_SYMBOL))
     return (NULL);
 
   /* It's safe to strip the leading char here once, since the name
      is also stored stripped in the minimal symbol table.  */
   if (name[0] == get_symbol_leading_char (m_objfile->obfd))
-    {
-      ++name;
-      --name_len;
-    }
+    name = name.substr (1);
 
   if (ms_type == mst_file_text && startswith (name, "__gnu_compiled"))
     return (NULL);
 
   if (symtab_create_debug >= 2)
-    printf_unfiltered ("Recording minsym:  %-21s  %18s  %4d  %s\n",
-               mst_str (ms_type), hex_string (address), section, name);
+    printf_unfiltered ("Recording minsym:  %-21s  %18s  %4d  %.*s\n",
+               mst_str (ms_type), hex_string (address), section,
+	       (int) name.size (), name.data ());
 
   if (m_msym_bunch_index == BUNCH_SIZE)
     {
@@ -1106,7 +1127,7 @@ minimal_symbol_reader::record_full (const char *name, int name_len,
   msymbol = &m_msym_bunch->contents[m_msym_bunch_index];
   symbol_set_language (msymbol, language_auto,
 		       &m_objfile->per_bfd->storage_obstack);
-  symbol_set_names (msymbol, name, name_len, copy_name, m_objfile->per_bfd);
+  symbol_set_names (msymbol, name, copy_name, m_objfile->per_bfd);
 
   SET_MSYMBOL_VALUE_ADDRESS (msymbol, address);
   MSYMBOL_SECTION (msymbol) = section;
@@ -1124,41 +1145,36 @@ minimal_symbol_reader::record_full (const char *name, int name_len,
   return msymbol;
 }
 
-/* Compare two minimal symbols by address and return a signed result based
-   on unsigned comparisons, so that we sort into unsigned numeric order.
+/* Compare two minimal symbols by address and return true if FN1's address
+   is less than FN2's, so that we sort into unsigned numeric order.
    Within groups with the same address, sort by name.  */
 
-static int
-compare_minimal_symbols (const void *fn1p, const void *fn2p)
+static inline bool
+minimal_symbol_is_less_than (const minimal_symbol &fn1,
+			     const minimal_symbol &fn2)
 {
-  const struct minimal_symbol *fn1;
-  const struct minimal_symbol *fn2;
-
-  fn1 = (const struct minimal_symbol *) fn1p;
-  fn2 = (const struct minimal_symbol *) fn2p;
-
-  if (MSYMBOL_VALUE_RAW_ADDRESS (fn1) < MSYMBOL_VALUE_RAW_ADDRESS (fn2))
+  if (MSYMBOL_VALUE_RAW_ADDRESS (&fn1) < MSYMBOL_VALUE_RAW_ADDRESS (&fn2))
     {
-      return (-1);		/* addr 1 is less than addr 2.  */
+      return true;		/* addr 1 is less than addr 2.  */
     }
-  else if (MSYMBOL_VALUE_RAW_ADDRESS (fn1) > MSYMBOL_VALUE_RAW_ADDRESS (fn2))
+  else if (MSYMBOL_VALUE_RAW_ADDRESS (&fn1) > MSYMBOL_VALUE_RAW_ADDRESS (&fn2))
     {
-      return (1);		/* addr 1 is greater than addr 2.  */
+      return false;		/* addr 1 is greater than addr 2.  */
     }
   else
     /* addrs are equal: sort by name */
     {
-      const char *name1 = MSYMBOL_LINKAGE_NAME (fn1);
-      const char *name2 = MSYMBOL_LINKAGE_NAME (fn2);
+      const char *name1 = MSYMBOL_LINKAGE_NAME (&fn1);
+      const char *name2 = MSYMBOL_LINKAGE_NAME (&fn2);
 
       if (name1 && name2)	/* both have names */
-	return strcmp (name1, name2);
+	return strcmp (name1, name2) < 0;
       else if (name2)
-	return 1;		/* fn1 has no name, so it is "less".  */
+	return true;		/* fn1 has no name, so it is "less".  */
       else if (name1)		/* fn2 has no name, so it is "less".  */
-	return -1;
+	return false;
       else
-	return (0);		/* Neither has a name, so they're equal.  */
+	return false;		/* Neither has a name, so they're equal.  */
     }
 }
 
@@ -1222,6 +1238,16 @@ compact_minimal_symbols (struct minimal_symbol *msymbol, int mcount,
   return (mcount);
 }
 
+static void
+clear_minimal_symbol_hash_tables (struct objfile *objfile)
+{
+  for (size_t i = 0; i < MINIMAL_SYMBOL_HASH_SIZE; i++)
+    {
+      objfile->per_bfd->msymbol_hash[i] = 0;
+      objfile->per_bfd->msymbol_demangled_hash[i] = 0;
+    }
+}
+
 /* Build (or rebuild) the minimal symbol hash tables.  This is necessary
    after compacting or sorting the table since the entries move around
    thus causing the internal minimal_symbol pointers to become jumbled.  */
@@ -1232,14 +1258,7 @@ build_minimal_symbol_hash_tables (struct objfile *objfile)
   int i;
   struct minimal_symbol *msym;
 
-  /* Clear the hash tables.  */
-  for (i = 0; i < MINIMAL_SYMBOL_HASH_SIZE; i++)
-    {
-      objfile->per_bfd->msymbol_hash[i] = 0;
-      objfile->per_bfd->msymbol_demangled_hash[i] = 0;
-    }
-
-  /* Now, (re)insert the actual entries.  */
+  /* (Re)insert the actual entries.  */
   for ((i = objfile->per_bfd->minimal_symbol_count,
 	msym = objfile->per_bfd->msymbols.get ());
        i > 0;
@@ -1315,8 +1334,7 @@ minimal_symbol_reader::install ()
 
       /* Sort the minimal symbols by address.  */
 
-      qsort (msymbols, mcount, sizeof (struct minimal_symbol),
-	     compare_minimal_symbols);
+      std::sort (msymbols, msymbols + mcount, minimal_symbol_is_less_than);
 
       /* Compact out any duplicates, and free up whatever space we are
          no longer using.  */
@@ -1329,6 +1347,9 @@ minimal_symbol_reader::install ()
       /* Attach the minimal symbol table to the specified objfile.
          The strings themselves are also located in the storage_obstack
          of this objfile.  */
+
+      if (m_objfile->per_bfd->minimal_symbol_count != 0)
+	clear_minimal_symbol_hash_tables (m_objfile);
 
       m_objfile->per_bfd->minimal_symbol_count = mcount;
       m_objfile->per_bfd->msymbols = std::move (msym_holder);

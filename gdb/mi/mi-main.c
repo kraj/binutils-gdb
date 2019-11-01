@@ -46,7 +46,6 @@
 #include "osdata.h"
 #include "gdbsupport/gdb_splay_tree.h"
 #include "tracepoint.h"
-#include "ctf.h"
 #include "ada-lang.h"
 #include "linespec.h"
 #include "extension.h"
@@ -101,11 +100,11 @@ static void output_register (struct frame_info *, int regnum, int format,
 			     int skip_unavailable);
 
 /* Controls whether the frontend wants MI in async mode.  */
-static int mi_async = 0;
+static bool mi_async = false;
 
 /* The set command writes to this variable.  If the inferior is
    executing, mi_async is *not* updated.  */
-static int mi_async_1 = 0;
+static bool mi_async_1 = false;
 
 static void
 set_mi_async_command (const char *args, int from_tty,
@@ -1235,12 +1234,12 @@ mi_cmd_data_evaluate_expression (const char *command, char **argv, int argc)
    the ``x'' command.
    WORD-SIZE: size of each ``word''; 1,2,4, or 8 bytes.
    NR_ROW: Number of rows.
-   NR_COL: The number of colums (words per row).
+   NR_COL: The number of columns (words per row).
    ASCHAR: (OPTIONAL) Append an ascii character dump to each row.  Use
    ASCHAR for unprintable characters.
 
    Reads SIZE*NR_ROW*NR_COL bytes starting at ADDR from memory and
-   displayes them.  Returns:
+   displays them.  Returns:
 
    {addr="...",rowN={wordN="..." ,... [,ascii="..."]}, ...}
 
@@ -1360,7 +1359,7 @@ mi_cmd_data_read_memory (const char *command, char **argv, int argc)
   uiout->field_core_addr ("next-page", gdbarch, addr + total_bytes);
   uiout->field_core_addr ("prev-page", gdbarch, addr - total_bytes);
 
-  /* Build the result as a two dimentional table.  */
+  /* Build the result as a two dimensional table.  */
   {
     int row;
     int row_byte;

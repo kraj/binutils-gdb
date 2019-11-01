@@ -23,7 +23,6 @@
 #include "event-loop.h"
 
 #include "gdb_select.h"
-#include "readline/readline.h"
 
 #include <windows.h>
 
@@ -64,6 +63,17 @@ gdb_select (int n, fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
   int fd;
   int num_ready;
   size_t indx;
+
+  if (n == 0)
+    {
+      /* The MS API says that the first argument to
+	 WaitForMultipleObjects cannot be zero.  That's why we just
+	 use a regular Sleep here.  */
+      if (timeout != NULL)
+	Sleep (timeout->tv_sec * 1000 + timeout->tv_usec / 1000);
+
+      return 0;
+    }
 
   num_ready = 0;
   num_handles = 0;
@@ -166,14 +176,6 @@ gdb_select (int n, fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
 	    num_ready++;
 	}
     }
-
-  /* With multi-threaded SIGINT handling, there is a race between the
-     readline signal handler and GDB.  It may still be in
-     rl_prep_terminal in another thread.  Do not return until it is
-     done; we can check the state here because we never longjmp from
-     signal handlers on Windows.  */
-  while (RL_ISSTATE (RL_STATE_SIGHANDLER))
-    Sleep (1);
 
   return num_ready;
 }

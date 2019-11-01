@@ -72,7 +72,7 @@ static struct cmd_list_element *tcp_show_cmdlist;
 
 /* Whether to auto-retry refused connections.  */
 
-static int tcp_auto_retry = 1;
+static bool tcp_auto_retry = true;
 
 /* Timeout period for connections, in seconds.  */
 
@@ -307,7 +307,7 @@ net_open (struct serial *scb, const char *name)
   /* Flag to indicate whether we've got a connection refused.  It will
      be true if any of the connections tried was refused.  */
   bool got_connrefused;
-  /* If a connection succeeeds, SUCCESS_AINFO will point to the
+  /* If a connection succeeds, SUCCESS_AINFO will point to the
      'struct addrinfo' that succeed.  */
   struct addrinfo *success_ainfo = NULL;
   unsigned int polls = 0;
@@ -480,27 +480,27 @@ _initialize_ser_tcp (void)
 #endif /* USE_WIN32API */
 
   add_prefix_cmd ("tcp", class_maintenance, set_tcp_cmd, _("\
-TCP protocol specific variables\n\
-Configure variables specific to remote TCP connections"),
+TCP protocol specific variables.\n\
+Configure variables specific to remote TCP connections."),
 		  &tcp_set_cmdlist, "set tcp ",
 		  0 /* allow-unknown */, &setlist);
   add_prefix_cmd ("tcp", class_maintenance, show_tcp_cmd, _("\
-TCP protocol specific variables\n\
-Configure variables specific to remote TCP connections"),
+TCP protocol specific variables.\n\
+Configure variables specific to remote TCP connections."),
 		  &tcp_show_cmdlist, "show tcp ",
 		  0 /* allow-unknown */, &showlist);
 
   add_setshow_boolean_cmd ("auto-retry", class_obscure,
 			   &tcp_auto_retry, _("\
-Set auto-retry on socket connect"), _("\
-Show auto-retry on socket connect"), 
+Set auto-retry on socket connect."), _("\
+Show auto-retry on socket connect."),
 			   NULL, NULL, NULL,
 			   &tcp_set_cmdlist, &tcp_show_cmdlist);
 
   add_setshow_uinteger_cmd ("connect-timeout", class_obscure,
 			    &tcp_retry_limit, _("\
-Set timeout limit in seconds for socket connection"), _("\
-Show timeout limit in seconds for socket connection"), _("\
+Set timeout limit in seconds for socket connection."), _("\
+Show timeout limit in seconds for socket connection."), _("\
 If set to \"unlimited\", GDB will keep attempting to establish a\n\
 connection forever, unless interrupted with Ctrl-c.\n\
 The default is 15 seconds."),

@@ -3974,7 +3974,7 @@ optimize_encoding (void)
 		&& i.reg_operands == 1
 		&& i.imm_operands == 1
 		&& i.op[0].imms->X_op == O_constant
-		&& ((i.tm.base_opcode == 0xb0
+		&& ((i.tm.base_opcode == 0xb8
 		     && i.tm.extension_opcode == None
 		     && fits_in_unsigned_long (i.op[0].imms->X_add_number))
 		    || (fits_in_imm31 (i.op[0].imms->X_add_number)
@@ -3984,7 +3984,7 @@ optimize_encoding (void)
 			    || (i.tm.base_opcode == 0x80
 				&& i.tm.extension_opcode == 0x4)
 			    || ((i.tm.base_opcode == 0xf6
-				 || i.tm.base_opcode == 0xc6)
+				 || (i.tm.base_opcode | 1) == 0xc7)
 				&& i.tm.extension_opcode == 0x0)))
 		    || (fits_in_imm7 (i.op[0].imms->X_add_number)
 			&& i.tm.base_opcode == 0x83
@@ -4010,7 +4010,7 @@ optimize_encoding (void)
 	   movq $imm32, %r64   -> movl $imm32, %r32
         */
       i.tm.opcode_modifier.norex64 = 1;
-      if (i.tm.base_opcode == 0xb0 || i.tm.base_opcode == 0xc6)
+      if (i.tm.base_opcode == 0xb8 || (i.tm.base_opcode | 1) == 0xc7)
 	{
 	  /* Handle
 	       movq $imm31, %r64   -> movl $imm31, %r32
@@ -4024,13 +4024,14 @@ optimize_encoding (void)
 	  i.types[0].bitfield.imm64 = 0;
 	  i.types[1].bitfield.dword = 1;
 	  i.types[1].bitfield.qword = 0;
-	  if (i.tm.base_opcode == 0xc6)
+	  if ((i.tm.base_opcode | 1) == 0xc7)
 	    {
 	      /* Handle
 		   movq $imm31, %r64   -> movl $imm31, %r32
 	       */
-	      i.tm.base_opcode = 0xb0;
+	      i.tm.base_opcode = 0xb8;
 	      i.tm.extension_opcode = None;
+	      i.tm.opcode_modifier.w = 0;
 	      i.tm.opcode_modifier.shortform = 1;
 	      i.tm.opcode_modifier.modrm = 0;
 	    }
@@ -6198,7 +6199,7 @@ check_string (void)
 	{
 	  as_bad (_("`%s' operand %d must use `%ses' segment"),
 		  i.tm.name,
-		  mem_op + 1,
+		  intel_syntax ? i.tm.operands - mem_op : mem_op + 1,
 		  register_prefix);
 	  return 0;
 	}
@@ -6214,7 +6215,7 @@ check_string (void)
 	{
 	  as_bad (_("`%s' operand %d must use `%ses' segment"),
 		  i.tm.name,
-		  mem_op + 2,
+		  intel_syntax ? i.tm.operands - mem_op - 1 : mem_op + 2,
 		  register_prefix);
 	  return 0;
 	}
@@ -7010,14 +7011,14 @@ duplicate:
 	  if (flag_code != CODE_64BIT
 	      ? i.tm.base_opcode == POP_SEG_SHORT
 		&& i.op[0].regs->reg_num == 1
-	      : (i.tm.base_opcode | 1) == POP_SEG_SHORT
+	      : (i.tm.base_opcode | 1) == POP_SEG386_SHORT
 		&& i.op[0].regs->reg_num < 4)
 	    {
 	      as_bad (_("you can't `%s %s%s'"),
 		      i.tm.name, register_prefix, i.op[0].regs->reg_name);
 	      return 0;
 	    }
-	  if ( i.op[0].regs->reg_num > 3 )
+	  if ( i.op[0].regs->reg_num > 3 && i.tm.opcode_length == 1 )
 	    {
 	      i.tm.base_opcode ^= POP_SEG_SHORT ^ POP_SEG386_SHORT;
 	      i.tm.opcode_length = 2;
@@ -8105,7 +8106,7 @@ x86_cleanup (void)
 
   /* Create the .note.gnu.property section.  */
   sec = subseg_new (NOTE_GNU_PROPERTY_SECTION_NAME, 0);
-  bfd_set_section_flags (stdoutput, sec,
+  bfd_set_section_flags (sec,
 			 (SEC_ALLOC
 			  | SEC_LOAD
 			  | SEC_DATA
@@ -8123,7 +8124,7 @@ x86_cleanup (void)
       alignment = 2;
     }
 
-  bfd_set_section_alignment (stdoutput, sec, alignment);
+  bfd_set_section_alignment (sec, alignment);
   elf_section_type (sec) = SHT_NOTE;
 
   /* GNU_PROPERTY_X86_ISA_1_USED: 4-byte type + 4-byte data size
@@ -11438,9 +11439,9 @@ md_parse_option (int c, const char *arg)
 
     case OPTION_MVEXWIG:
       if (strcmp (arg, "0") == 0)
-	vexwig = evexw0;
+	vexwig = vexw0;
       else if (strcmp (arg, "1") == 0)
-	vexwig = evexw1;
+	vexwig = vexw1;
       else
 	as_fatal (_("invalid -mvexwig= option: `%s'"), arg);
       break;
@@ -11939,7 +11940,7 @@ md_section_align (segT segment ATTRIBUTE_UNUSED, valueT size)
 	 work.  */
       int align;
 
-      align = bfd_get_section_alignment (stdoutput, segment);
+      align = bfd_section_alignment (segment);
       size = ((size + (1 << align) - 1) & (-((valueT) 1 << align)));
     }
 #endif
@@ -12382,8 +12383,7 @@ handle_large_common (int small ATTRIBUTE_UNUSED)
 	  /* The .lbss section is for local .largecomm symbols.  */
 	  lbss_section = subseg_new (".lbss", 0);
 	  applicable = bfd_applicable_section_flags (stdoutput);
-	  bfd_set_section_flags (stdoutput, lbss_section,
-				 applicable & SEC_ALLOC);
+	  bfd_set_section_flags (lbss_section, applicable & SEC_ALLOC);
 	  seg_info (lbss_section)->bss = 1;
 
 	  subseg_set (seg, subseg);

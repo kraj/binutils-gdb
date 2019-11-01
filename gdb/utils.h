@@ -25,14 +25,16 @@
 #include "gdbsupport/scoped_restore.h"
 #include <chrono>
 
+#ifdef HAVE_LIBXXHASH
+#include <xxhash.h>
+#endif
+
 struct completion_match_for_lcd;
 class compiled_regex;
 
-extern void initialize_utils (void);
-
 /* String utilities.  */
 
-extern int sevenbit_strings;
+extern bool sevenbit_strings;
 
 /* Modes of operation for strncmp_iw_with_mode.  */
 
@@ -103,8 +105,6 @@ extern int streq_hash (const void *, const void *);
 
 extern int subset_compare (const char *, const char *);
 
-int compare_positive_ints (const void *ap, const void *bp);
-
 /* Compare C strings for std::sort.  */
 
 static inline bool
@@ -125,7 +125,7 @@ void reset_prompt_for_continue_wait_time (void);
 /* Return the time spent in prompt_for_continue.  */
 std::chrono::steady_clock::duration get_prompt_for_continue_wait_time ();
 
-/* Parsing utilites.  */
+/* Parsing utilities.  */
 
 extern int parse_pid_to_attach (const char *args);
 
@@ -316,7 +316,7 @@ extern void wrap_here (const char *);
 
 extern void reinitialize_more_filter (void);
 
-extern int pagination_enabled;
+extern bool pagination_enabled;
 
 extern struct ui_file **current_ui_gdb_stdout_ptr (void);
 extern struct ui_file **current_ui_gdb_stdin_ptr (void);
@@ -352,7 +352,10 @@ extern struct ui_file *gdb_stdtargin;
 extern void set_screen_width_and_height (int width, int height);
 
 /* More generic printf like operations.  Filtered versions may return
-   non-locally on error.  */
+   non-locally on error.  As an extension over plain printf, these
+   support some GDB-specific format specifiers.  Particularly useful
+   here are the styling formatters: '%p[', '%p]' and '%ps'.  See
+   ui_out::message for details.  */
 
 extern void fputs_filtered (const char *, struct ui_file *);
 
@@ -432,12 +435,32 @@ extern void fprintf_styled (struct ui_file *stream,
 			    ...)
   ATTRIBUTE_PRINTF (3, 4);
 
+extern void vfprintf_styled (struct ui_file *stream,
+			     const ui_file_style &style,
+			     const char *fmt,
+			     va_list args)
+  ATTRIBUTE_PRINTF (3, 0);
+
+/* Like vfprintf_styled, but do not process gdb-specific format
+   specifiers.  */
+extern void vfprintf_styled_no_gdbfmt (struct ui_file *stream,
+				       const ui_file_style &style,
+				       bool filter,
+				       const char *fmt, va_list args)
+  ATTRIBUTE_PRINTF (4, 0);
+
 /* Like fputs_filtered, but styles the output according to STYLE, when
    appropriate.  */
 
 extern void fputs_styled (const char *linebuffer,
 			  const ui_file_style &style,
 			  struct ui_file *stream);
+
+/* Unfiltered variant of fputs_styled.  */
+
+extern void fputs_styled_unfiltered (const char *linebuffer,
+				     const ui_file_style &style,
+				     struct ui_file *stream);
 
 /* Like fputs_styled, but uses highlight_style to highlight the
    parts of STR that match HIGHLIGHT.  */
@@ -540,11 +563,6 @@ extern void warn_cant_dump_core (const char *reason);
 
 extern void dump_core (void);
 
-/* Return the hex string form of LENGTH bytes of DATA.
-   Space for the result is malloc'd, caller must free.  */
-
-extern char *make_hex_string (const gdb_byte *data, size_t length);
-
 /* Copy NBITS bits from SOURCE to DEST starting at the given bit
    offsets.  Use the bit order as specified by BITS_BIG_ENDIAN.
    Source and destination buffers must not overlap.  */
@@ -552,5 +570,19 @@ extern char *make_hex_string (const gdb_byte *data, size_t length);
 extern void copy_bitwise (gdb_byte *dest, ULONGEST dest_offset,
 			  const gdb_byte *source, ULONGEST source_offset,
 			  ULONGEST nbits, int bits_big_endian);
+
+/* A fast hashing function.  This can be used to hash strings in a fast way
+   when the length is known.  If no fast hashing library is available, falls
+   back to iterative_hash from libiberty.  */
+
+static inline unsigned int
+fast_hash (const char* str, size_t len)
+{
+#ifdef HAVE_LIBXXHASH
+  return XXH64 (str, len, 0);
+#else
+  return iterative_hash (str, len, 0);
+#endif
+}
 
 #endif /* UTILS_H */

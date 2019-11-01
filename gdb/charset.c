@@ -23,7 +23,6 @@
 #include "gdb_obstack.h"
 #include "gdbsupport/gdb_wait.h"
 #include "charset-list.h"
-#include "gdbsupport/vec.h"
 #include "gdbsupport/environ.h"
 #include "arch-utils.h"
 #include "gdbsupport/gdb_vecs.h"
@@ -817,10 +816,9 @@ find_charset_names (void)
 
 #ifdef ICONV_BIN
   {
-    char *iconv_dir = relocate_gdb_directory (ICONV_BIN,
-					      ICONV_BIN_RELOCATABLE);
-    iconv_program = concat (iconv_dir, SLASH_STRING, "iconv", NULL);
-    xfree (iconv_dir);
+    std::string iconv_dir = relocate_gdb_directory (ICONV_BIN,
+						    ICONV_BIN_RELOCATABLE);
+    iconv_program = concat (iconv_dir.c_str(), SLASH_STRING, "iconv", NULL);
   }
 #else
   iconv_program = xstrdup ("iconv");
@@ -946,15 +944,9 @@ default_auto_wide_charset (void)
 #define ENDIAN_SUFFIX "LE"
 #endif
 
-/* The code below serves to generate a compile time error if
-   gdb_wchar_t type is not of size 2 nor 4, despite the fact that
-   macro __STDC_ISO_10646__ is defined.
-   This is better than a gdb_assert call, because GDB cannot handle
-   strings correctly if this size is different.  */
+/* GDB cannot handle strings correctly if this size is different.  */
 
-extern char your_gdb_wchar_t_is_bogus[(sizeof (gdb_wchar_t) == 2
-				       || sizeof (gdb_wchar_t) == 4)
-				      ? 1 : -1];
+gdb_static_assert (sizeof (gdb_wchar_t) == 2 || sizeof (gdb_wchar_t) == 4);
 
 /* intermediate_encoding returns the charset used internally by
    GDB to convert between target and host encodings. As the test above

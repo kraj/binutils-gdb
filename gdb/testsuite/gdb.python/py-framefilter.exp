@@ -41,16 +41,15 @@ gdb_test "info frame-filter" \
 # Care is taken to put it in the same directory as the binary so that
 # gdb will find it.
 set remote_obj_python_file \
-    [remote_download \
-	 host ${srcdir}/${subdir}/${testfile}-gdb.py.in \
-	 [standard_output_file ${testfile}-gdb.py]]
+    [gdb_remote_download host ${srcdir}/${subdir}/${testfile}-gdb.py.in \
+	 ${testfile}-gdb.py]
 
 gdb_reinitialize_dir $srcdir/$subdir
 gdb_test_no_output "set auto-load safe-path ${remote_obj_python_file}" \
     "set auto-load safe-path"
 gdb_load ${binfile}
 # Verify gdb loaded the script.
-gdb_test "info auto-load python-scripts" "Yes.*/${testfile}-gdb.py.*" \
+gdb_test "info auto-load python-scripts" "Yes.*${testfile}-gdb.py.*" \
     "Test auto-load had loaded python scripts"
 
 if ![runto_main] then {
@@ -86,8 +85,7 @@ gdb_continue_to_breakpoint "Inner test breakpoint"
 
 # Test multiple local blocks.
 gdb_test "bt full no-filters" \
-    ".*#0.*end_func.*h = 9.*f = 42.*g = 19.*bar = $hex \"Inside block x2\".*d = 15.*e = 14.*foo = $hex \"Inside block\".*str = $hex \"The End\".*st2 = $hex \"Is Near\".*b = 12.*c = 5.*" \
-    "bt full no-filters"
+    ".*#0.*end_func.*h = 9.*f = 42.*g = 19.*bar = $hex \"Inside block x2\".*d = 15.*e = 14.*foo = $hex \"Inside block\".*str = $hex \"The End\".*st2 = $hex \"Is Near\".*b = 12.*c = 5.*"
 gdb_test "bt full" \
     ".*#0.*cnuf_dne.*h = 9.*f = 42.*g = 19.*bar = $hex \"Inside block x2\".*d = 15.*e = 14.*foo = $hex \"Inside block\".*str = $hex \"The End\".*st2 = $hex \"Is Near\".*b = 12.*c = 5.*" \
     "bt full with filters"
@@ -146,8 +144,7 @@ gdb_test "disable frame-filter global NoSuchFilter" \
 
 # Test no-filters
 gdb_test "bt no-filters" \
-    ".*#0.*end_func.*#22.*in func1.*#27.*in main \\(\\).*" \
-    "bt no-filters"
+    ".*#0.*end_func.*#22.*in func1.*#27.*in main \\(\\).*"
 
 # Test reverse
 gdb_test "bt" \
@@ -302,9 +299,8 @@ if { [skip_python_tests] } { continue }
 # Care is taken to put it in the same directory as the binary so that
 # gdb will find it.
 set remote_obj_python_file \
-    [remote_download \
-	 host ${srcdir}/${subdir}/${testfile}-gdb.py.in \
-	 [standard_output_file ${testfile}-gdb.py]]
+    [gdb_remote_download host ${srcdir}/${subdir}/${testfile}-gdb.py.in \
+	 ${testfile}-gdb.py]
 
 gdb_reinitialize_dir $srcdir/$subdir
 gdb_test_no_output "set auto-load safe-path ${remote_obj_python_file}" \
@@ -312,7 +308,7 @@ gdb_test_no_output "set auto-load safe-path ${remote_obj_python_file}" \
 gdb_load ${binfile}
 
 # Verify gdb loaded the script.
-gdb_test "info auto-load python-scripts" "Yes.*/${testfile}-gdb.py.*" \
+gdb_test "info auto-load python-scripts" "Yes.*${testfile}-gdb.py.*" \
     "Set autoload path for no debug info tests"
 if ![runto_main] then {
     perror "couldn't run to breakpoint"

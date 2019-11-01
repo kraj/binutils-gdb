@@ -25,16 +25,13 @@
 #include "frame.h"
 #include "inferior.h"
 #include "breakpoint.h"
-#include "gdbsupport/gdb_wait.h"
 #include "gdbcore.h"
 #include "gdbcmd.h"
-#include "cli/cli-script.h"
 #include "target.h"
 #include "gdbthread.h"
 #include "annotate.h"
 #include "symfile.h"
 #include "top.h"
-#include <signal.h>
 #include "inf-loop.h"
 #include "regcache.h"
 #include "value.h"
@@ -42,7 +39,6 @@
 #include "language.h"
 #include "solib.h"
 #include "main.h"
-#include "dictionary.h"
 #include "block.h"
 #include "mi/mi-common.h"
 #include "event-top.h"
@@ -51,8 +47,6 @@
 #include "inline-frame.h"
 #include "jit.h"
 #include "tracepoint.h"
-#include "continuations.h"
-#include "interps.h"
 #include "skip.h"
 #include "probe.h"
 #include "objfiles.h"
@@ -136,7 +130,7 @@ mark_infrun_async_event_handler (void)
 /* When set, stop the 'step' command if we enter a function which has
    no line number information.  The normal behavior is that we step
    over such function.  */
-int step_stop_if_no_debug = 0;
+bool step_stop_if_no_debug = false;
 static void
 show_step_stop_if_no_debug (struct ui_file *file, int from_tty,
 			    struct cmd_list_element *c, const char *value)
@@ -155,9 +149,9 @@ static ptid_t previous_inferior_ptid;
    Exactly which branch is detached depends on 'set follow-fork-mode'
    setting.  */
 
-static int detach_fork = 1;
+static bool detach_fork = true;
 
-int debug_displaced = 0;
+bool debug_displaced = false;
 static void
 show_debug_displaced (struct ui_file *file, int from_tty,
 		      struct cmd_list_element *c, const char *value)
@@ -176,7 +170,7 @@ show_debug_infrun (struct ui_file *file, int from_tty,
 
 /* Support for disabling address space randomization.  */
 
-int disable_randomization = 1;
+bool disable_randomization = true;
 
 static void
 show_disable_randomization (struct ui_file *file, int from_tty,
@@ -205,8 +199,8 @@ set_disable_randomization (const char *args, int from_tty,
 
 /* User interface for non-stop mode.  */
 
-int non_stop = 0;
-static int non_stop_1 = 0;
+bool non_stop = false;
+static bool non_stop_1 = false;
 
 static void
 set_non_stop (const char *args, int from_tty,
@@ -234,8 +228,8 @@ show_non_stop (struct ui_file *file, int from_tty,
    non-stop, in which all GDB operations that might affect the
    target's execution have been disabled.  */
 
-int observer_mode = 0;
-static int observer_mode_1 = 0;
+bool observer_mode = false;
+static bool observer_mode_1 = false;
 
 static void
 set_observer_mode (const char *args, int from_tty,
@@ -256,7 +250,7 @@ set_observer_mode (const char *args, int from_tty,
   /* We can insert fast tracepoints in or out of observer mode,
      but enable them if we're going into this mode.  */
   if (observer_mode)
-    may_insert_fast_tracepoints = 1;
+    may_insert_fast_tracepoints = true;
   may_stop = !observer_mode;
   update_target_permissions ();
 
@@ -265,7 +259,7 @@ set_observer_mode (const char *args, int from_tty,
   if (observer_mode)
     {
       pagination_enabled = 0;
-      non_stop = non_stop_1 = 1;
+      non_stop = non_stop_1 = true;
     }
 
   if (from_tty)
@@ -289,13 +283,11 @@ show_observer_mode (struct ui_file *file, int from_tty,
 void
 update_observer_mode (void)
 {
-  int newval;
-
-  newval = (!may_insert_breakpoints
-	    && !may_insert_tracepoints
-	    && may_insert_fast_tracepoints
-	    && !may_stop
-	    && non_stop);
+  bool newval = (!may_insert_breakpoints
+		 && !may_insert_tracepoints
+		 && may_insert_fast_tracepoints
+		 && !may_stop
+		 && non_stop);
 
   /* Let the user know if things change.  */
   if (newval != observer_mode)
@@ -1106,7 +1098,7 @@ follow_exec (ptid_t ptid, const char *exec_file_target)
 
      And, we DON'T want to call delete_breakpoints() here, since
      that may write the bp's "shadow contents" (the instruction
-     value that was overwritten witha TRAP instruction).  Since
+     value that was overwritten with a TRAP instruction).  Since
      we now have a new a.out, those shadow contents aren't valid.  */
 
   mark_breakpoints_out ();
@@ -1431,7 +1423,7 @@ step_over_info_valid_p (void)
      register contents, and memory.  We use this in step n1.
 
    - gdbarch_displaced_step_fixup adjusts registers and memory after
-     we have successfuly single-stepped the instruction, to yield the
+     we have successfully single-stepped the instruction, to yield the
      same effect the instruction would have had if we had executed it
      at its original address.  We use this in step n3.
 
@@ -2089,7 +2081,7 @@ set_schedlock_func (const char *args, int from_tty, struct cmd_list_element *c)
 /* True if execution commands resume all threads of all processes by
    default; otherwise, resume only threads of the current inferior
    process.  */
-int sched_multi = 0;
+bool sched_multi = false;
 
 /* Try to setup for software single stepping over the specified location.
    Return 1 if target_resume() should use hardware single step.
@@ -5924,7 +5916,7 @@ handle_signal_stop (struct execution_control_state *ecs)
 	  return;
 	}
 
-      /* Note: step_resume_breakpoint may be non-NULL.  This occures
+      /* Note: step_resume_breakpoint may be non-NULL.  This occurs
 	 when either there's a nested signal, or when there's a
 	 pending signal enabled just as the signal handler returns
 	 (leaving the inferior at the step-resume-breakpoint without
@@ -7658,24 +7650,19 @@ print_exited_reason (struct ui_out *uiout, int exitstatus)
     {
       if (uiout->is_mi_like_p ())
 	uiout->field_string ("reason", async_reason_lookup (EXEC_ASYNC_EXITED));
-      uiout->text ("[Inferior ");
-      uiout->text (plongest (inf->num));
-      uiout->text (" (");
-      uiout->text (pidstr.c_str ());
-      uiout->text (") exited with code ");
-      uiout->field_fmt ("exit-code", "0%o", (unsigned int) exitstatus);
-      uiout->text ("]\n");
+      std::string exit_code_str
+	= string_printf ("0%o", (unsigned int) exitstatus);
+      uiout->message ("[Inferior %s (%s) exited with code %pF]\n",
+		      plongest (inf->num), pidstr.c_str (),
+		      string_field ("exit-code", exit_code_str.c_str ()));
     }
   else
     {
       if (uiout->is_mi_like_p ())
 	uiout->field_string
 	  ("reason", async_reason_lookup (EXEC_ASYNC_EXITED_NORMALLY));
-      uiout->text ("[Inferior ");
-      uiout->text (plongest (inf->num));
-      uiout->text (" (");
-      uiout->text (pidstr.c_str ());
-      uiout->text (") exited normally]\n");
+      uiout->message ("[Inferior %s (%s) exited normally]\n",
+		      plongest (inf->num), pidstr.c_str ());
     }
 }
 

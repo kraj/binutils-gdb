@@ -1303,7 +1303,7 @@ or1k_elf_relocate_section (bfd *output_bfd,
 
 	  name = bfd_elf_string_from_elf_section
 	    (input_bfd, symtab_hdr->sh_link, sym->st_name);
-	  name = (name == NULL) ? bfd_section_name (input_bfd, sec) : name;
+	  name = name == NULL ? bfd_section_name (sec) : name;
 	}
       else
 	{
@@ -2064,8 +2064,7 @@ or1k_elf_check_relocs (bfd *abfd,
 		      return FALSE;
 
 		    if (strncmp (name, ".rela", 5) != 0
-			|| strcmp (bfd_get_section_name (abfd, sec),
-				   name + 5) != 0)
+			|| strcmp (bfd_section_name (sec), name + 5) != 0)
 		      {
 			_bfd_error_handler
 			  /* xgettext:c-format */
@@ -2377,8 +2376,11 @@ or1k_elf_finish_dynamic_symbol (bfd *output_bfd,
       or1k_write_plt_entry (output_bfd, splt->contents + h->plt.offset,
 			    plt0, plt1, plt2, OR1K_JR(12));
 
-      /* Fill in the entry in the global offset table.  */
-      bfd_put_32 (output_bfd, plt_addr, sgot->contents + got_offset);
+      /* Fill in the entry in the global offset table.  We initialize it to
+	 point to the top of the plt.  This is done to lazy lookup the actual
+	 symbol as the first plt entry will be setup by libc to call the
+	 runtime dynamic linker.  */
+      bfd_put_32 (output_bfd, plt_base_addr, sgot->contents + got_offset);
 
       /* Fill in the entry in the .rela.plt section.  */
       rela.r_offset = got_addr;
@@ -2993,7 +2995,7 @@ or1k_elf_size_dynamic_sections (bfd *output_bfd ATTRIBUTE_UNUSED,
 	  /* Strip this section if we don't need it; see the
 	     comment below.  */
 	}
-      else if (CONST_STRNEQ (bfd_get_section_name (dynobj, s), ".rela"))
+      else if (CONST_STRNEQ (bfd_section_name (s), ".rela"))
 	{
 	  if (s->size != 0 && s != htab->root.srelplt)
 	    relocs = TRUE;

@@ -616,7 +616,7 @@ fetch_register (struct regcache *regcache, int tid, int regno)
   if (altivec_register_p (gdbarch, regno))
     {
       /* If this is the first time through, or if it is not the first
-         time through, and we have comfirmed that there is kernel
+         time through, and we have confirmed that there is kernel
          support for such a ptrace request, then go and fetch the
          register.  */
       if (have_ptrace_getvrregs)
@@ -1085,7 +1085,7 @@ store_altivec_registers (const struct regcache *regcache, int tid,
     perror_with_name (_("Unable to store AltiVec registers"));
 }
 
-/* Assuming TID referrs to an SPE process, set the top halves of TID's
+/* Assuming TID refers to an SPE process, set the top halves of TID's
    general-purpose registers and its SPE-specific registers to the
    values in EVRREGSET.  If we don't support PTRACE_SETEVRREGS, do
    nothing.
@@ -1575,9 +1575,9 @@ struct hw_break_tuple
   struct ppc_hw_breakpoint *hw_break;
 };
 
-/* This is an internal VEC created to store information about *points inserted
-   for each thread.  This is used when PowerPC HWDEBUG ptrace interface is
-   available.  */
+/* This is an internal vector created to store information about *points
+   inserted for each thread.  This is used when PowerPC HWDEBUG ptrace
+   interface is available.  */
 struct thread_points
   {
     /* The TID to which this *point relates.  */
@@ -2645,9 +2645,6 @@ ppc_linux_nat_target::read_description ()
       else if (errno != EIO)
 	perror_with_name (_("Unable to fetch AltiVec registers"));
     }
-
-  if (hwcap & PPC_FEATURE_CELL)
-    features.cell = true;
 
   features.isa205 = ppc_linux_has_isa205 (hwcap);
 

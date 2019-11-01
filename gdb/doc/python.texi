@@ -769,7 +769,7 @@ The result @code{bar} will be a @code{gdb.Value} object holding the
 value pointed to by @code{foo}.
 
 A similar function @code{Value.referenced_value} exists which also
-returns @code{gdb.Value} objects corresonding to the values pointed to
+returns @code{gdb.Value} objects corresponding to the values pointed to
 by pointer values (and additionally, values referenced by reference
 values).  However, the behavior of @code{Value.dereference}
 differs from @code{Value.referenced_value} by the fact that the
@@ -3293,6 +3293,9 @@ This function returns the thread object for the selected thread.  If there
 is no selected thread, this will return @code{None}.
 @end defun
 
+To get the list of threads for an inferior, use the @code{Inferior.threads()}
+method.  @xref{Inferiors In Python}
+
 A @code{gdb.InferiorThread} object has the following attributes:
 
 @defvar InferiorThread.name
@@ -4722,7 +4725,12 @@ A @code{gdb.Block} is iterable.  The iterator returns the symbols
 should not assume that a specific block object will always contain a
 given symbol, since changes in @value{GDBN} features and
 infrastructure may cause symbols move across blocks in a symbol
-table.
+table.  You can also use Python's @dfn{dictionary syntax} to access
+variables in this block, e.g.:
+
+@smallexample
+symbol = some_block['variable']  # symbol is of type gdb.Symbol
+@end smallexample
 
 The following block-related functions are available in the @code{gdb}
 module:
@@ -4845,6 +4853,25 @@ module and described later in this chapter.
 
 The result is a @code{gdb.Symbol} object or @code{None} if the symbol
 is not found.
+@end defun
+
+@findex gdb.lookup_static_symbol
+@defun gdb.lookup_static_symbol (name @r{[}, domain@r{]})
+This function searches for a global symbol with static linkage by name.
+The search scope can be restricted to by the domain argument.
+
+@var{name} is the name of the symbol.  It must be a string.
+The optional @var{domain} argument restricts the search to the domain type.
+The @var{domain} argument must be a domain constant defined in the @code{gdb}
+module and described later in this chapter.
+
+The result is a @code{gdb.Symbol} object or @code{None} if the symbol
+is not found.
+
+Note that this function will not find function-scoped static variables. To look
+up such variables, iterate over the variables of the function's
+@code{gdb.Block} and check that @code{block.addr_class} is
+@code{gdb.SYMBOL_LOC_STATIC}.
 @end defun
 
 A @code{gdb.Symbol} object has the following attributes:

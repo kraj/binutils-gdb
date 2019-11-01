@@ -32,6 +32,7 @@
 #include "typeprint.h"
 #include "gdb-demangle.h"
 #include <ctype.h>
+#include "cli/cli-style.h"
 
 static void pascal_type_print_varspec_suffix (struct type *, struct ui_file *,
 					      int, int, int,
@@ -100,7 +101,7 @@ pascal_print_typedef (struct type *type, struct symbol *new_symbol,
   fprintf_filtered (stream, "type ");
   fprintf_filtered (stream, "%s = ", SYMBOL_PRINT_NAME (new_symbol));
   type_print (type, "", stream, 0);
-  fprintf_filtered (stream, ";\n");
+  fprintf_filtered (stream, ";");
 }
 
 /* If TYPE is a derived type, then print out derivation information.
@@ -470,7 +471,7 @@ pascal_type_print_base (struct type *type, struct ui_file *stream, int show,
   wrap_here ("    ");
   if (type == NULL)
     {
-      fputs_filtered ("<type unknown>", stream);
+      fputs_styled ("<type unknown>", metadata_style.style (), stream);
       return;
     }
 
@@ -827,8 +828,9 @@ pascal_type_print_base (struct type *type, struct ui_file *stream, int show,
 	{
 	  /* At least for dump_symtab, it is important that this not be
 	     an error ().  */
-	  fprintf_filtered (stream, "<invalid unnamed pascal type code %d>",
-			    TYPE_CODE (type));
+	  fprintf_styled (stream, metadata_style.style (),
+			  "<invalid unnamed pascal type code %d>",
+			  TYPE_CODE (type));
 	}
       break;
     }

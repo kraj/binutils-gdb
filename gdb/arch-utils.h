@@ -247,7 +247,7 @@ extern void default_skip_permanent_breakpoint (struct regcache *regcache);
 
 extern CORE_ADDR default_infcall_mmap (CORE_ADDR size, unsigned prot);
 extern void default_infcall_munmap (CORE_ADDR addr, CORE_ADDR size);
-extern char *default_gcc_target_options (struct gdbarch *gdbarch);
+extern std::string default_gcc_target_options (struct gdbarch *gdbarch);
 extern const char *default_gnu_triplet_regexp (struct gdbarch *gdbarch);
 extern int default_addressable_memory_unit_size (struct gdbarch *gdbarch);
 
@@ -271,5 +271,9 @@ extern bool default_in_indirect_branch_thunk (gdbarch *gdbarch,
 /* Default implementation of gdbarch type_align method.  */
 extern ULONGEST default_type_align (struct gdbarch *gdbarch,
 				    struct type *type);
+
+/* Default implementation of gdbarch get_pc_address_flags method.  */
+extern std::string default_get_pc_address_flags (frame_info *frame,
+						 CORE_ADDR pc);
 
 #endif /* ARCH_UTILS_H */

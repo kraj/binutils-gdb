@@ -32,6 +32,8 @@ public:
 
   ui_file *set_stream (ui_file *stream);
 
+  bool can_emit_style_escape () const override;
+
 protected:
 
   virtual void do_table_begin (int nbrofcols, int nr_rows,
@@ -55,15 +57,16 @@ protected:
   virtual void do_field_string (int fldno, int width, ui_align align,
 				const char *fldname,
 				const char *string,
-				ui_out_style_kind style) override;
+				const ui_file_style &style) override;
   virtual void do_field_fmt (int fldno, int width, ui_align align,
-			     const char *fldname, const char *format,
-			     va_list args)
-    override ATTRIBUTE_PRINTF (6,0);
+			     const char *fldname, const ui_file_style &style,
+			     const char *format, va_list args)
+    override ATTRIBUTE_PRINTF (7, 0);
   virtual void do_spaces (int numspaces) override;
   virtual void do_text (const char *string) override;
-  virtual void do_message (const char *format, va_list args) override
-    ATTRIBUTE_PRINTF (2,0);
+  virtual void do_message (const ui_file_style &style,
+			   const char *format, va_list args) override
+    ATTRIBUTE_PRINTF (3,0);
   virtual void do_wrap_hint (const char *identstring) override;
   virtual void do_flush () override;
   virtual void do_redirect (struct ui_file *outstream) override;

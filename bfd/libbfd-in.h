@@ -123,6 +123,15 @@ extern void *bfd_realloc2
 extern void *bfd_zmalloc2
   (bfd_size_type, bfd_size_type) ATTRIBUTE_HIDDEN;
 
+static inline char *
+bfd_strdup (const char *str)
+{
+  size_t len = strlen (str) + 1;
+  char *buf = bfd_malloc (len);
+  if (buf != NULL)
+    memcpy (buf, str, len);
+  return buf;
+}
 /* These routines allocate and free things on the BFD's objalloc.  */
 
 extern void *bfd_alloc2
@@ -514,6 +523,8 @@ extern bfd_boolean _bfd_nolink_bfd_lookup_section_flags
 #define _bfd_nolink_bfd_merge_sections _bfd_bool_bfd_link_false_error
 extern bfd_boolean _bfd_nolink_bfd_is_group_section
   (bfd *, const asection *) ATTRIBUTE_HIDDEN;
+extern const char *_bfd_nolink_bfd_group_name
+  (bfd *, const asection *) ATTRIBUTE_HIDDEN;
 extern bfd_boolean _bfd_nolink_bfd_discard_group
   (bfd *, asection *) ATTRIBUTE_HIDDEN;
 extern struct bfd_link_hash_table *_bfd_nolink_bfd_link_hash_table_create
@@ -588,7 +599,7 @@ extern const struct dwarf_debug_section dwarf_debug_sections[] ATTRIBUTE_HIDDEN;
 extern bfd_boolean _bfd_dwarf2_find_nearest_line
   (bfd *, asymbol **, asymbol *, asection *, bfd_vma,
    const char **, const char **, unsigned int *, unsigned int *,
-   const struct dwarf_debug_section *, unsigned int, void **) ATTRIBUTE_HIDDEN;
+   const struct dwarf_debug_section *, void **) ATTRIBUTE_HIDDEN;
 
 /* Find the bias between DWARF addresses and real addresses.  */
 extern bfd_signed_vma _bfd_dwarf2_find_symbol_bias

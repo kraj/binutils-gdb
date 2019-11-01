@@ -220,73 +220,10 @@ ppc_supply_ptrace_register (struct regcache *regcache,
     perror_with_name ("Unexpected byte order");
 }
 
-
-#define INSTR_SC        0x44000002
-#define NR_spu_run      0x0116
-
-/* If the PPU thread is currently stopped on a spu_run system call,
-   return to FD and ADDR the file handle and NPC parameter address
-   used with the system call.  Return non-zero if successful.  */
-static int
-parse_spufs_run (struct regcache *regcache, int *fd, CORE_ADDR *addr)
-{
-  CORE_ADDR curr_pc;
-  int curr_insn;
-  int curr_r0;
-
-  if (register_size (regcache->tdesc, 0) == 4)
-    {
-      unsigned int pc, r0, r3, r4;
-      collect_register_by_name (regcache, "pc", &pc);
-      collect_register_by_name (regcache, "r0", &r0);
-      collect_register_by_name (regcache, "orig_r3", &r3);
-      collect_register_by_name (regcache, "r4", &r4);
-      curr_pc = (CORE_ADDR) pc;
-      curr_r0 = (int) r0;
-      *fd = (int) r3;
-      *addr = (CORE_ADDR) r4;
-    }
-  else
-    {
-      unsigned long pc, r0, r3, r4;
-      collect_register_by_name (regcache, "pc", &pc);
-      collect_register_by_name (regcache, "r0", &r0);
-      collect_register_by_name (regcache, "orig_r3", &r3);
-      collect_register_by_name (regcache, "r4", &r4);
-      curr_pc = (CORE_ADDR) pc;
-      curr_r0 = (int) r0;
-      *fd = (int) r3;
-      *addr = (CORE_ADDR) r4;
-    }
-
-  /* Fetch instruction preceding current NIP.  */
-  if ((*the_target->read_memory) (curr_pc - 4,
-				  (unsigned char *) &curr_insn, 4) != 0)
-    return 0;
-  /* It should be a "sc" instruction.  */
-  if (curr_insn != INSTR_SC)
-    return 0;
-  /* System call number should be NR_spu_run.  */
-  if (curr_r0 != NR_spu_run)
-    return 0;
-
-  return 1;
-}
-
 static CORE_ADDR
 ppc_get_pc (struct regcache *regcache)
 {
-  CORE_ADDR addr;
-  int fd;
-
-  if (parse_spufs_run (regcache, &fd, &addr))
-    {
-      unsigned int pc;
-      (*the_target->read_memory) (addr, (unsigned char *) &pc, 4);
-      return ((CORE_ADDR)1 << 63)
-	| ((CORE_ADDR)fd << 32) | (CORE_ADDR) (pc - 4);
-    }
-  else if (register_size (regcache->tdesc, 0) == 4)
+  if (register_size (regcache->tdesc, 0) == 4)
     {
       unsigned int pc;
       collect_register_by_name (regcache, "pc", &pc);
@@ -303,15 +240,7 @@ ppc_get_pc (struct regcache *regcache)
 static void
 ppc_set_pc (struct regcache *regcache, CORE_ADDR pc)
 {
-  CORE_ADDR addr;
-  int fd;
-
-  if (parse_spufs_run (regcache, &fd, &addr))
-    {
-      unsigned int newpc = pc;
-      (*the_target->write_memory) (addr, (unsigned char *) &newpc, 4);
-    }
-  else if (register_size (regcache->tdesc, 0) == 4)
+  if (register_size (regcache->tdesc, 0) == 4)
     {
       unsigned int newpc = pc;
       supply_register_by_name (regcache, "pc", &newpc);
@@ -348,23 +277,11 @@ ppc_breakpoint_at (CORE_ADDR where)
 {
   unsigned int insn;
 
-  if (where & ((CORE_ADDR)1 << 63))
-    {
-      char mem_annex[32];
-      sprintf (mem_annex, "%d/mem", (int)((where >> 32) & 0x7fffffff));
-      (*the_target->qxfer_spu) (mem_annex, (unsigned char *) &insn,
-				NULL, where & 0xffffffff, 4);
-      if (insn == 0x3fff)
-	return 1;
-    }
-  else
-    {
-      (*the_target->read_memory) (where, (unsigned char *) &insn, 4);
-      if (insn == ppc_breakpoint)
-	return 1;
-      /* If necessary, recognize more trap instructions here.  GDB only uses
-	 the one.  */
-    }
+  (*the_target->read_memory) (where, (unsigned char *) &insn, 4);
+  if (insn == ppc_breakpoint)
+    return 1;
+  /* If necessary, recognize more trap instructions here.  GDB only uses
+     the one.  */
 
   return 0;
 }
@@ -940,9 +857,6 @@ ppc_arch_setup (void)
 	    features.htm = true;
 	}
     }
-
-  if (ppc_hwcap & PPC_FEATURE_CELL)
-    features.cell = true;
 
   tdesc = ppc_linux_match_description (features);
 
@@ -1535,12 +1449,12 @@ ppc_relocate_instruction (CORE_ADDR *to, CORE_ADDR oldloc)
 
 	  /* Jump over the unconditional branch.  */
 	  insn = (insn & ~0xfffc) | 0x8;
-	  write_inferior_memory (*to, (unsigned char *) &insn, 4);
+	  target_write_memory (*to, (unsigned char *) &insn, 4);
 	  *to += 4;
 
 	  /* Build a unconditional branch and copy LK bit.  */
 	  insn = (18 << 26) | (0x3fffffc & newrel) | (insn & 0x3);
-	  write_inferior_memory (*to, (unsigned char *) &insn, 4);
+	  target_write_memory (*to, (unsigned char *) &insn, 4);
 	  *to += 4;
 
 	  return;
@@ -1563,14 +1477,14 @@ ppc_relocate_instruction (CORE_ADDR *to, CORE_ADDR oldloc)
 	  bdnz_insn |= (insn ^ (1 << 22)) & (1 << 22);
 	  bf_insn |= (insn ^ (1 << 24)) & (1 << 24);
 
-	  write_inferior_memory (*to, (unsigned char *) &bdnz_insn, 4);
+	  target_write_memory (*to, (unsigned char *) &bdnz_insn, 4);
 	  *to += 4;
-	  write_inferior_memory (*to, (unsigned char *) &bf_insn, 4);
+	  target_write_memory (*to, (unsigned char *) &bf_insn, 4);
 	  *to += 4;
 
 	  /* Build a unconditional branch and copy LK bit.  */
 	  insn = (18 << 26) | (0x3fffffc & newrel) | (insn & 0x3);
-	  write_inferior_memory (*to, (unsigned char *) &insn, 4);
+	  target_write_memory (*to, (unsigned char *) &insn, 4);
 	  *to += 4;
 
 	  return;
@@ -1583,14 +1497,14 @@ ppc_relocate_instruction (CORE_ADDR *to, CORE_ADDR oldloc)
 
 	  /* Build a unconditional branch and copy LK bit.  */
 	  insn = (18 << 26) | (0x3fffffc & newrel) | (insn & 0x3);
-	  write_inferior_memory (*to, (unsigned char *) &insn, 4);
+	  target_write_memory (*to, (unsigned char *) &insn, 4);
 	  *to += 4;
 
 	  return;
 	}
     }
 
-  write_inferior_memory (*to, (unsigned char *) &insn, 4);
+  target_write_memory (*to, (unsigned char *) &insn, 4);
   *to += 4;
 }
 
@@ -1674,7 +1588,7 @@ ppc_install_fast_tracepoint_jump_pad (CORE_ADDR tpoint, CORE_ADDR tpaddr,
      6. Restore SP
      7. Build a jump for back to the program
      8. Copy/relocate original instruction
-     9. Build a jump for replacing orignal instruction.  */
+     9. Build a jump for replacing original instruction.  */
 
   /* Adjust stack pointer.  */
   if (is_64)
@@ -1750,7 +1664,7 @@ ppc_install_fast_tracepoint_jump_pad (CORE_ADDR tpoint, CORE_ADDR tpaddr,
   p += GEN_ADDI (p, 1, 1, frame_size);
 
   /* Flush instructions to inferior memory.  */
-  write_inferior_memory (buildaddr, (unsigned char *) buf, (p - buf) * 4);
+  target_write_memory (buildaddr, (unsigned char *) buf, (p - buf) * 4);
 
   /* Now, insert the original instruction to execute in the jump pad.  */
   *adjusted_insn_addr = buildaddr + (p - buf) * 4;
@@ -1780,7 +1694,7 @@ ppc_install_fast_tracepoint_jump_pad (CORE_ADDR tpoint, CORE_ADDR tpaddr,
     }
   /* b <tpaddr+4> */
   p += GEN_B (p, offset);
-  write_inferior_memory (buildaddr, (unsigned char *) buf, (p - buf) * 4);
+  target_write_memory (buildaddr, (unsigned char *) buf, (p - buf) * 4);
   *jump_entry = buildaddr + (p - buf) * 4;
 
   /* The jump pad is now built.  Wire in a jump to our jump pad.  This
@@ -1816,7 +1730,7 @@ static void
 emit_insns (uint32_t *buf, int n)
 {
   n = n * sizeof (uint32_t);
-  write_inferior_memory (current_insn_ptr, (unsigned char *) buf, n);
+  target_write_memory (current_insn_ptr, (unsigned char *) buf, n);
   current_insn_ptr += n;
 }
 
@@ -2604,7 +2518,7 @@ ppc_write_goto_address (CORE_ADDR from, CORE_ADDR to, int size)
     }
 
   if (!emit_error)
-    write_inferior_memory (from, (unsigned char *) &insn, 4);
+    target_write_memory (from, (unsigned char *) &insn, 4);
 }
 
 /* Table of emit ops for 32-bit.  */
@@ -3416,8 +3330,6 @@ ppc_get_ipa_tdesc_idx (void)
     return PPC_TDESC_BASE;
   if (tdesc == tdesc_powerpc_altivec64l)
     return PPC_TDESC_ALTIVEC;
-  if (tdesc == tdesc_powerpc_cell64l)
-    return PPC_TDESC_CELL;
   if (tdesc == tdesc_powerpc_vsx64l)
     return PPC_TDESC_VSX;
   if (tdesc == tdesc_powerpc_isa205_64l)
@@ -3438,8 +3350,6 @@ ppc_get_ipa_tdesc_idx (void)
     return PPC_TDESC_BASE;
   if (tdesc == tdesc_powerpc_altivec32l)
     return PPC_TDESC_ALTIVEC;
-  if (tdesc == tdesc_powerpc_cell32l)
-    return PPC_TDESC_CELL;
   if (tdesc == tdesc_powerpc_vsx32l)
     return PPC_TDESC_VSX;
   if (tdesc == tdesc_powerpc_isa205_32l)
@@ -3507,7 +3417,6 @@ initialize_low_arch (void)
 
   init_registers_powerpc_32l ();
   init_registers_powerpc_altivec32l ();
-  init_registers_powerpc_cell32l ();
   init_registers_powerpc_vsx32l ();
   init_registers_powerpc_isa205_32l ();
   init_registers_powerpc_isa205_altivec32l ();
@@ -3519,7 +3428,6 @@ initialize_low_arch (void)
 #if __powerpc64__
   init_registers_powerpc_64l ();
   init_registers_powerpc_altivec64l ();
-  init_registers_powerpc_cell64l ();
   init_registers_powerpc_vsx64l ();
   init_registers_powerpc_isa205_64l ();
   init_registers_powerpc_isa205_altivec64l ();

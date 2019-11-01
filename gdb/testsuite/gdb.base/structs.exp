@@ -82,10 +82,12 @@ proc start_structs_test { types } {
     gdb_load ${binfile}
 
     # Make certain that the output is consistent
-    gdb_test_no_output "set print sevenbit-strings"
-    gdb_test_no_output "set print address off"
-    gdb_test_no_output "set width 0"
-    gdb_test_no_output "set print elements 300"
+    with_test_prefix "types=$types" {
+	gdb_test_no_output "set print sevenbit-strings"
+	gdb_test_no_output "set print address off"
+	gdb_test_no_output "set width 0"
+	gdb_test_no_output "set print elements 300"
+    }
 
     # Advance to main
     if { ![runto_main] } then {
@@ -102,7 +104,11 @@ proc start_structs_test { types } {
 	# Verify $anychar_re can match all the values of `char' type.
 	gdb_breakpoint [gdb_get_line_number "chartest-done"]
 	gdb_continue_to_breakpoint "chartest-done" ".*chartest-done.*"
-	gdb_test "p chartest" "= {({c = ${anychar_re}}, ){255}{c = ${anychar_re}}}"
+	gdb_test_sequence "p chartest" "" \
+	    [concat \
+		 [list "= \{"] \
+		 [lrepeat 255 "^\{c = ${anychar_re}\}, "] \
+		 [list "^\{c = ${anychar_re}\}\}"]]
     }
 
     # check that at the struct containing all the relevant types is correct

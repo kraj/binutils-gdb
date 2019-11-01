@@ -1184,8 +1184,8 @@ f;void;infcall_munmap;CORE_ADDR addr, CORE_ADDR size;addr, size;;default_infcall
 # Return string (caller has to use xfree for it) with options for GCC
 # to produce code for this target, typically "-m64", "-m32" or "-m31".
 # These options are put before CU's DW_AT_producer compilation options so that
-# they can override it.  Method may also return NULL.
-m;char *;gcc_target_options;void;;;default_gcc_target_options;;0
+# they can override it.
+m;std::string;gcc_target_options;void;;;default_gcc_target_options;;0
 
 # Return a regular expression that matches names used by this
 # architecture in GNU configury triplets.  The result is statically
@@ -1209,6 +1209,9 @@ v;const disasm_options_and_args_t *;valid_disassembler_options;;;0;0;;0;host_add
 # required for TYPE then return the value 0, GDB will then apply the
 # default rules as laid out in gdbtypes.c:type_align.
 m;ULONGEST;type_align;struct type *type;type;;default_type_align;;0
+
+# Return a string containing any flags for the given PC in the given FRAME.
+f;std::string;get_pc_address_flags;frame_info *frame, CORE_ADDR pc;frame, pc;;default_get_pc_address_flags;;0
 
 EOF
 }

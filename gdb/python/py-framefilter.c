@@ -33,6 +33,7 @@
 #include "mi/mi-cmds.h"
 #include "python-internal.h"
 #include "gdbsupport/gdb_optional.h"
+#include "cli/cli-style.h"
 
 enum mi_print_types
 {
@@ -396,9 +397,9 @@ py_print_single_arg (struct ui_out *out,
 	  if (val == NULL)
 	    {
 	      gdb_assert (fa != NULL && fa->error != NULL);
-	      out->field_fmt ("value",
+	      out->field_fmt ("value", metadata_style.style (),
 			      _("<error reading variable: %s>"),
-			      fa->error);
+			      fa->error.get ());
 	    }
 	  else
 	    py_print_value (out, val, opts, 0, args_type, language);
@@ -485,9 +486,6 @@ enumerate_args (PyObject *iter,
 
 	  read_frame_arg (user_frame_print_options,
 			  sym, frame, &arg, &entryarg);
-
-	  gdb::unique_xmalloc_ptr<char> arg_holder (arg.error);
-	  gdb::unique_xmalloc_ptr<char> entry_holder (entryarg.error);
 
 	  /* The object has not provided a value, so this is a frame
 	     argument to be read by GDB.  In this case we have to
@@ -901,6 +899,8 @@ py_print_frame (PyObject *filter, frame_filter_flags flags,
 	    {
 	      annotate_frame_address ();
 	      out->field_core_addr ("addr", gdbarch, address);
+	      if (get_frame_pc_masked (frame))
+		out->field_string ("pac", " [PAC]");
 	      annotate_frame_address_end ();
 	      out->text (" in ");
 	    }
@@ -948,7 +948,7 @@ py_print_frame (PyObject *filter, frame_filter_flags flags,
 	  if (function == NULL)
 	    out->field_skip ("func");
 	  else
-	    out->field_string ("func", function, ui_out_style_kind::FUNCTION);
+	    out->field_string ("func", function, function_name_style.style ());
 	}
     }
 
@@ -988,7 +988,7 @@ py_print_frame (PyObject *filter, frame_filter_flags flags,
 	      out->text (" at ");
 	      annotate_frame_source_file ();
 	      out->field_string ("file", filename.get (),
-				 ui_out_style_kind::FILE);
+				 file_name_style.style ());
 	      annotate_frame_source_file_end ();
 	    }
 	}

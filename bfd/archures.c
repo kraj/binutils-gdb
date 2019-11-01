@@ -584,6 +584,16 @@ DESCRIPTION
 .		  bfd_boolean code);
 .
 .  const struct bfd_arch_info *next;
+.
+.  {* On some architectures the offset for a relocation can point into
+.     the middle of an instruction.  This field specifies the maximum
+.     offset such a relocation can have (in octets).  This affects the
+.     behaviour of the disassembler, since a value greater than zero
+.     means that it may need to disassemble an instruction twice, once
+.     to get its length and then a second time to display it.  If the
+.     value is negative then this has to be done for every single
+.     instruction, regardless of the offset of the reloc.  *}
+.  signed int max_reloc_offset_into_insn;
 .}
 .bfd_arch_info_type;
 .
@@ -929,12 +939,13 @@ DESCRIPTION
 .extern const bfd_arch_info_type bfd_default_arch_struct;
 */
 
-const bfd_arch_info_type bfd_default_arch_struct = {
+const bfd_arch_info_type bfd_default_arch_struct =
+{
   32, 32, 8, bfd_arch_unknown, 0, "unknown", "unknown", 2, TRUE,
   bfd_default_compatible,
   bfd_default_scan,
   bfd_arch_default_fill,
-  0,
+  0, 0
 };
 
 /*
@@ -988,7 +999,7 @@ FUNCTION
 	bfd_get_arch
 
 SYNOPSIS
-	enum bfd_architecture bfd_get_arch (bfd *abfd);
+	enum bfd_architecture bfd_get_arch (const bfd *abfd);
 
 DESCRIPTION
 	Return the enumerated type which describes the BFD @var{abfd}'s
@@ -996,7 +1007,7 @@ DESCRIPTION
 */
 
 enum bfd_architecture
-bfd_get_arch (bfd *abfd)
+bfd_get_arch (const bfd *abfd)
 {
   return abfd->arch_info->arch;
 }
@@ -1006,7 +1017,7 @@ FUNCTION
 	bfd_get_mach
 
 SYNOPSIS
-	unsigned long bfd_get_mach (bfd *abfd);
+	unsigned long bfd_get_mach (const bfd *abfd);
 
 DESCRIPTION
 	Return the long type which describes the BFD @var{abfd}'s
@@ -1014,7 +1025,7 @@ DESCRIPTION
 */
 
 unsigned long
-bfd_get_mach (bfd *abfd)
+bfd_get_mach (const bfd *abfd)
 {
   return abfd->arch_info->mach;
 }
@@ -1024,7 +1035,7 @@ FUNCTION
 	bfd_arch_bits_per_byte
 
 SYNOPSIS
-	unsigned int bfd_arch_bits_per_byte (bfd *abfd);
+	unsigned int bfd_arch_bits_per_byte (const bfd *abfd);
 
 DESCRIPTION
 	Return the number of bits in one of the BFD @var{abfd}'s
@@ -1032,7 +1043,7 @@ DESCRIPTION
 */
 
 unsigned int
-bfd_arch_bits_per_byte (bfd *abfd)
+bfd_arch_bits_per_byte (const bfd *abfd)
 {
   return abfd->arch_info->bits_per_byte;
 }
@@ -1042,7 +1053,7 @@ FUNCTION
 	bfd_arch_bits_per_address
 
 SYNOPSIS
-	unsigned int bfd_arch_bits_per_address (bfd *abfd);
+	unsigned int bfd_arch_bits_per_address (const bfd *abfd);
 
 DESCRIPTION
 	Return the number of bits in one of the BFD @var{abfd}'s
@@ -1050,7 +1061,7 @@ DESCRIPTION
 */
 
 unsigned int
-bfd_arch_bits_per_address (bfd *abfd)
+bfd_arch_bits_per_address (const bfd *abfd)
 {
   return abfd->arch_info->bits_per_address;
 }
@@ -1372,7 +1383,7 @@ FUNCTION
 	bfd_octets_per_byte
 
 SYNOPSIS
-	unsigned int bfd_octets_per_byte (bfd *abfd);
+	unsigned int bfd_octets_per_byte (const bfd *abfd);
 
 DESCRIPTION
 	Return the number of octets (8-bit quantities) per target byte
@@ -1381,7 +1392,7 @@ DESCRIPTION
 */
 
 unsigned int
-bfd_octets_per_byte (bfd *abfd)
+bfd_octets_per_byte (const bfd *abfd)
 {
   return bfd_arch_mach_octets_per_byte (bfd_get_arch (abfd),
 					bfd_get_mach (abfd));

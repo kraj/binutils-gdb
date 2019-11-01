@@ -24,12 +24,9 @@
 #include "tui/tui-data.h"
 #include "tui/tui-wingeneral.h"
 #include "tui/tui-win.h"
+#include "tui/tui-stack.h"
 
 #include "gdb_curses.h"
-
-/***********************
-** PUBLIC FUNCTIONS
-***********************/
 
 /* See tui-data.h.  */
 
@@ -37,50 +34,49 @@ void
 tui_gen_win_info::refresh_window ()
 {
   if (handle != NULL)
-    {
-      touchwin (handle);
-      wrefresh (handle);
-    }
+    wrefresh (handle.get ());
 }
-
-/* Function to delete the curses window, checking for NULL.  */
-void
-tui_delete_win (WINDOW *window)
-{
-  if (window != NULL)
-    delwin (window);
-}
-
 
 /* Draw a border arround the window.  */
 static void
-box_win (struct tui_gen_win_info *win_info, 
-	 int highlight_flag)
+box_win (struct tui_win_info *win_info, 
+	 bool highlight_flag)
 {
-  if (win_info && win_info->handle)
-    {
-      WINDOW *win;
-      int attrs;
+  WINDOW *win;
+  int attrs;
 
-      win = win_info->handle;
-      if (highlight_flag == HILITE)
-        attrs = tui_active_border_attrs;
-      else
-        attrs = tui_border_attrs;
+  win = win_info->handle.get ();
+  if (highlight_flag)
+    attrs = tui_active_border_attrs;
+  else
+    attrs = tui_border_attrs;
 
-      wattron (win, attrs);
+  wattron (win, attrs);
 #ifdef HAVE_WBORDER
-      wborder (win, tui_border_vline, tui_border_vline,
-               tui_border_hline, tui_border_hline,
-               tui_border_ulcorner, tui_border_urcorner,
-               tui_border_llcorner, tui_border_lrcorner);
+  wborder (win, tui_border_vline, tui_border_vline,
+	   tui_border_hline, tui_border_hline,
+	   tui_border_ulcorner, tui_border_urcorner,
+	   tui_border_llcorner, tui_border_lrcorner);
 #else
-      box (win, tui_border_vline, tui_border_hline);
+  box (win, tui_border_vline, tui_border_hline);
 #endif
-      if (win_info->title)
-        mvwaddstr (win, 0, 3, win_info->title);
-      wattroff (win, attrs);
+  if (!win_info->title.empty ())
+    {
+      /* Emit "+-TITLE-+" -- so 2 characters on the right and 2 on
+	 the left.  */
+      int max_len = win_info->width - 2 - 2;
+
+      if (win_info->title.size () <= max_len)
+	mvwaddstr (win, 0, 3, win_info->title.c_str ());
+      else
+	{
+	  std::string truncated
+	    = "..." + win_info->title.substr (win_info->title.size ()
+					      - max_len + 3);
+	  mvwaddstr (win, 0, 3, truncated.c_str ());
+	}
     }
+  wattroff (win, attrs);
 }
 
 
@@ -91,7 +87,7 @@ tui_unhighlight_win (struct tui_win_info *win_info)
       && win_info->can_highlight
       && win_info->handle != NULL)
     {
-      box_win (win_info, NO_HILITE);
+      box_win (win_info, false);
       win_info->refresh_window ();
       win_info->set_highlight (false);
     }
@@ -105,45 +101,40 @@ tui_highlight_win (struct tui_win_info *win_info)
       && win_info->can_highlight
       && win_info->handle != NULL)
     {
-      box_win (win_info, HILITE);
+      box_win (win_info, true);
       win_info->refresh_window ();
       win_info->set_highlight (true);
     }
 }
 
 void
-tui_check_and_display_highlight_if_needed (struct tui_win_info *win_info)
+tui_win_info::check_and_display_highlight_if_needed ()
 {
-  if (win_info != NULL && win_info->can_highlight)
+  if (can_highlight)
     {
-      if (win_info->is_highlighted)
-	tui_highlight_win (win_info);
+      if (is_highlighted)
+	tui_highlight_win (this);
       else
-	tui_unhighlight_win (win_info);
-
+	tui_unhighlight_win (this);
     }
 }
 
 
 void
-tui_make_window (struct tui_gen_win_info *win_info, enum tui_box box_it)
+tui_gen_win_info::make_window ()
 {
-  WINDOW *handle;
-
-  handle = newwin (win_info->height,
-		   win_info->width,
-		   win_info->origin.y,
-		   win_info->origin.x);
-  win_info->handle = handle;
+  handle.reset (newwin (height, width, origin.y, origin.x));
   if (handle != NULL)
-    {
-      if (box_it == BOX_WINDOW)
-	box_win (win_info, NO_HILITE);
-      win_info->is_visible = true;
-      scrollok (handle, TRUE);
-    }
+    scrollok (handle.get (), TRUE);
 }
 
+void
+tui_win_info::make_window ()
+{
+  tui_gen_win_info::make_window ();
+  if (handle != NULL && can_box ())
+    box_win (this, false);
+}
 
 /* We can't really make windows visible, or invisible.  So we have to
    delete the entire window when making it visible, and create it
@@ -151,39 +142,22 @@ tui_make_window (struct tui_gen_win_info *win_info, enum tui_box box_it)
 void
 tui_gen_win_info::make_visible (bool visible)
 {
-  if (is_visible == visible)
+  if (is_visible () == visible)
     return;
-  is_visible = visible;
 
   if (visible)
-    tui_make_window (this, (tui_win_is_auxiliary (type)
-			    ? DONT_BOX_WINDOW : BOX_WINDOW));
+    make_window ();
   else
-    {
-      tui_delete_win (handle);
-      handle = NULL;
-    }
+    handle.reset (nullptr);
 }
 
-/* Makes all windows invisible (except the command and locator
-   windows).  */
-static void
-make_all_visible (bool visible)
-{
-  for (tui_win_info *win_info : all_tui_windows ())
-    win_info->make_visible (visible);
-}
-
-void
-tui_make_all_visible (void)
-{
-  make_all_visible (true);
-}
+/* See tui-wingeneral.h.  */
 
 void
 tui_make_all_invisible (void)
 {
-  make_all_visible (false);
+  for (tui_win_info *win_info : all_tui_windows ())
+    win_info->make_visible (false);
 }
 
 /* Function to refresh all the windows currently displayed.  */
@@ -195,14 +169,9 @@ tui_refresh_all ()
 
   for (tui_win_info *win_info : all_tui_windows ())
     {
-      if (win_info->is_visible)
+      if (win_info->is_visible ())
 	win_info->refresh_window ();
     }
-  if (locator->is_visible)
+  if (locator->is_visible ())
     locator->refresh_window ();
 }
-
-
-/*********************************
-** Local Static Functions
-*********************************/

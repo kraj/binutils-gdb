@@ -25,6 +25,7 @@
 #include "libiberty.h"
 #include "elf-bfd.h"
 #include "elf/cr16.h"
+#include "elf32-cr16.h"
 
 /* The cr16 linker needs to keep track of the number of relocs that
    it decides to copy in check_relocs for each symbol.  This is so
@@ -610,7 +611,7 @@ _bfd_cr16_elf_create_got_section (bfd * abfd, struct bfd_link_info * info)
   s = bfd_make_section_anyway_with_flags (abfd, ".got", flags);
   htab->sgot= s;
   if (s == NULL
-      || ! bfd_set_section_alignment (abfd, s, ptralign))
+      || !bfd_set_section_alignment (s, ptralign))
     return FALSE;
 
   if (bed->want_got_plt)
@@ -618,7 +619,7 @@ _bfd_cr16_elf_create_got_section (bfd * abfd, struct bfd_link_info * info)
       s = bfd_make_section_anyway_with_flags (abfd, ".got.plt", flags);
       htab->sgotplt = s;
       if (s == NULL
-	  || ! bfd_set_section_alignment (abfd, s, ptralign))
+	  || !bfd_set_section_alignment (s, ptralign))
 	return FALSE;
     }
 
@@ -1444,7 +1445,7 @@ elf32_cr16_relocate_section (bfd *output_bfd, struct bfd_link_info *info,
 	      name = (bfd_elf_string_from_elf_section
 		      (input_bfd, symtab_hdr->sh_link, sym->st_name));
 	      if (name == NULL || *name == '\0')
-		name = bfd_section_name (input_bfd, sec);
+		name = bfd_section_name (sec);
 	    }
 
 	  switch (r)
@@ -2241,7 +2242,7 @@ _bfd_cr16_elf_create_dynamic_sections (bfd *abfd, struct bfd_link_info *info)
 					  flags | SEC_READONLY);
   htab->srelplt = s;
   if (s == NULL
-      || ! bfd_set_section_alignment (abfd, s, ptralign))
+      || !bfd_set_section_alignment (s, ptralign))
     return FALSE;
 
   if (! _bfd_cr16_elf_create_got_section (abfd, info))
@@ -2278,7 +2279,7 @@ _bfd_cr16_elf_create_dynamic_sections (bfd *abfd, struct bfd_link_info *info)
 						   ? ".rela.bss" : ".rel.bss"),
 						  flags | SEC_READONLY);
 	  if (s == NULL
-	      || ! bfd_set_section_alignment (abfd, s, ptralign))
+	      || !bfd_set_section_alignment (s, ptralign))
 	    return FALSE;
 	}
     }
@@ -2463,7 +2464,7 @@ _bfd_cr16_elf_size_dynamic_sections (bfd * output_bfd,
 
       /* It's OK to base decisions on the section name, because none
 	 of the dynobj section names depend upon the input files.  */
-      name = bfd_get_section_name (dynobj, s);
+      name = bfd_section_name (s);
 
       if (strcmp (name, ".plt") == 0)
 	{
@@ -2489,8 +2490,7 @@ _bfd_cr16_elf_size_dynamic_sections (bfd * output_bfd,
 		     entry.  The entries in the .rela.plt section
 		     really apply to the .got section, which we
 		     created ourselves and so know is not readonly.  */
-		  outname = bfd_get_section_name (output_bfd,
-						  s->output_section);
+		  outname = bfd_section_name (s->output_section);
 		  target = bfd_get_section_by_name (output_bfd, outname + 5);
 		  if (target != NULL
 		      && (target->flags & SEC_READONLY) != 0

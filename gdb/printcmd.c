@@ -100,7 +100,7 @@ show_max_symbolic_offset (struct ui_file *file, int from_tty,
 
 /* Append the source filename and linenumber of the symbol when
    printing a symbolic value as `<symbol at filename:linenum>' if set.  */
-static int print_symbol_filename = 0;
+static bool print_symbol_filename = false;
 static void
 show_print_symbol_filename (struct ui_file *file, int from_tty,
 			    struct cmd_list_element *c, const char *value)
@@ -405,21 +405,30 @@ print_scalar_formatted (const gdb_byte *valaddr, struct type *type,
 
   /* Historically gdb has printed floats by first casting them to a
      long, and then printing the long.  PR cli/16242 suggests changing
-     this to using C-style hex float format.  */
-  gdb::byte_vector converted_float_bytes;
-  if (TYPE_CODE (type) == TYPE_CODE_FLT
-      && (options->format == 'o'
-	  || options->format == 'x'
-	  || options->format == 't'
-	  || options->format == 'z'
-	  || options->format == 'd'
-	  || options->format == 'u'))
+     this to using C-style hex float format.
+
+     Biased range types must also be unbiased here; the unbiasing is
+     done by unpack_long.  */
+  gdb::byte_vector converted_bytes;
+  /* Some cases below will unpack the value again.  In the biased
+     range case, we want to avoid this, so we store the unpacked value
+     here for possible use later.  */
+  gdb::optional<LONGEST> val_long;
+  if ((TYPE_CODE (type) == TYPE_CODE_FLT
+       && (options->format == 'o'
+	   || options->format == 'x'
+	   || options->format == 't'
+	   || options->format == 'z'
+	   || options->format == 'd'
+	   || options->format == 'u'))
+      || (TYPE_CODE (type) == TYPE_CODE_RANGE
+	  && TYPE_RANGE_DATA (type)->bias != 0))
     {
-      LONGEST val_long = unpack_long (type, valaddr);
-      converted_float_bytes.resize (TYPE_LENGTH (type));
-      store_signed_integer (converted_float_bytes.data (), TYPE_LENGTH (type),
-			    byte_order, val_long);
-      valaddr = converted_float_bytes.data ();
+      val_long.emplace (unpack_long (type, valaddr));
+      converted_bytes.resize (TYPE_LENGTH (type));
+      store_signed_integer (converted_bytes.data (), TYPE_LENGTH (type),
+			    byte_order, *val_long);
+      valaddr = converted_bytes.data ();
     }
 
   /* Printing a non-float type as 'f' will interpret the data as if it were
@@ -469,7 +478,8 @@ print_scalar_formatted (const gdb_byte *valaddr, struct type *type,
       {
 	struct value_print_options opts = *options;
 
-	LONGEST val_long = unpack_long (type, valaddr);
+	if (!val_long.has_value ())
+	  val_long.emplace (unpack_long (type, valaddr));
 
 	opts.format = 0;
 	if (TYPE_UNSIGNED (type))
@@ -477,15 +487,15 @@ print_scalar_formatted (const gdb_byte *valaddr, struct type *type,
  	else
 	  type = builtin_type (gdbarch)->builtin_true_char;
 
-	value_print (value_from_longest (type, val_long), stream, &opts);
+	value_print (value_from_longest (type, *val_long), stream, &opts);
       }
       break;
 
     case 'a':
       {
-	CORE_ADDR addr = unpack_pointer (type, valaddr);
-
-	print_address (gdbarch, addr, stream);
+	if (!val_long.has_value ())
+	  val_long.emplace (unpack_long (type, valaddr));
+	print_address (gdbarch, *val_long, stream);
       }
       break;
 
@@ -540,7 +550,7 @@ print_address_symbolic (struct gdbarch *gdbarch, CORE_ADDR addr,
     fputs_filtered ("<", stream);
   fputs_styled (name.c_str (), function_name_style.style (), stream);
   if (offset != 0)
-    fprintf_filtered (stream, "+%u", (unsigned int) offset);
+    fprintf_filtered (stream, "%+d", offset);
 
   /* Append source filename and line number if desired.  Give specific
      line # of this addr, if we have it; else line # of the nearest symbol.  */
@@ -680,7 +690,7 @@ build_address_symbolic (struct gdbarch *gdbarch,
       && name_location + max_symbolic_offset > name_location)
     return 1;
 
-  *offset = addr - name_location;
+  *offset = (LONGEST) addr - name_location;
 
   *name = name_temp;
 
@@ -1936,7 +1946,8 @@ do_one_display (struct display *d)
   if (d->block)
     {
       if (d->pspace == current_program_space)
-	within_current_scope = contained_in (get_selected_block (0), d->block);
+	within_current_scope = contained_in (get_selected_block (0), d->block,
+					     true);
       else
 	within_current_scope = 0;
     }
@@ -1990,8 +2001,9 @@ do_one_display (struct display *d)
 	}
       catch (const gdb_exception_error &ex)
 	{
-	  fprintf_filtered (gdb_stdout, _("<error: %s>\n"),
-			    ex.what ());
+	  fprintf_filtered (gdb_stdout, _("%p[<error: %s>%p]\n"),
+			    metadata_style.style ().ptr (), ex.what (),
+			    nullptr);
 	}
     }
   else
@@ -2024,7 +2036,8 @@ do_one_display (struct display *d)
 	}
       catch (const gdb_exception_error &ex)
 	{
-	  fprintf_filtered (gdb_stdout, _("<error: %s>"), ex.what ());
+	  fprintf_styled (gdb_stdout, metadata_style.style (),
+			  _("<error: %s>"), ex.what ());
 	}
 
       printf_filtered ("\n");
@@ -2098,7 +2111,7 @@ Num Enb Expression\n"));
       else if (d->format.format)
 	printf_filtered ("/%c ", d->format.format);
       puts_filtered (d->exp_string);
-      if (d->block && !contained_in (get_selected_block (0), d->block))
+      if (d->block && !contained_in (get_selected_block (0), d->block, true))
 	printf_filtered (_(" (cannot be evaluated in the current context)"));
       printf_filtered ("\n");
     }
@@ -2113,7 +2126,7 @@ do_enable_disable_display (struct display *d, void *data)
   d->enabled_p = *(int *) data;
 }
 
-/* Implamentation of both the "disable display" and "enable display"
+/* Implementation of both the "disable display" and "enable display"
    commands.  ENABLE decides what to do.  */
 
 static void
@@ -2203,9 +2216,8 @@ print_variable_and_value (const char *name, struct symbol *var,
   if (!name)
     name = SYMBOL_PRINT_NAME (var);
 
-  fputs_filtered (n_spaces (2 * indent), stream);
-  fputs_styled (name, variable_name_style.style (), stream);
-  fputs_filtered (" = ", stream);
+  fprintf_filtered (stream, "%s%ps = ", n_spaces (2 * indent),
+		    styled_string (variable_name_style.style (), name));
 
   try
     {
@@ -2227,8 +2239,9 @@ print_variable_and_value (const char *name, struct symbol *var,
     }
   catch (const gdb_exception_error &except)
     {
-      fprintf_filtered (stream, "<error reading variable %s (%s)>", name,
-			except.what ());
+      fprintf_styled (stream, metadata_style.style (),
+		      "<error reading variable %s (%s)>", name,
+		      except.what ());
     }
 
   fprintf_filtered (stream, "\n");
@@ -2800,7 +2813,7 @@ Usage: output EXP\n\
 This is useful in user-defined commands."));
 
   add_prefix_cmd ("set", class_vars, set_command, _("\
-Evaluate expression EXP and assign result to variable VAR\n\
+Evaluate expression EXP and assign result to variable VAR.\n\
 Usage: set VAR = EXP\n\
 This uses assignment syntax appropriate for the current language\n\
 (VAR = EXP or VAR := EXP for example).\n\
@@ -2814,7 +2827,7 @@ You can see these environment settings with the \"show\" command."),
 		  &setlist, "set ", 1, &cmdlist);
   if (dbx_commands)
     add_com ("assign", class_vars, set_command, _("\
-Evaluate expression EXP and assign result to variable VAR\n\
+Evaluate expression EXP and assign result to variable VAR.\n\
 Usage: assign VAR = EXP\n\
 This uses assignment syntax appropriate for the current language\n\
 (VAR = EXP or VAR := EXP for example).\n\
@@ -2835,7 +2848,7 @@ history, if it is not void."));
   set_cmd_completer_handle_brkchars (c, print_command_completer);
 
   add_cmd ("variable", class_vars, set_command, _("\
-Evaluate expression EXP and assign result to variable VAR\n\
+Evaluate expression EXP and assign result to variable VAR.\n\
 Usage: set variable VAR = EXP\n\
 This uses assignment syntax appropriate for the current language\n\
 (VAR = EXP or VAR := EXP for example).\n\
@@ -2848,12 +2861,13 @@ This may usually be abbreviated to simply \"set\"."),
 
   const auto print_opts = make_value_print_options_def_group (nullptr);
 
-  static const std::string print_help = gdb::option::build_help (N_("\
+  static const std::string print_help = gdb::option::build_help (_("\
 Print value of expression EXP.\n\
 Usage: print [[OPTION]... --] [/FMT] [EXP]\n\
 \n\
 Options:\n\
-%OPTIONS%\
+%OPTIONS%\n\
+\n\
 Note: because this command accepts arbitrary expressions, if you\n\
 specify any command option, you must use a double dash (\"--\")\n\
 to mark the end of option processing.  E.g.: \"print -o -- myobj\".\n\

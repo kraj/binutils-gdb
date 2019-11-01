@@ -407,7 +407,7 @@ struct language_defn
        This field may not be NULL.  If the language does not need any
        special processing here, 'iterate_over_symbols' should be
        used as the definition.  */
-    void (*la_iterate_over_symbols)
+    bool (*la_iterate_over_symbols)
       (const struct block *block, const lookup_name_info &name,
        domain_enum domain,
        gdb::function_view<symbol_found_callback_ftype> callback);
@@ -482,6 +482,11 @@ extern const struct language_defn *current_language;
    of main(), or the language we last mentioned in a message, or C.  */
 
 extern const struct language_defn *expected_language;
+
+/* Warning issued when current_language and the language of the current
+   frame do not match.  */
+
+extern const char lang_frame_mismatch_warn[];
 
 /* language_mode == 
    language_mode_auto:   current_language automatically set upon selection

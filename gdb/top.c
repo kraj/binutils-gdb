@@ -86,7 +86,7 @@ extern void initialize_all_files (void);
 #define PREFIX(X) the_prompts.prompt_stack[the_prompts.top + X].prefix
 #define SUFFIX(X) the_prompts.prompt_stack[the_prompts.top + X].suffix
 
-/* Default command line prompt.  This is overriden in some configs.  */
+/* Default command line prompt.  This is overridden in some configs.  */
 
 #ifndef DEFAULT_PROMPT
 #define DEFAULT_PROMPT	"(gdb) "
@@ -110,12 +110,10 @@ gen_ret_current_ui_field_ptr (struct ui_out *, current_uiout)
 
 int inhibit_gdbinit = 0;
 
-extern char lang_frame_mismatch_warn[];		/* language.c */
-
 /* Flag for whether we want to confirm potentially dangerous
    operations.  Default is yes.  */
 
-int confirm = 1;
+bool confirm = true;
 
 static void
 show_confirm (struct ui_file *file, int from_tty,
@@ -492,7 +490,7 @@ check_frame_language_change (void)
 	  && flang != language_unknown
 	  && flang != current_language->la_language)
 	{
-	  printf_filtered ("%s\n", lang_frame_mismatch_warn);
+	  printf_filtered ("%s\n", _(lang_frame_mismatch_warn));
 	  warned = 1;
 	}
     }
@@ -850,15 +848,15 @@ gdb_readline_no_editing (const char *prompt)
 /* Variables which control command line editing and history
    substitution.  These variables are given default values at the end
    of this file.  */
-static int command_editing_p;
+static bool command_editing_p;
 
 /* NOTE 1999-04-29: This variable will be static again, once we modify
    gdb to use the event loop as the default command loop and we merge
    event-top.c into this file, top.c.  */
 
-/* static */ int history_expansion_p;
+/* static */ bool history_expansion_p;
 
-static int write_history_p;
+static bool write_history_p;
 static void
 show_write_history_p (struct ui_file *file, int from_tty,
 		      struct cmd_list_element *c, const char *value)
@@ -1524,6 +1522,10 @@ This GDB was configured as follows:\n\
     fprintf_filtered (stream, _("\
              --with-system-gdbinit=%s%s\n\
 "), SYSTEM_GDBINIT, SYSTEM_GDBINIT_RELOCATABLE ? " (relocatable)" : "");
+  if (SYSTEM_GDBINIT_DIR[0])
+    fprintf_filtered (stream, _("\
+             --with-system-gdbinit-dir=%s%s\n\
+"), SYSTEM_GDBINIT_DIR, SYSTEM_GDBINIT_DIR_RELOCATABLE ? " (relocatable)" : "");
     /* We assume "relocatable" will be printed at least once, thus we always
        print this text.  It's a reasonably safe assumption for now.  */
     fprintf_filtered (stream, _("\n\
@@ -1885,7 +1887,7 @@ show_history (const char *args, int from_tty)
   cmd_show_list (showhistlist, from_tty, "");
 }
 
-int info_verbose = 0;		/* Default verbose msgs off.  */
+bool info_verbose = false;	/* Default verbose msgs off.  */
 
 /* Called by do_set_command.  An elaborate joke.  */
 void
@@ -2047,7 +2049,7 @@ show_gdb_datadir (struct ui_file *file, int from_tty,
 		  struct cmd_list_element *c, const char *value)
 {
   fprintf_filtered (file, _("GDB's data directory is \"%s\".\n"),
-		    gdb_datadir);
+		    gdb_datadir.c_str ());
 }
 
 static void
@@ -2102,8 +2104,8 @@ init_main (void)
 
   add_setshow_string_cmd ("prompt", class_support,
 			  &top_prompt,
-			  _("Set gdb's prompt"),
-			  _("Show gdb's prompt"),
+			  _("Set gdb's prompt."),
+			  _("Show gdb's prompt."),
 			  NULL, NULL,
 			  show_prompt,
 			  &setlist, &showlist);
@@ -2135,9 +2137,9 @@ Without an argument, saving is enabled."),
 
   add_setshow_zuinteger_unlimited_cmd ("size", no_class,
 				       &history_size_setshow_var, _("\
-Set the size of the command history,"), _("\
-Show the size of the command history,"), _("\
-ie. the number of previous commands to keep a record of.\n\
+Set the size of the command history."), _("\
+Show the size of the command history."), _("\
+This is the number of previous commands to keep a record of.\n\
 If set to \"unlimited\", the number of commands kept in the history\n\
 list is unlimited.  This defaults to the value of the environment\n\
 variable \"GDBHISTSIZE\", or to 256 if this variable is not set."),
@@ -2161,8 +2163,8 @@ By default this option is set to 0."),
 			   &sethistlist, &showhistlist);
 
   add_setshow_filename_cmd ("filename", no_class, &history_filename, _("\
-Set the filename in which to record the command history"), _("\
-Show the filename in which to record the command history"), _("\
+Set the filename in which to record the command history."), _("\
+Show the filename in which to record the command history."), _("\
 (the list of previous commands of which a record is kept)."),
 			    set_history_filename,
 			    show_history_filename,
@@ -2217,7 +2219,8 @@ input settings."),
                         &setlist, &showlist);
 
   c = add_cmd ("new-ui", class_support, new_ui_command, _("\
-Create a new UI.  It takes two arguments:\n\
+Create a new UI.\n\
+Usage: new-ui INTERPRETER TTY\n\
 The first argument is the name of the interpreter to run.\n\
 The second argument is the terminal the UI runs on."), &cmdlist);
   set_cmd_completer (c, interpreter_completer);
@@ -2242,7 +2245,6 @@ gdb_init (char *argv0)
 
   init_cmd_lists ();	    /* This needs to be done first.  */
   initialize_targets ();    /* Setup target_terminal macros for utils.c.  */
-  initialize_utils ();	    /* Make errors and warnings possible.  */
 
   init_page_info ();
 

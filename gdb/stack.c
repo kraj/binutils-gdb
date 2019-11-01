@@ -54,6 +54,7 @@
 #include "observable.h"
 #include "gdbsupport/def-vector.h"
 #include "cli/cli-option.h"
+#include "cli/cli-style.h"
 
 /* The possible choices of "set print frame-arguments", and the value
    of this setting.  */
@@ -139,8 +140,8 @@ static const gdb::option::option_def frame_print_option_defs[] = {
     print_entry_values_choices,
     [] (frame_print_options *opt) { return &opt->print_entry_values; },
     NULL, /* show_cmd_cb */
-    N_("Set printing of function arguments at function entry"),
-    N_("Show printing of function arguments at function entry"),
+    N_("Set printing of function arguments at function entry."),
+    N_("Show printing of function arguments at function entry."),
     N_("GDB can sometimes determine the values of function arguments at entry,\n\
 in addition to their current values.  This option tells GDB whether\n\
 to print the current value, the value at entry (marked as val@entry),\n\
@@ -152,8 +153,8 @@ or both.  Note that one or both of these values may be <optimized out>."),
     print_frame_arguments_choices,
     [] (frame_print_options *opt) { return &opt->print_frame_arguments; },
     NULL, /* show_cmd_cb */
-    N_("Set printing of non-scalar frame arguments"),
-    N_("Show printing of non-scalar frame arguments"),
+    N_("Set printing of non-scalar frame arguments."),
+    N_("Show printing of non-scalar frame arguments."),
     NULL /* help_doc */
   },
 
@@ -183,9 +184,9 @@ pretty-printers for that value.")
 
 struct backtrace_cmd_options
 {
-  int full = 0;
-  int no_filters = 0;
-  int hide = 0;
+  bool full = false;
+  bool no_filters = false;
+  bool hide = false;
 };
 
 using bt_flag_option_def
@@ -296,7 +297,7 @@ print_stack_frame (struct frame_info *frame, int print_level,
 		   int set_current_sal)
 {
 
-  /* For mi, alway print location and address.  */
+  /* For mi, always print location and address.  */
   if (current_uiout->is_mi_like_p ())
     print_what = LOC_AND_ADDRESS;
 
@@ -348,7 +349,7 @@ print_frame_nameless_args (struct frame_info *frame, long start, int num,
    read in.
 
    Errors are printed as if they would be the parameter value.  Use zeroed ARG
-   iff it should not be printed accoring to user settings.  */
+   iff it should not be printed according to user settings.  */
 
 static void
 print_frame_arg (const frame_print_options &fp_opts,
@@ -381,16 +382,20 @@ print_frame_arg (const frame_print_options &fp_opts,
   if (arg->entry_kind == print_entry_values_only
       || arg->entry_kind == print_entry_values_compact)
     stb.puts ("@entry");
-  uiout->field_stream ("name", stb, ui_out_style_kind::VARIABLE);
+  uiout->field_stream ("name", stb, variable_name_style.style ());
   annotate_arg_name_end ();
   uiout->text ("=");
 
+  ui_file_style style;
   if (!arg->val && !arg->error)
     uiout->text ("...");
   else
     {
       if (arg->error)
-	stb.printf (_("<error reading variable: %s>"), arg->error);
+	{
+	  stb.printf (_("<error reading variable: %s>"), arg->error.get ());
+	  style = metadata_style.style ();
+	}
       else
 	{
 	  try
@@ -427,11 +432,12 @@ print_frame_arg (const frame_print_options &fp_opts,
 	    {
 	      stb.printf (_("<error reading variable: %s>"),
 			  except.what ());
+	      style = metadata_style.style ();
 	    }
 	}
     }
 
-  uiout->field_stream ("value", stb);
+  uiout->field_stream ("value", stb, style);
 }
 
 /* Read in inferior function local SYM at FRAME into ARGP.  Caller is
@@ -452,13 +458,12 @@ read_frame_local (struct symbol *sym, struct frame_info *frame,
     }
   catch (const gdb_exception_error &except)
     {
-      argp->error = xstrdup (except.what ());
+      argp->error.reset (xstrdup (except.what ()));
     }
 }
 
-/* Read in inferior function parameter SYM at FRAME into ARGP.  Caller is
-   responsible for xfree of ARGP->ERROR.  This function never throws an
-   exception.  */
+/* Read in inferior function parameter SYM at FRAME into ARGP.  This
+   function never throws an exception.  */
 
 void
 read_frame_arg (const frame_print_options &fp_opts,
@@ -626,7 +631,7 @@ read_frame_arg (const frame_print_options &fp_opts,
 
   argp->sym = sym;
   argp->val = val;
-  argp->error = val_error ? xstrdup (val_error) : NULL;
+  argp->error.reset (val_error ? xstrdup (val_error) : NULL);
   if (!val && !val_error)
     argp->entry_kind = print_entry_values_only;
   else if ((fp_opts.print_entry_values == print_entry_values_compact
@@ -641,7 +646,7 @@ read_frame_arg (const frame_print_options &fp_opts,
 
   entryargp->sym = sym;
   entryargp->val = entryval;
-  entryargp->error = entryval_error ? xstrdup (entryval_error) : NULL;
+  entryargp->error.reset (entryval_error ? xstrdup (entryval_error) : NULL);
   if (!entryval && !entryval_error)
     entryargp->entry_kind = print_entry_values_no;
   else
@@ -810,10 +815,8 @@ print_frame_args (const frame_print_options &fp_opts,
 
 	  if (!print_args)
 	    {
-	      memset (&arg, 0, sizeof (arg));
 	      arg.sym = sym;
 	      arg.entry_kind = print_entry_values_no;
-	      memset (&entryarg, 0, sizeof (entryarg));
 	      entryarg.sym = sym;
 	      entryarg.entry_kind = print_entry_values_no;
 	    }
@@ -833,9 +836,6 @@ print_frame_args (const frame_print_options &fp_opts,
 
 	      print_frame_arg (fp_opts, &entryarg);
 	    }
-
-	  xfree (arg.error);
-	  xfree (entryarg.error);
 
 	  first = 0;
 	}
@@ -929,6 +929,23 @@ print_frame_info_to_print_what (const char *print_frame_info)
 		  print_frame_info);
 }
 
+/* Print the PC from FRAME, plus any flags, to UIOUT.  */
+
+static void
+print_pc (struct ui_out *uiout, struct gdbarch *gdbarch, frame_info *frame,
+	  CORE_ADDR pc)
+{
+  uiout->field_core_addr ("addr", gdbarch, pc);
+
+  std::string flags = gdbarch_get_pc_address_flags (gdbarch, frame, pc);
+  if (!flags.empty ())
+  {
+    uiout->text (" [");
+    uiout->field_string ("addr_flags", flags);
+    uiout->text ("]");
+  }
+}
+
 /* See stack.h.  */
 
 void
@@ -942,7 +959,7 @@ get_user_print_what_frame_info (gdb::optional<enum print_what> *what)
 /* Print information about frame FRAME.  The output is format according
    to PRINT_LEVEL and PRINT_WHAT and PRINT_ARGS.  For the meaning of
    PRINT_WHAT, see enum print_what comments in frame.h.
-   Note that PRINT_WHAT is overriden if FP_OPTS.print_frame_info
+   Note that PRINT_WHAT is overridden if FP_OPTS.print_frame_info
    != print_frame_info_auto.
 
    Used in "where" output, and to emit breakpoint or step
@@ -986,8 +1003,7 @@ print_frame_info (const frame_print_options &fp_opts,
       if (uiout->is_mi_like_p ())
         {
           annotate_frame_address ();
-          uiout->field_core_addr ("addr",
-				  gdbarch, get_frame_pc (frame));
+	  print_pc (uiout, gdbarch, frame, get_frame_pc (frame));
           annotate_frame_address_end ();
         }
 
@@ -995,18 +1011,18 @@ print_frame_info (const frame_print_options &fp_opts,
         {
           annotate_function_call ();
           uiout->field_string ("func", "<function called from gdb>",
-			       ui_out_style_kind::FUNCTION);
+			       metadata_style.style ());
 	}
       else if (get_frame_type (frame) == SIGTRAMP_FRAME)
         {
 	  annotate_signal_handler_caller ();
           uiout->field_string ("func", "<signal handler called>",
-			       ui_out_style_kind::FUNCTION);
+			       metadata_style.style ());
         }
       else if (get_frame_type (frame) == ARCH_FRAME)
         {
           uiout->field_string ("func", "<cross-architecture call>",
-			       ui_out_style_kind::FUNCTION);
+			       metadata_style.style ());
 	}
       uiout->text ("\n");
       annotate_frame_end ();
@@ -1071,8 +1087,7 @@ print_frame_info (const frame_print_options &fp_opts,
 	     ability to decide for themselves if it is desired.  */
 	  if (opts.addressprint && mid_statement)
 	    {
-	      uiout->field_core_addr ("addr",
-				      gdbarch, get_frame_pc (frame));
+	      print_pc (uiout, gdbarch, frame, get_frame_pc (frame));
 	      uiout->text ("\t");
 	    }
 
@@ -1298,10 +1313,10 @@ print_frame (const frame_print_options &fp_opts,
 	{
 	  annotate_frame_address ();
 	  if (pc_p)
-	    uiout->field_core_addr ("addr", gdbarch, pc);
+	    print_pc (uiout, gdbarch, frame, pc);
 	  else
 	    uiout->field_string ("addr", "<unavailable>",
-				 ui_out_style_kind::ADDRESS);
+				 metadata_style.style ());
 	  annotate_frame_address_end ();
 	  uiout->text (" in ");
 	}
@@ -1310,7 +1325,7 @@ print_frame (const frame_print_options &fp_opts,
     string_file stb;
     fprintf_symbol_filtered (&stb, funname ? funname.get () : "??",
 			     funlang, DMGL_ANSI);
-    uiout->field_stream ("func", stb, ui_out_style_kind::FUNCTION);
+    uiout->field_stream ("func", stb, function_name_style.style ());
     uiout->wrap_hint ("   ");
     annotate_frame_args ();
 
@@ -1352,7 +1367,8 @@ print_frame (const frame_print_options &fp_opts,
 	uiout->wrap_hint ("   ");
 	uiout->text (" at ");
 	annotate_frame_source_file ();
-	uiout->field_string ("file", filename_display, ui_out_style_kind::FILE);
+	uiout->field_string ("file", filename_display,
+			     file_name_style.style ());
 	if (uiout->is_mi_like_p ())
 	  {
 	    const char *fullname = symtab_to_fullname (sal.symtab);
@@ -1377,7 +1393,7 @@ print_frame (const frame_print_options &fp_opts,
 	    annotate_frame_where ();
 	    uiout->wrap_hint ("  ");
 	    uiout->text (" from ");
-	    uiout->field_string ("from", lib);
+	    uiout->field_string ("from", lib, file_name_style.style ());
 	  }
       }
     if (uiout->is_mi_like_p ())
@@ -1497,7 +1513,7 @@ info_frame_command_core (struct frame_info *fi, bool selected_frame_p)
   if (frame_pc_p)
     fputs_filtered (paddress (gdbarch, get_frame_pc (fi)), gdb_stdout);
   else
-    fputs_filtered ("<unavailable>", gdb_stdout);
+    fputs_styled ("<unavailable>", metadata_style.style (), gdb_stdout);
 
   wrap_here ("   ");
   if (funname)
@@ -1508,8 +1524,11 @@ info_frame_command_core (struct frame_info *fi, bool selected_frame_p)
     }
   wrap_here ("   ");
   if (sal.symtab)
-    printf_filtered (" (%s:%d)", symtab_to_filename_for_display (sal.symtab),
-		     sal.line);
+    printf_filtered
+      (" (%ps:%d)",
+       styled_string (file_name_style.style (),
+		      symtab_to_filename_for_display (sal.symtab)),
+       sal.line);
   puts_filtered ("; ");
   wrap_here ("    ");
   printf_filtered ("saved %s = ", pc_regname);
@@ -1534,8 +1553,9 @@ info_frame_command_core (struct frame_info *fi, bool selected_frame_p)
 	      val_print_not_saved (gdb_stdout);
 	      break;
 	    default:
-	      fprintf_filtered (gdb_stdout, _("<error: %s>"),
-				ex.what ());
+	      fprintf_styled (gdb_stdout, metadata_style.style (),
+			      _("<error: %s>"),
+			      ex.what ());
 	      break;
 	    }
 	}
@@ -2408,13 +2428,76 @@ print_frame_local_vars (struct frame_info *frame,
     }
 }
 
+/* Structure to hold the values of the options used by the 'info
+   variables' command and other similar commands.  These correspond to the
+   -q and -t options.  */
+
+struct info_print_options
+{
+  bool quiet = false;
+  char *type_regexp = nullptr;
+
+  ~info_print_options ()
+  {
+    xfree (type_regexp);
+  }
+};
+
+/* The options used by the 'info locals' and 'info args' commands.  */
+
+static const gdb::option::option_def info_print_options_defs[] = {
+  gdb::option::boolean_option_def<info_print_options> {
+    "q",
+    [] (info_print_options *opt) { return &opt->quiet; },
+    nullptr, /* show_cmd_cb */
+    nullptr /* set_doc */
+  },
+
+  gdb::option::string_option_def<info_print_options> {
+    "t",
+    [] (info_print_options *opt) { return &opt->type_regexp; },
+    nullptr, /* show_cmd_cb */
+    nullptr /* set_doc */
+  }
+};
+
+/* Returns the option group used by 'info locals' and 'info args'
+   commands.  */
+
+static gdb::option::option_def_group
+make_info_print_options_def_group (info_print_options *opts)
+{
+  return {{info_print_options_defs}, opts};
+}
+
+/* Command completer for 'info locals' and 'info args'.  */
+
+static void
+info_print_command_completer (struct cmd_list_element *ignore,
+			      completion_tracker &tracker,
+			      const char *text, const char * /* word */)
+{
+  const auto group
+    = make_info_print_options_def_group (nullptr);
+  if (gdb::option::complete_options
+      (tracker, &text, gdb::option::PROCESS_OPTIONS_UNKNOWN_IS_OPERAND, group))
+    return;
+
+  const char *word = advance_to_expression_complete_word_point (tracker, text);
+  symbol_completer (ignore, tracker, text, word);
+}
+
 /* Implement the 'info locals' command.  */
 
 void
 info_locals_command (const char *args, int from_tty)
 {
   info_print_options opts;
-  extract_info_print_options (&opts, &args);
+  auto grp = make_info_print_options_def_group (&opts);
+  gdb::option::process_options
+    (&args, gdb::option::PROCESS_OPTIONS_UNKNOWN_IS_OPERAND, grp);
+  if (args != nullptr && *args == '\0')
+    args = nullptr;
 
   print_frame_local_vars (get_selected_frame (_("No frame selected.")),
 			  opts.quiet, args, opts.type_regexp,
@@ -2521,7 +2604,11 @@ void
 info_args_command (const char *args, int from_tty)
 {
   info_print_options opts;
-  extract_info_print_options (&opts, &args);
+  auto grp = make_info_print_options_def_group (&opts);
+  gdb::option::process_options
+    (&args, gdb::option::PROCESS_OPTIONS_UNKNOWN_IS_OPERAND, grp);
+  if (args != nullptr && *args == '\0')
+    args = nullptr;
 
   print_frame_arg_vars (get_selected_frame (_("No frame selected.")),
 			opts.quiet, args, opts.type_regexp, gdb_stdout);
@@ -3275,7 +3362,7 @@ Options:\n\
   const auto frame_apply_opts
     = make_frame_apply_options_def_group (nullptr, nullptr);
 
-  static std::string frame_apply_cmd_help = gdb::option::build_help (N_("\
+  static std::string frame_apply_cmd_help = gdb::option::build_help (_("\
 Apply a command to a number of frames.\n\
 Usage: frame apply COUNT [OPTION]... COMMAND\n\
 With a negative COUNT argument, applies the command on outermost -COUNT frames.\n"
@@ -3288,7 +3375,7 @@ With a negative COUNT argument, applies the command on outermost -COUNT frames.\
 			&frame_cmd_list);
   set_cmd_completer_handle_brkchars (cmd, frame_apply_cmd_completer);
 
-  static std::string frame_apply_all_cmd_help = gdb::option::build_help (N_("\
+  static std::string frame_apply_all_cmd_help = gdb::option::build_help (_("\
 Apply a command to all frames.\n\
 \n\
 Usage: frame apply all [OPTION]... COMMAND\n"
@@ -3300,7 +3387,7 @@ Usage: frame apply all [OPTION]... COMMAND\n"
 		 &frame_apply_cmd_list);
   set_cmd_completer_handle_brkchars (cmd, frame_apply_all_cmd_completer);
 
-  static std::string frame_apply_level_cmd_help = gdb::option::build_help (N_("\
+  static std::string frame_apply_level_cmd_help = gdb::option::build_help (_("\
 Apply a command to a list of frames.\n\
 \n\
 Usage: frame apply level LEVEL... [OPTION]... COMMAND\n\
@@ -3330,7 +3417,7 @@ A single numerical argument specifies the frame to select."),
 
   add_cmd ("address", class_stack, &frame_cmd.address,
 	   _("\
-Select and print a stack frame by stack address\n\
+Select and print a stack frame by stack address.\n\
 \n\
 Usage: frame address STACK-ADDRESS"),
 	   &frame_cmd_list);
@@ -3407,12 +3494,13 @@ Usage: select-frame level LEVEL"),
     = make_backtrace_options_def_group (nullptr, nullptr, nullptr);
 
   static std::string backtrace_help
-    = gdb::option::build_help (N_("\
+    = gdb::option::build_help (_("\
 Print backtrace of all stack frames, or innermost COUNT frames.\n\
 Usage: backtrace [OPTION]... [QUALIFIER]... [COUNT | -COUNT]\n\
 \n\
 Options:\n\
-%OPTIONS%\
+%OPTIONS%\n\
+\n\
 For backward compatibility, the following qualifiers are supported:\n\
 \n\
    full       - same as -full option.\n\
@@ -3477,14 +3565,16 @@ Usage: info frame level LEVEL"),
 All local variables of current stack frame or those matching REGEXPs.\n\
 Usage: info locals [-q] [-t TYPEREGEXP] [NAMEREGEXP]\n\
 Prints the local variables of the current stack frame.\n"),
-				  _("local variables")));
+					_("local variables"),
+					false));
   set_cmd_completer_handle_brkchars (cmd, info_print_command_completer);
   cmd = add_info ("args", info_args_command,
 		  info_print_args_help (_("\
 All argument variables of current stack frame or those matching REGEXPs.\n\
 Usage: info args [-q] [-t TYPEREGEXP] [NAMEREGEXP]\n\
 Prints the argument variables of the current stack frame.\n"),
-				  _("argument variables")));
+					_("argument variables"),
+					false));
   set_cmd_completer_handle_brkchars (cmd, info_print_command_completer);
 
   if (dbx_commands)

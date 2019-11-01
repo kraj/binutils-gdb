@@ -32,8 +32,8 @@
 #include <string>
 #include <stdlib.h>
 
-/* When set to 1, show debug messages about the index cache.  */
-static int debug_index_cache = 0;
+/* When set to true, show debug messages about the index cache.  */
+static bool debug_index_cache = false;
 
 /* The index cache directory, used for "set/show index-cache directory".  */
 static char *index_cache_directory = NULL;
@@ -340,12 +340,12 @@ _initialize_index_cache ()
 
   /* set index-cache */
   add_prefix_cmd ("index-cache", class_files, set_index_cache_command,
-		  _("Set index-cache options"), &set_index_cache_prefix_list,
+		  _("Set index-cache options."), &set_index_cache_prefix_list,
 		  "set index-cache ", false, &setlist);
 
   /* show index-cache */
   add_prefix_cmd ("index-cache", class_files, show_index_cache_command,
-		  _("Show index-cache options"), &show_index_cache_prefix_list,
+		  _("Show index-cache options."), &show_index_cache_prefix_list,
 		  "show index-cache ", false, &showlist);
 
   /* set index-cache on */

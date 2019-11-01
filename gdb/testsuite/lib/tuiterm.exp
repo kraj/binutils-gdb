@@ -266,6 +266,13 @@ namespace eval Term {
 	}
     }
 
+    # Backward tab stops.
+    proc _csi_Z {args} {
+	set n [_default [lindex $args 0] 1]
+	variable _cur_x
+	set _cur_x [expr {max (int (($_cur_x - 1) / 8) * 8 - ($n - 1) * 8, 0)}]
+    }
+
     # Repeat.
     proc _csi_b {args} {
 	variable _last_char
@@ -392,7 +399,7 @@ namespace eval Term {
 		verbose "+++ unsupported escape"
 		error "unsupported escape"
 	    }
-	    -re "^\x1b\\\[(\[0-9;\]*)(\[0-9a-zA-Z@\])" {
+	    -re "^\x1b\\\[(\[0-9;\]*)(\[a-zA-Z@\])" {
 		set cmd $expect_out(2,string)
 		set params [split $expect_out(1,string) ";"]
 		verbose "+++ _csi_$cmd <<<$expect_out(1,string)>>>"

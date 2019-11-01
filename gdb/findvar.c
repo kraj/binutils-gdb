@@ -218,7 +218,7 @@ store_typed_address (gdb_byte *buf, struct type *type, CORE_ADDR addr)
    bytes.  If SOURCE_SIZE is greater than DEST_SIZE, then truncate the most
    significant bytes.  If SOURCE_SIZE is less than DEST_SIZE then either sign
    or zero extended according to IS_SIGNED.  Values are stored in memory with
-   endianess BYTE_ORDER.  */
+   endianness BYTE_ORDER.  */
 
 void
 copy_integer_to_size (gdb_byte *dest, int dest_size, const gdb_byte *source,
@@ -446,7 +446,7 @@ follow_static_link (struct frame_info *frame,
       QUIT;
 
       /* If we don't know how to compute FRAME's base address, don't give up:
-	 maybe the frame we are looking for is upper in the stace frame.  */
+	 maybe the frame we are looking for is upper in the stack frame.  */
       if (framefunc != NULL
 	  && SYMBOL_BLOCK_OPS (framefunc) != NULL
 	  && SYMBOL_BLOCK_OPS (framefunc)->get_frame_base != NULL

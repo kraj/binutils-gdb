@@ -52,6 +52,37 @@ constexpr gdb_byte s390_break_insn[] = { 0x0, 0x1 };
 
 typedef BP_MANIPULATION (s390_break_insn) s390_breakpoint;
 
+/* Types.  */
+
+/* Implement the gdbarch type alignment method.  */
+
+static ULONGEST
+s390_type_align (gdbarch *gdbarch, struct type *t)
+{
+  t = check_typedef (t);
+
+  if (TYPE_LENGTH (t) > 8)
+    {
+      switch (TYPE_CODE (t))
+	{
+	case TYPE_CODE_INT:
+	case TYPE_CODE_RANGE:
+	case TYPE_CODE_FLT:
+	case TYPE_CODE_ENUM:
+	case TYPE_CODE_CHAR:
+	case TYPE_CODE_BOOL:
+	case TYPE_CODE_DECFLOAT:
+	  return 8;
+
+	case TYPE_CODE_ARRAY:
+	  if (TYPE_VECTOR (t))
+	    return 8;
+	  break;
+	}
+    }
+  return 0;
+}
+
 /* Decoding S/390 instructions.  */
 
 /* Read a single instruction from address AT.  */
@@ -666,9 +697,7 @@ s390_load (struct s390_prologue_data *data,
       struct target_section *secp;
       secp = target_section_by_addr (current_top_target (), addr.k);
       if (secp != NULL
-	  && (bfd_get_section_flags (secp->the_bfd_section->owner,
-				     secp->the_bfd_section)
-	      & SEC_READONLY))
+	  && (bfd_section_flags (secp->the_bfd_section) & SEC_READONLY))
 	return pv_constant (read_memory_integer (addr.k, size,
 						 data->byte_order));
     }
@@ -1608,11 +1637,26 @@ s390_address_class_name_to_type_flags (struct gdbarch *gdbarch,
 static struct type *
 s390_effective_inner_type (struct type *type, unsigned int min_size)
 {
-  while (TYPE_CODE (type) == TYPE_CODE_STRUCT
-	 && TYPE_NFIELDS (type) == 1)
+  while (TYPE_CODE (type) == TYPE_CODE_STRUCT)
     {
-      struct type *inner = check_typedef (TYPE_FIELD_TYPE (type, 0));
+      struct type *inner = NULL;
 
+      /* Find a non-static field, if any.  Unless there's exactly one,
+	 abort the unwrapping.  */
+      for (int i = 0; i < TYPE_NFIELDS (type); i++)
+	{
+	  struct field f = TYPE_FIELD (type, i);
+
+	  if (field_is_static (&f))
+	    continue;
+	  if (inner != NULL)
+	    return type;
+	  inner = FIELD_TYPE (f);
+	}
+
+      if (inner == NULL)
+	break;
+      inner = check_typedef (inner);
       if (TYPE_LENGTH (inner) < min_size)
 	break;
       type = inner;
@@ -2072,7 +2116,7 @@ s390_return_value (struct gdbarch *gdbarch, struct value *function,
 
 /* Frame unwinding.  */
 
-/* Implmement the stack_frame_destroyed_p gdbarch method.  */
+/* Implement the stack_frame_destroyed_p gdbarch method.  */
 
 static int
 s390_stack_frame_destroyed_p (struct gdbarch *gdbarch, CORE_ADDR pc)
@@ -4105,6 +4149,7 @@ ex:
 	case 0xb998: /* ALCR - add logical with carry */
 	case 0xb999: /* SLBR - subtract logical with borrow */
 	case 0xb9f4: /* NRK - and */
+	case 0xb9f5: /* NCRK - and with complement */
 	case 0xb9f6: /* ORK - or */
 	case 0xb9f7: /* XRK - xor */
 	case 0xb9f8: /* ARK - add */
@@ -4137,20 +4182,32 @@ ex:
 	case 0xb919: /* SGFR - subtract */
 	case 0xb91a: /* ALGFR - add logical */
 	case 0xb91b: /* SLGFR - subtract logical */
+	case 0xb964: /* NNGRK - and 64 bit */
+	case 0xb965: /* OCGRK - or with complement 64 bit */
+	case 0xb966: /* NOGRK - or 64 bit */
+	case 0xb967: /* NXGRK - not exclusive or 64 bit */
+	case 0xb974: /* NNRK - and 32 bit */
+	case 0xb975: /* OCRK - or with complement 32 bit */
+	case 0xb976: /* NORK - or 32 bit */
+	case 0xb977: /* NXRK - not exclusive or 32 bit */
 	case 0xb980: /* NGR - and */
 	case 0xb981: /* OGR - or */
 	case 0xb982: /* XGR - xor */
 	case 0xb988: /* ALCGR - add logical with carry */
 	case 0xb989: /* SLBGR - subtract logical with borrow */
+	case 0xb9c0: /* SELFHR - select high */
 	case 0xb9e1: /* POPCNT - population count */
 	case 0xb9e4: /* NGRK - and */
+	case 0xb9e5: /* NCGRK - and with complement */
 	case 0xb9e6: /* OGRK - or */
 	case 0xb9e7: /* XGRK - xor */
 	case 0xb9e8: /* AGRK - add */
 	case 0xb9e9: /* SGRK - subtract */
 	case 0xb9ea: /* ALGRK - add logical */
+	case 0xb9e3: /* SELGR - select 64 bit */
 	case 0xb9eb: /* SLGRK - subtract logical */
 	case 0xb9ed: /* MSGRKC - multiply single 64x64 -> 64 */
+	case 0xb9f0: /* SELR - select 32 bit */
 	case 0xb9fd: /* MSRKC - multiply single 32x32 -> 32 */
 	  /* 64-bit gpr destination + flags */
 	  if (s390_record_gpr_g (gdbarch, regcache, inib[6]))
@@ -4526,7 +4583,13 @@ ex:
 	    return -1;
 	  break;
 
-	/* 0xb932-0xb93b undefined */
+	/* 0xb932-0xb937 undefined */
+
+	/* 0xb938 unsupported: SORTL - sort lists */
+	/* 0xb939 unsupported: DFLTCC - deflate conversion call */
+	/* 0xb93a unsupported: KDSA - compute dig. signature auth. */
+
+	/* 0xb93b undefined */
 
 	case 0xb93c: /* PPNO - perform pseudorandom number operation [partial] */
 	  regcache_raw_read_unsigned (regcache, S390_R1_REGNUM, &tmp);
@@ -5248,7 +5311,7 @@ ex:
 	case 0xe383: /* MSGC - multiply single 64x64mem -> 64 */
 	case 0xe398: /* ALC - add logical with carry */
 	case 0xe399: /* SLB - subtract logical with borrow */
-	case 0xe727: /* LCBB - load count to block bounduary */
+	case 0xe727: /* LCBB - load count to block boundary */
 	case 0xeb81: /* ICMY - insert characters under mask */
 	case 0xebdc: /* SRAK - shift left single */
 	case 0xebdd: /* SLAK - shift left single */
@@ -5456,6 +5519,13 @@ ex:
 	/* 0xe3ce undefined */
 	/* 0xe3d0-0xe3ff undefined */
 
+	case 0xe601: /* VLEBRH - vector load byte reversed element */
+	case 0xe602: /* VLEBRG - vector load byte reversed element */
+	case 0xe603: /* VLEBRF - vector load byte reversed element */
+	case 0xe604: /* VLLEBRZ - vector load byte rev. el. and zero */
+	case 0xe605: /* VLBRREP - vector load byte rev. el. and replicate */
+	case 0xe606: /* VLBR - vector load byte reversed elements */
+	case 0xe607: /* VLER - vector load elements reversed */
 	case 0xe634: /* VPKZ - vector pack zoned */
 	case 0xe635: /* VLRL - vector load rightmost with immed. length */
 	case 0xe637: /* VLRLR - vector load rightmost with length */
@@ -5467,7 +5537,7 @@ ex:
 	case 0xe704: /* VLLEZ - vector load logical element and zero */
 	case 0xe705: /* VLREP - vector load and replicate */
 	case 0xe706: /* VL - vector load */
-	case 0xe707: /* VLBB - vector load to block bounduary */
+	case 0xe707: /* VLBB - vector load to block boundary */
 	case 0xe712: /* VGEG - vector gather element */
 	case 0xe713: /* VGEF - vector gather element */
 	case 0xe722: /* VLVG - vector load vr element from gr */
@@ -5518,6 +5588,9 @@ ex:
 	case 0xe77f: /* VSRAB - vector shift right arithmetic by byte */
 	case 0xe784: /* VPDI - vector permute doubleword immediate */
 	case 0xe785: /* VBPERM - vector bit permute */
+	case 0xe786: /* VSLD - vector shift left double by bit */
+	case 0xe787: /* VSRD - vector shift right double by bit */
+	case 0xe78b: /* VSTRS - vector string search */
 	case 0xe78c: /* VPERM - vector permute */
 	case 0xe78d: /* VSEL - vector select */
 	case 0xe78e: /* VFMS - vector fp multiply and subtract */
@@ -5546,10 +5619,10 @@ ex:
 	case 0xe7bc: /* VGFMA - vector Galois field multiply sum and accumulate */
 	case 0xe7bd: /* VSBCBI - vector subtract with borrow compute borrow indication */
 	case 0xe7bf: /* VSBI - vector subtract with borrow indication */
-	case 0xe7c0: /* VCLGD - vector convert to logical 64-bit */
-	case 0xe7c1: /* VCDLG - vector convert from logical 64-bit */
-	case 0xe7c2: /* VCGD - vector convert to fixed 64-bit */
-	case 0xe7c3: /* VCDG - vector convert from fixed 64-bit */
+	case 0xe7c0: /* VCLFP - vector fp convert to logical */
+	case 0xe7c1: /* VCFPL - vector fp convert from logical */
+	case 0xe7c2: /* VCSFP - vector fp convert to fixed */
+	case 0xe7c3: /* VCFPS - vector fp convert from fixed */
 	case 0xe7c4: /* VLDE/VFLL - vector fp load lengthened */
 	case 0xe7c5: /* VLED/VFLR - vector fp load rounded */
 	case 0xe7c7: /* VFI - vector load fp integer */
@@ -5600,6 +5673,7 @@ ex:
 	    return -1;
 	  break;
 
+	case 0xe609: /* VSTEBRH - vector store byte reversed element */
 	case 0xe709: /* VSTEH - vector store element */
 	  oaddr = s390_record_calc_disp (gdbarch, regcache, inib[3], insn[1], 0);
 	  if (record_full_arch_list_add_mem (oaddr, 2))
@@ -5608,6 +5682,7 @@ ex:
 	    return -1;
 	  break;
 
+	case 0xe60a: /* VSTEBRG - vector store byte reversed element */
 	case 0xe70a: /* VSTEG - vector store element */
 	  oaddr = s390_record_calc_disp (gdbarch, regcache, inib[3], insn[1], 0);
 	  if (record_full_arch_list_add_mem (oaddr, 8))
@@ -5616,6 +5691,7 @@ ex:
 	    return -1;
 	  break;
 
+	case 0xe60b: /* VSTEBRF - vector store byte reversed element */
 	case 0xe70b: /* VSTEF - vector store element */
 	  oaddr = s390_record_calc_disp (gdbarch, regcache, inib[3], insn[1], 0);
 	  if (record_full_arch_list_add_mem (oaddr, 4))
@@ -5626,6 +5702,8 @@ ex:
 
 	/* 0xe70c-0xe70d undefined */
 
+	case 0xe60e: /* VSTBR - vector store byte reversed elements */
+	case 0xe60f: /* VSTER - vector store elements reversed */
 	case 0xe70e: /* VST - vector store */
 	  oaddr = s390_record_calc_disp (gdbarch, regcache, inib[3], insn[1], 0);
 	  if (record_full_arch_list_add_mem (oaddr, 16))
@@ -6160,7 +6238,7 @@ ex:
 	    return -1;
 	  break;
 
-	/* 0xed42-0xed47 undefind */
+	/* 0xed42-0xed47 undefined */
 
 	case 0xed48: /* SLXT - shift significand left */
 	case 0xed49: /* SRXT - shift significand right */
@@ -6175,10 +6253,10 @@ ex:
 	    return -1;
 	  break;
 
-	/* 0xed4a-0xed4f undefind */
-	/* 0xed52-0xed53 undefind */
-	/* 0xed56-0xed57 undefind */
-	/* 0xed5a-0xed63 undefind */
+	/* 0xed4a-0xed4f undefined */
+	/* 0xed52-0xed53 undefined */
+	/* 0xed56-0xed57 undefined */
+	/* 0xed5a-0xed63 undefined */
 	/* 0xed68-0xeda7 undefined */
 
 	case 0xeda8: /* CZDT - convert to zoned */
@@ -6205,7 +6283,16 @@ ex:
       /* SSE/SIL-format instruction */
       switch (insn[0])
 	{
-	/* 0xe500-0xe543 undefined, privileged, or unsupported */
+	/* 0xe500-0xe509 undefined, privileged, or unsupported */
+
+	case 0xe50a: /* MVCRL - move right to left */
+	  regcache_raw_read_unsigned (regcache, S390_R0_REGNUM, &tmp);
+	  oaddr = s390_record_calc_disp (gdbarch, regcache, 0, insn[1], 0);
+	  if (record_full_arch_list_add_mem (oaddr, (tmp & 0xff) + 1))
+	    return -1;
+	  break;
+
+	/* 0xe50b-0xe543 undefined, privileged, or unsupported */
 
 	case 0xe544: /* MVHHI - move */
 	  oaddr = s390_record_calc_disp (gdbarch, regcache, 0, insn[1], 0);
@@ -6692,10 +6779,10 @@ UNKNOWN_OP:
 /* Implement gdbarch_gcc_target_options.  GCC does not know "-m32" or
    "-mcmodel=large".  */
 
-static char *
+static std::string
 s390_gcc_target_options (struct gdbarch *gdbarch)
 {
-  return xstrdup (gdbarch_ptr_bit (gdbarch) == 64 ? "-m64" : "-m31");
+  return gdbarch_ptr_bit (gdbarch) == 64 ? "-m64" : "-m31";
 }
 
 /* Implement gdbarch_gnu_triplet_regexp.  Target triplets are "s390-*"
@@ -6943,6 +7030,8 @@ s390_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
      will give the size of type actually used in each case.  */
   set_gdbarch_long_double_bit (gdbarch, 128);
   set_gdbarch_long_double_format (gdbarch, floatformats_ia64_quad);
+
+  set_gdbarch_type_align (gdbarch, s390_type_align);
 
   /* Breakpoints.  */
   /* Amount PC must be decremented by after a breakpoint.  This is

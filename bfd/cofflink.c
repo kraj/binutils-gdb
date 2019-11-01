@@ -902,7 +902,7 @@ _bfd_coff_final_link (bfd *abfd,
 					bfd_asymbol_name(sym), FALSE, FALSE)
 		       == NULL))
 		  || (((flaginfo.info->discard == discard_sec_merge
-			&& (bfd_get_section (sym)->flags & SEC_MERGE)
+			&& (bfd_asymbol_section (sym)->flags & SEC_MERGE)
 			&& ! bfd_link_relocatable (flaginfo.info))
 		       || flaginfo.info->discard == discard_l)
 		      && bfd_is_local_label_name (sub, bfd_asymbol_name(sym))))
@@ -1186,9 +1186,9 @@ _bfd_coff_final_link (bfd *abfd,
 
   _bfd_stringtab_free (flaginfo.strtab);
 
-  /* Setting bfd_get_symcount to 0 will cause write_object_contents to
+  /* Setting symcount to 0 will cause write_object_contents to
      not try to write out the symbols.  */
-  bfd_get_symcount (abfd) = 0;
+  abfd->symcount = 0;
 
   return TRUE;
 
@@ -2846,8 +2846,7 @@ _bfd_coff_reloc_link_order (bfd *output_bfd,
 	  (*flaginfo->info->callbacks->reloc_overflow)
 	    (flaginfo->info, NULL,
 	     (link_order->type == bfd_section_reloc_link_order
-	      ? bfd_section_name (output_bfd,
-				  link_order->u.reloc.p->u.section)
+	      ? bfd_section_name (link_order->u.reloc.p->u.section)
 	      : link_order->u.reloc.p->u.name),
 	     howto->name, link_order->u.reloc.p->addend,
 	     (bfd *) NULL, (asection *) NULL, (bfd_vma) 0);

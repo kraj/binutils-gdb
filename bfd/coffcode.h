@@ -1696,7 +1696,7 @@ coff_set_custom_section_alignment (bfd *abfd ATTRIBUTE_UNUSED,
 
   for (i = 0; i < table_size; ++i)
     {
-      const char *secname = bfd_get_section_name (abfd, section);
+      const char *secname = bfd_section_name (section);
 
       if (alignment_table[i].comparison_length == (unsigned int) -1
 	  ? strcmp (alignment_table[i].name, secname) == 0
@@ -1759,17 +1759,17 @@ coff_new_section_hook (bfd * abfd, asection * section)
 
 #ifdef RS6000COFF_C
   if (bfd_xcoff_text_align_power (abfd) != 0
-      && strcmp (bfd_get_section_name (abfd, section), ".text") == 0)
+      && strcmp (bfd_section_name (section), ".text") == 0)
     section->alignment_power = bfd_xcoff_text_align_power (abfd);
   else if (bfd_xcoff_data_align_power (abfd) != 0
-      && strcmp (bfd_get_section_name (abfd, section), ".data") == 0)
+      && strcmp (bfd_section_name (section), ".data") == 0)
     section->alignment_power = bfd_xcoff_data_align_power (abfd);
   else
     {
       int i;
 
       for (i = 0; i < XCOFF_DWSECT_NBR_NAMES; i++)
-	if (strcmp (bfd_get_section_name (abfd, section),
+	if (strcmp (bfd_section_name (section),
 		    xcoff_dwsect_names[i].name) == 0)
 	  {
 	    section->alignment_power = 0;
@@ -3221,7 +3221,7 @@ coff_compute_section_file_positions (bfd * abfd)
 	 incremented in coff_set_section_contents.  This is right for
 	 SVR3.2.  */
       if (strcmp (current->name, _LIB) == 0)
-	(void) bfd_set_section_vma (abfd, current, 0);
+	bfd_set_section_vma (current, 0);
 #endif
 
 #ifdef ALIGN_SECTIONS_IN_FILE
@@ -4011,7 +4011,7 @@ coff_write_object_contents (bfd * abfd)
       if (text_sec != NULL)
 	{
 	  internal_a.o_sntext = text_sec->target_index;
-	  internal_a.o_algntext = bfd_get_section_alignment (abfd, text_sec);
+	  internal_a.o_algntext = bfd_section_alignment (text_sec);
 	}
       else
 	{
@@ -4021,7 +4021,7 @@ coff_write_object_contents (bfd * abfd)
       if (data_sec != NULL)
 	{
 	  internal_a.o_sndata = data_sec->target_index;
-	  internal_a.o_algndata = bfd_get_section_alignment (abfd, data_sec);
+	  internal_a.o_algndata = bfd_section_alignment (data_sec);
 	}
       else
 	{
@@ -4390,8 +4390,7 @@ coff_slurp_line_table (bfd *abfd, asection *asect)
 	   PR 17521: file: 078-10659-0.004.  */
 	continue;
       else
-	cache_ptr->u.offset = (dst.l_addr.l_paddr
-			       - bfd_section_vma (abfd, asect));
+	cache_ptr->u.offset = dst.l_addr.l_paddr - bfd_section_vma (asect);
       cache_ptr++;
     }
 
@@ -4809,7 +4808,7 @@ coff_slurp_symbol_table (bfd * abfd)
   obj_symbols (abfd) = cached_area;
   obj_raw_syments (abfd) = native_symbols;
 
-  bfd_get_symcount (abfd) = number_of_symbols;
+  abfd->symcount = number_of_symbols;
   obj_convert (abfd) = table_ptr;
   /* Slurp the line tables for each section too.  */
   {
@@ -4886,7 +4885,7 @@ coff_classify_symbol (bfd *abfd,
 	  name = _bfd_coff_internal_syment_name (abfd, syment, buf)
 	  sec = coff_section_from_bfd_index (abfd, syment->n_scnum);
 	  if (sec != NULL && name != NULL
-	      && (strcmp (bfd_get_section_name (abfd, sec), name) == 0))
+	      && (strcmp (bfd_section_name (sec), name) == 0))
 	    return COFF_SYMBOL_PE_SECTION;
 	}
 #endif
@@ -5749,6 +5748,10 @@ static bfd_coff_backend_data bigobj_swap_table =
 
 #ifndef coff_bfd_is_group_section
 #define coff_bfd_is_group_section	    bfd_generic_is_group_section
+#endif
+
+#ifndef coff_bfd_group_name
+#define coff_bfd_group_name		    bfd_coff_group_name
 #endif
 
 #ifndef coff_bfd_discard_group

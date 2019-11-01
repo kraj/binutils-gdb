@@ -1162,6 +1162,7 @@ go32_sysinfo (const char *arg, int from_tty)
       unsigned brand_idx;
       int intel_p = strcmp (cpuid_vendor, "GenuineIntel") == 0;
       int amd_p = strcmp (cpuid_vendor, "AuthenticAMD") == 0;
+      int hygon_p = strcmp (cpuid_vendor, "HygonGenuine") == 0;
       unsigned cpu_family, cpu_model;
 
 #if 0
@@ -1261,12 +1262,12 @@ go32_sysinfo (const char *arg, int from_tty)
 	    }
 	}
       xsnprintf (cpu_string, sizeof (cpu_string), "%s%s Model %d Stepping %d",
-	         intel_p ? "Pentium" : (amd_p ? "AMD" : "ix86"),
+	         intel_p ? "Pentium" : (amd_p ? "AMD" : (hygon_p ? "Hygon" : "ix86")),
 	         cpu_brand, cpu_model, cpuid_eax & 0xf);
       printfi_filtered (31, "%s\n", cpu_string);
       if (((cpuid_edx & (6 | (0x0d << 23))) != 0)
 	  || ((cpuid_edx & 1) == 0)
-	  || (amd_p && (cpuid_edx & (3 << 30)) != 0))
+	  || ((amd_p || hygon_p) && (cpuid_edx & (3 << 30)) != 0))
 	{
 	  puts_filtered ("CPU Features...................");
 	  /* We only list features which might be useful in the DPMI
@@ -1285,7 +1286,7 @@ go32_sysinfo (const char *arg, int from_tty)
 	    puts_filtered ("SSE ");
 	  if ((cpuid_edx & (1 << 26)) != 0)
 	    puts_filtered ("SSE2 ");
-	  if (amd_p)
+	  if (amd_p || hygon_p)
 	    {
 	      if ((cpuid_edx & (1 << 31)) != 0)
 		puts_filtered ("3DNow! ");
@@ -1876,13 +1877,13 @@ get_cr3 (void)
   cr3 = _farnspeekl (taskbase + 0x1c) & ~0xfff;
   if (cr3 > 0xfffff)
     {
-#if 0  /* Not fullly supported yet.  */
+#if 0  /* Not fully supported yet.  */
       /* The Page Directory is in UMBs.  In that case, CWSDPMI puts
 	 the first Page Table right below the Page Directory.  Thus,
 	 the first Page Table's entry for its own address and the Page
 	 Directory entry for that Page Table will hold the same
 	 physical address.  The loop below searches the entire UMB
-	 range of addresses for such an occurence.  */
+	 range of addresses for such an occurrence.  */
       unsigned long addr, pte_idx;
 
       for (addr = 0xb0000, pte_idx = 0xb0;

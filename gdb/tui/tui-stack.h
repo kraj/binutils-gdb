@@ -22,7 +22,50 @@
 #ifndef TUI_TUI_STACK_H
 #define TUI_TUI_STACK_H
 
+#include "tui/tui-data.h"
+
 struct frame_info;
+
+/* Locator window class.  */
+
+struct tui_locator_window : public tui_gen_win_info
+{
+  tui_locator_window ()
+    : tui_gen_win_info (LOCATOR_WIN)
+  {
+    full_name[0] = 0;
+    proc_name[0] = 0;
+  }
+
+  void rerender () override;
+
+  /* Update the locator, with the provided arguments.
+
+     Returns true if any of the locator's fields were actually
+     changed, and false otherwise.  */
+  bool set_locator_info (struct gdbarch *gdbarch,
+			 const char *fullname,
+			 const char *procname,
+			 int lineno, CORE_ADDR addr);
+
+  /* Set the full_name portion of the locator.  */
+  void set_locator_fullname (const char *fullname);
+
+  std::string full_name;
+  std::string proc_name;
+  int line_no = 0;
+  CORE_ADDR addr = 0;
+  /* Architecture associated with code at this location.  */
+  struct gdbarch *gdbarch = nullptr;
+
+private:
+
+  /* Create the status line to display as much information as we can
+     on this single line: target name, process number, current
+     function, current line, current PC, SingleKey mode.  */
+
+  std::string make_status_line () const;
+};
 
 extern void tui_update_locator_fullname (const char *);
 extern void tui_show_locator_content (void);

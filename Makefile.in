@@ -33849,7 +33849,13 @@ maybe-install-libctf:
 @if libctf
 maybe-install-libctf: install-libctf
 
-install-libctf:
+install-libctf: installdirs
+	@: $(MAKE); $(unstage)
+	@r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(HOST_EXPORTS) \
+	(cd $(HOST_SUBDIR)/libctf && \
+	  $(MAKE) $(FLAGS_TO_PASS)  install)
 
 @endif libctf
 
@@ -33858,7 +33864,13 @@ maybe-install-strip-libctf:
 @if libctf
 maybe-install-strip-libctf: install-strip-libctf
 
-install-strip-libctf:
+install-strip-libctf: installdirs
+	@: $(MAKE); $(unstage)
+	@r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(HOST_EXPORTS) \
+	(cd $(HOST_SUBDIR)/libctf && \
+	  $(MAKE) $(FLAGS_TO_PASS)  install-strip)
 
 @endif libctf
 
@@ -51159,6 +51171,13 @@ all-stage3-binutils: maybe-all-stage3-libctf
 all-stage4-binutils: maybe-all-stage4-libctf
 all-stageprofile-binutils: maybe-all-stageprofile-libctf
 all-stagefeedback-binutils: maybe-all-stagefeedback-libctf
+all-ld: maybe-all-libctf
+all-stage1-ld: maybe-all-stage1-libctf
+all-stage2-ld: maybe-all-stage2-libctf
+all-stage3-ld: maybe-all-stage3-libctf
+all-stage4-ld: maybe-all-stage4-libctf
+all-stageprofile-ld: maybe-all-stageprofile-libctf
+all-stagefeedback-ld: maybe-all-stagefeedback-libctf
 install-binutils: maybe-install-opcodes
 install-strip-binutils: maybe-install-strip-opcodes
 install-opcodes: maybe-install-bfd
@@ -51505,6 +51524,7 @@ all-gdb: maybe-all-libiberty
 all-gdb: maybe-all-libiconv
 all-gdb: maybe-all-opcodes
 all-gdb: maybe-all-libdecnumber
+all-gdb: maybe-all-libctf
 configure-gprof: maybe-configure-intl
 all-gprof: maybe-all-libiberty
 all-gprof: maybe-all-bfd

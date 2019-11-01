@@ -28,6 +28,7 @@
 #include "source.h"
 #include "disasm.h"
 #include "tui/tui.h"
+#include "tui/tui-command.h"
 #include "tui/tui-data.h"
 #include "tui/tui-win.h"
 #include "tui/tui-layout.h"
@@ -44,34 +45,32 @@
 struct tui_asm_line 
 {
   CORE_ADDR addr;
-  char *addr_string;
-  char *insn;
+  std::string addr_string;
+  std::string insn;
 };
 
 /* Function to set the disassembly window's content.
    Disassemble count lines starting at pc.
    Return address of the count'th instruction after pc.  */
 static CORE_ADDR
-tui_disassemble (struct gdbarch *gdbarch, struct tui_asm_line *asm_lines,
-		 CORE_ADDR pc, int count)
+tui_disassemble (struct gdbarch *gdbarch,
+		 std::vector<tui_asm_line> &asm_lines,
+		 CORE_ADDR pc, int pos, int count)
 {
   string_file gdb_dis_out;
 
   /* Now construct each line.  */
-  for (; count > 0; count--, asm_lines++)
+  for (int i = 0; i < count; ++i)
     {
-      xfree (asm_lines->addr_string);
-      xfree (asm_lines->insn);
-      
       print_address (gdbarch, pc, &gdb_dis_out);
-      asm_lines->addr = pc;
-      asm_lines->addr_string = xstrdup (gdb_dis_out.c_str ());
+      asm_lines[pos + i].addr = pc;
+      asm_lines[pos + i].addr_string = std::move (gdb_dis_out.string ());
 
       gdb_dis_out.clear ();
 
       pc = pc + gdb_print_insn (gdbarch, pc, &gdb_dis_out, NULL);
 
-      asm_lines->insn = xstrdup (gdb_dis_out.c_str ());
+      asm_lines[pos + i].insn = std::move (gdb_dis_out.string ());
 
       /* Reset the buffer to empty.  */
       gdb_dis_out.clear ();
@@ -87,20 +86,17 @@ tui_find_disassembly_address (struct gdbarch *gdbarch, CORE_ADDR pc, int from)
 {
   CORE_ADDR new_low;
   int max_lines;
-  int i;
-  struct tui_asm_line *asm_lines;
 
   max_lines = (from > 0) ? from : - from;
   if (max_lines <= 1)
-     return pc;
+    return pc;
 
-  asm_lines = XALLOCAVEC (struct tui_asm_line, max_lines);
-  memset (asm_lines, 0, sizeof (struct tui_asm_line) * max_lines);
+  std::vector<tui_asm_line> asm_lines (max_lines);
 
   new_low = pc;
   if (from > 0)
     {
-      tui_disassemble (gdbarch, asm_lines, pc, max_lines);
+      tui_disassemble (gdbarch, asm_lines, pc, 0, max_lines);
       new_low = asm_lines[max_lines - 1].addr;
     }
   else
@@ -122,7 +118,7 @@ tui_find_disassembly_address (struct gdbarch *gdbarch, CORE_ADDR pc, int from)
          else
             new_low += 1 * max_lines;
 
-         tui_disassemble (gdbarch, asm_lines, new_low, max_lines);
+         tui_disassemble (gdbarch, asm_lines, new_low, 0, max_lines);
          last_addr = asm_lines[pos].addr;
       } while (last_addr > pc && msymbol.minsym);
 
@@ -139,8 +135,8 @@ tui_find_disassembly_address (struct gdbarch *gdbarch, CORE_ADDR pc, int from)
             if (pos >= max_lines)
               pos = 0;
 
-            next_addr = tui_disassemble (gdbarch, &asm_lines[pos],
-					 last_addr, 1);
+            next_addr = tui_disassemble (gdbarch, asm_lines,
+					 last_addr, pos, 1);
 
             /* If there are some problems while disassembling exit.  */
             if (next_addr <= last_addr)
@@ -152,61 +148,54 @@ tui_find_disassembly_address (struct gdbarch *gdbarch, CORE_ADDR pc, int from)
          pos = 0;
       new_low = asm_lines[pos].addr;
     }
-  for (i = 0; i < max_lines; i++)
-    {
-      xfree (asm_lines[i].addr_string);
-      xfree (asm_lines[i].insn);
-    }
   return new_low;
 }
 
 /* Function to set the disassembly window's content.  */
 enum tui_status
-tui_set_disassem_content (tui_source_window_base *win_info,
-			  struct gdbarch *gdbarch, CORE_ADDR pc)
+tui_disasm_window::set_contents (struct gdbarch *arch,
+				 struct symtab *s,
+				 struct tui_line_or_address line_or_addr)
 {
   int i;
-  int offset = win_info->horizontal_offset;
+  int offset = horizontal_offset;
   int max_lines, line_width;
   CORE_ADDR cur_pc;
   struct tui_locator_window *locator = tui_locator_win_info_ptr ();
   int tab_len = tui_tab_width;
-  struct tui_asm_line *asm_lines;
   int insn_pos;
   int addr_size, insn_size;
-  char *line;
   
+  gdb_assert (line_or_addr.loa == LOA_ADDRESS);
+  CORE_ADDR pc = line_or_addr.u.addr;
   if (pc == 0)
     return TUI_FAILURE;
 
-  tui_alloc_source_buffer (win_info);
-
-  win_info->gdbarch = gdbarch;
-  win_info->start_line_or_addr.loa = LOA_ADDRESS;
-  win_info->start_line_or_addr.u.addr = pc;
+  gdbarch = arch;
+  start_line_or_addr.loa = LOA_ADDRESS;
+  start_line_or_addr.u.addr = pc;
   cur_pc = locator->addr;
 
   /* Window size, excluding highlight box.  */
-  max_lines = win_info->height - 2;
-  line_width = win_info->width - 2;
+  max_lines = height - 2;
+  line_width = width - TUI_EXECINFO_SIZE - 2;
 
   /* Get temporary table that will hold all strings (addr & insn).  */
-  asm_lines = XALLOCAVEC (struct tui_asm_line, max_lines);
-  memset (asm_lines, 0, sizeof (struct tui_asm_line) * max_lines);
+  std::vector<tui_asm_line> asm_lines (max_lines);
 
-  tui_disassemble (gdbarch, asm_lines, pc, max_lines);
+  tui_disassemble (gdbarch, asm_lines, pc, 0, max_lines);
 
   /* Determine maximum address- and instruction lengths.  */
   addr_size = 0;
   insn_size = 0;
   for (i = 0; i < max_lines; i++)
     {
-      size_t len = strlen (asm_lines[i].addr_string);
+      size_t len = asm_lines[i].addr_string.size ();
 
       if (len > addr_size)
         addr_size = len;
 
-      len = strlen (asm_lines[i].insn);
+      len = asm_lines[i].insn.size ();
       if (len > insn_size)
 	insn_size = len;
     }
@@ -214,34 +203,27 @@ tui_set_disassem_content (tui_source_window_base *win_info,
   /* Align instructions to the same column.  */
   insn_pos = (1 + (addr_size / tab_len)) * tab_len;
 
-  /* Allocate memory to create each line.  */
-  line = (char*) alloca (insn_pos + insn_size + 1);
-
   /* Now construct each line.  */
-  win_info->content.resize (max_lines);
+  content.resize (max_lines);
   for (i = 0; i < max_lines; i++)
     {
-      int cur_len;
+      tui_source_element *src = &content[i];
 
-      tui_source_element *src = &win_info->content[i];
-      strcpy (line, asm_lines[i].addr_string);
-      cur_len = strlen (line);
-      memset (line + cur_len, ' ', insn_pos - cur_len);
-      strcpy (line + insn_pos, asm_lines[i].insn);
+      std::string line
+	= (asm_lines[i].addr_string
+	   + n_spaces (insn_pos
+		       - asm_lines[i].addr_string.size ())
+	   + asm_lines[i].insn);
 
       /* Now copy the line taking the offset into account.  */
-      xfree (src->line);
-      if (strlen (line) > offset)
-	src->line = xstrndup (&line[offset], line_width);
+      if (line.size() > offset)
+	src->line.reset (xstrndup (&line[offset], line_width));
       else
-	src->line = xstrdup ("");
+	src->line = make_unique_xstrdup ("");
 
       src->line_or_addr.loa = LOA_ADDRESS;
       src->line_or_addr.u.addr = asm_lines[i].addr;
       src->is_exec_point = asm_lines[i].addr == cur_pc;
-
-      xfree (asm_lines[i].addr_string);
-      xfree (asm_lines[i].insn);
     }
   return TUI_SUCCESS;
 }
@@ -255,10 +237,11 @@ tui_show_disassem (struct gdbarch *gdbarch, CORE_ADDR start_addr)
   struct tui_win_info *win_with_focus = tui_win_with_focus ();
   struct tui_line_or_address val;
 
+  gdb_assert (TUI_DISASM_WIN != nullptr && TUI_DISASM_WIN->is_visible ());
+
   val.loa = LOA_ADDRESS;
   val.u.addr = start_addr;
-  tui_add_win_to_layout (DISASSEM_WIN);
-  tui_update_source_window (TUI_DISASM_WIN, gdbarch, s, val, FALSE);
+  TUI_DISASM_WIN->update_source_window (gdbarch, s, val);
 
   /* If the focus was in the src win, put it in the asm win, if the
      source view isn't split.  */
@@ -286,7 +269,7 @@ tui_show_disassem_and_update_source (struct gdbarch *gdbarch,
       sal = find_pc_line (start_addr, 0);
       val.loa = LOA_LINE;
       val.u.line_no = sal.line;
-      tui_update_source_window (TUI_SRC_WIN, gdbarch, sal.symtab, val, TRUE);
+      TUI_SRC_WIN->update_source_window (gdbarch, sal.symtab, val);
       if (sal.symtab)
 	{
 	  set_current_source_symtab_and_line (sal);
@@ -343,7 +326,14 @@ tui_get_low_disassembly_address (struct gdbarch *gdbarch,
 
   /* Determine where to start the disassembly so that the pc is about
      in the middle of the viewport.  */
-  pos = tui_default_win_viewport_height (DISASSEM_WIN, DISASSEM_COMMAND) / 2;
+  if (tui_win_list[DISASSEM_WIN] != NULL)
+    pos = tui_win_list[DISASSEM_WIN]->height;
+  else if (TUI_CMD_WIN == NULL)
+    pos = tui_term_height () / 2 - 2;
+  else
+    pos = tui_term_height () - TUI_CMD_WIN->height - 2;
+  pos = (pos - 2) / 2;
+
   pc = tui_find_disassembly_address (gdbarch, pc, -pos);
 
   if (pc < low)
@@ -368,8 +358,7 @@ tui_disasm_window::do_scroll_vertical (int num_to_scroll)
 
       val.loa = LOA_ADDRESS;
       val.u.addr = tui_find_disassembly_address (gdbarch, pc, num_to_scroll);
-      tui_update_source_window_as_is (this, gdbarch,
-				      NULL, val, FALSE);
+      update_source_window_as_is (gdbarch, NULL, val);
     }
 }
 
@@ -378,4 +367,52 @@ tui_disasm_window::location_matches_p (struct bp_location *loc, int line_no)
 {
   return (content[line_no].line_or_addr.loa == LOA_ADDRESS
 	  && content[line_no].line_or_addr.u.addr == loc->address);
+}
+
+bool
+tui_disasm_window::addr_is_displayed (CORE_ADDR addr) const
+{
+  bool is_displayed = false;
+  int threshold = SCROLL_THRESHOLD;
+
+  int i = 0;
+  while (i < content.size () - threshold && !is_displayed)
+    {
+      is_displayed
+	= (content[i].line_or_addr.loa == LOA_ADDRESS
+	   && content[i].line_or_addr.u.addr == addr);
+      i++;
+    }
+
+  return is_displayed;
+}
+
+void
+tui_disasm_window::maybe_update (struct frame_info *fi, symtab_and_line sal,
+				 int line_no, CORE_ADDR addr)
+{
+  CORE_ADDR low;
+
+  if (find_pc_partial_function (get_frame_pc (fi),
+				NULL, &low, NULL) == 0)
+    {
+      /* There is no symbol available for current PC.  There is no
+	 safe way how to "disassemble backwards".  */
+      low = get_frame_pc (fi);
+    }
+  else
+    low = tui_get_low_disassembly_address (get_frame_arch (fi),
+					   low, get_frame_pc (fi));
+
+  struct tui_line_or_address a;
+
+  a.loa = LOA_ADDRESS;
+  a.u.addr = low;
+  if (!addr_is_displayed (addr))
+    update_source_window (get_frame_arch (fi), sal.symtab, a);
+  else
+    {
+      a.u.addr = addr;
+      set_is_exec_point_at (a);
+    }
 }

@@ -24,8 +24,6 @@
 
 struct ui_file;
 
-extern void strcat_to_buf (char *, int, const char *);
-
 /* Types of error returns.  */
 enum tui_status
 {
@@ -44,12 +42,9 @@ enum tui_win_type
   MAX_MAJOR_WINDOWS,
   /* Auxiliary windows.  */
   LOCATOR_WIN,
-  EXEC_INFO_WIN,
   DATA_ITEM_WIN
 };
 
-/* GENERAL TUI FUNCTIONS */
-/* tui.c */
 extern CORE_ADDR tui_get_low_disassembly_address (struct gdbarch *,
 						  CORE_ADDR, CORE_ADDR);
 extern void tui_show_assembly (struct gdbarch *gdbarch, CORE_ADDR addr);

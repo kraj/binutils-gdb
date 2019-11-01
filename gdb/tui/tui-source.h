@@ -47,24 +47,40 @@ struct tui_source_window : public tui_source_window_base
 
   bool showing_source_p (const char *filename) const;
 
+  void maybe_update (struct frame_info *fi, symtab_and_line sal,
+		     int line_no, CORE_ADDR addr)
+    override;
+
+  void erase_source_content () override
+  {
+    do_erase_source_content (_("[ No Source Available ]"));
+  }
+
+  void show_symtab_source (struct gdbarch *, struct symtab *,
+			   struct tui_line_or_address);
+
 protected:
 
   void do_scroll_vertical (int num_to_scroll) override;
+
+  enum tui_status set_contents
+    (struct gdbarch *gdbarch,
+     struct symtab *s,
+     struct tui_line_or_address line_or_addr) override;
 
 private:
 
   void style_changed ();
 
+  /* Answer whether a particular line number or address is displayed
+     in the current source window.  */
+  bool line_is_displayed (int line) const;
+
+  /* It is the resolved form as returned by symtab_to_fullname.  */
+  gdb::unique_xmalloc_ptr<char> m_fullname;
+
   /* A token used to register and unregister an observer.  */
   gdb::observers::token m_observable;
 };
-
-extern enum tui_status tui_set_source_content (tui_source_window_base *,
-					       struct symtab *, 
-					       int, int);
-extern void tui_show_symtab_source (tui_source_window_base *,
-				    struct gdbarch *, struct symtab *,
-				    struct tui_line_or_address,
-				    int);
 
 #endif /* TUI_TUI_SOURCE_H */

@@ -23,6 +23,7 @@
 #include "target.h"
 #include "gdbthread.h"
 #include "tdesc.h"
+#include "debug.h"
 #include "dll.h"
 #include "gdbsupport/rsp-low.h"
 #include "gdbsupport/netstuff.h"
@@ -108,10 +109,6 @@ static int remote_is_stdio = 0;
 
 static gdb_fildes_t remote_desc = INVALID_DESCRIPTOR;
 static gdb_fildes_t listen_desc = INVALID_DESCRIPTOR;
-
-/* FIXME headerize? */
-extern int using_threads;
-extern int debug_threads;
 
 #ifdef USE_WIN32API
 # define read(fd, buf, len) recv (fd, (char *) buf, len, 0)
@@ -1636,7 +1633,7 @@ relocate_instruction (CORE_ADDR *to, CORE_ADDR oldloc)
 	{
 	  if (decode_X_packet (&cs.own_buf[1], len - 1, &mem_addr,
 			       &mem_len, &mem_buf) < 0
-	      || write_inferior_memory (mem_addr, mem_buf, mem_len) != 0)
+	      || target_write_memory (mem_addr, mem_buf, mem_len) != 0)
 	    write_enn (cs.own_buf);
 	  else
 	    write_ok (cs.own_buf);
@@ -1644,7 +1641,7 @@ relocate_instruction (CORE_ADDR *to, CORE_ADDR oldloc)
       else
 	{
 	  decode_M_packet (&cs.own_buf[1], &mem_addr, &mem_len, &mem_buf);
-	  if (write_inferior_memory (mem_addr, mem_buf, mem_len) == 0)
+	  if (target_write_memory (mem_addr, mem_buf, mem_len) == 0)
 	    write_ok (cs.own_buf);
 	  else
 	    write_enn (cs.own_buf);

@@ -59,9 +59,7 @@
 #include "gdb_regex.h"
 #include "probe.h"
 #include "cli/cli-utils.h"
-#include "continuations.h"
 #include "stack.h"
-#include "skip.h"
 #include "ax-gdb.h"
 #include "dummy-frame.h"
 #include "interps.h"
@@ -69,11 +67,9 @@
 #include "thread-fsm.h"
 #include "tid-parse.h"
 #include "cli/cli-style.h"
-#include "mi/mi-main.h"
 
 /* readline include files */
-#include "readline/readline.h"
-#include "readline/history.h"
+#include "readline/tilde.h"
 
 /* readline defines this.  */
 #undef savestring
@@ -290,7 +286,7 @@ static char *dprintf_channel;
 
 /* True if dprintf commands should continue to operate even if GDB
    has disconnected.  */
-static int disconnected_dprintf = 1;
+static bool disconnected_dprintf = true;
 
 struct command_line *
 breakpoint_commands (struct breakpoint *b)
@@ -301,7 +297,7 @@ breakpoint_commands (struct breakpoint *b)
 /* Flag indicating that a command has proceeded the inferior past the
    current breakpoint.  */
 
-static int breakpoint_proceeded;
+static bool breakpoint_proceeded;
 
 const char *
 bpdisp_text (enum bpdisp disp)
@@ -346,11 +342,11 @@ show_pending_break_support (struct ui_file *file, int from_tty,
 		    value);
 }
 
-/* If 1, gdb will automatically use hardware breakpoints for breakpoints
+/* If true, gdb will automatically use hardware breakpoints for breakpoints
    set with "break" but falling in read-only memory.
-   If 0, gdb will warn about such breakpoints, but won't automatically
+   If false, gdb will warn about such breakpoints, but won't automatically
    use hardware breakpoints.  */
-static int automatic_hardware_breakpoints;
+static bool automatic_hardware_breakpoints;
 static void
 show_automatic_hardware_breakpoints (struct ui_file *file, int from_tty,
 				     struct cmd_list_element *c,
@@ -368,7 +364,7 @@ show_automatic_hardware_breakpoints (struct ui_file *file, int from_tty,
    breakpoints until the next resume, and removes them again when the
    target fully stops.  This is a bit safer in case GDB crashes while
    processing user input.  */
-static int always_inserted_mode = 0;
+static bool always_inserted_mode = false;
 
 static void
 show_always_inserted_mode (struct ui_file *file, int from_tty,
@@ -477,7 +473,7 @@ static int executing_breakpoint_commands;
 static int overlay_events_enabled;
 
 /* See description in breakpoint.h. */
-int target_exact_watchpoints = 0;
+bool target_exact_watchpoints = false;
 
 /* Walk the following statement or block through all breakpoints.
    ALL_BREAKPOINTS_SAFE does so even if the statement deletes the
@@ -521,9 +517,9 @@ int target_exact_watchpoints = 0;
 
 /* Chains of all breakpoints defined.  */
 
-struct breakpoint *breakpoint_chain;
+static struct breakpoint *breakpoint_chain;
 
-/* Array is sorted by bp_locations_compare - primarily by the ADDRESS.  */
+/* Array is sorted by bp_location_is_less_than - primarily by the ADDRESS.  */
 
 static struct bp_location **bp_locations;
 
@@ -777,7 +773,7 @@ show_condition_evaluation_mode (struct ui_file *file, int from_tty,
 
 /* A comparison function for bp_location AP and BP that is used by
    bsearch.  This comparison function only cares about addresses, unlike
-   the more general bp_locations_compare function.  */
+   the more general bp_location_is_less_than function.  */
 
 static int
 bp_locations_compare_addrs (const void *ap, const void *bp)
@@ -1727,7 +1723,7 @@ update_watchpoint (struct watchpoint *b, int reparse)
 	 to the user when the old value and the new value may actually
 	 be completely different objects.  */
       b->val = NULL;
-      b->val_valid = 0;
+      b->val_valid = false;
 
       /* Note that unlike with breakpoints, the watchpoint's condition
 	 expression is stored in the breakpoint object, not in the
@@ -1780,7 +1776,7 @@ update_watchpoint (struct watchpoint *b, int reparse)
 	  if (b->val_bitsize != 0)
 	    v = extract_bitfield_from_watchpoint_value (b, v);
 	  b->val = release_value (v);
-	  b->val_valid = 1;
+	  b->val_valid = true;
 	}
 
       frame_pspace = get_frame_program_space (get_selected_frame (NULL));
@@ -3900,7 +3896,7 @@ breakpoint_init_inferior (enum inf_context context)
 		  /* Reset val field to force reread of starting value in
 		     insert_breakpoints.  */
 		  w->val.reset (nullptr);
-		  w->val_valid = 0;
+		  w->val_valid = false;
 		}
 	    }
 	}
@@ -4457,7 +4453,7 @@ static void
 watchpoint_value_print (struct value *val, struct ui_file *stream)
 {
   if (val == NULL)
-    fprintf_unfiltered (stream, _("<unreadable>"));
+    fprintf_styled (stream, metadata_style.style (), _("<unreadable>"));
   else
     {
       struct value_print_options opts;
@@ -4877,7 +4873,7 @@ watchpoint_check (bpstat bs)
 	{
 	  bs->old_val = b->val;
 	  b->val = release_value (new_val);
-	  b->val_valid = 1;
+	  b->val_valid = true;
 	  if (new_val != NULL)
 	    value_free_to_mark (mark);
 	  return WP_VALUE_CHANGED;
@@ -4912,10 +4908,10 @@ watchpoint_check (bpstat bs)
 	  if (uiout->is_mi_like_p ())
 	    uiout->field_string
 	      ("reason", async_reason_lookup (EXEC_ASYNC_WATCHPOINT_SCOPE));
-	  uiout->text ("\nWatchpoint ");
-	  uiout->field_signed ("wpnum", b->number);
-	  uiout->text (" deleted because the program has left the block in\n"
-		       "which its expression is valid.\n");
+	  uiout->message ("\nWatchpoint %pF deleted because the program has "
+			  "left the block in\n"
+			  "which its expression is valid.\n",
+			  signed_field ("wpnum", b->number));
 	}
 
       /* Make sure the watchpoint's commands aren't executed.  */
@@ -5823,14 +5819,14 @@ print_breakpoint_location (struct breakpoint *b,
 	{
 	  uiout->text ("in ");
 	  uiout->field_string ("func", SYMBOL_PRINT_NAME (sym),
-			       ui_out_style_kind::FUNCTION);
+			       function_name_style.style ());
 	  uiout->text (" ");
 	  uiout->wrap_hint (wrap_indent_at_field (uiout, "what"));
 	  uiout->text ("at ");
 	}
       uiout->field_string ("file",
 			   symtab_to_filename_for_display (loc->symtab),
-			   ui_out_style_kind::FILE);
+			   file_name_style.style ());
       uiout->text (":");
 
       if (uiout->is_mi_like_p ())
@@ -6055,9 +6051,11 @@ print_one_breakpoint_location (struct breakpoint *b,
 	    {
 	      annotate_field (4);
 	      if (header_of_multiple)
-		uiout->field_string ("addr", "<MULTIPLE>");
+		uiout->field_string ("addr", "<MULTIPLE>",
+				     metadata_style.style ());
 	      else if (b->loc == NULL || loc->shlib_disabled)
-		uiout->field_string ("addr", "<PENDING>");
+		uiout->field_string ("addr", "<PENDING>",
+				     metadata_style.style ());
 	      else
 		uiout->field_core_addr ("addr",
 					loc->gdbarch, loc->address);
@@ -6141,10 +6139,9 @@ print_one_breakpoint_location (struct breakpoint *b,
 	  && breakpoint_condition_evaluation_mode ()
 	  == condition_evaluation_target)
 	{
-	  uiout->text (" (");
-	  uiout->field_string ("evaluated-by",
-			       bp_condition_evaluator (b));
-	  uiout->text (" evals)");
+	  uiout->message (" (%pF evals)",
+			  string_field ("evaluated-by",
+					bp_condition_evaluator (b)));
 	}
       uiout->text ("\n");
     }
@@ -6193,9 +6190,8 @@ print_one_breakpoint_location (struct breakpoint *b,
   if (!part_of_multiple && b->ignore_count)
     {
       annotate_field (8);
-      uiout->text ("\tignore next ");
-      uiout->field_signed ("ignore", b->ignore_count);
-      uiout->text (" hits\n");
+      uiout->message ("\tignore next %pF hits\n",
+		      signed_field ("ignore", b->ignore_count));
     }
 
   /* Note that an enable count of 1 corresponds to "enable once"
@@ -6658,9 +6654,9 @@ describe_other_breakpoints (struct gdbarch *gdbarch,
 			     (others > 1) ? "," 
 			     : ((others == 1) ? " and" : ""));
 	  }
-      printf_filtered (_("also set at pc "));
-      fputs_styled (paddress (gdbarch, pc), address_style.style (), gdb_stdout);
-      printf_filtered (".\n");
+      current_uiout->message (_("also set at pc %ps.\n"),
+			      styled_string (address_style.style (),
+					     paddress (gdbarch, pc)));
     }
 }
 
@@ -8850,7 +8846,7 @@ init_breakpoint_sal (struct breakpoint *b, struct gdbarch *gdbarch,
     b->location = std::move (location);
   else
     b->location = new_address_location (b->loc->address, NULL, 0);
-  b->filter = filter.release ();
+  b->filter = std::move (filter);
 }
 
 static void
@@ -10717,7 +10713,7 @@ watch_command_1 (const char *arg, int accessflag, int from_tty,
       w->val = val;
       w->val_bitpos = saved_bitpos;
       w->val_bitsize = saved_bitsize;
-      w->val_valid = 1;
+      w->val_valid = true;
     }
 
   if (cond_start)
@@ -11432,41 +11428,36 @@ breakpoint_auto_delete (bpstat bs)
 }
 
 /* A comparison function for bp_location AP and BP being interfaced to
-   qsort.  Sort elements primarily by their ADDRESS (no matter what
+   std::sort.  Sort elements primarily by their ADDRESS (no matter what
    bl_address_is_meaningful says), secondarily by ordering first
    permanent elements and terciarily just ensuring the array is sorted
-   stable way despite qsort being an unstable algorithm.  */
+   stable way despite std::sort being an unstable algorithm.  */
 
 static int
-bp_locations_compare (const void *ap, const void *bp)
+bp_location_is_less_than (const bp_location *a, const bp_location *b)
 {
-  const struct bp_location *a = *(const struct bp_location **) ap;
-  const struct bp_location *b = *(const struct bp_location **) bp;
-
   if (a->address != b->address)
-    return (a->address > b->address) - (a->address < b->address);
+    return a->address < b->address;
 
   /* Sort locations at the same address by their pspace number, keeping
      locations of the same inferior (in a multi-inferior environment)
      grouped.  */
 
   if (a->pspace->num != b->pspace->num)
-    return ((a->pspace->num > b->pspace->num)
-	    - (a->pspace->num < b->pspace->num));
+    return a->pspace->num < b->pspace->num;
 
   /* Sort permanent breakpoints first.  */
   if (a->permanent != b->permanent)
-    return (a->permanent < b->permanent) - (a->permanent > b->permanent);
+    return a->permanent > b->permanent;
 
   /* Make the internal GDB representation stable across GDB runs
      where A and B memory inside GDB can differ.  Breakpoint locations of
      the same type at the same address can be sorted in arbitrary order.  */
 
   if (a->owner->number != b->owner->number)
-    return ((a->owner->number > b->owner->number)
-	    - (a->owner->number < b->owner->number));
+    return a->owner->number < b->owner->number;
 
-  return (a > b) - (a < b);
+  return a < b;
 }
 
 /* Set bp_locations_placed_address_before_address_max and
@@ -11681,8 +11672,8 @@ update_global_location_list (enum ugll_insert_mode insert_mode)
   ALL_BREAKPOINTS (b)
     for (loc = b->loc; loc; loc = loc->next)
       *locp++ = loc;
-  qsort (bp_locations, bp_locations_count, sizeof (*bp_locations),
-	 bp_locations_compare);
+  std::sort (bp_locations, bp_locations + bp_locations_count,
+	     bp_location_is_less_than);
 
   bp_locations_target_extensions_update ();
 
@@ -12075,23 +12066,21 @@ say_where (struct breakpoint *b)
   else
     {
       if (opts.addressprint || b->loc->symtab == NULL)
-	{
-	  printf_filtered (" at ");
-	  fputs_styled (paddress (b->loc->gdbarch, b->loc->address),
-			address_style.style (),
-			gdb_stdout);
-	}
+	printf_filtered (" at %ps",
+			 styled_string (address_style.style (),
+					paddress (b->loc->gdbarch,
+						  b->loc->address)));
       if (b->loc->symtab != NULL)
 	{
 	  /* If there is a single location, we can print the location
 	     more nicely.  */
 	  if (b->loc->next == NULL)
 	    {
-	      puts_filtered (": file ");
-	      fputs_styled (symtab_to_filename_for_display (b->loc->symtab),
-			    file_name_style.style (),
-			    gdb_stdout);
-	      printf_filtered (", line %d.",
+	      const char *filename
+		= symtab_to_filename_for_display (b->loc->symtab);
+	      printf_filtered (": file %ps, line %d.",
+			       styled_string (file_name_style.style (),
+					      filename),
 			       b->loc->line_number);
 	    }
 	  else
@@ -12124,7 +12113,6 @@ breakpoint::~breakpoint ()
 {
   xfree (this->cond_string);
   xfree (this->extra_string);
-  xfree (this->filter);
 }
 
 static struct bp_location *
@@ -12390,18 +12378,18 @@ bkpt_print_it (bpstat bs)
   annotate_breakpoint (b->number);
   maybe_print_thread_hit_breakpoint (uiout);
 
-  if (bp_temp)
-    uiout->text ("Temporary breakpoint ");
-  else
-    uiout->text ("Breakpoint ");
   if (uiout->is_mi_like_p ())
     {
       uiout->field_string ("reason",
 			   async_reason_lookup (EXEC_ASYNC_BREAKPOINT_HIT));
       uiout->field_string ("disp", bpdisp_text (b->disposition));
     }
-  uiout->field_signed ("bkptno", b->number);
-  uiout->text (", ");
+  if (bp_temp)
+    uiout->message ("Temporary breakpoint %pF, ",
+		    signed_field ("bkptno", b->number));
+  else
+    uiout->message ("Breakpoint %pF, ",
+		    signed_field ("bkptno", b->number));
 
   return PRINT_SRC_AND_LOC;
 }
@@ -12717,10 +12705,9 @@ tracepoint_print_one_detail (const struct breakpoint *self,
     {
       gdb_assert (self->type == bp_static_tracepoint);
 
-      uiout->text ("\tmarker id is ");
-      uiout->field_string ("static-tracepoint-marker-string-id",
-			   tp->static_trace_marker_id);
-      uiout->text ("\n");
+      uiout->message ("\tmarker id is %pF\n",
+		      string_field ("static-tracepoint-marker-string-id",
+				    tp->static_trace_marker_id.c_str ()));
     }
 }
 
@@ -13318,12 +13305,12 @@ update_static_tracepoint (struct breakpoint *b, struct symtab_and_line sal)
 	  if (sym)
 	    {
 	      uiout->field_string ("func", SYMBOL_PRINT_NAME (sym),
-				   ui_out_style_kind::FUNCTION);
+				   function_name_style.style ());
 	      uiout->text (" at ");
 	    }
 	  uiout->field_string ("file",
 			       symtab_to_filename_for_display (sal2.symtab),
-			       ui_out_style_kind::FILE);
+			       file_name_style.style ());
 	  uiout->text (":");
 
 	  if (uiout->is_mi_like_p ())
@@ -13701,7 +13688,7 @@ decode_location_default (struct breakpoint *b,
 
   decode_line_full (location, DECODE_LINE_FUNFIRSTLINE, search_pspace,
 		    NULL, 0, &canonical, multiple_symbols_all,
-		    b->filter);
+		    b->filter.get ());
 
   /* We should get 0 or 1 resulting SALs.  */
   gdb_assert (canonical.lsals.size () < 2);
@@ -14376,7 +14363,7 @@ invalidate_bp_value_on_memory_change (struct inferior *inferior,
 		  && addr + len > loc->address)
 		{
 		  wp->val = NULL;
-		  wp->val_valid = 0;
+		  wp->val_valid = false;
 		}
 	  }
       }
@@ -15136,14 +15123,13 @@ save_command (const char *arg, int from_tty)
 }
 
 struct breakpoint *
-iterate_over_breakpoints (int (*callback) (struct breakpoint *, void *),
-			  void *data)
+iterate_over_breakpoints (gdb::function_view<bool (breakpoint *)> callback)
 {
   struct breakpoint *b, *b_tmp;
 
   ALL_BREAKPOINTS_SAFE (b, b_tmp)
     {
-      if ((*callback) (b, data))
+      if (callback (b))
 	return b;
     }
 
@@ -15452,7 +15438,8 @@ BREAK_ARGS_HELP ("thbreak")));
   set_cmd_completer (c, location_completer);
 
   add_prefix_cmd ("enable", class_breakpoint, enable_command, _("\
-Enable some breakpoints.\n\
+Enable all or some breakpoints.\n\
+Usage: enable [BREAKPOINTNUM]...\n\
 Give breakpoint numbers (separated by spaces) as arguments.\n\
 With no subcommand, breakpoints are enabled until you command otherwise.\n\
 This is used to cancel the effect of the \"disable\" command.\n\
@@ -15462,46 +15449,54 @@ With a subcommand you can enable temporarily."),
   add_com_alias ("en", "enable", class_breakpoint, 1);
 
   add_prefix_cmd ("breakpoints", class_breakpoint, enable_command, _("\
-Enable some breakpoints.\n\
+Enable all or some breakpoints.\n\
+Usage: enable breakpoints [BREAKPOINTNUM]...\n\
 Give breakpoint numbers (separated by spaces) as arguments.\n\
 This is used to cancel the effect of the \"disable\" command.\n\
 May be abbreviated to simply \"enable\"."),
 		   &enablebreaklist, "enable breakpoints ", 1, &enablelist);
 
   add_cmd ("once", no_class, enable_once_command, _("\
-Enable breakpoints for one hit.  Give breakpoint numbers.\n\
+Enable some breakpoints for one hit.\n\
+Usage: enable breakpoints once BREAKPOINTNUM...\n\
 If a breakpoint is hit while enabled in this fashion, it becomes disabled."),
 	   &enablebreaklist);
 
   add_cmd ("delete", no_class, enable_delete_command, _("\
-Enable breakpoints and delete when hit.  Give breakpoint numbers.\n\
+Enable some breakpoints and delete when hit.\n\
+Usage: enable breakpoints delete BREAKPOINTNUM...\n\
 If a breakpoint is hit while enabled in this fashion, it is deleted."),
 	   &enablebreaklist);
 
   add_cmd ("count", no_class, enable_count_command, _("\
-Enable breakpoints for COUNT hits.  Give count and then breakpoint numbers.\n\
+Enable some breakpoints for COUNT hits.\n\
+Usage: enable breakpoints count COUNT BREAKPOINTNUM...\n\
 If a breakpoint is hit while enabled in this fashion,\n\
 the count is decremented; when it reaches zero, the breakpoint is disabled."),
 	   &enablebreaklist);
 
   add_cmd ("delete", no_class, enable_delete_command, _("\
-Enable breakpoints and delete when hit.  Give breakpoint numbers.\n\
+Enable some breakpoints and delete when hit.\n\
+Usage: enable delete BREAKPOINTNUM...\n\
 If a breakpoint is hit while enabled in this fashion, it is deleted."),
 	   &enablelist);
 
   add_cmd ("once", no_class, enable_once_command, _("\
-Enable breakpoints for one hit.  Give breakpoint numbers.\n\
+Enable some breakpoints for one hit.\n\
+Usage: enable once BREAKPOINTNUM...\n\
 If a breakpoint is hit while enabled in this fashion, it becomes disabled."),
 	   &enablelist);
 
   add_cmd ("count", no_class, enable_count_command, _("\
-Enable breakpoints for COUNT hits.  Give count and then breakpoint numbers.\n\
+Enable some breakpoints for COUNT hits.\n\
+Usage: enable count COUNT BREAKPOINTNUM...\n\
 If a breakpoint is hit while enabled in this fashion,\n\
 the count is decremented; when it reaches zero, the breakpoint is disabled."),
 	   &enablelist);
 
   add_prefix_cmd ("disable", class_breakpoint, disable_command, _("\
-Disable some breakpoints.\n\
+Disable all or some breakpoints.\n\
+Usage: disable [BREAKPOINTNUM]...\n\
 Arguments are breakpoint numbers with spaces in between.\n\
 To disable all breakpoints, give no argument.\n\
 A disabled breakpoint is not forgotten, but has no effect until re-enabled."),
@@ -15510,7 +15505,8 @@ A disabled breakpoint is not forgotten, but has no effect until re-enabled."),
   add_com_alias ("disa", "disable", class_breakpoint, 1);
 
   add_cmd ("breakpoints", class_alias, disable_command, _("\
-Disable some breakpoints.\n\
+Disable all or some breakpoints.\n\
+Usage: disable breakpoints [BREAKPOINTNUM]...\n\
 Arguments are breakpoint numbers with spaces in between.\n\
 To disable all breakpoints, give no argument.\n\
 A disabled breakpoint is not forgotten, but has no effect until re-enabled.\n\
@@ -15518,18 +15514,19 @@ This command may be abbreviated \"disable\"."),
 	   &disablelist);
 
   add_prefix_cmd ("delete", class_breakpoint, delete_command, _("\
-Delete some breakpoints or auto-display expressions.\n\
+Delete all or some breakpoints.\n\
+Usage: delete [BREAKPOINTNUM]...\n\
 Arguments are breakpoint numbers with spaces in between.\n\
 To delete all breakpoints, give no argument.\n\
 \n\
-Also a prefix command for deletion of other GDB objects.\n\
-The \"unset\" command is also an alias for \"delete\"."),
+Also a prefix command for deletion of other GDB objects."),
 		  &deletelist, "delete ", 1, &cmdlist);
   add_com_alias ("d", "delete", class_breakpoint, 1);
   add_com_alias ("del", "delete", class_breakpoint, 1);
 
   add_cmd ("breakpoints", class_alias, delete_command, _("\
-Delete some breakpoints or auto-display expressions.\n\
+Delete all or some breakpoints or auto-display expressions.\n\
+Usage: delete breakpoints [BREAKPOINTNUM]...\n\
 Arguments are breakpoint numbers with spaces in between.\n\
 To delete all breakpoints, give no argument.\n\
 This command may be abbreviated \"delete\"."),
@@ -15806,15 +15803,15 @@ Use the 'source' command in another debug session to restore them."),
   deprecate_cmd (c, "save tracepoints");
 
   add_prefix_cmd ("breakpoint", class_maintenance, set_breakpoint_cmd, _("\
-Breakpoint specific settings\n\
+Breakpoint specific settings.\n\
 Configure various breakpoint-specific variables such as\n\
-pending breakpoint behavior"),
+pending breakpoint behavior."),
 		  &breakpoint_set_cmdlist, "set breakpoint ",
 		  0/*allow-unknown*/, &setlist);
   add_prefix_cmd ("breakpoint", class_maintenance, show_breakpoint_cmd, _("\
-Breakpoint specific settings\n\
+Breakpoint specific settings.\n\
 Configure various breakpoint-specific variables such as\n\
-pending breakpoint behavior"),
+pending breakpoint behavior."),
 		  &breakpoint_show_cmdlist, "show breakpoint ",
 		  0/*allow-unknown*/, &showlist);
 
@@ -15915,16 +15912,16 @@ output stream by setting dprintf-function and dprintf-channel."),
   dprintf_function = xstrdup ("printf");
   add_setshow_string_cmd ("dprintf-function", class_support,
 			  &dprintf_function, _("\
-Set the function to use for dynamic printf"), _("\
-Show the function to use for dynamic printf"), NULL,
+Set the function to use for dynamic printf."), _("\
+Show the function to use for dynamic printf."), NULL,
 			  update_dprintf_commands, NULL,
 			  &setlist, &showlist);
 
   dprintf_channel = xstrdup ("");
   add_setshow_string_cmd ("dprintf-channel", class_support,
 			  &dprintf_channel, _("\
-Set the channel to use for dynamic printf"), _("\
-Show the channel to use for dynamic printf"), NULL,
+Set the channel to use for dynamic printf."), _("\
+Show the channel to use for dynamic printf."), NULL,
 			  update_dprintf_commands, NULL,
 			  &setlist, &showlist);
 
@@ -15939,10 +15936,12 @@ even if GDB disconnects or detaches from the target."),
 			   &setlist, &showlist);
 
   add_com ("agent-printf", class_vars, agent_printf_command, _("\
-agent-printf \"printf format string\", arg1, arg2, arg3, ..., argn\n\
-(target agent only) This is useful for formatted output in user-defined commands."));
+Target agent only formatted printing, like the C \"printf\" function.\n\
+Usage: agent-printf \"format string\", ARG1, ARG2, ARG3, ..., ARGN\n\
+This supports most C printf format specifications, like %s, %d, etc.\n\
+This is useful for formatted output in user-defined commands."));
 
-  automatic_hardware_breakpoints = 1;
+  automatic_hardware_breakpoints = true;
 
   gdb::observers::about_to_proceed.attach (breakpoint_about_to_proceed);
   gdb::observers::thread_exit.attach (remove_threaded_breakpoints);

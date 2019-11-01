@@ -51,19 +51,12 @@
 #include "memrange.h"
 #include "cli/cli-utils.h"
 #include "probe.h"
-#include "ctf.h"
 #include "gdbsupport/filestuff.h"
 #include "gdbsupport/rsp-low.h"
 #include "tracefile.h"
 #include "location.h"
 #include <algorithm>
-
-/* readline include files */
-#include "readline/readline.h"
-#include "readline/history.h"
-
-/* readline defines this.  */
-#undef savestring
+#include "cli/cli-style.h"
 
 #include <unistd.h>
 
@@ -138,12 +131,12 @@ static struct cmd_list_element *tfindlist;
 /* List of expressions to collect by default at each tracepoint hit.  */
 char *default_collect;
 
-static int disconnected_tracing;
+static bool disconnected_tracing;
 
 /* This variable controls whether we ask the target for a linear or
    circular trace buffer.  */
 
-static int circular_trace_buffer;
+static bool circular_trace_buffer;
 
 /* This variable is the requested trace buffer size, or -1 to indicate
    that we don't care and leave it up to the target to set a size.  */
@@ -442,6 +435,7 @@ tvariables_info_1 (void)
 	uiout->field_string ("name", std::string ("$") + tsv.name);
 	uiout->field_string ("initial", plongest (tsv.initial_value));
 
+	ui_file_style style;
 	if (tsv.value_known)
 	  c = plongest (tsv.value);
 	else if (uiout->is_mi_like_p ())
@@ -450,13 +444,19 @@ tvariables_info_1 (void)
 	     undefined does not seem important enough to represent.  */
 	  c = NULL;
 	else if (current_trace_status ()->running || traceframe_number >= 0)
-	  /* The value is/was defined, but we don't have it.  */
-	  c = "<unknown>";
+	  {
+	    /* The value is/was defined, but we don't have it.  */
+	    c = "<unknown>";
+	    style = metadata_style.style ();
+	  }
 	else
-	  /* It is not meaningful to ask about the value.  */
-	  c = "<undefined>";
+	  {
+	    /* It is not meaningful to ask about the value.  */
+	    c = "<undefined>";
+	    style = metadata_style.style ();
+	  }
 	if (c)
-	  uiout->field_string ("current", c);
+	  uiout->field_string ("current", c, style);
 	uiout->text ("\n");
       }
   }
@@ -2136,7 +2136,7 @@ tfind_1 (enum trace_find_type type, int num,
 	 DON'T give an error, but DO change the state of
 	 traceframe_number etc. to invalid.
 
-	 The rationalle is that if you typed the command, you
+	 The rationale is that if you typed the command, you
 	 might just have committed a typo or something, and you'd
 	 like to NOT lose your current debugging state.  However
 	 if you're in a user-defined command or especially in a
@@ -3690,7 +3690,7 @@ print_one_static_tracepoint_marker (int count,
     {
       uiout->text ("in ");
       uiout->field_string ("func", SYMBOL_PRINT_NAME (sym),
-			   ui_out_style_kind::FUNCTION);
+			   function_name_style.style ());
       uiout->wrap_hint (wrap_indent);
       uiout->text (" at ");
     }
@@ -3701,7 +3701,7 @@ print_one_static_tracepoint_marker (int count,
     {
       uiout->field_string ("file",
 			   symtab_to_filename_for_display (sal.symtab),
-			   ui_out_style_kind::FILE);
+			   file_name_style.style ());
       uiout->text (":");
 
       if (uiout->is_mi_like_p ())
@@ -4001,7 +4001,7 @@ _initialize_tracepoint (void)
   tracepoint_number = -1;
 
   add_info ("scope", info_scope_command,
-	    _("List the variables local to a scope"));
+	    _("List the variables local to a scope."));
 
   add_cmd ("tracepoints", class_trace,
 	   _("Tracing of program execution without stopping the program."),
@@ -4031,7 +4031,7 @@ Status of trace state variables and their values."));
 List target static tracepoints markers."));
 
   add_prefix_cmd ("tfind", class_trace, tfind_command, _("\
-Select a trace frame;\n\
+Select a trace frame.\n\
 No argument means forward by one frame; '-' means backward by one frame."),
 		  &tfindlist, "tfind ", 1, &cmdlist);
 
@@ -4132,8 +4132,8 @@ depending on target's capabilities."));
   default_collect = xstrdup ("");
   add_setshow_string_cmd ("default-collect", class_trace,
 			  &default_collect, _("\
-Set the list of expressions to collect by default"), _("\
-Show the list of expressions to collect by default"), NULL,
+Set the list of expressions to collect by default."), _("\
+Show the list of expressions to collect by default."), NULL,
 			  NULL, NULL,
 			  &setlist, &showlist);
 
@@ -4173,22 +4173,22 @@ disables any attempt to set the buffer size and lets the target choose."),
 
   add_setshow_string_cmd ("trace-user", class_trace,
 			  &trace_user, _("\
-Set the user name to use for current and future trace runs"), _("\
-Show the user name to use for current and future trace runs"), NULL,
+Set the user name to use for current and future trace runs."), _("\
+Show the user name to use for current and future trace runs."), NULL,
 			  set_trace_user, NULL,
 			  &setlist, &showlist);
 
   add_setshow_string_cmd ("trace-notes", class_trace,
 			  &trace_notes, _("\
-Set notes string to use for current and future trace runs"), _("\
-Show the notes string to use for current and future trace runs"), NULL,
+Set notes string to use for current and future trace runs."), _("\
+Show the notes string to use for current and future trace runs."), NULL,
 			  set_trace_notes, NULL,
 			  &setlist, &showlist);
 
   add_setshow_string_cmd ("trace-stop-notes", class_trace,
 			  &trace_stop_notes, _("\
-Set notes string to use for future tstop commands"), _("\
-Show the notes string to use for future tstop commands"), NULL,
+Set notes string to use for future tstop commands."), _("\
+Show the notes string to use for future tstop commands."), NULL,
 			  set_trace_stop_notes, NULL,
 			  &setlist, &showlist);
 }

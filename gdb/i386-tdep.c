@@ -1505,7 +1505,7 @@ struct i386_insn i386_frame_setup_skip_insns[] =
   /* Check for `mov imm32, r32'.  Note that there is an alternative
      encoding for `mov m32, %eax'.
 
-     ??? Should we handle SIB adressing here?
+     ??? Should we handle SIB addressing here?
      ??? Should we handle 16-bit operand-sizes here?  */
 
   /* `movl m32, %eax' */
@@ -1622,7 +1622,7 @@ i386_analyze_frame_setup (struct gdbarch *gdbarch,
       /* Check for some special instructions that might be migrated by
 	 GCC into the prologue and skip them.  At this point in the
 	 prologue, code should only touch the scratch registers %eax,
-	 %ecx and %edx, so while the number of posibilities is sheer,
+	 %ecx and %edx, so while the number of possibilities is sheer,
 	 it is limited.
 
 	 Make sure we only skip these instructions if we later see the
@@ -2956,7 +2956,7 @@ i386_return_value (struct gdbarch *gdbarch, struct value *function,
 	|| code == TYPE_CODE_UNION
 	|| code == TYPE_CODE_ARRAY)
        && !i386_reg_struct_return_p (gdbarch, type))
-      /* Complex double and long double uses the struct return covention.  */
+      /* Complex double and long double uses the struct return convention.  */
       || (code == TYPE_CODE_COMPLEX && TYPE_LENGTH (type) == 16)
       || (code == TYPE_CODE_COMPLEX && TYPE_LENGTH (type) == 24)
       /* 128-bit decimal float uses the struct return convention.  */

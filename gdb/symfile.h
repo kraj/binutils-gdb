@@ -179,7 +179,8 @@ struct quick_symbol_functions
      contains !TYPE_OPAQUE symbol prefer its compunit.  If it contains
      only TYPE_OPAQUE symbol(s), return at least that compunit.  */
   struct compunit_symtab *(*lookup_symbol) (struct objfile *objfile,
-					    int block_index, const char *name,
+					    block_enum block_index,
+					    const char *name,
 					    domain_enum domain);
 
   /* Print statistics about any indices loaded for OBJFILE.  The
@@ -211,7 +212,7 @@ struct quick_symbol_functions
      and for which MATCH (symbol name, NAME) == 0, passing each to 
      CALLBACK, reading in partial symbol tables as needed.  Look
      through global symbols if GLOBAL and otherwise static symbols.
-     Passes NAME, NAMESPACE, and DATA to CALLBACK with each symbol
+     Passes NAME and NAMESPACE to CALLBACK with each symbol
      found.  After each block is processed, passes NULL to CALLBACK.
      MATCH must be weaker than strcmp_iw_ordered in the sense that
      strcmp_iw_ordered(x,y) == 0 --> MATCH(x,y) == 0.  ORDERED_COMPARE,
@@ -221,17 +222,16 @@ struct quick_symbol_functions
      and 
             strcmp_iw_ordered(x,y) <= 0 --> ORDERED_COMPARE(x,y) <= 0
      (allowing strcmp_iw_ordered(x,y) < 0 while ORDERED_COMPARE(x, y) == 0).
-     CALLBACK returns 0 to indicate that the scan should continue, or
-     non-zero to indicate that the scan should be terminated.  */
+     CALLBACK returns true to indicate that the scan should continue, or
+     false to indicate that the scan should be terminated.  */
 
-  void (*map_matching_symbols) (struct objfile *,
-				const char *name, domain_enum domain,
-				int global,
-				int (*callback) (const struct block *,
-						 struct symbol *, void *),
-				void *data,
-				symbol_name_match_type match,
-				symbol_compare_ftype *ordered_compare);
+  void (*map_matching_symbols)
+    (struct objfile *,
+     const lookup_name_info &lookup_name,
+     domain_enum domain,
+     int global,
+     gdb::function_view<symbol_found_callback_ftype> callback,
+     symbol_compare_ftype *ordered_compare);
 
   /* Expand all symbol tables in OBJFILE matching some criteria.
 
@@ -439,7 +439,7 @@ extern section_addr_info
 
 			/*   Variables   */
 
-/* If non-zero, shared library symbols will be added automatically
+/* If true, shared library symbols will be added automatically
    when the inferior is created, new libraries are loaded, or when
    attaching to the inferior.  This is almost always what users will
    want to have happen; but for very large programs, the startup time
@@ -449,7 +449,7 @@ extern section_addr_info
    library symbols are not loaded, commands like "info fun" will *not*
    report all the functions that are actually present.  */
 
-extern int auto_solib_add;
+extern bool auto_solib_add;
 
 /* From symfile.c */
 
@@ -585,7 +585,8 @@ struct dwarf2_debug_sections {
 };
 
 extern int dwarf2_has_info (struct objfile *,
-                            const struct dwarf2_debug_sections *);
+                            const struct dwarf2_debug_sections *,
+			    bool = false);
 
 /* Dwarf2 sections that can be accessed by dwarf2_get_section_info.  */
 enum dwarf2_section_enum {
@@ -625,6 +626,6 @@ extern gdb_bfd_ref_ptr find_separate_debug_file_in_section (struct objfile *);
 
 /* True if we are printing debug output about separate debug info files.  */
 
-extern int separate_debug_file_debug;
+extern bool separate_debug_file_debug;
 
 #endif /* !defined(SYMFILE_H) */

@@ -379,31 +379,18 @@ static initializer cpu_flag_init[] =
     "CpuAVX512_VP2INTERSECT" },
 };
 
-static const initializer operand_type_shorthands[] =
-{
-  { "Reg8",     "Reg|Byte" },
-  { "Reg16",    "Reg|Word" },
-  { "Reg32",    "Reg|Dword" },
-  { "Reg64",    "Reg|Qword" },
-  { "FloatAcc", "Acc|Tbyte" },
-  { "FloatReg", "Reg|Tbyte" },
-  { "RegXMM",   "RegSIMD|Xmmword" },
-  { "RegYMM",   "RegSIMD|Ymmword" },
-  { "RegZMM",   "RegSIMD|Zmmword" },
-};
-
 static initializer operand_type_init[] =
 {
   { "OPERAND_TYPE_NONE",
     "0" },
   { "OPERAND_TYPE_REG8",
-    "Reg8" },
+    "Reg|Byte" },
   { "OPERAND_TYPE_REG16",
-    "Reg16" },
+    "Reg|Word" },
   { "OPERAND_TYPE_REG32",
-    "Reg32" },
+    "Reg|Dword" },
   { "OPERAND_TYPE_REG64",
-    "Reg64" },
+    "Reg|Qword" },
   { "OPERAND_TYPE_IMM1",
     "Imm1" },
   { "OPERAND_TYPE_IMM8",
@@ -441,9 +428,9 @@ static initializer operand_type_init[] =
   { "OPERAND_TYPE_DEBUG",
     "Debug" },
   { "OPERAND_TYPE_FLOATREG",
-    "FloatReg" },
+    "Reg|Tbyte" },
   { "OPERAND_TYPE_FLOATACC",
-    "FloatAcc" },
+    "Acc|Tbyte" },
   { "OPERAND_TYPE_SREG",
     "SReg" },
   { "OPERAND_TYPE_JUMPABSOLUTE",
@@ -451,11 +438,11 @@ static initializer operand_type_init[] =
   { "OPERAND_TYPE_REGMMX",
     "RegMMX" },
   { "OPERAND_TYPE_REGXMM",
-    "RegXMM" },
+    "RegSIMD|Xmmword" },
   { "OPERAND_TYPE_REGYMM",
-    "RegYMM" },
+    "RegSIMD|Ymmword" },
   { "OPERAND_TYPE_REGZMM",
-    "RegZMM" },
+    "RegSIMD|Zmmword" },
   { "OPERAND_TYPE_REGMASK",
     "RegMask" },
   { "OPERAND_TYPE_ESSEG",
@@ -830,8 +817,8 @@ next_field (char *str, char sep, char **next, char *last)
 static void set_bitfield (char *, bitfield *, int, unsigned int, int);
 
 static int
-set_bitfield_from_shorthand (char *f, bitfield *array, unsigned int size,
-			     int lineno)
+set_bitfield_from_cpu_flag_init (char *f, bitfield *array, unsigned int size,
+				 int lineno)
 {
   char *str, *next, *last;
   unsigned int i;
@@ -841,22 +828,6 @@ set_bitfield_from_shorthand (char *f, bitfield *array, unsigned int size,
       {
 	/* Turn on selective bits.  */
 	char *init = xstrdup (cpu_flag_init[i].init);
-	last = init + strlen (init);
-	for (next = init; next && next < last; )
-	  {
-	    str = next_field (next, '|', &next, last);
-	    if (str)
-	      set_bitfield (str, array, 1, size, lineno);
-	  }
-	free (init);
-	return 0;
-      }
-
-  for (i = 0; i < ARRAY_SIZE (operand_type_shorthands); i++)
-    if (strcmp (operand_type_shorthands[i].name, f) == 0)
-      {
-	/* Turn on selective bits.  */
-	char *init = xstrdup (operand_type_shorthands[i].init);
 	last = init + strlen (init);
 	for (next = init; next && next < last; )
 	  {
@@ -918,8 +889,8 @@ set_bitfield (char *f, bitfield *array, int value,
 	}
     }
 
-  /* Handle shorthands.  */
-  if (value == 1 && !set_bitfield_from_shorthand (f, array, size, lineno))
+  /* Handle CPU_XXX_FLAGS.  */
+  if (value == 1 && !set_bitfield_from_cpu_flag_init (f, array, size, lineno))
     return;
 
   if (lineno != -1)
@@ -1107,6 +1078,8 @@ process_i386_opcode_modifier (FILE *table, char *mod, char **opnd, int lineno)
 
   if (strcmp (mod, "0"))
     {
+      unsigned int have_w = 0, bwlq_suf = 0xf;
+
       last = mod + strlen (mod);
       for (next = mod; next && next < last; )
 	{
@@ -1120,8 +1093,30 @@ process_i386_opcode_modifier (FILE *table, char *mod, char **opnd, int lineno)
 			  lineno);
 	      if (strcasecmp(str, "IsString") == 0)
 		active_isstring = 1;
+
+	      if (strcasecmp(str, "W") == 0)
+		have_w = 1;
+
+	      if (strcasecmp(str, "No_bSuf") == 0)
+		bwlq_suf &= ~1;
+	      if (strcasecmp(str, "No_wSuf") == 0)
+		bwlq_suf &= ~2;
+	      if (strcasecmp(str, "No_lSuf") == 0)
+		bwlq_suf &= ~4;
+	      if (strcasecmp(str, "No_qSuf") == 0)
+		bwlq_suf &= ~8;
 	    }
 	}
+
+      if (have_w && !bwlq_suf)
+	fail ("%s: %d: stray W modifier\n", filename, lineno);
+      if (have_w && !(bwlq_suf & 1))
+	fprintf (stderr, "%s: %d: W modifier without Byte operand(s)\n",
+		 filename, lineno);
+      if (have_w && !(bwlq_suf & ~1))
+	fprintf (stderr,
+		 "%s: %d: W modifier without Word/Dword/Qword operand(s)\n",
+		 filename, lineno);
     }
   output_opcode_modifier (table, modifiers, ARRAY_SIZE (modifiers));
 }
@@ -1270,8 +1265,7 @@ output_i386_opcode (FILE *table, const char *name, char *str,
     }
 
   fprintf (table, "  { \"%s\", %s, %s, %s, %s,\n",
-	   name, operands, base_opcode, extension_opcode,
-	   opcode_length);
+	   name, base_opcode, extension_opcode, opcode_length, operands);
 
   process_i386_cpu_flag (table, cpu_flags, 0, ",", "    ", lineno);
 

@@ -22,7 +22,6 @@
 #define PROGSPACE_H
 
 #include "target.h"
-#include "gdbsupport/vec.h"
 #include "gdb_bfd.h"
 #include "gdbsupport/gdb_vecs.h"
 #include "registry.h"
@@ -141,7 +140,7 @@ struct program_space
 
   typedef next_adapter<struct objfile> objfiles_range;
 
-  /* Return an iterarable object that can be used to iterate over all
+  /* Return an iterable object that can be used to iterate over all
      objfiles.  The basic use is in a foreach, like:
 
      for (objfile *objf : pspace->objfiles ()) { ... }  */

@@ -88,7 +88,6 @@ class minimal_symbol_reader
      Arguments are:
 
      NAME - the symbol's name
-     NAME_LEN - the length of the name
      COPY_NAME - if true, the minsym code must make a copy of NAME.  If
      false, then NAME must be NUL-terminated, and must have a lifetime
      that is at least as long as OBJFILE's lifetime.
@@ -97,15 +96,14 @@ class minimal_symbol_reader
      SECTION - the symbol's section
   */
 
-  struct minimal_symbol *record_full (const char *name,
-				      int name_len,
+  struct minimal_symbol *record_full (gdb::string_view name,
 				      bool copy_name,
 				      CORE_ADDR address,
 				      enum minimal_symbol_type ms_type,
 				      int section);
 
   /* Like record_full, but:
-     - uses strlen to compute NAME_LEN,
+     - computes the length of NAME
      - passes COPY_NAME = true,
      - and passes a default SECTION, depending on the type
 
@@ -115,7 +113,7 @@ class minimal_symbol_reader
 	       enum minimal_symbol_type ms_type);
 
   /* Like record_full, but:
-     - uses strlen to compute NAME_LEN,
+     - computes the length of NAME
      - passes COPY_NAME = true.
 
      This variant does not return the new symbol.  */
@@ -124,7 +122,7 @@ class minimal_symbol_reader
 			 enum minimal_symbol_type ms_type,
 			 int section)
   {
-    record_full (name, strlen (name), true, address, ms_type, section);
+    record_full (name, true, address, ms_type, section);
   }
 
  private:
@@ -159,7 +157,8 @@ bool msymbol_is_function (struct objfile *objfile,
 			  minimal_symbol *minsym,
 			  CORE_ADDR *func_address_p = NULL);
 
-/* Compute a hash code for the string argument.  */
+/* Compute a hash code for the string argument.  Unlike htab_hash_string,
+   this is a case-insensitive hash to support "set case-sensitive off".  */
 
 unsigned int msymbol_hash (const char *);
 
@@ -203,6 +202,17 @@ struct bound_minimal_symbol lookup_bound_minimal_symbol (const char *);
 
 struct bound_minimal_symbol lookup_minimal_symbol_text (const char *,
 							struct objfile *);
+
+/* Look through the minimal symbols in OBJF (and its separate debug
+   objfiles) for a global (not file-local) minsym whose linkage name
+   is NAME.  This is somewhat similar to lookup_minimal_symbol_text,
+   only data symbols (not text symbols) are considered, and a non-NULL
+   objfile is not accepted.  Returns a bound minimal symbol that
+   matches, or an "empty" bound minimal symbol otherwise.  */
+
+extern struct bound_minimal_symbol lookup_minimal_symbol_linkage
+  (const char *name, struct objfile *objf)
+  ATTRIBUTE_NONNULL (1) ATTRIBUTE_NONNULL (2);
 
 /* Look through all the current minimal symbol tables and find the
    first minimal symbol that matches NAME and PC.  If OBJF is non-NULL,

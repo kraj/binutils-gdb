@@ -77,15 +77,15 @@ struct extended_symbol_info
   (sym->elfinfo ? sym->elfinfo->internal_elf_sym.st_size: sym->ssize)
 
 /* The output formatting functions.  */
-static void print_object_filename_bsd (char *);
-static void print_object_filename_sysv (char *);
-static void print_object_filename_posix (char *);
-static void print_archive_filename_bsd (char *);
-static void print_archive_filename_sysv (char *);
-static void print_archive_filename_posix (char *);
-static void print_archive_member_bsd (char *, const char *);
-static void print_archive_member_sysv (char *, const char *);
-static void print_archive_member_posix (char *, const char *);
+static void print_object_filename_bsd (const char *);
+static void print_object_filename_sysv (const char *);
+static void print_object_filename_posix (const char *);
+static void print_archive_filename_bsd (const char *);
+static void print_archive_filename_sysv (const char *);
+static void print_archive_filename_posix (const char *);
+static void print_archive_member_bsd (const char *, const char *);
+static void print_archive_member_sysv (const char *, const char *);
+static void print_archive_member_posix (const char *, const char *);
 static void print_symbol_filename_bsd (bfd *, bfd *);
 static void print_symbol_filename_sysv (bfd *, bfd *);
 static void print_symbol_filename_posix (bfd *, bfd *);
@@ -98,13 +98,13 @@ static void print_symbol_info_posix (struct extended_symbol_info *, bfd *);
 struct output_fns
   {
     /* Print the name of an object file given on the command line.  */
-    void (*print_object_filename) (char *);
+    void (*print_object_filename) (const char *);
 
     /* Print the name of an archive file given on the command line.  */
-    void (*print_archive_filename) (char *);
+    void (*print_archive_filename) (const char *);
 
     /* Print the name of an archive member file.  */
-    void (*print_archive_member) (char *, const char *);
+    void (*print_archive_member) (const char *, const char *);
 
     /* Print the name of the file (and archive, if there is one)
        containing a symbol.  */
@@ -142,6 +142,7 @@ static struct output_fns formats[] =
 /* The output format to use.  */
 static struct output_fns *format = &formats[FORMAT_DEFAULT];
 static unsigned int print_format = FORMAT_DEFAULT;
+static const char *print_format_string = NULL;
 
 /* Command options.  */
 
@@ -592,8 +593,8 @@ numeric_forward (const void *P_x, const void *P_y)
   if (x == NULL || y == NULL)
     bfd_fatal (bfd_get_filename (sort_bfd));
 
-  xs = bfd_get_section (x);
-  ys = bfd_get_section (y);
+  xs = bfd_asymbol_section (x);
+  ys = bfd_asymbol_section (y);
 
   if (bfd_is_und_section (xs))
     {
@@ -645,8 +646,8 @@ size_forward1 (const void *P_x, const void *P_y)
   if (x == NULL || y == NULL)
     bfd_fatal (bfd_get_filename (sort_bfd));
 
-  xs = bfd_get_section (x);
-  ys = bfd_get_section (y);
+  xs = bfd_asymbol_section (x);
+  ys = bfd_asymbol_section (y);
 
   if (bfd_is_und_section (xs))
     abort ();
@@ -774,7 +775,7 @@ sort_symbols_by_size (bfd *abfd, bfd_boolean is_dynamic, void *minisyms,
       else
 	next = NULL;
 
-      sec = bfd_get_section (sym);
+      sec = bfd_asymbol_section (sym);
 
       /* Synthetic symbols don't have a full type set of data available, thus
 	 we can't rely on that information for the symbol size.  Ditto for
@@ -788,11 +789,11 @@ sort_symbols_by_size (bfd *abfd, bfd_boolean is_dynamic, void *minisyms,
       else
 	{
 	  if (from + size < fromend
-	      && sec == bfd_get_section (next))
+	      && sec == bfd_asymbol_section (next))
 	    sz = valueof (next) - valueof (sym);
 	  else
-	    sz = (bfd_get_section_vma (abfd, sec)
-		  + bfd_section_size (abfd, sec)
+	    sz = (bfd_section_vma (sec)
+		  + bfd_section_size (sec)
 		  - valueof (sym));
 	}
 
@@ -895,7 +896,7 @@ print_symbol (bfd *        abfd,
       if ((sym->flags & (BSF_SECTION_SYM | BSF_SYNTHETIC)) == 0)
 	version_string = bfd_get_symbol_version_string (abfd, sym, &hidden);
 
-      if (bfd_is_und_section (bfd_get_section (sym)))
+      if (bfd_is_und_section (bfd_asymbol_section (sym)))
 	hidden = TRUE;
 
       if (version_string && *version_string != '\0')
@@ -931,7 +932,7 @@ print_symbol (bfd *        abfd,
 	  lineno_cache_bfd = abfd;
 	}
 
-      if (bfd_is_und_section (bfd_get_section (sym)))
+      if (bfd_is_und_section (bfd_asymbol_section (sym)))
 	{
 	  static asection **secs;
 	  static arelent ***relocs;
@@ -1001,10 +1002,10 @@ print_symbol (bfd *        abfd,
 		}
 	    }
 	}
-      else if (bfd_get_section (sym)->owner == abfd)
+      else if (bfd_asymbol_section (sym)->owner == abfd)
 	{
 	  if ((bfd_find_line (abfd, syms, sym, &filename, &lineno)
-	       || bfd_find_nearest_line (abfd, bfd_get_section (sym),
+	       || bfd_find_nearest_line (abfd, bfd_asymbol_section (sym),
 					 syms, sym->value, &filename,
 					 &functionname, &lineno))
 	      && filename != NULL
@@ -1216,6 +1217,51 @@ display_rel_file (bfd *abfd, bfd *archive_bfd)
   free (symsizes);
 }
 
+/* Construct a formatting string for printing symbol values.  */
+
+static const char *
+get_print_format (void)
+{
+  const char * padding;
+  if (print_format == FORMAT_POSIX)
+    {
+      /* POSIX compatible output does not have any padding.  */
+      padding = "";
+    }
+  else if (print_width == 32)
+    {
+      padding ="08";
+    }
+  else /* print_width == 64 */
+    {
+      padding = "016";
+    }
+
+  const char * length = "l";
+  if (print_width == 64)
+    {
+#if BFD_HOST_64BIT_LONG
+      ;
+#elif BFD_HOST_64BIT_LONG_LONG
+#ifndef __MSVCRT__
+      length = "ll";
+#else
+      length = "I64";
+#endif
+#endif
+    }
+
+  const char * radix = NULL;
+  switch (print_radix)
+    {
+    case 8:  radix = "o"; break;
+    case 10: radix = "d"; break;
+    case 16: radix = "x"; break;
+    }
+
+  return concat ("%", padding, length, radix, NULL);
+}
+
 static void
 set_print_width (bfd *file)
 {
@@ -1234,6 +1280,8 @@ set_print_width (bfd *file)
       else
 	print_width = 32;
     }
+  free ((char *) print_format_string);
+  print_format_string = get_print_format ();
 }
 
 static void
@@ -1357,14 +1405,14 @@ display_file (char *filename)
 /* Print the name of an object file given on the command line.  */
 
 static void
-print_object_filename_bsd (char *filename)
+print_object_filename_bsd (const char *filename)
 {
   if (filename_per_file && !filename_per_symbol)
     printf ("\n%s:\n", filename);
 }
 
 static void
-print_object_filename_sysv (char *filename)
+print_object_filename_sysv (const char *filename)
 {
   if (undefined_only)
     printf (_("\n\nUndefined symbols from %s:\n\n"), filename);
@@ -1379,7 +1427,7 @@ Name                  Value           Class        Type         Size            
 }
 
 static void
-print_object_filename_posix (char *filename)
+print_object_filename_posix (const char *filename)
 {
   if (filename_per_file && !filename_per_symbol)
     printf ("%s:\n", filename);
@@ -1388,26 +1436,26 @@ print_object_filename_posix (char *filename)
 /* Print the name of an archive file given on the command line.  */
 
 static void
-print_archive_filename_bsd (char *filename)
+print_archive_filename_bsd (const char *filename)
 {
   if (filename_per_file)
     printf ("\n%s:\n", filename);
 }
 
 static void
-print_archive_filename_sysv (char *filename ATTRIBUTE_UNUSED)
+print_archive_filename_sysv (const char *filename ATTRIBUTE_UNUSED)
 {
 }
 
 static void
-print_archive_filename_posix (char *filename ATTRIBUTE_UNUSED)
+print_archive_filename_posix (const char *filename ATTRIBUTE_UNUSED)
 {
 }
 
 /* Print the name of an archive member file.  */
 
 static void
-print_archive_member_bsd (char *archive ATTRIBUTE_UNUSED,
+print_archive_member_bsd (const char *archive ATTRIBUTE_UNUSED,
 			  const char *filename)
 {
   if (!filename_per_symbol)
@@ -1415,7 +1463,7 @@ print_archive_member_bsd (char *archive ATTRIBUTE_UNUSED,
 }
 
 static void
-print_archive_member_sysv (char *archive, const char *filename)
+print_archive_member_sysv (const char *archive, const char *filename)
 {
   if (undefined_only)
     printf (_("\n\nUndefined symbols from %s[%s]:\n\n"), archive, filename);
@@ -1430,7 +1478,7 @@ Name                  Value           Class        Type         Size            
 }
 
 static void
-print_archive_member_posix (char *archive, const char *filename)
+print_archive_member_posix (const char *archive, const char *filename)
 {
   if (!filename_per_symbol)
     printf ("%s[%s]:\n", archive, filename);
@@ -1474,58 +1522,6 @@ print_symbol_filename_posix (bfd *archive_bfd, bfd *abfd)
     }
 }
 
-/* Construct a formatting string for printing symbol values.  */
-
-static const char *
-get_print_format (void)
-{
-  static const char * saved_format = NULL;
-
-  /* See if we have already constructed the format.  */
-  if (saved_format)
-    return saved_format;
-
-  const char * padding;
-  if (print_format == FORMAT_POSIX)
-    {
-      /* POSIX compatible output does not have any padding.  */
-      padding = "";
-    }
-  else if (print_width == 32)
-    {
-      padding ="08";
-    }
-  else /* print_width == 64 */
-    {
-      padding = "016";
-    }
-
-  const char * length = "l";
-  if (print_width == 64)
-    {
-#if BFD_HOST_64BIT_LONG
-      ;
-#elif BFD_HOST_64BIT_LONG_LONG
-#ifndef __MSVCRT__
-      length = "ll";
-#else
-      length = "I64";
-#endif
-#endif
-    }
-
-  const char * radix = NULL;
-  switch (print_radix)
-    {
-    case 8:  radix = "o"; break;
-    case 10: radix = "d"; break;
-    case 16: radix = "x"; break;
-    }
-
-  saved_format = concat ("%", padding, length, radix, NULL);
-  return saved_format;
-}
-
 /* Print a symbol value.  */
 
 static void
@@ -1534,12 +1530,12 @@ print_value (bfd *abfd ATTRIBUTE_UNUSED, bfd_vma val)
   switch (print_width)
     {
     case 32:
-      printf (get_print_format (), (unsigned long) val);
+      printf (print_format_string, (unsigned long) val);
       break;
 
     case 64:
 #if BFD_HOST_64BIT_LONG || BFD_HOST_64BIT_LONG_LONG
-      printf (get_print_format (), val);
+      printf (print_format_string, val);
 #else
       /* We have a 64 bit value to print, but the host is only 32 bit.  */
       if (print_radix == 16)

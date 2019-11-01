@@ -43,6 +43,7 @@
 #include "completer.h"
 #include "gdbsupport/selftest.h"
 #include "gdbsupport/array-view.h"
+#include "cli/cli-style.h"
 
 /* Definition of a user function.  */
 struct internal_function
@@ -1977,7 +1978,7 @@ init_if_undefined_command (const char* args, int from_tty)
   intvar = expr->elts[2].internalvar;
 
   /* Only evaluate the expression if the lvalue is void.
-     This may still fail if the expresssion is invalid.  */
+     This may still fail if the expression is invalid.  */
   if (intvar->kind == INTERNALVAR_VOID)
     evaluate_expression (expr.get ());
 }
@@ -2152,7 +2153,7 @@ value_of_internalvar (struct gdbarch *gdbarch, struct internalvar *var)
      on this value go back to affect the original internal variable.
 
      Do not do this for INTERNALVAR_MAKE_VALUE variables, as those have
-     no underlying modifyable state in the internal variable.
+     no underlying modifiable state in the internal variable.
 
      Likewise, if the variable's value is a computed lvalue, we want
      references to it to produce another computed lvalue, where
@@ -2539,7 +2540,8 @@ show_convenience (const char *ignore, int from_tty)
 	}
       catch (const gdb_exception_error &ex)
 	{
-	  fprintf_filtered (gdb_stdout, _("<error: %s>"), ex.what ());
+	  fprintf_styled (gdb_stdout, metadata_style.style (),
+			  _("<error: %s>"), ex.what ());
 	}
 
       printf_filtered (("\n"));
@@ -2751,10 +2753,16 @@ unpack_long (struct type *type, const gdb_byte *valaddr)
     case TYPE_CODE_CHAR:
     case TYPE_CODE_RANGE:
     case TYPE_CODE_MEMBERPTR:
-      if (nosign)
-	return extract_unsigned_integer (valaddr, len, byte_order);
-      else
-	return extract_signed_integer (valaddr, len, byte_order);
+      {
+	LONGEST result;
+	if (nosign)
+	  result = extract_unsigned_integer (valaddr, len, byte_order);
+	else
+	  result = extract_signed_integer (valaddr, len, byte_order);
+	if (code == TYPE_CODE_RANGE)
+	  result += TYPE_RANGE_DATA (type)->bias;
+	return result;
+      }
 
     case TYPE_CODE_FLT:
     case TYPE_CODE_DECFLOAT:
@@ -3315,12 +3323,14 @@ pack_long (gdb_byte *buf, struct type *type, LONGEST num)
 
   switch (TYPE_CODE (type))
     {
+    case TYPE_CODE_RANGE:
+      num -= TYPE_RANGE_DATA (type)->bias;
+      /* Fall through.  */
     case TYPE_CODE_INT:
     case TYPE_CODE_CHAR:
     case TYPE_CODE_ENUM:
     case TYPE_CODE_FLAGS:
     case TYPE_CODE_BOOL:
-    case TYPE_CODE_RANGE:
     case TYPE_CODE_MEMBERPTR:
       store_signed_integer (buf, len, byte_order, num);
       break;

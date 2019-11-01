@@ -23,6 +23,7 @@
 #include "defs.h"
 #include "arch-utils.h"
 #include <ctype.h>
+#include <cmath>
 #include <signal.h>
 #include "command.h"
 #include "gdbcmd.h"
@@ -276,14 +277,68 @@ maint_print_section_info (const char *name, flagword flags,
   printf_filtered ("\n");
 }
 
+/* Information passed between the "maintenance info sections" command, and
+   the worker function that prints each section.  */
+struct maint_print_section_data
+{
+  /* The GDB objfile we're printing this section for.  */
+  struct objfile *objfile;
+
+  /* The argument string passed by the user to the top level maintenance
+     info sections command.  Used for filtering which sections are
+     printed.  */
+  const char *arg;
+
+  /* The number of digits in the highest section index for all sections
+     from the bfd object associated with OBJFILE.  Used when pretty
+     printing the index number to ensure all of the indexes line up.  */
+  int index_digits;
+
+  /* Constructor.  */
+  maint_print_section_data (struct objfile *objfile, const char *arg,
+			    bfd *abfd)
+    : objfile (objfile),
+      arg(arg)
+  {
+    int section_count = gdb_bfd_count_sections (abfd);
+    index_digits = ((int) log10 ((float) section_count)) + 1;
+  }
+
+private:
+  maint_print_section_data () = delete;
+  maint_print_section_data (const maint_print_section_data &) = delete;
+};
+
+/* Helper function to pretty-print the section index of ASECT from ABFD.
+   The INDEX_DIGITS is the number of digits in the largest index that will
+   be printed, and is used to pretty-print the resulting string.  */
+
 static void
-print_bfd_section_info (bfd *abfd, 
-			asection *asect, 
+print_section_index (bfd *abfd,
+		     asection *asect,
+		     int index_digits)
+{
+  std::string result
+    = string_printf (" [%d] ", gdb_bfd_section_index (abfd, asect));
+  /* The '+ 4' for the leading and trailing characters.  */
+  printf_filtered ("%-*s", (index_digits + 4), result.c_str ());
+}
+
+/* Print information about ASECT from ABFD.  DATUM holds a pointer to a
+   maint_print_section_data object.  The section will be printed using the
+   VMA's from the bfd, which will not be the relocated addresses for bfds
+   that should be relocated.  The information must be printed with the
+   same layout as PRINT_OBJFILE_SECTION_INFO below.  */
+
+static void
+print_bfd_section_info (bfd *abfd,
+			asection *asect,
 			void *datum)
 {
-  flagword flags = bfd_get_section_flags (abfd, asect);
-  const char *name = bfd_section_name (abfd, asect);
-  const char *arg = (const char *) datum;
+  flagword flags = bfd_section_flags (asect);
+  const char *name = bfd_section_name (asect);
+  maint_print_section_data *print_data = (maint_print_section_data *) datum;
+  const char *arg = print_data->arg;
 
   if (arg == NULL || *arg == '\0'
       || match_substring (arg, name)
@@ -293,21 +348,27 @@ print_bfd_section_info (bfd *abfd,
       int addr_size = gdbarch_addr_bit (gdbarch) / 8;
       CORE_ADDR addr, endaddr;
 
-      addr = bfd_section_vma (abfd, asect);
-      endaddr = addr + bfd_section_size (abfd, asect);
-      printf_filtered (" [%d] ", gdb_bfd_section_index (abfd, asect));
+      addr = bfd_section_vma (asect);
+      endaddr = addr + bfd_section_size (asect);
+      print_section_index (abfd, asect, print_data->index_digits);
       maint_print_section_info (name, flags, addr, endaddr,
 				asect->filepos, addr_size);
     }
 }
 
+/* Print information about ASECT which is GDB's wrapper around a section
+   from ABFD.  The information must be printed with the same layout as
+   PRINT_BFD_SECTION_INFO above.  PRINT_DATA holds information used to
+   filter which sections are printed, and for formatting the output.  */
+
 static void
-print_objfile_section_info (bfd *abfd, 
-			    struct obj_section *asect, 
-			    const char *string)
+print_objfile_section_info (bfd *abfd,
+			    struct obj_section *asect,
+			    maint_print_section_data *print_data)
 {
-  flagword flags = bfd_get_section_flags (abfd, asect->the_bfd_section);
-  const char *name = bfd_section_name (abfd, asect->the_bfd_section);
+  flagword flags = bfd_section_flags (asect->the_bfd_section);
+  const char *name = bfd_section_name (asect->the_bfd_section);
+  const char *string = print_data->arg;
 
   if (string == NULL || *string == '\0'
       || match_substring (string, name)
@@ -316,6 +377,8 @@ print_objfile_section_info (bfd *abfd,
       struct gdbarch *gdbarch = gdbarch_from_bfd (abfd);
       int addr_size = gdbarch_addr_bit (gdbarch) / 8;
 
+      print_section_index (abfd, asect->the_bfd_section,
+			   print_data->index_digits);
       maint_print_section_info (name, flags,
 				obj_section_addr (asect),
 				obj_section_endaddr (asect),
@@ -324,47 +387,99 @@ print_objfile_section_info (bfd *abfd,
     }
 }
 
+/* Find an obj_section, GDB's wrapper around a bfd section for ASECTION
+   from ABFD.  It might be that no such wrapper exists (for example debug
+   sections don't have such wrappers) in which case nullptr is returned.  */
+
+static obj_section *
+maint_obj_section_from_bfd_section (bfd *abfd,
+				    asection *asection,
+				    objfile *ofile)
+{
+  if (ofile->sections == nullptr)
+    return nullptr;
+
+  obj_section *osect
+    = &ofile->sections[gdb_bfd_section_index (abfd, asection)];
+
+  if (osect >= ofile->sections_end)
+    return nullptr;
+
+  return osect;
+}
+
+/* Print information about ASECT from ABFD.  DATUM holds a pointer to a
+   maint_print_section_data object.  Where possible the information for
+   ASECT will print the relocated addresses of the section.  */
+
+static void
+print_bfd_section_info_maybe_relocated (bfd *abfd,
+					asection *asect,
+					void *datum)
+{
+  maint_print_section_data *print_data = (maint_print_section_data *) datum;
+  objfile *objfile = print_data->objfile;
+
+  gdb_assert (objfile->sections != NULL);
+  obj_section *osect
+    = maint_obj_section_from_bfd_section (abfd, asect, objfile);
+
+  if (osect->the_bfd_section == NULL)
+    print_bfd_section_info (abfd, asect, datum);
+  else
+    print_objfile_section_info (abfd, osect, print_data);
+}
+
+/* Implement the "maintenance info sections" command.  */
+
 static void
 maintenance_info_sections (const char *arg, int from_tty)
 {
   if (exec_bfd)
     {
+      bool allobj = false;
+
       printf_filtered (_("Exec file:\n"));
       printf_filtered ("    `%s', ", bfd_get_filename (exec_bfd));
       wrap_here ("        ");
       printf_filtered (_("file type %s.\n"), bfd_get_target (exec_bfd));
-      if (arg && *arg && match_substring (arg, "ALLOBJ"))
+
+      /* Only this function cares about the 'ALLOBJ' argument;
+	 if 'ALLOBJ' is the only argument, discard it rather than
+	 passing it down to print_objfile_section_info (which
+	 wouldn't know how to handle it).  */
+      if (arg && strcmp (arg, "ALLOBJ") == 0)
 	{
-	  struct obj_section *osect;
-
-	  /* Only this function cares about the 'ALLOBJ' argument; 
-	     if 'ALLOBJ' is the only argument, discard it rather than
-	     passing it down to print_objfile_section_info (which 
-	     wouldn't know how to handle it).  */
-	  if (strcmp (arg, "ALLOBJ") == 0)
-	    arg = NULL;
-
-	  for (objfile *ofile : current_program_space->objfiles ())
-	    {
-	      printf_filtered (_("  Object file: %s\n"), 
-			       bfd_get_filename (ofile->obfd));
-	      ALL_OBJFILE_OSECTIONS (ofile, osect)
-		{
-		  print_objfile_section_info (ofile->obfd, osect, arg);
-		}
-	    }
+	  arg = NULL;
+	  allobj = true;
 	}
-      else 
-	bfd_map_over_sections (exec_bfd, print_bfd_section_info, (void *) arg);
+
+      for (objfile *ofile : current_program_space->objfiles ())
+	{
+	  if (allobj)
+	    printf_filtered (_("  Object file: %s\n"),
+			     bfd_get_filename (ofile->obfd));
+	  else if (ofile->obfd != exec_bfd)
+	    continue;
+
+	  maint_print_section_data print_data (ofile, arg, ofile->obfd);
+
+	  bfd_map_over_sections (ofile->obfd,
+				 print_bfd_section_info_maybe_relocated,
+				 (void *) &print_data);
+	}
     }
 
   if (core_bfd)
     {
+      maint_print_section_data print_data (nullptr, arg, core_bfd);
+
       printf_filtered (_("Core file:\n"));
       printf_filtered ("    `%s', ", bfd_get_filename (core_bfd));
       wrap_here ("        ");
       printf_filtered (_("file type %s.\n"), bfd_get_target (core_bfd));
-      bfd_map_over_sections (core_bfd, print_bfd_section_info, (void *) arg);
+      bfd_map_over_sections (core_bfd, print_bfd_section_info,
+			     (void *) &print_data);
     }
 }
 
@@ -655,7 +770,7 @@ maintenance_with_cmd_completer (struct cmd_list_element *ignore,
 
 /* Profiling support.  */
 
-static int maintenance_profile_p;
+static bool maintenance_profile_p;
 static void
 show_maintenance_profile_p (struct ui_file *file, int from_tty,
 			    struct cmd_list_element *c, const char *value)
@@ -726,17 +841,17 @@ maintenance_set_profile_cmd (const char *args, int from_tty,
 }
 #endif
 
-/* If nonzero, display time usage both at startup and for each command.  */
+/* If true, display time usage both at startup and for each command.  */
 
-static int per_command_time;
+static bool per_command_time;
 
-/* If nonzero, display space usage both at startup and for each command.  */
+/* If true, display space usage both at startup and for each command.  */
 
-static int per_command_space;
+static bool per_command_space;
 
-/* If nonzero, display basic symtab stats for each command.  */
+/* If true, display basic symtab stats for each command.  */
 
-static int per_command_symtab;
+static bool per_command_symtab;
 
 /* mt per-command commands.  */
 
@@ -1012,7 +1127,7 @@ Commands for showing internal info about the program being debugged."),
   add_alias_cmd ("i", "info", class_maintenance, 1, &maintenancelist);
 
   add_cmd ("sections", class_maintenance, maintenance_info_sections, _("\
-List the BFD sections of the exec and core files. \n\
+List the BFD sections of the exec and core files.\n\
 Arguments may be any combination of:\n\
 	[one or more section names]\n\
 	ALLOC LOAD RELOC READONLY CODE DATA ROM CONSTRUCTOR\n\
@@ -1165,21 +1280,22 @@ Commands for checking internal gdb state."),
 	   &maintenancelist);
 
   add_cmd ("deprecate", class_maintenance, maintenance_deprecate, _("\
-Deprecate a command.  Note that this is just in here so the \n\
-testsuite can check the command deprecator. You probably shouldn't use this,\n\
-rather you should use the C function deprecate_cmd().  If you decide you \n\
-want to use it: maintenance deprecate 'commandname' \"replacement\". The \n\
-replacement is optional."), &maintenancelist);
+Deprecate a command (for testing purposes).\n\
+Usage: maintenance deprecate COMMANDNAME [\"REPLACEMENT\"]\n\
+This is used by the testsuite to check the command deprecator.\n\
+You probably shouldn't use this,\n\
+rather you should use the C function deprecate_cmd()."), &maintenancelist);
 
   add_cmd ("undeprecate", class_maintenance, maintenance_undeprecate, _("\
-Undeprecate a command.  Note that this is just in here so the \n\
-testsuite can check the command deprecator. You probably shouldn't use this,\n\
-If you decide you want to use it: maintenance undeprecate 'commandname'"),
+Undeprecate a command (for testing purposes).\n\
+Usage: maintenance undeprecate COMMANDNAME\n\
+This is used by the testsuite to check the command deprecator.\n\
+You probably shouldn't use this."),
 	   &maintenancelist);
 
   add_cmd ("selftest", class_maintenance, maintenance_selftest, _("\
 Run gdb's unit tests.\n\
-Usage: maintenance selftest [filter]\n\
+Usage: maintenance selftest [FILTER]\n\
 This will run any unit tests that were built in to gdb.\n\
 If a filter is given, only the tests with that value in their name will ran."),
 	   &maintenancelist);

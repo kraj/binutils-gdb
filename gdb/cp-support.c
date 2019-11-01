@@ -244,7 +244,7 @@ inspect_type (struct demangle_parse_info *info,
 	    }
 
 	  len = buf.size ();
-	  name = (char *) obstack_copy0 (&info->obstack, buf.c_str (), len);
+	  name = obstack_strdup (&info->obstack, buf.string ());
 
 	  /* Turn the result into a new tree.  Note that this
 	     tree will contain pointers into NAME, so NAME cannot
@@ -315,9 +315,7 @@ replace_typedefs_qualified_name (struct demangle_parse_info *info,
 
 	  buf.write (d_left (comp)->u.s_name.s, d_left (comp)->u.s_name.len);
 	  newobj.type = DEMANGLE_COMPONENT_NAME;
-	  newobj.u.s_name.s
-	    = (char *) obstack_copy0 (&info->obstack,
-				      buf.c_str (), buf.size ());
+	  newobj.u.s_name.s = obstack_strdup (&info->obstack, buf.string ());
 	  newobj.u.s_name.len = buf.size ();
 	  if (inspect_type (info, &newobj, finder, data))
 	    {
@@ -379,9 +377,7 @@ replace_typedefs_qualified_name (struct demangle_parse_info *info,
 	 with a DEMANGLE_COMPONENT_NAME node containing the whole
 	 name.  */
       ret_comp->type = DEMANGLE_COMPONENT_NAME;
-      ret_comp->u.s_name.s
-	= (char *) obstack_copy0 (&info->obstack,
-				  buf.c_str (), buf.size ());
+      ret_comp->u.s_name.s = obstack_strdup (&info->obstack, buf.string ());
       ret_comp->u.s_name.len = buf.size ();
       inspect_type (info, ret_comp, finder, data);
     }
@@ -989,7 +985,7 @@ cp_find_first_component_aux (const char *name, int permissive)
   /* Operator names can show up in unexpected places.  Since these can
      contain parentheses or angle brackets, they can screw up the
      recursion.  But not every string 'operator' is part of an
-     operater name: e.g. you could have a variable 'cooperator'.  So
+     operator name: e.g. you could have a variable 'cooperator'.  So
      this variable tells us whether or not we should treat the string
      'operator' as starting an operator.  */
   int operator_possible = 1;
@@ -1473,10 +1469,10 @@ cp_lookup_rtti_type (const char *name, const struct block *block)
 
 #ifdef HAVE_WORKING_FORK
 
-/* If nonzero, attempt to catch crashes in the demangler and print
+/* If true, attempt to catch crashes in the demangler and print
    useful debugging information.  */
 
-static int catch_demangler_crashes = 1;
+static bool catch_demangler_crashes = true;
 
 /* Stack context and environment for demangler crash recovery.  */
 
@@ -1543,7 +1539,16 @@ gdb_demangle (const char *name, int options)
       ofunc = signal (SIGSEGV, gdb_demangle_signal_handler);
 #endif
 
-      crash_signal = SIGSETJMP (gdb_demangle_jmp_buf);
+      /* The signal handler may keep the signal blocked when we longjmp out
+         of it.  If we have sigprocmask, we can use it to unblock the signal
+	 afterwards and we can avoid the performance overhead of saving the
+	 signal mask just in case the signal gets triggered.  Otherwise, just
+	 tell sigsetjmp to save the mask.  */
+#ifdef HAVE_SIGPROCMASK
+      crash_signal = SIGSETJMP (gdb_demangle_jmp_buf, 0);
+#else
+      crash_signal = SIGSETJMP (gdb_demangle_jmp_buf, 1);
+#endif
     }
 #endif
 
@@ -1562,6 +1567,14 @@ gdb_demangle (const char *name, int options)
       if (crash_signal != 0)
 	{
 	  static int error_reported = 0;
+
+#ifdef HAVE_SIGPROCMASK
+	  /* If we got the signal, SIGSEGV may still be blocked; restore it.  */
+	  sigset_t segv_sig_set;
+	  sigemptyset (&segv_sig_set);
+	  sigaddset (&segv_sig_set, SIGSEGV);
+	  sigprocmask (SIG_UNBLOCK, &segv_sig_set, NULL);
+#endif
 
 	  if (!error_reported)
 	    {

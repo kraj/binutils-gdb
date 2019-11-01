@@ -28,6 +28,7 @@
 #include "c-lang.h"
 #include "typeprint.h"
 #include <algorithm>
+#include "cli/cli-style.h"
 
 static struct cp_abi_ops gnu_v3_abi_ops;
 
@@ -392,7 +393,7 @@ gnuv3_get_virtual_fn (struct gdbarch *gdbarch, struct value *container,
   /* If this architecture uses function descriptors directly in the vtable,
      then the address of the vtable entry is actually a "function pointer"
      (i.e. points to the descriptor).  We don't need to scale the index
-     by the size of a function descriptor; GCC does that before outputing
+     by the size of a function descriptor; GCC does that before outputting
      debug information.  */
   if (gdbarch_vtable_function_descriptors (gdbarch))
     vfn = value_addr (vfn);
@@ -912,7 +913,8 @@ print_one_vtable (struct gdbarch *gdbarch, struct value *value,
 	}
       catch (const gdb_exception_error &ex)
 	{
-	  printf_filtered (_("<error: %s>"), ex.what ());
+	  fprintf_styled (gdb_stdout, metadata_style.style (),
+			  _("<error: %s>"), ex.what ());
 	  got_error = 1;
 	}
 

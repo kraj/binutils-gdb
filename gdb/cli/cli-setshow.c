@@ -130,8 +130,9 @@ deprecated_show_value_hack (struct ui_file *ignore_file,
   /* If there's no command or value, don't try to print it out.  */
   if (c == NULL || value == NULL)
     return;
-  /* Print doc minus "show" at start.  */
-  print_doc_line (gdb_stdout, c->doc + 5);
+  /* Print doc minus "Show " at start.  Tell print_doc_line that
+     this is for a 'show value' prefix.  */
+  print_doc_line (gdb_stdout, c->doc + 5, true);
   switch (c->var_type)
     {
     case var_string:
@@ -415,9 +416,9 @@ do_set_command (const char *arg, int from_tty, struct cmd_list_element *c)
 
 	if (val < 0)
 	  error (_("\"on\" or \"off\" expected."));
-	if (val != *(int *) c->var)
+	if (val != *(bool *) c->var)
 	  {
-	    *(int *) c->var = val;
+	    *(bool *) c->var = val;
 
 	    option_changed = 1;
 	  }
@@ -587,7 +588,7 @@ do_set_command (const char *arg, int from_tty, struct cmd_list_element *c)
 	  break;
 	case var_boolean:
 	  {
-	    const char *opt = *(int *) c->var ? "on" : "off";
+	    const char *opt = *(bool *) c->var ? "on" : "off";
 
 	    gdb::observers::command_param_changed.notify (name, opt);
 	  }
@@ -626,7 +627,7 @@ do_set_command (const char *arg, int from_tty, struct cmd_list_element *c)
 /* See cli/cli-setshow.h.  */
 
 std::string
-get_setshow_command_value_string (cmd_list_element *c)
+get_setshow_command_value_string (const cmd_list_element *c)
 {
   string_file stb;
 
@@ -644,7 +645,7 @@ get_setshow_command_value_string (cmd_list_element *c)
 	stb.puts (*(char **) c->var);
       break;
     case var_boolean:
-      stb.puts (*(int *) c->var ? "on" : "off");
+      stb.puts (*(bool *) c->var ? "on" : "off");
       break;
     case var_auto_boolean:
       switch (*(enum auto_boolean*) c->var)

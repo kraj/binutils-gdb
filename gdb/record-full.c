@@ -53,7 +53,7 @@
    mode, and we build up an execution log in which, for each executed
    instruction, we record all changes in memory and register state.
    This is invisible to the user, to whom it just looks like an
-   ordinary debugging session (except for performance degredation).
+   ordinary debugging session (except for performance degradation).
 
    In replay mode, instead of actually letting the inferior run as a
    process, we simulate its execution by playing back the recorded
@@ -159,7 +159,7 @@ struct record_full_entry
 
 /* If true, query if PREC cannot record memory
    change of next instruction.  */
-int record_full_memory_query = 0;
+bool record_full_memory_query = false;
 
 struct record_full_core_buf_entry
 {
@@ -196,8 +196,8 @@ static struct record_full_entry *record_full_list = &record_full_first;
 static struct record_full_entry *record_full_arch_list_head = NULL;
 static struct record_full_entry *record_full_arch_list_tail = NULL;
 
-/* 1 ask user. 0 auto delete the last struct record_full_entry.  */
-static int record_full_stop_at_limit = 1;
+/* true ask user. false auto delete the last struct record_full_entry.  */
+static bool record_full_stop_at_limit = true;
 /* Maximum allowed number of insns in execution log.  */
 static unsigned int record_full_insn_max_num
 	= DEFAULT_RECORD_FULL_INSN_MAX_NUM;
@@ -1359,7 +1359,7 @@ record_full_wait_1 (struct target_ops *ops,
 		  if (first_record_full_end
 		      && execution_direction == EXEC_REVERSE)
 		    {
-		      /* When reverse excute, the first
+		      /* When reverse execute, the first
 			 record_full_end is the part of current
 			 instruction.  */
 		      first_record_full_end = 0;
@@ -2350,9 +2350,9 @@ record_full_restore (void)
 			osec ? "succeeded" : "failed");
   if (osec == NULL)
     return;
-  osec_size = bfd_section_size (core_bfd, osec);
+  osec_size = bfd_section_size (osec);
   if (record_debug)
-    fprintf_unfiltered (gdb_stdlog, "%s", bfd_section_name (core_bfd, osec));
+    fprintf_unfiltered (gdb_stdlog, "%s", bfd_section_name (osec));
 
   /* Check the magic code.  */
   bfdcore_read (core_bfd, osec, &magic, sizeof (magic), &bfd_offset);
@@ -2599,10 +2599,9 @@ record_full_base_target::save_record (const char *recfilename)
     error (_("Failed to create 'precord' section for corefile %s: %s"),
 	   recfilename,
            bfd_errmsg (bfd_get_error ()));
-  bfd_set_section_size (obfd.get (), osec, save_size);
-  bfd_set_section_vma (obfd.get (), osec, 0);
-  bfd_set_section_alignment (obfd.get (), osec, 0);
-  bfd_section_lma (obfd.get (), osec) = 0;
+  bfd_set_section_size (osec, save_size);
+  bfd_set_section_vma (osec, 0);
+  bfd_set_section_alignment (osec, 0);
 
   /* Save corefile state.  */
   write_gcore_file (obfd.get ());
@@ -2832,11 +2831,11 @@ Argument is filename.  File must be created with 'record save'."),
   deprecate_cmd (c, "record full restore");
 
   add_prefix_cmd ("full", class_support, set_record_full_command,
-		  _("Set record options"), &set_record_full_cmdlist,
+		  _("Set record options."), &set_record_full_cmdlist,
 		  "set record full ", 0, &set_record_cmdlist);
 
   add_prefix_cmd ("full", class_support, show_record_full_command,
-		  _("Show record options"), &show_record_full_cmdlist,
+		  _("Show record options."), &show_record_full_cmdlist,
 		  "show record full ", 0, &show_record_cmdlist);
 
   /* Record instructions number limit command.  */

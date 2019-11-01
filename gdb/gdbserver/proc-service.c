@@ -21,7 +21,7 @@
 #include "server.h"
 
 /* This file is currently tied to GNU/Linux.  It should scale well to
-   another libthread_db implementation, with the approriate gdbserver
+   another libthread_db implementation, with the appropriate gdbserver
    hooks, but for now this means we can use GNU/Linux's target data.  */
 
 #include "linux-low.h"
@@ -91,7 +91,7 @@ ps_err_e
 ps_pdwrite (gdb_ps_prochandle_t ph, psaddr_t addr,
 	    gdb_ps_write_buf_t buf, gdb_ps_size_t size)
 {
-  if (write_inferior_memory ((uintptr_t) addr, (const gdb_byte *) buf, size)
+  if (target_write_memory ((uintptr_t) addr, (const gdb_byte *) buf, size)
       != 0)
     return PS_ERR;
   return PS_OK;

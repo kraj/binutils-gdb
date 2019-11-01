@@ -29,9 +29,11 @@ AC_DEFUN([GDB_AC_COMMON], [
 		   sys/resource.h sys/socket.h dnl
 		   sys/un.h sys/wait.h dnl
 		   thread_db.h wait.h dnl
-		   termios.h)
+		   termios.h dnl
+		   dlfcn.h)
 
-  AC_CHECK_FUNCS([fdwalk getrlimit pipe pipe2 socketpair sigaction])
+  AC_CHECK_FUNCS([fdwalk getrlimit pipe pipe2 socketpair sigaction \
+		  sigprocmask strerror_r])
 
   AC_CHECK_DECLS([strerror, strstr])
 

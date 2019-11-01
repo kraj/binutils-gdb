@@ -101,11 +101,9 @@ symbol_file_add_from_memory (struct bfd *templ, CORE_ADDR addr,
   /* Manage the new reference for the duration of this function.  */
   gdb_bfd_ref_ptr nbfd_holder = gdb_bfd_ref_ptr::new_reference (nbfd);
 
-  xfree (bfd_get_filename (nbfd));
   if (name == NULL)
-    nbfd->filename = xstrdup ("shared object read from target memory");
-  else
-    nbfd->filename = name;
+    name = xstrdup ("shared object read from target memory");
+  bfd_set_filename (nbfd, name);
 
   if (!bfd_check_format (nbfd, bfd_object))
     error (_("Got object file from memory but can't read symbols: %s."),
@@ -113,9 +111,9 @@ symbol_file_add_from_memory (struct bfd *templ, CORE_ADDR addr,
 
   section_addr_info sai;
   for (sec = nbfd->sections; sec != NULL; sec = sec->next)
-    if ((bfd_get_section_flags (nbfd, sec) & (SEC_ALLOC|SEC_LOAD)) != 0)
-      sai.emplace_back (bfd_get_section_vma (nbfd, sec) + loadbase,
-			bfd_get_section_name (nbfd, sec),
+    if ((bfd_section_flags (sec) & (SEC_ALLOC|SEC_LOAD)) != 0)
+      sai.emplace_back (bfd_section_vma (sec) + loadbase,
+			bfd_section_name (sec),
 			sec->index);
 
   if (from_tty)

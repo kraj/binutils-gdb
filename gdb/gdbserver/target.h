@@ -167,7 +167,7 @@ struct target_ops
   int (*read_memory) (CORE_ADDR memaddr, unsigned char *myaddr, int len);
 
   /* Write memory to the inferior process.  This should generally be
-     called through write_inferior_memory, which handles breakpoint shadowing.
+     called through target_write_memory, which handles breakpoint shadowing.
 
      Write LEN bytes from the buffer at MYADDR to MEMADDR.
 
@@ -255,10 +255,6 @@ struct target_ops
 
   int (*get_tls_address) (struct thread_info *thread, CORE_ADDR offset,
 			  CORE_ADDR load_module, CORE_ADDR *address);
-
-   /* Read/Write from/to spufs using qXfer packets.  */
-  int (*qxfer_spu) (const char *annex, unsigned char *readbuf,
-		    unsigned const char *writebuf, CORE_ADDR offset, int len);
 
   /* Fill BUF with an hostio error packet representing the last hostio
      error.  */
@@ -725,9 +721,6 @@ void done_accessing_memory (void);
    : false)
 
 int read_inferior_memory (CORE_ADDR memaddr, unsigned char *myaddr, int len);
-
-int write_inferior_memory (CORE_ADDR memaddr, const unsigned char *myaddr,
-			   int len);
 
 int set_desired_thread ();
 

@@ -83,6 +83,10 @@ save_vars { env(TERM) } {
 	    "Defined at $base_file_expr:16\r\n#define SOME_MACRO 23"
     }
 
+    set func [style some_called_function function]
+    # Somewhere should see the call to the function.
+    gdb_test "disassemble main" "[style $hex address].*$func.*"
+
     gdb_exit
     gdb_spawn
 
@@ -90,25 +94,25 @@ save_vars { env(TERM) } {
     gdb_test "" "${vers}.*" \
 	"version is styled"
 
-    set address_style_expr [style "\"address\" style" address]
+    set address_style_expr [style ".*\".*address.*\".*style.*" address]
     gdb_test "show style address foreground" \
 	"The ${address_style_expr} foreground color is: blue" \
 	"style name and style word styled using its own style in show style"
 
-    set aliases_expr [style "aliases" title]
-    set breakpoints_expr [style "breakpoints" title]
+    set aliases_expr [style ".*aliases.*" title]
+    set breakpoints_expr [style ".*breakpoints.*" title]
     gdb_test "help" \
 	[multi_line \
 	     "List of classes of commands:" \
 	     "" \
-	     "${aliases_expr} -- Aliases of other commands" \
-	     "${breakpoints_expr} -- Making program stop at certain points" \
+	     "${aliases_expr} -- Aliases of other commands\." \
+	     "${breakpoints_expr} -- Making program stop at certain points\." \
 	     ".*" \
 	    ] \
 	"help classes of commands styled with title"
 
-    set taas_expr  [style "taas" title]
-    set tfaas_expr  [style "tfaas" title]
+    set taas_expr  [style ".*taas.*" title]
+    set tfaas_expr  [style ".*tfaas.*" title]
     set cut_for_thre_expr [style "cut for 'thre" highlight]
     gdb_test "apropos -v cut for 'thre" \
 	[multi_line \
@@ -127,4 +131,13 @@ save_vars { env(TERM) } {
     gdb_test "file $binfile" \
 	"Reading symbols from [style $quoted file]..." \
 	"filename is styled when loading symbol file"
+
+    gdb_test "pwd" "Working directory [style .*? file].*"
+
+    gdb_test_no_output "set print repeat 3"
+    gdb_test "print {0,0,0,0,0,0,0,0}" \
+	" = \\{0 [style {<repeats.*8.*times>} metadata]\\}"
+
+    gdb_test "show logging file" \
+	"The current logfile is \"[style .*? file]\"\\..*"
 }

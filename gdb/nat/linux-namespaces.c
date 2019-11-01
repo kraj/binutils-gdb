@@ -31,7 +31,7 @@
 #include "gdbsupport/scope-exit.h"
 
 /* See nat/linux-namespaces.h.  */
-int debug_linux_namespaces;
+bool debug_linux_namespaces;
 
 /* Handle systems without fork.  */
 
@@ -562,7 +562,7 @@ mnsh_main (int sock)
   while (1)
     {
       enum mnsh_msg_type type;
-      int fd, int1, int2;
+      int fd = -1, int1, int2;
       char buf[PATH_MAX];
       ssize_t size, response = -1;
 

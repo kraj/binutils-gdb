@@ -74,7 +74,6 @@ struct inferior;
 #include "bfd.h"
 #include "symtab.h"
 #include "memattr.h"
-#include "gdbsupport/vec.h"
 #include "gdbsupport/gdb_signals.h"
 #include "btrace.h"
 #include "record.h"
@@ -137,8 +136,6 @@ enum target_object
 {
   /* AVR target specific transfer.  See "avr-tdep.c" and "remote.c".  */
   TARGET_OBJECT_AVR,
-  /* SPU target specific transfer.  See "spu-tdep.c".  */
-  TARGET_OBJECT_SPU,
   /* Transfer up-to LEN bytes of memory starting at OFFSET.  */
   TARGET_OBJECT_MEMORY,
   /* Memory, avoiding GDB's data cache and trusting the executable.
@@ -1538,7 +1535,7 @@ enum flash_preserve_mode
    that supports writing to flash memory, and it should be used for
    all cases where access to flash memory is desirable.
 
-   REQUESTS is the vector (see vec.h) of memory_write_request.
+   REQUESTS is the vector of memory_write_request.
    PRESERVE_FLASH_P indicates what to do with blocks which must be
      erased, but not completely rewritten.
    PROGRESS_CB is a function that will be periodically called to provide
@@ -1802,7 +1799,7 @@ extern int target_has_execution_current (void);
   (current_top_target ()->get_thread_control_capabilities () & tc_schedlock)
 
 /* Controls whether async mode is permitted.  */
-extern int target_async_permitted;
+extern bool target_async_permitted;
 
 /* Can the target support asynchronous execution?  */
 #define target_can_async_p() (current_top_target ()->can_async_p ())
@@ -2482,12 +2479,12 @@ extern int remote_timeout;
 extern scoped_restore_tmpl<int>
     make_scoped_restore_show_memory_breakpoints (int show);
 
-extern int may_write_registers;
-extern int may_write_memory;
-extern int may_insert_breakpoints;
-extern int may_insert_tracepoints;
-extern int may_insert_fast_tracepoints;
-extern int may_stop;
+extern bool may_write_registers;
+extern bool may_write_memory;
+extern bool may_insert_breakpoints;
+extern bool may_insert_tracepoints;
+extern bool may_insert_fast_tracepoints;
+extern bool may_stop;
 
 extern void update_target_permissions (void);
 

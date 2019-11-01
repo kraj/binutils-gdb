@@ -23,6 +23,7 @@
 #include "bfd.h"
 #include "libbfd.h"
 #include "libiberty.h"
+#include "cpu-arm.h"
 
 /* This routine is provided two arch_infos and works out which ARM
    machine which would be compatible with both and returns a pointer
@@ -147,12 +148,15 @@ processors[] =
   { bfd_mach_arm_8,	  "cortex-a73"	    },
   { bfd_mach_arm_8,	  "cortex-a75"	    },
   { bfd_mach_arm_8,	  "cortex-a76"	    },
+  { bfd_mach_arm_8,	  "cortex-a76ae"    },
+  { bfd_mach_arm_8,	  "cortex-a77"	    },
   { bfd_mach_arm_6SM,	  "cortex-m0"	    },
   { bfd_mach_arm_6SM,	  "cortex-m0plus"   },
   { bfd_mach_arm_6SM,	  "cortex-m1"	    },
   { bfd_mach_arm_8M_BASE, "cortex-m23"	    },
   { bfd_mach_arm_7,	  "cortex-m3"	    },
   { bfd_mach_arm_8M_MAIN, "cortex-m33"	    },
+  { bfd_mach_arm_8M_MAIN, "cortex-m35p"	    },
   { bfd_mach_arm_7EM,	  "cortex-m4"	    },
   { bfd_mach_arm_7EM,	  "cortex-m7"	    },
   { bfd_mach_arm_7,	  "cortex-r4"	    },
@@ -218,7 +222,7 @@ scan (const struct bfd_arch_info *info, const char *string)
 
 #define N(number, print, default, next)  \
 {  32, 32, 8, bfd_arch_arm, number, "arm", print, 4, default, compatible, \
-   scan, bfd_arch_default_fill, next }
+    scan, bfd_arch_default_fill, next, 0 }
 
 static const bfd_arch_info_type arch_info_struct[] =
 {

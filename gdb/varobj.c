@@ -26,7 +26,6 @@
 #include "gdb_regex.h"
 
 #include "varobj.h"
-#include "gdbsupport/vec.h"
 #include "gdbthread.h"
 #include "inferior.h"
 #include "varobj-iter.h"
@@ -40,7 +39,7 @@
 typedef int PyObject;
 #endif
 
-/* Non-zero if we want to see trace of varobj level stuff.  */
+/* See varobj.h.  */
 
 unsigned int varobjdebug = 0;
 static void
@@ -598,10 +597,9 @@ varobj_get_frozen (const struct varobj *var)
   return var->frozen;
 }
 
-/* A helper function that restricts a range to what is actually
-   available in a VEC.  This follows the usual rules for the meaning
-   of FROM and TO -- if either is negative, the entire range is
-   used.  */
+/* A helper function that updates the contents of FROM and TO based on the
+   size of the vector CHILDREN.  If the contents of either FROM or TO are
+   negative the entire range is used.  */
 
 void
 varobj_restrict_range (const std::vector<varobj *> &children,
@@ -1301,7 +1299,7 @@ install_new_value (struct varobj *var, struct value *value, bool initial)
 	{
 	  /* For variables that are frozen, or are children of frozen
 	     variables, we don't do fetch on initial assignment.
-	     For non-initial assignemnt we do the fetch, since it means we're
+	     For non-initial assignment we do the fetch, since it means we're
 	     explicitly asked to compare the new value with the old one.  */
 	  intentionally_not_fetched = true;
 	}
@@ -1833,7 +1831,7 @@ install_variable (struct varobj *var)
   return true;			/* OK */
 }
 
-/* Unistall the object VAR.  */
+/* Uninstall the object VAR.  */
 static void
 uninstall_variable (struct varobj *var)
 {
@@ -2000,7 +1998,7 @@ varobj::~varobj ()
    value were accessible.
 
    This differs from VAR->type in that VAR->type is always
-   the true type of the expession in the source language.
+   the true type of the expression in the source language.
    The return value of this function is the type we're
    actually storing in varobj, and using for displaying
    the values and for comparing previous and new values.

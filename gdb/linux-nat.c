@@ -68,10 +68,6 @@
 #include "gdbsupport/fileio.h"
 #include "gdbsupport/scope-exit.h"
 
-#ifndef SPUFS_MAGIC
-#define SPUFS_MAGIC 0x23c9b64e
-#endif
-
 /* This comment documents high-level logic of this file.
 
 Waiting for events in sync mode
@@ -1472,7 +1468,7 @@ linux_nat_target::detach (inferior *inf, int from_tty)
      inferiors running. */
 
   /* Stop all threads before detaching.  ptrace requires that the
-     thread is stopped to sucessfully detach.  */
+     thread is stopped to successfully detach.  */
   iterate_over_lwps (ptid_t (pid), stop_callback);
   /* ... and wait until all of them have reported back that
      they're no longer running.  */
@@ -3150,9 +3146,12 @@ linux_nat_filter_event (int lwpid, int status)
 
       /* When using hardware single-step, we need to report every signal.
 	 Otherwise, signals in pass_mask may be short-circuited
-	 except signals that might be caused by a breakpoint.  */
+	 except signals that might be caused by a breakpoint, or SIGSTOP
+	 if we sent the SIGSTOP and are waiting for it to arrive.  */
       if (!lp->step
 	  && WSTOPSIG (status) && sigismember (&pass_mask, WSTOPSIG (status))
+	  && (WSTOPSIG (status) != SIGSTOP
+	      || !find_thread_ptid (lp->ptid)->stop_requested)
 	  && !linux_wstatus_maybe_breakpoint (status))
 	{
 	  linux_resume_one_lwp (lp, lp->step, signo);
@@ -3307,7 +3306,7 @@ linux_nat_wait_1 (ptid_t ptid, struct target_waitstatus *ourstatus,
 	 - If the thread group leader exits while other threads in the
 	   thread group still exist, waitpid(TGID, ...) hangs.  That
 	   waitpid won't return an exit status until the other threads
-	   in the group are reapped.
+	   in the group are reaped.
 
 	 - When a non-leader thread execs, that thread just vanishes
 	   without reporting an exit (so we'd hang if we waited for it
@@ -3727,7 +3726,7 @@ linux_nat_target::kill ()
       ptid_t ptid = ptid_t (inferior_ptid.pid ());
 
       /* Stop all threads before killing them, since ptrace requires
-	 that the thread is stopped to sucessfully PTRACE_KILL.  */
+	 that the thread is stopped to successfully PTRACE_KILL.  */
       iterate_over_lwps (ptid, stop_callback);
       /* ... and wait until all of them have reported back that
 	 they're no longer running.  */
@@ -3842,12 +3841,6 @@ linux_nat_xfer_osdata (enum target_object object,
 		       ULONGEST *xfered_len);
 
 static enum target_xfer_status
-linux_proc_xfer_spu (enum target_object object,
-		     const char *annex, gdb_byte *readbuf,
-		     const gdb_byte *writebuf,
-		     ULONGEST offset, ULONGEST len, ULONGEST *xfered_len);
-
-static enum target_xfer_status
 linux_proc_xfer_partial (enum target_object object,
 			 const char *annex, gdb_byte *readbuf,
 			 const gdb_byte *writebuf,
@@ -3878,10 +3871,6 @@ linux_nat_target::xfer_partial (enum target_object object,
   if (object == TARGET_OBJECT_OSDATA)
     return linux_nat_xfer_osdata (object, annex, readbuf, writebuf,
 				  offset, len, xfered_len);
-
-  if (object == TARGET_OBJECT_SPU)
-    return linux_proc_xfer_spu (object, annex, readbuf, writebuf,
-				offset, len, xfered_len);
 
   /* GDB calculates all addresses in the largest possible address
      width.
@@ -4015,121 +4004,6 @@ linux_proc_xfer_partial (enum target_object object,
   else
     {
       *xfered_len = ret;
-      return TARGET_XFER_OK;
-    }
-}
-
-
-/* Enumerate spufs IDs for process PID.  */
-static LONGEST
-spu_enumerate_spu_ids (int pid, gdb_byte *buf, ULONGEST offset, ULONGEST len)
-{
-  enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch ());
-  LONGEST pos = 0;
-  LONGEST written = 0;
-  char path[128];
-  DIR *dir;
-  struct dirent *entry;
-
-  xsnprintf (path, sizeof path, "/proc/%d/fd", pid);
-  dir = opendir (path);
-  if (!dir)
-    return -1;
-
-  rewinddir (dir);
-  while ((entry = readdir (dir)) != NULL)
-    {
-      struct stat st;
-      struct statfs stfs;
-      int fd;
-
-      fd = atoi (entry->d_name);
-      if (!fd)
-	continue;
-
-      xsnprintf (path, sizeof path, "/proc/%d/fd/%d", pid, fd);
-      if (stat (path, &st) != 0)
-	continue;
-      if (!S_ISDIR (st.st_mode))
-	continue;
-
-      if (statfs (path, &stfs) != 0)
-	continue;
-      if (stfs.f_type != SPUFS_MAGIC)
-	continue;
-
-      if (pos >= offset && pos + 4 <= offset + len)
-	{
-	  store_unsigned_integer (buf + pos - offset, 4, byte_order, fd);
-	  written += 4;
-	}
-      pos += 4;
-    }
-
-  closedir (dir);
-  return written;
-}
-
-/* Implement the to_xfer_partial interface for the TARGET_OBJECT_SPU
-   object type, using the /proc file system.  */
-
-static enum target_xfer_status
-linux_proc_xfer_spu (enum target_object object,
-		     const char *annex, gdb_byte *readbuf,
-		     const gdb_byte *writebuf,
-		     ULONGEST offset, ULONGEST len, ULONGEST *xfered_len)
-{
-  char buf[128];
-  int fd = 0;
-  int ret = -1;
-  int pid = inferior_ptid.lwp ();
-
-  if (!annex)
-    {
-      if (!readbuf)
-	return TARGET_XFER_E_IO;
-      else
-	{
-	  LONGEST l = spu_enumerate_spu_ids (pid, readbuf, offset, len);
-
-	  if (l < 0)
-	    return TARGET_XFER_E_IO;
-	  else if (l == 0)
-	    return TARGET_XFER_EOF;
-	  else
-	    {
-	      *xfered_len = (ULONGEST) l;
-	      return TARGET_XFER_OK;
-	    }
-	}
-    }
-
-  xsnprintf (buf, sizeof buf, "/proc/%d/fd/%s", pid, annex);
-  fd = gdb_open_cloexec (buf, writebuf? O_WRONLY : O_RDONLY, 0);
-  if (fd <= 0)
-    return TARGET_XFER_E_IO;
-
-  if (offset != 0
-      && lseek (fd, (off_t) offset, SEEK_SET) != (off_t) offset)
-    {
-      close (fd);
-      return TARGET_XFER_EOF;
-    }
-
-  if (writebuf)
-    ret = write (fd, writebuf, (size_t) len);
-  else if (readbuf)
-    ret = read (fd, readbuf, (size_t) len);
-
-  close (fd);
-
-  if (ret < 0)
-    return TARGET_XFER_E_IO;
-  else if (ret == 0)
-    return TARGET_XFER_EOF;
-  else
-    {
-      *xfered_len = (ULONGEST) ret;
       return TARGET_XFER_OK;
     }
 }

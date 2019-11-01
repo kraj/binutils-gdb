@@ -23,6 +23,7 @@
 #include "bfd.h"
 #include "bfdlink.h"
 #include "bfdver.h"
+#include "ctf-api.h"
 #include "ld.h"
 #include "ldmain.h"
 #include "ldmisc.h"
@@ -403,12 +404,6 @@ asymbol_from_plugin_symbol (bfd *abfd, asymbol *asym,
       flags = BSF_GLOBAL;
       section = bfd_com_section_ptr;
       asym->value = ldsym->size;
-      /* For ELF targets, set alignment of common symbol to 1.  */
-      if (bfd_get_flavour (abfd) == bfd_target_elf_flavour)
-	{
-	  ((elf_symbol_type *) asym)->internal_elf_sym.st_shndx = SHN_COMMON;
-	  ((elf_symbol_type *) asym)->internal_elf_sym.st_value = 1;
-	}
       break;
 
     default:
@@ -417,7 +412,6 @@ asymbol_from_plugin_symbol (bfd *abfd, asymbol *asym,
   asym->flags = flags;
   asym->section = section;
 
-  /* Visibility only applies on ELF targets.  */
   if (bfd_get_flavour (abfd) == bfd_target_elf_flavour)
     {
       elf_symbol_type *elfsym = elf_symbol_from (abfd, asym);
@@ -425,6 +419,13 @@ asymbol_from_plugin_symbol (bfd *abfd, asymbol *asym,
 
       if (!elfsym)
 	einfo (_("%F%P: %s: non-ELF symbol in ELF BFD!\n"), asym->name);
+
+      if (ldsym->def == LDPK_COMMON)
+	{
+	  elfsym->internal_elf_sym.st_shndx = SHN_COMMON;
+	  elfsym->internal_elf_sym.st_value = 1;
+	}
+
       switch (ldsym->visibility)
 	{
 	default:
@@ -445,9 +446,7 @@ asymbol_from_plugin_symbol (bfd *abfd, asymbol *asym,
 	  visibility = STV_HIDDEN;
 	  break;
 	}
-      elfsym->internal_elf_sym.st_other
-	= (visibility | (elfsym->internal_elf_sym.st_other
-			 & ~ELF_ST_VISIBILITY (-1)));
+      elfsym->internal_elf_sym.st_other |= visibility;
     }
 
   return LDPS_OK;
@@ -749,7 +748,7 @@ get_symbols (const void *handle, int nsyms, struct ld_plugin_symbol *syms,
       if (syms[n].def != LDPK_UNDEF && syms[n].def != LDPK_WEAKUNDEF)
 	{
 	  blhe = h;
-	  if (blhe)
+	  if (blhe && link_info.wrap_hash != NULL)
 	    {
 	      /* Check if a symbol is a wrapper symbol.  */
 	      struct bfd_link_hash_entry *unwrap

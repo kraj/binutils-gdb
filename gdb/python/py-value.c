@@ -580,7 +580,7 @@ valpy_string (PyObject *self, PyObject *args, PyObject *kw)
 			   encoding, errors);
 }
 
-/* Given a Python object, copy its truth value to a C int (the value
+/* Given a Python object, copy its truth value to a C bool (the value
    pointed by dest).
    If src_obj is NULL, then *dest is not modified.
 
@@ -588,7 +588,7 @@ valpy_string (PyObject *self, PyObject *args, PyObject *kw)
    in case of error.  */
 
 static bool
-copy_py_bool_obj (int *dest, PyObject *src_obj)
+copy_py_bool_obj (bool *dest, PyObject *src_obj)
 {
   if (src_obj)
     {
@@ -847,7 +847,7 @@ value_has_field (struct value *v, PyObject *field)
       val_type = value_type (v);
       val_type = check_typedef (val_type);
       if (TYPE_IS_REFERENCE (val_type) || TYPE_CODE (val_type) == TYPE_CODE_PTR)
-      val_type = check_typedef (TYPE_TARGET_TYPE (val_type));
+	val_type = check_typedef (TYPE_TARGET_TYPE (val_type));
 
       type_code = TYPE_CODE (val_type);
       if ((type_code == TYPE_CODE_STRUCT || type_code == TYPE_CODE_UNION)

@@ -52,8 +52,6 @@
 #include "elf-bfd.h"
 #include "elf/aarch64.h"
 
-#include "gdbsupport/vec.h"
-
 #include "record.h"
 #include "record-full.h"
 #include "arch/aarch64-insn.h"
@@ -250,13 +248,13 @@ class instruction_reader : public abstract_instruction_reader
 
 } // namespace
 
-/* If address signing is enabled, mask off the signature bits from ADDR, using
-   the register values in THIS_FRAME.  */
+/* If address signing is enabled, mask off the signature bits from the link
+   register, which is passed by value in ADDR, using the register values in
+   THIS_FRAME.  */
 
 static CORE_ADDR
-aarch64_frame_unmask_address (struct gdbarch_tdep *tdep,
-			      struct frame_info *this_frame,
-			      CORE_ADDR addr)
+aarch64_frame_unmask_lr (struct gdbarch_tdep *tdep,
+			 struct frame_info *this_frame, CORE_ADDR addr)
 {
   if (tdep->has_pauth ()
       && frame_unwind_register_unsigned (this_frame,
@@ -265,9 +263,23 @@ aarch64_frame_unmask_address (struct gdbarch_tdep *tdep,
       int cmask_num = AARCH64_PAUTH_CMASK_REGNUM (tdep->pauth_reg_base);
       CORE_ADDR cmask = frame_unwind_register_unsigned (this_frame, cmask_num);
       addr = addr & ~cmask;
+
+      /* Record in the frame that the link register required unmasking.  */
+      set_frame_previous_pc_masked (this_frame);
     }
 
   return addr;
+}
+
+/* Implement the "get_pc_address_flags" gdbarch method.  */
+
+static std::string
+aarch64_get_pc_address_flags (frame_info *frame, CORE_ADDR pc)
+{
+  if (pc != 0 && get_frame_pc_masked (frame))
+    return "PAC";
+
+  return "";
 }
 
 /* Analyze a prologue, looking for a recognizable stack frame
@@ -384,17 +396,16 @@ aarch64_analyze_prologue (struct gdbarch *gdbarch,
 	{
 	  unsigned rt = inst.operands[0].reg.regno;
 	  unsigned rn = inst.operands[1].addr.base_regno;
-	  int is64
-	    = (aarch64_get_qualifier_esize (inst.operands[0].qualifier) == 8);
+	  int size = aarch64_get_qualifier_esize (inst.operands[0].qualifier);
 
 	  gdb_assert (aarch64_num_of_operands (inst.opcode) == 2);
 	  gdb_assert (inst.operands[0].type == AARCH64_OPND_Rt);
 	  gdb_assert (inst.operands[1].type == AARCH64_OPND_ADDR_SIMM9);
 	  gdb_assert (!inst.operands[1].addr.offset.is_reg);
 
-	  stack.store (pv_add_constant (regs[rn],
-					inst.operands[1].addr.offset.imm),
-		       is64 ? 8 : 4, regs[rt]);
+	  stack.store
+	    (pv_add_constant (regs[rn], inst.operands[1].addr.offset.imm),
+	     size, regs[rt]);
 	}
       else if ((inst.opcode->iclass == ldstpair_off
 		|| (inst.opcode->iclass == ldstpair_indexed
@@ -406,6 +417,7 @@ aarch64_analyze_prologue (struct gdbarch *gdbarch,
 	  unsigned rt2;
 	  unsigned rn = inst.operands[2].addr.base_regno;
 	  int32_t imm = inst.operands[2].addr.offset.imm;
+	  int size = aarch64_get_qualifier_esize (inst.operands[0].qualifier);
 
 	  gdb_assert (inst.operands[0].type == AARCH64_OPND_Rt
 		      || inst.operands[0].type == AARCH64_OPND_Ft);
@@ -427,17 +439,12 @@ aarch64_analyze_prologue (struct gdbarch *gdbarch,
 	  rt2 = inst.operands[1].reg.regno;
 	  if (inst.operands[0].type == AARCH64_OPND_Ft)
 	    {
-	      /* Only bottom 64-bit of each V register (D register) need
-		 to be preserved.  */
-	      gdb_assert (inst.operands[0].qualifier == AARCH64_OPND_QLF_S_D);
 	      rt1 += AARCH64_X_REGISTER_COUNT;
 	      rt2 += AARCH64_X_REGISTER_COUNT;
 	    }
 
-	  stack.store (pv_add_constant (regs[rn], imm), 8,
-		       regs[rt1]);
-	  stack.store (pv_add_constant (regs[rn], imm + 8), 8,
-		       regs[rt2]);
+	  stack.store (pv_add_constant (regs[rn], imm), size, regs[rt1]);
+	  stack.store (pv_add_constant (regs[rn], imm + size), size, regs[rt2]);
 
 	  if (inst.operands[2].addr.writeback)
 	    regs[rn] = pv_add_constant (regs[rn], imm);
@@ -454,21 +461,14 @@ aarch64_analyze_prologue (struct gdbarch *gdbarch,
 	  unsigned int rt = inst.operands[0].reg.regno;
 	  int32_t imm = inst.operands[1].addr.offset.imm;
 	  unsigned int rn = inst.operands[1].addr.base_regno;
-	  bool is64
-	    = (aarch64_get_qualifier_esize (inst.operands[0].qualifier) == 8);
+	  int size = aarch64_get_qualifier_esize (inst.operands[0].qualifier);
 	  gdb_assert (inst.operands[0].type == AARCH64_OPND_Rt
 		      || inst.operands[0].type == AARCH64_OPND_Ft);
 
 	  if (inst.operands[0].type == AARCH64_OPND_Ft)
-	    {
-	      /* Only bottom 64-bit of each V register (D register) need
-		 to be preserved.  */
-	      gdb_assert (inst.operands[0].qualifier == AARCH64_OPND_QLF_S_D);
-	      rt += AARCH64_X_REGISTER_COUNT;
-	    }
+	    rt += AARCH64_X_REGISTER_COUNT;
 
-	  stack.store (pv_add_constant (regs[rn], imm),
-		       is64 ? 8 : 4, regs[rt]);
+	  stack.store (pv_add_constant (regs[rn], imm), size, regs[rt]);
 	  if (inst.operands[1].addr.writeback)
 	    regs[rn] = pv_add_constant (regs[rn], imm);
 	}
@@ -952,7 +952,7 @@ aarch64_prologue_prev_register (struct frame_info *this_frame,
       if (tdep->has_pauth ()
 	  && trad_frame_value_p (cache->saved_regs,
 				 tdep->pauth_ra_state_regnum))
-	lr = aarch64_frame_unmask_address (tdep, this_frame, lr);
+	lr = aarch64_frame_unmask_lr (tdep, this_frame, lr);
 
       return frame_unwind_got_constant (this_frame, prev_regnum, lr);
     }
@@ -1119,7 +1119,7 @@ aarch64_dwarf2_prev_register (struct frame_info *this_frame,
     {
     case AARCH64_PC_REGNUM:
       lr = frame_unwind_register_unsigned (this_frame, AARCH64_LR_REGNUM);
-      lr = aarch64_frame_unmask_address (tdep, this_frame, lr);
+      lr = aarch64_frame_unmask_lr (tdep, this_frame, lr);
       return frame_unwind_got_constant (this_frame, regnum, lr);
 
     default:
@@ -1414,7 +1414,7 @@ struct aarch64_call_info
 };
 
 /* Pass a value in a sequence of consecutive X registers.  The caller
-   is responsbile for ensuring sufficient registers are available.  */
+   is responsible for ensuring sufficient registers are available.  */
 
 static void
 pass_in_x (struct gdbarch *gdbarch, struct regcache *regcache,
@@ -3379,6 +3379,8 @@ aarch64_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
 
   set_gdbarch_gen_return_address (gdbarch, aarch64_gen_return_address);
 
+  set_gdbarch_get_pc_address_flags (gdbarch, aarch64_get_pc_address_flags);
+
   tdesc_use_registers (gdbarch, tdesc, tdesc_data);
 
   /* Add standard register aliases.  */
@@ -3548,7 +3550,7 @@ aarch64_record_data_proc_reg (insn_decode_record *aarch64_insn_r)
 	    }
 	  else if (insn_bits21_23 == 0x04 || insn_bits21_23 == 0x06)
 	    {
-	      /* CConditional select.  */
+	      /* Conditional select.  */
 	      /* Data-processing (2 source).  */
 	      /* Data-processing (1 source).  */
 	      record_buf[0] = reg_rd;

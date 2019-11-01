@@ -385,7 +385,7 @@ open_procinfo_files (procinfo *pi, int which)
      several.  Here is some rationale:
 
      There are several file descriptors that may need to be open
-       for any given process or LWP.  The ones we're intereted in are:
+       for any given process or LWP.  The ones we're interested in are:
 	 - control	 (ctl)	  write-only	change the state
 	 - status	 (status) read-only	query the state
 	 - address space (as)	  read/write	access memory
@@ -838,7 +838,7 @@ proc_unset_run_on_last_close (procinfo *pi)
 }
 
 /* Reset inherit_on_fork flag.  If the process forks a child while we
-   are registered for events in the parent, then we will NOT recieve
+   are registered for events in the parent, then we will NOT receive
    events from the child.  Returns non-zero for success, zero for
    failure.  */
 
@@ -2476,40 +2476,12 @@ wait_again:
 		wstat = (what << 8) | 0177;
 		break;
 	      case PR_FAULTED:
-		switch (what) {
-		case FLTWATCH:
-		  wstat = (SIGTRAP << 8) | 0177;
-		  break;
-		  /* FIXME: use si_signo where possible.  */
-		case FLTPRIV:
-		case FLTILL:
-		  wstat = (SIGILL << 8) | 0177;
-		  break;
-		case FLTBPT:
-		case FLTTRACE:
-		  wstat = (SIGTRAP << 8) | 0177;
-		  break;
-		case FLTSTACK:
-		case FLTACCESS:
-		case FLTBOUNDS:
-		  wstat = (SIGSEGV << 8) | 0177;
-		  break;
-		case FLTIOVF:
-		case FLTIZDIV:
-		case FLTFPE:
-		  wstat = (SIGFPE << 8) | 0177;
-		  break;
-		case FLTPAGE:	/* Recoverable page fault */
-		default:	/* FIXME: use si_signo if possible for
-				   fault.  */
-		  retval = ptid_t (-1);
-		  printf_filtered ("procfs:%d -- ", __LINE__);
-		  printf_filtered (_("child stopped for unknown reason:\n"));
-		  proc_prettyprint_why (why, what, 1);
-		  error (_("... giving up..."));
-		  break;
+		{
+		  int signo = pi->prstatus.pr_lwp.pr_info.si_signo;
+		  if (signo != 0)
+		    wstat = (signo << 8) | 0177;
 		}
-		break;	/* case PR_FAULTED: */
+		break;
 	      default:	/* switch (why) unmatched */
 		printf_filtered ("procfs:%d -- ", __LINE__);
 		printf_filtered (_("child stopped for unknown reason:\n"));
@@ -2619,7 +2591,7 @@ procfs_xfer_memory (gdb_byte *readbuf, const gdb_byte *writebuf,
    File descriptors are also cached.  As they are a limited resource,
    we cannot hold onto them indefinitely.  However, as they are
    expensive to open, we don't want to throw them away
-   indescriminately either.  As a compromise, we will keep the file
+   indiscriminately either.  As a compromise, we will keep the file
    descriptors for the parent process, but discard any file
    descriptors we may have accumulated for the threads.
 

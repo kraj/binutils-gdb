@@ -126,10 +126,10 @@ static const char *const test_options_enum_values_choices[] =
 
 struct test_options_opts
 {
-  int flag_opt = 0;
-  int xx1_opt = 0;
-  int xx2_opt = 0;
-  int boolean_opt = 0;
+  bool flag_opt = false;
+  bool xx1_opt = false;
+  bool xx2_opt = false;
+  bool boolean_opt = false;
   const char *enum_opt = test_options_enum_values_xxx;
   unsigned int uint_opt = 0;
   int zuint_unl_opt = 0;
@@ -444,8 +444,8 @@ Command used for testing options processing.\n\
 Usage: maint test-options require-delimiter [[OPTION]... --] [OPERAND]...\n\
 \n\
 Options:\n\
-\n\
 %OPTIONS%\n\
+\n\
 If you specify any command option, you must use a double dash (\"--\")\n\
 to mark the end of option processing."),
 			       def_group);
@@ -456,7 +456,6 @@ Command used for testing options processing.\n\
 Usage: maint test-options unknown-is-error [OPTION]... [OPERAND]...\n\
 \n\
 Options:\n\
-\n\
 %OPTIONS%"),
 			       def_group);
 
@@ -466,7 +465,6 @@ Command used for testing options processing.\n\
 Usage: maint test-options unknown-is-operand [OPTION]... [OPERAND]...\n\
 \n\
 Options:\n\
-\n\
 %OPTIONS%"),
 			       def_group);
 

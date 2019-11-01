@@ -121,15 +121,28 @@ riscv_subset_supports (const char *feature)
 }
 
 static bfd_boolean
-riscv_multi_subset_supports (const char *features[])
+riscv_multi_subset_supports (enum riscv_insn_class insn_class)
 {
-  unsigned i = 0;
-  bfd_boolean supported = TRUE;
+  switch (insn_class)
+    {
+    case INSN_CLASS_I: return riscv_subset_supports ("i");
+    case INSN_CLASS_C: return riscv_subset_supports ("c");
+    case INSN_CLASS_A: return riscv_subset_supports ("a");
+    case INSN_CLASS_M: return riscv_subset_supports ("m");
+    case INSN_CLASS_F: return riscv_subset_supports ("f");
+    case INSN_CLASS_D: return riscv_subset_supports ("d");
+    case INSN_CLASS_D_AND_C:
+      return riscv_subset_supports ("d") && riscv_subset_supports ("c");
 
-  for (;features[i]; ++i)
-    supported = supported && riscv_subset_supports (features[i]);
+    case INSN_CLASS_F_AND_C:
+      return riscv_subset_supports ("f") && riscv_subset_supports ("c");
 
-  return supported;
+    case INSN_CLASS_Q: return riscv_subset_supports ("q");
+
+    default:
+      as_fatal ("Unreachable");
+      return FALSE;
+    }
 }
 
 /* Set which ISA and extensions are available.  */
@@ -928,6 +941,29 @@ macro_build (expressionS *ep, const char *name, const char *fmt, ...)
   append_insn (&insn, ep, r);
 }
 
+/* Build an instruction created by a macro expansion.  Like md_assemble but
+   accept a printf-style format string and arguments.  */
+
+static void
+md_assemblef (const char *format, ...)
+{
+  char *buf = NULL;
+  va_list ap;
+  int r;
+
+  va_start (ap, format);
+
+  r = vasprintf (&buf, format, ap);
+
+  if (r < 0)
+    as_fatal (_("internal error: vasprintf failed"));
+
+  md_assemble (buf);
+  free(buf);
+
+  va_end (ap);
+}
+
 /* Sign-extend 32-bit mode constants that have bit 31 set and all higher bits
    unset.  */
 static void
@@ -1013,6 +1049,7 @@ static void
 load_const (int reg, expressionS *ep)
 {
   int shift = RISCV_IMM_BITS;
+  bfd_vma upper_imm;
   expressionS upper = *ep, lower = *ep;
   lower.X_add_number = (int32_t) ep->X_add_number << (32-shift) >> (32-shift);
   upper.X_add_number -= lower.X_add_number;
@@ -1032,9 +1069,10 @@ load_const (int reg, expressionS *ep)
       upper.X_add_number = (int64_t) upper.X_add_number >> shift;
       load_const (reg, &upper);
 
-      macro_build (NULL, "slli", "d,s,>", reg, reg, shift);
+      md_assemblef ("slli x%d, x%d, 0x%x", reg, reg, shift);
       if (lower.X_add_number != 0)
-	macro_build (&lower, "addi", "d,s,j", reg, reg, BFD_RELOC_RISCV_LO12_I);
+	md_assemblef ("addi x%d, x%d, %" BFD_VMA_FMT "d", reg, reg,
+		      lower.X_add_number);
     }
   else
     {
@@ -1043,13 +1081,16 @@ load_const (int reg, expressionS *ep)
 
       if (upper.X_add_number != 0)
 	{
-	  macro_build (ep, "lui", "d,u", reg, BFD_RELOC_RISCV_HI20);
+	  /* Discard low part and zero-extend upper immediate.  */
+	  upper_imm = ((uint32_t)upper.X_add_number >> shift);
+
+	  md_assemblef ("lui x%d, 0x%" BFD_VMA_FMT "x", reg, upper_imm);
 	  hi_reg = reg;
 	}
 
       if (lower.X_add_number != 0 || hi_reg == 0)
-	macro_build (ep, ADD32_INSN, "d,s,j", reg, hi_reg,
-		     BFD_RELOC_RISCV_LO12_I);
+	md_assemblef ("%s x%d, x%d, %" BFD_VMA_FMT "d", ADD32_INSN, reg, hi_reg,
+		      lower.X_add_number);
     }
 }
 
@@ -1399,7 +1440,7 @@ riscv_ip (char *str, struct riscv_cl_insn *ip, expressionS *imm_expr,
       if ((insn->xlen_requirement != 0) && (xlen != insn->xlen_requirement))
 	continue;
 
-      if (!riscv_multi_subset_supports (insn->subset))
+      if (!riscv_multi_subset_supports (insn->insn_class))
 	continue;
 
       create_insn (ip, insn);

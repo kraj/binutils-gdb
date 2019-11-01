@@ -21,7 +21,6 @@
 
 #include "defs.h"
 #include "probe.h"
-#include "gdbsupport/vec.h"
 #include "elf-bfd.h"
 #include "gdbtypes.h"
 #include "obstack.h"
@@ -122,7 +121,7 @@ public:
   CORE_ADDR get_relocated_address (struct objfile *objfile) override;
 
   /* See probe.h.  */
-  unsigned get_argument_count (struct frame_info *frame) override;
+  unsigned get_argument_count (struct gdbarch *gdbarch) override;
 
   /* See probe.h.  */
   bool can_evaluate_arguments () const override;
@@ -152,7 +151,7 @@ public:
   struct dtrace_probe_arg *get_arg_by_number (unsigned n,
 					      struct gdbarch *gdbarch);
 
-  /* Build the GDB internal expressiosn that, once evaluated, will
+  /* Build the GDB internal expression that, once evaluated, will
      calculate the values of the arguments of the probe.  */
   void build_arg_exprs (struct gdbarch *gdbarch);
 
@@ -693,7 +692,7 @@ dtrace_probe::get_relocated_address (struct objfile *objfile)
 /* Implementation of the get_argument_count method.  */
 
 unsigned
-dtrace_probe::get_argument_count (struct frame_info *frame)
+dtrace_probe::get_argument_count (struct gdbarch *gdbarch)
 {
   return m_args.size ();
 }

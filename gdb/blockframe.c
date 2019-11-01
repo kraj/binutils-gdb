@@ -209,7 +209,7 @@ clear_pc_function_cache (void)
 
 /* See symtab.h.  */
 
-int
+bool
 find_pc_partial_function (CORE_ADDR pc, const char **name, CORE_ADDR *address,
 			  CORE_ADDR *endaddr, const struct block **block)
 {
@@ -219,7 +219,7 @@ find_pc_partial_function (CORE_ADDR pc, const char **name, CORE_ADDR *address,
   struct compunit_symtab *compunit_symtab = NULL;
   CORE_ADDR mapped_pc;
 
-  /* To ensure that the symbol returned belongs to the correct setion
+  /* To ensure that the symbol returned belongs to the correct section
      (and that the last [random] symbol from the previous section
      isn't returned) try to find the section containing PC.  First try
      the overlay code (which by default returns NULL); and second try
@@ -331,7 +331,9 @@ find_pc_partial_function (CORE_ADDR pc, const char **name, CORE_ADDR *address,
 	*address = 0;
       if (endaddr != NULL)
 	*endaddr = 0;
-      return 0;
+      if (block != nullptr)
+	*block = nullptr;
+      return false;
     }
 
   cache_pc_function_low = BMSYMBOL_VALUE_ADDRESS (msymbol);
@@ -372,7 +374,7 @@ find_pc_partial_function (CORE_ADDR pc, const char **name, CORE_ADDR *address,
   if (block != nullptr)
     *block = cache_pc_function_block;
 
-  return 1;
+  return true;
 }
 
 /* See symtab.h.  */

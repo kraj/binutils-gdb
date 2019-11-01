@@ -25,6 +25,7 @@
 #include "libiberty.h"
 #include "progress.h"
 #include "bfdlink.h"
+#include "ctf-api.h"
 #include "filenames.h"
 
 #include "ld.h"
@@ -148,7 +149,9 @@ static struct bfd_link_callbacks link_callbacks =
   einfo,
   info_msg,
   minfo,
-  ldlang_override_segment_assignment
+  ldlang_override_segment_assignment,
+  ldlang_ctf_apply_strsym,
+  ldlang_write_ctf_late
 };
 
 static bfd_assert_handler_type default_bfd_assert_handler;
@@ -816,9 +819,9 @@ add_archive_element (struct bfd_link_info *info,
   input->local_sym_name = abfd->filename;
   input->the_bfd = abfd;
 
-  parent = abfd->my_archive->usrdata;
+  parent = bfd_usrdata (abfd->my_archive);
   if (parent != NULL && !parent->flags.reload)
-    parent->next = (lang_statement_union_type *) input;
+    parent->next = input;
 
   /* Save the original data for trace files/tries below, as plugins
      (if enabled) may possibly alter it to point to a replacement

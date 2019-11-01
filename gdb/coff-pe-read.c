@@ -136,7 +136,7 @@ get_section_vmas (bfd *abfd, asection *sectp, void *context)
          bfd_get_section_vma() within memory.  Store the offset.  */
 
       sections[sectix].vma_offset
-	= bfd_get_section_vma (abfd, sectp) - sections[sectix].rva_start;
+	= bfd_section_vma (sectp) - sections[sectix].rva_start;
     }
 }
 
@@ -541,7 +541,7 @@ read_pe_exported_syms (minimal_symbol_reader &reader,
 
 
       /* Pointer to the function address vector.  */
-      /* This is relatived to ordinal value. */
+      /* This is relative to ordinal value. */
       unsigned long func_rva = pe_as32 (erva + exp_funcbase +
                                         ordinal * 4);
 
@@ -614,7 +614,7 @@ read_pe_exported_syms (minimal_symbol_reader &reader,
 /* Extract from ABFD the offset of the .text section.
    This offset is mainly related to the offset within the file.
    The value was previously expected to be 0x1000 for all files,
-   but some Windows OS core DLLs seem to use 0x10000 section alignement
+   but some Windows OS core DLLs seem to use 0x10000 section alignment
    which modified the return value of that function.
    Still return default 0x1000 value if ABFD is NULL or
    if '.text' section is not found, but that should not happen...  */

@@ -444,7 +444,7 @@ thread_step_over_chain_remove (struct thread_info *tp)
   step_over_chain_remove (&step_over_queue_head, tp);
 }
 
-/* Delete the thread referenced by THR.  If SILENT, don't notifyi
+/* Delete the thread referenced by THR.  If SILENT, don't notify
    the observer of this exit.
    
    THR must not be NULL or a failed assertion will be raised.  */
@@ -709,7 +709,7 @@ delete_exited_threads (void)
       delete_thread (tp);
 }
 
-/* Return true value if stack temporaies are enabled for the thread
+/* Return true value if stack temporaries are enabled for the thread
    TP.  */
 
 bool
@@ -1204,7 +1204,7 @@ print_thread_info (struct ui_out *uiout, const char *requested_threads,
 struct info_threads_opts
 {
   /* For "-gid".  */
-  int show_global_ids = 0;
+  bool show_global_ids = false;
 };
 
 static const gdb::option::option_def info_threads_option_defs[] = {
@@ -1574,7 +1574,7 @@ static const gdb::option::option_def thr_qcs_flags_option_defs[] = {
    ASCENDING and FLAGS as context.  */
 
 static inline std::array<gdb::option::option_def_group, 2>
-make_thread_apply_all_options_def_group (int *ascending,
+make_thread_apply_all_options_def_group (bool *ascending,
 					 qcs_flags *flags)
 {
   return {{
@@ -1603,7 +1603,7 @@ make_thread_apply_options_def_group (qcs_flags *flags)
 static void
 thread_apply_all_command (const char *cmd, int from_tty)
 {
-  int ascending = false;
+  bool ascending = false;
   qcs_flags flags;
 
   auto group = make_thread_apply_all_options_def_group (&ascending,
@@ -1951,7 +1951,7 @@ thread_find_command (const char *arg, int from_tty)
 }
 
 /* Print notices when new threads are attached and detached.  */
-int print_thread_events = 1;
+bool print_thread_events = true;
 static void
 show_print_thread_events (struct ui_file *file, int from_tty,
 			  struct cmd_list_element *c, const char *value)
@@ -2150,7 +2150,7 @@ Options:\n\
 
   const auto thread_apply_opts = make_thread_apply_options_def_group (nullptr);
 
-  static std::string thread_apply_help = gdb::option::build_help (N_("\
+  static std::string thread_apply_help = gdb::option::build_help (_("\
 Apply a command to a list of threads.\n\
 Usage: thread apply ID... [OPTION]... COMMAND\n\
 ID is a space-separated list of IDs of threads to apply COMMAND on.\n"
@@ -2166,7 +2166,7 @@ THREAD_APPLY_OPTION_HELP),
   const auto thread_apply_all_opts
     = make_thread_apply_all_options_def_group (nullptr, nullptr);
 
-  static std::string thread_apply_all_help = gdb::option::build_help (N_("\
+  static std::string thread_apply_all_help = gdb::option::build_help (_("\
 Apply a command to all threads.\n\
 \n\
 Usage: thread apply all [OPTION]... COMMAND\n"

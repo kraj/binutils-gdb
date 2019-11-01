@@ -56,7 +56,7 @@ static struct cmd_list_element *compile_command_list;
 
 /* Debug flag for "compile" commands.  */
 
-int compile_debug;
+bool compile_debug;
 
 /* Object of this type are stored in the compiler's symbol_err_map.  */
 
@@ -241,7 +241,7 @@ show_compile_debug (struct ui_file *file, int from_tty,
 struct compile_options
 {
   /* For -raw.  */
-  int raw = false;
+  bool raw = false;
 };
 
 using compile_flag_option_def
@@ -635,7 +635,7 @@ get_args (const compile_instance *compiler, struct gdbarch *gdbarch,
   int argc_compiler;
   char **argv_compiler;
 
-  build_argc_argv (gdbarch_gcc_target_options (gdbarch),
+  build_argc_argv (gdbarch_gcc_target_options (gdbarch).c_str (),
 		   argcp, argvp);
 
   cs_producer_options = get_selected_pc_producer_options ();
@@ -971,13 +971,14 @@ Command to compile source code and inject it into the inferior."),
   const auto compile_opts = make_compile_options_def_group (nullptr);
 
   static const std::string compile_code_help
-    = gdb::option::build_help (N_("\
+    = gdb::option::build_help (_("\
 Compile, inject, and execute code.\n\
 \n\
 Usage: compile code [OPTION]... [CODE]\n\
 \n\
 Options:\n\
 %OPTIONS%\n\
+\n\
 The source code may be specified as a simple one line expression, e.g.:\n\
 \n\
     compile code printf(\"Hello world\\n\");\n\
@@ -994,7 +995,7 @@ indicate the end of the expression."),
   set_cmd_completer_handle_brkchars (c, compile_code_command_completer);
 
 static const std::string compile_file_help
-    = gdb::option::build_help (N_("\
+    = gdb::option::build_help (_("\
 Evaluate a file containing source code.\n\
 \n\
 Usage: compile file [OPTION].. [FILENAME]\n\
@@ -1011,13 +1012,14 @@ Options:\n\
   const auto compile_print_opts = make_value_print_options_def_group (nullptr);
 
   static const std::string compile_print_help
-    = gdb::option::build_help (N_("\
+    = gdb::option::build_help (_("\
 Evaluate EXPR by using the compiler and print result.\n\
 \n\
 Usage: compile print [[OPTION]... --] [/FMT] [EXPR]\n\
 \n\
 Options:\n\
-%OPTIONS%\
+%OPTIONS%\n\
+\n\
 Note: because this command accepts arbitrary expressions, if you\n\
 specify any command option, you must use a double dash (\"--\")\n\
 to mark the end of option processing.  E.g.: \"compile print -o -- myobj\".\n\
@@ -1049,8 +1051,8 @@ When on, compile command debugging is enabled."),
 
   add_setshow_string_cmd ("compile-args", class_support,
 			  &compile_args,
-			  _("Set compile command GCC command-line arguments"),
-			  _("Show compile command GCC command-line arguments"),
+			  _("Set compile command GCC command-line arguments."),
+			  _("Show compile command GCC command-line arguments."),
 			  _("\
 Use options like -I (include file directory) or ABI settings.\n\
 String quoting is parsed like in shell, for example:\n\
@@ -1078,9 +1080,9 @@ String quoting is parsed like in shell, for example:\n\
   add_setshow_optional_filename_cmd ("compile-gcc", class_support,
 				     &compile_gcc,
 				     _("Set compile command "
-				       "GCC driver filename"),
+				       "GCC driver filename."),
 				     _("Show compile command "
-				       "GCC driver filename"),
+				       "GCC driver filename."),
 				     _("\
 It should be absolute filename of the gcc executable.\n\
 If empty the default target triplet will be searched in $PATH."),

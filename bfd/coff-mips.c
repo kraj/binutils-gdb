@@ -1012,8 +1012,7 @@ mips_relocate_section (bfd *output_bfd,
 
 		  /* Compute a new r_symndx value.  */
 		  s = h->root.u.def.section;
-		  name = bfd_get_section_name (output_bfd,
-					       s->output_section);
+		  name = bfd_section_name (s->output_section);
 
 		  int_rel.r_symndx = -1;
 		  switch (name[1])
@@ -1223,7 +1222,7 @@ mips_relocate_section (bfd *output_bfd,
 		if (int_rel.r_extern)
 		  name = NULL;
 		else
-		  name = bfd_section_name (input_bfd, s);
+		  name = bfd_section_name (s);
 		(*info->callbacks->reloc_overflow)
 		  (info, (h ? &h->root : NULL), name, howto->name,
 		   (bfd_vma) 0, input_bfd, input_section,
@@ -1416,6 +1415,7 @@ static const struct ecoff_backend_data mips_ecoff_backend_data =
 #define _bfd_ecoff_bfd_merge_sections bfd_generic_merge_sections
 
 #define _bfd_ecoff_bfd_is_group_section bfd_generic_is_group_section
+#define _bfd_ecoff_bfd_group_name bfd_generic_group_name
 #define _bfd_ecoff_bfd_discard_group bfd_generic_discard_group
 #define _bfd_ecoff_section_already_linked \
   _bfd_coff_section_already_linked

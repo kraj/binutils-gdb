@@ -46,21 +46,6 @@ static bfd_boolean insn32;
 static bfd_boolean ignore_branch_isa;
 static bfd_boolean compact_branches;
 
-static void
-mips_after_parse (void)
-{
-  /* .gnu.hash and the MIPS ABI require .dynsym to be sorted in different
-     ways.  .gnu.hash needs symbols to be grouped by hash code whereas the
-     MIPS ABI requires a mapping between the GOT and the symbol table.  */
-  if (link_info.emit_gnu_hash)
-    {
-      einfo (_("%X%P: .gnu.hash is incompatible with the MIPS ABI\n"));
-      link_info.emit_hash = TRUE;
-      link_info.emit_gnu_hash = FALSE;
-    }
-  gld${EMULATION_NAME}_after_parse ();
-}
-
 struct hook_stub_info
 {
   lang_statement_list_type add;
@@ -183,7 +168,7 @@ mips_add_stub_section (const char *stub_sec_name, asection *input_section,
   /* Set the flags.  */
   flags = (SEC_ALLOC | SEC_LOAD | SEC_READONLY | SEC_CODE
 	   | SEC_HAS_CONTENTS | SEC_IN_MEMORY | SEC_KEEP);
-  if (!bfd_set_section_flags (stub_bfd, stub_sec, flags))
+  if (!bfd_set_section_flags (stub_sec, flags))
     goto err_ret;
 
   os = lang_output_section_get (output_section);
@@ -241,26 +226,6 @@ mips_before_allocation (void)
 
   gld${EMULATION_NAME}_before_allocation ();
 }
-
-/* Avoid processing the fake stub_file in vercheck, stat_needed and
-   check_needed routines.  */
-
-static void (*real_func) (lang_input_statement_type *);
-
-static void mips_for_each_input_file_wrapper (lang_input_statement_type *l)
-{
-  if (l != stub_file)
-    (*real_func) (l);
-}
-
-static void
-mips_lang_for_each_input_file (void (*func) (lang_input_statement_type *))
-{
-  real_func = func;
-  lang_for_each_input_file (&mips_for_each_input_file_wrapper);
-}
-
-#define lang_for_each_input_file mips_lang_for_each_input_file
 
 EOF
 
@@ -337,6 +302,5 @@ PARSE_AND_LIST_ARGS_CASES='
       break;
 '
 
-LDEMUL_AFTER_PARSE=mips_after_parse
 LDEMUL_BEFORE_ALLOCATION=mips_before_allocation
 LDEMUL_CREATE_OUTPUT_SECTION_STATEMENTS=mips_create_output_section_statements
