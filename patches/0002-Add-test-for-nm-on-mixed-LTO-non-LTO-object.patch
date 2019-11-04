@@ -1,4 +1,4 @@
-From 389d05762eddf6c0625a4bc1ee66de81bf1427ae Mon Sep 17 00:00:00 2001
+From 039bf59f0cdfa9538cdb7525a4d87f3869e44228 Mon Sep 17 00:00:00 2001
 From: "H.J. Lu" <hjl.tools@gmail.com>
 Date: Fri, 7 Mar 2014 10:51:47 -0800
 Subject: [PATCH 2/3] Add test for nm on mixed LTO/non-LTO object
@@ -33,5 +33,5 @@ index a079046163..fb8ead4c0b 100644
  run_cc_link_tests $lto_link_symbol_tests
  
 -- 
-2.20.1
+2.21.0
 

@@ -1,4 +1,4 @@
-From 20e87f4bc611fa29c9145e0f32f8f0e99c464973 Mon Sep 17 00:00:00 2001
+From 1bc6fbec6297ec52b4d8d279698838f39af82138 Mon Sep 17 00:00:00 2001
 From: "H.J. Lu" <hjl.tools@gmail.com>
 Date: Sun, 8 Feb 2015 17:53:24 -0800
 Subject: [PATCH 3/3] Don't check the plugin target twice
@@ -67,5 +67,5 @@ index bd1f63c0c4..14ee33cbaf 100644
  #endif
  
 -- 
-2.20.1
+2.21.0
 
