@@ -38,10 +38,10 @@
 #include "infrun.h"
 #include "event-loop.h"
 #include "inf-loop.h"
-#include "gdbsupport/vec.h"
 #include "inferior.h"
 #include <algorithm>
 #include "gdbarch.h"
+#include "cli/cli-style.h"
 
 static const target_info record_btrace_target_info = {
   "record-btrace",
@@ -1084,7 +1084,7 @@ btrace_call_history_src_line (struct ui_out *uiout,
 
   uiout->field_string ("file",
 		       symtab_to_filename_for_display (symbol_symtab (sym)),
-		       ui_out_style_kind::FILE);
+		       file_name_style.style ());
 
   btrace_compute_src_line_range (bfun, &begin, &end);
   if (end < begin)
@@ -1176,13 +1176,13 @@ btrace_call_history (struct ui_out *uiout,
 
       if (sym != NULL)
 	uiout->field_string ("function", SYMBOL_PRINT_NAME (sym),
-			     ui_out_style_kind::FUNCTION);
+			     function_name_style.style ());
       else if (msym != NULL)
 	uiout->field_string ("function", MSYMBOL_PRINT_NAME (msym),
-			     ui_out_style_kind::FUNCTION);
+			     function_name_style.style ());
       else if (!uiout->is_mi_like_p ())
 	uiout->field_string ("function", "??",
-			     ui_out_style_kind::FUNCTION);
+			     function_name_style.style ());
 
       if ((flags & RECORD_PRINT_INSN_RANGE) != 0)
 	{
@@ -1435,8 +1435,7 @@ record_btrace_target::xfer_partial (enum target_object object,
 	    if (section != NULL)
 	      {
 		/* Check if the section we found is readonly.  */
-		if ((bfd_get_section_flags (section->the_bfd_section->owner,
-					    section->the_bfd_section)
+		if ((bfd_section_flags (section->the_bfd_section)
 		     & SEC_READONLY) != 0)
 		  {
 		    /* Truncate the request to fit into this section.  */
@@ -1560,7 +1559,7 @@ record_btrace_target::store_registers (struct regcache *regcache, int regno)
       && record_is_replaying (regcache->ptid ()))
     error (_("Cannot write registers while replaying."));
 
-  gdb_assert (may_write_registers != 0);
+  gdb_assert (may_write_registers);
 
   this->beneath ()->store_registers (regcache, regno);
 }
@@ -1862,7 +1861,7 @@ record_btrace_frame_dealloc_cache (struct frame_info *self, void *this_cache)
 }
 
 /* btrace recording does not store previous memory content, neither the stack
-   frames content.  Any unwinding would return errorneous results as the stack
+   frames content.  Any unwinding would return erroneous results as the stack
    contents no longer matches the changed PC value restored from history.
    Therefore this unwinder reports any possibly unwound registers as
    <unavailable>.  */
@@ -1973,7 +1972,7 @@ get_thread_current_frame_id (struct thread_info *tp)
      For the latter, EXECUTING is false and this has no effect.
      For the former, EXECUTING is true and we're in wait, about to
      move the thread.  Since we need to recompute the stack, we temporarily
-     set EXECUTING to flase.  */
+     set EXECUTING to false.  */
   executing = tp->executing;
   set_executing (inferior_ptid, false);
 

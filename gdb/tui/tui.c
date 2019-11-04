@@ -237,7 +237,7 @@ tui_rl_other_window (int count, int key)
   if (win_info)
     {
       tui_set_win_focus_to (win_info);
-      keypad (TUI_CMD_WIN->handle, (win_info != TUI_CMD_WIN));
+      keypad (TUI_CMD_WIN->handle.get (), win_info != TUI_CMD_WIN);
     }
   return 0;
 }
@@ -329,13 +329,17 @@ tui_initialize_readline (void)
   int i;
   Keymap tui_ctlx_keymap;
 
-  rl_initialize ();
-
   rl_add_defun ("tui-switch-mode", tui_rl_switch_mode, -1);
   rl_add_defun ("gdb-command", tui_rl_command_key, -1);
   rl_add_defun ("next-keymap", tui_rl_next_keymap, -1);
 
   tui_keymap = rl_make_bare_keymap ();
+
+  /* The named keymap feature was added in Readline 8.0.  */
+#if RL_READLINE_VERSION >= 0x800
+  rl_set_keymap_name ("SingleKey", tui_keymap);
+#endif
+
   tui_ctlx_keymap = rl_make_bare_keymap ();
   tui_readline_standard_keymap = rl_get_keymap ();
 
@@ -401,7 +405,7 @@ tui_enable (void)
   if (tui_active)
     return;
 
-  /* To avoid to initialize curses when gdb starts, there is a defered
+  /* To avoid to initialize curses when gdb starts, there is a deferred
      curses initialization.  This initialization is made only once
      and the first time the curses mode is entered.  */
   if (tui_finish_init)
@@ -467,7 +471,6 @@ tui_enable (void)
       nodelay(w, FALSE);
       nl();
       keypad (w, TRUE);
-      rl_initialize ();
       tui_set_term_height_to (LINES);
       tui_set_term_width_to (COLS);
       def_prog_mode ();
@@ -475,8 +478,8 @@ tui_enable (void)
       tui_show_frame_info (0);
       tui_set_layout (SRC_COMMAND);
       tui_set_win_focus_to (TUI_SRC_WIN);
-      keypad (TUI_CMD_WIN->handle, TRUE);
-      wrefresh (TUI_CMD_WIN->handle);
+      keypad (TUI_CMD_WIN->handle.get (), TRUE);
+      wrefresh (TUI_CMD_WIN->handle.get ());
       tui_finish_init = 0;
     }
   else
@@ -501,7 +504,7 @@ tui_enable (void)
      window.  */
   if (tui_win_resized ())
     {
-      tui_set_win_resized_to (FALSE);
+      tui_set_win_resized_to (false);
       tui_resize_all ();
     }
 
@@ -565,19 +568,6 @@ static void
 tui_disable_command (const char *args, int from_tty)
 {
   tui_disable ();
-}
-
-void
-strcat_to_buf (char *buf, int buflen, 
-	       const char *item_to_add)
-{
-  if (item_to_add != NULL && buf != NULL)
-    {
-      if ((strlen (buf) + strlen (item_to_add)) <= buflen)
-	strcat (buf, item_to_add);
-      else
-	strncat (buf, item_to_add, (buflen - strlen (buf)));
-    }
 }
 
 #if 0

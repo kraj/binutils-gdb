@@ -1,3 +1,154 @@
+2019-11-01  Christian Biesinger  <cbiesinger@google.com>
+
+	* configure: Regenerate.
+	* configure.ac: Remove check for strerror_r.
+
+2019-10-31  Christian Biesinger  <cbiesinger@google.com>
+
+	* config.in: Regenerate.
+	* configure: Regenerate.
+	* configure.ac: Also check for strerror_r.
+
+2019-10-31  Christian Biesinger  <cbiesinger@google.com>
+
+	* ax.h (debug_agent): Remove duplicate declaration.
+
+2019-10-26  Tom de Vries  <tdevries@suse.de>
+
+	* linux-aarch64-low.c: Fix typos in comments.
+	* linux-arm-low.c: Same.
+	* linux-low.c: Same.
+	* linux-ppc-low.c: Same.
+	* proc-service.c: Same.
+	* regcache.h: Same.
+	* server.c: Same.
+	* tracepoint.c: Same.
+	* win32-low.c: Same.
+
+2019-10-25  Tom Tromey  <tromey@adacore.com>
+
+	* utils.c (xstrdup): Remove.
+
+2019-10-23  Tom Tromey  <tom@tromey.com>
+
+	* configure, config.in: Rebuild.
+
+2019-10-23  Tom Tromey  <tom@tromey.com>
+
+	* configure: Rebuild.
+	* acinclude.m4: Use m4_include, not sinclude.
+
+2019-10-17  Tom Tromey  <tromey@adacore.com>
+
+	* configure: Rebuild.
+	* configure.ac: Use AC_CONFIG_HEADERS.  Create stamp-h there, not
+	in AC_CONFIG_FILES invocation.
+	* Makefile.in (stamp-h, Makefile): Use new-style config.status
+	invocation.
+
+2019-10-16  Christian Biesinger  <cbiesinger@google.com>
+
+	* server.c: Include xml-builtin.h.
+	(get_xml_features): Don't declare xml_builtins here.
+
+2019-10-15  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* Makefile.in: Remove references to vec-ipa.o.
+
+2019-10-15  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* Makefile.in: Remove references to vec.c.
+
+2019-10-02  Christian Biesinger  <cbiesinger@google.com>
+
+	* server.c (server_waiting): Change to bool.
+	(extended_protocol): Likewise.
+	(response_needed): Likewise.
+	(exit_requested): Likewise.
+	(run_once): Likewise.
+	(report_no_resumed): Likewise.
+	(non_stop): Likewise.
+	(disable_packet_vCont): Likewise.
+	(disable_packet_Tthread): Likewise.
+	(disable_packet_qC): Likewise.
+	(disable_packet_qfThreadInfo): Likewise.
+	(handle_general_set): Update.
+	(handle_detach): Update.
+	(handle_monitor_command): Update.
+	(handle_query): Update.
+	(captured_main): Update.
+	(process_serial_event): Update.
+	* server.h (server_waiting): Change to bool.
+	(disable_packet_vCont): Likewise.
+	(disable_packet_Tthread): Likewise.
+	(disable_packet_qC): Likewise.
+	(disable_packet_qfThreadInfo): Likewise.
+	(run_once): Likewise.
+	(non_stop): Likewise.
+	* target.c (target_stop_and_wait): Update.
+
+2019-10-02  Tom Tromey  <tromey@adacore.com>
+
+	* Makefile.in (SFILES): Add common-inferior.c.
+	(OBS): Add common-inferior.o.
+	* server.c (startup_with_shell): Don't define.
+
+2019-10-02  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* linux-low.c (linux_low_read_btrace): Update for change to
+	std::vector.
+
+2019-09-20  Christian Biesinger  <cbiesinger@google.com>
+
+	* debug.c (debug_threads): Remove comment in favor of the header.
+	* debug.h (using_threads): Add declaration.
+	(debug_threads): Add comment.
+	* linux-aarch64-low.c: Include debug.h and remove declaration of
+	debug_threads.
+	* nto-low.c: Likewise.
+	* remote-utils.c: Likewise.
+	* thread-db.c: Likewise.
+
+2019-09-20  Ulrich Weigand  <uweigand@de.ibm.com>
+
+	* configure.srv (ipa_ppc_linux_regobj): Remove powerpc-cell32l-ipa.o
+	and powerpc-cell64l-ipa.o.
+	(powerpc*-*-linux*): Remove powerpc-cell32l.o and powerpc-cell64l.o
+	from srv_regobj.  Remove rs6000/powerpc-cell32l.xml and
+	rs6000/powerpc-cell64l.xml from srv_xmlfiles.
+	(spu*-*-*): Remove.
+
+	* spu-low.c: Remove file.
+
+	* linux-ppc-low.c (INSTR_SC, NR_spu_run): Remove.
+	(parse_spufs_run): Remove.
+	(ppc_get_pc): Remove Cell/B.E. support.
+	(ppc_set_pc): Likewise.
+	(ppc_breakpoint_at): Likewise.
+	(ppc_arch_setup): Likewise.
+	(ppc_get_ipa_tdesc_idx): Do not handle tdesc_powerpc_cell64l or
+	tdesc_powerpc_cell32l.
+	(initialize_low_arch): Do not call init_registers_powerpc_cell64l
+	or init_registers_powerpc_cell32l.
+	* linux-ppc-ipa.c (get_ipa_tdesc): Do not handle PPC_TDESC_CELL.
+	(initialize_low_tracepoint): Do not call init_registers_powerpc_cell64l
+	or init_registers_powerpc_cell32l.
+	* linux-ppc-tdesc-init.h (PPC_TDESC_CELL): Mark as unused.
+	(init_registers_powerpc_cell32l): Remove prototype.
+	(init_registers_powerpc_cell64l): Likewise.
+
+	* target.h (struct target_ops): Remove qxfer_spu member.
+	* server.c (handle_qxfer_spu): Remove.
+	(qxfer_packets): Remove entry for "spu".
+	(handle_query): No longer support qXfer:spu:read or qXfer:spu:write.
+	* linux-low.c (SPUFS_MAGIC): Remove.
+	(spu_enumerate_spu_ids): Remove.
+	(linux_qxfer_spu): Remove.
+	(linux_target_ops): Remove qxfer_spu member.
+	* lynx-low.c (lynx_target_ops): Remove qxfer_spu member.
+	* nto-low.c (nto_target_ops): Remove qxfer_spu member.
+	* win32-low.c (win32_target_ops): Remove qxfer_spu member.
+
 2019-08-23  Sergio Durigan Junior  <sergiodj@redhat.com>
 
 	* Makefile.in (SFILES): Add 'gdbsupport/gdb-dlfcn.c'.

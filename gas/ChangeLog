@@ -1,3 +1,232 @@
+2019-11-04  Jan Beulich  <jbeulich@suse.com>
+
+	* config/tc-i386.c (process_operands): Handle ShortForm insns
+	later, splitting out their segment register sub-form.
+
+2019-10-31  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* testsuite/gas/i386/general.s: Add .code16gcc fldenv tests.
+	* testsuite/gas/i386/general.l: Updated.
+
+2019-10-31  Mihail Ionescu  <mihail.ionescu@arm.com>
+
+	* config/tc-arm.c (selected_ctx_ext_table) New static variable.
+	(arm_parse_arch): Set context sensitive extension table based on the
+	chosen base architecture.
+	(s_arm_arch_extension): Change to lookup extensions in the new context
+	sensitive tables.
+	* gas/testsuite/gas/arm/mve-ext.s: New.
+	* gas/testsuite/gas/arm/mve-ext.d: New.
+	* gas/testsuite/gas/arm/mvefp-ext.s: New.
+	* gas/testsuite/gas/arm/mvefp-ext.d: New.
+
+2019-10-30  Delia Burduv  <Delia.Burduv@arm.com>
+
+	* config/tc-aarch64.c (parse_address_main): Accept the omission of
+	the immediate argument for ldraa and ldrab as a shorthand for the
+	immediate being 0.
+	* testsuite/gas/aarch64/ldraa-ldrab-no-offset.d: New test.
+	* testsuite/gas/aarch64/ldraa-ldrab-no-offset.s: New test.
+	* testsuite/gas/aarch64/illegal-ldraa.s: Modified to accept the
+	writeback form with no offset.
+	* testsuite/gas/aarch64/illegal-ldraa.s: Removed missing offset
+	error.
+
+2019-10-30  Jan Beulich  <jbeulich@suse.com>
+
+	* testsuite/gas/i386/noreg16.d, testsuite/gas/i386/noreg16.s,
+	testsuite/gas/i386/noreg32.d, testsuite/gas/i386/noreg32.s,
+	testsuite/gas/i386/noreg64.d, testsuite/gas/i386/noreg64.s: New.
+	* testsuite/gas/i386/i386.exp: Run new tests.
+
+2019-10-30  Jan Beulich  <jbeulich@suse.com>
+
+	* config/tc-i386.c (optimize_encoding): Adjust opcodes compared
+	against. Adjust replacement opcode and clear .w.
+
+2019-10-29  Alan Modra  <amodra@gmail.com>
+
+	PR 25125
+	* dw2gencfi.c (output_cfi_insn): Don't allow DW_CFA_advance_loc4
+	to be placed in a different frag to the rs_cfa.
+
+2019-10-26  John David Anglin  <danglin@gcc.gnu.org>
+
+	PR gas/25121
+	* config/tc-hppa.c (tc_gen_reloc): Cast some enums to int.
+	(md_assemble): Likewise.
+
+2019-10-26  Alan Modra  <amodra@gmail.com>
+
+	PR 25125
+	* dw2gencfi.c (output_cfi_insn): Don't output DW_CFA_advance_loc+0.
+	* ehopt.c (eh_frame_estimate_size_before_relax): Return -1 for
+	an advance_loc of zero.
+	(eh_frame_relax_frag): Translate fr_subtype of 7 to size -1.
+	(eh_frame_convert_frag): Handle fr_subtype of 7.  Abort on
+	unexpected fr_subtype.
+
+2019-10-25  Alan Modra  <amodra@gmail.com>
+
+	PR gas/25125
+	PR gas/12049
+	* write.c (relax_frag): Correct calculation of delta for
+	positive branches where "stretch" would make the branch
+	negative.  Return zero immediately in that case.  Correct
+	TC_PCREL_ADJUST comment.
+
+2019-10-16  Alan Modra  <amodra@gmail.com>
+
+	* config/tc-xtensa.c (xg_order_trampoline_chain_entry): Don't
+	call S_GET_VALUE multiple times for a symbol.  Rearrange code
+	so it is obvious what is the primary sort key.
+	(xg_order_trampoline_chain): Similarly.
+
+2019-10-15  Alan Modra  <amodra@gmail.com>
+
+	* config/tc-nds32.c (nds32_set_section_relocs): Use relocs and n
+	parameters rather than equivalent sec->orelocation and
+	sec->reloc_count.  Don't sort for n <= 1.  Tidy.
+
+2019-10-09  Nick Clifton  <nickc@redhat.com>
+
+	PR 25041
+	* testsuite/gas/avr/pr25041.s: New test.
+	* testsuite/gas/avr/pr25041.d: New test driver.
+
+2019-10-07  Jozef Lawrynowicz  <jozef.l@mittosystems.com>
+
+	* config/tc-msp430.c (md_parse_option): Set lower_data_region_only
+	to FALSE if the data region is set to "upper", "either" or "none".
+	(msp430_object_attribute): New.
+	(md_pseudo_table): Handle .mspabi_attribute and .gnu_attribute.
+	(msp430_md_end): Replace hard-coded attribute values with enums.
+	Handle data region object attribute.
+	* doc/as.texi: Document MSP430 Data Region object attribute.
+	* doc/c-msp430.texi: Document the .mspabi_attribute directive.
+	* testsuite/gas/msp430/attr-430-small-bad.d: New test.
+	* testsuite/gas/msp430/attr-430-small-bad.l: New test.
+	* testsuite/gas/msp430/attr-430-small-good.d: New test.
+	* testsuite/gas/msp430/attr-430-small.s: New test.
+	* testsuite/gas/msp430/attr-430x-large-any-bad.d: New test.
+	* testsuite/gas/msp430/attr-430x-large-any-bad.l: New test.
+	* testsuite/gas/msp430/attr-430x-large-any-good.d: New test.
+	* testsuite/gas/msp430/attr-430x-large-any.s: New test.
+	* testsuite/gas/msp430/attr-430x-large-lower-bad.d: New test.
+	* testsuite/gas/msp430/attr-430x-large-lower-bad.l: New test.
+	* testsuite/gas/msp430/attr-430x-large-lower-good.d: New test.
+	* testsuite/gas/msp430/attr-430x-large-lower.s: New test.
+	* testsuite/gas/msp430/msp430.exp: Run new tests.
+
+2019-10-07  Jan Beulich  <jbeulich@suse.com>
+
+	* config/tc-i386.c (check_string): Make reported operand number
+	depend on Intel syntax.
+	* testsuite/gas/i386/intel-cmps.s,
+	testsuite/gas/i386/intel-cmps32.d,
+	testsuite/gas/i386/intel-cmps64.d: New.
+	* testsuite/gas/i386/i386.exp: Run new tests.
+	* testsuite/gas/i386/intel-movs.s: Extend.
+	* testsuite/gas/i386/intel-movs32.d,
+	testsuite/gas/i386/intel-movs64.d: Adjust expectations.
+	* testsuite/gas/i386/string-bad.l: Tighten expectations.
+
+2019-09-24  Tamar Christina  <tamar.christina@arm.com>
+
+	PR gas/24991
+	* config/tc-arm.c (out_of_range_p): New.
+	(md_apply_fix): Use it in BFD_RELOC_THUMB_PCREL_BRANCH9,
+	BFD_RELOC_THUMB_PCREL_BRANCH12, BFD_RELOC_THUMB_PCREL_BRANCH20,
+	BFD_RELOC_THUMB_PCREL_BRANCH23, BFD_RELOC_THUMB_PCREL_BRANCH25
+	* testsuite/gas/arm/pr24991.d: New test.
+	* testsuite/gas/arm/pr24991.l: New test.
+	* testsuite/gas/arm/pr24991.s: New test.
+
+2019-09-23  Alan Modra  <amodra@gmail.com>
+
+	* config/obj-ecoff.c: Include ecoff-bfd.h.
+	* config/obj-elf.c: Likewise.
+
+2019-09-23  Alan Modra  <amodra@gmail.com>
+
+	* config/tc-arm.c: Include cpu-arm.h.
+
+2019-09-21  Alan Modra  <amodra@gmail.com>
+
+	* config/tc-i386.c (md_parse_option): Fix warning on vexwig assignment.
+
+2019-09-20  Alan Modra  <amodra@gmail.com>
+
+	* config/tc-tic6x.c (tc_gen_reloc): Correct common symbol check.
+
+2018-09-20  Jan Beulich  <jbeulich@suse.com>
+
+	PR gas/25012
+	* config/tc-i386.c (process_operands): Adjust handling of
+	PUSH/POP of segment registers.
+	* testsuite/gas/i386/x86-64-opcode.s: Add PUSHq/POPq case with
+	%fs/%gs operands. Add PUSHF/POPF case without suffix.
+	* testsuite/gas/i386/x86-64-opcode.d: Adjust expectations.
+
+2019-09-19  Matthew Malcomson  <matthew.malcomson@arm.com>
+
+	* NEWS: Add SVE2 and TME entries.
+
+2019-09-18  Alan Modra  <amodra@gmail.com>
+
+	* as.c, * as.h, * dw2gencfi.c, * dwarf2dbg.c, * ecoff.c,
+	* read.c, * stabs.c, * subsegs.c, * subsegs.h, * write.c,
+	* config/obj-coff-seh.c, * config/obj-coff.c, * config/obj-ecoff.c,
+	* config/obj-elf.c, * config/obj-macho.c, * config/obj-som.c,
+	* config/tc-aarch64.c, * config/tc-alpha.c, * config/tc-arc.c,
+	* config/tc-arm.c, * config/tc-avr.c, * config/tc-bfin.c,
+	* config/tc-bpf.c, * config/tc-d10v.c, * config/tc-d30v.c,
+	* config/tc-epiphany.c, * config/tc-fr30.c, * config/tc-frv.c,
+	* config/tc-h8300.c, * config/tc-hppa.c, * config/tc-i386.c,
+	* config/tc-ia64.c, * config/tc-ip2k.c, * config/tc-iq2000.c,
+	* config/tc-lm32.c, * config/tc-m32c.c, * config/tc-m32r.c,
+	* config/tc-m68hc11.c, * config/tc-mep.c, * config/tc-microblaze.c,
+	* config/tc-mips.c, * config/tc-mmix.c, * config/tc-mn10200.c,
+	* config/tc-mn10300.c, * config/tc-msp430.c, * config/tc-mt.c,
+	* config/tc-nds32.c, * config/tc-or1k.c, * config/tc-ppc.c,
+	* config/tc-pru.c, * config/tc-rl78.c, * config/tc-rx.c,
+	* config/tc-s12z.c, * config/tc-s390.c, * config/tc-score.c,
+	* config/tc-score7.c, * config/tc-sh.c, * config/tc-sparc.c,
+	* config/tc-spu.c, * config/tc-tic4x.c, * config/tc-tic54x.c,
+	* config/tc-tic6x.c, * config/tc-tilegx.c, * config/tc-tilepro.c,
+	* config/tc-v850.c, * config/tc-visium.c, * config/tc-wasm32.c,
+	* config/tc-xc16x.c, * config/tc-xgate.c, * config/tc-xstormy16.c,
+	* config/tc-xtensa.c, * config/tc-z8k.c: Update throughout for
+	bfd section macro and function changes.
+	* write.c (compress_debug): Use bfd_rename_section.
+
+2019-09-18  Alan Modra  <amodra@gmail.com>
+
+	* symbols.c (S_IS_LOCAL): Update bfd_get_section to
+	bfd_asymbol_section.
+
+2019-09-18  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* Makefile.in: Re-generate.
+	* configure: Re-generate.
+	* doc/Makefile.in: Re-generate.
+
+2019-09-17  Maxim Blinov  <maxim.blinov@embecosm.com>
+
+	* config/tc-riscv.c (riscv_multi_subset_supports): Handle
+	insn_class enum rather than subset char string.
+	(riscv_ip): Update call to riscv_multi_subset_supports.
+
+2019-09-16  Phil Blundell  <pb@pbcl.net>
+
+	* Makefile.in, configure, doc/Makefile.in: Regenerated.
+
+2019-09-10  Nick Clifton  <nickc@redhat.com>
+
+	PR 24907
+	* testsuite/gas/arm/pr24907.s: New test.
+	* testsuite/gas/arm/pr24907.d: Expected disassembly.
+
 2019-09-09  Phil Blundell  <pb@pbcl.net>
 
 	binutils 2.33 branch created.

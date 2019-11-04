@@ -251,7 +251,7 @@ print_command_lines (struct ui_out *uiout, struct command_line *cmd,
 	}
 
       /* An if command.  Recursively print both arms before
-	 continueing.  */
+	 continuing.  */
       if (list->control_type == if_control)
 	{
 	  uiout->field_fmt (NULL, "if %s", list->line);
@@ -449,7 +449,6 @@ void
 execute_user_command (struct cmd_list_element *c, const char *args)
 {
   counted_command_line cmdlines_copy;
-  extern unsigned int max_user_call_depth;
 
   /* Ensure that the user commands can't be deleted while they are
      executing.  */

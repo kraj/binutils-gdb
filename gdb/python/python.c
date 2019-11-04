@@ -441,7 +441,7 @@ gdbpy_parameter_value (enum var_types type, void *var)
 
     case var_boolean:
       {
-	if (* (int *) var)
+	if (* (bool *) var)
 	  Py_RETURN_TRUE;
 	else
 	  Py_RETURN_FALSE;
@@ -1590,7 +1590,14 @@ do_start_initialization ()
 {
 #ifdef IS_PY3K
   size_t progsize, count;
-  wchar_t *progname_copy;
+  /* Python documentation indicates that the memory given
+     to Py_SetProgramName cannot be freed.  However, it seems that
+     at least Python 3.7.4 Py_SetProgramName takes a copy of the
+     given program_name.  Making progname_copy static and not release
+     the memory avoids a leak report for Python versions that duplicate
+     program_name, and respect the requirement of Py_SetProgramName
+     for Python versions that do not duplicate program_name.  */
+  static wchar_t *progname_copy;
 #endif
 
 #ifdef WITH_PYTHON_PATH
@@ -1601,7 +1608,7 @@ do_start_initialization ()
      /foo/lib/pythonX.Y/...
      This must be done before calling Py_Initialize.  */
   gdb::unique_xmalloc_ptr<char> progname
-    (concat (ldirname (python_libdir).c_str (), SLASH_STRING, "bin",
+    (concat (ldirname (python_libdir.c_str ()).c_str (), SLASH_STRING, "bin",
 	      SLASH_STRING, "python", (char *) NULL));
 #ifdef IS_PY3K
   std::string oldloc = setlocale (LC_ALL, NULL);

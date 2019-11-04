@@ -19,7 +19,7 @@ dnl along with this program.  If not, see <http://www.gnu.org/licenses/>.
 dnl Process this file with autoconf to produce a configure script.
 
 AC_INIT(main.c)
-AC_CONFIG_HEADER(config.h:config.in)
+AC_CONFIG_HEADERS(config.h:config.in, [echo > stamp-h])
 AM_MAINTAINER_MODE
 
 # Set the 'development' global.
@@ -691,19 +691,17 @@ fi
 # --------------------- #
 
 dnl Utility to simplify finding libpython.
-dnl $1 = pythonX.Y
-dnl $2 = the shell variable to assign the result to
+dnl $1 = the shell variable to assign the result to
 dnl      If libpython is found we store $version here.
-dnl $3 = additional flags to add to CPPFLAGS
-dnl $4 = additional flags to add to LIBS
+dnl $2 = additional flags to add to CPPFLAGS
+dnl $3 = additional flags to add to LIBS
 
 AC_DEFUN([AC_TRY_LIBPYTHON],
 [
-  version=$1
-  define([have_libpython_var],$2)
-  new_CPPFLAGS=$3
-  new_LIBS=$4
-  AC_MSG_CHECKING([for ${version}])
+  define([have_libpython_var],$1)
+  new_CPPFLAGS=$2
+  new_LIBS=$3
+  AC_MSG_CHECKING([for python])
   save_CPPFLAGS=$CPPFLAGS
   save_LIBS=$LIBS
   CPPFLAGS="$CPPFLAGS $new_CPPFLAGS"
@@ -711,7 +709,7 @@ AC_DEFUN([AC_TRY_LIBPYTHON],
   found_usable_python=no
   AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include "Python.h"]],
                                  [[Py_Initialize ();]])],
-                 [have_libpython_var=${version}
+                 [have_libpython_var=yes
                   found_usable_python=yes
                   PYTHON_CPPFLAGS=$new_CPPFLAGS
                   PYTHON_LIBS=$new_LIBS])
@@ -868,46 +866,17 @@ else
 
   have_libpython=no
   if test "${have_python_config}" = yes; then
-    # Determine the Python version by extracting "-lpython<version>"
-    # part of the python_libs. <version> is usually X.Y with X and Y
-    # being decimal numbers, but can also be XY (seen on Windows).
-    #
-    # The extraction is performed using sed with a regular expression.
-    # Initially, the regexp used was using the '?' quantifier to make
-    # the dot in the version number optional.  Unfortunately, this
-    # does not work with non-GNU versions of sed because, because of
-    # what looks like a limitation (the '?' quantifier does not work
-    # with back-references).  We work around this limitation by using
-    # the '*' quantifier instead.  It means that, in theory, we might
-    # match unexpected version strings such as "-lpython2..7", but
-    # this seems unlikely in practice.  And even if that happens,
-    # an error will be triggered later on, when checking that version
-    # number.
-    python_version=`echo " ${python_libs} " \
-                         | sed -e 's,^.* -l\(python[[0-9]]*[[.]]*[[0-9]]*\).*$,\1,'`
-    case "${python_version}" in
-    python*)
-      AC_TRY_LIBPYTHON(${python_version}, have_libpython,
-                       ${python_includes}, ${python_libs})
-      ;;
-    *)
-      AC_MSG_ERROR([unable to determine python version from ${python_libs}])
-      ;;
-    esac
+    AC_TRY_LIBPYTHON(have_libpython,
+                     ${python_includes}, ${python_libs})
   elif test "${have_python_config}" != failed; then
     if test "${have_libpython}" = no; then
-      AC_TRY_LIBPYTHON(python2.7, have_libpython,
+      AC_TRY_LIBPYTHON(have_libpython,
                        ${python_includes}, "-lpython2.7 ${python_libs}")
     fi
     if test "${have_libpython}" = no; then
-      AC_TRY_LIBPYTHON(python2.6, have_libpython,
+      AC_TRY_LIBPYTHON(have_libpython,
                        ${python_includes}, "-lpython2.6 ${python_libs}")
     fi
-  fi
-  if test "${have_libpython}" = python2.7 -o "${have_libpython}" = python27; then
-    AC_DEFINE(HAVE_LIBPYTHON2_7, 1, [Define if Python 2.7 is being used.])
-  elif test "${have_libpython}" = python2.6 -o "${have_libpython}" = python26; then
-    AC_DEFINE(HAVE_LIBPYTHON2_6, 1, [Define if Python 2.6 is being used.])
   fi
 
   if test "${have_libpython}" = no; then
@@ -979,23 +948,6 @@ if test "${have_libpython}" != no; then
            fi
            ;;
   esac
-
-  # Note that "python -m threading" cannot be used to check for
-  # threading support due to a bug in Python 2.7.3
-  # (http://bugs.python.org/issue15567).
-  AC_MSG_CHECKING(whether python supports threads)
-  saved_CPPFLAGS="${CPPFLAGS}"
-  CPPFLAGS="${PYTHON_CPPFLAGS}"
-  # Note that the test is reversed so that python_has_threads=yes on
-  # unexpected failures.
-  AC_PREPROC_IFELSE([AC_LANG_SOURCE([[
-#include <Python.h>
-#ifdef WITH_THREAD
-# error
-#endif
-  ]])], [python_has_threads=no], [python_has_threads=yes])
-  AC_MSG_RESULT(${python_has_threads})
-  CPPFLAGS="${saved_CPPFLAGS}"
 else
   # Even if Python support is not compiled in, we need to have this file
   # included so that the "python" command, et.al., still exists.
@@ -1363,7 +1315,7 @@ AC_FUNC_VFORK
 AC_CHECK_FUNCS([getauxval getrusage getuid getgid \
 		pipe poll pread pread64 pwrite resize_term \
 		sbrk getpgid setpgid setpgrp setsid \
-		sigaction sigprocmask sigsetmask socketpair \
+		sigaction sigsetmask socketpair \
 		ttrace wborder wresize setlocale iconvlist libiconvlist btowc \
 		setrlimit getrlimit posix_madvise waitpid \
 		ptrace64 sigaltstack setns use_default_colors])
@@ -1843,6 +1795,9 @@ GDB_AC_DEFINE_RELOCATABLE(TARGET_SYSTEM_ROOT, sysroot, ${ac_define_dir})
 GDB_AC_WITH_DIR(SYSTEM_GDBINIT, system-gdbinit,
     [automatically load a system-wide gdbinit file],
     [])
+GDB_AC_WITH_DIR(SYSTEM_GDBINIT_DIR, system-gdbinit-dir,
+    [automatically load system-wide gdbinit files from this directory],
+    [])
 
 AM_GDB_WARNINGS
 AM_GDB_UBSAN
@@ -2217,23 +2172,43 @@ else
   fi
 fi
 
-# If nativefile (NAT_FILE) is not set in configure.nat, we link to an
-# empty version.
+# Check for xxhash
+AC_ARG_WITH(xxhash,
+  AC_HELP_STRING([--with-xxhash], [use libxxhash for hashing (faster) (auto/yes/no)]),
+  [], [with_xxhash=auto])
 
-files=
-links=
+if test "x$with_xxhash" != "xno"; then
+  AC_LIB_HAVE_LINKFLAGS([xxhash], [],
+			[#include <xxhash.h>],
+			[XXH32("foo", 3, 0);
+			])
+  if test "$HAVE_LIBXXHASH" != yes; then
+    if test "$with_xxhash" = yes; then
+      AC_MSG_ERROR([xxhash is missing or unusable])
+    fi
+  fi
+  if test "x$with_xxhash" = "xauto"; then
+    with_xxhash="$HAVE_LIBXXHASH"
+  fi
+fi
 
+AC_MSG_CHECKING([whether to use xxhash])
+AC_MSG_RESULT([$with_xxhash])
+
+NM_H=
 rm -f nm.h
 if test "${nativefile}" != ""; then
     case "${nativefile}" in
       nm-*.h ) GDB_NM_FILE="config/${gdb_host_cpu}/${nativefile}" ;;
       * ) GDB_NM_FILE="${nativefile}"
     esac
-    files="${files} ${GDB_NM_FILE}"
-    links="${links} nm.h"
+    AC_CONFIG_LINKS([nm.h:$GDB_NM_FILE], [echo > stamp-nmh],
+                    [GDB_NM_FILE=$GDB_NM_FILE])
     AC_DEFINE_UNQUOTED(GDB_NM_FILE, "${GDB_NM_FILE}", [nativefile])
+    NM_H=nm.h
 fi
 AC_SUBST(GDB_NM_FILE)
+AC_SUBST(NM_H)
 
 dnl Add dependency for xsltproc if building with maintainer-mode enabled.
 AC_PATH_PROGS(XSLTPROC, xsltproc, missing)
@@ -2243,8 +2218,6 @@ if test "x$USE_MAINTAINER_MODE" = xyes; then
   fi
 fi
 AC_SUBST(XSLTPROC)
-
-AC_LINK_FILES($files, $links)
 
 dnl Check for exe extension set on certain hosts (e.g. Win32)
 AC_EXEEXT
@@ -2262,12 +2235,6 @@ GDB_AC_SELFTEST([
 GDB_AC_TRANSFORM([gdb], [GDB_TRANSFORM_NAME])
 GDB_AC_TRANSFORM([gcore], [GCORE_TRANSFORM_NAME])
 AC_CONFIG_FILES([gcore], [chmod +x gcore])
-AC_CONFIG_FILES([Makefile gdb-gdb.gdb gdb-gdb.py doc/Makefile data-directory/Makefile],
-[
-case x$CONFIG_HEADERS in
-xconfig.h:config.in)
-echo > stamp-h ;;
-esac
-])
+AC_CONFIG_FILES([Makefile gdb-gdb.gdb gdb-gdb.py doc/Makefile data-directory/Makefile])
 
 AC_OUTPUT

@@ -1,3 +1,36 @@
+2019-09-28  Alan Modra  <amodra@gmail.com>
+
+	PR 16794
+	* i386.cc (Target_i386::Relocate::relocate <R_386_GOTOFF>): Don't
+	ignore addend, apply using pcrel32.
+	* x86_64.cc (Target_x86_64::Relocate::relocate <R_X86_64_GOTOFF64>):
+	Similarly use pcrel64.
+
+2019-09-24  Nick Clifton  <nickc@redhat.com>
+
+	* descriptors.cc: Include <string>
+
+2019-09-23  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/plugin_new_section_layout.c (new_input_hook): Correct
+	return status enum values.
+
+2019-09-20  Alan Modra  <amodra@gmail.com>
+
+	PR 24768
+	* layout.cc (Layout::Layout): Init lto_slim_object_.
+	* object.cc (Sized_relobj_file::do_layout): Wrap overlong line.
+	Don't use C cast.  Validate section size.  Don't copy contents.
+
+2019-09-20  Alan Modra  <amodra@gmail.com>
+
+	* powerpc.cc (Target_powerpc::Scan::check_non_pic): Move REL24
+	to 32-bit supported.
+
+2019-09-18  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* testsuite/Makefile.in: Re-generate.
+
 2019-09-09  Phil Blundell  <pb@pbcl.net>
 
 	binutils 2.33 branch created.

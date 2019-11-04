@@ -246,14 +246,11 @@
 /* Define if you have the mpfr library. */
 #undef HAVE_LIBMPFR
 
-/* Define if Python 2.6 is being used. */
-#undef HAVE_LIBPYTHON2_6
-
-/* Define if Python 2.7 is being used. */
-#undef HAVE_LIBPYTHON2_7
-
 /* Define to 1 if you have the <libunwind-ia64.h> header file. */
 #undef HAVE_LIBUNWIND_IA64_H
+
+/* Define if you have the xxhash library. */
+#undef HAVE_LIBXXHASH
 
 /* Define to 1 if you have the <linux/elf.h> header file. */
 #undef HAVE_LINUX_ELF_H
@@ -425,6 +422,9 @@
 
 /* Define to 1 if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H
+
+/* Define to 1 if you have the `strerror_r' function. */
+#undef HAVE_STRERROR_R
 
 /* Define to 1 if you have the <strings.h> header file. */
 #undef HAVE_STRINGS_H
@@ -683,6 +683,13 @@
 
 /* automatically load a system-wide gdbinit file */
 #undef SYSTEM_GDBINIT
+
+/* automatically load system-wide gdbinit files from this directory */
+#undef SYSTEM_GDBINIT_DIR
+
+/* Define if the system-gdbinit-dir directory should be relocated when GDB is
+   moved. */
+#undef SYSTEM_GDBINIT_DIR_RELOCATABLE
 
 /* Define if the system-gdbinit directory should be relocated when GDB is
    moved. */

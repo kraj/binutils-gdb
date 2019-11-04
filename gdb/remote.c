@@ -75,6 +75,7 @@
 #include "gdbsupport/scoped_restore.h"
 #include "gdbsupport/environ.h"
 #include "gdbsupport/byte-vector.h"
+#include <algorithm>
 #include <unordered_map>
 
 /* The remote target.  */
@@ -141,7 +142,7 @@ struct vCont_action_support
   bool S = false;
 };
 
-/* About this many threadisds fit in a packet.  */
+/* About this many threadids fit in a packet.  */
 
 #define MAXTHREADLISTRESULTS 32
 
@@ -1038,7 +1039,7 @@ static struct cmd_list_element *remote_show_cmdlist;
 
 /* Controls whether GDB is willing to use range stepping.  */
 
-static int use_range_stepping = 1;
+static bool use_range_stepping = true;
 
 /* The max number of chars in debug output.  The rest of chars are
    omitted.  */
@@ -1276,22 +1277,6 @@ show_remote_exec_file (struct ui_file *file, int from_tty,
 }
 
 static int
-compare_pnums (const void *lhs_, const void *rhs_)
-{
-  const struct packet_reg * const *lhs
-    = (const struct packet_reg * const *) lhs_;
-  const struct packet_reg * const *rhs
-    = (const struct packet_reg * const *) rhs_;
-
-  if ((*lhs)->pnum < (*rhs)->pnum)
-    return -1;
-  else if ((*lhs)->pnum == (*rhs)->pnum)
-    return 0;
-  else
-    return 1;
-}
-
-static int
 map_regcache_remote_table (struct gdbarch *gdbarch, struct packet_reg *regs)
 {
   int regnum, num_remote_regs, offset;
@@ -1321,8 +1306,9 @@ map_regcache_remote_table (struct gdbarch *gdbarch, struct packet_reg *regs)
     if (regs[regnum].pnum != -1)
       remote_regs[num_remote_regs++] = &regs[regnum];
 
-  qsort (remote_regs, num_remote_regs, sizeof (struct packet_reg *),
-	 compare_pnums);
+  std::sort (remote_regs, remote_regs + num_remote_regs,
+	     [] (const packet_reg *a, const packet_reg *b)
+	      { return a->pnum < b->pnum; });
 
   for (regnum = 0, offset = 0; regnum < num_remote_regs; regnum++)
     {
@@ -1492,12 +1478,12 @@ show_interrupt_sequence (struct ui_file *file, int from_tty,
    to the remote target when gdb connects to it.
    This is mostly needed when you debug the Linux kernel: The Linux kernel
    expects BREAK g which is Magic SysRq g for connecting gdb.  */
-static int interrupt_on_connect = 0;
+static bool interrupt_on_connect = false;
 
 /* This variable is used to implement the "set/show remotebreak" commands.
    Since these commands are now deprecated in favor of "set/show remote
    interrupt-sequence", it no longer has any effect on the code.  */
-static int remote_break;
+static bool remote_break;
 
 static void
 set_remotebreak (const char *args, int from_tty, struct cmd_list_element *c)
@@ -1523,7 +1509,7 @@ show_remotebreak (struct ui_file *file, int from_tty,
    memory packets to ``host::sizeof long'' bytes - (typically 32
    bits).  Consequently, for 64 bit targets, the upper 32 bits of an
    address was never sent.  Since fixing this bug may cause a break in
-   some remote targets this variable is principly provided to
+   some remote targets this variable is principally provided to
    facilitate backward compatibility.  */
 
 static unsigned int remote_address_size;
@@ -1864,7 +1850,7 @@ packet_check_result (const char *buf)
       if (buf[0] == 'E'
 	  && isxdigit (buf[1]) && isxdigit (buf[2])
 	  && buf[3] == '\0')
-	/* "Enn"  - definitly an error.  */
+	/* "Enn"  - definitely an error.  */
 	return PACKET_ERROR;
 
       /* Always treat "E." as an error.  This will be used for
@@ -1970,8 +1956,6 @@ enum {
   PACKET_qXfer_libraries,
   PACKET_qXfer_libraries_svr4,
   PACKET_qXfer_memory_map,
-  PACKET_qXfer_spu_read,
-  PACKET_qXfer_spu_write,
   PACKET_qXfer_osdata,
   PACKET_qXfer_threads,
   PACKET_qXfer_statictrace_read,
@@ -2845,7 +2829,7 @@ remote_target::thread_name (struct thread_info *info)
 
 /* About these extended threadlist and threadinfo packets.  They are
    variable length packets but, the fields within them are often fixed
-   length.  They are redundent enough to send over UDP as is the
+   length.  They are redundant enough to send over UDP as is the
    remote protocol in general.  There is a matching unit test module
    in libstub.  */
 
@@ -3252,7 +3236,7 @@ remote_target::remote_unpack_thread_info_response (char *pkt,
     }
   copy_threadref (&info->threadid, &ref);
 
-  /* Loop on tagged fields , try to bail if somthing goes wrong.  */
+  /* Loop on tagged fields , try to bail if something goes wrong.  */
 
   /* Packets are terminated with nulls.  */
   while ((pkt < limit) && mask && *pkt)
@@ -3391,7 +3375,7 @@ remote_target::remote_get_threadlist (int startflag, threadref *nextthread,
   struct remote_state *rs = get_remote_state ();
   int result = 1;
 
-  /* Trancate result limit to be smaller than the packet size.  */
+  /* Truncate result limit to be smaller than the packet size.  */
   if ((((result_limit + 1) * BUF_THREAD_ID_SIZE) + 10)
       >= get_remote_packet_size ())
     result_limit = (get_remote_packet_size () / BUF_THREAD_ID_SIZE) - 2;
@@ -3413,8 +3397,8 @@ remote_target::remote_get_threadlist (int startflag, threadref *nextthread,
   if (!threadmatch (&rs->echo_nextthread, nextthread))
     {
       /* FIXME: This is a good reason to drop the packet.  */
-      /* Possably, there is a duplicate response.  */
-      /* Possabilities :
+      /* Possibly, there is a duplicate response.  */
+      /* Possibilities :
          retransmit immediatly - race conditions
          retransmit after timeout - yes
          exit
@@ -5083,10 +5067,6 @@ static const struct protocol_feature remote_protocol_features[] = {
     remote_supported_packet, PACKET_augmented_libraries_svr4_read_feature },
   { "qXfer:memory-map:read", PACKET_DISABLE, remote_supported_packet,
     PACKET_qXfer_memory_map },
-  { "qXfer:spu:read", PACKET_DISABLE, remote_supported_packet,
-    PACKET_qXfer_spu_read },
-  { "qXfer:spu:write", PACKET_DISABLE, remote_supported_packet,
-    PACKET_qXfer_spu_write },
   { "qXfer:osdata:read", PACKET_DISABLE, remote_supported_packet,
     PACKET_qXfer_osdata },
   { "qXfer:threads:read", PACKET_DISABLE, remote_supported_packet,
@@ -7542,7 +7522,7 @@ Packet: '%s'\n"),
       <GDB marks the REMOTE_ASYNC_GET_PENDING_EVENTS_TOKEN>
     2.5) <-- (registers reply to step #2.3)
 
-   Eventualy after step #2.5, we return to the event loop, which
+   Eventually after step #2.5, we return to the event loop, which
    notices there's an event on the
    REMOTE_ASYNC_GET_PENDING_EVENTS_TOKEN event and calls the
    associated callback --- the function below.  At this point, we're
@@ -8749,9 +8729,7 @@ remote_target::remote_xfer_live_readonly_partial (gdb_byte *readbuf,
 
   secp = target_section_by_addr (this, memaddr);
   if (secp != NULL
-      && (bfd_get_section_flags (secp->the_bfd_section->owner,
-				 secp->the_bfd_section)
-	  & SEC_READONLY))
+      && (bfd_section_flags (secp->the_bfd_section) & SEC_READONLY))
     {
       struct target_section *p;
       ULONGEST memend = memaddr + len;
@@ -10656,11 +10634,11 @@ compare_sections_command (const char *args, int from_tty)
       if (read_only && (s->flags & SEC_READONLY) == 0)
 	continue;		/* Skip writeable sections */
 
-      size = bfd_get_section_size (s);
+      size = bfd_section_size (s);
       if (size == 0)
 	continue;		/* Skip zero-length section.  */
 
-      sectname = bfd_get_section_name (exec_bfd, s);
+      sectname = bfd_section_name (s);
       if (args && strcmp (args, sectname) != 0)
 	continue;		/* Not the section selected by user.  */
 
@@ -10858,19 +10836,6 @@ remote_target::xfer_partial (enum target_object object,
       else
 	return remote_read_bytes (offset, readbuf, len, unit_size,
 				  xfered_len);
-    }
-
-  /* Handle SPU memory using qxfer packets.  */
-  if (object == TARGET_OBJECT_SPU)
-    {
-      if (readbuf)
-	return remote_read_qxfer ("spu", annex, readbuf, offset, len,
-				  xfered_len, &remote_protocol_packets
-				  [PACKET_qXfer_spu_read]);
-      else
-	return remote_write_qxfer ("spu", annex, writebuf, offset, len,
-				   xfered_len, &remote_protocol_packets
-				   [PACKET_qXfer_spu_write]);
     }
 
   /* Handle extra signal info using qxfer packets.  */
@@ -11304,7 +11269,7 @@ output_threadid (char *title, threadref *ref)
 {
   char hexid[20];
 
-  pack_threadid (&hexid[0], ref);	/* Convert threead id into hex.  */
+  pack_threadid (&hexid[0], ref);	/* Convert thread id into hex.  */
   hexid[16] = 0;
   printf_filtered ("%s  %s\n", title, (&hexid[0]));
 }
@@ -13059,7 +13024,6 @@ void
 remote_target::trace_set_readonly_regions ()
 {
   asection *s;
-  bfd *abfd = NULL;
   bfd_size_type size;
   bfd_vma vma;
   int anysecs = 0;
@@ -13083,8 +13047,8 @@ remote_target::trace_set_readonly_regions ()
 	continue;
 
       anysecs = 1;
-      vma = bfd_get_section_vma (abfd, s);
-      size = bfd_get_section_size (s);
+      vma = bfd_section_vma (s);
+      size = bfd_section_size (s);
       sprintf_vma (tmp1, vma);
       sprintf_vma (tmp2, vma + size);
       sec_length = 1 + strlen (tmp1) + 1 + strlen (tmp2);
@@ -13124,14 +13088,13 @@ remote_target::get_trace_status (struct trace_status *ts)
 {
   /* Initialize it just to avoid a GCC false warning.  */
   char *p = NULL;
-  /* FIXME we need to get register block size some other way.  */
-  extern int trace_regblock_size;
   enum packet_result result;
   struct remote_state *rs = get_remote_state ();
 
   if (packet_support (PACKET_qTStatus) == PACKET_DISABLE)
     return -1;
 
+  /* FIXME we need to get register block size some other way.  */
   trace_regblock_size
     = rs->get_remote_arch_state (target_gdbarch ())->sizeof_g_packet;
 
@@ -14483,12 +14446,6 @@ Show the maximum size of the address (in bits) in a memory packet."), NULL,
 
   add_packet_config_cmd (&remote_protocol_packets[PACKET_qXfer_memory_map],
 			 "qXfer:memory-map:read", "memory-map", 0);
-
-  add_packet_config_cmd (&remote_protocol_packets[PACKET_qXfer_spu_read],
-                         "qXfer:spu:read", "read-spu-object", 0);
-
-  add_packet_config_cmd (&remote_protocol_packets[PACKET_qXfer_spu_write],
-                         "qXfer:spu:write", "write-spu-object", 0);
 
   add_packet_config_cmd (&remote_protocol_packets[PACKET_qXfer_osdata],
                         "qXfer:osdata:read", "osdata", 0);

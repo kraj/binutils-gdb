@@ -232,7 +232,7 @@ get_debugseg_name (segT seg, const char *base_name)
   if (!seg)
     return concat (base_name, NULL);
 
-  name = bfd_get_section_name (stdoutput, seg);
+  name = bfd_section_name (seg);
 
   if (name == NULL || *name == 0)
     return concat (base_name, NULL);
@@ -281,7 +281,7 @@ is_now_linkonce_segment (void)
   if (compact_eh)
     return now_seg;
 
-  if ((bfd_get_section_flags (stdoutput, now_seg)
+  if ((bfd_section_flags (now_seg)
        & (SEC_LINK_ONCE | SEC_LINK_DUPLICATES_DISCARD
 	  | SEC_LINK_DUPLICATES_ONE_ONLY | SEC_LINK_DUPLICATES_SAME_SIZE
 	  | SEC_LINK_DUPLICATES_SAME_CONTENTS)) != 0)
@@ -306,16 +306,16 @@ make_debug_seg (segT cseg, char *name, int sflags)
   if (!cseg)
     flags = 0;
   else
-    flags = bfd_get_section_flags (stdoutput, cseg)
-      & (SEC_LINK_ONCE | SEC_LINK_DUPLICATES_DISCARD
-	 | SEC_LINK_DUPLICATES_ONE_ONLY | SEC_LINK_DUPLICATES_SAME_SIZE
-	 | SEC_LINK_DUPLICATES_SAME_CONTENTS);
+    flags = (bfd_section_flags (cseg)
+	     & (SEC_LINK_ONCE | SEC_LINK_DUPLICATES_DISCARD
+		| SEC_LINK_DUPLICATES_ONE_ONLY | SEC_LINK_DUPLICATES_SAME_SIZE
+		| SEC_LINK_DUPLICATES_SAME_CONTENTS));
 
   /* Add standard section flags.  */
   flags |= sflags;
 
   /* Apply possibly linked once flags to new generated segment, too.  */
-  if (!bfd_set_section_flags (stdoutput, r, flags))
+  if (!bfd_set_section_flags (r, flags))
     as_bad (_("bfd_set_section_flags: %s"),
 	    bfd_errmsg (bfd_get_error ()));
 
@@ -1359,7 +1359,7 @@ get_cfi_seg (segT cseg, const char *base, flagword flags, int align)
   else
     {
       cseg = subseg_new (base, 0);
-      bfd_set_section_flags (stdoutput, cseg, flags);
+      bfd_set_section_flags (cseg, flags);
     }
   record_alignment (cseg, align);
   return cseg;
@@ -1598,7 +1598,9 @@ output_cfi_insn (struct cfi_insn_data *insn)
 	    addressT delta = S_GET_VALUE (to) - S_GET_VALUE (from);
 	    addressT scaled = delta / DWARF2_LINE_MIN_INSN_LENGTH;
 
-	    if (scaled <= 0x3F)
+	    if (scaled == 0)
+	      ;
+	    else if (scaled <= 0x3F)
 	      out_one (DW_CFA_advance_loc + scaled);
 	    else if (scaled <= 0xFF)
 	      {
@@ -1628,7 +1630,12 @@ output_cfi_insn (struct cfi_insn_data *insn)
 	    /* The code in ehopt.c expects that one byte of the encoding
 	       is already allocated to the frag.  This comes from the way
 	       that it scans the .eh_frame section looking first for the
-	       .byte DW_CFA_advance_loc4.  */
+	       .byte DW_CFA_advance_loc4.  Call frag_grow with the sum of
+	       room needed by frag_more and frag_var to preallocate space
+	       ensuring that the DW_CFA_advance_loc4 is in the fixed part
+	       of the rs_cfa frag, so that the relax machinery can remove
+	       the advance_loc should it advance by zero.  */
+	    frag_grow (5);
 	    *frag_more (1) = DW_CFA_advance_loc4;
 
 	    frag_var (rs_cfa, 4, 0, DWARF2_LINE_MIN_INSN_LENGTH << 3,

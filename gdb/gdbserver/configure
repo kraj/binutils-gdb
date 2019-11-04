@@ -6821,7 +6821,8 @@ fi
 done
 
 
-  for ac_func in fdwalk getrlimit pipe pipe2 socketpair sigaction
+  for ac_func in fdwalk getrlimit pipe pipe2 socketpair sigaction \
+		  sigprocmask strerror_r
 do :
   as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
 ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
@@ -9806,17 +9807,13 @@ $as_echo "$as_me: executing $ac_file commands" >&6;}
 
 
   case $ac_file$ac_mode in
+    "config.h":H) echo > stamp-h ;;
     "depdir":C) $SHELL $ac_aux_dir/mkinstalldirs $DEPDIR ;;
     "gdbdepdir":C)
   for subdir in ${CONFIG_SRC_SUBDIR}
   do
       $SHELL $ac_aux_dir/mkinstalldirs $subdir/$DEPDIR
   done ;;
-    "Makefile":F) case x$CONFIG_HEADERS in
-xconfig.h:config.in)
-echo > stamp-h ;;
-esac
- ;;
 
   esac
 done # for ac_tag

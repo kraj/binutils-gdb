@@ -116,16 +116,15 @@ const struct floatformat *floatformats_ibm_long_double[BFD_ENDIAN_UNKNOWN] = {
 
 /* Should opaque types be resolved?  */
 
-static int opaque_type_resolution = 1;
+static bool opaque_type_resolution = true;
 
-/* A flag to enable printing of debugging information of C++
-   overloading.  */
+/* See gdbtypes.h.  */
 
 unsigned int overload_debug = 0;
 
 /* A flag to enable strict type checking.  */
 
-static int strict_type_checking = 1;
+static bool strict_type_checking = true;
 
 /* A function to show whether opaque types are resolved.  */
 
@@ -2734,7 +2733,7 @@ check_stub_method_group (struct type *type, int method_id)
     }
 }
 
-/* Ensure it is in .rodata (if available) by workarounding GCC PR 44690.  */
+/* Ensure it is in .rodata (if available) by working around GCC PR 44690.  */
 const struct cplus_struct_type cplus_struct_default = { };
 
 void

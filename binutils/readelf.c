@@ -184,7 +184,7 @@ typedef struct elf_section_list
 #define DEBUG_DUMP	(1 << 2)	/* The -w command line switch.  */
 #define STRING_DUMP     (1 << 3)	/* The -p command line switch.  */
 #define RELOC_DUMP      (1 << 4)	/* The -R command line switch.  */
-#define CTF_DUMP        (1 << 5)        /* The --ctf command line switch.  */
+#define CTF_DUMP	(1 << 5)	/* The --ctf command line switch.  */
 
 typedef unsigned char dump_type;
 
@@ -4465,7 +4465,7 @@ static struct option options[] =
   {"dwarf-start",      required_argument, 0, OPTION_DWARF_START},
   {"dwarf-check",      no_argument, 0, OPTION_DWARF_CHECK},
 
-  {"ctf",              required_argument, 0, OPTION_CTF_DUMP},
+  {"ctf",	       required_argument, 0, OPTION_CTF_DUMP},
 
   {"ctf-symbols",      required_argument, 0, OPTION_CTF_SYMBOLS},
   {"ctf-strings",      required_argument, 0, OPTION_CTF_STRINGS},
@@ -5101,6 +5101,9 @@ process_program_headers (Filedata * filedata)
   unsigned int i;
   Elf_Internal_Phdr * previous_load = NULL;
 
+  dynamic_addr = 0;
+  dynamic_size = 0;
+
   if (filedata->file_header.e_phnum == 0)
     {
       /* PR binutils/12467.  */
@@ -5150,9 +5153,6 @@ process_program_headers (Filedata * filedata)
 	    (_("                 FileSiz            MemSiz              Flags  Align\n"));
 	}
     }
-
-  dynamic_addr = 0;
-  dynamic_size = 0;
 
   for (i = 0, segment = filedata->program_headers;
        i < filedata->file_header.e_phnum;
@@ -5262,11 +5262,17 @@ process_program_headers (Filedata * filedata)
 	      unsigned int j;
 
 	      for (j = 1; j < filedata->file_header.e_phnum; j++)
-		if (filedata->program_headers[j].p_vaddr <= segment->p_vaddr
-		    && (filedata->program_headers[j].p_vaddr
-			+ filedata->program_headers[j].p_memsz)
-		    >= (segment->p_vaddr + segment->p_filesz))
-		  break;
+		{
+		  Elf_Internal_Phdr *load = filedata->program_headers + j;
+		  if (load->p_type == PT_LOAD
+		      && load->p_offset <= segment->p_offset
+		      && (load->p_offset + load->p_filesz
+			  >= segment->p_offset + segment->p_filesz)
+		      && load->p_vaddr <= segment->p_vaddr
+		      && (load->p_vaddr + load->p_filesz
+			  >= segment->p_vaddr + segment->p_filesz))
+		    break;
+		}
 	      if (j == filedata->file_header.e_phnum)
 		error (_("the PHDR segment is not covered by a LOAD segment\n"));
 	    }
@@ -13922,18 +13928,19 @@ dump_section_as_ctf (Elf_Internal_Shdr * section, Filedata * filedata)
   Elf_Internal_Shdr *  parent_sec = NULL;
   Elf_Internal_Shdr *  symtab_sec = NULL;
   Elf_Internal_Shdr *  strtab_sec = NULL;
-  void *      	       data = NULL;
-  void *      	       symdata = NULL;
-  void *      	       strdata = NULL;
-  void *      	       parentdata = NULL;
-  ctf_sect_t           ctfsect, symsect, strsect, parentsect;
-  ctf_sect_t *         symsectp = NULL;
-  ctf_sect_t *         strsectp = NULL;
-  ctf_file_t *         ctf = NULL;
-  ctf_file_t *         parent = NULL;
+  void *	       data = NULL;
+  void *	       symdata = NULL;
+  void *	       strdata = NULL;
+  void *	       parentdata = NULL;
+  ctf_sect_t	       ctfsect, symsect, strsect, parentsect;
+  ctf_sect_t *	       symsectp = NULL;
+  ctf_sect_t *	       strsectp = NULL;
+  ctf_file_t *	       ctf = NULL;
+  ctf_file_t *	       parent = NULL;
 
-  const char *things[] = {"Labels", "Data objects", "Function objects",
-			  "Variables", "Types", "Strings", ""};
+  const char *things[] = {"Header", "Labels", "Data objects",
+			  "Function objects", "Variables", "Types", "Strings",
+			  ""};
   const char **thing;
   int err;
   bfd_boolean ret = FALSE;
@@ -13943,7 +13950,13 @@ dump_section_as_ctf (Elf_Internal_Shdr * section, Filedata * filedata)
   data = get_section_contents (section, filedata);
   ctfsect.cts_data = data;
 
-  if (dump_ctf_symtab_name)
+  if (!dump_ctf_symtab_name)
+    dump_ctf_symtab_name = strdup (".symtab");
+
+  if (!dump_ctf_strtab_name)
+    dump_ctf_strtab_name = strdup (".strtab");
+
+  if (dump_ctf_symtab_name && dump_ctf_symtab_name[0] != 0)
     {
       if ((symtab_sec = find_section (filedata, dump_ctf_symtab_name)) == NULL)
 	{
@@ -13958,7 +13971,7 @@ dump_section_as_ctf (Elf_Internal_Shdr * section, Filedata * filedata)
       symsectp = shdr_to_ctf_sect (&symsect, symtab_sec, filedata);
       symsect.cts_data = symdata;
     }
-  if (dump_ctf_strtab_name)
+  if (dump_ctf_strtab_name && dump_ctf_symtab_name[0] != 0)
     {
       if ((strtab_sec = find_section (filedata, dump_ctf_strtab_name)) == NULL)
 	{
@@ -14014,7 +14027,7 @@ dump_section_as_ctf (Elf_Internal_Shdr * section, Filedata * filedata)
   printf (_("\nDump of CTF section '%s':\n"),
 	  printable_section_name (filedata, section));
 
-  for (i = 1, thing = things; *thing[0]; thing++, i++)
+  for (i = 0, thing = things; *thing[0]; thing++, i++)
     {
       ctf_dump_state_t *s = NULL;
       char *item;
@@ -15729,6 +15742,36 @@ display_msp430x_attribute (unsigned char * p,
 
   assert (p <= end);
   return p;
+}
+
+static unsigned char *
+display_msp430_gnu_attribute (unsigned char * p,
+			      unsigned int tag,
+			      const unsigned char * const end)
+{
+  if (tag == Tag_GNU_MSP430_Data_Region)
+    {
+      unsigned int len;
+      int val;
+
+      val = read_uleb128 (p, &len, end);
+      p += len;
+      printf ("  Tag_GNU_MSP430_Data_Region: ");
+
+      switch (val)
+	{
+	case Val_GNU_MSP430_Data_Region_Any:
+	  printf (_("Any Region\n"));
+	  break;
+	case Val_GNU_MSP430_Data_Region_Lower:
+	  printf (_("Lower Region Only\n"));
+	  break;
+	default:
+	  printf ("??? (%d)\n", val);
+	}
+      return p;
+    }
+  return display_tag_value (tag & 1, p, end);
 }
 
 struct riscv_attr_tag_t {
@@ -19555,7 +19598,7 @@ process_arch_specific (Filedata * filedata)
     case EM_MSP430:
      return process_attributes (filedata, "mspabi", SHT_MSP430_ATTRIBUTES,
 				display_msp430x_attribute,
-				display_generic_attribute);
+				display_msp430_gnu_attribute);
 
     case EM_RISCV:
      return process_attributes (filedata, "riscv", SHT_RISCV_ATTRIBUTES,

@@ -40,8 +40,6 @@ public:
 
 static arm_netbsd_nat_target the_arm_netbsd_nat_target;
 
-extern int arm_apcs_32;
-
 static void
 arm_supply_gregset (struct regcache *regcache, struct reg *gregset)
 {
@@ -439,7 +437,7 @@ fetch_elfcore_registers (struct regcache *regcache,
 
 static struct core_fns arm_netbsd_elfcore_fns =
 {
-  bfd_target_elf_flavour,		/* core_flovour.  */
+  bfd_target_elf_flavour,		/* core_flavour.  */
   default_check_format,			/* check_format.  */
   default_core_sniffer,			/* core_sniffer.  */
   fetch_elfcore_registers,		/* core_read_registers.  */

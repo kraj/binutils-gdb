@@ -207,10 +207,10 @@ find_text_range (bfd * sym_bfd, struct objfile *objfile)
   CORE_ADDR end = 0;
 
   for (sec = sym_bfd->sections; sec; sec = sec->next)
-    if (bfd_get_section_flags (sym_bfd, sec) & SEC_CODE)
+    if (bfd_section_flags (sec) & SEC_CODE)
       {
-	CORE_ADDR sec_start = bfd_section_vma (sym_bfd, sec);
-	CORE_ADDR sec_end = sec_start + bfd_section_size (sym_bfd, sec);
+	CORE_ADDR sec_start = bfd_section_vma (sec);
+	CORE_ADDR sec_end = sec_start + bfd_section_size (sec);
 
 	if (found_any)
 	  {
@@ -607,8 +607,8 @@ dbx_symfile_init (struct objfile *objfile)
   text_sect = bfd_get_section_by_name (sym_bfd, ".text");
   if (!text_sect)
     error (_("Can't find .text section in symbol file"));
-  DBX_TEXT_ADDR (objfile) = bfd_section_vma (sym_bfd, text_sect);
-  DBX_TEXT_SIZE (objfile) = bfd_section_size (sym_bfd, text_sect);
+  DBX_TEXT_ADDR (objfile) = bfd_section_vma (text_sect);
+  DBX_TEXT_SIZE (objfile) = bfd_section_size (text_sect);
 
   DBX_SYMBOL_SIZE (objfile) = obj_symbol_entry_size (sym_bfd);
   DBX_SYMCOUNT (objfile) = bfd_get_symcount (sym_bfd);
@@ -781,7 +781,7 @@ fill_symbuf (bfd *sym_bfd)
 
 	  if (bfd_seek (sym_bfd, filepos, SEEK_SET) != 0)
 	    perror_with_name (bfd_get_filename (sym_bfd));
-	  symbuf_left = bfd_section_size (sym_bfd, (*symbuf_sections)[sect_idx]);
+	  symbuf_left = bfd_section_size ((*symbuf_sections)[sect_idx]);
 	  symbol_table_offset = filepos - symbuf_read;
 	  ++sect_idx;
 	}
@@ -1464,7 +1464,7 @@ read_dbx_symtab (minimal_symbol_reader &reader, struct objfile *objfile)
 	      if (gdbarch_static_transform_name_p (gdbarch))
 		gdbarch_static_transform_name (gdbarch, namestring);
 
-	      add_psymbol_to_list (sym_name, sym_len, 1,
+	      add_psymbol_to_list (gdb::string_view (sym_name, sym_len), true,
 				   VAR_DOMAIN, LOC_STATIC,
 				   data_sect_index,
 				   psymbol_placement::STATIC,
@@ -1474,7 +1474,7 @@ read_dbx_symtab (minimal_symbol_reader &reader, struct objfile *objfile)
 	    case 'G':
 	      /* The addresses in these entries are reported to be
 		 wrong.  See the code that reads 'G's for symtabs.  */
-	      add_psymbol_to_list (sym_name, sym_len, 1,
+	      add_psymbol_to_list (gdb::string_view (sym_name, sym_len), true,
 				   VAR_DOMAIN, LOC_STATIC,
 				   data_sect_index,
 				   psymbol_placement::GLOBAL,
@@ -1492,15 +1492,15 @@ read_dbx_symtab (minimal_symbol_reader &reader, struct objfile *objfile)
 		  || (p == namestring + 1
 		      && namestring[0] != ' '))
 		{
-		  add_psymbol_to_list (sym_name, sym_len, 1,
-				       STRUCT_DOMAIN, LOC_TYPEDEF, -1,
+		  add_psymbol_to_list (gdb::string_view (sym_name, sym_len),
+				       true, STRUCT_DOMAIN, LOC_TYPEDEF, -1,
 				       psymbol_placement::STATIC,
 				       0, psymtab_language, objfile);
 		  if (p[2] == 't')
 		    {
 		      /* Also a typedef with the same name.  */
-		      add_psymbol_to_list (sym_name, sym_len, 1,
-					   VAR_DOMAIN, LOC_TYPEDEF, -1,
+		      add_psymbol_to_list (gdb::string_view (sym_name, sym_len),
+					   true, VAR_DOMAIN, LOC_TYPEDEF, -1,
 					   psymbol_placement::STATIC,
 					   0, psymtab_language, objfile);
 		      p += 1;
@@ -1511,8 +1511,8 @@ read_dbx_symtab (minimal_symbol_reader &reader, struct objfile *objfile)
 	    case 't':
 	      if (p != namestring)	/* a name is there, not just :T...  */
 		{
-		  add_psymbol_to_list (sym_name, sym_len, 1,
-				       VAR_DOMAIN, LOC_TYPEDEF, -1,
+		  add_psymbol_to_list (gdb::string_view (sym_name, sym_len),
+				       true, VAR_DOMAIN, LOC_TYPEDEF, -1,
 				       psymbol_placement::STATIC,
 				       0, psymtab_language, objfile);
 		}
@@ -1572,7 +1572,7 @@ read_dbx_symtab (minimal_symbol_reader &reader, struct objfile *objfile)
 			;
 		      /* Note that the value doesn't matter for
 			 enum constants in psymtabs, just in symtabs.  */
-		      add_psymbol_to_list (p, q - p, 1,
+		      add_psymbol_to_list (gdb::string_view (p, q - p), true,
 					   VAR_DOMAIN, LOC_CONST, -1,
 					   psymbol_placement::STATIC, 0,
 					   psymtab_language, objfile);
@@ -1590,7 +1590,7 @@ read_dbx_symtab (minimal_symbol_reader &reader, struct objfile *objfile)
 
 	    case 'c':
 	      /* Constant, e.g. from "const" in Pascal.  */
-	      add_psymbol_to_list (sym_name, sym_len, 1,
+	      add_psymbol_to_list (gdb::string_view (sym_name, sym_len), true,
 				   VAR_DOMAIN, LOC_CONST, -1,
 				   psymbol_placement::STATIC, 0,
 				   psymtab_language, objfile);
@@ -1645,7 +1645,7 @@ read_dbx_symtab (minimal_symbol_reader &reader, struct objfile *objfile)
 		  pst->set_text_low (nlist.n_value);
 		  textlow_not_set = 0;
 		}
-	      add_psymbol_to_list (sym_name, sym_len, 1,
+	      add_psymbol_to_list (gdb::string_view (sym_name, sym_len), true,
 				   VAR_DOMAIN, LOC_BLOCK,
 				   SECT_OFF_TEXT (objfile),
 				   psymbol_placement::STATIC,
@@ -1704,7 +1704,7 @@ read_dbx_symtab (minimal_symbol_reader &reader, struct objfile *objfile)
 		  pst->set_text_low (nlist.n_value);
 		  textlow_not_set = 0;
 		}
-	      add_psymbol_to_list (sym_name, sym_len, 1,
+	      add_psymbol_to_list (gdb::string_view (sym_name, sym_len), true,
 				   VAR_DOMAIN, LOC_BLOCK,
 				   SECT_OFF_TEXT (objfile),
 				   psymbol_placement::GLOBAL,
@@ -2298,7 +2298,7 @@ read_ofile_symtab (struct objfile *objfile, struct partial_symtab *pst)
       else if (type & N_EXT || type == (unsigned char) N_TEXT
 	       || type == (unsigned char) N_NBTEXT)
 	{
-	  /* Global symbol: see if we came across a dbx defintion for
+	  /* Global symbol: see if we came across a dbx definition for
 	     a corresponding symbol.  If so, store the value.  Remove
 	     syms from the chain when their values are stored, but
 	     search the whole chain, as there may be several syms from
@@ -2628,7 +2628,7 @@ process_one_symbol (int type, int desc, CORE_ADDR valu, const char *name,
          function-relative symbols.  */
       valu += function_start_offset;
 
-      /* GCC 2.95.3 emits the first N_SLINE stab somwehere in the
+      /* GCC 2.95.3 emits the first N_SLINE stab somewhere in the
 	 middle of the prologue instead of right at the start of the
 	 function.  To deal with this we record the address for the
 	 first N_SLINE stab to be the start of the function instead of
@@ -2980,7 +2980,7 @@ coffstab_build_psymtabs (struct objfile *objfile,
     = make_scoped_restore (&symbuf_sections);
   if (stabsects.size () == 1)
     {
-      stabsize = bfd_section_size (sym_bfd, stabsects[0]);
+      stabsize = bfd_section_size (stabsects[0]);
       DBX_SYMCOUNT (objfile) = stabsize / DBX_SYMBOL_SIZE (objfile);
       DBX_SYMTAB_OFFSET (objfile) = stabsects[0]->filepos;
     }
@@ -2989,7 +2989,7 @@ coffstab_build_psymtabs (struct objfile *objfile,
       DBX_SYMCOUNT (objfile) = 0;
       for (asection *section : stabsects)
 	{
-	  stabsize = bfd_section_size (sym_bfd, section);
+	  stabsize = bfd_section_size (section);
 	  DBX_SYMCOUNT (objfile) += stabsize / DBX_SYMBOL_SIZE (objfile);
 	}
 
@@ -2997,7 +2997,7 @@ coffstab_build_psymtabs (struct objfile *objfile,
 
       sect_idx = 1;
       symbuf_sections = &stabsects;
-      symbuf_left = bfd_section_size (sym_bfd, stabsects[0]);
+      symbuf_left = bfd_section_size (stabsects[0]);
       symbuf_read = 0;
     }
 
@@ -3040,7 +3040,7 @@ elfstab_build_psymtabs (struct objfile *objfile, asection *stabsect,
 #define	ELF_STABS_SYMBOL_SIZE	12	/* XXX FIXME XXX */
   DBX_SYMBOL_SIZE (objfile) = ELF_STABS_SYMBOL_SIZE;
   DBX_SYMCOUNT (objfile)
-    = bfd_section_size (objfile->obfd, stabsect) / DBX_SYMBOL_SIZE (objfile);
+    = bfd_section_size (stabsect) / DBX_SYMBOL_SIZE (objfile);
   DBX_STRINGTAB_SIZE (objfile) = stabstrsize;
   DBX_SYMTAB_OFFSET (objfile) = stabsect->filepos;
   DBX_STAB_SECTION (objfile) = stabsect;
@@ -3067,7 +3067,7 @@ elfstab_build_psymtabs (struct objfile *objfile, asection *stabsect,
   processing_acc_compilation = 1;
 
   symbuf_read = 0;
-  symbuf_left = bfd_section_size (objfile->obfd, stabsect);
+  symbuf_left = bfd_section_size (stabsect);
 
   scoped_restore restore_stabs_data = make_scoped_restore (&stabs_data);
   gdb::unique_xmalloc_ptr<gdb_byte> data_holder;
@@ -3128,13 +3128,13 @@ stabsect_build_psymtabs (struct objfile *objfile, char *stab_name,
   text_sect = bfd_get_section_by_name (sym_bfd, text_name);
   if (!text_sect)
     error (_("Can't find %s section in symbol file"), text_name);
-  DBX_TEXT_ADDR (objfile) = bfd_section_vma (sym_bfd, text_sect);
-  DBX_TEXT_SIZE (objfile) = bfd_section_size (sym_bfd, text_sect);
+  DBX_TEXT_ADDR (objfile) = bfd_section_vma (text_sect);
+  DBX_TEXT_SIZE (objfile) = bfd_section_size (text_sect);
 
   DBX_SYMBOL_SIZE (objfile) = sizeof (struct external_nlist);
-  DBX_SYMCOUNT (objfile) = bfd_section_size (sym_bfd, stabsect)
+  DBX_SYMCOUNT (objfile) = bfd_section_size (stabsect)
     / DBX_SYMBOL_SIZE (objfile);
-  DBX_STRINGTAB_SIZE (objfile) = bfd_section_size (sym_bfd, stabstrsect);
+  DBX_STRINGTAB_SIZE (objfile) = bfd_section_size (stabstrsect);
   DBX_SYMTAB_OFFSET (objfile) = stabsect->filepos;	/* XXX - FIXME: POKING
 							   INSIDE BFD DATA
 							   STRUCTURES */

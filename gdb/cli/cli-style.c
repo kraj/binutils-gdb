@@ -26,15 +26,15 @@
 /* True if styling is enabled.  */
 
 #if defined (__MSDOS__) || defined (__CYGWIN__)
-int cli_styling = 0;
+bool cli_styling = false;
 #else
-int cli_styling = 1;
+bool cli_styling = true;
 #endif
 
 /* True if source styling is enabled.  Note that this is only
    consulted when cli_styling is true.  */
 
-int source_styling = 1;
+bool source_styling = true;
 
 /* Name of colors; must correspond to ui_file_style::basic_color.  */
 static const char * const cli_colors[] = {
@@ -82,6 +82,10 @@ cli_style_option highlight_style ("highlight", ui_file_style::RED);
 /* See cli-style.h.  */
 
 cli_style_option title_style ("title", ui_file_style::BOLD);
+
+/* See cli-style.h.  */
+
+cli_style_option metadata_style ("metadata", ui_file_style::DIM);
 
 /* See cli-style.h.  */
 
@@ -372,4 +376,11 @@ Highlight display styling.\n\
 Configure highlight colors and display intensity\n\
 Some commands use the highlight style to draw the attention to a part\n\
 of their output."));
+
+  STYLE_ADD_SETSHOW_COMMANDS (metadata_style,
+			      _("\
+Metadata display styling.\n\
+Configure metadata colors and display intensity\n\
+The \"metadata\" style is used when GDB displays information about\n\
+your data, for example \"<unavailable>\""));
 }

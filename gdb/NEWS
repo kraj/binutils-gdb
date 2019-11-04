@@ -11,6 +11,12 @@
   scripts that should work error-free with many different versions,
   such as in system-wide init files.
 
+* New built-in convenience functions $_gdb_setting, $_gdb_setting_str,
+  $_gdb_maint_setting and $_gdb_maint_setting_str provide access to values
+  of the GDB settings and the GDB maintenance settings.  They are handy
+  for changing the logic of user defined commands depending on the
+  current GDB settings.
+
 * GDB now supports Thread Local Storage (TLS) variables on several
   FreeBSD architectures (amd64, i386, powerpc, riscv).  Other
   architectures require kernel changes.  TLS is not yet supported for
@@ -28,6 +34,29 @@
   GDB commands such as "shell", "pipe" and "make".
 
 * The RX port now supports XML target descriptions.
+
+* GDB now shows the Ada task names at more places, e.g. in task switching
+  messages.
+
+* GDB can now be compiled with Python 3 on Windows.
+
+* New convenience variable $_ada_exception holds the address of the
+  Ada exception being thrown.  This is set by Ada-related catchpoints.
+
+* GDB can now place breakpoints on nested functions and subroutines in
+  Fortran code.  The '::' operator can be used between parent and
+  child scopes when placing breakpoints, for example:
+
+    (gdb) break outer_function::inner_function
+
+  The 'outer_function::' prefix is only needed if 'inner_function' is
+  not visible in the current scope.
+
+* In addition to the system-wide gdbinit file, if configured with
+ --with-system-gdbinit-dir, GDB will now also load files in that directory
+ as system gdbinit files, unless the -nx or -n flag is provided.  Files
+ with extensions .gdb, .py and .scm are supported as long as GDB was
+ compiled with support for that language.
 
 * Python API
 
@@ -130,6 +159,24 @@ show print frame-info
   'frame', 'stepi'.  The python frame filtering also respect this setting.
   The 'backtrace' '-frame-info' option can override this global setting.
 
+info modules [-q] [REGEXP]
+  Return a list of Fortran modules matching REGEXP, or all modules if
+  no REGEXP is given.
+
+info module functions [-q] [-m MODULE_REGEXP] [-t TYPE_REGEXP] [REGEXP]
+  Return a list of functions within all modules, grouped by module.
+  The list of functions can be restricted with the optional regular
+  expressions.  MODULE_REGEXP matches against the module name,
+  TYPE_REGEXP matches against the function type signature, and REGEXP
+  matches against the function name.
+
+info module variables [-q] [-m MODULE_REGEXP] [-t TYPE_REGEXP] [REGEXP]
+  Return a list of variables within all modules, grouped by module.
+  The list of variables can be restricted with the optional regular
+  expressions.  MODULE_REGEXP matches against the module name,
+  TYPE_REGEXP matches against the variable type, and REGEXP matches
+  against the variable name.
+
 * Changed commands
 
 help
@@ -180,6 +227,9 @@ maint test-options unknown-is-operand
 maint show test-options-completion-result
   Commands used by the testsuite to validate the command options
   framework.
+
+focus, winheight, +, -, >, <
+  These commands are now case-sensitive.
 
 * New command options, command completion
 
@@ -296,6 +346,20 @@ maint show test-options-completion-result
 
 * Other MI changes
 
+ ** The default version of the MI interpreter is now 3 (-i=mi3).
+
+  ** The output of information about multi-location breakpoints (which is
+     syntactically incorrect in MI 2) has changed in MI 3.  This affects
+     the following commands and events:
+
+	- -break-insert
+	- -break-info
+	- =breakpoint-created
+	- =breakpoint-modified
+
+     The -fix-multi-location-breakpoint-output command can be used to enable
+     this behavior with previous MI versions.
+
  ** Backtraces and frames include a new optional field addr_flags which is
     given after the addr field.  On AArch64 this contains PAC if the address
     has been masked in the frame.  On all other targets the field is not
@@ -317,6 +381,25 @@ maint show test-options-completion-result
 
   GDB now bundles GNU readline 8.0, but if you choose to use
   --with-system-readline, only readline >= 7.0 can be used.
+
+* The TUI SingleKey keymap is now named "SingleKey".  This can be used
+  from .inputrc to bind keys in this keymap.  This feature is only
+  available when gdb is built against GNU readline 8.0 or later.
+
+* Removed targets and native configurations
+
+  GDB no longer supports debugging the Cell Broadband Engine.  This includes
+  both debugging standalone Cell/B.E. SPU applications and integrated debugging
+  of Cell/B.E. applications that use both the PPU and SPU architectures.
+
+* New Simulators
+
+TI PRU					pru-*-elf
+
+* Removed targets and native configurations
+
+Solaris 10			i?86-*-solaris2.10, x86_64-*-solaris2.10,
+				sparc*-*-solaris2.10
 
 *** Changes in GDB 8.3
 
@@ -483,8 +566,6 @@ set style address intensity VALUE
 
 * MI changes
 
-  ** The default version of the MI interpreter is now 3 (-i=mi3).
-
   ** The '-data-disassemble' MI command now accepts an '-a' option to
      disassemble the whole function surrounding the given program
      counter value or function name.  Support for this feature can be
@@ -493,18 +574,6 @@ set style address intensity VALUE
 
   ** Command responses and notifications that include a frame now include
      the frame's architecture in a new "arch" attribute.
-
-  ** The output of information about multi-location breakpoints (which is
-     syntactically incorrect in MI 2) has changed in MI 3.  This affects
-     the following commands and events:
-
-	- -break-insert
-	- -break-info
-	- =breakpoint-created
-	- =breakpoint-modified
-
-     The -fix-multi-location-breakpoint-output command can be used to enable
-     this behavior with previous MI versions.
 
 * New native configurations
 

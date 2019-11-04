@@ -69,8 +69,8 @@ struct partial_symbol;
    testcase are broken for some targets.  In this test the functions
    are all implemented as part of one file and the testcase is not
    necessarily linked with a start file (depending on the target).
-   What happens is, that the first frame is printed normaly and
-   following frames are treated as being inside the enttry file then.
+   What happens is, that the first frame is printed normally and
+   following frames are treated as being inside the entry file then.
    This way, only the #0 frame is printed in the backtrace output.''
    Ref "frame.c" "NOTE: vinschen/2003-04-01".
 
@@ -143,14 +143,14 @@ struct obj_section
 
 /* The memory address of section S (vma + offset).  */
 #define obj_section_addr(s)				      		\
-  (bfd_get_section_vma ((s)->objfile->obfd, s->the_bfd_section)		\
+  (bfd_section_vma (s->the_bfd_section)					\
    + obj_section_offset (s))
 
 /* The one-passed-the-end memory address of section S
    (vma + size + offset).  */
 #define obj_section_endaddr(s)						\
-  (bfd_get_section_vma ((s)->objfile->obfd, s->the_bfd_section)		\
-   + bfd_get_section_size ((s)->the_bfd_section)			\
+  (bfd_section_vma (s->the_bfd_section)					\
+   + bfd_section_size ((s)->the_bfd_section)				\
    + obj_section_offset (s))
 
 /* The "objstats" structure provides a place for gdb to record some
@@ -258,10 +258,10 @@ struct objfile_per_bfd_storage
   struct gdbarch *gdbarch = NULL;
 
   /* Hash table for mapping symbol names to demangled names.  Each
-     entry in the hash table is actually two consecutive strings,
-     both null-terminated; the first one is a mangled or linkage
-     name, and the second is the demangled name or just a zero byte
-     if the name doesn't demangle.  */
+     entry in the hash table is a demangled_name_entry struct, storing the
+     language and two consecutive strings, both null-terminated; the first one
+     is a mangled or linkage name, and the second is the demangled name or just
+     a zero byte if the name doesn't demangle.  */
 
   htab_up demangled_names_hash;
 
@@ -305,12 +305,14 @@ struct objfile_per_bfd_storage
 
   bool minsyms_read : 1;
 
-  /* This is a hash table used to index the minimal symbols by name.  */
+  /* This is a hash table used to index the minimal symbols by (mangled)
+     name.  */
 
   minimal_symbol *msymbol_hash[MINIMAL_SYMBOL_HASH_SIZE] {};
 
   /* This hash table is used to index the minimal symbols by their
-     demangled names.  */
+     demangled names.  Uses a language-specific hash function via
+     search_name_hash.  */
 
   minimal_symbol *msymbol_demangled_hash[MINIMAL_SYMBOL_HASH_SIZE] {};
 
@@ -481,7 +483,7 @@ struct objfile
      This pointer is never NULL.  This does not have to be freed; it is
      guaranteed to have a lifetime at least as long as the objfile.  */
 
-  char *original_name = nullptr;
+  const char *original_name = nullptr;
 
   CORE_ADDR addr_low = 0;
 
@@ -635,11 +637,7 @@ extern CORE_ADDR entry_point_address (void);
 
 extern void build_objfile_section_table (struct objfile *);
 
-extern void put_objfile_before (struct objfile *, struct objfile *);
-
 extern void add_separate_debug_objfile (struct objfile *, struct objfile *);
-
-extern void unlink_objfile (struct objfile *);
 
 extern void free_objfile_separate_debug (struct objfile *);
 

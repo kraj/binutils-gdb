@@ -1,4 +1,4 @@
-/* Target dependent code for ARC arhitecture, for GDB.
+/* Target dependent code for ARC architecture, for GDB.
 
    Copyright 2005-2019 Free Software Foundation, Inc.
    Contributed by Synopsys Inc.
@@ -33,7 +33,7 @@
 
 /* ARC header files.  */
 #include "opcode/arc.h"
-#include "../opcodes/arc-dis.h"
+#include "opcodes/arc-dis.h"
 #include "arc-tdep.h"
 
 /* Standard headers.  */
@@ -969,7 +969,7 @@ arc_is_in_prologue (struct gdbarch *gdbarch, const struct arc_instruction &insn,
   /* Store of some register.  May or may not update base address register.  */
   if (insn.insn_class == STORE || insn.insn_class == PUSH)
     {
-      /* There is definetely at least one operand - register/value being
+      /* There is definitely at least one operand - register/value being
 	 stored.  */
       gdb_assert (insn.operands_count > 0);
 
@@ -1203,7 +1203,7 @@ arc_disassemble_info (struct gdbarch *gdbarch)
    If CACHE is not NULL, then it will be filled with information about saved
    registers.
 
-   There are several variations of prologue which GDB may encouter.  "Full"
+   There are several variations of prologue which GDB may encounter.  "Full"
    prologue looks like this:
 
 	sub	sp,sp,<imm>   ; Space for variadic arguments.
@@ -1224,7 +1224,7 @@ arc_disassemble_info (struct gdbarch *gdbarch)
     store, that doesn't update SP.  Like this:
 
 
-	sub	sp,sp,8		; Create space for calee-saved registers.
+	sub	sp,sp,8		; Create space for callee-saved registers.
 	st	r13,[sp,4]      ; Store callee saved registers (up to R26/GP).
 	st	r14,[sp,0]
 
@@ -1391,7 +1391,7 @@ arc_skip_prologue (struct gdbarch *gdbarch, CORE_ADDR pc)
 int
 arc_delayed_print_insn (bfd_vma addr, struct disassemble_info *info)
 {
-  /* Standard BFD "machine number" field allows libocodes disassembler to
+  /* Standard BFD "machine number" field allows libopcodes disassembler to
      distinguish ARC 600, 700 and v2 cores, however v2 encompasses both ARC EM
      and HS, which have some difference between.  There are two ways to specify
      what is the target core:
@@ -1886,7 +1886,7 @@ arc_tdesc_init (struct gdbarch_info info, const struct target_desc **tdesc,
 	}
     }
 
-  /* Mandatory AUX registeres are intentionally few and are common between
+  /* Mandatory AUX registers are intentionally few and are common between
      ARCompact and ARC v2, so same code can be used for both.  */
   feature = tdesc_find_feature (tdesc_loc, aux_minimal_feature_name);
   if (feature == NULL)

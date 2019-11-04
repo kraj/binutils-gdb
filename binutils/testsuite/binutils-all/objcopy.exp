@@ -1108,10 +1108,12 @@ if [is_elf_format] {
 	run_dump_test "note-2-64"
 	run_dump_test "note-3-64"
 	run_dump_test "note-4-64"
+	run_dump_test "note-6-64"
     } else {
 	run_dump_test "note-2-32"
 	run_dump_test "note-3-32"
 	run_dump_test "note-4-32"
+	run_dump_test "note-6-32"
     }
     run_dump_test "note-5"
 }
@@ -1220,6 +1222,9 @@ if [is_elf_format] {
     run_dump_test "only-section-01"
     run_dump_test "remove-section-01"
 
+    run_dump_test "keep-section-1"
+    run_dump_test "keep-section-2"
+
     # Test the remove relocation functionality
     set test_list [lsort [glob -nocomplain $srcdir/$subdir/remove-relocs-*.d]]
     foreach t $test_list {
@@ -1310,3 +1315,5 @@ proc objcopy_remove_relocations_from_executable { } {
 objcopy_remove_relocations_from_executable
 
 run_dump_test "pr23633"
+
+run_dump_test "set-section-alignment"

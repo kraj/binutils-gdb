@@ -52,7 +52,7 @@ tui_ui_out::do_field_signed (int fldno, int width, ui_align alignment,
 void
 tui_ui_out::do_field_string (int fldno, int width, ui_align align,
 			     const char *fldname, const char *string,
-			     ui_out_style_kind style)
+			     const ui_file_style &style)
 {
   if (suppress_output ())
     return;
@@ -70,15 +70,15 @@ tui_ui_out::do_field_string (int fldno, int width, ui_align align,
 
 void
 tui_ui_out::do_field_fmt (int fldno, int width, ui_align align,
-			  const char *fldname, const char *format,
-			  va_list args)
+			  const char *fldname, const ui_file_style &style,
+			  const char *format, va_list args)
 {
   if (suppress_output ())
     return;
 
   m_start_of_line++;
 
-  cli_ui_out::do_field_fmt (fldno, width, align, fldname, format, args);
+  cli_ui_out::do_field_fmt (fldno, width, align, fldname, style, format, args);
 }
 
 void

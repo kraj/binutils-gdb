@@ -28,7 +28,6 @@
 #include "gdbcore.h"
 #include "mach-o.h"
 #include "aout/stab_gnu.h"
-#include "gdbsupport/vec.h"
 #include "psympriv.h"
 #include "complaints.h"
 #include "gdb_bfd.h"
@@ -575,7 +574,7 @@ macho_add_oso_symfile (oso_el *oso, const gdb_bfd_ref_ptr &abfd,
                          sec->name, sym->name,
                          paddress (arch, res));
                     }
-                  bfd_set_section_vma (abfd.get (), sec, res);
+                  bfd_set_section_vma (sec, res);
                   sections_rebased[sec->index] = 1;
                 }
             }
@@ -589,7 +588,7 @@ macho_add_oso_symfile (oso_el *oso, const gdb_bfd_ref_ptr &abfd,
 
   bfd_hash_table_free (&table);
 
-  /* We need to clear SYMFILE_MAINLINE to avoid interractive question
+  /* We need to clear SYMFILE_MAINLINE to avoid interactive question
      from symfile.c:symbol_file_add_with_addrs_or_offsets.  */
   symbol_file_add_from_bfd
     (abfd.get (), name, symfile_flags & ~(SYMFILE_MAINLINE | SYMFILE_VERBOSE),
@@ -671,7 +670,7 @@ macho_symfile_read_all_oso (std::vector<oso_el> *oso_vector_ptr,
           /* Load all oso in this library.  */
 	  while (member_bfd != NULL)
 	    {
-	      const char *member_name = member_bfd->filename;
+	      const char *member_name = bfd_get_filename (member_bfd.get ());
               int member_len = strlen (member_name);
 
               /* If this member is referenced, add it as a symfile.  */
@@ -685,7 +684,7 @@ macho_symfile_read_all_oso (std::vector<oso_el> *oso_vector_ptr,
                                   member_len))
                     {
                       macho_add_oso_symfile (oso2, member_bfd,
-					     bfd_get_filename (member_bfd),
+					     bfd_get_filename (member_bfd.get ()),
                                              main_objfile, symfile_flags);
                       oso2->name = NULL;
                       break;
@@ -854,8 +853,7 @@ macho_symfile_read (struct objfile *objfile, symfile_add_flags symfile_flags)
             {
               if (strcmp (asect->name, dsect->name) != 0)
                 break;
-              bfd_set_section_size (dsym_bfd.get (), dsect,
-                                    bfd_get_section_size (asect));
+              bfd_set_section_size (dsect, bfd_section_size (asect));
             }
 
 	  /* Add the dsym file as a separate file.  */

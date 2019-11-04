@@ -292,7 +292,7 @@ DEF_ENUM_FLAGS_TYPE (enum type_instance_flag_value, type_instance_flags);
 #define TYPE_GNU_IFUNC(t)	(TYPE_MAIN_TYPE (t)->flag_gnu_ifunc)
 
 /* * Type owner.  If TYPE_OBJFILE_OWNED is true, the type is owned by
-   the objfile retrieved as TYPE_OBJFILE.  Otherweise, the type is
+   the objfile retrieved as TYPE_OBJFILE.  Otherwise, the type is
    owned by an architecture; TYPE_OBJFILE is NULL in this case.  */
 
 #define TYPE_OBJFILE_OWNED(t) (TYPE_MAIN_TYPE (t)->flag_objfile_owned)
@@ -2145,5 +2145,10 @@ extern bool types_deeply_equal (struct type *, struct type *);
 extern int type_not_allocated (const struct type *type);
 
 extern int type_not_associated (const struct type *type);
+
+/* A flag to enable printing of debugging information of C++
+   overloading.  */
+
+extern unsigned int overload_debug;
 
 #endif /* GDBTYPES_H */

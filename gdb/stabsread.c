@@ -42,6 +42,7 @@
 #include "gdb-demangle.h"
 #include "language.h"
 #include "target-float.h"
+#include "c-lang.h"
 #include "cp-abi.h"
 #include "cp-support.h"
 #include <ctype.h>
@@ -751,11 +752,12 @@ define_symbol (CORE_ADDR valu, const char *string, int desc, int type,
       if (!new_name.empty ())
 	{
 	  SYMBOL_SET_NAMES (sym,
-			    new_name.c_str (), new_name.length (),
+			    new_name,
 			    1, objfile);
 	}
       else
-	SYMBOL_SET_NAMES (sym, string, p - string, 1, objfile);
+	SYMBOL_SET_NAMES (sym, gdb::string_view (string, p - string), true,
+			  objfile);
 
       if (SYMBOL_LANGUAGE (sym) == language_cplus)
 	cp_scan_for_anonymous_namespaces (get_buildsym_compunit (), sym,
@@ -942,7 +944,7 @@ define_symbol (CORE_ADDR valu, const char *string, int desc, int type,
       SYMBOL_TYPE (sym) = read_type (&p, objfile);
       SYMBOL_ACLASS_INDEX (sym) = LOC_LABEL;
       SYMBOL_DOMAIN (sym) = VAR_DOMAIN;
-      SYMBOL_VALUE_ADDRESS (sym) = valu;
+      SET_SYMBOL_VALUE_ADDRESS (sym, valu);
       add_symbol_to_list (sym, get_local_symbols ());
       break;
 
@@ -1188,7 +1190,7 @@ define_symbol (CORE_ADDR valu, const char *string, int desc, int type,
       /* Static symbol at top level of file.  */
       SYMBOL_TYPE (sym) = read_type (&p, objfile);
       SYMBOL_ACLASS_INDEX (sym) = LOC_STATIC;
-      SYMBOL_VALUE_ADDRESS (sym) = valu;
+      SET_SYMBOL_VALUE_ADDRESS (sym, valu);
       if (gdbarch_static_transform_name_p (gdbarch)
 	  && gdbarch_static_transform_name (gdbarch,
 					    SYMBOL_LINKAGE_NAME (sym))
@@ -1204,7 +1206,8 @@ define_symbol (CORE_ADDR valu, const char *string, int desc, int type,
 		(gdbarch, SYMBOL_LINKAGE_NAME (sym));
 
 	      SYMBOL_SET_LINKAGE_NAME (sym, new_name);
-	      SYMBOL_VALUE_ADDRESS (sym) = BMSYMBOL_VALUE_ADDRESS (msym);
+	      SET_SYMBOL_VALUE_ADDRESS (sym,
+					BMSYMBOL_VALUE_ADDRESS (msym));
 	    }
 	}
       SYMBOL_DOMAIN (sym) = VAR_DOMAIN;
@@ -1258,11 +1261,6 @@ define_symbol (CORE_ADDR valu, const char *string, int desc, int type,
 
       if (TYPE_NAME (SYMBOL_TYPE (sym)) == NULL)
 	{
-	  /* gcc-2.6 or later (when using -fvtable-thunks)
-	     emits a unique named type for a vtable entry.
-	     Some gdb code depends on that specific name.  */
-	  extern const char vtbl_ptr_name[];
-
 	  if ((TYPE_CODE (SYMBOL_TYPE (sym)) == TYPE_CODE_PTR
 	       && strcmp (SYMBOL_LINKAGE_NAME (sym), vtbl_ptr_name))
 	      || TYPE_CODE (SYMBOL_TYPE (sym)) == TYPE_CODE_FUNC)
@@ -1380,7 +1378,7 @@ define_symbol (CORE_ADDR valu, const char *string, int desc, int type,
       /* Static symbol of local scope.  */
       SYMBOL_TYPE (sym) = read_type (&p, objfile);
       SYMBOL_ACLASS_INDEX (sym) = LOC_STATIC;
-      SYMBOL_VALUE_ADDRESS (sym) = valu;
+      SET_SYMBOL_VALUE_ADDRESS (sym, valu);
       if (gdbarch_static_transform_name_p (gdbarch)
 	  && gdbarch_static_transform_name (gdbarch,
 					    SYMBOL_LINKAGE_NAME (sym))
@@ -1396,7 +1394,7 @@ define_symbol (CORE_ADDR valu, const char *string, int desc, int type,
 		(gdbarch, SYMBOL_LINKAGE_NAME (sym));
 
 	      SYMBOL_SET_LINKAGE_NAME (sym, new_name);
-	      SYMBOL_VALUE_ADDRESS (sym) = BMSYMBOL_VALUE_ADDRESS (msym);
+	      SET_SYMBOL_VALUE_ADDRESS (sym, BMSYMBOL_VALUE_ADDRESS (msym));
 	    }
 	}
       SYMBOL_DOMAIN (sym) = VAR_DOMAIN;
@@ -3893,7 +3891,7 @@ read_huge_number (const char **pp, int end, int *bits,
 	      && len == twos_complement_bits / 3))
 	{
 	  /* Ok, we have enough characters for a signed value, check
-	     for signness by testing if the sign bit is set.  */
+	     for signedness by testing if the sign bit is set.  */
 	  sign_bit = (twos_complement_bits % 3 + 2) % 3;
 	  c = *p - '0';
 	  if (c & (1 << sign_bit))
@@ -4363,7 +4361,9 @@ fix_common_block (struct symbol *sym, CORE_ADDR valu)
       int j;
 
       for (j = next->nsyms - 1; j >= 0; j--)
-	SYMBOL_VALUE_ADDRESS (next->symbol[j]) += valu;
+	SET_SYMBOL_VALUE_ADDRESS (next->symbol[j],
+				  SYMBOL_VALUE_ADDRESS (next->symbol[j])
+				  + valu);
     }
 }
 
@@ -4549,7 +4549,7 @@ cleanup_undefined_types_1 (void)
   undef_types_length = 0;
 }
 
-/* Try to fix all the undefined types we ecountered while processing
+/* Try to fix all the undefined types we encountered while processing
    this unit.  */
 
 void
@@ -4641,8 +4641,9 @@ scan_file_globals (struct objfile *objfile)
 			}
 		      else
 			{
-			  SYMBOL_VALUE_ADDRESS (sym)
-			    = MSYMBOL_VALUE_ADDRESS (resolve_objfile, msymbol);
+			  SET_SYMBOL_VALUE_ADDRESS
+			    (sym, MSYMBOL_VALUE_ADDRESS (resolve_objfile,
+							 msymbol));
 			}
 		      SYMBOL_SECTION (sym) = MSYMBOL_SECTION (msymbol);
 		    }
@@ -4680,7 +4681,7 @@ scan_file_globals (struct objfile *objfile)
 
 	  /* Change the symbol address from the misleading chain value
 	     to address zero.  */
-	  SYMBOL_VALUE_ADDRESS (prev) = 0;
+	  SET_SYMBOL_VALUE_ADDRESS (prev, 0);
 
 	  /* Complain about unresolved common block symbols.  */
 	  if (SYMBOL_CLASS (prev) == LOC_STATIC)

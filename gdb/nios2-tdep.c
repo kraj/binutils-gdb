@@ -52,7 +52,7 @@
 
 /* Control debugging information emitted in this file.  */
 
-static int nios2_debug = 0;
+static bool nios2_debug = false;
 
 /* The following structures are used in the cache for prologue
    analysis; see the reg_value and reg_saved tables in
@@ -2260,11 +2260,11 @@ nios2_type_align (struct gdbarch *gdbarch, struct type *type)
 }
 
 /* Implement the gcc_target_options gdbarch method.  */
-static char *
+static std::string
 nios2_gcc_target_options (struct gdbarch *gdbarch)
 {
   /* GCC doesn't know "-m32".  */
-  return NULL;
+  return {};
 }
 
 /* Initialize the Nios II gdbarch.  */

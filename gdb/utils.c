@@ -62,7 +62,6 @@
 
 #include <chrono>
 
-#include "gdb_usleep.h"
 #include "interps.h"
 #include "gdb_regex.h"
 #include "gdbsupport/job-control.h"
@@ -74,13 +73,15 @@
 #include "cli/cli-style.h"
 #include "gdbsupport/scope-exit.h"
 #include "gdbarch.h"
+#include "cli-out.h"
 
 void (*deprecated_error_begin_hook) (void);
 
 /* Prototypes for local functions */
 
 static void vfprintf_maybe_filtered (struct ui_file *, const char *,
-				     va_list, int) ATTRIBUTE_PRINTF (2, 0);
+				     va_list, bool, bool)
+  ATTRIBUTE_PRINTF (2, 0);
 
 static void fputs_maybe_filtered (const char *, struct ui_file *, int);
 
@@ -99,13 +100,13 @@ static std::chrono::steady_clock::duration prompt_for_continue_wait_time;
 
 /* A flag indicating whether to timestamp debugging messages.  */
 
-static int debug_timestamp = 0;
+static bool debug_timestamp = false;
 
-/* Nonzero means that strings with character values >0x7F should be printed
-   as octal escapes.  Zero means just print the value (e.g. it's an
+/* True means that strings with character values >0x7F should be printed
+   as octal escapes.  False means just print the value (e.g. it's an
    international character, and the terminal or window can cope.)  */
 
-int sevenbit_strings = 0;
+bool sevenbit_strings = false;
 static void
 show_sevenbit_strings (struct ui_file *file, int from_tty,
 		       struct cmd_list_element *c, const char *value)
@@ -119,7 +120,7 @@ show_sevenbit_strings (struct ui_file *file, int from_tty,
 
 const char *warning_pre_print = "\nwarning: ";
 
-int pagination_enabled = 1;
+bool pagination_enabled = true;
 static void
 show_pagination_enabled (struct ui_file *file, int from_tty,
 			 struct cmd_list_element *c, const char *value)
@@ -581,9 +582,7 @@ add_internal_problem_command (struct internal_problem *problem)
 static std::string
 perror_string (const char *prefix)
 {
-  char *err;
-
-  err = safe_strerror (errno);
+  const char *err = safe_strerror (errno);
   return std::string (prefix) + ": " + err;
 }
 
@@ -629,19 +628,11 @@ perror_warning_with_name (const char *string)
 void
 print_sys_errmsg (const char *string, int errcode)
 {
-  char *err;
-  char *combined;
-
-  err = safe_strerror (errcode);
-  combined = (char *) alloca (strlen (err) + strlen (string) + 3);
-  strcpy (combined, string);
-  strcat (combined, ": ");
-  strcat (combined, err);
-
+  const char *err = safe_strerror (errcode);
   /* We want anything which was printed on stdout to come out first, before
      this message.  */
   gdb_flush (gdb_stdout);
-  fprintf_unfiltered (gdb_stderr, "%s.\n", combined);
+  fprintf_unfiltered (gdb_stderr, "%s: %s.\n", string, err);
 }
 
 /* Control C eventually causes this to be called, at a convenient time.  */
@@ -734,22 +725,6 @@ void
 gdb_print_host_address_1 (const void *addr, struct ui_file *stream)
 {
   fprintf_filtered (stream, "%s", host_address_to_string (addr));
-}
-
-/* See utils.h.  */
-
-char *
-make_hex_string (const gdb_byte *data, size_t length)
-{
-  char *result = (char *) xmalloc (length * 2 + 1);
-  char *p;
-  size_t i;
-
-  p = result;
-  for (i = 0; i < length; ++i)
-    p += xsnprintf (p, 3, "%02x", data[i]);
-  *p = '\0';
-  return result;
 }
 
 
@@ -1296,7 +1271,7 @@ init_page_info (void)
 	  || getenv ("EMACS") || getenv ("INSIDE_EMACS"))
 	{
 	  /* The number of lines per page is not mentioned in the terminal
-	     description or EMACS evironment variable is set.  This probably
+	     description or EMACS environment variable is set.  This probably
 	     means that paging is not useful, so disable paging.  */
 	  lines_per_page = UINT_MAX;
 	}
@@ -1353,7 +1328,7 @@ set_screen_size (void)
      commands and either:
 
      - the user specified "unlimited", which maps to UINT_MAX, or
-     - the user spedified some number between INT_MAX and UINT_MAX.
+     - the user specified some number between INT_MAX and UINT_MAX.
 
      Cap "infinity" to approximately sqrt(INT_MAX) so that we don't
      overflow in rl_set_screen_size, which multiplies rows and columns
@@ -1872,6 +1847,24 @@ fputs_styled (const char *linebuffer, const ui_file_style &style,
 /* See utils.h.  */
 
 void
+fputs_styled_unfiltered (const char *linebuffer, const ui_file_style &style,
+			 struct ui_file *stream)
+{
+  /* This just makes it so we emit somewhat fewer escape
+     sequences.  */
+  if (style.is_default ())
+    fputs_maybe_filtered (linebuffer, stream, 0);
+  else
+    {
+      set_output_style (stream, style);
+      fputs_maybe_filtered (linebuffer, stream, 0);
+      set_output_style (stream, ui_file_style ());
+    }
+}
+
+/* See utils.h.  */
+
+void
 fputs_highlighted (const char *str, const compiled_regex &highlight,
 		   struct ui_file *stream)
 {
@@ -2031,40 +2024,52 @@ puts_debug (char *prefix, char *string, char *suffix)
 /* Print a variable number of ARGS using format FORMAT.  If this
    information is going to put the amount written (since the last call
    to REINITIALIZE_MORE_FILTER or the last page break) over the page size,
-   call prompt_for_continue to get the users permision to continue.
+   call prompt_for_continue to get the users permission to continue.
 
    Unlike fprintf, this function does not return a value.
 
    We implement three variants, vfprintf (takes a vararg list and stream),
    fprintf (takes a stream to write on), and printf (the usual).
 
-   Note also that a longjmp to top level may occur in this routine
-   (since prompt_for_continue may do so) so this routine should not be
-   called when cleanups are not in place.  */
+   Note also that this may throw a quit (since prompt_for_continue may
+   do so).  */
 
 static void
 vfprintf_maybe_filtered (struct ui_file *stream, const char *format,
-			 va_list args, int filter)
+			 va_list args, bool filter, bool gdbfmt)
 {
-  std::string linebuffer = string_vprintf (format, args);
-  fputs_maybe_filtered (linebuffer.c_str (), stream, filter);
+  if (gdbfmt)
+    {
+      ui_out_flags flags = disallow_ui_out_field;
+      if (!filter)
+	flags |= unfiltered_output;
+      cli_ui_out (stream, flags).vmessage (applied_style, format, args);
+    }
+  else
+    {
+      std::string str = string_vprintf (format, args);
+      fputs_maybe_filtered (str.c_str (), stream, filter);
+    }
 }
 
 
 void
 vfprintf_filtered (struct ui_file *stream, const char *format, va_list args)
 {
-  vfprintf_maybe_filtered (stream, format, args, 1);
+  vfprintf_maybe_filtered (stream, format, args, true, true);
 }
 
 void
 vfprintf_unfiltered (struct ui_file *stream, const char *format, va_list args)
 {
-  std::string linebuffer = string_vprintf (format, args);
   if (debug_timestamp && stream == gdb_stdlog)
     {
       using namespace std::chrono;
       int len, need_nl;
+
+      string_file sfile;
+      cli_ui_out (&sfile, 0).vmessage (ui_file_style (), format, args);
+      std::string linebuffer = std::move (sfile.string ());
 
       steady_clock::time_point now = steady_clock::now ();
       seconds s = duration_cast<seconds> (now.time_since_epoch ());
@@ -2081,13 +2086,13 @@ vfprintf_unfiltered (struct ui_file *stream, const char *format, va_list args)
       fputs_unfiltered (timestamp.c_str (), stream);
     }
   else
-    fputs_unfiltered (linebuffer.c_str (), stream);
+    vfprintf_maybe_filtered (stream, format, args, false, true);
 }
 
 void
 vprintf_filtered (const char *format, va_list args)
 {
-  vfprintf_maybe_filtered (gdb_stdout, format, args, 1);
+  vfprintf_maybe_filtered (gdb_stdout, format, args, true, false);
 }
 
 void
@@ -2147,6 +2152,33 @@ fprintf_styled (struct ui_file *stream, const ui_file_style &style,
   set_output_style (stream, ui_file_style ());
 }
 
+/* See utils.h.  */
+
+void
+vfprintf_styled (struct ui_file *stream, const ui_file_style &style,
+		 const char *format, va_list args)
+{
+  set_output_style (stream, style);
+  vfprintf_filtered (stream, format, args);
+  set_output_style (stream, ui_file_style ());
+}
+
+/* See utils.h.  */
+
+void
+vfprintf_styled_no_gdbfmt (struct ui_file *stream, const ui_file_style &style,
+			   bool filter, const char *format, va_list args)
+{
+  std::string str = string_vprintf (format, args);
+  if (!str.empty ())
+    {
+      if (!style.is_default ())
+	set_output_style (stream, style);
+      fputs_maybe_filtered (str.c_str (), stream, filter);
+      if (!style.is_default ())
+	set_output_style (stream, ui_file_style ());
+    }
+}
 
 void
 printf_filtered (const char *format, ...)
@@ -2789,57 +2821,6 @@ show_debug_timestamp (struct ui_file *file, int from_tty,
 }
 
 
-void
-initialize_utils (void)
-{
-  add_setshow_uinteger_cmd ("width", class_support, &chars_per_line, _("\
-Set number of characters where GDB should wrap lines of its output."), _("\
-Show number of characters where GDB should wrap lines of its output."), _("\
-This affects where GDB wraps its output to fit the screen width.\n\
-Setting this to \"unlimited\" or zero prevents GDB from wrapping its output."),
-			    set_width_command,
-			    show_chars_per_line,
-			    &setlist, &showlist);
-
-  add_setshow_uinteger_cmd ("height", class_support, &lines_per_page, _("\
-Set number of lines in a page for GDB output pagination."), _("\
-Show number of lines in a page for GDB output pagination."), _("\
-This affects the number of lines after which GDB will pause\n\
-its output and ask you whether to continue.\n\
-Setting this to \"unlimited\" or zero causes GDB never pause during output."),
-			    set_height_command,
-			    show_lines_per_page,
-			    &setlist, &showlist);
-
-  add_setshow_boolean_cmd ("pagination", class_support,
-			   &pagination_enabled, _("\
-Set state of GDB output pagination."), _("\
-Show state of GDB output pagination."), _("\
-When pagination is ON, GDB pauses at end of each screenful of\n\
-its output and asks you whether to continue.\n\
-Turning pagination off is an alternative to \"set height unlimited\"."),
-			   NULL,
-			   show_pagination_enabled,
-			   &setlist, &showlist);
-
-  add_setshow_boolean_cmd ("sevenbit-strings", class_support,
-			   &sevenbit_strings, _("\
-Set printing of 8-bit characters in strings as \\nnn."), _("\
-Show printing of 8-bit characters in strings as \\nnn."), NULL,
-			   NULL,
-			   show_sevenbit_strings,
-			   &setprintlist, &showprintlist);
-
-  add_setshow_boolean_cmd ("timestamp", class_maintenance,
-			    &debug_timestamp, _("\
-Set timestamping of debugging messages."), _("\
-Show timestamping of debugging messages."), _("\
-When set, debugging messages will be marked with seconds and microseconds."),
-			   NULL,
-			   show_debug_timestamp,
-			   &setdebuglist, &showdebuglist);
-}
-
 /* See utils.h.  */
 
 CORE_ADDR
@@ -3059,14 +3040,6 @@ gdb_argv::reset (const char *s)
   m_argv = argv;
 }
 
-int
-compare_positive_ints (const void *ap, const void *bp)
-{
-  /* Because we know we're comparing two ints which are positive,
-     there's no danger of overflow here.  */
-  return * (int *) ap - * (int *) bp;
-}
-
 #define AMBIGUOUS_MESS1	".\nMatching formats:"
 #define AMBIGUOUS_MESS2	\
   ".\nUse \"set gnutarget format-name\" to specify the format."
@@ -3115,7 +3088,7 @@ parse_pid_to_attach (const char *args)
   return pid;
 }
 
-/* Substitute all occurences of string FROM by string TO in *STRINGP.  *STRINGP
+/* Substitute all occurrences of string FROM by string TO in *STRINGP.  *STRINGP
    must come from xrealloc-compatible allocator and it may be updated.  FROM
    needs to be delimited by IS_DIR_SEPARATOR or DIRNAME_SEPARATOR (or be
    located at the start or end of *STRINGP.  */
@@ -3448,6 +3421,53 @@ copy_bitwise (gdb_byte *dest, ULONGEST dest_offset,
 void
 _initialize_utils (void)
 {
+  add_setshow_uinteger_cmd ("width", class_support, &chars_per_line, _("\
+Set number of characters where GDB should wrap lines of its output."), _("\
+Show number of characters where GDB should wrap lines of its output."), _("\
+This affects where GDB wraps its output to fit the screen width.\n\
+Setting this to \"unlimited\" or zero prevents GDB from wrapping its output."),
+			    set_width_command,
+			    show_chars_per_line,
+			    &setlist, &showlist);
+
+  add_setshow_uinteger_cmd ("height", class_support, &lines_per_page, _("\
+Set number of lines in a page for GDB output pagination."), _("\
+Show number of lines in a page for GDB output pagination."), _("\
+This affects the number of lines after which GDB will pause\n\
+its output and ask you whether to continue.\n\
+Setting this to \"unlimited\" or zero causes GDB never pause during output."),
+			    set_height_command,
+			    show_lines_per_page,
+			    &setlist, &showlist);
+
+  add_setshow_boolean_cmd ("pagination", class_support,
+			   &pagination_enabled, _("\
+Set state of GDB output pagination."), _("\
+Show state of GDB output pagination."), _("\
+When pagination is ON, GDB pauses at end of each screenful of\n\
+its output and asks you whether to continue.\n\
+Turning pagination off is an alternative to \"set height unlimited\"."),
+			   NULL,
+			   show_pagination_enabled,
+			   &setlist, &showlist);
+
+  add_setshow_boolean_cmd ("sevenbit-strings", class_support,
+			   &sevenbit_strings, _("\
+Set printing of 8-bit characters in strings as \\nnn."), _("\
+Show printing of 8-bit characters in strings as \\nnn."), NULL,
+			   NULL,
+			   show_sevenbit_strings,
+			   &setprintlist, &showprintlist);
+
+  add_setshow_boolean_cmd ("timestamp", class_maintenance,
+			    &debug_timestamp, _("\
+Set timestamping of debugging messages."), _("\
+Show timestamping of debugging messages."), _("\
+When set, debugging messages will be marked with seconds and microseconds."),
+			   NULL,
+			   show_debug_timestamp,
+			   &setdebuglist, &showdebuglist);
+
   add_internal_problem_command (&internal_error_problem);
   add_internal_problem_command (&internal_warning_problem);
   add_internal_problem_command (&demangler_warning_problem);

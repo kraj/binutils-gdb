@@ -769,7 +769,7 @@ The result @code{bar} will be a @code{gdb.Value} object holding the
 value pointed to by @code{foo}.
 
 A similar function @code{Value.referenced_value} exists which also
-returns @code{gdb.Value} objects corresonding to the values pointed to
+returns @code{gdb.Value} objects corresponding to the values pointed to
 by pointer values (and additionally, values referenced by reference
 values).  However, the behavior of @code{Value.dereference}
 differs from @code{Value.referenced_value} by the fact that the
@@ -3292,6 +3292,9 @@ module:
 This function returns the thread object for the selected thread.  If there
 is no selected thread, this will return @code{None}.
 @end defun
+
+To get the list of threads for an inferior, use the @code{Inferior.threads()}
+method.  @xref{Inferiors In Python}
 
 A @code{gdb.InferiorThread} object has the following attributes:
 

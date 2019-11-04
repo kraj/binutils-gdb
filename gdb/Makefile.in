@@ -153,6 +153,9 @@ INCLUDE_CFLAGS = -I$(INCLUDE_DIR)
 # Where is the "-liberty" library?  Typically in ../libiberty.
 LIBIBERTY = ../libiberty/libiberty.a
 
+# Where is the CTF library?  Typically in ../libctf.
+LIBCTF = ../libctf/.libs/libctf.a
+
 # Where is the BFD library?  Typically in ../bfd.
 BFD_DIR = ../bfd
 BFD = $(BFD_DIR)/libbfd.a
@@ -171,8 +174,8 @@ LIBDECNUMBER = $(LIBDECNUMBER_DIR)/libdecnumber.a
 LIBDECNUMBER_SRC = $(srcdir)/$(LIBDECNUMBER_DIR)
 LIBDECNUMBER_CFLAGS = -I$(LIBDECNUMBER_DIR) -I$(LIBDECNUMBER_SRC)
 
-# Where is the READLINE library?  Typically in ../readline.
-READLINE_DIR = ../readline
+# Where is the READLINE library?  Typically in ../readline/readline.
+READLINE_DIR = ../readline/readline
 READLINE_SRC = $(srcdir)/$(READLINE_DIR)
 READLINE = @READLINE@
 READLINE_DEPS = @READLINE_DEPS@
@@ -184,9 +187,13 @@ LIBEXPAT = @LIBEXPAT@
 # Where is lzma?  This will be empty if lzma was not available.
 LIBLZMA = @LIBLZMA@
 
-# Where is libbabeltrace? This will be empty if lbabeltrace was not
+# Where is libbabeltrace? This will be empty if libbabeltrace was not
 # available.
 LIBBABELTRACE = @LIBBABELTRACE@
+
+# Where is libxxhash? This will be empty if libxxhash was not
+# available.
+LIBXXHASH = @LIBXXHASH@
 
 # Where is libipt?  This will be empty if libipt was not available.
 LIBIPT = @LIBIPT@
@@ -452,7 +459,11 @@ OPCODES = $(OPCODES_DIR)/libopcodes.a
 # Where are the other opcode tables which only have header file
 # versions?
 OP_INCLUDE = $(INCLUDE_DIR)/opcode
+# See TOP_CFLAGS as well.
 OPCODES_CFLAGS = -I$(OP_INCLUDE)
+
+# Allow includes like "opcodes/mumble.h".
+TOP_CFLAGS = -I$(top_srcdir)/..
 
 # The simulator is usually nonexistent; targets that include one
 # should set this to list all the .o or .a files to be linked in.
@@ -569,7 +580,7 @@ INTERNAL_CFLAGS_BASE = \
 	$(GDB_CFLAGS) $(OPCODES_CFLAGS) $(READLINE_CFLAGS) $(ZLIBINC) \
 	$(BFD_CFLAGS) $(INCLUDE_CFLAGS) $(LIBDECNUMBER_CFLAGS) \
 	$(INTL_CFLAGS) $(INCGNU) $(ENABLE_CFLAGS) $(INTERNAL_CPPFLAGS) \
-	$(SRCHIGH_CFLAGS)
+	$(SRCHIGH_CFLAGS) $(TOP_CFLAGS)
 INTERNAL_WARN_CFLAGS = $(INTERNAL_CFLAGS_BASE) $(GDB_WARN_CFLAGS)
 INTERNAL_CFLAGS = $(INTERNAL_WARN_CFLAGS) $(GDB_WERROR_CFLAGS)
 
@@ -588,13 +599,14 @@ INTERNAL_LDFLAGS = \
 # Libraries and corresponding dependencies for compiling gdb.
 # XM_CLIBS, defined in *config files, have host-dependent libs.
 # LIBIBERTY appears twice on purpose.
-CLIBS = $(SIM) $(READLINE) $(OPCODES) $(BFD) $(ZLIB) $(INTL) $(LIBIBERTY) $(LIBDECNUMBER) \
+CLIBS = $(SIM) $(READLINE) $(OPCODES) $(BFD) $(LIBCTF) $(ZLIB) \
+        $(INTL) $(LIBIBERTY) $(LIBDECNUMBER) \
 	$(XM_CLIBS) $(GDBTKLIBS) \
 	@LIBS@ @GUILE_LIBS@ @PYTHON_LIBS@ \
 	$(LIBEXPAT) $(LIBLZMA) $(LIBBABELTRACE) $(LIBIPT) \
 	$(LIBIBERTY) $(WIN32LIBS) $(LIBGNU) $(LIBICONV) $(LIBMPFR) \
-	$(SRCHIGH_LIBS)
-CDEPS = $(NAT_CDEPS) $(SIM) $(BFD) $(READLINE_DEPS) \
+	$(SRCHIGH_LIBS) $(LIBXXHASH)
+CDEPS = $(NAT_CDEPS) $(SIM) $(BFD) $(READLINE_DEPS) $(LIBCTF) \
 	$(OPCODES) $(INTL_DEPS) $(LIBIBERTY) $(CONFIG_DEPS) $(LIBGNU)
 
 DIST = gdb
@@ -776,7 +788,6 @@ ALL_TARGET_OBS = \
 	solib-darwin.o \
 	solib-dsbt.o \
 	solib-frv.o \
-	solib-spu.o \
 	solib-svr4.o \
 	sparc-linux-tdep.o \
 	sparc-nbsd-tdep.o \
@@ -784,8 +795,6 @@ ALL_TARGET_OBS = \
 	sparc-ravenscar-thread.o \
 	sparc-sol2-tdep.o \
 	sparc-tdep.o \
-	spu-multiarch.o \
-	spu-tdep.o \
 	symfile-mem.o \
 	tic6x-linux-tdep.o \
 	tic6x-tdep.o \
@@ -811,6 +820,7 @@ LOADLIBES = @LOADLIBES@
 MH_CFLAGS = @MH_CFLAGS@
 XM_CLIBS = @XM_CLIBS@
 NAT_GENERATED_FILES = @NAT_GENERATED_FILES@
+NM_H = @NM_H@
 HAVE_NATIVE_GCORE_HOST = @HAVE_NATIVE_GCORE_HOST@
 
 # Native-target dependent makefile fragment comes in here.
@@ -956,6 +966,7 @@ COMMON_SFILES = \
 	gdbsupport/cleanups.c \
 	gdbsupport/common-debug.c \
 	gdbsupport/common-exceptions.c \
+	gdbsupport/common-inferior.c \
 	gdbsupport/common-regcache.c \
 	gdbsupport/common-utils.c \
 	gdbsupport/errors.c \
@@ -978,7 +989,6 @@ COMMON_SFILES = \
 	gdbsupport/signals.c \
 	gdbsupport/signals-state-save-restore.c \
 	gdbsupport/tdesc.c \
-	gdbsupport/vec.c \
 	gdbsupport/xml-utils.c \
 	complaints.c \
 	completer.c \
@@ -990,7 +1000,7 @@ COMMON_SFILES = \
 	cp-namespace.c \
 	cp-support.c \
 	cp-valprint.c \
-	ctf.c \
+	ctfread.c \
 	d-lang.c \
 	d-namespace.c \
 	d-valprint.c \
@@ -1031,7 +1041,6 @@ COMMON_SFILES = \
 	gdb_bfd.c \
 	gdb_obstack.c \
 	gdb_regex.c \
-	gdb_usleep.c \
 	gdbarch.c \
 	gdbarch-selftests.c \
 	gdbtypes.c \
@@ -1127,6 +1136,7 @@ COMMON_SFILES = \
 	thread-iter.c \
 	tid-parse.c \
 	top.c \
+	tracectf.c \
 	tracefile.c \
 	tracefile-tfile.c \
 	tracepoint.c \
@@ -1227,7 +1237,6 @@ HFILES_NO_SRCDIR = \
 	cp-abi.h \
 	cp-support.h \
 	csky-tdep.h \
-	ctf.h \
 	d-lang.h \
 	darwin-nat.h \
 	dcache.h \
@@ -1268,7 +1277,6 @@ HFILES_NO_SRCDIR = \
 	gdb_regex.h \
 	gdb_select.h \
 	gdb-stabs.h \
-	gdb_usleep.h \
 	gdb_vfork.h \
 	gdb_wchar.h \
 	gdbarch.h \
@@ -1382,7 +1390,6 @@ HFILES_NO_SRCDIR = \
 	solib.h \
 	solib-aix.h \
 	solib-darwin.h \
-	solib-spu.h \
 	solib-svr4.h \
 	solib-target.h \
 	solist.h \
@@ -1392,7 +1399,6 @@ HFILES_NO_SRCDIR = \
 	sparc-ravenscar-thread.h \
 	sparc-tdep.h \
 	sparc64-tdep.h \
-	spu-tdep.h \
 	stabsread.h \
 	stack.h \
 	stap-probe.h \
@@ -1404,6 +1410,7 @@ HFILES_NO_SRCDIR = \
 	terminal.h \
 	tid-parse.h \
 	top.h \
+	tracectf.h \
 	tracefile.h \
 	tracepoint.h \
 	trad-frame.h \
@@ -1427,6 +1434,7 @@ HFILES_NO_SRCDIR = \
 	x86-linux-nat.h \
 	x86-nat.h \
 	xcoffread.h \
+	xml-builtin.h \
 	xml-support.h \
 	xml-syscall.h \
 	xml-tdesc.h \
@@ -1461,6 +1469,7 @@ HFILES_NO_SRCDIR = \
 	gdbsupport/format.h \
 	gdbsupport/gdb-dlfcn.h \
 	gdbsupport/gdb_assert.h \
+	gdbsupport/gdb_binary_search.h \
 	gdbsupport/gdb_tilde_expand.h \
 	gdbsupport/gdb_locale.h \
 	gdbsupport/gdb_proc_service.h \
@@ -1481,7 +1490,6 @@ HFILES_NO_SRCDIR = \
 	gdbsupport/signals-state-save-restore.h \
 	gdbsupport/symbol.h \
 	gdbsupport/tdesc.h \
-	gdbsupport/vec.h \
 	gdbsupport/version.h \
 	gdbsupport/x86-xstate.h \
 	gdbsupport/xml-utils.h \
@@ -1619,9 +1627,9 @@ DISTSTUFF = $(YYFILES)
 generated_files = \
 	ada-lex.c \
 	config.h \
-	gcore \
 	jit-reader.h \
-	$(NAT_GENERATED_FILES)
+	$(NAT_GENERATED_FILES) \
+	$(NM_H)
 
 # Flags needed to compile Python code
 PYTHON_CFLAGS = @PYTHON_CFLAGS@
@@ -1998,18 +2006,10 @@ subdir_do: force
 	done
 
 Makefile: Makefile.in config.status
-	# Regenerate the Makefile and the tm.h / nm.h links.
-	CONFIG_FILES="Makefile" \
-	  CONFIG_COMMANDS= \
-	  CONFIG_HEADERS= \
-	  $(SHELL) config.status
+	$(SHELL) config.status $@
 
 data-directory/Makefile: data-directory/Makefile.in config.status
-	CONFIG_FILES="data-directory/Makefile" \
-	  CONFIG_COMMANDS="depfiles" \
-	  CONFIG_HEADERS= \
-	  CONFIG_LINKS= \
-	  $(SHELL) config.status
+	$(SHELL) config.status $@
 
 .PHONY: run
 run: Makefile
@@ -2029,11 +2029,11 @@ gdb-gdb.gdb: $(srcdir)/gdb-gdb.gdb.in
 
 config.h: stamp-h ; @true
 stamp-h: $(srcdir)/config.in config.status
-	CONFIG_HEADERS=config.h:config.in \
-	  CONFIG_COMMANDS="default depdir" \
-	  CONFIG_FILES= \
-	  CONFIG_LINKS= \
-	  $(SHELL) config.status
+	$(SHELL) config.status config.h
+
+nm.h: stamp-nmh ; @true
+stamp-nmh: config.status
+	$(SHELL) config.status nm.h
 
 config.status: $(srcdir)/configure configure.nat configure.tgt configure.host ../bfd/development.sh
 	$(SHELL) config.status --recheck
@@ -2304,7 +2304,6 @@ ALLDEPFILES = \
 	sh-tdep.c \
 	sol2-tdep.c \
 	solib-aix.c \
-	solib-spu.c \
 	solib-svr4.c \
 	sparc-linux-nat.c \
 	sparc-linux-tdep.c \
@@ -2327,9 +2326,6 @@ ALLDEPFILES = \
 	sparc64-obsd-tdep.c \
 	sparc64-sol2-tdep.c \
 	sparc64-tdep.c \
-	spu-linux-nat.c \
-	spu-multiarch.c \
-	spu-tdep.c \
 	tilegx-linux-nat.c \
 	tilegx-linux-tdep.c \
 	tilegx-tdep.c \

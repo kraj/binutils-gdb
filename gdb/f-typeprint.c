@@ -31,6 +31,7 @@
 #include "target.h"
 #include "f-lang.h"
 #include "typeprint.h"
+#include "cli/cli-style.h"
 
 #if 0				/* Currently unused.  */
 static void f_type_print_args (struct type *, struct ui_file *);
@@ -53,7 +54,6 @@ f_print_typedef (struct type *type, struct symbol *new_symbol,
 {
   type = check_typedef (type);
   f_print_type (type, "", stream, 0, 0, &type_print_raw_options);
-  fprintf_filtered (stream, "\n");
 }
 
 /* LEVEL is the depth to indent lines by.  */
@@ -325,7 +325,7 @@ f_type_print_base (struct type *type, struct ui_file *stream, int show,
   wrap_here ("    ");
   if (type == NULL)
     {
-      fputs_filtered ("<type unknown>", stream);
+      fputs_styled ("<type unknown>", metadata_style.style (), stream);
       return;
     }
 

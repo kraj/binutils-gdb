@@ -22,7 +22,7 @@
    to provide access to the Solaris user-mode thread implementation.
 
    Solaris threads are true user-mode threads, which are invoked via
-   the thr_* and pthread_* (native and POSIX respectivly) interfaces.
+   the thr_* and pthread_* (native and POSIX respectively) interfaces.
    These are mostly implemented in user-space, with all thread context
    kept in various structures that live in the user's heap.  These
    should not be confused with lightweight processes (LWPs), which are
@@ -253,7 +253,7 @@ td_err_string (td_err_e errcode)
   return buf;
 }
 
-/* Return the libthread_db state string assicoated with STATECODE.
+/* Return the libthread_db state string associated with STATECODE.
    If STATECODE is unknown, return an appropriate message.  */
 
 static const char *
@@ -391,7 +391,7 @@ sol_thread_target::detach (inferior *inf, int from_tty)
   beneath->detach (inf, from_tty);
 }
 
-/* Resume execution of process PTID.  If STEP is nozero, then just
+/* Resume execution of process PTID.  If STEP is nonzero, then just
    single step it.  If SIGNAL is nonzero, restart it with that signal
    activated.  We may have to convert PTID from a thread ID to an LWP
    ID for procfs.  */

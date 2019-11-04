@@ -40,9 +40,6 @@
 #include "tui/tui-source.h"
 #include "gdb_curses.h"
 
-/*******************************
-** Static Local Decls
-********************************/
 static void show_layout (enum tui_layout_type);
 static void show_source_or_disasm_and_command (enum tui_layout_type);
 static void show_source_command (void);
@@ -64,9 +61,6 @@ tui_current_layout (void)
   return current_layout;
 }
 
-/***************************************
-** DEFINITIONS
-***************************************/
 
 /* Show the screen layout defined.  */
 static void
@@ -207,7 +201,6 @@ tui_add_win_to_layout (enum tui_win_type type)
 	  && cur_layout != SRC_DISASSEM_COMMAND
 	  && cur_layout != SRC_DATA_COMMAND)
 	{
-	  tui_clear_source_windows_detail ();
 	  if (cur_layout == DISASSEM_DATA_COMMAND)
 	    show_layout (SRC_DATA_COMMAND);
 	  else
@@ -219,7 +212,6 @@ tui_add_win_to_layout (enum tui_win_type type)
 	  && cur_layout != SRC_DISASSEM_COMMAND
 	  && cur_layout != DISASSEM_DATA_COMMAND)
 	{
-	  tui_clear_source_windows_detail ();
 	  if (cur_layout == SRC_DATA_COMMAND)
 	    show_layout (DISASSEM_DATA_COMMAND);
 	  else
@@ -239,66 +231,6 @@ tui_add_win_to_layout (enum tui_win_type type)
     default:
       break;
     }
-}
-
-
-/* Answer the height of a window.  If it hasn't been created yet,
-   answer what the height of a window would be based upon its type and
-   the layout.  */
-static int
-tui_default_win_height (enum tui_win_type type, 
-			enum tui_layout_type layout)
-{
-  int h;
-
-  if (tui_win_list[type] != NULL)
-    h = tui_win_list[type]->height;
-  else
-    {
-      switch (layout)
-	{
-	case SRC_COMMAND:
-	case DISASSEM_COMMAND:
-	  if (TUI_CMD_WIN == NULL)
-	    h = tui_term_height () / 2;
-	  else
-	    h = tui_term_height () - TUI_CMD_WIN->height;
-	  break;
-	case SRC_DISASSEM_COMMAND:
-	case SRC_DATA_COMMAND:
-	case DISASSEM_DATA_COMMAND:
-	  if (TUI_CMD_WIN == NULL)
-	    h = tui_term_height () / 3;
-	  else
-	    h = (tui_term_height () - TUI_CMD_WIN->height) / 2;
-	  break;
-	default:
-	  h = 0;
-	  break;
-	}
-    }
-
-  return h;
-}
-
-
-/* Answer the height of a window.  If it hasn't been created yet,
-   answer what the height of a window would be based upon its type and
-   the layout.  */
-int
-tui_default_win_viewport_height (enum tui_win_type type,
-				 enum tui_layout_type layout)
-{
-  int h;
-
-  h = tui_default_win_height (type, layout);
-
-  if (type == CMD_WIN)
-    h -= 1;
-  else
-    h -= 2;
-
-  return h;
 }
 
 /* Complete possible layout names.  TEXT is the complete text entered so
@@ -340,39 +272,28 @@ Layout names are:\n\
 }
 
 
-/*************************
-** STATIC LOCAL FUNCTIONS
-**************************/
-
-
 /* Function to set the layout to SRC, ASM, SPLIT, NEXT, PREV, DATA, or
    REGS. */
 static void
 tui_layout_command (const char *layout_name, int from_tty)
 {
-  int i;
   enum tui_layout_type new_layout = UNDEFINED_LAYOUT;
   enum tui_layout_type cur_layout = tui_current_layout ();
 
-  if (layout_name == NULL)
+  if (layout_name == NULL || *layout_name == '\0')
     error (_("Usage: layout prev | next | LAYOUT-NAME"));
 
-  std::string copy = layout_name;
-  for (i = 0; i < copy.size (); i++)
-    copy[i] = toupper (copy[i]);
-  const char *buf_ptr = copy.c_str ();
-
   /* First check for ambiguous input.  */
-  if (strlen (buf_ptr) <= 1 && *buf_ptr == 'S')
+  if (strcmp (layout_name, "s") == 0)
     error (_("Ambiguous command input."));
 
-  if (subset_compare (buf_ptr, "SRC"))
+  if (subset_compare (layout_name, "src"))
     new_layout = SRC_COMMAND;
-  else if (subset_compare (buf_ptr, "ASM"))
+  else if (subset_compare (layout_name, "asm"))
     new_layout = DISASSEM_COMMAND;
-  else if (subset_compare (buf_ptr, "SPLIT"))
+  else if (subset_compare (layout_name, "split"))
     new_layout = SRC_DISASSEM_COMMAND;
-  else if (subset_compare (buf_ptr, "REGS"))
+  else if (subset_compare (layout_name, "regs"))
     {
       if (cur_layout == SRC_COMMAND
 	  || cur_layout == SRC_DATA_COMMAND)
@@ -380,9 +301,9 @@ tui_layout_command (const char *layout_name, int from_tty)
       else
 	new_layout = DISASSEM_DATA_COMMAND;
     }
-  else if (subset_compare (buf_ptr, "NEXT"))
+  else if (subset_compare (layout_name, "next"))
     new_layout = next_layout ();
-  else if (subset_compare (buf_ptr, "PREV"))
+  else if (subset_compare (layout_name, "prev"))
     new_layout = prev_layout ();
   else
     error (_("Unrecognized layout: %s"), layout_name);
@@ -507,18 +428,14 @@ show_source_disasm_command (void)
   struct tui_locator_window *locator = tui_locator_win_info_ptr ();
   gdb_assert (locator != nullptr);
 
-  TUI_SRC_WIN->show_source_content ();
   if (TUI_DISASM_WIN == NULL)
     tui_win_list[DISASSEM_WIN] = new tui_disasm_window ();
   TUI_DISASM_WIN->resize (asm_height,
 			  tui_term_width (),
 			  0,
 			  src_height - 1);
-  locator->resize (2 /* 1 */ ,
-		   tui_term_width (),
-		   0,
-		   (src_height + asm_height) - 1);
-  TUI_DISASM_WIN->show_source_content ();
+  locator->resize (1, tui_term_width (),
+		   0, (src_height + asm_height) - 1);
 
   if (TUI_CMD_WIN == NULL)
     tui_win_list[CMD_WIN] = new tui_cmd_window ();
@@ -565,10 +482,8 @@ show_data (enum tui_layout_type new_layout)
 				  tui_term_width (),
 				  0,
 				  data_height - 1);
-  locator->resize (2 /* 1 */ ,
-		   tui_term_width (),
-		   0,
-		   total_height - 1);
+  locator->resize (1, tui_term_width (),
+		   0, total_height - 1);
   TUI_CMD_WIN->resize (TUI_CMD_WIN->height, tui_term_width (),
 		       0, total_height);
 
@@ -596,12 +511,11 @@ tui_gen_win_info::resize (int height_, int width_,
   if (handle != nullptr)
     {
 #ifdef HAVE_WRESIZE
-      wresize (handle, height, width);
-      mvwin (handle, origin.y, origin.x);
-      wmove (handle, 0, 0);
+      wresize (handle.get (), height, width);
+      mvwin (handle.get (), origin.y, origin.x);
+      wmove (handle.get (), 0, 0);
 #else
-      tui_delete_win (handle);
-      handle = NULL;
+      handle.reset (nullptr);
 #endif
     }
 
@@ -639,16 +553,12 @@ show_source_or_disasm_and_command (enum tui_layout_type layout_type)
       win_info = TUI_DISASM_WIN;
     }
 
-  locator->resize (2 /* 1 */ ,
-		   tui_term_width (),
-		   0,
-		   src_height - 1);
+  locator->resize (1, tui_term_width (),
+		   0, src_height - 1);
   win_info->resize (src_height - 1,
 		    tui_term_width (),
 		    0,
 		    0);
-
-  win_info->show_source_content ();
 
   if (TUI_CMD_WIN == NULL)
     tui_win_list[CMD_WIN] = new tui_cmd_window ();

@@ -19,7 +19,6 @@
 
 #include "defs.h"
 #include "arch-utils.h"
-#include <signal.h>
 #include "symtab.h"
 #include "gdbtypes.h"
 #include "frame.h"
@@ -35,8 +34,6 @@
 #include "objfiles.h"
 #include "completer.h"
 #include "ui-out.h"
-#include "event-top.h"
-#include "parser-defs.h"
 #include "regcache.h"
 #include "reggroups.h"
 #include "block.h"
@@ -45,7 +42,6 @@
 #include "observable.h"
 #include "target-descriptions.h"
 #include "user-regs.h"
-#include "cli/cli-decode.h"
 #include "gdbthread.h"
 #include "valprint.h"
 #include "inline-frame.h"
@@ -53,13 +49,12 @@
 #include "inf-loop.h"
 #include "continuations.h"
 #include "linespec.h"
-#include "cli/cli-utils.h"
-#include "infcall.h"
 #include "thread-fsm.h"
 #include "top.h"
 #include "interps.h"
 #include "gdbsupport/gdb_optional.h"
 #include "source.h"
+#include "cli/cli-style.h"
 
 /* Local functions: */
 
@@ -102,10 +97,6 @@ enum stop_stack_kind stop_stack_dummy;
    process.  */
 
 int stopped_by_random_signal;
-
-/* See inferior.h.  */
-
-int startup_with_shell = 1;
 
 
 /* Accessor routines.  */
@@ -1628,7 +1619,8 @@ print_return_value_1 (struct ui_out *uiout, struct return_value_info *rv)
 	  uiout->field_stream ("return-value", stb);
 	}
       else
-	uiout->field_string ("return-value", _("<not displayed>"));
+	uiout->field_string ("return-value", _("<not displayed>"),
+			     metadata_style.style ());
       uiout->text ("\n");
     }
   else
@@ -2081,7 +2073,7 @@ set_environment_command (const char *arg, int from_tty)
   if (arg == 0)
     error_no_arg (_("environment variable and value"));
 
-  /* Find seperation between variable name and value.  */
+  /* Find separation between variable name and value.  */
   p = (char *) strchr (arg, '=');
   val = (char *) strchr (arg, ' ');
 
@@ -3028,7 +3020,7 @@ info_proc_cmd_1 (const char *args, enum info_proc_what what, int from_tty)
     }
 }
 
-/* Implement `info proc' when given without any futher parameters.  */
+/* Implement `info proc' when given without any further parameters.  */
 
 static void
 info_proc_cmd (const char *args, int from_tty)

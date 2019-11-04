@@ -28,6 +28,8 @@
 #include "elf-nacl.h"
 #include "elf-vxworks.h"
 #include "elf/arm.h"
+#include "elf32-arm.h"
+#include "cpu-arm.h"
 
 /* Return the relocation section associated with NAME.  HTAB is the
    bfd's elf32_arm_link_hash_entry.  */
@@ -3817,7 +3819,8 @@ create_got_section (bfd *dynobj, struct bfd_link_info *info)
       htab->srofixup = bfd_make_section_with_flags (dynobj, ".rofixup",
 						    (SEC_ALLOC | SEC_LOAD | SEC_HAS_CONTENTS
 						     | SEC_IN_MEMORY | SEC_LINKER_CREATED | SEC_READONLY));
-      if (htab->srofixup == NULL || ! bfd_set_section_alignment (dynobj, htab->srofixup, 2))
+      if (htab->srofixup == NULL
+	  || !bfd_set_section_alignment (htab->srofixup, 2))
 	return FALSE;
     }
 
@@ -3845,7 +3848,7 @@ create_ifunc_sections (struct bfd_link_info *info)
       s = bfd_make_section_anyway_with_flags (dynobj, ".iplt",
 					      flags | SEC_READONLY | SEC_CODE);
       if (s == NULL
-	  || !bfd_set_section_alignment (dynobj, s, bed->plt_alignment))
+	  || !bfd_set_section_alignment (s, bed->plt_alignment))
 	return FALSE;
       htab->root.iplt = s;
     }
@@ -3856,7 +3859,7 @@ create_ifunc_sections (struct bfd_link_info *info)
 					      RELOC_SECTION (htab, ".iplt"),
 					      flags | SEC_READONLY);
       if (s == NULL
-	  || !bfd_set_section_alignment (dynobj, s, bed->s->log_file_align))
+	  || !bfd_set_section_alignment (s, bed->s->log_file_align))
 	return FALSE;
       htab->root.irelplt = s;
     }
@@ -3865,7 +3868,7 @@ create_ifunc_sections (struct bfd_link_info *info)
     {
       s = bfd_make_section_anyway_with_flags (dynobj, ".igot.plt", flags);
       if (s == NULL
-	  || !bfd_set_section_alignment (dynobj, s, bed->s->log_file_align))
+	  || !bfd_set_section_alignment (s, bed->s->log_file_align))
 	return FALSE;
       htab->root.igotplt = s;
     }
@@ -4911,7 +4914,7 @@ elf32_arm_tls_transition (struct bfd_link_info *info, int r_type,
 {
   int is_local = (h == NULL);
 
-  if (bfd_link_pic (info)
+  if (bfd_link_dll (info)
       || (h && h->root.type == bfd_link_hash_undefweak))
     return r_type;
 
@@ -6252,7 +6255,10 @@ set_cmse_veneer_addr_from_implib (struct bfd_link_info *info,
     return FALSE;
 
   /* Read in the input secure gateway import library's symbol table.  */
-  sympp = (asymbol **) xmalloc (symsize);
+  sympp = (asymbol **) bfd_malloc (symsize);
+  if (sympp == NULL)
+    return FALSE;
+
   symcount = bfd_canonicalize_symtab (in_implib_bfd, sympp);
   if (symcount < 0)
     {
@@ -7709,7 +7715,7 @@ arm_make_glue_section (bfd * abfd, const char * name)
   sec = bfd_make_section_anyway_with_flags (abfd, name, ARM_GLUE_SECTION_FLAGS);
 
   if (sec == NULL
-      || !bfd_set_section_alignment (abfd, sec, 2))
+      || !bfd_set_section_alignment (sec, 2))
     return FALSE;
 
   /* Set the gc mark to prevent the section from being removed by garbage
@@ -11697,7 +11703,7 @@ elf32_arm_final_link_relocate (reloc_howto_type *	    howto,
 	  {
 	    /* If we don't know the module number, create a relocation
 	       for it.  */
-	    if (bfd_link_pic (info))
+	    if (bfd_link_dll (info))
 	      {
 		Elf_Internal_Rela outrel;
 
@@ -11801,7 +11807,7 @@ elf32_arm_final_link_relocate (reloc_howto_type *	    howto,
 	       now, and emit any relocations.  If both an IE GOT and a
 	       GD GOT are necessary, we emit the GD first.  */
 
-	    if ((bfd_link_pic (info) || indx != 0)
+	    if ((bfd_link_dll (info) || indx != 0)
 		&& (h == NULL
 		    || (ELF_ST_VISIBILITY (h->other) == STV_DEFAULT
 			&& !resolved_to_zero)
@@ -11818,7 +11824,7 @@ elf32_arm_final_link_relocate (reloc_howto_type *	    howto,
 		/* We should have relaxed, unless this is an undefined
 		   weak symbol.  */
 		BFD_ASSERT ((h && (h->root.type == bfd_link_hash_undefweak))
-			    || bfd_link_pic (info));
+			    || bfd_link_dll (info));
 		BFD_ASSERT (globals->sgotplt_jump_table_size + offplt + 8
 			    <= globals->root.sgotplt->size);
 
@@ -12024,9 +12030,9 @@ elf32_arm_final_link_relocate (reloc_howto_type *	    howto,
 	    unsigned long data, insn;
 	    unsigned thumb;
 
-	    data = bfd_get_32 (input_bfd, hit_data);
+	    data = bfd_get_signed_32 (input_bfd, hit_data);
 	    thumb = data & 1;
-	    data &= ~1u;
+	    data &= ~1ul;
 
 	    if (thumb)
 	      {
@@ -13374,7 +13380,7 @@ elf32_arm_relocate_section (bfd *		   output_bfd,
 	  name = (bfd_elf_string_from_elf_section
 		  (input_bfd, symtab_hdr->sh_link, sym->st_name));
 	  if (name == NULL || *name == '\0')
-	    name = bfd_section_name (input_bfd, sec);
+	    name = bfd_section_name (sec);
 	}
 
       if (r_symndx != STN_UNDEF
@@ -13552,10 +13558,10 @@ adjust_exidx_size(asection *exidx_sec, int adjust)
   if (!exidx_sec->rawsize)
     exidx_sec->rawsize = exidx_sec->size;
 
-  bfd_set_section_size (exidx_sec->owner, exidx_sec, exidx_sec->size + adjust);
+  bfd_set_section_size (exidx_sec, exidx_sec->size + adjust);
   out_sec = exidx_sec->output_section;
   /* Adjust size of output section.  */
-  bfd_set_section_size (out_sec->owner, out_sec, out_sec->size +adjust);
+  bfd_set_section_size (out_sec, out_sec->size +adjust);
 }
 
 /* Insert an EXIDX_CANTUNWIND marker at the end of a section.  */
@@ -15696,9 +15702,9 @@ elf32_arm_check_relocs (bfd *abfd, struct bfd_link_info *info,
 		{
 		  flagword flags;
 
-		  flags = bfd_get_section_flags (dynobj, sreloc);
+		  flags = bfd_section_flags (sreloc);
 		  flags &= ~(SEC_LOAD | SEC_ALLOC);
-		  bfd_set_section_flags (dynobj, sreloc, flags);
+		  bfd_set_section_flags (sreloc, flags);
 		}
 	    }
 
@@ -16076,7 +16082,7 @@ arm_elf_find_function (bfd *	     abfd,
 		    BFD_ARM_SPECIAL_SYM_TYPE_ANY))
 	    continue;
 	  /* Fall through.  */
-	  if (bfd_get_section (&q->symbol) == section
+	  if (bfd_asymbol_section (&q->symbol) == section
 	      && q->symbol.value >= low_func
 	      && q->symbol.value <= offset)
 	    {
@@ -16491,7 +16497,7 @@ allocate_dynrelocs_for_symbol (struct elf_link_hash_entry *h, void * inf)
 	    indx = h->dynindx;
 
 	  if (tls_type != GOT_NORMAL
-	      && (bfd_link_pic (info) || indx != 0)
+	      && (bfd_link_dll (info) || indx != 0)
 	      && (ELF_ST_VISIBILITY (h->other) == STV_DEFAULT
 		  || h->root.type != bfd_link_hash_undefweak))
 	    {
@@ -17158,7 +17164,7 @@ elf32_arm_size_dynamic_sections (bfd * output_bfd ATTRIBUTE_UNUSED,
 
       /* It's OK to base decisions on the section name, because none
 	 of the dynobj section names depend upon the input files.  */
-      name = bfd_get_section_name (dynobj, s);
+      name = bfd_section_name (s);
 
       if (s == htab->root.splt)
 	{
@@ -17951,7 +17957,7 @@ elf32_arm_fake_sections (bfd * abfd, Elf_Internal_Shdr * hdr, asection * sec)
 {
   const char * name;
 
-  name = bfd_get_section_name (abfd, sec);
+  name = bfd_section_name (sec);
 
   if (is_arm_elf_unwind_section_name (abfd, name))
     {
@@ -20874,7 +20880,7 @@ elf32_arm_merge_private_bfd_data (bfd *ibfd, struct bfd_link_info *info)
 	  if (strcmp (sec->name, ".glue_7")
 	      && strcmp (sec->name, ".glue_7t"))
 	    {
-	      if ((bfd_get_section_flags (ibfd, sec)
+	      if ((bfd_section_flags (sec)
 		   & (SEC_LOAD | SEC_CODE | SEC_HAS_CONTENTS))
 		  == (SEC_LOAD | SEC_CODE | SEC_HAS_CONTENTS))
 		only_data_sections = FALSE;

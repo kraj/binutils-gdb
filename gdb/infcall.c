@@ -55,7 +55,7 @@
    asynchronous inferior function call implementation, and that in
    turn means restructuring the code so that it is event driven.  */
 
-static int may_call_functions_p = 1;
+static bool may_call_functions_p = true;
 static void
 show_may_call_functions_p (struct ui_file *file, int from_tty,
 			   struct cmd_list_element *c,
@@ -86,7 +86,7 @@ show_may_call_functions_p (struct ui_file *file, int from_tty,
    trust the debug information; the user can override this behavior
    with "set coerce-float-to-double 0".  */
 
-static int coerce_float_to_double_p = 1;
+static bool coerce_float_to_double_p = true;
 static void
 show_coerce_float_to_double_p (struct ui_file *file, int from_tty,
 			       struct cmd_list_element *c, const char *value)
@@ -104,7 +104,7 @@ show_coerce_float_to_double_p (struct ui_file *file, int from_tty,
 
    The default is to stop in the frame where the signal was received.  */
 
-static int unwind_on_signal_p = 0;
+static bool unwind_on_signal_p = false;
 static void
 show_unwind_on_signal_p (struct ui_file *file, int from_tty,
 			 struct cmd_list_element *c, const char *value)
@@ -127,7 +127,7 @@ show_unwind_on_signal_p (struct ui_file *file, int from_tty,
    The default is to unwind the frame if a std::terminate call is
    made.  */
 
-static int unwind_on_terminating_exception_p = 1;
+static bool unwind_on_terminating_exception_p = true;
 
 static void
 show_unwind_on_terminating_exception_p (struct ui_file *file, int from_tty,
@@ -145,13 +145,11 @@ show_unwind_on_terminating_exception_p (struct ui_file *file, int from_tty,
    for arguments to be passed to C, Ada or Fortran functions.
 
    If PARAM_TYPE is non-NULL, it is the expected parameter type.
-   IS_PROTOTYPED is non-zero if the function declaration is prototyped.
-   SP is the stack pointer were additional data can be pushed (updating
-   its value as needed).  */
+   IS_PROTOTYPED is non-zero if the function declaration is prototyped.  */
 
 static struct value *
 value_arg_coerce (struct gdbarch *gdbarch, struct value *arg,
-		  struct type *param_type, int is_prototyped, CORE_ADDR *sp)
+		  struct type *param_type, int is_prototyped)
 {
   const struct builtin_type *builtin = builtin_type (gdbarch);
   struct type *arg_type = check_typedef (value_type (arg));
@@ -670,6 +668,42 @@ run_inferior_call (struct call_thread_fsm *sm,
   return caught_error;
 }
 
+/* Reserve space on the stack for a value of the given type.
+   Return the address of the allocated space.
+   Make certain that the value is correctly aligned.
+   The SP argument is modified.  */
+
+static CORE_ADDR
+reserve_stack_space (const type *values_type, CORE_ADDR &sp)
+{
+  struct frame_info *frame = get_current_frame ();
+  struct gdbarch *gdbarch = get_frame_arch (frame);
+  CORE_ADDR addr = 0;
+
+  if (gdbarch_inner_than (gdbarch, 1, 2))
+    {
+      /* Stack grows downward.  Align STRUCT_ADDR and SP after
+	 making space.  */
+      sp -= TYPE_LENGTH (values_type);
+      if (gdbarch_frame_align_p (gdbarch))
+	sp = gdbarch_frame_align (gdbarch, sp);
+      addr = sp;
+    }
+  else
+    {
+      /* Stack grows upward.  Align the frame, allocate space, and
+	 then again, re-align the frame???  */
+      if (gdbarch_frame_align_p (gdbarch))
+	sp = gdbarch_frame_align (gdbarch, sp);
+      addr = sp;
+      sp += TYPE_LENGTH (values_type);
+      if (gdbarch_frame_align_p (gdbarch))
+	sp = gdbarch_frame_align (gdbarch, sp);
+    }
+
+  return addr;
+}
+
 /* See infcall.h.  */
 
 struct value *
@@ -691,7 +725,7 @@ call_function_by_hand (struct value *function,
    making dummy frames be different from normal frames, consider that.  */
 
 /* Perform a function call in the inferior.
-   ARGS is a vector of values of arguments (NARGS of them).
+   ARGS is a vector of values of arguments.
    FUNCTION is a value, the function to be called.
    Returns a value representing what the function returned.
    May fail to return, if a breakpoint or signal is hit
@@ -746,6 +780,27 @@ call_function_by_hand_dummy (struct value *function,
   if (!gdbarch_push_dummy_call_p (gdbarch))
     error (_("This target does not support function calls."));
 
+  /* Find the function type and do a sanity check.  */
+  type *ftype;
+  type *values_type;
+  CORE_ADDR funaddr = find_function_addr (function, &values_type, &ftype);
+
+  if (values_type == NULL)
+    values_type = default_return_type;
+  if (values_type == NULL)
+    {
+      const char *name = get_function_name (funaddr,
+					    name_buf, sizeof (name_buf));
+      error (_("'%s' has unknown return type; "
+	       "cast the call to its declared return type"),
+	     name);
+    }
+
+  values_type = check_typedef (values_type);
+
+  if (args.size () < TYPE_NFIELDS (ftype))
+    error (_("Too few arguments in function call."));
+
   /* A holder for the inferior status.
      This is only needed while we're preparing the inferior function call.  */
   infcall_control_state_up inf_status (save_infcall_control_state ());
@@ -786,7 +841,7 @@ call_function_by_hand_dummy (struct value *function,
 	   void parameterless generic dummy frame calls to frameless
 	   functions will create a sequence of effectively identical
 	   frames (SP, FP and TOS and PC the same).  This, not
-	   suprisingly, results in what appears to be a stack in an
+	   surprisingly, results in what appears to be a stack in an
 	   infinite loop --- when GDB tries to find a generic dummy
 	   frame on the internal dummy frame stack, it will always
 	   find the first one.
@@ -850,23 +905,6 @@ call_function_by_hand_dummy (struct value *function,
 	  }
       }
   }
-
-  type *ftype;
-  type *values_type;
-  CORE_ADDR funaddr = find_function_addr (function, &values_type, &ftype);
-
-  if (values_type == NULL)
-    values_type = default_return_type;
-  if (values_type == NULL)
-    {
-      const char *name = get_function_name (funaddr,
-					    name_buf, sizeof (name_buf));
-      error (_("'%s' has unknown return type; "
-	       "cast the call to its declared return type"),
-	     name);
-    }
-
-  values_type = check_typedef (values_type);
 
   /* Are we returning a value using a structure return?  */
 
@@ -945,9 +983,6 @@ call_function_by_hand_dummy (struct value *function,
       internal_error (__FILE__, __LINE__, _("bad switch"));
     }
 
-  if (args.size () < TYPE_NFIELDS (ftype))
-    error (_("Too few arguments in function call."));
-
   for (int i = args.size () - 1; i >= 0; i--)
     {
       int prototyped;
@@ -983,15 +1018,14 @@ call_function_by_hand_dummy (struct value *function,
 	param_type = NULL;
 
       args[i] = value_arg_coerce (gdbarch, args[i],
-				  param_type, prototyped, &sp);
+				  param_type, prototyped);
 
       if (param_type != NULL && language_pass_by_reference (param_type))
 	args[i] = value_addr (args[i]);
     }
 
   /* Reserve space for the return structure to be written on the
-     stack, if necessary.  Make certain that the value is correctly
-     aligned.
+     stack, if necessary.
 
      While evaluating expressions, we reserve space on the stack for
      return values of class type even if the language ABI and the target
@@ -1006,28 +1040,7 @@ call_function_by_hand_dummy (struct value *function,
 
   if (return_method != return_method_normal
       || (stack_temporaries && class_or_union_p (values_type)))
-    {
-      if (gdbarch_inner_than (gdbarch, 1, 2))
-	{
-	  /* Stack grows downward.  Align STRUCT_ADDR and SP after
-             making space for the return value.  */
-	  sp -= TYPE_LENGTH (values_type);
-	  if (gdbarch_frame_align_p (gdbarch))
-	    sp = gdbarch_frame_align (gdbarch, sp);
-	  struct_addr = sp;
-	}
-      else
-	{
-	  /* Stack grows upward.  Align the frame, allocate space, and
-             then again, re-align the frame???  */
-	  if (gdbarch_frame_align_p (gdbarch))
-	    sp = gdbarch_frame_align (gdbarch, sp);
-	  struct_addr = sp;
-	  sp += TYPE_LENGTH (values_type);
-	  if (gdbarch_frame_align_p (gdbarch))
-	    sp = gdbarch_frame_align (gdbarch, sp);
-	}
-    }
+    struct_addr = reserve_stack_space (values_type, sp);
 
   std::vector<struct value *> new_args;
   if (return_method == return_method_hidden_param)

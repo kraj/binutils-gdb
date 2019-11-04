@@ -53,9 +53,6 @@
 
 #include <signal.h>
 
-/*******************************
-** Static Local Decls
-********************************/
 static enum tui_status tui_adjust_win_heights (struct tui_win_info *, 
 					       int);
 static int new_height_ok (struct tui_win_info *, int);
@@ -71,15 +68,8 @@ static void parse_scrolling_args (const char *,
 				  int *);
 
 
-/***************************************
-** DEFINITIONS
-***************************************/
 #define WIN_HEIGHT_USAGE    "Usage: winheight WINDOW-NAME [+ | -] NUM-LINES\n"
 #define FOCUS_USAGE         "Usage: focus [WINDOW-NAME | next | prev]\n"
-
-/***************************************
-** PUBLIC FUNCTIONS
-***************************************/
 
 #ifndef ACS_LRCORNER
 #  define ACS_LRCORNER '+'
@@ -539,7 +529,7 @@ tui_resize_all (void)
 #endif      
       /* Turn keypad off while we resize.  */
       if (win_with_focus != TUI_CMD_WIN)
-	keypad (TUI_CMD_WIN->handle, FALSE);
+	keypad (TUI_CMD_WIN->handle.get (), FALSE);
       tui_update_gdb_sizes ();
       tui_set_term_height_to (screenheight);
       tui_set_term_width_to (screenwidth);
@@ -561,7 +551,6 @@ tui_resize_all (void)
          AIX 5.3 does not define clear.  */
       erase ();
       clearok (curscr, TRUE);
-      refresh ();
       switch (cur_layout)
        {
 	case SRC_COMMAND:
@@ -580,8 +569,7 @@ tui_resize_all (void)
 
 	  src_win->resize (new_height, screenwidth, 0, 0);
 
-	  locator->resize (2 /* 1 */, screenwidth,
-			   0, new_height);
+	  locator->resize (1, screenwidth, 0, new_height);
 
 	  new_height = screenheight - (new_height + 1);
 	  TUI_CMD_WIN->resize (new_height, screenwidth,
@@ -637,7 +625,7 @@ tui_resize_all (void)
 	  second_win->resize (new_height, screenwidth,
 			      0, first_win->height - 1);
 
-	  locator->resize (2 /* 1 */, screenwidth,
+	  locator->resize (1, screenwidth,
 			   0, second_win->origin.y + new_height);
 
 	  /* Change the command window's height/width.  */
@@ -651,7 +639,7 @@ tui_resize_all (void)
       /* Turn keypad back on, unless focus is in the command
 	 window.  */
       if (win_with_focus != TUI_CMD_WIN)
-	keypad (TUI_CMD_WIN->handle, TRUE);
+	keypad (TUI_CMD_WIN->handle.get (), TRUE);
     }
 }
 
@@ -664,7 +652,7 @@ static void
 tui_sigwinch_handler (int signal)
 {
   mark_async_signal_handler (tui_sigwinch_token);
-  tui_set_win_resized_to (TRUE);
+  tui_set_win_resized_to (true);
 }
 
 /* Callback for asynchronously resizing TUI following a SIGWINCH signal.  */
@@ -685,7 +673,7 @@ tui_async_resize_screen (gdb_client_data arg)
     }
   else
     {
-      tui_set_win_resized_to (FALSE);
+      tui_set_win_resized_to (false);
       tui_resize_all ();
       tui_refresh_all_win ();
       tui_update_gdb_sizes ();
@@ -720,11 +708,6 @@ tui_initialize_win (void)
   }
 #endif
 }
-
-
-/*************************
-** STATIC LOCAL FUNCTIONS
-**************************/
 
 
 static void
@@ -793,53 +776,53 @@ tui_set_focus_command (const char *arg, int from_tty)
 
   if (arg != NULL)
     {
-      char *buf_ptr = xstrdup (arg);
-      int i;
       struct tui_win_info *win_info = NULL;
 
-      for (i = 0; (i < strlen (buf_ptr)); i++)
-	buf_ptr[i] = tolower (arg[i]);
-
-      if (subset_compare (buf_ptr, "next"))
+      if (subset_compare (arg, "next"))
 	win_info = tui_next_win (tui_win_with_focus ());
-      else if (subset_compare (buf_ptr, "prev"))
+      else if (subset_compare (arg, "prev"))
 	win_info = tui_prev_win (tui_win_with_focus ());
       else
-	win_info = tui_partial_win_by_name (buf_ptr);
+	win_info = tui_partial_win_by_name (arg);
 
-      if (win_info == NULL || !win_info->is_visible ())
-	warning (_("Invalid window specified. \n\
-The window name specified must be valid and visible.\n"));
-      else
-	{
-	  tui_set_win_focus_to (win_info);
-	  keypad (TUI_CMD_WIN->handle, (win_info != TUI_CMD_WIN));
-	}
+      if (win_info == NULL)
+	error (_("Unrecognized window name \"%s\""), arg);
+      if (!win_info->is_visible ())
+	error (_("Window \"%s\" is not visible"), arg);
 
-      xfree (buf_ptr);
+      tui_set_win_focus_to (win_info);
+      keypad (TUI_CMD_WIN->handle.get (), win_info != TUI_CMD_WIN);
       printf_filtered (_("Focus set to %s window.\n"),
 		       tui_win_with_focus ()->name ());
     }
   else
-    warning (_("Incorrect Number of Arguments.\n%s"), FOCUS_USAGE);
+    error (_("Incorrect Number of Arguments.\n%s"), FOCUS_USAGE);
 }
 
 static void
 tui_all_windows_info (const char *arg, int from_tty)
 {
   struct tui_win_info *win_with_focus = tui_win_with_focus ();
+  struct ui_out *uiout = current_uiout;
+
+  ui_out_emit_table table_emitter (uiout, 3, -1, "tui-windows");
+  uiout->table_header (10, ui_left, "name", "Name");
+  uiout->table_header (5, ui_right, "lines", "Lines");
+  uiout->table_header (10, ui_left, "focus", "Focus");
+  uiout->table_body ();
 
   for (tui_win_info *win_info : all_tui_windows ())
     if (win_info->is_visible ())
       {
+	ui_out_emit_tuple tuple_emitter (uiout, nullptr);
+
+	uiout->field_string ("name", win_info->name ());
+	uiout->field_signed ("lines", win_info->height);
 	if (win_with_focus == win_info)
-	  printf_filtered ("        %s\t(%d lines)  <has focus>\n",
-			   win_info->name (),
-			   win_info->height);
+	  uiout->field_string ("focus", _("(has focus)"));
 	else
-	  printf_filtered ("        %s\t(%d lines)\n",
-			   win_info->name (),
-			   win_info->height);
+	  uiout->field_skip ("focus");
+	uiout->text ("\n");
       }
 }
 
@@ -936,65 +919,61 @@ tui_set_win_height_command (const char *arg, int from_tty)
       char *buf = &copy[0];
       char *buf_ptr = buf;
       char *wname = NULL;
-      int new_height, i;
+      int new_height;
       struct tui_win_info *win_info;
 
       wname = buf_ptr;
       buf_ptr = strchr (buf_ptr, ' ');
       if (buf_ptr != NULL)
 	{
-	  *buf_ptr = (char) 0;
+	  *buf_ptr = '\0';
 
 	  /* Validate the window name.  */
-	  for (i = 0; i < strlen (wname); i++)
-	    wname[i] = tolower (wname[i]);
 	  win_info = tui_partial_win_by_name (wname);
 
-	  if (win_info == NULL || !win_info->is_visible ())
-	    warning (_("Invalid window specified. \n\
-The window name specified must be valid and visible.\n"));
-	  else
+	  if (win_info == NULL)
+	    error (_("Unrecognized window name \"%s\""), arg);
+	  if (!win_info->is_visible ())
+	    error (_("Window \"%s\" is not visible"), arg);
+
+	  /* Process the size.  */
+	  buf_ptr = skip_spaces (buf_ptr);
+
+	  if (*buf_ptr != '\0')
 	    {
-	      /* Process the size.  */
-	      while (*(++buf_ptr) == ' ')
-		;
+	      bool negate = false;
+	      bool fixed_size = true;
+	      int input_no;;
 
-	      if (*buf_ptr != (char) 0)
+	      if (*buf_ptr == '+' || *buf_ptr == '-')
 		{
-		  int negate = FALSE;
-		  int fixed_size = TRUE;
-		  int input_no;;
-
-		  if (*buf_ptr == '+' || *buf_ptr == '-')
-		    {
-		      if (*buf_ptr == '-')
-			negate = TRUE;
-		      fixed_size = FALSE;
-		      buf_ptr++;
-		    }
-		  input_no = atoi (buf_ptr);
-		  if (input_no > 0)
-		    {
-		      if (negate)
-			input_no *= (-1);
-		      if (fixed_size)
-			new_height = input_no;
-		      else
-			new_height = win_info->height + input_no;
-
-		      /* Now change the window's height, and adjust
-		         all other windows around it.  */
-		      if (tui_adjust_win_heights (win_info,
-						new_height) == TUI_FAILURE)
-			warning (_("Invalid window height specified.\n%s"),
-				 WIN_HEIGHT_USAGE);
-		      else
-                        tui_update_gdb_sizes ();
-		    }
+		  if (*buf_ptr == '-')
+		    negate = true;
+		  fixed_size = false;
+		  buf_ptr++;
+		}
+	      input_no = atoi (buf_ptr);
+	      if (input_no > 0)
+		{
+		  if (negate)
+		    input_no *= (-1);
+		  if (fixed_size)
+		    new_height = input_no;
 		  else
+		    new_height = win_info->height + input_no;
+
+		  /* Now change the window's height, and adjust
+		     all other windows around it.  */
+		  if (tui_adjust_win_heights (win_info,
+					      new_height) == TUI_FAILURE)
 		    warning (_("Invalid window height specified.\n%s"),
 			     WIN_HEIGHT_USAGE);
+		  else
+		    tui_update_gdb_sizes ();
 		}
+	      else
+		warning (_("Invalid window height specified.\n%s"),
+			 WIN_HEIGHT_USAGE);
 	    }
 	}
       else
@@ -1071,7 +1050,7 @@ tui_adjust_win_heights (struct tui_win_info *primary_win_info,
 		  second_win = *(tui_source_windows ().begin ());
 		}
 	      if (primary_win_info == TUI_CMD_WIN)
-		{ /* Split the change in height accross the 1st & 2nd
+		{ /* Split the change in height across the 1st & 2nd
 		     windows, adjusting them as well.  */
 		  /* Subtract the locator.  */
 		  int first_split_diff = diff / 2;
@@ -1093,7 +1072,7 @@ tui_adjust_win_heights (struct tui_win_info *primary_win_info,
 			    second_split_diff++;
 			}
 		    }
-		  /* Make sure that the minimum hieghts are
+		  /* Make sure that the minimum heights are
 		     honored.  */
 		  while ((first_win->height + first_split_diff) < 3)
 		    {
@@ -1111,7 +1090,7 @@ tui_adjust_win_heights (struct tui_win_info *primary_win_info,
 		  second_win->resize (second_win->height + second_split_diff,
 				      width,
 				      0, first_win->height - 1);
-		  locator->resize (2 /* 1 */, width,
+		  locator->resize (1, width,
 				   0, (second_win->origin.y
 				       + second_win->height + 1));
 
@@ -1147,7 +1126,7 @@ tui_adjust_win_heights (struct tui_win_info *primary_win_info,
 		  else
 		    second_win->resize (second_win->height, width,
 					0, first_win->height - 1);
-		  locator->resize (2 /* 1 */, width,
+		  locator->resize (1, width,
 				   0, (second_win->origin.y
 				       + second_win->height + 1));
 		  TUI_CMD_WIN->origin.y = locator->origin.y + 1;
@@ -1308,7 +1287,7 @@ parse_scrolling_args (const char *arg,
 	  buf_ptr = strchr (buf_ptr, ' ');
 	  if (buf_ptr != NULL)
 	    {
-	      *buf_ptr = (char) 0;
+	      *buf_ptr = '\0';
 	      if (num_to_scroll)
 		*num_to_scroll = atoi (num_str);
 	      buf_ptr++;
@@ -1322,29 +1301,19 @@ parse_scrolling_args (const char *arg,
 	{
 	  const char *wname;
 
-	  if (*buf_ptr == ' ')
-	    while (*(++buf_ptr) == ' ')
-	      ;
+	  wname = skip_spaces (buf_ptr);
 
-	  if (*buf_ptr != (char) 0)
+	  if (*wname != '\0')
 	    {
-	      /* Validate the window name.  */
-	      for (char *p = buf_ptr; *p != '\0'; p++)
-		*p = tolower (*p);
+	      *win_to_scroll = tui_partial_win_by_name (wname);
 
-	      wname = buf_ptr;
+	      if (*win_to_scroll == NULL)
+		error (_("Unrecognized window `%s'"), wname);
+	      if (!(*win_to_scroll)->is_visible ())
+		error (_("Window is not visible"));
+	      else if (*win_to_scroll == TUI_CMD_WIN)
+		*win_to_scroll = *(tui_source_windows ().begin ());
 	    }
-	  else
-	    wname = "?";
-	  
-	  *win_to_scroll = tui_partial_win_by_name (wname);
-
-	  if (*win_to_scroll == NULL)
-	    error (_("Unrecognized window `%s'"), wname);
-	  if (!(*win_to_scroll)->is_visible ())
-	    error (_("Window is not visible"));
-	  else if (*win_to_scroll == TUI_CMD_WIN)
-	    *win_to_scroll = *(tui_source_windows ().begin ());
 	}
     }
 }

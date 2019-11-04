@@ -346,7 +346,7 @@ gdbarch_init_osabi (struct gdbarch_info info, struct gdbarch *gdbarch)
 	continue;
 
       /* If the architecture described by ARCH_INFO can run code for
-	 the architcture we registered the handler for, then the
+	 the architecture we registered the handler for, then the
 	 handler is applicable.  Note, though, that if the handler is
 	 for an architecture that is a superset of ARCH_INFO, we can't
 	 use that --- it would be perfectly correct for it to install
@@ -415,8 +415,8 @@ check_note (bfd *abfd, asection *sect, char *note, unsigned int *sectsize,
   /* If this assertion triggers, increase MAX_NOTESZ.  */
   gdb_assert (notesz <= MAX_NOTESZ);
 
-  /* Check whether SECT is big enough to comtain the complete note.  */
-  if (notesz > bfd_section_size (abfd, sect))
+  /* Check whether SECT is big enough to contain the complete note.  */
+  if (notesz > bfd_section_size (sect))
     return 0;
 
   /* Check the note name.  */
@@ -445,8 +445,8 @@ generic_elf_osabi_sniff_abi_tag_sections (bfd *abfd, asection *sect, void *obj)
   unsigned int sectsize;
   char *note;
 
-  name = bfd_get_section_name (abfd, sect);
-  sectsize = bfd_section_size (abfd, sect);
+  name = bfd_section_name (sect);
+  sectsize = bfd_section_size (sect);
 
   /* Limit the amount of data to read.  */
   if (sectsize > MAX_NOTESZ)

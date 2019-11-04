@@ -42,7 +42,7 @@
 #include "readline/tilde.h"
 #include "completer.h"
 
-static const char *jit_reader_dir = NULL;
+static std::string jit_reader_dir;
 
 static const struct objfile_data *jit_objfile_data;
 
@@ -76,7 +76,7 @@ struct target_buffer
   ULONGEST size;
 };
 
-/* Openning the file is a no-op.  */
+/* Opening the file is a no-op.  */
 
 static void *
 mem_bfd_iovec_open (struct bfd *abfd, void *open_closure)
@@ -216,7 +216,7 @@ jit_reader_load_command (const char *args, int from_tty)
     error (_("JIT reader already loaded.  Run jit-reader-unload first."));
 
   if (!IS_ABSOLUTE_PATH (file.get ()))
-    file.reset (xstrprintf ("%s%s%s", jit_reader_dir, SLASH_STRING,
+    file.reset (xstrprintf ("%s%s%s", jit_reader_dir.c_str (), SLASH_STRING,
 			    file.get ()));
 
   loaded_jit_reader = jit_reader_load (file.get ());
@@ -910,12 +910,12 @@ JITed symbol file is not an object file, ignoring it.\n"));
      addresses that we care about.  */
   section_addr_info sai;
   for (sec = nbfd->sections; sec != NULL; sec = sec->next)
-    if ((bfd_get_section_flags (nbfd.get (), sec) & (SEC_ALLOC|SEC_LOAD)) != 0)
+    if ((bfd_section_flags (sec) & (SEC_ALLOC|SEC_LOAD)) != 0)
       {
         /* We assume that these virtual addresses are absolute, and do not
            treat them as offsets.  */
-	sai.emplace_back (bfd_get_section_vma (nbfd.get (), sec),
-			  bfd_get_section_name (nbfd.get (), sec),
+	sai.emplace_back (bfd_section_vma (sec),
+			  bfd_section_name (sec),
 			  sec->index);
       }
 

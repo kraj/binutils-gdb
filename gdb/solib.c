@@ -47,6 +47,7 @@
 #include "gdb_bfd.h"
 #include "gdbsupport/filestuff.h"
 #include "source.h"
+#include "cli/cli-style.h"
 
 /* Architecture-specific operations.  */
 
@@ -143,7 +144,7 @@ show_solib_search_path (struct ui_file *file, int from_tty,
    *   If IS_SOLIB is non-zero:
    *     Look in inferior's $LD_LIBRARY_PATH.
    *
-   * The last check avoids doing this search when targetting remote
+   * The last check avoids doing this search when targeting remote
    * machines since a sysroot will almost always be set.
 */
 
@@ -502,14 +503,14 @@ solib_bfd_open (const char *pathname)
   /* Check bfd format.  */
   if (!bfd_check_format (abfd.get (), bfd_object))
     error (_("`%s': not in executable format: %s"),
-	   bfd_get_filename (abfd), bfd_errmsg (bfd_get_error ()));
+	   bfd_get_filename (abfd.get ()), bfd_errmsg (bfd_get_error ()));
 
   /* Check bfd arch.  */
   b = gdbarch_bfd_arch_info (target_gdbarch ());
   if (!b->compatible (b, bfd_get_arch_info (abfd.get ())))
     warning (_("`%s': Shared library architecture %s is not compatible "
-               "with target architecture %s."), bfd_get_filename (abfd),
-             bfd_get_arch_info (abfd.get ())->printable_name,
+	       "with target architecture %s."), bfd_get_filename (abfd.get ()),
+	     bfd_get_arch_info (abfd.get ())->printable_name,
 	     b->printable_name);
 
   return abfd;
@@ -1104,7 +1105,7 @@ info_sharedlibrary_command (const char *pattern, int from_tty)
 	else
 	  uiout->field_string ("syms-read", so->symbols_loaded ? "Yes" : "No");
 
-	uiout->field_string ("name", so->so_name, ui_out_style_kind::FILE);
+	uiout->field_string ("name", so->so_name, file_name_style.style ());
 
 	uiout->text ("\n");
       }
@@ -1440,21 +1441,6 @@ show_auto_solib_add (struct ui_file *file, int from_tty,
 		    value);
 }
 
-
-/* Handler for library-specific lookup of global symbol NAME in OBJFILE.  Call
-   the library-specific handler if it is installed for the current target.  */
-
-struct block_symbol
-solib_global_lookup (struct objfile *objfile,
-		     const char *name,
-		     const domain_enum domain)
-{
-  const struct target_so_ops *ops = solib_ops (target_gdbarch ());
-
-  if (ops->lookup_lib_global_symbol != NULL)
-    return ops->lookup_lib_global_symbol (objfile, name, domain);
-  return {};
-}
 
 /* Lookup the value for a specific symbol from dynamic symbol table.  Look
    up symbol from ABFD.  MATCH_SYM is a callback function to determine

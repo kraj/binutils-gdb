@@ -856,7 +856,7 @@ bfd_generic_archive_p (bfd *abfd)
       return NULL;
     }
 
-  bfd_is_thin_archive (abfd) = (strncmp (armag, ARMAGT, SARMAG) == 0);
+  bfd_set_thin_archive (abfd, strncmp (armag, ARMAGT, SARMAG) == 0);
 
   if (strncmp (armag, ARMAG, SARMAG) != 0
       && ! bfd_is_thin_archive (abfd))
@@ -1013,7 +1013,7 @@ do_slurp_bsd_armap (bfd *abfd)
   /* FIXME, we should provide some way to free raw_ardata when
      we are done using the strings from it.  For now, it seems
      to be allocated on an objalloc anyway...  */
-  bfd_has_map (abfd) = TRUE;
+  abfd->has_armap = TRUE;
   return TRUE;
 }
 
@@ -1105,7 +1105,7 @@ do_slurp_coff_armap (bfd *abfd)
   /* Pad to an even boundary if you have to.  */
   ardata->first_file_filepos += (ardata->first_file_filepos) % 2;
 
-  bfd_has_map (abfd) = TRUE;
+  abfd->has_armap = TRUE;
   bfd_release (abfd, raw_armap);
 
   /* Check for a second archive header (as used by PE).  */
@@ -1188,7 +1188,7 @@ bfd_slurp_armap (bfd *abfd)
 	return do_slurp_bsd_armap (abfd);
     }
 
-  bfd_has_map (abfd) = FALSE;
+  abfd->has_armap = FALSE;
   return TRUE;
 }
 
@@ -1299,6 +1299,9 @@ normalize (bfd *abfd, const char *file)
   const char *last;
   char *copy;
 
+  if (abfd->flags & BFD_ARCHIVE_FULL_PATH)
+    return file;
+
   first = file + strlen (file) - 1;
   last = first + 1;
 
@@ -1326,8 +1329,10 @@ normalize (bfd *abfd, const char *file)
 
 #else
 static const char *
-normalize (bfd *abfd ATTRIBUTE_UNUSED, const char *file)
+normalize (bfd *abfd, const char *file)
 {
+  if (abfd->flags & BFD_ARCHIVE_FULL_PATH)
+    return file;
   return lbasename (file);
 }
 #endif
@@ -1562,7 +1567,7 @@ _bfd_construct_extended_name_table (bfd *abfd,
 	  continue;
 	}
 
-      normal = normalize (current, current->filename);
+      normal = normalize (abfd, current->filename);
       if (normal == NULL)
 	return FALSE;
 
@@ -1643,7 +1648,7 @@ _bfd_construct_extended_name_table (bfd *abfd,
 	}
       else
 	{
-	  normal = normalize (current, filename);
+	  normal = normalize (abfd, filename);
 	  if (normal == NULL)
 	    return FALSE;
 	}
@@ -1714,7 +1719,7 @@ _bfd_archive_bsd44_construct_extended_name_table (bfd *abfd,
        current != NULL;
        current = current->archive_next)
     {
-      const char *normal = normalize (current, current->filename);
+      const char *normal = normalize (abfd, current->filename);
       int has_space = 0;
       unsigned int len;
 

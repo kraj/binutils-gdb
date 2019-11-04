@@ -52,8 +52,6 @@
 #include "elf-bfd.h"
 #include "elf/aarch64.h"
 
-#include "gdbsupport/vec.h"
-
 #include "record.h"
 #include "record-full.h"
 #include "arch/aarch64-insn.h"
@@ -1416,7 +1414,7 @@ struct aarch64_call_info
 };
 
 /* Pass a value in a sequence of consecutive X registers.  The caller
-   is responsbile for ensuring sufficient registers are available.  */
+   is responsible for ensuring sufficient registers are available.  */
 
 static void
 pass_in_x (struct gdbarch *gdbarch, struct regcache *regcache,
@@ -3552,7 +3550,7 @@ aarch64_record_data_proc_reg (insn_decode_record *aarch64_insn_r)
 	    }
 	  else if (insn_bits21_23 == 0x04 || insn_bits21_23 == 0x06)
 	    {
-	      /* CConditional select.  */
+	      /* Conditional select.  */
 	      /* Data-processing (2 source).  */
 	      /* Data-processing (1 source).  */
 	      record_buf[0] = reg_rd;

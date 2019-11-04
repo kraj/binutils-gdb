@@ -545,13 +545,13 @@ dump_section_header (bfd *abfd, asection *section, void *data)
     return;
 
   printf ("%3d %-*s %08lx  ", section->index, longest_section_name,
-	  sanitize_string (bfd_get_section_name (abfd, section)),
-	  (unsigned long) bfd_section_size (abfd, section) / opb);
-  bfd_printf_vma (abfd, bfd_get_section_vma (abfd, section));
+	  sanitize_string (bfd_section_name (section)),
+	  (unsigned long) bfd_section_size (section) / opb);
+  bfd_printf_vma (abfd, bfd_section_vma (section));
   printf ("  ");
   bfd_printf_vma (abfd, section->lma);
   printf ("  %08lx  2**%u", (unsigned long) section->filepos,
-	  bfd_get_section_alignment (abfd, section));
+	  bfd_section_alignment (section));
   if (! wide_output)
     printf ("\n                ");
   printf ("  ");
@@ -631,7 +631,8 @@ dump_section_header (bfd *abfd, asection *section, void *data)
    DATA which contains the string length of the longest section name.  */
 
 static void
-find_longest_section_name (bfd *abfd, asection *section, void *data)
+find_longest_section_name (bfd *abfd ATTRIBUTE_UNUSED,
+			   asection *section, void *data)
 {
   int *longest_so_far = (int *) data;
   const char *name;
@@ -645,7 +646,7 @@ find_longest_section_name (bfd *abfd, asection *section, void *data)
   if (! process_section_p (section))
     return;
 
-  name = bfd_get_section_name (abfd, section);
+  name = bfd_section_name (section);
   len = (int) strlen (name);
   if (len > *longest_so_far)
     *longest_so_far = len;
@@ -995,7 +996,7 @@ objdump_print_symname (bfd *abfd, struct disassemble_info *inf,
   if ((sym->flags & (BSF_SECTION_SYM | BSF_SYNTHETIC)) == 0)
     version_string = bfd_get_symbol_version_string (abfd, sym, &hidden);
 
-  if (bfd_is_und_section (bfd_get_section (sym)))
+  if (bfd_is_und_section (bfd_asymbol_section (sym)))
     hidden = TRUE;
 
   name = sanitize_string (name);
@@ -1034,8 +1035,8 @@ sym_ok (bfd_boolean               want_section,
 	 debug info file, whilst the section we want is in a normal file.
 	 So the section pointers will be different, but the section names
 	 will be the same.  */
-      if (strcmp (bfd_section_name (abfd, sorted_syms[place]->section),
-		  bfd_section_name (abfd, sec)) != 0)
+      if (strcmp (bfd_section_name (sorted_syms[place]->section),
+		  bfd_section_name (sec)) != 0)
 	return FALSE;
     }
 
@@ -1141,9 +1142,9 @@ find_symbol_for_address (bfd_vma vma,
      Also give the target a chance to reject symbols.  */
   want_section = (aux->require_sec
 		  || ((abfd->flags & HAS_RELOC) != 0
-		      && vma >= bfd_get_section_vma (abfd, sec)
-		      && vma < (bfd_get_section_vma (abfd, sec)
-				+ bfd_section_size (abfd, sec) / opb)));
+		      && vma >= bfd_section_vma (sec)
+		      && vma < (bfd_section_vma (sec)
+				+ bfd_section_size (sec) / opb)));
   
   if (! sym_ok (want_section, abfd, thisplace, sec, inf))
     {
@@ -1267,8 +1268,8 @@ objdump_print_addr_with_sym (bfd *abfd, asection *sec, asymbol *sym,
       bfd_vma secaddr;
 
       (*inf->fprintf_func) (inf->stream, " <%s",
-			    sanitize_string (bfd_get_section_name (abfd, sec)));
-      secaddr = bfd_get_section_vma (abfd, sec);
+			    sanitize_string (bfd_section_name (sec)));
+      secaddr = bfd_section_vma (sec);
       if (vma < secaddr)
 	{
 	  (*inf->fprintf_func) (inf->stream, "-0x");
@@ -1351,7 +1352,7 @@ objdump_print_addr (bfd_vma vma,
       /* Adjust the vma to the reloc.  */
       vma += bfd_asymbol_value (sym);
 
-      if (bfd_is_und_section (bfd_get_section (sym)))
+      if (bfd_is_und_section (bfd_asymbol_section (sym)))
 	skip_find = TRUE;
     }
 
@@ -1836,6 +1837,12 @@ objdump_sprintf (SFILE *f, const char *format, ...)
 
 #define DEFAULT_SKIP_ZEROES_AT_END 3
 
+static int
+null_print (const void * stream ATTRIBUTE_UNUSED, const char * format ATTRIBUTE_UNUSED, ...)
+{
+  return 1;
+}
+
 /* Disassemble some data in memory between given values.  */
 
 static void
@@ -1903,10 +1910,7 @@ disassemble_bytes (struct disassemble_info * inf,
     {
       bfd_vma z;
       bfd_boolean need_nl = FALSE;
-      int previous_octets;
 
-      /* Remember the length of the previous instruction.  */
-      previous_octets = octets;
       octets = 0;
 
       /* Make sure we don't use relocs from previous instructions.  */
@@ -1990,26 +1994,46 @@ disassemble_bytes (struct disassemble_info * inf,
 		  && *relppp < relppend)
 		{
 		  bfd_signed_vma distance_to_rel;
+		  int insn_size = 0;
+		  int max_reloc_offset
+		    = aux->abfd->arch_info->max_reloc_offset_into_insn;
 
-		  distance_to_rel = (**relppp)->address
-		    - (rel_offset + addr_offset);
+		  distance_to_rel = ((**relppp)->address - rel_offset
+				     - addr_offset);
+
+		  if (distance_to_rel > 0
+		      && (max_reloc_offset < 0
+			  || distance_to_rel <= max_reloc_offset))
+		    {
+		      /* This reloc *might* apply to the current insn,
+			 starting somewhere inside it.  Discover the length
+			 of the current insn so that the check below will
+			 work.  */
+		      if (insn_width)
+			insn_size = insn_width;
+		      else
+			{
+			  /* We find the length by calling the dissassembler
+			     function with a dummy print handler.  This should
+			     work unless the disassembler is not expecting to
+			     be called multiple times for the same address.
+
+			     This does mean disassembling the instruction
+			     twice, but we only do this when there is a high
+			     probability that there is a reloc that will
+			     affect the instruction.  */
+			  inf->fprintf_func = (fprintf_ftype) null_print;
+			  insn_size = disassemble_fn (section->vma
+						      + addr_offset, inf);
+			  inf->fprintf_func = (fprintf_ftype) objdump_sprintf;
+			}
+		    }
 
 		  /* Check to see if the current reloc is associated with
 		     the instruction that we are about to disassemble.  */
 		  if (distance_to_rel == 0
-		      /* FIXME: This is wrong.  We are trying to catch
-			 relocs that are addressed part way through the
-			 current instruction, as might happen with a packed
-			 VLIW instruction.  Unfortunately we do not know the
-			 length of the current instruction since we have not
-			 disassembled it yet.  Instead we take a guess based
-			 upon the length of the previous instruction.  The
-			 proper solution is to have a new target-specific
-			 disassembler function which just returns the length
-			 of an instruction at a given address without trying
-			 to display its disassembly. */
 		      || (distance_to_rel > 0
-			  && distance_to_rel < (bfd_signed_vma) (previous_octets/ opb)))
+			  && distance_to_rel < insn_size / (int) opb))
 		    {
 		      inf->flags |= INSN_HAS_RELOC;
 		      aux->reloc = **relppp;
@@ -2211,8 +2235,8 @@ disassemble_bytes (struct disassemble_info * inf,
 		    {
 		      asection *sym_sec;
 
-		      sym_sec = bfd_get_section (*q->sym_ptr_ptr);
-		      sym_name = bfd_get_section_name (aux->abfd, sym_sec);
+		      sym_sec = bfd_asymbol_section (*q->sym_ptr_ptr);
+		      sym_name = bfd_section_name (sym_sec);
 		      if (sym_name == NULL || *sym_name == '\0')
 			sym_name = "*unknown*";
 		      printf ("%s", sanitize_string (sym_name));
@@ -2285,7 +2309,7 @@ disassemble_section (bfd *abfd, asection *section, void *inf)
   if (! process_section_p (section))
     return;
 
-  datasize = bfd_get_section_size (section);
+  datasize = bfd_section_size (section);
   if (datasize == 0)
     return;
 
@@ -2515,7 +2539,7 @@ disassemble_section (bfd *abfd, asection *section, void *inf)
       else
 	{
 #define is_valid_next_sym(SYM) \
-  (strcmp (bfd_section_name (abfd, (SYM)->section), bfd_section_name (abfd, section)) == 0 \
+  (strcmp (bfd_section_name ((SYM)->section), bfd_section_name (section)) == 0 \
    && (bfd_asymbol_value (SYM) > bfd_asymbol_value (sym)) \
    && pinfo->symbol_is_valid (SYM, pinfo))
 
@@ -2727,9 +2751,9 @@ load_specific_debug_section (enum dwarf_section_display_enum debug,
   section->filename = bfd_get_filename (abfd);
   section->reloc_info = NULL;
   section->num_relocs = 0;
-  section->address = bfd_get_section_vma (abfd, sec);
+  section->address = bfd_section_vma (sec);
   section->user_data = sec;
-  section->size = bfd_get_section_size (sec);
+  section->size = bfd_section_size (sec);
   /* PR 24360: On 32-bit hosts sizeof (size_t) < sizeof (bfd_size_type). */
   alloced = amt = section->size + 1;
   if (alloced != amt || alloced == 0)
@@ -2902,7 +2926,7 @@ static void
 dump_dwarf_section (bfd *abfd, asection *section,
 		    void *arg ATTRIBUTE_UNUSED)
 {
-  const char *name = bfd_get_section_name (abfd, section);
+  const char *name = bfd_section_name (section);
   const char *match;
   int i;
 
@@ -3027,7 +3051,7 @@ read_section_stabs (bfd *abfd, const char *sect_name, bfd_size_type *size_ptr,
       return NULL;
     }
 
-  *size_ptr = bfd_section_size (abfd, stabsect);
+  *size_ptr = bfd_section_size (stabsect);
   if (entsize_ptr)
     *entsize_ptr = stabsect->entsize;
 
@@ -3258,19 +3282,27 @@ static int
 dump_ctf_archive_member (ctf_file_t *ctf, const char *name, void *arg)
 {
   ctf_file_t *parent = (ctf_file_t *) arg;
-  const char *things[] = {"Labels", "Data objects", "Function objects",
-			  "Variables", "Types", "Strings", ""};
+  const char *things[] = {"Header", "Labels", "Data objects",
+			  "Function objects", "Variables", "Types", "Strings",
+			  ""};
   const char **thing;
   size_t i;
 
   /* Only print out the name of non-default-named archive members.
      The name .ctf appears everywhere, even for things that aren't
-     really archives, so printing it out is liable to be confusing.  */
-  if (strcmp (name, ".ctf") != 0)
-    printf (_("\nCTF archive member: %s:\n"), sanitize_string (name));
+     really archives, so printing it out is liable to be confusing.
 
-  ctf_import (ctf, parent);
-  for (i = 1, thing = things; *thing[0]; thing++, i++)
+     The parent, if there is one, is the default-owned archive member:
+     avoid importing it into itself.  (This does no harm, but looks
+     confusing.)  */
+
+  if (strcmp (name, ".ctf") != 0)
+    {
+      printf (_("\nCTF archive member: %s:\n"), sanitize_string (name));
+      ctf_import (ctf, parent);
+    }
+
+  for (i = 0, thing = things; *thing[0]; thing++, i++)
     {
       ctf_dump_state_t *s = NULL;
       char *item;
@@ -3298,7 +3330,7 @@ dump_ctf_archive_member (ctf_file_t *ctf, const char *name, void *arg)
 static void
 dump_ctf (bfd *abfd, const char *sect_name, const char *parent_name)
 {
-  ctf_archive_t *ctfa, *parenta = NULL;
+  ctf_archive_t *ctfa, *parenta = NULL, *lookparent;
   bfd_byte *ctfdata, *parentdata = NULL;
   bfd_size_type ctfsize, parentsize;
   ctf_sect_t ctfsect;
@@ -3331,14 +3363,18 @@ dump_ctf (bfd *abfd, const char *sect_name, const char *parent_name)
 	  bfd_fatal (bfd_get_filename (abfd));
 	}
 
-      /* Assume that the applicable parent archive member is the default one.
-	 (This is what all known implementations are expected to do, if they
-	 put CTFs and their parents in archives together.)  */
-      if ((parent = ctf_arc_open_by_name (parenta, NULL, &err)) == NULL)
-	{
-	  non_fatal (_("CTF open failure: %s\n"), ctf_errmsg (err));
-	  bfd_fatal (bfd_get_filename (abfd));
-	}
+      lookparent = parenta;
+    }
+  else
+    lookparent = ctfa;
+
+  /* Assume that the applicable parent archive member is the default one.
+     (This is what all known implementations are expected to do, if they
+     put CTFs and their parents in archives together.)  */
+  if ((parent = ctf_arc_open_by_name (lookparent, NULL, &err)) == NULL)
+    {
+      non_fatal (_("CTF open failure: %s\n"), ctf_errmsg (err));
+      bfd_fatal (bfd_get_filename (abfd));
     }
 
   printf (_("Contents of CTF section %s:\n"), sanitize_string (sect_name));
@@ -3436,7 +3472,7 @@ dump_section (bfd *abfd, asection *section, void *dummy ATTRIBUTE_UNUSED)
   if (! process_section_p (section))
     return;
 
-  if ((datasize = bfd_section_size (abfd, section)) == 0)
+  if ((datasize = bfd_section_size (section)) == 0)
     return;
 
   /* Compute the address range to display.  */
@@ -4512,11 +4548,11 @@ main (int argc, char **argv)
 	case OPTION_DWARF_CHECK:
 	  dwarf_check = TRUE;
 	  break;
-        case OPTION_CTF:
-          dump_ctf_section_info = TRUE;
-          dump_ctf_section_name = xstrdup (optarg);
-          seenflag = TRUE;
-          break;
+	case OPTION_CTF:
+	  dump_ctf_section_info = TRUE;
+	  dump_ctf_section_name = xstrdup (optarg);
+	  seenflag = TRUE;
+	  break;
 	case OPTION_CTF_PARENT:
 	  dump_ctf_parent_name = xstrdup (optarg);
 	  break;

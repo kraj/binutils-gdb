@@ -43,6 +43,8 @@
 #endif
 #endif
 
+#include "gdb_string_view.h"
+
 /* xmalloc(), xrealloc() and xcalloc() have already been declared in
    "libiberty.h". */
 
@@ -106,17 +108,26 @@ std::string extract_string_maybe_quoted (const char **arg);
 
 /* The strerror() function can return NULL for errno values that are
    out of range.  Provide a "safe" version that always returns a
-   printable string.  */
+   printable string.  This version is also thread-safe.  */
 
-extern char *safe_strerror (int);
+extern const char *safe_strerror (int);
 
-/* Return non-zero if the start of STRING matches PATTERN, zero
-   otherwise.  */
+/* Return true if the start of STRING matches PATTERN, false otherwise.  */
 
-static inline int
+static inline bool
 startswith (const char *string, const char *pattern)
 {
   return strncmp (string, pattern, strlen (pattern)) == 0;
+}
+
+/* Version of startswith that takes string_view arguments.  See comment
+   above.  */
+
+static inline bool
+startswith (gdb::string_view string, gdb::string_view pattern)
+{
+  return (string.length () >= pattern.length ()
+	  && strncmp (string.data (), pattern.data (), pattern.length ()) == 0);
 }
 
 ULONGEST strtoulst (const char *num, const char **trailer, int base);

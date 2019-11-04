@@ -26,7 +26,6 @@
 #include "reggroups.h"
 #include "target.h"
 #include "target-descriptions.h"
-#include "gdbsupport/vec.h"
 #include "xml-support.h"
 #include "xml-tdesc.h"
 #include "osabi.h"
@@ -1748,7 +1747,7 @@ static std::vector<xml_test_tdesc> xml_tdesc;
 
 #if GDB_SELF_TEST
 
-/* See target-descritpions.h.  */
+/* See target-descriptions.h.  */
 
 void
 record_xml_tdesc (const char *xml_file, const struct target_desc *tdesc)
@@ -1759,7 +1758,7 @@ record_xml_tdesc (const char *xml_file, const struct target_desc *tdesc)
 
 }
 
-/* Test the convesion process of a target description to/from xml: Take a target
+/* Test the conversion process of a target description to/from xml: Take a target
    description TDESC, convert to xml, back to a description, and confirm the new
    tdesc is identical to the original.  */
 static bool

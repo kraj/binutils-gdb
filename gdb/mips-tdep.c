@@ -858,7 +858,7 @@ static int heuristic_fence_post = 0;
    register N.  NOTE: This defines the pseudo register type so need to
    rebuild the architecture vector.  */
 
-static int mips64_transfers_32bit_regs_p = 0;
+static bool mips64_transfers_32bit_regs_p = false;
 
 static void
 set_mips64_transfers_32bit_regs (const char *args, int from_tty,
@@ -7975,7 +7975,7 @@ static void
 mips_find_abi_section (bfd *abfd, asection *sect, void *obj)
 {
   enum mips_abi *abip = (enum mips_abi *) obj;
-  const char *name = bfd_get_section_name (abfd, sect);
+  const char *name = bfd_section_name (sect);
 
   if (*abip != MIPS_ABI_UNKNOWN)
     return;
@@ -8003,7 +8003,7 @@ static void
 mips_find_long_section (bfd *abfd, asection *sect, void *obj)
 {
   int *lbp = (int *) obj;
-  const char *name = bfd_get_section_name (abfd, sect);
+  const char *name = bfd_section_name (sect);
 
   if (startswith (name, ".gcc_compiled_long32"))
     *lbp = 32;

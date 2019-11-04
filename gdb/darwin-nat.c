@@ -120,7 +120,7 @@ static vm_size_t mach_page_size;
 
 /* If Set, catch all mach exceptions (before they are converted to signals
    by the kernel).  */
-static int enable_mach_exceptions;
+static bool enable_mach_exceptions;
 
 /* Inferior that should report a fake stop event.  */
 static struct inferior *darwin_inf_fake_stop;
@@ -2145,7 +2145,7 @@ darwin_nat_target::thread_alive (ptid_t ptid)
    copy it to RDADDR in gdb's address space.
    If WRADDR is not NULL, write gdb's LEN bytes from WRADDR and copy it
    to ADDR in inferior task's address space.
-   Return 0 on failure; number of bytes read / writen otherwise.  */
+   Return 0 on failure; number of bytes read / written otherwise.  */
 
 static int
 darwin_read_write_inferior (task_t task, CORE_ADDR addr,

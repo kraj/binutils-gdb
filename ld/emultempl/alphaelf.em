@@ -19,7 +19,7 @@
 # MA 02110-1301, USA.
 #
 
-# This file is sourced from elf32.em, and defines extra alpha
+# This file is sourced from elf.em, and defines extra alpha
 # specific routines.
 #
 fragment <<EOF
@@ -82,7 +82,7 @@ alpha_after_parse (void)
 				   exp_nameop (SIZEOF_HEADERS, NULL)),
 			NULL);
 
-  gld${EMULATION_NAME}_after_parse ();
+  ldelf_after_parse ();
 }
 
 static void

@@ -26,8 +26,6 @@
    inferior.  For presentation purposes, the branch trace is represented as a
    list of sequential control-flow blocks, one such list per thread.  */
 
-#include "vec.h"
-
 /* A branch trace block.
 
    This represents a block of sequential control-flow.  Adjacent blocks will be
@@ -43,11 +41,15 @@ struct btrace_block
 
   /* The address of the first byte of the last instruction in the block.  */
   CORE_ADDR end;
-};
 
-/* Define functions operating on a vector of branch trace blocks.  */
-typedef struct btrace_block btrace_block_s;
-DEF_VEC_O (btrace_block_s);
+  /* Simple constructor.  */
+  btrace_block (CORE_ADDR begin, CORE_ADDR end)
+    : begin (begin),
+      end (end)
+  {
+    /* Nothing.  */
+  }
+};
 
 /* Enumeration of btrace formats.  */
 
@@ -137,8 +139,9 @@ struct btrace_config
 struct btrace_data_bts
 {
   /* Branch trace is represented as a vector of branch trace blocks starting
-     with the most recent block.  */
-  VEC (btrace_block_s) *blocks;
+     with the most recent block.  This needs to be a pointer as we place
+     btrace_data_bts into a union.  */
+  std::vector<btrace_block> *blocks;
 };
 
 /* Configuration information to go with the trace data.  */

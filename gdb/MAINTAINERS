@@ -311,16 +311,13 @@ the native maintainer when resolving ABI issues.
 	rx		--target=rx-elf ,-Werror
 
 	s390		--target=s390-linux-gnu ,-Werror
-			Andreas Arnez		arnez@linux.vnet.ibm.com
+			Andreas Arnez		arnez@linux.ibm.com
 
-	score	--target=score-elf
+	score		--target=score-elf
 	sh		--target=sh-elf ,-Werror
 
-	sparc		--target=sparc64-solaris2.10 ,-Werror
+	sparc		--target=sparcv9-solaris2.11 ,-Werror
 			(--target=sparc-elf broken)
-
-	spu		--target=spu-elf ,-Werror
-			Ulrich Weigand		uweigand@de.ibm.com
 
 	tic6x		--target=tic6x-elf ,-Werror
 			Yao Qi			qiyao@sourceware.org
@@ -441,10 +438,11 @@ Pascal support		Pierre Muller		muller@sourceware.org
 To get recommended for the Write After Approval list you need a valid
 FSF assignment and have submitted one good patch.
 
+Tankut Baris Aktemur				tankut.baris.aktemur@intel.com
 Pedro Alves					pedro_alves@portugalmail.pt
 David Anderson					davea@sgi.com
 John David Anglin				dave.anglin@nrc-cnrc.gc.ca
-Andreas Arnez					arnez@linux.vnet.ibm.com
+Andreas Arnez					arnez@linux.ibm.com
 Shrinivas Atre					shrinivasa@kpitcummins.com
 Sterling Augustine				saugustine@google.com
 John Baldwin					jhb@freebsd.org

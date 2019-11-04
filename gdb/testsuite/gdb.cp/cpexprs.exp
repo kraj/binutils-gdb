@@ -681,11 +681,6 @@ add {policyd5::function} \
 # Start the test
 if {[skip_cplus_tests]} { continue }
 
-# On SPU this test fails because the executable exceeds local storage size.
-if { [istarget "spu*-*-*"] } {
-        return 0
-}
-
 #
 # test running programs
 #
@@ -710,12 +705,12 @@ gdb_test "set listsize 1"
 
 # "print METHOD"
 foreach name [get_functions print] {
-    gdb_test "print $name" [get $name print] "print $name"
+    gdb_test "print $name" [get $name print]
 }
 
 # "list METHOD"
 foreach name [get_functions list] {
-    gdb_test "list $name" [get $name list] "list $name"
+    gdb_test "list $name" [get $name list]
 }
 
 # Running to breakpoint -- use any function we can "list"

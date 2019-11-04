@@ -626,7 +626,11 @@ LIBOBJS
 GCORE_TRANSFORM_NAME
 GDB_TRANSFORM_NAME
 XSLTPROC
+NM_H
 GDB_NM_FILE
+LTLIBXXHASH
+LIBXXHASH
+HAVE_LIBXXHASH
 LTLIBBABELTRACE
 LIBBABELTRACE
 HAVE_LIBBABELTRACE
@@ -693,6 +697,7 @@ WIN32LIBS
 SER_HARDWIRE
 WERROR_CFLAGS
 WARN_CFLAGS
+SYSTEM_GDBINIT_DIR
 SYSTEM_GDBINIT
 TARGET_SYSTEM_ROOT
 CONFIG_LDFLAGS
@@ -884,6 +889,7 @@ with_libipt_prefix
 with_included_regex
 with_sysroot
 with_system_gdbinit
+with_system_gdbinit_dir
 enable_werror
 enable_build_warnings
 enable_gdb_build_warnings
@@ -897,6 +903,8 @@ enable_sim
 enable_gdbserver
 with_babeltrace
 with_libbabeltrace_prefix
+with_xxhash
+with_libxxhash_prefix
 enable_unit_tests
 '
       ac_precious_vars='build_alias
@@ -1618,6 +1626,9 @@ Optional Packages:
   --with-sysroot[=DIR]    search for usr/lib et al within DIR
   --with-system-gdbinit=PATH
                           automatically load a system-wide gdbinit file
+  --with-system-gdbinit-dir=PATH
+                          automatically load system-wide gdbinit files from
+                          this directory
   --with-lzma             support lzma compression (auto/yes/no)
   --with-liblzma-prefix[=DIR]  search for liblzma in DIR/include and DIR/lib
   --without-liblzma-prefix     don't search for liblzma in includedir and libdir
@@ -1627,6 +1638,9 @@ Optional Packages:
   --with-babeltrace       include babeltrace support (auto/yes/no)
   --with-libbabeltrace-prefix[=DIR]  search for libbabeltrace in DIR/include and DIR/lib
   --without-libbabeltrace-prefix     don't search for libbabeltrace in includedir and libdir
+  --with-xxhash           use libxxhash for hashing (faster) (auto/yes/no)
+  --with-libxxhash-prefix[=DIR]  search for libxxhash in DIR/include and DIR/lib
+  --without-libxxhash-prefix     don't search for libxxhash in includedir and libdir
 
 Some influential environment variables:
   CC          C compiler command
@@ -10430,32 +10444,12 @@ fi
 
   have_libpython=no
   if test "${have_python_config}" = yes; then
-    # Determine the Python version by extracting "-lpython<version>"
-    # part of the python_libs. <version> is usually X.Y with X and Y
-    # being decimal numbers, but can also be XY (seen on Windows).
-    #
-    # The extraction is performed using sed with a regular expression.
-    # Initially, the regexp used was using the '?' quantifier to make
-    # the dot in the version number optional.  Unfortunately, this
-    # does not work with non-GNU versions of sed because, because of
-    # what looks like a limitation (the '?' quantifier does not work
-    # with back-references).  We work around this limitation by using
-    # the '*' quantifier instead.  It means that, in theory, we might
-    # match unexpected version strings such as "-lpython2..7", but
-    # this seems unlikely in practice.  And even if that happens,
-    # an error will be triggered later on, when checking that version
-    # number.
-    python_version=`echo " ${python_libs} " \
-                         | sed -e 's,^.* -l\(python[0-9]*[.]*[0-9]*\).*$,\1,'`
-    case "${python_version}" in
-    python*)
 
-  version=${python_version}
 
   new_CPPFLAGS=${python_includes}
   new_LIBS=${python_libs}
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ${version}" >&5
-$as_echo_n "checking for ${version}... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for python" >&5
+$as_echo_n "checking for python... " >&6; }
   save_CPPFLAGS=$CPPFLAGS
   save_LIBS=$LIBS
   CPPFLAGS="$CPPFLAGS $new_CPPFLAGS"
@@ -10473,7 +10467,7 @@ Py_Initialize ();
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-  have_libpython=${version}
+  have_libpython=yes
                   found_usable_python=yes
                   PYTHON_CPPFLAGS=$new_CPPFLAGS
                   PYTHON_LIBS=$new_LIBS
@@ -10485,20 +10479,14 @@ rm -f core conftest.err conftest.$ac_objext \
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: ${found_usable_python}" >&5
 $as_echo "${found_usable_python}" >&6; }
 
-      ;;
-    *)
-      as_fn_error $? "unable to determine python version from ${python_libs}" "$LINENO" 5
-      ;;
-    esac
   elif test "${have_python_config}" != failed; then
     if test "${have_libpython}" = no; then
 
-  version=python2.7
 
   new_CPPFLAGS=${python_includes}
   new_LIBS="-lpython2.7 ${python_libs}"
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ${version}" >&5
-$as_echo_n "checking for ${version}... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for python" >&5
+$as_echo_n "checking for python... " >&6; }
   save_CPPFLAGS=$CPPFLAGS
   save_LIBS=$LIBS
   CPPFLAGS="$CPPFLAGS $new_CPPFLAGS"
@@ -10516,7 +10504,7 @@ Py_Initialize ();
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-  have_libpython=${version}
+  have_libpython=yes
                   found_usable_python=yes
                   PYTHON_CPPFLAGS=$new_CPPFLAGS
                   PYTHON_LIBS=$new_LIBS
@@ -10531,12 +10519,11 @@ $as_echo "${found_usable_python}" >&6; }
     fi
     if test "${have_libpython}" = no; then
 
-  version=python2.6
 
   new_CPPFLAGS=${python_includes}
   new_LIBS="-lpython2.6 ${python_libs}"
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ${version}" >&5
-$as_echo_n "checking for ${version}... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for python" >&5
+$as_echo_n "checking for python... " >&6; }
   save_CPPFLAGS=$CPPFLAGS
   save_LIBS=$LIBS
   CPPFLAGS="$CPPFLAGS $new_CPPFLAGS"
@@ -10554,7 +10541,7 @@ Py_Initialize ();
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-  have_libpython=${version}
+  have_libpython=yes
                   found_usable_python=yes
                   PYTHON_CPPFLAGS=$new_CPPFLAGS
                   PYTHON_LIBS=$new_LIBS
@@ -10567,15 +10554,6 @@ rm -f core conftest.err conftest.$ac_objext \
 $as_echo "${found_usable_python}" >&6; }
 
     fi
-  fi
-  if test "${have_libpython}" = python2.7 -o "${have_libpython}" = python27; then
-
-$as_echo "#define HAVE_LIBPYTHON2_7 1" >>confdefs.h
-
-  elif test "${have_libpython}" = python2.6 -o "${have_libpython}" = python26; then
-
-$as_echo "#define HAVE_LIBPYTHON2_6 1" >>confdefs.h
-
   fi
 
   if test "${have_libpython}" = no; then
@@ -10691,34 +10669,6 @@ $as_echo "${PYTHON_CFLAGS}" >&6; }
            fi
            ;;
   esac
-
-  # Note that "python -m threading" cannot be used to check for
-  # threading support due to a bug in Python 2.7.3
-  # (http://bugs.python.org/issue15567).
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether python supports threads" >&5
-$as_echo_n "checking whether python supports threads... " >&6; }
-  saved_CPPFLAGS="${CPPFLAGS}"
-  CPPFLAGS="${PYTHON_CPPFLAGS}"
-  # Note that the test is reversed so that python_has_threads=yes on
-  # unexpected failures.
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#include <Python.h>
-#ifdef WITH_THREAD
-# error
-#endif
-
-_ACEOF
-if ac_fn_c_try_cpp "$LINENO"; then :
-  python_has_threads=no
-else
-  python_has_threads=yes
-fi
-rm -f conftest.err conftest.i conftest.$ac_ext
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: ${python_has_threads}" >&5
-$as_echo "${python_has_threads}" >&6; }
-  CPPFLAGS="${saved_CPPFLAGS}"
 else
   # Even if Python support is not compiled in, we need to have this file
   # included so that the "python" command, et.al., still exists.
@@ -13120,7 +13070,7 @@ fi
 for ac_func in getauxval getrusage getuid getgid \
 		pipe poll pread pread64 pwrite resize_term \
 		sbrk getpgid setpgid setpgrp setsid \
-		sigaction sigprocmask sigsetmask socketpair \
+		sigaction sigsetmask socketpair \
 		ttrace wborder wresize setlocale iconvlist libiconvlist btowc \
 		setrlimit getrlimit posix_madvise waitpid \
 		ptrace64 sigaltstack setns use_default_colors
@@ -13529,7 +13479,8 @@ fi
 done
 
 
-  for ac_func in fdwalk getrlimit pipe pipe2 socketpair sigaction
+  for ac_func in fdwalk getrlimit pipe pipe2 socketpair sigaction \
+		  sigprocmask strerror_r
 do :
   as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
 ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
@@ -15232,6 +15183,52 @@ _ACEOF
 
 cat >>confdefs.h <<_ACEOF
 #define SYSTEM_GDBINIT_RELOCATABLE $value
+_ACEOF
+
+
+
+
+
+# Check whether --with-system-gdbinit-dir was given.
+if test "${with_system_gdbinit_dir+set}" = set; then :
+  withval=$with_system_gdbinit_dir;
+    SYSTEM_GDBINIT_DIR=$withval
+else
+  SYSTEM_GDBINIT_DIR=
+fi
+
+
+  test "x$prefix" = xNONE && prefix="$ac_default_prefix"
+  test "x$exec_prefix" = xNONE && exec_prefix='${prefix}'
+  ac_define_dir=`eval echo $SYSTEM_GDBINIT_DIR`
+  ac_define_dir=`eval echo $ac_define_dir`
+
+cat >>confdefs.h <<_ACEOF
+#define SYSTEM_GDBINIT_DIR "$ac_define_dir"
+_ACEOF
+
+
+
+
+  if test "x$exec_prefix" = xNONE || test "x$exec_prefix" = 'x${prefix}'; then
+     if test "x$prefix" = xNONE; then
+     	test_prefix=/usr/local
+     else
+	test_prefix=$prefix
+     fi
+  else
+     test_prefix=$exec_prefix
+  fi
+  value=0
+  case ${ac_define_dir} in
+     "${test_prefix}"|"${test_prefix}/"*|\
+	'${exec_prefix}'|'${exec_prefix}/'*)
+     value=1
+     ;;
+  esac
+
+cat >>confdefs.h <<_ACEOF
+#define SYSTEM_GDBINIT_DIR_RELOCATABLE $value
 _ACEOF
 
 
@@ -17556,26 +17553,512 @@ $as_echo "$as_me: WARNING: babeltrace is missing or unusable; GDB is unable to r
   fi
 fi
 
-# If nativefile (NAT_FILE) is not set in configure.nat, we link to an
-# empty version.
+# Check for xxhash
 
-files=
-links=
+# Check whether --with-xxhash was given.
+if test "${with_xxhash+set}" = set; then :
+  withval=$with_xxhash;
+else
+  with_xxhash=auto
+fi
 
+
+if test "x$with_xxhash" != "xno"; then
+
+
+
+
+
+
+
+
+    use_additional=yes
+
+  acl_save_prefix="$prefix"
+  prefix="$acl_final_prefix"
+  acl_save_exec_prefix="$exec_prefix"
+  exec_prefix="$acl_final_exec_prefix"
+
+    eval additional_includedir=\"$includedir\"
+    eval additional_libdir=\"$libdir\"
+
+  exec_prefix="$acl_save_exec_prefix"
+  prefix="$acl_save_prefix"
+
+
+# Check whether --with-libxxhash-prefix was given.
+if test "${with_libxxhash_prefix+set}" = set; then :
+  withval=$with_libxxhash_prefix;
+    if test "X$withval" = "Xno"; then
+      use_additional=no
+    else
+      if test "X$withval" = "X"; then
+
+  acl_save_prefix="$prefix"
+  prefix="$acl_final_prefix"
+  acl_save_exec_prefix="$exec_prefix"
+  exec_prefix="$acl_final_exec_prefix"
+
+          eval additional_includedir=\"$includedir\"
+          eval additional_libdir=\"$libdir\"
+
+  exec_prefix="$acl_save_exec_prefix"
+  prefix="$acl_save_prefix"
+
+      else
+        additional_includedir="$withval/include"
+        additional_libdir="$withval/lib"
+      fi
+    fi
+
+fi
+
+      LIBXXHASH=
+  LTLIBXXHASH=
+  INCXXHASH=
+  rpathdirs=
+  ltrpathdirs=
+  names_already_handled=
+  names_next_round='xxhash '
+  while test -n "$names_next_round"; do
+    names_this_round="$names_next_round"
+    names_next_round=
+    for name in $names_this_round; do
+      already_handled=
+      for n in $names_already_handled; do
+        if test "$n" = "$name"; then
+          already_handled=yes
+          break
+        fi
+      done
+      if test -z "$already_handled"; then
+        names_already_handled="$names_already_handled $name"
+                        uppername=`echo "$name" | sed -e 'y|abcdefghijklmnopqrstuvwxyz./-|ABCDEFGHIJKLMNOPQRSTUVWXYZ___|'`
+        eval value=\"\$HAVE_LIB$uppername\"
+        if test -n "$value"; then
+          if test "$value" = yes; then
+            eval value=\"\$LIB$uppername\"
+            test -z "$value" || LIBXXHASH="${LIBXXHASH}${LIBXXHASH:+ }$value"
+            eval value=\"\$LTLIB$uppername\"
+            test -z "$value" || LTLIBXXHASH="${LTLIBXXHASH}${LTLIBXXHASH:+ }$value"
+          else
+                                    :
+          fi
+        else
+                              found_dir=
+          found_la=
+          found_so=
+          found_a=
+          if test $use_additional = yes; then
+            if test -n "$shlibext" && test -f "$additional_libdir/lib$name.$shlibext"; then
+              found_dir="$additional_libdir"
+              found_so="$additional_libdir/lib$name.$shlibext"
+              if test -f "$additional_libdir/lib$name.la"; then
+                found_la="$additional_libdir/lib$name.la"
+              fi
+            else
+              if test -f "$additional_libdir/lib$name.$libext"; then
+                found_dir="$additional_libdir"
+                found_a="$additional_libdir/lib$name.$libext"
+                if test -f "$additional_libdir/lib$name.la"; then
+                  found_la="$additional_libdir/lib$name.la"
+                fi
+              fi
+            fi
+          fi
+          if test "X$found_dir" = "X"; then
+            for x in $LDFLAGS $LTLIBXXHASH; do
+
+  acl_save_prefix="$prefix"
+  prefix="$acl_final_prefix"
+  acl_save_exec_prefix="$exec_prefix"
+  exec_prefix="$acl_final_exec_prefix"
+  eval x=\"$x\"
+  exec_prefix="$acl_save_exec_prefix"
+  prefix="$acl_save_prefix"
+
+              case "$x" in
+                -L*)
+                  dir=`echo "X$x" | sed -e 's/^X-L//'`
+                  if test -n "$shlibext" && test -f "$dir/lib$name.$shlibext"; then
+                    found_dir="$dir"
+                    found_so="$dir/lib$name.$shlibext"
+                    if test -f "$dir/lib$name.la"; then
+                      found_la="$dir/lib$name.la"
+                    fi
+                  else
+                    if test -f "$dir/lib$name.$libext"; then
+                      found_dir="$dir"
+                      found_a="$dir/lib$name.$libext"
+                      if test -f "$dir/lib$name.la"; then
+                        found_la="$dir/lib$name.la"
+                      fi
+                    fi
+                  fi
+                  ;;
+              esac
+              if test "X$found_dir" != "X"; then
+                break
+              fi
+            done
+          fi
+          if test "X$found_dir" != "X"; then
+                        LTLIBXXHASH="${LTLIBXXHASH}${LTLIBXXHASH:+ }-L$found_dir -l$name"
+            if test "X$found_so" != "X"; then
+                                                        if test "$enable_rpath" = no || test "X$found_dir" = "X/usr/lib"; then
+                                LIBXXHASH="${LIBXXHASH}${LIBXXHASH:+ }$found_so"
+              else
+                                                                                haveit=
+                for x in $ltrpathdirs; do
+                  if test "X$x" = "X$found_dir"; then
+                    haveit=yes
+                    break
+                  fi
+                done
+                if test -z "$haveit"; then
+                  ltrpathdirs="$ltrpathdirs $found_dir"
+                fi
+                                if test "$hardcode_direct" = yes; then
+                                                      LIBXXHASH="${LIBXXHASH}${LIBXXHASH:+ }$found_so"
+                else
+                  if test -n "$hardcode_libdir_flag_spec" && test "$hardcode_minus_L" = no; then
+                                                            LIBXXHASH="${LIBXXHASH}${LIBXXHASH:+ }$found_so"
+                                                            haveit=
+                    for x in $rpathdirs; do
+                      if test "X$x" = "X$found_dir"; then
+                        haveit=yes
+                        break
+                      fi
+                    done
+                    if test -z "$haveit"; then
+                      rpathdirs="$rpathdirs $found_dir"
+                    fi
+                  else
+                                                                                haveit=
+                    for x in $LDFLAGS $LIBXXHASH; do
+
+  acl_save_prefix="$prefix"
+  prefix="$acl_final_prefix"
+  acl_save_exec_prefix="$exec_prefix"
+  exec_prefix="$acl_final_exec_prefix"
+  eval x=\"$x\"
+  exec_prefix="$acl_save_exec_prefix"
+  prefix="$acl_save_prefix"
+
+                      if test "X$x" = "X-L$found_dir"; then
+                        haveit=yes
+                        break
+                      fi
+                    done
+                    if test -z "$haveit"; then
+                      LIBXXHASH="${LIBXXHASH}${LIBXXHASH:+ }-L$found_dir"
+                    fi
+                    if test "$hardcode_minus_L" != no; then
+                                                                                        LIBXXHASH="${LIBXXHASH}${LIBXXHASH:+ }$found_so"
+                    else
+                                                                                                                                                                                LIBXXHASH="${LIBXXHASH}${LIBXXHASH:+ }-l$name"
+                    fi
+                  fi
+                fi
+              fi
+            else
+              if test "X$found_a" != "X"; then
+                                LIBXXHASH="${LIBXXHASH}${LIBXXHASH:+ }$found_a"
+              else
+                                                LIBXXHASH="${LIBXXHASH}${LIBXXHASH:+ }-L$found_dir -l$name"
+              fi
+            fi
+                        additional_includedir=
+            case "$found_dir" in
+              */lib | */lib/)
+                basedir=`echo "X$found_dir" | sed -e 's,^X,,' -e 's,/lib/*$,,'`
+                additional_includedir="$basedir/include"
+                ;;
+            esac
+            if test "X$additional_includedir" != "X"; then
+                                                                                                                if test "X$additional_includedir" != "X/usr/include"; then
+                haveit=
+                if test "X$additional_includedir" = "X/usr/local/include"; then
+                  if test -n "$GCC"; then
+                    case $host_os in
+                      linux*) haveit=yes;;
+                    esac
+                  fi
+                fi
+                if test -z "$haveit"; then
+                  for x in $CPPFLAGS $INCXXHASH; do
+
+  acl_save_prefix="$prefix"
+  prefix="$acl_final_prefix"
+  acl_save_exec_prefix="$exec_prefix"
+  exec_prefix="$acl_final_exec_prefix"
+  eval x=\"$x\"
+  exec_prefix="$acl_save_exec_prefix"
+  prefix="$acl_save_prefix"
+
+                    if test "X$x" = "X-I$additional_includedir"; then
+                      haveit=yes
+                      break
+                    fi
+                  done
+                  if test -z "$haveit"; then
+                    if test -d "$additional_includedir"; then
+                                            INCXXHASH="${INCXXHASH}${INCXXHASH:+ }-I$additional_includedir"
+                    fi
+                  fi
+                fi
+              fi
+            fi
+                        if test -n "$found_la"; then
+                                                        save_libdir="$libdir"
+              case "$found_la" in
+                */* | *\\*) . "$found_la" ;;
+                *) . "./$found_la" ;;
+              esac
+              libdir="$save_libdir"
+                            for dep in $dependency_libs; do
+                case "$dep" in
+                  -L*)
+                    additional_libdir=`echo "X$dep" | sed -e 's/^X-L//'`
+                                                                                                                                                                if test "X$additional_libdir" != "X/usr/lib"; then
+                      haveit=
+                      if test "X$additional_libdir" = "X/usr/local/lib"; then
+                        if test -n "$GCC"; then
+                          case $host_os in
+                            linux*) haveit=yes;;
+                          esac
+                        fi
+                      fi
+                      if test -z "$haveit"; then
+                        haveit=
+                        for x in $LDFLAGS $LIBXXHASH; do
+
+  acl_save_prefix="$prefix"
+  prefix="$acl_final_prefix"
+  acl_save_exec_prefix="$exec_prefix"
+  exec_prefix="$acl_final_exec_prefix"
+  eval x=\"$x\"
+  exec_prefix="$acl_save_exec_prefix"
+  prefix="$acl_save_prefix"
+
+                          if test "X$x" = "X-L$additional_libdir"; then
+                            haveit=yes
+                            break
+                          fi
+                        done
+                        if test -z "$haveit"; then
+                          if test -d "$additional_libdir"; then
+                                                        LIBXXHASH="${LIBXXHASH}${LIBXXHASH:+ }-L$additional_libdir"
+                          fi
+                        fi
+                        haveit=
+                        for x in $LDFLAGS $LTLIBXXHASH; do
+
+  acl_save_prefix="$prefix"
+  prefix="$acl_final_prefix"
+  acl_save_exec_prefix="$exec_prefix"
+  exec_prefix="$acl_final_exec_prefix"
+  eval x=\"$x\"
+  exec_prefix="$acl_save_exec_prefix"
+  prefix="$acl_save_prefix"
+
+                          if test "X$x" = "X-L$additional_libdir"; then
+                            haveit=yes
+                            break
+                          fi
+                        done
+                        if test -z "$haveit"; then
+                          if test -d "$additional_libdir"; then
+                                                        LTLIBXXHASH="${LTLIBXXHASH}${LTLIBXXHASH:+ }-L$additional_libdir"
+                          fi
+                        fi
+                      fi
+                    fi
+                    ;;
+                  -R*)
+                    dir=`echo "X$dep" | sed -e 's/^X-R//'`
+                    if test "$enable_rpath" != no; then
+                                                                  haveit=
+                      for x in $rpathdirs; do
+                        if test "X$x" = "X$dir"; then
+                          haveit=yes
+                          break
+                        fi
+                      done
+                      if test -z "$haveit"; then
+                        rpathdirs="$rpathdirs $dir"
+                      fi
+                                                                  haveit=
+                      for x in $ltrpathdirs; do
+                        if test "X$x" = "X$dir"; then
+                          haveit=yes
+                          break
+                        fi
+                      done
+                      if test -z "$haveit"; then
+                        ltrpathdirs="$ltrpathdirs $dir"
+                      fi
+                    fi
+                    ;;
+                  -l*)
+                                        names_next_round="$names_next_round "`echo "X$dep" | sed -e 's/^X-l//'`
+                    ;;
+                  *.la)
+                                                                                names_next_round="$names_next_round "`echo "X$dep" | sed -e 's,^X.*/,,' -e 's,^lib,,' -e 's,\.la$,,'`
+                    ;;
+                  *)
+                                        LIBXXHASH="${LIBXXHASH}${LIBXXHASH:+ }$dep"
+                    LTLIBXXHASH="${LTLIBXXHASH}${LTLIBXXHASH:+ }$dep"
+                    ;;
+                esac
+              done
+            fi
+          else
+                                                            LIBXXHASH="${LIBXXHASH}${LIBXXHASH:+ }-l$name"
+            LTLIBXXHASH="${LTLIBXXHASH}${LTLIBXXHASH:+ }-l$name"
+          fi
+        fi
+      fi
+    done
+  done
+  if test "X$rpathdirs" != "X"; then
+    if test -n "$hardcode_libdir_separator"; then
+                        alldirs=
+      for found_dir in $rpathdirs; do
+        alldirs="${alldirs}${alldirs:+$hardcode_libdir_separator}$found_dir"
+      done
+            acl_save_libdir="$libdir"
+      libdir="$alldirs"
+      eval flag=\"$hardcode_libdir_flag_spec\"
+      libdir="$acl_save_libdir"
+      LIBXXHASH="${LIBXXHASH}${LIBXXHASH:+ }$flag"
+    else
+            for found_dir in $rpathdirs; do
+        acl_save_libdir="$libdir"
+        libdir="$found_dir"
+        eval flag=\"$hardcode_libdir_flag_spec\"
+        libdir="$acl_save_libdir"
+        LIBXXHASH="${LIBXXHASH}${LIBXXHASH:+ }$flag"
+      done
+    fi
+  fi
+  if test "X$ltrpathdirs" != "X"; then
+            for found_dir in $ltrpathdirs; do
+      LTLIBXXHASH="${LTLIBXXHASH}${LTLIBXXHASH:+ }-R$found_dir"
+    done
+  fi
+
+
+        ac_save_CPPFLAGS="$CPPFLAGS"
+
+  for element in $INCXXHASH; do
+    haveit=
+    for x in $CPPFLAGS; do
+
+  acl_save_prefix="$prefix"
+  prefix="$acl_final_prefix"
+  acl_save_exec_prefix="$exec_prefix"
+  exec_prefix="$acl_final_exec_prefix"
+  eval x=\"$x\"
+  exec_prefix="$acl_save_exec_prefix"
+  prefix="$acl_save_prefix"
+
+      if test "X$x" = "X$element"; then
+        haveit=yes
+        break
+      fi
+    done
+    if test -z "$haveit"; then
+      CPPFLAGS="${CPPFLAGS}${CPPFLAGS:+ }$element"
+    fi
+  done
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for libxxhash" >&5
+$as_echo_n "checking for libxxhash... " >&6; }
+if ${ac_cv_libxxhash+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+    ac_save_LIBS="$LIBS"
+    LIBS="$LIBS $LIBXXHASH"
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <xxhash.h>
+int
+main ()
+{
+XXH32("foo", 3, 0);
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_libxxhash=yes
+else
+  ac_cv_libxxhash=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+    LIBS="$ac_save_LIBS"
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_libxxhash" >&5
+$as_echo "$ac_cv_libxxhash" >&6; }
+  if test "$ac_cv_libxxhash" = yes; then
+    HAVE_LIBXXHASH=yes
+
+$as_echo "#define HAVE_LIBXXHASH 1" >>confdefs.h
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking how to link with libxxhash" >&5
+$as_echo_n "checking how to link with libxxhash... " >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LIBXXHASH" >&5
+$as_echo "$LIBXXHASH" >&6; }
+  else
+    HAVE_LIBXXHASH=no
+            CPPFLAGS="$ac_save_CPPFLAGS"
+    LIBXXHASH=
+    LTLIBXXHASH=
+  fi
+
+
+
+
+
+
+  if test "$HAVE_LIBXXHASH" != yes; then
+    if test "$with_xxhash" = yes; then
+      as_fn_error $? "xxhash is missing or unusable" "$LINENO" 5
+    fi
+  fi
+  if test "x$with_xxhash" = "xauto"; then
+    with_xxhash="$HAVE_LIBXXHASH"
+  fi
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to use xxhash" >&5
+$as_echo_n "checking whether to use xxhash... " >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_xxhash" >&5
+$as_echo "$with_xxhash" >&6; }
+
+NM_H=
 rm -f nm.h
 if test "${nativefile}" != ""; then
     case "${nativefile}" in
       nm-*.h ) GDB_NM_FILE="config/${gdb_host_cpu}/${nativefile}" ;;
       * ) GDB_NM_FILE="${nativefile}"
     esac
-    files="${files} ${GDB_NM_FILE}"
-    links="${links} nm.h"
+    ac_config_links="$ac_config_links nm.h:$GDB_NM_FILE"
+
 
 cat >>confdefs.h <<_ACEOF
 #define GDB_NM_FILE "${GDB_NM_FILE}"
 _ACEOF
 
+    NM_H=nm.h
 fi
+
 
 
 for ac_prog in xsltproc
@@ -17629,16 +18112,6 @@ if test "x$USE_MAINTAINER_MODE" = xyes; then
     as_fn_error $? "unable to find xsltproc.  maintainer-mode requires xsltproc." "$LINENO" 5
   fi
 fi
-
-
-ac_sources="$files"
-ac_dests="$links"
-while test -n "$ac_sources"; do
-  set $ac_dests; ac_dest=$1; shift; ac_dests=$*
-  set $ac_sources; ac_source=$1; shift; ac_sources=$*
-  ac_config_links_1="$ac_config_links_1 $ac_dest:$ac_source"
-done
-ac_config_links="$ac_config_links $ac_config_links_1"
 
 
 
@@ -18406,6 +18879,7 @@ cat >>$CONFIG_STATUS <<_ACEOF || ac_write_fail=1
 # INIT-COMMANDS
 #
 ac_aux_dir=$ac_aux_dir DEPDIR=$DEPDIR
+GDB_NM_FILE=$GDB_NM_FILE
 
 _ACEOF
 
@@ -18418,7 +18892,7 @@ do
     "config.h") CONFIG_HEADERS="$CONFIG_HEADERS config.h:config.in" ;;
     "depdir") CONFIG_COMMANDS="$CONFIG_COMMANDS depdir" ;;
     "jit-reader.h") CONFIG_FILES="$CONFIG_FILES jit-reader.h:jit-reader.in" ;;
-    "$ac_config_links_1") CONFIG_LINKS="$CONFIG_LINKS $ac_config_links_1" ;;
+    "nm.h") CONFIG_LINKS="$CONFIG_LINKS nm.h:$GDB_NM_FILE" ;;
     "gcore") CONFIG_FILES="$CONFIG_FILES gcore" ;;
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
     "gdb-gdb.gdb") CONFIG_FILES="$CONFIG_FILES gdb-gdb.gdb" ;;
@@ -19051,38 +19525,10 @@ $as_echo "$as_me: executing $ac_file commands" >&6;}
 
 
   case $ac_file$ac_mode in
+    "config.h":H) echo > stamp-h ;;
     "depdir":C) $SHELL $ac_aux_dir/mkinstalldirs $DEPDIR ;;
+    "nm.h":L) echo > stamp-nmh ;;
     "gcore":F) chmod +x gcore ;;
-    "Makefile":F)
-case x$CONFIG_HEADERS in
-xconfig.h:config.in)
-echo > stamp-h ;;
-esac
- ;;
-    "gdb-gdb.gdb":F)
-case x$CONFIG_HEADERS in
-xconfig.h:config.in)
-echo > stamp-h ;;
-esac
- ;;
-    "gdb-gdb.py":F)
-case x$CONFIG_HEADERS in
-xconfig.h:config.in)
-echo > stamp-h ;;
-esac
- ;;
-    "doc/Makefile":F)
-case x$CONFIG_HEADERS in
-xconfig.h:config.in)
-echo > stamp-h ;;
-esac
- ;;
-    "data-directory/Makefile":F)
-case x$CONFIG_HEADERS in
-xconfig.h:config.in)
-echo > stamp-h ;;
-esac
- ;;
 
   esac
 done # for ac_tag

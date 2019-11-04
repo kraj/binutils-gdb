@@ -646,7 +646,7 @@ i386_linux_core_read_xcr0 (bfd *abfd)
 
   if (xstate)
     {
-      size_t size = bfd_section_size (abfd, xstate);
+      size_t size = bfd_section_size (xstate);
 
       /* Check extended state size.  */
       if (size < X86_XSTATE_AVX_SIZE)
@@ -1035,7 +1035,7 @@ i386_linux_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
   tdep->i386_sysenter_record = i386_linux_intx80_sysenter_syscall_record;
   tdep->i386_syscall_record = i386_linux_intx80_sysenter_syscall_record;
 
-  /* N_FUN symbols in shared libaries have 0 for their values and need
+  /* N_FUN symbols in shared libraries have 0 for their values and need
      to be relocated.  */
   set_gdbarch_sofun_address_maybe_missing (gdbarch, 1);
 

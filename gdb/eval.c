@@ -42,9 +42,6 @@
 #include "typeprint.h"
 #include <ctype.h>
 
-/* This is defined in valops.c */
-extern int overload_resolution;
-
 /* Prototypes for local functions.  */
 
 static struct value *evaluate_subexp_for_sizeof (struct expression *, int *,
@@ -345,7 +342,7 @@ evaluate_struct_tuple (struct value *struct_val,
 /* Recursive helper function for setting elements of array tuples.
    The target is ARRAY (which has bounds LOW_BOUND to HIGH_BOUND); the
    element value is ELEMENT; EXP, POS and NOSIDE are as usual.
-   Evaluates index expresions and sets the specified element(s) of
+   Evaluates index expressions and sets the specified element(s) of
    ARRAY to ELEMENT.  Returns last index value.  */
 
 static LONGEST
@@ -421,7 +418,7 @@ unop_promote (const struct language_defn *language, struct gdbarch *gdbarch,
 	{
 	default:
 	  /* Perform integral promotion for ANSI C/C++.
-	     If not appropropriate for any particular language
+	     If not appropriate for any particular language
 	     it needs to modify this function.  */
 	  {
 	    struct type *builtin_int = builtin_type (gdbarch)->builtin_int;
@@ -3222,7 +3219,7 @@ evaluate_subexp_for_sizeof (struct expression *exp, int *pos,
 
       /* Deal with the special case if NOSIDE is EVAL_NORMAL and the resulting
 	 type of the subscript is a variable length array type. In this case we
-	 must re-evaluate the right hand side of the subcription to allow
+	 must re-evaluate the right hand side of the subscription to allow
 	 side-effects. */
     case BINOP_SUBSCRIPT:
       if (noside == EVAL_NORMAL)

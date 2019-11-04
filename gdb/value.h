@@ -81,6 +81,8 @@ struct value_print_options;
   value_contents_eq for more info.
 */
 
+extern bool overload_resolution;
+
 /* The structure which defines the type of a value.  It should never
    be possible for a program lval value to survive over a call to the
    inferior (i.e. to be put into the history list or an internal
@@ -566,7 +568,7 @@ extern void mark_value_bits_unavailable (struct value *value,
    Optimized-out contents are equal to optimized-out contents, and are
    not equal to non-optimized-out contents.
 
-   Unavailable contente are equal to unavailable contents, and are not
+   Unavailable contents are equal to unavailable contents, and are not
    equal to non-unavailable contents.
 
    For example, if 'x's represent an unavailable byte, and 'V' and 'Z'

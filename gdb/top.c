@@ -86,7 +86,7 @@ extern void initialize_all_files (void);
 #define PREFIX(X) the_prompts.prompt_stack[the_prompts.top + X].prefix
 #define SUFFIX(X) the_prompts.prompt_stack[the_prompts.top + X].suffix
 
-/* Default command line prompt.  This is overriden in some configs.  */
+/* Default command line prompt.  This is overridden in some configs.  */
 
 #ifndef DEFAULT_PROMPT
 #define DEFAULT_PROMPT	"(gdb) "
@@ -110,12 +110,10 @@ gen_ret_current_ui_field_ptr (struct ui_out *, current_uiout)
 
 int inhibit_gdbinit = 0;
 
-extern char lang_frame_mismatch_warn[];		/* language.c */
-
 /* Flag for whether we want to confirm potentially dangerous
    operations.  Default is yes.  */
 
-int confirm = 1;
+bool confirm = true;
 
 static void
 show_confirm (struct ui_file *file, int from_tty,
@@ -492,7 +490,7 @@ check_frame_language_change (void)
 	  && flang != language_unknown
 	  && flang != current_language->la_language)
 	{
-	  printf_filtered ("%s\n", lang_frame_mismatch_warn);
+	  printf_filtered ("%s\n", _(lang_frame_mismatch_warn));
 	  warned = 1;
 	}
     }
@@ -850,15 +848,15 @@ gdb_readline_no_editing (const char *prompt)
 /* Variables which control command line editing and history
    substitution.  These variables are given default values at the end
    of this file.  */
-static int command_editing_p;
+static bool command_editing_p;
 
 /* NOTE 1999-04-29: This variable will be static again, once we modify
    gdb to use the event loop as the default command loop and we merge
    event-top.c into this file, top.c.  */
 
-/* static */ int history_expansion_p;
+/* static */ bool history_expansion_p;
 
-static int write_history_p;
+static bool write_history_p;
 static void
 show_write_history_p (struct ui_file *file, int from_tty,
 		      struct cmd_list_element *c, const char *value)
@@ -1515,6 +1513,10 @@ This GDB was configured as follows:\n\
     fprintf_filtered (stream, _("\
              --with-system-gdbinit=%s%s\n\
 "), SYSTEM_GDBINIT, SYSTEM_GDBINIT_RELOCATABLE ? " (relocatable)" : "");
+  if (SYSTEM_GDBINIT_DIR[0])
+    fprintf_filtered (stream, _("\
+             --with-system-gdbinit-dir=%s%s\n\
+"), SYSTEM_GDBINIT_DIR, SYSTEM_GDBINIT_DIR_RELOCATABLE ? " (relocatable)" : "");
     /* We assume "relocatable" will be printed at least once, thus we always
        print this text.  It's a reasonably safe assumption for now.  */
     fprintf_filtered (stream, _("\n\
@@ -1876,7 +1878,7 @@ show_history (const char *args, int from_tty)
   cmd_show_list (showhistlist, from_tty, "");
 }
 
-int info_verbose = 0;		/* Default verbose msgs off.  */
+bool info_verbose = false;	/* Default verbose msgs off.  */
 
 /* Called by do_set_command.  An elaborate joke.  */
 void
@@ -2038,7 +2040,7 @@ show_gdb_datadir (struct ui_file *file, int from_tty,
 		  struct cmd_list_element *c, const char *value)
 {
   fprintf_filtered (file, _("GDB's data directory is \"%s\".\n"),
-		    gdb_datadir);
+		    gdb_datadir.c_str ());
 }
 
 static void
@@ -2234,7 +2236,6 @@ gdb_init (char *argv0)
 
   init_cmd_lists ();	    /* This needs to be done first.  */
   initialize_targets ();    /* Setup target_terminal macros for utils.c.  */
-  initialize_utils ();	    /* Make errors and warnings possible.  */
 
   init_page_info ();
 

@@ -169,7 +169,7 @@ in the section entitled ``GNU Free Documentation License''.
 @c man title ar create, modify, and extract from archives
 
 @smallexample
-ar [-]@var{p}[@var{mod}] [@option{--plugin} @var{name}] [@option{--target} @var{bfdname}] [@var{relpos}] [@var{count}] @var{archive} [@var{member}@dots{}]
+ar [-]@var{p}[@var{mod}] [@option{--plugin} @var{name}] [@option{--target} @var{bfdname}] [@option{--output} @var{dirname}] [@var{relpos}] [@var{count}] @var{archive} [@var{member}@dots{}]
 ar -M [ <mri-script ]
 @end smallexample
 
@@ -253,7 +253,7 @@ program.
 
 @smallexample
 @c man begin SYNOPSIS ar
-ar [@option{-X32_64}] [@option{-}]@var{p}[@var{mod}] [@option{--plugin} @var{name}] [@option{--target} @var{bfdname}] [@var{relpos}] [@var{count}] @var{archive} [@var{member}@dots{}]
+ar [@option{-X32_64}] [@option{-}]@var{p}[@var{mod}] [@option{--plugin} @var{name}] [@option{--target} @var{bfdname}] [@option{--output} @var{dirname}] [@var{relpos}] [@var{count}] @var{archive} [@var{member}@dots{}]
 @c man end
 @end smallexample
 
@@ -387,7 +387,10 @@ use the @samp{v} modifier with this operation, to request that
 If you do not specify a @var{member}, all files in the archive
 are extracted.
 
-Files cannot be extracted from a thin archive.
+Files cannot be extracted from a thin archive, and there are
+restrictions on extracting from archives created with @option{P}: The
+paths must not be absolute, may not contain @code{..}, and any
+subdirectories in the paths must exist.
 @end table
 
 A number of modifiers (@var{mod}) may immediately follow the @var{p}
@@ -463,12 +466,20 @@ Display member offsets inside the archive. Use together with the @samp{t}
 option.
 
 @item P
-Use the full path name when matching names in the archive.  @sc{gnu}
-@command{ar} can not create an archive with a full path name (such archives
-are not POSIX compliant), but other archive creators can.  This option
-will cause @sc{gnu} @command{ar} to match file names using a complete path
-name, which can be convenient when extracting a single file from an
-archive created by another tool.
+Use the full path name when matching or storing names in the archive.
+Archives created with full path names are not POSIX compliant, and
+thus may not work with tools other than up to date @sc{gnu} tools.
+Modifying such archives with @sc{gnu} @command{ar} without using
+@option{P} will remove the full path names unless the archive is a
+thin archive.  Note that @option{P} may be useful when adding files to
+a thin archive since @option{r} without @option{P} ignores the path
+when choosing which element to replace.  Thus
+@smallexample
+ar rcST archive.a subdir/file1 subdir/file2 file1
+@end smallexample
+will result in the first @code{subdir/file1} being replaced with
+@code{file1} from the current directory.  Adding @option{P} will
+prevent this replacement.
 
 @item s
 @cindex writing archive index
@@ -533,7 +544,7 @@ and then exits.
 Displays the version information of @command{ar} and then exits.
 
 @item -X32_64
-@command{ar} ignores an initial option spelt @samp{-X32_64}, for
+@command{ar} ignores an initial option spelled @samp{-X32_64}, for
 compatibility with AIX.  The behaviour produced by this option is the
 default for @sc{gnu} @command{ar}.  @command{ar} does not support any
 of the other @samp{-X} options; in particular, it does not support
@@ -568,6 +579,21 @@ The optional command-line switch @option{--target @var{bfdname}}
 specifies that the archive members are in an object code format
 different from your system's default format.  See
 @xref{Target Selection}, for more information.
+
+@item --output @var{dirname}
+The @option{--output} option can be used to specify a path to a
+directory into which archive members should be extracted.  If this
+option is not specified then the current directory will be used.
+
+Note - although the presence of this option does imply a @option{x} 
+extraction operation that option must still be included on the command
+line.
+
+Note - using this option does not allow archive members to be
+extracted to locations outside of the current directory, or one of its 
+sub-directories.  This is a security feature to prevent archives
+created with the @option{P} option from maliciously overwriting user
+files.
 @end table
 @c man end
 
@@ -1160,6 +1186,7 @@ objcopy [@option{-F} @var{bfdname}|@option{--target=}@var{bfdname}]
         [@option{--interleave-width=}@var{width}]
         [@option{-j} @var{sectionpattern}|@option{--only-section=}@var{sectionpattern}]
         [@option{-R} @var{sectionpattern}|@option{--remove-section=}@var{sectionpattern}]
+        [@option{--keep-section=}@var{sectionpattern}]
         [@option{--remove-relocations=}@var{sectionpattern}]
         [@option{-p}|@option{--preserve-dates}]
         [@option{-D}|@option{--enable-deterministic-archives}]
@@ -1342,6 +1369,10 @@ would otherwise remove it.  For example:
 
 will remove all sections matching the pattern '.text.*', but will not
 remove the section '.text.foo'.
+
+@item --keep-section=@var{sectionpattern}
+When removing sections from the output file, keep sections that match
+@var{sectionpattern}.
 
 @item --remove-relocations=@var{sectionpattern}
 Remove non-dynamic relocations from the output file for any section
@@ -1622,9 +1653,9 @@ contents--just remove the section instead.  Not all flags are
 meaningful for all object file formats.
 
 @item --set-section-alignment @var{sectionpattern}=@var{align}
-Set the alignment for any sections matching @var{sectionpattern}.  @var{align}
-specifies the alignment as the exponent for the power of two, i.e. the
-alignment in bytes will be 2^@var{align}.
+Set the alignment for any sections matching @var{sectionpattern}.
+@var{align} specifies the alignment in bytes and must be a power of
+two, i.e. 1, 2, 4, 8@dots{}. 
 
 @item --add-section @var{sectionname}=@var{filename}
 Add a new section named @var{sectionname} while copying the file.  The
@@ -2135,8 +2166,6 @@ objdump [@option{-a}|@option{--archive-headers}]
         [@option{--dwarf-depth=@var{n}}]
         [@option{--dwarf-start=@var{n}}]
         [@option{--ctf-parent=}@var{section}]
-        [@option{--ctf-symbols=}@var{section}]
-        [@option{--ctf-strings=}@var{section}]
         [@option{--no-recurse-limit}|@option{--recurse-limit}]
         [@option{--special-syms}]
         [@option{--prefix=}@var{prefix}]
@@ -3218,6 +3247,7 @@ strip [@option{-F} @var{bfdname} |@option{--target=}@var{bfdname}]
       [@option{-w}|@option{--wildcard}]
       [@option{-x}|@option{--discard-all}] [@option{-X} |@option{--discard-locals}]
       [@option{-R} @var{sectionname} |@option{--remove-section=}@var{sectionname}]
+      [@option{--keep-section=}@var{sectionpattern}]
       [@option{--remove-relocations=}@var{sectionpattern}]
       [@option{-o} @var{file}] [@option{-p}|@option{--preserve-dates}]
       [@option{-D}|@option{--enable-deterministic-archives}]
@@ -3287,6 +3317,10 @@ would otherwise remove it.  For example:
 
 will remove all sections matching the pattern '.text.*', but will not
 remove the section '.text.foo'.
+
+@item --keep-section=@var{sectionpattern}
+When removing sections from the output file, keep sections that match
+@var{sectionpattern}.
 
 @item --remove-relocations=@var{sectionpattern}
 Remove relocations from the output file for any section matching
@@ -4850,7 +4884,8 @@ command to @command{ar}, but without using the BFD library.  @xref{ar}.
 @item --ctf-symbols=@var{section}
 @item --ctf-strings=@var{section}
 Specify the name of another section from which the CTF file can inherit
-strings and symbols.
+strings and symbols.  By default, the @code{.symtab} and its linked
+string table are used.
 
 If either of @option{--ctf-symbols} or @option{--ctf-strings} is specified, the
 other must be specified as well.

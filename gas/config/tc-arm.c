@@ -32,6 +32,7 @@
 #include "obstack.h"
 #include "libiberty.h"
 #include "opcode/arm.h"
+#include "cpu-arm.h"
 
 #ifdef OBJ_ELF
 #include "elf/arm.h"
@@ -105,6 +106,15 @@ enum arm_float_abi
    If you have a target that requires a default CPU option then the you
    should define CPU_DEFAULT here.  */
 #endif
+
+/* Perform range checks on positive and negative overflows by checking if the
+   VALUE given fits within the range of an BITS sized immediate.  */
+static bfd_boolean out_of_range_p (offsetT value, offsetT bits)
+ {
+  gas_assert (bits < (offsetT)(sizeof (value) * 8));
+  return (value & ~((1 << bits)-1))
+	  && ((value & ~((1 << bits)-1)) != ~((1 << bits)-1));
+}
 
 #ifndef FPU_DEFAULT
 # ifdef TE_LINUX
@@ -345,6 +355,7 @@ static arm_feature_set selected_fpu = FPU_NONE;
 /* Feature bits selected by the last .object_arch directive.  */
 static arm_feature_set selected_object_arch = ARM_ARCH_NONE;
 /* Must be long enough to hold any of the names in arm_cpus.  */
+static const struct arm_ext_table * selected_ctx_ext_table = NULL;
 static char selected_cpu_name[20];
 
 extern FLONUM_TYPE generic_floating_point_number;
@@ -14424,6 +14435,7 @@ do_mve_scalar_shift (void)
 #define M_MNEM_vmlsdavax  0xeef01e21
 #define M_MNEM_vmullt	0xee011e00
 #define M_MNEM_vmullb	0xee010e00
+#define M_MNEM_vctp	0xf000e801
 #define M_MNEM_vst20	0xfc801e00
 #define M_MNEM_vst21	0xfc801e20
 #define M_MNEM_vst40	0xfc801e01
@@ -15791,6 +15803,45 @@ mve_get_vcmp_vpt_cond (struct neon_type_el et)
     }
   /* Should be unreachable.  */
   abort ();
+}
+
+/* For VCTP (create vector tail predicate) in MVE.  */
+static void
+do_mve_vctp (void)
+{
+  int dt = 0;
+  unsigned size = 0x0;
+
+  if (inst.cond > COND_ALWAYS)
+    inst.pred_insn_type = INSIDE_VPT_INSN;
+  else
+    inst.pred_insn_type = MVE_OUTSIDE_PRED_INSN;
+
+  /* This is a typical MVE instruction which has no type but have size 8, 16,
+     32 and 64.  For instructions with no type, inst.vectype.el[j].type is set
+     to NT_untyped and size is updated in inst.vectype.el[j].size.  */
+  if ((inst.operands[0].present) && (inst.vectype.el[0].type == NT_untyped))
+    dt = inst.vectype.el[0].size;
+
+  /* Setting this does not indicate an actual NEON instruction, but only
+     indicates that the mnemonic accepts neon-style type suffixes.  */
+  inst.is_neon = 1;
+
+  switch (dt)
+    {
+      case 8:
+	break;
+      case 16:
+	size = 0x1; break;
+      case 32:
+	size = 0x2; break;
+      case 64:
+	size = 0x3; break;
+      default:
+	first_error (_("Type is not allowed for this instruction"));
+    }
+  inst.instruction |= size << 20;
+  inst.instruction |= inst.operands[0].reg << 16;
 }
 
 static void
@@ -17241,6 +17292,7 @@ static void
 do_mve_vstr_vldr_RQ (int size, int elsize, int load)
 {
     unsigned os = inst.operands[1].imm >> 5;
+    unsigned type = inst.vectype.el[0].type;
     constraint (os != 0 && size == 8,
 		_("can not shift offsets when accessing less than half-word"));
     constraint (os && os != neon_logbits (size),
@@ -17271,15 +17323,14 @@ do_mve_vstr_vldr_RQ (int size, int elsize, int load)
 	constraint (inst.operands[0].reg == (inst.operands[1].imm & 0x1f),
 		    _("destination register and offset register may not be"
 		    " the same"));
-	constraint (size == elsize && inst.vectype.el[0].type != NT_unsigned,
+	constraint (size == elsize && type == NT_signed, BAD_EL_TYPE);
+	constraint (size != elsize && type != NT_unsigned && type != NT_signed,
 		    BAD_EL_TYPE);
-	constraint (inst.vectype.el[0].type != NT_unsigned
-		    && inst.vectype.el[0].type != NT_signed, BAD_EL_TYPE);
-	inst.instruction |= (inst.vectype.el[0].type == NT_unsigned) << 28;
+	inst.instruction |= ((size == elsize) || (type == NT_unsigned)) << 28;
       }
     else
       {
-	constraint (inst.vectype.el[0].type != NT_untyped, BAD_EL_TYPE);
+	constraint (type != NT_untyped, BAD_EL_TYPE);
       }
 
     inst.instruction |= 1 << 23;
@@ -22838,7 +22889,7 @@ arm_frob_label (symbolS * sym)
      out of the jump table, and chaos would ensue.  */
   if (label_is_thumb_function_name
       && (S_GET_NAME (sym)[0] != '.' || S_GET_NAME (sym)[1] != 'L')
-      && (bfd_get_section_flags (stdoutput, now_seg) & SEC_CODE) != 0)
+      && (bfd_section_flags (now_seg) & SEC_CODE) != 0)
     {
       /* When the address of a Thumb function is taken the bottom
 	 bit of that address should be set.  This will allow
@@ -25494,6 +25545,7 @@ static const struct asm_opcode insns[] =
 
  /* MVE and MVE FP only.  */
  mToC("vhcadd",	ee000f00,   4, (RMQ, RMQ, RMQ, EXPi),		  mve_vhcadd),
+ mCEF(vctp,	_vctp,      1, (RRnpc),				  mve_vctp),
  mCEF(vadc,	_vadc,      3, (RMQ, RMQ, RMQ),			  mve_vadc),
  mCEF(vadci,	_vadci,     3, (RMQ, RMQ, RMQ),			  mve_vadc),
  mToC("vsbc",	fe300f00,   3, (RMQ, RMQ, RMQ),			  mve_vsbc),
@@ -26450,7 +26502,7 @@ arm_init_frag (fragS * fragP, int max_chars)
 
   /* PR 21809: Do not set a mapping state for debug sections
      - it just confuses other tools.  */
-  if (bfd_get_section_flags (NULL, now_seg) & SEC_DEBUGGING)
+  if (bfd_section_flags (now_seg) & SEC_DEBUGGING)
     return;
 
   frag_thumb_mode = fragP->tc_frag_data.thumb_mode ^ MODE_RECORDED;
@@ -28047,7 +28099,7 @@ md_apply_fix (fixS *	fixP,
       break;
 
     case BFD_RELOC_THUMB_PCREL_BRANCH9: /* Conditional branch.	*/
-      if ((value & ~0xff) && ((value & ~0xff) != ~0xff))
+      if (out_of_range_p (value, 8))
 	as_bad_where (fixP->fx_file, fixP->fx_line, BAD_RANGE);
 
       if (fixP->fx_done || !seg->use_rela_p)
@@ -28059,7 +28111,7 @@ md_apply_fix (fixS *	fixP,
       break;
 
     case BFD_RELOC_THUMB_PCREL_BRANCH12: /* Unconditional branch.  */
-      if ((value & ~0x7ff) && ((value & ~0x7ff) != ~0x7ff))
+      if (out_of_range_p (value, 11))
 	as_bad_where (fixP->fx_file, fixP->fx_line, BAD_RANGE);
 
       if (fixP->fx_done || !seg->use_rela_p)
@@ -28070,6 +28122,7 @@ md_apply_fix (fixS *	fixP,
 	}
       break;
 
+    /* This relocation is misnamed, it should be BRANCH21.  */
     case BFD_RELOC_THUMB_PCREL_BRANCH20:
       if (fixP->fx_addsy
 	  && (S_GET_SEGMENT (fixP->fx_addsy) == seg)
@@ -28080,7 +28133,7 @@ md_apply_fix (fixS *	fixP,
 	  /* Force a relocation for a branch 20 bits wide.  */
 	  fixP->fx_done = 0;
 	}
-      if ((value & ~0x1fffff) && ((value & ~0x0fffff) != ~0x0fffff))
+      if (out_of_range_p (value, 20))
 	as_bad_where (fixP->fx_file, fixP->fx_line,
 		      _("conditional branch out of range"));
 
@@ -28159,12 +28212,11 @@ md_apply_fix (fixS *	fixP,
 	 fixP->fx_r_type = BFD_RELOC_THUMB_PCREL_BRANCH23;
 #endif
 
-      if ((value & ~0x3fffff) && ((value & ~0x3fffff) != ~0x3fffff))
+      if (out_of_range_p (value, 22))
 	{
 	  if (!(ARM_CPU_HAS_FEATURE (cpu_variant, arm_ext_v6t2)))
 	    as_bad_where (fixP->fx_file, fixP->fx_line, BAD_RANGE);
-	  else if ((value & ~0x1ffffff)
-		   && ((value & ~0x1ffffff) != ~0x1ffffff))
+	  else if (out_of_range_p (value, 24))
 	    as_bad_where (fixP->fx_file, fixP->fx_line,
 			  _("Thumb2 branch out of range"));
 	}
@@ -28175,7 +28227,7 @@ md_apply_fix (fixS *	fixP,
       break;
 
     case BFD_RELOC_THUMB_PCREL_BRANCH25:
-      if ((value & ~0x0ffffff) && ((value & ~0x0ffffff) != ~0x0ffffff))
+      if (out_of_range_p (value, 24))
 	as_bad_where (fixP->fx_file, fixP->fx_line, BAD_RANGE);
 
       if (fixP->fx_done || !seg->use_rela_p)
@@ -29978,9 +30030,8 @@ md_begin (void)
 
 	if (sec != NULL)
 	  {
-	    bfd_set_section_flags
-	      (stdoutput, sec, SEC_READONLY | SEC_DEBUGGING /* | SEC_HAS_CONTENTS */);
-	    bfd_set_section_size (stdoutput, sec, 0);
+	    bfd_set_section_flags (sec, SEC_READONLY | SEC_DEBUGGING);
+	    bfd_set_section_size (sec, 0);
 	    bfd_set_section_contents (stdoutput, sec, NULL, 0, 0);
 	  }
       }
@@ -31452,6 +31503,7 @@ arm_parse_arch (const char *str)
 	  march_ext_opt = XNEW (arm_feature_set);
 	*march_ext_opt = arm_arch_none;
 	march_fpu_opt = &opt->default_fpu;
+	selected_ctx_ext_table = opt->ext_table;
 	strcpy (selected_cpu_name, opt->name);
 
 	if (ext != NULL)
@@ -32309,6 +32361,35 @@ s_arm_arch_extension (int ignored ATTRIBUTE_UNUSED)
     {
       adding_value = 0;
       name += 2;
+    }
+
+  /* Check the context specific extension table */
+  if (selected_ctx_ext_table)
+    {
+      const struct arm_ext_table * ext_opt;
+      for (ext_opt = selected_ctx_ext_table; ext_opt->name != NULL; ext_opt++)
+        {
+          if (streq (ext_opt->name, name))
+	    {
+	      if (adding_value)
+		{
+		  if (ARM_FEATURE_ZERO (ext_opt->merge))
+		    /* TODO: Option not supported.  When we remove the
+		    legacy table this case should error out.  */
+		    continue;
+		  ARM_MERGE_FEATURE_SETS (selected_ext, selected_ext,
+					  ext_opt->merge);
+		}
+	      else
+		ARM_CLEAR_FEATURE (selected_ext, selected_ext, ext_opt->clear);
+
+	      ARM_MERGE_FEATURE_SETS (selected_cpu, selected_arch, selected_ext);
+	      ARM_MERGE_FEATURE_SETS (cpu_variant, selected_cpu, selected_fpu);
+	      *input_line_pointer = saved_char;
+	      demand_empty_rest_of_line ();
+	      return;
+	    }
+	}
     }
 
   for (opt = arm_extensions; opt->name != NULL; opt++)

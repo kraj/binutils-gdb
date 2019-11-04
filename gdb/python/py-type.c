@@ -26,7 +26,6 @@
 #include "demangle.h"
 #include "objfiles.h"
 #include "language.h"
-#include "gdbsupport/vec.h"
 #include "typeprint.h"
 
 typedef struct pyty_type_object
@@ -1333,6 +1332,17 @@ PyObject *
 type_to_type_object (struct type *type)
 {
   type_object *type_obj;
+
+  try
+    {
+      /* Try not to let stub types leak out to Python.  */
+      if (TYPE_STUB (type))
+	type = check_typedef (type);
+    }
+  catch (...)
+    {
+      /* Just ignore failures in check_typedef.  */
+    }
 
   type_obj = PyObject_New (type_object, &type_object_type);
   if (type_obj)

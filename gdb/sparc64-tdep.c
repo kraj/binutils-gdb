@@ -1199,7 +1199,7 @@ sparc64_16_byte_align_p (struct type *type)
 
 /* Store floating fields of element ELEMENT of an "parameter array"
    that has type TYPE and is stored at BITPOS in VALBUF in the
-   apropriate registers of REGCACHE.  This function can be called
+   appropriate registers of REGCACHE.  This function can be called
    recursively and therefore handles floating types in addition to
    structures.  */
 
@@ -1463,7 +1463,7 @@ sparc64_store_arguments (struct regcache *regcache, int nargs,
   /* The psABI says that "Every stack frame must be 16-byte aligned."  */
   sp &= ~0xf;
 
-  /* Now we store the arguments in to the "paramater array".  Some
+  /* Now we store the arguments in to the "parameter array".  Some
      Integer or Pointer arguments and Structure or Union arguments
      will be passed in %o registers.  Some Floating arguments and
      floating members of structures are passed in floating-point

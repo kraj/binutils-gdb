@@ -26,12 +26,12 @@
    into the scope DEST.  ALIAS is the name of the imported namespace
    in the current scope.  If ALIAS is NULL then the namespace is known
    by its original name.  DECLARATION is the name if the imported
-   varable if this is a declaration import (Eg. using A::x), otherwise
+   variable if this is a declaration import (Eg. using A::x), otherwise
    it is NULL.  EXCLUDES is a list of names not to import from an
    imported module or NULL.  If COPY_NAMES is non-zero, then the
    arguments are copied into newly allocated memory so they can be
-   temporaries.  For EXCLUDES the VEC pointers are copied but the
-   pointed to characters are not copied.  */
+   temporaries.  For EXCLUDES the contents of the vector are copied,
+   but the pointed to characters are not copied.  */
 
 void
 add_using_directive (struct using_direct **using_directives,

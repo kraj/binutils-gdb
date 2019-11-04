@@ -3331,7 +3331,7 @@ decode_line_with_last_displayed (const char *string, int flags)
 
 
 
-/* First, some functions to initialize stuff at the beggining of the
+/* First, some functions to initialize stuff at the beginning of the
    function.  */
 
 static void
@@ -4109,8 +4109,9 @@ decode_digits_list_mode (struct linespec_state *self,
   return values;
 }
 
-/* A helper for create_sals_line_offset that iterates over the symtabs,
-   adding lines to the VEC.  */
+/* A helper for create_sals_line_offset that iterates over the symtabs
+   associated with LS and returns a vector of corresponding symtab_and_line
+   structures.  */
 
 static std::vector<symtab_and_line>
 decode_digits_ordinary (struct linespec_state *self,

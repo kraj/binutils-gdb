@@ -92,7 +92,7 @@ CODE_FRAGMENT
 .  ENUM_BITFIELD (bfd_direction) direction : 2;
 .
 .  {* Format_specific flags.  *}
-.  flagword flags : 20;
+.  flagword flags;
 .
 .  {* Values that may appear in the flags field of a BFD.  These also
 .     appear in the object_flags field of the bfd_target structure, where
@@ -178,6 +178,9 @@ CODE_FRAGMENT
 .
 .  {* Use the ELF STT_COMMON type in this BFD.  *}
 .#define BFD_USE_ELF_STT_COMMON  0x80000
+.
+.  {* Put pathnames into archives (non-POSIX).  *}
+.#define BFD_ARCHIVE_FULL_PATH  0x100000
 .
 .  {* Flags bits to be saved in bfd_preserve_save.  *}
 .#define BFD_FLAGS_SAVED \
@@ -355,12 +358,225 @@ CODE_FRAGMENT
 .  const struct bfd_build_id *build_id;
 .};
 .
+.static inline const char *
+.bfd_get_filename (const bfd *abfd)
+.{
+.  return abfd->filename;
+.}
+.
+.static inline bfd_boolean
+.bfd_get_cacheable (const bfd *abfd)
+.{
+.  return abfd->cacheable;
+.}
+.
+.static inline enum bfd_format
+.bfd_get_format (const bfd *abfd)
+.{
+.  return abfd->format;
+.}
+.
+.static inline flagword
+.bfd_get_file_flags (const bfd *abfd)
+.{
+.  return abfd->flags;
+.}
+.
+.static inline bfd_vma
+.bfd_get_start_address (const bfd *abfd)
+.{
+.  return abfd->start_address;
+.}
+.
+.static inline unsigned int
+.bfd_get_symcount (const bfd *abfd)
+.{
+.  return abfd->symcount;
+.}
+.
+.static inline unsigned int
+.bfd_get_dynamic_symcount (const bfd *abfd)
+.{
+.  return abfd->dynsymcount;
+.}
+.
+.static inline struct bfd_symbol **
+.bfd_get_outsymbols (const bfd *abfd)
+.{
+.  return abfd->outsymbols;
+.}
+.
+.static inline unsigned int
+.bfd_count_sections (const bfd *abfd)
+.{
+.  return abfd->section_count;
+.}
+.
+.static inline bfd_boolean
+.bfd_has_map (const bfd *abfd)
+.{
+.  return abfd->has_armap;
+.}
+.
+.static inline bfd_boolean
+.bfd_is_thin_archive (const bfd *abfd)
+.{
+.  return abfd->is_thin_archive;
+.}
+.
+.static inline void *
+.bfd_usrdata (const bfd *abfd)
+.{
+.  return abfd->usrdata;
+.}
+.
 .{* See note beside bfd_set_section_userdata.  *}
 .static inline bfd_boolean
 .bfd_set_cacheable (bfd * abfd, bfd_boolean val)
 .{
 .  abfd->cacheable = val;
 .  return TRUE;
+.}
+.
+.static inline void
+.bfd_set_thin_archive (bfd *abfd, bfd_boolean val)
+.{
+.  abfd->is_thin_archive = val;
+.}
+.
+.static inline void
+.bfd_set_usrdata (bfd *abfd, void *val)
+.{
+.  abfd->usrdata = val;
+.}
+.
+.static inline asection *
+.bfd_asymbol_section (const asymbol *sy)
+.{
+.  return sy->section;
+.}
+.
+.static inline bfd_vma
+.bfd_asymbol_value (const asymbol *sy)
+.{
+.  return sy->section->vma + sy->value;
+.}
+.
+.static inline const char *
+.bfd_asymbol_name (const asymbol *sy)
+.{
+.  return sy->name;
+.}
+.
+.static inline struct bfd *
+.bfd_asymbol_bfd (const asymbol *sy)
+.{
+.  return sy->the_bfd;
+.}
+.
+.static inline void
+.bfd_set_asymbol_name (asymbol *sy, const char *name)
+.{
+.  sy->name = name;
+.}
+.
+.static inline bfd_size_type
+.bfd_get_section_limit_octets (const bfd *abfd, const asection *sec)
+.{
+.  if (abfd->direction != write_direction && sec->rawsize != 0)
+.    return sec->rawsize;
+.  return sec->size;
+.}
+.
+.{* Find the address one past the end of SEC.  *}
+.static inline bfd_size_type
+.bfd_get_section_limit (const bfd *abfd, const asection *sec)
+.{
+.  return bfd_get_section_limit_octets (abfd, sec) / bfd_octets_per_byte (abfd);
+.}
+.
+.{* Functions to handle insertion and deletion of a bfd's sections.  These
+.   only handle the list pointers, ie. do not adjust section_count,
+.   target_index etc.  *}
+.static inline void
+.bfd_section_list_remove (bfd *abfd, asection *s)
+.{
+.  asection *next = s->next;
+.  asection *prev = s->prev;
+.  if (prev)
+.    prev->next = next;
+.  else
+.    abfd->sections = next;
+.  if (next)
+.    next->prev = prev;
+.  else
+.    abfd->section_last = prev;
+.}
+.
+.static inline void
+.bfd_section_list_append (bfd *abfd, asection *s)
+.{
+.  s->next = 0;
+.  if (abfd->section_last)
+.    {
+.      s->prev = abfd->section_last;
+.      abfd->section_last->next = s;
+.    }
+.  else
+.    {
+.      s->prev = 0;
+.      abfd->sections = s;
+.    }
+.  abfd->section_last = s;
+.}
+.
+.static inline void
+.bfd_section_list_prepend (bfd *abfd, asection *s)
+.{
+.  s->prev = 0;
+.  if (abfd->sections)
+.    {
+.      s->next = abfd->sections;
+.      abfd->sections->prev = s;
+.    }
+.  else
+.    {
+.      s->next = 0;
+.      abfd->section_last = s;
+.    }
+.  abfd->sections = s;
+.}
+.
+.static inline void
+.bfd_section_list_insert_after (bfd *abfd, asection *a, asection *s)
+.{
+.  asection *next = a->next;
+.  s->next = next;
+.  s->prev = a;
+.  a->next = s;
+.  if (next)
+.    next->prev = s;
+.  else
+.    abfd->section_last = s;
+.}
+.
+.static inline void
+.bfd_section_list_insert_before (bfd *abfd, asection *b, asection *s)
+.{
+.  asection *prev = b->prev;
+.  s->prev = prev;
+.  s->next = b;
+.  b->prev = s;
+.  if (prev)
+.    prev->next = s;
+.  else
+.    abfd->sections = s;
+.}
+.
+.static inline bfd_boolean
+.bfd_section_removed_from_list (const bfd *abfd, const asection *s)
+.{
+.  return s->next ? s->next->prev != s : abfd->section_last != s;
 .}
 .
 */
@@ -1418,7 +1634,7 @@ bfd_set_file_flags (bfd *abfd, flagword flags)
       return FALSE;
     }
 
-  bfd_get_file_flags (abfd) = flags;
+  abfd->flags = flags;
   if ((flags & bfd_applicable_file_flags (abfd)) != flags)
     {
       bfd_set_error (bfd_error_invalid_operation);
@@ -1507,7 +1723,7 @@ RETURNS
 int
 bfd_get_sign_extend_vma (bfd *abfd)
 {
-  char *name;
+  const char *name;
 
   if (bfd_get_flavour (abfd) == bfd_target_elf_flavour)
     return get_elf_backend_data (abfd)->sign_extend_vma;
@@ -1861,6 +2077,9 @@ DESCRIPTION
 .
 .#define bfd_is_group_section(abfd, sec) \
 .	BFD_SEND (abfd, _bfd_is_group_section, (abfd, sec))
+.
+.#define bfd_group_name(abfd, sec) \
+.	BFD_SEND (abfd, _bfd_group_name, (abfd, sec))
 .
 .#define bfd_discard_group(abfd, sec) \
 .	BFD_SEND (abfd, _bfd_discard_group, (abfd, sec))
@@ -2339,7 +2558,7 @@ bfd_update_compression_header (bfd *abfd, bfd_byte *contents,
 		  bfd_put_32 (abfd, 1 << sec->alignment_power,
 			      &echdr->ch_addralign);
 		  /* bfd_log2 (alignof (Elf32_Chdr)) */
-		  bfd_set_section_alignment (abfd, sec, 2);
+		  bfd_set_section_alignment (sec, 2);
 		}
 	      else
 		{
@@ -2351,7 +2570,7 @@ bfd_update_compression_header (bfd *abfd, bfd_byte *contents,
 		  bfd_put_64 (abfd, 1 << sec->alignment_power,
 			      &echdr->ch_addralign);
 		  /* bfd_log2 (alignof (Elf64_Chdr)) */
-		  bfd_set_section_alignment (abfd, sec, 3);
+		  bfd_set_section_alignment (sec, 3);
 		}
 	    }
 	  else
@@ -2365,7 +2584,7 @@ bfd_update_compression_header (bfd *abfd, bfd_byte *contents,
 	      memcpy (contents, "ZLIB", 4);
 	      bfd_putb64 (sec->size, contents + 4);
 	      /* No way to keep the original alignment, just use 1 always. */
-	      bfd_set_section_alignment (abfd, sec, 0);
+	      bfd_set_section_alignment (sec, 0);
 	    }
 	}
     }
@@ -2419,7 +2638,7 @@ bfd_check_compression_header (bfd *abfd, bfd_byte *contents,
 	  chdr.ch_addralign = bfd_get_64 (abfd, &echdr->ch_addralign);
 	}
       if (chdr.ch_type == ELFCOMPRESS_ZLIB
-	  && chdr.ch_addralign == (1U << bfd_log2 (chdr.ch_addralign)))
+	  && chdr.ch_addralign == (chdr.ch_addralign & -chdr.ch_addralign))
 	{
 	  *uncompressed_size = chdr.ch_size;
 	  *uncompressed_alignment_power = bfd_log2 (chdr.ch_addralign);
@@ -2594,7 +2813,7 @@ bfd_convert_section_contents (bfd *ibfd, sec_ptr isec, bfd *obfd,
       use_memmove = TRUE;
     }
 
-  size = bfd_get_section_size (isec) - ihdr_size + ohdr_size;
+  size = bfd_section_size (isec) - ihdr_size + ohdr_size;
   if (!use_memmove)
     {
       contents = (bfd_byte *) bfd_malloc (size);

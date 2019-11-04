@@ -638,14 +638,6 @@ darwin_relocate_section_addresses (struct so_list *so,
     so->addr_low = sec->addr;
 }
 
-static struct block_symbol
-darwin_lookup_lib_symbol (struct objfile *objfile,
-			  const char *name,
-			  const domain_enum domain)
-{
-  return {};
-}
-
 static gdb_bfd_ref_ptr
 darwin_bfd_open (const char *pathname)
 {
@@ -670,8 +662,7 @@ darwin_bfd_open (const char *pathname)
   /* The current filename for fat-binary BFDs is a name generated
      by BFD, usually a string containing the name of the architecture.
      Reset its value to the actual filename.  */
-  xfree ((char *) bfd_get_filename (res.get ()));
-  res->filename = xstrdup (pathname);
+  bfd_set_filename (res.get (), xstrdup (pathname));
 
   return res;
 }
@@ -688,6 +679,5 @@ _initialize_darwin_solib (void)
   darwin_so_ops.current_sos = darwin_current_sos;
   darwin_so_ops.open_symbol_file_object = open_symbol_file_object;
   darwin_so_ops.in_dynsym_resolve_code = darwin_in_dynsym_resolve_code;
-  darwin_so_ops.lookup_lib_global_symbol = darwin_lookup_lib_symbol;
   darwin_so_ops.bfd_open = darwin_bfd_open;
 }

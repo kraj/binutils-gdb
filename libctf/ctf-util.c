@@ -80,6 +80,14 @@ ctf_list_delete (ctf_list_t *lp, void *existing)
     lp->l_prev = p->l_prev;
 }
 
+/* Return 1 if the list is empty.  */
+
+int
+ctf_list_empty_p (ctf_list_t *lp)
+{
+  return (lp->l_next == NULL && lp->l_prev == NULL);
+}
+
 /* Convert a 32-bit ELF symbol into Elf64 and return a pointer to it.  */
 
 Elf64_Sym *
@@ -95,20 +103,7 @@ ctf_sym_to_elf64 (const Elf32_Sym *src, Elf64_Sym *dst)
   return dst;
 }
 
-/* Same as strdup(3C), but use ctf_alloc() to do the memory allocation. */
-
-_libctf_malloc_ char *
-ctf_strdup (const char *s1)
-{
-  char *s2 = ctf_alloc (strlen (s1) + 1);
-
-  if (s2 != NULL)
-    (void) strcpy (s2, s1);
-
-  return s2;
-}
-
-/* A string appender working on dynamic strings.  */
+/* A string appender working on dynamic strings.  Returns NULL on OOM.  */
 
 char *
 ctf_str_append (char *s, const char *append)
@@ -130,6 +125,19 @@ ctf_str_append (char *s, const char *append)
   s[s_len + append_len] = '\0';
 
   return s;
+}
+
+/* A version of ctf_str_append that returns the old string on OOM.  */
+
+char *
+ctf_str_append_noerr (char *s, const char *append)
+{
+  char *new_s;
+
+  new_s = ctf_str_append (s, append);
+  if (!new_s)
+    return s;
+  return new_s;
 }
 
 /* A realloc() that fails noisily if called with any ctf_str_num_users.  */

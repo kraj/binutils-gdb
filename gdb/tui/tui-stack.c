@@ -63,17 +63,12 @@ tui_locator_win_info_ptr (void)
   return &_locator;
 }
 
-/* Create the status line to display as much information as we can on
-   this single line: target name, process number, current function,
-   current line, current PC, SingleKey mode.  */
-static char *
-tui_make_status_line (struct tui_locator_window *loc)
+std::string
+tui_locator_window::make_status_line () const
 {
-  char *string;
-  char line_buf[50], *pname;
-  char *buf;
+  char line_buf[50];
   int status_size;
-  int i, proc_width;
+  int proc_width;
   const char *pid_name;
   int target_width;
   int pid_width;
@@ -96,13 +91,11 @@ tui_make_status_line (struct tui_locator_window *loc)
   if (pid_width > MAX_PID_WIDTH)
     pid_width = MAX_PID_WIDTH;
 
-  status_size = tui_term_width ();
-  string = (char *) xmalloc (status_size + 1);
-  buf = (char*) alloca (status_size + 1);
+  status_size = width;
 
   /* Translate line number and obtain its size.  */
-  if (loc->line_no > 0)
-    xsnprintf (line_buf, sizeof (line_buf), "%d", loc->line_no);
+  if (line_no > 0)
+    xsnprintf (line_buf, sizeof (line_buf), "%d", line_no);
   else
     strcpy (line_buf, "??");
   line_width = strlen (line_buf);
@@ -110,8 +103,8 @@ tui_make_status_line (struct tui_locator_window *loc)
     line_width = MIN_LINE_WIDTH;
 
   /* Translate PC address.  */
-  std::string pc_out (loc->gdbarch
-		      ? paddress (loc->gdbarch, loc->addr)
+  std::string pc_out (gdbarch
+		      ? paddress (gdbarch, addr)
 		      : "??");
   const char *pc_buf = pc_out.c_str ();
   int pc_width = pc_out.size ();
@@ -154,65 +147,48 @@ tui_make_status_line (struct tui_locator_window *loc)
         }
     }
 
-  /* Now convert elements to string form.  */
-  pname = loc->proc_name;
-
   /* Now create the locator line from the string version of the
-     elements.  We could use sprintf() here but that wouldn't ensure
-     that we don't overrun the size of the allocated buffer.
-     strcat_to_buf() will.  */
-  *string = (char) 0;
+     elements.  */
+  string_file string;
 
   if (target_width > 0)
-    {
-      sprintf (buf, "%*.*s ",
-               -target_width, target_width, target_shortname);
-      strcat_to_buf (string, status_size, buf);
-    }
+    string.printf ("%*.*s ", -target_width, target_width, target_shortname);
   if (pid_width > 0)
-    {
-      sprintf (buf, "%*.*s ",
-               -pid_width, pid_width, pid_name);
-      strcat_to_buf (string, status_size, buf);
-    }
-  
+    string.printf ("%*.*s ", -pid_width, pid_width, pid_name);
+
   /* Show whether we are in SingleKey mode.  */
   if (tui_current_key_mode == TUI_SINGLE_KEY_MODE)
     {
-      strcat_to_buf (string, status_size, SINGLE_KEY);
-      strcat_to_buf (string, status_size, " ");
+      string.puts (SINGLE_KEY);
+      string.puts (" ");
     }
 
   /* Procedure/class name.  */
   if (proc_width > 0)
     {
-      if (strlen (pname) > proc_width)
-        sprintf (buf, "%s%*.*s* ", PROC_PREFIX,
-                 1 - proc_width, proc_width - 1, pname);
+      if (proc_name.size () > proc_width)
+        string.printf ("%s%*.*s* ", PROC_PREFIX,
+		       1 - proc_width, proc_width - 1, proc_name.c_str ());
       else
-        sprintf (buf, "%s%*.*s ", PROC_PREFIX,
-                 -proc_width, proc_width, pname);
-      strcat_to_buf (string, status_size, buf);
+        string.printf ("%s%*.*s ", PROC_PREFIX,
+		       -proc_width, proc_width, proc_name.c_str ());
     }
 
   if (line_width > 0)
-    {
-      sprintf (buf, "%s%*.*s ", LINE_PREFIX,
-               -line_width, line_width, line_buf);
-      strcat_to_buf (string, status_size, buf);
-    }
+    string.printf ("%s%*.*s ", LINE_PREFIX,
+		   -line_width, line_width, line_buf);
   if (pc_width > 0)
     {
-      strcat_to_buf (string, status_size, PC_PREFIX);
-      strcat_to_buf (string, status_size, pc_buf);
+      string.puts (PC_PREFIX);
+      string.puts (pc_buf);
     }
-  
-  
-  for (i = strlen (string); i < status_size; i++)
-    string[i] = ' ';
-  string[status_size] = (char) 0;
 
-  return string;
+  if (string.size () < status_size)
+    string.puts (n_spaces (status_size - string.size ()));
+  else if (string.size () > status_size)
+    string.string ().erase (status_size, string.size ());
+
+  return std::move (string.string ());
 }
 
 /* Get a printable name for the function at the address.  The symbol
@@ -252,20 +228,20 @@ tui_locator_window::rerender ()
 {
   if (handle != NULL)
     {
-      char *string = tui_make_status_line (this);
-      wmove (handle, 0, 0);
+      std::string string = make_status_line ();
+      scrollok (handle.get (), FALSE);
+      wmove (handle.get (), 0, 0);
       /* We ignore the return value from wstandout and wstandend, casting
 	 them to void in order to avoid a compiler warning.  The warning
 	 itself was introduced by a patch to ncurses 5.7 dated 2009-08-29,
 	 changing these macro to expand to code that causes the compiler
 	 to generate an unused-value warning.  */
-      (void) wstandout (handle);
-      waddstr (handle, string);
-      wclrtoeol (handle);
-      (void) wstandend (handle);
+      (void) wstandout (handle.get ());
+      waddstr (handle.get (), string.c_str ());
+      wclrtoeol (handle.get ());
+      (void) wstandend (handle.get ());
       refresh_window ();
-      wmove (handle, 0, 0);
-      xfree (string);
+      wmove (handle.get (), 0, 0);
     }
 }
 
@@ -274,10 +250,7 @@ tui_locator_window::rerender ()
 void
 tui_locator_window::set_locator_fullname (const char *fullname)
 {
-  struct tui_locator_window *locator = tui_locator_win_info_ptr ();
-
-  locator->full_name[0] = 0;
-  strcat_to_buf (locator->full_name, MAX_LOCATOR_ELEMENT_LEN, fullname);
+  full_name = fullname;
   rerender ();
 }
 
@@ -298,16 +271,13 @@ tui_locator_window::set_locator_info (struct gdbarch *gdbarch_in,
   if (fullname == NULL)
     fullname = "";
 
-  locator_changed_p |= strncmp (proc_name, procname,
-				MAX_LOCATOR_ELEMENT_LEN) != 0;
+  locator_changed_p |= proc_name != procname;
   locator_changed_p |= lineno != line_no;
   locator_changed_p |= addr_in != addr;
   locator_changed_p |= gdbarch_in != gdbarch;
-  locator_changed_p |= strncmp (full_name, fullname,
-				MAX_LOCATOR_ELEMENT_LEN) != 0;
+  locator_changed_p |= full_name != fullname;
 
-  proc_name[0] = (char) 0;
-  strcat_to_buf (proc_name, MAX_LOCATOR_ELEMENT_LEN, procname);
+  proc_name = procname;
   line_no = lineno;
   addr = addr_in;
   gdbarch = gdbarch_in;

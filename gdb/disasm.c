@@ -31,6 +31,7 @@
 #include <algorithm>
 #include "gdbsupport/gdb_optional.h"
 #include "valprint.h"
+#include "cli/cli-style.h"
 
 /* Disassemble functions.
    FIXME: We should get rid of all the duplicate code in gdb that does
@@ -162,28 +163,27 @@ gdb_disassembler::dis_asm_print_address (bfd_vma addr,
   print_address (self->arch (), addr, self->stream ());
 }
 
-static int
-compare_lines (const void *mle1p, const void *mle2p)
+static bool
+line_is_less_than (const deprecated_dis_line_entry &mle1,
+		   const deprecated_dis_line_entry &mle2)
 {
-  struct deprecated_dis_line_entry *mle1, *mle2;
-  int val;
-
-  mle1 = (struct deprecated_dis_line_entry *) mle1p;
-  mle2 = (struct deprecated_dis_line_entry *) mle2p;
+  bool val;
 
   /* End of sequence markers have a line number of 0 but don't want to
      be sorted to the head of the list, instead sort by PC.  */
-  if (mle1->line == 0 || mle2->line == 0)
+  if (mle1.line == 0 || mle2.line == 0)
     {
-      val = mle1->start_pc - mle2->start_pc;
-      if (val == 0)
-        val = mle1->line - mle2->line;
+      if (mle1.start_pc != mle2.start_pc)
+	val = mle1.start_pc < mle2.start_pc;
+    else
+        val = mle1.line < mle2.line;
     }
   else
     {
-      val = mle1->line - mle2->line;
-      if (val == 0)
-        val = mle1->start_pc - mle2->start_pc;
+      if (mle1.line != mle2.line)
+	val = mle1.line < mle2.line;
+      else
+        val = mle1.start_pc < mle2.start_pc;
     }
   return val;
 }
@@ -245,7 +245,7 @@ gdb_pretty_print_disassembler::pretty_print_insn (const struct disasm_insn *insn
 	m_uiout->text (" <");
 	if (!omit_fname)
 	  m_uiout->field_string ("func-name", name.c_str (),
-				 ui_out_style_kind::FUNCTION);
+				 function_name_style.style ());
 	/* For negative offsets, avoid displaying them as +-N; the sign of
 	   the offset takes the place of the "+" here.  */
 	if (offset >= 0)
@@ -403,8 +403,7 @@ do_mixed_source_and_assembly_deprecated
   /* Now, sort mle by line #s (and, then by addresses within lines).  */
 
   if (out_of_order)
-    qsort (mle, newlines, sizeof (struct deprecated_dis_line_entry),
-	   compare_lines);
+    std::sort (mle, mle + newlines, line_is_less_than);
 
   /* Now, for each line entry, emit the specified lines (unless
      they have been emitted before), followed by the assembly code
@@ -763,12 +762,12 @@ gdb_disassembler::gdb_disassembler (struct gdbarch *gdbarch,
   m_di.memory_error_func = dis_asm_memory_error;
   m_di.print_address_func = dis_asm_print_address;
   /* NOTE: cagney/2003-04-28: The original code, from the old Insight
-     disassembler had a local optomization here.  By default it would
+     disassembler had a local optimization here.  By default it would
      access the executable file, instead of the target memory (there
      was a growing list of exceptions though).  Unfortunately, the
      heuristic was flawed.  Commands like "disassemble &variable"
      didn't work as they relied on the access going to the target.
-     Further, it has been supperseeded by trust-read-only-sections
+     Further, it has been superseeded by trust-read-only-sections
      (although that should be superseeded by target_trust..._p()).  */
   m_di.read_memory_func = read_memory_func;
   m_di.arch = gdbarch_bfd_arch_info (gdbarch)->arch;

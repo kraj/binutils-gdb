@@ -45,9 +45,13 @@
 #include "event-top.h"
 #include "infrun.h"
 #include "gdbsupport/signals-state-save-restore.h"
+#include <algorithm>
 #include <vector>
 #include "gdbsupport/pathstuff.h"
 #include "cli/cli-style.h"
+#ifdef GDBTK
+#include "gdbtk/generic/gdbtk.h"
+#endif
 
 /* The selected interpreter.  This will be used as a set command
    variable, so it should always be malloc'ed - since
@@ -61,7 +65,7 @@ int dbx_commands = 0;
 char *gdb_sysroot = 0;
 
 /* GDB datadir, used to store data files.  */
-char *gdb_datadir = 0;
+std::string gdb_datadir;
 
 /* Non-zero if GDB_DATADIR was provided on the command line.
    This doesn't track whether data-directory is set later from the
@@ -70,7 +74,7 @@ static int gdb_datadir_provided = 0;
 
 /* If gdb was configured with --with-python=/path,
    the possibly relocated path to python's lib directory.  */
-char *python_libdir = 0;
+std::string python_libdir;
 
 /* Target IO streams.  */
 struct ui_file *gdb_stdtargin;
@@ -121,133 +125,180 @@ set_gdb_data_directory (const char *new_datadir)
   else if (!S_ISDIR (st.st_mode))
     warning (_("%s is not a directory."), new_datadir);
 
-  xfree (gdb_datadir);
-  gdb_datadir = gdb_realpath (new_datadir).release ();
+  gdb_datadir = gdb_realpath (new_datadir).get ();
 
   /* gdb_realpath won't return an absolute path if the path doesn't exist,
      but we still want to record an absolute path here.  If the user entered
      "../foo" and "../foo" doesn't exist then we'll record $(pwd)/../foo which
      isn't canonical, but that's ok.  */
-  if (!IS_ABSOLUTE_PATH (gdb_datadir))
+  if (!IS_ABSOLUTE_PATH (gdb_datadir.c_str ()))
     {
-      gdb::unique_xmalloc_ptr<char> abs_datadir = gdb_abspath (gdb_datadir);
+      gdb::unique_xmalloc_ptr<char> abs_datadir
+        = gdb_abspath (gdb_datadir.c_str ());
 
-      xfree (gdb_datadir);
-      gdb_datadir = abs_datadir.release ();
+      gdb_datadir = abs_datadir.get ();
     }
 }
 
 /* Relocate a file or directory.  PROGNAME is the name by which gdb
    was invoked (i.e., argv[0]).  INITIAL is the default value for the
    file or directory.  RELOCATABLE is true if the value is relocatable,
-   false otherwise.  Returns a newly allocated string; this may return
-   NULL under the same conditions as make_relative_prefix.  */
+   false otherwise.  This may return an empty string under the same
+   conditions as make_relative_prefix returning NULL.  */
 
-static char *
+static std::string
 relocate_path (const char *progname, const char *initial, bool relocatable)
 {
   if (relocatable)
-    return make_relative_prefix (progname, BINDIR, initial);
-  return xstrdup (initial);
+    {
+      gdb::unique_xmalloc_ptr<char> str (make_relative_prefix (progname,
+							       BINDIR,
+							       initial));
+      if (str != nullptr)
+	return str.get ();
+      return std::string ();
+    }
+  return initial;
 }
 
 /* Like relocate_path, but specifically checks for a directory.
    INITIAL is relocated according to the rules of relocate_path.  If
    the result is a directory, it is used; otherwise, INITIAL is used.
-   The chosen directory is then canonicalized using lrealpath.  This
-   function always returns a newly-allocated string.  */
+   The chosen directory is then canonicalized using lrealpath.  */
 
-char *
+std::string
 relocate_gdb_directory (const char *initial, bool relocatable)
 {
-  char *dir;
-
-  dir = relocate_path (gdb_program_name, initial, relocatable);
-  if (dir)
+  std::string dir = relocate_path (gdb_program_name, initial, relocatable);
+  if (!dir.empty ())
     {
       struct stat s;
 
-      if (*dir == '\0' || stat (dir, &s) != 0 || !S_ISDIR (s.st_mode))
+      if (stat (dir.c_str (), &s) != 0 || !S_ISDIR (s.st_mode))
 	{
-	  xfree (dir);
-	  dir = NULL;
+	  dir.clear ();
 	}
     }
-  if (!dir)
-    dir = xstrdup (initial);
+  if (dir.empty ())
+    dir = initial;
 
   /* Canonicalize the directory.  */
-  if (*dir)
+  if (!dir.empty ())
     {
-      char *canon_sysroot = lrealpath (dir);
+      gdb::unique_xmalloc_ptr<char> canon_sysroot (lrealpath (dir.c_str ()));
 
       if (canon_sysroot)
-	{
-	  xfree (dir);
-	  dir = canon_sysroot;
-	}
+	dir = canon_sysroot.get ();
     }
 
   return dir;
+}
+
+/* Given a gdbinit path in FILE, adjusts it according to the gdb_datadir
+   parameter if it is in the data dir, or passes it through relocate_path
+   otherwise.  */
+
+static std::string
+relocate_gdbinit_path_maybe_in_datadir (const std::string &file,
+					bool relocatable)
+{
+  size_t datadir_len = strlen (GDB_DATADIR);
+
+  std::string relocated_path;
+
+  /* If SYSTEM_GDBINIT lives in data-directory, and data-directory
+     has been provided, search for SYSTEM_GDBINIT there.  */
+  if (gdb_datadir_provided
+      && datadir_len < file.length ()
+      && filename_ncmp (file.c_str (), GDB_DATADIR, datadir_len) == 0
+      && IS_DIR_SEPARATOR (file[datadir_len]))
+    {
+      /* Append the part of SYSTEM_GDBINIT that follows GDB_DATADIR
+	 to gdb_datadir.  */
+
+      size_t start = datadir_len;
+      for (; IS_DIR_SEPARATOR (file[start]); ++start)
+	;
+      relocated_path = gdb_datadir + SLASH_STRING + file.substr (start);
+    }
+  else
+    {
+      relocated_path = relocate_path (gdb_program_name, file.c_str (),
+				      relocatable);
+    }
+    return relocated_path;
 }
 
 /* Compute the locations of init files that GDB should source and
    return them in SYSTEM_GDBINIT, HOME_GDBINIT, LOCAL_GDBINIT.  If
    there is no system gdbinit (resp. home gdbinit and local gdbinit)
    to be loaded, then SYSTEM_GDBINIT (resp. HOME_GDBINIT and
-   LOCAL_GDBINIT) is set to NULL.  */
+   LOCAL_GDBINIT) is set to the empty string.  */
 static void
-get_init_files (const char **system_gdbinit,
-		const char **home_gdbinit,
-		const char **local_gdbinit)
+get_init_files (std::vector<std::string> *system_gdbinit,
+		std::string *home_gdbinit,
+		std::string *local_gdbinit)
 {
-  static const char *sysgdbinit = NULL;
-  static char *homeinit = NULL;
-  static const char *localinit = NULL;
+  static std::vector<std::string> sysgdbinit;
+  static std::string homeinit;
+  static std::string localinit;
   static int initialized = 0;
 
   if (!initialized)
     {
       struct stat homebuf, cwdbuf, s;
-      const char *homedir;
 
       if (SYSTEM_GDBINIT[0])
 	{
-	  int datadir_len = strlen (GDB_DATADIR);
-	  int sys_gdbinit_len = strlen (SYSTEM_GDBINIT);
-	  char *relocated_sysgdbinit;
-
-	  /* If SYSTEM_GDBINIT lives in data-directory, and data-directory
-	     has been provided, search for SYSTEM_GDBINIT there.  */
-	  if (gdb_datadir_provided
-	      && datadir_len < sys_gdbinit_len
-	      && filename_ncmp (SYSTEM_GDBINIT, GDB_DATADIR, datadir_len) == 0
-	      && IS_DIR_SEPARATOR (SYSTEM_GDBINIT[datadir_len]))
-	    {
-	      /* Append the part of SYSTEM_GDBINIT that follows GDB_DATADIR
-		 to gdb_datadir.  */
-	      char *tmp_sys_gdbinit = xstrdup (&SYSTEM_GDBINIT[datadir_len]);
-	      char *p;
-
-	      for (p = tmp_sys_gdbinit; IS_DIR_SEPARATOR (*p); ++p)
-		continue;
-	      relocated_sysgdbinit = concat (gdb_datadir, SLASH_STRING, p,
-					     (char *) NULL);
-	      xfree (tmp_sys_gdbinit);
-	    }
-	  else
-	    {
-	      relocated_sysgdbinit = relocate_path (gdb_program_name,
-						    SYSTEM_GDBINIT,
-						    SYSTEM_GDBINIT_RELOCATABLE);
-	    }
-	  if (relocated_sysgdbinit && stat (relocated_sysgdbinit, &s) == 0)
-	    sysgdbinit = relocated_sysgdbinit;
-	  else
-	    xfree (relocated_sysgdbinit);
+	  std::string relocated_sysgdbinit
+	    = relocate_gdbinit_path_maybe_in_datadir
+		(SYSTEM_GDBINIT, SYSTEM_GDBINIT_RELOCATABLE);
+	  if (!relocated_sysgdbinit.empty ()
+	      && stat (relocated_sysgdbinit.c_str (), &s) == 0)
+	    sysgdbinit.push_back (relocated_sysgdbinit);
+	}
+      if (SYSTEM_GDBINIT_DIR[0])
+	{
+	  std::string relocated_gdbinit_dir
+	    = relocate_gdbinit_path_maybe_in_datadir
+		(SYSTEM_GDBINIT_DIR, SYSTEM_GDBINIT_DIR_RELOCATABLE);
+	  if (!relocated_gdbinit_dir.empty ()) {
+	    gdb_dir_up dir (opendir (relocated_gdbinit_dir.c_str ()));
+	    if (dir != nullptr)
+	      {
+		std::vector<std::string> files;
+		for (;;)
+		  {
+		    struct dirent *ent = readdir (dir.get ());
+		    if (ent == nullptr)
+		      break;
+		    std::string name (ent->d_name);
+		    if (name == "." || name == "..")
+		      continue;
+		    /* ent->d_type is not available on all systems (e.g. mingw,
+		       Solaris), so we have to call stat().  */
+		    std::string filename
+		      = relocated_gdbinit_dir + SLASH_STRING + name;
+		    if (stat (filename.c_str (), &s) != 0
+			|| !S_ISREG (s.st_mode))
+		      continue;
+		    const struct extension_language_defn *extlang
+		      = get_ext_lang_of_file (filename.c_str ());
+		    /* We effectively don't support "set script-extension
+		       off/soft", because we are loading system init files here,
+		       so it does not really make sense to depend on a
+		       setting.  */
+		    if (extlang != nullptr && ext_lang_present_p (extlang))
+		      files.push_back (std::move (filename));
+		  }
+		std::sort (files.begin (), files.end ());
+		sysgdbinit.insert (sysgdbinit.end (),
+				   files.begin (), files.end ());
+	      }
+	  }
 	}
 
-      homedir = getenv ("HOME");
+      const char *homedir = getenv ("HOME");
 
       /* If the .gdbinit file in the current directory is the same as
 	 the $HOME/.gdbinit file, it should not be sourced.  homebuf
@@ -260,17 +311,16 @@ get_init_files (const char **system_gdbinit,
 
       if (homedir)
 	{
-	  homeinit = xstrprintf ("%s/%s", homedir, GDBINIT);
-	  if (stat (homeinit, &homebuf) != 0)
+	  homeinit = std::string (homedir) + SLASH_STRING + GDBINIT;
+	  if (stat (homeinit.c_str (), &homebuf) != 0)
 	    {
-	      xfree (homeinit);
-	      homeinit = NULL;
+	      homeinit = "";
 	    }
 	}
 
       if (stat (GDBINIT, &cwdbuf) == 0)
 	{
-	  if (!homeinit
+	  if (homeinit.empty ()
 	      || memcmp ((char *) &homebuf, (char *) &cwdbuf,
 			 sizeof (struct stat)))
 	    localinit = GDBINIT;
@@ -470,11 +520,6 @@ captured_main_1 (struct captured_main_args *context)
   /* All arguments of --directory option.  */
   std::vector<char *> dirarg;
 
-  /* gdb init files.  */
-  const char *system_gdbinit;
-  const char *home_gdbinit;
-  const char *local_gdbinit;
-
   int i;
   int save_auto_load;
   int ret = 1;
@@ -534,17 +579,19 @@ captured_main_1 (struct captured_main_args *context)
     perror_warning_with_name (_("error finding working directory"));
 
   /* Set the sysroot path.  */
-  gdb_sysroot = relocate_gdb_directory (TARGET_SYSTEM_ROOT,
-					TARGET_SYSTEM_ROOT_RELOCATABLE);
+  gdb_sysroot
+    = xstrdup (relocate_gdb_directory (TARGET_SYSTEM_ROOT,
+				     TARGET_SYSTEM_ROOT_RELOCATABLE).c_str ());
 
-  if (gdb_sysroot == NULL || *gdb_sysroot == '\0')
+  if (*gdb_sysroot == '\0')
     {
       xfree (gdb_sysroot);
       gdb_sysroot = xstrdup (TARGET_SYSROOT_PREFIX);
     }
 
-  debug_file_directory = relocate_gdb_directory (DEBUGDIR,
-						 DEBUGDIR_RELOCATABLE);
+  debug_file_directory
+    = xstrdup (relocate_gdb_directory (DEBUGDIR,
+				     DEBUGDIR_RELOCATABLE).c_str ());
 
   gdb_datadir = relocate_gdb_directory (GDB_DATADIR,
 					GDB_DATADIR_RELOCATABLE);
@@ -590,6 +637,9 @@ captured_main_1 (struct captured_main_args *context)
       OPT_READNOW,
       OPT_READNEVER
     };
+    /* This struct requires int* in the struct, but write_files is a bool.
+       So use this temporary int that we write back after argument parsing.  */
+    int write_files_1 = 0;
     static struct option long_options[] =
     {
       {"tui", no_argument, 0, OPT_TUI},
@@ -654,7 +704,7 @@ captured_main_1 (struct captured_main_args *context)
       {"w", no_argument, NULL, OPT_WINDOWS},
       {"windows", no_argument, NULL, OPT_WINDOWS},
       {"statistics", no_argument, 0, OPT_STATISTICS},
-      {"write", no_argument, &write_files, 1},
+      {"write", no_argument, &write_files_1, 1},
       {"args", no_argument, &set_args, 1},
       {"l", required_argument, 0, 'l'},
       {"return-child-result", no_argument, &return_child_result, 1},
@@ -759,8 +809,6 @@ captured_main_1 (struct captured_main_args *context)
 #ifdef GDBTK
 	  case 'z':
 	    {
-	      extern int gdbtk_test (char *);
-
 	      if (!gdbtk_test (optarg))
 		error (_("%s: unable to load tclcommand file \"%s\""),
 		       gdb_program_name, optarg);
@@ -773,8 +821,6 @@ captured_main_1 (struct captured_main_args *context)
 	    {
 	      /* Set the external editor commands when gdb is farming out files
 		 to be edited by another program.  */
-	      extern char *external_editor_command;
-
 	      external_editor_command = xstrdup (optarg);
 	      break;
 	    }
@@ -838,6 +884,7 @@ captured_main_1 (struct captured_main_args *context)
 		   gdb_program_name);
 	  }
       }
+    write_files = (write_files_1 != 0);
 
     if (batch_flag)
       {
@@ -906,8 +953,11 @@ captured_main_1 (struct captured_main_args *context)
     }
 
   /* Lookup gdbinit files.  Note that the gdbinit file name may be
-     overriden during file initialization, so get_init_files should be
+     overridden during file initialization, so get_init_files should be
      called after gdb_init.  */
+  std::vector<std::string> system_gdbinit;
+  std::string home_gdbinit;
+  std::string local_gdbinit;
   get_init_files (&system_gdbinit, &home_gdbinit, &local_gdbinit);
 
   /* Do these (and anything which might call wrap_here or *_filtered)
@@ -984,16 +1034,19 @@ captured_main_1 (struct captured_main_args *context)
      This is done *before* all the command line arguments are
      processed; it sets global parameters, which are independent of
      what file you are debugging or what directory you are in.  */
-  if (system_gdbinit && !inhibit_gdbinit)
-    ret = catch_command_errors (source_script, system_gdbinit, 0);
+  if (!system_gdbinit.empty () && !inhibit_gdbinit)
+    {
+      for (const std::string &file : system_gdbinit)
+	ret = catch_command_errors (source_script, file.c_str (), 0);
+    }
 
   /* Read and execute $HOME/.gdbinit file, if it exists.  This is done
      *before* all the command line arguments are processed; it sets
      global parameters, which are independent of what file you are
      debugging or what directory you are in.  */
 
-  if (home_gdbinit && !inhibit_gdbinit && !inhibit_home_gdbinit)
-    ret = catch_command_errors (source_script, home_gdbinit, 0);
+  if (!home_gdbinit.empty () && !inhibit_gdbinit && !inhibit_home_gdbinit)
+    ret = catch_command_errors (source_script, home_gdbinit.c_str (), 0);
 
   /* Process '-ix' and '-iex' options early.  */
   for (i = 0; i < cmdarg_vec.size (); i++)
@@ -1096,20 +1149,20 @@ captured_main_1 (struct captured_main_args *context)
 
   /* Read the .gdbinit file in the current directory, *if* it isn't
      the same as the $HOME/.gdbinit file (it should exist, also).  */
-  if (local_gdbinit)
+  if (!local_gdbinit.empty ())
     {
       auto_load_local_gdbinit_pathname
-	= gdb_realpath (local_gdbinit).release ();
+	= gdb_realpath (local_gdbinit.c_str ()).release ();
 
       if (!inhibit_gdbinit && auto_load_local_gdbinit
-	  && file_is_auto_load_safe (local_gdbinit,
+	  && file_is_auto_load_safe (local_gdbinit.c_str (),
 				     _("auto-load: Loading .gdbinit "
 				       "file \"%s\".\n"),
-				     local_gdbinit))
+				     local_gdbinit.c_str ()))
 	{
 	  auto_load_local_gdbinit_loaded = 1;
 
-	  ret = catch_command_errors (source_script, local_gdbinit, 0);
+	  ret = catch_command_errors (source_script, local_gdbinit.c_str (), 0);
 	}
     }
 
@@ -1203,9 +1256,9 @@ gdb_main (struct captured_main_args *args)
 static void
 print_gdb_help (struct ui_file *stream)
 {
-  const char *system_gdbinit;
-  const char *home_gdbinit;
-  const char *local_gdbinit;
+  std::vector<std::string> system_gdbinit;
+  std::string home_gdbinit;
+  std::string local_gdbinit;
 
   get_init_files (&system_gdbinit, &home_gdbinit, &local_gdbinit);
 
@@ -1283,18 +1336,27 @@ Other options:\n\n\
   fputs_unfiltered (_("\n\
 At startup, GDB reads the following init files and executes their commands:\n\
 "), stream);
-  if (system_gdbinit)
-    fprintf_unfiltered (stream, _("\
-   * system-wide init file: %s\n\
-"), system_gdbinit);
-  if (home_gdbinit)
+  if (!system_gdbinit.empty ())
+    {
+      std::string output;
+      for (size_t idx = 0; idx < system_gdbinit.size (); ++idx)
+        {
+	  output += system_gdbinit[idx];
+	  if (idx < system_gdbinit.size () - 1)
+	    output += ", ";
+	}
+      fprintf_unfiltered (stream, _("\
+   * system-wide init files: %s\n\
+"), output.c_str ());
+    }
+  if (!home_gdbinit.empty ())
     fprintf_unfiltered (stream, _("\
    * user-specific init file: %s\n\
-"), home_gdbinit);
-  if (local_gdbinit)
+"), home_gdbinit.c_str ());
+  if (!local_gdbinit.empty ())
     fprintf_unfiltered (stream, _("\
    * local init file (see also 'set auto-load local-gdbinit'): ./%s\n\
-"), local_gdbinit);
+"), local_gdbinit.c_str ());
   fputs_unfiltered (_("\n\
 For more information, type \"help\" from within GDB, or consult the\n\
 GDB manual (available as on-line info or a printed manual).\n\

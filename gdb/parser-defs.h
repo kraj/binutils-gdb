@@ -23,7 +23,6 @@
 #if !defined (PARSER_DEFS_H)
 #define PARSER_DEFS_H 1
 
-#include "gdbsupport/vec.h"
 #include "expression.h"
 #include "symtab.h"
 
@@ -32,7 +31,7 @@ struct language_defn;
 struct internalvar;
 class innermost_block_tracker;
 
-extern int parser_debug;
+extern bool parser_debug;
 
 /* A class that can be used to build a "struct expression".  */
 

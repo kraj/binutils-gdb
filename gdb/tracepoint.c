@@ -51,12 +51,12 @@
 #include "memrange.h"
 #include "cli/cli-utils.h"
 #include "probe.h"
-#include "ctf.h"
 #include "gdbsupport/filestuff.h"
 #include "gdbsupport/rsp-low.h"
 #include "tracefile.h"
 #include "location.h"
 #include <algorithm>
+#include "cli/cli-style.h"
 
 #include <unistd.h>
 
@@ -131,12 +131,12 @@ static struct cmd_list_element *tfindlist;
 /* List of expressions to collect by default at each tracepoint hit.  */
 char *default_collect;
 
-static int disconnected_tracing;
+static bool disconnected_tracing;
 
 /* This variable controls whether we ask the target for a linear or
    circular trace buffer.  */
 
-static int circular_trace_buffer;
+static bool circular_trace_buffer;
 
 /* This variable is the requested trace buffer size, or -1 to indicate
    that we don't care and leave it up to the target to set a size.  */
@@ -435,6 +435,7 @@ tvariables_info_1 (void)
 	uiout->field_string ("name", std::string ("$") + tsv.name);
 	uiout->field_string ("initial", plongest (tsv.initial_value));
 
+	ui_file_style style;
 	if (tsv.value_known)
 	  c = plongest (tsv.value);
 	else if (uiout->is_mi_like_p ())
@@ -443,13 +444,19 @@ tvariables_info_1 (void)
 	     undefined does not seem important enough to represent.  */
 	  c = NULL;
 	else if (current_trace_status ()->running || traceframe_number >= 0)
-	  /* The value is/was defined, but we don't have it.  */
-	  c = "<unknown>";
+	  {
+	    /* The value is/was defined, but we don't have it.  */
+	    c = "<unknown>";
+	    style = metadata_style.style ();
+	  }
 	else
-	  /* It is not meaningful to ask about the value.  */
-	  c = "<undefined>";
+	  {
+	    /* It is not meaningful to ask about the value.  */
+	    c = "<undefined>";
+	    style = metadata_style.style ();
+	  }
 	if (c)
-	  uiout->field_string ("current", c);
+	  uiout->field_string ("current", c, style);
 	uiout->text ("\n");
       }
   }
@@ -2129,7 +2136,7 @@ tfind_1 (enum trace_find_type type, int num,
 	 DON'T give an error, but DO change the state of
 	 traceframe_number etc. to invalid.
 
-	 The rationalle is that if you typed the command, you
+	 The rationale is that if you typed the command, you
 	 might just have committed a typo or something, and you'd
 	 like to NOT lose your current debugging state.  However
 	 if you're in a user-defined command or especially in a
@@ -3683,7 +3690,7 @@ print_one_static_tracepoint_marker (int count,
     {
       uiout->text ("in ");
       uiout->field_string ("func", SYMBOL_PRINT_NAME (sym),
-			   ui_out_style_kind::FUNCTION);
+			   function_name_style.style ());
       uiout->wrap_hint (wrap_indent);
       uiout->text (" at ");
     }
@@ -3694,7 +3701,7 @@ print_one_static_tracepoint_marker (int count,
     {
       uiout->field_string ("file",
 			   symtab_to_filename_for_display (sal.symtab),
-			   ui_out_style_kind::FILE);
+			   file_name_style.style ());
       uiout->text (":");
 
       if (uiout->is_mi_like_p ())

@@ -203,6 +203,7 @@ SFILES = \
 	$(srcdir)/gdbsupport/cleanups.c \
 	$(srcdir)/gdbsupport/common-debug.c \
 	$(srcdir)/gdbsupport/common-exceptions.c \
+	$(srcdir)/gdbsupport/common-inferior.c \
 	$(srcdir)/gdbsupport/common-regcache.c \
 	$(srcdir)/gdbsupport/common-utils.c \
 	$(srcdir)/gdbsupport/errors.c \
@@ -220,7 +221,6 @@ SFILES = \
 	$(srcdir)/gdbsupport/ptid.c \
 	$(srcdir)/gdbsupport/rsp-low.c \
 	$(srcdir)/gdbsupport/tdesc.c \
-	$(srcdir)/gdbsupport/vec.c \
 	$(srcdir)/gdbsupport/xml-utils.c \
 	$(srcdir)/nat/aarch64-sve-linux-ptrace.c \
 	$(srcdir)/nat/linux-btrace.c \
@@ -248,6 +248,7 @@ OBS = \
 	gdbsupport/cleanups.o \
 	gdbsupport/common-debug.o \
 	gdbsupport/common-exceptions.o \
+	gdbsupport/common-inferior.o \
 	gdbsupport/job-control.o \
 	gdbsupport/common-regcache.o \
 	gdbsupport/common-utils.o \
@@ -268,7 +269,6 @@ OBS = \
 	gdbsupport/signals.o \
 	gdbsupport/signals-state-save-restore.o \
 	gdbsupport/tdesc.o \
-	gdbsupport/vec.o \
 	gdbsupport/xml-utils.o \
 	debug.o \
 	dll.o \
@@ -426,7 +426,6 @@ IPA_OBJS = \
 	gdbsupport/print-utils-ipa.o \
 	gdbsupport/rsp-low-ipa.o \
 	gdbsupport/tdesc-ipa.o \
-	gdbsupport/vec-ipa.o \
 	regcache-ipa.o \
 	remote-utils-ipa.o \
 	tdesc-ipa.o \
@@ -497,10 +496,10 @@ subdir_do: force
 
 config.h: stamp-h ; @true
 stamp-h: config.in config.status
-	CONFIG_FILES="" CONFIG_HEADERS=config.h:config.in $(SHELL) ./config.status
+	$(SHELL) ./config.status config.h
 
 Makefile: Makefile.in config.status
-	CONFIG_HEADERS="" $(SHELL) ./config.status
+	$(SHELL) ./config.status $@
 
 $(GNULIB_BUILDDIR)/Makefile: $(srcdir)/../../gnulib/Makefile.in config.status
 	  @cd $(GNULIB_BUILDDIR); CONFIG_FILES="Makefile" \

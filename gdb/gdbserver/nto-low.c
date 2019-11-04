@@ -22,6 +22,7 @@
 #include "gdbthread.h"
 #include "nto-low.h"
 #include "hostio.h"
+#include "debug.h"
 
 #include <limits.h>
 #include <fcntl.h>
@@ -32,7 +33,6 @@
 #include <sys/neutrino.h>
 
 
-extern int using_threads;
 int using_threads = 1;
 
 const struct target_desc *nto_tdesc;
@@ -963,7 +963,6 @@ static struct target_ops nto_target_ops = {
   nto_stopped_data_address,
   NULL, /* nto_read_offsets */
   NULL, /* thread_db_set_tls_address */
-  NULL,
   hostio_last_error_from_errno,
   NULL, /* nto_qxfer_osdata */
   NULL, /* xfer_siginfo */

@@ -1234,7 +1234,7 @@ store_insn_p (unsigned long op, unsigned long rs,
    this masking operation is equal to BL_INSTRUCTION, then the opcode in
    question is a ``bl'' instruction.
    
-   BL_DISPLACMENT_MASK is anded with the opcode in order to extract
+   BL_DISPLACEMENT_MASK is anded with the opcode in order to extract
    the branch displacement.  */
 
 #define BL_MASK 0xfc000001
@@ -1360,7 +1360,7 @@ rs6000_skip_stack_check (struct gdbarch *gdbarch, const CORE_ADDR start_pc)
       return pc;
     }
 
-  /* Third sequence: No probe; instead, a comparizon between the stack size
+  /* Third sequence: No probe; instead, a comparison between the stack size
      limit (saved in a run-time global variable) and the current stack
      pointer:
 
@@ -3866,7 +3866,7 @@ bfd_uses_spe_extensions (bfd *abfd)
   if (!sect)
     return 0;
 
-  size = bfd_get_section_size (sect);
+  size = bfd_section_size (sect);
   contents = (gdb_byte *) xmalloc (size);
   if (!bfd_get_section_contents (abfd, sect, contents, 0, size))
     {
@@ -6140,16 +6140,6 @@ rs6000_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
   struct tdesc_arch_data *tdesc_data = NULL;
   int num_pseudoregs = 0;
   int cur_reg;
-
-  /* INFO may refer to a binary that is not of the PowerPC architecture,
-     e.g. when debugging a stand-alone SPE executable on a Cell/B.E. system.
-     In this case, we must not attempt to infer properties of the (PowerPC
-     side) of the target system from properties of that executable.  Trust
-     the target description instead.  */
-  if (info.abfd
-      && bfd_get_arch (info.abfd) != bfd_arch_powerpc
-      && bfd_get_arch (info.abfd) != bfd_arch_rs6000)
-    info.abfd = NULL;
 
   from_xcoff_exec = info.abfd && info.abfd->format == bfd_object &&
     bfd_get_flavour (info.abfd) == bfd_target_xcoff_flavour;

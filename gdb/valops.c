@@ -39,9 +39,9 @@
 #include "observable.h"
 #include "objfiles.h"
 #include "extension.h"
+#include "gdbtypes.h"
 #include "gdbsupport/byte-vector.h"
 
-extern unsigned int overload_debug;
 /* Local functions.  */
 
 static int typecmp (int staticp, int varargs, int nargs,
@@ -97,7 +97,7 @@ static CORE_ADDR allocate_space_in_inferior (int);
 
 static struct value *cast_into_complex (struct type *, struct value *);
 
-int overload_resolution = 0;
+bool overload_resolution = false;
 static void
 show_overload_resolution (struct ui_file *file, int from_tty,
 			  struct cmd_list_element *c, 
@@ -907,7 +907,7 @@ get_value_at (struct type *type, CORE_ADDR addr, int lazy)
 /* Return a value with type TYPE located at ADDR.
 
    Call value_at only if the data needs to be fetched immediately;
-   if we can be 'lazy' and defer the fetch, perhaps indefinately, call
+   if we can be 'lazy' and defer the fetch, perhaps indefinitely, call
    value_at_lazy instead.  value_at_lazy simply records the address of
    the data and sets the lazy-evaluation-required flag.  The lazy flag
    is tested in the value_contents macro, which is used if and when
@@ -2820,7 +2820,7 @@ find_overload_match (gdb::array_view<value *> args,
    contained in QUALIFIED_NAME until it either finds a good match or
    runs out of namespaces.  It stores the overloaded functions in
    *OLOAD_SYMS, and the badness vector in *OLOAD_CHAMP_BV.  If NO_ADL,
-   argument dependent lookup is not performned.  */
+   argument dependent lookup is not performed.  */
 
 static int
 find_oload_champ_namespace (gdb::array_view<value *> args,
@@ -3850,7 +3850,7 @@ value_slice (struct value *array, int lowbound, int length)
 /* Create a value for a FORTRAN complex number.  Currently most of the
    time values are coerced to COMPLEX*16 (i.e. a complex number
    composed of 2 doubles.  This really should be a smarter routine
-   that figures out precision inteligently as opposed to assuming
+   that figures out precision intelligently as opposed to assuming
    doubles.  FIXME: fmb  */
 
 struct value *

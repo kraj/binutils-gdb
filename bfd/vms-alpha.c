@@ -632,7 +632,7 @@ _bfd_vms_slurp_eisd (bfd *abfd, unsigned int offset)
       section->size = size;
       section->vma = vaddr;
 
-      if (!bfd_set_section_flags (abfd, section, bfd_flags))
+      if (!bfd_set_section_flags (section, bfd_flags))
 	return FALSE;
     }
 
@@ -687,7 +687,7 @@ _bfd_vms_slurp_eihs (bfd *abfd, unsigned int offset)
       section->size = dstsize;
       section->filepos = VMS_BLOCK_SIZE * (dstvbn - 1);
 
-      if (!bfd_set_section_flags (abfd, section, bfd_flags))
+      if (!bfd_set_section_flags (section, bfd_flags))
 	return FALSE;
 
       PRIV (dst_section) = section;
@@ -705,7 +705,7 @@ _bfd_vms_slurp_eihs (bfd *abfd, unsigned int offset)
       section->size = dmtbytes;
       section->filepos = VMS_BLOCK_SIZE * (dmtvbn - 1);
 
-      if (!bfd_set_section_flags (abfd, section, bfd_flags))
+      if (!bfd_set_section_flags (section, bfd_flags))
 	return FALSE;
     }
 
@@ -1261,7 +1261,7 @@ _bfd_vms_slurp_egsd (bfd *abfd)
 		    new_flags |= SEC_CODE;
 		    new_flags &= ~SEC_DATA;
 		  }
-		if (!bfd_set_section_flags (abfd, section, new_flags))
+		if (!bfd_set_section_flags (section, new_flags))
 		  return FALSE;
 
 		/* Give a non-overlapping vma to non absolute sections.  */
@@ -2441,7 +2441,7 @@ vms_slurp_debug (bfd *abfd)
       section = bfd_make_section (abfd, "$DST$");
       if (!section)
 	return FALSE;
-      if (!bfd_set_section_flags (abfd, section, flags))
+      if (!bfd_set_section_flags (section, flags))
 	return FALSE;
       PRIV (dst_section) = section;
     }
@@ -4623,7 +4623,7 @@ build_module_list (bfd *abfd)
 	 section and build the list of modules.  This is sufficient
 	 since we can compute the start address and the end address
 	 of every module from the section contents.  */
-      bfd_size_type size = bfd_get_section_size (dmt);
+      bfd_size_type size = bfd_section_size (dmt);
       unsigned char *ptr, *end;
 
       ptr = (unsigned char *) bfd_alloc (abfd, size);
@@ -8912,8 +8912,8 @@ alpha_vms_bfd_final_link (bfd *abfd, struct bfd_link_info *info)
       return FALSE;
     }
 
-  bfd_get_outsymbols (abfd) = NULL;
-  bfd_get_symcount (abfd) = 0;
+  abfd->outsymbols = NULL;
+  abfd->symcount = 0;
 
   /* Mark all sections which will be included in the output file.  */
   for (o = abfd->sections; o != NULL; o = o->next)
@@ -9324,7 +9324,7 @@ vms_new_section_hook (bfd * abfd, asection *section)
   vms_debug2 ((1, "vms_new_section_hook (%p, [%u]%s)\n",
 	       abfd, section->index, section->name));
 
-  if (! bfd_set_section_alignment (abfd, section, 0))
+  if (!bfd_set_section_alignment (section, 0))
     return FALSE;
 
   vms_debug2 ((7, "%u: %s\n", section->index, section->name));
@@ -9412,11 +9412,11 @@ vms_get_symbol_info (bfd * abfd ATTRIBUTE_UNUSED,
   else if (bfd_is_ind_section (sec))
     ret->type = 'I';
   else if ((symbol->flags & BSF_FUNCTION)
-	   || (bfd_get_section_flags (abfd, sec) & SEC_CODE))
+	   || (bfd_section_flags (sec) & SEC_CODE))
     ret->type = 'T';
-  else if (bfd_get_section_flags (abfd, sec) & SEC_DATA)
+  else if (bfd_section_flags (sec) & SEC_DATA)
     ret->type = 'D';
-  else if (bfd_get_section_flags (abfd, sec) & SEC_ALLOC)
+  else if (bfd_section_flags (sec) & SEC_ALLOC)
     ret->type = 'B';
   else
     ret->type = '?';
@@ -9504,6 +9504,7 @@ bfd_vms_get_data (bfd *abfd)
 #define vms_bfd_copy_link_hash_symbol_type \
   _bfd_generic_copy_link_hash_symbol_type
 #define vms_bfd_is_group_section	  bfd_generic_is_group_section
+#define vms_bfd_group_name		  bfd_generic_group_name
 #define vms_bfd_discard_group		  bfd_generic_discard_group
 #define vms_section_already_linked	  _bfd_generic_section_already_linked
 #define vms_bfd_define_common_symbol	  bfd_generic_define_common_symbol
@@ -9550,6 +9551,7 @@ bfd_vms_get_data (bfd *abfd)
 #define alpha_vms_bfd_lookup_section_flags bfd_generic_lookup_section_flags
 #define alpha_vms_bfd_merge_sections bfd_generic_merge_sections
 #define alpha_vms_bfd_is_group_section bfd_generic_is_group_section
+#define alpha_vms_bfd_group_name bfd_generic_group_name
 #define alpha_vms_bfd_discard_group bfd_generic_discard_group
 #define alpha_vms_section_already_linked \
   _bfd_generic_section_already_linked

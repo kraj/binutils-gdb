@@ -1,3 +1,76 @@
+2019-10-31  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.texinfo (Symbols): Document new 'info module variables' and
+	'info module functions' commands.
+
+2019-10-31  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.texinfo (Symbols): Document new 'info modules' command.
+
+2019-10-31  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* gdb.texinfo (Convenience Funs): Document the new
+	$_gdb_setting_str, $_gdb_maint_setting and $_gdb_maint_setting_str
+	convenience functions.
+
+2019-10-29  Christian Biesinger  <cbiesinger@google.com>
+
+	* Makefile.in: Also set SYSTEM_GDBINIT_DIR for the info manual
+	generation.
+	* gdb.texinfo (many sections): Document new --with-system-gdbinit-dir
+	option.
+
+2019-10-23  Tom Tromey  <tom@tromey.com>
+
+	* Makefile.in (READLINE_DIR): Update.
+
+2019-10-23  Christian Biesinger  <cbiesinger@google.com>
+
+	* python.texi (Threads In Python): Add a note for how to get the
+	list of threads.
+
+2019-10-07  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.texinfo: Fix typo.
+	* guile.texi: Same.
+	* python.texi: Same.
+
+2019-10-03  Bernhard Heckel  <bernhard.heckel@intel.com>
+
+	* doc/gdb.texinfo (Fortran Operators): Describe scope operator.
+
+2019-10-02  Tom Tromey  <tromey@adacore.com>
+
+	* gdb.texinfo (Set Catchpoints, Convenience Vars): Document
+	$_ada_exception.
+
+2019-09-20  Ulrich Weigand  <uweigand@de.ibm.com>
+
+	* doc/gdb.texinfo (Remote Configuration): Remove documentation for
+	qXfer:spu:read and qXfer:spu:write.
+	(General Query Packets): Likewise.
+	(Cell Broadband Engine SPU architecture): Remove subsection.
+
+2019-09-18  Tom Tromey  <tom@tromey.com>
+
+	* gdb.texinfo (Editing): Document readline application name.
+	(TUI Single Key Mode): Document TUI SingleKey keymap name.
+
+2019-09-17  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.texinfo (Source Path): Additional text to better describe
+	how the source path directory list is used when searching for
+	source files.
+
+2019-09-12  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* gdb.texinfo (Ada Tasks): Tell the task name is printed, update
+	examples.
+
+2019-09-10  Tom Tromey  <tromey@adacore.com>
+
+	* gdb.texinfo (Index Files): Update Ada text.
+
 2019-08-27  Andrew Burgess  <andrew.burgess@embecosm.com>
 
 	* gdb.texinfo (Symbols): Add information about the -n flag to

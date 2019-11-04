@@ -36,6 +36,15 @@ struct tui_point
   int x, y;
 };
 
+/* A deleter that calls delwin.  */
+struct curses_deleter
+{
+  void operator() (WINDOW *win) const
+  {
+    delwin (win);
+  }
+};
+
 /* Generic window information.  */
 struct tui_gen_win_info
 {
@@ -57,7 +66,9 @@ protected:
 public:
   tui_gen_win_info (tui_gen_win_info &&) = default;
 
-  virtual ~tui_gen_win_info ();
+  virtual ~tui_gen_win_info ()
+  {
+  }
 
   /* Call to refresh this window.  */
   virtual void refresh_window ();
@@ -83,7 +94,7 @@ public:
   }
 
   /* Window handle.  */
-  WINDOW *handle = nullptr;
+  std::unique_ptr<WINDOW, curses_deleter> handle;
   /* Type of window.  */
   enum tui_win_type type;
   /* Window width.  */
@@ -170,7 +181,7 @@ public:
   {
   }
 
-  /* Set whether this window is highglighted.  */
+  /* Set whether this window is highlighted.  */
   void set_highlight (bool highlight)
   {
     is_highlighted = highlight;
@@ -206,8 +217,6 @@ public:
   /* Is this window highlighted?  */
   bool is_highlighted = false;
 };
-
-extern int tui_win_is_auxiliary (enum tui_win_type win_type);
 
 
 /* Global Data.  */
@@ -295,11 +304,10 @@ extern void tui_set_term_height_to (int);
 extern int tui_term_width (void);
 extern void tui_set_term_width_to (int);
 extern struct tui_locator_window *tui_locator_win_info_ptr (void);
-extern void tui_clear_source_windows_detail (void);
 extern struct tui_win_info *tui_win_with_focus (void);
 extern void tui_set_win_with_focus (struct tui_win_info *);
-extern int tui_win_resized (void);
-extern void tui_set_win_resized_to (int);
+extern bool tui_win_resized ();
+extern void tui_set_win_resized_to (bool);
 
 extern struct tui_win_info *tui_next_win (struct tui_win_info *);
 extern struct tui_win_info *tui_prev_win (struct tui_win_info *);

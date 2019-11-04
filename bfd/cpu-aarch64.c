@@ -22,6 +22,7 @@
 #include "bfd.h"
 #include "libbfd.h"
 #include "libiberty.h"
+#include "cpu-aarch64.h"
 
 /* This routine is provided two arch_infos and works out which Aarch64
    machine which would be compatible with both and returns a pointer
@@ -104,7 +105,7 @@ scan (const struct bfd_arch_info *info, const char *string)
 #define N(NUMBER, PRINT, WORDSIZE, DEFAULT, NEXT)		\
   { WORDSIZE, WORDSIZE, 8, bfd_arch_aarch64, NUMBER,		\
     "aarch64", PRINT, 4, DEFAULT, compatible, scan,		\
-    bfd_arch_default_fill, NEXT }
+      bfd_arch_default_fill, NEXT, 0 }
 
 static const bfd_arch_info_type bfd_aarch64_arch_ilp32 =
   N (bfd_mach_aarch64_ilp32, "aarch64:ilp32", 32, FALSE, NULL);

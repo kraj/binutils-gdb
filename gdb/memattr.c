@@ -25,7 +25,6 @@
 #include "target-dcache.h"
 #include "value.h"
 #include "language.h"
-#include "gdbsupport/vec.h"
 #include "breakpoint.h"
 #include "cli/cli-utils.h"
 #include <algorithm>
@@ -53,7 +52,7 @@ static bool target_mem_regions_valid;
 /* If this flag is set, gdb will assume that memory ranges not
    specified by the memory map have type MEM_NONE, and will
    emit errors on all accesses to that memory.  */
-static int inaccessible_by_default = 1;
+static bool inaccessible_by_default = true;
 
 static void
 show_inaccessible_by_default (struct ui_file *file, int from_tty,
@@ -134,7 +133,7 @@ create_user_mem_region (CORE_ADDR lo, CORE_ADDR hi,
   int ix = std::distance (user_mem_region_list.begin (), it);
 
   /* Check for an overlapping memory region.  We only need to check
-     in the vicinity - at most one before and one after the
+     in the vincinity - at most one before and one after the
      insertion point.  */
   for (int i = ix - 1; i < ix + 1; i++)
     {

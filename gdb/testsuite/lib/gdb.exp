@@ -633,9 +633,13 @@ proc gdb_continue_to_breakpoint {name {location_pattern .*}} {
     global gdb_prompt
     set full_name "continue to breakpoint: $name"
 
+    set kfail_pattern "Process record does not support instruction 0xfae64 at.*"
     gdb_test_multiple "continue" $full_name {
 	-re "(?:Breakpoint|Temporary breakpoint) .* (at|in) $location_pattern\r\n$gdb_prompt $" {
 	    pass $full_name
+	}
+	-re "\[\r\n\]*(?:$kfail_pattern)\[\r\n\]+$gdb_prompt $" {
+	    kfail "gdb/25038" $full_name
 	}
     }
 }
@@ -719,10 +723,24 @@ proc gdb_internal_error_resync {} {
 #
 # gdb_test_multiple "print foo" "test foo" {
 #    -re "expected output 1" {
-#        pass "print foo"
+#        pass "test foo"
 #    }
 #    -re "expected output 2" {
-#        fail "print foo"
+#        fail "test foo"
+#    }
+# }
+#
+# Within action elements you can also make use of the variable
+# gdb_test_name.  This variable is setup automatically by
+# gdb_test_multiple, and contains the value of MESSAGE.  You can then
+# write this, which is equivalent to the above:
+#
+# gdb_test_multiple "print foo" "test foo" {
+#    -re "expected output 1" {
+#        pass $gdb_test_name
+#    }
+#    -re "expected output 2" {
+#        fail $gdb_test_name
 #    }
 # }
 #
@@ -745,6 +763,34 @@ proc gdb_internal_error_resync {} {
 # ...", all being implicitly appended to that list.  These are always
 # expected from $gdb_spawn_id.  IOW, callers do not need to worry
 # about resetting "-i" back to $gdb_spawn_id explicitly.
+#
+# In EXPECT_ARGUMENTS we can use a -wrap pattern flag, that wraps the regexp
+# pattern as gdb_test wraps its message argument.
+# This allows us to rewrite:
+#   gdb_test <command> <pattern> <message>
+# into:
+#   gdb_test_multiple <command> <message> {
+#       -re -wrap <pattern> {
+#           pass $gdb_test_name
+#       }
+#   }
+#
+# In EXPECT_ARGUMENTS, a pattern flag -early can be used.  It makes sure the
+# pattern is inserted before any implicit pattern added by gdb_test_multiple.
+# Using this pattern flag, we can f.i. setup a kfail for an assertion failure
+# <assert> during gdb_continue_to_breakpoint by the rewrite:
+#   gdb_continue_to_breakpoint <msg> <pattern>
+# into:
+#   set breakpoint_pattern "(?:Breakpoint|Temporary breakpoint) .* (at|in)"
+#   gdb_test_multiple "continue" "continue to breakpoint: <msg>"  {
+#	-early -re "internal-error: <assert>" {
+#	    setup_kfail gdb/nnnnn "*-*-*"
+#	    exp_continue
+#	}
+#	-re "$breakpoint_pattern <pattern>\r\n$gdb_prompt $" {
+#	    pass $gdb_test_name
+#	}
+#    }
 #
 proc gdb_test_multiple { command message user_code { prompt_regexp "" } } {
     global verbose use_gdb_stub
@@ -804,37 +850,59 @@ proc gdb_test_multiple { command message user_code { prompt_regexp "" } } {
     set subst_code [uplevel list $subst_code]
 
     set processed_code ""
+    set early_processed_code ""
+    # The variable current_list holds the name of the currently processed
+    # list, either processed_code or early_processed_code.
+    set current_list "processed_code"
     set patterns ""
     set expecting_action 0
     set expecting_arg 0
+    set wrap_pattern 0
     foreach item $user_code subst_item $subst_code {
 	if { $item == "-n" || $item == "-notransfer" || $item == "-nocase" } {
-	    lappend processed_code $item
+	    lappend $current_list $item
 	    continue
 	}
 	if { $item == "-indices" || $item == "-re" || $item == "-ex" } {
-	    lappend processed_code $item
+	    lappend $current_list $item
+	    continue
+	}
+	if { $item == "-early" } {
+	    set current_list "early_processed_code"
 	    continue
 	}
 	if { $item == "-timeout" || $item == "-i" } {
 	    set expecting_arg 1
-	    lappend processed_code $item
+	    lappend $current_list $item
+	    continue
+	}
+	if { $item == "-wrap" } {
+	    set wrap_pattern 1
 	    continue
 	}
 	if { $expecting_arg } {
 	    set expecting_arg 0
-	    lappend processed_code $subst_item
+	    lappend $current_list $subst_item
 	    continue
 	}
 	if { $expecting_action } {
-	    lappend processed_code "uplevel [list $item]"
+	    lappend $current_list "uplevel [list $item]"
 	    set expecting_action 0
 	    # Cosmetic, no effect on the list.
-	    append processed_code "\n"
+	    append $current_list "\n"
+	    # End the effect of -early, it only applies to one action.
+	    set current_list "processed_code"
 	    continue
 	}
 	set expecting_action 1
-	lappend processed_code $subst_item
+	if { $wrap_pattern } {
+	    # Wrap subst_item as is done for the gdb_test PATTERN argument.
+	    lappend $current_list \
+		"\[\r\n\]*(?:$subst_item)\[\r\n\]+$gdb_prompt $"
+	    set wrap_pattern 0
+	} else {
+	    lappend $current_list $subst_item
+	}
 	if {$patterns != ""} {
 	    append patterns "; "
 	}
@@ -897,7 +965,8 @@ proc gdb_test_multiple { command message user_code { prompt_regexp "" } } {
 	}
     }
 
-    set code {
+    set code $early_processed_code
+    append code {
 	-re ".*A problem internal to GDB has been detected" {
 	    fail "$message (GDB internal error)"
 	    gdb_internal_error_resync
@@ -1038,8 +1107,28 @@ proc gdb_test_multiple { command message user_code { prompt_regexp "" } } {
 	}
     }
 
+    # Create gdb_test_name in the parent scope.  If this variable
+    # already exists, which it might if we have nested calls to
+    # gdb_test_multiple, then preserve the old value, otherwise,
+    # create a new variable in the parent scope.
+    upvar gdb_test_name gdb_test_name
+    if { [info exists gdb_test_name] } {
+	set gdb_test_name_old "$gdb_test_name"
+    }
+    set gdb_test_name "$message"
+
     set result 0
     set code [catch {gdb_expect $code} string]
+
+    # Clean up the gdb_test_name variable.  If we had a
+    # previous value then restore it, otherwise, delete the variable
+    # from the parent scope.
+    if { [info exists gdb_test_name_old] } {
+	set gdb_test_name "$gdb_test_name_old"
+    } else {
+	unset gdb_test_name
+    }
+
     if {$code == 1} {
 	global errorInfo errorCode
 	return -code error -errorinfo $errorInfo -errorcode $errorCode $string
@@ -1083,24 +1172,28 @@ proc gdb_test { args } {
     set command [lindex $args 0]
     set pattern [lindex $args 1]
 
-    if [llength $args]==5 {
-	set question_string [lindex $args 3]
-	set response_string [lindex $args 4]
-    } else {
-	set question_string "^FOOBAR$"
-    }
-
-    return [gdb_test_multiple $command $message {
+    set user_code {}
+    lappend user_code {
 	-re "\[\r\n\]*(?:$pattern)\[\r\n\]+$gdb_prompt $" {
 	    if ![string match "" $message] then {
 		pass "$message"
             }
         }
-	-re "(${question_string})$" {
-	    send_gdb "$response_string\n"
-	    exp_continue
+    }
+
+    if { [llength $args] == 5 } {
+	set question_string [lindex $args 3]
+	set response_string [lindex $args 4]
+	lappend user_code {
+	    -re "(${question_string})$" {
+		send_gdb "$response_string\n"
+		exp_continue
+	    }
 	}
-     }]
+     }
+
+    set user_code [join $user_code]
+    return [gdb_test_multiple $command $message $user_code]
 }
 
 # Return 1 if version MAJOR.MINOR is at least AT_LEAST_MAJOR.AT_LEAST_MINOR.
@@ -1308,11 +1401,10 @@ proc gdb_test_exact { args } {
     regsub -all "\n" $pattern "\r\n" pattern
     if [llength $args]==3 then {
 	set message [lindex $args 2]
-    } else {
-	set message $command
+	return [gdb_test $command $pattern $message]
     }
 
-    return [gdb_test $command $pattern $message]
+    return [gdb_test $command $pattern]
 }
 
 # Wrapper around gdb_test_multiple that looks for a list of expected
@@ -5690,13 +5782,13 @@ proc gdb_gnu_strip_debug { dest args } {
 # If third argument TESTNAME is not empty, it's used as the name of the
 # test to be printed on pass/fail.
 proc help_test_raw { gdb_command expected_lines {testname {}} } {
-    if {$testname == {}} {
-	set message $gdb_command
-    } else {
-	set message $testname
-    }
     set expected_output [join $expected_lines ""]
-    gdb_test "${gdb_command}" "${expected_output}" $message
+    if {$testname != {}} {
+	gdb_test "${gdb_command}" "${expected_output}" $testname
+	return
+    }
+
+    gdb_test "${gdb_command}" "${expected_output}"
 }
 
 # A regexp that matches the end of help CLASS|PREFIX_COMMAND

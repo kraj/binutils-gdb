@@ -41,7 +41,7 @@ enum dwarf2_frame_reg_rule
   DWARF2_FRAME_REG_UNSPECIFIED = 0,
 
   /* The term "undefined" comes from the DWARF2 CFI spec which this
-     code is moddeling; it indicates that the register's value is
+     code is modeling; it indicates that the register's value is
      "undefined".  GCC uses the less formal term "unsaved".  Its
      definition is a combination of REG_UNDEFINED and REG_UNSPECIFIED.
      The failure to differentiate the two helps explain a few problems
@@ -201,7 +201,7 @@ struct dwarf2_frame_state
    registered with the gdbarch.  Not all architectures can or do use the
    DWARF unwinders.  Setting this to true on a target that does not
    otherwise support the DWARF unwinders has no effect.  */
-extern int dwarf2_frame_unwinders_enabled_p;
+extern bool dwarf2_frame_unwinders_enabled_p;
 
 /* Set the architecture-specific register state initialization
    function for GDBARCH to INIT_REG.  */

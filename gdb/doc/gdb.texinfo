@@ -1083,6 +1083,16 @@ Its location is specified with the @code{--with-system-gdbinit}
 configure option (@pxref{System-wide configuration}).
 It is loaded first when @value{GDBN} starts, before command line options
 have been processed.
+@item @file{system.gdbinit.d}
+This is the system-wide init directory.
+Its location is specified with the @code{--with-system-gdbinit-dir}
+configure option (@pxref{System-wide configuration}).
+Files in this directory are loaded in alphabetical order immediately after
+system.gdbinit (if enabled) when @value{GDBN} starts, before command line
+options have been processed.  Files need to have a recognized scripting
+language extension (@file{.py}/@file{.scm}) or be named with a @file{.gdb}
+extension to be interpreted as regular @value{GDBN} commands.  @value{GDBN}
+will not recurse into any subdirectories of this directory.
 @item @file{~/.gdbinit}
 This is the init file in your home directory.
 It is loaded next, after @file{system.gdbinit}, and before
@@ -1315,8 +1325,11 @@ Sets up the command interpreter as specified by the command line
 @cindex init file
 Reads the system-wide @dfn{init file} (if @option{--with-system-gdbinit} was
 used when building @value{GDBN}; @pxref{System-wide configuration,
- ,System-wide configuration and settings}) and executes all the commands in
-that file.
+ ,System-wide configuration and settings}) and the files in the system-wide
+gdbinit directory (if @option{--with-system-gdbinit-dir} was used) and executes
+all the commands in those files.  The files need to be named with a @file{.gdb}
+extension to be interpreted as @value{GDBN} commands, or they can be written
+in a supported scripting language with an appropriate file extension.
 
 @anchor{Home Directory Init File}
 @item
@@ -4788,9 +4801,16 @@ called @code{Constraint_Error} is defined in package @code{Pck}, then
 the command to use to catch such exceptions is @kbd{catch exception
 Pck.Constraint_Error}.
 
+@vindex $_ada_exception@r{, convenience variable}
+The convenience variable @code{$_ada_exception} holds the address of
+the exception being thrown.  This can be useful when setting a
+condition for such a catchpoint.
+
 @item exception unhandled
 @kindex catch exception unhandled
-An exception that was raised but is not handled by the program.
+An exception that was raised but is not handled by the program.  The
+convenience variable @code{$_ada_exception} is set as for @code{catch
+exception}.
 
 @item handlers @r{[}@var{name}@r{]}
 @kindex catch handlers
@@ -4812,9 +4832,13 @@ user-defined one.  For instance, assuming an exception called
 command to use to catch such exceptions handling is
 @kbd{catch handlers Pck.Constraint_Error}.
 
+The convenience variable @code{$_ada_exception} is set as for
+@code{catch exception}.
+
 @item assert
 @kindex catch assert
-A failed Ada assertion.
+A failed Ada assertion.  Note that the convenience variable
+@code{$_ada_exception} is @emph{not} set by this catchpoint.
 
 @item exec
 @kindex catch exec
@@ -8954,11 +8978,21 @@ it tries all the directories in the list, in the order they are present
 in the list, until it finds a file with the desired name.
 
 For example, suppose an executable references the file
-@file{/usr/src/foo-1.0/lib/foo.c}, and our source path is
-@file{/mnt/cross}.  The file is first looked up literally; if this
-fails, @file{/mnt/cross/usr/src/foo-1.0/lib/foo.c} is tried; if this
-fails, @file{/mnt/cross/foo.c} is opened; if this fails, an error
-message is printed.  @value{GDBN} does not look up the parts of the
+@file{/usr/src/foo-1.0/lib/foo.c}, does not record a compilation
+directory, and the @dfn{source path} is @file{/mnt/cross}.
+@value{GDBN} would look for the source file in the following
+locations:
+
+@enumerate
+
+@item @file{/usr/src/foo-1.0/lib/foo.c}
+@item @file{/mnt/cross/usr/src/foo-1.0/lib/foo.c}
+@item @file{/mnt/cross/foo.c}
+
+@end enumerate
+
+If the source file is not present at any of the above locations then
+an error is printed.  @value{GDBN} does not look up the parts of the
 source file name, such as @file{/mnt/cross/src/foo-1.0/lib/foo.c}.
 Likewise, the subdirectories of the source path are not searched: if
 the source path is @file{/mnt/cross}, and the binary refers to
@@ -8966,11 +9000,91 @@ the source path is @file{/mnt/cross}, and the binary refers to
 @file{/mnt/cross/usr/src/foo-1.0/lib}.
 
 Plain file names, relative file names with leading directories, file
-names containing dots, etc.@: are all treated as described above; for
-instance, if the source path is @file{/mnt/cross}, and the source file
-is recorded as @file{../lib/foo.c}, @value{GDBN} would first try
-@file{../lib/foo.c}, then @file{/mnt/cross/../lib/foo.c}, and after
-that---@file{/mnt/cross/foo.c}.
+names containing dots, etc.@: are all treated as described above,
+except that non-absolute file names are not looked up literally.  If
+the @dfn{source path} is @file{/mnt/cross}, the source file is
+recorded as @file{../lib/foo.c}, and no compilation directory is
+recorded, then @value{GDBN} will search in the following locations:
+
+@enumerate
+
+@item @file{/mnt/cross/../lib/foo.c}
+@item @file{/mnt/cross/foo.c}
+
+@end enumerate
+
+@kindex cdir
+@kindex cwd
+@vindex $cdir@r{, convenience variable}
+@vindex $cwd@r{, convenience variable}
+@cindex compilation directory
+@cindex current directory
+@cindex working directory
+@cindex directory, current
+@cindex directory, compilation
+The @dfn{source path} will always include two special entries
+@samp{$cdir} and @samp{$cwd}, these refer to the compilation directory
+(if one is recorded) and the current working directory respectively.
+
+@samp{$cdir} causes @value{GDBN} to search within the compilation
+directory, if one is recorded in the debug information.  If no
+compilation directory is recorded in the debug information then
+@samp{$cdir} is ignored.
+
+@samp{$cwd} is not the same as @samp{.}---the former tracks the
+current working directory as it changes during your @value{GDBN}
+session, while the latter is immediately expanded to the current
+directory at the time you add an entry to the source path.
+
+If a compilation directory is recorded in the debug information, and
+@value{GDBN} has not found the source file after the first search
+using @dfn{source path}, then @value{GDBN} will combine the
+compilation directory and the filename, and then search for the source
+file again using the @dfn{source path}.
+
+For example, if the executable records the source file as
+@file{/usr/src/foo-1.0/lib/foo.c}, the compilation directory is
+recorded as @file{/project/build}, and the @dfn{source path} is
+@file{/mnt/cross:$cdir:$cwd} while the current working directory of
+the @value{GDBN} session is @file{/home/user}, then @value{GDBN} will
+search for the source file in the following loctions:
+
+@enumerate
+
+@item @file{/usr/src/foo-1.0/lib/foo.c}
+@item @file{/mnt/cross/usr/src/foo-1.0/lib/foo.c}
+@item @file{/project/build/usr/src/foo-1.0/lib/foo.c}
+@item @file{/home/user/usr/src/foo-1.0/lib/foo.c}
+@item @file{/mnt/cross/project/build/usr/src/foo-1.0/lib/foo.c}
+@item @file{/project/build/project/build/usr/src/foo-1.0/lib/foo.c}
+@item @file{/home/user/project/build/usr/src/foo-1.0/lib/foo.c}
+@item @file{/mnt/cross/foo.c}
+@item @file{/project/build/foo.c}
+@item @file{/home/user/foo.c}
+
+@end enumerate
+
+If the file name in the previous example had been recorded in the
+executable as a relative path rather than an absolute path, then the
+first look up would not have occurred, but all of the remaining steps
+would be similar.
+
+When searching for source files on MS-DOS and MS-Windows, where
+absolute paths start with a drive letter (e.g.
+@file{C:/project/foo.c}), @value{GDBN} will remove the drive letter
+from the file name before appending it to a search directory from
+@dfn{source path}; for instance if the executable references the
+source file @file{C:/project/foo.c} and @dfn{source path} is set to
+@file{D:/mnt/cross}, then @value{GDBN} will search in the following
+locations for the source file:
+
+@enumerate
+
+@item @file{C:/project/foo.c}
+@item @file{D:/mnt/cross/project/foo.c}
+@item @file{D:/mnt/cross/foo.c}
+
+@end enumerate
 
 Note that the executable search path is @emph{not} used to locate the
 source files.
@@ -8981,8 +9095,8 @@ each line is in the file.
 
 @kindex directory
 @kindex dir
-When you start @value{GDBN}, its source path includes only @samp{cdir}
-and @samp{cwd}, in that order.
+When you start @value{GDBN}, its source path includes only @samp{$cdir}
+and @samp{$cwd}, in that order.
 To add other directories, use the @code{directory} command.
 
 The search path is used to find both program source files and @value{GDBN}
@@ -9058,21 +9172,12 @@ part of absolute file names) or
 whitespace.  You may specify a directory that is already in the source
 path; this moves it forward, so @value{GDBN} searches it sooner.
 
-@kindex cdir
-@kindex cwd
-@vindex $cdir@r{, convenience variable}
-@vindex $cwd@r{, convenience variable}
-@cindex compilation directory
-@cindex current directory
-@cindex working directory
-@cindex directory, current
-@cindex directory, compilation
-You can use the string @samp{$cdir} to refer to the compilation
-directory (if one is recorded), and @samp{$cwd} to refer to the current
-working directory.  @samp{$cwd} is not the same as @samp{.}---the former
-tracks the current working directory as it changes during your @value{GDBN}
-session, while the latter is immediately expanded to the current
-directory at the time you add an entry to the source path.
+The special strings @samp{$cdir} (to refer to the compilation
+directory, if one is recorded), and @samp{$cwd} (to refer to the
+current working directory) can also be included in the list of
+directories @var{dirname}.  Though these will already be in the source
+path they will be moved forward in the list so @value{GDBN} searches
+them sooner.
 
 @item directory
 Reset the source path to its default value (@samp{$cdir:$cwd} on Unix systems).  This requires confirmation.
@@ -11742,6 +11847,11 @@ The program has exited
 The variable @code{$_exception} is set to the exception object being
 thrown at an exception-related catchpoint.  @xref{Set Catchpoints}.
 
+@item $_ada_exception
+The variable @code{$_ada_exception} is set to the address of the
+exception being caught or thrown at an Ada exception-related
+catchpoint.  @xref{Set Catchpoints}.
+
 @item $_probe_argc
 @itemx $_probe_arg0@dots{}$_probe_arg11
 Arguments to a static probe.  @xref{Static Probe Points}.
@@ -11877,9 +11987,98 @@ $3 = void
 $4 = 1
 @end smallexample
 
+@item $_gdb_setting_str (@var{setting})
+@findex $_gdb_setting_str@r{, convenience function}
+Return the value of the @value{GDBN} @var{setting} as a string.
+@var{setting} is any setting that can be used in a @code{set} or
+@code{show} command (@pxref{Controlling GDB}).
+
+@smallexample
+(@value{GDBP}) show print frame-arguments
+Printing of non-scalar frame arguments is "scalars".
+(@value{GDBP}) p $_gdb_setting_str("print frame-arguments")
+$1 = "scalars"
+(@value{GDBP}) p $_gdb_setting_str("height")
+$2 = "30"
+(@value{GDBP})
+@end smallexample
+
+@item $_gdb_setting (@var{setting})
+@findex $_gdb_setting@r{, convenience function}
+Return the value of the @value{GDBN} @var{setting}.
+The type of the returned value depends on the setting.
+
+The value type for boolean and auto boolean settings is @code{int}.
+The boolean values @code{off} and @code{on} are converted to
+the integer values @code{0} and @code{1}.  The value @code{auto} is
+converted to the value @code{-1}.
+
+The value type for integer settings is either @code{unsigned int}
+or @code{int}, depending on the setting.
+
+Some integer settings accept an @code{unlimited} value.
+Depending on the setting, the @code{set} command also accepts
+the value @code{0} or the value @code{@minus{}1} as a synonym for
+@code{unlimited}.
+For example, @code{set height unlimited} is equivalent to
+@code{set height 0}.
+
+Some other settings that accept the @code{unlimited} value
+use the value @code{0} to literally mean zero.
+For example, @code{set history size 0} indicates to not
+record any @value{GDBN} commands in the command history.
+For such settings, @code{@minus{}1} is the synonym
+for @code{unlimited}.
+
+See the documentation of the corresponding @code{set} command for
+the numerical value equivalent to @code{unlimited}.
+
+The @code{$_gdb_setting} function converts the unlimited value
+to a @code{0} or a @code{@minus{}1} value according to what the
+@code{set} command uses.
+
+@smallexample
+@group
+(@value{GDBP}) p $_gdb_setting_str("height")
+$1 = "30"
+(@value{GDBP}) p $_gdb_setting("height")
+$2 = 30
+(@value{GDBP}) set height unlimited
+(@value{GDBP}) p $_gdb_setting_str("height")
+$3 = "unlimited"
+(@value{GDBP}) p $_gdb_setting("height")
+$4 = 0
+@end group
+@group
+(@value{GDBP}) p $_gdb_setting_str("history size")
+$5 = "unlimited"
+(@value{GDBP}) p $_gdb_setting("history size")
+$6 = -1
+(@value{GDBP}) p $_gdb_setting_str("disassemble-next-line")
+$7 = "auto"
+(@value{GDBP}) p $_gdb_setting("disassemble-next-line")
+$8 = -1
+(@value{GDBP})
+@end group
+@end smallexample
+
+Other setting types (enum, filename, optional filename, string, string noescape)
+are returned as string values.
+
+
+@item $_gdb_maint_setting_str (@var{setting})
+@findex $_gdb_maint_setting_str@r{, convenience function}
+Like the @code{$_gdb_setting_str} function, but works with
+@code{maintenance set} variables.
+
+@item $_gdb_maint_setting (@var{setting})
+@findex $_gdb_maint_setting@r{, convenience function}
+Like the @code{$_gdb_setting} function, but works with
+@code{maintenance set} variables.
+
 @end table
 
-These functions require @value{GDBN} to be configured with
+The following functions require @value{GDBN} to be configured with
 @code{Python} support.
 
 @table @code
@@ -16473,6 +16672,10 @@ The access component operator.  Normally used to access elements in derived
 types.  Also suitable for unions.  As unions aren't part of regular Fortran,
 this can only happen when accessing a register that uses a gdbarch-defined
 union type.
+@item ::
+The scope operator.  Normally used to access variables in modules or
+to set breakpoints on subroutines nested in modules or in other
+subroutines (internal subroutines).
 @end table
 
 @node Fortran Defaults
@@ -17751,10 +17954,10 @@ the following example:
 *  2   807c468    1  15 Runnable               task_1
 (@value{GDBP}) info task 2
 Ada Task: 0x807c468
-Name: task_1
+Name: "task_1"
 Thread: 0
 LWP: 0x1fac
-Parent: 1 (main_task)
+Parent: 1 ("main_task")
 Base Priority: 15
 State: Runnable
 @end smallexample
@@ -17762,7 +17965,7 @@ State: Runnable
 @item task
 @kindex task@r{ (Ada)}
 @cindex current Ada task ID
-This command prints the ID of the current task.
+This command prints the ID and name of the current task.
 
 @smallexample
 @iftex
@@ -17771,9 +17974,9 @@ This command prints the ID of the current task.
 (@value{GDBP}) info tasks
   ID       TID P-ID Pri State                  Name
    1   8077870    0  15 Child Activation Wait  main_task
-*  2   807c458    1  15 Runnable               t
+*  2   807c458    1  15 Runnable               some_task
 (@value{GDBP}) task
-[Current task is 2]
+[Current task is 2 "some_task"]
 @end smallexample
 
 @item task @var{taskno}
@@ -17789,9 +17992,9 @@ from the current task to the given task.
 (@value{GDBP}) info tasks
   ID       TID P-ID Pri State                  Name
    1   8077870    0  15 Child Activation Wait  main_task
-*  2   807c458    1  15 Runnable               t
+*  2   807c458    1  15 Runnable               some_task
 (@value{GDBP}) task 1
-[Switching to task 1]
+[Switching to task 1 "main_task"]
 #0  0x8067726 in pthread_cond_wait ()
 (@value{GDBP}) bt
 #0  0x8067726 in pthread_cond_wait ()
@@ -18682,6 +18885,35 @@ of special characters or quotes.
 If both @var{regexp} and @var{type_regexp} are provided, an argument
 is printed only if its name matches @var{regexp} and its type matches
 @var{type_regexp}.
+
+@kindex info modules
+@cindex modules
+@item info modules @r{[}-q@r{]} @r{[}@var{regexp}@r{]}
+List all Fortran modules in the program, or all modules matching the
+optional regular expression @var{regexp}.
+
+The optional flag @samp{-q}, which stands for @samp{quiet}, disables
+printing header information and messages explaining why no modules
+have been printed.
+
+@kindex info module
+@cindex Fortran modules, information about
+@cindex functions and variables by Fortran module
+@cindex module functions and variables
+@item info module functions @r{[}-q@r{]} @r{[}-m @var{module-regexp}@r{]} @r{[}-t @var{type-regexp}@r{]} @r{[}@var{regexp}@r{]}
+@itemx info module variables @r{[}-q@r{]} @r{[}-m @var{module-regexp}@r{]} @r{[}-t @var{type-regexp}@r{]} @r{[}@var{regexp}@r{]}
+List all functions or variables within all Fortran modules.  The set
+of functions or variables listed can be limited by providing some or
+all of the optional regular expressions.  If @var{module-regexp} is
+provided, then only Fortran modules matching @var{module-regexp} will
+be searched.  Only functions or variables whose type matches the
+optional regular expression @var{type-regexp} will be listed.  And
+only functions or variables whose name matches the optional regular
+expression @var{regexp} will be listed.
+
+The optional flag @samp{-q}, which stands for @samp{quiet}, disables
+printing header information and messages explaining why no functions
+or variables have been printed.
 
 @kindex info classes
 @cindex Objective-C, classes and selectors
@@ -20936,8 +21168,8 @@ $ gdb -iex "set use-deprecated-index-sections on" <program>
 @end smallexample
 
 There are currently some limitation on indices.  They only work when
-for DWARF debugging information, not stabs.  And, they do not
-currently work for programs using Ada.
+using DWARF debugging information, not stabs.  And, only the
+@code{-dwarf-5} index works for programs using Ada.
 
 @subsection Automatic symbol index cache
 
@@ -22481,14 +22713,6 @@ are:
 @item @code{read-sdata-object}
 @tab @code{qXfer:sdata:read}
 @tab @code{print $_sdata}
-
-@item @code{read-spu-object}
-@tab @code{qXfer:spu:read}
-@tab @code{info spu}
-
-@item @code{write-spu-object}
-@tab @code{qXfer:spu:write}
-@tab @code{info spu}
 
 @item @code{read-siginfo-object}
 @tab @code{qXfer:siginfo:read}
@@ -24357,7 +24581,6 @@ all uses of @value{GDBN} with the architecture, both native and cross.
 * Alpha::
 * MIPS::
 * HPPA::               HP PA architecture
-* SPU::                Cell Broadband Engine SPU architecture
 * PowerPC::
 * Nios II::
 * Sparc64::
@@ -24672,69 +24895,6 @@ given @var{address}.
 @end table
 
 
-@node SPU
-@subsection Cell Broadband Engine SPU architecture
-@cindex Cell Broadband Engine
-@cindex SPU
-
-When @value{GDBN} is debugging the Cell Broadband Engine SPU architecture,
-it provides the following special commands:
-
-@table @code
-@item info spu event
-@kindex info spu
-Display SPU event facility status.  Shows current event mask
-and pending event status.
-
-@item info spu signal
-Display SPU signal notification facility status.  Shows pending
-signal-control word and signal notification mode of both signal
-notification channels.
-
-@item info spu mailbox
-Display SPU mailbox facility status.  Shows all pending entries,
-in order of processing, in each of the SPU Write Outbound,
-SPU Write Outbound Interrupt, and SPU Read Inbound mailboxes.
-
-@item info spu dma
-Display MFC DMA status.  Shows all pending commands in the MFC
-DMA queue.  For each entry, opcode, tag, class IDs, effective
-and local store addresses and transfer size are shown.
-
-@item info spu proxydma
-Display MFC Proxy-DMA status.  Shows all pending commands in the MFC
-Proxy-DMA queue.  For each entry, opcode, tag, class IDs, effective
-and local store addresses and transfer size are shown.
-
-@end table
- 
-When @value{GDBN} is debugging a combined PowerPC/SPU application
-on the Cell Broadband Engine, it provides in addition the following
-special commands:
-
-@table @code
-@item set spu stop-on-load @var{arg}
-@kindex set spu
-Set whether to stop for new SPE threads.  When set to @code{on}, @value{GDBN}
-will give control to the user when a new SPE thread enters its @code{main}
-function.  The default is @code{off}.
-
-@item show spu stop-on-load
-@kindex show spu
-Show whether to stop for new SPE threads.
-
-@item set spu auto-flush-cache @var{arg}
-Set whether to automatically flush the software-managed cache.  When set to
-@code{on}, @value{GDBN} will automatically cause the SPE software-managed
-cache to be flushed whenever SPE execution stops.  This provides a consistent
-view of PowerPC memory that is accessed via the cache.  If an application
-does not use the software-managed cache, this option has no effect.
-
-@item show spu auto-flush-cache
-Show whether to automatically flush the software-managed cache.
-
-@end table
-
 @node PowerPC
 @subsection PowerPC
 @cindex PowerPC architecture
@@ -24974,6 +25134,10 @@ Show whether command line editing is enabled.
 for more details about the Readline
 interface.  Users unfamiliar with @sc{gnu} Emacs or @code{vi} are
 encouraged to read that chapter.
+
+@cindex Readline application name
+@value{GDBN} sets the Readline application name to @samp{gdb}.  This
+is useful for conditions in @file{.inputrc}.
 
 @node Command History
 @section Command History
@@ -26249,6 +26413,13 @@ language is not supported, then the evaluation fails.
 Display the current value of the @code{script-extension} option.
 
 @end table
+
+@ifset SYSTEM_GDBINIT_DIR
+This setting is not used for files in the system-wide gdbinit directory.
+Files in that directory must have an extension matching their language,
+or have a @file{.gdb} extension to be interpreted as regular @value{GDBN}
+commands.  @xref{Startup}.
+@end ifset
 
 @node Sequences
 @section Canned Sequences of Commands
@@ -27577,6 +27748,10 @@ with the TUI SingleKey mode.  Once the command is entered the TUI
 SingleKey mode is restored.  The only way to permanently leave
 this mode is by typing @kbd{q} or @kbd{C-x s}.
 
+@cindex SingleKey keymap name
+If @value{GDBN} was built with Readline 8.0 or later, the TUI
+SingleKey keymap will be named @samp{SingleKey}.  This can be used in
+@file{.inputrc} to add additional bindings to this keymap.
 
 @node TUI Commands
 @section TUI-specific Commands
@@ -27597,7 +27772,7 @@ possible or desirable to enable curses window management.
 @item tui enable
 @kindex tui enable
 Activate TUI mode.  The last active TUI window layout will be used if
-TUI mode has prevsiouly been used in the current debugging session,
+TUI mode has previously been used in the current debugging session,
 otherwise a default layout is used.
 
 @item tui disable
@@ -37017,6 +37192,14 @@ directory under the configured prefix, and @value{GDBN} is moved to
 another location after being built, the location of the system-wide
 init file will be adjusted accordingly.
 
+@item --with-system-gdbinit-dir=@var{directory}
+Configure @value{GDBN} to automatically load init files from a
+system-wide directory.  @var{directory} should be an absolute directory
+name.  If @var{directory} is in a directory under the configured
+prefix, and @value{GDBN} is moved to another location after being
+built, the location of the system-wide init directory will be
+adjusted accordingly.
+
 @item --enable-build-warnings
 When building the @value{GDBN} sources, ask the compiler to warn about
 any code which looks even vaguely suspicious.  It passes many
@@ -37042,24 +37225,28 @@ was first introduced in GCC 4.9.
 @section System-wide configuration and settings
 @cindex system-wide init file
 
-@value{GDBN} can be configured to have a system-wide init file;
-this file will be read and executed at startup (@pxref{Startup, , What
-@value{GDBN} does during startup}).
+@value{GDBN} can be configured to have a system-wide init file and a
+system-wide init file directory; this file and files in that directory
+(if they have a recognized file extension) will be read and executed at
+startup (@pxref{Startup, , What @value{GDBN} does during startup}).
 
-Here is the corresponding configure option:
+Here are the corresponding configure options:
 
 @table @code
 @item --with-system-gdbinit=@var{file}
 Specify that the default location of the system-wide init file is
 @var{file}.
+@item --with-system-gdbinit-dir=@var{directory}
+Specify that the default location of the system-wide init file directory
+is @var{directory}.
 @end table
 
 If @value{GDBN} has been configured with the option @option{--prefix=$prefix},
-it may be subject to relocation.  Two possible cases:
+they may be subject to relocation.  Two possible cases:
 
 @itemize @bullet
 @item 
-If the default location of this init file contains @file{$prefix},
+If the default location of this init file/directory contains @file{$prefix},
 it will be subject to relocation.  Suppose that the configure options
 are @option{--prefix=$prefix --with-system-gdbinit=$prefix/etc/gdbinit};
 if @value{GDBN} is moved from @file{$prefix} to @file{$install}, the system
@@ -37084,6 +37271,14 @@ Note that the system-wide init file is only read once, during @value{GDBN}
 initialization.  If the data-directory is changed after @value{GDBN} has
 started with the @code{set data-directory} command, the file will not be
 reread.
+
+This applies similarly to the system-wide directory specified in
+@option{--with-system-gdbinit-dir}.
+
+Any supported scripting language can be used for these init files, as long
+as the file extension matches the scripting language.  To be interpreted
+as regular @value{GDBN} commands, the files needs to have a @file{.gdb}
+extension.
 
 @menu
 * System-wide Configuration Scripts::  Installed System-wide Configuration Scripts
@@ -40021,16 +40216,6 @@ These are the currently defined stub features and their properties:
 @tab @samp{-}
 @tab Yes
 
-@item @samp{qXfer:spu:read}
-@tab No
-@tab @samp{-}
-@tab Yes
-
-@item @samp{qXfer:spu:write}
-@tab No
-@tab @samp{-}
-@tab Yes
-
 @item @samp{qXfer:siginfo:read}
 @tab No
 @tab @samp{-}
@@ -40262,14 +40447,6 @@ The remote stub understands the @samp{qXfer:memory-map:read} packet
 @item qXfer:sdata:read
 The remote stub understands the @samp{qXfer:sdata:read} packet
 (@pxref{qXfer sdata read}).
-
-@item qXfer:spu:read
-The remote stub understands the @samp{qXfer:spu:read} packet
-(@pxref{qXfer spu read}).
-
-@item qXfer:spu:write
-The remote stub understands the @samp{qXfer:spu:write} packet
-(@pxref{qXfer spu write}).
 
 @item qXfer:siginfo:read
 The remote stub understands the @samp{qXfer:siginfo:read} packet
@@ -40716,18 +40893,6 @@ This packet is not probed by default; the remote stub must request it,
 by supplying an appropriate @samp{qSupported} response
 (@pxref{qSupported}).
 
-@item qXfer:spu:read:@var{annex}:@var{offset},@var{length}
-@anchor{qXfer spu read}
-Read contents of an @code{spufs} file on the target system.  The
-annex specifies which file to read; it must be of the form 
-@file{@var{id}/@var{name}}, where @var{id} specifies an SPU context ID
-in the target process, and @var{name} identifes the @code{spufs} file
-in that context to be accessed.
-
-This packet is not probed by default; the remote stub must request it,
-by supplying an appropriate @samp{qSupported} response
-(@pxref{qSupported}).
-
 @item qXfer:threads:read::@var{offset},@var{length}
 @anchor{qXfer threads read}
 Access the list of threads on target.  @xref{Thread List Format}.  The
@@ -40813,17 +40978,6 @@ empty (@pxref{qXfer write}).
 This packet is not probed by default; the remote stub must request it,
 by supplying an appropriate @samp{qSupported} response
 (@pxref{qSupported}).
-
-@item qXfer:spu:write:@var{annex}:@var{offset}:@var{data}@dots{}
-@anchor{qXfer spu write}
-Write @var{data} to an @code{spufs} file on the target system.  The
-annex specifies which file to write; it must be of the form
-@file{@var{id}/@var{name}}, where @var{id} specifies an SPU context ID
-in the target process, and @var{name} identifes the @code{spufs} file
-in that context to be accessed.
-
-This packet is not probed by default; the remote stub must request it,
-by supplying an appropriate @samp{qSupported} response (@pxref{qSupported}).
 @end table
 
 @item qXfer:@var{object}:@var{operation}:@dots{}
@@ -45615,6 +45769,10 @@ Richard M. Stallman and Roland H. Pesch, July 1991.
 @value{SYSTEM_GDBINIT}
 @end ifset
 
+@ifset SYSTEM_GDBINIT_DIR
+@value{SYSTEM_GDBINIT_DIR}/*
+@end ifset
+
 ~/.gdbinit
 
 ./.gdbinit
@@ -45651,6 +45809,20 @@ the @value{GDBN} manual in node @code{Startup}
 @end ifclear
 System-wide initialization file.  It is executed unless user specified
 @value{GDBN} option @code{-nx} or @code{-n}.
+See more in
+@ifset man
+the @value{GDBN} manual in node @code{System-wide configuration}
+-- shell command @code{info -f gdb -n 'System-wide configuration'}.
+@end ifset
+@ifset SYSTEM_GDBINIT_DIR
+@item @value{SYSTEM_GDBINIT_DIR}
+@end ifset
+@ifclear SYSTEM_GDBINIT_DIR
+@item (not enabled with @code{--with-system-gdbinit-dir} during compilation)
+@end ifclear
+System-wide initialization directory.  All files in this directory are
+executed on startup unless user specified @value{GDBN} option @code{-nx} or
+@code{-n}, as long as they have a recognized file extension.
 See more in
 @ifset man
 the @value{GDBN} manual in node @code{System-wide configuration}
