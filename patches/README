@@ -35,6 +35,7 @@ patches="
 	binutils-x86-64-gold-thunk.patch
 	binutils-x86-gpoff.patch
 	binutils-x86-optimize-option.patch
+	binutils-attach-to-group.patch
 "
 
 for p in $patches
