@@ -586,7 +586,7 @@ index 8d08a69d22..5d8d092141 100644
 +    return FALSE;
 +
 +  gpsection = h->root.u.def.section->output_section;
-+  gpsection_size = bfd_get_section_size (gpsection);
++  gpsection_size = bfd_section_size (gpsection);
 +
 +  if (bed->target_id == X86_64_ELF_DATA && gpsection_size > 0xffffffff)
 +    {
