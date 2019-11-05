@@ -1141,14 +1141,14 @@ open_source_file (struct symtab *s)
           const struct bfd_build_id *build_id;
           const objfile *ofp = COMPUNIT_OBJFILE (SYMTAB_COMPUNIT (s));
 
-          std::string suffname;
+          std::string srcpath;
 	  if (IS_DIR_SEPARATOR (s->filename[0]))
-	    suffname = s->filename;
+	    srcpath = s->filename;
 	  else
             {
-              suffname = SYMTAB_DIRNAME(s);
-              suffname += SLASH_STRING;
-              suffname += s->filename;
+              srcpath = SYMTAB_DIRNAME(s);
+              srcpath += SLASH_STRING;
+              srcpath += s->filename;
             }
 	      
           build_id = build_id_bfd_get (ofp->obfd);
@@ -1158,16 +1158,21 @@ open_source_file (struct symtab *s)
             {
               char *name_in_cache;
 
-              scoped_fd dbgd_fd (debuginfod_find_source (build_id->data,
+              /* Allow debuginfod to abort the download if SIGINT is raised.  */
+              debuginfod_set_progressfn(
+                [] (long a, long b) { return 1 ? check_quit_flag() : 0; }
+              );
+
+              scoped_fd src_fd (debuginfod_find_source (build_id->data,
                                                          build_id->size,
-                                                         suffname.c_str(),
+                                                         srcpath.c_str(),
                                                          &name_in_cache));
 
-              if (dbgd_fd.get () >= 0)
+              if (src_fd.get () >= 0)
                 fullname.reset (name_in_cache);
 
               s->fullname = fullname.release ();
-              return dbgd_fd;
+              return src_fd;
             }
         }
     }

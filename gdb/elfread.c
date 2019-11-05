@@ -1321,21 +1321,28 @@ elf_symfile_read (struct objfile *objfile, symfile_add_flags symfile_flags)
 
 #if HAVE_LIBDEBUGINFOD 
           const struct bfd_build_id *build_id;
-	  char *debugfile_path;
+	  char *symfile_path;
 
           build_id = build_id_bfd_get (objfile->obfd);
+
+          /* Allow debuginfod to abort the download if SIGINT is raised.  */
+          debuginfod_set_progressfn(
+            [] (long a, long b) { return 1 ? check_quit_flag() : 0; }
+          );
+
+          /* Query debuginfod servers for symfile.  */
 	  scoped_fd fd (debuginfod_find_debuginfo (build_id->data,
 					           build_id->size,
-					           &debugfile_path));
+					           &symfile_path));
 
 	  if (fd.get () >= 0)
 	    {
-	      /* debuginfo successfully retrieved from server.  */
-	      gdb_bfd_ref_ptr debug_bfd (symfile_bfd_open (debugfile_path));
+	      /* file successfully retrieved from server.  */
+	      gdb_bfd_ref_ptr debug_bfd (symfile_bfd_open (symfile_path));
 
-	      symbol_file_add_separate (debug_bfd.get (), debugfile_path,
+	      symbol_file_add_separate (debug_bfd.get (), symfile_path,
 				        symfile_flags, objfile);
-	      xfree (debugfile_path);
+	      xfree (symfile_path);
               has_dwarf2 = true;
 	    }
 #endif /* LIBDEBUGINFOD */
