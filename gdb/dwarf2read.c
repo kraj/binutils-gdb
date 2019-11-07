@@ -77,6 +77,9 @@
 #include "gdbsupport/selftest.h"
 #include "rust-lang.h"
 #include "gdbsupport/pathstuff.h"
+#if HAVE_LIBDEBUGINFOD
+#include "elfutils/debuginfod.h"
+#endif
 
 /* When == 1, print basic high level tracing messages.
    When > 1, be more verbose.
@@ -2713,6 +2716,38 @@ dwarf2_get_dwz_file (struct dwarf2_per_objfile *dwarf2_per_objfile)
 
   if (dwz_bfd == NULL)
     dwz_bfd = build_id_to_debug_bfd (buildid_len, buildid);
+
+#if HAVE_LIBDEBUGINFOD
+  if (dwz_bfd == NULL)
+    {
+      /* Query debuginfod servers for the dwz file.  */
+      char *alt_filename;
+
+      /* Allow debuginfod to abort the download if SIGINT is raised.  */
+      debuginfod_set_progressfn(
+        [] (long a, long b) { return 1 ? check_quit_flag () : 0; }
+      );
+
+      /* Query debuginfod servers for symfile.  */
+      scoped_fd fd (debuginfod_find_debuginfo (buildid,
+                                               buildid_len,
+                                               &alt_filename));
+
+      if (fd.get () >= 0)
+        {
+          /* File successfully retrieved from server.  */
+          dwz_bfd = gdb_bfd_open (alt_filename, gnutarget, -1);
+
+          if(dwz_bfd != NULL)
+            {
+              if (!build_id_verify (dwz_bfd.get (), buildid_len, buildid))
+	        dwz_bfd.reset (nullptr);
+            }
+
+          xfree (alt_filename);
+        }
+    }
+#endif /* HAVE_LIBDEBUGINFOD */
 
   if (dwz_bfd == NULL)
     error (_("could not find '.gnu_debugaltlink' file for %s"),
