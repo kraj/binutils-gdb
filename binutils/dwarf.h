@@ -258,3 +258,7 @@ extern dwarf_vma read_leb128 (unsigned char *, unsigned int *, bfd_boolean, cons
    relocation against the given debug section at the given
    offset.  */
 extern bfd_boolean reloc_at (struct dwarf_section *, dwarf_vma);
+
+#if HAVE_LIBDEBUGINFOD
+extern unsigned char * get_build_id (void *);
+#endif

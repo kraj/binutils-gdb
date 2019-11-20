@@ -63,6 +63,30 @@ else
   default_strings_all=1
 fi], [default_strings_all=1])
 
+# Enable debuginfod
+AC_ARG_WITH([debuginfod],
+        AC_HELP_STRING([--with-debuginfod],
+                       [Enable debuginfo lookups with debuginfod (auto/yes/no)]),
+        [], [with_debuginfod=auto])
+AC_MSG_CHECKING([whether to use debuginfod])
+AC_MSG_RESULT([$with_debuginfod])
+
+if test "${with_debuginfod}" = no; then
+  AC_MSG_WARN([debuginfod support disabled; some features may be unavailable.])
+  HAVE_LIBDEBUGINFOD=no
+else
+  AC_LIB_HAVE_LINKFLAGS([debuginfod], [], [#include <elfutils/debuginfod.h>],
+                                     [debuginfod_client *client;
+                                     client = debuginfod_begin();])
+  if test "$HAVE_LIBDEBUGINFOD" != yes; then
+    if test "$with_debuginfod" = yes; then
+      AC_MSG_ERROR([debuginfod is missing or unusable])
+    else
+      AC_MSG_WARN([debuginfod is missing or unusable; some features may be unavailable.])
+    fi
+  fi
+fi
+
 AC_DEFINE_UNQUOTED(DEFAULT_STRINGS_ALL, $default_strings_all,
 		   [Should strings use -a behavior by default?])
 
