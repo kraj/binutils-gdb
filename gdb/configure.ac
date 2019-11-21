@@ -340,10 +340,8 @@ if test "${with_debuginfod}" = no; then
   HAVE_LIBDEBUGINFOD=no
 else
   AC_LIB_HAVE_LINKFLAGS([debuginfod], [], [#include <elfutils/debuginfod.h>],
-                                     [const unsigned char buildid;
-                                     int buildid_len = 1;
-                                     char *path;
-                                     path = debuginfod_find_debuginfo (& buildid, buildid_len, &path);])
+                                     [debuginfod_client *client;
+                                      client = debuginfod_begin();])
   if test "$HAVE_LIBDEBUGINFOD" != yes; then
     if test "$with_debuginfod" = yes; then
       AC_MSG_ERROR([debuginfod is missing or unusable])

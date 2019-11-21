@@ -7366,10 +7366,8 @@ else
 int
 main ()
 {
-const unsigned char buildid;
-                                     int buildid_len = 1;
-                                     char *path;
-                                     path = debuginfod_find_debuginfo (& buildid, buildid_len, &path);
+debuginfod_client *client;
+                                      client = debuginfod_begin();
   ;
   return 0;
 }
