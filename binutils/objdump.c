@@ -2928,11 +2928,11 @@ open_debug_file (const char * pathname)
 unsigned char *
 get_build_id (void * data)
 {
+  unsigned i;
   char * build_id_str;
   bfd * abfd = (bfd *) data;
   const struct bfd_build_id * build_id;
 
-  unsigned i;
   build_id = abfd->build_id;
   if (build_id == NULL)
     return NULL;
@@ -2943,8 +2943,8 @@ get_build_id (void * data)
 
   for (i = 0; i < build_id->size; i++)
     sprintf(build_id_str + (i * 2), "%02x", build_id->data[i]);
+  build_id_str[build_id->size * 2] = '\0';
 
-  build_id_str[build_id->size * 2 + 1] = '\0';
   return (unsigned char *)build_id_str;
 }
 #endif /* HAVE_LIBDEBUGINFOD */

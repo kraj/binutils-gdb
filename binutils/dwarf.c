@@ -10286,6 +10286,7 @@ debuginfod_fetch_separate_debug_info (struct dwarf_section * section,
 
   if (strcmp (section->uncompressed_name, ".gnu_debuglink") == 0)
     {
+      /* Get the build-id of file.  */
       build_id = get_build_id (file);
       build_id_len = 0;
     }

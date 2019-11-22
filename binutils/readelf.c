@@ -14177,6 +14177,7 @@ load_specific_debug_section (enum dwarf_section_display_enum  debug,
 }
 
 #if HAVE_LIBDEBUGINFOD
+/* Return a hex string representation of the build-id.  */
 unsigned char *
 get_build_id (void * data)
 {
@@ -14297,6 +14298,7 @@ get_build_id (void * data)
 
           for (j = 0; j < inote.descsz; ++j)
             sprintf(build_id + (j * 2), "%02x", inote.descdata[j] & 0xff);
+          build_id[inote.descsz * 2] = '\0';
 
           return (unsigned char *)build_id;
         }
