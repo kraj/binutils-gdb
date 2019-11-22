@@ -75,10 +75,16 @@ if test "${with_debuginfod}" = no; then
   AC_MSG_WARN([debuginfod support disabled; some features may be unavailable.])
   HAVE_LIBDEBUGINFOD=no
 else
-  AC_LIB_HAVE_LINKFLAGS([debuginfod], [], [#include <elfutils/debuginfod.h>],
-                                     [debuginfod_client *client;
-                                     client = debuginfod_begin();])
-  if test "$HAVE_LIBDEBUGINFOD" != yes; then
+  AC_CHECK_LIB([debuginfod], [debuginfod_begin], [have_debuginfod_lib=yes])
+  AC_CHECK_DECL([debuginfod_begin], [have_debuginfod_h=yes], [],
+                [#include <elfutils/debuginfod.h>])
+  if test "x$have_debuginfod_lib" = "xyes" -a \
+          "x$have_debuginfod_h" = "xyes"; then
+    AC_DEFINE([HAVE_LIBDEBUGINFOD], [1],
+              [Define to 1 if debuginfod is enabled.])
+    AC_SUBST([LIBDEBUGINFOD], ["-ldebuginfod"])
+  else
+    AC_SUBST([LIBDEBUGINFOD], [])
     if test "$with_debuginfod" = yes; then
       AC_MSG_ERROR([debuginfod is missing or unusable])
     else
