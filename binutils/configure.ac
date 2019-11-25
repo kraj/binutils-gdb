@@ -73,7 +73,6 @@ AC_MSG_RESULT([$with_debuginfod])
 
 if test "${with_debuginfod}" = no; then
   AC_MSG_WARN([debuginfod support disabled; some features may be unavailable.])
-  HAVE_LIBDEBUGINFOD=no
 else
   AC_CHECK_LIB([debuginfod], [debuginfod_begin], [have_debuginfod_lib=yes])
   AC_CHECK_DECL([debuginfod_begin], [have_debuginfod_h=yes], [],
