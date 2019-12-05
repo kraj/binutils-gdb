@@ -2722,14 +2722,19 @@ dwarf2_get_dwz_file (struct dwarf2_per_objfile *dwarf2_per_objfile)
     {
       /* Query debuginfod servers for the dwz file.  */
       char *alt_filename;
+      debuginfod_client *client;
+
+      client = debuginfod_begin ();
 
       /* Allow debuginfod to abort the download if SIGINT is raised.  */
       debuginfod_set_progressfn(
-        [] (long a, long b) { return 1 ? check_quit_flag () : 0; }
+        client,
+        [] (debuginfod_client *c, long a, long b) { return 1 ? check_quit_flag () : 0; }
       );
 
       /* Query debuginfod servers for symfile.  */
-      scoped_fd fd (debuginfod_find_debuginfo (buildid,
+      scoped_fd fd (debuginfod_find_debuginfo (client,
+                                               buildid,
                                                buildid_len,
                                                &alt_filename));
 

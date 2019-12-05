@@ -1322,16 +1322,20 @@ elf_symfile_read (struct objfile *objfile, symfile_add_flags symfile_flags)
 #if HAVE_LIBDEBUGINFOD 
           const struct bfd_build_id *build_id;
 	  char *symfile_path;
+          debuginfod_client *client;
 
+          client = debuginfod_begin ();
           build_id = build_id_bfd_get (objfile->obfd);
 
           /* Allow debuginfod to abort the download if SIGINT is raised.  */
           debuginfod_set_progressfn(
-            [] (long a, long b) { return 1 ? check_quit_flag() : 0; }
+            client,
+            [] (debuginfod_client *c, long a, long b) { return 1 ? check_quit_flag() : 0; }
           );
 
           /* Query debuginfod servers for symfile.  */
-	  scoped_fd fd (debuginfod_find_debuginfo (build_id->data,
+	  scoped_fd fd (debuginfod_find_debuginfo (client,
+                                                   build_id->data,
 					           build_id->size,
 					           &symfile_path));
 

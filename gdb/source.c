@@ -1157,16 +1157,21 @@ open_source_file (struct symtab *s)
           if (build_id != NULL)
             {
               char *name_in_cache;
+              debuginfod_client *client;
+
+              client = debuginfod_begin();
 
               /* Allow debuginfod to abort the download if SIGINT is raised.  */
               debuginfod_set_progressfn(
-                [] (long a, long b) { return 1 ? check_quit_flag() : 0; }
+                client,
+                [] (debuginfod_client *c, long a, long b) { return 1 ? check_quit_flag() : 0; }
               );
 
-              scoped_fd src_fd (debuginfod_find_source (build_id->data,
-                                                         build_id->size,
-                                                         srcpath.c_str(),
-                                                         &name_in_cache));
+              scoped_fd src_fd (debuginfod_find_source (client,
+                                                        build_id->data,
+                                                        build_id->size,
+                                                        srcpath.c_str(),
+                                                        &name_in_cache));
 
               if (src_fd.get () >= 0)
                 fullname.reset (name_in_cache);
