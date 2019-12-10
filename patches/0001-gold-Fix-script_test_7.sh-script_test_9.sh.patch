@@ -1,0 +1,40 @@
+From cb42cda0709b6c3a13490eec1c55e2d1141876e3 Mon Sep 17 00:00:00 2001
+From: "H.J. Lu" <hjl.tools@gmail.com>
+Date: Tue, 10 Dec 2019 14:46:23 -0800
+Subject: [PATCH] gold: Fix script_test_7.sh/script_test_9.sh
+
+Fix
+
+FAIL: script_test_7.sh
+FAIL: script_test_9.sh
+
+due to text and bss section changes.
+---
+ gold/testsuite/script_test_7.sh | 2 +-
+ gold/testsuite/script_test_9.sh | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/gold/testsuite/script_test_7.sh b/gold/testsuite/script_test_7.sh
+index b4f1f234e5..b6fb1b4733 100755
+--- a/gold/testsuite/script_test_7.sh
++++ b/gold/testsuite/script_test_7.sh
+@@ -40,4 +40,4 @@ check()
+ 
+ check script_test_7.stdout "\\.interp[ 	]*PROGBITS[ 	]*0*10000100"
+ check script_test_7.stdout "\\.data[ 	]*PROGBITS[ 	]*0*10200000"
+-check script_test_7.stdout "\\.bss[ 	]*NOBITS[ 	]*0*10400..."
++check script_test_7.stdout "\\.bss[ 	]*NOBITS[ 	]*0*1040...."
+diff --git a/gold/testsuite/script_test_9.sh b/gold/testsuite/script_test_9.sh
+index eb131c54ea..1ebc90a63f 100755
+--- a/gold/testsuite/script_test_9.sh
++++ b/gold/testsuite/script_test_9.sh
+@@ -38,5 +38,5 @@ check()
+ 
+ check script_test_9.stdout "LOAD .*R E "
+ check script_test_9.stdout "LOAD .*RW "
+-check script_test_9.stdout "00 .*\.text .init"
++check script_test_9.stdout "00 .*\.text .*\.init"
+ check script_test_9.stdout "01 .*\.data "
+-- 
+2.21.0
+
