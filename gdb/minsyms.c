@@ -53,6 +53,12 @@
 #include "gdbsupport/symbol.h"
 #include <algorithm>
 #include "safe-ctype.h"
+#include "gdbsupport/parallel-for.h"
+#include "maint.h"
+
+#if CXX_STD_THREAD
+#include <mutex>
+#endif
 
 /* See minsyms.h.  */
 
@@ -136,12 +142,12 @@ msymbol_hash (const char *string)
 /* Add the minimal symbol SYM to an objfile's minsym hash table, TABLE.  */
 static void
 add_minsym_to_hash_table (struct minimal_symbol *sym,
-			  struct minimal_symbol **table)
+			  struct minimal_symbol **table,
+			  unsigned int hash_value)
 {
   if (sym->hash_next == NULL)
     {
-      unsigned int hash
-	= msymbol_hash (MSYMBOL_LINKAGE_NAME (sym)) % MINIMAL_SYMBOL_HASH_SIZE;
+      unsigned int hash = hash_value % MINIMAL_SYMBOL_HASH_SIZE;
 
       sym->hash_next = table[hash];
       table[hash] = sym;
@@ -152,18 +158,16 @@ add_minsym_to_hash_table (struct minimal_symbol *sym,
    TABLE.  */
 static void
 add_minsym_to_demangled_hash_table (struct minimal_symbol *sym,
-				    struct objfile *objfile)
+				    struct objfile *objfile,
+				    unsigned int hash_value)
 {
   if (sym->demangled_hash_next == NULL)
     {
-      unsigned int hash = search_name_hash (MSYMBOL_LANGUAGE (sym),
-					    MSYMBOL_SEARCH_NAME (sym));
-
       objfile->per_bfd->demangled_hash_languages.set (MSYMBOL_LANGUAGE (sym));
 
       struct minimal_symbol **table
 	= objfile->per_bfd->msymbol_demangled_hash;
-      unsigned int hash_index = hash % MINIMAL_SYMBOL_HASH_SIZE;
+      unsigned int hash_index = hash_value % MINIMAL_SYMBOL_HASH_SIZE;
       sym->demangled_hash_next = table[hash_index];
       table[hash_index] = sym;
     }
@@ -252,7 +256,7 @@ lookup_minimal_symbol_mangled (const char *lookup_name,
        msymbol != NULL;
        msymbol = msymbol->hash_next)
     {
-      const char *symbol_name = MSYMBOL_LINKAGE_NAME (msymbol);
+      const char *symbol_name = msymbol->linkage_name ();
 
       if (namecmp (symbol_name, lookup_name) == 0
 	  && found.maybe_collect (sfile, objfile, msymbol))
@@ -276,7 +280,7 @@ lookup_minimal_symbol_demangled (const lookup_name_info &lookup_name,
        msymbol != NULL;
        msymbol = msymbol->demangled_hash_next)
     {
-      const char *symbol_name = MSYMBOL_SEARCH_NAME (msymbol);
+      const char *symbol_name = msymbol->search_name ();
 
       if (matcher (symbol_name, lookup_name, NULL)
 	  && found.maybe_collect (sfile, objfile, msymbol))
@@ -487,7 +491,7 @@ iterate_over_minimal_symbols
 	   iter != NULL;
 	   iter = iter->hash_next)
 	{
-	  if (mangled_cmp (MSYMBOL_LINKAGE_NAME (iter), name) == 0)
+	  if (mangled_cmp (iter->linkage_name (), name) == 0)
 	    if (callback (iter))
 	      return;
 	}
@@ -511,7 +515,7 @@ iterate_over_minimal_symbols
       for (minimal_symbol *iter = objf->per_bfd->msymbol_demangled_hash[hash];
 	   iter != NULL;
 	   iter = iter->demangled_hash_next)
-	if (name_match (MSYMBOL_SEARCH_NAME (iter), lookup_name, NULL))
+	if (name_match (iter->search_name (), lookup_name, NULL))
 	  if (callback (iter))
 	    return;
     }
@@ -530,7 +534,7 @@ lookup_minimal_symbol_linkage (const char *name, struct objfile *objf)
 	   msymbol != NULL;
 	   msymbol = msymbol->hash_next)
 	{
-	  if (strcmp (MSYMBOL_LINKAGE_NAME (msymbol), name) == 0
+	  if (strcmp (msymbol->linkage_name (), name) == 0
 	      && (MSYMBOL_TYPE (msymbol) == mst_data
 		  || MSYMBOL_TYPE (msymbol) == mst_bss))
 	    return {msymbol, objfile};
@@ -563,7 +567,7 @@ lookup_minimal_symbol_text (const char *name, struct objfile *objf)
 	       msymbol != NULL && found_symbol.minsym == NULL;
 	       msymbol = msymbol->hash_next)
 	    {
-	      if (strcmp (MSYMBOL_LINKAGE_NAME (msymbol), name) == 0 &&
+	      if (strcmp (msymbol->linkage_name (), name) == 0 &&
 		  (MSYMBOL_TYPE (msymbol) == mst_text
 		   || MSYMBOL_TYPE (msymbol) == mst_text_gnu_ifunc
 		   || MSYMBOL_TYPE (msymbol) == mst_file_text))
@@ -611,7 +615,7 @@ lookup_minimal_symbol_by_pc_name (CORE_ADDR pc, const char *name,
 	       msymbol = msymbol->hash_next)
 	    {
 	      if (MSYMBOL_VALUE_ADDRESS (objfile, msymbol) == pc
-		  && strcmp (MSYMBOL_LINKAGE_NAME (msymbol), name) == 0)
+		  && strcmp (msymbol->linkage_name (), name) == 0)
 		return msymbol;
 	    }
 	}
@@ -1127,7 +1131,21 @@ minimal_symbol_reader::record_full (gdb::string_view name,
   msymbol = &m_msym_bunch->contents[m_msym_bunch_index];
   symbol_set_language (msymbol, language_auto,
 		       &m_objfile->per_bfd->storage_obstack);
-  symbol_set_names (msymbol, name, copy_name, m_objfile->per_bfd);
+
+  if (copy_name)
+    msymbol->name = obstack_strndup (&m_objfile->per_bfd->storage_obstack,
+				     name.data (), name.size ());
+  else
+    msymbol->name = name.data ();
+
+  if (worker_threads_disabled ())
+    {
+      /* To keep our behavior as close as possible to the previous non-threaded
+	 behavior for GDB 9.1, we call symbol_set_names here when threads
+	 are disabled.  */
+      symbol_set_names (msymbol, msymbol->name, false, m_objfile->per_bfd);
+      msymbol->name_set = 1;
+    }
 
   SET_MSYMBOL_VALUE_ADDRESS (msymbol, address);
   MSYMBOL_SECTION (msymbol) = section;
@@ -1164,8 +1182,8 @@ minimal_symbol_is_less_than (const minimal_symbol &fn1,
   else
     /* addrs are equal: sort by name */
     {
-      const char *name1 = MSYMBOL_LINKAGE_NAME (&fn1);
-      const char *name2 = MSYMBOL_LINKAGE_NAME (&fn2);
+      const char *name1 = fn1.linkage_name ();
+      const char *name2 = fn2.linkage_name ();
 
       if (name1 && name2)	/* both have names */
 	return strcmp (name1, name2) < 0;
@@ -1220,8 +1238,8 @@ compact_minimal_symbols (struct minimal_symbol *msymbol, int mcount,
 	  if (MSYMBOL_VALUE_RAW_ADDRESS (copyfrom)
 	      == MSYMBOL_VALUE_RAW_ADDRESS ((copyfrom + 1))
 	      && MSYMBOL_SECTION (copyfrom) == MSYMBOL_SECTION (copyfrom + 1)
-	      && strcmp (MSYMBOL_LINKAGE_NAME (copyfrom),
-			 MSYMBOL_LINKAGE_NAME ((copyfrom + 1))) == 0)
+	      && strcmp (copyfrom->linkage_name (),
+			 (copyfrom + 1)->linkage_name ()) == 0)
 	    {
 	      if (MSYMBOL_TYPE ((copyfrom + 1)) == mst_unknown)
 		{
@@ -1248,28 +1266,47 @@ clear_minimal_symbol_hash_tables (struct objfile *objfile)
     }
 }
 
+/* This struct is used to store values we compute for msymbols on the
+   background threads but don't need to keep around long term.  */
+struct computed_hash_values
+{
+  /* Length of the linkage_name of the symbol.  */
+  size_t name_length;
+  /* Hash code (using fast_hash) of the linkage_name.  */
+  hashval_t mangled_name_hash;
+  /* The msymbol_hash of the linkage_name.  */
+  unsigned int minsym_hash;
+  /* The msymbol_hash of the search_name.  */
+  unsigned int minsym_demangled_hash;
+};
+
 /* Build (or rebuild) the minimal symbol hash tables.  This is necessary
    after compacting or sorting the table since the entries move around
    thus causing the internal minimal_symbol pointers to become jumbled.  */
   
 static void
-build_minimal_symbol_hash_tables (struct objfile *objfile)
+build_minimal_symbol_hash_tables
+  (struct objfile *objfile,
+   const std::vector<computed_hash_values>& hash_values)
 {
   int i;
   struct minimal_symbol *msym;
 
   /* (Re)insert the actual entries.  */
-  for ((i = objfile->per_bfd->minimal_symbol_count,
+  int mcount = objfile->per_bfd->minimal_symbol_count;
+  for ((i = 0,
 	msym = objfile->per_bfd->msymbols.get ());
-       i > 0;
-       i--, msym++)
+       i < mcount;
+       i++, msym++)
     {
       msym->hash_next = 0;
-      add_minsym_to_hash_table (msym, objfile->per_bfd->msymbol_hash);
+      add_minsym_to_hash_table (msym, objfile->per_bfd->msymbol_hash,
+				hash_values[i].minsym_hash);
 
       msym->demangled_hash_next = 0;
-      if (MSYMBOL_SEARCH_NAME (msym) != MSYMBOL_LINKAGE_NAME (msym))
-	add_minsym_to_demangled_hash_table (msym, objfile);
+      if (msym->search_name () != msym->linkage_name ())
+	add_minsym_to_demangled_hash_table
+	  (msym, objfile, hash_values[i].minsym_demangled_hash);
     }
 }
 
@@ -1354,7 +1391,69 @@ minimal_symbol_reader::install ()
       m_objfile->per_bfd->minimal_symbol_count = mcount;
       m_objfile->per_bfd->msymbols = std::move (msym_holder);
 
-      build_minimal_symbol_hash_tables (m_objfile);
+#if CXX_STD_THREAD
+      /* Mutex that is used when modifying or accessing the demangled
+	 hash table.  */
+      std::mutex demangled_mutex;
+#endif
+
+      std::vector<computed_hash_values> hash_values (mcount);
+
+      msymbols = m_objfile->per_bfd->msymbols.get ();
+      gdb::parallel_for_each
+	(&msymbols[0], &msymbols[mcount],
+	 [&] (minimal_symbol *start, minimal_symbol *end)
+	 {
+	   for (minimal_symbol *msym = start; msym < end; ++msym)
+	     {
+	       size_t idx = msym - msymbols;
+	       hash_values[idx].name_length = strlen (msym->name);
+	       if (!msym->name_set)
+		 {
+		   /* This will be freed later, by symbol_set_names.  */
+		   char *demangled_name
+		     = symbol_find_demangled_name (msym, msym->name);
+		   symbol_set_demangled_name
+		     (msym, demangled_name,
+		      &m_objfile->per_bfd->storage_obstack);
+		   msym->name_set = 1;
+		 }
+	       /* This mangled_name_hash computation has to be outside of
+		  the name_set check, or symbol_set_names below will
+		  be called with an invalid hash value.  */
+	       hash_values[idx].mangled_name_hash
+		 = fast_hash (msym->name, hash_values[idx].name_length);
+	       hash_values[idx].minsym_hash
+		 = msymbol_hash (msym->linkage_name ());
+	       /* We only use this hash code if the search name differs
+		  from the linkage name.  See the code in
+		  build_minimal_symbol_hash_tables.  */
+	       if (msym->search_name () != msym->linkage_name ())
+		 hash_values[idx].minsym_demangled_hash
+		   = search_name_hash (MSYMBOL_LANGUAGE (msym),
+				       msym->search_name ());
+	     }
+	   {
+	     /* To limit how long we hold the lock, we only acquire it here
+	        and not while we demangle the names above.  */
+#if CXX_STD_THREAD
+	     std::lock_guard<std::mutex> guard (demangled_mutex);
+#endif
+	     for (minimal_symbol *msym = start; msym < end; ++msym)
+	       {
+		 size_t idx = msym - msymbols;
+		 symbol_set_names
+		   (msym,
+		    gdb::string_view(msym->name,
+				     hash_values[idx].name_length),
+		    false,
+		    m_objfile->per_bfd,
+		    hash_values[idx].mangled_name_hash);
+	       }
+	   }
+	 });
+
+      build_minimal_symbol_hash_tables (m_objfile, hash_values);
     }
 }
 
@@ -1402,8 +1501,8 @@ find_solib_trampoline_target (struct frame_info *frame, CORE_ADDR pc)
 		   || MSYMBOL_TYPE (msymbol) == mst_text_gnu_ifunc
 		   || MSYMBOL_TYPE (msymbol) == mst_data
 		   || MSYMBOL_TYPE (msymbol) == mst_data_gnu_ifunc)
-		  && strcmp (MSYMBOL_LINKAGE_NAME (msymbol),
-			     MSYMBOL_LINKAGE_NAME (tsymbol)) == 0)
+		  && strcmp (msymbol->linkage_name (),
+			     tsymbol->linkage_name ()) == 0)
 		{
 		  CORE_ADDR func;
 

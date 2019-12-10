@@ -1,3 +1,1741 @@
+2019-12-10  Christian Biesinger  <cbiesinger@google.com>
+
+	* gdbsupport/safe-strerror.c: Supress the unused function warning
+	for select_strerror_r.
+
+2019-12-10  Christian Biesinger  <cbiesinger@google.com>
+
+	* config.in: Regenerate.
+	* configure: Regenerate.
+	* gdbsupport/agent.c (gdb_connect_sync_socket): Call
+	safe_strerror instead of strerror.
+	* gdbsupport/common.m4: Don't check for strerror.
+	* gdbsupport/safe-strerror.c: Support both the glibc version
+	of strerror_r and the XSI version.
+
+2019-12-10  Tom Tromey  <tromey@adacore.com>
+
+	* ada-typeprint.c (print_choices): Use a single "?".
+	(print_variant_part): Print "?" if the discriminant name
+	is not known.
+
+2019-12-10  George Barrett  <bob@bob131.so>
+
+	Fix scripted probe breakpoints.
+	* breakpoint.c (tracepoint_probe_breakpoint_ops): Move
+	declaration forward.
+	(breakpoint_ops_for_event_location_type)
+	(breakpoint_ops_for_event_location): Add function definitions.
+	(break_command_1, trace_command): Use
+	breakpoint_ops_for_event_location.
+	* breakpoint.h (breakpoint_ops_for_event_location): Add function
+	declarations.
+	* guile/scm-breakpoint.c (gdbscm_register_breakpoint_x): Use
+	breakpoint_ops_for_event_location.
+	* python/py-breakpoint.c (bppy_init): Use
+	breakpoint_ops_for_event_location.
+
+2019-12-09  Tankut Baris Aktemur  <tankut.baris.aktemur@intel.com>
+
+	* gdbtypes.c (rank_one_type): Return INCOMPATIBLE_TYPE_BADNESS
+	when ranking an lvalue argument for an rvalue parameter.
+
+2019-12-08  Wataru Ashihara  <wataash@wataash.com>
+
+	* darwin-nat.c (darwin_nat_target::create_inferior): Fix
+	template argument for scoped_restore_tmpl from bool to int.
+
+2019-12-07  Keith Seitz  <keiths@redhat.com>
+
+	* build-id.c (build_id_bfd_get): Permit bfd_core, too.
+	(build_id_to_debug_bfd): Make static, rewriting to use
+	build_id_to_bfd_suffix.
+	(build_id_to_bfd_suffix): Copy of build_id_to_debug_bfd,
+	adding `suffix' parameter. Append SUFFIX to file names
+	when searching for matching files.
+	(build_id_to_debug_bfd): Use build_id_to_bfd_suffix.
+	(build_id_to_exec_bfd): Likewise.
+	* build-id.h (build_id_to_debug_bfd): Clarify that function
+	searches for BFD of debug info file.
+	(build_id_to_exec_bfd): Declare.
+	* corelow.c: Include build-id.h.
+	(locate_exec_from_corefile_build_id): New function.
+	(core_target_open): If no executable BFD is found,
+	search for a core file BFD using build-id.
+
+2019-12-06  Christian Biesinger  <cbiesinger@google.com>
+
+	* bcache.c: Put in namespace gdb.
+	* bcache.h: Likewise.
+	* gdbtypes.c (check_types_worklist): Update.
+	(types_deeply_equal): Update.
+	* macrotab.c (struct macro_table) <bcache>: Update.
+	(new_macro_table): Update.
+	* macrotab.h (struct bcache): Put this forward declaration
+	inside namespace gdb.
+	(new_macro_table): Update.
+	* objfiles.h (struct objfile_per_bfd_storage) <filename_cache>:
+	Update.
+	<macro_cache>: Update.
+	* psymtab.h: (psymtab_storage) <psymbol_cache>: Update.
+
+2019-12-06  Tom de Vries  <tdevries@suse.de>
+
+	PR symtab/24971
+	* block.c (best_symbol, better_symbol): New function.
+	(block_lookup_symbol_primary, block_lookup_symbol): Prefer def over
+	decl.
+
+2019-12-06  Tankut Baris Aktemur  <tankut.baris.aktemur@intel.com>
+
+	* gdbtypes.h: Define the REFERENCE_SEE_THROUGH_BADNESS value.
+	* gdbtypes.c (rank_one_type): Use REFERENCE_SEE_THROUGH_BADNESS
+	for ranking see-through reference cases.
+
+2019-12-06  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+	* stack.c (faas_command): Check a command is provided.
+	* thread.c (taas_command, tfaas_command): Likewise.
+
+2019-12-05  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+	* inferior.c (prune_inferiors):  Only call delete_inferior,
+	Do not modify the inferior list.
+
+2019-12-05  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* c-exp.y: Update calls to lookup_typename,
+	lookup_signed_typename and lookup_unsigned_typename.
+	* c-lang.c (evaluate_subexp_c): Likewise.
+	* cp-namespace.c (cp_lookup_symbol_imports_or_template):
+	Likewise.
+	* eval.c (binop_promote): Likewise.
+	* gdbtypes.c (lookup_typename): Remove gdbarch parameter.
+	(lookup_unsigned_typename): Likewise.
+	(lookup_signed_typename): Likewise.
+	* gdbtypes.h (lookup_unsigned_typename): Likewise.
+	(lookup_signed_typename): Likewise.
+	(lookup_typename): Likewise.
+	* guile/scm-type.c (tyscm_lookup_typename): Update calls to
+	lookup_typename, lookup_signed_typename,
+	lookup_unsigned_typename.
+	* m2-exp.y: Likewise.
+	* printcmd.c (printf_wide_c_string): Likewise.
+	(ui_printf): Likewise.
+	* python/py-type.c (typy_lookup_typename): Likewise.
+	* python/py-xmethods.c (python_xmethod_worker::invoke):
+	Likewise.
+	* rust-exp.y: Likewise.
+
+2019-12-04  Christian Biesinger  <cbiesinger@google.com>
+
+	* configure.nat (obsd64): Add missing files x86-nat.o and
+	nat/x86-dregs.o.
+
+2019-12-04  Tom Tromey  <tom@tromey.com>
+
+	* valprint.c (val_print_string): Use metadata_style.
+	* go-valprint.c (print_go_string): Use metadata style.
+	* p-valprint.c (pascal_object_print_static_field): Use metadata
+	style.
+	* cp-valprint.c (cp_print_static_field): Use metadata style.
+
+2019-12-04  Andrew Burgess  <andrew.burgess@embecosm.com>
+	    Chris January  <chris.january@arm.com>
+
+	* f-exp.y (COMPLEX_KEYWORD, SINGLE, DOUBLE, PRECISION): New
+	tokens.
+	(typebase): New patterns for complex, single/double precision, and
+	single/double complex.
+	(f77_keywords): Change token for complex keyword, and add single,
+	double, and precision keywords.
+
+2019-12-04  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* avr-tdep.c (_initialize_avr_tdep): Improve help of command
+	"info io_registers".
+
+2019-12-04  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* regcache.c (cooked_read_test): Initialize thread list of
+	mock_inferior.
+
+2019-12-04  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* aarch64-linux-tdep.c: Remove includes.
+
+2019-12-04  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* aarch64-tdep.c: Remove includes.
+
+2019-12-04  Simon Marchi  <simon.marchi@efficios.com>
+
+	* filtered-iterator.h (filtered_iterator) <operator==,
+	operator!=>: Compare wrapped iterators, not wrapped pointers.
+	* Makefile.in (SUBDIR_UNITTESTS_SRCS): Add
+	unittests/filtered_iterator-selftests.c.
+	* unittests/filtered_iterator-selftests.c: New file.
+
+2019-12-04  Tom Tromey  <tromey@adacore.com>
+
+	* gdbtypes.c (create_range_type): Inherit endianity
+	from base type.
+
+2019-12-04  Tom Tromey  <tromey@adacore.com>
+
+	* ada-lang.c (decode_constrained_packed_array)
+	(ada_value_assign, value_assign_to_component): Update.
+	* dwarf2loc.c (rw_pieced_value, access_memory)
+	(dwarf2_compile_expr_to_ax): Update.
+	* dwarf2read.c (dwarf2_add_field): Update.
+	* eval.c (evaluate_subexp_standard): Update.
+	* gdbarch.c, gdbarch.h: Rebuild.
+	* gdbarch.sh (bits_big_endian): Remove.
+	* gdbtypes.h (union field_location): Update comment.
+	* target-descriptions.c (make_gdb_type): Update.
+	* valarith.c (value_bit_index): Update.
+	* value.c (struct value) <bitpos>: Update comment.
+	(unpack_bits_as_long, modify_field): Update.
+	* value.h (value_bitpos): Update comment.
+
+2019-12-04  Tom Tromey  <tromey@adacore.com>
+
+	* gdbtypes.c (type_byte_order): Move earlier.  Assert for unknown
+	endian-ness.
+
+2019-12-04  Tom Tromey  <tromey@adacore.com>
+
+	* dwarf2read.c (dwarf2_init_float_type)
+	(dwarf2_init_complex_target_type): Add byte_order parameter.
+	(read_base_type): Compute byte order earlier.
+	* gdbtypes.c (init_float_type): Add byte_order parameter.
+	* gdbtypes.h (init_float_type): Add byte_order parameter.
+
+2019-12-04  Tom Tromey  <tromey@adacore.com>
+
+	* unittests/tui-selftests.c: Conditionally include tui-winsource.h.
+
+2019-12-04  Tom Tromey  <tromey@adacore.com>
+
+	* dwarf2read.c (process_structure_scope): Initialize
+	"discr_offset".
+
+2019-12-04  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* mi/mi-symbol-cmds.c (mi_symbol_info): Take extra parameter, and
+	add it into the search spec.
+	(parse_max_results_option): New function.
+	(mi_info_functions_or_variables): Parse -max-results flag and pass
+	it to mi_symbol_info.
+	(mi_cmd_symbol_info_modules): Likewise.
+	(mi_cmd_symbol_info_types): Likewise.
+	* symtab.c (global_symbol_searcher::add_matching_symbols): Change
+	return type to bool, change result container into a set, and don't
+	add new results if we have enough already.
+	(global_symbol_searcher::add_matching_msymbols): Change return
+	type to bool, and don't add new results if we have enough already.
+	(sort_search_symbols_remove_dups): Delete.
+	(global_symbol_searcher::search): Early exit from search loop when
+	we have enough results.  Use a std::set to collect the results
+	from calling add_matching_symbols.
+	* symtab.h (global_symbol_searcher) <set_max_seach_results>: New
+	member function.
+	(global_symbol_searcher) <m_max_search_results>: New member
+	variable.
+	(global_symbol_searcher) <add_matching_symbols>: Update header
+	comment and change return type to bool.
+	(global_symbol_searcher) <add_matching_msymbols>: Update header
+	comment and change return type to bool.
+
+2019-12-04  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* symtab.c (symbol_search::compare_search_syms): Update header
+	comment.
+	(global_symbol_searcher::is_suitable_msymbol): New function.
+	(global_symbol_searcher::expand_symtabs): New function.
+	(global_symbol_searcher::add_matching_symbols): New function.
+	(global_symbol_searcher::add_matching_msymbols): New function.
+	(global_symbol_searcher::search): Move most of the content
+	into the new functions above, and call them as needed.
+	* symtab.h (global_symbol_searcher) <expand_symtabs>: New member
+	function.
+	(global_symbol_searcher) <add_matching_symbols>: New member
+	function.
+	(global_symbol_searcher) <add_matching_msymbols>: New member
+	function.
+	(global_symbol_searcher) <is_suitable_msymbol>: New member
+	function.
+
+2019-12-04  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* mi/mi-cmds.c (mi_cmds): Add -symbol-info-module-functions and
+	-symbol-info-module-variables entries.
+	* mi/mi-cmds.h (mi_cmd_symbol_info_module_functions): Declare.
+	(mi_cmd_symbol_info_module_variables): Declare.
+	* mi/mi-symbol-cmds.c
+	(module_symbol_search_iterator): New typedef.
+	(output_module_symbols_in_single_module_and_file): New function.
+	(output_module_symbols_in_single_module): New function.
+	(mi_info_module_functions_or_variables): New function.
+	(mi_cmd_symbol_info_module_functions): New function.
+	(mi_cmd_symbol_info_module_variables): New function.
+	* NEWS: Mention new MI command.
+
+2019-12-03  Christian Biesinger  <cbiesinger@google.com>
+
+	* bcache.c (hash): Remove.
+	(hash_continue): Remove.
+	* bcache.h (hash): Remove.
+	(hash_continue): Remove.
+	(struct bcache) <ctor>: Update.
+	* psymtab.c (psymbol_hash): Update.
+	* stabsread.c (hashname): Update.
+	* utils.h (fast_hash): Add an argument for a start value,
+	defaulting to zero.
+
+2019-12-03  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+	* symtab.c (symbol_cache_clear_slot):  Move close to cleared type.
+	(destroy_block_symbol_cache): New function.
+	(symbol_cache:~symbol_cache) Call destroy_block_symbol_cache.
+	(resize_symbol_cache): Likewise.
+
+2019-12-02  Tom Tromey  <tom@tromey.com>
+
+	* unittests/tui-selftests.c (run_tests): Make conditional.
+	(_initialize_tui_selftest): Make conditional.
+
+2019-12-02  Christian Biesinger  <cbiesinger@google.com>
+
+	* aix-thread.c (debug_aix_thread): Change type to bool.
+
+2019-12-02  Luis Machado  <luis.machado@linaro.org>
+
+	* infrun.c (follow_fork_inferior): Remove outdated FIXME comment.
+
+2019-12-01  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* dwarf2read.c (read_tag_string_type): Read the fields required to
+	make a dynamic string, and possibly create a dynamic range for the
+	string.
+	(attr_to_dynamic_prop): Setup is_reference based on the type of
+	attribute being processed.
+	* gdbtypes.c (is_dynamic_type_internal): Handle TYPE_CODE_STRING.
+	(resolve_dynamic_array): Rename to...
+	(resolve_dynamic_array_or_string): ...this, update header comment,
+	and accept TYPE_CODE_STRING.
+	(resolve_dynamic_type_internal): Handle TYPE_CODE_STRING.
+
+2019-12-01  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* dwarf2read.c (dwarf2_per_cu_int_type): New function, takes most
+	of its implementation from...
+	(dwarf2_per_cu_addr_sized_int_type): ...here, which now just calls
+	the new function.
+
+2019-12-01  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* dwarf2read.c (read_subrange_type): Read bit and byte stride and
+	create a range with stride where appropriate.
+	* f-valprint.c: Include 'gdbarch.h'.
+	(f77_print_array_1): Take the stride into account when walking the
+	array.  Also convert the stride into addressable units.
+	* gdbtypes.c (create_range_type): Initialise the stride to
+	constant zero.
+	(create_range_type_with_stride): New function, initialise the
+	range as normal, and then setup the stride.
+	(has_static_range): Include the stride here.  Also change the
+	return type to bool.
+	(create_array_type_with_stride): Consider the range stride if the
+	array isn't given its own stride.
+	(resolve_dynamic_range): Resolve the stride if needed.
+	* gdbtypes.h (struct range_bounds) <stride>: New member variable.
+	(struct range_bounds) <flag_is_byte_stride>: New member variable.
+	(TYPE_BIT_STRIDE): Define.
+	(TYPE_ARRAY_BIT_STRIDE): Define.
+	(create_range_type_with_stride): Declare.
+	* valarith.c (value_subscripted_rvalue): Take range stride into
+	account when walking the array.
+
+2019-12-01  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-win.c (tui_all_windows_info): Treat inactive TUI
+	specially.
+
+2019-12-01  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-winsource.c (tui_copy_source_line): Don't advance past
+	\0.
+	* unittests/tui-selftests.c: New file.
+	* Makefile.in (SUBDIR_UNITTESTS_SRCS): Add tui-selftests.c.
+
+2019-12-01  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui.c (tui_enable): Call tui_update_variables earlier.
+
+2019-12-01  Tom Tromey  <tom@tromey.com>
+
+	* NEWS: Document new settings.
+	* tui/tui-wingeneral.c (box_win): Apply appropriate border style.
+	* tui/tui-win.c (_initialize_tui_win): Add border style
+	observers.
+	* tui/tui-io.h (tui_apply_style): Declare.
+	* tui/tui-io.c (tui_apply_style): Rename from apply_style.  No
+	longer static.
+	(apply_ansi_escape, tui_set_reverse_mode): Update.
+	* cli/cli-style.h (class cli_style_option) <add_setshow_commands>:
+	Add "skip_intensity" parameter.
+	<changed>: New member.
+	<do_set_value>: Declare.
+	(tui_border_style, tui_active_border_style): Declare.
+	* cli/cli-style.c (tui_border_style, tui_active_border_style): New
+	globals.
+	(cli_style_option): Initialize "changed".
+	(cli_style_option::do_set_value): New function.
+	(cli_style_option::add_setshow_commands): Add "skip_intensity"
+	parameter.  Update.
+	(STYLE_ADD_SETSHOW_COMMANDS): Add "SKIP" parameter.
+	(_initialize_cli_style): Update.  Create TUI border style
+	commands.
+
+2019-12-01  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-winsource.h (tui_copy_source_line): Add "ndigits"
+	parameter.
+	* tui/tui-winsource.c (tui_copy_source_line): Add "ndigits"
+	parameter.
+	* tui/tui-win.h (compact_source): Declare.
+	* tui/tui-win.c (compact_source): New global.
+	(tui_set_compact_source, tui_show_compact_source): New functions.
+	(_initialize_tui_win): Add "compact-source" setting.
+	* tui/tui-source.c (tui_source_window::set_contents): Handle
+	compact_source setting.
+	* tui/tui-disasm.c (tui_disasm_window::set_contents): Update.
+	* NEWS: Document new setting.
+
+2019-11-30  Tom Tromey  <tom@tromey.com>
+
+	* dwarf2read.c (dwarf2_add_field): Include field offset when
+	computing variant part length.
+
+2019-11-30  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+	* NEWS:  Mention define-prefix.  Tell that command names can now
+	contain a . character.
+
+2019-11-30  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* command.h (valid_cmd_char_p): Declare.
+	* cli/cli-decode.c (valid_cmd_char_p): New function factorizing
+	the check of valid command char.
+	(find_command_name_length, valid_user_defined_cmd_name_p): Use
+	valid_cmd_char_p.
+	* cli/cli-script.c (validate_comname): Likewise.
+	* completer.c (gdb_completer_command_word_break_characters):
+	Do not remove . from the word break char, update comments.
+	(complete_line_internal_1): Use valid_cmd_char_p.
+	* guile/scm-cmd.c (gdbscm_parse_command_name): Likewise.
+	* python/py-cmd.c (gdbpy_parse_command_name): Likewise.
+
+2019-11-30  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* cli/cli-script.c (do_define_command): Ensure a redefined
+	prefix command is kept as a prefix command.
+	(define_prefix_command): New function.
+	(show_user_1): Report user defined prefixes.
+	(_initialize_cli_script):  Create the new 'define-prefix' command.
+	Add completers for 'define' and 'document'.
+	* top.c (execute_command):  If command is a user-defined prefix only
+	command, report the list of commands for this prefix command.
+
+2019-11-29  Tankut Baris Aktemur  <tankut.baris.aktemur@intel.com>
+
+	* valops.c (find_oload_champ): Improve debug output.
+
+2019-11-29  Tankut Baris Aktemur  <tankut.baris.aktemur@intel.com>
+
+	* valops.c (find_oload_champ): Print part of debug messages
+	before the badness vector is std::move'd.
+
+2019-11-28  Tom Tromey  <tom@tromey.com>
+
+	* value.c (creal_internal_fn): Fix comment.
+
+2019-11-28  Tom Tromey  <tom@tromey.com>
+
+	* gdbtypes.h (struct range_bounds) <flag_upper_bound_is_count,
+	flag_bound_evaluated>: Now unsigned.
+
+2019-11-28  Tom Tromey  <tom@tromey.com>
+
+	* guile/guile-internal.h (vlscm_scm_from_value_unsafe): Don't
+	declare.
+
+2019-11-28  Mihails Strasuns  <mihails.strasuns@intel.com>
+
+	* jit.c (jit_bfd_try_read_symtab): Fix printed function name in the
+	debug output.
+	* jit.c (jit_unregister_code): Add debug print to match
+	`jit_register_code`.
+
+2019-11-27  Christian Biesinger  <cbiesinger@google.com>
+
+	* NEWS: Mention the new multithreaded symbol loading.
+
+2019-11-27  Christian Biesinger  <cbiesinger@google.com>
+
+	* maint.c (n_worker_threads): Default to 0.
+	(worker_threads_disabled): New function.
+	* maint.h (worker_threads_disabled): New function.
+	* minsyms.c (minimal_symbol_reader::record_full): Call symbol_set_names
+	here if worker_threads_disabled () is true.
+	(minimal_symbol_reader::install): Skip all threading if
+	worker_threads_disabled () is true.
+
+2019-11-27  Christian Biesinger  <cbiesinger@google.com>
+
+	* minsyms.c (add_minsym_to_hash_table): Use a previously computed
+	hash code if possible.
+	(add_minsym_to_demangled_hash_table): Likewise.
+	(minimal_symbol_reader::install): Compute the hash codes for msymbol
+	on the background thread.
+	* symtab.h (struct minimal_symbol) <hash_value, demangled_hash_value>:
+	Add these fields.
+
+2019-11-27  Christian Biesinger  <cbiesinger@google.com>
+
+	* minsyms.c (minimal_symbol_reader::install): Also compute the hash
+	of the mangled name on the background thread.
+	* symtab.c (symbol_set_names): Allow passing in the hash of the
+	linkage_name.
+	* symtab.h (symbol_set_names): Likewise.
+
+2019-11-27  Kevin Buettner  <kevinb@redhat.com>
+
+	* dwarf2read.c (inherit_abstract_dies): Ensure that delayed
+	physnames are computed for inherited DIEs.
+
+2019-11-27  Tom Tromey  <tromey@adacore.com>
+
+	* dwarf2read.h (struct dwarf2_per_objfile): Remove unnecessary
+	backslashes.
+	* cp-support.c: Remove unnecessary backslashes.
+
+2019-11-27  Christian Biesinger  <cbiesinger@google.com>
+
+	* ada-exp.y (write_ambiguous_var): Replace SYMBOL_SET_LINKAGE_NAME
+	with sym->set_linkage_name.
+	* coffread.c (coff_read_enum_type): Likewise.
+	* mdebugread.c (parse_symbol): Likewise.
+	* stabsread.c (patch_block_stabs): Likewise.
+	(define_symbol): Likewise.
+	(read_enum_type): Likewise.
+	(common_block_end): Likewise.
+	* symtab.h (struct general_symbol_info) <set_linkage_name>: New
+	function.
+	(SYMBOL_SET_LINKAGE_NAME): Remove.
+	* xcoffread.c (process_xcoff_symbol): Replace SYMBOL_SET_LINKAGE_NAME
+	with sym->set_linkage_name.
+
+2019-11-27  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* mi/mi-cmds.c (mi_cmds): Add 'symbol-info-modules' entry.
+	* mi/mi-cmds.h (mi_cmd_symbol_info_modules): Declare.
+	* mi/mi-symbol-cmds.c (mi_cmd_symbol_info_modules): New function.
+	* NEWS: Mention new MI command.
+
+2019-11-27  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* mi/mi-cmds.c (mi_cmds): Add '-symbol-info-functions',
+	'-symbol-info-types', and '-symbol-info-variables'.
+	* mi/mi-cmds.h (mi_cmd_symbol_info_functions): Declare.
+	(mi_cmd_symbol_info_types): Declare.
+	(mi_cmd_symbol_info_variables): Declare.
+	* mi/mi-symbol-cmds.c: Add 'source.h' and 'mi-getopt.h' includes.
+	(output_debug_symbol): New function.
+	(output_nondebug_symbol): New function.
+	(mi_symbol_info): New function.
+	(mi_info_functions_or_variables): New function.
+	(mi_cmd_symbol_info_functions): New function.
+	(mi_cmd_symbol_info_types): New function.
+	(mi_cmd_symbol_info_variables): New function.
+	* NEWS: Mention new commands.
+
+2019-11-27  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* symtab.c (symbol_to_info_string): New function, most content
+	moved from print_symbol_info, but updated to return a std::string.
+	(print_symbol_info): Update to use symbol_to_info_string and print
+	returned string.
+	* symtab.h (symbol_to_info_string): Declare new function.
+
+2019-11-27  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* python/python.c (gdbpy_rbreak): Convert to using
+	global_symbol_searcher.
+	* symtab.c (file_matches): Convert return type to bool, change
+	file list to std::vector, update header comment.
+	(search_symbols): Rename to...
+	(global_symbol_searcher::search): ...this and update now its
+	a member function of global_symbol_searcher.  Take account of the
+	changes to file_matches.
+	(symtab_symbol_info): Convert to using global_symbol_searcher.
+	(rbreak_command): Likewise.
+	(search_module_symbols): Likewise.
+	* symtab.h (enum symbol_search): Update comment.
+	(search_symbols): Remove declaration.
+	(class global_symbol_searcher): New class.
+
+2019-11-26  Tom Tromey  <tromey@adacore.com>
+
+	* cp-support.c (_initialize_cp_support): Conditionally initialize
+	gdb_demangle_attempt_core_dump.
+
+2019-11-26  Tom Tromey  <tom@tromey.com>
+
+	* python/py-function.c (fnpy_init): Update.
+	* value.h (add_internal_function): Adjust declaration.
+	* value.c (function_destroyer): Remove.
+	(do_add_internal_function): Don't set destroyer or copy name.
+	(add_internal_function): Take unique_xmalloc_ptr<char> for name.
+	Set name_allocated.
+	* python/py-cmd.c (cmdpy_destroyer): Don't free "name".
+	(cmdpy_init): Set name_allocated.
+	* cli/cli-decode.h (struct cmd_list_element) <name_allocated>: New
+	member.
+	(~cmd_list_element): Free "name" if needed.
+
+2019-11-26  Tom Tromey  <tom@tromey.com>
+
+	* value.h (add_internal_function): Add new overload.  Move
+	documentation from value.h.
+	* value.c (do_add_internal_function): New function.
+	(add_internal_function): Use it.  Add new overload.
+	(function_destroyer): Don't free doc.
+	* python/py-function.c (fnpy_init): Update.
+
+2019-11-26  Tom Tromey  <tom@tromey.com>
+
+	* python/py-cmd.c (cmdpy_destroyer): Don't free "doc".
+	(cmdpy_init): Set "doc_allocated".
+
+2019-11-26  Tom Tromey  <tom@tromey.com>
+
+	* gdbsupport/thread-pool.c (thread_pool::set_thread_count): Set
+	name of worker thread.
+	* gdbsupport/common.m4 (GDB_AC_COMMON): Check for
+	pthread_setname_np.
+	* configure, config.in: Rebuild.
+
+2019-11-26  Tom Tromey  <tom@tromey.com>
+
+	* python/python.c (class gdbpy_gil): New.
+	(struct gdbpy_event): Add constructor, destructor, operator().
+	(gdbpy_post_event): Use run_on_main_thread.
+	(gdbpy_initialize_events): Remove.
+	(do_start_initialization): Update.
+
+2019-11-26  Tom Tromey  <tom@tromey.com>
+
+	* NEWS: Add entry.
+	* maint.c (_initialize_maint_cmds): Add "worker-threads" maint
+	commands.  Call update_thread_pool_size.
+	(update_thread_pool_size, maintenance_set_worker_threads): New
+	functions.
+	(n_worker_threads): New global.
+
+2019-11-26  Christian Biesinger  <cbiesinger@google.com>
+	    Tom Tromey  <tom@tromey.com>
+
+	* minsyms.c (minimal_symbol_reader::install): Use
+	parallel_for_each.
+	* gdbsupport/parallel-for.h: New file.
+	* Makefile.in (HFILES_NO_SRCDIR): Add gdbsupport/parallel-for.h.
+
+2019-11-26  Christian Biesinger  <cbiesinger@google.com>
+	    Tom Tromey  <tom@tromey.com>
+
+	* gdbsupport/thread-pool.h: New file.
+	* gdbsupport/thread-pool.c: New file.
+	* Makefile.in (COMMON_SFILES): Add thread-pool.c.
+	(HFILES_NO_SRCDIR): Add thread-pool.h.
+
+2019-11-26  Tom Tromey  <tom@tromey.com>
+
+	* event-top.h (thread_local_segv_handler): Declare.
+	* event-top.c (thread_local_segv_handler): New global.
+	(install_handle_sigsegv, handle_sigsegv): New functions.
+	(async_init_signals): Install SIGSEGV handler.
+	* cp-support.c (gdb_demangle_jmp_buf): Change type.  Now
+	thread-local.
+	(report_failed_demangle): New function.
+	(gdb_demangle): Make core_dump_allowed atomic.  Remove signal
+	handler-setting code, instead use segv_handler.  Run warning code
+	on main thread.
+
+2019-11-26  Tom Tromey  <tom@tromey.com>
+
+	* run-on-main-thread.c: New file.
+	* run-on-main-thread.h: New file.
+	* unittests/main-thread-selftests.c: New file.
+	* Makefile.in (SUBDIR_UNITTESTS_SRCS): Add
+	main-thread-selftests.c.
+	(HFILES_NO_SRCDIR): Add run-on-main-thread.h.
+	(COMMON_SFILES): Add run-on-main-thread.c.
+
+2019-11-26  Tom Tromey  <tom@tromey.com>
+
+	* main.c (setup_alternate_signal_stack): Remove.
+	(captured_main_1): Use gdb::alternate_signal_stack.
+	* gdbsupport/alt-stack.h: New file.
+
+2019-11-26  Tom Tromey  <tom@tromey.com>
+
+	* gdbsupport/signals-state-save-restore.c (original_signal_mask):
+	Remove comment.
+	(save_original_signals_state, restore_original_signals_state): Use
+	gdb_sigmask.
+	* linux-nat.c (block_child_signals, restore_child_signals_mask)
+	(_initialize_linux_nat): Use gdb_sigmask.
+	* guile/guile.c (_initialize_guile): Use block_signals.
+	* Makefile.in (HFILES_NO_SRCDIR): Add gdb-sigmask.h.
+	* gdbsupport/gdb-sigmask.h: New file.
+	* event-top.c (async_sigtstp_handler): Use gdb_sigmask.
+	* cp-support.c (gdb_demangle): Use gdb_sigmask.
+	* gdbsupport/common.m4 (GDB_AC_COMMON): Check for
+	pthread_sigmask.
+	* configure, config.in: Rebuild.
+	* gdbsupport/block-signals.h: New file.
+
+2019-11-26  Tom Tromey  <tom@tromey.com>
+
+	* acinclude.m4: Include ax_pthread.m4.
+	* Makefile.in (PTHREAD_CFLAGS, PTHREAD_LIBS): New variables.
+	(INTERNAL_CFLAGS_BASE): Use PTHREAD_CFLAGS.
+	(CLIBS): Use PTHREAD_LIBS.
+	(aclocal_m4_deps): Add ax_pthread.m4.
+	* config.in, configure: Rebuild.
+	* gdbsupport/common.m4 (GDB_AC_COMMON): Check for std::thread.
+
+2019-11-26  Tom Tromey  <tom@tromey.com>
+
+	* symtab.h (struct minimal_symbol) <name_set>: New member.
+	* minsyms.c (minimal_symbol_reader::record_full): Copy name.
+	Don't call symbol_set_names.
+	(minimal_symbol_reader::install): Call symbol_set_names.
+
+2019-11-26  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* python/python.c (gdbpy_enter::~gdbpy_enter): Release GIL after
+	restore_active_ext_lang, as GIL is needed for (indirectly)
+	called PyOS_InterruptOccurred.
+
+2019-11-26  Simon Marchi  <simon.marchi@efficios.com>
+
+	* sparc-nat.c (sparc_xfer_wcookie): Sync declaration with
+	definition.
+
+2019-11-26  Simon Marchi  <simon.marchi@efficios.com>
+
+	* remote-sim.c (simulator_command): Make static, remove
+	declaration.
+
+2019-11-26  Simon Marchi  <simon.marchi@efficios.com>
+
+	* unittests/array-view-selftests.c (check_ptr_size_ctor2): Make
+	static.
+	* unittests/basic_string_view/capacity/1.cc (test01): Likewise.
+	* unittests/basic_string_view/cons/char/1.cc (test01): Likewise.
+	(main): Likewise.
+	* unittests/basic_string_view/cons/char/2.cc (test03): Likewise.
+	(main): Likewise.
+	* unittests/basic_string_view/cons/char/3.cc (test05): Likewise.
+	(main): Likewise.
+	* unittests/basic_string_view/element_access/char/1.cc (test01):
+	Likewise.
+	(main): Likewise.
+	* unittests/basic_string_view/element_access/char/empty.cc (main):
+	Likewise.
+	* unittests/basic_string_view/element_access/char/front_back.cc
+	(test01): Likewise.
+	(main): Likewise.
+	* unittests/basic_string_view/inserters/char/2.cc (test05):
+	Likewise.
+	(main): Likewise.
+	* unittests/basic_string_view/modifiers/remove_prefix/char/1.cc
+	(test01): Likewise.
+	(main): Likewise.
+	* unittests/basic_string_view/modifiers/remove_suffix/char/1.cc
+	(test01): Likewise.
+	(main): Likewise.
+	* unittests/basic_string_view/modifiers/swap/char/1.cc (test01):
+	Likewise.
+	* unittests/basic_string_view/operations/compare/char/1.cc
+	(test01): Likewise.
+	(main): Likewise.
+	* unittests/basic_string_view/operations/compare/char/13650.cc
+	(test01): Likewise.
+	* unittests/basic_string_view/operations/copy/char/1.cc (test01):
+	Likewise.
+	(main): Likewise.
+	* unittests/basic_string_view/operations/data/char/1.cc (test01):
+	Likewise.
+	(main): Likewise.
+	* unittests/basic_string_view/operations/find/char/1.cc (test01):
+	Likewise.
+	(main): Likewise.
+	* unittests/basic_string_view/operations/find/char/2.cc (test02):
+	Likewise.
+	(main): Likewise.
+	* unittests/basic_string_view/operations/find/char/3.cc (test03):
+	Likewise.
+	(main): Likewise.
+	* unittests/basic_string_view/operations/find/char/4.cc (main):
+	Likewise.
+	* unittests/basic_string_view/operations/rfind/char/1.cc (test01):
+	Likewise.
+	(main): Likewise.
+	* unittests/basic_string_view/operations/rfind/char/2.cc (test02):
+	Likewise.
+	(main): Likewise.
+	* unittests/basic_string_view/operations/rfind/char/3.cc (test03):
+	Likewise.
+	(main): Likewise.
+	* unittests/basic_string_view/operations/substr/char/1.cc
+	(test01): Likewise.
+	(main): Likewise.
+	* unittests/basic_string_view/operators/char/2.cc (main):
+	Likewise.
+	* unittests/optional/assignment/1.cc (test): Likewise.
+	* unittests/optional/assignment/2.cc (test): Likewise.
+	* unittests/optional/assignment/3.cc (test): Likewise.
+	* unittests/optional/assignment/4.cc (test): Likewise.
+	* unittests/optional/assignment/5.cc (test): Likewise.
+	* unittests/optional/assignment/6.cc (test): Likewise.
+	* unittests/optional/assignment/7.cc (test): Likewise.
+	* unittests/optional/cons/copy.cc (test): Likewise.
+	* unittests/optional/cons/default.cc (test): Likewise.
+	* unittests/optional/cons/move.cc (test): Likewise.
+	* unittests/optional/cons/value.cc (test): Likewise.
+	* unittests/optional/in_place.cc (test): Likewise.
+	* unittests/optional/observers/1.cc (test): Likewise.
+	* unittests/optional/observers/2.cc (test): Likewise.
+
+2019-11-26  Simon Marchi  <simon.marchi@efficios.com>
+
+	* tui-win.h (tui_set_var_cmd): Remove.
+	* tui-win.c (tui_set_var_cmd): Make static.
+
+2019-11-26  Simon Marchi  <simon.marchi@efficios.com>
+
+	* breakpoint.h (hbreak_command_wrapper, thbreak_command_wrapper,
+	rbreak_command_wrapper): Remove.
+	* symtab.c (rbreak_command_wrapper): Remove.
+
+2019-11-26  Simon Marchi  <simon.marchi@efficios.com>
+
+	* inferior.h (info_terminal_command): Remove declaration.
+	* inflow.c (info_terminal_command): Make static.
+
+2019-11-26  Simon Marchi  <simon.marchi@efficios.com>
+
+	* inferior.c (exit_inferior_silent): Remove.
+
+2019-11-26  Simon Marchi  <simon.marchi@efficios.com>
+
+	* dictionary.c (dict_empty, mdict_empty): Remove.
+	* dictionary.c (mdict_empty): Remove.
+
+2019-11-26  Simon Marchi  <simon.marchi@efficios.com>
+
+	 * arc-tdep.c (arc_insn_get_memory_base_reg): Make static.
+	 (arc_insn_get_memory_offset): Likewise.
+	 (arc_insn_dump): Likewise.
+	 * cp-support.c (test_cp_symbol_name_matches): Likewise.
+	 * csky-linux-tdep.c (csky_supply_fregset): Likewise.
+	 * dictionary.c (dict_iterator_next): Likewise.
+	 (dict_iter_match_first): Likewise.
+	 (dict_iter_match_next): Likewise.
+	 * f-lang.c (evaluate_subexp_f): Likewise.
+	 * hppa-tdep.c (hppa_read_pc): Likewise.
+	 * i386-tdep.c (i386_floatformat_for_type): Likewise.
+	 * parse.c (write_exp_elt_msym): Likewise.
+	 * ppc-linux-tdep.c (ppc_floatformat_for_type): Likewise.
+	 * remote.c (remote_packet_size): Likewise.
+	 (remote_notif_stop_parse): Likewise.
+	 * rs6000-aix-tdep.c (aix_sighandle_frame_sniffer): Likewise.
+	 * s12z-tdep.c (s12z_disassemble_info): Likewise.
+	 * source.c (prepare_path_for_appending): Likewise.
+	 * sparc64-linux-tdep.c
+	 (sparc64_linux_handle_segmentation_fault); Likewise.
+	 * stack.c (frame_selection_by_function_completer): Likewise.
+
+2019-11-26  Simon Marchi  <simon.marchi@efficios.com>
+
+	* completer.c (set_gdb_completion_word_break_characters):
+	Remove.
+
+2019-11-26  Simon Marchi  <simon.marchi@efficios.com>
+
+	* dwarf-index-write.c: Include dwarf-index-write.h.
+	* mi/mi-interp.c: Include mi/mi-interp.h.
+
+2019-11-26  Simon Marchi  <simon.marchi@efficios.com>
+
+	* aarch32-tdep.c: Include aarch32-tdep.h.
+	* aarch32-tdep.h: Forward-declare struct target_desc.
+
+2019-11-26  Christian Biesinger  <cbiesinger@google.com>
+
+	* linux-nat.c (detach_one_lwp): Call safe_strerror instead of
+	strerror.
+	* nto-procfs.c (nto_procfs_target::create_inferior): Likewise.
+	* windows-nat.c (windows_nat_target::create_inferior): Likewise.
+
+2019-11-25  Tom de Vries  <tdevries@suse.de>
+
+	* contrib/words.sh: Add -c option.
+
+2019-11-25  Christian Biesinger  <cbiesinger@google.com>
+
+	* solib.c (solib_find_1): Change int to bool.
+	(exec_file_find): Change int to bool.
+	(solib_find): Change int to bool.
+	(solib_read_symbols): Change int to bool.
+	(solib_used): Change int to bool.
+	(solib_add): Change int to bool.
+	(info_sharedlibrary_command): Change int to bool.
+	(solib_contains_address_p): Change int to bool.
+	(solib_keep_data_in_core): Change int to bool.
+	(in_solib_dynsym_resolve_code): Change int to bool.
+	(reload_shared_libraries_1): Change int to bool.
+	(gdb_sysroot_changed): Change int to bool.
+	* solib.h (solib_read_symbols): Change int to bool.
+	(solib_contains_address_p): Change int to bool.
+	(solib_keep_data_in_core): Change int to bool.
+	(in_solib_dynsym_resolve_code): Change int to bool.
+	(libpthread_name_p): Change int to bool.
+
+2019-11-25  Luis Machado  <luis.machado@linaro.org>
+
+	* NEWS (New Commands): Mention "set debug remote-packet-max-chars".
+	* remote.c (REMOTE_DEBUG_MAX_CHAR): Remove.
+	(remote_packet_max_chars): New static global.
+	(show_remote_packet_max_chars): New function.
+	(remote_target::putpkt_binary): Adjust to use new
+	remote_packet_max_chars option.
+	(remote_target::getpkt_or_notif_sane_1): Likewise.
+	(_initialize_remote): Register new remote-packet-max-chars option.
+
+2019-11-24  Simon Marchi  <simon.marchi@efficios.com>
+
+	* m68k-linux-nat.c: Include gdbarch.h.
+
+2019-11-24  Tom Tromey  <tom@tromey.com>
+
+	* symfile.c (read_symbols): Update.
+	* psymtab.c (require_partial_symbols): Change type of "verbose" to
+	bool.
+	(psym_map_symtabs_matching_filename, find_pc_sect_psymtab)
+	(psym_lookup_symbol, psym_find_last_source_symtab)
+	(psym_forget_cached_source_info, psym_print_stats)
+	(psym_expand_symtabs_for_function, psym_expand_all_symtabs)
+	(psym_expand_symtabs_with_fullname, psym_map_symbol_filenames)
+	(psym_map_matching_symbols, psym_expand_symtabs_matching)
+	(psym_find_compunit_symtab_by_address)
+	(maintenance_print_psymbols, maintenance_info_psymtabs)
+	(maintenance_check_psymtabs): Update.
+	* psymtab.h (require_partial_symbols): Change type of "verbose" to
+	bool.
+
+2019-11-22  Tom Tromey  <tom@tromey.com>
+
+	* observable.h: Update comments.
+
+2019-11-22  Tom Tromey  <tromey@adacore.com>
+
+	* ada-tasks.c (ada_task_is_alive): Make parameter const.
+	(print_ada_task_info): Don't try to fetch thread id if task is not
+	alive.
+
+2019-11-22  Christian Biesinger  <cbiesinger@google.com>
+
+	* ada-exp.y: Update.
+	* ada-lang.c (sort_choices): Update.
+	(ada_print_symbol_signature): Update.
+	(resolve_subexp): Update.
+	(ada_parse_renaming): Update.
+	(ada_read_renaming_var_value): Update.
+	(lesseq_defined_than): Update.
+	(remove_extra_symbols): Update.
+	(remove_irrelevant_renamings): Update.
+	(ada_add_block_symbols): Update.
+	(ada_collect_symbol_completion_matches): Update.
+	(ada_is_renaming_symbol): Update.
+	(aggregate_assign_from_choices): Update.
+	(ada_evaluate_subexp): Update.
+	(ada_has_this_exception_support): Update.
+	(ada_is_non_standard_exception_sym): Update.
+	(ada_add_exceptions_from_frame): Update.
+	(ada_add_global_exceptions): Update.
+	(ada_print_subexp): Update.
+	* ax-gdb.c (gen_var_ref): Update.
+	(gen_maybe_namespace_elt): Update.
+	(gen_expr_for_cast): Update.
+	(gen_expr): Update.
+	* block.h: Update.
+	* blockframe.c (find_pc_partial_function): Update.
+	* breakpoint.c (print_breakpoint_location): Update.
+	(update_static_tracepoint): Update.
+	* btrace.c (ftrace_print_function_name): Update.
+	(ftrace_function_switched): Update.
+	* buildsym.c (find_symbol_in_list): Update.
+	* c-exp.y: Update.
+	* c-typeprint.c (c_print_typedef): Update.
+	(c_type_print_template_args): Update.
+	* cli/cli-cmds.c (edit_command): Update.
+	(list_command): Update.
+	(print_sal_location): Update.
+	* coffread.c (patch_opaque_types): Update.
+	(process_coff_symbol): Update.
+	(coff_read_enum_type): Update.
+	* compile/compile-c-symbols.c (c_symbol_substitution_name): Update.
+	(convert_one_symbol): Update.
+	(hash_symname): Update.
+	(eq_symname): Update.
+	* compile/compile-cplus-symbols.c (convert_one_symbol): Update.
+	* compile/compile-cplus-types.c (debug_print_scope): Update.
+	* compile/compile-loc2c.c (do_compile_dwarf_expr_to_c): Update.
+	* compile/compile-object-load.c (get_out_value_type): Update.
+	* cp-namespace.c (cp_scan_for_anonymous_namespaces): Update.
+	(search_symbol_list): Update.
+	(cp_lookup_symbol_imports_or_template): Update.
+	* cp-support.c (overload_list_add_symbol): Update.
+	* ctfread.c (psymtab_to_symtab): Update.
+	* dbxread.c (cp_set_block_scope): Update.
+	* dictionary.c (iter_match_first_hashed): Update.
+	(iter_match_next_hashed): Update.
+	(insert_symbol_hashed): Update.
+	(iter_match_next_linear): Update.
+	* dictionary.h: Update.
+	* dwarf2loc.c (func_get_frame_base_dwarf_block): Update.
+	(locexpr_describe_location_piece): Update.
+	(locexpr_describe_location_1): Update.
+	(locexpr_generate_c_location): Update.
+	(loclist_describe_location): Update.
+	(loclist_generate_c_location): Update.
+	* dwarf2read.c (dw2_debug_names_lookup_symbol): Update.
+	(read_func_scope): Update.
+	(process_enumeration_scope): Update.
+	(new_symbol): Update.
+	(dwarf2_const_value): Update.
+	(dwarf2_symbol_mark_computed): Update.
+	* eval.c (evaluate_funcall): Update.
+	(evaluate_subexp_standard): Update.
+	* expprint.c (print_subexp_standard): Update.
+	(dump_subexp_body_standard): Update.
+	* f-valprint.c (info_common_command_for_block): Update.
+	* findvar.c (get_hosting_frame): Update.
+	(default_read_var_value): Update.
+	* go-lang.c (go_symbol_package_name): Update.
+	* guile/scm-block.c (bkscm_print_block_smob): Update.
+	* guile/scm-symbol.c (syscm_print_symbol_smob): Update.
+	(gdbscm_symbol_name): Update.
+	(gdbscm_symbol_linkage_name): Update.
+	(gdbscm_symbol_print_name): Update.
+	* infcall.c (get_function_name): Update.
+	* infcmd.c (jump_command): Update.
+	(finish_command): Update.
+	* infrun.c (insert_exception_resume_breakpoint): Update.
+	* linespec.c (canonicalize_linespec): Update.
+	(create_sals_line_offset): Update.
+	(convert_linespec_to_sals): Update.
+	(complete_label): Update.
+	(find_label_symbols_in_block): Update.
+	* m2-typeprint.c (m2_print_typedef): Update.
+	* mdebugread.c (mdebug_reg_to_regnum): Update.
+	(parse_symbol): Update.
+	(mylookup_symbol): Update.
+	* mi/mi-cmd-stack.c (list_arg_or_local): Update.
+	(list_args_or_locals): Update.
+	* objc-lang.c (compare_selectors): Update.
+	(info_selectors_command): Update.
+	(compare_classes): Update.
+	(info_classes_command): Update.
+	(find_imps): Update.
+	* p-typeprint.c (pascal_print_typedef): Update.
+	* printcmd.c (build_address_symbolic): Update.
+	(info_address_command): Update.
+	(print_variable_and_value): Update.
+	* python/py-framefilter.c (extract_sym): Update.
+	(py_print_single_arg): Update.
+	* python/py-symbol.c (sympy_str): Update.
+	(sympy_get_name): Update.
+	(sympy_get_linkage_name): Update.
+	* python/python.c (gdbpy_rbreak): Update.
+	* record-btrace.c (btrace_get_bfun_name): Update.
+	(btrace_call_history): Update.
+	* rust-lang.c (rust_print_typedef): Update.
+	* solib-frv.c (frv_fdpic_find_canonical_descriptor): Update.
+	* stabsread.c (stab_reg_to_regnum): Update.
+	(define_symbol): Update.
+	(read_enum_type): Update.
+	(common_block_end): Update.
+	(cleanup_undefined_types_1): Update.
+	(scan_file_globals): Update.
+	* stack.c (print_frame_arg): Update.
+	(print_frame_args): Update.
+	(find_frame_funname): Update.
+	(info_frame_command_core): Update.
+	(iterate_over_block_locals): Update.
+	(print_block_frame_labels): Update.
+	(do_print_variable_and_value): Update.
+	(iterate_over_block_arg_vars): Update.
+	(return_command): Update.
+	* symmisc.c (dump_symtab_1): Update.
+	(print_symbol): Update.
+	* symtab.c (eq_symbol_entry): Update.
+	(symbol_cache_dump): Update.
+	(lookup_language_this): Update.
+	(find_pc_sect_line): Update.
+	(skip_prologue_sal): Update.
+	(symbol_search::compare_search_syms): Update.
+	(treg_matches_sym_type_name): Update.
+	(search_symbols): Update.
+	(print_symbol_info): Update.
+	(rbreak_command): Update.
+	(completion_list_add_symbol): Update.
+	(find_gnu_ifunc): Update.
+	(get_symbol_address): Update.
+	(search_module_symbols): Update.
+	(info_module_subcommand): Update.
+	* symtab.h (SYMBOL_NATURAL_NAME): Remove.
+	(SYMBOL_LINKAGE_NAME): Remove.
+	(SYMBOL_DEMANGLED_NAME): Remove.
+	(SYMBOL_PRINT_NAME): Remove.
+	(SYMBOL_SEARCH_NAME): Remove.
+	* tracepoint.c (set_traceframe_context): Update.
+	(validate_actionline): Update.
+	(collection_list::collect_symbol): Update.
+	(encode_actions_1): Update.
+	(info_scope_command): Update.
+	(print_one_static_tracepoint_marker): Update.
+	* typeprint.c (typedef_hash_table::add_template_parameters): Update.
+	* valops.c (address_of_variable): Update.
+	(find_overload_match): Update.
+	(find_oload_champ): Update.
+
+2019-11-22  Christian Biesinger  <cbiesinger@google.com>
+
+	* ada-lang.c (ada_lookup_simple_minsym): Update.
+	(ada_collect_symbol_completion_matches): Update.
+	* ada-tasks.c (read_atcb): Update.
+	* amd64-windows-tdep.c (amd64_skip_main_prologue): Update.
+	(amd64_windows_skip_trampoline_code): Update.
+	* arm-tdep.c (skip_prologue_function): Update.
+	(arm_skip_stack_protector): Update.
+	* arm-wince-tdep.c (arm_pe_skip_trampoline_code): Update.
+	(arm_wince_skip_main_prologue): Update.
+	* ax-gdb.c (gen_expr): Update.
+	* block.c (call_site_for_pc): Update.
+	* blockframe.c (find_pc_partial_function): Update.
+	* breakpoint.c (set_breakpoint_location_function): Update.
+	* btrace.c (ftrace_print_function_name): Update.
+	(ftrace_function_switched): Update.
+	* c-valprint.c (print_unpacked_pointer): Update.
+	* coffread.c (coff_symfile_read): Update.
+	* compile/compile-c-symbols.c (convert_symbol_bmsym): Update.
+	* compile/compile-cplus-symbols.c (convert_symbol_bmsym): Update.
+	* dwarf-index-write.c (write_psymbols): Update.
+	* dwarf2loc.c (call_site_to_target_addr): Update.
+	(func_verify_no_selftailcall): Update.
+	(tailcall_dump): Update.
+	(call_site_find_chain_1): Update.
+	(dwarf_expr_reg_to_entry_parameter): Update.
+	* elfread.c (elf_gnu_ifunc_record_cache): Update.
+	* eval.c (evaluate_funcall): Update.
+	(evaluate_subexp_standard): Update.
+	(evaluate_subexp_for_sizeof): Update.
+	* expprint.c (print_subexp_standard): Update.
+	(dump_subexp_body_standard): Update.
+	* frame.c (get_prev_frame_always_1): Update.
+	* frv-tdep.c (frv_skip_main_prologue): Update.
+	* gnu-v2-abi.c (gnuv2_value_rtti_type): Update.
+	* gnu-v3-abi.c (gnuv3_rtti_type): Update.
+	(gnuv3_get_typename_from_type_info): Update.
+	(gnuv3_skip_trampoline): Update.
+	* hppa-tdep.c (hppa_lookup_stub_minimal_symbol): Update.
+	* i386-tdep.c (i386_skip_main_prologue): Update.
+	(i386_pe_skip_trampoline_code): Update.
+	* ia64-tdep.c (ia64_convert_from_func_ptr_addr): Update.
+	* infcall.c (get_function_name): Update.
+	* linespec.c (minsym_found): Update.
+	* linux-fork.c (info_checkpoints_command): Update.
+	* m32c-tdep.c (m32c_m16c_address_to_pointer): Update.
+	(m32c_m16c_pointer_to_address): Update.
+	* maint.c (maintenance_translate_address): Update.
+	* minsyms.c (add_minsym_to_hash_table): Update.
+	(add_minsym_to_demangled_hash_table): Update.
+	(lookup_minimal_symbol_mangled): Update.
+	(lookup_minimal_symbol_demangled): Update.
+	(lookup_minimal_symbol_linkage): Update.
+	(lookup_minimal_symbol_text): Update.
+	(lookup_minimal_symbol_by_pc_name): Update.
+	(minimal_symbol_is_less_than): Update.
+	(compact_minimal_symbols): Update.
+	(build_minimal_symbol_hash_tables): Update.
+	(find_solib_trampoline_target): Update.
+	* mips-tdep.c (mips_stub_frame_sniffer): Update.
+	(mips_skip_pic_trampoline_code): Update.
+	* msp430-tdep.c (msp430_skip_trampoline_code): Update.
+	* objc-lang.c (info_selectors_command): Update.
+	(info_classes_command): Update.
+	(find_methods): Update.
+	(find_imps): Update.
+	* p-valprint.c (pascal_val_print): Update.
+	* ppc-linux-tdep.c (powerpc_linux_in_dynsym_resolve_code): Update.
+	* ppc-sysv-tdep.c (convert_code_addr_to_desc_addr): Update.
+	* printcmd.c (build_address_symbolic): Update.
+	(info_symbol_command): Update.
+	* psymtab.c (psymbol_name_matches): Update.
+	(match_partial_symbol): Update.
+	(lookup_partial_symbol): Update.
+	(print_partial_symbols): Update.
+	(sort_pst_symbols): Update.
+	(maintenance_check_psymtabs): Update.
+	* python/py-framefilter.c (py_print_frame): Update.
+	* python/python.c (gdbpy_rbreak): Update.
+	* record-btrace.c (btrace_get_bfun_name): Update.
+	(btrace_call_history): Update.
+	* rs6000-tdep.c (rs6000_skip_main_prologue): Update.
+	(rs6000_skip_trampoline_code): Update.
+	* sol-thread.c (info_cb): Update.
+	* stabsread.c (scan_file_globals): Update.
+	* stack.c (find_frame_funname): Update.
+	(info_frame_command_core): Update.
+	* symmisc.c (dump_msymbols): Update.
+	* symtab.c (symbol_natural_name): Rename to..,
+	(general_symbol_info::natural_name): ...this.
+	(symbol_demangled_name): Rename to...
+	(general_symbol_info::demangled_name): ...this.
+	(symbol_search_name): Rename to...
+	(general_symbol_info::search_name): ...this.
+	(symbol_matches_search_name): Update.
+	(find_pc_sect_line): Update.
+	(skip_prologue_sal): Update.
+	(search_symbols): Update.
+	(print_msymbol_info): Update.
+	(rbreak_command): Update.
+	(completion_list_add_msymbol): Update.
+	(completion_list_objc_symbol): Update.
+	(get_msymbol_address): Update.
+	* symtab.h (struct general_symbol_info): Add member functions
+	natural_name (), linkage_name (), print_name (), demangled_name (),
+	and search_name ().
+	(SYMBOL_NATURAL_NAME): Update.
+	(symbol_natural_name): Move to a member function on general_symbol_info.
+	(SYMBOL_DEMANGLED_NAME): Update.
+	(symbol_demangled_name): Move to a member function on
+	general_symbol_info.
+	(SYMBOL_SEARCH_NAME): Update.
+	(symbol_search_name): Move to a member function on general_symbol_info.
+	(MSYMBOL_NATURAL_NAME): Remove.
+	(MSYMBOL_LINKAGE_NAME): Remove.
+	(MSYMBOL_PRINT_NAME): Remove.
+	(MSYMBOL_DEMANGLED_NAME): Remove.
+	(MSYMBOL_SEARCH_NAME): Remove.
+	* x86-tdep.c (x86_in_indirect_branch_thunk): Update.
+
+2019-11-22  Christian Biesinger  <cbiesinger@google.com>
+
+	* symtab.c (create_demangled_names_hash): Use per_bfd->
+	minimal_symbol_count for computing the initial size, if greater
+	than our default size.
+
+2019-11-22  Tom de Vries  <tdevries@suse.de>
+
+	* contrib/words.sh: Improve words extraction.
+
+2019-11-22  Tom de Vries  <tdevries@suse.de>
+
+	* contrib/words.sh: Combine sed invocations.
+
+2019-11-21  Christian Biesinger  <cbiesinger@google.com>
+
+	* Makefile.in: Update.
+	* demangle.c: Rename to...
+	* gdb-demangle.c: ..this.
+	(is_cplus_marker): Change return type to bool.
+	(_initialize_demangler): Rename to...
+	(_initialize_gdb_demangle): ...this.
+	* gdb-demangle.h (is_cplus_marker): Change return type to bool.
+	* symtab.h (demangle): Remove declaration; instead include
+	gdb-demangle.h.
+
+2019-11-21  Tom Tromey  <tromey@adacore.com>
+
+	* gdbsupport/format.c (format_pieces): Parse %I64d.
+	* unittests/format_pieces-selftests.c (test_windows_formats): New
+	function.
+	(run_tests): Call it.
+
+2019-11-21  Peeter Joot  <peeter.joot@lzlabs.com>
+
+	Byte reverse display of variables with DW_END_big, DW_END_little
+	(DW_AT_endianity) dwarf attributes if different than the native
+	byte order.
+	* ada-lang.c (ada_value_binop):
+	Use type_byte_order instead of gdbarch_byte_order.
+	* ada-valprint.c (printstr):
+	(ada_val_print_string):
+	* ada-lang.c (value_pointer):
+	(ada_value_binop):
+	Use type_byte_order instead of gdbarch_byte_order.
+	* c-lang.c (c_get_string):
+	Use type_byte_order instead of gdbarch_byte_order.
+	* c-valprint.c (c_val_print_array):
+	Use type_byte_order instead of gdbarch_byte_order.
+	* cp-valprint.c (cp_print_class_member):
+	Use type_byte_order instead of gdbarch_byte_order.
+	* dwarf2loc.c (rw_pieced_value):
+	Use type_byte_order instead of gdbarch_byte_order.
+	* dwarf2read.c (read_base_type): Handle DW_END_big,
+	DW_END_little
+	* f-lang.c (f_get_encoding):
+	Use type_byte_order instead of gdbarch_byte_order.
+	* findvar.c (default_read_var_value):
+	Use type_byte_order instead of gdbarch_byte_order.
+	* gdbtypes.c (check_types_equal):
+	Require matching TYPE_ENDIANITY_NOT_DEFAULT if set.
+	(recursive_dump_type): Print TYPE_ENDIANITY_BIG,
+	and TYPE_ENDIANITY_LITTLE if set.
+	(type_byte_order): new function.
+	* gdbtypes.h (TYPE_ENDIANITY_NOT_DEFAULT): New macro.
+	(struct main_type) <flag_endianity_not_default>:
+	New field.
+	(type_byte_order): New function.
+	* infcmd.c (default_print_one_register_info):
+	Use type_byte_order instead of gdbarch_byte_order.
+	* p-lang.c (pascal_printstr):
+	Use type_byte_order instead of gdbarch_byte_order.
+	* p-valprint.c (pascal_val_print):
+	Use type_byte_order instead of gdbarch_byte_order.
+	* printcmd.c (print_scalar_formatted):
+	Use type_byte_order instead of gdbarch_byte_order.
+	* solib-darwin.c (darwin_current_sos):
+	Use type_byte_order instead of gdbarch_byte_order.
+	* solib-svr4.c (solib_svr4_r_ldsomap):
+	Use type_byte_order instead of gdbarch_byte_order.
+	* stap-probe.c (stap_modify_semaphore):
+	Use type_byte_order instead of gdbarch_byte_order.
+	* target-float.c (target_float_same_format_p):
+	Use type_byte_order instead of gdbarch_byte_order.
+	* valarith.c (scalar_binop):
+	(value_bit_index):
+	Use type_byte_order instead of gdbarch_byte_order.
+	* valops.c (value_cast):
+	Use type_byte_order instead of gdbarch_byte_order.
+	* valprint.c (generic_emit_char):
+	(generic_printstr):
+	(val_print_string):
+	Use type_byte_order instead of gdbarch_byte_order.
+	* value.c (unpack_long):
+	(unpack_bits_as_long):
+	(unpack_value_bitfield):
+	(modify_field):
+	(pack_long):
+	(pack_unsigned_long):
+	Use type_byte_order instead of gdbarch_byte_order.
+	* findvar.c (unsigned_pointer_to_address):
+	(signed_pointer_to_address):
+	(unsigned_address_to_pointer):
+	(address_to_signed_pointer):
+	(default_read_var_value):
+	(default_value_from_register):
+	Use type_byte_order instead of gdbarch_byte_order.
+	* gnu-v3-abi.c (gnuv3_make_method_ptr):
+	Use type_byte_order instead of gdbarch_byte_order.
+	* riscv-tdep.c (riscv_print_one_register_info):
+	Use type_byte_order instead of gdbarch_byte_order.
+
+2019-11-21  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* top.c (current_ui_gdb_stdout_ptr): Spell out by hand.
+	(current_ui_gdb_stdin_ptr): Likewise.
+	(current_ui_gdb_stderr_ptr): Likewise.
+	(current_ui_gdb_stdlog_ptr): Likewise.
+	(current_ui_current_uiout_ptr): Likewise.
+	(gen_ret_current_ui_field_ptr): Remove.
+
+2019-11-21  Tom de Vries  <tdevries@suse.de>
+
+	PR gdb/24956
+	* cli/cli-script.c (execute_control_command): Only switch to
+	INTERP_CONSOLE's ui_out when INTERP_MI is active.
+
+2019-11-19  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-win.c (tui_partial_win_by_name): Move from tui-data.c.
+	Now static.  Change type of "name".
+	(tui_set_win_height_command): Don't copy "arg".
+	* tui/tui-data.h (tui_partial_win_by_name): Don't declare.
+	* tui/tui-data.c (tui_partial_win_by_name): Move to tui-win.c.
+
+2019-11-19  Ali Tamur <tamur@google.com>
+
+	* dwarf2read.c (dw2_get_file_names_reader): Replace "if (attr)" with
+	"if (attr != nullptr)".
+	(dwarf2_find_base_address): Likewise.
+	(dwarf2_build_include_psymtabs): Likewise.
+	(read_cutu_die_from_dwo): Likewise.
+	(read_func_scope): Likewise.
+	(read_call_site_scope): Likewise.
+	(dwarf2_get_pc_bounds): Likewise.
+	(dwarf2_record_block_ranges): Likewise.
+	(dwarf2_add_field): Likewise.
+	(dwarf2_add_member_fn): Likewise.
+	(read_structure_type): Likewise.
+	(read_enumeration_type): Likewise.
+	(read_array_type): Likewise.
+	(read_array_order): Likewise.
+	(read_set_type): Likewise.
+	(read_common_block): Likewise.
+	(read_tag_reference_type): Likewise.
+	(read_tag_string_type): Likewise.
+	(read_subroutine_type): Likewise.
+	(read_base_type): Likewise.
+	(read_subrange_type): Likewise.
+	(new_symbol): Likewise.
+	(prepare_one_comp_unit): Likewise.
+
+2019-11-19  Tom Tromey  <tromey@adacore.com>
+
+	* windows-nat.c (windows_nat_target::attach): Include GetLastError
+	result in error when DebugActiveProcess fails.
+
+2019-11-18  Sergio Durigan Junior  <sergiodj@redhat.com>
+	    Pedro Alves  <palves@redhat.com>
+
+	https://bugzilla.redhat.com/show_bug.cgi?id=1765117
+	* target.c (target_stack::push): Call 'unpush' if there's a
+	target on top of the stack.
+
+2019-11-18  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* python/py-block.c (blpy_dealloc): Call tp_free.
+	(blpy_block_syms_dealloc): Likewise.
+	* python/py-finishbreakpoint.c (bpfinishpy_dealloc): Likewise.
+	* python/py-inferior.c (infpy_dealloc): Likewise.
+	* python/py-lazy-string.c (stpy_dealloc): Likewise.
+	* python/py-linetable.c (ltpy_iterator_dealloc): Likewise.
+	* python/py-symbol.c (sympy_dealloc): Likewise.
+	* python/py-symtab.c (stpy_dealloc): Likewise.
+	* python/py-type.c (typy_iterator_dealloc): Likewise.
+
+2019-11-18  Christian Biesinger  <cbiesinger@google.com>
+
+	* symtab.h (struct symbol) <owner>: Initialize explicitly in the
+	constructor instead of using a class initializer.
+
+2019-11-15  Christian Biesinger  <cbiesinger@google.com>
+
+	* Makefile.in: Replace {posix,mingw}-strerror.c with safe-strerror.c.
+	* configure: Regenerate.
+	* configure.ac: Don't source common.host.
+	* gdbsupport/common.host: Remove.
+	* gdbsupport/mingw-strerror.c: Remove.
+	* gdbsupport/posix-strerror.c: Rename to...
+	* gdbsupport/safe-strerror.c: ...this.
+
+2019-11-15  Christian Biesinger  <cbiesinger@google.com>
+
+	* maint.c (scoped_command_stats::print_time): Use localtime_r
+	instead of localtime (provided through gnulib if necessary).
+	* nat/linux-osdata.c (time_from_time_t): Use ctime_r instead
+	of ctime.
+
+2019-11-15  Christian Biesinger  <cbiesinger@google.com>
+
+	* gdbsupport/common-defs.h: Include time.h before pathmax.h to
+	avoid compile errors.
+
+2019-11-15  Christian Biesinger  <cbiesinger@google.com>
+
+	* config.in: Regenerate.
+	* configure: Regenerate.
+	* gdbsupport/common.m4: No longer check for strerror_r.
+	* gdbsupport/posix-strerror.c (safe_strerror): Always call the
+	POSIX version of strerror_r, now that gnulib provides it if
+	necessary.
+
+2019-11-14  Christian Biesinger  <cbiesinger@google.com>
+
+	* README (`configure' options): Update.
+
+2019-11-14  Tom Tromey  <tromey@adacore.com>
+
+	* eval.c (evaluate_subexp_standard) <BINOP_ASSIGN>: Do not pass an
+	expected type for the RHS if the LHS is a convenience variable.
+
+2019-11-14  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* unittests/vec-utils-selftests.c (unordered_remove_tests::obj):
+	Provide explicit default and copy constructor.
+
+2019-11-14  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* python/py-finishbreakpoint.c (gdbpy_breakpoint_created):
+	only call Py_INCREF (newbp) in the bppy_pending_object case.
+
+2019-11-13  Tom Tromey  <tromey@adacore.com>
+
+	PR build/25182:
+	* psympriv.h (partial_symbol): Remove static assert.
+	* symtab.h (general_symbol_info, symbol): Remove static assert.
+
+2019-11-12  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdbsupport/format.c (format_pieces::format_pieces): Support
+	printf 'z' size modifier.
+	* gdbsupport/format.h (enum argclass): Add size_t_arg.
+	* printcmd.c (ui_printf):  Handle size_t_arg.
+	* ui-out.c (ui_out::vmessage): Likewise.
+	* unittests/format_pieces-selftests.c (test_format_int_sizes): New
+	function.
+	(run_tests): Call test_format_int_sizes.
+
+2019-11-12  Christian Biesinger  <cbiesinger@google.com>
+
+	* ada-exp.y (write_ambiguous_var): Update.
+	* buildsym.c (add_symbol_to_list): Update.
+	* dwarf2read.c (read_variable): Update.
+	(new_symbol): Update.
+	* jit.c (finalize_symtab): Update.
+	* language.c (language_alloc_type_symbol): Update.
+	* symtab.c (fixup_symbol_section): Update.
+	(initialize_objfile_symbol_1): Move code to...
+	(initialize_objfile_symbol): ...here. Remove now-unnecessary memset.
+	(allocate_symbol): Update.
+	(allocate_template_symbol): Update.
+	(get_symbol_address): Update.
+	* symtab.h (struct symbol): Inherit from general_symbol_info instead
+	of having as a field, and add a constructor.
+	(SYMBOL_VALUE): Update.
+	(SYMBOL_VALUE_ADDRESS): Update.
+	(SET_SYMBOL_VALUE_ADDRESS): Update.
+	(SYMBOL_VALUE_BYTES): Update.
+	(SYMBOL_VALUE_COMMON_BLOCK): Update.
+	(SYMBOL_BLOCK_VALUE): Update.
+	(SYMBOL_VALUE_CHAIN): Update.
+	(SYMBOL_LANGUAGE): Update.
+	(SYMBOL_SECTION): Update.
+	(SYMBOL_OBJ_SECTION): Update.
+	(SYMBOL_SET_LANGUAGE): Update.
+	(SYMBOL_SET_LINKAGE_NAME): Update.
+	(SYMBOL_SET_NAMES): Update.
+	(SYMBOL_NATURAL_NAME): Update.
+	(SYMBOL_LINKAGE_NAME): Update.
+	(SYMBOL_DEMANGLED_NAME): Update.
+	(SYMBOL_SEARCH_NAME): Update.
+	(SYMBOL_MATCHES_SEARCH_NAME): Update.
+	(struct symbol): Update.
+	(struct template_symbol): Update.
+	(struct rust_vtable_symbol): Update.
+	* xcoffread.c (SYMBOL_DUP): Update.
+
+2019-11-12  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-layout.c (show_layout): Set current_layout.
+	(show_source_disasm_command, show_data)
+	(show_source_or_disasm_and_command): Don't set current_layout.
+
+2019-11-12  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-layout.c (_initialize_tui_layout): Move to end.
+
+2019-11-12  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-win.c (resize_message): New global.
+	(show_tui_resize_message): New function.
+	(tui_async_resize_screen): Print message if requested.
+	(_initialize_tui_win): Add tui-resize-message setting.
+	* NEWS: Add entry for new commands.
+
+2019-11-11  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui.c (tui_initialize_readline): Add new bindable readline
+	functions.
+
+2019-11-11  Christian Biesinger  <cbiesinger@google.com>
+
+	* nat/linux-osdata.c (user_from_uid): Use getpwuid_r.
+
+2019-11-10  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* python/py-symbol.c (gdbpy_lookup_static_symbols): New
+	function.
+	* python/python-internal.h (gdbpy_lookup_static_symbols):
+	Declare new function.
+	* python/python.c (python_GdbMethods): Add
+	gdb.lookup_static_symbols method.
+	* NEWS: Mention gdb.lookup_static_symbols.
+
+2019-11-10  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* python/py-symbol.c (gdbpy_lookup_static_symbol): Lookup in
+	static block of current object file first.  Also fix typo in
+	header comment.
+
+2019-11-10  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* stack.c (set_last_displayed_sal): Delete.
+	(last_displayed_sal_valid): Delete.
+	(last_displayed_pspace): Delete.
+	(last_displayed_addr): Delete.
+	(last_displayed_symtab): Delete.
+	(last_displayed_line): Delete.
+	(class last_displayed_symtab_info_type): New.
+	(last_displayed_symtab_info): New static global variable.
+	(print_frame_info): Call methods on last_displayed_symtab_info.
+	(clear_last_displayed_sal): Update header comment, and make use of
+	last_displayed_symtab_info.
+	(last_displayed_sal_is_valid): Likewise.
+	(get_last_displayed_pspace): Likewise.
+	(get_last_displayed_addr): Likewise.
+	(get_last_displayed_symtab): Likewise.
+	(get_last_displayed_line): Likewise.
+	(get_last_displayed_sal): Likewise.
+	* stack.h (clear_last_displayed_sal): Update header comment.
+	(last_displayed_sal_is_valid): Likewise.
+	(get_last_displayed_pspace): Likewise.
+	(get_last_displayed_addr): Likewise.
+	(get_last_displayed_symtab): Likewise.
+	(get_last_displayed_line): Likewise.
+	(get_last_displayed_sal): Likewise.
+
+2019-11-10  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* stack.c (frame_show_address): Convert return type to bool.
+	* stack.h (frame_show_address): Likewise, and update header
+	comment.
+
+2019-11-10  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* Makefile.in (SUBDIR_UNITTESTS_SRCS): Add new file to the list.
+	* unittests/vec-utils-selftests.c: New file.
+	* gdbsupport/gdb_vecs.h (unordered_remove): Avoid self move assign.
+
+2019-11-10  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-wingeneral.c (tui_unhighlight_win): Use can_box.
+	(tui_highlight_win): Likewise.
+	(tui_win_info::check_and_display_highlight_if_needed): Likewise.
+	* tui/tui-data.h (struct tui_win_info) <can_highlight>: Remove.
+	* tui/tui-command.h (struct tui_cmd_window) <tui_cmd_window>:
+	Don't set can_highlight.
+
+2019-11-10  Tom Tromey  <tom@tromey.com>
+
+	* cli/cli-style.h (class cli_style_option) <cli_style_option>:
+	Remove unused declaration.
+
+2019-11-08  Tom Tromey  <tromey@adacore.com>
+
+	* top.c (read_command_file): Update.
+	(command_line_input): Make return type const.
+	* python/py-gdb-readline.c: Update.
+	* linespec.c (decode_line_2): Update.
+	* defs.h (command_line_input): Make return type const.
+	* cli/cli-script.c (read_next_line): Make return type const.
+	* ada-lang.c (get_selections): Update.
+
+2019-11-06  Christian Biesinger  <cbiesinger@google.com>
+
+	* linux-tdep.c (linux_info_proc): Use strtok_r instead of strtok.
+	* mi/mi-main.c (output_cores): Likewise.
+	* nat/linux-osdata.c (linux_xfer_osdata_cpus): Likewise.
+	(linux_xfer_osdata_modules): Likewise.
+	* remote.c (register_remote_support_xml): Likewise.
+	* sparc64-tdep.c (adi_is_addr_mapped): Likewise.
+	* xml-syscall.c (syscall_create_syscall_desc): Likewise.
+
+2019-11-06  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-interp.c: Don't include readline.h.
+	* tui/tui-hooks.c: Don't include readline.h.
+	* symmisc.c: Include tilde.h, not readline.h.
+	* symfile.c: Include tilde.h, not readline.h.
+	* source.c: Include tilde.h, not readline.h.
+	* solib.c: Include tilde.h, not readline.h.
+	* psymtab.c: Include tilde.h, not readline.h.
+	* exec.c: Include tilde.h, not readline.h.
+	* corelow.c: Include tilde.h, not readline.h.
+	* cli/cli-dump.c: Include tilde.h, not readline.h.
+	* cli/cli-cmds.c: Don't include readline.h.
+
+2019-11-05  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-disasm.c (struct tui_asm_line) <addr_size>: New member.
+	(tui_disassemble): Set addr_size.
+	(tui_disasm_window::set_contents): Use addr_size.
+
+2019-11-05  Tom Tromey  <tom@tromey.com>
+
+	* rust-lang.c (rust_language_defn): Update.
+	* python/py-value.c (valpy_string): Call c_get_string.
+	* p-lang.c (pascal_language_defn): Update.
+	* opencl-lang.c (opencl_language_defn): Update.
+	* objc-lang.c (objc_language_defn): Update.
+	* m2-lang.c (m2_language_defn): Update.
+	* language.c (unknown_language_defn, auto_language_defn): Update.
+	(default_get_string): Remove.
+	* guile/scm-value.c (gdbscm_value_to_string): Use c_get_string.
+	* go-lang.c (go_language_defn): Update.
+	* f-lang.c (f_language_defn): Update.
+	* d-lang.c (d_language_defn): Update.
+	* c-lang.c (c_language_defn, cplus_language_defn)
+	(asm_language_defn, minimal_language_defn): Update.
+	* ada-lang.c (ada_language_defn): Update.
+	* language.h (struct language_defn) <la_get_string>: Remove.
+	(LA_GET_STRING): Remove.
+	(default_get_string): Don't declare.
+
+2019-11-05  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-source.h (struct tui_source_window): Inline
+	constructor.  Remove destructor.
+	<style_changed, m_observable>: Move to superclass.
+	* tui/tui-winsource.h (tui_copy_source_line): Declare.
+	(struct tui_source_window_base): Move private members to end.
+	<style_changed, m_observable>: Move from tui_source_window.
+	* tui/tui-winsource.c (tui_copy_source_line): Move from
+	tui-source.c.  Rename from copy_source_line.  Add special handling
+	for negative line number.
+	(tui_source_window_base::style_changed): Move from
+	tui_source_window.
+	(tui_source_window_base): Register observer.
+	(~tui_source_window_base): New.
+	* tui/tui-source.c (copy_source_line): Move to tui-winsource.c;
+	rename.
+	(tui_source_window::set_contents): Use tui_copy_source_line.
+	(tui_source_window::tui_source_window): Move to tui-source.h.
+	(tui_source_window::~tui_source_window): Remove.
+	(tui_source_window::style_changed): Move to superclass.
+	* tui/tui-disasm.c (tui_disassemble): Create string file with
+	styling, when possible.  Add "addr_size" parameter.
+	(tui_disasm_window::set_contents): Use tui_copy_source_line.
+	Don't compute maximum size.
+	(len_without_escapes): New function
+
+2019-11-05  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-winsource.h (struct tui_source_element) <line>: Now a
+	std::string.
+	* tui/tui-winsource.c (tui_show_source_line): Update.
+	* tui/tui-source.c (tui_source_window::set_contents): Update.
+	* tui/tui-disasm.c (tui_disasm_window::set_contents): Update.
+
+2019-11-05  Christian Biesinger  <cbiesinger@google.com>
+
+	* symtab.h (gdb_static_assert): Put && operator at the beginning
+	of the line instead of the end.
+
 2019-11-04  Christian Biesinger  <cbiesinger@google.com>
 
 	* psympriv.h: Add static_asserts for sizeof (general_symbol_info)

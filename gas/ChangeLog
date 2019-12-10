@@ -1,3 +1,566 @@
+2019-12-10  Vladimir Murzin  <vladimir.murzin@arm.com>
+
+	* config/tc-arm.c (s_arm_arch): Set selected_ctx_ext_table.
+	* testsuite/gas/arm/mve-arch-ext.s: New.
+	* testsuite/gas/arm/mve-arch-ext.d: New.
+
+2019-12-09  Jan Beulich  <jbeulich@suse.com>
+
+	* config/tc-i386-intel.c (O_oword_ptr): Move.
+	(O_xmmword_ptr): Alias to O_oword_ptr.
+	(O_fword_ptr, O_tbyte_ptr, O_ymmword_ptr, O_zmmword_ptr): Adjust
+	expansion.
+	(i386_intel_simplify, i386_intel_operand): Fold O_oword_ptr and
+	O_xmmword_ptr cases, leaving comments.
+
+2019-12-09  Jan Beulich  <jbeulich@suse.com>
+
+	* config/tc-i386-intel.c (O_mmword_ptr): Define.
+	(i386_types): Add mmword entry.
+	(i386_intel_simplify, i386_intel_operand): Add comment.
+	* testsuite/gas/i386/intel-expr.s: Also test mmword and zmmword.
+	* testsuite/gas/i386/intelok.s: Also test "mmword ptr".
+	* testsuite/gas/i386/intel-expr.d, testsuite/gas/i386/intelok.d,
+	testsuite/gas/i386/intelok.e: Adjust expectations.
+
+2019-12-09  Jan Beulich  <jbeulich@suse.com>
+
+	* config/tc-i386-intel.c (i386_intel_operand): Set "byte"
+	attribute suffix instead of suffix for floating point insns when
+	handling O_near_ptr / O_far_ptr.
+	* testsuite/gas/i386/intelbad.s: Add FPU tests.
+	* testsuite/gas/i386/intelbad.l: Adjust expectations.
+
+2019-12-09  Jan Beulich  <jbeulich@suse.com>
+
+	* config/tc-i386-intel.c (i386_intel_operand): Set "byte"
+	attribute suffix instead of suffix uniformly for insns not
+	possibly accepting "tbyte ptr" explicitly.
+
+2019-12-09  Jan Beulich  <jbeulich@suse.com>
+
+	* config/tc-i386-intel.c (i386_intel_operand): Don't set suffix
+	for floating point insns when handling O_fword_ptr.
+
+2019-12-09  Jan Beulich  <jbeulich@suse.com>
+
+	* config/tc-i386-intel.c (i386_intel_operand): Don't special
+	case LDS et al when handling O_word_ptr.
+
+2019-12-08  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/gas/aarch64/bfloat16.d: Match 32-bit and 64-bit output.
+	* testsuite/gas/aarch64/dgh.d: Likewise.
+	* testsuite/gas/aarch64/f32mm.d: Likewise.
+	* testsuite/gas/aarch64/f64mm.d: Likewise.
+	* testsuite/gas/aarch64/i8mm.d: Likewise.
+	* testsuite/gas/aarch64/pac_ab_key.d: Likewise.
+	* testsuite/gas/aarch64/pac_negate_ra_state.d: Likewise.
+	* testsuite/gas/aarch64/reloc-prel_g0.d: Likewise.
+	* testsuite/gas/aarch64/reloc-prel_g0_nc.d: Likewise.
+	* testsuite/gas/aarch64/reloc-prel_g1.d: Likewise.
+	* testsuite/gas/aarch64/sve-bfloat-movprfx.d: Likewise.
+	* testsuite/gas/aarch64/sve-movprfx-mm.d: Likewise.
+	* testsuite/gas/aarch64/sve2.d: Likewise.
+
+2019-12-06  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* dw2gencfi.c (cfi_pseudo_table): Add cfi_negate_ra_state.
+	* testsuite/gas/aarch64/pac_negate_ra_state.s: New file.
+	* testsuite/gas/aarch64/pac_negate_ra_state.d: Likewise.
+
+2019-12-05  Jan Beulich  <jbeulich@suse.com>
+
+	* config/tc-aarch64.c (aarch64_features): Drop redundant AES and
+	SHA2 flags from "crypto" entry.
+
+2019-12-05  Jan Beulich  <jbeulich@suse.com>
+
+	* config/tc-aarch64.c (aarch64_features): Make SHA2 a prereq of
+	SHA3.
+	* testsuite/gas/aarch64/crypto.s
+	* testsuite/gas/aarch64/crypto-directive.d: Refer to crypto.d
+	for actual output.
+	* testsuite/gas/aarch64/illegal-crypto-nofp.l: Relax
+	expectations.
+	* testsuite/gas/aarch64/crypto-directive2.d,
+	testsuite/gas/aarch64/crypto-directive3.d: New.
+
+2019-12-04  Jan Beulich  <jbeulich@suse.com>
+
+	* config/tc-i386-intel.c (i386_intel_operand): Handle LFS et al
+	as well as LGDT at al when processing O_tbyte_ptr.
+	* testsuite/gas/i386/intelbad.s: Add LDS et al cases.
+	* testsuite/gas/i386/x86-64-intel64.s,
+	* testsuite/gas/i386/x86-64-opcode.s:  Add LFS et al cases.
+	* testsuite/gas/i386/ilp32/x86-64-intel64.d: Add -mintel64
+	command line option and fold expectations with parent dir test.
+	* testsuite/gas/i386/x86-64-intel64.d: Add -mintel64 command
+	line option and adjust expectations.
+	* testsuite/gas/i386/intelbad.l,
+	testsuite/gas/i386/x86-64-opcode.d: Adjust expectations.
+
+2019-12-04  Jan Beulich  <jbeulich@suse.com>
+
+	* config/tc-i386-intel.c (i386_intel_operand): Also handle DWORD
+	with 64-bit mode branches.
+	* testsuite/gas/i386/x86-64-jump.s: Extend Intel syntax branch
+	operand coverage.
+	* testsuite/gas/i386/x86-64-jump.d: Adjust expectations.
+
+2019-12-04  Jan Beulich  <jbeulich@suse.com>
+
+	* config/tc-i386.c (output_insn): Don't consider Cpu* settings
+	when setting GNU_PROPERTY_X86_FEATURE_2_MMX.
+
+2019-12-04  Jan Beulich  <jbeulich@suse.com>
+
+	* testsuite/gas/i386/movdir.s: Add Intel syntax case with
+	operand size specifier.
+	* testsuite/gas/i386/x86-64-movdir.s: Add Intel syntax cases
+	with operand size specifier and wit 32-bit operands.
+	* testsuite/gas/i386/movdir-intel.d,
+	testsuite/gas/i386/movdir.d,
+	testsuite/gas/i386/x86-64-movdir-intel.d,
+	testsuite/gas/i386/x86-64-movdir.d: Adjust expectations.
+
+2019-12-04  Jan Beulich  <jbeulich@suse.com>
+
+	* config/tc-i386.c (process_suffix): Arrange for insns with a
+	single non-GPR register operand to not have its suffix guessed
+	from GPR operands. Extend DefaultSize handling to cover PUSH/POP
+	of segment registers.
+	* testsuite/gas/i386/general.s: Add PUSH/POP sreg to .code16gcc
+	set of insns.
+	* testsuite/gas/i386/general.l: Adjust expectations.
+
+2019-12-04  Jan Beulich  <jbeulich@suse.com>
+
+	* config/tc-i386.c (process_suffix): Exclude SYSRET alongside
+	FLDENV et al.
+	* testsuite/gas/i386/general.s: Expand .code16gcc set of insns.
+	* testsuite/gas/i386/general.l: Adjust expectations.
+
+2019-11-22  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* as.c (flag_dwarf_cie_version): Change initial value to -1, and
+	update comment.
+	* config/tc-riscv.c (riscv_after_parse_args): Set
+	flag_dwarf_cie_version if it has not already been set.
+	* dwarf2dbg.c (dwarf2_init): Initialise flag_dwarf_cie_version if
+	needed.
+	* testsuite/gas/riscv/default-cie-version.d: New file.
+	* testsuite/gas/riscv/default-cie-version.s: New file.
+
+2019-11-22  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* dw2gencfi.c (output_cie): Error on return column overflow.
+	* testsuite/gas/riscv/cie-rtn-col-1.d: New file.
+	* testsuite/gas/riscv/cie-rtn-col-3.d: New file.
+	* testsuite/gas/riscv/cie-rtn-col.s: New file.
+
+2019-11-22  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* config/tc-riscv.c (tc_riscv_regname_to_dw2regnum): Lookup CSR
+	names too.
+	* testsuite/gas/riscv/csr-dw-regnums.d: New file.
+	* testsuite/gas/riscv/csr-dw-regnums.s: New file.
+
+2019-11-22  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* config/tc-riscv.c (struct regname): Delete.
+	(hash_reg_names): Handle value as 'void *'.
+
+2019-11-25  Andrew Pinski  <apinski@marvell.com>
+
+	* config/tc-aarch64.c (md_begin): Use correct
+	hash table for uppercase version of hint.
+	* testsuite/gas/aarch64/system-2.s: Extend psb case to uppercase.
+	* testsuite/gas/aarch64/system-2.d: Update.
+
+2019-11-25  Christian Eggers  <ceggers@gmx.de>
+
+	* as.h: Define SEC_OCTETS as SEC_ELF_OCTETS if OBJ_ELF.
+	* dwarf2dbg.c: (dwarf2_finish): Set section flag SEC_OCTETS for
+	.debug_line, .debug_info, .debug_abbrev, .debug_aranges, .debug_str
+	and .debug_ranges sections.
+	* write.c (maybe_generate_build_notes): Set section flag
+	SEC_OCTETS for .gnu.build.attributes section.
+	* frags.c (frag_now_fix): Don't divide by OCTETS_PER_BYTE if
+	SEC_OCTETS is set.
+	* symbols.c (resolve_symbol_value): Likewise.
+
+2019-11-25  Christian Eggers  <ceggers@gmx.de>
+
+	* dwarf2dbg.c (out_set_addr): Revert 2019-03-13 change.
+	(out_debug_line, out_debug_aranges, out_debug_info): Likewise.
+	* symbols.h (symbol_set_value_now_octets, symbol_octets_p): Remove.
+	* symbols.c (struct symbol_flags): Remove member sy_octets.
+	(symbol_temp_new_now_octets): Don't set symbol_flags::sy_octets.
+	(resolve_symbol_value): Revert: Return octets instead of bytes if
+	sy_octets is set.
+	(symbol_set_value_now_octets): Remove.
+	(symbol_octets_p): Remove.
+
+2019-11-22  Mihail Ionescu  <mihail.ionescu@arm.com>
+
+	* config/tc-arm.c (arm_ext_crc): New.
+	(crc_ext_armv8): Remove.
+	(insns): Rename crc_ext_armv8 to arm_ext_crc.
+	(arm_cpus): Replace CRC_EXT_ARMV8 with ARM_EXT2_CRC.
+	(armv8a_ext_table, armv8r_ext_table,
+	arm_option_extension_value_table): Redefine the crc
+	extension in terms of ARM_EXT2_CRC.
+	* gas/testsuite/gas/arm/crc-ext.s: New.
+	* gas/testsuite/gas/arm/crc-ext.d: New.
+
+2019-11-20  Alan Modra  <amodra@gmail.com>
+
+	PR 24944
+	* atof-generic.c (atof_generic): Increase decimal guard digits.
+	* testsuite/gas/i386/fp.s: Add more tests.
+	* testsuite/gas/i386/fp.d: Update.
+
+2019-11-18  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* as.c (parse_args): Parse --gdwarf-cie-version option.
+	(flag_dwarf_cie_version): New variable.
+	* as.h (flag_dwarf_cie_version): Declare.
+	* dw2gencfi.c (output_cie): Switch from DW_CIE_VERSION to
+	flag_dwarf_cie_version.
+	* doc/as.texi (Overview): Document --gdwarf-cie-version.
+	* NEWS: Likewise.
+	* testsuite/gas/cfi/cfi.exp: Add new tests.
+	* testsuite/gas/cfi/cie-version-0.d: New file.
+	* testsuite/gas/cfi/cie-version-1.d: New file.
+	* testsuite/gas/cfi/cie-version-2.d: New file.
+	* testsuite/gas/cfi/cie-version-3.d: New file.
+	* testsuite/gas/cfi/cie-version-4.d: New file.
+	* testsuite/gas/cfi/cie-version.s: New file.
+
+2019-11-14  Jan Beulich  <jbeulich@suse.com>
+
+	* config/tc-i386.c (operand_size_match, md_assemble,
+	parse_insn, match_template, process_suffix, output_jump,
+	output_insn, i386_displacement): Adjust jump* field use/
+	handling.
+	* config/tc-i386-intel.c (i386_intel_operand): Likewise.
+
+2019-11-14  Jan Beulich  <jbeulich@suse.com>
+
+	* config/tc-i386.c (struct _i386_insn): Add jumpabsolute field.
+	(operand_type_match): Drop jumpabsolute use.
+	(type_names): Remove OPERAND_TYPE_JUMPABSOLUTE entry.
+	(process_suffix, i386_displacement): Adjust jumpabsolute uses.
+	(match_template, i386_att_operand): Adjust jumpabsolute
+	handling.	
+	* config/tc-i386-intel.c (i386_intel_operand): Likewise.
+
+2019-11-14  Jan Beulich  <jbeulich@suse.com>
+
+	* config/tc-i386.c (operand_size_match): Adjust anysize use.
+
+2019-11-14  Jan Beulich  <jbeulich@suse.com>
+
+	* testsuite/gas/i386/intel-cmps32.d,
+	testsuite/gas/i386/intel-cmps64.d: Correct regexp closing
+	parentheses placement.
+
+2019-11-14  Jan Beulich  <jbeulich@suse.com>
+
+	* testsuite/gas/i386/intel-cmps.s,
+	testsuite/gas/i386/intel-movs.s: Extend.
+	* testsuite/gas/i386/intel-cmps32.d,
+	testsuite/gas/i386/intel-cmps64.d,
+	testsuite/gas/i386/intel-movs32.d,
+	testsuite/gas/i386/intel-movs64.d: Adjust expectations.
+	* testsuite/gas/i386/intel-cmps16.d,
+	testsuite/gas/i386/intel-movs16.d: New.
+	* testsuite/gas/i386/i386.exp: Run new tests.
+
+2019-11-12  Nelson Chu  <nelson.chu@sifive.com>
+
+	* testsuite/gas/riscv/insn.d: Add the f extension to -march option.
+
+2019-11-12  Mihail Ionescu  <mihail.ionescu@arm.com>
+
+	* config/tc-arm.c (do_vfp_nsyn_push): Move in order to enable it for
+	both fpu_vfp_ext_v1xd and mve_ext and add call to the aliased vstm
+	instruction for mve_ext.
+	(do_vfp_nsyn_pop): Move in order to enable it for both
+	fpu_vfp_ext_v1xd and mve_ext and add call to the aliased vldm
+	instruction for mve_ext.
+	(do_neon_ldm_stm): Add fpu_vfp_ext_v1 and mve_ext checks.
+	(insns): Enable vldm, vldmia, vldmdb, vstm, vstmia, vstmdb, vpop,
+	vpush, and fldd, fstd, flds, fsts for arm_ext_v6t2 instead
+	of fpu_vfp_ext_v1xd.
+	* testsuite/gas/arm/v8_1m-mve.s: New.
+	* testsuite/gas/arm/v8_1m-mve.d: New.
+
+2019-11-12  Mihail Ionescu  <mihail.ionescu@arm.com>
+
+	* gas/config/tc-arm.c (do_neon_mvn): Allow mve_ext cmode=0xd.
+	* testsuite/gas/arm/mve-vmov-vmvn-vorr-vbic.s: New test.
+	* testsuite/gas/arm/mve-vmov-vmvn-vorr-vbic.d: Likewise.
+
+2019-11-12  Mihail Ionescu  <mihail.ionescu@arm.com>
+
+	* config/tc-arm.c (s_arm_fpu): Clear selected_cpu fpu bits.
+	(fpu_any): Remove OBJ_ELF guards.
+	* testsuite/gas/arm/fpu-rst.s: New.
+	* testsuite/gas/arm/fpu-rst.d: New.
+	* testsuite/gas/arm/fpu-rst.l: New.
+
+2019-11-12  Jan Beulich  <jbeulich@suse.com>
+
+	* config/tc-i386.c (type_names): Remove OPERAND_TYPE_ESSEG
+	entry.
+	(md_assemble): Adjust isstring field use. Add assertion.
+	(check_string): Mostly re-write.
+	(i386_index_check): Adjust isstring field use and related code.
+
+2019-11-12  Jan Beulich  <jbeulich@suse.com>
+
+	* config/tc-i386.c (process_immext): Remove SSE3, SVME, and
+	MWAITX special case logic.
+	(process_suffix): Replace immext field uses by instance ones.
+	* testsuite/gas/i386/arch-13.s,
+	testsuite/gas/i386/x86-64-arch-3.s: Add CLZERO with operand
+	cases.
+	* testsuite/gas/i386/svme.s: Add 16-bit operand cases.
+	* testsuite/gas/i386/x86-64-specific-reg.s: Drop FIXME comments.
+	* testsuite/gas/i386/arch-13.d,
+	testsuite/gas/i386/mwaitx-reg.l, testsuite/gas/i386/svme.d,
+	testsuite/gas/i386/x86-64-arch-3.d,
+	testsuite/gas/i386/x86-64-mwaitx-reg.l,
+	testsuite/gas/i386/x86-64-specific-reg.l: Adjust expectations.
+
+2019-11-12  Jan Beulich  <jbeulich@suse.com>
+
+	* config/tc-i386.c (operand_type_set, operand_type_and,
+	operand_type_and_not, operand_type_or, operand_type_xor): Handle
+	"instance" field specially.
+	(operand_size_match, md_assemble, match_template, process_suffix,
+	check_byte_reg, check_long_reg, check_qword_reg, check_word_reg,
+	process_operands, build_modrm_byte): Use "instance" instead of
+	"acc" / "inoutportreg" / "shiftcount" fields.
+	(optimize_imm): Adjust comment.
+
+2019-11-11  Jan Beulich  <jbeulich@suse.com>
+
+	* testsuite/gas/aarch64/illegal-sve2.s: Add smaxp/sminp cases
+	with mismatched 1st and 3rd operands.
+	* testsuite/gas/aarch64/illegal-sve2.l: Adjust expectations.
+
+2019-11-08  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR gas/25167
+	* config/tc-i386.c (match_template): Don't check instruction
+	suffix set from operand.
+	* testsuite/gas/i386/code16.d: New file.
+	* testsuite/gas/i386/code16.s: Likewise.
+	* testsuite/gas/i386/i386.exp: Run code16.
+
+2019-11-08  Jan Beulich  <jbeulich@suse.com>
+
+	* config/tc-i386.c (optimize_encoding, build_modrm_byte,
+	check_VecOperations, parse_real_register): Use "class" instead
+	of "regmask" and "regbnd" fields.
+
+2019-11-08  Jan Beulich  <jbeulich@suse.com>
+
+	* config/tc-i386.c (match_mem_size, operand_size_match,
+	operand_type_register_match, pi, check_VecOperands, match_template,
+	check_byte_reg, check_long_reg, check_qword_reg, process_operands,
+	build_modrm_byte, parse_real_register): Use "class" instead of
+	"regsimd" / "regmmx" fields.
+
+2019-11-08  Jan Beulich  <jbeulich@suse.com>
+
+	* config/tc-i386.c (pi, check_byte_reg, build_modrm_byte,
+	parse_real_register): Use "class" instead of "control"/"debug"/
+	"test" fields.
+
+2019-11-08  Jan Beulich  <jbeulich@suse.com>
+
+	* config/tc-i386.c (pi, check_byte_reg, process_operands,
+	build_modrm_byte, i386_att_operand, parse_real_register): Use
+	"class" instead of "sreg" field.
+	* config/tc-i386-intel.c (i386_intel_simplify_register,
+	i386_intel_operand): Likewise.
+
+2019-11-08  Jan Beulich  <jbeulich@suse.com>
+
+	* config/tc-i386.c (operand_type_set, operand_type_and,
+	operand_type_and_not, operand_type_or, operand_type_xor): Handle
+	"class" field specially.
+	(anyimm): New.
+	(operand_type_check, operand_size_match,
+	operand_type_register_match, pi, md_assemble, is_short_form,
+	process_suffix, check_byte_reg, check_long_reg, check_qword_reg,
+	check_word_reg, process_operands, build_modrm_byte): Use "class"
+	instead of "reg" field.
+	(optimize_imm): Likewise. Reduce redundancy. Adjust calculation
+	of "allowed".
+
+2019-11-07  Mihail Ionescu  <mihail.ionescu@arm.com>
+
+	* testsuite/gas/aarch64/dgh.s: New test.
+	* testsuite/gas/aarch64/dgh.d: New test.
+
+2019-11-07  Mihail Ionescu  <mihail.ionescu@arm.com>
+
+	* config/tc-arm.c (arm_ext_i8mm): New feature set.
+	(do_vusdot): New.
+	(do_vsudot): New.
+	(do_vsmmla): New.
+	(do_vummla): New.
+	(insns): Add vsmmla, vummla, vusmmla, vusdot, vsudot mnemonics.
+	(armv86a_ext_table): Add i8mm extension.
+	(arm_extensions): Move bf16 extension to context sensitive table.
+	(armv82a_ext_table, armv84a_ext_table, armv85a_ext_table):
+	Move bf16 extension to context sensitive table.
+	(armv86a_ext_table): Add i8mm extension.
+	* doc/c-arm.texi: Document i8mm extension.
+	* testsuite/gas/arm/i8mm.s: New test.
+	* testsuite/gas/arm/i8mm.d: New test.
+	* testsuite/gas/arm/bfloat17-cmdline-bad-3.d: Update test.
+
+2019-11-07  Mihail Ionescu  <mihail.ionescu@arm.com>
+
+	* config/tc-aarch64.c: Add new arch fetures to suppport the mm extension.
+	(parse_operands): Add new operand.
+	* testsuite/gas/aarch64/i8mm.s: New test.
+	* testsuite/gas/aarch64/i8mm.d: New test.
+	* testsuite/gas/aarch64/f32mm.s: New test.
+	* testsuite/gas/aarch64/f32mm.d: New test.
+	* testsuite/gas/aarch64/f64mm.s: New test.
+	* testsuite/gas/aarch64/f64mm.d: New test.
+	* testsuite/gas/aarch64/sve-movprfx-mm.s: New test.
+	* testsuite/gas/aarch64/sve-movprfx-mm.d: New test.
+
+2019-11-07  Mihail Ionescu  <mihail.ionescu@arm.com>
+2019-11-07  Barnaby Wilks  <barnaby.wilks@arm.com>
+
+	* config/tc-aarch64.c (md_atof): Add encoding for the bfloat16 format.
+	* testsuite/gas/aarch64/bfloat16-directive-le.d: New test.
+	* testsuite/gas/aarch64/bfloat16-directive-be.d: New test.
+	* testsuite/gas/aarch64/bfloat16-directive.s: New test.
+
+2019-11-07  Mihail Ionescu  <mihail.ionescu@arm.com>
+2019-11-07  Barnaby Wilks  <barnaby.wilks@arm.com>
+
+	* config/tc-arm.c (md_atof): Add encoding for bfloat16
+	* testsuite/gas/arm/bfloat16-directive-le.d: New test.
+	* testsuite/gas/arm/bfloat16-directive-be.d: New test.
+	* testsuite/gas/arm/bfloat16-directive.s: New test.
+
+2019-11-07  Mihail Ionescu  <mihail.ionescu@arm.com>
+2019-11-07  Barnaby Wilks  <barnaby.wilks@arm.com>
+
+	* as.h (atof_ieee_detail): Add prototype for atof_ieee_detail function.
+	(atof_ieee): Move some code into the atof_ieee_detail function.
+	(atof_ieee_detail): Add function that provides a higher level of
+	control over generating IEEE-like numbers.
+
+2019-11-07  Mihail Ionescu  <mihail.ionescu@arm.com>
+2019-11-07  Matthew Malcomson  <matthew.malcomson@arm.com>
+
+	* config/tc-arm.c (arm_archs): Add armv8.6-a option.
+	(cpu_arch_ver): Add TAG_CPU_ARCH_V8 tag for Armv8.6-a.
+	* doc/c-arm.texi (-march): New armv8.6-a arch.
+	* config/tc-arm.c (arm_ext_bf16): New feature set.
+	(enum neon_el_type): Add NT_bfloat value.
+	(B_MNEM_vfmat, B_MNEM_vfmab): New bfloat16 encoder
+	helpers.
+	(BAD_BF16): New message.
+	(parse_neon_type): Add bf16 type specifier.
+	(enum neon_type_mask): Add N_BF16 type.
+	(type_chk_of_el_type): Account for NT_bfloat.
+	(el_type_of_type_chk): Account for N_BF16.
+	(neon_three_args): Split out from neon_three_same.
+	(neon_three_same): Part split out into neon_three_args.
+	(CVT_FLAVOUR_VAR): Add bf16_f32 cvt flavour.
+	(do_neon_cvt_1): Account for vcvt.bf16.f32.
+	(do_bfloat_vmla): New.
+	(do_mve_vfma): New function to deal with the mnemonic clash between the BF16
+	vfmat and the MVE vfma in a VPT block with a 't'rue condition.
+	(do_neon_cvttb_1): Account for vcvt{t,b}.bf16.f32.
+	(do_vdot): New
+	(do_vmmla): New
+	(insns): Add vdot and vmmla mnemonics.
+	(arm_extensions): Add "bf16" extension.
+	* doc/c-arm.texi: Document "bf16" extension.
+	* testsuite/gas/arm/attr-march-armv8_6-a.d: New test.
+	* testsuite/gas/arm/bfloat16-bad.d: New test.
+	* testsuite/gas/arm/bfloat16-bad.l: New test.
+	* testsuite/gas/arm/bfloat16-bad.s: New test.
+	* testsuite/gas/arm/bfloat16-cmdline-bad-2.d: New test.
+	* testsuite/gas/arm/bfloat16-cmdline-bad-3.d: New test.
+	* testsuite/gas/arm/bfloat16-cmdline-bad.d: New test.
+	* testsuite/gas/arm/bfloat16-neon.s: New test.
+	* testsuite/gas/arm/bfloat16-non-neon.s: New test.
+	* testsuite/gas/arm/bfloat16-thumb-bad.d: New test.
+	* testsuite/gas/arm/bfloat16-thumb-bad.l: New test.
+	* testsuite/gas/arm/bfloat16-thumb.d: New test.
+	* testsuite/gas/arm/bfloat16-vfp.d: New test.
+	* testsuite/gas/arm/bfloat16.d: New test.
+	* testsuite/gas/arm/bfloat16.s: New test.
+
+2019-11-07  Mihail Ionescu  <mihail.ionescu@arm.com>
+2019-11-07  Matthew Malcomson  <matthew.malcomson@arm.com>
+
+	* config/tc-aarch64.c (vectype_to_qualifier): Special case the
+	S_2H operand qualifier.
+	* doc/c-aarch64.texi: Document bf16 extension.
+	* testsuite/gas/aarch64/bfloat16.d: New test.
+	* testsuite/gas/aarch64/bfloat16.s: New test.
+	* testsuite/gas/aarch64/illegal-bfloat16.d: New test.
+	* testsuite/gas/aarch64/illegal-bfloat16.l: New test.
+	* testsuite/gas/aarch64/illegal-bfloat16.s: New test.
+	* testsuite/gas/aarch64/sve-bfloat-movprfx.s: New test.
+	* testsuite/gas/aarch64/sve-bfloat-movprfx.d: New test.
+
+2019-11-07  Mihail Ionescu  <mihail.ionescu@arm.com>
+2019-11-07  Matthew Malcomson  <matthew.malcomson@arm.com>
+
+	* config/tc-aarch64.c (armv8.6-a): New arch.
+	* doc/c-aarch64.texi (armv8.6-a): Document new arch.
+
+2019-11-07  Jan Beulich  <jbeulich@suse.com>
+
+	* config/tc-i386.c (cpu_arch): Add .rdpru and .mcommit entries.
+	* doc/c-i386.texi: Mention rdpru and mcommit.
+	* testsuite/gas/i386/arch-13.s,
+	testsuite/gas/i386/x86-64-arch-3.s: Add mcommit and rdpru cases.
+	* testsuite/gas/i386/arch-13.d,
+	testsuite/gas/i386/x86-64-arch-3.d: Extend -march=. Adjust
+	expectations.
+	* testsuite/gas/i386/arch-13-znver1.d: Extend -march=. Redirect
+	expectations to arch-13.d.
+	* testsuite/gas/i386/arch-13-znver2.d: Redirect expectations to
+	arch-13.d.
+	testsuite/gas/i386/x86-64-arch-3-znver1.d: Extend -march=.
+
+2019-11-07  Jan Beulich  <jbeulich@suse.com>
+
+	* testsuite/gas/i386/x86-64-arch-3.s: Add monitorx/mwaitx cases
+	with canonical operand sizes.
+	* testsuite/gas/i386/x86-64-sse3.s: Add monitor/mwait cases with
+	canonical operand sizes.
+	* testsuite/gas/i386/x86-64-arch-3-znver1.d,
+	testsuite/gas/i386/x86-64-arch-3-znver2.d: Redirect expectations
+	to x86-64-arch-3.d.
+	* testsuite/gas/i386/ilp32/x86-64-sse-noavx.d: Redirect
+	expectations to parent dir's x86-64-sse-noavx.d.
+	* testsuite/gas/i386/ilp32/x86-64-sse3.d: Redirect expectations
+	to to parent dir's x86-64-sse3.d.
+	* testsuite/gas/i386/x86-64-arch-3.d,
+	testsuite/gas/i386/x86-64-mwaitx-bdver4.d,
+	testsuite/gas/i386/x86-64-sse-noavx.d,
+	testsuite/gas/i386/x86-64-sse3.d,
+	testsuite/gas/i386/x86-64-suffix.d: Adjust expectations.
+
 2019-11-04  Jan Beulich  <jbeulich@suse.com>
 
 	* config/tc-i386.c (process_operands): Handle ShortForm insns

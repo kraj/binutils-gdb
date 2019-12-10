@@ -225,13 +225,9 @@ extern unsigned long dwarf_start_die;
 
 extern int dwarf_check;
 
-extern void init_dwarf_regnames (unsigned int);
-extern void init_dwarf_regnames_i386 (void);
-extern void init_dwarf_regnames_iamcu (void);
-extern void init_dwarf_regnames_x86_64 (void);
-extern void init_dwarf_regnames_aarch64 (void);
-extern void init_dwarf_regnames_s390 (void);
-extern void init_dwarf_regnames_riscv (void);
+extern void init_dwarf_regnames_by_elf_machine_code (unsigned int);
+extern void init_dwarf_regnames_by_bfd_arch_and_mach (enum bfd_architecture arch,
+						      unsigned long mach);
 
 extern bfd_boolean  load_debug_section (enum dwarf_section_display_enum, void *);
 extern void         free_debug_section (enum dwarf_section_display_enum);

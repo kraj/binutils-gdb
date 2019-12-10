@@ -102,7 +102,7 @@ static initializer cpu_flag_init[] =
   { "CPU_ZNVER1_FLAGS",
     "CPU_GENERIC64_FLAGS|CpuFISTTP|CpuRdtscp|CpuCX16|CPU_AVX2_FLAGS|CpuSSE4A|CpuABM|CpuSVME|CpuAES|CpuPCLMUL|CpuLZCNT|CpuPRFCHW|CpuFMA|CpuBMI|CpuF16C|CpuXsaveopt|CpuFSGSBase|CpuMovbe|CpuBMI2|CpuRdRnd|CpuADX|CpuRdSeed|CpuSMAP|CpuSHA|CpuXSAVEC|CpuXSAVES|CpuClflushOpt|CpuCLZERO|CpuMWAITX" },
   { "CPU_ZNVER2_FLAGS",
-    "CPU_ZNVER1_FLAGS|CpuRDPID|CpuWBNOINVD|CpuCLWB" },
+    "CPU_ZNVER1_FLAGS|CpuCLWB|CpuRDPID|CpuRDPRU|CpuMCOMMIT|CpuWBNOINVD" },
   { "CPU_BTVER1_FLAGS",
     "CPU_GENERIC64_FLAGS|CpuFISTTP|CpuCX16|CpuRdtscp|CPU_SSSE3_FLAGS|CpuSSE4A|CpuABM|CpuPRFCHW|CpuCX16|CpuClflush|CpuFISTTP|CpuSVME|CpuLZCNT" },
   { "CPU_BTVER2_FLAGS",
@@ -303,6 +303,10 @@ static initializer cpu_flag_init[] =
     "CpuENQCMD" },
   { "CPU_AVX512_VP2INTERSECT_FLAGS",
     "CpuAVX512_VP2INTERSECT" },
+  { "CPU_RDPRU_FLAGS",
+    "CpuRDPRU" },
+  { "CPU_MCOMMIT_FLAGS",
+    "CpuMCOMMIT" },
   { "CPU_ANY_X87_FLAGS",
     "CPU_ANY_287_FLAGS|Cpu8087" },
   { "CPU_ANY_287_FLAGS",
@@ -384,13 +388,13 @@ static initializer operand_type_init[] =
   { "OPERAND_TYPE_NONE",
     "0" },
   { "OPERAND_TYPE_REG8",
-    "Reg|Byte" },
+    "Class=Reg|Byte" },
   { "OPERAND_TYPE_REG16",
-    "Reg|Word" },
+    "Class=Reg|Word" },
   { "OPERAND_TYPE_REG32",
-    "Reg|Dword" },
+    "Class=Reg|Dword" },
   { "OPERAND_TYPE_REG64",
-    "Reg|Qword" },
+    "Class=Reg|Qword" },
   { "OPERAND_TYPE_IMM1",
     "Imm1" },
   { "OPERAND_TYPE_IMM8",
@@ -418,43 +422,41 @@ static initializer operand_type_init[] =
   { "OPERAND_TYPE_DISP64",
     "Disp64" },
   { "OPERAND_TYPE_INOUTPORTREG",
-    "InOutPortReg" },
+    "Instance=RegD|Word" },
   { "OPERAND_TYPE_SHIFTCOUNT",
-    "ShiftCount" },
+    "Instance=RegC|Byte" },
   { "OPERAND_TYPE_CONTROL",
-    "Control" },
+    "Class=RegCR" },
   { "OPERAND_TYPE_TEST",
-    "Test" },
+    "Class=RegTR" },
   { "OPERAND_TYPE_DEBUG",
-    "Debug" },
+    "Class=RegDR" },
   { "OPERAND_TYPE_FLOATREG",
-    "Reg|Tbyte" },
+    "Class=Reg|Tbyte" },
   { "OPERAND_TYPE_FLOATACC",
-    "Acc|Tbyte" },
+    "Instance=Accum|Tbyte" },
   { "OPERAND_TYPE_SREG",
-    "SReg" },
-  { "OPERAND_TYPE_JUMPABSOLUTE",
-    "JumpAbsolute" },
+    "Class=SReg" },
   { "OPERAND_TYPE_REGMMX",
-    "RegMMX" },
+    "Class=RegMMX" },
   { "OPERAND_TYPE_REGXMM",
-    "RegSIMD|Xmmword" },
+    "Class=RegSIMD|Xmmword" },
   { "OPERAND_TYPE_REGYMM",
-    "RegSIMD|Ymmword" },
+    "Class=RegSIMD|Ymmword" },
   { "OPERAND_TYPE_REGZMM",
-    "RegSIMD|Zmmword" },
+    "Class=RegSIMD|Zmmword" },
   { "OPERAND_TYPE_REGMASK",
-    "RegMask" },
-  { "OPERAND_TYPE_ESSEG",
-    "EsSeg" },
+    "Class=RegMask" },
+  { "OPERAND_TYPE_REGBND",
+    "Class=RegBND" },
   { "OPERAND_TYPE_ACC8",
-    "Acc|Byte" },
+    "Instance=Accum|Byte" },
   { "OPERAND_TYPE_ACC16",
-    "Acc|Word" },
+    "Instance=Accum|Word" },
   { "OPERAND_TYPE_ACC32",
-    "Acc|Dword" },
+    "Instance=Accum|Dword" },
   { "OPERAND_TYPE_ACC64",
-    "Acc|Qword" },
+    "Instance=Accum|Qword" },
   { "OPERAND_TYPE_DISP16_32",
     "Disp16|Disp32" },
   { "OPERAND_TYPE_ANYDISP",
@@ -475,8 +477,8 @@ static initializer operand_type_init[] =
     "Imm32|Imm32S|Imm64|Disp32" },
   { "OPERAND_TYPE_IMM32_32S_64_DISP32_64",
     "Imm32|Imm32S|Imm64|Disp32|Disp64" },
-  { "OPERAND_TYPE_REGBND",
-    "RegBND" },
+  { "OPERAND_TYPE_ANYIMM",
+    "Imm1|Imm8|Imm8S|Imm16|Imm32|Imm32S|Imm64" },
 };
 
 typedef struct bitfield
@@ -598,6 +600,8 @@ static bitfield cpu_flags[] =
   BITFIELD (CpuMOVDIRI),
   BITFIELD (CpuMOVDIR64B),
   BITFIELD (CpuENQCMD),
+  BITFIELD (CpuRDPRU),
+  BITFIELD (CpuMCOMMIT),
 #ifdef CpuUnused
   BITFIELD (CpuUnused),
 #endif
@@ -611,15 +615,13 @@ static bitfield opcode_modifiers[] =
   BITFIELD (Modrm),
   BITFIELD (ShortForm),
   BITFIELD (Jump),
-  BITFIELD (JumpDword),
-  BITFIELD (JumpByte),
-  BITFIELD (JumpInterSegment),
   BITFIELD (FloatMF),
   BITFIELD (FloatR),
   BITFIELD (Size),
   BITFIELD (CheckRegSize),
   BITFIELD (IgnoreSize),
   BITFIELD (DefaultSize),
+  BITFIELD (Anysize),
   BITFIELD (No_bSuf),
   BITFIELD (No_wSuf),
   BITFIELD (No_lSuf),
@@ -668,12 +670,41 @@ static bitfield opcode_modifiers[] =
   BITFIELD (Intel64),
 };
 
+#define CLASS(n) #n, n
+
+static const struct {
+  const char *name;
+  enum operand_class value;
+} operand_classes[] = {
+  CLASS (Reg),
+  CLASS (SReg),
+  CLASS (RegCR),
+  CLASS (RegDR),
+  CLASS (RegTR),
+  CLASS (RegMMX),
+  CLASS (RegSIMD),
+  CLASS (RegMask),
+  CLASS (RegBND),
+};
+
+#undef CLASS
+
+#define INSTANCE(n) #n, n
+
+static const struct {
+  const char *name;
+  enum operand_instance value;
+} operand_instances[] = {
+    INSTANCE (Accum),
+    INSTANCE (RegC),
+    INSTANCE (RegD),
+    INSTANCE (RegB),
+};
+
+#undef INSTANCE
+
 static bitfield operand_types[] =
 {
-  BITFIELD (Reg),
-  BITFIELD (RegMMX),
-  BITFIELD (RegSIMD),
-  BITFIELD (RegMask),
   BITFIELD (Imm1),
   BITFIELD (Imm8),
   BITFIELD (Imm8S),
@@ -687,15 +718,6 @@ static bitfield operand_types[] =
   BITFIELD (Disp32),
   BITFIELD (Disp32S),
   BITFIELD (Disp64),
-  BITFIELD (InOutPortReg),
-  BITFIELD (ShiftCount),
-  BITFIELD (Control),
-  BITFIELD (Debug),
-  BITFIELD (Test),
-  BITFIELD (SReg),
-  BITFIELD (Acc),
-  BITFIELD (JumpAbsolute),
-  BITFIELD (EsSeg),
   BITFIELD (Byte),
   BITFIELD (Word),
   BITFIELD (Dword),
@@ -706,8 +728,6 @@ static bitfield operand_types[] =
   BITFIELD (Ymmword),
   BITFIELD (Zmmword),
   BITFIELD (Unspecified),
-  BITFIELD (Anysize),
-  BITFIELD (RegBND),
 #ifdef OTUnused
   BITFIELD (OTUnused),
 #endif
@@ -1128,20 +1148,22 @@ enum stage {
 };
 
 static void
-output_operand_type (FILE *table, bitfield *types, unsigned int size,
+output_operand_type (FILE *table, enum operand_class class,
+		     enum operand_instance instance,
+		     const bitfield *types, unsigned int size,
 		     enum stage stage, const char *indent)
 {
   unsigned int i;
 
-  fprintf (table, "{ { ");
+  fprintf (table, "{ { %d, %d, ", class, instance);
 
   for (i = 0; i < size - 1; i++)
     {
-      if (((i + 1) % 20) != 0)
+      if (((i + 3) % 20) != 0)
 	fprintf (table, "%d, ", types[i].value);
       else
 	fprintf (table, "%d,", types[i].value);
-      if (((i + 1) % 20) == 0)
+      if (((i + 3) % 20) == 0)
 	{
 	  /* We need \\ for macro.  */
 	  if (stage == stage_macros)
@@ -1159,6 +1181,8 @@ process_i386_operand_type (FILE *table, char *op, enum stage stage,
 			   const char *indent, int lineno)
 {
   char *str, *next, *last;
+  enum operand_class class = ClassNone;
+  enum operand_instance instance = InstanceNone;
   bitfield types [ARRAY_SIZE (operand_types)];
 
   /* Copy the default operand type.  */
@@ -1172,6 +1196,32 @@ process_i386_operand_type (FILE *table, char *op, enum stage stage,
       for (next = op; next && next < last; )
 	{
 	  str = next_field (next, '|', &next, last);
+	  if (str)
+	    {
+	      unsigned int i;
+
+	      if (!strncmp(str, "Class=", 6))
+		{
+		  for (i = 0; i < ARRAY_SIZE(operand_classes); ++i)
+		    if (!strcmp(str + 6, operand_classes[i].name))
+		      {
+			class = operand_classes[i].value;
+			str = NULL;
+			break;
+		      }
+		}
+
+	      if (str && !strncmp(str, "Instance=", 9))
+		{
+		  for (i = 0; i < ARRAY_SIZE(operand_instances); ++i)
+		    if (!strcmp(str + 9, operand_instances[i].name))
+		      {
+			instance = operand_instances[i].value;
+			str = NULL;
+			break;
+		      }
+		}
+	    }
 	  if (str)
 	    {
 	      set_bitfield (str, types, 1, ARRAY_SIZE (types), lineno);
@@ -1191,8 +1241,8 @@ process_i386_operand_type (FILE *table, char *op, enum stage stage,
 	    set_bitfield("Disp32S", types, 1, ARRAY_SIZE (types), lineno);
 	}
     }
-  output_operand_type (table, types, ARRAY_SIZE (types), stage,
-		       indent);
+  output_operand_type (table, class, instance, types, ARRAY_SIZE (types),
+		       stage, indent);
 }
 
 static void
@@ -1682,11 +1732,13 @@ main (int argc, char **argv)
 
   /* Check the unused bitfield in i386_operand_type.  */
 #ifdef OTUnused
-  static_assert (ARRAY_SIZE (operand_types) == OTNum + 1);
+  static_assert (ARRAY_SIZE (operand_types) + CLASS_WIDTH + INSTANCE_WIDTH
+		 == OTNum + 1);
 #else
-  static_assert (ARRAY_SIZE (operand_types) == OTNum);
+  static_assert (ARRAY_SIZE (operand_types) + CLASS_WIDTH + INSTANCE_WIDTH
+		 == OTNum);
 
-  c = OTNumOfBits - OTMax - 1;
+  c = OTNumOfBits - OTNum;
   if (c)
     fail (_("%d unused bits in i386_operand_type.\n"), c);
 #endif

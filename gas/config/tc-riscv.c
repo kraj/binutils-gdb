@@ -446,12 +446,6 @@ opcode_name_lookup (char **s)
   return o;
 }
 
-struct regname
-{
-  const char *name;
-  unsigned int num;
-};
-
 enum reg_class
 {
   RCLASS_GPR,
@@ -489,7 +483,7 @@ hash_reg_names (enum reg_class class, const char * const names[], unsigned n)
 static unsigned int
 reg_lookup_internal (const char *s, enum reg_class class)
 {
-  struct regname *r = (struct regname *) hash_find (reg_names_hash, s);
+  void *r = hash_find (reg_names_hash, s);
 
   if (r == NULL || DECODE_REG_CLASS (r) != class)
     return -1;
@@ -2347,6 +2341,12 @@ riscv_after_parse_args (void)
 
   /* Insert float_abi into the EF_RISCV_FLOAT_ABI field of elf_flags.  */
   elf_flags |= float_abi * (EF_RISCV_FLOAT_ABI & ~(EF_RISCV_FLOAT_ABI << 1));
+
+  /* If the CIE to be produced has not been overridden on the command line,
+     then produce version 3 by default.  This allows us to use the full
+     range of registers in a .cfi_return_column directive.  */
+  if (flag_dwarf_cie_version == -1)
+    flag_dwarf_cie_version = 3;
 }
 
 long
@@ -3042,6 +3042,10 @@ tc_riscv_regname_to_dw2regnum (char *regname)
 
   if ((reg = reg_lookup_internal (regname, RCLASS_FPR)) >= 0)
     return reg + 32;
+
+  /* CSRs are numbered 4096 -> 8191.  */
+  if ((reg = reg_lookup_internal (regname, RCLASS_CSR)) >= 0)
+    return reg + 4096;
 
   as_bad (_("unknown register `%s'"), regname);
   return -1;

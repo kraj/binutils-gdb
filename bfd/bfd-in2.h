@@ -992,6 +992,11 @@ typedef struct bfd_section
   /* This section contains vliw code.  This is for Toshiba MeP only.  */
 #define SEC_MEP_VLIW               0x20000000
 
+  /* All symbols, sizes and relocations in this section are octets
+     instead of bytes.  Required for DWARF debug sections as DWARF
+     information is organized in octets, not bytes.  */
+#define SEC_ELF_OCTETS             0x40000000
+
   /* Indicate that section has the no read flag set. This happens
      when memory read flag isn't set. */
 #define SEC_COFF_NOREAD            0x40000000
@@ -1826,8 +1831,6 @@ enum bfd_architecture
 #define bfd_mach_bfin          1
   bfd_arch_cr16,      /* National Semiconductor CompactRISC (ie CR16).  */
 #define bfd_mach_cr16          1
-  bfd_arch_cr16c,     /* National Semiconductor CompactRISC.  */
-#define bfd_mach_cr16c         1
   bfd_arch_crx,       /*  National Semiconductor CRX.  */
 #define bfd_mach_crx           1
   bfd_arch_cris,      /* Axis CRIS.  */
@@ -1995,7 +1998,8 @@ const bfd_arch_info_type *bfd_lookup_arch
 const char *bfd_printable_arch_mach
    (enum bfd_architecture arch, unsigned long machine);
 
-unsigned int bfd_octets_per_byte (const bfd *abfd);
+unsigned int bfd_octets_per_byte (const bfd *abfd,
+    const asection *sec);
 
 unsigned int bfd_arch_mach_octets_per_byte
    (enum bfd_architecture arch, unsigned long machine);
@@ -4859,48 +4863,6 @@ This is a 15 bit relative address.  If the most significant bits are all zero
 then it may be truncated to 8 bits.  */
   BFD_RELOC_S12Z_15_PCREL,
 
-/* NS CR16C Relocations.  */
-  BFD_RELOC_16C_NUM08,
-  BFD_RELOC_16C_NUM08_C,
-  BFD_RELOC_16C_NUM16,
-  BFD_RELOC_16C_NUM16_C,
-  BFD_RELOC_16C_NUM32,
-  BFD_RELOC_16C_NUM32_C,
-  BFD_RELOC_16C_DISP04,
-  BFD_RELOC_16C_DISP04_C,
-  BFD_RELOC_16C_DISP08,
-  BFD_RELOC_16C_DISP08_C,
-  BFD_RELOC_16C_DISP16,
-  BFD_RELOC_16C_DISP16_C,
-  BFD_RELOC_16C_DISP24,
-  BFD_RELOC_16C_DISP24_C,
-  BFD_RELOC_16C_DISP24a,
-  BFD_RELOC_16C_DISP24a_C,
-  BFD_RELOC_16C_REG04,
-  BFD_RELOC_16C_REG04_C,
-  BFD_RELOC_16C_REG04a,
-  BFD_RELOC_16C_REG04a_C,
-  BFD_RELOC_16C_REG14,
-  BFD_RELOC_16C_REG14_C,
-  BFD_RELOC_16C_REG16,
-  BFD_RELOC_16C_REG16_C,
-  BFD_RELOC_16C_REG20,
-  BFD_RELOC_16C_REG20_C,
-  BFD_RELOC_16C_ABS20,
-  BFD_RELOC_16C_ABS20_C,
-  BFD_RELOC_16C_ABS24,
-  BFD_RELOC_16C_ABS24_C,
-  BFD_RELOC_16C_IMM04,
-  BFD_RELOC_16C_IMM04_C,
-  BFD_RELOC_16C_IMM16,
-  BFD_RELOC_16C_IMM16_C,
-  BFD_RELOC_16C_IMM20,
-  BFD_RELOC_16C_IMM20_C,
-  BFD_RELOC_16C_IMM24,
-  BFD_RELOC_16C_IMM24_C,
-  BFD_RELOC_16C_IMM32,
-  BFD_RELOC_16C_IMM32_C,
-
 /* NS CR16 Relocations.  */
   BFD_RELOC_CR16_NUM8,
   BFD_RELOC_CR16_NUM16,
@@ -6898,7 +6860,8 @@ bfd_get_section_limit_octets (const bfd *abfd, const asection *sec)
 static inline bfd_size_type
 bfd_get_section_limit (const bfd *abfd, const asection *sec)
 {
-  return bfd_get_section_limit_octets (abfd, sec) / bfd_octets_per_byte (abfd);
+  return (bfd_get_section_limit_octets (abfd, sec)
+          / bfd_octets_per_byte (abfd, sec));
 }
 
 /* Functions to handle insertion and deletion of a bfd's sections.  These
@@ -7008,6 +6971,7 @@ typedef enum bfd_error
   bfd_error_bad_value,
   bfd_error_file_truncated,
   bfd_error_file_too_big,
+  bfd_error_sorry,
   bfd_error_on_input,
   bfd_error_invalid_error_code
 }

@@ -46,6 +46,10 @@
 #include "cli/cli-setshow.h"
 #include "cli/cli-cmds.h"
 
+#if CXX_STD_THREAD
+#include "gdbsupport/thread-pool.h"
+#endif
+
 static void maintenance_do_deprecate (const char *, int);
 
 /* Access the maintenance subcommands.  */
@@ -569,7 +573,7 @@ maintenance_translate_address (const char *arg, int from_tty)
 
   if (sym.minsym)
     {
-      const char *symbol_name = MSYMBOL_PRINT_NAME (sym.minsym);
+      const char *symbol_name = sym.minsym->print_name ();
       const char *symbol_offset
 	= pulongest (address - BMSYMBOL_VALUE_ADDRESS (sym));
 
@@ -840,6 +844,35 @@ maintenance_set_profile_cmd (const char *args, int from_tty,
   error (_("Profiling support is not available on this system."));
 }
 #endif
+
+static int n_worker_threads = 0;
+
+bool worker_threads_disabled ()
+{
+  return n_worker_threads == 0;
+}
+
+/* Update the thread pool for the desired number of threads.  */
+static void
+update_thread_pool_size ()
+{
+#if CXX_STD_THREAD
+  int n_threads = n_worker_threads;
+
+  if (n_threads < 0)
+    n_threads = std::thread::hardware_concurrency ();
+
+  gdb::thread_pool::g_thread_pool->set_thread_count (n_threads);
+#endif
+}
+
+static void
+maintenance_set_worker_threads (const char *args, int from_tty,
+				struct cmd_list_element *c)
+{
+  update_thread_pool_size ();
+}
+
 
 /* If true, display time usage both at startup and for each command.  */
 
@@ -1039,10 +1072,11 @@ scoped_command_stats::print_time (const char *msg)
   auto millis = ticks % 1000;
 
   std::time_t as_time = system_clock::to_time_t (now);
-  struct tm *tm = localtime (&as_time);
+  struct tm tm;
+  localtime_r (&as_time, &tm);
 
   char out[100];
-  strftime (out, sizeof (out), "%F %H:%M:%S", tm);
+  strftime (out, sizeof (out), "%F %H:%M:%S", &tm);
 
   printf_unfiltered ("%s.%03d - %s\n", out, (int) millis, msg);
 }
@@ -1312,4 +1346,17 @@ When enabled GDB is profiled."),
 			   show_maintenance_profile_p,
 			   &maintenance_set_cmdlist,
 			   &maintenance_show_cmdlist);
+
+  add_setshow_zuinteger_unlimited_cmd ("worker-threads",
+				       class_maintenance,
+				       &n_worker_threads, _("\
+Set the number of worker threads GDB can use."), _("\
+Show the number of worker threads GDB can use."), _("\
+GDB may use multiple threads to speed up certain CPU-intensive operations,\n\
+such as demangling symbol names."),
+				       maintenance_set_worker_threads, NULL,
+				       &maintenance_set_cmdlist,
+				       &maintenance_show_cmdlist);
+
+  update_thread_pool_size ();
 }

@@ -330,8 +330,10 @@ tui_initialize_readline (void)
   Keymap tui_ctlx_keymap;
 
   rl_add_defun ("tui-switch-mode", tui_rl_switch_mode, -1);
-  rl_add_defun ("gdb-command", tui_rl_command_key, -1);
   rl_add_defun ("next-keymap", tui_rl_next_keymap, -1);
+  rl_add_defun ("tui-delete-other-windows", tui_rl_delete_other_windows, -1);
+  rl_add_defun ("tui-change-windows", tui_rl_change_windows, -1);
+  rl_add_defun ("tui-other-window", tui_rl_other_window, -1);
 
   tui_keymap = rl_make_bare_keymap ();
 
@@ -494,8 +496,9 @@ tui_enable (void)
   tui_install_hooks ();
   rl_startup_hook = tui_rl_startup_hook;
 
-  tui_update_variables ();
-  
+  if (tui_update_variables ())
+    tui_rehighlight_all ();
+
   tui_setup_io (1);
 
   tui_active = 1;

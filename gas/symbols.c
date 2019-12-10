@@ -73,10 +73,6 @@ struct symbol_flags
      before.  It is cleared as soon as any direct reference to the
      symbol is present.  */
   unsigned int sy_weakrefd : 1;
-
-  /* This if set if the unit of the symbol value is "octets" instead
-     of "bytes".  */
-  unsigned int sy_octets : 1;
 };
 
 /* The information we keep for a symbol.  Note that the symbol table
@@ -850,9 +846,7 @@ symbol_temp_new_now (void)
 symbolS *
 symbol_temp_new_now_octets (void)
 {
-  symbolS * symb = symbol_temp_new (now_seg, frag_now_fix_octets (), frag_now);
-  symb->sy_flags.sy_octets = 1;
-  return symb;
+  return symbol_temp_new (now_seg, frag_now_fix_octets (), frag_now);
 }
 
 symbolS *
@@ -1223,7 +1217,13 @@ resolve_symbol_value (symbolS *symp)
       if (local_symbol_resolved_p (locsym))
 	return final_val;
 
-      final_val += local_symbol_get_frag (locsym)->fr_address / OCTETS_PER_BYTE;
+      /* Symbols whose section has SEC_ELF_OCTETS set,
+	 resolve to octets instead of target bytes. */
+      if (locsym->lsy_section->flags & SEC_OCTETS)
+	final_val += local_symbol_get_frag (locsym)->fr_address;
+      else
+	final_val += (local_symbol_get_frag (locsym)->fr_address
+		      / OCTETS_PER_BYTE);
 
       if (finalize_syms)
 	{
@@ -1336,7 +1336,9 @@ resolve_symbol_value (symbolS *symp)
 	  /* Fall through.  */
 
 	case O_constant:
-	  if (symp->sy_flags.sy_octets)
+	  /* Symbols whose section has SEC_ELF_OCTETS set,
+	     resolve to octets instead of target bytes. */
+	  if (symp->bsym->section->flags & SEC_OCTETS)
 	    final_val += symp->sy_frag->fr_address;
 	  else
 	    final_val += symp->sy_frag->fr_address / OCTETS_PER_BYTE;
@@ -2651,18 +2653,6 @@ symbol_set_value_now (symbolS *sym)
   symbol_set_frag (sym, frag_now);
 }
 
-/* Set the value of SYM to the current position in the current segment,
-   in octets.  */
-
-void
-symbol_set_value_now_octets (symbolS *sym)
-{
-  S_SET_SEGMENT (sym, now_seg);
-  S_SET_VALUE (sym, frag_now_fix_octets ());
-  symbol_set_frag (sym, frag_now);
-  sym->sy_flags.sy_octets = 1;
-}
-
 /* Set the frag of a symbol.  */
 
 void
@@ -2932,13 +2922,6 @@ symbol_set_bfdsym (symbolS *s, asymbol *bsym)
   if ((s->bsym->flags & BSF_SECTION_SYM) == 0)
     s->bsym = bsym;
   /* else XXX - What do we do now ?  */
-}
-
-/* Return whether symbol unit is "octets" (instead of "bytes").  */
-
-int symbol_octets_p (symbolS *s)
-{
-  return s->sy_flags.sy_octets;
 }
 
 #ifdef OBJ_SYMFIELD_TYPE

@@ -509,8 +509,8 @@
 #ifndef elf_backend_modify_segment_map
 #define elf_backend_modify_segment_map	0
 #endif
-#ifndef elf_backend_modify_program_headers
-#define elf_backend_modify_program_headers	0
+#ifndef elf_backend_modify_headers
+#define elf_backend_modify_headers		_bfd_elf_modify_headers
 #endif
 #ifndef elf_backend_allow_non_load_phdr
 #define elf_backend_allow_non_load_phdr	0
@@ -563,8 +563,8 @@
 #ifndef elf_backend_static_tls_alignment
 #define elf_backend_static_tls_alignment	1
 #endif
-#ifndef elf_backend_post_process_headers
-#define elf_backend_post_process_headers	_bfd_elf_post_process_headers
+#ifndef elf_backend_init_file_header
+#define elf_backend_init_file_header		_bfd_elf_init_file_header
 #endif
 #ifndef elf_backend_print_symbol_all
 #define elf_backend_print_symbol_all		NULL
@@ -823,13 +823,13 @@ static struct elf_backend_data elfNN_bed =
   elf_backend_final_write_processing,
   elf_backend_additional_program_headers,
   elf_backend_modify_segment_map,
-  elf_backend_modify_program_headers,
+  elf_backend_modify_headers,
   elf_backend_allow_non_load_phdr,
   elf_backend_gc_keep,
   elf_backend_gc_mark_dynamic_ref,
   elf_backend_gc_mark_hook,
   elf_backend_gc_mark_extra_sections,
-  elf_backend_post_process_headers,
+  elf_backend_init_file_header,
   elf_backend_print_symbol_all,
   elf_backend_output_arch_local_syms,
   elf_backend_output_arch_syms,

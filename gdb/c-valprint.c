@@ -187,7 +187,7 @@ print_unpacked_pointer (struct type *type, struct type *elttype,
 	  if (want_space)
 	    fputs_filtered (" ", stream);
 	  fputs_filtered (" <", stream);
-	  fputs_filtered (MSYMBOL_PRINT_NAME (msymbol.minsym), stream);
+	  fputs_filtered (msymbol.minsym->print_name (), stream);
 	  fputs_filtered (">", stream);
 	  want_space = 1;
 	}
@@ -203,8 +203,7 @@ print_unpacked_pointer (struct type *type, struct type *elttype,
 
 	  if (msymbol.minsym != NULL)
 	    {
-	      const char *search_name
-		= MSYMBOL_SEARCH_NAME (msymbol.minsym);
+	      const char *search_name = msymbol.minsym->search_name ();
 	      wsym = lookup_symbol_search_name (search_name, NULL,
 						VAR_DOMAIN).symbol;
 	    }
@@ -247,8 +246,7 @@ c_val_print_array (struct type *type, const gdb_byte *valaddr,
     {
       LONGEST low_bound, high_bound;
       int eltlen, len;
-      struct gdbarch *gdbarch = get_type_arch (type);
-      enum bfd_endian byte_order = gdbarch_byte_order (gdbarch);
+      enum bfd_endian byte_order = type_byte_order (type);
       unsigned int i = 0;	/* Number of characters printed.  */
 
       if (!get_array_bounds (type, &low_bound, &high_bound))

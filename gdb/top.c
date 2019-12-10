@@ -92,21 +92,35 @@ extern void initialize_all_files (void);
 #define DEFAULT_PROMPT	"(gdb) "
 #endif
 
-/* Generate a function that exports a pointer to a field of the
-   current UI.  */
-
-#define gen_ret_current_ui_field_ptr(type, name)	\
-type *							\
-current_ui_## name ## _ptr (void)			\
-{							\
-  return &current_ui->m_ ## name;		\
+struct ui_file **
+current_ui_gdb_stdout_ptr ()
+{
+  return &current_ui->m_gdb_stdout;
 }
 
-gen_ret_current_ui_field_ptr (struct ui_file *, gdb_stdout)
-gen_ret_current_ui_field_ptr (struct ui_file *, gdb_stdin)
-gen_ret_current_ui_field_ptr (struct ui_file *, gdb_stderr)
-gen_ret_current_ui_field_ptr (struct ui_file *, gdb_stdlog)
-gen_ret_current_ui_field_ptr (struct ui_out *, current_uiout)
+struct ui_file **
+current_ui_gdb_stdin_ptr ()
+{
+  return &current_ui->m_gdb_stdin;
+}
+
+struct ui_file **
+current_ui_gdb_stderr_ptr ()
+{
+  return &current_ui->m_gdb_stderr;
+}
+
+struct ui_file **
+current_ui_gdb_stdlog_ptr ()
+{
+  return &current_ui->m_gdb_stdlog;
+}
+
+struct ui_out **
+current_ui_current_uiout_ptr ()
+{
+  return &current_ui->m_current_uiout;
+}
 
 int inhibit_gdbinit = 0;
 
@@ -420,7 +434,7 @@ read_command_file (FILE *stream)
 
   while (ui->instream != NULL && !feof (ui->instream))
     {
-      char *command;
+      const char *command;
 
       /* Get a command-line.  This calls the readline package.  */
       command = command_line_input (NULL, NULL);
@@ -613,6 +627,18 @@ execute_command (const char *p, int from_tty)
       /* c->user_commands would be NULL in the case of a python command.  */
       if (c->theclass == class_user && c->user_commands)
 	execute_user_command (c, arg);
+      else if (c->theclass == class_user
+	       && c->prefixlist && !c->allow_unknown)
+	/* If this is a user defined prefix that does not allow unknown
+	   (in other words, C is a prefix command and not a command
+	   that can be followed by its args), report the list of
+	   subcommands.  */
+	{
+	  printf_unfiltered
+	    ("\"%.*s\" must be followed by the name of a subcommand.\n",
+	     (int) strlen (c->prefixname) - 1, c->prefixname);
+	  help_list (*c->prefixlist, c->prefixname, all_commands, gdb_stdout);
+	}
       else if (c->type == set_cmd)
 	do_set_command (arg, from_tty, c);
       else if (c->type == show_cmd)
@@ -1210,7 +1236,7 @@ gdb_safe_append_history (void)
    This routine either uses fancy command line editing or simple input
    as the user has requested.  */
 
-char *
+const char *
 command_line_input (const char *prompt_arg, const char *annotation_suffix)
 {
   static struct buffer cmd_line_buffer;

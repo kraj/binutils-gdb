@@ -33,6 +33,12 @@
   provide the exitcode or exit status of the shell commands launched by
   GDB commands such as "shell", "pipe" and "make".
 
+* The command define-prefix can now define user defined prefix commands.
+  User defined commands can now be defined using these user defined prefix
+  commands.
+
+* Command names can now use the . character.
+
 * The RX port now supports XML target descriptions.
 
 * GDB now shows the Ada task names at more places, e.g. in task switching
@@ -58,6 +64,10 @@
  with extensions .gdb, .py and .scm are supported as long as GDB was
  compiled with support for that language.
 
+* GDB now supports multithreaded symbol loading for higher performance.
+  This feature is still in testing, so it is disabled by default.  You
+  can turn it on using 'maint set worker-threads unlimited'.
+
 * Python API
 
   ** The gdb.Value type has a new method 'format_string' which returns a
@@ -77,6 +87,9 @@
   ** The new function gdb.lookup_static_symbol can be used to look up
      symbols with static linkage.
 
+  ** The new function gdb.lookup_static_symbols can be used to look up
+     all static symbols with static linkage.
+
   ** gdb.Objfile has new methods 'lookup_global_symbol' and
      'lookup_static_symbol' to lookup a symbol from this objfile only.
 
@@ -93,6 +106,9 @@ pipe -d DELIM COMMAND DELIM SHELL_COMMAND
   With no COMMAND, repeat the last executed command
   and send its output to SHELL_COMMAND.
 
+define-prefix COMMAND
+  Define or mark a command as a user-defined prefix command.
+  
 with SETTING [VALUE] [-- COMMAND]
 w SETTING [VALUE] [-- COMMAND]
   Temporarily set SETTING, run COMMAND, and restore SETTING.
@@ -146,10 +162,31 @@ set style highlight background COLOR
 set style highlight intensity VALUE
   Control the styling of highlightings.
 
+maint set worker-threads
+maint show worker-threads
+  Control the number of worker threads that can be used by GDB.  The
+  default is 0.  "unlimited" lets GDB choose a number that is
+  reasonable.  Currently worker threads are only used when demangling
+  the names of linker symbols.
+
+set style tui-border foreground COLOR
+set style tui-border background COLOR
+  Control the styling of TUI borders.
+
+set style tui-active-border foreground COLOR
+set style tui-active-border background COLOR
+  Control the styling of the active TUI border.
+
 maint set test-settings KIND
 maint show test-settings KIND
   A set of commands used by the testsuite for exercising the settings
   infrastructure.
+
+maint set tui-resize-message [on|off]
+maint show tui-resize-message
+  Control whether GDB prints a message each time the terminal is
+  resized when in TUI mode.  This is primarily useful for testing the
+  TUI.
 
 set print frame-info [short-location|location|location-and-address
                         |source-and-location|source-line|auto]
@@ -158,6 +195,14 @@ show print frame-info
   a frame.  This setting will e.g. influence the behaviour of 'backtrace',
   'frame', 'stepi'.  The python frame filtering also respect this setting.
   The 'backtrace' '-frame-info' option can override this global setting.
+
+set tui compact-source
+show tui compact-source
+
+  Enable the "compact" display mode for the TUI source window.  The
+  compact display uses only as much space as is needed for the line
+  numbers in the current file, and only a single space to separate the
+  line numbers from the source.
 
 info modules [-q] [REGEXP]
   Return a list of Fortran modules matching REGEXP, or all modules if
@@ -176,6 +221,12 @@ info module variables [-q] [-m MODULE_REGEXP] [-t TYPE_REGEXP] [REGEXP]
   expressions.  MODULE_REGEXP matches against the module name,
   TYPE_REGEXP matches against the variable type, and REGEXP matches
   against the variable name.
+
+set debug remote-packet-max-chars
+show debug remote-packet-max-chars
+  Controls the number of characters to output in a remote packet when using
+  "set debug remote".
+  The default is 512 bytes.
 
 * Changed commands
 
@@ -343,6 +394,17 @@ focus, winheight, +, -, >, <
 -catch-throw, -catch-rethrow, and -catch-catch
   These can be used to catch C++ exceptions in a similar fashion to
   the CLI commands 'catch throw', 'catch rethrow', and 'catch catch'.
+
+-symbol-info-functions, -symbol-info-types, and -symbol-info-variables
+  These commands are the MI equivalent of the CLI commands 'info
+  functions', 'info types', and 'info variables' respectively.
+
+-symbol-info-modules, this is the MI equivalent of the CLI 'info
+  modules' command.
+
+-symbol-info-module-functions and -symbol-info-module-variables.
+  These commands are the MI equivalent of the CLI commands 'info
+  module functions' and 'info module variables'.
 
 * Other MI changes
 

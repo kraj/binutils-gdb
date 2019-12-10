@@ -219,6 +219,12 @@ DEF_ENUM_FLAGS_TYPE (enum type_instance_flag_value, type_instance_flags);
 
 #define TYPE_NOSIGN(t)		(TYPE_MAIN_TYPE (t)->flag_nosign)
 
+/* * A compiler may supply dwarf instrumentation
+   that indicates the desired endian interpretation of the variable
+   differs from the native endian representation. */
+
+#define TYPE_ENDIANITY_NOT_DEFAULT(t) (TYPE_MAIN_TYPE (t)->flag_endianity_not_default)
+
 /* * This appears in a type's flags word if it is a stub type (e.g.,
    if someone referenced a type that wasn't defined in a source file
    via (struct sir_not_appearing_in_this_film *)).  */
@@ -546,10 +552,9 @@ union type_owner
 union field_location
 {
   /* * Position of this field, counting in bits from start of
-     containing structure.  For gdbarch_bits_big_endian=1
-     targets, it is the bit offset to the MSB.  For
-     gdbarch_bits_big_endian=0 targets, it is the bit offset to
-     the LSB.  */
+     containing structure.  For big-endian targets, it is the bit
+     offset to the MSB.  For little-endian targets, it is the bit
+     offset to the LSB.  */
 
   LONGEST bitpos;
 
@@ -617,6 +622,13 @@ struct range_bounds
 
   struct dynamic_prop high;
 
+  /* The stride value for this range.  This can be stored in bits or bytes
+     based on the value of BYTE_STRIDE_P.  It is optional to have a stride
+     value, if this range has no stride value defined then this will be set
+     to the constant zero.  */
+
+  struct dynamic_prop stride;
+
   /* * The bias.  Sometimes a range value is biased before storage.
      The bias is added to the stored bits to form the true value.  */
 
@@ -625,12 +637,16 @@ struct range_bounds
   /* True if HIGH range bound contains the number of elements in the
      subrange.  This affects how the final high bound is computed.  */
 
-  int flag_upper_bound_is_count : 1;
+  unsigned int flag_upper_bound_is_count : 1;
 
   /* True if LOW or/and HIGH are resolved into a static bound from
      a dynamic one.  */
 
-  int flag_bound_evaluated : 1;
+  unsigned int flag_bound_evaluated : 1;
+
+  /* If this is true this STRIDE is in bytes, otherwise STRIDE is in bits.  */
+
+  unsigned int flag_is_byte_stride : 1;
 };
 
 /* Compare two range_bounds objects for equality.  Simply does
@@ -701,6 +717,7 @@ struct main_type
   unsigned int flag_gnu_ifunc : 1;
   unsigned int flag_fixed_instance : 1;
   unsigned int flag_objfile_owned : 1;
+  unsigned int flag_endianity_not_default : 1;
 
   /* * True if this type was declared with "class" rather than
      "struct".  */
@@ -1345,6 +1362,9 @@ extern bool set_type_align (struct type *, ULONGEST);
   TYPE_RANGE_DATA(range_type)->high.kind
 #define TYPE_LOW_BOUND_KIND(range_type) \
   TYPE_RANGE_DATA(range_type)->low.kind
+#define TYPE_BIT_STRIDE(range_type) \
+  (TYPE_RANGE_DATA(range_type)->stride.data.const_val \
+   * (TYPE_RANGE_DATA(range_type)->flag_is_byte_stride ? 8 : 1))
 
 /* Property accessors for the type data location.  */
 #define TYPE_DATA_LOCATION(thistype) \
@@ -1386,6 +1406,9 @@ extern bool set_type_align (struct type *, ULONGEST);
 
 #define TYPE_ARRAY_LOWER_BOUND_VALUE(arraytype) \
    (TYPE_LOW_BOUND(TYPE_INDEX_TYPE((arraytype))))
+
+#define TYPE_ARRAY_BIT_STRIDE(arraytype) \
+  (TYPE_BIT_STRIDE(TYPE_INDEX_TYPE((arraytype))))
 
 /* C++ */
 
@@ -1797,7 +1820,8 @@ extern struct type *init_character_type (struct objfile *, int, int,
 extern struct type *init_boolean_type (struct objfile *, int, int,
 				       const char *);
 extern struct type *init_float_type (struct objfile *, int, const char *,
-				     const struct floatformat **);
+				     const struct floatformat **,
+				     enum bfd_endian = BFD_ENDIAN_UNKNOWN);
 extern struct type *init_decfloat_type (struct objfile *, int, const char *);
 extern struct type *init_complex_type (struct objfile *, const char *,
 				       struct type *);
@@ -1959,6 +1983,16 @@ extern struct type *create_range_type (struct type *, struct type *,
 				       const struct dynamic_prop *,
 				       LONGEST);
 
+/* Like CREATE_RANGE_TYPE but also sets up a stride.  When BYTE_STRIDE_P
+   is true the value in STRIDE is a byte stride, otherwise STRIDE is a bit
+   stride.  */
+
+extern struct type * create_range_type_with_stride
+  (struct type *result_type, struct type *index_type,
+   const struct dynamic_prop *low_bound,
+   const struct dynamic_prop *high_bound, LONGEST bias,
+   const struct dynamic_prop *stride, bool byte_stride_p);
+
 extern struct type *create_array_type (struct type *, struct type *,
 				       struct type *);
 
@@ -1971,10 +2005,10 @@ extern struct type *lookup_string_range_type (struct type *, LONGEST, LONGEST);
 extern struct type *create_set_type (struct type *, struct type *);
 
 extern struct type *lookup_unsigned_typename (const struct language_defn *,
-					      struct gdbarch *, const char *);
+					      const char *);
 
 extern struct type *lookup_signed_typename (const struct language_defn *,
-					    struct gdbarch *, const char *);
+					    const char *);
 
 extern void get_unsigned_type_max (struct type *, ULONGEST *);
 
@@ -2014,8 +2048,7 @@ extern void check_stub_method_group (struct type *, int);
 extern char *gdb_mangle_name (struct type *, int, int);
 
 extern struct type *lookup_typename (const struct language_defn *,
-				     struct gdbarch *, const char *,
-				     const struct block *, int);
+				     const char *, const struct block *, int);
 
 extern struct type *lookup_template_type (const char *, struct type *,
 					  const struct block *);
@@ -2072,6 +2105,7 @@ extern const struct rank BASE_CONVERSION_BADNESS;
 /* * Badness of converting from non-reference to reference.  Subrank
    is the type of reference conversion being done.  */
 extern const struct rank REFERENCE_CONVERSION_BADNESS;
+extern const struct rank REFERENCE_SEE_THROUGH_BADNESS;
 /* * Conversion to rvalue reference.  */
 #define REFERENCE_CONVERSION_RVALUE 1
 /* * Conversion to const lvalue reference.  */
@@ -2145,6 +2179,12 @@ extern bool types_deeply_equal (struct type *, struct type *);
 extern int type_not_allocated (const struct type *type);
 
 extern int type_not_associated (const struct type *type);
+
+/* * When the type includes explicit byte ordering, return that.
+   Otherwise, the byte ordering from gdbarch_byte_order for 
+   get_type_arch is returned.  */
+   
+extern enum bfd_endian type_byte_order (const struct type *type);
 
 /* A flag to enable printing of debugging information of C++
    overloading.  */

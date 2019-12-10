@@ -356,7 +356,7 @@ print_scalar_formatted (const gdb_byte *valaddr, struct type *type,
 {
   struct gdbarch *gdbarch = get_type_arch (type);
   unsigned int len = TYPE_LENGTH (type);
-  enum bfd_endian byte_order = gdbarch_byte_order (gdbarch);
+  enum bfd_endian byte_order = type_byte_order (type);
 
   /* String printing should go through val_print_scalar_formatted.  */
   gdb_assert (options->format != 's');
@@ -628,9 +628,9 @@ build_address_symbolic (struct gdbarch *gdbarch,
 
       name_location = BLOCK_ENTRY_PC (SYMBOL_BLOCK_VALUE (symbol));
       if (do_demangle || asm_demangle)
-	name_temp = SYMBOL_PRINT_NAME (symbol);
+	name_temp = symbol->print_name ();
       else
-	name_temp = SYMBOL_LINKAGE_NAME (symbol);
+	name_temp = symbol->linkage_name ();
     }
 
   if (msymbol.minsym != NULL
@@ -671,9 +671,9 @@ build_address_symbolic (struct gdbarch *gdbarch,
 	  symbol = 0;
 	  name_location = BMSYMBOL_VALUE_ADDRESS (msymbol);
 	  if (do_demangle || asm_demangle)
-	    name_temp = MSYMBOL_PRINT_NAME (msymbol.minsym);
+	    name_temp = msymbol.minsym->print_name ();
 	  else
-	    name_temp = MSYMBOL_LINKAGE_NAME (msymbol.minsym);
+	    name_temp = msymbol.minsym->linkage_name ();
 	}
     }
   if (symbol == NULL && msymbol.minsym == NULL)
@@ -1349,7 +1349,7 @@ info_symbol_command (const char *arg, int from_tty)
 	    offset = sect_addr - MSYMBOL_VALUE_ADDRESS (objfile, msymbol);
 	    mapped = section_is_mapped (osect) ? _("mapped") : _("unmapped");
 	    sec_name = osect->the_bfd_section->name;
-	    msym_name = MSYMBOL_PRINT_NAME (msymbol);
+	    msym_name = msymbol->print_name ();
 
 	    /* Don't print the offset if it is zero.
 	       We assume there's no need to handle i18n of "sym + offset".  */
@@ -1472,7 +1472,7 @@ info_address_command (const char *exp, int from_tty)
     }
 
   printf_filtered ("Symbol \"");
-  fprintf_symbol_filtered (gdb_stdout, SYMBOL_PRINT_NAME (sym),
+  fprintf_symbol_filtered (gdb_stdout, sym->print_name (),
 			   current_language->la_language, DMGL_ANSI);
   printf_filtered ("\" is ");
   val = SYMBOL_VALUE (sym);
@@ -1592,7 +1592,7 @@ info_address_command (const char *exp, int from_tty)
       {
 	struct bound_minimal_symbol msym;
 
-	msym = lookup_bound_minimal_symbol (SYMBOL_LINKAGE_NAME (sym));
+	msym = lookup_bound_minimal_symbol (sym->linkage_name ());
 	if (msym.minsym == NULL)
 	  printf_filtered ("unresolved");
 	else
@@ -2214,7 +2214,7 @@ print_variable_and_value (const char *name, struct symbol *var,
 {
 
   if (!name)
-    name = SYMBOL_PRINT_NAME (var);
+    name = var->print_name ();
 
   fprintf_filtered (stream, "%s%ps = ", n_spaces (2 * indent),
 		    styled_string (variable_name_style.style (), name));
@@ -2326,7 +2326,7 @@ printf_wide_c_string (struct ui_file *stream, const char *format,
   const gdb_byte *str;
   size_t len;
   struct gdbarch *gdbarch = get_type_arch (value_type (value));
-  struct type *wctype = lookup_typename (current_language, gdbarch,
+  struct type *wctype = lookup_typename (current_language,
 					 "wchar_t", NULL, 0);
   int wcwidth = TYPE_LENGTH (wctype);
 
@@ -2601,7 +2601,7 @@ ui_printf (const char *arg, struct ui_file *stream)
 	    {
 	      struct gdbarch *gdbarch
 		= get_type_arch (value_type (val_args[i]));
-	      struct type *wctype = lookup_typename (current_language, gdbarch,
+	      struct type *wctype = lookup_typename (current_language,
 						     "wchar_t", NULL, 0);
 	      struct type *valtype;
 	      const gdb_byte *bytes;
@@ -2656,6 +2656,16 @@ ui_printf (const char *arg, struct ui_file *stream)
 	  case long_arg:
 	    {
 	      long val = value_as_long (val_args[i]);
+
+	      DIAGNOSTIC_PUSH
+	      DIAGNOSTIC_IGNORE_FORMAT_NONLITERAL
+              fprintf_filtered (stream, current_substring, val);
+	      DIAGNOSTIC_POP
+	      break;
+	    }
+	  case size_t_arg:
+	    {
+	      size_t val = value_as_long (val_args[i]);
 
 	      DIAGNOSTIC_PUSH
 	      DIAGNOSTIC_IGNORE_FORMAT_NONLITERAL

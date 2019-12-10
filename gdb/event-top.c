@@ -40,6 +40,7 @@
 #include "gdbsupport/buffer.h"
 #include "ser-event.h"
 #include "gdb_select.h"
+#include "gdbsupport/gdb-sigmask.h"
 
 /* readline include files.  */
 #include "readline/readline.h"
@@ -847,6 +848,45 @@ gdb_readline_no_editing_callback (gdb_client_data client_data)
 }
 
 
+/* See event-top.h.  */
+
+thread_local void (*thread_local_segv_handler) (int);
+
+static void handle_sigsegv (int sig);
+
+/* Install the SIGSEGV handler.  */
+static void
+install_handle_sigsegv ()
+{
+#if defined (HAVE_SIGACTION)
+  struct sigaction sa;
+  sa.sa_handler = handle_sigsegv;
+  sigemptyset (&sa.sa_mask);
+#ifdef HAVE_SIGALTSTACK
+  sa.sa_flags = SA_ONSTACK;
+#else
+  sa.sa_flags = 0;
+#endif
+  sigaction (SIGSEGV, &sa, nullptr);
+#else
+  signal (SIGSEGV, handle_sigsegv);
+#endif
+}
+
+/* Handler for SIGSEGV.  */
+
+static void
+handle_sigsegv (int sig)
+{
+  install_handle_sigsegv ();
+
+  if (thread_local_segv_handler == nullptr)
+    abort ();
+  thread_local_segv_handler (sig);
+}
+
+
+
 /* The serial event associated with the QUIT flag.  set_quit_flag sets
    this, and check_quit_flag clears it.  Used by interruptible_select
    to be able to do interruptible I/O with no race with the SIGINT
@@ -914,6 +954,8 @@ async_init_signals (void)
   sigtstp_token =
     create_async_signal_handler (async_sigtstp_handler, NULL);
 #endif
+
+  install_handle_sigsegv ();
 }
 
 /* See defs.h.  */
@@ -1127,7 +1169,7 @@ async_sigtstp_handler (gdb_client_data arg)
     sigset_t zero;
 
     sigemptyset (&zero);
-    sigprocmask (SIG_SETMASK, &zero, 0);
+    gdb_sigmask (SIG_SETMASK, &zero, 0);
   }
 #elif HAVE_SIGSETMASK
   sigsetmask (0);

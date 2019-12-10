@@ -91,6 +91,7 @@ show_layout (enum tui_layout_type layout)
 	  break;
 	}
 
+      current_layout = layout;
       tui_delete_invisible_windows ();
     }
 }
@@ -246,31 +247,6 @@ layout_completer (struct cmd_list_element *ignore,
 
   complete_on_enum (tracker, layout_names, text, word);
 }
-
-/* Function to initialize gdb commands, for tui window layout
-   manipulation.  */
-
-void
-_initialize_tui_layout (void)
-{
-  struct cmd_list_element *cmd;
-
-  cmd = add_com ("layout", class_tui, tui_layout_command, _("\
-Change the layout of windows.\n\
-Usage: layout prev | next | LAYOUT-NAME\n\
-Layout names are:\n\
-   src   : Displays source and command windows.\n\
-   asm   : Displays disassembly and command windows.\n\
-   split : Displays source, disassembly and command windows.\n\
-   regs  : Displays register window. If existing layout\n\
-           is source/command or assembly/command, the \n\
-           register window is displayed. If the\n\
-           source/assembly/command (split) is displayed, \n\
-           the register window is displayed with \n\
-           the window that has current logical focus."));
-  set_cmd_completer (cmd, layout_completer);
-}
-
 
 /* Function to set the layout to SRC, ASM, SPLIT, NEXT, PREV, DATA, or
    REGS. */
@@ -443,7 +419,6 @@ show_source_disasm_command (void)
 		       tui_term_width (),
 		       0,
 		       tui_term_height () - cmd_height);
-  current_layout = SRC_DISASSEM_COMMAND;
 }
 
 
@@ -486,8 +461,6 @@ show_data (enum tui_layout_type new_layout)
 		   0, total_height - 1);
   TUI_CMD_WIN->resize (TUI_CMD_WIN->height, tui_term_width (),
 		       0, total_height);
-
-  current_layout = new_layout;
 }
 
 void
@@ -566,5 +539,30 @@ show_source_or_disasm_and_command (enum tui_layout_type layout_type)
 		       tui_term_width (),
 		       0,
 		       src_height);
-  current_layout = layout_type;
+}
+
+
+
+/* Function to initialize gdb commands, for tui window layout
+   manipulation.  */
+
+void
+_initialize_tui_layout (void)
+{
+  struct cmd_list_element *cmd;
+
+  cmd = add_com ("layout", class_tui, tui_layout_command, _("\
+Change the layout of windows.\n\
+Usage: layout prev | next | LAYOUT-NAME\n\
+Layout names are:\n\
+   src   : Displays source and command windows.\n\
+   asm   : Displays disassembly and command windows.\n\
+   split : Displays source, disassembly and command windows.\n\
+   regs  : Displays register window. If existing layout\n\
+           is source/command or assembly/command, the \n\
+           register window is displayed. If the\n\
+           source/assembly/command (split) is displayed, \n\
+           the register window is displayed with \n\
+           the window that has current logical focus."));
+  set_cmd_completer (cmd, layout_completer);
 }

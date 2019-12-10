@@ -30,9 +30,11 @@
 #include "breakpoint.h"
 #include "frame.h"
 #include "cli/cli-cmds.h"
+#include "cli/cli-style.h"
 #include "top.h"
 #include "source.h"
 #include "event-loop.h"
+#include "gdbcmd.h"
 
 #include "tui/tui.h"
 #include "tui/tui-io.h"
@@ -50,6 +52,7 @@
 #include "gdb_curses.h"
 #include <ctype.h>
 #include "readline/readline.h"
+#include "gdbsupport/gdb_string_view.h"
 
 #include <signal.h>
 
@@ -332,13 +335,30 @@ tui_get_cmd_list (void)
 
 /* The set_func hook of "set tui ..." commands that affect the window
    borders on the TUI display.  */
-void
+
+static void
 tui_set_var_cmd (const char *null_args,
 		 int from_tty, struct cmd_list_element *c)
 {
   if (tui_update_variables () && tui_active)
     tui_rehighlight_all ();
 }
+
+
+
+/* True if TUI resizes should print a message.  This is used by the
+   test suite.  */
+
+static bool resize_message;
+
+static void
+show_tui_resize_message (struct ui_file *file, int from_tty,
+			 struct cmd_list_element *c, const char *value)
+{
+  fprintf_filtered (file, _("TUI resize messaging is %s.\n"), value);
+}
+
+
 
 /* Generic window name completion function.  Complete window name pointed
    to by TEXT and WORD.  If INCLUDE_NEXT_PREV_P is true then the special
@@ -677,6 +697,13 @@ tui_async_resize_screen (gdb_client_data arg)
       tui_resize_all ();
       tui_refresh_all_win ();
       tui_update_gdb_sizes ();
+      if (resize_message)
+	{
+	  static int count;
+	  printf_unfiltered ("@@ resize done %d, size = %dx%d\n", count,
+			     tui_term_width (), tui_term_height ());
+	  ++count;
+	}
       tui_redisplay_readline ();
     }
 }
@@ -768,6 +795,24 @@ tui_scroll_right_command (const char *arg, int from_tty)
 }
 
 
+/* Answer the window represented by name.  */
+static struct tui_win_info *
+tui_partial_win_by_name (gdb::string_view name)
+{
+  if (name != NULL)
+    {
+      for (tui_win_info *item : all_tui_windows ())
+	{
+	  const char *cur_name = item->name ();
+
+	  if (startswith (cur_name, name))
+	    return item;
+	}
+    }
+
+  return NULL;
+}
+
 /* Set focus to the window named by 'arg'.  */
 static void
 tui_set_focus_command (const char *arg, int from_tty)
@@ -802,6 +847,12 @@ tui_set_focus_command (const char *arg, int from_tty)
 static void
 tui_all_windows_info (const char *arg, int from_tty)
 {
+  if (!tui_active)
+    {
+      printf_filtered (_("The TUI is not active.\n"));
+      return;
+    }
+
   struct tui_win_info *win_with_focus = tui_win_with_focus ();
   struct ui_out *uiout = current_uiout;
 
@@ -883,6 +934,29 @@ tui_show_tab_width (struct ui_file *file, int from_tty,
 
 }
 
+/* See tui-win.h.  */
+
+bool compact_source = false;
+
+/* Callback for "set tui compact-source".  */
+
+static void
+tui_set_compact_source (const char *ignore, int from_tty,
+			struct cmd_list_element *c)
+{
+  if (TUI_SRC_WIN != nullptr)
+    TUI_SRC_WIN->refill ();
+}
+
+/* Callback for "show tui compact-source".  */
+
+static void
+tui_show_compact_source (struct ui_file *file, int from_tty,
+			 struct cmd_list_element *c, const char *value)
+{
+  printf_filtered (_("TUI source window compactness is %s.\n"), value);
+}
+
 /* Set the tab width of the specified window.  */
 static void
 tui_set_tab_width_command (const char *arg, int from_tty)
@@ -915,20 +989,16 @@ tui_set_win_height_command (const char *arg, int from_tty)
   tui_enable ();
   if (arg != NULL)
     {
-      std::string copy = arg;
-      char *buf = &copy[0];
-      char *buf_ptr = buf;
-      char *wname = NULL;
+      const char *buf = arg;
+      const char *buf_ptr = buf;
       int new_height;
       struct tui_win_info *win_info;
 
-      wname = buf_ptr;
       buf_ptr = strchr (buf_ptr, ' ');
       if (buf_ptr != NULL)
 	{
-	  *buf_ptr = '\0';
-
 	  /* Validate the window name.  */
+	  gdb::string_view wname (buf, buf_ptr - buf);
 	  win_info = tui_partial_win_by_name (wname);
 
 	  if (win_info == NULL)
@@ -1434,4 +1504,27 @@ Show the tab witdh, in characters, for the TUI."), _("\
 This variable controls how many spaces are used to display a tab character."),
 			     tui_set_tab_width, tui_show_tab_width,
 			     &tui_setlist, &tui_showlist);
+
+  add_setshow_boolean_cmd ("tui-resize-message", class_maintenance,
+			   &resize_message, _("\
+Set TUI resize messaging."), _("\
+Show TUI resize messaging."), _("\
+When enabled GDB will print a message when the terminal is resized."),
+			   nullptr,
+			   show_tui_resize_message,
+			   &maintenance_set_cmdlist,
+			   &maintenance_show_cmdlist);
+
+  add_setshow_boolean_cmd ("compact-source", class_tui,
+			   &compact_source, _("\
+Set whether the TUI source window is compact."), _("\
+Show whether the TUI source window is compact."), _("\
+This variable controls whether the TUI source window is shown\n\
+in a compact form.  The compact form puts the source closer to\n\
+the line numbers and uses less horizontal space."),
+			   tui_set_compact_source, tui_show_compact_source,
+			   &tui_setlist, &tui_showlist);
+
+  tui_border_style.changed.attach (tui_rehighlight_all);
+  tui_active_border_style.changed.attach (tui_rehighlight_all);
 }

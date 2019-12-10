@@ -55,9 +55,11 @@ IMPORTED_GNULIB_MODULES="\
     setenv \
     signal-h \
     strchrnul \
+    strerror_r-posix \
     strstr \
     strtok_r \
     sys_stat \
+    time_r \
     unistd \
     unsetenv \
     update-copyright \
@@ -174,7 +176,7 @@ apply_patches "patches/0002-mkostemp-mkostemps-Fix-compilation-error-in-C-mode-o
 apply_patches "patches/0003-Fix-glob-c-Coverity-issues.patch"
 
 # Regenerate all necessary files...
-aclocal -Iimport/m4 -I../config &&
+aclocal &&
 autoconf &&
 autoheader &&
 automake
@@ -182,15 +184,3 @@ if [ $? -ne 0 ]; then
    echo "Error: Failed to regenerate Makefiles and configure scripts."
    exit 1
 fi
-
-# Update aclocal-m4-deps.mk
-ACLOCAL_M4_DEPS_FILE=aclocal-m4-deps.mk
-cat > ${ACLOCAL_M4_DEPS_FILE}.tmp <<EOF
-# THIS FILE IS GENERATED.  -*- buffer-read-only: t -*- vi :set ro:
-aclocal_m4_deps = \\
-$(find import/m4 -type f -name "*.m4" | LC_COLLATE=C sort | \
-  sed 's/^/	/; s/$/ \\/; $s/ \\//g')
-EOF
-
-../move-if-change ${ACLOCAL_M4_DEPS_FILE}.tmp ${ACLOCAL_M4_DEPS_FILE}
-rm -f ${ACLOCAL_M4_DEPS_FILE}.tmp

@@ -1421,16 +1421,16 @@ static bfd_boolean
 is_nondebug_keep_contents_section (bfd *ibfd, asection *isection)
 {
   /* Always keep ELF note sections.  */
-  if (ibfd->xvec->flavour == bfd_target_elf_flavour)
-    return (elf_section_type (isection) == SHT_NOTE);
+  if (bfd_get_flavour (ibfd) == bfd_target_elf_flavour)
+    return elf_section_type (isection) == SHT_NOTE;
 
   /* Always keep the .buildid section for PE/COFF.
 
      Strictly, this should be written "always keep the section storing the debug
      directory", but that may be the .text section for objects produced by some
      tools, which it is not sensible to keep.  */
-  if (ibfd->xvec->flavour == bfd_target_coff_flavour)
-    return (strcmp (bfd_section_name (isection), ".buildid") == 0);
+  if (bfd_get_flavour (ibfd) == bfd_target_coff_flavour)
+    return strcmp (bfd_section_name (isection), ".buildid") == 0;
 
   return FALSE;
 }
@@ -2460,7 +2460,9 @@ merge_gnu_build_notes (bfd *          abfd,
   bfd_vma        prev_start = 0;
   bfd_vma        prev_end = 0;
 
-  new = new_contents = xmalloc (size);
+  /* Not sure how, but the notes might grow in size.
+     (eg see PR 1774507).  Allow for this here.  */
+  new = new_contents = xmalloc (size * 2);
   for (pnote = pnotes, old = contents;
        pnote < pnotes_end;
        pnote ++)
@@ -2527,8 +2529,11 @@ merge_gnu_build_notes (bfd *          abfd,
 #endif
   
   new_size = new - new_contents;
-  memcpy (contents, new_contents, new_size);
-  size = new_size;
+  if (new_size < size)
+    {
+      memcpy (contents, new_contents, new_size);
+      size = new_size;
+    }
   free (new_contents);
 
  done:
@@ -2585,7 +2590,7 @@ copy_object (bfd *ibfd, bfd *obfd, const bfd_arch_info_type *input_arch)
       return FALSE;
     }
 
-  if (ibfd->xvec->flavour != bfd_target_elf_flavour)
+  if (bfd_get_flavour (ibfd) != bfd_target_elf_flavour)
     {
       if ((do_debug_sections & compress) != 0
 	  && do_debug_sections != compress)
@@ -2646,8 +2651,7 @@ copy_object (bfd *ibfd, bfd *obfd, const bfd_arch_info_type *input_arch)
   imach = bfd_get_mach (ibfd);
   if (input_arch)
     {
-      if (bfd_get_arch_info (ibfd) == NULL
-	  || bfd_get_arch_info (ibfd)->arch == bfd_arch_unknown)
+      if (iarch == bfd_arch_unknown)
 	{
 	  iarch = input_arch->arch;
 	  imach = input_arch->mach;
@@ -2655,6 +2659,14 @@ copy_object (bfd *ibfd, bfd *obfd, const bfd_arch_info_type *input_arch)
       else
 	non_fatal (_("Input file `%s' ignores binary architecture parameter."),
 		   bfd_get_archive_filename (ibfd));
+    }
+  if (iarch == bfd_arch_unknown
+      && bfd_get_flavour (ibfd) != bfd_target_elf_flavour
+      && bfd_get_flavour (obfd) == bfd_target_elf_flavour)
+    {
+      const struct elf_backend_data *bed = get_elf_backend_data (obfd);
+      iarch = bed->arch;
+      imach = 0;
     }
   if (!bfd_set_arch_mach (obfd, iarch, imach)
       && (ibfd->target_defaulted
@@ -2683,7 +2695,7 @@ copy_object (bfd *ibfd, bfd *obfd, const bfd_arch_info_type *input_arch)
       pe_data_type *pe = pe_data (obfd);
 
       /* Copy PE parameters before changing them.  */
-      if (ibfd->xvec->flavour == bfd_target_coff_flavour
+      if (bfd_get_flavour (ibfd) == bfd_target_coff_flavour
 	  && bfd_pei_p (ibfd))
 	pe->pe_opthdr = pe_data (ibfd)->pe_opthdr;
 
@@ -2878,6 +2890,11 @@ copy_object (bfd *ibfd, bfd *obfd, const bfd_arch_info_type *input_arch)
 	  if (! is_mergeable_note_section (ibfd, osec))
 	    continue;
 
+	  /* If the section is going to be completly deleted then
+	     do not bother to merge it.  */
+	  if (osec->output_section == NULL)
+	    continue;
+
 	  bfd_size_type size = bfd_section_size (osec);
 
 	  if (size == 0)
@@ -2893,25 +2910,19 @@ copy_object (bfd *ibfd, bfd *obfd, const bfd_arch_info_type *input_arch)
 	    {
 	      bfd_nonfatal_message (NULL, ibfd, osec,
 				    _("warning: could not load note section"));
-	      free (merged->contents);
 	      free (merged);
 	      continue;
 	    }
 
 	  merged->size = merge_gnu_build_notes (ibfd, osec, size,
 						merged->contents);
-	  if (merged->size == size)
-	    {
-	      /* Merging achieves nothing.  */
-	      merge_debug ("Merge of section %s achieved nothing - skipping\n",
-			   bfd_section_name (osec));
-	      free (merged->contents);
-	      free (merged);
-	      continue;
-	    }
 
-	  if (osec->output_section == NULL
-	      || !bfd_set_section_size (osec->output_section, merged->size))
+	  /* FIXME: Once we have read the contents in, we must write
+	     them out again.  So even if the mergeing has achieved
+	     nothing we still add this entry to the merge list.  */
+
+	  if (size != merged->size
+	      && !bfd_set_section_size (osec->output_section, merged->size))
 	    {
 	      bfd_nonfatal_message (NULL, obfd, osec,
 				    _("warning: failed to set merged notes size"));
@@ -3277,16 +3288,16 @@ copy_object (bfd *ibfd, bfd *obfd, const bfd_arch_info_type *input_arch)
 		{
 		  bfd_nonfatal_message
 		    (NULL, obfd, osec,
-		     _("error: failed to copy merged notes into output"));
+		     _("error: failed to locate merged notes"));
 		  continue;
 		}
 	    }
 
-	  if (! is_mergeable_note_section (obfd, osec))
+	  if (merged->contents == NULL)
 	    {
 	      bfd_nonfatal_message
 		(NULL, obfd, osec,
-		 _("error: failed to copy merged notes into output"));
+		 _("error: failed to merge notes"));
 	      continue;
 	    }
 
@@ -3746,6 +3757,14 @@ copy_file (const char *input_filename, const char *output_filename,
 	  status = 1;
 	  return;
 	}
+
+      if (gnu_debuglink_filename != NULL)
+	{
+	  non_fatal (_("--add-gnu-debuglink ignored for archive %s"),
+		     bfd_get_filename (ibfd));
+	  gnu_debuglink_filename = NULL;
+	}
+
       /* This is a no-op on non-Coff targets.  */
       set_long_section_mode (obfd, ibfd, long_section_names);
 
@@ -3923,11 +3942,16 @@ setup_section (bfd *ibfd, sec_ptr isection, void *obfdarg)
   /* Get the, possibly new, name of the output section.  */
   name = bfd_section_name (isection);
   flags = bfd_section_flags (isection);
+  if (bfd_get_flavour (ibfd) != bfd_get_flavour (obfd))
+    {
+      flags &= bfd_applicable_section_flags (ibfd);
+      flags &= bfd_applicable_section_flags (obfd);
+    }
   name = find_section_rename (name, &flags);
 
   /* Prefix sections.  */
-  if ((prefix_alloc_sections_string)
-      && (bfd_section_flags (isection) & SEC_ALLOC))
+  if (prefix_alloc_sections_string
+      && (bfd_section_flags (isection) & SEC_ALLOC) != 0)
     prefix = prefix_alloc_sections_string;
   else if (prefix_sections_string)
     prefix = prefix_sections_string;
@@ -3953,7 +3977,7 @@ setup_section (bfd *ibfd, sec_ptr isection, void *obfdarg)
 	   && !is_nondebug_keep_contents_section (ibfd, isection))
     {
       flags &= ~(SEC_HAS_CONTENTS | SEC_LOAD | SEC_GROUP);
-      if (obfd->xvec->flavour == bfd_target_elf_flavour)
+      if (bfd_get_flavour (obfd) == bfd_target_elf_flavour)
 	{
 	  make_nobits = TRUE;
 
@@ -4056,7 +4080,7 @@ setup_section (bfd *ibfd, sec_ptr isection, void *obfdarg)
       if (gsym != NULL)
 	{
 	  gsym->flags |= BSF_KEEP;
-	  if (ibfd->xvec->flavour == bfd_target_elf_flavour)
+	  if (bfd_get_flavour (ibfd) == bfd_target_elf_flavour)
 	    elf_group_id (isection) = gsym;
 	}
     }

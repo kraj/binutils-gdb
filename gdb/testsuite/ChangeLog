@@ -1,3 +1,251 @@
+2019-12-10  Tom Tromey  <tromey@adacore.com>
+
+	* gdb.ada/unchecked_union.exp: New file.
+	* gdb.ada/unchecked_union/pck.adb: New file.
+	* gdb.ada/unchecked_union/pck.ads: New file.
+	* gdb.ada/unchecked_union/unchecked_union.adb: New file.
+	* gdb-utils.exp (string_to_regexp): Also quote "?".
+
+2019-12-10  George Barrett  <bob@bob131.so>
+
+	Test scripted probe breakpoints.
+	* gdb.guile/scm-breakpoint.c (main): Add probe point.
+	* gdb.python/py-breakpoint.c (main): Likewise.
+	* gdb.guile/scm-breakpoint.exp (test_bkpt_probe): Add probe
+	specifier test.
+	* gdb.python/py-breakpoint.exp (test_bkpt_probe): Likewise.
+
+2019-12-09  Tankut Baris Aktemur  <tankut.baris.aktemur@intel.com>
+
+	* gdb.cp/rvalue-ref-overload.cc (g): New function that takes
+	an rvalue parameter.
+	* gdb.cp/rvalue-ref-overload.exp: Test calling it with an lvalue
+	parameter.
+
+2019-12-09  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.mi/mi-fortran-modules.exp: Add patterns to skip system
+	modules.
+
+2019-12-09  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.fortran/derived-type-striding.exp: KFAIL if we are using a
+	broken version of GCC.
+
+2019-12-09  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.fortran/info-modules.exp: Rewrite to make use of new
+	sym-info-cmds library.
+	* gdb.fortran/info-types.exp: Likewise.
+	* lib/sym-info-cmds.exp: New file.
+
+2019-12-08  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.dwarf2/imported-unit.exp: Fix inter-CU references.
+
+2019-12-07  Keith Seitz  <keiths@redhat.com>
+
+	* gdb.base/corefile-buildid-shlib-shr.c: New file.
+	* gdb.base/corefile-buildid-shlib.c: New file.
+	* gdb.base/corefile-buildid.c: New file.
+	* gdb.base/corefile-buildid.exp: New file.
+
+2019-12-06  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.dwarf2/varval.exp: Add decl before def test.
+
+2019-12-06  Tankut Baris Aktemur  <tankut.baris.aktemur@intel.com>
+
+	* gdb.cp/rvalue-ref-overload.exp: Minor cleanup.
+
+2019-12-06  Tankut Baris Aktemur  <tankut.baris.aktemur@intel.com>
+
+	* gdb.cp/rvalue-ref-overload.cc: Add a case that involves both
+	CV and reference conversion for overload resolution.
+	* gdb.cp/rvalue-ref-overload.exp: Test it.
+
+2019-12-06  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* gdb.threads/pthreads.exp: Test taas and tfaas without command.
+	* gdb.base/frameapply.exp: Test faas without command.
+
+2019-12-04  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* lib/gdb.exp (gdb_compile): Add -J compiler option when building
+	Fortran tests.
+	* gdb.mi/mi-fortran-modules.exp: Compile source files in correct
+	order.
+
+2019-12-04  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.fortran/type-kinds.exp (test_cast_1_to_type_kind): Handle
+	casting to type with no kind specified.
+	(test_basic_parsing_of_type_kinds): Additional tests for types
+	with no kind specified, and add tests for single/double
+	precision/complex types.
+
+2019-12-04  Tom Tromey  <tromey@adacore.com>
+
+	* gdb.base/endianity.c (struct other) <x>: New field.
+	(main): Initialize it.
+	* gdb.base/endianity.exp: Update.
+
+2019-12-04  Tom Tromey  <tromey@adacore.com>
+
+	* gdb.ada/scalar_storage/storage.adb: New file.
+	* gdb.ada/scalar_storage/pck.adb: New file.
+	* gdb.ada/scalar_storage/pck.ads: New file.
+	* gdb.ada/scalar_storage.exp: New file.
+
+2019-12-04  Tom Tromey  <tromey@adacore.com>
+
+	* gdb.base/endianity.c (struct otherendian) <f>: New field.
+	(main): Initialize it.
+	* gdb.base/endianity.exp: Update.
+
+2019-12-04  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.mi/mi-sym-info.exp: Add tests for -max-results parameter.
+
+2019-12-04  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.mi/mi-fortran-modules.exp: Add additional tests for
+	-symbol-info-module-functions and -symbol-info-module-variables.
+
+2019-12-01  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.fortran/array-slices.exp: Add test for dynamic strings.
+
+2019-12-01  Richard Bunt  <richard.bunt@arm.com>
+	    Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.fortran/derived-type-striding.exp: New file.
+	* gdb.fortran/derived-type-striding.f90: New file.
+	* gdb.fortran/array-slices.exp: New file.
+	* gdb.fortran/array-slices.f90: New file.
+
+2019-11-30  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* gdb.base/define.exp: Test . in command names.
+	* gdb.base/setshow.exp: Update test, as . is now part of
+	command name.
+
+2019-11-30  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* gdb.base/define-prefix.exp: New file.
+
+2019-11-28  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* lib/gdb.exp (skip_btrace_tests): Return 1 if the test fails to
+	compile.
+	(skip_btrace_pt_tests): Likewise.
+
+2019-11-27  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.fortran/info-modules.exp: Compile source files in correct
+	order.
+
+2019-11-27  Kevin Buettner  <kevinb@redhat.com>
+
+	* gdb.dwarf2/imported-unit.exp: New file.
+	* gdb.dwarf2/imported-unit.c: New file.
+
+2019-11-27  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.mi/mi-fortran-modules-2.f90: New file.
+	* gdb.mi/mi-fortran-modules.exp: New file.
+	* gdb.mi/mi-fortran-modules.f90: New file.
+
+2019-11-27  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.mi/mi-sym-info-1.c: New file.
+	* gdb.mi/mi-sym-info-2.c: New file.
+	* gdb.mi/mi-sym-info.exp: New file.
+
+2019-11-22  Tom Tromey  <tromey@adacore.com>
+
+	* gdb.ada/tasks.exp: Add -ada-task-info regression test.
+	* gdb.ada/tasks/foo.adb: Add another stopping location.
+
+2019-11-21  Peeter Joot  <peeter.joot@lzlabs.com>
+
+	* gdb.base/endianity.c: New test.
+	* gdb.base/endianity.exp: New file.
+
+2019-11-21  Lukas Durfina  <ldurfina@tachyum.com>
+
+	* gdb.arch/amd64-eval.exp: Skip test if target is not x86-64.
+
+2019-11-21  Tom de Vries  <tdevries@suse.de>
+
+	PR gdb/24956
+	* gdb.base/ui-redirect.exp: Test output of user-defined command.
+
+2019-11-20  Sergio Durigan Junior  <sergiodj@redhat.com>
+
+	* gdb.python/py-progspace.exp: Add missing parentheses on some
+	'print' commands.
+
+2019-11-19  Tom Tromey  <tom@tromey.com>
+
+	* gdb.tui/winheight.exp: New file.
+
+2019-11-19  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.base/ctf-whatis.c: Delete.
+	* gdb.base/ctf-whatis.exp: Delete.
+	* gdb.base/whatis.exp: Rewrite to compile as both dwarf and ctf.
+
+2019-11-19  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.base/ctf-cvexpr.exp: Delete.
+	* gdb.base/cvexpr.exp: Rewrite to compile as both dwarf and ctf.
+
+2019-11-19  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.base/ctf-constvars.exp: Skip test if CTF is not supported in
+	the compiler.  Clean up header comment a little.
+	* gdb.base/ctf-ptype.exp: Likewise.
+	* gdb.base/ctf-whatis.exp: Likewise.
+	* lib/gdb.exp (skip_ctf_tests): New proc.
+
+2019-11-18  Sergio Durigan Junior  <sergiodj@redhat.com>
+
+	https://bugzilla.redhat.com/show_bug.cgi?id=1765117
+	* gdb.tui/corefile-run.exp: New file.
+
+2019-11-14  Tom Tromey  <tromey@adacore.com>
+
+	* gdb.base/gdbvars.exp (test_convenience_variables): Add
+	regression tests.
+
+2019-11-12  Tom Tromey  <tom@tromey.com>
+
+	* lib/tuiterm.exp (_accept): Add wait_for parameter.  Check output
+	after any command.  Expect prompt after WAIT_FOR is seen.
+	(enter_tui): Enable resize messages.
+	(command): Expect command in output.
+	(get_line): Avoid error when cursor appears to be off-screen.
+	(dump_screen): Include screen size in title.
+	(_do_resize): New proc, from "resize".
+	(resize): Rewrite.  Do resize in two steps.
+	* gdb.tui/empty.exp (layouts): Fix entries.
+	(check_boxes): Remove xfail.
+	(check_text): Dump screen on failure.
+
+2019-11-10  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.python/py-symbol.exp: Add test for
+	gdb.lookup_static_symbols.
+
+2019-11-10  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.python/py-symbol.c: Declare and call function from new
+	py-symbol-2.c file.
+	* gdb.python/py-symbol.exp: Compile both source files, and add new
+	tests for gdb.lookup_static_symbol.
+	* gdb.python/py-symbol-2.c: New file.
+
 2019-11-02  Tom de Vries  <tdevries@suse.de>
 
 	* gdb.base/advance.exp: Drop superfluous 3rd argument to gdb_test.

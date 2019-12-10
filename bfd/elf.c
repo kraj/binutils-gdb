@@ -51,7 +51,6 @@ SECTION
 
 static int elf_sort_sections (const void *, const void *);
 static bfd_boolean assign_file_positions_except_relocs (bfd *, struct bfd_link_info *);
-static bfd_boolean prep_headers (bfd *);
 static bfd_boolean swap_out_syms (bfd *, struct elf_strtab_hash **, int) ;
 static bfd_boolean elf_parse_notes (bfd *abfd, char *buf, size_t size,
 				    file_ptr offset, size_t align);
@@ -1103,23 +1102,16 @@ _bfd_elf_make_section_from_shdr (bfd *abfd,
 	 not any sort of flag.  Their SEC_ALLOC bits are cleared.  */
       if (name [0] == '.')
 	{
-	  const char *p;
-	  int n;
-	  if (name[1] == 'd')
-	    p = ".debug", n = 6;
-	  else if (name[1] == 'g' && name[2] == 'n')
-	    p = ".gnu.linkonce.wi.", n = 17;
-	  else if (name[1] == 'g' && name[2] == 'd')
-	    p = ".gdb_index", n = 11; /* yes we really do mean 11.  */
-	  else if (name[1] == 'l')
-	    p = ".line", n = 5;
-	  else if (name[1] == 's')
-	    p = ".stab", n = 5;
-	  else if (name[1] == 'z')
-	    p = ".zdebug", n = 7;
-	  else
-	    p = NULL, n = 0;
-	  if (p != NULL && strncmp (name, p, n) == 0)
+	  if (strncmp (name, ".debug", 6) == 0
+	      || strncmp (name, ".gnu.linkonce.wi.", 17) == 0
+	      || strncmp (name, ".zdebug", 7) == 0)
+	    flags |= SEC_DEBUGGING | SEC_ELF_OCTETS;
+	  else if (strncmp (name, GNU_BUILD_ATTRS_SECTION_NAME, 21) == 0
+		   || strncmp (name, ".note.gnu", 9) == 0)
+	    flags |= SEC_ELF_OCTETS;
+	  else if (strncmp (name, ".line", 5) == 0
+		   || strncmp (name, ".stab", 5) == 0
+		   || strcmp (name, ".gdb_index") == 0)
 	    flags |= SEC_DEBUGGING;
 	}
     }
@@ -4312,11 +4304,8 @@ _bfd_elf_compute_section_file_positions (bfd *abfd,
   if (bed->elf_backend_begin_write_processing)
     (*bed->elf_backend_begin_write_processing) (abfd, link_info);
 
-  if (! prep_headers (abfd))
+  if (!(*bed->elf_backend_init_file_header) (abfd, link_info))
     return FALSE;
-
-  /* Post process the headers if necessary.  */
-  (*bed->elf_backend_post_process_headers) (abfd, link_info);
 
   fsargs.failed = FALSE;
   fsargs.link_info = link_info;
@@ -4350,7 +4339,7 @@ _bfd_elf_compute_section_file_positions (bfd *abfd,
     }
 
   shstrtab_hdr = &elf_tdata (abfd)->shstrtab_hdr;
-  /* sh_name was set in prep_headers.  */
+  /* sh_name was set in init_file_header.  */
   shstrtab_hdr->sh_type = SHT_STRTAB;
   shstrtab_hdr->sh_flags = bed->elf_strtab_flags;
   shstrtab_hdr->sh_addr = 0;
@@ -6313,6 +6302,7 @@ assign_file_positions_except_relocs (bfd *abfd,
   struct elf_obj_tdata *tdata = elf_tdata (abfd);
   Elf_Internal_Ehdr *i_ehdrp = elf_elfheader (abfd);
   const struct elf_backend_data *bed = get_elf_backend_data (abfd);
+  unsigned int alloc;
 
   if ((abfd->flags & (EXEC_P | DYNAMIC)) == 0
       && bfd_get_format (abfd) != bfd_core)
@@ -6355,11 +6345,10 @@ assign_file_positions_except_relocs (bfd *abfd,
 	}
 
       elf_next_file_pos (abfd) = off;
+      elf_program_header_size (abfd) = 0;
     }
   else
     {
-      unsigned int alloc;
-
       /* Assign file positions for the loaded sections based on the
 	 assignment of sections to segments.  */
       if (!assign_file_positions_for_load_sections (abfd, link_info))
@@ -6368,41 +6357,15 @@ assign_file_positions_except_relocs (bfd *abfd,
       /* And for non-load sections.  */
       if (!assign_file_positions_for_non_load_sections (abfd, link_info))
 	return FALSE;
+    }
 
-      if (bed->elf_backend_modify_program_headers != NULL)
-	{
-	  if (!(*bed->elf_backend_modify_program_headers) (abfd, link_info))
-	    return FALSE;
-	}
+  if (!(*bed->elf_backend_modify_headers) (abfd, link_info))
+    return FALSE;
 
-      /* Set e_type in ELF header to ET_EXEC for -pie -Ttext-segment=.  */
-      if (link_info != NULL && bfd_link_pie (link_info))
-	{
-	  unsigned int num_segments = i_ehdrp->e_phnum;
-	  Elf_Internal_Phdr *segment = tdata->phdr;
-	  Elf_Internal_Phdr *end_segment = &segment[num_segments];
-
-	  /* Find the lowest p_vaddr in PT_LOAD segments.  */
-	  bfd_vma p_vaddr = (bfd_vma) -1;
-	  for (; segment < end_segment; segment++)
-	    if (segment->p_type == PT_LOAD && p_vaddr > segment->p_vaddr)
-	      p_vaddr = segment->p_vaddr;
-
-	  /* Set e_type to ET_EXEC if the lowest p_vaddr in PT_LOAD
-	     segments is non-zero.  */
-	  if (p_vaddr)
-	    i_ehdrp->e_type = ET_EXEC;
-	}
-
-      /* Write out the program headers.
-	 FIXME: We used to have code here to sort the PT_LOAD segments into
-	 ascending order, as per the ELF spec.  But this breaks some programs,
-	 including the Linux kernel.  But really either the spec should be
-	 changed or the programs updated.  */
-      alloc = i_ehdrp->e_phnum;
-      if (alloc == 0)
-	return TRUE;
-
+  /* Write out the program headers.  */
+  alloc = i_ehdrp->e_phnum;
+  if (alloc != 0)
+    {
       if (bfd_seek (abfd, i_ehdrp->e_phoff, SEEK_SET) != 0
 	  || bed->s->write_out_phdrs (abfd, tdata->phdr, alloc) != 0)
 	return FALSE;
@@ -6411,8 +6374,9 @@ assign_file_positions_except_relocs (bfd *abfd,
   return TRUE;
 }
 
-static bfd_boolean
-prep_headers (bfd *abfd)
+bfd_boolean
+_bfd_elf_init_file_header (bfd *abfd,
+			   struct bfd_link_info *info ATTRIBUTE_UNUSED)
 {
   Elf_Internal_Ehdr *i_ehdrp;	/* Elf file header, internal form.  */
   struct elf_strtab_hash *shstrtab;
@@ -6475,16 +6439,6 @@ prep_headers (bfd *abfd)
   i_ehdrp->e_entry = bfd_get_start_address (abfd);
   i_ehdrp->e_shentsize = bed->s->sizeof_shdr;
 
-  /* If we're building an executable, we'll need a program header table.  */
-  if (abfd->flags & EXEC_P)
-    /* It all happens later.  */
-    ;
-  else
-    {
-      i_ehdrp->e_phentsize = 0;
-      i_ehdrp->e_phoff = 0;
-    }
-
   elf_tdata (abfd)->symtab_hdr.sh_name =
     (unsigned int) _bfd_elf_strtab_add (shstrtab, ".symtab", FALSE);
   elf_tdata (abfd)->strtab_hdr.sh_name =
@@ -6496,6 +6450,38 @@ prep_headers (bfd *abfd)
       || elf_tdata (abfd)->shstrtab_hdr.sh_name == (unsigned int) -1)
     return FALSE;
 
+  return TRUE;
+}
+
+/* Set e_type in ELF header to ET_EXEC for -pie -Ttext-segment=.
+
+   FIXME: We used to have code here to sort the PT_LOAD segments into
+   ascending order, as per the ELF spec.  But this breaks some programs,
+   including the Linux kernel.  But really either the spec should be
+   changed or the programs updated.  */
+
+bfd_boolean
+_bfd_elf_modify_headers (bfd *obfd, struct bfd_link_info *link_info)
+{
+  if (link_info != NULL && bfd_link_pie (link_info))
+    {
+      Elf_Internal_Ehdr *i_ehdrp = elf_elfheader (obfd);
+      unsigned int num_segments = i_ehdrp->e_phnum;
+      struct elf_obj_tdata *tdata = elf_tdata (obfd);
+      Elf_Internal_Phdr *segment = tdata->phdr;
+      Elf_Internal_Phdr *end_segment = &segment[num_segments];
+
+      /* Find the lowest p_vaddr in PT_LOAD segments.  */
+      bfd_vma p_vaddr = (bfd_vma) -1;
+      for (; segment < end_segment; segment++)
+	if (segment->p_type == PT_LOAD && p_vaddr > segment->p_vaddr)
+	  p_vaddr = segment->p_vaddr;
+
+      /* Set e_type to ET_EXEC if the lowest p_vaddr in PT_LOAD
+	 segments is non-zero.  */
+      if (p_vaddr)
+	i_ehdrp->e_type = ET_EXEC;
+    }
   return TRUE;
 }
 
@@ -7324,7 +7310,7 @@ rewrite_elf_program_header (bfd *ibfd, bfd *obfd)
 					  : 0),
 				       output_section->alignment_power)
 			  != output_section->lma)
-			abort ();
+			goto sorry;
 		    }
 		  else
 		    {
@@ -7363,7 +7349,8 @@ rewrite_elf_program_header (bfd *ibfd, bfd *obfd)
 	     negative size - or segments that do not contain any sections.  */
 	  if (map->count == 0)
 	    {
-	      bfd_set_error (bfd_error_bad_value);
+	    sorry:
+	      bfd_set_error (bfd_error_sorry);
 	      free (sections);
 	      return FALSE;
 	    }
@@ -9043,10 +9030,11 @@ _bfd_elf_find_nearest_line (bfd *abfd,
 				     filename_ptr, functionname_ptr,
 				     line_ptr, discriminator_ptr,
 				     dwarf_debug_sections,
-				     &elf_tdata (abfd)->dwarf2_find_line_info)
-      || _bfd_dwarf1_find_nearest_line (abfd, symbols, section, offset,
-					filename_ptr, functionname_ptr,
-					line_ptr))
+				     &elf_tdata (abfd)->dwarf2_find_line_info))
+    return TRUE;
+
+  if (_bfd_dwarf1_find_nearest_line (abfd, symbols, section, offset,
+				     filename_ptr, functionname_ptr, line_ptr))
     {
       if (!*functionname_ptr)
 	_bfd_elf_find_function (abfd, symbols, section, offset,
@@ -9228,7 +9216,7 @@ _bfd_elf_validate_reloc (bfd *abfd, arelent *areloc)
 
 	  howto = bfd_reloc_type_lookup (abfd, code);
 
-	  if (areloc->howto->pcrel_offset != howto->pcrel_offset)
+	  if (howto && areloc->howto->pcrel_offset != howto->pcrel_offset)
 	    {
 	      if (howto->pcrel_offset)
 		areloc->addend += areloc->address;
@@ -9277,7 +9265,7 @@ _bfd_elf_validate_reloc (bfd *abfd, arelent *areloc)
   /* xgettext:c-format */
   _bfd_error_handler (_("%pB: %s unsupported"),
 		      abfd, areloc->howto->name);
-  bfd_set_error (bfd_error_bad_value);
+  bfd_set_error (bfd_error_sorry);
   return FALSE;
 }
 
@@ -12060,7 +12048,8 @@ _bfd_elf_section_offset (bfd *abfd,
 
 	  /* address_size and sec->size are in octets.  Convert
 	     to bytes before subtracting the original offset.  */
-	  offset = (sec->size - address_size) / bfd_octets_per_byte (abfd) - offset;
+	  offset = ((sec->size - address_size)
+		    / bfd_octets_per_byte (abfd, sec) - offset);
 	}
       return offset;
     }
@@ -12217,12 +12206,6 @@ asection _bfd_elf_large_com_section
   = BFD_FAKE_SECTION (_bfd_elf_large_com_section, &lcomm_sym,
 		      "LARGE_COMMON", 0, SEC_IS_COMMON);
 
-void
-_bfd_elf_post_process_headers (bfd *abfd ATTRIBUTE_UNUSED,
-			       struct bfd_link_info *info ATTRIBUTE_UNUSED)
-{
-}
-
 bfd_boolean
 _bfd_elf_final_write_processing (bfd *abfd)
 {
@@ -12249,7 +12232,7 @@ _bfd_elf_final_write_processing (bfd *abfd)
 	    _bfd_error_handler (_("symbol type STT_GNU_IFUNC is unsupported"));
 	  if (elf_tdata (abfd)->has_gnu_osabi & elf_gnu_osabi_unique)
 	    _bfd_error_handler (_("symbol binding STB_GNU_UNIQUE is unsupported"));
-	  bfd_set_error (bfd_error_bad_value);
+	  bfd_set_error (bfd_error_sorry);
 	  return FALSE;
 	}
     }

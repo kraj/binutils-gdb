@@ -44,7 +44,7 @@
 #include "completer.h"
 #include "bcache.h"
 #include "hashtab.h"
-#include "readline/readline.h"
+#include "readline/tilde.h"
 #include "block.h"
 #include "observable.h"
 #include "exec.h"
@@ -809,7 +809,7 @@ read_symbols (struct objfile *objfile, symfile_add_flags add_flags)
 	}
     }
   if ((add_flags & SYMFILE_NO_READ) == 0)
-    require_partial_symbols (objfile, 0);
+    require_partial_symbols (objfile, false);
 }
 
 /* Initialize entry point information for this objfile.  */

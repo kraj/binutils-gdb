@@ -492,7 +492,8 @@ CODE_FRAGMENT
 .static inline bfd_size_type
 .bfd_get_section_limit (const bfd *abfd, const asection *sec)
 .{
-.  return bfd_get_section_limit_octets (abfd, sec) / bfd_octets_per_byte (abfd);
+.  return (bfd_get_section_limit_octets (abfd, sec)
+.	   / bfd_octets_per_byte (abfd, sec));
 .}
 .
 .{* Functions to handle insertion and deletion of a bfd's sections.  These
@@ -655,6 +656,7 @@ CODE_FRAGMENT
 .  bfd_error_bad_value,
 .  bfd_error_file_truncated,
 .  bfd_error_file_too_big,
+.  bfd_error_sorry,
 .  bfd_error_on_input,
 .  bfd_error_invalid_error_code
 .}
@@ -688,6 +690,7 @@ const char *const bfd_errmsgs[] =
   N_("bad value"),
   N_("file truncated"),
   N_("file too big"),
+  N_("sorry, cannot handle this file"),
   N_("error reading %s: %s"),
   N_("#<invalid error code>")
 };

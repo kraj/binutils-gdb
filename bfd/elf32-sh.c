@@ -30,6 +30,9 @@
 #include "libiberty.h"
 #include "../opcodes/sh-opc.h"
 
+/* All users of this file have bfd_octets_per_byte (abfd, sec) == 1.  */
+#define OCTETS_PER_BYTE(ABFD, SEC) 1
+
 static bfd_reloc_status_type sh_elf_reloc
   (bfd *, arelent *, asymbol *, void *, asection *, bfd *, char **);
 static bfd_reloc_status_type sh_elf_ignore_reloc
@@ -229,11 +232,12 @@ sh_elf_reloc (bfd *abfd, arelent *reloc_entry, asymbol *symbol_in,
 	      void *data, asection *input_section, bfd *output_bfd,
 	      char **error_message ATTRIBUTE_UNUSED)
 {
-  unsigned long insn;
+  bfd_vma insn;
   bfd_vma sym_value;
   enum elf_sh_reloc_type r_type;
   bfd_vma addr = reloc_entry->address;
-  bfd_byte *hit_data = addr + (bfd_byte *) data;
+  bfd_size_type octets = addr * OCTETS_PER_BYTE (abfd, input_section);
+  bfd_byte *hit_data = (bfd_byte *) data + octets;
 
   r_type = (enum elf_sh_reloc_type) reloc_entry->howto->type;
 
@@ -254,7 +258,7 @@ sh_elf_reloc (bfd *abfd, arelent *reloc_entry, asymbol *symbol_in,
     return bfd_reloc_undefined;
 
   /* PR 17512: file: 9891ca98.  */
-  if (addr * bfd_octets_per_byte (abfd) + bfd_get_reloc_size (reloc_entry->howto)
+  if (octets + bfd_get_reloc_size (reloc_entry->howto)
       > bfd_get_section_limit_octets (abfd, input_section))
     return bfd_reloc_outofrange;
 
@@ -270,7 +274,7 @@ sh_elf_reloc (bfd *abfd, arelent *reloc_entry, asymbol *symbol_in,
     case R_SH_DIR32:
       insn = bfd_get_32 (abfd, hit_data);
       insn += sym_value + reloc_entry->addend;
-      bfd_put_32 (abfd, (bfd_vma) insn, hit_data);
+      bfd_put_32 (abfd, insn, hit_data);
       break;
     case R_SH_IND12W:
       insn = bfd_get_16 (abfd, hit_data);
@@ -279,12 +283,10 @@ sh_elf_reloc (bfd *abfd, arelent *reloc_entry, asymbol *symbol_in,
 		    + input_section->output_offset
 		    + addr
 		    + 4);
-      sym_value += (insn & 0xfff) << 1;
-      if (insn & 0x800)
-	sym_value -= 0x1000;
-      insn = (insn & 0xf000) | (sym_value & 0xfff);
-      bfd_put_16 (abfd, (bfd_vma) insn, hit_data);
-      if (sym_value < (bfd_vma) -0x1000 || sym_value >= 0x1000)
+      sym_value += (((insn & 0xfff) ^ 0x800) - 0x800) << 1;
+      insn = (insn & 0xf000) | ((sym_value >> 1) & 0xfff);
+      bfd_put_16 (abfd, insn, hit_data);
+      if (sym_value + 0x1000 >= 0x2000 || (sym_value & 1) != 0)
 	return bfd_reloc_overflow;
       break;
     default:
@@ -6846,8 +6848,6 @@ sh_elf_encode_eh_address (bfd *abfd,
 #define	elf32_bed			elf32_sh_fd_bed
 
 #include "elf32-target.h"
-
-#undef elf_backend_modify_program_headers
 
 /* VxWorks support.  */
 #undef	TARGET_BIG_SYM

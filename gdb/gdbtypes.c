@@ -60,6 +60,7 @@ const struct rank VOID_PTR_CONVERSION_BADNESS = {2,0};
 const struct rank BOOL_CONVERSION_BADNESS = {3,0};
 const struct rank BASE_CONVERSION_BADNESS = {2,0};
 const struct rank REFERENCE_CONVERSION_BADNESS = {2,0};
+const struct rank REFERENCE_SEE_THROUGH_BADNESS = {0,1};
 const struct rank NULL_POINTER_CONVERSION_BADNESS = {2,0};
 const struct rank NS_POINTER_CONVERSION_BADNESS = {10,0};
 const struct rank NS_INTEGER_POINTER_CONVERSION_BADNESS = {3,0};
@@ -935,6 +936,10 @@ create_range_type (struct type *result_type, struct type *index_type,
   TYPE_RANGE_DATA (result_type)->high = *high_bound;
   TYPE_RANGE_DATA (result_type)->bias = bias;
 
+  /* Initialize the stride to be a constant, the value will already be zero
+     thanks to the use of TYPE_ZALLOC above.  */
+  TYPE_RANGE_DATA (result_type)->stride.kind = PROP_CONST;
+
   if (low_bound->kind == PROP_CONST && low_bound->data.const_val >= 0)
     TYPE_UNSIGNED (result_type) = 1;
 
@@ -945,8 +950,34 @@ create_range_type (struct type *result_type, struct type *index_type,
   if (high_bound->kind == PROP_CONST && high_bound->data.const_val < 0)
     TYPE_UNSIGNED (result_type) = 0;
 
+  TYPE_ENDIANITY_NOT_DEFAULT (result_type)
+    = TYPE_ENDIANITY_NOT_DEFAULT (index_type);
+
   return result_type;
 }
+
+/* See gdbtypes.h.  */
+
+struct type *
+create_range_type_with_stride (struct type *result_type,
+			       struct type *index_type,
+			       const struct dynamic_prop *low_bound,
+			       const struct dynamic_prop *high_bound,
+			       LONGEST bias,
+			       const struct dynamic_prop *stride,
+			       bool byte_stride_p)
+{
+  result_type = create_range_type (result_type, index_type, low_bound,
+				   high_bound, bias);
+
+  gdb_assert (stride != nullptr);
+  TYPE_RANGE_DATA (result_type)->stride = *stride;
+  TYPE_RANGE_DATA (result_type)->flag_is_byte_stride = byte_stride_p;
+
+  return result_type;
+}
+
+
 
 /* Create a range type using either a blank type supplied in
    RESULT_TYPE, or creating a new type, inheriting the objfile from
@@ -978,11 +1009,14 @@ create_static_range_type (struct type *result_type, struct type *index_type,
 /* Predicate tests whether BOUNDS are static.  Returns 1 if all bounds values
    are static, otherwise returns 0.  */
 
-static int
+static bool
 has_static_range (const struct range_bounds *bounds)
 {
+  /* If the range doesn't have a defined stride then its stride field will
+     be initialized to the constant 0.  */
   return (bounds->low.kind == PROP_CONST
-	  && bounds->high.kind == PROP_CONST);
+	  && bounds->high.kind == PROP_CONST
+	  && bounds->stride.kind == PROP_CONST);
 }
 
 
@@ -1189,6 +1223,15 @@ create_array_type_with_stride (struct type *result_type,
 	  && !type_not_allocated (result_type)))
     {
       LONGEST low_bound, high_bound;
+      unsigned int stride;
+
+      /* If the array itself doesn't provide a stride value then take
+	 whatever stride the range provides.  Don't update BIT_STRIDE as
+	 we don't want to place the stride value from the range into this
+	 arrays bit size field.  */
+      stride = bit_stride;
+      if (stride == 0)
+	stride = TYPE_BIT_STRIDE (range_type);
 
       if (get_discrete_bounds (range_type, &low_bound, &high_bound) < 0)
 	low_bound = high_bound = 0;
@@ -1198,9 +1241,9 @@ create_array_type_with_stride (struct type *result_type,
 	 In such cases, the array length should be zero.  */
       if (high_bound < low_bound)
 	TYPE_LENGTH (result_type) = 0;
-      else if (bit_stride > 0)
+      else if (stride > 0)
 	TYPE_LENGTH (result_type) =
-	  (bit_stride * (high_bound - low_bound + 1) + 7) / 8;
+	  (stride * (high_bound - low_bound + 1) + 7) / 8;
       else
 	TYPE_LENGTH (result_type) =
 	  TYPE_LENGTH (element_type) * (high_bound - low_bound + 1);
@@ -1513,7 +1556,7 @@ type_name_or_error (struct type *type)
 
 struct type *
 lookup_typename (const struct language_defn *language,
-		 struct gdbarch *gdbarch, const char *name,
+		 const char *name,
 		 const struct block *block, int noerr)
 {
   struct symbol *sym;
@@ -1530,29 +1573,28 @@ lookup_typename (const struct language_defn *language,
 
 struct type *
 lookup_unsigned_typename (const struct language_defn *language,
-			  struct gdbarch *gdbarch, const char *name)
+			  const char *name)
 {
   char *uns = (char *) alloca (strlen (name) + 10);
 
   strcpy (uns, "unsigned ");
   strcpy (uns + 9, name);
-  return lookup_typename (language, gdbarch, uns, NULL, 0);
+  return lookup_typename (language, uns, NULL, 0);
 }
 
 struct type *
-lookup_signed_typename (const struct language_defn *language,
-			struct gdbarch *gdbarch, const char *name)
+lookup_signed_typename (const struct language_defn *language, const char *name)
 {
   struct type *t;
   char *uns = (char *) alloca (strlen (name) + 8);
 
   strcpy (uns, "signed ");
   strcpy (uns + 7, name);
-  t = lookup_typename (language, gdbarch, uns, NULL, 1);
+  t = lookup_typename (language, uns, NULL, 1);
   /* If we don't find "signed FOO" just try again with plain "FOO".  */
   if (t != NULL)
     return t;
-  return lookup_typename (language, gdbarch, name, NULL, 0);
+  return lookup_typename (language, name, NULL, 0);
 }
 
 /* Lookup a structure type named "struct NAME",
@@ -1928,6 +1970,9 @@ is_dynamic_type_internal (struct type *type, int top_level)
 		|| is_dynamic_type_internal (TYPE_TARGET_TYPE (type), 0));
       }
 
+    case TYPE_CODE_STRING:
+      /* Strings are very much like an array of characters, and can be
+	 treated as one here.  */
     case TYPE_CODE_ARRAY:
       {
 	gdb_assert (TYPE_NFIELDS (type) == 1);
@@ -1982,7 +2027,7 @@ resolve_dynamic_range (struct type *dyn_range_type,
   CORE_ADDR value;
   struct type *static_range_type, *static_target_type;
   const struct dynamic_prop *prop;
-  struct dynamic_prop low_bound, high_bound;
+  struct dynamic_prop low_bound, high_bound, stride;
 
   gdb_assert (TYPE_CODE (dyn_range_type) == TYPE_CODE_RANGE);
 
@@ -2014,24 +2059,48 @@ resolve_dynamic_range (struct type *dyn_range_type,
       high_bound.data.const_val = 0;
     }
 
+  bool byte_stride_p = TYPE_RANGE_DATA (dyn_range_type)->flag_is_byte_stride;
+  prop = &TYPE_RANGE_DATA (dyn_range_type)->stride;
+  if (dwarf2_evaluate_property (prop, NULL, addr_stack, &value))
+    {
+      stride.kind = PROP_CONST;
+      stride.data.const_val = value;
+
+      /* If we have a bit stride that is not an exact number of bytes then
+	 I really don't think this is going to work with current GDB, the
+	 array indexing code in GDB seems to be pretty heavily tied to byte
+	 offsets right now.  Assuming 8 bits in a byte.  */
+      struct gdbarch *gdbarch = get_type_arch (dyn_range_type);
+      int unit_size = gdbarch_addressable_memory_unit_size (gdbarch);
+      if (!byte_stride_p && (value % (unit_size * 8)) != 0)
+	error (_("bit strides that are not a multiple of the byte size "
+		 "are currently not supported"));
+    }
+  else
+    {
+      stride.kind = PROP_UNDEFINED;
+      stride.data.const_val = 0;
+      byte_stride_p = true;
+    }
+
   static_target_type
     = resolve_dynamic_type_internal (TYPE_TARGET_TYPE (dyn_range_type),
 				     addr_stack, 0);
   LONGEST bias = TYPE_RANGE_DATA (dyn_range_type)->bias;
-  static_range_type = create_range_type (copy_type (dyn_range_type),
-					 static_target_type,
-					 &low_bound, &high_bound, bias);
+  static_range_type = create_range_type_with_stride
+    (copy_type (dyn_range_type), static_target_type,
+     &low_bound, &high_bound, bias, &stride, byte_stride_p);
   TYPE_RANGE_DATA (static_range_type)->flag_bound_evaluated = 1;
   return static_range_type;
 }
 
-/* Resolves dynamic bound values of an array type TYPE to static ones.
-   ADDR_STACK is a stack of struct property_addr_info to be used
-   if needed during the dynamic resolution.  */
+/* Resolves dynamic bound values of an array or string type TYPE to static
+   ones.  ADDR_STACK is a stack of struct property_addr_info to be used if
+   needed during the dynamic resolution.  */
 
 static struct type *
-resolve_dynamic_array (struct type *type,
-		       struct property_addr_info *addr_stack)
+resolve_dynamic_array_or_string (struct type *type,
+				 struct property_addr_info *addr_stack)
 {
   CORE_ADDR value;
   struct type *elt_type;
@@ -2040,7 +2109,10 @@ resolve_dynamic_array (struct type *type,
   struct dynamic_prop *prop;
   unsigned int bit_stride = 0;
 
-  gdb_assert (TYPE_CODE (type) == TYPE_CODE_ARRAY);
+  /* For dynamic type resolution strings can be treated like arrays of
+     characters.  */
+  gdb_assert (TYPE_CODE (type) == TYPE_CODE_ARRAY
+	      || TYPE_CODE (type) == TYPE_CODE_STRING);
 
   type = copy_type (type);
 
@@ -2066,7 +2138,7 @@ resolve_dynamic_array (struct type *type,
   ary_dim = check_typedef (TYPE_TARGET_TYPE (elt_type));
 
   if (ary_dim != NULL && TYPE_CODE (ary_dim) == TYPE_CODE_ARRAY)
-    elt_type = resolve_dynamic_array (ary_dim, addr_stack);
+    elt_type = resolve_dynamic_array_or_string (ary_dim, addr_stack);
   else
     elt_type = TYPE_TARGET_TYPE (type);
 
@@ -2269,8 +2341,11 @@ resolve_dynamic_type_internal (struct type *type,
 	    break;
 	  }
 
+	case TYPE_CODE_STRING:
+	  /* Strings are very much like an array of characters, and can be
+	     treated as one here.  */
 	case TYPE_CODE_ARRAY:
-	  resolved_type = resolve_dynamic_array (type, addr_stack);
+	  resolved_type = resolve_dynamic_array_or_string (type, addr_stack);
 	  break;
 
 	case TYPE_CODE_RANGE:
@@ -2904,15 +2979,22 @@ init_boolean_type (struct objfile *objfile,
 /* Allocate a TYPE_CODE_FLT type structure associated with OBJFILE.
    BIT is the type size in bits; if BIT equals -1, the size is
    determined by the floatformat.  NAME is the type name.  Set the
-   TYPE_FLOATFORMAT from FLOATFORMATS.  */
+   TYPE_FLOATFORMAT from FLOATFORMATS.  BYTE_ORDER is the byte order
+   to use.  If it is BFD_ENDIAN_UNKNOWN (the default), then the byte
+   order of the objfile's architecture is used.  */
 
 struct type *
 init_float_type (struct objfile *objfile,
 		 int bit, const char *name,
-		 const struct floatformat **floatformats)
+		 const struct floatformat **floatformats,
+		 enum bfd_endian byte_order)
 {
-  struct gdbarch *gdbarch = get_objfile_arch (objfile);
-  const struct floatformat *fmt = floatformats[gdbarch_byte_order (gdbarch)];
+  if (byte_order == BFD_ENDIAN_UNKNOWN)
+    {
+      struct gdbarch *gdbarch = get_objfile_arch (objfile);
+      byte_order = gdbarch_byte_order (gdbarch);
+    }
+  const struct floatformat *fmt = floatformats[byte_order];
   struct type *t;
 
   bit = verify_floatformat (bit, fmt);
@@ -3344,6 +3426,26 @@ is_unique_ancestor (struct type *base, struct value *val)
 				    value_address (val), val) == 1;
 }
 
+/* See gdbtypes.h.  */
+
+enum bfd_endian
+type_byte_order (const struct type *type)
+{
+  bfd_endian byteorder = gdbarch_byte_order (get_type_arch (type));
+  if (TYPE_ENDIANITY_NOT_DEFAULT (type))
+    {
+      if (byteorder == BFD_ENDIAN_BIG)
+        return BFD_ENDIAN_LITTLE;
+      else
+	{
+	  gdb_assert (byteorder == BFD_ENDIAN_LITTLE);
+	  return BFD_ENDIAN_BIG;
+	}
+    }
+
+  return byteorder;
+}
+
 
 /* Overload resolution.  */
 
@@ -3616,6 +3718,7 @@ check_types_equal (struct type *type1, struct type *type2,
       || TYPE_LENGTH (type1) != TYPE_LENGTH (type2)
       || TYPE_UNSIGNED (type1) != TYPE_UNSIGNED (type2)
       || TYPE_NOSIGN (type1) != TYPE_NOSIGN (type2)
+      || TYPE_ENDIANITY_NOT_DEFAULT (type1) != TYPE_ENDIANITY_NOT_DEFAULT (type2)
       || TYPE_VARARGS (type1) != TYPE_VARARGS (type2)
       || TYPE_VECTOR (type1) != TYPE_VECTOR (type2)
       || TYPE_NOTTEXT (type1) != TYPE_NOTTEXT (type2)
@@ -3710,7 +3813,7 @@ check_types_equal (struct type *type1, struct type *type2,
 
 static bool
 check_types_worklist (std::vector<type_equality_entry> *worklist,
-		      struct bcache *cache)
+		      gdb::bcache *cache)
 {
   while (!worklist->empty ())
     {
@@ -3746,7 +3849,7 @@ types_deeply_equal (struct type *type1, struct type *type2)
   if (type1 == type2)
     return true;
 
-  struct bcache cache (nullptr, nullptr);
+  gdb::bcache cache (nullptr, nullptr);
   worklist.emplace_back (type1, type2);
   return check_types_worklist (&worklist, &cache);
 }
@@ -4200,12 +4303,9 @@ rank_one_type (struct type *parm, struct type *arg, struct value *value)
 	}
       else
 	{
-	  /* Lvalues should prefer lvalue overloads.  */
+	  /* It's illegal to pass an lvalue as an rvalue.  */
 	  if (TYPE_CODE (parm) == TYPE_CODE_RVALUE_REF)
-	    {
-	      rank.subrank = REFERENCE_CONVERSION_RVALUE;
-	      return sum_ranks (rank, REFERENCE_CONVERSION_BADNESS);
-	    }
+	    return INCOMPATIBLE_TYPE_BADNESS;
 	}
     }
 
@@ -4236,10 +4336,10 @@ rank_one_type (struct type *parm, struct type *arg, struct value *value)
 
   if (TYPE_IS_REFERENCE (arg))
     return (sum_ranks (rank_one_type (parm, TYPE_TARGET_TYPE (arg), NULL),
-                       REFERENCE_CONVERSION_BADNESS));
+                       REFERENCE_SEE_THROUGH_BADNESS));
   if (TYPE_IS_REFERENCE (parm))
     return (sum_ranks (rank_one_type (TYPE_TARGET_TYPE (parm), arg, NULL),
-                       REFERENCE_CONVERSION_BADNESS));
+                       REFERENCE_SEE_THROUGH_BADNESS));
   if (overload_debug)
   /* Debugging only.  */
     fprintf_filtered (gdb_stderr, 
@@ -4668,6 +4768,10 @@ recursive_dump_type (struct type *type, int spaces)
   if (TYPE_NOSIGN (type))
     {
       puts_filtered (" TYPE_NOSIGN");
+    }
+  if (TYPE_ENDIANITY_NOT_DEFAULT (type))
+    {
+      puts_filtered (" TYPE_ENDIANITY_NOT_DEFAULT");
     }
   if (TYPE_STUB (type))
     {

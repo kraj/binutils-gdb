@@ -448,8 +448,6 @@ DESCRIPTION
 .#define bfd_mach_bfin		1
 .  bfd_arch_cr16,      {* National Semiconductor CompactRISC (ie CR16).  *}
 .#define bfd_mach_cr16		1
-.  bfd_arch_cr16c,     {* National Semiconductor CompactRISC.  *}
-.#define bfd_mach_cr16c		1
 .  bfd_arch_crx,       {*  National Semiconductor CRX.  *}
 .#define bfd_mach_crx		1
 .  bfd_arch_cris,      {* Axis CRIS.  *}
@@ -606,7 +604,6 @@ extern const bfd_arch_info_type bfd_arm_arch;
 extern const bfd_arch_info_type bfd_avr_arch;
 extern const bfd_arch_info_type bfd_bfin_arch;
 extern const bfd_arch_info_type bfd_cr16_arch;
-extern const bfd_arch_info_type bfd_cr16c_arch;
 extern const bfd_arch_info_type bfd_cris_arch;
 extern const bfd_arch_info_type bfd_crx_arch;
 extern const bfd_arch_info_type bfd_csky_arch;
@@ -698,7 +695,6 @@ static const bfd_arch_info_type * const bfd_archures_list[] =
     &bfd_avr_arch,
     &bfd_bfin_arch,
     &bfd_cr16_arch,
-    &bfd_cr16c_arch,
     &bfd_cris_arch,
     &bfd_crx_arch,
     &bfd_csky_arch,
@@ -1383,7 +1379,8 @@ FUNCTION
 	bfd_octets_per_byte
 
 SYNOPSIS
-	unsigned int bfd_octets_per_byte (const bfd *abfd);
+	unsigned int bfd_octets_per_byte (const bfd *abfd,
+					  const asection *sec);
 
 DESCRIPTION
 	Return the number of octets (8-bit quantities) per target byte
@@ -1392,8 +1389,13 @@ DESCRIPTION
 */
 
 unsigned int
-bfd_octets_per_byte (const bfd *abfd)
+bfd_octets_per_byte (const bfd *abfd, const asection *sec)
 {
+  if (bfd_get_flavour (abfd) == bfd_target_elf_flavour
+      && sec != NULL
+      && (sec->flags & SEC_ELF_OCTETS) != 0)
+    return 1;
+
   return bfd_arch_mach_octets_per_byte (bfd_get_arch (abfd),
 					bfd_get_mach (abfd));
 }

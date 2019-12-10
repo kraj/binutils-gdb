@@ -1191,8 +1191,7 @@ elfNN_ia64_modify_segment_map (bfd *abfd,
    for SHF_IA_64_NORECOV on each.  */
 
 static bfd_boolean
-elfNN_ia64_modify_program_headers (bfd *abfd,
-				   struct bfd_link_info *info ATTRIBUTE_UNUSED)
+elfNN_ia64_modify_headers (bfd *abfd, struct bfd_link_info *info)
 {
   struct elf_obj_tdata *tdata = elf_tdata (abfd);
   struct elf_segment_map *m;
@@ -1224,7 +1223,7 @@ elfNN_ia64_modify_program_headers (bfd *abfd,
       found:;
       }
 
-  return TRUE;
+  return _bfd_elf_modify_headers (abfd, info);
 }
 
 /* According to the Tahoe assembler spec, all labels starting with a
@@ -4973,14 +4972,18 @@ elfNN_ia64_hpux_vec (const bfd_target *vec)
   return (vec == &ia64_elfNN_hpux_be_vec);
 }
 
-static void
-elfNN_hpux_post_process_headers (bfd *abfd,
-				 struct bfd_link_info *info ATTRIBUTE_UNUSED)
+static bfd_boolean
+elfNN_hpux_init_file_header (bfd *abfd, struct bfd_link_info *info)
 {
-  Elf_Internal_Ehdr *i_ehdrp = elf_elfheader (abfd);
+  Elf_Internal_Ehdr *i_ehdrp;
 
+  if (!_bfd_elf_init_file_header (abfd, info))
+    return FALSE;
+
+  i_ehdrp = elf_elfheader (abfd);
   i_ehdrp->e_ident[EI_OSABI] = get_elf_backend_data (abfd)->elf_osabi;
   i_ehdrp->e_ident[EI_ABIVERSION] = 1;
+  return TRUE;
 }
 
 static bfd_boolean
@@ -5037,8 +5040,8 @@ elfNN_hpux_backend_symbol_processing (bfd *abfd ATTRIBUTE_UNUSED,
 	elfNN_ia64_additional_program_headers
 #define elf_backend_modify_segment_map \
 	elfNN_ia64_modify_segment_map
-#define elf_backend_modify_program_headers \
-	elfNN_ia64_modify_program_headers
+#define elf_backend_modify_headers \
+	elfNN_ia64_modify_headers
 #define elf_info_to_howto \
 	elfNN_ia64_info_to_howto
 
@@ -5122,8 +5125,8 @@ elfNN_hpux_backend_symbol_processing (bfd *abfd ATTRIBUTE_UNUSED,
 
 /* These are HP-UX specific functions.  */
 
-#undef  elf_backend_post_process_headers
-#define elf_backend_post_process_headers elfNN_hpux_post_process_headers
+#undef  elf_backend_init_file_header
+#define elf_backend_init_file_header elfNN_hpux_init_file_header
 
 #undef  elf_backend_section_from_bfd_section
 #define elf_backend_section_from_bfd_section elfNN_hpux_backend_section_from_bfd_section

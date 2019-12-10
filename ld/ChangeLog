@@ -1,3 +1,275 @@
+2019-12-08  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/ld-elf/eh4.d: Match optional padding DW_CFA_nop in FDEs.
+	* testsuite/ld-elf/eh5.d: Likewise, and extra CIEs emitted on
+	embedded targets.
+
+2019-12-06  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/ld-mips-elf/eh-frame1-n32.d: Pass --eh-frame-hdr to ld.
+	* testsuite/ld-mips-elf/eh-frame1-n64.d: Likewise.
+	* testsuite/ld-mips-elf/eh-frame2-n32.d: Likewise.
+	* testsuite/ld-mips-elf/eh-frame2-n64.d: Likewise.
+
+2019-12-05  Alan Modra  <amodra@gmail.com>
+
+	PR 25244
+	* ldlang.c (lang_print_memory_usage): Correct last patch.
+
+2019-12-05  Alan Modra  <amodra@gmail.com>
+
+	PR 25243
+	* emulparams/armelf.sh (OTHER_READONLY_SECTIONS): Move definition
+	of __exidx_start and __exidx_end into ARM.exidx.
+	* emulparams/armelf_linux_eabi.sh (OTHER_READONLY_SECTIONS): Likewise.
+	* emulparams/armsymbian.sh (OTHER_READONLY_SECTIONS): Similarly.
+	* emulparams/elf32_tic6x_le.sh (OTHER_READONLY_SECTIONS): Similarly.
+	* emulparams/armelf_fuchsia.sh: Source armelf_linux_eabi.sh,
+	just redefining TEXT_START_ADDR.
+	* emulparams/armelf_linux_fdpiceabi.sh: Source armelf_linux_eabi.sh,
+	adding to OTHER_READONLY_SECTIONS.
+
+2019-12-05  Alan Modra  <amodra@gmail.com>
+
+	PR 25244
+	* ldlang.c (lang_print_memory_usage): Don't print percent used
+	when length is zero.
+
+2019-11-27  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* testsuite/ld-elf/eh5.d: Accept version 3 DWARF CIE.
+
+2019-11-26  Martin Liska  <mliska@suse.cz>
+
+	* scripttempl/arclinux.sc: Add .text.sorted.* which is sorted
+	by default.
+	* scripttempl/elf.sc: Likewise.
+	* scripttempl/elf64bpf.sc: Likewise.
+	* scripttempl/nds32elf.sc: Likewise.
+	* testsuite/ld-arm/arm-no-rel-plt.ld: Expect .text.sorted.*
+	in the default linker script.
+	* testsuite/ld-arm/fdpic-main.ld: Likewise.
+	* testsuite/ld-arm/fdpic-shared.ld: Likewise.
+
+2019-11-25  Alan Modra  <amodra@gmail.com>
+
+	* ldexp.c (fold_name): Pass section to bfd_octets_per_byte.
+	* ldlang.c (init_opb): Don't call bfd_arch_mach_octets_per_byte
+	unnecessarily.
+
+2019-11-25  Christian Eggers  <ceggers@gmx.de>
+
+	* ldexp.c (fold_name): Provide section parameter to
+	bfd_octets_per_byte.
+	* ldlang (init_opb): New argument s. Set opb_shift to 0 if
+	SEC_ELF_OCTETS for the current section is set.
+	(print_input_section): Pass current section to init_opb.
+	(print_data_statement,print_reloc_statement,
+	print_padding_statement): Likewise.
+	(lang_check_section_addresses): Call init_opb for each
+	section.
+	(lang_size_sections_1,lang_size_sections_1,
+	lang_do_assignments_1): Likewise.
+	(lang_process): Pass NULL to init_opb.
+
+2019-11-22  Nick Clifton  <nickc@redhat.com>
+
+	* ld.texi (Output Section Discarding): Add note indicating that
+	/DISCARD/ed sections ignore ELF section grouping.
+
+2019-11-22  Nick Clifton  <nickc@redhat.com>
+
+	* ldlang.h (LANG_FOR_EACH_INPUT_STATEMENT): Use cast instead of
+	extra check.
+
+2019-11-21  Nick Clifton  <nickc@redhat.com>
+
+	* ldlang.h (LANG_FOR_EACH_INPUT_STATEMENT): Check for an empty
+	file chain before examining the first input statement.
+
+2019-11-21  Alan Modra  <amodra@gmail.com>
+
+	PR 46
+	* scripttempl/pe.sc: Comment on ld -Ur fail.  Wrap .gcc_exc comment.
+	* scripttempl/pep.sc: Likewise.
+	* scripttempl/i386beos.sc: Wrap .gcc_exc comment.
+	* scripttempl/mcorepe.sc: Likewise.
+	* testsuite/ld-cdtest/cdtest.exp (test2): xfail for pe.
+
+2019-11-12  Jim Wilson  <jimw@sifive.com>
+
+	PR 25181
+	* testsuite/ld-riscv-elf/call-relax-0.s: New file.
+	* testsuite/ld-riscv-elf/call-relax-1.s: New file.
+	* testsuite/ld-riscv-elf/call-relax-2.s: New file.
+	* testsuite/ld-riscv-elf/call-relax-3.s: New file.
+	* testsuite/ld-riscv-elf/call-relax.d: New test.
+	* testsuite/ld-riscv-elf/ld-riscv-elf.exp: Run call-relax test.
+
+2019-11-08  Alan Modra  <amodra@gmail.com>
+
+	* emulparams/aarch64elf.sh: Revert 2019-11-05 change.
+	* emulparams/aarch64elf32.sh: Likewise.
+	* emulparams/arcelf.sh: Likewise.
+	* emulparams/armelf.sh: Likewise.
+	* emulparams/armelf_fbsd.sh: Likewise.
+	* emulparams/armelf_nbsd.sh: Likewise.
+	* emulparams/armelf_vxworks.sh: Likewise.
+	* emulparams/armsymbian.sh: Likewise.
+	* emulparams/elf32bfin.sh: Likewise.
+	* emulparams/elf32microblaze.sh: Likewise.
+	* emulparams/score3_elf.sh: Likewise.
+	* emulparams/shelf.sh: Likewise.
+	* emulparams/shelf_nbsd.sh: Likewise.
+	* emulparams/shelf_uclinux.sh: Likewise.
+
+2019-11-07  Alan Modra  <amodra@gmail.com>
+
+	* emulparams/elf32cr16c.sh: Delete.
+	* scripttempl/elf32cr16c.sc: Delete.
+	* Makefile.am,
+	* configure.tgt: Remove cr16c support.
+	* NEWS: Mention removal of cr16c.
+	* Makefile.in,
+	* po/BLD-POTFILES.in: Regenerate.
+
+2019-11-07  Alan Modra  <amodra@gmail.com>
+
+	* configure.tgt: Order targets by cpu.
+
+2019-11-07  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/ld-aarch64/aarch64-elf.exp: Run tests requiring pie
+	or shared library support only when check_shared_lib_support.
+	* testsuite/ld-aarch64/bti-pac-plt-1.d: Likewise.
+	* testsuite/ld-aarch64/bti-pac-plt-2.d: Likewise.
+	* testsuite/ld-aarch64/bti-plt-1.d: Likewise.
+	* testsuite/ld-aarch64/bti-plt-2.d: Likewise.
+	* testsuite/ld-aarch64/bti-plt-3.d: Likewise.
+	* testsuite/ld-aarch64/bti-plt-4.d: Likewise.
+	* testsuite/ld-aarch64/bti-plt-6.d: Likewise.
+	* testsuite/ld-aarch64/bti-plt-7.d: Likewise.
+	* testsuite/ld-aarch64/bti-warn.d: Likewise.
+	* testsuite/ld-aarch64/dt_textrel.d: Likewise.
+	* testsuite/ld-aarch64/emit-relocs-258-dyn-bad.d: Likewise.
+	* testsuite/ld-aarch64/emit-relocs-259-dyn-bad.d: Likewise.
+	* testsuite/ld-aarch64/emit-relocs-264-bad.d: Likewise.
+	* testsuite/ld-aarch64/emit-relocs-266-bad.d: Likewise.
+	* testsuite/ld-aarch64/emit-relocs-268-bad.d: Likewise.
+	* testsuite/ld-aarch64/emit-relocs-269-bad.d: Likewise.
+	* testsuite/ld-aarch64/emit-relocs-515-be.d: Likewise.
+	* testsuite/ld-aarch64/emit-relocs-515.d: Likewise.
+	* testsuite/ld-aarch64/emit-relocs-516-be.d: Likewise.
+	* testsuite/ld-aarch64/emit-relocs-516.d: Likewise.
+	* testsuite/ld-aarch64/farcall-b-plt.d: Likewise.
+	* testsuite/ld-aarch64/farcall-bl-plt.d: Likewise.
+	* testsuite/ld-aarch64/gc-plt-relocs.d: Likewise.
+	* testsuite/ld-aarch64/gc-relocs-257-dyn.d: Likewise.
+	* testsuite/ld-aarch64/ifunc-1-local.d: Likewise.
+	* testsuite/ld-aarch64/ifunc-1.d: Likewise.
+	* testsuite/ld-aarch64/ifunc-12.d: Likewise.
+	* testsuite/ld-aarch64/ifunc-13.d: Likewise.
+	* testsuite/ld-aarch64/ifunc-14a.d: Likewise.
+	* testsuite/ld-aarch64/ifunc-14b.d: Likewise.
+	* testsuite/ld-aarch64/ifunc-14c.d: Likewise.
+	* testsuite/ld-aarch64/ifunc-14d.d: Likewise.
+	* testsuite/ld-aarch64/ifunc-14e.d: Likewise.
+	* testsuite/ld-aarch64/ifunc-14f.d: Likewise.
+	* testsuite/ld-aarch64/ifunc-15.d: Likewise.
+	* testsuite/ld-aarch64/ifunc-16.d: Likewise.
+	* testsuite/ld-aarch64/ifunc-18a.d: Likewise.
+	* testsuite/ld-aarch64/ifunc-18b.d: Likewise.
+	* testsuite/ld-aarch64/ifunc-19a.d: Likewise.
+	* testsuite/ld-aarch64/ifunc-19b.d: Likewise.
+	* testsuite/ld-aarch64/ifunc-2-local.d: Likewise.
+	* testsuite/ld-aarch64/ifunc-2.d: Likewise.
+	* testsuite/ld-aarch64/ifunc-20.d: Likewise.
+	* testsuite/ld-aarch64/ifunc-21.d: Likewise.
+	* testsuite/ld-aarch64/ifunc-3a.d: Likewise.
+	* testsuite/ld-aarch64/ifunc-3b.d: Likewise.
+	* testsuite/ld-aarch64/ifunc-5b-local.d: Likewise.
+	* testsuite/ld-aarch64/ifunc-5b.d: Likewise.
+	* testsuite/ld-aarch64/ifunc-6b.d: Likewise.
+	* testsuite/ld-aarch64/ifunc-7b.d: Likewise.
+	* testsuite/ld-aarch64/ifunc-7c.d: Likewise.
+	* testsuite/ld-aarch64/pac-plt-1.d: Likewise.
+	* testsuite/ld-aarch64/pac-plt-2.d: Likewise.
+	* testsuite/ld-aarch64/pcrel_pic_defined.d: Likewise.
+	* testsuite/ld-aarch64/pcrel_pic_undefined.d: Likewise.
+	* testsuite/ld-aarch64/pie-bind-locally.d: Likewise.
+	* testsuite/ld-aarch64/plt_mapping_symbol.d: Likewise.
+	* testsuite/ld-aarch64/pr20402.d: Likewise.
+	* testsuite/ld-aarch64/pr22764.d: Likewise.
+	* testsuite/ld-aarch64/property-bti-pac1.d: Likewise.
+	* testsuite/ld-aarch64/protected-data.d: Likewise.
+	* testsuite/ld-aarch64/rela-abs-relative-be.d: Likewise.
+	* testsuite/ld-aarch64/rela-abs-relative-opt.d: Likewise.
+	* testsuite/ld-aarch64/rela-abs-relative.d: Likewise.
+	* testsuite/ld-aarch64/relasz.d: Likewise.
+	* testsuite/ld-aarch64/relocs-1027-symbolic-func.d: Likewise.
+	* testsuite/ld-aarch64/tls-desc-ie-ilp32.d: Likewise.
+	* testsuite/ld-aarch64/tls-desc-ie.d: Likewise.
+	* testsuite/ld-aarch64/tls-large-desc-be.d: Likewise.
+	* testsuite/ld-aarch64/tls-large-desc.d: Likewise.
+	* testsuite/ld-aarch64/tls-large-ie-be.d: Likewise.
+	* testsuite/ld-aarch64/tls-large-ie.d: Likewise.
+	* testsuite/ld-aarch64/tls-relax-gdesc-le-now.d: Likewise.
+	* testsuite/ld-aarch64/tls-small-ld.d: Likewise.
+	* testsuite/ld-aarch64/tls-tiny-desc.d: Likewise.
+	* testsuite/ld-aarch64/tls-tiny-gd.d: Likewise.
+	* testsuite/ld-aarch64/tls-tiny-ie.d: Likewise.
+	* testsuite/ld-aarch64/tls-tiny-ld.d: Likewise.
+	* testsuite/ld-aarch64/tlsle-symbol-offset.d: Likewise.
+	* testsuite/ld-aarch64/tlsle.d: Likewise.
+	* testsuite/ld-aarch64/variant_pcs-now.d: Likewise.
+	* testsuite/ld-aarch64/variant_pcs-shared.d: Likewise.
+	* testsuite/ld-arm/arm-elf.exp: Likewise.  Remove --hash-style=sysv
+	from static tests.  Consolidate armelftests_common_* vars into one.
+	* testsuite/ld-arm/gc-hidden-1.d: Require check_shared_lib_support.
+	* testsuite/ld-arm/movw-shared-1.d: Likewise.
+	* testsuite/ld-arm/movw-shared-2.d: Likewise.
+	* testsuite/ld-arm/movw-shared-3.d: Likewise.
+	* testsuite/ld-arm/movw-shared-4.d: Likewise.
+	* testsuite/ld-arm/pie-bind-locally.d: Likewise.
+	* testsuite/ld-arm/protected-data.d: Likewise.
+	* testsuite/ld-arm/rel32-reject-pie.d: Likewise.
+	* testsuite/ld-arm/rel32-reject.d: Likewise.
+	* testsuite/ld-arm/thumb2-bl-undefweak.d: Likewise.
+	* testsuite/ld-arm/thumb2-bl-undefweak1.d: Likewise.
+
+2019-11-06  Christian Eggers  <ceggers@gmx.de>
+
+	* ldlang.c (print_input_section): Shift printed size by opb_shift.
+
+2019-11-05  Alan Modra  <amodra@gmail.com>
+
+	* emulparams/aarch64elf.sh (GENERATE_SHLIB_SCRIPT),
+	(GENERATE_PIE_SCRIPT): Don't set.
+	* emulparams/aarch64elf32.sh (GENERATE_SHLIB_SCRIPT),
+	(GENERATE_PIE_SCRIPT): Don't set.
+	* emulparams/arcelf.sh (GENERATE_SHLIB_SCRIPT): Don't set.
+	* emulparams/armelf.sh (GENERATE_SHLIB_SCRIPT),
+	(GENERATE_PIE_SCRIPT): Don't set.
+	* emulparams/armelf_fbsd.sh (GENERATE_SHLIB_SCRIPT): Set.
+	* emulparams/armelf_nbsd.sh (GENERATE_SHLIB_SCRIPT),
+	(GENERATE_PIE_SCRIPT): Set.
+	* emulparams/armelf_vxworks.sh (GENERATE_SHLIB_SCRIPT): Set.
+	* emulparams/armsymbian.sh (GENERATE_SHLIB_SCRIPT): Set.
+	* emulparams/elf32bfin.sh (GENERATE_SHLIB_SCRIPT): Don't set.
+	* emulparams/elf32microblaze.sh (GENERATE_SHLIB_SCRIPT): Don't set.
+	* emulparams/score3_elf.sh (GENERATE_SHLIB_SCRIPT): Don't set.
+	* emulparams/shelf.sh (GENERATE_SHLIB_SCRIPT): Don't set.
+	* emulparams/shelf_nbsd.sh (GENERATE_SHLIB_SCRIPT),
+	(GENERATE_PIE_SCRIPT): Set.
+	* emulparams/shelf_uclinux.sh (GENERATE_SHLIB_SCRIPT): Set.
+
+2019-11-05  Alan Modra  <amodra@gmail.com>
+
+	* emulparams/elf32bfinfd.sh: Unset EMBEDDED rather assigning as empty.
+	* emulparams/elf32frvfd.sh: Likewise.
+	* emulparams/elf32lm32fd.sh: Likewise.
+	* emulparams/i386lynx.sh: Likewise.
+
 2019-10-22  Alan Modra  <amodra@gmail.com>
 
 	PR 22269

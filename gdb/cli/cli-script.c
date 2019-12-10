@@ -29,6 +29,7 @@
 #include "cli/cli-cmds.h"
 #include "cli/cli-decode.h"
 #include "cli/cli-script.h"
+#include "cli/cli-style.h"
 
 #include "extension.h"
 #include "interps.h"
@@ -50,7 +51,7 @@ recurse_read_control_structure
 static void do_define_command (const char *comname, int from_tty,
 			       const counted_command_line *commands);
 
-static char *read_next_line (void);
+static const char *read_next_line ();
 
 /* Level of control structure when reading.  */
 static int control_level;
@@ -696,6 +697,9 @@ execute_control_command_1 (struct command_line *cmd, int from_tty)
 enum command_control_type
 execute_control_command (struct command_line *cmd, int from_tty)
 {
+  if (!current_uiout->is_mi_like_p ())
+    return execute_control_command_1 (cmd, from_tty);
+
   /* Make sure we use the console uiout.  It's possible that we are executing
      breakpoint commands while running the MI interpreter.  */
   interp *console = interp_lookup (current_ui, INTERP_CONSOLE);
@@ -890,8 +894,8 @@ user_args::insert_args (const char *line) const
    recurse_read_control_structure whenever we need to read commands
    from stdin.  */
 
-static char *
-read_next_line (void)
+static const char *
+read_next_line ()
 {
   struct ui *ui = current_ui;
   char *prompt_ptr, control_prompt[256];
@@ -1338,7 +1342,7 @@ validate_comname (const char **comname)
   p = *comname;
   while (*p)
     {
-      if (!isalnum (*p) && *p != '-' && *p != '_')
+      if (!valid_cmd_char_p (*p))
 	error (_("Junk in argument list: \"%s\""), p);
       p++;
     }
@@ -1392,7 +1396,17 @@ do_define_command (const char *comname, int from_tty,
       int q;
 
       if (c->theclass == class_user || c->theclass == class_alias)
-	q = query (_("Redefine command \"%s\"? "), c->name);
+	{
+	  /* if C is a prefix command that was previously defined,
+	     tell the user its subcommands will be kept, and ask
+	     if ok to redefine the command.  */
+	  if (c->prefixlist != nullptr)
+	    q = (c->user_commands.get () == nullptr
+		 || query (_("Keeping subcommands of prefix command \"%s\".\n"
+			     "Redefine command \"%s\"? "), c->name, c->name));
+	  else
+	    q = query (_("Redefine command \"%s\"? "), c->name);
+	}
       else
 	q = query (_("Really redefine built-in command \"%s\"? "), c->name);
       if (!q)
@@ -1413,7 +1427,7 @@ do_define_command (const char *comname, int from_tty,
       hook_type      = CMD_POST_HOOK;
       hook_name_size = HOOK_POST_LEN;
     }
-   
+
   if (hook_type != CMD_NO_HOOK)
     {
       /* Look up cmd it hooks, and verify that we got an exact match.  */
@@ -1443,10 +1457,27 @@ do_define_command (const char *comname, int from_tty,
   else
     cmds = *commands;
 
-  newc = add_cmd (comname, class_user, user_defined_command,
-		  (c && c->theclass == class_user)
-		  ? c->doc : xstrdup ("User-defined."), list);
-  newc->user_commands = std::move (cmds);
+  {
+    struct cmd_list_element **c_prefixlist
+      = c == nullptr ? nullptr : c->prefixlist;
+    const char *c_prefixname = c == nullptr ? nullptr : c->prefixname;
+
+    newc = add_cmd (comname, class_user, user_defined_command,
+		    (c != nullptr && c->theclass == class_user)
+		    ? c->doc : xstrdup ("User-defined."), list);
+    newc->user_commands = std::move (cmds);
+
+    /* If we define or re-define a command that was previously defined
+       as a prefix, keep the prefix information.  */
+    if (c_prefixlist != nullptr)
+      {
+	newc->prefixlist = c_prefixlist;
+	newc->prefixname = c_prefixname;
+	/* allow_unknown: see explanation in equivalent logic in
+	   define_prefix_command ().  */
+	newc->allow_unknown = newc->user_commands.get () != nullptr;
+    }
+  }
 
   /* If this new command is a hook, then mark both commands as being
      tied.  */
@@ -1521,6 +1552,54 @@ document_command (const char *comname, int from_tty)
     c->doc = doc;
   }
 }
+
+/* Implementation of the "define-prefix" command.  */
+
+static void
+define_prefix_command (const char *comname, int from_tty)
+{
+  struct cmd_list_element *c, **list;
+  const char *tem;
+  const char *comfull;
+
+  comfull = comname;
+  list = validate_comname (&comname);
+
+  /* Look it up, and verify that we got an exact match.  */
+  tem = comname;
+  c = lookup_cmd (&tem, *list, "", -1, 1);
+  if (c != nullptr && strcmp (comname, c->name) != 0)
+    c = nullptr;
+
+  if (c != nullptr && c->theclass != class_user)
+    error (_("Command \"%s\" is built-in."), comfull);
+
+  if (c != nullptr && c->prefixlist != nullptr)
+    {
+      /* c is already a user defined prefix command.  */
+      return;
+    }
+
+  /* If the command does not exist at all, create it.  */
+  if (c == nullptr)
+    {
+      comname = xstrdup (comname);
+      c = add_cmd (comname, class_user, user_defined_command,
+		   xstrdup ("User-defined."), list);
+    }
+
+  /* Allocate the c->prefixlist, which marks the command as a prefix
+     command.  */
+  c->prefixlist = new struct cmd_list_element*;
+  *(c->prefixlist) = nullptr;
+  c->prefixname = xstrprintf ("%s ", comfull);
+  /* If the prefix command C is not a command, then it must be followed
+     by known subcommands.  Otherwise, if C is also a normal command,
+     it can be followed by C args that must not cause a 'subcommand'
+     not recognised error, and thus we must allow unknown.  */
+  c->allow_unknown = c->user_commands.get () != nullptr;
+}
+
 
 /* Used to implement source_command.  */
 
@@ -1561,7 +1640,21 @@ void
 show_user_1 (struct cmd_list_element *c, const char *prefix, const char *name,
 	     struct ui_file *stream)
 {
-  struct command_line *cmdlines;
+  if (cli_user_command_p (c))
+    {
+      struct command_line *cmdlines = c->user_commands.get ();
+
+      fprintf_filtered (stream, "User %scommand \"",
+			c->prefixlist == NULL ? "" : "prefix ");
+      fprintf_styled (stream, title_style.style (), "%s%s",
+		      prefix, name);
+      fprintf_filtered (stream, "\":\n");
+      if (cmdlines)
+	{
+	  print_command_lines (current_uiout, cmdlines, 1);
+	  fputs_filtered ("\n", stream);
+	}
+    }
 
   if (c->prefixlist != NULL)
     {
@@ -1570,25 +1663,23 @@ show_user_1 (struct cmd_list_element *c, const char *prefix, const char *name,
       for (c = *c->prefixlist; c != NULL; c = c->next)
 	if (c->theclass == class_user || c->prefixlist != NULL)
 	  show_user_1 (c, prefixname, c->name, gdb_stdout);
-      return;
     }
 
-  cmdlines = c->user_commands.get ();
-  fprintf_filtered (stream, "User command \"%s%s\":\n", prefix, name);
-
-  if (!cmdlines)
-    return;
-  print_command_lines (current_uiout, cmdlines, 1);
-  fputs_filtered ("\n", stream);
 }
 
 void
 _initialize_cli_script (void)
 {
-  add_com ("document", class_support, document_command, _("\
+  struct cmd_list_element *c;
+
+  /* "document", "define" and "define-prefix" use command_completer,
+     as this helps the user to either type the command name and/or
+     its prefixes.  */
+  c = add_com ("document", class_support, document_command, _("\
 Document a user-defined command.\n\
 Give command name as argument.  Give documentation on following lines.\n\
 End with a line of just \"end\"."));
+  set_cmd_completer (c, command_completer);
   define_cmd_element = add_com ("define", class_support, define_command, _("\
 Define a new command name.  Command name is argument.\n\
 Definition appears on following lines, one command per line.\n\
@@ -1597,6 +1688,14 @@ Use the \"document\" command to give documentation for the new command.\n\
 Commands defined in this way may accept an unlimited number of arguments\n\
 accessed via $arg0 .. $argN.  $argc tells how many arguments have\n\
 been passed."));
+  set_cmd_completer (define_cmd_element, command_completer);
+  c = add_com ("define-prefix", class_support, define_prefix_command,
+	   _("\
+Define or mark a command as a user-defined prefix command.\n\
+User defined prefix commands can be used as prefix commands for\n\
+other user defined commands.\n\
+If the command already exists, it is changed to a prefix command."));
+  set_cmd_completer (c, command_completer);
 
   while_cmd_element = add_com ("while", class_support, while_command, _("\
 Execute nested commands WHILE the conditional expression is non zero.\n\

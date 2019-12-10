@@ -1299,9 +1299,6 @@ const char *bpdisp_text (enum bpdisp disp);
 
 extern void break_command (const char *, int);
 
-extern void hbreak_command_wrapper (const char *, int);
-extern void thbreak_command_wrapper (const char *, int);
-extern void rbreak_command_wrapper (const char *, int);
 extern void watch_command_wrapper (const char *, int, int);
 extern void awatch_command_wrapper (const char *, int, int);
 extern void rwatch_command_wrapper (const char *, int, int);
@@ -1354,6 +1351,15 @@ extern void init_catchpoint (struct breakpoint *b,
 
 extern void install_breakpoint (int internal, std::unique_ptr<breakpoint> &&b,
 				int update_gll);
+
+/* Returns the breakpoint ops appropriate for use with with LOCATION and
+   according to IS_TRACEPOINT.  Use this to ensure, for example, that you pass
+   the correct ops to create_breakpoint for probe locations.  If LOCATION is
+   NULL, returns bkpt_breakpoint_ops (or tracepoint_breakpoint_ops, if
+   IS_TRACEPOINT is true).  */
+
+extern const struct breakpoint_ops *breakpoint_ops_for_event_location
+  (const struct event_location *location, bool is_tracepoint);
 
 /* Flags that can be passed down to create_breakpoint, etc., to affect
    breakpoint creation in several ways.  */

@@ -96,6 +96,10 @@
 #undef GNULIB_GETCWD
 
 /* Define to a C preprocessor expression that evaluates to 1 or 0, depending
+   whether the gnulib module lock shall be considered present. */
+#undef GNULIB_LOCK
+
+/* Define to a C preprocessor expression that evaluates to 1 or 0, depending
    whether the gnulib module mkostemp shall be considered present. */
 #undef GNULIB_MKOSTEMP
 
@@ -260,11 +264,17 @@
 /* Define to 1 when the gnulib module strerror should be tested. */
 #undef GNULIB_TEST_STRERROR
 
+/* Define to 1 when the gnulib module strerror_r should be tested. */
+#undef GNULIB_TEST_STRERROR_R
+
 /* Define to 1 when the gnulib module strstr should be tested. */
 #undef GNULIB_TEST_STRSTR
 
 /* Define to 1 when the gnulib module strtok_r should be tested. */
 #undef GNULIB_TEST_STRTOK_R
+
+/* Define to 1 when the gnulib module time_r should be tested. */
+#undef GNULIB_TEST_TIME_R
 
 /* Define to 1 when the gnulib module unsetenv should be tested. */
 #undef GNULIB_TEST_UNSETENV
@@ -288,6 +298,9 @@
 
 /* Define to 1 if you have the 'canonicalize_file_name' function. */
 #undef HAVE_CANONICALIZE_FILE_NAME
+
+/* Define to 1 if you have the 'catgets' function. */
+#undef HAVE_CATGETS
 
 /* Define to 1 if you have the `closedir' function. */
 #undef HAVE_CLOSEDIR
@@ -336,6 +349,10 @@
    don't. */
 #undef HAVE_DECL_ISBLANK
 
+/* Define to 1 if you have the declaration of `localtime_r', and to 0 if you
+   don't. */
+#undef HAVE_DECL_LOCALTIME_R
+
 /* Define to 1 if you have the declaration of `mbrtowc', and to 0 if you
    don't. */
 #undef HAVE_DECL_MBRTOWC
@@ -372,9 +389,12 @@
    */
 #undef HAVE_DECL_STRDUP
 
-/* Define to 1 if you have the declaration of `strerror_r', and to 0 if you
-   don't. */
+/* Define to 1, since you should have the declaration of strerror_r. */
 #undef HAVE_DECL_STRERROR_R
+
+/* Define to 1 if you have the declaration of 'strerror_r' in the system
+   include files, or to 0 otherwise. */
+#undef HAVE_DECL_STRERROR_R_ORIG
 
 /* Define to 1 if you have the declaration of `strtok_r', and to 0 if you
    don't. */
@@ -397,6 +417,9 @@
 
 /* Define to 1 if you have the `dirfd' function. */
 #undef HAVE_DIRFD
+
+/* Define to 1 if you have the <dlfcn.h> header file. */
+#undef HAVE_DLFCN_H
 
 /* Define to 1 if you have the 'dup2' function. */
 #undef HAVE_DUP2
@@ -507,6 +530,9 @@
 /* Define to 1 if you have the 'link' function. */
 #undef HAVE_LINK
 
+/* Define to 1 if you have the 'localtime_r' function. */
+#undef HAVE_LOCALTIME_R
+
 /* Define to 1 if the system has the type 'long long int'. */
 #undef HAVE_LONG_LONG_INT
 
@@ -582,6 +608,12 @@
 
 /* Define to 1 if you have the 'pipe' function. */
 #undef HAVE_PIPE
+
+/* Define if the <pthread.h> defines PTHREAD_MUTEX_RECURSIVE. */
+#undef HAVE_PTHREAD_MUTEX_RECURSIVE
+
+/* Define if the POSIX multithreading library has read/write locks. */
+#undef HAVE_PTHREAD_RWLOCK
 
 /* Define to 1 if you have the `rawmemchr' function. */
 #undef HAVE_RAWMEMCHR
@@ -1508,6 +1540,9 @@
 /* Define to 1 if the system has the type `sigset_t'. */
 #undef HAVE_SIGSET_T
 
+/* Define to 1 if you have the 'snprintf' function. */
+#undef HAVE_SNPRINTF
+
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
 
@@ -1520,7 +1555,7 @@
 /* Define to 1 if you have the 'strdup' function. */
 #undef HAVE_STRDUP
 
-/* Define to 1 if you have the `strerror_r' function. */
+/* Define to 1, since you should have the function strerror_r. */
 #undef HAVE_STRERROR_R
 
 /* Define to 1 if you have the <strings.h> header file. */
@@ -1605,6 +1640,9 @@
 /* Define to 1 if you have the <wctype.h> header file. */
 #undef HAVE_WCTYPE_H
 
+/* Define to 1 if you have the <windows.h> header file. */
+#undef HAVE_WINDOWS_H
+
 /* Define to 1 if you have the <winsock2.h> header file. */
 #undef HAVE_WINSOCK2_H
 
@@ -1644,6 +1682,9 @@
 
 /* Define to 1 if you have the `__secure_getenv' function. */
 #undef HAVE___SECURE_GETENV
+
+/* Define to 1 if you have the '__xpg_strerror_r' function. */
+#undef HAVE___XPG_STRERROR_R
 
 /* Define as the bit index in the word where to find bit 0 of the exponent of
    'long double'. */
@@ -1712,6 +1753,9 @@
    type mode_t. */
 #undef PROMOTED_MODE_T
 
+/* Define if the pthread_in_use() detection is hard. */
+#undef PTHREAD_IN_USE_DETECTION_HARD
+
 /* Define to l, ll, u, ul, ull, etc., as suitable for constants of type
    'ptrdiff_t'. */
 #undef PTRDIFF_T_SUFFIX
@@ -1778,8 +1822,29 @@
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
 
-/* Define to 1 if strerror_r returns char *. */
+/* Define to 0, since strerror_r should not return char *. */
 #undef STRERROR_R_CHAR_P
+
+/* Define if the POSIX multithreading library can be used. */
+#undef USE_POSIX_THREADS
+
+/* Define if references to the POSIX multithreading library should be made
+   weak. */
+#undef USE_POSIX_THREADS_WEAK
+
+/* Define if the GNU Pth multithreading library can be used. */
+#undef USE_PTH_THREADS
+
+/* Define if references to the GNU Pth multithreading library should be made
+   weak. */
+#undef USE_PTH_THREADS_WEAK
+
+/* Define if the old Solaris multithreading library can be used. */
+#undef USE_SOLARIS_THREADS
+
+/* Define if references to the old Solaris multithreading library should be
+   made weak. */
+#undef USE_SOLARIS_THREADS_WEAK
 
 /* Enable extensions on AIX 3, Interix.  */
 #ifndef _ALL_SOURCE
@@ -1840,6 +1905,9 @@
 # undef __EXTENSIONS__
 #endif
 
+
+/* Define if the native Windows multithreading API can be used. */
+#undef USE_WINDOWS_THREADS
 
 /* Define to 1 if unsetenv returns void instead of int. */
 #undef VOID_UNSETENV

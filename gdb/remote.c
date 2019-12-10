@@ -1041,11 +1041,6 @@ static struct cmd_list_element *remote_show_cmdlist;
 
 static bool use_range_stepping = true;
 
-/* The max number of chars in debug output.  The rest of chars are
-   omitted.  */
-
-#define REMOTE_DEBUG_MAX_CHAR 512
-
 /* Private data that we'll store in (struct thread_info)->priv.  */
 struct remote_thread_info : public private_thread_info
 {
@@ -1710,6 +1705,23 @@ show_hardware_breakpoint_limit (struct ui_file *file, int from_tty,
 {
   fprintf_filtered (file, _("The maximum number of target hardware "
 			    "breakpoints is %s.\n"), value);
+}
+
+/* Controls the maximum number of characters to display in the debug output
+   for each remote packet.  The remaining characters are omitted.  */
+
+static int remote_packet_max_chars = 512;
+
+/* Show the maximum number of characters to display for each remote packet
+   when remote debugging is enabled.  */
+
+static void
+show_remote_packet_max_chars (struct ui_file *file, int from_tty,
+			      struct cmd_list_element *c,
+			      const char *value)
+{
+  fprintf_filtered (file, _("Number of remote packet characters to "
+			    "display is %s.\n"), value);
 }
 
 long
@@ -5044,7 +5056,7 @@ remote_target::remote_packet_size (const protocol_feature *feature,
   rs->explicit_packet_size = packet_size;
 }
 
-void
+static void
 remote_packet_size (remote_target *remote, const protocol_feature *feature,
 		    enum packet_support support, const char *value)
 {
@@ -5169,7 +5181,8 @@ register_remote_support_xml (const char *xml)
   else
     {
       char *copy = xstrdup (remote_support_xml + 13);
-      char *p = strtok (copy, ",");
+      char *saveptr;
+      char *p = strtok_r (copy, ",", &saveptr);
 
       do
 	{
@@ -5180,7 +5193,7 @@ register_remote_support_xml (const char *xml)
 	      return;
 	    }
 	}
-      while ((p = strtok (NULL, ",")) != NULL);
+      while ((p = strtok_r (NULL, ",", &saveptr)) != NULL);
       xfree (copy);
 
       remote_support_xml = reconcat (remote_support_xml,
@@ -6813,7 +6826,7 @@ remote_target::stop_reply_queue_length ()
   return rs->stop_reply_queue.size ();
 }
 
-void
+static void
 remote_notif_stop_parse (remote_target *remote,
 			 struct notif_client *self, const char *buf,
 			 struct notif_event *event)
@@ -9118,15 +9131,21 @@ remote_target::putpkt_binary (const char *buf, int cnt)
 	  *p = '\0';
 
 	  int len = (int) (p - buf2);
+	  int max_chars;
+
+	  if (remote_packet_max_chars < 0)
+	    max_chars = len;
+	  else
+	    max_chars = remote_packet_max_chars;
 
 	  std::string str
-	    = escape_buffer (buf2, std::min (len, REMOTE_DEBUG_MAX_CHAR));
+	    = escape_buffer (buf2, std::min (len, max_chars));
 
 	  fprintf_unfiltered (gdb_stdlog, "Sending packet: %s", str.c_str ());
 
-	  if (len > REMOTE_DEBUG_MAX_CHAR)
+	  if (len > max_chars)
 	    fprintf_unfiltered (gdb_stdlog, "[%d bytes omitted]",
-				len - REMOTE_DEBUG_MAX_CHAR);
+				len - max_chars);
 
 	  fprintf_unfiltered (gdb_stdlog, "...");
 
@@ -9562,16 +9581,23 @@ remote_target::getpkt_or_notif_sane_1 (gdb::char_vector *buf,
 	{
 	  if (remote_debug)
 	    {
+	      int max_chars;
+
+	      if (remote_packet_max_chars < 0)
+		max_chars = val;
+	      else
+		max_chars = remote_packet_max_chars;
+
 	      std::string str
 		= escape_buffer (buf->data (),
-				 std::min (val, REMOTE_DEBUG_MAX_CHAR));
+				 std::min (val, max_chars));
 
 	      fprintf_unfiltered (gdb_stdlog, "Packet received: %s",
 				  str.c_str ());
 
-	      if (val > REMOTE_DEBUG_MAX_CHAR)
+	      if (val > max_chars)
 		fprintf_unfiltered (gdb_stdlog, "[%d bytes omitted]",
-				    val - REMOTE_DEBUG_MAX_CHAR);
+				    val - max_chars);
 
 	      fprintf_unfiltered (gdb_stdlog, "\n");
 	    }
@@ -14721,6 +14747,14 @@ of time passes without a response from the target, an error occurs."),
 			    NULL,
 			    show_watchdog,
 			    &setlist, &showlist);
+
+  add_setshow_zuinteger_unlimited_cmd ("remote-packet-max-chars", no_class,
+				       &remote_packet_max_chars, _("\
+Set the maximum number of characters to display for each remote packet."), _("\
+Show the maximum number of characters to display for each remote packet."), _("\
+Specify \"unlimited\" to display all the characters."),
+				       NULL, show_remote_packet_max_chars,
+				       &setdebuglist, &showdebuglist);
 
   /* Eventually initialize fileio.  See fileio.c */
   initialize_remote_fileio (remote_set_cmdlist, remote_show_cmdlist);

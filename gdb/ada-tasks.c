@@ -347,7 +347,7 @@ valid_task_id (int task_num)
    task state.  */
 
 static int
-ada_task_is_alive (struct ada_task_info *task_info)
+ada_task_is_alive (const struct ada_task_info *task_info)
 {
   return (task_info->state != Terminated);
 }
@@ -669,7 +669,7 @@ read_atcb (CORE_ADDR task_id, struct ada_task_info *task_info)
 	  msym = lookup_minimal_symbol_by_pc (task_id);
 	  if (msym.minsym)
 	    {
-	      const char *full_name = MSYMBOL_LINKAGE_NAME (msym.minsym);
+	      const char *full_name = msym.minsym->linkage_name ();
 	      const char *task_name = full_name;
 	      const char *p;
 
@@ -1127,14 +1127,17 @@ print_ada_task_info (struct ui_out *uiout,
       /* Print the associated Thread ID.  */
       if (uiout->is_mi_like_p ())
         {
-	  thread_info *thread = find_thread_ptid (task_info->ptid);
+	  thread_info *thread = (ada_task_is_alive (task_info)
+				 ? find_thread_ptid (task_info->ptid)
+				 : nullptr);
 
 	  if (thread != NULL)
 	    uiout->field_signed ("thread-id", thread->global_num);
 	  else
-	    /* This should never happen unless there is a bug somewhere,
-	       but be resilient when that happens.  */
-	    uiout->field_skip ("thread-id");
+	    {
+	      /* This can happen if the thread is no longer alive.  */
+	      uiout->field_skip ("thread-id");
+	    }
 	}
 
       /* Print the ID of the parent task.  */

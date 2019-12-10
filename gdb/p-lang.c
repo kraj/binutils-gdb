@@ -230,7 +230,7 @@ pascal_printstr (struct ui_file *stream, struct type *type,
 		 const char *encoding, int force_ellipses,
 		 const struct value_print_options *options)
 {
-  enum bfd_endian byte_order = gdbarch_byte_order (get_type_arch (type));
+  enum bfd_endian byte_order = type_byte_order (type);
   unsigned int i;
   unsigned int things_printed = 0;
   int in_quotes = 0;
@@ -466,7 +466,6 @@ extern const struct language_defn pascal_language_defn =
   pascal_language_arch_info,
   default_print_array_index,
   default_pass_by_reference,
-  default_get_string,
   c_watch_location_expression,
   NULL,				/* la_compare_symbol_for_completion */
   iterate_over_symbols,

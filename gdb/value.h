@@ -146,8 +146,8 @@ extern LONGEST value_bitsize (const struct value *);
 extern void set_value_bitsize (struct value *, LONGEST bit);
 
 /* Only used for bitfields; position of start of field.  For
-   gdbarch_bits_big_endian=0 targets, it is the position of the LSB.  For
-   gdbarch_bits_big_endian=1 targets, it is the position of the MSB.  */
+   little-endian targets, it is the position of the LSB.  For
+   big-endian targets, it is the position of the MSB.  */
 
 extern LONGEST value_bitpos (const struct value *);
 extern void set_value_bitpos (struct value *, LONGEST bit);
@@ -1165,9 +1165,22 @@ typedef struct value *(*internal_function_fn) (struct gdbarch *gdbarch,
 					       int argc,
 					       struct value **argv);
 
-void add_internal_function (const char *name, const char *doc,
-			    internal_function_fn handler,
-			    void *cookie);
+/* Add a new internal function.  NAME is the name of the function; DOC
+   is a documentation string describing the function.  HANDLER is
+   called when the function is invoked.  COOKIE is an arbitrary
+   pointer which is passed to HANDLER and is intended for "user
+   data".  */
+
+extern void add_internal_function (const char *name, const char *doc,
+				   internal_function_fn handler,
+				   void *cookie);
+
+/* This overload takes an allocated documentation string.  */
+
+extern void add_internal_function (gdb::unique_xmalloc_ptr<char> &&name,
+				   gdb::unique_xmalloc_ptr<char> &&doc,
+				   internal_function_fn handler,
+				   void *cookie);
 
 struct value *call_internal_function (struct gdbarch *gdbarch,
 				      const struct language_defn *language,

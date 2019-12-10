@@ -1,3 +1,79 @@
+2019-12-10  Alan Modra  <amodra@gmail.com>
+
+	PR 24960
+	* dis-asm.h (disassemble_free_target): Declare.
+
+2019-12-10  Alan Modra  <amodra@gmail.com>
+
+	* dis-asm.h (struct disassemble_info): Delete insn_sets.
+	(INIT_DISASSEMBLE_INFO_NO_ARCH): Don't define.
+
+2019-12-05  Jan Beulich  <jbeulich@suse.com>
+
+	* opcode/aarch64.h (AARCH64_FEATURE_CRYPTO): Expand to the
+	combination of AES and SHA2.
+
+2019-11-25  Alan Modra  <amodra@gmail.com>
+
+	* coff/ti.h (GET_SCNHDR_SIZE, PUT_SCNHDR_SIZE, GET_SCN_SCNLEN),
+	(PUT_SCN_SCNLEN): Adjust bfd_octets_per_byte calls.
+
+2019-11-22  Mihail Ionescu  <mihail.ionescu@arm.com>
+
+	* opcode/arm.h (ARM_EXT2_CRC): New extension feature
+	to replace CRC_EXT_ARMV8.
+	(CRC_EXT_ARMV8): Remove and mark bit as unused.
+	(ARM_ARCH_V8A_CRC, ARM_ARCH_V8_1A, ARM_ARCH_V8_2A,
+	ARM_ARCH_V8_3A, ARM_ARCH_V8_4A, ARM_ARCH_V8_5A,
+	ARM_ARCH_V8_6A): Redefine using ARM_EXT2_CRC instead of
+	CRC_EXT_ARMV8.
+
+2019-11-18  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* dwarf2.h (DW_CIE_VERSION): Delete.
+
+2019-11-07  Mihail Ionescu  <mihail.ionescu@arm.com>
+
+	* opcode/arm.h (ARM_EXT2_I8MM): New feature macro.
+
+2019-11-07  Mihail Ionescu  <mihail.ionescu@arm.com>
+
+	* opcode/aarch64.h (AARCH64_FEATURE_I8MM): New.
+	(AARCH64_FEATURE_F32MM): New.
+	(AARCH64_FEATURE_F64MM): New.
+	(AARCH64_OPND_SVE_ADDR_RI_S4x32): New.
+	(enum aarch64_insn_class): Add new instruction class "aarch64_misc" for
+	instructions that do not require special handling.
+
+2019-11-07  Mihail Ionescu  <mihail.ionescu@arm.com>
+	    Matthew Malcomson  <matthew.malcomson@arm.com>
+
+	* opcode/arm.h (ARM_EXT2_V8_6A, ARM_AEXT2_V8_6A,
+	ARM_ARCH_V8_6A): New.
+	* opcode/arm.h (ARM_EXT2_BF16): New feature macro.
+	(ARM_AEXT2_V8_6A): Include above macro in definition.
+
+2019-11-07  Mihail Ionescu  <mihail.ionescu@arm.com>
+	    Matthew Malcomson  <matthew.malcomson@arm.com>
+
+	* opcode/aarch64.h (AARCH64_FEATURE_BFLOAT16): New feature macros.
+	(AARCH64_ARCH_V8_6): Include BFloat16 feature macros.
+	(enum aarch64_opnd_qualifier): Introduce new operand qualifier
+	AARCH64_OPND_QLF_S_2H.
+	(enum aarch64_insn_class): Introduce new class "bfloat16".
+	(BFLOAT16_SVE_INSNC): New feature set for bfloat16
+	instructions to support the movprfx constraint.
+
+2019-11-07  Mihail Ionescu  <mihail.ionescu@arm.com>
+	    Matthew Malcomson  <matthew.malcomson@arm.com>
+
+	* opcode/aarch64.h (AARCH64_FEATURE_V8_6): New.
+	(AARCH64_ARCH_V8_6): New.
+
+2019-11-07  Alan Modra  <amodra@gmail.com>
+
+	* elf/cr16c.h: Delete.
+
 2019-10-29  Andrew Eikum  <aeikum@codeweavers.com>
 
 	* coff/internal.h (struct internal_extra_pe_filehdr): Use ints

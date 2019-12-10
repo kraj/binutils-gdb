@@ -635,6 +635,54 @@ my_get_expression (expressionS * ep, char **str, int prefix_mode,
 const char *
 md_atof (int type, char *litP, int *sizeP)
 {
+  /* If this is a bfloat16 type, then parse it slightly differently -
+     as it does not follow the IEEE standard exactly.  */
+  if (type == 'b')
+    {
+      char * t;
+      LITTLENUM_TYPE words[MAX_LITTLENUMS];
+      FLONUM_TYPE generic_float;
+
+      t = atof_ieee_detail (input_line_pointer, 1, 8, words, &generic_float);
+
+      if (t)
+	input_line_pointer = t;
+      else
+	return _("invalid floating point number");
+
+      switch (generic_float.sign)
+	{
+	/* Is +Inf.  */
+	case 'P':
+	  words[0] = 0x7f80;
+	  break;
+
+	/* Is -Inf.  */
+	case 'N':
+	  words[0] = 0xff80;
+	  break;
+
+	/* Is NaN.  */
+	/* bfloat16 has two types of NaN - quiet and signalling.
+	   Quiet NaN has bit[6] == 1 && faction != 0, whereas
+	   signalling Nan's have bit[0] == 0 && fraction != 0.
+	   Chose this specific encoding as it is the same form
+	   as used by other IEEE 754 encodings in GAS.  */
+	case 0:
+	  words[0] = 0x7fff;
+	  break;
+
+	default:
+	  break;
+	}
+
+      *sizeP = 2;
+
+      md_number_to_chars (litP, (valueT) words[0], sizeof (LITTLENUM_TYPE));
+
+      return NULL;
+    }
+
   return ieee_md_atof (type, litP, sizeP, target_big_endian);
 }
 
@@ -2107,6 +2155,7 @@ const pseudo_typeS md_pseudo_table[] = {
   {"variant_pcs", s_variant_pcs, 0},
 #endif
   {"float16", float_cons, 'h'},
+  {"bfloat16", float_cons, 'b'},
   {0, 0, 0}
 };
 
@@ -5130,6 +5179,10 @@ vectype_to_qualifier (const struct vector_type_el *vectype)
       if (vectype->type == NT_b && vectype->width == 4)
 	return AARCH64_OPND_QLF_S_4B;
 
+      /* Special case S_2H.  */
+      if (vectype->type == NT_h && vectype->width == 2)
+	return AARCH64_OPND_QLF_S_2H;
+
       /* Vector element register.  */
       return AARCH64_OPND_QLF_S_B + vectype->type;
     }
@@ -6380,6 +6433,7 @@ parse_operands (char *str, const aarch64_opcode *opcode)
 	  break;
 
 	case AARCH64_OPND_SVE_ADDR_RI_S4x16:
+	case AARCH64_OPND_SVE_ADDR_RI_S4x32:
 	case AARCH64_OPND_SVE_ADDR_RI_S4xVL:
 	case AARCH64_OPND_SVE_ADDR_RI_S4x2xVL:
 	case AARCH64_OPND_SVE_ADDR_RI_S4x3xVL:
@@ -8728,12 +8782,15 @@ md_begin (void)
   for (i = 0; aarch64_hint_options[i].name != NULL; i++)
     {
       const char* name = aarch64_hint_options[i].name;
+      const char* upper_name = get_upper_str(name);
 
       checked_hash_insert (aarch64_hint_opt_hsh, name,
 			   (void *) (aarch64_hint_options + i));
-      /* Also hash the name in the upper case.  */
-      checked_hash_insert (aarch64_pldop_hsh, get_upper_str (name),
-			   (void *) (aarch64_hint_options + i));
+
+      /* Also hash the name in the upper case if not the same.  */
+      if (strcmp (name, upper_name) != 0)
+	checked_hash_insert (aarch64_hint_opt_hsh, upper_name,
+			     (void *) (aarch64_hint_options + i));
     }
 
   /* Set the cpu variant based on the command-line options.  */
@@ -8918,6 +8975,7 @@ static const struct aarch64_arch_option_table aarch64_archs[] = {
   {"armv8.3-a", AARCH64_ARCH_V8_3},
   {"armv8.4-a", AARCH64_ARCH_V8_4},
   {"armv8.5-a", AARCH64_ARCH_V8_5},
+  {"armv8.6-a", AARCH64_ARCH_V8_6},
   {NULL, AARCH64_ARCH_NONE}
 };
 
@@ -8932,9 +8990,7 @@ struct aarch64_option_cpu_value_table
 static const struct aarch64_option_cpu_value_table aarch64_features[] = {
   {"crc",		AARCH64_FEATURE (AARCH64_FEATURE_CRC, 0),
 			AARCH64_ARCH_NONE},
-  {"crypto",		AARCH64_FEATURE (AARCH64_FEATURE_CRYPTO
-					 | AARCH64_FEATURE_AES
-					 | AARCH64_FEATURE_SHA2, 0),
+  {"crypto",		AARCH64_FEATURE (AARCH64_FEATURE_CRYPTO, 0),
 			AARCH64_FEATURE (AARCH64_FEATURE_SIMD, 0)},
   {"fp",		AARCH64_FEATURE (AARCH64_FEATURE_FP, 0),
 			AARCH64_ARCH_NONE},
@@ -8980,9 +9036,8 @@ static const struct aarch64_option_cpu_value_table aarch64_features[] = {
 			AARCH64_ARCH_NONE},
   {"sm4",		AARCH64_FEATURE (AARCH64_FEATURE_SM4, 0),
 			AARCH64_ARCH_NONE},
-  {"sha3",		AARCH64_FEATURE (AARCH64_FEATURE_SHA2
-					 | AARCH64_FEATURE_SHA3, 0),
-			AARCH64_ARCH_NONE},
+  {"sha3",		AARCH64_FEATURE (AARCH64_FEATURE_SHA3, 0),
+			AARCH64_FEATURE (AARCH64_FEATURE_SHA2, 0)},
   {"rng",		AARCH64_FEATURE (AARCH64_FEATURE_RNG, 0),
 			AARCH64_ARCH_NONE},
   {"ssbs",		AARCH64_FEATURE (AARCH64_FEATURE_SSBS, 0),
@@ -9002,6 +9057,14 @@ static const struct aarch64_option_cpu_value_table aarch64_features[] = {
 					 | AARCH64_FEATURE_SHA3, 0)},
   {"sve2-bitperm",	AARCH64_FEATURE (AARCH64_FEATURE_SVE2_BITPERM, 0),
 			AARCH64_FEATURE (AARCH64_FEATURE_SVE2, 0)},
+  {"bf16",		AARCH64_FEATURE (AARCH64_FEATURE_BFLOAT16, 0),
+			AARCH64_ARCH_NONE},
+  {"i8mm",		AARCH64_FEATURE (AARCH64_FEATURE_I8MM, 0),
+			AARCH64_ARCH_NONE},
+  {"f32mm",		AARCH64_FEATURE (AARCH64_FEATURE_F32MM, 0),
+			AARCH64_ARCH_NONE},
+  {"f64mm",		AARCH64_FEATURE (AARCH64_FEATURE_F64MM, 0),
+			AARCH64_ARCH_NONE},
   {NULL,		AARCH64_ARCH_NONE, AARCH64_ARCH_NONE},
 };
 

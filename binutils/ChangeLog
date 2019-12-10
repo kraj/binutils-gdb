@@ -1,3 +1,159 @@
+2019-12-10  Alan Modra  <amodra@gmail.com>
+
+	PR 24960
+	* objdump.c (disassemble_data): Call disassemble_free_target.
+
+2019-12-10  Alan Modra  <amodra@gmail.com>
+
+	* objdump.c (struct objdump_disasm_info): Delete "sec".
+	(find_symbol_for_address): Use inf->section rather than aux->sec.
+	(objdump_print_addr, disassemble_bytes): Likewise.
+	(disassemble_section): Don't set aux->sec.
+
+2019-12-08  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/lib/binutils-common.exp (regexp_diff): Support #?REGEXP.
+
+2019-11-22  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* dwarf.c (regname_internal_riscv): New function.
+	(init_dwarf_regnames_riscv): Use new function.
+
+2019-11-22  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* dwarf.c (typedef dwarf_regname_lookup_ftype): New typedef.
+	(dwarf_regnames_lookup_func): New static global.
+	(init_dwarf_regnames_i386): Set dwarf_regnames_lookup_func.
+	(init_dwarf_regnames_iamcu): Likewise.
+	(init_dwarf_regnames_x86_64): Likewise.
+	(init_dwarf_regnames_aarch64): Likewise.
+	(init_dwarf_regnames_s390): Likewise.
+	(init_dwarf_regnames_riscv): Likewise.
+	(init_dwarf_regnames_by_elf_machine_code): Reset
+	dwarf_regnames_lookup_func to NULL.
+	(init_dwarf_regnames_by_bfd_arch_and_mach): Likewise.
+	(regname_internal_by_table_only): New function.
+	(regname): Make use of dwarf_regnames_lookup_func.
+
+2019-11-22  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* dwarf.c (init_dwarf_regnames_i386): Make static.
+	(init_dwarf_regnames_iamcu): Make static.
+	(init_dwarf_regnames_x86_64): Make static.
+	(init_dwarf_regnames_aarch64): Make static.
+	(init_dwarf_regnames_s390): Make static.
+	(init_dwarf_regnames_riscv): Make static.
+	* dwarf.h (init_dwarf_regnames_i386): Delete declaration.
+	(init_dwarf_regnames_iamcu): Delete declaration.
+	(init_dwarf_regnames_x86_64): Delete declaration.
+	(init_dwarf_regnames_aarch64): Delete declaration.
+	(init_dwarf_regnames_s390): Delete declaration.
+	(init_dwarf_regnames_riscv): Delete declaration.
+
+2019-11-22  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* dwarf.c (init_dwarf_regnames_by_bfd_arch_and_mach): New
+	function.
+	* dwarf.h (init_dwarf_regnames_by_bfd_arch_and_mach): Declare.
+	* objdump.c (dump_dwarf): Call new function instead of calling
+	specific initialization routines.  Restrucure so that eh_addr_size
+	is still calculated correctly.
+
+2019-11-22  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* dwarf.c (init_dwarf_regnames): Renamed to...
+	(init_dwarf_regnames_by_elf_machine_code): ...this.
+	* dwarf.h (init_dwarf_regnames): Renamed to...
+	(init_dwarf_regnames_by_elf_machine_code): ...this.
+	* readelf.c (process_file_header): Update call to use new name.
+
+2019-11-22  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* dwarf.c (frame_need_space): Compare dwarf_regnames_count against
+	0, and only warn about large numbers of registers if the number is
+	more than the dwarf_regnames_count.
+
+2019-11-25  Christian Eggers  <ceggers@gmx.de>
+
+	* objdump.c (disassemble_data): Provide section parameter to
+	bfd_octets_per_byte.
+	(dump_section): likewise
+	(dump_section_header): likewise. Show SEC_ELF_OCTETS flag if set.
+
+2019-11-21  Alan Modra  <amodra@gmail.com>
+
+	PR 273
+	* size.c (sysv_internal_sizer, sysv_internal_printer): Exclude
+	sections with no flag bits set.
+	* testsuite/binutils-all/size.exp: Allow $CODE$ as a text section.
+
+2019-11-21  Nick Clifton  <nickc@redhat.com>
+
+	* objcopy.c (merge_gnu_build_notes): Allow for the possibility
+	that the new notes might actually be larger than the original
+	notes.
+
+2019-11-21  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/lib/binutils-common.exp (is_pecoff_format): Rewrite
+	with positive logic and add more target triples.
+
+2019-11-19  Alan Modra  <amodra@gmail.com>
+
+	PR 24499
+	* objcopy.c (copy_file): Ignore --add-gnu-debuglink for archives.
+
+2019-11-19  Alan Modra  <amodra@gmail.com>
+
+	PR 24968
+	* objcopy.c (copy_object): For ELF output and non-ELF input without
+	arch, take arch from output file if not given by -B.  Don't
+	bfd_get_arch_info when we already have iarch.
+
+2019-11-19  Alan Modra  <amodra@gmail.com>
+
+	PR 25191
+	* objcopy.c (is_nondebug_keep_contents_section): Use bfd_get_flavour.
+	(copy_object): Likewise.
+	(setup_section): Likewise.  If flavour of input and output files
+	differ, restrict section flags to the intersection of input and
+	output bfd_applicable_section_flags.
+
+2019-11-19  Alan Modra  <amodra@gmail.com>
+
+	* bucomm.c (bfd_nonfatal_message): Add a space between program
+	name and file.
+
+2019-11-18  Alan Modra  <amodra@gmail.com>
+
+	PR 25198
+	* prdbg.c (tg_start_class_type): Correct scope of idbuf.
+
+2019-11-08  Alan Modra  <amodra@gmail.com>
+
+	PR 25172
+	* objdump.c (usage): Correct --stop-address description.
+
+2019-11-07  Nick Clifton  <nickc@redhat.com>
+
+	* ar.c (open_output_file): Check for filename validity before
+	prefixing with output directory.
+	Display the constructed output filename if in verbose mode.
+	(extract_file): Let open_output_file display the filename.
+
+2019-11-07  Nick Clifton  <nickc@redhat.com>
+
+	* objcopy.c (copy_object): Skip note sections that do not have
+	an output section.  Always copy note sections, even if no
+	changes are made.
+
+2019-11-06  Christian Eggers  <ceggers@gmx.de>
+
+	* readelf.c (IN_RANGE): Rename parameter OFF to NELEM. Add
+	comment.  Catch potential integer overflow and fix off by one
+	error whilst checking reloc location against section size.
+	(apply_relocations): Use IN_RANGE macro.
+
 2019-11-04  Fangrui Song  <maskray@google.com>
 
 	* objcopy.c (enum option_values): Add OPTION_KEEP_SECTION.

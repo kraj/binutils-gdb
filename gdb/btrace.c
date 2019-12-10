@@ -82,10 +82,10 @@ ftrace_print_function_name (const struct btrace_function *bfun)
   sym = bfun->sym;
 
   if (sym != NULL)
-    return SYMBOL_PRINT_NAME (sym);
+    return sym->print_name ();
 
   if (msym != NULL)
-    return MSYMBOL_PRINT_NAME (msym);
+    return msym->print_name ();
 
   return "<unknown>";
 }
@@ -197,7 +197,7 @@ ftrace_function_switched (const struct btrace_function *bfun,
 
   /* If the minimal symbol changed, we certainly switched functions.  */
   if (mfun != NULL && msym != NULL
-      && strcmp (MSYMBOL_LINKAGE_NAME (mfun), MSYMBOL_LINKAGE_NAME (msym)) != 0)
+      && strcmp (mfun->linkage_name (), msym->linkage_name ()) != 0)
     return 1;
 
   /* If the symbol changed, we certainly switched functions.  */
@@ -206,7 +206,7 @@ ftrace_function_switched (const struct btrace_function *bfun,
       const char *bfname, *fname;
 
       /* Check the function name.  */
-      if (strcmp (SYMBOL_LINKAGE_NAME (fun), SYMBOL_LINKAGE_NAME (sym)) != 0)
+      if (strcmp (fun->linkage_name (), sym->linkage_name ()) != 0)
 	return 1;
 
       /* Check the location of those functions, as well.  */

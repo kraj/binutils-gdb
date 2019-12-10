@@ -1296,7 +1296,7 @@ hppa64_frame_align (struct gdbarch *gdbarch, CORE_ADDR addr)
   return align_up (addr, 16);
 }
 
-CORE_ADDR
+static CORE_ADDR
 hppa_read_pc (readable_regcache *regcache)
 {
   ULONGEST ipsw;
@@ -2537,7 +2537,7 @@ hppa_lookup_stub_minimal_symbol (const char *name,
     {
       for (minimal_symbol *msym : objfile->msymbols ())
 	{
-	  if (strcmp (MSYMBOL_LINKAGE_NAME (msym), name) == 0)
+	  if (strcmp (msym->linkage_name (), name) == 0)
 	    {
 	      struct unwind_table_entry *u;
 

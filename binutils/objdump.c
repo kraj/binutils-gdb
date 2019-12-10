@@ -147,7 +147,6 @@ static int include_path_count;
 struct objdump_disasm_info
 {
   bfd *              abfd;
-  asection *         sec;
   bfd_boolean        require_sec;
   arelent **         dynrelbuf;
   long               dynrelcount;
@@ -264,7 +263,7 @@ usage (FILE *stream, int status)
   -w, --wide                     Format output for more than 80 columns\n\
   -z, --disassemble-zeroes       Do not skip blocks of zeroes when disassembling\n\
       --start-address=ADDR       Only process data whose address is >= ADDR\n\
-      --stop-address=ADDR        Only process data whose address is <= ADDR\n\
+      --stop-address=ADDR        Only process data whose address is < ADDR\n\
       --prefix-addresses         Print complete address alongside disassembly\n\
       --[no-]show-raw-insn       Display hex alongside symbolic disassembly\n\
       --insn-width=WIDTH         Display WIDTH bytes on a single line for -d\n\
@@ -532,7 +531,7 @@ static void
 dump_section_header (bfd *abfd, asection *section, void *data)
 {
   char *comma = "";
-  unsigned int opb = bfd_octets_per_byte (abfd);
+  unsigned int opb = bfd_octets_per_byte (abfd, section);
   int longest_section_name = *((int *) data);
 
   /* Ignore linker created section.  See elfNN_ia64_object_p in
@@ -584,7 +583,10 @@ dump_section_header (bfd *abfd, asection *section, void *data)
       PF (SEC_COFF_NOREAD, "NOREAD");
     }
   else if (bfd_get_flavour (abfd) == bfd_target_elf_flavour)
-    PF (SEC_ELF_PURECODE, "PURECODE");
+    {
+      PF (SEC_ELF_OCTETS, "OCTETS");
+      PF (SEC_ELF_PURECODE, "PURECODE");
+    }
   PF (SEC_THREAD_LOCAL, "THREAD_LOCAL");
   PF (SEC_GROUP, "GROUP");
   if (bfd_get_arch (abfd) == bfd_arch_mep)
@@ -1075,7 +1077,7 @@ find_symbol_for_address (bfd_vma vma,
 
   aux = (struct objdump_disasm_info *) inf->application_data;
   abfd = aux->abfd;
-  sec = aux->sec;
+  sec = inf->section;
   opb = inf->octets_per_byte;
 
   /* Perform a binary search looking for the closest symbol to the
@@ -1339,7 +1341,8 @@ objdump_print_addr (bfd_vma vma,
 
       if (display_file_offsets)
 	inf->fprintf_func (inf->stream, _(" (File Offset: 0x%lx)"),
-			   (long int)(aux->sec->filepos + (vma - aux->sec->vma)));
+			   (long int) (inf->section->filepos
+				       + (vma - inf->section->vma)));
       return;
     }
 
@@ -1359,7 +1362,7 @@ objdump_print_addr (bfd_vma vma,
   if (!skip_find)
     sym = find_symbol_for_address (vma, inf, NULL);
 
-  objdump_print_addr_with_sym (aux->abfd, aux->sec, sym, vma, inf,
+  objdump_print_addr_with_sym (aux->abfd, inf->section, sym, vma, inf,
 			       skip_zeroes);
 }
 
@@ -1868,7 +1871,7 @@ disassemble_bytes (struct disassemble_info * inf,
   SFILE sfile;
 
   aux = (struct objdump_disasm_info *) inf->application_data;
-  section = aux->sec;
+  section = inf->section;
 
   sfile.alloc = 120;
   sfile.buffer = (char *) xmalloc (sfile.alloc);
@@ -2381,7 +2384,6 @@ disassemble_section (bfd *abfd, asection *section, void *inf)
       return;
     }
 
-  paux->sec = section;
   pinfo->buffer = data;
   pinfo->buffer_vma = section->vma;
   pinfo->buffer_length = datasize;
@@ -2682,7 +2684,7 @@ disassemble_data (bfd *abfd)
   disasm_info.arch = bfd_get_arch (abfd);
   disasm_info.mach = bfd_get_mach (abfd);
   disasm_info.disassembler_options = disassembler_options;
-  disasm_info.octets_per_byte = bfd_octets_per_byte (abfd);
+  disasm_info.octets_per_byte = bfd_octets_per_byte (abfd, NULL);
   disasm_info.skip_zeroes = DEFAULT_SKIP_ZEROES;
   disasm_info.skip_zeroes_at_end = DEFAULT_SKIP_ZEROES_AT_END;
   disasm_info.disassembler_needs_relocs = FALSE;
@@ -2728,6 +2730,7 @@ disassemble_data (bfd *abfd)
   if (aux.dynrelbuf != NULL)
     free (aux.dynrelbuf);
   free (sorted_syms);
+  disassemble_free_target (&disasm_info);
 }
 
 static bfd_boolean
@@ -2972,44 +2975,8 @@ dump_dwarf (bfd *abfd)
       return;
     }
 
-  eh_addr_size = bfd_arch_bits_per_address (abfd) / 8;
-
   switch (bfd_get_arch (abfd))
     {
-    case bfd_arch_i386:
-      switch (bfd_get_mach (abfd))
-	{
-	case bfd_mach_x86_64:
-	case bfd_mach_x86_64_intel_syntax:
-	case bfd_mach_x86_64_nacl:
-	case bfd_mach_x64_32:
-	case bfd_mach_x64_32_intel_syntax:
-	case bfd_mach_x64_32_nacl:
-	  init_dwarf_regnames_x86_64 ();
-	  break;
-
-	default:
-	  init_dwarf_regnames_i386 ();
-	  break;
-	}
-      break;
-
-    case bfd_arch_iamcu:
-      init_dwarf_regnames_iamcu ();
-      break;
-
-    case bfd_arch_aarch64:
-      init_dwarf_regnames_aarch64();
-      break;
-
-    case bfd_arch_s390:
-      init_dwarf_regnames_s390 ();
-      break;
-
-    case bfd_arch_riscv:
-      init_dwarf_regnames_riscv ();
-      break;
-
     case bfd_arch_s12z:
       /* S12Z has a 24 bit address space.  But the only known
 	 producer of dwarf_info encodes addresses into 32 bits.  */
@@ -3017,8 +2984,12 @@ dump_dwarf (bfd *abfd)
       break;
 
     default:
+      eh_addr_size = bfd_arch_bits_per_address (abfd) / 8;
       break;
     }
+
+  init_dwarf_regnames_by_bfd_arch_and_mach (bfd_get_arch (abfd),
+					    bfd_get_mach (abfd));
 
   bfd_map_over_sections (abfd, dump_dwarf_section, NULL);
 }
@@ -3459,7 +3430,7 @@ dump_section (bfd *abfd, asection *section, void *dummy ATTRIBUTE_UNUSED)
   bfd_vma addr_offset;
   bfd_vma start_offset;
   bfd_vma stop_offset;
-  unsigned int opb = bfd_octets_per_byte (abfd);
+  unsigned int opb = bfd_octets_per_byte (abfd, section);
   /* Bytes per line.  */
   const int onaline = 16;
   char buf[64];

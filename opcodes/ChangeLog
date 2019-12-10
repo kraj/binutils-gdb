@@ -1,3 +1,472 @@
+2019-12-10  Alan Modra  <amodra@gmail.com>
+
+	PR 24960
+	* disassemble.c (disassemble_free_target): New function.
+
+2019-12-10  Alan Modra  <amodra@gmail.com>
+
+	* cgen-dis.in (print_insn_@arch@): Replace insn_sets with private_data.
+	* disassemble.c (disassemble_init_for_target): Likewise.
+	* bpf-dis.c: Regenerate.
+	* epiphany-dis.c: Regenerate.
+	* fr30-dis.c: Regenerate.
+	* frv-dis.c: Regenerate.
+	* ip2k-dis.c: Regenerate.
+	* iq2000-dis.c: Regenerate.
+	* lm32-dis.c: Regenerate.
+	* m32c-dis.c: Regenerate.
+	* m32r-dis.c: Regenerate.
+	* mep-dis.c: Regenerate.
+	* mt-dis.c: Regenerate.
+	* or1k-dis.c: Regenerate.
+	* xc16x-dis.c: Regenerate.
+	* xstormy16-dis.c: Regenerate.
+
+2019-12-10  Alan Modra  <amodra@gmail.com>
+
+	* ppc-dis.c (private): Delete variable.
+	(get_powerpc_dialect): Don't segfault on NULL info->private_data.
+	(powerpc_init_dialect): Don't use global private.
+
+2019-12-10  Alan Modra  <amodra@gmail.com>
+
+	* s12z-opc.c: Formatting.
+
+2019-12-08  Alan Modra  <amodra@gmail.com>
+
+	* s12z-opc.c (exg_sex_discrim): Don't leak memory on invalid
+	registers.
+
+2019-12-05  Jan Beulich  <jbeulich@suse.com>
+
+	* aarch64-tbl.h (aarch64_feature_crypto,
+	aarch64_feature_crypto_v8_2, CRYPTO, CRYPTO_V8_2, CRYP_INSN,
+	CRYPTO_V8_2_INSN): Delete.
+
+2019-12-05  Alan Modra  <amodra@gmail.com>
+
+	PR 25249
+	* microblaze-dis.c (NUM_STRBUFS, STRBUF_SIZE): Define.
+	(struct string_buf): New.
+	(strbuf): New function.
+	(get_field): Use strbuf rather than strdup of local temp.
+	(get_field_imm, get_field_imm5, get_field_imm5_mbar): Likewise.
+	(get_field_rfsl, get_field_imm15): Likewise.
+	(get_field_rd, get_field_r1, get_field_r2): Update macros.
+	(get_field_special): Likewise.  Don't strcpy spr.  Formatting.
+	(print_insn_microblaze): Formatting.  Init and pass string_buf to
+	get_field functions.
+
+2019-12-04  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-opc.tbl (lfs, lgs, lss): Drop No_qSuf.
+	* i386-tbl.h: Re-generate.
+
+2019-12-04  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-dis.c (mod_table): Use Ev instead of Em for movdiri.
+
+2019-12-04  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-opc.tbl (push, pop): Drop DefaultSize from GPR-only
+	forms.
+	(xbegin): Drop DefaultSize.
+	* i386-tbl.h: Re-generate.
+
+2019-11-22  Mihail Ionescu  <mihail.ionescu@arm.com>
+
+	* opcodes/arm-dis.c (arm_opcodes, thumb32_opcodes):
+	Change the coproc CRC conditions to use the extension
+	feature set, second word, base on ARM_EXT2_CRC.
+
+2019-11-14  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-opc.tbl (syscall, sysret): Drop Cpu64 forms.
+	* i386-tbl.h: Re-generate.
+
+2019-11-14  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-gen.c (opcode_modifiers): Remove JumpDword, JumpByte,
+	JumpInterSegment, and JumpAbsolute entries.
+	* i386-opc.h (JUMP, JUMP_DWORD, JUMP_BYTE, JUMP_INTERSEGMENT,
+	JUMP_ABSOLUTE): Define.
+	(struct i386_opcode_modifier): Extend jump field to 3 bits.
+	Remove jumpdword, jumpbyte, jumpintersegment, and jumpabsolute
+	fields.
+	* i386-opc.tbl (JumpByte, JumpDword, JumpAbsolute,
+	JumpInterSegment): Define.
+	* i386-tbl.h: Re-generate.
+
+2019-11-14  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-gen.c (operand_type_init): Remove
+	OPERAND_TYPE_JUMPABSOLUTE entry.
+	(opcode_modifiers): Add JumpAbsolute entry.
+	(operand_types): Remove JumpAbsolute entry.
+	* i386-opc.h (JumpAbsolute): Move between enums.
+	(struct i386_opcode_modifier): Add jumpabsolute field.
+	(union i386_operand_type): Remove jumpabsolute field.
+	* i386-opc.tbl (call, lcall, jmp, ljmp): Move JumpAbsolute.
+	* i386-init.h, i386-tbl.h: Re-generate.
+
+2019-11-14  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-gen.c (opcode_modifiers): Add AnySize entry.
+	(operand_types): Remove AnySize entry.
+	* i386-opc.h (AnySize): Move between enums.
+	(struct i386_opcode_modifier): Add anysize field.
+	(OTUnused): Un-comment.
+	(union i386_operand_type): Remove anysize field.
+	* i386-opc.tbl (lea, invlpg, clflush, prefetchnta, prefetcht0,
+	prefetcht1, prefetcht2, prefetchtw, bndmk, bndcl, bndcu, bndcn,
+	bndstx, bndldx, prefetchwt1, clflushopt, clwb, cldemote): Move
+	AnySize.
+	* i386-tbl.h: Re-generate.
+
+2019-11-12  Nelson Chu  <nelson.chu@sifive.com>
+
+	* riscv-opc.c (riscv_insn_types): Replace the INSN_CLASS_I with
+	INSN_CLASS_F and the INSN_CLASS_C with INSN_CLASS_F_AND_C if we
+	use the floating point register (FPR).
+
+2019-11-12  Mihail Ionescu  <mihail.ionescu@arm.com>
+
+	* opcodes/arm-dis.c (mve_opcodes): Enable VMOV imm to vec with
+	cmode 1101.
+	(is_mve_encoding_conflict): Update cmode conflict checks for
+	MVE_VMVN_IMM.
+
+2019-11-12  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-gen.c (operand_type_init): Remove OPERAND_TYPE_ESSEG
+	entry.
+	(operand_types): Remove EsSeg entry.
+	(main): Replace stale use of OTMax.
+	* i386-opc.h (IS_STRING_ES_OP0, IS_STRING_ES_OP1): Define.
+	(struct i386_opcode_modifier): Expand isstring field to 2 bits.
+	(EsSeg): Delete.
+	(OTUnused): Comment out.
+	(union i386_operand_type): Remove esseg field.
+	* i386-opc.tbl (IsStringEsOp0, IsStringEsOp1): Define.
+	(cmps, scmp, scas, ssca, cmpsd): Add IsStringEsOp0.
+	(ins, movs, smov, movsd): Add IsStringEsOpOp1.
+	(stos, ssto): Add IsStringEsOp0/IsStringEsOpOp1.
+	* i386-init.h, i386-tbl.h: Re-generate.
+
+2019-11-12  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-gen.c (operand_instances): Add RegB entry.
+	* i386-opc.h (enum operand_instance): Add RegB.
+	* i386-opc.tbl (RegC, RegD, RegB): Define.
+	(Acc, ShiftCount, InOutPortReg): Adjust definitions.
+	(monitor, mwait, invlpga, skinit, vmload, vmrun, vmsave, clzero,
+	monitorx, mwaitx): Drop ImmExt and convert encodings
+	accordingly.
+	* i386-reg.tbl (ecx, rcx): Add Instance=RegC.
+	(edx, rdx): Add Instance=RegD.
+	(ebx, rbx): Add Instance=RegB.
+	* i386-tbl.h: Re-generate.
+
+2019-11-12  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-gen.c (operand_type_init): Adjust
+	OPERAND_TYPE_INOUTPORTREG, OPERAND_TYPE_SHIFTCOUNT,
+	OPERAND_TYPE_FLOATACC, OPERAND_TYPE_ACC8, OPERAND_TYPE_ACC16,
+	OPERAND_TYPE_ACC32, and OPERAND_TYPE_ACC64 entries.
+	(operand_instances): New.
+	(operand_types): Drop InOutPortReg, ShiftCount, and Acc entries.
+	(output_operand_type): New parameter "instance". Process it.
+	(process_i386_operand_type): New local variable "instance".
+	(main): Adjust static assertions.
+	* i386-opc.h (INSTANCE_WIDTH): Define.
+	(enum operand_instance): New.
+	(Acc, InOutPortReg, ShiftCount): Replace by ClassInstance.
+	(union i386_operand_type): Replace acc, inoutportreg, and
+	shiftcount by instance.
+	* i386-opc.tbl (Acc, InOutPortReg, ShiftCount): Define.
+	* i386-reg.tbl (st, al, cl, ax, dx, eax, rax, xmm0, st(0)):
+	Add Instance=.
+	* i386-init.h, i386-tbl.h: Re-generate.
+
+2019-11-11  Jan Beulich  <jbeulich@suse.com>
+
+	* aarch64-tbl.h (aarch64_opcode_table): Switch SVE2's
+	smaxp/sminp entries' "tied_operand" field to 2.
+
+2019-11-11  Jan Beulich  <jbeulich@suse.com>
+
+	* aarch64-opc.c (operand_general_constraint_met_p): Replace
+	"index" local variable by that of the already existing "num".
+
+2019-11-08  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR gas/25167
+	* i386-opc.tbl: Remove IgnoreSize from cmpsd and movsd.
+	* i386-tbl.h: Regenerated.
+
+2019-11-08  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-gen.c (operand_type_init): Add Class= to
+	OPERAND_TYPE_REGMASK and OPERAND_TYPE_REGBND entries. Move up
+	OPERAND_TYPE_REGBND entry.
+	(operand_classes): Add RegMask and RegBND entries.
+	(operand_types): Drop RegMask and RegBND entry.
+	* i386-opc.h (enum operand_class): Add RegMask and RegBND.
+	(RegMask, RegBND): Delete.
+	(union i386_operand_type): Remove regmask and regbnd fields.
+	* i386-opc.tbl (RegMask, RegBND): Define.
+	* i386-reg.tbl: Replace RegMask by Class=RegMask and RegBND by
+	Class=RegBND.
+	* i386-init.h, i386-tbl.h: Re-generate.
+
+2019-11-08  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-gen.c (operand_type_init): Add Class= to
+	OPERAND_TYPE_REGMMX, OPERAND_TYPE_REGXMM, OPERAND_TYPE_REGYMM, and
+	OPERAND_TYPE_REGZMM entries.
+	(operand_classes): Add RegMMX and RegSIMD entries.
+	(operand_types): Drop RegMMX and RegSIMD entries.
+	* i386-opc.h (enum operand_class): Add RegMMX and RegSIMD.
+	(RegMMX, RegSIMD): Delete.
+	(union i386_operand_type): Remove regmmx and regsimd fields.
+	* i386-opc.tbl (RegMMX): Define.
+	(RegXMM, RegYMM, RegZMM): Add Class=.
+	* i386-reg.tbl: Replace RegMMX by Class=RegMMX and RegSIMD by
+	Class=RegSIMD.
+	* i386-init.h, i386-tbl.h: Re-generate.
+
+2019-11-08  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-gen.c (operand_type_init): Add Class= to
+	OPERAND_TYPE_CONTROL, OPERAND_TYPE_TEST, and OPERAND_TYPE_DEBUG
+	entries.
+	(operand_classes): Add RegCR, RegDR, and RegTR entries.
+	(operand_types): Drop Control, Debug, and Test entries.
+	* i386-opc.h (enum operand_class): Add RegCR, RegDR, and RegTR.
+	(Control, Debug, Test): Delete.
+	(union i386_operand_type): Remove control, debug, and test
+	fields.
+	* i386-opc.tbl (Control, Debug, Test): Define.
+	* i386-reg.tbl: Replace Control by Class=RegCR, Debug by
+	Class=RegDR, and Test by Class=RegTR.
+	* i386-init.h, i386-tbl.h: Re-generate.
+
+2019-11-08  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-gen.c (operand_type_init): Add Class= to
+	OPERAND_TYPE_SREG entry.
+	(operand_classes): Add SReg entry.
+	(operand_types): Drop SReg entry.
+	* i386-opc.h (enum operand_class): Add SReg.
+	(SReg): Delete.
+	(union i386_operand_type): Remove sreg field.
+	* i386-opc.tbl (SReg): Define.
+	* i386-reg.tbl: Replace SReg by Class=SReg.
+	* i386-init.h, i386-tbl.h: Re-generate.
+
+2019-11-08  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-gen.c (operand_type_init): Add Class=. New
+	OPERAND_TYPE_ANYIMM entry.
+	(operand_classes): New.
+	(operand_types): Drop Reg entry.
+	(output_operand_type): New parameter "class". Process it.
+	(process_i386_operand_type): New local variable "class".
+	(main): Adjust static assertions.
+	* i386-opc.h (CLASS_WIDTH): Define.
+	(enum operand_class): New.
+	(Reg): Replace by Class. Adjust comment.
+	(union i386_operand_type): Replace reg by class.
+	* i386-opc.tbl (Reg8, Reg16, Reg32, Reg64, FloatReg): Add
+	Class=.
+	* i386-reg.tbl: Replace Reg by Class=Reg.
+	* i386-init.h: Re-generate.
+
+2019-11-07  Mihail Ionescu  <mihail.ionescu@arm.com>
+
+	* opcodes/aarch64-tbl.h (V8_6_INSN): New macro for v8.6 instructions.
+	(aarch64_opcode_table): Add data gathering hint mnemonic.
+	* opcodes/aarch64-dis-2.c: Account for new instruction.
+
+2019-11-07  Mihail Ionescu  <mihail.ionescu@arm.com>
+
+	* arm-dis.c (neon_opcodes): Add i8mm SIMD instructions.
+
+
+2019-11-07  Mihail Ionescu  <mihail.ionescu@arm.com>
+
+	* aarch64-tbl.h (aarch64_feature_i8mm_sve, aarch64_feature_f32mm_sve,
+	aarch64_feature_f64mm_sve, aarch64_feature_i8mm, aarch64_feature_f32mm,
+	aarch64_feature_f64mm): New feature sets.
+	(INT8MATMUL_INSN, F64MATMUL_SVE_INSN, F64MATMUL_INSN,
+	F32MATMUL_SVE_INSN, F32MATMUL_INSN): New macros to define matrix multiply
+	instructions.
+	(I8MM_SVE, F32MM_SVE, F64MM_SVE, I8MM, F32MM, F64MM): New feature set
+	macros.
+	(QL_MMLA64, OP_SVE_SBB): New qualifiers.
+	(OP_SVE_QQQ): New qualifier.
+	(INT8MATMUL_SVE_INSNC, F64MATMUL_SVE_INSNC,
+	F32MATMUL_SVE_INSNC): New feature set for bfloat16 instructions to support
+	the movprfx constraint.
+	(aarch64_opcode_table): Support for SVE_ADDR_RI_S4x32.
+	(aarch64_opcode_table): Define new instructions smmla,
+	ummla, usmmla, usdot, sudot, fmmla, ld1rob, ld1roh, ld1row, ld1rod,
+	uzip{1/2}, trn{1/2}.
+	* aarch64-opc.c (operand_general_constraint_met_p): Handle
+	AARCH64_OPND_SVE_ADDR_RI_S4x32.
+	(aarch64_print_operand): Handle AARCH64_OPND_SVE_ADDR_RI_S4x32.
+	* aarch64-dis-2.c (aarch64_opcode_lookup_1, aarch64_find_next_opcode):
+	Account for new instructions.
+	* opcodes/aarch64-asm-2.c (aarch64_insert_operand): Support the new
+	S4x32 operand.
+	* aarch64-opc-2.c (aarch64_operands): Support the new S4x32 operand.
+
+2019-11-07  Mihail Ionescu  <mihail.ionescu@arm.com>
+2019-11-07  Matthew Malcomson  <matthew.malcomson@arm.com>
+
+	* arm-dis.c (select_arm_features): Update bfd_march_arm_8 with
+	Armv8.6-A.
+	(coprocessor_opcodes): Add bfloat16 vcvt{t,b}.
+	(neon_opcodes): Add bfloat SIMD instructions.
+	(print_insn_coprocessor): Add new control character %b to print
+	condition code without checking cp_num.
+	(print_insn_neon): Account for BFloat16 instructions that have no
+	special top-byte handling.
+
+2019-11-07  Mihail Ionescu  <mihail.ionescu@arm.com>
+2019-11-07  Matthew Malcomson  <matthew.malcomson@arm.com>
+
+	* arm-dis.c (print_insn_coprocessor,
+	print_insn_generic_coprocessor): Create wrapper functions around
+	the implementation of the print_insn_coprocessor control codes.
+	(print_insn_coprocessor_1): Original print_insn_coprocessor
+	function that now takes which array to look at as an argument.
+	(print_insn_arm): Use both print_insn_coprocessor and
+	print_insn_generic_coprocessor.
+	(print_insn_thumb32): As above.
+
+2019-11-07  Mihail Ionescu  <mihail.ionescu@arm.com>
+2019-11-07  Matthew Malcomson  <matthew.malcomson@arm.com>
+
+	* aarch64-asm.c (aarch64_ins_reglane): Use AARCH64_OPND_QLF_S_2H
+	in reglane special case.
+	* aarch64-dis-2.c (aarch64_opcode_lookup_1,
+	aarch64_find_next_opcode): Account for new instructions.
+	* aarch64-dis.c (aarch64_ext_reglane): Use AARCH64_OPND_QLF_S_2H
+	in reglane special case.
+	* aarch64-opc.c (struct operand_qualifier_data): Add data for
+	new AARCH64_OPND_QLF_S_2H qualifier.
+	* aarch64-tbl.h (QL_BFDOT QL_BFDOT64, QL_BFDOT64I, QL_BFMMLA2,
+	QL_BFCVT64, QL_BFCVTN64, QL_BFCVTN2_64): New qualifiers.
+	(aarch64_feature_bfloat16, aarch64_feature_bfloat16_sve): New feature
+	sets.
+	(BFLOAT_SVE, BFLOAT): New feature set macros.
+	(BFLOAT_SVE_INSN, BFLOAT_INSN): New macros to define BFloat16
+	instructions.
+	(aarch64_opcode_table): Define new instructions bfdot,
+	bfmmla, bfcvt, bfcvtnt, bfdot, bfdot, bfcvtn, bfmlal[b/t]
+	bfcvtn2, bfcvt.
+
+2019-11-07  Mihail Ionescu  <mihail.ionescu@arm.com>
+2019-11-07  Matthew Malcomson  <matthew.malcomson@arm.com>
+
+	* aarch64-tbl.h (ARMV8_6): New macro.
+
+2019-11-07  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-dis.c (prefix_table): Add mcommit.
+	(rm_table): Add rdpru.
+	* i386-gen.c (cpu_flag_init): Adjust CPU_ZNVER2_FLAGS entry. Add
+	CPU_RDPRU_FLAGS and CPU_MCOMMIT_FLAGS entries.
+	(cpu_flags): Add CpuRDPRU and CpuMCOMMIT entries.
+	* i386-opc.h (CpuRDPRU, CpuMCOMMIT): New.
+	(union i386_cpu_flags): Add cpurdpru and cpumcommit fields.
+	* i386-opc.tbl (mcommit, rdpru): New.
+	* i386-init.h, i386-tbl.h: Re-generate.
+
+2019-11-07  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-dis.c (OP_Mwait): Drop local variable "names", use
+	"names32" instead.
+	(OP_Monitor): Drop local variable "op1_names", re-purpose
+	"names" for it instead, and replace former "names" uses by
+	"names32" ones.
+
+2019-11-07  Jan Beulich  <jbeulich@suse.com>
+
+	PR/gas 25167
+	* opcodes/i386-opc.tbl (movsd, cmpsd): Drop IgnoreSize from
+	operand-less forms.
+	* opcodes/i386-tbl.h: Re-generate.
+
+2019-11-05  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-dis.c (OP_Mwaitx): Delete.
+	(prefix_table): Use OP_Mwait for mwaitx entry.
+	(OP_Mwait): Also handle mwaitx.
+
+2019-11-05  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-dis.c (PREFIX_0F01_REG_7_MOD_3_RM_2,
+	PREFIX_0F01_REG_7_MOD_3_RM_3): New.
+	(prefix_table): Add respective entries.
+	(rm_table): Link to those entries.
+
+2019-11-05  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-dis.c (REG_0F1C_MOD_0): Rename to ...
+	(REG_0F1C_P_0_MOD_0): ... this.
+	(REG_0F1E_MOD_3): Rename to ...
+	(REG_0F1E_P_1_MOD_3): ... this.
+	(RM_0F01_REG_5): Rename to ...
+	(RM_0F01_REG_5_MOD_3): ... this.
+	(RM_0F01_REG_7): Rename to ...
+	(RM_0F01_REG_7_MOD_3): ... this.
+	(RM_0F1E_MOD_3_REG_7): Rename to ...
+	(RM_0F1E_P_1_MOD_3_REG_7): ... this.
+	(RM_0FAE_REG_6): Rename to ...
+	(RM_0FAE_REG_6_MOD_3_P_0): ... this.
+	(RM_0FAE_REG_7): Rename to ...
+	(RM_0FAE_REG_7_MOD_3): ... this.
+	(PREFIX_MOD_0_0F01_REG_5): Rename to ...
+	(PREFIX_0F01_REG_5_MOD_0): ... this.
+	(PREFIX_MOD_3_0F01_REG_5_RM_0): Rename to ...
+	(PREFIX_0F01_REG_5_MOD_3_RM_0): ... this.
+	(PREFIX_MOD_3_0F01_REG_5_RM_2): Rename to ...
+	(PREFIX_0F01_REG_5_MOD_3_RM_2): ... this.
+	(PREFIX_0FAE_REG_0): Rename to ...
+	(PREFIX_0FAE_REG_0_MOD_3): ... this.
+	(PREFIX_0FAE_REG_1): Rename to ...
+	(PREFIX_0FAE_REG_1_MOD_3): ... this.
+	(PREFIX_0FAE_REG_2): Rename to ...
+	(PREFIX_0FAE_REG_2_MOD_3): ... this.
+	(PREFIX_0FAE_REG_3): Rename to ...
+	(PREFIX_0FAE_REG_3_MOD_3): ... this.
+	(PREFIX_MOD_0_0FAE_REG_4): Rename to ...
+	(PREFIX_0FAE_REG_4_MOD_0): ... this.
+	(PREFIX_MOD_3_0FAE_REG_4): Rename to ...
+	(PREFIX_0FAE_REG_4_MOD_3): ... this.
+	(PREFIX_MOD_0_0FAE_REG_5): Rename to ...
+	(PREFIX_0FAE_REG_5_MOD_0): ... this.
+	(PREFIX_MOD_3_0FAE_REG_5): Rename to ...
+	(PREFIX_0FAE_REG_5_MOD_3): ... this.
+	(PREFIX_MOD_0_0FAE_REG_6): Rename to ...
+	(PREFIX_0FAE_REG_6_MOD_0): ... this.
+	(PREFIX_MOD_1_0FAE_REG_6): Rename to ...
+	(PREFIX_0FAE_REG_6_MOD_3): ... this.
+	(PREFIX_0FAE_REG_7): Rename to ...
+	(PREFIX_0FAE_REG_7_MOD_0): ... this.
+	(PREFIX_MOD_0_0FC3): Rename to ...
+	(PREFIX_0FC3_MOD_0): ... this.
+	(PREFIX_MOD_0_0FC7_REG_6): Rename to ...
+	(PREFIX_0FC7_REG_6_MOD_0): ... this.
+	(PREFIX_MOD_3_0FC7_REG_6): Rename to ...
+	(PREFIX_0FC7_REG_6_MOD_3): ... this.
+	(PREFIX_MOD_3_0FC7_REG_7): Rename to ...
+	(PREFIX_0FC7_REG_7_MOD_3): ... this.
+	(reg_table, prefix_table, mod_table, rm_table): Adjust
+	accordingly.
+
 2019-11-04  Nick Clifton  <nickc@redhat.com>
 
 	* v850-dis.c (get_v850_sreg_name): New function.  Returns the name

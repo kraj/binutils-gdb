@@ -42,6 +42,7 @@ AC_DEFUN([gl_EARLY],
   AC_REQUIRE([gl_USE_SYSTEM_EXTENSIONS])
   AC_REQUIRE([gl_PROG_AR_RANLIB])
 
+  AC_REQUIRE([AM_PROG_CC_C_O])
   # Code from module absolute-header:
   # Code from module alloca:
   # Code from module alloca-opt:
@@ -97,6 +98,7 @@ AC_DEFUN([gl_EARLY],
   # Code from module gettimeofday:
   # Code from module glob:
   # Code from module hard-locale:
+  # Code from module havelib:
   # Code from module include_next:
   # Code from module inet_ntop:
   # Code from module intprops:
@@ -108,6 +110,7 @@ AC_DEFUN([gl_EARLY],
   AC_REQUIRE([AC_SYS_LARGEFILE])
   # Code from module limits-h:
   # Code from module localcharset:
+  # Code from module lock:
   # Code from module lstat:
   # Code from module malloc-posix:
   # Code from module malloca:
@@ -164,6 +167,7 @@ AC_DEFUN([gl_EARLY],
   # Code from module streq:
   # Code from module strerror:
   # Code from module strerror-override:
+  # Code from module strerror_r-posix:
   # Code from module string:
   # Code from module strnlen1:
   # Code from module strstr:
@@ -175,7 +179,10 @@ AC_DEFUN([gl_EARLY],
   # Code from module sys_types:
   # Code from module sys_uio:
   # Code from module tempname:
+  # Code from module threadlib:
+  gl_THREADLIB_EARLY
   # Code from module time:
+  # Code from module time_r:
   # Code from module unistd:
   # Code from module unistd-safer:
   # Code from module unsetenv:
@@ -382,6 +389,8 @@ AC_DEFUN([gl_INIT],
   gl_LOCALCHARSET
   LOCALCHARSET_TESTS_ENVIRONMENT="CHARSETALIASDIR=\"\$(abs_top_builddir)/$gl_source_base\""
   AC_SUBST([LOCALCHARSET_TESTS_ENVIRONMENT])
+  gl_LOCK
+  gl_MODULE_INDICATOR([lock])
   gl_FUNC_LSTAT
   if test $REPLACE_LSTAT = 1; then
     AC_LIBOBJ([lstat])
@@ -576,6 +585,12 @@ AC_DEFUN([gl_INIT],
     AC_LIBOBJ([strerror-override])
     gl_PREREQ_SYS_H_WINSOCK2
   fi
+  gl_FUNC_STRERROR_R
+  if test $HAVE_DECL_STRERROR_R = 0 || test $REPLACE_STRERROR_R = 1; then
+    AC_LIBOBJ([strerror_r])
+    gl_PREREQ_STRERROR_R
+  fi
+  gl_STRING_MODULE_INDICATOR([strerror_r])
   gl_HEADER_STRING_H
   gl_FUNC_STRSTR
   if test $REPLACE_STRSTR = 1; then
@@ -603,7 +618,14 @@ AC_DEFUN([gl_INIT],
   gl_HEADER_SYS_UIO
   AC_PROG_MKDIR_P
   gl_FUNC_GEN_TEMPNAME
+  gl_THREADLIB
   gl_HEADER_TIME_H
+  gl_TIME_R
+  if test $HAVE_LOCALTIME_R = 0 || test $REPLACE_LOCALTIME_R = 1; then
+    AC_LIBOBJ([time_r])
+    gl_PREREQ_TIME_R
+  fi
+  gl_TIME_MODULE_INDICATOR([time_r])
   gl_UNISTD_H
   gl_UNISTD_SAFER
   gl_FUNC_UNSETENV
@@ -754,6 +776,7 @@ AC_DEFUN([gltests_LIBSOURCES], [
 # This macro records the list of files which have been installed by
 # gnulib-tool and may be removed by future gnulib-tool invocations.
 AC_DEFUN([gl_FILE_LIST], [
+  build-aux/config.rpath
   build-aux/snippet/_Noreturn.h
   build-aux/snippet/arg-nonnull.h
   build-aux/snippet/c++defs.h
@@ -820,6 +843,9 @@ AC_DEFUN([gl_FILE_LIST], [
   lib/glob-libc.h
   lib/glob.c
   lib/glob.in.h
+  lib/glthread/lock.c
+  lib/glthread/lock.h
+  lib/glthread/threadlib.c
   lib/hard-locale.c
   lib/hard-locale.h
   lib/inet_ntop.c
@@ -899,6 +925,7 @@ AC_DEFUN([gl_FILE_LIST], [
   lib/strerror-override.c
   lib/strerror-override.h
   lib/strerror.c
+  lib/strerror_r.c
   lib/string.in.h
   lib/stripslash.c
   lib/strnlen1.c
@@ -914,6 +941,7 @@ AC_DEFUN([gl_FILE_LIST], [
   lib/tempname.c
   lib/tempname.h
   lib/time.in.h
+  lib/time_r.c
   lib/unistd--.h
   lib/unistd-safer.h
   lib/unistd.c
@@ -981,11 +1009,15 @@ AC_DEFUN([gl_FILE_LIST], [
   m4/isnand.m4
   m4/isnanl.m4
   m4/largefile.m4
+  m4/lib-ld.m4
+  m4/lib-link.m4
+  m4/lib-prefix.m4
   m4/limits-h.m4
   m4/localcharset.m4
   m4/locale-fr.m4
   m4/locale-ja.m4
   m4/locale-zh.m4
+  m4/lock.m4
   m4/longlong.m4
   m4/lstat.m4
   m4/malloc.m4
@@ -1039,6 +1071,7 @@ AC_DEFUN([gl_FILE_LIST], [
   m4/strchrnul.m4
   m4/strdup.m4
   m4/strerror.m4
+  m4/strerror_r.m4
   m4/string_h.m4
   m4/strstr.m4
   m4/strtok_r.m4
@@ -1048,7 +1081,9 @@ AC_DEFUN([gl_FILE_LIST], [
   m4/sys_types_h.m4
   m4/sys_uio_h.m4
   m4/tempname.m4
+  m4/threadlib.m4
   m4/time_h.m4
+  m4/time_r.m4
   m4/unistd-safer.m4
   m4/unistd_h.m4
   m4/warn-on-use.m4

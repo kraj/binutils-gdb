@@ -224,12 +224,6 @@ static void print_frame (const frame_print_options &opts,
 			 enum print_what print_what,  int print_args,
 			 struct symtab_and_line sal);
 
-static void set_last_displayed_sal (int valid,
-				    struct program_space *pspace,
-				    CORE_ADDR addr,
-				    struct symtab *symtab,
-				    int line);
-
 static struct frame_info *find_frame_for_function (const char *);
 static struct frame_info *find_frame_for_address (CORE_ADDR);
 
@@ -241,18 +235,84 @@ static struct frame_info *find_frame_for_address (CORE_ADDR);
 
 int annotation_level = 0;
 
-/* These variables hold the last symtab and line we displayed to the user.
- * This is where we insert a breakpoint or a skiplist entry by default.  */
-static int last_displayed_sal_valid = 0;
-static struct program_space *last_displayed_pspace = 0;
-static CORE_ADDR last_displayed_addr = 0;
-static struct symtab *last_displayed_symtab = 0;
-static int last_displayed_line = 0;
+/* Class used to manage tracking the last symtab we displayed.  */
+
+class last_displayed_symtab_info_type
+{
+public:
+  /* True if the cached information is valid.  */
+  bool is_valid () const
+  { return m_valid; }
+
+  /* Return the cached program_space.  If the cache is invalid nullptr is
+     returned.  */
+  struct program_space *pspace () const
+  { return m_pspace; }
+
+  /* Return the cached CORE_ADDR address.  If the cache is invalid 0 is
+     returned.  */
+  CORE_ADDR address () const
+  { return m_address; }
+
+  /* Return the cached symtab.  If the cache is invalid nullptr is
+     returned.  */
+  struct symtab *symtab () const
+  { return m_symtab; }
+
+  /* Return the cached line number.  If the cache is invalid 0 is
+     returned.  */
+  int line () const
+  { return m_line; }
+
+  /* Invalidate the cache, reset all the members to their default value.  */
+  void invalidate ()
+  {
+    m_valid = false;
+    m_pspace = nullptr;
+    m_address = 0;
+    m_symtab = nullptr;
+    m_line = 0;
+  }
+
+  /* Store a new set of values in the cache.  */
+  void set (struct program_space *pspace, CORE_ADDR address,
+	    struct symtab *symtab, int line)
+  {
+    gdb_assert (pspace != nullptr);
+
+    m_valid = true;
+    m_pspace = pspace;
+    m_address = address;
+    m_symtab = symtab;
+    m_line = line;
+  }
+
+private:
+  /* True when the cache is valid.  */
+  bool m_valid = false;
+
+  /* The last program space displayed.  */
+  struct program_space *m_pspace = nullptr;
+
+  /* The last address displayed.  */
+  CORE_ADDR m_address = 0;
+
+  /* The last symtab displayed.  */
+  struct symtab *m_symtab = nullptr;
+
+  /* The last line number displayed.  */
+  int m_line = 0;
+};
+
+/* An actual instance of the cache, holds information about the last symtab
+   displayed.  */
+static last_displayed_symtab_info_type last_displayed_symtab_info;
+
 
 
 /* See stack.h.  */
 
-int
+bool
 frame_show_address (struct frame_info *frame,
 		    struct symtab_and_line sal)
 {
@@ -267,7 +327,7 @@ frame_show_address (struct frame_info *frame,
 	gdb_assert (inline_skipped_frames (inferior_thread ()) > 0);
       else
 	gdb_assert (get_frame_type (get_next_frame (frame)) == INLINE_FRAME);
-      return 0;
+      return false;
     }
 
   return get_frame_pc (frame) != sal.pc;
@@ -367,7 +427,7 @@ print_frame_arg (const frame_print_options &fp_opts,
 
   annotate_arg_emitter arg_emitter;
   ui_out_emit_tuple tuple_emitter (uiout, NULL);
-  fprintf_symbol_filtered (&stb, SYMBOL_PRINT_NAME (arg->sym),
+  fprintf_symbol_filtered (&stb, arg->sym->print_name (),
 			   SYMBOL_LANGUAGE (arg->sym), DMGL_PARAMS | DMGL_ANSI);
   if (arg->entry_kind == print_entry_values_compact)
     {
@@ -375,7 +435,7 @@ print_frame_arg (const frame_print_options &fp_opts,
 	 PRINT_ENTRY_VALUE_COMPACT we never use MI.  */
       stb.puts ("=");
 
-      fprintf_symbol_filtered (&stb, SYMBOL_PRINT_NAME (arg->sym),
+      fprintf_symbol_filtered (&stb, arg->sym->print_name (),
 			       SYMBOL_LANGUAGE (arg->sym),
 			       DMGL_PARAMS | DMGL_ANSI);
     }
@@ -757,11 +817,11 @@ print_frame_args (const frame_print_options &fp_opts,
 	     parameter names occur on the RS/6000, for traceback
 	     tables.  FIXME, should we even print them?  */
 
-	  if (*SYMBOL_LINKAGE_NAME (sym))
+	  if (*sym->linkage_name ())
 	    {
 	      struct symbol *nsym;
 
-	      nsym = lookup_symbol_search_name (SYMBOL_SEARCH_NAME (sym),
+	      nsym = lookup_symbol_search_name (sym->search_name (),
 						b, VAR_DOMAIN).symbol;
 	      gdb_assert (nsym != NULL);
 	      if (SYMBOL_CLASS (nsym) == LOC_REGISTER
@@ -1105,9 +1165,9 @@ print_frame_info (const frame_print_options &fp_opts,
       CORE_ADDR pc;
 
       if (get_frame_pc_if_available (frame, &pc))
-	set_last_displayed_sal (1, sal.pspace, pc, sal.symtab, sal.line);
+	last_displayed_symtab_info.set (sal.pspace, pc, sal.symtab, sal.line);
       else
-	set_last_displayed_sal (0, 0, 0, 0, 0);
+	last_displayed_symtab_info.invalidate ();
     }
 
   annotate_frame_end ();
@@ -1115,103 +1175,67 @@ print_frame_info (const frame_print_options &fp_opts,
   gdb_flush (gdb_stdout);
 }
 
-/* Remember the last symtab and line we displayed, which we use e.g.
- * as the place to put a breakpoint when the `break' command is
- * invoked with no arguments.  */
-
-static void
-set_last_displayed_sal (int valid, struct program_space *pspace,
-			CORE_ADDR addr, struct symtab *symtab,
-			int line)
-{
-  last_displayed_sal_valid = valid;
-  last_displayed_pspace = pspace;
-  last_displayed_addr = addr;
-  last_displayed_symtab = symtab;
-  last_displayed_line = line;
-  if (valid && pspace == NULL)
-    {
-      clear_last_displayed_sal ();
-      internal_error (__FILE__, __LINE__,
-		      _("Trying to set NULL pspace."));
-    }
-}
-
-/* Forget the last sal we displayed.  */
+/* See stack.h.  */
 
 void
 clear_last_displayed_sal (void)
 {
-  last_displayed_sal_valid = 0;
-  last_displayed_pspace = 0;
-  last_displayed_addr = 0;
-  last_displayed_symtab = 0;
-  last_displayed_line = 0;
+  last_displayed_symtab_info.invalidate ();
 }
 
-/* Is our record of the last sal we displayed valid?  If not,
- * the get_last_displayed_* functions will return NULL or 0, as
- * appropriate.  */
+/* See stack.h.  */
 
-int
+bool
 last_displayed_sal_is_valid (void)
 {
-  return last_displayed_sal_valid;
+  return last_displayed_symtab_info.is_valid ();
 }
 
-/* Get the pspace of the last sal we displayed, if it's valid.  */
+/* See stack.h.  */
 
 struct program_space *
 get_last_displayed_pspace (void)
 {
-  if (last_displayed_sal_valid)
-    return last_displayed_pspace;
-  return 0;
+  return last_displayed_symtab_info.pspace ();
 }
 
-/* Get the address of the last sal we displayed, if it's valid.  */
+/* See stack.h.  */
 
 CORE_ADDR
 get_last_displayed_addr (void)
 {
-  if (last_displayed_sal_valid)
-    return last_displayed_addr;
-  return 0;
+  return last_displayed_symtab_info.address ();
 }
 
-/* Get the symtab of the last sal we displayed, if it's valid.  */
+/* See stack.h.  */
 
 struct symtab*
 get_last_displayed_symtab (void)
 {
-  if (last_displayed_sal_valid)
-    return last_displayed_symtab;
-  return 0;
+  return last_displayed_symtab_info.symtab ();
 }
 
-/* Get the line of the last sal we displayed, if it's valid.  */
+/* See stack.h.  */
 
 int
 get_last_displayed_line (void)
 {
-  if (last_displayed_sal_valid)
-    return last_displayed_line;
-  return 0;
+  return last_displayed_symtab_info.line ();
 }
 
-/* Get the last sal we displayed, if it's valid.  */
+/* See stack.h.  */
 
 symtab_and_line
 get_last_displayed_sal ()
 {
   symtab_and_line sal;
 
-  if (last_displayed_sal_valid)
+  if (last_displayed_symtab_info.is_valid ())
     {
-      sal.pspace = last_displayed_pspace;
-      sal.pc = last_displayed_addr;
-      sal.symtab = last_displayed_symtab;
-      sal.line = last_displayed_line;
+      sal.pspace = last_displayed_symtab_info.pspace ();
+      sal.pc = last_displayed_symtab_info.address ();
+      sal.symtab = last_displayed_symtab_info.symtab ();
+      sal.line = last_displayed_symtab_info.line ();
     }
 
   return sal;
@@ -1235,14 +1259,14 @@ find_frame_funname (struct frame_info *frame, enum language *funlang,
   func = get_frame_function (frame);
   if (func)
     {
-      const char *print_name = SYMBOL_PRINT_NAME (func);
+      const char *print_name = func->print_name ();
 
       *funlang = SYMBOL_LANGUAGE (func);
       if (funcp)
 	*funcp = func;
       if (*funlang == language_cplus)
 	{
-	  /* It seems appropriate to use SYMBOL_PRINT_NAME() here,
+	  /* It seems appropriate to use print_name() here,
 	     to display the demangled name that we already have
 	     stored in the symbol table, but we stored a version
 	     with DMGL_PARAMS turned on, and here we don't want to
@@ -1266,7 +1290,7 @@ find_frame_funname (struct frame_info *frame, enum language *funlang,
       msymbol = lookup_minimal_symbol_by_pc (pc);
       if (msymbol.minsym != NULL)
 	{
-	  funname.reset (xstrdup (MSYMBOL_PRINT_NAME (msymbol.minsym)));
+	  funname.reset (xstrdup (msymbol.minsym->print_name ()));
 	  *funlang = MSYMBOL_LANGUAGE (msymbol.minsym);
 	}
     }
@@ -1408,7 +1432,7 @@ print_frame (const frame_print_options &fp_opts,
 /* Completion function for "frame function", "info frame function", and
    "select-frame function" commands.  */
 
-void
+static void
 frame_selection_by_function_completer (struct cmd_list_element *ignore,
 				       completion_tracker &tracker,
 				       const char *text, const char *word)
@@ -1470,11 +1494,11 @@ info_frame_command_core (struct frame_info *fi, bool selected_frame_p)
   gdb::unique_xmalloc_ptr<char> func_only;
   if (func)
     {
-      funname = SYMBOL_PRINT_NAME (func);
+      funname = func->print_name ();
       funlang = SYMBOL_LANGUAGE (func);
       if (funlang == language_cplus)
 	{
-	  /* It seems appropriate to use SYMBOL_PRINT_NAME() here,
+	  /* It seems appropriate to use print_name() here,
 	     to display the demangled name that we already have
 	     stored in the symbol table, but we stored a version
 	     with DMGL_PARAMS turned on, and here we don't want to
@@ -1492,7 +1516,7 @@ info_frame_command_core (struct frame_info *fi, bool selected_frame_p)
       msymbol = lookup_minimal_symbol_by_pc (frame_pc);
       if (msymbol.minsym != NULL)
 	{
-	  funname = MSYMBOL_PRINT_NAME (msymbol.minsym);
+	  funname = msymbol.minsym->print_name ();
 	  funlang = MSYMBOL_LANGUAGE (msymbol.minsym);
 	}
     }
@@ -2222,7 +2246,7 @@ iterate_over_block_locals (const struct block *b,
 	    break;
 	  if (SYMBOL_DOMAIN (sym) == COMMON_BLOCK_DOMAIN)
 	    break;
-	  (*cb) (SYMBOL_PRINT_NAME (sym), sym, cb_data);
+	  (*cb) (sym->print_name (), sym, cb_data);
 	  break;
 
 	default:
@@ -2252,7 +2276,7 @@ print_block_frame_labels (struct gdbarch *gdbarch, struct block *b,
 
   ALL_BLOCK_SYMBOLS (b, iter, sym)
     {
-      if (strcmp (SYMBOL_LINKAGE_NAME (sym), "default") == 0)
+      if (strcmp (sym->linkage_name (), "default") == 0)
 	{
 	  if (*have_default)
 	    continue;
@@ -2265,7 +2289,7 @@ print_block_frame_labels (struct gdbarch *gdbarch, struct block *b,
 
 	  sal = find_pc_line (SYMBOL_VALUE_ADDRESS (sym), 0);
 	  values_printed = 1;
-	  fputs_filtered (SYMBOL_PRINT_NAME (sym), stream);
+	  fputs_filtered (sym->print_name (), stream);
 	  get_user_print_options (&opts);
 	  if (opts.addressprint)
 	    {
@@ -2327,8 +2351,7 @@ do_print_variable_and_value (const char *print_name,
   struct frame_info *frame;
 
   if (p->preg.has_value ()
-      && p->preg->exec (SYMBOL_NATURAL_NAME (sym), 0,
-			NULL, 0) != 0)
+      && p->preg->exec (sym->natural_name (), 0, NULL, 0) != 0)
     return;
   if (p->treg.has_value ()
       && !treg_matches_sym_type_name (*p->treg, sym))
@@ -2530,9 +2553,9 @@ iterate_over_block_arg_vars (const struct block *b,
 	     float).  There are also LOC_ARG/LOC_REGISTER pairs which
 	     are not combined in symbol-reading.  */
 
-	  sym2 = lookup_symbol_search_name (SYMBOL_SEARCH_NAME (sym),
+	  sym2 = lookup_symbol_search_name (sym->search_name (),
 					    b, VAR_DOMAIN).symbol;
-	  (*cb) (SYMBOL_PRINT_NAME (sym), sym2, cb_data);
+	  (*cb) (sym->print_name (), sym2, cb_data);
 	}
     }
 }
@@ -2832,7 +2855,7 @@ return_command (const char *retval_exp, int from_tty)
 	  if (TYPE_NO_RETURN (thisfun->type))
 	    warning (_("Function does not return normally to caller."));
 	  confirmed = query (_("%sMake %s return now? "), query_prefix,
-			     SYMBOL_PRINT_NAME (thisfun));
+			     thisfun->print_name ());
 	}
       if (!confirmed)
 	error (_("Not confirmed"));
@@ -3258,6 +3281,8 @@ frame_apply_command (const char* cmd, int from_tty)
 static void
 faas_command (const char *cmd, int from_tty)
 {
+  if (cmd == NULL || *cmd == '\0')
+    error (_("Please specify a command to apply on all frames"));
   std::string expanded = std::string ("frame apply all -s ") + cmd;
   execute_command (expanded.c_str (), from_tty);
 }

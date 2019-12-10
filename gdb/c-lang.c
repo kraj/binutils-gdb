@@ -245,7 +245,7 @@ c_get_string (struct value *value, gdb::unique_xmalloc_ptr<gdb_byte> *buffer,
   struct type *element_type = TYPE_TARGET_TYPE (type);
   int req_length = *length;
   enum bfd_endian byte_order
-    = gdbarch_byte_order (get_type_arch (type));
+    = type_byte_order (type);
 
   if (element_type == NULL)
     goto error;
@@ -611,16 +611,13 @@ evaluate_subexp_c (struct type *expect_type, struct expression *exp,
 					      exp->gdbarch);
 	    break;
 	  case C_WIDE_STRING:
-	    type = lookup_typename (exp->language_defn, exp->gdbarch,
-				    "wchar_t", NULL, 0);
+	    type = lookup_typename (exp->language_defn, "wchar_t", NULL, 0);
 	    break;
 	  case C_STRING_16:
-	    type = lookup_typename (exp->language_defn, exp->gdbarch,
-				    "char16_t", NULL, 0);
+	    type = lookup_typename (exp->language_defn, "char16_t", NULL, 0);
 	    break;
 	  case C_STRING_32:
-	    type = lookup_typename (exp->language_defn, exp->gdbarch,
-				    "char32_t", NULL, 0);
+	    type = lookup_typename (exp->language_defn, "char32_t", NULL, 0);
 	    break;
 	  default:
 	    internal_error (__FILE__, __LINE__, _("unhandled c_string_type"));
@@ -926,7 +923,6 @@ extern const struct language_defn c_language_defn =
   c_language_arch_info,
   default_print_array_index,
   default_pass_by_reference,
-  c_get_string,
   c_watch_location_expression,
   NULL,				/* la_get_symbol_name_matcher */
   iterate_over_symbols,
@@ -1072,7 +1068,6 @@ extern const struct language_defn cplus_language_defn =
   cplus_language_arch_info,
   default_print_array_index,
   cp_pass_by_reference,
-  c_get_string,
   c_watch_location_expression,
   cp_get_symbol_name_matcher,
   iterate_over_symbols,
@@ -1127,7 +1122,6 @@ extern const struct language_defn asm_language_defn =
   c_language_arch_info, 	/* FIXME: la_language_arch_info.  */
   default_print_array_index,
   default_pass_by_reference,
-  c_get_string,
   c_watch_location_expression,
   NULL,				/* la_get_symbol_name_matcher */
   iterate_over_symbols,
@@ -1182,7 +1176,6 @@ extern const struct language_defn minimal_language_defn =
   c_language_arch_info,
   default_print_array_index,
   default_pass_by_reference,
-  c_get_string,
   c_watch_location_expression,
   NULL,				/* la_get_symbol_name_matcher */
   iterate_over_symbols,

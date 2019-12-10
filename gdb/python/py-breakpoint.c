@@ -828,13 +828,16 @@ bppy_init (PyObject *self, PyObject *args, PyObject *kwargs)
 		location = new_explicit_location (&explicit_loc);
 	      }
 
+	    const struct breakpoint_ops *ops =
+	      breakpoint_ops_for_event_location (location.get (), false);
+
 	    create_breakpoint (python_gdbarch,
 			       location.get (), NULL, -1, NULL,
 			       0,
 			       temporary_bp, bp_breakpoint,
 			       0,
 			       AUTO_BOOLEAN_TRUE,
-			       &bkpt_breakpoint_ops,
+			       ops,
 			       0, 1, internal_bp, 0);
 	    break;
 	  }
@@ -1017,6 +1020,7 @@ gdbpy_breakpoint_created (struct breakpoint *bp)
   if (bppy_pending_object)
     {
       newbp = bppy_pending_object;
+      Py_INCREF (newbp);
       bppy_pending_object = NULL;
     }
   else
@@ -1027,7 +1031,6 @@ gdbpy_breakpoint_created (struct breakpoint *bp)
       newbp->bp = bp;
       newbp->bp->py_bp_object = newbp;
       newbp->is_finish_bp = 0;
-      Py_INCREF (newbp);
       ++bppy_live;
     }
   else

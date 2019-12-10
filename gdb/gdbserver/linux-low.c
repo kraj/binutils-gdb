@@ -50,6 +50,7 @@
 #include "gdbsupport/common-inferior.h"
 #include "nat/fork-inferior.h"
 #include "gdbsupport/environ.h"
+#include "gdbsupport/gdb-sigmask.h"
 #include "gdbsupport/scoped_restore.h"
 #ifndef ELFMAG0
 /* Don't include <linux/elf.h> here.  If it got included by gdb_proc_service.h
@@ -1159,7 +1160,7 @@ attach_proc_task_lwp_callback (ptid_t ptid)
 	    {
 	      debug_printf ("Cannot attach to lwp %d: "
 			    "thread is gone (%d: %s)\n",
-			    lwpid, err, strerror (err));
+			    lwpid, err, safe_strerror (err));
 	    }
 	}
       else if (err != 0)
@@ -1303,7 +1304,7 @@ linux_kill_one_lwp (struct lwp_info *lwp)
 
       debug_printf ("LKL:  kill_lwp (SIGKILL) %s, 0, 0 (%s)\n",
 		    target_pid_to_str (ptid_of (thr)),
-		    save_errno ? strerror (save_errno) : "OK");
+		    save_errno ? safe_strerror (save_errno) : "OK");
     }
 
   errno = 0;
@@ -1314,7 +1315,7 @@ linux_kill_one_lwp (struct lwp_info *lwp)
 
       debug_printf ("LKL:  PTRACE_KILL %s, 0, 0 (%s)\n",
 		    target_pid_to_str (ptid_of (thr)),
-		    save_errno ? strerror (save_errno) : "OK");
+		    save_errno ? safe_strerror (save_errno) : "OK");
     }
 }
 
@@ -1560,7 +1561,7 @@ linux_detach_one_lwp (struct lwp_info *lwp)
 	  if (ret == -1)
 	    {
 	      warning (_("Couldn't reap LWP %d while detaching: %s"),
-		       lwpid, strerror (errno));
+		       lwpid, safe_strerror (errno));
 	    }
 	  else if (!WIFEXITED (status) && !WIFSIGNALED (status))
 	    {
@@ -1573,7 +1574,7 @@ linux_detach_one_lwp (struct lwp_info *lwp)
 	{
 	  error (_("Can't detach %s: %s"),
 		 target_pid_to_str (ptid_of (thread)),
-		 strerror (save_errno));
+		 safe_strerror (save_errno));
 	}
     }
   else if (debug_threads)
@@ -2689,7 +2690,7 @@ linux_wait_for_event_filtered (ptid_t wait_ptid, ptid_t filter_ptid,
   /* Make sure SIGCHLD is blocked until the sigsuspend below.  Block
      all signals while here.  */
   sigfillset (&block_mask);
-  sigprocmask (SIG_BLOCK, &block_mask, &prev_mask);
+  gdb_sigmask (SIG_BLOCK, &block_mask, &prev_mask);
 
   /* Always pull all events out of the kernel.  We'll randomly select
      an event LWP out of all that have events, to prevent
@@ -2715,7 +2716,7 @@ linux_wait_for_event_filtered (ptid_t wait_ptid, ptid_t filter_ptid,
 
       if (debug_threads)
 	debug_printf ("LWFE: waitpid(-1, ...) returned %d, %s\n",
-		      ret, errno ? strerror (errno) : "ERRNO-OK");
+		      ret, errno ? safe_strerror (errno) : "ERRNO-OK");
 
       if (ret > 0)
 	{
@@ -2775,7 +2776,7 @@ linux_wait_for_event_filtered (ptid_t wait_ptid, ptid_t filter_ptid,
 	{
 	  if (debug_threads)
 	    debug_printf ("LLW: exit (no unwaited-for LWP)\n");
-	  sigprocmask (SIG_SETMASK, &prev_mask, NULL);
+	  gdb_sigmask (SIG_SETMASK, &prev_mask, NULL);
 	  return -1;
 	}
 
@@ -2785,7 +2786,7 @@ linux_wait_for_event_filtered (ptid_t wait_ptid, ptid_t filter_ptid,
 	  if (debug_threads)
 	    debug_printf ("WNOHANG set, no event found\n");
 
-	  sigprocmask (SIG_SETMASK, &prev_mask, NULL);
+	  gdb_sigmask (SIG_SETMASK, &prev_mask, NULL);
 	  return 0;
 	}
 
@@ -2794,11 +2795,11 @@ linux_wait_for_event_filtered (ptid_t wait_ptid, ptid_t filter_ptid,
 	debug_printf ("sigsuspend'ing\n");
 
       sigsuspend (&prev_mask);
-      sigprocmask (SIG_SETMASK, &prev_mask, NULL);
+      gdb_sigmask (SIG_SETMASK, &prev_mask, NULL);
       goto retry;
     }
 
-  sigprocmask (SIG_SETMASK, &prev_mask, NULL);
+  gdb_sigmask (SIG_SETMASK, &prev_mask, NULL);
 
   current_thread = event_thread;
 
@@ -5593,7 +5594,7 @@ store_register (const struct usrregs_info *usrregs,
 	    return;
 
 	  if ((*the_low_target.cannot_store_register) (regno) == 0)
-	    error ("writing register %d: %s", regno, strerror (errno));
+	    error ("writing register %d: %s", regno, safe_strerror (errno));
 	}
       regaddr += sizeof (PTRACE_XFER_TYPE);
     }
@@ -6215,7 +6216,7 @@ linux_async (int enable)
       sigemptyset (&mask);
       sigaddset (&mask, SIGCHLD);
 
-      sigprocmask (SIG_BLOCK, &mask, NULL);
+      gdb_sigmask (SIG_BLOCK, &mask, NULL);
 
       if (enable)
 	{
@@ -6223,7 +6224,7 @@ linux_async (int enable)
 	    {
 	      linux_event_pipe[0] = -1;
 	      linux_event_pipe[1] = -1;
-	      sigprocmask (SIG_UNBLOCK, &mask, NULL);
+	      gdb_sigmask (SIG_UNBLOCK, &mask, NULL);
 
 	      warning ("creating event pipe failed.");
 	      return previous;
@@ -6249,7 +6250,7 @@ linux_async (int enable)
 	  linux_event_pipe[1] = -1;
 	}
 
-      sigprocmask (SIG_UNBLOCK, &mask, NULL);
+      gdb_sigmask (SIG_UNBLOCK, &mask, NULL);
     }
 
   return previous;

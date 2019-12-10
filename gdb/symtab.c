@@ -183,6 +183,16 @@ struct symbol_cache_slot
   } value;
 };
 
+/* Clear out SLOT.  */
+
+static void
+symbol_cache_clear_slot (struct symbol_cache_slot *slot)
+{
+  if (slot->state == SYMBOL_SLOT_NOT_FOUND)
+    xfree (slot->value.not_found.name);
+  slot->state = SYMBOL_SLOT_UNUSED;
+}
+
 /* Symbols don't specify global vs static block.
    So keep them in separate caches.  */
 
@@ -201,6 +211,19 @@ struct block_symbol_cache
   struct symbol_cache_slot symbols[1];
 };
 
+/* Clear all slots of BSC and free BSC.  */
+
+static void
+destroy_block_symbol_cache (struct block_symbol_cache *bsc)
+{
+  if (bsc != nullptr)
+    {
+      for (unsigned int i = 0; i < bsc->size; i++)
+	symbol_cache_clear_slot (&bsc->symbols[i]);
+      xfree (bsc);
+    }
+}
+
 /* The symbol cache.
 
    Searching for symbols in the static and global blocks over multiple objfiles
@@ -217,8 +240,8 @@ struct symbol_cache
 
   ~symbol_cache ()
   {
-    xfree (global_symbols);
-    xfree (static_symbols);
+    destroy_block_symbol_cache (global_symbols);
+    destroy_block_symbol_cache (static_symbols);
   }
 
   struct block_symbol_cache *global_symbols = nullptr;
@@ -770,20 +793,26 @@ create_demangled_names_hash (struct objfile_per_bfd_storage *per_bfd)
   /* Choose 256 as the starting size of the hash table, somewhat arbitrarily.
      The hash table code will round this up to the next prime number.
      Choosing a much larger table size wastes memory, and saves only about
-     1% in symbol reading.  */
+     1% in symbol reading.  However, if the minsym count is already
+     initialized (e.g. because symbol name setting was deferred to
+     a background thread) we can initialize the hashtable with a count
+     based on that, because we will almost certainly have at least that
+     many entries.  If we have a nonzero number but less than 256,
+     we still stay with 256 to have some space for psymbols, etc.  */
+
+  /* htab will expand the table when it is 3/4th full, so we account for that
+     here.  +2 to round up.  */
+  int minsym_based_count = (per_bfd->minimal_symbol_count + 2) / 3 * 4;
+  int count = std::max (per_bfd->minimal_symbol_count, minsym_based_count);
 
   per_bfd->demangled_names_hash.reset (htab_create_alloc
-    (256, hash_demangled_name_entry, eq_demangled_name_entry,
+    (count, hash_demangled_name_entry, eq_demangled_name_entry,
      free_demangled_name_entry, xcalloc, xfree));
 }
 
-/* Try to determine the demangled name for a symbol, based on the
-   language of that symbol.  If the language is set to language_auto,
-   it will attempt to find any demangling algorithm that works and
-   then set the language appropriately.  The returned name is allocated
-   by the demangler and should be xfree'd.  */
+/* See symtab.h  */
 
-static char *
+char *
 symbol_find_demangled_name (struct general_symbol_info *gsymbol,
 			    const char *mangled)
 {
@@ -830,7 +859,8 @@ symbol_find_demangled_name (struct general_symbol_info *gsymbol,
 void
 symbol_set_names (struct general_symbol_info *gsymbol,
 		  gdb::string_view linkage_name, bool copy_name,
-		  struct objfile_per_bfd_storage *per_bfd)
+		  struct objfile_per_bfd_storage *per_bfd,
+		  gdb::optional<hashval_t> hash)
 {
   struct demangled_name_entry **slot;
 
@@ -858,9 +888,11 @@ symbol_set_names (struct general_symbol_info *gsymbol,
     create_demangled_names_hash (per_bfd);
 
   struct demangled_name_entry entry (linkage_name);
+  if (!hash.has_value ())
+    hash = hash_demangled_name_entry (&entry);
   slot = ((struct demangled_name_entry **)
-	  htab_find_slot (per_bfd->demangled_names_hash.get (),
-			  &entry, INSERT));
+          htab_find_slot_with_hash (per_bfd->demangled_names_hash.get (),
+				    &entry, *hash, INSERT));
 
   /* If this name is not in the hash table, add it.  */
   if (*slot == NULL
@@ -884,8 +916,15 @@ symbol_set_names (struct general_symbol_info *gsymbol,
       else
 	linkage_name_copy = linkage_name;
 
-      gdb::unique_xmalloc_ptr<char> demangled_name_ptr
-	(symbol_find_demangled_name (gsymbol, linkage_name_copy.data ()));
+      /* The const_cast is safe because the only reason it is already
+         initialized is if we purposefully set it from a background
+         thread to avoid doing the work here.  However, it is still
+         allocated from the heap and needs to be freed by us, just
+         like if we called symbol_find_demangled_name here.  */
+      gdb::unique_xmalloc_ptr<char> demangled_name
+	(gsymbol->language_specific.demangled_name
+	 ? const_cast<char *> (gsymbol->language_specific.demangled_name)
+	 : symbol_find_demangled_name (gsymbol, linkage_name_copy.data ()));
 
       /* Suppose we have demangled_name==NULL, copy_name==0, and
 	 linkage_name_copy==linkage_name.  In this case, we already have the
@@ -919,7 +958,7 @@ symbol_set_names (struct general_symbol_info *gsymbol,
 	  new (*slot) demangled_name_entry
 	    (gdb::string_view (mangled_ptr, linkage_name.length ()));
 	}
-      (*slot)->demangled = std::move (demangled_name_ptr);
+      (*slot)->demangled = std::move (demangled_name);
       (*slot)->language = gsymbol->language;
     }
   else if (gsymbol->language == language_unknown
@@ -934,49 +973,47 @@ symbol_set_names (struct general_symbol_info *gsymbol,
     symbol_set_demangled_name (gsymbol, NULL, &per_bfd->storage_obstack);
 }
 
-/* Return the source code name of a symbol.  In languages where
-   demangling is necessary, this is the demangled name.  */
+/* See symtab.h.  */
 
 const char *
-symbol_natural_name (const struct general_symbol_info *gsymbol)
+general_symbol_info::natural_name () const
 {
-  switch (gsymbol->language)
+  switch (language)
     {
     case language_cplus:
     case language_d:
     case language_go:
     case language_objc:
     case language_fortran:
-      if (symbol_get_demangled_name (gsymbol) != NULL)
-	return symbol_get_demangled_name (gsymbol);
+      if (symbol_get_demangled_name (this) != NULL)
+	return symbol_get_demangled_name (this);
       break;
     case language_ada:
-      return ada_decode_symbol (gsymbol);
+      return ada_decode_symbol (this);
     default:
       break;
     }
-  return gsymbol->name;
+  return name;
 }
 
-/* Return the demangled name for a symbol based on the language for
-   that symbol.  If no demangled name exists, return NULL.  */
+/* See symtab.h.  */
 
 const char *
-symbol_demangled_name (const struct general_symbol_info *gsymbol)
+general_symbol_info::demangled_name () const
 {
   const char *dem_name = NULL;
 
-  switch (gsymbol->language)
+  switch (language)
     {
     case language_cplus:
     case language_d:
     case language_go:
     case language_objc:
     case language_fortran:
-      dem_name = symbol_get_demangled_name (gsymbol);
+      dem_name = symbol_get_demangled_name (this);
       break;
     case language_ada:
-      dem_name = ada_decode_symbol (gsymbol);
+      dem_name = ada_decode_symbol (this);
       break;
     default:
       break;
@@ -984,18 +1021,15 @@ symbol_demangled_name (const struct general_symbol_info *gsymbol)
   return dem_name;
 }
 
-/* Return the search name of a symbol---generally the demangled or
-   linkage name of the symbol, depending on how it will be searched for.
-   If there is no distinct demangled name, then returns the same value
-   (same pointer) as SYMBOL_LINKAGE_NAME.  */
+/* See symtab.h.  */
 
 const char *
-symbol_search_name (const struct general_symbol_info *gsymbol)
+general_symbol_info::search_name () const
 {
-  if (gsymbol->language == language_ada)
-    return gsymbol->name;
+  if (language == language_ada)
+    return name;
   else
-    return symbol_natural_name (gsymbol);
+    return natural_name ();
 }
 
 /* See symtab.h.  */
@@ -1006,7 +1040,7 @@ symbol_matches_search_name (const struct general_symbol_info *gsymbol,
 {
   symbol_name_matcher_ftype *name_match
     = get_symbol_name_matcher (language_def (gsymbol->language), name);
-  return name_match (symbol_search_name (gsymbol), name, NULL);
+  return name_match (gsymbol->search_name (), name, NULL);
 }
 
 
@@ -1146,7 +1180,7 @@ eq_symbol_entry (const struct symbol_cache_slot *slot,
     }
   else
     {
-      slot_name = SYMBOL_SEARCH_NAME (slot->value.found.symbol);
+      slot_name = slot->value.found.symbol->search_name ();
       slot_domain = SYMBOL_DOMAIN (slot->value.found.symbol);
     }
 
@@ -1163,7 +1197,7 @@ eq_symbol_entry (const struct symbol_cache_slot *slot,
       /* It's important that we use the same comparison that was done
 	 the first time through.  If the slot records a found symbol,
 	 then this means using the symbol name comparison function of
-	 the symbol's language with SYMBOL_SEARCH_NAME.  See
+	 the symbol's language with symbol->search_name ().  See
 	 dictionary.c.  It also means using symbol_matches_domain for
 	 found symbols.  See block.c.
 
@@ -1223,8 +1257,8 @@ resize_symbol_cache (struct symbol_cache *cache, unsigned int new_size)
 	  && new_size == 0))
     return;
 
-  xfree (cache->global_symbols);
-  xfree (cache->static_symbols);
+  destroy_block_symbol_cache (cache->global_symbols);
+  destroy_block_symbol_cache (cache->static_symbols);
 
   if (new_size == 0)
     {
@@ -1360,16 +1394,6 @@ symbol_cache_lookup (struct symbol_cache *cache,
     }
   ++bsc->misses;
   return {};
-}
-
-/* Clear out SLOT.  */
-
-static void
-symbol_cache_clear_slot (struct symbol_cache_slot *slot)
-{
-  if (slot->state == SYMBOL_SLOT_NOT_FOUND)
-    xfree (slot->value.not_found.name);
-  slot->state = SYMBOL_SLOT_UNUSED;
 }
 
 /* Mark SYMBOL as found in SLOT.
@@ -1512,7 +1536,7 @@ symbol_cache_dump (const struct symbol_cache *cache)
 
 		printf_filtered ("  [%4u] = %s, %s %s\n", i,
 				 host_address_to_string (context),
-				 SYMBOL_PRINT_NAME (found),
+				 found->print_name (),
 				 domain_name (SYMBOL_DOMAIN (found)));
 		break;
 	      }
@@ -1759,7 +1783,7 @@ fixup_symbol_section (struct symbol *sym, struct objfile *objfile)
       return sym;
     }
 
-  fixup_section (&sym->ginfo, addr, objfile);
+  fixup_section (sym, addr, objfile);
 
   return sym;
 }
@@ -1945,7 +1969,7 @@ lookup_language_this (const struct language_defn *lang,
 	  if (symbol_lookup_debug > 1)
 	    {
 	      fprintf_unfiltered (gdb_stdlog, " = %s (%s, block %s)\n",
-				  SYMBOL_PRINT_NAME (sym),
+				  sym->print_name (),
 				  host_address_to_string (sym),
 				  host_address_to_string (block));
 	    }
@@ -3117,7 +3141,7 @@ find_pc_sect_line (CORE_ADDR pc, struct obj_section *section, int notcurrent)
     if (MSYMBOL_TYPE (msymbol.minsym) == mst_solib_trampoline)
       {
 	struct bound_minimal_symbol mfunsym
-	  = lookup_minimal_symbol_text (MSYMBOL_LINKAGE_NAME (msymbol.minsym),
+	  = lookup_minimal_symbol_text (msymbol.minsym->linkage_name (),
 					NULL);
 
 	if (mfunsym.minsym == NULL)
@@ -3131,7 +3155,7 @@ find_pc_sect_line (CORE_ADDR pc, struct obj_section *section, int notcurrent)
 	   * but the "break" still works, and the warning is annoying.
 	   * So I commented out the warning.  RT */
 	  /* warning ("In stub for %s; unable to find real function/line info",
-	     SYMBOL_LINKAGE_NAME (msymbol)); */
+	     msymbol->linkage_name ()); */
 	  ;
 	/* fall through */
 	else if (BMSYMBOL_VALUE_ADDRESS (mfunsym)
@@ -3139,7 +3163,7 @@ find_pc_sect_line (CORE_ADDR pc, struct obj_section *section, int notcurrent)
 	  /* Avoid infinite recursion */
 	  /* See above comment about why warning is commented out.  */
 	  /* warning ("In stub for %s; unable to find real function/line info",
-	     SYMBOL_LINKAGE_NAME (msymbol)); */
+	     msymbol->linkage_name ()); */
 	  ;
 	/* fall through */
 	else
@@ -3710,7 +3734,7 @@ skip_prologue_sal (struct symtab_and_line *sal)
       objfile = symbol_objfile (sym);
       pc = BLOCK_ENTRY_PC (SYMBOL_BLOCK_VALUE (sym));
       section = SYMBOL_OBJ_SECTION (objfile, sym);
-      name = SYMBOL_LINKAGE_NAME (sym);
+      name = sym->linkage_name ();
     }
   else
     {
@@ -3723,7 +3747,7 @@ skip_prologue_sal (struct symtab_and_line *sal)
       objfile = msymbol.objfile;
       pc = BMSYMBOL_VALUE_ADDRESS (msymbol);
       section = MSYMBOL_OBJ_SECTION (objfile, msymbol.minsym);
-      name = MSYMBOL_LINKAGE_NAME (msymbol.minsym);
+      name = msymbol.minsym->linkage_name ();
     }
 
   gdbarch = get_objfile_arch (objfile);
@@ -4339,31 +4363,28 @@ info_sources_command (const char *args, int from_tty)
   printf_filtered ("\n");
 }
 
-/* Compare FILE against all the NFILES entries of FILES.  If BASENAMES is
-   non-zero compare only lbasename of FILES.  */
+/* Compare FILE against all the entries of FILENAMES.  If BASENAMES is
+   true compare only lbasename of FILENAMES.  */
 
-static int
-file_matches (const char *file, const char *files[], int nfiles, int basenames)
+static bool
+file_matches (const char *file, const std::vector<const char *> &filenames,
+	      bool basenames)
 {
-  int i;
+  if (filenames.empty ())
+    return true;
 
-  if (file != NULL && nfiles != 0)
+  for (const char *name : filenames)
     {
-      for (i = 0; i < nfiles; i++)
-	{
-	  if (compare_filenames_for_search (file, (basenames
-						   ? lbasename (files[i])
-						   : files[i])))
-	    return 1;
-	}
+      name = (basenames ? lbasename (name) : name);
+      if (compare_filenames_for_search (file, name))
+	return true;
     }
-  else if (nfiles == 0)
-    return 1;
-  return 0;
+
+  return false;
 }
 
-/* Helper function for sort_search_symbols_remove_dups and qsort.  Can only
-   sort symbols, not minimal symbols.  */
+/* Helper function for std::sort on symbol_search objects.  Can only sort
+   symbols, not minimal symbols.  */
 
 int
 symbol_search::compare_search_syms (const symbol_search &sym_a,
@@ -4379,8 +4400,7 @@ symbol_search::compare_search_syms (const symbol_search &sym_a,
   if (sym_a.block != sym_b.block)
     return sym_a.block - sym_b.block;
 
-  return strcmp (SYMBOL_PRINT_NAME (sym_a.symbol),
-		 SYMBOL_PRINT_NAME (sym_b.symbol));
+  return strcmp (sym_a.symbol->print_name (), sym_b.symbol->print_name ());
 }
 
 /* Returns true if the type_name of symbol_type of SYM matches TREG.
@@ -4397,7 +4417,7 @@ treg_matches_sym_type_name (const compiled_regex &treg,
     {
       fprintf_unfiltered (gdb_stdlog,
 			  "treg_matches_sym_type_name\n     sym %s\n",
-			  SYMBOL_NATURAL_NAME (sym));
+			  sym->natural_name ());
     }
 
   sym_type = SYMBOL_TYPE (sym);
@@ -4425,79 +4445,255 @@ treg_matches_sym_type_name (const compiled_regex &treg,
   return treg.exec (printed_sym_type_name.c_str (), 0, NULL, 0) == 0;
 }
 
+/* See symtab.h.  */
 
-/* Sort the symbols in RESULT and remove duplicates.  */
-
-static void
-sort_search_symbols_remove_dups (std::vector<symbol_search> *result)
+bool
+global_symbol_searcher::is_suitable_msymbol
+	(const enum search_domain kind, const minimal_symbol *msymbol)
 {
-  std::sort (result->begin (), result->end ());
-  result->erase (std::unique (result->begin (), result->end ()),
-		 result->end ());
+  switch (MSYMBOL_TYPE (msymbol))
+    {
+    case mst_data:
+    case mst_bss:
+    case mst_file_data:
+    case mst_file_bss:
+      return kind == VARIABLES_DOMAIN;
+    case mst_text:
+    case mst_file_text:
+    case mst_solib_trampoline:
+    case mst_text_gnu_ifunc:
+      return kind == FUNCTIONS_DOMAIN;
+    default:
+      return false;
+    }
 }
 
-/* Search the symbol table for matches to the regular expression REGEXP,
-   returning the results.
+/* See symtab.h.  */
 
-   Only symbols of KIND are searched:
-   VARIABLES_DOMAIN - search all symbols, excluding functions, type names,
-                      and constants (enums).
-		      if T_REGEXP is not NULL, only returns var that have
-		      a type matching regular expression T_REGEXP.
-   FUNCTIONS_DOMAIN - search all functions
-   TYPES_DOMAIN     - search all type names
-   ALL_DOMAIN       - an internal error for this function
+bool
+global_symbol_searcher::expand_symtabs
+	(objfile *objfile, const gdb::optional<compiled_regex> &preg) const
+{
+  enum search_domain kind = m_kind;
+  bool found_msymbol = false;
 
-   Within each file the results are sorted locally; each symtab's global and
-   static blocks are separately alphabetized.
-   Duplicate entries are removed.
+  if (objfile->sf)
+    objfile->sf->qf->expand_symtabs_matching
+      (objfile,
+       [&] (const char *filename, bool basenames)
+       {
+	 return file_matches (filename, filenames, basenames);
+       },
+       lookup_name_info::match_any (),
+       [&] (const char *symname)
+       {
+	 return (!preg.has_value ()
+		 || preg->exec (symname, 0, NULL, 0) == 0);
+       },
+       NULL,
+       kind);
 
-   When EXCLUDE_MINSYMS is false then matching minsyms are also returned,
-   otherwise they are excluded.  */
+  /* Here, we search through the minimal symbol tables for functions and
+     variables that match, and force their symbols to be read.  This is in
+     particular necessary for demangled variable names, which are no longer
+     put into the partial symbol tables.  The symbol will then be found
+     during the scan of symtabs later.
+
+     For functions, find_pc_symtab should succeed if we have debug info for
+     the function, for variables we have to call
+     lookup_symbol_in_objfile_from_linkage_name to determine if the
+     variable has debug info.  If the lookup fails, set found_msymbol so
+     that we will rescan to print any matching symbols without debug info.
+     We only search the objfile the msymbol came from, we no longer search
+     all objfiles.  In large programs (1000s of shared libs) searching all
+     objfiles is not worth the pain.  */
+  if (filenames.empty ()
+      && (kind == VARIABLES_DOMAIN || kind == FUNCTIONS_DOMAIN))
+    {
+      for (minimal_symbol *msymbol : objfile->msymbols ())
+	{
+	  QUIT;
+
+	  if (msymbol->created_by_gdb)
+	    continue;
+
+	  if (is_suitable_msymbol (kind, msymbol))
+	    {
+	      if (!preg.has_value ()
+		  || preg->exec (msymbol->natural_name (), 0,
+				 NULL, 0) == 0)
+		{
+		  /* An important side-effect of these lookup functions is
+		     to expand the symbol table if msymbol is found, later
+		     in the process we will add matching symbols or
+		     msymbols to the results list, and that requires that
+		     the symbols tables are expanded.  */
+		  if (kind == FUNCTIONS_DOMAIN
+		      ? (find_pc_compunit_symtab
+			 (MSYMBOL_VALUE_ADDRESS (objfile, msymbol))
+			 == NULL)
+		      : (lookup_symbol_in_objfile_from_linkage_name
+			 (objfile, msymbol->linkage_name (),
+			  VAR_DOMAIN)
+			 .symbol == NULL))
+		    found_msymbol = true;
+		}
+	    }
+	}
+    }
+
+  return found_msymbol;
+}
+
+/* See symtab.h.  */
+
+bool
+global_symbol_searcher::add_matching_symbols
+	(objfile *objfile,
+	 const gdb::optional<compiled_regex> &preg,
+	 const gdb::optional<compiled_regex> &treg,
+	 std::set<symbol_search> *result_set) const
+{
+  enum search_domain kind = m_kind;
+
+  /* Add matching symbols (if not already present).  */
+  for (compunit_symtab *cust : objfile->compunits ())
+    {
+      const struct blockvector *bv  = COMPUNIT_BLOCKVECTOR (cust);
+
+      for (block_enum block : { GLOBAL_BLOCK, STATIC_BLOCK })
+	{
+	  struct block_iterator iter;
+	  struct symbol *sym;
+	  const struct block *b = BLOCKVECTOR_BLOCK (bv, block);
+
+	  ALL_BLOCK_SYMBOLS (b, iter, sym)
+	    {
+	      struct symtab *real_symtab = symbol_symtab (sym);
+
+	      QUIT;
+
+	      /* Check first sole REAL_SYMTAB->FILENAME.  It does
+		 not need to be a substring of symtab_to_fullname as
+		 it may contain "./" etc.  */
+	      if ((file_matches (real_symtab->filename, filenames, false)
+		   || ((basenames_may_differ
+			|| file_matches (lbasename (real_symtab->filename),
+					 filenames, true))
+		       && file_matches (symtab_to_fullname (real_symtab),
+					filenames, false)))
+		  && ((!preg.has_value ()
+		       || preg->exec (sym->natural_name (), 0,
+				      NULL, 0) == 0)
+		      && ((kind == VARIABLES_DOMAIN
+			   && SYMBOL_CLASS (sym) != LOC_TYPEDEF
+			   && SYMBOL_CLASS (sym) != LOC_UNRESOLVED
+			   && SYMBOL_CLASS (sym) != LOC_BLOCK
+			   /* LOC_CONST can be used for more than
+			      just enums, e.g., c++ static const
+			      members.  We only want to skip enums
+			      here.  */
+			   && !(SYMBOL_CLASS (sym) == LOC_CONST
+				&& (TYPE_CODE (SYMBOL_TYPE (sym))
+				    == TYPE_CODE_ENUM))
+			   && (!treg.has_value ()
+			       || treg_matches_sym_type_name (*treg, sym)))
+			  || (kind == FUNCTIONS_DOMAIN
+			      && SYMBOL_CLASS (sym) == LOC_BLOCK
+			      && (!treg.has_value ()
+				  || treg_matches_sym_type_name (*treg,
+								 sym)))
+			  || (kind == TYPES_DOMAIN
+			      && SYMBOL_CLASS (sym) == LOC_TYPEDEF
+			      && SYMBOL_DOMAIN (sym) != MODULE_DOMAIN)
+			  || (kind == MODULES_DOMAIN
+			      && SYMBOL_DOMAIN (sym) == MODULE_DOMAIN
+			      && SYMBOL_LINE (sym) != 0))))
+		{
+		  if (result_set->size () < m_max_search_results)
+		    {
+		      /* Match, insert if not already in the results.  */
+		      symbol_search ss (block, sym);
+		      if (result_set->find (ss) == result_set->end ())
+			result_set->insert (ss);
+		    }
+		  else
+		    return false;
+		}
+	    }
+	}
+    }
+
+  return true;
+}
+
+/* See symtab.h.  */
+
+bool
+global_symbol_searcher::add_matching_msymbols
+	(objfile *objfile, const gdb::optional<compiled_regex> &preg,
+	 std::vector<symbol_search> *results) const
+{
+  enum search_domain kind = m_kind;
+
+  for (minimal_symbol *msymbol : objfile->msymbols ())
+    {
+      QUIT;
+
+      if (msymbol->created_by_gdb)
+	continue;
+
+      if (is_suitable_msymbol (kind, msymbol))
+	{
+	  if (!preg.has_value ()
+	      || preg->exec (msymbol->natural_name (), 0,
+			     NULL, 0) == 0)
+	    {
+	      /* For functions we can do a quick check of whether the
+		 symbol might be found via find_pc_symtab.  */
+	      if (kind != FUNCTIONS_DOMAIN
+		  || (find_pc_compunit_symtab
+		      (MSYMBOL_VALUE_ADDRESS (objfile, msymbol))
+		      == NULL))
+		{
+		  if (lookup_symbol_in_objfile_from_linkage_name
+		      (objfile, msymbol->linkage_name (),
+		       VAR_DOMAIN).symbol == NULL)
+		    {
+		      /* Matching msymbol, add it to the results list.  */
+		      if (results->size () < m_max_search_results)
+			results->emplace_back (GLOBAL_BLOCK, msymbol, objfile);
+		      else
+			return false;
+		    }
+		}
+	    }
+	}
+    }
+
+  return true;
+}
+
+/* See symtab.h.  */
 
 std::vector<symbol_search>
-search_symbols (const char *regexp, enum search_domain kind,
-		const char *t_regexp,
-		int nfiles, const char *files[],
-		bool exclude_minsyms)
+global_symbol_searcher::search () const
 {
-  const struct blockvector *bv;
-  const struct block *b;
-  int i = 0;
-  struct block_iterator iter;
-  struct symbol *sym;
-  int found_misc = 0;
-  static const enum minimal_symbol_type types[]
-    = {mst_data, mst_text, mst_unknown};
-  static const enum minimal_symbol_type types2[]
-    = {mst_bss, mst_file_text, mst_unknown};
-  static const enum minimal_symbol_type types3[]
-    = {mst_file_data, mst_solib_trampoline, mst_unknown};
-  static const enum minimal_symbol_type types4[]
-    = {mst_file_bss, mst_text_gnu_ifunc, mst_unknown};
-  enum minimal_symbol_type ourtype;
-  enum minimal_symbol_type ourtype2;
-  enum minimal_symbol_type ourtype3;
-  enum minimal_symbol_type ourtype4;
-  std::vector<symbol_search> result;
   gdb::optional<compiled_regex> preg;
   gdb::optional<compiled_regex> treg;
 
-  gdb_assert (kind != ALL_DOMAIN);
+  gdb_assert (m_kind != ALL_DOMAIN);
 
-  ourtype = types[kind];
-  ourtype2 = types2[kind];
-  ourtype3 = types3[kind];
-  ourtype4 = types4[kind];
-
-  if (regexp != NULL)
+  if (m_symbol_name_regexp != NULL)
     {
+      const char *symbol_name_regexp = m_symbol_name_regexp;
+
       /* Make sure spacing is right for C++ operators.
          This is just a courtesy to make the matching less sensitive
          to how many spaces the user leaves between 'operator'
          and <TYPENAME> or <OPERATOR>.  */
       const char *opend;
-      const char *opname = operator_chars (regexp, &opend);
+      const char *opname = operator_chars (symbol_name_regexp, &opend);
 
       if (*opname)
 	{
@@ -4522,214 +4718,124 @@ search_symbols (const char *regexp, enum search_domain kind,
 	      char *tmp = (char *) alloca (8 + fix + strlen (opname) + 1);
 
 	      sprintf (tmp, "operator%.*s%s", fix, " ", opname);
-	      regexp = tmp;
+	      symbol_name_regexp = tmp;
 	    }
 	}
 
       int cflags = REG_NOSUB | (case_sensitivity == case_sensitive_off
 				? REG_ICASE : 0);
-      preg.emplace (regexp, cflags, _("Invalid regexp"));
+      preg.emplace (symbol_name_regexp, cflags,
+		    _("Invalid regexp"));
     }
 
-  if (t_regexp != NULL)
+  if (m_symbol_type_regexp != NULL)
     {
       int cflags = REG_NOSUB | (case_sensitivity == case_sensitive_off
 				? REG_ICASE : 0);
-      treg.emplace (t_regexp, cflags, _("Invalid regexp"));
+      treg.emplace (m_symbol_type_regexp, cflags,
+		    _("Invalid regexp"));
     }
 
-  /* Search through the partial symtabs *first* for all symbols
-     matching the regexp.  That way we don't have to reproduce all of
-     the machinery below.  */
-  expand_symtabs_matching ([&] (const char *filename, bool basenames)
-			   {
-			     return file_matches (filename, files, nfiles,
-						  basenames);
-			   },
-			   lookup_name_info::match_any (),
-			   [&] (const char *symname)
-			   {
-			     return (!preg.has_value ()
-				     || preg->exec (symname,
-						    0, NULL, 0) == 0);
-			   },
-			   NULL,
-			   kind);
-
-  /* Here, we search through the minimal symbol tables for functions
-     and variables that match, and force their symbols to be read.
-     This is in particular necessary for demangled variable names,
-     which are no longer put into the partial symbol tables.
-     The symbol will then be found during the scan of symtabs below.
-
-     For functions, find_pc_symtab should succeed if we have debug info
-     for the function, for variables we have to call
-     lookup_symbol_in_objfile_from_linkage_name to determine if the variable
-     has debug info.
-     If the lookup fails, set found_misc so that we will rescan to print
-     any matching symbols without debug info.
-     We only search the objfile the msymbol came from, we no longer search
-     all objfiles.  In large programs (1000s of shared libs) searching all
-     objfiles is not worth the pain.  */
-
-  if (nfiles == 0 && (kind == VARIABLES_DOMAIN || kind == FUNCTIONS_DOMAIN))
-    {
-      for (objfile *objfile : current_program_space->objfiles ())
-	{
-	  for (minimal_symbol *msymbol : objfile->msymbols ())
-	    {
-	      QUIT;
-
-	      if (msymbol->created_by_gdb)
-		continue;
-
-	      if (MSYMBOL_TYPE (msymbol) == ourtype
-		  || MSYMBOL_TYPE (msymbol) == ourtype2
-		  || MSYMBOL_TYPE (msymbol) == ourtype3
-		  || MSYMBOL_TYPE (msymbol) == ourtype4)
-		{
-		  if (!preg.has_value ()
-		      || preg->exec (MSYMBOL_NATURAL_NAME (msymbol), 0,
-				     NULL, 0) == 0)
-		    {
-		      /* Note: An important side-effect of these
-			 lookup functions is to expand the symbol
-			 table if msymbol is found, for the benefit of
-			 the next loop on compunits.  */
-		      if (kind == FUNCTIONS_DOMAIN
-			  ? (find_pc_compunit_symtab
-			     (MSYMBOL_VALUE_ADDRESS (objfile, msymbol))
-			     == NULL)
-			  : (lookup_symbol_in_objfile_from_linkage_name
-			     (objfile, MSYMBOL_LINKAGE_NAME (msymbol),
-			      VAR_DOMAIN)
-			     .symbol == NULL))
-			found_misc = 1;
-		    }
-		}
-	    }
-	}
-    }
-
+  bool found_msymbol = false;
+  std::set<symbol_search> result_set;
   for (objfile *objfile : current_program_space->objfiles ())
     {
-      for (compunit_symtab *cust : objfile->compunits ())
-	{
-	  bv = COMPUNIT_BLOCKVECTOR (cust);
-	  for (i = GLOBAL_BLOCK; i <= STATIC_BLOCK; i++)
-	    {
-	      b = BLOCKVECTOR_BLOCK (bv, i);
-	      ALL_BLOCK_SYMBOLS (b, iter, sym)
-		{
-		  struct symtab *real_symtab = symbol_symtab (sym);
+      /* Expand symtabs within objfile that possibly contain matching
+	 symbols.  */
+      found_msymbol |= expand_symtabs (objfile, preg);
 
-		  QUIT;
-
-		  /* Check first sole REAL_SYMTAB->FILENAME.  It does
-		     not need to be a substring of symtab_to_fullname as
-		     it may contain "./" etc.  */
-		  if ((file_matches (real_symtab->filename, files, nfiles, 0)
-		       || ((basenames_may_differ
-			    || file_matches (lbasename (real_symtab->filename),
-					     files, nfiles, 1))
-			   && file_matches (symtab_to_fullname (real_symtab),
-					    files, nfiles, 0)))
-		      && ((!preg.has_value ()
-			   || preg->exec (SYMBOL_NATURAL_NAME (sym), 0,
-					  NULL, 0) == 0)
-			  && ((kind == VARIABLES_DOMAIN
-			       && SYMBOL_CLASS (sym) != LOC_TYPEDEF
-			       && SYMBOL_CLASS (sym) != LOC_UNRESOLVED
-			       && SYMBOL_CLASS (sym) != LOC_BLOCK
-			       /* LOC_CONST can be used for more than
-				  just enums, e.g., c++ static const
-				  members.  We only want to skip enums
-				  here.  */
-			       && !(SYMBOL_CLASS (sym) == LOC_CONST
-				    && (TYPE_CODE (SYMBOL_TYPE (sym))
-					== TYPE_CODE_ENUM))
-			       && (!treg.has_value ()
-				   || treg_matches_sym_type_name (*treg, sym)))
-			      || (kind == FUNCTIONS_DOMAIN
-				  && SYMBOL_CLASS (sym) == LOC_BLOCK
-				  && (!treg.has_value ()
-				      || treg_matches_sym_type_name (*treg,
-								     sym)))
-			      || (kind == TYPES_DOMAIN
-				  && SYMBOL_CLASS (sym) == LOC_TYPEDEF
-				  && SYMBOL_DOMAIN (sym) != MODULE_DOMAIN)
-			      || (kind == MODULES_DOMAIN
-				  && SYMBOL_DOMAIN (sym) == MODULE_DOMAIN
-				  && SYMBOL_LINE (sym) != 0))))
-		    {
-		      /* match */
-		      result.emplace_back (i, sym);
-		    }
-		}
-	    }
-	}
+      /* Find matching symbols within OBJFILE and add them in to the
+	 RESULT_SET set.  Use a set here so that we can easily detect
+	 duplicates as we go, and can therefore track how many unique
+	 matches we have found so far.  */
+      if (!add_matching_symbols (objfile, preg, treg, &result_set))
+	break;
     }
 
-  if (!result.empty ())
-    sort_search_symbols_remove_dups (&result);
+  /* Convert the result set into a sorted result list, as std::set is
+     defined to be sorted then no explicit call to std::sort is needed.  */
+  std::vector<symbol_search> result (result_set.begin (), result_set.end ());
 
-  /* If there are no eyes, avoid all contact.  I mean, if there are
-     no debug symbols, then add matching minsyms.  But if the user wants
-     to see symbols matching a type regexp, then never give a minimal symbol,
-     as we assume that a minimal symbol does not have a type.  */
-
-  if ((found_misc || (nfiles == 0 && kind != FUNCTIONS_DOMAIN))
-      && !exclude_minsyms
+  /* If there are no debug symbols, then add matching minsyms.  But if the
+     user wants to see symbols matching a type regexp, then never give a
+     minimal symbol, as we assume that a minimal symbol does not have a
+     type.  */
+  if ((found_msymbol || (filenames.empty () && m_kind == VARIABLES_DOMAIN))
+      && !m_exclude_minsyms
       && !treg.has_value ())
     {
+      gdb_assert (m_kind == VARIABLES_DOMAIN || m_kind == FUNCTIONS_DOMAIN);
       for (objfile *objfile : current_program_space->objfiles ())
-	{
-	  for (minimal_symbol *msymbol : objfile->msymbols ())
-	    {
-	      QUIT;
-
-	      if (msymbol->created_by_gdb)
-		continue;
-
-	      if (MSYMBOL_TYPE (msymbol) == ourtype
-		  || MSYMBOL_TYPE (msymbol) == ourtype2
-		  || MSYMBOL_TYPE (msymbol) == ourtype3
-		  || MSYMBOL_TYPE (msymbol) == ourtype4)
-		{
-		  if (!preg.has_value ()
-		      || preg->exec (MSYMBOL_NATURAL_NAME (msymbol), 0,
-				     NULL, 0) == 0)
-		    {
-		      /* For functions we can do a quick check of whether the
-			 symbol might be found via find_pc_symtab.  */
-		      if (kind != FUNCTIONS_DOMAIN
-			  || (find_pc_compunit_symtab
-			      (MSYMBOL_VALUE_ADDRESS (objfile, msymbol))
-			      == NULL))
-			{
-			  if (lookup_symbol_in_objfile_from_linkage_name
-			      (objfile, MSYMBOL_LINKAGE_NAME (msymbol),
-			       VAR_DOMAIN)
-			      .symbol == NULL)
-			    {
-			      /* match */
-			      result.emplace_back (i, msymbol, objfile);
-			    }
-			}
-		    }
-		}
-	    }
-	}
+	if (!add_matching_msymbols (objfile, preg, &result))
+	  break;
     }
 
   return result;
 }
 
-/* Helper function for symtab_symbol_info, this function uses
-   the data returned from search_symbols() to print information
-   regarding the match to gdb_stdout.  If LAST is not NULL,
-   print file and line number information for the symbol as
-   well.  Skip printing the filename if it matches LAST.  */
+/* See symtab.h.  */
+
+std::string
+symbol_to_info_string (struct symbol *sym, int block,
+		       enum search_domain kind)
+{
+  std::string str;
+
+  gdb_assert (block == GLOBAL_BLOCK || block == STATIC_BLOCK);
+
+  if (kind != TYPES_DOMAIN && block == STATIC_BLOCK)
+    str += "static ";
+
+  /* Typedef that is not a C++ class.  */
+  if (kind == TYPES_DOMAIN
+      && SYMBOL_DOMAIN (sym) != STRUCT_DOMAIN)
+    {
+      string_file tmp_stream;
+
+      /* FIXME: For C (and C++) we end up with a difference in output here
+	 between how a typedef is printed, and non-typedefs are printed.
+	 The TYPEDEF_PRINT code places a ";" at the end in an attempt to
+	 appear C-like, while TYPE_PRINT doesn't.
+
+	 For the struct printing case below, things are worse, we force
+	 printing of the ";" in this function, which is going to be wrong
+	 for languages that don't require a ";" between statements.  */
+      if (TYPE_CODE (SYMBOL_TYPE (sym)) == TYPE_CODE_TYPEDEF)
+	typedef_print (SYMBOL_TYPE (sym), sym, &tmp_stream);
+      else
+	type_print (SYMBOL_TYPE (sym), "", &tmp_stream, -1);
+      str += tmp_stream.string ();
+    }
+  /* variable, func, or typedef-that-is-c++-class.  */
+  else if (kind < TYPES_DOMAIN
+	   || (kind == TYPES_DOMAIN
+	       && SYMBOL_DOMAIN (sym) == STRUCT_DOMAIN))
+    {
+      string_file tmp_stream;
+
+      type_print (SYMBOL_TYPE (sym),
+		  (SYMBOL_CLASS (sym) == LOC_TYPEDEF
+		   ? "" : sym->print_name ()),
+		  &tmp_stream, 0);
+
+      str += tmp_stream.string ();
+      str += ";";
+    }
+  /* Printing of modules is currently done here, maybe at some future
+     point we might want a language specific method to print the module
+     symbol so that we can customise the output more.  */
+  else if (kind == MODULES_DOMAIN)
+    str += sym->print_name ();
+
+  return str;
+}
+
+/* Helper function for symbol info commands, for example 'info functions',
+   'info variables', etc.  KIND is the kind of symbol we searched for, and
+   BLOCK is the type of block the symbols was found in, either GLOBAL_BLOCK
+   or STATIC_BLOCK.  SYM is the symbol we found.  If LAST is not NULL,
+   print file and line number information for the symbol as well.  Skip
+   printing the filename if it matches LAST.  */
 
 static void
 print_symbol_info (enum search_domain kind,
@@ -4756,44 +4862,8 @@ print_symbol_info (enum search_domain kind,
 	puts_filtered ("\t");
     }
 
-  if (kind != TYPES_DOMAIN && block == STATIC_BLOCK)
-    printf_filtered ("static ");
-
-  /* Typedef that is not a C++ class.  */
-  if (kind == TYPES_DOMAIN
-      && SYMBOL_DOMAIN (sym) != STRUCT_DOMAIN)
-    {
-      /* FIXME: For C (and C++) we end up with a difference in output here
-	 between how a typedef is printed, and non-typedefs are printed.
-	 The TYPEDEF_PRINT code places a ";" at the end in an attempt to
-	 appear C-like, while TYPE_PRINT doesn't.
-
-	 For the struct printing case below, things are worse, we force
-	 printing of the ";" in this function, which is going to be wrong
-	 for languages that don't require a ";" between statements.  */
-      if (TYPE_CODE (SYMBOL_TYPE (sym)) == TYPE_CODE_TYPEDEF)
-	typedef_print (SYMBOL_TYPE (sym), sym, gdb_stdout);
-      else
-	type_print (SYMBOL_TYPE (sym), "", gdb_stdout, -1);
-      printf_filtered ("\n");
-    }
-  /* variable, func, or typedef-that-is-c++-class.  */
-  else if (kind < TYPES_DOMAIN
-	   || (kind == TYPES_DOMAIN
-	       && SYMBOL_DOMAIN (sym) == STRUCT_DOMAIN))
-    {
-      type_print (SYMBOL_TYPE (sym),
-		  (SYMBOL_CLASS (sym) == LOC_TYPEDEF
-		   ? "" : SYMBOL_PRINT_NAME (sym)),
-		  gdb_stdout, 0);
-
-      printf_filtered (";\n");
-    }
-  /* Printing of modules is currently done here, maybe at some future
-     point we might want a language specific method to print the module
-     symbol so that we can customise the output more.  */
-  else if (kind == MODULES_DOMAIN)
-    printf_filtered ("%s\n", SYMBOL_PRINT_NAME (sym));
+  std::string str = symbol_to_info_string (sym, block, kind);
+  printf_filtered ("%s\n", str.c_str ());
 }
 
 /* This help function for symtab_symbol_info() prints information
@@ -4819,8 +4889,7 @@ print_msymbol_info (struct bound_minimal_symbol msymbol)
 
   printf_filtered (_("%ps  %ps\n"),
 		   styled_string (address_style.style (), tmp),
-		   styled_string (sym_style,
-				  MSYMBOL_PRINT_NAME (msymbol.minsym)));
+		   styled_string (sym_style, msymbol.minsym->print_name ()));
 }
 
 /* This is the guts of the commands "info functions", "info types", and
@@ -4843,10 +4912,10 @@ symtab_symbol_info (bool quiet, bool exclude_minsyms,
   if (regexp != nullptr && *regexp == '\0')
     regexp = nullptr;
 
-  /* Must make sure that if we're interrupted, symbols gets freed.  */
-  std::vector<symbol_search> symbols = search_symbols (regexp, kind,
-						       t_regexp, 0, NULL,
-						       exclude_minsyms);
+  global_symbol_searcher spec (kind, regexp);
+  spec.set_symbol_type_regexp (t_regexp);
+  spec.set_exclude_minsyms (exclude_minsyms);
+  std::vector<symbol_search> symbols = spec.search ();
 
   if (!quiet)
     {
@@ -5073,23 +5142,13 @@ info_modules_command (const char *args, int from_tty)
 		      from_tty);
 }
 
-/* Breakpoint all functions matching regular expression.  */
-
-void
-rbreak_command_wrapper (char *regexp, int from_tty)
-{
-  rbreak_command (regexp, from_tty);
-}
-
 static void
 rbreak_command (const char *regexp, int from_tty)
 {
   std::string string;
-  const char **files = NULL;
-  const char *file_name;
-  int nfiles = 0;
+  const char *file_name = nullptr;
 
-  if (regexp)
+  if (regexp != nullptr)
     {
       const char *colon = strchr (regexp, ':');
 
@@ -5105,17 +5164,14 @@ rbreak_command (const char *regexp, int from_tty)
 	  while (isspace (local_name[colon_index]))
 	    local_name[colon_index--] = 0;
 	  file_name = local_name;
-	  files = &file_name;
-	  nfiles = 1;
 	  regexp = skip_spaces (colon + 1);
 	}
     }
 
-  std::vector<symbol_search> symbols = search_symbols (regexp,
-						       FUNCTIONS_DOMAIN,
-						       NULL,
-						       nfiles, files,
-						       false);
+  global_symbol_searcher spec (FUNCTIONS_DOMAIN, regexp);
+  if (file_name != nullptr)
+    spec.filenames.push_back (file_name);
+  std::vector<symbol_search> symbols = spec.search ();
 
   scoped_rbreak_breakpoints finalize;
   for (const symbol_search &p : symbols)
@@ -5126,18 +5182,18 @@ rbreak_command (const char *regexp, int from_tty)
 	  const char *fullname = symtab_to_fullname (symtab);
 
 	  string = string_printf ("%s:'%s'", fullname,
-				  SYMBOL_LINKAGE_NAME (p.symbol));
+				  p.symbol->linkage_name ());
 	  break_command (&string[0], from_tty);
 	  print_symbol_info (FUNCTIONS_DOMAIN, p.symbol, p.block, NULL);
 	}
       else
 	{
 	  string = string_printf ("'%s'",
-				  MSYMBOL_LINKAGE_NAME (p.msymbol.minsym));
+				  p.msymbol.minsym->linkage_name ());
 
 	  break_command (&string[0], from_tty);
 	  printf_filtered ("<function, no debug info> %s;\n",
-			   MSYMBOL_PRINT_NAME (p.msymbol.minsym));
+			   p.msymbol.minsym->print_name ());
 	}
     }
 }
@@ -5207,7 +5263,7 @@ completion_list_add_symbol (completion_tracker &tracker,
 			    const char *text, const char *word)
 {
   completion_list_add_name (tracker, SYMBOL_LANGUAGE (sym),
-			    SYMBOL_NATURAL_NAME (sym),
+			    sym->natural_name (),
 			    lookup_name, text, word);
 }
 
@@ -5220,7 +5276,7 @@ completion_list_add_msymbol (completion_tracker &tracker,
 			     const char *text, const char *word)
 {
   completion_list_add_name (tracker, MSYMBOL_LANGUAGE (sym),
-			    MSYMBOL_NATURAL_NAME (sym),
+			    sym->natural_name (),
 			    lookup_name, text, word);
 }
 
@@ -5240,7 +5296,7 @@ completion_list_objc_symbol (completion_tracker &tracker,
   const char *method, *category, *selector;
   char *tmp2 = NULL;
 
-  method = MSYMBOL_NATURAL_NAME (msymbol);
+  method = msymbol->natural_name ();
 
   /* Is it a method?  */
   if ((method[0] != '-') && (method[0] != '+'))
@@ -5399,7 +5455,7 @@ find_gnu_ifunc (const symbol *sym)
   if (SYMBOL_CLASS (sym) != LOC_BLOCK)
     return {};
 
-  lookup_name_info lookup_name (SYMBOL_SEARCH_NAME (sym),
+  lookup_name_info lookup_name (sym->search_name (),
 				symbol_name_match_type::SEARCH_NAME);
   struct objfile *objfile = symbol_objfile (sym);
 
@@ -6208,23 +6264,13 @@ initialize_ordinary_address_classes (void)
 
 
 
-/* Helper function to initialize the fields of an objfile-owned symbol.
-   It assumed that *SYM is already all zeroes.  */
-
-static void
-initialize_objfile_symbol_1 (struct symbol *sym)
-{
-  SYMBOL_OBJFILE_OWNED (sym) = 1;
-  SYMBOL_SECTION (sym) = -1;
-}
-
 /* Initialize the symbol SYM, and mark it as being owned by an objfile.  */
 
 void
 initialize_objfile_symbol (struct symbol *sym)
 {
-  memset (sym, 0, sizeof (*sym));
-  initialize_objfile_symbol_1 (sym);
+  SYMBOL_OBJFILE_OWNED (sym) = 1;
+  SYMBOL_SECTION (sym) = -1;
 }
 
 /* Allocate and initialize a new 'struct symbol' on OBJFILE's
@@ -6233,10 +6279,9 @@ initialize_objfile_symbol (struct symbol *sym)
 struct symbol *
 allocate_symbol (struct objfile *objfile)
 {
-  struct symbol *result;
+  struct symbol *result = new (&objfile->objfile_obstack) symbol ();
 
-  result = OBSTACK_ZALLOC (&objfile->objfile_obstack, struct symbol);
-  initialize_objfile_symbol_1 (result);
+  initialize_objfile_symbol (result);
 
   return result;
 }
@@ -6249,8 +6294,8 @@ allocate_template_symbol (struct objfile *objfile)
 {
   struct template_symbol *result;
 
-  result = OBSTACK_ZALLOC (&objfile->objfile_obstack, struct template_symbol);
-  initialize_objfile_symbol_1 (result);
+  result = new (&objfile->objfile_obstack) template_symbol ();
+  initialize_objfile_symbol (result);
 
   return result;
 }
@@ -6300,7 +6345,7 @@ get_symbol_address (const struct symbol *sym)
   gdb_assert (sym->maybe_copied);
   gdb_assert (SYMBOL_CLASS (sym) == LOC_STATIC);
 
-  const char *linkage_name = SYMBOL_LINKAGE_NAME (sym);
+  const char *linkage_name = sym->linkage_name ();
 
   for (objfile *objfile : current_program_space->objfiles ())
     {
@@ -6309,7 +6354,7 @@ get_symbol_address (const struct symbol *sym)
       if (minsym.minsym != nullptr)
 	return BMSYMBOL_VALUE_ADDRESS (minsym);
     }
-  return sym->ginfo.value.address;
+  return sym->value.address;
 }
 
 /* See symtab.h.  */
@@ -6320,7 +6365,7 @@ get_msymbol_address (struct objfile *objf, const struct minimal_symbol *minsym)
   gdb_assert (minsym->maybe_copied);
   gdb_assert ((objf->flags & OBJF_MAINLINE) == 0);
 
-  const char *linkage_name = MSYMBOL_LINKAGE_NAME (minsym);
+  const char *linkage_name = minsym->linkage_name ();
 
   for (objfile *objfile : current_program_space->objfiles ())
     {
@@ -6360,17 +6405,17 @@ search_module_symbols (const char *module_regexp, const char *regexp,
   std::vector<module_symbol_search> results;
 
   /* Search for all modules matching MODULE_REGEXP.  */
-  std::vector<symbol_search> modules = search_symbols (module_regexp,
-						       MODULES_DOMAIN,
-						       NULL, 0, NULL,
-						       true);
+  global_symbol_searcher spec1 (MODULES_DOMAIN, module_regexp);
+  spec1.set_exclude_minsyms (true);
+  std::vector<symbol_search> modules = spec1.search ();
 
   /* Now search for all symbols of the required KIND matching the required
      regular expressions.  We figure out which ones are in which modules
      below.  */
-  std::vector<symbol_search> symbols = search_symbols (regexp, kind,
-						       type_regexp, 0,
-						       NULL, true);
+  global_symbol_searcher spec2 (kind, regexp);
+  spec2.set_symbol_type_regexp (type_regexp);
+  spec2.set_exclude_minsyms (true);
+  std::vector<symbol_search> symbols = spec2.search ();
 
   /* Now iterate over all MODULES, checking to see which items from
      SYMBOLS are in each module.  */
@@ -6381,7 +6426,7 @@ search_module_symbols (const char *module_regexp, const char *regexp,
       /* This is a module.  */
       gdb_assert (p.symbol != nullptr);
 
-      std::string prefix = SYMBOL_PRINT_NAME (p.symbol);
+      std::string prefix = p.symbol->print_name ();
       prefix += "::";
 
       for (const symbol_search &q : symbols)
@@ -6389,7 +6434,7 @@ search_module_symbols (const char *module_regexp, const char *regexp,
 	  if (q.symbol == nullptr)
 	    continue;
 
-	  if (strncmp (SYMBOL_PRINT_NAME (q.symbol), prefix.c_str (),
+	  if (strncmp (q.symbol->print_name (), prefix.c_str (),
 		       prefix.size ()) != 0)
 	    continue;
 
@@ -6532,8 +6577,7 @@ info_module_subcommand (bool quiet, const char *module_regexp,
       if (last_module_symbol != p.symbol)
 	{
 	  printf_filtered ("\n");
-	  printf_filtered (_("Module \"%s\":\n"),
-			   SYMBOL_PRINT_NAME (p.symbol));
+	  printf_filtered (_("Module \"%s\":\n"), p.symbol->print_name ());
 	  last_module_symbol = p.symbol;
 	  last_filename = "";
 	}

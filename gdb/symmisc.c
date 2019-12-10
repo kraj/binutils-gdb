@@ -36,7 +36,7 @@
 #include "typeprint.h"
 #include "gdbcmd.h"
 #include "source.h"
-#include "readline/readline.h"
+#include "readline/tilde.h"
 
 #include "psymtab.h"
 
@@ -243,7 +243,7 @@ dump_msymbols (struct objfile *objfile, struct ui_file *outfile)
 			+ ANOFFSET (objfile->section_offsets,
 				    msymbol->section));
       fputs_filtered (paddress (gdbarch, addr), outfile);
-      fprintf_filtered (outfile, " %s", MSYMBOL_LINKAGE_NAME (msymbol));
+      fprintf_filtered (outfile, " %s", msymbol->linkage_name ());
       if (section)
 	{
 	  if (section->the_bfd_section != NULL)
@@ -253,9 +253,9 @@ dump_msymbols (struct objfile *objfile, struct ui_file *outfile)
 	    fprintf_filtered (outfile, " spurious section %ld",
 			      (long) (section - objfile->sections));
 	}
-      if (MSYMBOL_DEMANGLED_NAME (msymbol) != NULL)
+      if (msymbol->demangled_name () != NULL)
 	{
-	  fprintf_filtered (outfile, "  %s", MSYMBOL_DEMANGLED_NAME (msymbol));
+	  fprintf_filtered (outfile, "  %s", msymbol->demangled_name ());
 	}
       if (msymbol->filename)
 	fprintf_filtered (outfile, "  %s", msymbol->filename);
@@ -339,11 +339,11 @@ dump_symtab_1 (struct symtab *symtab, struct ui_file *outfile)
 	  if (BLOCK_FUNCTION (b))
 	    {
 	      fprintf_filtered (outfile, ", function %s",
-				SYMBOL_LINKAGE_NAME (BLOCK_FUNCTION (b)));
-	      if (SYMBOL_DEMANGLED_NAME (BLOCK_FUNCTION (b)) != NULL)
+				BLOCK_FUNCTION (b)->linkage_name ());
+	      if (BLOCK_FUNCTION (b)->demangled_name () != NULL)
 		{
 		  fprintf_filtered (outfile, ", %s",
-				SYMBOL_DEMANGLED_NAME (BLOCK_FUNCTION (b)));
+				BLOCK_FUNCTION (b)->demangled_name ());
 		}
 	    }
 	  fprintf_filtered (outfile, "\n");
@@ -523,7 +523,7 @@ print_symbol (struct gdbarch *gdbarch, struct symbol *symbol,
   print_spaces (depth, outfile);
   if (SYMBOL_DOMAIN (symbol) == LABEL_DOMAIN)
     {
-      fprintf_filtered (outfile, "label %s at ", SYMBOL_PRINT_NAME (symbol));
+      fprintf_filtered (outfile, "label %s at ", symbol->print_name ());
       fputs_filtered (paddress (gdbarch, SYMBOL_VALUE_ADDRESS (symbol)),
 		      outfile);
       if (section)
@@ -548,7 +548,7 @@ print_symbol (struct gdbarch *gdbarch, struct symbol *symbol,
 			  ? "enum"
 		     : (TYPE_CODE (SYMBOL_TYPE (symbol)) == TYPE_CODE_STRUCT
 			? "struct" : "union")),
-			    SYMBOL_LINKAGE_NAME (symbol));
+			    symbol->linkage_name ());
 	  LA_PRINT_TYPE (SYMBOL_TYPE (symbol), "", outfile, 1, depth,
 			 &type_print_raw_options);
 	}
@@ -561,7 +561,7 @@ print_symbol (struct gdbarch *gdbarch, struct symbol *symbol,
       if (SYMBOL_TYPE (symbol))
 	{
 	  /* Print details of types, except for enums where it's clutter.  */
-	  LA_PRINT_TYPE (SYMBOL_TYPE (symbol), SYMBOL_PRINT_NAME (symbol),
+	  LA_PRINT_TYPE (SYMBOL_TYPE (symbol), symbol->print_name (),
 			 outfile,
 			 TYPE_CODE (SYMBOL_TYPE (symbol)) != TYPE_CODE_ENUM,
 			 depth,
@@ -569,7 +569,7 @@ print_symbol (struct gdbarch *gdbarch, struct symbol *symbol,
 	  fprintf_filtered (outfile, "; ");
 	}
       else
-	fprintf_filtered (outfile, "%s ", SYMBOL_PRINT_NAME (symbol));
+	fprintf_filtered (outfile, "%s ", symbol->print_name ());
 
       switch (SYMBOL_CLASS (symbol))
 	{

@@ -1983,7 +1983,8 @@ windows_nat_target::attach (const char *args, int from_tty)
 #endif
 
   if (!ok)
-    error (_("Can't attach to process."));
+    error (_("Can't attach to process %u (error %u)"),
+	   (unsigned) pid, (unsigned) GetLastError ());
 
   DebugSetProcessKillOnExit (FALSE);
 
@@ -2709,7 +2710,7 @@ windows_nat_target::create_inferior (const char *exec_file,
 	redirect_inferior_handles (allargs, allargs_copy,
 				   &fd_inp, &fd_out, &fd_err);
       if (errno)
-	warning (_("Error in redirection: %s."), strerror (errno));
+	warning (_("Error in redirection: %s."), safe_strerror (errno));
       else
 	errno = e;
       allargs_len = strlen (allargs_copy);

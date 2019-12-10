@@ -412,6 +412,7 @@ enum debug_info_type
 extern enum debug_info_type debug_type;
 extern int use_gnu_debug_info_extensions;
 COMMON bfd_boolean flag_dwarf_sections;
+extern int flag_dwarf_cie_version;
 
 /* Maximum level of macro nesting.  */
 extern int max_macro_nest;
@@ -484,6 +485,7 @@ char * app_push (void);
 #define MAX_LITTLENUMS 6
 
 char * atof_ieee (char *, int, LITTLENUM_TYPE *);
+char * atof_ieee_detail (char *, int, int, LITTLENUM_TYPE *, FLONUM_TYPE *);
 const char * ieee_md_atof (int, char *, int *, bfd_boolean);
 const char * vax_md_atof (int, char *, int *);
 char * input_scrub_include_file (const char *, char *);
@@ -645,6 +647,13 @@ COMMON int flag_sectname_subst;
 #endif
 #if OCTETS_PER_BYTE != (1<<OCTETS_PER_BYTE_POWER)
  #error "Octets per byte conflicts with its power-of-two definition!"
+#endif
+
+#if defined OBJ_ELF || defined OBJ_MAYBE_ELF
+/* On ELF platforms, mark debug sections with SEC_ELF_OCTETS */
+#define SEC_OCTETS (IS_ELF ? SEC_ELF_OCTETS : 0)
+#else
+#define SEC_OCTETS 0
 #endif
 
 #endif /* GAS */

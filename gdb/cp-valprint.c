@@ -638,9 +638,9 @@ cp_print_static_field (struct type *type,
 	{
 	  if (value_address (val) == first_dont_print[i])
 	    {
-	      fputs_filtered ("<same as static member of an already"
-			      " seen type>",
-			      stream);
+	      fputs_styled (_("<same as static member of an already"
+			      " seen type>"),
+			    metadata_style.style (), stream);
 	      return;
 	    }
 	}
@@ -670,9 +670,9 @@ cp_print_static_field (struct type *type,
 	{
 	  if (target_type == first_dont_print[i])
 	    {
-	      fputs_filtered ("<same as static member of an already"
-			      " seen type>",
-			      stream);
+	      fputs_styled (_("<same as static member of an already"
+			      " seen type>"),
+			    metadata_style.style (), stream);
 	      return;
 	    }
 	}
@@ -740,7 +740,7 @@ void
 cp_print_class_member (const gdb_byte *valaddr, struct type *type,
 		       struct ui_file *stream, const char *prefix)
 {
-  enum bfd_endian byte_order = gdbarch_byte_order (get_type_arch (type));
+  enum bfd_endian byte_order = type_byte_order (type);
 
   /* VAL is a byte offset into the structure type SELF_TYPE.
      Find the name of the field for that offset and

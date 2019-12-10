@@ -5,6 +5,9 @@
    */
 #undef CRAY_STACKSEG_END
 
+/* Define to 1 if std::thread works. */
+#undef CXX_STD_THREAD
+
 /* Define to 1 if using `alloca.c'. */
 #undef C_ALLOCA
 
@@ -50,10 +53,6 @@
 /* Define to 1 if you have the declaration of `snprintf', and to 0 if you
    don't. */
 #undef HAVE_DECL_SNPRINTF
-
-/* Define to 1 if you have the declaration of `strerror', and to 0 if you
-   don't. */
-#undef HAVE_DECL_STRERROR
 
 /* Define to 1 if you have the declaration of `strstr', and to 0 if you don't.
    */
@@ -189,6 +188,15 @@
 /* Define if <thread_db.h> has psaddr_t. */
 #undef HAVE_PSADDR_T
 
+/* Have PTHREAD_PRIO_INHERIT. */
+#undef HAVE_PTHREAD_PRIO_INHERIT
+
+/* Define to 1 if you have the `pthread_setname_np' function. */
+#undef HAVE_PTHREAD_SETNAME_NP
+
+/* Define to 1 if you have the `pthread_sigmask' function. */
+#undef HAVE_PTHREAD_SIGMASK
+
 /* Define if the target supports PTRACE_GETFPXREGS for extended register
    access. */
 #undef HAVE_PTRACE_GETFPXREGS
@@ -228,9 +236,6 @@
 
 /* Define to 1 if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H
-
-/* Define to 1 if you have the `strerror_r' function. */
-#undef HAVE_STRERROR_R
 
 /* Define to 1 if you have the <strings.h> header file. */
 #undef HAVE_STRINGS_H
@@ -336,6 +341,10 @@
 
 /* Additional package description */
 #undef PKGVERSION
+
+/* Define to necessary symbol if this constant uses a non-standard name on
+   your system. */
+#undef PTHREAD_CREATE_JOINABLE
 
 /* Define to the type of arg 1 for ptrace. */
 #undef PTRACE_TYPE_ARG1

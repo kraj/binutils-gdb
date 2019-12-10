@@ -712,6 +712,7 @@ struct operand_qualifier_data aarch64_opnd_qualifiers[] =
   {8, 1, 0x3, "d", OQK_OPD_VARIANT},
   {16, 1, 0x4, "q", OQK_OPD_VARIANT},
   {4, 1, 0x0, "4b", OQK_OPD_VARIANT},
+  {4, 1, 0x0, "2h", OQK_OPD_VARIANT},
 
   {1, 4, 0x0, "4b", OQK_OPD_VARIANT},
   {1, 8, 0x0, "8b", OQK_OPD_VARIANT},
@@ -1898,6 +1899,7 @@ operand_general_constraint_met_p (const aarch64_opnd_info *opnds, int idx,
 	  break;
 
 	case AARCH64_OPND_SVE_ADDR_RI_S4x16:
+	case AARCH64_OPND_SVE_ADDR_RI_S4x32:
 	  min_value = -8;
 	  max_value = 7;
 	  goto sve_imm_offset;
@@ -2544,17 +2546,14 @@ operand_general_constraint_met_p (const aarch64_opnd_info *opnds, int idx,
 	case AARCH64_OPND_SVE_SHRIMM_PRED:
 	case AARCH64_OPND_SVE_SHRIMM_UNPRED:
 	case AARCH64_OPND_SVE_SHRIMM_UNPRED_22:
+	  num = (type == AARCH64_OPND_SVE_SHRIMM_UNPRED_22) ? 2 : 1;
+	  size = aarch64_get_qualifier_esize (opnds[idx - num].qualifier);
+	  if (!value_in_range_p (opnd->imm.value, 1, 8 * size))
 	    {
-	      unsigned int index =
-		(type == AARCH64_OPND_SVE_SHRIMM_UNPRED_22) ? 2 : 1;
-	      size = aarch64_get_qualifier_esize (opnds[idx - index].qualifier);
-	      if (!value_in_range_p (opnd->imm.value, 1, 8 * size))
-		{
-		  set_imm_out_of_range_error (mismatch_detail, idx, 1, 8*size);
-		  return 0;
-		}
-	      break;
-	   }
+	      set_imm_out_of_range_error (mismatch_detail, idx, 1, 8*size);
+	      return 0;
+	    }
+	  break;
 
 	default:
 	  break;
@@ -3643,6 +3642,7 @@ aarch64_print_operand (char *buf, size_t size, bfd_vma pc,
     case AARCH64_OPND_ADDR_SIMM13:
     case AARCH64_OPND_ADDR_OFFSET:
     case AARCH64_OPND_SVE_ADDR_RI_S4x16:
+    case AARCH64_OPND_SVE_ADDR_RI_S4x32:
     case AARCH64_OPND_SVE_ADDR_RI_S4xVL:
     case AARCH64_OPND_SVE_ADDR_RI_S4x2xVL:
     case AARCH64_OPND_SVE_ADDR_RI_S4x3xVL:

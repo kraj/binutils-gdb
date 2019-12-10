@@ -23,8 +23,10 @@
 #include <array>
 #include <vector>
 #include <string>
+#include <set>
 #include "gdbsupport/gdb_vecs.h"
 #include "gdbtypes.h"
+#include "gdb_obstack.h"
 #include "gdb_regex.h"
 #include "gdbsupport/enum-flags.h"
 #include "gdbsupport/function-view.h"
@@ -32,6 +34,7 @@
 #include "gdbsupport/gdb_string_view.h"
 #include "gdbsupport/next-iterator.h"
 #include "completer.h"
+#include "gdb-demangle.h"
 
 /* Opaque declarations.  */
 struct ui_file;
@@ -65,7 +68,7 @@ enum class symbol_name_match_type
 
   /* Search name matching.  This is like FULL, but the search name did
      not come from the user; instead it is already a search name
-     retrieved from a SYMBOL_SEARCH_NAME/MSYMBOL_SEARCH_NAME call.
+     retrieved from a search_name () call.
      For Ada, this avoids re-encoding an already-encoded search name
      (which would potentially incorrectly lowercase letters in the
      linkage/search name that should remain uppercase).  For C++, it
@@ -378,6 +381,50 @@ typedef bool (symbol_name_matcher_ftype)
 
 struct general_symbol_info
 {
+  /* Short version as to when to use which name accessor:
+     Use natural_name () to refer to the name of the symbol in the original
+     source code.  Use linkage_name () if you want to know what the linker
+     thinks the symbol's name is.  Use print_name () for output.  Use
+     demangled_name () if you specifically need to know whether natural_name ()
+     and linkage_name () are different.  */
+
+  const char *linkage_name () const
+  { return name; }
+
+  /* Return SYMBOL's "natural" name, i.e. the name that it was called in
+     the original source code.  In languages like C++ where symbols may
+     be mangled for ease of manipulation by the linker, this is the
+     demangled name.  */
+  const char *natural_name () const;
+
+  /* Returns a version of the name of a symbol that is
+     suitable for output.  In C++ this is the "demangled" form of the
+     name if demangle is on and the "mangled" form of the name if
+     demangle is off.  In other languages this is just the symbol name.
+     The result should never be NULL.  Don't use this for internal
+     purposes (e.g. storing in a hashtable): it's only suitable for output.  */
+  const char *print_name () const
+  { return demangle ? natural_name () : linkage_name (); }
+
+  /* Return the demangled name for a symbol based on the language for
+     that symbol.  If no demangled name exists, return NULL.  */
+  const char *demangled_name () const;
+
+  /* Returns the name to be used when sorting and searching symbols.
+     In C++, we search for the demangled form of a name,
+     and so sort symbols accordingly.  In Ada, however, we search by mangled
+     name.  If there is no distinct demangled name, then this
+     returns the same value (same pointer) as linkage_name ().  */
+  const char *search_name () const;
+
+  /* Set just the linkage name of a symbol; do not try to demangle
+     it.  Used for constructs which do not have a mangled name,
+     e.g. struct tags.  Unlike SYMBOL_SET_NAMES, linkage_name must
+     be terminated and either already on the objfile's obstack or
+     permanently allocated.  */
+  void set_linkage_name (const char *linkage_name)
+  { name = linkage_name; }
+
   /* Name of the symbol.  This is a required field.  Storage for the
      name is allocated on the objfile_obstack for the associated
      objfile.  For languages like C++ that make a distinction between
@@ -446,13 +493,6 @@ struct general_symbol_info
   short section;
 };
 
-/* This struct is size-critical (see comment at the top), so this assert
-   makes sure the size doesn't change accidentally.  Be careful when
-   purposely increasing the size.  */
-gdb_static_assert ((sizeof (void *) == 8 && sizeof (general_symbol_info) == 32)
-		   || (sizeof (void *) == 4 &&
-		       sizeof (general_symbol_info) == 20));
-
 extern void symbol_set_demangled_name (struct general_symbol_info *,
 				       const char *,
                                        struct obstack *);
@@ -470,116 +510,58 @@ extern CORE_ADDR symbol_overlayed_address (CORE_ADDR, struct obj_section *);
 
 extern CORE_ADDR get_symbol_address (const struct symbol *sym);
 
-/* Note that all the following SYMBOL_* macros are used with the
-   SYMBOL argument being either a partial symbol or
-   a full symbol.  Both types have a ginfo field.  In particular
-   the SYMBOL_SET_LANGUAGE, SYMBOL_DEMANGLED_NAME, etc.
-   macros cannot be entirely substituted by
-   functions, unless the callers are changed to pass in the ginfo
-   field only, instead of the SYMBOL parameter.  */
+/* Note that these macros only work with symbol, not partial_symbol.  */
 
-#define SYMBOL_VALUE(symbol)		(symbol)->ginfo.value.ivalue
+#define SYMBOL_VALUE(symbol)		(symbol)->value.ivalue
 #define SYMBOL_VALUE_ADDRESS(symbol)			      \
   (((symbol)->maybe_copied) ? get_symbol_address (symbol)     \
-   : ((symbol)->ginfo.value.address))
+   : ((symbol)->value.address))
 #define SET_SYMBOL_VALUE_ADDRESS(symbol, new_value)	\
-  ((symbol)->ginfo.value.address = (new_value))
-#define SYMBOL_VALUE_BYTES(symbol)	(symbol)->ginfo.value.bytes
-#define SYMBOL_VALUE_COMMON_BLOCK(symbol) (symbol)->ginfo.value.common_block
-#define SYMBOL_BLOCK_VALUE(symbol)	(symbol)->ginfo.value.block
-#define SYMBOL_VALUE_CHAIN(symbol)	(symbol)->ginfo.value.chain
-#define SYMBOL_LANGUAGE(symbol)		(symbol)->ginfo.language
-#define SYMBOL_SECTION(symbol)		(symbol)->ginfo.section
+  ((symbol)->value.address = (new_value))
+#define SYMBOL_VALUE_BYTES(symbol)	(symbol)->value.bytes
+#define SYMBOL_VALUE_COMMON_BLOCK(symbol) (symbol)->value.common_block
+#define SYMBOL_BLOCK_VALUE(symbol)	(symbol)->value.block
+#define SYMBOL_VALUE_CHAIN(symbol)	(symbol)->value.chain
+#define SYMBOL_LANGUAGE(symbol)		(symbol)->language
+#define SYMBOL_SECTION(symbol)		(symbol)->section
 #define SYMBOL_OBJ_SECTION(objfile, symbol)			\
-  (((symbol)->ginfo.section >= 0)				\
-   ? (&(((objfile)->sections)[(symbol)->ginfo.section]))	\
+  (((symbol)->section >= 0)				\
+   ? (&(((objfile)->sections)[(symbol)->section]))	\
    : NULL)
 
 /* Initializes the language dependent portion of a symbol
    depending upon the language for the symbol.  */
 #define SYMBOL_SET_LANGUAGE(symbol,language,obstack)	\
-  (symbol_set_language (&(symbol)->ginfo, (language), (obstack)))
+  (symbol_set_language ((symbol), (language), (obstack)))
 extern void symbol_set_language (struct general_symbol_info *symbol,
                                  enum language language,
 				 struct obstack *obstack);
 
-/* Set just the linkage name of a symbol; do not try to demangle
-   it.  Used for constructs which do not have a mangled name,
-   e.g. struct tags.  Unlike SYMBOL_SET_NAMES, linkage_name must
-   be terminated and either already on the objfile's obstack or
-   permanently allocated.  */
-#define SYMBOL_SET_LINKAGE_NAME(symbol,linkage_name) \
-  (symbol)->ginfo.name = (linkage_name)
+/* Try to determine the demangled name for a symbol, based on the
+   language of that symbol.  If the language is set to language_auto,
+   it will attempt to find any demangling algorithm that works and
+   then set the language appropriately.  The returned name is allocated
+   by the demangler and should be xfree'd.  */
+
+extern char *symbol_find_demangled_name (struct general_symbol_info *gsymbol,
+					 const char *mangled);
 
 /* Set the linkage and natural names of a symbol, by demangling
    the linkage name.  If linkage_name may not be nullterminated,
    copy_name must be set to true.  */
 #define SYMBOL_SET_NAMES(symbol,linkage_name,copy_name,objfile)	\
-  symbol_set_names (&(symbol)->ginfo, linkage_name, copy_name, \
+  symbol_set_names ((symbol), linkage_name, copy_name, \
 		    (objfile)->per_bfd)
 extern void symbol_set_names (struct general_symbol_info *symbol,
 			      gdb::string_view linkage_name, bool copy_name,
-			      struct objfile_per_bfd_storage *per_bfd);
-
-/* Now come lots of name accessor macros.  Short version as to when to
-   use which: Use SYMBOL_NATURAL_NAME to refer to the name of the
-   symbol in the original source code.  Use SYMBOL_LINKAGE_NAME if you
-   want to know what the linker thinks the symbol's name is.  Use
-   SYMBOL_PRINT_NAME for output.  Use SYMBOL_DEMANGLED_NAME if you
-   specifically need to know whether SYMBOL_NATURAL_NAME and
-   SYMBOL_LINKAGE_NAME are different.  */
-
-/* Return SYMBOL's "natural" name, i.e. the name that it was called in
-   the original source code.  In languages like C++ where symbols may
-   be mangled for ease of manipulation by the linker, this is the
-   demangled name.  */
-
-#define SYMBOL_NATURAL_NAME(symbol) \
-  (symbol_natural_name (&(symbol)->ginfo))
-extern const char *symbol_natural_name
-  (const struct general_symbol_info *symbol);
-
-/* Return SYMBOL's name from the point of view of the linker.  In
-   languages like C++ where symbols may be mangled for ease of
-   manipulation by the linker, this is the mangled name; otherwise,
-   it's the same as SYMBOL_NATURAL_NAME.  */
-
-#define SYMBOL_LINKAGE_NAME(symbol)	(symbol)->ginfo.name
-
-/* Return the demangled name for a symbol based on the language for
-   that symbol.  If no demangled name exists, return NULL.  */
-#define SYMBOL_DEMANGLED_NAME(symbol) \
-  (symbol_demangled_name (&(symbol)->ginfo))
-extern const char *symbol_demangled_name
-  (const struct general_symbol_info *symbol);
-
-/* Macro that returns a version of the name of a symbol that is
-   suitable for output.  In C++ this is the "demangled" form of the
-   name if demangle is on and the "mangled" form of the name if
-   demangle is off.  In other languages this is just the symbol name.
-   The result should never be NULL.  Don't use this for internal
-   purposes (e.g. storing in a hashtable): it's only suitable for output.
-
-   N.B. symbol may be anything with a ginfo member,
-   e.g., struct symbol or struct minimal_symbol.  */
-
-#define SYMBOL_PRINT_NAME(symbol)					\
-  (demangle ? SYMBOL_NATURAL_NAME (symbol) : SYMBOL_LINKAGE_NAME (symbol))
-extern bool demangle;
-
-/* Macro that returns the name to be used when sorting and searching symbols.
-   In C++, we search for the demangled form of a name,
-   and so sort symbols accordingly.  In Ada, however, we search by mangled
-   name.  If there is no distinct demangled name, then SYMBOL_SEARCH_NAME
-   returns the same value (same pointer) as SYMBOL_LINKAGE_NAME.  */
-#define SYMBOL_SEARCH_NAME(symbol)					 \
-   (symbol_search_name (&(symbol)->ginfo))
-extern const char *symbol_search_name (const struct general_symbol_info *ginfo);
+			      struct objfile_per_bfd_storage *per_bfd,
+			      gdb::optional<hashval_t> hash
+			        = gdb::optional<hashval_t> ());
 
 /* Return true if NAME matches the "search" name of SYMBOL, according
    to the symbol's language.  */
 #define SYMBOL_MATCHES_SEARCH_NAME(symbol, name)                       \
-  symbol_matches_search_name (&(symbol)->ginfo, (name))
+  symbol_matches_search_name ((symbol), (name))
 
 /* Helper for SYMBOL_MATCHES_SEARCH_NAME that works with both symbols
    and psymbols.  */
@@ -698,6 +680,10 @@ struct minimal_symbol : public general_symbol_info
 
   unsigned maybe_copied : 1;
 
+  /* Non-zero if this symbol ever had its demangled name set (even if
+     it was set to NULL).  */
+  unsigned int name_set : 1;
+
   /* Minimal symbols with the same hash key are kept on a linked
      list.  This is the link.  */
 
@@ -762,16 +748,6 @@ extern CORE_ADDR get_msymbol_address (struct objfile *objf,
    ? (&(((objfile)->sections)[(symbol)->section]))	\
    : NULL)
 
-#define MSYMBOL_NATURAL_NAME(symbol) \
-  (symbol_natural_name (symbol))
-#define MSYMBOL_LINKAGE_NAME(symbol)	(symbol)->name
-#define MSYMBOL_PRINT_NAME(symbol)					\
-  (demangle ? MSYMBOL_NATURAL_NAME (symbol) : MSYMBOL_LINKAGE_NAME (symbol))
-#define MSYMBOL_DEMANGLED_NAME(symbol) \
-  (symbol_demangled_name (symbol))
-#define MSYMBOL_SEARCH_NAME(symbol)					 \
-   (symbol_search_name (symbol))
-
 #include "minsyms.h"
 
 
@@ -823,7 +799,7 @@ gdb_static_assert (NR_DOMAINS <= (1 << SYMBOL_DOMAIN_BITS));
 
 extern const char *domain_name (domain_enum);
 
-/* Searching domains, used for `search_symbols'.  Element numbers are
+/* Searching domains, used when searching for symbols.  Element numbers are
    hardcoded in GDB, check all enum uses before changing it.  */
 
 enum search_domain
@@ -1105,16 +1081,34 @@ enum symbol_subclass_kind
 
 /* This structure is space critical.  See space comments at the top.  */
 
-struct symbol
+struct symbol : public general_symbol_info, public allocate_on_obstack
 {
-
-  /* The general symbol info required for all types of symbols.  */
-
-  struct general_symbol_info ginfo;
+  symbol ()
+    /* Class-initialization of bitfields is only allowed in C++20.  */
+    : domain (UNDEF_DOMAIN),
+      aclass_index (0),
+      is_objfile_owned (0),
+      is_argument (0),
+      is_inlined (0),
+      maybe_copied (0),
+      subclass (SYMBOL_NONE)
+    {
+      /* We can't use an initializer list for members of a base class, and
+         general_symbol_info needs to stay a POD type.  */
+      name = nullptr;
+      value.ivalue = 0;
+      language_specific.obstack = nullptr;
+      language = language_unknown;
+      ada_mangled = 0;
+      section = 0;
+      /* GCC 4.8.5 (on CentOS 7) does not correctly compile class-
+         initialization of unions, so we initialize it manually here.  */
+      owner.symtab = nullptr;
+    }
 
   /* Data type of value */
 
-  struct type *type;
+  struct type *type = nullptr;
 
   /* The owner of this symbol.
      Which one to use is defined by symbol.is_objfile_owned.  */
@@ -1141,7 +1135,7 @@ struct symbol
   unsigned int aclass_index : SYMBOL_ACLASS_BITS;
 
   /* If non-zero then symbol is objfile-owned, use owner.symtab.
-     Otherwise symbol is arch-owned, use owner.arch.  */
+       Otherwise symbol is arch-owned, use owner.arch.  */
 
   unsigned int is_objfile_owned : 1;
 
@@ -1175,7 +1169,7 @@ struct symbol
      to debug files longer than 64K lines?  What about machine
      generated programs?  */
 
-  unsigned short line;
+  unsigned short line = 0;
 
   /* An arbitrary data pointer, allowing symbol readers to record
      additional information on a per-symbol basis.  Note that this data
@@ -1189,16 +1183,10 @@ struct symbol
      to add a magic symbol to the block containing this information,
      or to have a generic debug info annotation slot for symbols.  */
 
-  void *aux_value;
+  void *aux_value = nullptr;
 
-  struct symbol *hash_next;
+  struct symbol *hash_next = nullptr;
 };
-
-/* This struct is size-critical (see comment at the top), so this assert
-   makes sure the size doesn't change accidentally.  Be careful when
-   purposely increasing the size.  */
-gdb_static_assert ((sizeof (void *) == 8 && sizeof (symbol) == 72)
-		   || (sizeof (void *) == 4 && sizeof (symbol) == 40));
 
 /* Several lookup functions return both a symbol and the block in which the
    symbol is found.  This structure is used in these cases.  */
@@ -1272,11 +1260,11 @@ extern void symbol_set_symtab (struct symbol *symbol, struct symtab *symtab);
 struct template_symbol : public symbol
 {
   /* The number of template arguments.  */
-  int n_template_arguments;
+  int n_template_arguments = 0;
 
   /* The template arguments.  This is an array with
      N_TEMPLATE_ARGUMENTS elements.  */
-  struct symbol **template_arguments;
+  struct symbol **template_arguments = nullptr;
 };
 
 /* A symbol that represents a Rust virtual table object.  */
@@ -1285,7 +1273,7 @@ struct rust_vtable_symbol : public symbol
 {
   /* The concrete type for which this vtable was created; that is, in
      "impl Trait for Type", this is "Type".  */
-  struct type *concrete_type;
+  struct type *concrete_type = nullptr;
 };
 
 
@@ -1631,8 +1619,7 @@ extern struct block_symbol lookup_symbol (const char *,
    DOMAIN, visible from lexical block BLOCK if non-NULL or from
    global/static blocks if BLOCK is NULL.  The passed-in search name
    should not come from the user; instead it should already be a
-   search name as retrieved from a
-   SYMBOL_SEARCH_NAME/MSYMBOL_SEARCH_NAME call.  See definition of
+   search name as retrieved from a search_name () call.  See definition of
    symbol_name_match_type::SEARCH_NAME.  Returns the struct symbol
    pointer, or NULL if no symbol is found.  The symbol's section is
    fixed up if necessary.  */
@@ -2026,11 +2013,9 @@ extern struct symbol *fixup_symbol_section (struct symbol *,
 extern symbol *find_function_alias_target (bound_minimal_symbol msymbol);
 
 /* Symbol searching */
-/* Note: struct symbol_search, search_symbols, et.al. are declared here,
-   instead of making them local to symtab.c, for gdbtk's sake.  */
 
-/* When using search_symbols, a vector of the following structs is
-   returned.  */
+/* When using the symbol_searcher struct to search for symbols, a vector of
+   the following structs is returned.  */
 struct symbol_search
 {
   symbol_search (int block_, struct symbol *symbol_)
@@ -2079,12 +2064,109 @@ private:
 				  const symbol_search &sym_b);
 };
 
-extern std::vector<symbol_search> search_symbols (const char *,
-						  enum search_domain,
-						  const char *,
-						  int,
-						  const char **,
-						  bool);
+/* In order to search for global symbols of a particular kind matching
+   particular regular expressions, create an instance of this structure and
+   call the SEARCH member function.  */
+class global_symbol_searcher
+{
+public:
+
+  /* Constructor.  */
+  global_symbol_searcher (enum search_domain kind,
+			  const char *symbol_name_regexp)
+    : m_kind (kind),
+      m_symbol_name_regexp (symbol_name_regexp)
+  {
+    /* The symbol searching is designed to only find one kind of thing.  */
+    gdb_assert (m_kind != ALL_DOMAIN);
+  }
+
+  /* Set the optional regexp that matches against the symbol type.  */
+  void set_symbol_type_regexp (const char *regexp)
+  {
+    m_symbol_type_regexp = regexp;
+  }
+
+  /* Set the flag to exclude minsyms from the search results.  */
+  void set_exclude_minsyms (bool exclude_minsyms)
+  {
+    m_exclude_minsyms = exclude_minsyms;
+  }
+
+  /* Set the maximum number of search results to be returned.  */
+  void set_max_search_results (size_t max_search_results)
+  {
+    m_max_search_results = max_search_results;
+  }
+
+  /* Search the symbols from all objfiles in the current program space
+     looking for matches as defined by the current state of this object.
+
+     Within each file the results are sorted locally; each symtab's global
+     and static blocks are separately alphabetized.  Duplicate entries are
+     removed.  */
+  std::vector<symbol_search> search () const;
+
+  /* The set of source files to search in for matching symbols.  This is
+     currently public so that it can be populated after this object has
+     been constructed.  */
+  std::vector<const char *> filenames;
+
+private:
+  /* The kind of symbols are we searching for.
+     VARIABLES_DOMAIN - Search all symbols, excluding functions, type
+                        names, and constants (enums).
+     FUNCTIONS_DOMAIN - Search all functions..
+     TYPES_DOMAIN     - Search all type names.
+     MODULES_DOMAIN   - Search all Fortran modules.
+     ALL_DOMAIN       - Not valid for this function.  */
+  enum search_domain m_kind;
+
+  /* Regular expression to match against the symbol name.  */
+  const char *m_symbol_name_regexp = nullptr;
+
+  /* Regular expression to match against the symbol type.  */
+  const char *m_symbol_type_regexp = nullptr;
+
+  /* When this flag is false then minsyms that match M_SYMBOL_REGEXP will
+     be included in the results, otherwise they are excluded.  */
+  bool m_exclude_minsyms = false;
+
+  /* Maximum number of search results.  We currently impose a hard limit
+     of SIZE_MAX, there is no "unlimited".  */
+  size_t m_max_search_results = SIZE_MAX;
+
+  /* Expand symtabs in OBJFILE that match PREG, are of type M_KIND.  Return
+     true if any msymbols were seen that we should later consider adding to
+     the results list.  */
+  bool expand_symtabs (objfile *objfile,
+		       const gdb::optional<compiled_regex> &preg) const;
+
+  /* Add symbols from symtabs in OBJFILE that match PREG, and TREG, and are
+     of type M_KIND, to the results set RESULTS_SET.  Return false if we
+     stop adding results early due to having already found too many results
+     (based on M_MAX_SEARCH_RESULTS limit), otherwise return true.
+     Returning true does not indicate that any results were added, just
+     that we didn't _not_ add a result due to reaching MAX_SEARCH_RESULTS.  */
+  bool add_matching_symbols (objfile *objfile,
+			     const gdb::optional<compiled_regex> &preg,
+			     const gdb::optional<compiled_regex> &treg,
+			     std::set<symbol_search> *result_set) const;
+
+  /* Add msymbols from OBJFILE that match PREG and M_KIND, to the results
+     vector RESULTS.  Return false if we stop adding results early due to
+     having already found too many results (based on max search results
+     limit M_MAX_SEARCH_RESULTS), otherwise return true.  Returning true
+     does not indicate that any results were added, just that we didn't
+     _not_ add a result due to reaching MAX_SEARCH_RESULTS.  */
+  bool add_matching_msymbols (objfile *objfile,
+			      const gdb::optional<compiled_regex> &preg,
+			      std::vector<symbol_search> *results) const;
+
+  /* Return true if MSYMBOL is of type KIND.  */
+  static bool is_suitable_msymbol (const enum search_domain kind,
+				   const minimal_symbol *msymbol);
+};
 
 /* When searching for Fortran symbols within modules (functions/variables)
    we return a vector of this type.  The first item in the pair is the
@@ -2100,6 +2182,14 @@ typedef std::pair<symbol_search, symbol_search> module_symbol_search;
 extern std::vector<module_symbol_search> search_module_symbols
 	(const char *module_regexp, const char *regexp,
 	 const char *type_regexp, search_domain kind);
+
+/* Convert a global or static symbol SYM (based on BLOCK, which should be
+   either GLOBAL_BLOCK or STATIC_BLOCK) into a string for use in 'info'
+   type commands (e.g. 'info variables', 'info functions', etc).  KIND is
+   the type of symbol that was searched for which gave us SYM.  */
+
+extern std::string symbol_to_info_string (struct symbol *sym, int block,
+					  enum search_domain kind);
 
 extern bool treg_matches_sym_type_name (const compiled_regex &treg,
 					const struct symbol *sym);

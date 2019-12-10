@@ -829,7 +829,7 @@ rust_print_typedef (struct type *type,
 		    struct ui_file *stream)
 {
   type = check_typedef (type);
-  fprintf_filtered (stream, "type %s = ", SYMBOL_PRINT_NAME (new_symbol));
+  fprintf_filtered (stream, "type %s = ", new_symbol->print_name ());
   type_print (type, "", stream, 0);
   fprintf_filtered (stream, ";");
 }
@@ -2165,7 +2165,6 @@ extern const struct language_defn rust_language_defn =
   rust_language_arch_info,
   default_print_array_index,
   default_pass_by_reference,
-  c_get_string,
   rust_watch_location_expression,
   NULL,				/* la_get_symbol_name_matcher */
   iterate_over_symbols,

@@ -1522,7 +1522,7 @@ read_xcoff_symtab (struct objfile *objfile, struct partial_symtab *pst)
 }
 
 #define	SYMBOL_DUP(SYMBOL1, SYMBOL2)	\
-  (SYMBOL2) = XOBNEW (&objfile->objfile_obstack, struct symbol); \
+  (SYMBOL2) = new (&objfile->objfile_obstack) symbol (); \
   *(SYMBOL2) = *(SYMBOL1);
 
 
@@ -1574,7 +1574,7 @@ process_xcoff_symbol (struct coff_symbol *cs, struct objfile *objfile)
          will be patched with the type from its stab entry later on in
          patch_block_stabs (), unless the file was compiled without -g.  */
 
-      SYMBOL_SET_LINKAGE_NAME (sym, SYMNAME_ALLOC (name, symname_alloced));
+      sym->set_linkage_name (SYMNAME_ALLOC (name, symname_alloced));
       SYMBOL_TYPE (sym) = objfile_type (objfile)->nodebug_text_symbol;
 
       SYMBOL_ACLASS_INDEX (sym) = LOC_BLOCK;

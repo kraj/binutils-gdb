@@ -1,3 +1,80 @@
+2019-12-04  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* doc/gdb.texinfo (GDB/MI Symbol Query): Add documentation of
+	-max-results to some -symbol-info-* commands.
+
+2019-12-04  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* doc/gdb.texinfo (GDB/MI Symbol Query): Document new MI command
+	-symbol-info-module-functions and -symbol-info-module-variables.
+
+2019-12-01  Tom Tromey  <tom@tromey.com>
+
+	* gdb.texinfo (TUI Configuration): Mention TUI border styles.
+	(Output Styling): Document new settings.
+
+2019-12-01  Tom Tromey  <tom@tromey.com>
+
+	* gdb.texinfo (TUI Configuration): Document new setting.
+
+2019-11-30  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* gdb.texinfo (Define): Indicate that user-defined prefix can
+	be used in 'define' command.  Document 'define-prefix' command.
+
+2019-11-27  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* doc/gdb.texinfo (GDB/MI Symbol Query): Document new MI command
+	-symbol-info-modules.
+
+2019-11-27  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* doc/gdb.texinfo (GDB/MI Symbol Query): Document new MI command
+	-symbol-info-functions, -symbol-info-types, and
+	-symbol-info-variables.
+
+2019-11-26  Tom Tromey  <tom@tromey.com>
+
+	* gdb.texinfo (Maintenance Commands): Document new maint
+	commands.
+
+2019-11-25  Luis Machado  <luis.machado@linaro.org>
+
+	* gdb.texinfo (Debugging Output): Document set debug
+	remote-packet-max-chars.
+
+2019-11-14  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.texinfo: Fix typos.
+	* python.texi: Same.
+	* stabs.texinfo: Same.
+
+2019-11-12  Tom Tromey  <tom@tromey.com>
+
+	* gdb.texinfo (Maintenance Commands): Document new command.
+
+2019-11-11  Tom Tromey  <tom@tromey.com>
+
+	* gdb.texinfo (TUI Keys): Document readline function names.
+
+2019-11-11  Tom Tromey  <tom@tromey.com>
+
+	* gdb.texinfo (Editing): Document operate-and-get-next.
+
+2019-11-11  Tom Tromey  <tromey@adacore.com>
+
+	* gdb.texinfo (Host I/O Packets): Fix typo in "vFile:pwrite".
+
+2019-11-10  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* python.texi (Symbols In Python): Add documentation for
+	gdb.lookup_static_symbols.
+
+2019-11-10  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* python.texi (Symbols In Python): Extend documentation for
+	gdb.lookup_static_symbol.
+
 2019-10-31  Andrew Burgess  <andrew.burgess@embecosm.com>
 
 	* gdb.texinfo (Symbols): Document new 'info module variables' and

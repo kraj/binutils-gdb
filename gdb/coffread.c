@@ -640,7 +640,7 @@ coff_symfile_read (struct objfile *objfile, symfile_add_flags symfile_flags)
     {
       for (minimal_symbol *msym : objfile->msymbols ())
 	{
-	  const char *name = MSYMBOL_LINKAGE_NAME (msym);
+	  const char *name = msym->linkage_name ();
 
 	  /* If the minimal symbols whose name are prefixed by "__imp_"
 	     or "_imp_", get rid of the prefix, and search the minimal
@@ -1502,15 +1502,15 @@ patch_opaque_types (struct symtab *s)
 	  && TYPE_CODE (SYMBOL_TYPE (real_sym)) == TYPE_CODE_PTR
 	  && TYPE_LENGTH (TYPE_TARGET_TYPE (SYMBOL_TYPE (real_sym))) != 0)
 	{
-	  const char *name = SYMBOL_LINKAGE_NAME (real_sym);
+	  const char *name = real_sym->linkage_name ();
 	  int hash = hashname (name);
 	  struct symbol *sym, *prev;
 
 	  prev = 0;
 	  for (sym = opaque_type_chain[hash]; sym;)
 	    {
-	      if (name[0] == SYMBOL_LINKAGE_NAME (sym)[0]
-		  && strcmp (name + 1, SYMBOL_LINKAGE_NAME (sym) + 1) == 0)
+	      if (name[0] == sym->linkage_name ()[0]
+		  && strcmp (name + 1, sym->linkage_name () + 1) == 0)
 		{
 		  if (prev)
 		    {
@@ -1693,7 +1693,7 @@ process_coff_symbol (struct coff_symbol *cs,
 		}
 	      else
 		TYPE_NAME (SYMBOL_TYPE (sym)) =
-		  xstrdup (SYMBOL_LINKAGE_NAME (sym));
+		  xstrdup (sym->linkage_name ());
 	    }
 
 	  /* Keep track of any type which points to empty structured
@@ -1707,7 +1707,7 @@ process_coff_symbol (struct coff_symbol *cs,
 	      && TYPE_CODE (TYPE_TARGET_TYPE (SYMBOL_TYPE (sym)))
 	         != TYPE_CODE_UNDEF)
 	    {
-	      int i = hashname (SYMBOL_LINKAGE_NAME (sym));
+	      int i = hashname (sym->linkage_name ());
 
 	      SYMBOL_VALUE_CHAIN (sym) = opaque_type_chain[i];
 	      opaque_type_chain[i] = sym;
@@ -1725,11 +1725,10 @@ process_coff_symbol (struct coff_symbol *cs,
 	     names for anonymous enums, structures, and unions, like
 	     "~0fake" or ".0fake".  Thanks, but no thanks...  */
 	  if (TYPE_NAME (SYMBOL_TYPE (sym)) == 0)
-	    if (SYMBOL_LINKAGE_NAME (sym) != NULL
-		&& *SYMBOL_LINKAGE_NAME (sym) != '~'
-		&& *SYMBOL_LINKAGE_NAME (sym) != '.')
-	      TYPE_NAME (SYMBOL_TYPE (sym)) =
-		xstrdup (SYMBOL_LINKAGE_NAME (sym));
+	    if (sym->linkage_name () != NULL
+		&& *sym->linkage_name () != '~'
+		&& *sym->linkage_name () != '.')
+	      TYPE_NAME (SYMBOL_TYPE (sym)) = xstrdup (sym->linkage_name ());
 
 	  add_symbol_to_list (sym, get_file_symbols ());
 	  break;
@@ -2107,7 +2106,7 @@ coff_read_enum_type (int index, int length, int lastsym,
 	  sym = allocate_symbol (objfile);
 
 	  name = obstack_strdup (&objfile->objfile_obstack, name);
-	  SYMBOL_SET_LINKAGE_NAME (sym, name);
+	  sym->set_linkage_name (name);
 	  SYMBOL_ACLASS_INDEX (sym) = LOC_CONST;
 	  SYMBOL_DOMAIN (sym) = VAR_DOMAIN;
 	  SYMBOL_VALUE (sym) = ms->c_value;
@@ -2154,7 +2153,7 @@ coff_read_enum_type (int index, int length, int lastsym,
 	  struct symbol *xsym = syms->symbol[j];
 
 	  SYMBOL_TYPE (xsym) = type;
-	  TYPE_FIELD_NAME (type, n) = SYMBOL_LINKAGE_NAME (xsym);
+	  TYPE_FIELD_NAME (type, n) = xsym->linkage_name ();
 	  SET_FIELD_ENUMVAL (TYPE_FIELD (type, n), SYMBOL_VALUE (xsym));
 	  if (SYMBOL_VALUE (xsym) < 0)
 	    unsigned_enum = 0;

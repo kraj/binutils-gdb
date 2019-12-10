@@ -59,7 +59,7 @@ f_get_encoding (struct type *type)
       encoding = target_charset (get_type_arch (type));
       break;
     case 4:
-      if (gdbarch_byte_order (get_type_arch (type)) == BFD_ENDIAN_BIG)
+      if (type_byte_order (type) == BFD_ENDIAN_BIG)
 	encoding = "UTF-32BE";
       else
 	encoding = "UTF-32LE";
@@ -243,7 +243,8 @@ f_collect_symbol_completion_matches (completion_tracker &tracker,
 }
 
 /* Special expression evaluation cases for Fortran.  */
-struct value *
+
+static struct value *
 evaluate_subexp_f (struct type *expect_type, struct expression *exp,
 		   int *pos, enum noside noside)
 {
@@ -671,7 +672,6 @@ extern const struct language_defn f_language_defn =
   f_language_arch_info,
   default_print_array_index,
   default_pass_by_reference,
-  default_get_string,
   c_watch_location_expression,
   cp_get_symbol_name_matcher,	/* la_get_symbol_name_matcher */
   iterate_over_symbols,

@@ -465,7 +465,7 @@ dict_add_pending (struct dictionary *dict,
 /* Initialize ITERATOR to point at the first symbol in DICT, and
    return that first symbol, or NULL if DICT is empty.  */
 
-struct symbol *
+static struct symbol *
 dict_iterator_first (const struct dictionary *dict,
 		     struct dict_iterator *iterator)
 {
@@ -475,14 +475,14 @@ dict_iterator_first (const struct dictionary *dict,
 /* Advance ITERATOR, and return the next symbol, or NULL if there are
    no more symbols.  */
 
-struct symbol *
+static struct symbol *
 dict_iterator_next (struct dict_iterator *iterator)
 {
   return (DICT_VECTOR (DICT_ITERATOR_DICT (iterator)))
     ->iterator_next (iterator);
 }
 
-struct symbol *
+static struct symbol *
 dict_iter_match_first (const struct dictionary *dict,
 		       const lookup_name_info &name,
 		       struct dict_iterator *iterator)
@@ -490,7 +490,7 @@ dict_iter_match_first (const struct dictionary *dict,
   return (DICT_VECTOR (dict))->iter_match_first (dict, name, iterator);
 }
 
-struct symbol *
+static struct symbol *
 dict_iter_match_next (const lookup_name_info &name,
 		      struct dict_iterator *iterator)
 {
@@ -507,16 +507,6 @@ dict_size (const struct dictionary *dict)
 /* Now come functions (well, one function, currently) that are
    implemented generically by means of the vtable.  Typically, they're
    rarely used.  */
-
-/* Test to see if DICT is empty.  */
-
-static int
-dict_empty (struct dictionary *dict)
-{
-  struct dict_iterator iter;
-
-  return (dict_iterator_first (dict, &iter) == NULL);
-}
 
 
 /* The functions implementing the dictionary interface.  */
@@ -608,7 +598,7 @@ iter_match_first_hashed (const struct dictionary *dict,
        sym = sym->hash_next)
     {
       /* Warning: the order of arguments to compare matters!  */
-      if (matches_name (SYMBOL_SEARCH_NAME (sym), name, NULL))
+      if (matches_name (sym->search_name (), name, NULL))
 	break;
     }
 
@@ -629,7 +619,7 @@ iter_match_next_hashed (const lookup_name_info &name,
        next != NULL;
        next = next->hash_next)
     {
-      if (matches_name (SYMBOL_SEARCH_NAME (next), name, NULL))
+      if (matches_name (next->search_name (), name, NULL))
 	break;
     }
 
@@ -652,7 +642,7 @@ insert_symbol_hashed (struct dictionary *dict,
      language.  The two may not use the same hashing algorithm.  */
   gdb_assert (SYMBOL_LANGUAGE (sym) == DICT_LANGUAGE (dict)->la_language);
 
-  hash = search_name_hash (SYMBOL_LANGUAGE (sym), SYMBOL_SEARCH_NAME (sym));
+  hash = search_name_hash (SYMBOL_LANGUAGE (sym), sym->search_name ());
   hash_index = hash % DICT_HASHED_NBUCKETS (dict);
   sym->hash_next = buckets[hash_index];
   buckets[hash_index] = sym;
@@ -847,7 +837,7 @@ iter_match_next_linear (const lookup_name_info &name,
     {
       sym = DICT_LINEAR_SYM (dict, i);
 
-      if (matches_name (SYMBOL_SEARCH_NAME (sym), name, NULL))
+      if (matches_name (sym->search_name (), name, NULL))
 	{
 	  retval = sym;
 	  break;
@@ -1282,18 +1272,4 @@ mdict_size (const struct multidictionary *mdict)
     size += dict_size (mdict->dictionaries[idx]);
 
   return size;
-}
-
-/* See dictionary.h.  */
-
-bool
-mdict_empty (const struct multidictionary *mdict)
-{
-  for (unsigned short idx = 0; idx < mdict->n_allocated_dictionaries; ++idx)
-    {
-      if (!dict_empty (mdict->dictionaries[idx]))
-	return false;
-    }
-
-  return true;
 }

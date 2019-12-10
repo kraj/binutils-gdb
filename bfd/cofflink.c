@@ -2541,7 +2541,8 @@ _bfd_coff_link_input_bfd (struct coff_final_link_info *flaginfo, bfd *input_bfd)
       /* Write out the modified section contents.  */
       if (secdata == NULL || secdata->stab_info == NULL)
 	{
-	  file_ptr loc = o->output_offset * bfd_octets_per_byte (output_bfd);
+	  file_ptr loc = (o->output_offset
+			  * bfd_octets_per_byte (output_bfd, o));
 	  if (! bfd_set_section_contents (output_bfd, o->output_section,
 					  contents, loc, o->size))
 	    return FALSE;
@@ -2833,7 +2834,7 @@ _bfd_coff_reloc_link_order (bfd *output_bfd,
 	return FALSE;
 
       rstat = _bfd_relocate_contents (howto, output_bfd,
-				      (bfd_vma) link_order->u.reloc.p->addend,\
+				      (bfd_vma) link_order->u.reloc.p->addend,
 				      buf);
       switch (rstat)
 	{
@@ -2852,7 +2853,8 @@ _bfd_coff_reloc_link_order (bfd *output_bfd,
 	     (bfd *) NULL, (asection *) NULL, (bfd_vma) 0);
 	  break;
 	}
-      loc = link_order->offset * bfd_octets_per_byte (output_bfd);
+      loc = link_order->offset * bfd_octets_per_byte (output_bfd,
+						      output_section);
       ok = bfd_set_section_contents (output_bfd, output_section, buf,
 				     loc, size);
       free (buf);

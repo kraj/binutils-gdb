@@ -98,10 +98,7 @@ cmdpy_destroyer (struct cmd_list_element *self, void *context)
   gdbpy_ref<cmdpy_object> cmd ((cmdpy_object *) context);
   cmd->command = NULL;
 
-  /* We allocated the name, doc string, and perhaps the prefix
-     name.  */
-  xfree ((char *) self->name);
-  xfree ((char *) self->doc);
+  /* We may have allocated the prefix name.  */
   xfree ((char *) self->prefixname);
 }
 
@@ -375,10 +372,7 @@ gdbpy_parse_command_name (const char *name,
   lastchar = i;
 
   /* Find first character of the final word.  */
-  for (; i > 0 && (isalnum (name[i - 1])
-		   || name[i - 1] == '-'
-		   || name[i - 1] == '_');
-       --i)
+  for (; i > 0 && valid_cmd_char_p (name[i - 1]); --i)
     ;
   result = (char *) xmalloc (lastchar - i + 2);
   memcpy (result, &name[i], lastchar - i + 1);
@@ -563,6 +557,8 @@ cmdpy_init (PyObject *self, PyObject *args, PyObject *kw)
       /* There appears to be no API to set this.  */
       cmd->func = cmdpy_function;
       cmd->destroyer = cmdpy_destroyer;
+      cmd->doc_allocated = 1;
+      cmd->name_allocated = 1;
 
       obj->command = cmd;
       set_cmd_context (cmd, self_ref.release ());

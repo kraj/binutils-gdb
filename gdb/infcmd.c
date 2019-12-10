@@ -1210,7 +1210,7 @@ jump_command (const char *arg, int from_tty)
   if (fn != NULL && sfn != fn)
     {
       if (!query (_("Line %d is not in `%s'.  Jump anyway? "), sal.line,
-		  SYMBOL_PRINT_NAME (fn)))
+		  fn->print_name ()))
 	{
 	  error (_("Not confirmed."));
 	  /* NOTREACHED */
@@ -1939,7 +1939,7 @@ finish_command (const char *arg, int from_tty)
 	  if (sm->function != NULL && TYPE_NO_RETURN (sm->function->type)
 	      && !query (_("warning: Function %s does not return normally.\n"
 			   "Try to finish anyway? "),
-			 SYMBOL_PRINT_NAME (sm->function)))
+			 sm->function->print_name ()))
 	    error (_("Not confirmed."));
 	  printf_filtered (_("Run till exit from "));
 	}
@@ -2216,7 +2216,7 @@ default_print_one_register_info (struct ui_file *file,
     {
       struct value_print_options opts;
       const gdb_byte *valaddr = value_contents_for_printing (val);
-      enum bfd_endian byte_order = gdbarch_byte_order (get_type_arch (regtype));
+      enum bfd_endian byte_order = type_byte_order (regtype);
 
       get_user_print_options (&opts);
       opts.deref_ref = 1;

@@ -483,7 +483,7 @@ value_cast (struct type *type, struct value *arg2)
       if (code2 == TYPE_CODE_PTR)
         longest = extract_unsigned_integer
 		    (value_contents (arg2), TYPE_LENGTH (type2),
-		     gdbarch_byte_order (get_type_arch (type2)));
+		     type_byte_order (type2));
       else
         longest = value_as_long (arg2);
       return value_from_longest (to_type, convert_to_boolean ?
@@ -1330,13 +1330,13 @@ address_of_variable (struct symbol *var, const struct block *b)
 
 	error (_("Address requested for identifier "
 		 "\"%s\" which is in register $%s"),
-	       SYMBOL_PRINT_NAME (var), regname);
+	       var->print_name (), regname);
 	break;
       }
 
     default:
       error (_("Can't take address of \"%s\" which isn't an lvalue."),
-	     SYMBOL_PRINT_NAME (var));
+	     var->print_name ());
       break;
     }
 
@@ -2644,7 +2644,7 @@ find_overload_match (gdb::array_view<value *> args,
 
       if (fsym)
         {
-          qualified_name = SYMBOL_NATURAL_NAME (fsym);
+          qualified_name = fsym->natural_name ();
 
           /* If we have a function with a C++ name, try to extract just
 	     the function part.  Do not try this for non-functions (e.g.
@@ -3023,6 +3023,33 @@ find_oload_champ (gdb::array_view<value *> args,
       bv = rank_function (parm_types,
 			  args.slice (static_offset));
 
+      if (overload_debug)
+	{
+	  if (methods != NULL)
+	    fprintf_filtered (gdb_stderr,
+			      "Overloaded method instance %s, # of parms %d\n",
+			      methods[ix].physname, (int) parm_types.size ());
+	  else if (xmethods != NULL)
+	    fprintf_filtered (gdb_stderr,
+			      "Xmethod worker, # of parms %d\n",
+			      (int) parm_types.size ());
+	  else
+	    fprintf_filtered (gdb_stderr,
+			      "Overloaded function instance "
+			      "%s # of parms %d\n",
+			      functions[ix]->demangled_name (),
+			      (int) parm_types.size ());
+
+	  fprintf_filtered (gdb_stderr,
+			    "...Badness of length : {%d, %d}\n",
+			    bv[0].rank, bv[0].subrank);
+
+	  for (jj = 1; jj < bv.size (); jj++)
+	    fprintf_filtered (gdb_stderr,
+			      "...Badness of arg %d : {%d, %d}\n",
+			      jj, bv[jj].rank, bv[jj].subrank);
+	}
+
       if (oload_champ_bv->empty ())
 	{
 	  *oload_champ_bv = std::move (bv);
@@ -3048,29 +3075,9 @@ find_oload_champ (gdb::array_view<value *> args,
 	    break;
 	  }
       if (overload_debug)
-	{
-	  if (methods != NULL)
-	    fprintf_filtered (gdb_stderr,
-			      "Overloaded method instance %s, # of parms %d\n",
-			      methods[ix].physname, (int) parm_types.size ());
-	  else if (xmethods != NULL)
-	    fprintf_filtered (gdb_stderr,
-			      "Xmethod worker, # of parms %d\n",
-			      (int) parm_types.size ());
-	  else
-	    fprintf_filtered (gdb_stderr,
-			      "Overloaded function instance "
-			      "%s # of parms %d\n",
-			      SYMBOL_DEMANGLED_NAME (functions[ix]),
-			      (int) parm_types.size ());
-	  for (jj = 0; jj < args.size () - static_offset; jj++)
-	    fprintf_filtered (gdb_stderr,
-			      "...Badness @ %d : %d\n", 
-			      jj, bv[jj].rank);
-	  fprintf_filtered (gdb_stderr, "Overload resolution "
-			    "champion is %d, ambiguous? %d\n", 
-			    oload_champ, oload_ambiguous);
-	}
+	fprintf_filtered (gdb_stderr, "Overload resolution "
+			  "champion is %d, ambiguous? %d\n",
+			  oload_champ, oload_ambiguous);
     }
 
   return oload_champ;

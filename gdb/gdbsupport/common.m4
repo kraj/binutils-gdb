@@ -33,9 +33,40 @@ AC_DEFUN([GDB_AC_COMMON], [
 		   dlfcn.h)
 
   AC_CHECK_FUNCS([fdwalk getrlimit pipe pipe2 socketpair sigaction \
-		  sigprocmask strerror_r])
+		  sigprocmask])
 
-  AC_CHECK_DECLS([strerror, strstr])
+  AC_CHECK_DECLS([strstr])
+
+  # Check for std::thread.  This does not work on some platforms, like
+  # mingw and DJGPP.
+  AC_LANG_PUSH([C++])
+  AX_PTHREAD([threads=yes], [threads=no])
+  if test "$threads" = "yes"; then
+    save_LIBS="$LIBS"
+    LIBS="$PTHREAD_LIBS $LIBS"
+    save_CXXFLAGS="$CXXFLAGS"
+    CXXFLAGS="$PTHREAD_CFLAGS $save_CXXFLAGS"
+    AC_CACHE_CHECK([for std::thread],
+		   gdb_cv_cxx_std_thread,
+		   [AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+    [[#include <thread>
+      void callback() { }]],
+    [[std::thread t(callback);]])],
+				  gdb_cv_cxx_std_thread=yes,
+				  gdb_cv_cxx_std_thread=no)])
+
+    # This check must be here, while LIBS includes any necessary
+    # threading library.
+    AC_CHECK_FUNCS([pthread_sigmask pthread_setname_np])
+
+    LIBS="$save_LIBS"
+    CXXFLAGS="$save_CXXFLAGS"
+  fi
+  if test $gdb_cv_cxx_std_thread = yes; then
+    AC_DEFINE(CXX_STD_THREAD, 1,
+	      [Define to 1 if std::thread works.])
+  fi
+  AC_LANG_POP
 
   dnl Check if sigsetjmp is available.  Using AC_CHECK_FUNCS won't
   dnl do since sigsetjmp might only be defined as a macro.

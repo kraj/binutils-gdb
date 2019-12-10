@@ -524,7 +524,7 @@ func_get_frame_base_dwarf_block (struct symbol *framefunc, CORE_ADDR pc,
 
   if (*length == 0)
     error (_("Could not find the frame base for \"%s\"."),
-	   SYMBOL_NATURAL_NAME (framefunc));
+	   framefunc->natural_name ());
 }
 
 static CORE_ADDR
@@ -800,7 +800,7 @@ call_site_to_target_addr (struct gdbarch *call_site_gdbarch,
 			 _("DW_AT_call_target is not specified at %s in %s"),
 			 paddress (call_site_gdbarch, call_site->pc),
 			 (msym.minsym == NULL ? "???"
-			  : MSYMBOL_PRINT_NAME (msym.minsym)));
+			  : msym.minsym->print_name ()));
 			
 	  }
 	if (caller_frame == NULL)
@@ -814,7 +814,7 @@ call_site_to_target_addr (struct gdbarch *call_site_gdbarch,
 			   "available at %s in %s"),
 			 paddress (call_site_gdbarch, call_site->pc),
 			 (msym.minsym == NULL ? "???"
-			  : MSYMBOL_PRINT_NAME (msym.minsym)));
+			  : msym.minsym->print_name ()));
 			
 	  }
 	caller_arch = get_frame_arch (caller_frame);
@@ -846,7 +846,7 @@ call_site_to_target_addr (struct gdbarch *call_site_gdbarch,
 			   "at %s in %s"),
 			 physname, paddress (call_site_gdbarch, call_site->pc),
 			 (msym.minsym == NULL ? "???"
-			  : MSYMBOL_PRINT_NAME (msym.minsym)));
+			  : msym.minsym->print_name ()));
 			
 	  }
 	return BMSYMBOL_VALUE_ADDRESS (msym);
@@ -934,7 +934,7 @@ func_verify_no_selftailcall (struct gdbarch *gdbarch, CORE_ADDR verify_addr)
 			     "function \"%s\" at %s can call itself via tail "
 			     "calls"),
 			   (msym.minsym == NULL ? "???"
-			    : MSYMBOL_PRINT_NAME (msym.minsym)),
+			    : msym.minsym->print_name ()),
 			   paddress (gdbarch, verify_addr));
 	    }
 
@@ -955,7 +955,7 @@ tailcall_dump (struct gdbarch *gdbarch, const struct call_site *call_site)
 
   fprintf_unfiltered (gdb_stdlog, " %s(%s)", paddress (gdbarch, addr),
 		      (msym.minsym == NULL ? "???"
-		       : MSYMBOL_PRINT_NAME (msym.minsym)));
+		       : msym.minsym->print_name ()));
 
 }
 
@@ -1173,10 +1173,10 @@ call_site_find_chain_1 (struct gdbarch *gdbarch, CORE_ADDR caller_pc,
 		     "callers or callees between caller function \"%s\" at %s "
 		     "and callee function \"%s\" at %s"),
 		   (msym_caller.minsym == NULL
-		    ? "???" : MSYMBOL_PRINT_NAME (msym_caller.minsym)),
+		    ? "???" : msym_caller.minsym->print_name ()),
 		   paddress (gdbarch, caller_pc),
 		   (msym_callee.minsym == NULL
-		    ? "???" : MSYMBOL_PRINT_NAME (msym_callee.minsym)),
+		    ? "???" : msym_callee.minsym->print_name ()),
 		   paddress (gdbarch, callee_pc));
     }
 
@@ -1276,7 +1276,7 @@ dwarf_expr_reg_to_entry_parameter (struct frame_info *frame,
 		   gdbarch_bfd_arch_info (gdbarch)->printable_name,
 		   paddress (gdbarch, func_addr),
 		   (msym.minsym == NULL ? "???"
-		    : MSYMBOL_PRINT_NAME (msym.minsym)),
+		    : msym.minsym->print_name ()),
 		   gdbarch_bfd_arch_info (caller_gdbarch)->printable_name);
     }
 
@@ -1289,7 +1289,7 @@ dwarf_expr_reg_to_entry_parameter (struct frame_info *frame,
 					   "requires caller of %s (%s)"),
 		   paddress (gdbarch, func_addr),
 		   (msym.minsym == NULL ? "???"
-		    : MSYMBOL_PRINT_NAME (msym.minsym)));
+		    : msym.minsym->print_name ()));
     }
   caller_pc = get_frame_pc (caller_frame);
   call_site = call_site_for_pc (gdbarch, caller_pc);
@@ -1305,9 +1305,9 @@ dwarf_expr_reg_to_entry_parameter (struct frame_info *frame,
 		   _("DW_OP_entry_value resolving expects callee %s at %s "
 		     "but the called frame is for %s at %s"),
 		   (target_msym == NULL ? "???"
-					: MSYMBOL_PRINT_NAME (target_msym)),
+					: target_msym->print_name ()),
 		   paddress (gdbarch, target_addr),
-		   func_msym == NULL ? "???" : MSYMBOL_PRINT_NAME (func_msym),
+		   func_msym == NULL ? "???" : func_msym->print_name (),
 		   paddress (gdbarch, func_addr));
     }
 
@@ -1331,7 +1331,7 @@ dwarf_expr_reg_to_entry_parameter (struct frame_info *frame,
       throw_error (NO_ENTRY_VALUE_ERROR, _("Cannot find matching parameter "
 					   "at DW_TAG_call_site %s at %s"),
 		   paddress (gdbarch, caller_pc),
-		   msym == NULL ? "???" : MSYMBOL_PRINT_NAME (msym)); 
+		   msym == NULL ? "???" : msym->print_name ()); 
     }
 
   *per_cu_return = call_site->per_cu;
@@ -1577,8 +1577,7 @@ rw_pieced_value (struct value *v, struct value *from)
   struct piece_closure *c
     = (struct piece_closure *) value_computed_closure (v);
   gdb::byte_vector buffer;
-  int bits_big_endian
-    = gdbarch_bits_big_endian (get_type_arch (value_type (v)));
+  bool bits_big_endian = type_byte_order (value_type (v)) == BFD_ENDIAN_BIG;
 
   if (from != NULL)
     {
@@ -1601,7 +1600,7 @@ rw_pieced_value (struct value *v, struct value *from)
       bits_to_skip += (8 * value_offset (value_parent (v))
 		       + value_bitpos (v));
       if (from != NULL
-	  && (gdbarch_byte_order (get_type_arch (value_type (from)))
+	  && (type_byte_order (value_type (from))
 	      == BFD_ENDIAN_BIG))
 	{
 	  /* Use the least significant bits of FROM.  */
@@ -2817,7 +2816,7 @@ access_memory (struct gdbarch *arch, struct agent_expr *expr, ULONGEST nbits)
   if (8 * nbytes == nbits)
     return;
 
-  if (gdbarch_bits_big_endian (arch))
+  if (gdbarch_byte_order (arch) == BFD_ENDIAN_BIG)
     {
       /* On a bits-big-endian machine, we want the high-order
 	 NBITS.  */
@@ -2867,7 +2866,7 @@ dwarf2_compile_expr_to_ax (struct agent_expr *expr, struct axs_value *loc,
   enum bfd_endian byte_order = gdbarch_byte_order (arch);
   ULONGEST bits_collected = 0;
   unsigned int addr_size_bits = 8 * addr_size;
-  int bits_big_endian = gdbarch_bits_big_endian (arch);
+  bool bits_big_endian = byte_order == BFD_ENDIAN_BIG;
 
   std::vector<int> offsets (op_end - op_ptr, -1);
 
@@ -3635,13 +3634,13 @@ locexpr_describe_location_piece (struct symbol *symbol, struct ui_file *stream,
 
       if (!b)
 	error (_("No block found for address for symbol \"%s\"."),
-	       SYMBOL_PRINT_NAME (symbol));
+	       symbol->print_name ());
 
       framefunc = block_linkage_function (b);
 
       if (!framefunc)
 	error (_("No function found for block for symbol \"%s\"."),
-	       SYMBOL_PRINT_NAME (symbol));
+	       symbol->print_name ());
 
       func_get_frame_base_dwarf_block (framefunc, addr, &base_data, &base_size);
 
@@ -3655,7 +3654,7 @@ locexpr_describe_location_piece (struct symbol *symbol, struct ui_file *stream,
 	  if (buf_end != base_data + base_size)
 	    error (_("Unexpected opcode after "
 		     "DW_OP_breg%u for symbol \"%s\"."),
-		   frame_reg, SYMBOL_PRINT_NAME (symbol));
+		   frame_reg, symbol->print_name ());
 	}
       else if (base_data[0] >= DW_OP_reg0 && base_data[0] <= DW_OP_reg31)
 	{
@@ -4229,7 +4228,7 @@ locexpr_describe_location_1 (struct symbol *symbol, CORE_ADDR addr,
 
   if (bad || data > end)
     error (_("Corrupted DWARF2 expression for \"%s\"."),
-	   SYMBOL_PRINT_NAME (symbol));
+	   symbol->print_name ());
 }
 
 /* Print a natural-language description of SYMBOL to STREAM.  This
@@ -4282,7 +4281,7 @@ locexpr_generate_c_location (struct symbol *sym, string_file *stream,
   unsigned int addr_size = dwarf2_per_cu_addr_size (dlbaton->per_cu);
 
   if (dlbaton->size == 0)
-    error (_("symbol \"%s\" is optimized out"), SYMBOL_NATURAL_NAME (sym));
+    error (_("symbol \"%s\" is optimized out"), sym->natural_name ());
 
   compile_dwarf_expr_to_c (stream, result_name,
 			   sym, pc, gdbarch, registers_used, addr_size,
@@ -4428,7 +4427,7 @@ loclist_describe_location (struct symbol *symbol, CORE_ADDR addr,
 	case DEBUG_LOC_BUFFER_OVERFLOW:
 	case DEBUG_LOC_INVALID_ENTRY:
 	  error (_("Corrupted DWARF expression for symbol \"%s\"."),
-		 SYMBOL_PRINT_NAME (symbol));
+		 symbol->print_name ());
 	default:
 	  gdb_assert_not_reached ("bad debug_loc_kind");
 	}
@@ -4495,7 +4494,7 @@ loclist_generate_c_location (struct symbol *sym, string_file *stream,
 
   data = dwarf2_find_location_expression (dlbaton, &size, pc);
   if (size == 0)
-    error (_("symbol \"%s\" is optimized out"), SYMBOL_NATURAL_NAME (sym));
+    error (_("symbol \"%s\" is optimized out"), sym->natural_name ());
 
   compile_dwarf_expr_to_c (stream, result_name,
 			   sym, pc, gdbarch, registers_used, addr_size,

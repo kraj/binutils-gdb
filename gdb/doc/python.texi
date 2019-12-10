@@ -2518,7 +2518,7 @@ class FrameId(object):
 
 class MyUnwinder(Unwinder):
     def __init__(....):
-        supe(MyUnwinder, self).__init___(<expects unwinder name argument>)
+        super(MyUnwinder, self).__init___(<expects unwinder name argument>)
 
     def __call__(pending_frame):
         if not <we recognize frame>:
@@ -4867,6 +4867,50 @@ module and described later in this chapter.
 
 The result is a @code{gdb.Symbol} object or @code{None} if the symbol
 is not found.
+
+Note that this function will not find function-scoped static variables. To look
+up such variables, iterate over the variables of the function's
+@code{gdb.Block} and check that @code{block.addr_class} is
+@code{gdb.SYMBOL_LOC_STATIC}.
+
+There can be multiple global symbols with static linkage with the same
+name.  This function will only return the first matching symbol that
+it finds.  Which symbol is found depends on where @value{GDBN} is
+currently stopped, as @value{GDBN} will first search for matching
+symbols in the current object file, and then search all other object
+files.  If the application is not yet running then @value{GDBN} will
+search all object files in the order they appear in the debug
+information.
+@end defun
+
+@findex gdb.lookup_global_symbol
+@defun gdb.lookup_global_symbol (name @r{[}, domain@r{]})
+This function searches for a global symbol by name.
+The search scope can be restricted to by the domain argument.
+
+@var{name} is the name of the symbol.  It must be a string.
+The optional @var{domain} argument restricts the search to the domain type.
+The @var{domain} argument must be a domain constant defined in the @code{gdb}
+module and described later in this chapter.
+
+The result is a @code{gdb.Symbol} object or @code{None} if the symbol
+is not found.
+@end defun
+
+@findex gdb.lookup_static_symbols
+@defun gdb.lookup_static_symbols (name @r{[}, domain@r{]})
+Similar to @code{gdb.lookup_static_symbol}, this function searches for
+global symbols with static linkage by name, and optionally restricted
+by the domain argument.  However, this function returns a list of all
+matching symbols found, not just the first one.
+
+@var{name} is the name of the symbol.  It must be a string.
+The optional @var{domain} argument restricts the search to the domain type.
+The @var{domain} argument must be a domain constant defined in the @code{gdb}
+module and described later in this chapter.
+
+The result is a list of @code{gdb.Symbol} objects which could be empty
+if no matching symbols were found.
 
 Note that this function will not find function-scoped static variables. To look
 up such variables, iterate over the variables of the function's

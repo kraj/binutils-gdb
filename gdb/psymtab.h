@@ -120,7 +120,7 @@ public:
   /* A byte cache where we can stash arbitrary "chunks" of bytes that
      will not change.  */
 
-  struct bcache psymbol_cache;
+  gdb::bcache psymbol_cache;
 
   /* Vectors of all partial symbols read in from file.  The actual data
      is stored in the objfile_obstack.  */
@@ -147,11 +147,11 @@ extern const struct quick_symbol_functions dwarf2_gdb_index_functions;
 extern const struct quick_symbol_functions dwarf2_debug_names_functions;
 
 /* Ensure that the partial symbols for OBJFILE have been loaded.  If
-   VERBOSE is non-zero, then this will print a message when symbols
+   VERBOSE is true, then this will print a message when symbols
    are loaded.  This function returns a range adapter suitable for
    iterating over the psymtabs of OBJFILE.  */
 
 extern psymtab_storage::partial_symtab_range require_partial_symbols
-    (struct objfile *objfile, int verbose);
+    (struct objfile *objfile, bool verbose);
 
 #endif /* PSYMTAB_H */

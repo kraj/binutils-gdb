@@ -1,3 +1,88 @@
+2019-12-10  Christian Biesinger  <cbiesinger@google.com>
+
+	* Makefile.in: Add safe-strerror.c to gdbreplay and IPA, and change
+	UNDO_GNULIB_CFLAGS to undo strerror_r instead of strerror.
+	* config.in: Regenerate.
+	* configure: Regenerate.
+	* configure.ac: Don't check for strerror.
+	* linux-i386-ipa.c (initialize_fast_tracepoint_trampoline_buffer):
+	Call safe_strerror instead of strerror.
+	* server.h (strerror): Remove this now-unnecessary declaration.
+	* tracepoint.c (init_named_socket): Call safe_strerror instead of
+	strerror.
+	(gdb_agent_helper_thread): Likewise.
+	* utils.c (perror_with_name): Likewise.
+
+2019-11-26  Tom Tromey  <tom@tromey.com>
+
+	* configure, config.in: Rebuild.
+
+2019-11-26  Tom Tromey  <tom@tromey.com>
+
+	* remote-utils.c (block_unblock_async_io): Use gdb_sigmask.
+	* linux-low.c (linux_wait_for_event_filtered, linux_async): Use
+	gdb_sigmask.
+	* configure, config.in: Rebuild.
+
+2019-11-26  Tom Tromey  <tom@tromey.com>
+
+	* Makefile.in (PTHREAD_CFLAGS, PTHREAD_LIBS): New variables.
+	(INTERNAL_CFLAGS_BASE): Use PTHREAD_CFLAGS.
+	(GDBSERVER_LIBS): Use PTHREAD_LIBS.
+	* acinclude.m4: Include ax_pthread.m4.
+	* config.in, configure: Rebuild.
+
+2019-11-26  Christian Biesinger  <cbiesinger@google.com>
+
+	* debug.c (debug_set_output): Call safe_strerror instead of
+	strerror.
+	* linux-low.c (attach_proc_task_lwp_callback): Likewise.
+	(linux_kill_one_lwp): Likewise.
+	(linux_detach_one_lwp): Likewise.
+	(linux_wait_for_event_filtered): Likewise.
+	(store_register): Likewise.
+	* lynx-low.c (lynx_attach): Likewise.
+	* mem-break.c (insert_memory_breakpoint): Likewise.
+	(remove_memory_breakpoint): Likewise.
+	(delete_fast_tracepoint_jump): Likewise.
+	(set_fast_tracepoint_jump): Likewise.
+	(uninsert_fast_tracepoint_jumps_at): Likewise.
+	(reinsert_fast_tracepoint_jumps_at): Likewise.
+	* nto-low.c (nto_xfer_memory): Likewise.
+	(nto_resume): Likewise.
+
+2019-11-20  Luis Machado  <luis.machado@linaro.org>
+
+	* linux-aarch64-low.c (is_sve_tdesc): Check against target feature
+	instead of register count.
+	* tdesc.c (tdesc_contains_feature): New function.
+	* tdesc.h (tdesc_contains_feature): New prototype.
+
+2019-11-15  Christian Biesinger  <cbiesinger@google.com>
+
+	* Makefile.in: Add safe-strerror.c.
+	* configure: Regenerate.
+	* configure.ac: Don't source common.host.
+
+2019-11-15  Christian Biesinger  <cbiesinger@google.com>
+
+	* config.in: Regenerate.
+	* configure: Regenerate.
+
+2019-11-12  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* ax.c (ax_printf): Handle size_t_arg.
+
+2019-11-06  Christian Biesinger  <cbiesinger@google.com>
+
+	* linux-tdep.c (linux_info_proc): Use strtok_r instead of strtok.
+	* mi/mi-main.c (output_cores): Likewise.
+	* nat/linux-osdata.c (linux_xfer_osdata_cpus): Likewise.
+	(linux_xfer_osdata_modules): Likewise.
+	* remote.c (register_remote_support_xml): Likewise.
+	* sparc64-tdep.c (adi_is_addr_mapped): Likewise.
+	* xml-syscall.c (syscall_create_syscall_desc): Likewise.
+
 2019-11-01  Christian Biesinger  <cbiesinger@google.com>
 
 	* configure: Regenerate.

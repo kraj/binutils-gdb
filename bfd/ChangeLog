@@ -1,3 +1,353 @@
+2019-12-07  Alan Modra  <amodra@gmail.com>
+
+	PR 25236
+	* elflink.c (_bfd_elf_link_assign_sym_version): Assign versions
+	for ELF_COMMON_DEF_P symbols.
+	(elf_link_output_extsym, _bfd_elf_add_default_symbol): Adjust to
+	suit.
+
+2019-12-05  Sandra Loosemore  <sandra@codesourcery.com>
+
+	Only give FDE encoding warnings if --eh-frame-hdr was specified.
+
+	* elf-eh-frame.c (_bfd_elf_discard_section_eh_frame): Make
+	FDE encoding warning conditional.
+
+2019-12-05  Nick Clifton  <nickc@redhat.com>
+
+	PR 25029
+	* peXXigen.c (_bfd_XXi_swap_aouthdr_out): Ignore empty sections
+	when computing the sizes stored in the headers.
+
+2019-12-03  Alan Modra  <amodra@gmail.com>
+
+	PR 25230
+	* dwarf2.c (struct dwarf2_debug_file): Add line_table and
+	abbrev_offsets.
+	(struct abbrev_offset_entry): New.
+	(hash_abbrev, eq_abbrev, del_abbrev): New functions.
+	(read_abbrevs): Check whether we have already read abbrevs at
+	given offset, and add new offset/abbrev to hash table.
+	(decode_line_info): Keep line table at offset zero in file struct.
+	Return this for a cu reusing the same dir/file list.
+	(find_abstract_instance): Find cu for DW_FORM_GNU_ref_alt.
+	(_bfd_dwarf2_slurp_debug_info): Create offset/abbrev hash tables.
+	(_bfd_dwarf2_cleanup_debug_info): Adjust deletion of lines and
+	abbrevs.
+
+2019-12-03  Alan Modra  <amodra@gmail.com>
+
+	PR 25230
+	* dwarf2.c (struct dwarf2_debug_file): New struct.
+	(struct dwarf2_debug): Delete fields now in dwarf2_debug_file.
+	Add f, alt fields.
+	(struct comp_unit): Add file field.
+	(read_indirect_string, read_indirect_line_string): Adjust to suit.
+	(read_alt_indirect_string, read_alt_indirect_ref): Likewise.
+	(read_debug_ranges, find_abstract_instance, read_rangelist): Likewise.
+	(_bfd_dwarf2_stash_syms, place_sections): Likewise.
+	(stash_maybe_update_info_hash_tablse): Likewise.
+	(stash_verify_info_hash_table): Likewise.
+	(_bfd_dwarf2_slurp_debug_info): Likewise.
+	(_bfd_dwarf2_find_symbol_bias): Likewise.
+	(_bfd_dwarf2_find_nearest_line): Likewise.
+	(_bfd_dwarf2_cleanup_debug_info): Likewise.
+	(read_abbrevs): Add file param and adjust.  Update calls.
+	(stash_comp_unit): Likewise.
+	(decode_line_info): Delete stash param and adjust.  Update calls.
+	(comp_unit_find_nearest_line): Likewise.
+	(comp_unit_maybe_decode_line_info): Likewise.
+	(comp_unit_find_line): Likewise.
+	(parse_comp_unit): Add file and info_ptr param and adjust.  Update
+	calls.
+
+2019-12-03  Alan Modra  <amodra@gmail.com>
+
+	* dwarf2.c (read_indirect_string): Don't duplicate offset check
+	done in read_section.
+	(read_indirect_line_string): Likewise.
+	(read_alt_indirect_string): Likewise.
+	(read_alt_indirect_ref): Likewise.
+	(read_abbrevs): Likewise.  Free memory on all failure paths.
+	Use correct unsigned type for pointer difference comparison.
+
+2019-12-03  Alan Modra  <amodra@gmail.com>
+
+	* dwarf2.c (struct dwarf2_debug): Update comments.  Remove sec
+	and sec_info_ptr.
+	(_bfd_dwarf2_slurp_debug_info): Don't set sec or sec_info_ptr.
+	(stash_comp_unit): Likewise.
+	(read_alt_indirect_ref): Return NULL not FALSE.
+
+2019-12-03  Alan Modra  <amodra@gmail.com>
+
+	* dwarf2.c (_bfd_dwarf2_find_nearest_line): Correct function comment.
+
+2019-11-27  Alan Modra  <amodra@gmail.com>
+
+	PR 23652
+	* dwarf2.c (_bfd_dwarf2_stash_syms): Break out of loop on finding
+	matching section.
+	(_bfd_dwarf2_find_nearest_line): Return an int, with value 2 when
+	returning info from the symbol table.  Do the _bfd_elf_find_function
+	search also when !found.  Call _bfd_dwarf2_stash_syms regardless of
+	symbols.
+	* elf64-alpha.c (elf64_alpha_find_nearest_line): Accept dwarf2
+	result of 1 only.
+	* elfxx-mips.c (_bfd_mips_elf_find_nearest_line): Likewise.
+	* libbfd-in.h (_bfd_dwarf2_find_nearest_line): Update prototype.
+	* libbfd.h: Regenerate.
+
+2019-11-27  Alan Modra  <amodra@gmail.com>
+
+	PR 23652
+	* dwarf2.c (_bfd_dwarf2_stash_syms): New function.
+	(_bfd_dwarf2_find_nearest_line): Use it here, passing syms to
+	_bfd_elf_find_function.  Call _bfd_elf_find_function in cases
+	where _bfd_elf_find_nearest_line would do so.
+	* elf.c (_bfd_elf_find_nearest_line): Omit _bfd_elf_find_function
+	for dwarf2.
+	* elfxx-mips.c (_bfd_mips_elf_find_nearest_line): Similarly.  Tidy.
+	* elf32-arm.c (elf32_arm_maybe_function_sym): New function.
+	(elf_backend_maybe_function_sym): Define.
+	(arm_elf_find_function, elf32_arm_find_nearest_line): Delete.
+	(bfd_elf32_find_nearest_line): Don't define.
+	* elfnn-aarch64.c (elfNN_aarch64_maybe_function_sym): New function.
+	(elf_backend_maybe_function_sym): Define.
+	(aarch64_elf_find_function, elfNN_aarch64_find_nearest_line): Delete.
+	(bfd_elfNN_find_nearest_line): Don't define.
+
+2019-11-27  Alan Modra  <amodra@gmail.com>
+
+	* elf32-sh.c (sh_reloc): Use a bfd_vma insn.
+	(sh_reloc <R_SH_IND12W>): Divide calculated relocation value
+	by two before applying to insn.  Correct overflow test.
+	* coff-sh.c (sh_reloc): Likewise.
+
+2019-11-26  Nick Clifton  <nickc@redhat.com>
+
+	* elf32-sh.c (sh_elf_reloc): Use a signed_vma when checking for a
+	negative relocated value.
+	* coff-sh.c (sh_reloc): Likewise.
+
+2019-11-25  Alan Modra  <amodra@gmail.com>
+
+	* archures.c (bfd_octets_per_byte): Tail call
+	bfd_arch_mach_octets_per_byte.
+	* coff-arm.c (OCTETS_PER_BYTE): Define.
+	(coff_arm_reloc): Introduce new "octets" temp.  Use OCTETS_PER_BYTE
+	with section.  Correct "addr".  Remove ATTRIBUTE_UNUSED.
+	* coff-i386.c (coff_i386_reloc): Similarly.
+	* coff-mips.c (mips_reflo_reloc): Similarly.
+	* coff-x86_64.c (coff_amd64_reloc): Similarly.
+	* elf32-msp430.c (OCTETS_PER_BYTE): Define.
+	(rl78_sym_diff_handler): Use OCTETS_PER_BYTE, with section.
+	* elf32-nds32.c (nds32_elf_get_relocated_section_contents): Similarly.
+	* elf32-ppc.c (ppc_elf_addr16_ha_reloc): Similarly.
+	* elf32-pru.c (pru_elf32_do_ldi32_relocate): Similarly.
+	* elf32-s12z.c (opru18_reloc): Similarly.
+	* elf32-sh.c (sh_elf_reloc): Similarly.
+	* elf32-spu.c (spu_elf_rel9): Similarly.
+	* elf32-xtensa.c (bfd_elf_xtensa_reloc): Similarly.
+	* elf64-ppc.c (ppc64_elf_ha_reloc, ppc64_elf_brtaken_reloc),
+	(ppc64_elf_toc64_reloc): Similarly.
+	* bfd.c (bfd_get_section_limit): Pass section to bfd_octets_per_byte.
+	* cofflink.c (_bfd_coff_link_input_bfd),
+	(_bfd_coff_reloc_link_order): Likewise.
+	* elf.c (_bfd_elf_section_offset): Likewise.
+	* elflink.c (resolve_section, bfd_elf_perform_complex_relocation),
+	(elf_link_input_bfd, elf_reloc_link_order, elf_fixup_link_order),
+	(bfd_elf_final_link): Likewise.
+	* elf.c (_bfd_elf_make_section_from_shdr): Don't strncmp twice
+	to set SEC_ELF_OCTETS.
+	* reloc.c (bfd_perform_relocation): Tidy SEC_ELF_OCTETS special case.
+	(bfd_install_relocation): Likewise.
+	(_bfd_final_link_relocate): Don't recalculate octets.
+	* syms.c (_bfd_stab_section_find_nearest_line): Introduc new
+	"octets" temp.
+	* bfd-in2.h: Regenerate.
+
+2019-11-25  Christian Eggers  <ceggers@gmx.de>
+
+	* section.c (struct bfd_section): New flag SEC_ELF_OCTETS.
+	* archures.c (bfd_octets_per_byte): New parameter sec.
+	If section is not NULL and SEC_ELF_OCTETS is set, one octet es
+	returned [ELF targets only].
+	* bfd.c (bfd_get_section_limit): Provide section parameter to
+	bfd_octets_per_byte.
+	* bfd-in2.h: regenerate.
+	* binary.c (binary_set_section_contents): Move call to
+	bfd_octets_per_byte into section loop. Provide section parameter
+	to bfd_octets_per_byte.
+	* coff-arm.c (coff_arm_reloc): Provide section parameter
+	to bfd_octets_per_byte.
+	* coff-i386.c (coff_i386_reloc): likewise.
+	* coff-mips.c (mips_reflo_reloc): likewise.
+	* coff-x86_64.c (coff_amd64_reloc): likewise.
+	* cofflink.c (_bfd_coff_link_input_bfd): likewise.
+	(_bfd_coff_reloc_link_order): likewise.
+	* elf.c (_bfd_elf_section_offset): likewise.
+	(_bfd_elf_make_section_from_shdr): likewise.
+	Set SEC_ELF_OCTETS for sections with names .gnu.build.attributes,
+	.debug*, .zdebug* and .note.gnu*.
+	* elf32-msp430.c (rl78_sym_diff_handler): Provide section parameter
+	to bfd_octets_per_byte.
+	* elf32-nds.c (nds32_elf_get_relocated_section_contents): likewise.
+	* elf32-ppc.c (ppc_elf_addr16_ha_reloc): likewise.
+	* elf32-pru.c (pru_elf32_do_ldi32_relocate): likewise.
+	* elf32-s12z.c (opru18_reloc): likewise.
+	* elf32-sh.c (sh_elf_reloc): likewise.
+	* elf32-spu.c (spu_elf_rel9): likewise.
+	* elf32-xtensa.c (bfd_elf_xtensa_reloc): likewise
+	* elf64-ppc.c (ppc64_elf_brtaken_reloc): likewise.
+	(ppc64_elf_addr16_ha_reloc): likewise.
+	(ppc64_elf_toc64_reloc): likewise.
+	* elflink.c (bfd_elf_final_link): likewise.
+	(bfd_elf_perform_complex_relocation): likewise.
+	(elf_fixup_link_order): likewise.
+	(elf_link_input_bfd): likewise.
+	(elf_link_sort_relocs): likewise.
+	(elf_reloc_link_order): likewise.
+	(resolve_section): likewise.
+	* linker.c (_bfd_generic_reloc_link_order): likewise.
+	(bfd_generic_define_common_symbol): likewise.
+	(default_data_link_order): likewise.
+	(default_indirect_link_order): likewise.
+	* srec.c (srec_set_section_contents): likewise.
+	(srec_write_section): likewise.
+	* syms.c (_bfd_stab_section_find_nearest_line): likewise.
+	* reloc.c (_bfd_final_link_relocate): likewise.
+	(bfd_generic_get_relocated_section_contents): likewise.
+	(bfd_install_relocation): likewise.
+	For section which have SEC_ELF_OCTETS set, multiply output_base
+	and output_offset with bfd_octets_per_byte.
+	(bfd_perform_relocation): likewise.
+
+2019-11-21  Alan Modra  <amodra@gmail.com>
+
+	* elf32-arm.c (elf32_arm_size_stubs): Exclude dynamic library
+	BFDs that have not been loaded.
+
+2019-11-19  Alan Modra  <amodra@gmail.com>
+
+	PR 25197
+	* coffgen.c (coff_find_nearest_line_with_names): Check that C_FILE
+	u.syment.n_value does point at another C_FILE sym and not into
+	some auxent that happens to look like a C_FILE.  Properly check
+	for integer overflow and avoid possible pointer wrap-around.
+	Simplify pr17512 checks.
+
+2019-11-19  Alan Modra  <amodra@gmail.com>
+
+	PR 25200
+	* reloc.c (bfd_default_reloc_type_lookup): Don't BFD_FAIL.
+	* elf.c (_bfd_elf_validate_reloc): Don't segfault on NULL howto.
+
+2019-11-18  Alan Modra  <amodra@gmail.com>
+
+	* elf-bfd.h (struct elf_backend_data <elf_backend_init_file_header>):
+	Rename from elf_backend_post_process_headers.
+	(_bfd_elf_post_process_headers): Delete.
+	(_bfd_elf_init_file_header): Declare.
+	* elf.c (_bfd_elf_compute_section_file_positions): Call new function
+	in place of prep_headers and elf_backend_post_process_headers.
+	(_bfd_elf_init_file_header): Renamed from prep_headers with
+	updated args and made global.  Delete dead code.
+	(_bfd_elf_post_process_headers): Delete.
+	* elf32-arm.c (elf32_arm_init_file_header): Rename from
+	elf32_arm_post_process_headers and call _bfd_elf_init_file_header.
+	Return status.
+	(elf_backend_init_file_header): Define.
+	(elf_backend_post_process_headers): Don't define.
+	* elf32-i386.c (elf_i386_fbsd_init_file_header): Similarly.
+	* elf32-m68hc1x.c (elf32_m68hc11_init_file_header): Similarly.
+	* elf32-metag.c (elf_metag_init_file_header): Similarly.
+	* elf32-spu.c (spu_elf_init_file_header
+	* elf32-visium.c (visium_elf_init_file_header
+	* elf64-alpha.c (elf64_alpha_fbsd_init_file_header
+	* elf64-hppa.c (elf64_hppa_init_file_header
+	* elf64-ia64-vms.c (elf64_vms_init_file_header
+	* elfnn-aarch64.c (elfNN_aarch64_init_file_header
+	* elfnn-ia64.c (elfNN_hpux_init_file_header
+	* elfxx-mips.c (_bfd_mips_init_file_header
+	* elfxx-mips.h (_bfd_mips_post_process_headers): Delete.
+	(_bfd_mips_init_file_header): Declare.
+	(elf_backend_post_process_headers): Delete.
+	(elf_backend_init_file_header): Define.
+	* elfxx-target.h (elf_backend_post_process_headers): Delete.
+	(elf_backend_init_file_header): Define and use.
+	* elf32-m68hc12.c (elf_backend_init_file_header): Define.
+	(elf_backend_post_process_headers): Don't define.
+	* elf32-m68hc1x.h (elf32_m68hc11_post_process_headers): Delete.
+	(elf32_m68hc11_init_file_header): Declare.
+	* elf32-ppc.c (elf_backend_post_process_headers): Remove
+	unnecessary undef.
+
+2019-11-18  Alan Modra  <amodra@gmail.com>
+
+	* elf-bfd.h (struct elf_backend_data <elf_backend_modify_headers>):
+	Rename from elf_backend_modify_program_headers.
+	(_bfd_elf_modify_headers): Declare.
+	* elf.c (assign_file_positions_except_relocs): Set
+	elf_program_header_size.  Always call elf_backend_modify_headers.
+	Extract code modifying file header..
+	(_bfd_elf_modify_headers): ..to here.  New function.
+	* elf32-arm.c (elf_backend_modify_headers): Renamed from
+	elf_backend_modify_program_headers.
+	* elf32-i386.c: Similarly.
+	* elf64-x86-64.c: Similarly.
+	* elfxx-target.h: Similarly.  Default elf_backend_modify_headers
+	to _bfd_elf_modify_headers.
+	* elf-nacl.h (nacl_modify_headers): Rename from
+	nacl_modify_program_headers.
+	* elf-nacl.c (nacl_modify_headers): Rename from
+	nacl_modify_program_headers and call _bfd_elf_modify_headers.
+	* elf32-rx.c (elf32_rx_modify_headers): Similarly.
+	* elf32-spu.c (spu_elf_modify_headers): Similarly.
+	* elfnn-ia64.c (elfNN_ia64_modify_headers): Similarly.
+	* elf32-sh.c (elf_backend_modify_program_headers): Don't undef.
+
+2019-11-18  Alan Modra  <amodra@gmail.com>
+
+	PR 25196
+	* bfd.c (bfd_error_type): Add bfd_error_sorry.
+	(bfd_errmsgs): Likewise.
+	* elf.c (rewrite_elf_program_header): Don't abort on confused
+	lma/alignment.  Replace bfd_error_bad_value with bfd_error_sorry.
+	(_bfd_elf_validate_reloc): Use bfd_error_sorry.
+	(_bfd_elf_final_write_processing): Likewise.
+	* bfd-in2.h: Regenerate.
+
+2019-11-12  Jim Wilson  <jimw@sifive.com>
+
+	PR 25181
+	* elfnn-riscv.c (_bfd_riscv_relax_call): Always add max_alignment to
+	foff.  If sym_sec->output_section and sec->output_section are the same
+	and not *ABS* then set max_alignment to that section's alignment.
+
+2019-11-07  Alan Modra  <amodra@gmail.com>
+
+	* cpu-cr16c.c: Delete.
+	* elf32-cr16c.c: Delete.
+	* Makefile.am,
+	* archures.c,
+	* config.bfd,
+	* configure.ac,
+	* reloc.c,
+	* targets.c: Remove cr16c support.
+	* Makefile.in,
+	* bfd-in2.h,
+	* configure,
+	* libbfd.h,
+	* po/SRC-POTFILES.in: Regenerate.
+
+2019-11-05  Tim Rühsen  <tim.ruehsen@gmx.de>
+
+	* doc/chew.c (add_to_definition): Use correct type when
+	calculating size of array reallocation.
+	(nextword): Always initialise the word return parameter.
+	(compile): Check return value of nextword().
+
 2019-10-30  Keith Seitz  <keiths@redhat.com>
 
 	* elf-bfd.h (elf_backend_data) <elf_backend_core_find_build_id>:

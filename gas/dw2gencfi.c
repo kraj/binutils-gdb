@@ -726,6 +726,7 @@ const pseudo_typeS cfi_pseudo_table[] =
     { "cfi_remember_state", dot_cfi, DW_CFA_remember_state },
     { "cfi_restore_state", dot_cfi, DW_CFA_restore_state },
     { "cfi_window_save", dot_cfi, DW_CFA_GNU_window_save },
+    { "cfi_negate_ra_state", dot_cfi, DW_CFA_AARCH64_negate_ra_state },
     { "cfi_escape", dot_cfi_escape, 0 },
     { "cfi_signal_frame", dot_cfi, CFI_signal_frame },
     { "cfi_personality", dot_cfi_personality, 0 },
@@ -1860,7 +1861,7 @@ output_cie (struct cie_entry *cie, bfd_boolean eh_frame, int align)
       if (fmt != dwarf2_format_32bit)
 	out_four (-1);
     }
-  out_one (DW_CIE_VERSION);			/* Version.  */
+  out_one (flag_dwarf_cie_version);		/* Version.  */
   if (eh_frame)
     {
       out_one ('z');				/* Augmentation.  */
@@ -1876,10 +1877,23 @@ output_cie (struct cie_entry *cie, bfd_boolean eh_frame, int align)
   if (cie->signal_frame)
     out_one ('S');
   out_one (0);
+  if (flag_dwarf_cie_version >= 4)
+    {
+      /* For now we are assuming a flat address space with 4 or 8 byte
+         addresses.  */
+      int address_size = dwarf2_format_32bit ? 4 : 8;
+      out_one (address_size);			/* Address size.  */
+      out_one (0);				/* Segment size.  */
+    }
   out_uleb128 (DWARF2_LINE_MIN_INSN_LENGTH);	/* Code alignment.  */
   out_sleb128 (DWARF2_CIE_DATA_ALIGNMENT);	/* Data alignment.  */
-  if (DW_CIE_VERSION == 1)			/* Return column.  */
-    out_one (cie->return_column);
+  if (flag_dwarf_cie_version == 1)		/* Return column.  */
+    {
+      if ((cie->return_column & 0xff) != cie->return_column)
+	as_bad (_("return column number %d overflows in CIE version 1"),
+		cie->return_column);
+      out_one (cie->return_column);
+    }
   else
     out_uleb128 (cie->return_column);
   if (eh_frame)

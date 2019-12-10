@@ -1102,11 +1102,10 @@ static void
 write_ambiguous_var (struct parser_state *par_state,
 		     const struct block *block, char *name, int len)
 {
-  struct symbol *sym = XOBNEW (&temp_parse_space, struct symbol);
+  struct symbol *sym = new (&temp_parse_space) symbol ();
 
-  memset (sym, 0, sizeof (struct symbol));
   SYMBOL_DOMAIN (sym) = UNDEF_DOMAIN;
-  SYMBOL_LINKAGE_NAME (sym) = obstack_strndup (&temp_parse_space, name, len);
+  sym->set_linkage_name (obstack_strndup (&temp_parse_space, name, len));
   SYMBOL_LANGUAGE (sym) = language_ada;
 
   write_exp_elt_opcode (par_state, OP_VAR_VALUE);
