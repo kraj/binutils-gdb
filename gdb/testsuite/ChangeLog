@@ -1,3 +1,41 @@
+2019-12-11  Tom Tromey  <tom@tromey.com>
+
+	* gdb.tui/resize.exp: Fix regexp.
+	* gdb.tui/regs.exp: Fix regexps.
+	* gdb.tui/main.exp: Fix regexp.
+
+2019-12-11  Tom Tromey  <tom@tromey.com>
+
+	* gdb.tui/resize.exp: Update.
+	* gdb.tui/empty.exp (layouts): Update.
+
+2019-12-11  Tom Tromey  <tom@tromey.com>
+
+	* gdb.tui/regs.exp: Update.
+	* gdb.tui/empty.exp (layouts): Update.
+	* gdb.tui/basic.exp: Update.
+	* lib/tuiterm.exp (_check_box): Don't check bottom border.
+
+2019-12-11  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* gdb.base/options.exp: Add -raw-values in the print completion list.
+	* gdb.python/py-prettyprint.exp: Add tests for -raw-values.
+
+2019-12-10  Kevin Buettner  <kevinb@redhat.com>
+
+	* gdb.threads/omp-par-scope.c: New file.
+	* gdb/threads/omp-par-scope.exp: New file.
+
+2019-12-10  Kevin Buettner  <kevinb@redhat.com>
+
+	* lib/gdb.exp (support_nested_function_tests): New proc.
+
+2019-12-10  Kevin Buettner  <kevinb@redhat.com>
+
+	* lib/gdb.exp (gdb_compile_openmp): New proc.
+	(build_executable_from_specs): Add an "openmp" option.
+	(gdb_compile_pthreads): Add non-executable case.
+
 2019-12-10  Tom Tromey  <tromey@adacore.com>
 
 	* gdb.ada/unchecked_union.exp: New file.
