@@ -1,4 +1,4 @@
-From ef4aec994faea6bce939dd1781a7d1332ccb3b64 Mon Sep 17 00:00:00 2001
+From 7614875d90a2236996105f6d9cd6c2a7ed973ad3 Mon Sep 17 00:00:00 2001
 From: "H.J. Lu" <hjl.tools@gmail.com>
 Date: Tue, 23 Jan 2018 12:09:12 -0800
 Subject: [PATCH 2/2] gold: Initial R_X86_64_THUNK_GOTPCRELX support
@@ -37,7 +37,7 @@ index d42fd266ba..77b5972c43 100644
    R_X86_64_GNU_VTINHERIT = 250,
    R_X86_64_GNU_VTENTRY = 251
 diff --git a/gold/x86_64.cc b/gold/x86_64.cc
-index c06a282247..21133e36d3 100644
+index bafd90ef5e..35ae176bfa 100644
 --- a/gold/x86_64.cc
 +++ b/gold/x86_64.cc
 @@ -1165,7 +1165,8 @@ class Target_x86_64 : public Sized_target<size, false>
@@ -92,7 +92,7 @@ index c06a282247..21133e36d3 100644
      case elfcpp::R_X86_64_GOTPLT64:
        {
  	// The symbol requires a GOT entry.
-@@ -4862,6 +4868,7 @@ Target_x86_64<size>::Relocate::relocate(
+@@ -4861,6 +4867,7 @@ Target_x86_64<size>::Relocate::relocate(
      case elfcpp::R_X86_64_GOTPCREL:
      case elfcpp::R_X86_64_GOTPCRELX:
      case elfcpp::R_X86_64_REX_GOTPCRELX:
@@ -101,5 +101,5 @@ index c06a282247..21133e36d3 100644
        // Convert
        // mov foo@GOTPCREL(%rip), %reg
 -- 
-2.20.1
+2.21.0
 
