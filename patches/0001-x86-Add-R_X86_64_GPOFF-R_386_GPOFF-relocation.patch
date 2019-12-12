@@ -1,4 +1,4 @@
-From 7203291851bcfcb219129d371524423dbb9c19c0 Mon Sep 17 00:00:00 2001
+From ee48cdede908405ee01b958e35fb864adeb06a5d Mon Sep 17 00:00:00 2001
 From: "H.J. Lu" <hjl.tools@gmail.com>
 Date: Thu, 3 Aug 2017 09:43:28 -0700
 Subject: [PATCH] x86: Add R_X86_64_GPOFF/R_386_GPOFF relocation
@@ -255,7 +255,7 @@ ld/
  create mode 100644 ld/testsuite/ld-x86-64/gpoff-8f.d
 
 diff --git a/bfd/elf32-i386.c b/bfd/elf32-i386.c
-index 5d3f2eb4b5..b7d85736fa 100644
+index 41fc403e07..0309bc2d5b 100644
 --- a/bfd/elf32-i386.c
 +++ b/bfd/elf32-i386.c
 @@ -143,9 +143,12 @@ static reloc_howto_type elf_howto_table[]=
@@ -316,7 +316,7 @@ index 5d3f2eb4b5..b7d85736fa 100644
  	      h->def_regular = 1;
  	      h->ref_regular = 1;
  	      h->forced_local = 1;
-@@ -1914,6 +1930,11 @@ do_size:
+@@ -1908,6 +1924,11 @@ do_size:
  	    goto error_return;
  	  break;
  
@@ -328,7 +328,7 @@ index 5d3f2eb4b5..b7d85736fa 100644
  	default:
  	  break;
  	}
-@@ -3391,6 +3412,41 @@ disallow_got32:
+@@ -3385,6 +3406,41 @@ disallow_got32:
  	    relocation = -elf_i386_tpoff (info, relocation);
  	  break;
  
@@ -370,7 +370,7 @@ index 5d3f2eb4b5..b7d85736fa 100644
  	default:
  	  break;
  	}
-@@ -3896,6 +3952,10 @@ elf_i386_finish_local_dynamic_symbol (void **slot, void *inf)
+@@ -3890,6 +3946,10 @@ elf_i386_finish_local_dynamic_symbol (void **slot, void *inf)
    struct bfd_link_info *info
      = (struct bfd_link_info *) inf;
  
@@ -382,7 +382,7 @@ index 5d3f2eb4b5..b7d85736fa 100644
  					 h, NULL);
  }
 diff --git a/bfd/elf64-x86-64.c b/bfd/elf64-x86-64.c
-index 2a58cbb2ee..88fda66519 100644
+index 629c891ba1..c216537b69 100644
 --- a/bfd/elf64-x86-64.c
 +++ b/bfd/elf64-x86-64.c
 @@ -176,12 +176,15 @@ static reloc_howto_type x86_64_elf_howto_table[] =
@@ -410,7 +410,7 @@ index 2a58cbb2ee..88fda66519 100644
    { BFD_RELOC_VTABLE_INHERIT,	R_X86_64_GNU_VTINHERIT, },
    { BFD_RELOC_VTABLE_ENTRY,	R_X86_64_GNU_VTENTRY, },
  };
-@@ -2045,18 +2049,26 @@ elf_x86_64_check_relocs (bfd *abfd, struct bfd_link_info *info,
+@@ -2053,18 +2057,26 @@ elf_x86_64_check_relocs (bfd *abfd, struct bfd_link_info *info,
  	  if (isym == NULL)
  	    goto error_return;
  
@@ -443,7 +443,7 @@ index 2a58cbb2ee..88fda66519 100644
  	      h->def_regular = 1;
  	      h->ref_regular = 1;
  	      h->forced_local = 1;
-@@ -2553,6 +2565,11 @@ do_size:
+@@ -2487,6 +2499,11 @@ do_size:
  	    goto error_return;
  	  break;
  
@@ -455,7 +455,7 @@ index 2a58cbb2ee..88fda66519 100644
  	default:
  	  break;
  	}
-@@ -4113,6 +4130,41 @@ corrupt_input:
+@@ -4107,6 +4124,41 @@ corrupt_input:
  	  relocation -= _bfd_x86_elf_dtpoff_base (info);
  	  break;
  
@@ -497,7 +497,7 @@ index 2a58cbb2ee..88fda66519 100644
  	default:
  	  break;
  	}
-@@ -4624,6 +4676,10 @@ elf_x86_64_finish_local_dynamic_symbol (void **slot, void *inf)
+@@ -4618,6 +4670,10 @@ elf_x86_64_finish_local_dynamic_symbol (void **slot, void *inf)
    struct bfd_link_info *info
      = (struct bfd_link_info *) inf;
  
@@ -509,7 +509,7 @@ index 2a58cbb2ee..88fda66519 100644
  					   info, h, NULL);
  }
 diff --git a/bfd/elfxx-x86.c b/bfd/elfxx-x86.c
-index 8d08a69d22..5d8d092141 100644
+index d8165d1752..03268f0ebf 100644
 --- a/bfd/elfxx-x86.c
 +++ b/bfd/elfxx-x86.c
 @@ -594,6 +594,10 @@ elf_x86_allocate_local_dynreloc (void **slot, void *inf)
@@ -553,7 +553,7 @@ index 8d08a69d22..5d8d092141 100644
  
    if (ELIMINATE_COPY_RELOCS
        && ind->root.type != bfd_link_hash_indirect
-@@ -3002,3 +3022,102 @@ _bfd_elf_linker_x86_set_options (struct bfd_link_info * info,
+@@ -3055,3 +3075,102 @@ _bfd_elf_linker_x86_set_options (struct bfd_link_info * info,
    if (htab != NULL)
      htab->params = params;
  }
@@ -657,10 +657,10 @@ index 8d08a69d22..5d8d092141 100644
 +  return bfd_elf_final_link (abfd, info);
 +}
 diff --git a/bfd/elfxx-x86.h b/bfd/elfxx-x86.h
-index 013ac4b761..a9b6fe368d 100644
+index 57d6d6e408..56a2528b09 100644
 --- a/bfd/elfxx-x86.h
 +++ b/bfd/elfxx-x86.h
-@@ -248,6 +248,9 @@ struct elf_x86_link_hash_entry
+@@ -249,6 +249,9 @@ struct elf_x86_link_hash_entry
       should be resolved to 0 if zero_undefweak > 0.  */
    unsigned int zero_undefweak : 2;
  
@@ -670,7 +670,7 @@ index 013ac4b761..a9b6fe368d 100644
    /* Don't call finish_dynamic_symbol on this symbol.  */
    unsigned int no_finish_dynamic_symbol : 1;
  
-@@ -456,6 +459,9 @@ struct elf_x86_link_hash_table
+@@ -457,6 +460,9 @@ struct elf_x86_link_hash_table
    /* Parameters describing non-lazy PLT generation.  */
    const struct elf_x86_non_lazy_plt_layout *non_lazy_plt;
  
@@ -680,7 +680,7 @@ index 013ac4b761..a9b6fe368d 100644
    union
    {
      bfd_signed_vma refcount;
-@@ -707,6 +713,9 @@ extern void _bfd_x86_elf_link_fixup_ifunc_symbol
+@@ -708,6 +714,9 @@ extern void _bfd_x86_elf_link_fixup_ifunc_symbol
    (struct bfd_link_info *, struct elf_x86_link_hash_table *,
     struct elf_link_hash_entry *, Elf_Internal_Sym *sym);
  
@@ -690,7 +690,7 @@ index 013ac4b761..a9b6fe368d 100644
  #define bfd_elf64_mkobject \
    _bfd_x86_elf_mkobject
  #define bfd_elf32_mkobject \
-@@ -719,6 +728,10 @@ extern void _bfd_x86_elf_link_fixup_ifunc_symbol
+@@ -720,6 +729,10 @@ extern void _bfd_x86_elf_link_fixup_ifunc_symbol
    _bfd_x86_elf_link_check_relocs
  #define bfd_elf32_bfd_link_check_relocs \
    _bfd_x86_elf_link_check_relocs
@@ -702,10 +702,10 @@ index 013ac4b761..a9b6fe368d 100644
  #define elf_backend_size_dynamic_sections \
    _bfd_x86_elf_size_dynamic_sections
 diff --git a/gas/config/tc-i386.c b/gas/config/tc-i386.c
-index bed30e8eeb..7310bf8a7b 100644
+index 07c7c8db97..03d61b93e4 100644
 --- a/gas/config/tc-i386.c
 +++ b/gas/config/tc-i386.c
-@@ -726,6 +726,9 @@ static enum rc_type evexrcig = rne;
+@@ -790,6 +790,9 @@ static enum rc_type evexrcig = rne;
  /* Pre-defined "_GLOBAL_OFFSET_TABLE_".  */
  static symbolS *GOT_symbol;
  
@@ -715,7 +715,7 @@ index bed30e8eeb..7310bf8a7b 100644
  /* The dwarf2 return column, adjusted for 32 or 64 bit.  */
  unsigned int x86_dwarf2_return_column;
  
-@@ -8761,6 +8764,9 @@ lex_got (enum bfd_reloc_code_real *rel,
+@@ -9307,6 +9310,9 @@ lex_got (enum bfd_reloc_code_real *rel,
      { STRING_COMMA_LEN ("GOTPCREL"), { _dummy_first_bfd_reloc_code_real,
  				       BFD_RELOC_X86_64_GOTPCREL },
        OPERAND_TYPE_IMM32_32S_DISP32 },
@@ -725,7 +725,7 @@ index bed30e8eeb..7310bf8a7b 100644
      { STRING_COMMA_LEN ("TLSGD"),    { BFD_RELOC_386_TLS_GD,
  				       BFD_RELOC_X86_64_TLSGD    },
        OPERAND_TYPE_IMM32_32S_DISP32 },
-@@ -8833,8 +8839,19 @@ lex_got (enum bfd_reloc_code_real *rel,
+@@ -9379,8 +9385,19 @@ lex_got (enum bfd_reloc_code_real *rel,
  		    *types = gotrel[j].types64;
  		}
  
@@ -747,7 +747,7 @@ index bed30e8eeb..7310bf8a7b 100644
  
  	      /* The length of the first part of our input line.  */
  	      first = cp - input_line_pointer;
-@@ -9513,6 +9530,10 @@ i386_displacement (char *disp_start, char *disp_end)
+@@ -10059,6 +10076,10 @@ i386_displacement (char *disp_start, char *disp_end)
    if (gotfree_input_line)
      input_line_pointer = gotfree_input_line;
  
@@ -758,7 +758,7 @@ index bed30e8eeb..7310bf8a7b 100644
    exp_seg = expression (exp);
  
    SKIP_WHITESPACE ();
-@@ -11832,6 +11853,21 @@ md_undefined_symbol (char *name)
+@@ -12958,6 +12979,21 @@ md_undefined_symbol (char *name)
  	};
        return GOT_symbol;
      }
@@ -780,7 +780,7 @@ index bed30e8eeb..7310bf8a7b 100644
    return 0;
  }
  
-@@ -11996,6 +12032,7 @@ tc_gen_reloc (asection *section ATTRIBUTE_UNUSED, fixS *fixp)
+@@ -13137,6 +13173,7 @@ tc_gen_reloc (asection *section ATTRIBUTE_UNUSED, fixS *fixp)
      case BFD_RELOC_X86_64_PLTOFF64:
      case BFD_RELOC_X86_64_GOTPC32_TLSDESC:
      case BFD_RELOC_X86_64_TLSDESC_CALL:
@@ -789,10 +789,10 @@ index bed30e8eeb..7310bf8a7b 100644
      case BFD_RELOC_VTABLE_ENTRY:
      case BFD_RELOC_VTABLE_INHERIT:
 diff --git a/gas/config/tc-i386.h b/gas/config/tc-i386.h
-index c9f18d7a63..50a34977ef 100644
+index e896b23cb8..00d302debd 100644
 --- a/gas/config/tc-i386.h
 +++ b/gas/config/tc-i386.h
-@@ -128,6 +128,12 @@ extern const char *i386_comment_chars;
+@@ -130,6 +130,12 @@ extern const char *i386_comment_chars;
  #define GLOBAL_OFFSET_TABLE_NAME "_GLOBAL_OFFSET_TABLE_"
  #endif
  
@@ -833,10 +833,10 @@ index 0000000000..4b786a2472
 +	leal	foo@GPOFF, %eax
 +	movl	%fs:foo@GPOFF, %eax
 diff --git a/gas/testsuite/gas/i386/i386.exp b/gas/testsuite/gas/i386/i386.exp
-index d63afd1aba..e30a5a3c92 100644
+index 1559856b0d..ece0bcaac6 100644
 --- a/gas/testsuite/gas/i386/i386.exp
 +++ b/gas/testsuite/gas/i386/i386.exp
-@@ -560,6 +560,9 @@ if [expr ([istarget "i*86-*-*"] ||  [istarget "x86_64-*-*"]) && [gas_32_check]]
+@@ -604,6 +604,9 @@ if [expr ([istarget "i*86-*-*"] ||  [istarget "x86_64-*-*"]) && [gas_32_check]]
  	    run_list_test "code64-inval" "-I${srcdir}/$subdir -al"
  	}
  
@@ -846,16 +846,16 @@ index d63afd1aba..e30a5a3c92 100644
  	if {![istarget "*-*-nacl*"]} then {
  	    run_dump_test "iamcu-1"
  	    run_dump_test "iamcu-2"
-@@ -1064,6 +1067,9 @@ if [expr ([istarget "i*86-*-*"] || [istarget "x86_64-*-*"]) && [gas_64_check]] t
- 	run_dump_test "x86-64-property-2"
+@@ -1139,6 +1142,9 @@ if [expr ([istarget "i*86-*-*"] || [istarget "x86_64-*-*"]) && [gas_64_check]] t
  
  	run_dump_test "x86-64-localpic-2"
-+
+ 
 +	run_dump_test "x86-64-gpoff"
 +	run_list_test "x86-64-inval-gpoff" "-al"
-     }
- 
-     set ASFLAGS "$old_ASFLAGS"
++
+ 	if {[istarget "*-*-linux*"]} then {
+ 	    run_dump_test "x86-64-align-branch-3"
+ 	}
 diff --git a/gas/testsuite/gas/i386/inval-gpoff.l b/gas/testsuite/gas/i386/inval-gpoff.l
 new file mode 100644
 index 0000000000..3fad845e69
@@ -1568,7 +1568,7 @@ index 0000000000..6cc4a52403
 + +[a-f0-9]+:[ \t]+8d 83 [a-f0-9 \t]+lea[ \t]+0x[a-f0-9]+\(%ebx\),%eax
 +#pass
 diff --git a/ld/testsuite/ld-i386/i386.exp b/ld/testsuite/ld-i386/i386.exp
-index 1a1a7500e9..6e83ea2503 100644
+index 8fe047bba0..a8cabfea86 100644
 --- a/ld/testsuite/ld-i386/i386.exp
 +++ b/ld/testsuite/ld-i386/i386.exp
 @@ -308,6 +308,17 @@ run_dump_test "abs"
@@ -1589,7 +1589,7 @@ index 1a1a7500e9..6e83ea2503 100644
  run_dump_test "alloc"
  run_dump_test "warn1"
  run_dump_test "tlsgd2"
-@@ -1455,6 +1466,67 @@ if { [isnative]
+@@ -1467,6 +1478,67 @@ if { [isnative]
  	    ] \
  	]
      }
@@ -2135,7 +2135,7 @@ index 0000000000..fb8c3375b8
 + +[a-f0-9]+:[ \t]+48 8d 05 [a-f0-9 \t]+lea[ \t]+0x[a-f0-9]+\(%rip\),%rax[ \t]+# [a-f0-9]+ <foo>
 +#pass
 diff --git a/ld/testsuite/ld-x86-64/x86-64.exp b/ld/testsuite/ld-x86-64/x86-64.exp
-index b056f485f3..b17df95f2d 100644
+index 0badec9210..164a127c6a 100644
 --- a/ld/testsuite/ld-x86-64/x86-64.exp
 +++ b/ld/testsuite/ld-x86-64/x86-64.exp
 @@ -288,6 +288,17 @@ run_dump_test "abs-l1om"
@@ -2156,7 +2156,7 @@ index b056f485f3..b17df95f2d 100644
  run_dump_test "tlsgd2"
  run_dump_test "tlsgd3"
  run_dump_test "tlsgd12"
-@@ -2008,6 +2019,67 @@ if { [isnative] && [which $CC] != 0 } {
+@@ -2040,6 +2051,67 @@ if { [isnative] && [check_compiler_available] } {
  	}
      }
  
@@ -2225,5 +2225,5 @@ index b056f485f3..b17df95f2d 100644
      undefined_weak "-fPIE" ""
      undefined_weak "-fPIE" "-pie"
 -- 
-2.20.1
+2.21.0
 
