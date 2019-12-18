@@ -18,6 +18,8 @@ dnl along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 dnl Process this file with autoconf to produce a configure script.
 
+m4_include([../config/debuginfod.m4])
+
 AC_INIT(main.c)
 AC_CONFIG_HEADERS(config.h:config.in, [echo > stamp-h])
 AM_MAINTAINER_MODE
@@ -323,30 +325,8 @@ case $host_os in
     enable_gdbtk=no ;;
 esac
 
-# Enable debuginfod
-AC_ARG_WITH([debuginfod],
-        AC_HELP_STRING([--with-debuginfod],
-                       [Enable debuginfo and source-file lookups with debuginfod (auto/yes/no)]),
-        [], [with_debuginfod=auto])
-AC_MSG_CHECKING([whether to use debuginfod])
-AC_MSG_RESULT([$with_debuginfod])
-
-if test "${with_debuginfod}" = no; then
-  AC_MSG_WARN([debuginfod support disabled; some features may be unavailable.])
-  HAVE_LIBDEBUGINFOD=no
-else
-  AC_LIB_HAVE_LINKFLAGS([debuginfod], [], [#include <elfutils/debuginfod.h>],
-                                     [debuginfod_client *client;
-                                      client = debuginfod_begin();])
-  if test "$HAVE_LIBDEBUGINFOD" != yes; then
-    if test "$with_debuginfod" = yes; then
-      AC_MSG_ERROR([debuginfod is missing or unusable])
-    else
-      AC_MSG_WARN([debuginfod is missing or unusable; some features may be unavailable.])
-    fi
-  fi
-fi
-
+# Check for debuginfod
+AC_DEBUGINFOD
 
 # Libunwind support for ia64.
 

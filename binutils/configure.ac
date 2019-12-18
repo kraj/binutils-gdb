@@ -17,6 +17,7 @@ dnl along with this program; see the file COPYING3.  If not see
 dnl <http://www.gnu.org/licenses/>.
 dnl
 
+m4_include([../config/debuginfod.m4])
 m4_include([../bfd/version.m4])
 AC_INIT([binutils], BFD_VERSION)
 AC_CONFIG_SRCDIR(ar.c)
@@ -63,34 +64,7 @@ else
   default_strings_all=1
 fi], [default_strings_all=1])
 
-# Enable debuginfod
-AC_ARG_WITH([debuginfod],
-        AC_HELP_STRING([--with-debuginfod],
-                       [Enable debuginfo lookups with debuginfod (auto/yes/no)]),
-        [], [with_debuginfod=auto])
-AC_MSG_CHECKING([whether to use debuginfod])
-AC_MSG_RESULT([$with_debuginfod])
-
-if test "${with_debuginfod}" = no; then
-  AC_MSG_WARN([debuginfod support disabled; some features may be unavailable.])
-else
-  AC_CHECK_LIB([debuginfod], [debuginfod_begin], [have_debuginfod_lib=yes])
-  AC_CHECK_DECL([debuginfod_begin], [have_debuginfod_h=yes], [],
-                [#include <elfutils/debuginfod.h>])
-  if test "x$have_debuginfod_lib" = "xyes" -a \
-          "x$have_debuginfod_h" = "xyes"; then
-    AC_DEFINE([HAVE_LIBDEBUGINFOD], [1],
-              [Define to 1 if debuginfod is enabled.])
-    AC_SUBST([LIBDEBUGINFOD], ["-ldebuginfod"])
-  else
-    AC_SUBST([LIBDEBUGINFOD], [])
-    if test "$with_debuginfod" = yes; then
-      AC_MSG_ERROR([debuginfod is missing or unusable])
-    else
-      AC_MSG_WARN([debuginfod is missing or unusable; some features may be unavailable.])
-    fi
-  fi
-fi
+AC_DEBUGINFOD
 
 AC_DEFINE_UNQUOTED(DEFAULT_STRINGS_ALL, $default_strings_all,
 		   [Should strings use -a behavior by default?])

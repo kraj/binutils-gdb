@@ -29,6 +29,7 @@ m4_include([ltsugar.m4])
 m4_include([ltversion.m4])
 m4_include([lt~obsolete.m4])
 m4_include([config/isl.m4])
+m4_include([config/debuginfod.m4])
 
 AC_INIT(move-if-change)
 AC_DISABLE_OPTION_CHECKING
@@ -1362,6 +1363,9 @@ _LT_CHECK_OBJDIR
 gmplibs="-lmpc -lmpfr -lgmp"
 gmpinc=
 have_gmp=no
+
+# Check for debuginfod
+AC_DEBUGINFOD
 
 # Specify a location for mpc
 # check for this first so it ends up on the link line before mpfr.

@@ -12239,6 +12239,7 @@ else
 fi
 
 
+
 # Enable debuginfod
 
 # Check whether --with-debuginfod was given.
@@ -12320,6 +12321,9 @@ $as_echo "$as_me: WARNING: debuginfod is missing or unusable; some features may 
     fi
   fi
 fi
+
+
+
 
 
 cat >>confdefs.h <<_ACEOF
