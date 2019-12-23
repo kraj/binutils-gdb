@@ -90,58 +90,8 @@ gdb_load $binfile
 gdb_test "file" ".*No symbol file.*"
 gdb_exit
 
-set debuginfod_pid 0
-
-# Kill the server if we abort early
-proc sigint_handler {} {
-    global debuginfod_pid
-
-    if { $debuginfod_pid != 0 } {
-        catch {exec kill -INT $debuginfod_pid}
-    }
-
-    exit
-}
-
-trap sigint_handler INT
-
-# start up debuginfod
-set debuginfod_pid [exec debuginfod -p $port -F $debugdir >/dev/null 2>&1 &]
-
-if { !$debuginfod_pid } {
-    fail "$test (server init)"
-    return
-}
-
-# Wait for debuginfod indicate it's ready.
-set ready 0
-for {set timelim 10} {$timelim != 0} {incr timelim -1} {
-    sleep 1
-    set want ".*ready 1.*"
-    catch {exec curl -s http://127.0.0.1:$port/metrics} got
-
-    if { [regexp $want $got] } {
-      set ready 1
-      break
-    }
-}
-
-if { !$ready } {
-    fail "$test (server ready)"
-    catch {exec kill -INT $debuginfod_pid}
-    return
-}
-
-# gdb should now be able to find the symbol and source files
-gdb_start
-gdb_load $binfile
-gdb_test_no_output "set substitute-path $outputdir /dev/null"
-gdb_test "br main" "Breakpoint 1 at.*file.*"
-gdb_test "l" ".*This program is distributed in the hope.*"
-gdb_exit
-
-
 # Write some assembly that just has a .gnu_debugaltlink section.
+# Copied from testsuite/gdb.dwarf2/dwzbuildid.exp.
 proc write_just_debugaltlink {filename dwzname buildid} {
     set asm_file [standard_output_file $filename]
 
@@ -161,6 +111,7 @@ proc write_just_debugaltlink {filename dwzname buildid} {
 }
 
 # Write some DWARF that also sets the buildid.
+# Copied from testsuite/gdb.dwarf2/dwzbuildid.exp.
 proc write_dwarf_file {filename buildid {value 99}} {
     set asm_file [standard_output_file $filename]
 
@@ -190,17 +141,84 @@ proc write_dwarf_file {filename buildid {value 99}} {
     }
 }
 
-set buildid "1234567890abcedf"
+set buildid "01234567890abcedf0123456"
 
-write_just_debugaltlink ${binfile}_has_altlink.S ${binfile}.dwz $buildid
-write_dwarf_file ${binfile}.dwz $buildid
+write_just_debugaltlink ${binfile}_has_altlink.S ${binfile}_dwz.o $buildid
+write_dwarf_file ${binfile}_dwz.S $buildid
 
 # args: sourcefile, dest, type
 if {[gdb_compile ${binfile}_has_altlink.S ${binfile}_alt.o object nodebug] != ""} {
-    fail "$test (compile dwz)"
+    fail "$test (compile main with altlink)"
+    return
 }
 
-# TODO: query server for dwz
+if {[gdb_compile ${binfile}_dwz.S ${binfile}_dwz.o object nodebug] != ""} {
+    fail "$test (compile altlink)"
+    return
+}
+
+file copy -force ${binfile}_dwz.o $debugdir
+file delete -force ${binfile}_dwz.o
+
+# Test that gdb cannot find dwz without debuginfod.
+gdb_start
+gdb_test "file ${binfile}_alt.o" ".*could not find '.gnu_debugaltlink'.*"
+gdb_exit
+
+set debuginfod_pid 0
+
+# Kill the server if we abort early
+proc sigint_handler {} {
+    global debuginfod_pid
+
+    if { $debuginfod_pid != 0 } {
+        catch {exec kill -INT $debuginfod_pid}
+    }
+
+    exit
+}
+
+trap sigint_handler INT
+
+# Start up debuginfod
+set debuginfod_pid [exec debuginfod -p $port -F $debugdir 2>/dev/null &]
+
+if { !$debuginfod_pid } {
+    fail "$test (server init)"
+    return
+}
+
+# Wait for debuginfod indicate it's ready.
+set ready 0
+for {set timelim 30} {$timelim != 0} {incr timelim -1} {
+    sleep 1
+    set want ".*ready 1.*"
+    catch {exec curl -s http://127.0.0.1:$port/metrics} got
+
+    if { [regexp $want $got] } {
+      set ready 1
+      break
+    }
+}
+
+if { !$ready } {
+    fail "$test (server ready)"
+    catch {exec kill -INT $debuginfod_pid}
+    return
+}
+
+# gdb should now find the symbol and source files
+gdb_start
+gdb_load $binfile
+gdb_test_no_output "set substitute-path $outputdir /dev/null"
+gdb_test "br main" "Breakpoint 1 at.*file.*"
+gdb_test "l" ".*This program is distributed in the hope.*"
+gdb_exit
+
+# gdb should now find the debugaltlink file
+gdb_start
+gdb_test "file ${binfile}_alt.o" ".*Reading symbols from ${binfile}_alt.o\.\.\.\[\r\n\]"
+gdb_exit
 
 file delete -force $cache
 catch {exec kill -INT $debuginfod_pid}
