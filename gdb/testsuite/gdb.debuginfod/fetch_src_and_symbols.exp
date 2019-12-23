@@ -145,15 +145,14 @@ set buildid "01234567890abcedf0123456"
 write_just_debugaltlink ${binfile}_has_altlink.S ${binfile}_dwz.o $buildid
 write_dwarf_file ${binfile}_dwz.S $buildid
 
-# args: sourcefile, dest, type
 if {[gdb_compile ${binfile}_has_altlink.S ${binfile}_alt.o object nodebug] != ""} {
     fail "$test (compile main with altlink)"
-    return
+    return -1
 }
 
 if {[gdb_compile ${binfile}_dwz.S ${binfile}_dwz.o object nodebug] != ""} {
     fail "$test (compile altlink)"
-    return
+    return -1
 }
 
 file rename -force ${binfile}_dwz.o $debugdir
@@ -183,7 +182,7 @@ set debuginfod_pid [exec debuginfod -p $port -F $debugdir 2>/dev/null &]
 
 if { !$debuginfod_pid } {
     fail "$test (server init)"
-    return
+    return -1
 }
 
 # Wait for debuginfod indicate it's ready.
@@ -202,7 +201,7 @@ for {set timelim 30} {$timelim != 0} {incr timelim -1} {
 if { !$ready } {
     fail "$test (server ready)"
     catch {exec kill -INT $debuginfod_pid}
-    return
+    return -1
 }
 
 # gdb should now find the symbol and source files
