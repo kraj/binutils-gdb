@@ -80,9 +80,8 @@ if { [gdb_gnu_strip_debug $binfile ""] != 0 } {
 set debugdir [file join [standard_output_file {}] "debug"]
 set debuginfo [file join [standard_output_file {}] "fetch_src_and_symbols.debug"]
 
-file mkdir -force $debugdir
-file copy -force $debuginfo $debugdir
-file delete -force $debuginfo
+file mkdir $debugdir
+file rename -force $debuginfo $debugdir
 
 # test that gdb cannot find symbols without debuginfod
 gdb_start
@@ -157,8 +156,7 @@ if {[gdb_compile ${binfile}_dwz.S ${binfile}_dwz.o object nodebug] != ""} {
     return
 }
 
-file copy -force ${binfile}_dwz.o $debugdir
-file delete -force ${binfile}_dwz.o
+file rename -force ${binfile}_dwz.o $debugdir
 
 # Test that gdb cannot find dwz without debuginfod.
 gdb_start

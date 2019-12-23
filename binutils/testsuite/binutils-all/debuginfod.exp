@@ -4,12 +4,12 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston, MA 02110-1301, USA.
@@ -48,7 +48,7 @@ if { [target_compile $srcdir/$subdir/testprog.c tmpdir/testprog executable debug
     return
 }
 
-if { [binutils_run $OBJCOPY "--only-keep-debug tmpdir/testprog tmpdir/testprog.debug"] != "" } { 
+if { [binutils_run $OBJCOPY "--only-keep-debug tmpdir/testprog tmpdir/testprog.debug"] != "" } {
     fail "$test (create separate debug info file)"
     return
 }
@@ -56,7 +56,7 @@ if { [binutils_run $OBJCOPY "--only-keep-debug tmpdir/testprog tmpdir/testprog.d
 if { [binutils_run $OBJCOPY "--strip-debug tmpdir/testprog"] != "" } {
     fail "$test (strip debug info)"
     return
-}   
+}
 
 if { [binutils_run $OBJCOPY "--add-gnu-debuglink=tmpdir/testprog.debug tmpdir/testprog"] != "" } {
     fail "$test (add debuglink)"
@@ -84,11 +84,9 @@ set ::env(DEBUGINFOD_CACHE_PATH) $cache
 
 # Move debug files into another directory so that readelf and objdump cannot
 # find them without debuginfod.
-file mkdir -force tmpdir/dbg
-file copy -force tmpdir/testprog.debug tmpdir/dbg 
-file copy -force tmpdir/linkdebug.debug tmpdir/dbg
-file delete -force tmpdir/testprog.debug
-file delete -force tmpdir/linkdebug.debug
+file mkdir tmpdir/dbg
+file rename -force tmpdir/testprog.debug tmpdir/dbg
+file rename -force tmpdir/linkdebug.debug tmpdir/dbg
 
 # Remove an old cache if it exists
 file delete -force $cache
@@ -116,7 +114,7 @@ proc sigint_handler {} {
 trap sigint_handler INT
 
 # Start a debuginfod server.
-set debuginfod_pid [exec debuginfod -p $port -F tmpdir/dbg > /dev/null 2>&1 &]
+set debuginfod_pid [exec debuginfod -p $port -F tmpdir/dbg 2>/dev/null &]
 
 if { !$debuginfod_pid } {
     fail "$test (server init)"
@@ -125,11 +123,11 @@ if { !$debuginfod_pid } {
 
 # Wait for debuginfod indicate it's ready.
 set ready 0
-for {set timelim 10} {$timelim != 0} {incr timelim -1} {
+for {set timelim 30} {$timelim != 0} {incr timelim -1} {
     sleep 1
     set want ".*ready 1.*"
     catch {exec curl -s http://127.0.0.1:$port/metrics} got
-      
+
     if { [regexp $want $got] } {
       set ready 1
       break
