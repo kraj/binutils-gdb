@@ -1,6 +1,6 @@
 /* DWARF index writing support for GDB.
 
-   Copyright (C) 1994-2019 Free Software Foundation, Inc.
+   Copyright (C) 1994-2020 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -543,7 +543,7 @@ write_psymbols (struct mapped_symtab *symtab,
     {
       struct partial_symbol *psym = *psymp;
 
-      if (psym->ginfo.language == language_ada)
+      if (psym->ginfo.language () == language_ada)
 	error (_("Ada is not currently supported by the index; "
 		 "use the DWARF 5 index instead"));
 
@@ -690,7 +690,7 @@ public:
       return;
     const char *name = psym->ginfo.search_name ();
 
-    if (psym->ginfo.language == language_ada)
+    if (psym->ginfo.language () == language_ada)
       {
 	/* We want to ensure that the Ada main function's name appears
 	   verbatim in the index.  However, this name will be of the

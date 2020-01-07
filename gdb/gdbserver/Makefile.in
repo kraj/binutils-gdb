@@ -1,4 +1,4 @@
-# Copyright (C) 1989-2019 Free Software Foundation, Inc.
+# Copyright (C) 1989-2020 Free Software Foundation, Inc.
 
 # This file is part of GDB.
 
@@ -217,6 +217,7 @@ SFILES = \
 	$(srcdir)/gdbsupport/gdb-dlfcn.c \
 	$(srcdir)/gdbsupport/gdb_tilde_expand.c \
 	$(srcdir)/gdbsupport/gdb_vecs.c \
+	$(srcdir)/gdbsupport/gdb_wait.c \
 	$(srcdir)/gdbsupport/netstuff.c \
 	$(srcdir)/gdbsupport/new-op.c \
 	$(srcdir)/gdbsupport/pathstuff.c \
@@ -264,6 +265,7 @@ OBS = \
 	gdbsupport/gdb-dlfcn.o \
 	gdbsupport/gdb_tilde_expand.o \
 	gdbsupport/gdb_vecs.o \
+	gdbsupport/gdb_wait.o \
 	gdbsupport/netstuff.o \
 	gdbsupport/new-op.o \
 	gdbsupport/pathstuff.o \
@@ -381,10 +383,10 @@ install-only:
 	if [ x$$n = x ]; then n=gdbserver; else true; fi; \
 	if [ x"$(IPA_DEPFILES)" != x ]; then \
 		$(SHELL) $(srcdir)/../../mkinstalldirs $(DESTDIR)$(libdir); \
-		$(INSTALL_PROGRAM) $(IPA_LIB) $(DESTDIR)$(libdir)/$(IPA_LIB); \
+		$(INSTALL_PROGRAM_ENV) $(INSTALL_PROGRAM) $(IPA_LIB) $(DESTDIR)$(libdir)/$(IPA_LIB); \
 	fi; \
 	$(SHELL) $(srcdir)/../../mkinstalldirs $(DESTDIR)$(bindir); \
-	$(INSTALL_PROGRAM) gdbserver$(EXEEXT) $(DESTDIR)$(bindir)/$$n$(EXEEXT)
+	$(INSTALL_PROGRAM_ENV) $(INSTALL_PROGRAM) gdbserver$(EXEEXT) $(DESTDIR)$(bindir)/$$n$(EXEEXT)
 	# Note that we run install and not install-only, as the latter
 	# is not part of GNU standards and in particular not provided
 	# in libiberty.
@@ -580,10 +582,6 @@ ax.o: ax.c
 	$(COMPILE) $(WARN_CFLAGS_NO_FORMAT) $<
 	$(POSTCOMPILE)
 
-alloc-ipa.o: ../alloc.c
-	$(IPAGENT_COMPILE) $(WARN_CFLAGS_NO_FORMAT) $<
-	$(POSTCOMPILE)
-
 # Rules for objects that go in the in-process agent.
 
 arch/%-ipa.o: ../arch/%.c
@@ -599,6 +597,10 @@ gdbsupport/%-ipa.o: ../gdbsupport/%.c
 	$(POSTCOMPILE)
 
 %-ipa.o: %.c
+	$(IPAGENT_COMPILE) $<
+	$(POSTCOMPILE)
+
+%-ipa.o: ../%.c
 	$(IPAGENT_COMPILE) $<
 	$(POSTCOMPILE)
 

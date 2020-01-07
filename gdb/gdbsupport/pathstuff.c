@@ -1,6 +1,6 @@
 /* Path manipulation routines for GDB and gdbserver.
 
-   Copyright (C) 1986-2019 Free Software Foundation, Inc.
+   Copyright (C) 1986-2020 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -134,7 +134,7 @@ gdb_abspath (const char *path)
   if (path[0] == '~')
     return gdb_tilde_expand_up (path);
 
-  if (IS_ABSOLUTE_PATH (path))
+  if (IS_ABSOLUTE_PATH (path) || current_directory == NULL)
     return make_unique_xstrdup (path);
 
   /* Beware the // my son, the Emacs barfs, the botch that catch...  */

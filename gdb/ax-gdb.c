@@ -1,6 +1,6 @@
 /* GDB-specific functions for operating on agent expressions.
 
-   Copyright (C) 1998-2019 Free Software Foundation, Inc.
+   Copyright (C) 1998-2020 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -2230,7 +2230,7 @@ gen_expr (struct expression *exp, union exp_element **pc,
 
 	b = block_for_pc (ax->scope);
 	func = block_linkage_function (b);
-	lang = language_def (SYMBOL_LANGUAGE (func));
+	lang = language_def (func->language ());
 
 	sym = lookup_language_this (lang, b).symbol;
 	if (!sym)

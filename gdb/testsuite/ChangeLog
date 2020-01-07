@@ -1,3 +1,99 @@
+2020-01-06  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.base/backtrace.c: New file.
+	* gdb.base/backtrace.exp: New file.
+
+2020-01-05  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.tui/list.exp: Test 'focus next' after 'list main'.
+
+2020-01-03  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* gdb.base/style.exp: Test that warnings are styled.
+
+2019-12-29  Bernd Edlinger  <bernd.edlinger@hotmail.de>
+
+	* gdb.base/line65535.exp: New file.
+	* gdb.base/line65535.c: New file.
+
+2019-12-27  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* lib/ada.exp (gnat_runtime_has_debug_info): New proc.
+	* lib/gnat_debug_info_test.adb: New file.
+	* gdb.ada/ptype_tagged_param.exp: Use
+	gnat_runtime_has_debug_info, expect a different output if
+	runtime does not have debug info.
+
+2019-12-20  Simon Marchi  <simon.marchi@efficios.com>
+
+	* lib/sym-info-cmds.exp (GDBInfoSymbols::check_no_entry): Add
+	(another) quote in test name.
+
+2019-12-20  Simon Marchi  <simon.marchi@efficios.com>
+
+	* lib/sym-info-cmds.exp (GDBInfoModuleSymbols::check_no_entry):
+	Add quote in test name.
+
+2019-12-20  Tankut Baris Aktemur  <tankut.baris.aktemur@intel.com>
+
+	* gdb.cp/pass-by-ref.cc: Delete.  Generated in the output
+	directory instead.
+	* gdb.cp/pass-by-ref.exp: Extend with more cases.
+	* gdb.cp/pass-by-ref-2.cc: New file.
+	* gdb.cp/pass-by-ref-2.exp: New file.
+
+2019-12-20  Tom Tromey  <tom@tromey.com>
+
+	* gdb.tui/list-before.exp: New file.
+
+2019-12-20  Tom Tromey  <tom@tromey.com>
+
+	* gdb.tui/list.exp: Check for source on initial listing.
+
+2019-12-11  Tom Tromey  <tromey@adacore.com>
+
+	* gdb.xml/tdesc-arch.exp (set_arch): Add "trans_mode" parameter.
+	Add crlf test.
+
+2019-12-18  Simon Marchi  <simon.marchi@efficios.com>
+
+	* gdb.base/default.exp: Update value of $_gdb_major.
+
+2019-12-17  Bernd Edlinger  <bernd.edlinger@hotmail.de>
+
+	* gdb.base/skip.exp: Fix test failure observed with gcc-9.2.0.
+
+2019-12-17  Bernd Edlinger  <bernd.edlinger@hotmail.de>
+
+	* gdb.base/skip.exp: Whitespace fix.
+
+2019-12-16  Bernd Edlinger  <bernd.edlinger@hotmail.de>
+
+	* gdb.base/skip-inline.c: New file.
+	* gdb.base/skip-inline.exp: New file.
+
+2019-12-16  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* gdb.base/jit-reader.exp (jit_reader_test): Rename
+	jit_function_00 to jit_function_stack_mangle.
+	* gdb.base/jithost.c (jit_function_t): Rename to...
+	(jit_function_stack_mangle_t): ... this.
+	(jit_function_add_t): New typedef.
+	(jit_function_00_code): Rename to...
+	(jit_function_stack_mangle_code): ... this, make static.
+	(jit_function_add_code): New.
+	(main): Generate "add" function and call it.  Adjust to changes
+	in jithost_abi.
+	* gdb.base/jithost.h (struct jithost_abi_bounds): New.
+	(struct jithost_abi) <begin, end>: Remove fields.
+	<object, function_stack_mangle, function_add>: New fields.
+	* gdb.base/jitreader.c (struct reader_state) <code_begin,
+	code_end>: Remove fields.
+	<func_stack_mangle>: New field.
+	(read_debug_info): Adjust to renaming, create block for "add"
+	function.
+	(read_sp, unwind_frame, get_frame_id): Adjust to other changes.
+
 2019-12-11  Tom Tromey  <tom@tromey.com>
 
 	* gdb.tui/resize.exp: Fix regexp.
@@ -17943,6 +18039,6 @@ For older changes see ChangeLog-1993-2013.
 ;; version-control: never
 ;; End:
 
-    Copyright 2014-2019 Free Software Foundation, Inc.
+    Copyright 2014-2020 Free Software Foundation, Inc.
   Copying and distribution of this file, with or without modification,
   are permitted provided the copyright notice and this notice are preserved.

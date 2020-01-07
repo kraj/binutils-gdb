@@ -2,7 +2,7 @@
    convert to internal format, for GDB. Used as a last resort if no
    debugging symbols recognized.
 
-   Copyright (C) 2003-2019 Free Software Foundation, Inc.
+   Copyright (C) 2003-2020 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -439,6 +439,12 @@ read_pe_exported_syms (minimal_symbol_reader &reader,
 	  expptr = fptr + (export_opthdrrva - vaddr);
 	  break;
 	}
+    }
+
+  if (expptr == 0)
+    {
+      /* no section contains export table rva */
+      return;
     }
 
   export_rva = export_opthdrrva;

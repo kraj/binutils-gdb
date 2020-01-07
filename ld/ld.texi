@@ -1,6 +1,6 @@
 \input texinfo
 @setfilename ld.info
-@c Copyright (C) 1991-2019 Free Software Foundation, Inc.
+@c Copyright (C) 1991-2020 Free Software Foundation, Inc.
 @syncodeindex ky cp
 @c man begin INCLUDE
 @include configdoc.texi
@@ -56,7 +56,7 @@ This file documents the @sc{gnu} linker LD
 @end ifset
 version @value{VERSION}.
 
-Copyright @copyright{} 1991-2019 Free Software Foundation, Inc.
+Copyright @copyright{} 1991-2020 Free Software Foundation, Inc.
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3
@@ -93,7 +93,7 @@ section entitled ``GNU Free Documentation License''.
 
 @vskip 0pt plus 1filll
 @c man begin COPYRIGHT
-Copyright @copyright{} 1991-2019 Free Software Foundation, Inc.
+Copyright @copyright{} 1991-2020 Free Software Foundation, Inc.
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3
@@ -2995,12 +2995,15 @@ of the PE file header:
 @item --high-entropy-va
 Image is compatible with 64-bit address space layout randomization
 (ASLR).
+This option also implies @option{--dynamicbase} and
+@option{--enable-reloc-section}.
 
 @kindex --dynamicbase
 @item --dynamicbase
 The image base address may be relocated using address space layout
 randomization (ASLR).  This feature was introduced with MS Windows
 Vista for i386 PE targets.
+This option also implies @option{--enable-reloc-section}.
 
 @kindex --forceinteg
 @item --forceinteg
@@ -3043,6 +3046,11 @@ same sources are linked.  The option @option{--no-insert-timestamp}
 can be used to insert a zero value for the timestamp, this ensuring
 that binaries produced from identical sources will compare
 identically.
+
+@kindex --enable-reloc-section
+@item --enable-reloc-section
+Create the base relocation table, which is necessary if the image
+is loaded at a different image base than specified in the PE header.
 @end table
 
 @c man end

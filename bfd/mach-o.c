@@ -1,5 +1,5 @@
 /* Mach-O support for BFD.
-   Copyright (C) 1999-2019 Free Software Foundation, Inc.
+   Copyright (C) 1999-2020 Free Software Foundation, Inc.
 
    This file is part of BFD, the Binary File Descriptor library.
 
@@ -618,12 +618,12 @@ cputype (unsigned long value)
 }
 
 static const char *
-cpusubtype (unsigned long cputype, unsigned long cpusubtype)
+cpusubtype (unsigned long cpu_type, unsigned long cpu_subtype)
 {
   static char buffer[128];
 
   buffer[0] = 0;
-  switch (cpusubtype & BFD_MACH_O_CPU_SUBTYPE_MASK)
+  switch (cpu_subtype & BFD_MACH_O_CPU_SUBTYPE_MASK)
     {
     case 0:
       break;
@@ -633,13 +633,13 @@ cpusubtype (unsigned long cputype, unsigned long cpusubtype)
       sprintf (buffer, _("<unknown mask flags>")); break;
     }
 
-  cpusubtype &= ~ BFD_MACH_O_CPU_SUBTYPE_MASK;
+  cpu_subtype &= ~ BFD_MACH_O_CPU_SUBTYPE_MASK;
 
-  switch (cputype)
+  switch (cpu_type)
     {
     case BFD_MACH_O_CPU_TYPE_X86_64:
     case BFD_MACH_O_CPU_TYPE_I386:
-      switch (cpusubtype)
+      switch (cpu_subtype)
 	{
 	case BFD_MACH_O_CPU_SUBTYPE_X86_ALL:
 	  return strcat (buffer, " (X86_ALL)");
@@ -649,7 +649,7 @@ cpusubtype (unsigned long cputype, unsigned long cpusubtype)
       break;
 
     case BFD_MACH_O_CPU_TYPE_ARM:
-      switch (cpusubtype)
+      switch (cpu_subtype)
 	{
 	case BFD_MACH_O_CPU_SUBTYPE_ARM_ALL:
 	  return strcat (buffer, " (ARM_ALL)");
@@ -669,7 +669,7 @@ cpusubtype (unsigned long cputype, unsigned long cpusubtype)
       break;
 
     case BFD_MACH_O_CPU_TYPE_ARM64:
-      switch (cpusubtype)
+      switch (cpu_subtype)
 	{
 	case BFD_MACH_O_CPU_SUBTYPE_ARM64_ALL:
 	  return strcat (buffer, " (ARM64_ALL)");
@@ -684,7 +684,7 @@ cpusubtype (unsigned long cputype, unsigned long cpusubtype)
       break;
     }
 
-  if (cpusubtype != 0)
+  if (cpu_subtype != 0)
     return strcat (buffer, _(" (<unknown>)"));
 
   return buffer;
@@ -3998,10 +3998,14 @@ bfd_mach_o_read_dylinker (bfd *abfd, bfd_mach_o_load_command *command)
   unsigned int nameoff;
   unsigned int namelen;
 
+  if (command->len < sizeof (raw) + 8)
+    return FALSE;
   if (bfd_bread (&raw, sizeof (raw), abfd) != sizeof (raw))
     return FALSE;
 
   nameoff = bfd_h_get_32 (abfd, raw.str);
+  if (nameoff > command->len)
+    return FALSE;
 
   cmd->name_offset = nameoff;
   namelen = command->len - nameoff;
@@ -4024,6 +4028,8 @@ bfd_mach_o_read_dylib (bfd *abfd, bfd_mach_o_load_command *command)
   unsigned int nameoff;
   unsigned int namelen;
 
+  if (command->len < sizeof (raw) + 8)
+    return FALSE;
   switch (command->type)
     {
     case BFD_MACH_O_LC_LOAD_DYLIB:
@@ -4042,6 +4048,8 @@ bfd_mach_o_read_dylib (bfd *abfd, bfd_mach_o_load_command *command)
     return FALSE;
 
   nameoff = bfd_h_get_32 (abfd, raw.name);
+  if (nameoff > command->len)
+    return FALSE;
   cmd->timestamp = bfd_h_get_32 (abfd, raw.timestamp);
   cmd->current_version = bfd_h_get_32 (abfd, raw.current_version);
   cmd->compatibility_version = bfd_h_get_32 (abfd, raw.compatibility_version);
@@ -4068,6 +4076,8 @@ bfd_mach_o_read_prebound_dylib (bfd *abfd,
   unsigned int str_len;
   unsigned char *str;
 
+  if (command->len < sizeof (raw) + 8)
+    return FALSE;
   if (bfd_bread (&raw, sizeof (raw), abfd) != sizeof (raw))
     return FALSE;
 
@@ -4099,6 +4109,8 @@ bfd_mach_o_read_prebind_cksum (bfd *abfd,
   bfd_mach_o_prebind_cksum_command *cmd = &command->command.prebind_cksum;
   struct mach_o_prebind_cksum_command_external raw;
 
+  if (command->len < sizeof (raw) + 8)
+    return FALSE;
   if (bfd_bread (&raw, sizeof (raw), abfd) != sizeof (raw))
     return FALSE;
 
@@ -4113,6 +4125,8 @@ bfd_mach_o_read_twolevel_hints (bfd *abfd,
   bfd_mach_o_twolevel_hints_command *cmd = &command->command.twolevel_hints;
   struct mach_o_twolevel_hints_command_external raw;
 
+  if (command->len < sizeof (raw) + 8)
+    return FALSE;
   if (bfd_bread (&raw, sizeof (raw), abfd) != sizeof (raw))
     return FALSE;
 
@@ -4129,10 +4143,14 @@ bfd_mach_o_read_fvmlib (bfd *abfd, bfd_mach_o_load_command *command)
   unsigned int nameoff;
   unsigned int namelen;
 
+  if (command->len < sizeof (raw) + 8)
+    return FALSE;
   if (bfd_bread (&raw, sizeof (raw), abfd) != sizeof (raw))
     return FALSE;
 
   nameoff = bfd_h_get_32 (abfd, raw.name);
+  if (nameoff > command->len)
+    return FALSE;
   fvm->minor_version = bfd_h_get_32 (abfd, raw.minor_version);
   fvm->header_addr = bfd_h_get_32 (abfd, raw.header_addr);
 
@@ -4155,6 +4173,7 @@ bfd_mach_o_read_thread (bfd *abfd, bfd_mach_o_load_command *command)
   unsigned int offset;
   unsigned int nflavours;
   unsigned int i;
+  struct mach_o_thread_command_external raw;
 
   BFD_ASSERT ((command->type == BFD_MACH_O_LC_THREAD)
 	      || (command->type == BFD_MACH_O_LC_UNIXTHREAD));
@@ -4162,24 +4181,27 @@ bfd_mach_o_read_thread (bfd *abfd, bfd_mach_o_load_command *command)
   /* Count the number of threads.  */
   offset = 8;
   nflavours = 0;
-  while (offset != command->len)
+  while (offset + sizeof (raw) <= command->len)
     {
-      struct mach_o_thread_command_external raw;
-
-      if (offset >= command->len)
-	return FALSE;
+      unsigned int count;
 
       if (bfd_seek (abfd, command->offset + offset, SEEK_SET) != 0
 	  || bfd_bread (&raw, sizeof (raw), abfd) != sizeof (raw))
 	return FALSE;
 
-      offset += sizeof (raw) + bfd_h_get_32 (abfd, raw.count) * 4;
+      count = bfd_h_get_32 (abfd, raw.count);
+      if (count > (unsigned) -1 / 4
+	  || command->len - (offset + sizeof (raw)) < count * 4)
+	return FALSE;
+      offset += sizeof (raw) + count * 4;
       nflavours++;
     }
+  if (nflavours == 0 || offset != command->len)
+    return FALSE;
 
   /* Allocate threads.  */
-  cmd->flavours = bfd_alloc2
-    (abfd, nflavours, sizeof (bfd_mach_o_thread_flavour));
+  cmd->flavours = bfd_alloc2 (abfd, nflavours,
+			      sizeof (bfd_mach_o_thread_flavour));
   if (cmd->flavours == NULL)
     return FALSE;
   cmd->nflavours = nflavours;
@@ -4188,14 +4210,6 @@ bfd_mach_o_read_thread (bfd *abfd, bfd_mach_o_load_command *command)
   nflavours = 0;
   while (offset != command->len)
     {
-      struct mach_o_thread_command_external raw;
-
-      if (offset >= command->len)
-	return FALSE;
-
-      if (nflavours >= cmd->nflavours)
-	return FALSE;
-
       if (bfd_seek (abfd, command->offset + offset, SEEK_SET) != 0
 	  || bfd_bread (&raw, sizeof (raw), abfd) != sizeof (raw))
 	return FALSE;
@@ -4271,6 +4285,8 @@ bfd_mach_o_read_dysymtab (bfd *abfd, bfd_mach_o_load_command *command)
   {
     struct mach_o_dysymtab_command_external raw;
 
+    if (command->len < sizeof (raw) + 8)
+      return FALSE;
     if (bfd_bread (&raw, sizeof (raw), abfd) != sizeof (raw))
       return FALSE;
 
@@ -4447,6 +4463,8 @@ bfd_mach_o_read_symtab (bfd *abfd, bfd_mach_o_load_command *command)
 
   BFD_ASSERT (command->type == BFD_MACH_O_LC_SYMTAB);
 
+  if (command->len < sizeof (raw) + 8)
+    return FALSE;
   if (bfd_bread (&raw, sizeof (raw), abfd) != sizeof (raw))
     return FALSE;
 
@@ -4473,6 +4491,8 @@ bfd_mach_o_read_uuid (bfd *abfd, bfd_mach_o_load_command *command)
 
   BFD_ASSERT (command->type == BFD_MACH_O_LC_UUID);
 
+  if (command->len < 16 + 8)
+    return FALSE;
   if (bfd_bread (cmd->uuid, 16, abfd) != 16)
     return FALSE;
 
@@ -4485,6 +4505,8 @@ bfd_mach_o_read_linkedit (bfd *abfd, bfd_mach_o_load_command *command)
   bfd_mach_o_linkedit_command *cmd = &command->command.linkedit;
   struct mach_o_linkedit_data_command_external raw;
 
+  if (command->len < sizeof (raw) + 8)
+    return FALSE;
   if (bfd_bread (&raw, sizeof (raw), abfd) != sizeof (raw))
     return FALSE;
 
@@ -4500,10 +4522,15 @@ bfd_mach_o_read_str (bfd *abfd, bfd_mach_o_load_command *command)
   struct mach_o_str_command_external raw;
   unsigned long off;
 
+  if (command->len < sizeof (raw) + 8)
+    return FALSE;
   if (bfd_bread (&raw, sizeof (raw), abfd) != sizeof (raw))
     return FALSE;
 
   off = bfd_get_32 (abfd, raw.str);
+  if (off > command->len)
+    return FALSE;
+
   cmd->stroff = command->offset + off;
   cmd->str_len = command->len - off;
   cmd->str = bfd_alloc (abfd, cmd->str_len);
@@ -4586,6 +4613,8 @@ bfd_mach_o_read_dyld_info (bfd *abfd, bfd_mach_o_load_command *command)
   bfd_mach_o_dyld_info_command *cmd = &command->command.dyld_info;
   struct mach_o_dyld_info_command_external raw;
 
+  if (command->len < sizeof (raw) + 8)
+    return FALSE;
   if (bfd_bread (&raw, sizeof (raw), abfd) != sizeof (raw))
     return FALSE;
 
@@ -4613,6 +4642,8 @@ bfd_mach_o_read_version_min (bfd *abfd, bfd_mach_o_load_command *command)
   bfd_mach_o_version_min_command *cmd = &command->command.version_min;
   struct mach_o_version_min_command_external raw;
 
+  if (command->len < sizeof (raw) + 8)
+    return FALSE;
   if (bfd_bread (&raw, sizeof (raw), abfd) != sizeof (raw))
     return FALSE;
 
@@ -4627,6 +4658,8 @@ bfd_mach_o_read_encryption_info (bfd *abfd, bfd_mach_o_load_command *command)
   bfd_mach_o_encryption_info_command *cmd = &command->command.encryption_info;
   struct mach_o_encryption_info_command_external raw;
 
+  if (command->len < sizeof (raw) + 8)
+    return FALSE;
   if (bfd_bread (&raw, sizeof (raw), abfd) != sizeof (raw))
     return FALSE;
 
@@ -4642,6 +4675,8 @@ bfd_mach_o_read_encryption_info_64 (bfd *abfd, bfd_mach_o_load_command *command)
   bfd_mach_o_encryption_info_command *cmd = &command->command.encryption_info;
   struct mach_o_encryption_info_64_command_external raw;
 
+  if (command->len < sizeof (raw) + 8)
+    return FALSE;
   if (bfd_bread (&raw, sizeof (raw), abfd) != sizeof (raw))
     return FALSE;
 
@@ -4657,6 +4692,8 @@ bfd_mach_o_read_main (bfd *abfd, bfd_mach_o_load_command *command)
   bfd_mach_o_main_command *cmd = &command->command.main;
   struct mach_o_entry_point_command_external raw;
 
+  if (command->len < sizeof (raw) + 8)
+    return FALSE;
   if (bfd_bread (&raw, sizeof (raw), abfd) != sizeof (raw))
     return FALSE;
 
@@ -4672,6 +4709,8 @@ bfd_mach_o_read_source_version (bfd *abfd, bfd_mach_o_load_command *command)
   struct mach_o_source_version_command_external raw;
   bfd_uint64_t ver;
 
+  if (command->len < sizeof (raw) + 8)
+    return FALSE;
   if (bfd_bread (&raw, sizeof (raw), abfd) != sizeof (raw))
     return FALSE;
 
@@ -4697,6 +4736,8 @@ bfd_mach_o_read_note (bfd *abfd, bfd_mach_o_load_command *command)
   bfd_mach_o_note_command *cmd = &command->command.note;
   struct mach_o_note_command_external raw;
 
+  if (command->len < sizeof (raw) + 8)
+    return FALSE;
   if (bfd_bread (&raw, sizeof (raw), abfd) != sizeof (raw))
     return FALSE;
 
@@ -4712,6 +4753,8 @@ bfd_mach_o_read_build_version (bfd *abfd, bfd_mach_o_load_command *command)
   bfd_mach_o_build_version_command *cmd = &command->command.build_version;
   struct mach_o_build_version_command_external raw;
 
+  if (command->len < sizeof (raw) + 8)
+    return FALSE;
   if (bfd_bread (&raw, sizeof (raw), abfd) != sizeof (raw))
     return FALSE;
 
@@ -4736,6 +4779,8 @@ bfd_mach_o_read_segment (bfd *abfd,
 
       BFD_ASSERT (command->type == BFD_MACH_O_LC_SEGMENT_64);
 
+      if (command->len < sizeof (raw) + 8)
+	return FALSE;
       if (bfd_bread (&raw, sizeof (raw), abfd) != sizeof (raw))
 	return FALSE;
 
@@ -4757,6 +4802,8 @@ bfd_mach_o_read_segment (bfd *abfd,
 
       BFD_ASSERT (command->type == BFD_MACH_O_LC_SEGMENT);
 
+      if (command->len < sizeof (raw) + 8)
+	return FALSE;
       if (bfd_bread (&raw, sizeof (raw), abfd) != sizeof (raw))
 	return FALSE;
 
@@ -4815,9 +4862,11 @@ bfd_mach_o_read_command (bfd *abfd, bfd_mach_o_load_command *command)
     return FALSE;
 
   cmd = bfd_h_get_32 (abfd, raw.cmd);
-  command->type =  cmd & ~BFD_MACH_O_LC_REQ_DYLD;
+  command->type = cmd & ~BFD_MACH_O_LC_REQ_DYLD;
   command->type_required = cmd & BFD_MACH_O_LC_REQ_DYLD ? TRUE : FALSE;
   command->len = bfd_h_get_32 (abfd, raw.cmdsize);
+  if (command->len < 8 || command->len % 4 != 0)
+    return FALSE;
 
   switch (command->type)
     {
@@ -5101,8 +5150,8 @@ bfd_mach_o_scan (bfd *abfd,
 		 bfd_mach_o_data_struct *mdata)
 {
   unsigned int i;
-  enum bfd_architecture cputype;
-  unsigned long cpusubtype;
+  enum bfd_architecture cpu_type;
+  unsigned long cpu_subtype;
   unsigned int hdrsize;
 
   hdrsize = mach_o_wide_p (header) ?
@@ -5128,8 +5177,8 @@ bfd_mach_o_scan (bfd *abfd,
   abfd->tdata.mach_o_data = mdata;
 
   bfd_mach_o_convert_architecture (header->cputype, header->cpusubtype,
-				   &cputype, &cpusubtype);
-  if (cputype == bfd_arch_unknown)
+				   &cpu_type, &cpu_subtype);
+  if (cpu_type == bfd_arch_unknown)
     {
       _bfd_error_handler
 	/* xgettext:c-format */
@@ -5138,7 +5187,7 @@ bfd_mach_o_scan (bfd *abfd,
       return FALSE;
     }
 
-  bfd_set_arch_mach (abfd, cputype, cpusubtype);
+  bfd_set_arch_mach (abfd, cpu_type, cpu_subtype);
 
   if (header->ncmds != 0)
     {
@@ -5226,8 +5275,8 @@ bfd_mach_o_gen_mkobject (bfd *abfd)
 const bfd_target *
 bfd_mach_o_header_p (bfd *abfd,
 		     file_ptr hdr_off,
-		     bfd_mach_o_filetype filetype,
-		     bfd_mach_o_cpu_type cputype)
+		     bfd_mach_o_filetype file_type,
+		     bfd_mach_o_cpu_type cpu_type)
 {
   bfd_mach_o_header header;
   bfd_mach_o_data_struct *mdata;
@@ -5254,9 +5303,9 @@ bfd_mach_o_header_p (bfd *abfd,
   /* Check cputype and filetype.
      In case of wildcard, do not accept magics that are handled by existing
      targets.  */
-  if (cputype)
+  if (cpu_type)
     {
-      if (header.cputype != cputype)
+      if (header.cputype != cpu_type)
 	goto wrong;
     }
   else
@@ -5269,9 +5318,9 @@ bfd_mach_o_header_p (bfd *abfd,
 #endif
     }
 
-  if (filetype)
+  if (file_type)
     {
-      if (header.filetype != filetype)
+      if (header.filetype != file_type)
 	goto wrong;
     }
   else
@@ -5752,6 +5801,8 @@ bfd_mach_o_core_fetch_environment (bfd *abfd,
 	  unsigned char *buf = bfd_malloc (1024);
 	  unsigned long size = 1024;
 
+	  if (buf == NULL)
+	    return -1;
 	  for (;;)
 	    {
 	      bfd_size_type nread = 0;
@@ -5797,6 +5848,8 @@ bfd_mach_o_core_fetch_environment (bfd *abfd,
 		      bottom = seg->fileoff + seg->filesize - offset;
 		      top = seg->fileoff + seg->filesize - 4;
 		      *rbuf = bfd_malloc (top - bottom);
+		      if (*rbuf == NULL)
+			return -1;
 		      *rlen = top - bottom;
 
 		      memcpy (*rbuf, buf + size - *rlen, *rlen);
@@ -5941,6 +5994,9 @@ bfd_mach_o_follow_dsym (bfd *abfd)
   dsym_filename = (char *)bfd_malloc (strlen (base_bfd->filename)
 				       + strlen (dsym_subdir) + 1
 				       + strlen (base_basename) + 1);
+  if (dsym_filename == NULL)
+    return NULL;
+
   sprintf (dsym_filename, "%s%s/%s",
 	   base_bfd->filename, dsym_subdir, base_basename);
 

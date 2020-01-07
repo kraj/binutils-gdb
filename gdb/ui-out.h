@@ -1,6 +1,6 @@
 /* Output generating routines for GDB.
 
-   Copyright (C) 1999-2019 Free Software Foundation, Inc.
+   Copyright (C) 1999-2020 Free Software Foundation, Inc.
 
    Contributed by Cygnus Solutions.
    Written by Fernando Nasser for Cygnus.
@@ -77,8 +77,11 @@ enum ui_out_type
 /* The possible kinds of fields.  */
 enum class field_kind
   {
-    SIGNED,
-    STRING,
+    /* "FIELD_STRING" needs a funny name to avoid clashes with tokens
+       named "STRING".  See PR build/25250.  FIELD_SIGNED is given a
+       similar name for consistency.  */
+    FIELD_SIGNED,
+    FIELD_STRING,
   };
 
 /* The base type of all fields that can be emitted using %pF.  */
@@ -105,7 +108,7 @@ signed_field (const char *name, LONGEST val,
 	      signed_field_s &&tmp = {})
 {
   tmp.name = name;
-  tmp.kind = field_kind::SIGNED;
+  tmp.kind = field_kind::FIELD_SIGNED;
   tmp.val = val;
   return &tmp;
 }
@@ -126,7 +129,7 @@ string_field (const char *name, const char *str,
 	      string_field_s &&tmp = {})
 {
   tmp.name = name;
-  tmp.kind = field_kind::STRING;
+  tmp.kind = field_kind::FIELD_STRING;
   tmp.str = str;
   return &tmp;
 }

@@ -1,6 +1,6 @@
 /* Core dump and executable file functions above target vector, for GDB.
 
-   Copyright (C) 1986-2019 Free Software Foundation, Inc.
+   Copyright (C) 1986-2020 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -141,7 +141,7 @@ validate_files (void)
 
 /* See gdbsupport/common-inferior.h.  */
 
-char *
+const char *
 get_exec_file (int err)
 {
   if (exec_filename)
@@ -151,7 +151,6 @@ get_exec_file (int err)
 
   error (_("No executable file specified.\n\
 Use the \"file\" or \"exec-file\" command."));
-  return NULL;
 }
 
 

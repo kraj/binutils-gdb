@@ -1,5 +1,5 @@
 /* GDB routines for manipulating the minimal symbol tables.
-   Copyright (C) 1992-2019 Free Software Foundation, Inc.
+   Copyright (C) 1992-2020 Free Software Foundation, Inc.
    Contributed by Cygnus Support, using pieces from other GDB modules.
 
    This file is part of GDB.
@@ -54,7 +54,6 @@
 #include <algorithm>
 #include "safe-ctype.h"
 #include "gdbsupport/parallel-for.h"
-#include "maint.h"
 
 #if CXX_STD_THREAD
 #include <mutex>
@@ -163,7 +162,7 @@ add_minsym_to_demangled_hash_table (struct minimal_symbol *sym,
 {
   if (sym->demangled_hash_next == NULL)
     {
-      objfile->per_bfd->demangled_hash_languages.set (MSYMBOL_LANGUAGE (sym));
+      objfile->per_bfd->demangled_hash_languages.set (sym->language ());
 
       struct minimal_symbol **table
 	= objfile->per_bfd->msymbol_demangled_hash;
@@ -1129,23 +1128,14 @@ minimal_symbol_reader::record_full (gdb::string_view name,
       m_msym_bunch = newobj;
     }
   msymbol = &m_msym_bunch->contents[m_msym_bunch_index];
-  symbol_set_language (msymbol, language_auto,
-		       &m_objfile->per_bfd->storage_obstack);
+  msymbol->set_language (language_auto,
+			 &m_objfile->per_bfd->storage_obstack);
 
   if (copy_name)
-    msymbol->name = obstack_strndup (&m_objfile->per_bfd->storage_obstack,
-				     name.data (), name.size ());
+    msymbol->m_name = obstack_strndup (&m_objfile->per_bfd->storage_obstack,
+				       name.data (), name.size ());
   else
-    msymbol->name = name.data ();
-
-  if (worker_threads_disabled ())
-    {
-      /* To keep our behavior as close as possible to the previous non-threaded
-	 behavior for GDB 9.1, we call symbol_set_names here when threads
-	 are disabled.  */
-      symbol_set_names (msymbol, msymbol->name, false, m_objfile->per_bfd);
-      msymbol->name_set = 1;
-    }
+    msymbol->m_name = name.data ();
 
   SET_MSYMBOL_VALUE_ADDRESS (msymbol, address);
   MSYMBOL_SECTION (msymbol) = section;
@@ -1407,22 +1397,23 @@ minimal_symbol_reader::install ()
 	   for (minimal_symbol *msym = start; msym < end; ++msym)
 	     {
 	       size_t idx = msym - msymbols;
-	       hash_values[idx].name_length = strlen (msym->name);
+	       hash_values[idx].name_length = strlen (msym->linkage_name ());
 	       if (!msym->name_set)
 		 {
-		   /* This will be freed later, by symbol_set_names.  */
+		   /* This will be freed later, by compute_and_set_names.  */
 		   char *demangled_name
-		     = symbol_find_demangled_name (msym, msym->name);
+		     = symbol_find_demangled_name (msym, msym->linkage_name ());
 		   symbol_set_demangled_name
 		     (msym, demangled_name,
 		      &m_objfile->per_bfd->storage_obstack);
 		   msym->name_set = 1;
 		 }
 	       /* This mangled_name_hash computation has to be outside of
-		  the name_set check, or symbol_set_names below will
+		  the name_set check, or compute_and_set_names below will
 		  be called with an invalid hash value.  */
 	       hash_values[idx].mangled_name_hash
-		 = fast_hash (msym->name, hash_values[idx].name_length);
+		 = fast_hash (msym->linkage_name (),
+			      hash_values[idx].name_length);
 	       hash_values[idx].minsym_hash
 		 = msymbol_hash (msym->linkage_name ());
 	       /* We only use this hash code if the search name differs
@@ -1430,8 +1421,7 @@ minimal_symbol_reader::install ()
 		  build_minimal_symbol_hash_tables.  */
 	       if (msym->search_name () != msym->linkage_name ())
 		 hash_values[idx].minsym_demangled_hash
-		   = search_name_hash (MSYMBOL_LANGUAGE (msym),
-				       msym->search_name ());
+		   = search_name_hash (msym->language (), msym->search_name ());
 	     }
 	   {
 	     /* To limit how long we hold the lock, we only acquire it here
@@ -1442,10 +1432,9 @@ minimal_symbol_reader::install ()
 	     for (minimal_symbol *msym = start; msym < end; ++msym)
 	       {
 		 size_t idx = msym - msymbols;
-		 symbol_set_names
-		   (msym,
-		    gdb::string_view(msym->name,
-				     hash_values[idx].name_length),
+		 msym->compute_and_set_names
+		   (gdb::string_view (msym->linkage_name (),
+				      hash_values[idx].name_length),
 		    false,
 		    m_objfile->per_bfd,
 		    hash_values[idx].mangled_name_hash);

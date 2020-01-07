@@ -1,5 +1,5 @@
 # This shell script emits a C file. -*- C -*-
-#   Copyright (C) 2009-2019 Free Software Foundation, Inc.
+#   Copyright (C) 2009-2020 Free Software Foundation, Inc.
 #   Contributed by ARM Ltd.
 #
 # This file is part of the GNU Binutils.
@@ -170,7 +170,7 @@ elf${ELFSIZE}_aarch64_add_stub_section (const char *stub_sec_name,
   lang_output_section_statement_type *os;
   struct hook_stub_info info;
 
-  flags = (SEC_ALLOC | SEC_LOAD | SEC_READONLY | SEC_CODE | SEC_LINKER_CREATED
+  flags = (SEC_ALLOC | SEC_LOAD | SEC_READONLY | SEC_CODE
 	   | SEC_HAS_CONTENTS | SEC_RELOC | SEC_IN_MEMORY | SEC_KEEP);
   stub_sec = bfd_make_section_anyway_with_flags (stub_file->the_bfd,
 						 stub_sec_name, flags);

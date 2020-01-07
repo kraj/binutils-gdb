@@ -1,6 +1,6 @@
 /* GDB CLI commands.
 
-   Copyright (C) 2000-2019 Free Software Foundation, Inc.
+   Copyright (C) 2000-2020 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -800,6 +800,18 @@ exit_status_set_internal_vars (int exit_status)
   clear_internalvar (var_signal);
   if (WIFEXITED (exit_status))
     set_internalvar_integer (var_code, WEXITSTATUS (exit_status));
+#ifdef __MINGW32__
+  else if (WIFSIGNALED (exit_status) && WTERMSIG (exit_status) == -1)
+    {
+      /* The -1 condition can happen on MinGW, if we don't recognize
+	 the fatal exception code encoded in the exit status; see
+	 gdbsupport/gdb_wait.c.  We don't want to lose information in
+	 the exit status in that case.  Record it as a normal exit
+	 with the full exit status, including the higher 0xC0000000
+	 bits.  */
+      set_internalvar_integer (var_code, exit_status);
+    }
+#endif
   else if (WIFSIGNALED (exit_status))
     set_internalvar_integer (var_signal, WTERMSIG (exit_status));
   else
@@ -1338,7 +1350,9 @@ print_disassembly (struct gdbarch *gdbarch, const char *name,
 		   gdb_disassembly_flags flags)
 {
 #if defined(TUI)
-  if (!tui_is_window_visible (DISASSEM_WIN))
+  if (tui_is_window_visible (DISASSEM_WIN))
+    tui_show_assembly (gdbarch, low);
+  else
 #endif
     {
       printf_filtered ("Dump of assembler code ");
@@ -1368,12 +1382,6 @@ print_disassembly (struct gdbarch *gdbarch, const char *name,
 	}
       printf_filtered ("End of assembler dump.\n");
     }
-#if defined(TUI)
-  else
-    {
-      tui_show_assembly (gdbarch, low);
-    }
-#endif
 }
 
 /* Subroutine of disassemble_command to simplify it.

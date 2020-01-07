@@ -1,6 +1,6 @@
 /* TUI layout window management.
 
-   Copyright (C) 1998-2019 Free Software Foundation, Inc.
+   Copyright (C) 1998-2020 Free Software Foundation, Inc.
 
    Contributed by Hewlett-Packard Company.
 
@@ -201,9 +201,9 @@ tui_add_win_to_layout (enum tui_win_type type)
 	  && cur_layout != SRC_DATA_COMMAND)
 	{
 	  if (cur_layout == DISASSEM_DATA_COMMAND)
-	    show_layout (SRC_DATA_COMMAND);
+	    tui_set_layout (SRC_DATA_COMMAND);
 	  else
-	    show_layout (SRC_COMMAND);
+	    tui_set_layout (SRC_COMMAND);
 	}
       break;
     case DISASSEM_WIN:
@@ -212,9 +212,9 @@ tui_add_win_to_layout (enum tui_win_type type)
 	  && cur_layout != DISASSEM_DATA_COMMAND)
 	{
 	  if (cur_layout == SRC_DATA_COMMAND)
-	    show_layout (DISASSEM_DATA_COMMAND);
+	    tui_set_layout (DISASSEM_DATA_COMMAND);
 	  else
-	    show_layout (DISASSEM_COMMAND);
+	    tui_set_layout (DISASSEM_COMMAND);
 	}
       break;
     case DATA_WIN:
@@ -222,9 +222,9 @@ tui_add_win_to_layout (enum tui_win_type type)
 	  && cur_layout != DISASSEM_DATA_COMMAND)
 	{
 	  if (cur_layout == DISASSEM_COMMAND)
-	    show_layout (DISASSEM_DATA_COMMAND);
+	    tui_set_layout (DISASSEM_DATA_COMMAND);
 	  else
-	    show_layout (SRC_DATA_COMMAND);
+	    tui_set_layout (SRC_DATA_COMMAND);
 	}
       break;
     default:
@@ -373,10 +373,6 @@ tui_gen_win_info::resize (int height_, int width_,
 
   width = width_;
   height = height_;
-  if (height > 1)
-    viewport_height = height - 2;
-  else
-    viewport_height = 1;
   x = origin_x_;
   y = origin_y_;
 

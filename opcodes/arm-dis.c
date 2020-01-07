@@ -1,5 +1,5 @@
 /* Instruction printing code for the ARM
-   Copyright (C) 1994-2019 Free Software Foundation, Inc.
+   Copyright (C) 1994-2020 Free Software Foundation, Inc.
    Contributed by Richard Earnshaw (rwe@pegasus.esprit.ec.org)
    Modification by James G. Smith (jsmith@cygnus.co.uk)
 
@@ -9927,12 +9927,12 @@ print_insn_arm (bfd_vma pc, struct disassemble_info *info, long given)
 			  unsigned int immed = (given & 0xff);
 			  unsigned int a, i;
 
-			  a = (((immed << (32 - rotate))
-				| (immed >> rotate)) & 0xffffffff);
+			  a = (immed << ((32 - rotate) & 31)
+			       | immed >> rotate) & 0xffffffff;
 			  /* If there is another encoding with smaller rotate,
 			     the rotate should be specified directly.  */
 			  for (i = 0; i < 32; i += 2)
-			    if ((a << i | a >> (32 - i)) <= 0xff)
+			    if ((a << i | a >> ((32 - i) & 31)) <= 0xff)
 			      break;
 
 			  if (i != rotate)
@@ -11705,7 +11705,7 @@ static int
 print_insn (bfd_vma pc, struct disassemble_info *info, bfd_boolean little)
 {
   unsigned char b[4];
-  long		given;
+  unsigned long given;
   int           status;
   int           is_thumb = FALSE;
   int           is_data = FALSE;
@@ -11885,9 +11885,9 @@ print_insn (bfd_vma pc, struct disassemble_info *info, bfd_boolean little)
 
       status = info->read_memory_func (pc, (bfd_byte *) b, 4, info);
       if (little_code)
-	given = (b[0]) | (b[1] << 8) | (b[2] << 16) | (b[3] << 24);
+	given = (b[0]) | (b[1] << 8) | (b[2] << 16) | ((unsigned) b[3] << 24);
       else
-	given = (b[3]) | (b[2] << 8) | (b[1] << 16) | (b[0] << 24);
+	given = (b[3]) | (b[2] << 8) | (b[1] << 16) | ((unsigned) b[0] << 24);
     }
   else
     {

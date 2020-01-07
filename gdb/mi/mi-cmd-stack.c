@@ -1,5 +1,5 @@
 /* MI Command Set - stack commands.
-   Copyright (C) 2000-2019 Free Software Foundation, Inc.
+   Copyright (C) 2000-2020 Free Software Foundation, Inc.
    Contributed by Cygnus Solutions (a Red Hat company).
 
    This file is part of GDB.
@@ -543,7 +543,7 @@ list_arg_or_local (const struct frame_arg *arg, enum what_to_list what,
 	      get_no_prettyformat_print_options (&opts);
 	      opts.deref_ref = 1;
 	      common_val_print (arg->val, &stb, 0, &opts,
-				language_def (SYMBOL_LANGUAGE (arg->sym)));
+				language_def (arg->sym->language ()));
 	    }
 	  catch (const gdb_exception_error &except)
 	    {

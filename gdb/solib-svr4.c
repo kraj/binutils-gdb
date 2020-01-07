@@ -1,6 +1,6 @@
 /* Handle SVR4 shared libraries for GDB, the GNU Debugger.
 
-   Copyright (C) 1990-2019 Free Software Foundation, Inc.
+   Copyright (C) 1990-2020 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -1942,7 +1942,27 @@ svr4_handle_solib_event (void)
     /* Always locate the debug struct, in case it moved.  */
     info->debug_base = 0;
     if (locate_base (info) == 0)
-      return;
+      {
+	/* It's possible for the reloc_complete probe to be triggered before
+	   the linker has set the DT_DEBUG pointer (for example, when the
+	   linker has finished relocating an LD_AUDIT library or its
+	   dependencies).  Since we can't yet handle libraries from other link
+	   namespaces, we don't lose anything by ignoring them here.  */
+	struct value *link_map_id_val;
+	try
+	  {
+	    link_map_id_val = pa->prob->evaluate_argument (0, frame);
+	  }
+	catch (const gdb_exception_error)
+	  {
+	    link_map_id_val = NULL;
+	  }
+	/* glibc and illumos' libc both define LM_ID_BASE as zero.  */
+	if (link_map_id_val != NULL && value_as_long (link_map_id_val) != 0)
+	  action = DO_NOTHING;
+	else
+	  return;
+      }
 
     /* GDB does not currently support libraries loaded via dlmopen
        into namespaces other than the initial one.  We must ignore

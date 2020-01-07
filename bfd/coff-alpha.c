@@ -1,5 +1,5 @@
 /* BFD back-end for ALPHA Extended-Coff files.
-   Copyright (C) 1993-2019 Free Software Foundation, Inc.
+   Copyright (C) 1993-2020 Free Software Foundation, Inc.
    Modified from coff-mips.c by Steve Chamberlain <sac@cygnus.com> and
    Ian Lance Taylor <ian@cygnus.com>.
 
@@ -2026,7 +2026,10 @@ alpha_ecoff_read_ar_hdr (bfd *abfd)
       if (bfd_seek (abfd, (file_ptr) FILHSZ, SEEK_CUR) != 0
 	  || bfd_bread (ab, (bfd_size_type) 8, abfd) != 8
 	  || bfd_seek (abfd, (file_ptr) (- (FILHSZ + 8)), SEEK_CUR) != 0)
-	return NULL;
+	{
+	  free (ret);
+	  return NULL;
+	}
 
       ret->parsed_size = H_GET_64 (abfd, ab);
     }

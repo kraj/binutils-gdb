@@ -1,6 +1,6 @@
 /* Target dependent code for GDB on TI C6x systems.
 
-   Copyright (C) 2010-2019 Free Software Foundation, Inc.
+   Copyright (C) 2010-2020 Free Software Foundation, Inc.
    Contributed by Andrew Jenner <andrew@codesourcery.com>
    Contributed by Yao Qi <yao@codesourcery.com>
 
@@ -784,7 +784,7 @@ tic6x_return_value (struct gdbarch *gdbarch, struct value *function,
       if (type != NULL)
 	{
 	  type = check_typedef (type);
-	  if (language_pass_by_reference (type))
+	  if (!(language_pass_by_reference (type).trivially_copyable))
 	    return RETURN_VALUE_STRUCT_CONVENTION;
 	}
     }

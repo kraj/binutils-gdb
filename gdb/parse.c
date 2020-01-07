@@ -1,6 +1,6 @@
 /* Parse expressions for GDB.
 
-   Copyright (C) 1986-2019 Free Software Foundation, Inc.
+   Copyright (C) 1986-2020 Free Software Foundation, Inc.
 
    Modified from expread.y by the Department of Computer Science at the
    State University of New York at Buffalo, 1991.
@@ -1098,7 +1098,7 @@ parse_exp_in_context (const char **stringptr, CORE_ADDR pc,
       struct symbol *func = block_linkage_function (block);
 
       if (func != NULL)
-        lang = language_def (SYMBOL_LANGUAGE (func));
+        lang = language_def (func->language ());
       if (lang == NULL || lang->la_language == language_unknown)
         lang = current_language;
     }

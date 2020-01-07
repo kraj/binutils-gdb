@@ -1,6 +1,6 @@
 /* Symbol table definitions for GDB.
 
-   Copyright (C) 1986-2019 Free Software Foundation, Inc.
+   Copyright (C) 1986-2020 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -389,7 +389,7 @@ struct general_symbol_info
      and linkage_name () are different.  */
 
   const char *linkage_name () const
-  { return name; }
+  { return m_name; }
 
   /* Return SYMBOL's "natural" name, i.e. the name that it was called in
      the original source code.  In languages like C++ where symbols may
@@ -419,11 +419,26 @@ struct general_symbol_info
 
   /* Set just the linkage name of a symbol; do not try to demangle
      it.  Used for constructs which do not have a mangled name,
-     e.g. struct tags.  Unlike SYMBOL_SET_NAMES, linkage_name must
+     e.g. struct tags.  Unlike compute_and_set_names, linkage_name must
      be terminated and either already on the objfile's obstack or
      permanently allocated.  */
   void set_linkage_name (const char *linkage_name)
-  { name = linkage_name; }
+  { m_name = linkage_name; }
+
+  enum language language () const
+  { return m_language; }
+
+  /* Initializes the language dependent portion of a symbol
+     depending upon the language for the symbol.  */
+  void set_language (enum language language, struct obstack *obstack);
+
+  /* Set the linkage and natural names of a symbol, by demangling
+     the linkage name.  If linkage_name may not be nullterminated,
+     copy_name must be set to true.  */
+  void compute_and_set_names (gdb::string_view linkage_name, bool copy_name,
+			      struct objfile_per_bfd_storage *per_bfd,
+			      gdb::optional<hashval_t> hash
+			        = gdb::optional<hashval_t> ());
 
   /* Name of the symbol.  This is a required field.  Storage for the
      name is allocated on the objfile_obstack for the associated
@@ -431,7 +446,7 @@ struct general_symbol_info
      the mangled name and demangled name, this is the mangled
      name.  */
 
-  const char *name;
+  const char *m_name;
 
   /* Value of the symbol.  Which member of this union to use, and what
      it means, depends on what kind of symbol this is and its
@@ -479,7 +494,7 @@ struct general_symbol_info
      This is used to select one of the fields from the language specific
      union above.  */
 
-  ENUM_BITFIELD(language) language : LANGUAGE_BITS;
+  ENUM_BITFIELD(language) m_language : LANGUAGE_BITS;
 
   /* This is only used by Ada.  If set, then the 'demangled_name' field
      of language_specific is valid.  Otherwise, the 'obstack' field is
@@ -522,20 +537,11 @@ extern CORE_ADDR get_symbol_address (const struct symbol *sym);
 #define SYMBOL_VALUE_COMMON_BLOCK(symbol) (symbol)->value.common_block
 #define SYMBOL_BLOCK_VALUE(symbol)	(symbol)->value.block
 #define SYMBOL_VALUE_CHAIN(symbol)	(symbol)->value.chain
-#define SYMBOL_LANGUAGE(symbol)		(symbol)->language
 #define SYMBOL_SECTION(symbol)		(symbol)->section
 #define SYMBOL_OBJ_SECTION(objfile, symbol)			\
   (((symbol)->section >= 0)				\
    ? (&(((objfile)->sections)[(symbol)->section]))	\
    : NULL)
-
-/* Initializes the language dependent portion of a symbol
-   depending upon the language for the symbol.  */
-#define SYMBOL_SET_LANGUAGE(symbol,language,obstack)	\
-  (symbol_set_language ((symbol), (language), (obstack)))
-extern void symbol_set_language (struct general_symbol_info *symbol,
-                                 enum language language,
-				 struct obstack *obstack);
 
 /* Try to determine the demangled name for a symbol, based on the
    language of that symbol.  If the language is set to language_auto,
@@ -545,18 +551,6 @@ extern void symbol_set_language (struct general_symbol_info *symbol,
 
 extern char *symbol_find_demangled_name (struct general_symbol_info *gsymbol,
 					 const char *mangled);
-
-/* Set the linkage and natural names of a symbol, by demangling
-   the linkage name.  If linkage_name may not be nullterminated,
-   copy_name must be set to true.  */
-#define SYMBOL_SET_NAMES(symbol,linkage_name,copy_name,objfile)	\
-  symbol_set_names ((symbol), linkage_name, copy_name, \
-		    (objfile)->per_bfd)
-extern void symbol_set_names (struct general_symbol_info *symbol,
-			      gdb::string_view linkage_name, bool copy_name,
-			      struct objfile_per_bfd_storage *per_bfd,
-			      gdb::optional<hashval_t> hash
-			        = gdb::optional<hashval_t> ());
 
 /* Return true if NAME matches the "search" name of SYMBOL, according
    to the symbol's language.  */
@@ -741,7 +735,6 @@ extern CORE_ADDR get_msymbol_address (struct objfile *objf,
 #define MSYMBOL_VALUE_BYTES(symbol)	(symbol)->value.bytes
 #define MSYMBOL_BLOCK_VALUE(symbol)	(symbol)->value.block
 #define MSYMBOL_VALUE_CHAIN(symbol)	(symbol)->value.chain
-#define MSYMBOL_LANGUAGE(symbol)	(symbol)->language
 #define MSYMBOL_SECTION(symbol)		(symbol)->section
 #define MSYMBOL_OBJ_SECTION(objfile, symbol)			\
   (((symbol)->section >= 0)				\
@@ -1095,10 +1088,10 @@ struct symbol : public general_symbol_info, public allocate_on_obstack
     {
       /* We can't use an initializer list for members of a base class, and
          general_symbol_info needs to stay a POD type.  */
-      name = nullptr;
+      m_name = nullptr;
       value.ivalue = 0;
       language_specific.obstack = nullptr;
-      language = language_unknown;
+      m_language = language_unknown;
       ada_mangled = 0;
       section = 0;
       /* GCC 4.8.5 (on CentOS 7) does not correctly compile class-

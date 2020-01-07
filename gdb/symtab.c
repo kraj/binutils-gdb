@@ -1,6 +1,6 @@
 /* Symbol table lookup for the GNU debugger, GDB.
 
-   Copyright (C) 1986-2019 Free Software Foundation, Inc.
+   Copyright (C) 1986-2020 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -675,7 +675,7 @@ symbol_set_demangled_name (struct general_symbol_info *gsymbol,
                            const char *name,
                            struct obstack *obstack)
 {
-  if (gsymbol->language == language_ada)
+  if (gsymbol->language () == language_ada)
     {
       if (name == NULL)
 	{
@@ -697,7 +697,7 @@ symbol_set_demangled_name (struct general_symbol_info *gsymbol,
 const char *
 symbol_get_demangled_name (const struct general_symbol_info *gsymbol)
 {
-  if (gsymbol->language == language_ada)
+  if (gsymbol->language () == language_ada)
     {
       if (!gsymbol->ada_mangled)
 	return NULL;
@@ -712,28 +712,26 @@ symbol_get_demangled_name (const struct general_symbol_info *gsymbol)
    depending upon the language for the symbol.  */
 
 void
-symbol_set_language (struct general_symbol_info *gsymbol,
-                     enum language language,
-		     struct obstack *obstack)
+general_symbol_info::set_language (enum language language,
+				   struct obstack *obstack)
 {
-  gsymbol->language = language;
-  if (gsymbol->language == language_cplus
-      || gsymbol->language == language_d
-      || gsymbol->language == language_go
-      || gsymbol->language == language_objc
-      || gsymbol->language == language_fortran)
+  m_language = language;
+  if (language == language_cplus
+      || language == language_d
+      || language == language_go
+      || language == language_objc
+      || language == language_fortran)
     {
-      symbol_set_demangled_name (gsymbol, NULL, obstack);
+      symbol_set_demangled_name (this, NULL, obstack);
     }
-  else if (gsymbol->language == language_ada)
+  else if (language == language_ada)
     {
-      gdb_assert (gsymbol->ada_mangled == 0);
-      gsymbol->language_specific.obstack = obstack;
+      gdb_assert (ada_mangled == 0);
+      language_specific.obstack = obstack;
     }
   else
     {
-      memset (&gsymbol->language_specific, 0,
-	      sizeof (gsymbol->language_specific));
+      memset (&language_specific, 0, sizeof (language_specific));
     }
 }
 
@@ -819,12 +817,12 @@ symbol_find_demangled_name (struct general_symbol_info *gsymbol,
   char *demangled = NULL;
   int i;
 
-  if (gsymbol->language == language_unknown)
-    gsymbol->language = language_auto;
+  if (gsymbol->language () == language_unknown)
+    gsymbol->m_language = language_auto;
 
-  if (gsymbol->language != language_auto)
+  if (gsymbol->language () != language_auto)
     {
-      const struct language_defn *lang = language_def (gsymbol->language);
+      const struct language_defn *lang = language_def (gsymbol->language ());
 
       language_sniff_from_mangled_name (lang, mangled, &demangled);
       return demangled;
@@ -837,7 +835,7 @@ symbol_find_demangled_name (struct general_symbol_info *gsymbol,
 
       if (language_sniff_from_mangled_name (lang, mangled, &demangled))
 	{
-	  gsymbol->language = l;
+	  gsymbol->m_language = l;
 	  return demangled;
 	}
     }
@@ -857,19 +855,19 @@ symbol_find_demangled_name (struct general_symbol_info *gsymbol,
    so the pointer can be discarded after calling this function.  */
 
 void
-symbol_set_names (struct general_symbol_info *gsymbol,
-		  gdb::string_view linkage_name, bool copy_name,
-		  struct objfile_per_bfd_storage *per_bfd,
-		  gdb::optional<hashval_t> hash)
+general_symbol_info::compute_and_set_names (gdb::string_view linkage_name,
+					    bool copy_name,
+					    objfile_per_bfd_storage *per_bfd,
+					    gdb::optional<hashval_t> hash)
 {
   struct demangled_name_entry **slot;
 
-  if (gsymbol->language == language_ada)
+  if (language () == language_ada)
     {
       /* In Ada, we do the symbol lookups using the mangled name, so
          we can save some space by not storing the demangled name.  */
       if (!copy_name)
-	gsymbol->name = linkage_name.data ();
+	m_name = linkage_name.data ();
       else
 	{
 	  char *name = (char *) obstack_alloc (&per_bfd->storage_obstack,
@@ -877,9 +875,9 @@ symbol_set_names (struct general_symbol_info *gsymbol,
 
 	  memcpy (name, linkage_name.data (), linkage_name.length ());
 	  name[linkage_name.length ()] = '\0';
-	  gsymbol->name = name;
+	  m_name = name;
 	}
-      symbol_set_demangled_name (gsymbol, NULL, &per_bfd->storage_obstack);
+      symbol_set_demangled_name (this, NULL, &per_bfd->storage_obstack);
 
       return;
     }
@@ -898,7 +896,7 @@ symbol_set_names (struct general_symbol_info *gsymbol,
   if (*slot == NULL
       /* A C version of the symbol may have already snuck into the table.
 	 This happens to, e.g., main.init (__go_init_main).  Cope.  */
-      || (gsymbol->language == language_go && (*slot)->demangled == nullptr))
+      || (language () == language_go && (*slot)->demangled == nullptr))
     {
       /* A 0-terminated copy of the linkage name.  Callers must set COPY_NAME
          to true if the string might not be nullterminated.  We have to make
@@ -922,9 +920,9 @@ symbol_set_names (struct general_symbol_info *gsymbol,
          allocated from the heap and needs to be freed by us, just
          like if we called symbol_find_demangled_name here.  */
       gdb::unique_xmalloc_ptr<char> demangled_name
-	(gsymbol->language_specific.demangled_name
-	 ? const_cast<char *> (gsymbol->language_specific.demangled_name)
-	 : symbol_find_demangled_name (gsymbol, linkage_name_copy.data ()));
+	(language_specific.demangled_name
+	 ? const_cast<char *> (language_specific.demangled_name)
+	 : symbol_find_demangled_name (this, linkage_name_copy.data ()));
 
       /* Suppose we have demangled_name==NULL, copy_name==0, and
 	 linkage_name_copy==linkage_name.  In this case, we already have the
@@ -959,18 +957,17 @@ symbol_set_names (struct general_symbol_info *gsymbol,
 	    (gdb::string_view (mangled_ptr, linkage_name.length ()));
 	}
       (*slot)->demangled = std::move (demangled_name);
-      (*slot)->language = gsymbol->language;
+      (*slot)->language = language ();
     }
-  else if (gsymbol->language == language_unknown
-	   || gsymbol->language == language_auto)
-    gsymbol->language = (*slot)->language;
+  else if (language () == language_unknown || language () == language_auto)
+    m_language = (*slot)->language;
 
-  gsymbol->name = (*slot)->mangled.data ();
+  m_name = (*slot)->mangled.data ();
   if ((*slot)->demangled != nullptr)
-    symbol_set_demangled_name (gsymbol, (*slot)->demangled.get (),
+    symbol_set_demangled_name (this, (*slot)->demangled.get (),
 			       &per_bfd->storage_obstack);
   else
-    symbol_set_demangled_name (gsymbol, NULL, &per_bfd->storage_obstack);
+    symbol_set_demangled_name (this, NULL, &per_bfd->storage_obstack);
 }
 
 /* See symtab.h.  */
@@ -978,7 +975,7 @@ symbol_set_names (struct general_symbol_info *gsymbol,
 const char *
 general_symbol_info::natural_name () const
 {
-  switch (language)
+  switch (language ())
     {
     case language_cplus:
     case language_d:
@@ -993,7 +990,7 @@ general_symbol_info::natural_name () const
     default:
       break;
     }
-  return name;
+  return linkage_name ();
 }
 
 /* See symtab.h.  */
@@ -1003,7 +1000,7 @@ general_symbol_info::demangled_name () const
 {
   const char *dem_name = NULL;
 
-  switch (language)
+  switch (language ())
     {
     case language_cplus:
     case language_d:
@@ -1026,8 +1023,8 @@ general_symbol_info::demangled_name () const
 const char *
 general_symbol_info::search_name () const
 {
-  if (language == language_ada)
-    return name;
+  if (language () == language_ada)
+    return linkage_name ();
   else
     return natural_name ();
 }
@@ -1039,7 +1036,7 @@ symbol_matches_search_name (const struct general_symbol_info *gsymbol,
 			    const lookup_name_info &name)
 {
   symbol_name_matcher_ftype *name_match
-    = get_symbol_name_matcher (language_def (gsymbol->language), name);
+    = get_symbol_name_matcher (language_def (gsymbol->language ()), name);
   return name_match (gsymbol->search_name (), name, NULL);
 }
 
@@ -1219,8 +1216,7 @@ eq_symbol_entry (const struct symbol_cache_slot *slot,
 	  if (!SYMBOL_MATCHES_SEARCH_NAME (sym, lookup_name))
 	    return 0;
 
-	  if (!symbol_matches_domain (SYMBOL_LANGUAGE (sym),
-				      slot_domain, domain))
+	  if (!symbol_matches_domain (sym->language (), slot_domain, domain))
 	    return 0;
 	}
     }
@@ -1673,7 +1669,8 @@ fixup_section (struct general_symbol_info *ginfo,
      e.g. on PowerPC64, where the minimal symbol for a function will
      point to the function descriptor, while the debug symbol will
      point to the actual function code.  */
-  msym = lookup_minimal_symbol_by_pc_name (addr, ginfo->name, objfile);
+  msym = lookup_minimal_symbol_by_pc_name (addr, ginfo->linkage_name (),
+					   objfile);
   if (msym)
     ginfo->section = MSYMBOL_SECTION (msym);
   else
@@ -2846,8 +2843,7 @@ iterate_over_symbols (const struct block *block,
 
   ALL_BLOCK_SYMBOLS_WITH_NAME (block, name, iter, sym)
     {
-      if (symbol_matches_domain (SYMBOL_LANGUAGE (sym),
-				 SYMBOL_DOMAIN (sym), domain))
+      if (symbol_matches_domain (sym->language (), SYMBOL_DOMAIN (sym), domain))
 	{
 	  struct block_symbol block_sym = {sym, block};
 
@@ -5262,7 +5258,7 @@ completion_list_add_symbol (completion_tracker &tracker,
 			    const lookup_name_info &lookup_name,
 			    const char *text, const char *word)
 {
-  completion_list_add_name (tracker, SYMBOL_LANGUAGE (sym),
+  completion_list_add_name (tracker, sym->language (),
 			    sym->natural_name (),
 			    lookup_name, text, word);
 }
@@ -5275,7 +5271,7 @@ completion_list_add_msymbol (completion_tracker &tracker,
 			     const lookup_name_info &lookup_name,
 			     const char *text, const char *word)
 {
-  completion_list_add_name (tracker, MSYMBOL_LANGUAGE (sym),
+  completion_list_add_name (tracker, sym->language (),
 			    sym->natural_name (),
 			    lookup_name, text, word);
 }
@@ -5409,7 +5405,7 @@ completion_list_add_fields (completion_tracker &tracker,
       if (c == TYPE_CODE_UNION || c == TYPE_CODE_STRUCT)
 	for (j = TYPE_N_BASECLASSES (t); j < TYPE_NFIELDS (t); j++)
 	  if (TYPE_FIELD_NAME (t, j))
-	    completion_list_add_name (tracker, SYMBOL_LANGUAGE (sym),
+	    completion_list_add_name (tracker, sym->language (),
 				      TYPE_FIELD_NAME (t, j),
 				      lookup_name, text, word);
     }

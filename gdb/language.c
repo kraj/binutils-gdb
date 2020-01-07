@@ -1,6 +1,6 @@
 /* Multiple source language support for GDB.
 
-   Copyright (C) 1991-2019 Free Software Foundation, Inc.
+   Copyright (C) 1991-2020 Free Software Foundation, Inc.
 
    Contributed by the Department of Computer Science at the State University
    of New York at Buffalo.
@@ -652,21 +652,23 @@ language_class_name_from_physname (const struct language_defn *lang,
   return NULL;
 }
 
-/* Return non-zero if TYPE should be passed (and returned) by
-   reference at the language level.  */
-int
+/* Return information about whether TYPE should be passed
+   (and returned) by reference at the language level.  */
+
+struct language_pass_by_ref_info
 language_pass_by_reference (struct type *type)
 {
   return current_language->la_pass_by_reference (type);
 }
 
-/* Return zero; by default, types are passed by value at the language
-   level.  The target ABI may pass or return some structs by reference
-   independent of this.  */
-int
+/* Return a default struct that provides pass-by-reference information
+   about the given TYPE.  Languages should update the default values
+   as appropriate.  */
+
+struct language_pass_by_ref_info
 default_pass_by_reference (struct type *type)
 {
-  return 0;
+  return {};
 }
 
 /* Return the default string containing the list of characters
@@ -1050,8 +1052,8 @@ language_alloc_type_symbol (enum language lang, struct type *type)
   gdbarch = TYPE_OWNER (type).gdbarch;
   symbol = new (gdbarch_obstack (gdbarch)) struct symbol ();
 
-  symbol->name = TYPE_NAME (type);
-  symbol->language = lang;
+  symbol->m_name = TYPE_NAME (type);
+  symbol->set_language (lang, nullptr);
   symbol->owner.arch = gdbarch;
   SYMBOL_OBJFILE_OWNED (symbol) = 0;
   SYMBOL_TYPE (symbol) = type;

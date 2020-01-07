@@ -1,6 +1,6 @@
 /* Call module for 'compile' command.
 
-   Copyright (C) 2014-2019 Free Software Foundation, Inc.
+   Copyright (C) 2014-2020 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -86,7 +86,7 @@ do_module_cleanup (void *arg, int registers_valid)
     if ((objfile->flags & OBJF_USERLOADED) == 0
         && (strcmp (objfile_name (objfile), data->objfile_name_string) == 0))
       {
-	delete objfile;
+	objfile->unlink ();
 
 	/* It may be a bit too pervasive in this dummy_frame dtor callback.  */
 	clear_symtab_users (0);

@@ -1,6 +1,6 @@
 # config.bfd
 #
-#   Copyright (C) 2012-2019 Free Software Foundation, Inc.
+#   Copyright (C) 2012-2020 Free Software Foundation, Inc.
 #
 # This file is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -207,7 +207,7 @@ wasm32)		 targ_archs=bfd_wasm32_arch ;;
 x86_64*)	 targ_archs=bfd_i386_arch ;;
 xtensa*)	 targ_archs=bfd_xtensa_arch ;;
 xgate)		 targ_archs=bfd_xgate_arch ;;
-z80|r800)	 targ_archs=bfd_z80_arch ;;
+z80*|r800|z180|gbz80|ez80*)	 targ_archs=bfd_z80_arch ;;
 z8k*)		 targ_archs=bfd_z8k_arch ;;
 *)		 targ_archs=bfd_${targ_cpu}_arch ;;
 esac
@@ -1333,11 +1333,6 @@ case "${targ}" in
     targ_selvecs="tic6x_elf32_linux_be_vec tic6x_elf32_le_vec tic6x_elf32_be_vec"
     ;;
 
-  tic80*-*-*)
-    targ_defvec=tic80_coff_vec
-    targ_underscore=yes
-    ;;
-
 #ifdef BFD64
   tilegx-*-*)
     targ_defvec=tilegx_elf64_le_vec
@@ -1409,8 +1404,13 @@ case "${targ}" in
     targ_defvec=xc16x_elf32_vec
     ;;
 
-  z80-*-*)
+  z80-*-coff)
     targ_defvec=z80_coff_vec
+    targ_underscore=no
+    ;;
+
+  z80-*-elf)
+    targ_defvec=z80_elf32_vec
     targ_underscore=no
     ;;
 

@@ -1,5 +1,5 @@
 /* Read coff symbol tables and convert to internal format, for GDB.
-   Copyright (C) 1987-2019 Free Software Foundation, Inc.
+   Copyright (C) 1987-2020 Free Software Foundation, Inc.
    Contributed by David D. Johnson, Brown University (ddj@cs.brown.edu).
 
    This file is part of GDB.
@@ -1566,9 +1566,9 @@ process_coff_symbol (struct coff_symbol *cs,
 
   name = cs->c_name;
   name = EXTERNAL_NAME (name, objfile->obfd);
-  SYMBOL_SET_LANGUAGE (sym, get_current_subfile ()->language,
-		       &objfile->objfile_obstack);
-  SYMBOL_SET_NAMES (sym, name, true, objfile);
+  sym->set_language (get_current_subfile ()->language,
+		     &objfile->objfile_obstack);
+  sym->compute_and_set_names (name, true, objfile->per_bfd);
 
   /* default assumptions */
   SYMBOL_VALUE (sym) = cs->c_value;

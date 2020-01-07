@@ -1,6 +1,6 @@
 /* Top level stuff for GDB, the GNU debugger.
 
-   Copyright (C) 1999-2019 Free Software Foundation, Inc.
+   Copyright (C) 1999-2020 Free Software Foundation, Inc.
 
    Written by Elena Zannoni <ezannoni@cygnus.com> of Cygnus Solutions.
 
@@ -881,7 +881,7 @@ handle_sigsegv (int sig)
   install_handle_sigsegv ();
 
   if (thread_local_segv_handler == nullptr)
-    abort ();
+    abort ();			/* ARI: abort */
   thread_local_segv_handler (sig);
 }
 

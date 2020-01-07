@@ -1,6 +1,6 @@
 /* Core dump and executable file functions below target vector, for GDB.
 
-   Copyright (C) 1986-2019 Free Software Foundation, Inc.
+   Copyright (C) 1986-2020 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -44,6 +44,7 @@
 #include "completer.h"
 #include "gdbsupport/filestuff.h"
 #include "build-id.h"
+#include "gdbsupport/pathstuff.h"
 
 #ifndef O_LARGEFILE
 #define O_LARGEFILE 0
@@ -395,8 +396,7 @@ core_target_open (const char *arg, int from_tty)
 
   gdb::unique_xmalloc_ptr<char> filename (tilde_expand (arg));
   if (!IS_ABSOLUTE_PATH (filename.get ()))
-    filename.reset (concat (current_directory, "/",
-			    filename.get (), (char *) NULL));
+    filename = gdb_abspath (filename.get ());
 
   flags = O_BINARY | O_LARGEFILE;
   if (write_files)

@@ -1,7 +1,7 @@
 dnl                                            -*- Autoconf -*-
 dnl Process this file with autoconf to produce a configure script.
 dnl
-dnl   Copyright (C) 2019 Free Software Foundation, Inc.
+dnl   Copyright (C) 2019-2020 Free Software Foundation, Inc.
 dnl
 dnl This file is free software; you can redistribute it and/or modify
 dnl it under the terms of the GNU General Public License as published by
@@ -98,6 +98,8 @@ fi
 AC_C_BIGENDIAN
 AC_CHECK_HEADERS(byteswap.h endian.h)
 AC_CHECK_FUNCS(pread)
+
+AC_CHECK_DECLS([asprintf])
 
 dnl Check for qsort_r.  (Taken from gnulib.)
 AC_CHECK_FUNCS_ONCE([qsort_r])

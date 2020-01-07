@@ -1,6 +1,6 @@
 /* Print instructions for the Texas TMS320C[34]X, for GDB and GNU Binutils.
 
-   Copyright (C) 2002-2019 Free Software Foundation, Inc.
+   Copyright (C) 2002-2020 Free Software Foundation, Inc.
 
    Contributed by Michael P. Hayes (m.hayes@elec.canterbury.ac.nz)
 
@@ -277,7 +277,7 @@ tic4x_print_cond (struct disassemble_info *info, unsigned int cond)
 
   if (condtable == NULL)
     {
-      condtable = xmalloc (sizeof (tic4x_cond_t *) * 32);
+      condtable = xcalloc (32, sizeof (tic4x_cond_t *));
       for (i = 0; i < tic4x_num_conds; i++)
 	condtable[tic4x_conds[i].cond] = (tic4x_cond_t *)(tic4x_conds + i);
     }

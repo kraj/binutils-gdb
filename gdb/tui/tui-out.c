@@ -1,6 +1,6 @@
 /* Output generating routines for GDB CLI.
 
-   Copyright (C) 1999-2019 Free Software Foundation, Inc.
+   Copyright (C) 1999-2020 Free Software Foundation, Inc.
 
    Contributed by Cygnus Solutions.
    Written by Fernando Nasser for Cygnus.
@@ -60,10 +60,7 @@ tui_ui_out::do_field_string (int fldno, int width, ui_align align,
   m_start_of_line++;
 
   if (fldname && m_line > 0 && strcmp (fldname, "fullname") == 0)
-    {
-      tui_show_source (string, m_line);
-      return;
-    }
+    return;
 
   cli_ui_out::do_field_string (fldno, width, align, fldname, string, style);
 }

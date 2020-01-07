@@ -1,5 +1,5 @@
 /* Read dbx symbol tables and convert to internal format, for GDB.
-   Copyright (C) 1986-2019 Free Software Foundation, Inc.
+   Copyright (C) 1986-2020 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -2456,7 +2456,7 @@ process_one_symbol (int type, int desc, CORE_ADDR valu, const char *name,
 				cstk.start_addr, cstk.start_addr + valu);
 
 	  /* For C++, set the block's scope.  */
-	  if (SYMBOL_LANGUAGE (cstk.name) == language_cplus)
+	  if (cstk.name->language () == language_cplus)
 	    cp_set_block_scope (cstk.name, block, &objfile->objfile_obstack);
 
 	  /* May be switching to an assembler file which may not be using
@@ -2823,7 +2823,7 @@ process_one_symbol (int type, int desc, CORE_ADDR valu, const char *name,
 					cstk.start_addr, valu);
 
 		  /* For C++, set the block's scope.  */
-		  if (SYMBOL_LANGUAGE (cstk.name) == language_cplus)
+		  if (cstk.name->language () == language_cplus)
 		    cp_set_block_scope (cstk.name, block,
 					&objfile->objfile_obstack);
 		}

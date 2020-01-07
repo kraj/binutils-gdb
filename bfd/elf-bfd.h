@@ -1,5 +1,5 @@
 /* BFD back-end data structures for ELF files.
-   Copyright (C) 1992-2019 Free Software Foundation, Inc.
+   Copyright (C) 1992-2020 Free Software Foundation, Inc.
    Written by Cygnus Support.
 
    This file is part of BFD, the Binary File Descriptor library.
@@ -2836,8 +2836,8 @@ extern asection _bfd_elf_large_com_section;
 /* Hash for local symbol with the first section id, ID, in the input
    file and the local symbol index, SYM.  */
 #define ELF_LOCAL_SYMBOL_HASH(ID, SYM) \
-  (((((ID) & 0xff) << 24) | (((ID) & 0xff00) << 8)) \
-   ^ (SYM) ^ ((ID) >> 16))
+  (((((ID) & 0xffU) << 24) | (((ID) & 0xff00) << 8)) \
+   ^ (SYM) ^ (((ID) & 0xffff0000U) >> 16))
 
 /* This is the condition under which finish_dynamic_symbol will be called.
    If our finish_dynamic_symbol isn't called, we'll need to do something

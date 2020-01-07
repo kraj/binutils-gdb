@@ -1,6 +1,6 @@
 /* Target-vector operations for controlling windows child processes, for GDB.
 
-   Copyright (C) 1995-2019 Free Software Foundation, Inc.
+   Copyright (C) 1995-2020 Free Software Foundation, Inc.
 
    Contributed by Cygnus Solutions, A Red Hat Company.
 
@@ -68,6 +68,7 @@
 #include "inf-child.h"
 #include "gdbsupport/gdb_tilde_expand.h"
 #include "gdbsupport/pathstuff.h"
+#include "gdbsupport/gdb_wait.h"
 
 #define AdjustTokenPrivileges		dyn_AdjustTokenPrivileges
 #define DebugActiveProcessStop		dyn_DebugActiveProcessStop
@@ -940,7 +941,14 @@ catch_errors (void (*func) ())
 static void
 windows_clear_solib (void)
 {
-  solib_start.next = NULL;
+  struct so_list *so;
+
+  for (so = solib_start.next; so; so = solib_start.next)
+    {
+      solib_start.next = so->next;
+      windows_free_so (so);
+    }
+
   solib_end = &solib_start;
 }
 
@@ -1620,8 +1628,23 @@ get_windows_debug_event (struct target_ops *ops,
 	  windows_delete_thread (ptid_t (current_event.dwProcessId, 0,
 					 current_event.dwThreadId),
 				 0, true /* main_thread_p */);
-	  ourstatus->kind = TARGET_WAITKIND_EXITED;
-	  ourstatus->value.integer = current_event.u.ExitProcess.dwExitCode;
+	  DWORD exit_status = current_event.u.ExitProcess.dwExitCode;
+	  /* If the exit status looks like a fatal exception, but we
+	     don't recognize the exception's code, make the original
+	     exit status value available, to avoid losing
+	     information.  */
+	  int exit_signal
+	    = WIFSIGNALED (exit_status) ? WTERMSIG (exit_status) : -1;
+	  if (exit_signal == -1)
+	    {
+	      ourstatus->kind = TARGET_WAITKIND_EXITED;
+	      ourstatus->value.integer = exit_status;
+	    }
+	  else
+	    {
+	      ourstatus->kind = TARGET_WAITKIND_SIGNALLED;
+	      ourstatus->value.sig = gdb_signal_from_host (exit_signal);
+	    }
 	  thread_id = current_event.dwThreadId;
 	}
       break;
@@ -1990,7 +2013,7 @@ windows_nat_target::attach (const char *args, int from_tty)
 
   if (from_tty)
     {
-      char *exec_file = (char *) get_exec_file (0);
+      const char *exec_file = get_exec_file (0);
 
       if (exec_file)
 	printf_unfiltered ("Attaching to program `%s', %s\n", exec_file,

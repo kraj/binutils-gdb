@@ -1,5 +1,5 @@
 /* BFD back-end for IBM RS/6000 "XCOFF" files.
-   Copyright (C) 1990-2019 Free Software Foundation, Inc.
+   Copyright (C) 1990-2020 Free Software Foundation, Inc.
    Written by Metin G. Ozisik, Mimi Phuong-Thao Vo, and John Gilmore.
    Archive support from Damon A. Permezel.
    Contributed by IBM Corporation and Cygnus Support.
@@ -1260,18 +1260,27 @@ _bfd_xcoff_slurp_armap (bfd *abfd)
 	return FALSE;
 
       GET_VALUE_IN_FIELD (sz, hdr.size, 10);
+      if (sz == (bfd_size_type) -1)
+	{
+	  bfd_set_error (bfd_error_no_memory);
+	  return FALSE;
+	}
 
       /* Read in the entire symbol table.  */
-      contents = (bfd_byte *) bfd_alloc (abfd, sz);
+      contents = (bfd_byte *) bfd_alloc (abfd, sz + 1);
       if (contents == NULL)
 	return FALSE;
       if (bfd_bread (contents, sz, abfd) != sz)
 	return FALSE;
 
+      /* Ensure strings are NULL terminated so we don't wander off the
+	 end of the buffer.  */
+      contents[sz] = 0;
+
       /* The symbol table starts with a four byte count.  */
       c = H_GET_32 (abfd, contents);
 
-      if (c * 4 >= sz)
+      if (c >= sz / 4)
 	{
 	  bfd_set_error (bfd_error_bad_value);
 	  return FALSE;
@@ -1315,18 +1324,27 @@ _bfd_xcoff_slurp_armap (bfd *abfd)
 	return FALSE;
 
       GET_VALUE_IN_FIELD (sz, hdr.size, 10);
+      if (sz == (bfd_size_type) -1)
+	{
+	  bfd_set_error (bfd_error_no_memory);
+	  return FALSE;
+	}
 
       /* Read in the entire symbol table.  */
-      contents = (bfd_byte *) bfd_alloc (abfd, sz);
+      contents = (bfd_byte *) bfd_alloc (abfd, sz + 1);
       if (contents == NULL)
 	return FALSE;
       if (bfd_bread (contents, sz, abfd) != sz)
 	return FALSE;
 
+      /* Ensure strings are NULL terminated so we don't wander off the
+	 end of the buffer.  */
+      contents[sz] = 0;
+
       /* The symbol table starts with an eight byte count.  */
       c = H_GET_64 (abfd, contents);
 
-      if (c * 8 >= sz)
+      if (c >= sz / 8)
 	{
 	  bfd_set_error (bfd_error_bad_value);
 	  return FALSE;

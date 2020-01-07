@@ -1,6 +1,6 @@
 /* Thread pool
 
-   Copyright (C) 2019 Free Software Foundation, Inc.
+   Copyright (C) 2019-2020 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -49,8 +49,10 @@ set_thread_name (int (*set_name) (pthread_t, const char *), const char *name)
   set_name (pthread_self (), name);
 }
 
+/* The macOS man page says that pthread_setname_np returns "void", but
+   the headers actually declare it returning "int".  */
 ATTRIBUTE_UNUSED static void
-set_thread_name (void (*set_name) (const char *), const char *name)
+set_thread_name (int (*set_name) (const char *), const char *name)
 {
   set_name (name);
 }

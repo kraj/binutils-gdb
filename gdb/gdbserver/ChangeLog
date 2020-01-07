@@ -1,3 +1,34 @@
+2020-01-06  Eli Zaretskii  <eliz@gnu.org>
+	    Pedro Alves  <palves@redhat.com>
+
+	* win32-low.c (get_child_debug_event): Extract the fatal exception
+	from the exit status and convert to the equivalent Posix signal
+	number.
+	(win32_wait): Allow TARGET_WAITKIND_SIGNALLED status as well.
+	* Makefile.in (OBS, SFILES): Add gdb_wait.[co].
+
+2020-01-01  Hannes Domani  <ssbssa@yahoo.de>
+
+	* Makefile.in: Use INSTALL_PROGRAM_ENV.
+
+2020-01-01  Joel Brobecker  <brobecker@adacore.com>
+
+	* server.c (gdbserver_version): Change copyright year to 2020.
+	* gdbreplay.c (gdbreplay_version): Likewise.
+
+2019-12-19  Christian Biesinger  <cbiesinger@google.com>
+
+	* configure: Regenerate.
+	* configure.ac: Quote variable arguments of test.
+
+2019-12-16  Bernd Edlinger  <bernd.edlinger@hotmail.de>
+
+	* Makefile.in: Fix build with GNU Make 3.81
+
+2019-12-16  Tom Tromey  <tromey@adacore.com>
+
+	* server.c (get_exec_file): Constify result.
+
 2019-12-10  Christian Biesinger  <cbiesinger@google.com>
 
 	* Makefile.in: Add safe-strerror.c to gdbreplay and IPA, and change

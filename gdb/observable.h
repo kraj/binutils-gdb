@@ -1,6 +1,6 @@
 /* Observers
 
-   Copyright (C) 2016-2019 Free Software Foundation, Inc.
+   Copyright (C) 2016-2020 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -240,6 +240,12 @@ extern observable<user_selected_what /* selection */>
 /* This is notified when the source styling setting has changed and
    should be reconsulted.  */
 extern observable<> source_styling_changed;
+
+/* The CLI's notion of the current source has changed.  This differs
+   from user_selected_context_changed in that it is also set by the
+   "list" command.  */
+
+extern observable<> current_source_symtab_and_line_changed;
 
 } /* namespace observers */
 

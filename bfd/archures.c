@@ -1,5 +1,5 @@
 /* BFD library support routines for architectures.
-   Copyright (C) 1990-2019 Free Software Foundation, Inc.
+   Copyright (C) 1990-2020 Free Software Foundation, Inc.
    Hacked by John Gilmore and Steve Chamberlain of Cygnus Support.
 
    This file is part of BFD, the Binary File Descriptor library.
@@ -355,7 +355,6 @@ DESCRIPTION
 .#define bfd_mach_tic4x		40
 .  bfd_arch_tic54x,    {* Texas Instruments TMS320C54X.  *}
 .  bfd_arch_tic6x,     {* Texas Instruments TMS320C6X.  *}
-.  bfd_arch_tic80,     {* TI TMS320c80 (MVP).  *}
 .  bfd_arch_v850,      {* NEC V850.  *}
 .  bfd_arch_v850_rh850,{* NEC V850 (using RH850 ABI).  *}
 .#define bfd_mach_v850		1
@@ -506,9 +505,13 @@ DESCRIPTION
 .  bfd_arch_xtensa,    {* Tensilica's Xtensa cores.  *}
 .#define bfd_mach_xtensa	1
 .  bfd_arch_z80,
-.#define bfd_mach_z80strict	1 {* No undocumented opcodes.  *}
-.#define bfd_mach_z80		3 {* With ixl, ixh, iyl, and iyh.  *}
-.#define bfd_mach_z80full	7 {* All undocumented instructions.  *}
+.#define bfd_mach_gbz80         0 {* GameBoy Z80 (reduced instruction set) *}
+.#define bfd_mach_z80strict	1 {* Z80 without undocumented opcodes.  *}
+.#define bfd_mach_z180          2 {* Z180: successor with additional instructions, but without halves of ix and iy *}
+.#define bfd_mach_z80		3 {* Z80 with ixl, ixh, iyl, and iyh.  *}
+.#define bfd_mach_ez80_z80      4 {* eZ80 (successor of Z80 & Z180) in Z80 (16-bit address) mode *}
+.#define bfd_mach_ez80_adl      5 {* eZ80 (successor of Z80 & Z180) in ADL (24-bit address) mode *}
+.#define bfd_mach_z80full	7 {* Z80 with all undocumented instructions.  *}
 .#define bfd_mach_r800		11 {* R800: successor with multiplication.  *}
 .  bfd_arch_lm32,      {* Lattice Mico32.  *}
 .#define bfd_mach_lm32		1
@@ -668,7 +671,6 @@ extern const bfd_arch_info_type bfd_tic30_arch;
 extern const bfd_arch_info_type bfd_tic4x_arch;
 extern const bfd_arch_info_type bfd_tic54x_arch;
 extern const bfd_arch_info_type bfd_tic6x_arch;
-extern const bfd_arch_info_type bfd_tic80_arch;
 extern const bfd_arch_info_type bfd_tilegx_arch;
 extern const bfd_arch_info_type bfd_tilepro_arch;
 extern const bfd_arch_info_type bfd_v850_arch;
@@ -756,7 +758,6 @@ static const bfd_arch_info_type * const bfd_archures_list[] =
     &bfd_tic4x_arch,
     &bfd_tic54x_arch,
     &bfd_tic6x_arch,
-    &bfd_tic80_arch,
     &bfd_tilegx_arch,
     &bfd_tilepro_arch,
     &bfd_v850_arch,

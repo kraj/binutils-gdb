@@ -1,6 +1,6 @@
 /* TUI layout window management.
 
-   Copyright (C) 1998-2019 Free Software Foundation, Inc.
+   Copyright (C) 1998-2020 Free Software Foundation, Inc.
 
    Contributed by Hewlett-Packard Company.
 
@@ -33,6 +33,8 @@ class tui_layout_base
 public:
 
   DISABLE_COPY_AND_ASSIGN (tui_layout_base);
+
+  virtual ~tui_layout_base () = default;
 
   /* Clone this object.  Ordinarily a layout is cloned before it is
      used, so that any necessary modifications do not affect the

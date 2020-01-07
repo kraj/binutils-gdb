@@ -1,5 +1,5 @@
 /* YACC parser for Ada expressions, for GDB.
-   Copyright (C) 1986-2019 Free Software Foundation, Inc.
+   Copyright (C) 1986-2020 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -1106,7 +1106,7 @@ write_ambiguous_var (struct parser_state *par_state,
 
   SYMBOL_DOMAIN (sym) = UNDEF_DOMAIN;
   sym->set_linkage_name (obstack_strndup (&temp_parse_space, name, len));
-  SYMBOL_LANGUAGE (sym) = language_ada;
+  sym->set_language (language_ada, nullptr);
 
   write_exp_elt_opcode (par_state, OP_VAR_VALUE);
   write_exp_elt_block (par_state, block);

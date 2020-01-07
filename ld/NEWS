@@ -2,6 +2,13 @@
 
 * cr16c support removed.
 
+* Add support for z80-elf.
+
+* Add support for relocation of each byte or word of multibyte value to Z80
+  targets.
+
+* Add support for Zilog eZ80 (both ADL and Z80 mode) and Zilog Z180 CPUs.
+
 Changes in 2.33:
 
 * Add command-line option --no-print-map-discarded.
@@ -766,7 +773,7 @@ Changes in version 2.1:
   other utilities should work on Risc/Ultrix and Irix.
 
 
-Copyright (C) 2012-2019 Free Software Foundation, Inc.
+Copyright (C) 2012-2020 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification,
 are permitted in any medium without royalty provided the copyright

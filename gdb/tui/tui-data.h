@@ -1,6 +1,6 @@
 /* TUI data manipulation routines.
 
-   Copyright (C) 1998-2019 Free Software Foundation, Inc.
+   Copyright (C) 1998-2020 Free Software Foundation, Inc.
 
    Contributed by Hewlett-Packard Company.
 
@@ -110,8 +110,6 @@ public:
   /* Origin of window.  */
   int x = 0;
   int y = 0;
-  /* Viewport height.  */
-  int viewport_height = 0;
 };
 
 /* Constant definitions.  */

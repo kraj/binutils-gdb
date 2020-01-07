@@ -1,6 +1,6 @@
 ## Process this file with automake to generate Makefile.in
 #
-#   Copyright (C) 2012-2019 Free Software Foundation, Inc.
+#   Copyright (C) 2012-2020 Free Software Foundation, Inc.
 #
 # This file is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -160,7 +160,6 @@ ALL_MACHINES = \
 	cpu-tic4x.lo \
 	cpu-tic54x.lo \
 	cpu-tic6x.lo \
-	cpu-tic80.lo \
 	cpu-tilegx.lo \
 	cpu-tilepro.lo \
 	cpu-v850.lo \
@@ -246,7 +245,6 @@ ALL_MACHINES_CFILES = \
 	cpu-tic4x.c \
 	cpu-tic54x.c \
 	cpu-tic6x.c \
-	cpu-tic80.c \
 	cpu-tilegx.c \
 	cpu-tilepro.c \
 	cpu-v850.c \
@@ -278,7 +276,6 @@ BFD32_BACKENDS = \
 	coff-tic30.lo \
 	coff-tic4x.lo \
 	coff-tic54x.lo \
-	coff-tic80.lo \
 	coff-z80.lo \
 	coff-z8k.lo \
 	coffgen.lo \
@@ -357,6 +354,7 @@ BFD32_BACKENDS = \
 	elf32-xgate.lo \
 	elf32-xstormy16.lo \
 	elf32-xtensa.lo \
+	elf32-z80.lo \
 	elf32.lo \
 	elflink.lo \
 	elfxx-sparc.lo \
@@ -414,7 +412,6 @@ BFD32_BACKENDS_CFILES = \
 	coff-tic30.c \
 	coff-tic4x.c \
 	coff-tic54x.c \
-	coff-tic80.c \
 	coff-z80.c \
 	coff-z8k.c \
 	coffgen.c \
@@ -493,6 +490,7 @@ BFD32_BACKENDS_CFILES = \
 	elf32-xgate.c \
 	elf32-xstormy16.c \
 	elf32-xtensa.c \
+	elf32-z80.c \
 	elf32.c \
 	elflink.c \
 	elfxx-sparc.c \

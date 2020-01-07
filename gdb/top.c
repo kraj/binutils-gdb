@@ -1,6 +1,6 @@
 /* Top level stuff for GDB, the GNU debugger.
 
-   Copyright (C) 1986-2019 Free Software Foundation, Inc.
+   Copyright (C) 1986-2020 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -54,6 +54,8 @@
 #include "gdb_select.h"
 #include "gdbsupport/scope-exit.h"
 #include "gdbarch.h"
+#include "gdbsupport/pathstuff.h"
+#include "cli/cli-style.h"
 
 /* readline include files.  */
 #include "readline/readline.h"
@@ -923,8 +925,8 @@ show_history_filename (struct ui_file *file, int from_tty,
 		       struct cmd_list_element *c, const char *value)
 {
   fprintf_filtered (file, _("The filename in which to record "
-			    "the command history is \"%s\".\n"),
-		    value);
+			    "the command history is \"%ps\".\n"),
+		    styled_string (file_name_style.style (), value));
 }
 
 /* This is like readline(), but it has some gdb-specific behavior.
@@ -1191,8 +1193,10 @@ gdb_safe_append_history (void)
   saved_errno = errno;
   if (ret < 0 && saved_errno != ENOENT)
     {
-      warning (_("Could not rename %s to %s: %s"),
-	       history_filename, local_history_filename.c_str (),
+      warning (_("Could not rename %ps to %ps: %s"),
+	       styled_string (file_name_style.style (), history_filename),
+	       styled_string (file_name_style.style (),
+			      local_history_filename.c_str ()),
 	       safe_strerror (saved_errno));
     }
   else
@@ -1365,7 +1369,7 @@ print_gdb_version (struct ui_file *stream, bool interactive)
   /* Second line is a copyright notice.  */
 
   fprintf_filtered (stream,
-		    "Copyright (C) 2019 Free Software Foundation, Inc.\n");
+		    "Copyright (C) 2020 Free Software Foundation, Inc.\n");
 
   /* Following the copyright is a brief statement that the program is
      free software, that users are free to copy and change it on
@@ -1424,10 +1428,12 @@ print_gdb_configuration (struct ui_file *stream)
 This GDB was configured as follows:\n\
    configure --host=%s --target=%s\n\
 "), host_name, target_name);
+
   fprintf_filtered (stream, _("\
              --with-auto-load-dir=%s\n\
              --with-auto-load-safe-path=%s\n\
 "), AUTO_LOAD_DIR, AUTO_LOAD_SAFE_PATH);
+
 #if HAVE_LIBEXPAT
   fprintf_filtered (stream, _("\
              --with-expat\n\
@@ -1437,19 +1443,23 @@ This GDB was configured as follows:\n\
              --without-expat\n\
 "));
 #endif
+
   if (GDB_DATADIR[0])
     fprintf_filtered (stream, _("\
              --with-gdb-datadir=%s%s\n\
 "), GDB_DATADIR, GDB_DATADIR_RELOCATABLE ? " (relocatable)" : "");
+
 #ifdef ICONV_BIN
   fprintf_filtered (stream, _("\
              --with-iconv-bin=%s%s\n\
 "), ICONV_BIN, ICONV_BIN_RELOCATABLE ? " (relocatable)" : "");
 #endif
+
   if (JIT_READER_DIR[0])
     fprintf_filtered (stream, _("\
              --with-jit-reader-dir=%s%s\n\
 "), JIT_READER_DIR, JIT_READER_DIR_RELOCATABLE ? " (relocatable)" : "");
+
 #if HAVE_LIBUNWIND_IA64_H
   fprintf_filtered (stream, _("\
              --with-libunwind-ia64\n\
@@ -1459,6 +1469,7 @@ This GDB was configured as follows:\n\
              --without-libunwind-ia64\n\
 "));
 #endif
+
 #if HAVE_LIBLZMA
   fprintf_filtered (stream, _("\
              --with-lzma\n\
@@ -1468,31 +1479,43 @@ This GDB was configured as follows:\n\
              --without-lzma\n\
 "));
 #endif
+
 #if HAVE_LIBBABELTRACE
-    fprintf_filtered (stream, _("\
+  fprintf_filtered (stream, _("\
              --with-babeltrace\n\
 "));
 #else
-    fprintf_filtered (stream, _("\
+  fprintf_filtered (stream, _("\
              --without-babeltrace\n\
 "));
 #endif
+
 #if HAVE_LIBIPT
-    fprintf_filtered (stream, _("\
+  fprintf_filtered (stream, _("\
              --with-intel-pt\n\
 "));
 #else
-    fprintf_filtered (stream, _("\
+  fprintf_filtered (stream, _("\
              --without-intel-pt\n\
 "));
 #endif
+
 #if HAVE_LIBMPFR
-    fprintf_filtered (stream, _("\
+  fprintf_filtered (stream, _("\
              --with-mpfr\n\
 "));
 #else
-    fprintf_filtered (stream, _("\
+  fprintf_filtered (stream, _("\
              --without-mpfr\n\
+"));
+#endif
+#if HAVE_LIBXXHASH
+  fprintf_filtered (stream, _("\
+             --with-xxhash\n\
+"));
+#else
+  fprintf_filtered (stream, _("\
+             --without-xxhash\n\
 "));
 #endif
 #ifdef WITH_PYTHON_PATH
@@ -1504,6 +1527,7 @@ This GDB was configured as follows:\n\
              --without-python\n\
 "));
 #endif
+
 #if HAVE_GUILE
   fprintf_filtered (stream, _("\
              --with-guile\n\
@@ -1513,6 +1537,7 @@ This GDB was configured as follows:\n\
              --without-guile\n\
 "));
 #endif
+
 #if HAVE_SOURCE_HIGHLIGHT
   fprintf_filtered (stream, _("\
              --enable-source-highlight\n\
@@ -1522,30 +1547,36 @@ This GDB was configured as follows:\n\
              --disable-source-highlight\n\
 "));
 #endif
+
 #ifdef RELOC_SRCDIR
   fprintf_filtered (stream, _("\
              --with-relocated-sources=%s\n\
 "), RELOC_SRCDIR);
 #endif
+
   if (DEBUGDIR[0])
     fprintf_filtered (stream, _("\
              --with-separate-debug-dir=%s%s\n\
 "), DEBUGDIR, DEBUGDIR_RELOCATABLE ? " (relocatable)" : "");
+
   if (TARGET_SYSTEM_ROOT[0])
     fprintf_filtered (stream, _("\
              --with-sysroot=%s%s\n\
 "), TARGET_SYSTEM_ROOT, TARGET_SYSTEM_ROOT_RELOCATABLE ? " (relocatable)" : "");
+
   if (SYSTEM_GDBINIT[0])
     fprintf_filtered (stream, _("\
              --with-system-gdbinit=%s%s\n\
 "), SYSTEM_GDBINIT, SYSTEM_GDBINIT_RELOCATABLE ? " (relocatable)" : "");
+
   if (SYSTEM_GDBINIT_DIR[0])
     fprintf_filtered (stream, _("\
              --with-system-gdbinit-dir=%s%s\n\
 "), SYSTEM_GDBINIT_DIR, SYSTEM_GDBINIT_DIR_RELOCATABLE ? " (relocatable)" : "");
-    /* We assume "relocatable" will be printed at least once, thus we always
-       print this text.  It's a reasonably safe assumption for now.  */
-    fprintf_filtered (stream, _("\n\
+
+  /* We assume "relocatable" will be printed at least once, thus we always
+     print this text.  It's a reasonably safe assumption for now.  */
+  fprintf_filtered (stream, _("\n\
 (\"Relocatable\" means the directory can be moved with the GDB installation\n\
 tree, and GDB will still find it.)\n\
 "));
@@ -1994,12 +2025,13 @@ init_history (void)
          that was read.  */
 #ifdef __MSDOS__
       /* No leading dots in file names are allowed on MSDOS.  */
-      history_filename = concat (current_directory, "/_gdb_history",
-				 (char *)NULL);
+      const char *fname = "_gdb_history";
 #else
-      history_filename = concat (current_directory, "/.gdb_history",
-				 (char *)NULL);
+      const char *fname = ".gdb_history";
 #endif
+
+      gdb::unique_xmalloc_ptr<char> temp (gdb_abspath (fname));
+      history_filename = temp.release ();
     }
   read_history (history_filename);
 }
@@ -2065,8 +2097,9 @@ static void
 show_gdb_datadir (struct ui_file *file, int from_tty,
 		  struct cmd_list_element *c, const char *value)
 {
-  fprintf_filtered (file, _("GDB's data directory is \"%s\".\n"),
-		    gdb_datadir.c_str ());
+  fprintf_filtered (file, _("GDB's data directory is \"%ps\".\n"),
+		    styled_string (file_name_style.style (),
+				   gdb_datadir.c_str ()));
 }
 
 static void
@@ -2077,8 +2110,12 @@ set_history_filename (const char *args,
      directories the file written will be the same as the one
      that was read.  */
   if (!IS_ABSOLUTE_PATH (history_filename))
-    history_filename = reconcat (history_filename, current_directory, "/", 
-				 history_filename, (char *) NULL);
+    {
+      gdb::unique_xmalloc_ptr<char> temp (gdb_abspath (history_filename));
+
+      xfree (history_filename);
+      history_filename = temp.release ();
+    }
 }
 
 static void

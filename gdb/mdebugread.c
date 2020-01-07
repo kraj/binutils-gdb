@@ -1,6 +1,6 @@
 /* Read a symbol table in ECOFF format (Third-Eye).
 
-   Copyright (C) 1986-2019 Free Software Foundation, Inc.
+   Copyright (C) 1986-2020 Free Software Foundation, Inc.
 
    Original version contributed by Alessandro Forin (af@cs.cmu.edu) at
    CMU.  Major work by Per Bothner, John Gilmore and Ian Lance Taylor
@@ -794,11 +794,11 @@ parse_symbol (SYMR *sh, union aux_ext *ax, char *ext_sh, int bigend,
 
       /* All functions in C++ have prototypes.  For C we don't have enough
          information in the debug info.  */
-      if (SYMBOL_LANGUAGE (s) == language_cplus)
+      if (s->language () == language_cplus)
 	TYPE_PROTOTYPED (SYMBOL_TYPE (s)) = 1;
 
       /* Create and enter a new lexical context.  */
-      b = new_block (FUNCTION_BLOCK, SYMBOL_LANGUAGE (s));
+      b = new_block (FUNCTION_BLOCK, s->language ());
       SYMBOL_BLOCK_VALUE (s) = b;
       BLOCK_FUNCTION (b) = s;
       BLOCK_START (b) = BLOCK_END (b) = sh->value;
@@ -4761,9 +4761,8 @@ new_symbol (const char *name)
 {
   struct symbol *s = allocate_symbol (mdebugread_objfile);
 
-  SYMBOL_SET_LANGUAGE (s, psymtab_language,
-		       &mdebugread_objfile->objfile_obstack);
-  SYMBOL_SET_NAMES (s, name, true, mdebugread_objfile);
+  s->set_language (psymtab_language, &mdebugread_objfile->objfile_obstack);
+  s->compute_and_set_names (name, true, mdebugread_objfile->per_bfd);
   return s;
 }
 

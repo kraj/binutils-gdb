@@ -1,5 +1,5 @@
 # This shell script emits a C file. -*- C -*-
-#   Copyright (C) 2001-2019 Free Software Foundation, Inc.
+#   Copyright (C) 2001-2020 Free Software Foundation, Inc.
 #
 # This file is part of the GNU Binutils.
 #
@@ -163,7 +163,7 @@ mmo_place_orphan (asection *s,
 
 	  /* We have to find the oss before this one, so we can use that as
 	     "after".  */
-	  for (lookup = &lang_os_list.head->output_section_statement;
+	  for (lookup = (void *) lang_os_list.head;
 	       lookup != NULL && lookup->next != before;
 	       lookup = lookup->next)
 	    ;

@@ -1,5 +1,5 @@
 /* Native debugging support for Intel x86 running DJGPP.
-   Copyright (C) 1997-2019 Free Software Foundation, Inc.
+   Copyright (C) 1997-2020 Free Software Foundation, Inc.
    Written by Robert Hoehne.
 
    This file is part of GDB.
@@ -507,7 +507,8 @@ go32_nat_target::wait (ptid_t ptid, struct target_waitstatus *status,
     }
 
   getcwd (child_cwd, sizeof (child_cwd)); /* in case it has changed */
-  chdir (current_directory);
+  if (current_directory != NULL)
+    chdir (current_directory);
 
   if (a_tss.tss_irqn == 0x21)
     {

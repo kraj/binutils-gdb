@@ -1,6 +1,6 @@
 /* Native-dependent code for GNU/Linux AArch64.
 
-   Copyright (C) 2011-2019 Free Software Foundation, Inc.
+   Copyright (C) 2011-2020 Free Software Foundation, Inc.
    Contributed by ARM Ltd.
 
    This file is part of GDB.
@@ -970,7 +970,7 @@ aarch64_linux_nat_target::thread_architecture (ptid_t ptid)
      unavailable, to distinguish from an unset value of 0.  */
   struct gdbarch_info info;
   gdbarch_info_init (&info);
-  info.bfd_arch_info = bfd_lookup_arch (bfd_arch_spu, bfd_mach_spu);
+  info.bfd_arch_info = bfd_lookup_arch (bfd_arch_aarch64, bfd_mach_aarch64);
   info.id = (int *) (vq == 0 ? -1 : vq);
   return gdbarch_find_by_info (info);
 }

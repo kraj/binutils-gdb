@@ -1,5 +1,5 @@
 /* BFD support for handling relocation entries.
-   Copyright (C) 1990-2019 Free Software Foundation, Inc.
+   Copyright (C) 1990-2020 Free Software Foundation, Inc.
    Written by Cygnus Support.
 
    This file is part of BFD, the Binary File Descriptor library.
@@ -6673,6 +6673,30 @@ ENUM
   BFD_RELOC_Z80_DISP8
 ENUMDOC
   8 bit signed offset in (ix+d) or (iy+d).
+ENUM
+  BFD_RELOC_Z80_BYTE0
+ENUMDOC
+  First 8 bits of multibyte (32, 24 or 16 bit) value.
+ENUM
+  BFD_RELOC_Z80_BYTE1
+ENUMDOC
+  Second 8 bits of multibyte (32, 24 or 16 bit) value.
+ENUM
+  BFD_RELOC_Z80_BYTE2
+ENUMDOC
+  Third 8 bits of multibyte (32 or 24 bit) value.
+ENUM
+  BFD_RELOC_Z80_BYTE3
+ENUMDOC
+  Fourth 8 bits of multibyte (32 bit) value.
+ENUM
+  BFD_RELOC_Z80_WORD0
+ENUMDOC
+  Lowest 16 bits of multibyte (32 or 24 bit) value.
+ENUM
+  BFD_RELOC_Z80_WORD1
+ENUMDOC
+  Highest 16 bits of multibyte (32 or 24 bit) value.
 
 ENUM
   BFD_RELOC_Z8K_DISP7

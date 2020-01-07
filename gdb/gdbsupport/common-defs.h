@@ -1,6 +1,6 @@
 /* Common definitions.
 
-   Copyright (C) 1986-2019 Free Software Foundation, Inc.
+   Copyright (C) 1986-2020 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -97,11 +97,6 @@
 #endif
 #include <errno.h>
 #include <alloca.h>
-/* Must be included before pathmax.h to avoid build errors about localtime_r
-   and gmtime_r in gnulib on MinGW.  This is a gnulib bug:
-   https://lists.gnu.org/archive/html/bug-gnulib/2019-11/msg00022.html  */
-#include <time.h>
-
 
 #include "ansidecl.h"
 /* This is defined by ansidecl.h, but we prefer gnulib's version.  On

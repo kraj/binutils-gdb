@@ -1,5 +1,5 @@
 /* tc-arm.c -- Assemble for the ARM
-   Copyright (C) 1994-2019 Free Software Foundation, Inc.
+   Copyright (C) 1994-2020 Free Software Foundation, Inc.
    Contributed by Richard Earnshaw (rwe@pegasus.esprit.ec.org)
 	Modified by David Taylor (dtaylor@armltd.co.uk)
 	Cirrus coprocessor mods by Aldy Hernandez (aldyh@redhat.com)
@@ -1943,7 +1943,7 @@ parse_reg_list (char ** strp, enum reg_list_els etype)
 	      const char apsr_str[] = "apsr";
 	      int apsr_str_len = strlen (apsr_str);
 
-	      reg = arm_reg_parse (&str, REGLIST_RN);
+	      reg = arm_reg_parse (&str, REG_TYPE_RN);
 	      if (etype == REGLIST_CLRM)
 		{
 		  if (reg == REG_SP || reg == REG_PC)

@@ -1,5 +1,5 @@
 /* as.h - global header file
-   Copyright (C) 1987-2019 Free Software Foundation, Inc.
+   Copyright (C) 1987-2020 Free Software Foundation, Inc.
 
    This file is part of GAS, the GNU Assembler.
 
@@ -586,6 +586,10 @@ COMMON int flag_m68k_mri;
 #define DOLLAR_AMBIGU flag_m68k_mri
 #else
 #define flag_m68k_mri 0
+#endif
+
+#ifndef TC_STRING_ESCAPES
+#define TC_STRING_ESCAPES 1
 #endif
 
 #ifdef WARN_COMMENTS

@@ -6,7 +6,7 @@
 /* libbfd.h -- Declarations used by bfd library *implementation*.
    (This include file is not for users of the library.)
 
-   Copyright (C) 1990-2019 Free Software Foundation, Inc.
+   Copyright (C) 1990-2020 Free Software Foundation, Inc.
 
    Written by Cygnus Support.
 
@@ -2869,6 +2869,12 @@ static const char *const bfd_reloc_code_real_names[] = { "@@uninitialized@@",
   "BFD_RELOC_XTENSA_TLS_ARG",
   "BFD_RELOC_XTENSA_TLS_CALL",
   "BFD_RELOC_Z80_DISP8",
+  "BFD_RELOC_Z80_BYTE0",
+  "BFD_RELOC_Z80_BYTE1",
+  "BFD_RELOC_Z80_BYTE2",
+  "BFD_RELOC_Z80_BYTE3",
+  "BFD_RELOC_Z80_WORD0",
+  "BFD_RELOC_Z80_WORD1",
   "BFD_RELOC_Z8K_DISP7",
   "BFD_RELOC_Z8K_CALLR",
   "BFD_RELOC_Z8K_IMM4L",

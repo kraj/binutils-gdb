@@ -1,6 +1,6 @@
 /* TUI window generic functions.
 
-   Copyright (C) 1998-2019 Free Software Foundation, Inc.
+   Copyright (C) 1998-2020 Free Software Foundation, Inc.
 
    Contributed by Hewlett-Packard Company.
 
@@ -44,7 +44,7 @@ extern chtype tui_border_hline;
 extern int tui_border_attrs;
 extern int tui_active_border_attrs;
 
-extern int tui_update_variables (void);
+extern bool tui_update_variables ();
 
 extern void tui_initialize_win (void);
 

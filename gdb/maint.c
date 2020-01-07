@@ -1,6 +1,6 @@
 /* Support for GDB maintenance commands.
 
-   Copyright (C) 1992-2019 Free Software Foundation, Inc.
+   Copyright (C) 1992-2020 Free Software Foundation, Inc.
 
    Written by Fred Fish at Cygnus Support.
 
@@ -589,7 +589,7 @@ maintenance_translate_address (const char *arg, int from_tty)
 	  gdb_assert (sect->objfile && objfile_name (sect->objfile));
 	  obj_name = objfile_name (sect->objfile);
 
-	  if (MULTI_OBJFILE_P ())
+	  if (current_program_space->multi_objfile_p ())
 	    printf_filtered (_("%s + %s in section %s of %s\n"),
 			     symbol_name, symbol_offset,
 			     section_name, obj_name);
@@ -845,12 +845,7 @@ maintenance_set_profile_cmd (const char *args, int from_tty,
 }
 #endif
 
-static int n_worker_threads = 0;
-
-bool worker_threads_disabled ()
-{
-  return n_worker_threads == 0;
-}
+static int n_worker_threads = -1;
 
 /* Update the thread pool for the desired number of threads.  */
 static void

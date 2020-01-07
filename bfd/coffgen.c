@@ -1,5 +1,5 @@
 /* Support for the generic parts of COFF, for BFD.
-   Copyright (C) 1990-2019 Free Software Foundation, Inc.
+   Copyright (C) 1990-2020 Free Software Foundation, Inc.
    Written by Cygnus Support.
 
    This file is part of BFD, the Binary File Descriptor library.
@@ -302,9 +302,15 @@ coff_real_object_p (bfd *abfd,
 	}
     }
 
+  obj_coff_keep_syms (abfd) = FALSE;
+  obj_coff_keep_strings (abfd) = FALSE;
+  _bfd_coff_free_symbols (abfd);
   return abfd->xvec;
 
  fail:
+  obj_coff_keep_syms (abfd) = FALSE;
+  obj_coff_keep_strings (abfd) = FALSE;
+  _bfd_coff_free_symbols (abfd);
   bfd_release (abfd, tdata);
  fail2:
   abfd->tdata.any = tdata_save;
@@ -3160,4 +3166,19 @@ bfd_coff_group_name (bfd *abfd, const asection *sec)
   if (ci != NULL)
     return ci->name;
   return NULL;
+}
+
+bfd_boolean
+_bfd_coff_close_and_cleanup (bfd *abfd)
+{
+  if (abfd->format == bfd_object
+      && bfd_family_coff (abfd)
+      && coff_data (abfd) != NULL)
+    {
+      obj_coff_keep_syms (abfd) = FALSE;
+      obj_coff_keep_strings (abfd) = FALSE;
+      if (!_bfd_coff_free_symbols (abfd))
+	return FALSE;
+    }
+  return _bfd_generic_close_and_cleanup (abfd);
 }

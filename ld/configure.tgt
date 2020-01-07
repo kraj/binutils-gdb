@@ -1,6 +1,6 @@
 # configure.tgt
 #
-#   Copyright (C) 2013-2019 Free Software Foundation, Inc.
+#   Copyright (C) 2013-2020 Free Software Foundation, Inc.
 #
 # This file is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -591,7 +591,6 @@ moxie-*-moxiebox*)	targ_emul=moxiebox
 			targ_extra_ofiles=ldelfgen.o
 			;;
 moxie-*-*)		targ_emul=elf32moxie
-			targ_extra_ofiles=ldelfgen.o
 			;;
 msp430-*-*)		targ_emul=msp430elf
 			targ_extra_emuls="msp430X"
@@ -901,9 +900,6 @@ tic6x-*-uclinux)	targ_emul=elf32_tic6x_linux_le
 			targ_extra_emuls="elf32_tic6x_linux_be elf32_tic6x_le elf32_tic6x_be"
 			targ_extra_libpath=$targ_extra_emuls
 			;;
-tic80-*-*)		targ_emul=tic80coff
-			targ_extra_ofiles=
-			;;
 tilegx-*-*)		targ_emul=elf64tilegx
 			targ_extra_emuls="elf64tilegx_be elf32tilegx elf32tilegx_be"
 			targ_extra_libpath=$targ_extra_emuls
@@ -1015,6 +1011,9 @@ xgate-*-*)		targ_emul=xgateelf
 xstormy16-*-*)		targ_emul=elf32xstormy16
 			;;
 xtensa*-*-*)		targ_emul=elf32xtensa
+			;;
+z80-*-elf*)		targ_emul=elf32z80
+			targ_extra_ofiles="ldelf.o ldelfgen.o"
 			;;
 z80-*-coff)		targ_emul=z80
 			targ_extra_ofiles=

@@ -1,5 +1,5 @@
 /* Altera Nios II disassemble routines
-   Copyright (C) 2012-2019 Free Software Foundation, Inc.
+   Copyright (C) 2012-2020 Free Software Foundation, Inc.
    Contributed by Nigel Gray (ngray@altera.com).
    Contributed by Mentor Graphics, Inc.
 
@@ -858,7 +858,7 @@ nios2_print_insn_arg (const char *argptr,
 		if (i & (1 << 10))
 		  reglist |= (1 << 28);
 		if (i & (1 << 11))
-		  reglist |= (1 << 31);
+		  reglist |= (1u << 31);
 	      }
 	    else
 	      reglist = i << 2;
@@ -887,7 +887,7 @@ nios2_print_insn_arg (const char *argptr,
 	for (k = (dir == 1 ? 0 : 31);
 	     (dir == 1 && k < 32) || (dir == -1 && k >= 0);
 	     k += dir)
-	  if (reglist & (1 << k))
+	  if (reglist & (1u << k))
 	    {
 	      if (t)
 		(*info->fprintf_func) (info->stream, ",");

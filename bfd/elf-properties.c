@@ -1,5 +1,5 @@
 /* ELF program property support.
-   Copyright (C) 2017-2019 Free Software Foundation, Inc.
+   Copyright (C) 2017-2020 Free Software Foundation, Inc.
 
    This file is part of BFD, the Binary File Descriptor library.
 
@@ -703,6 +703,8 @@ _bfd_elf_convert_gnu_properties (bfd *ibfd, asection *isec,
   if (size > bfd_section_size (isec))
     {
       contents = (bfd_byte *) bfd_malloc (size);
+      if (contents == NULL)
+	return FALSE;
       free (*ptr);
       *ptr = contents;
     }

@@ -1,6 +1,6 @@
 /* Generic symbol file reading for the GNU debugger, GDB.
 
-   Copyright (C) 1990-2019 Free Software Foundation, Inc.
+   Copyright (C) 1990-2020 Free Software Foundation, Inc.
 
    Contributed by Cygnus Support, using pieces from other GDB modules.
 
@@ -940,7 +940,7 @@ syms_from_objfile_1 (struct objfile *objfile,
      if an error occurs during symbol reading.  */
   gdb::optional<clear_symtab_users_cleanup> defer_clear_users;
 
-  std::unique_ptr<struct objfile> objfile_holder (objfile);
+  objfile_up objfile_holder (objfile);
 
   /* If ADDRS is NULL, put together a dummy address list.
      We now establish the convention that an addr of zero means
@@ -958,7 +958,7 @@ syms_from_objfile_1 (struct objfile *objfile,
 
       if (symfile_objfile != NULL)
 	{
-	  delete symfile_objfile;
+	  symfile_objfile->unlink ();
 	  gdb_assert (symfile_objfile == NULL);
 	}
 
@@ -1093,10 +1093,7 @@ symbol_file_add_with_addrs (bfd *abfd, const char *name,
 
   if (mainline)
     flags |= OBJF_MAINLINE;
-  objfile = new struct objfile (abfd, name, flags);
-
-  if (parent)
-    add_separate_debug_objfile (objfile, parent);
+  objfile = objfile::make (abfd, name, flags, parent);
 
   /* We either created a new mapped symbol table, mapped an existing
      symbol table file which has not had initial symbol reading
@@ -1254,7 +1251,7 @@ symbol_file_clear (int from_tty)
      objfiles get stale by free_all_objfiles.  */
   no_shared_libraries (NULL, from_tty);
 
-  free_all_objfiles ();
+  current_program_space->free_all_objfiles ();
 
   gdb_assert (symfile_objfile == NULL);
   if (from_tty)
@@ -1700,7 +1697,7 @@ set_initial_language (void)
       struct symbol *sym = lookup_symbol (name, NULL, VAR_DOMAIN, NULL).symbol;
 
       if (sym != NULL)
-	lang = SYMBOL_LANGUAGE (sym);
+	lang = sym->language ();
     }
 
   if (lang == language_unknown)
@@ -2441,7 +2438,7 @@ remove_symbol_file_command (const char *args, int from_tty)
 		 objfile_name (objf)))
     error (_("Not confirmed."));
 
-  delete objf;
+  objf->unlink ();
   clear_symtab_users (0);
 }
 
@@ -2498,7 +2495,7 @@ reread_symbols (void)
 	  /* If we get an error, blow away this objfile (not sure if
 	     that is the correct response for things like shared
 	     libraries).  */
-	  std::unique_ptr<struct objfile> objfile_holder (objfile);
+	  objfile_up objfile_holder (objfile);
 
 	  /* We need to do this whenever any symbols go away.  */
 	  clear_symtab_users_cleanup defer_clear_users (0);

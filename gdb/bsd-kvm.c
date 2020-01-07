@@ -1,6 +1,6 @@
 /* BSD Kernel Data Access Library (libkvm) interface.
 
-   Copyright (C) 2004-2019 Free Software Foundation, Inc.
+   Copyright (C) 2004-2020 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -29,6 +29,7 @@
 #include "gdbcore.h"
 #include "inferior.h"          /* for get_exec_file */
 #include "gdbthread.h"
+#include "gdbsupport/pathstuff.h"
 
 #include <fcntl.h>
 #include <kvm.h>
@@ -106,7 +107,7 @@ static void
 bsd_kvm_target_open (const char *arg, int from_tty)
 {
   char errbuf[_POSIX2_LINE_MAX];
-  char *execfile = NULL;
+  const char *execfile = NULL;
   kvm_t *temp_kd;
   char *filename = NULL;
 
@@ -114,14 +115,13 @@ bsd_kvm_target_open (const char *arg, int from_tty)
 
   if (arg)
     {
-      char *temp;
-
       filename = tilde_expand (arg);
       if (filename[0] != '/')
 	{
-	  temp = concat (current_directory, "/", filename, (char *)NULL);
+	  gdb::unique_xmalloc_ptr<char> temp (gdb_abspath (filename));
+
 	  xfree (filename);
-	  filename = temp;
+	  filename = temp.release ();
 	}
     }
 

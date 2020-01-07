@@ -1,5 +1,5 @@
 /* Support routines for building symbol tables in GDB's internal format.
-   Copyright (C) 1986-2019 Free Software Foundation, Inc.
+   Copyright (C) 1986-2020 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -135,7 +135,7 @@ add_symbol_to_list (struct symbol *symbol, struct pending **listhead)
   struct pending *link;
 
   /* If this is an alias for another symbol, don't add it.  */
-  if (symbol->name && symbol->name[0] == '#')
+  if (symbol->linkage_name () && symbol->linkage_name ()[0] == '#')
     return;
 
   /* We keep PENDINGSIZE symbols in each link of the list.  If we
@@ -669,12 +669,6 @@ buildsym_compunit::record_line (struct subfile *subfile, int line,
 				CORE_ADDR pc)
 {
   struct linetable_entry *e;
-
-  /* Ignore the dummy line number in libg.o */
-  if (line == 0xffff)
-    {
-      return;
-    }
 
   /* Make sure line vector exists and is big enough.  */
   if (!subfile->line_vector)

@@ -1,6 +1,6 @@
 /* Generic code for supporting multiple C++ ABI's
 
-   Copyright (C) 2001-2019 Free Software Foundation, Inc.
+   Copyright (C) 2001-2020 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -220,11 +220,13 @@ cplus_typename_from_type_info (struct value *value)
   return (*current_cp_abi.get_typename_from_type_info) (value);
 }
 
-int
+/* See cp-abi.h.  */
+
+struct language_pass_by_ref_info
 cp_pass_by_reference (struct type *type)
 {
   if ((current_cp_abi.pass_by_reference) == NULL)
-    return 0;
+    return default_pass_by_reference (type);
   return (*current_cp_abi.pass_by_reference) (type);
 }
 

@@ -1,5 +1,5 @@
 /* BFD back-end for mmo objects (MMIX-specific object-format).
-   Copyright (C) 2001-2019 Free Software Foundation, Inc.
+   Copyright (C) 2001-2020 Free Software Foundation, Inc.
    Written by Hans-Peter Nilsson (hp@bitrange.com).
    Infrastructure and other bits originally copied from srec.c and
    binary.c.
@@ -579,7 +579,7 @@ mmo_mkobject (bfd *abfd)
 
       /* All fields are zero-initialized, so we don't have to explicitly
 	 initialize most.  */
-      tdata_type *tdata = (tdata_type *) bfd_zmalloc (sizeof (tdata_type));
+      tdata_type *tdata = (tdata_type *) bfd_zalloc (abfd, sizeof (tdata_type));
       if (tdata == NULL)
 	return FALSE;
 

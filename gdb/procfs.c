@@ -1,6 +1,6 @@
 /* Machine independent support for Solaris /proc (process file system) for GDB.
 
-   Copyright (C) 1999-2019 Free Software Foundation, Inc.
+   Copyright (C) 1999-2020 Free Software Foundation, Inc.
 
    Written by Michael Snyder at Cygnus Solutions.
    Based on work by Fred Fish, Stu Grossman, Geoff Noer, and others.
@@ -1870,7 +1870,6 @@ procfs_debug_inferior (procinfo *pi)
 void
 procfs_target::attach (const char *args, int from_tty)
 {
-  char *exec_file;
   int   pid;
 
   pid = parse_pid_to_attach (args);
@@ -1880,7 +1879,7 @@ procfs_target::attach (const char *args, int from_tty)
 
   if (from_tty)
     {
-      exec_file = get_exec_file (0);
+      const char *exec_file = get_exec_file (0);
 
       if (exec_file)
 	printf_filtered (_("Attaching to program `%s', %s\n"),

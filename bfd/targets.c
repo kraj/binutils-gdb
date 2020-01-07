@@ -1,5 +1,5 @@
 /* Generic target-file-type support for the BFD library.
-   Copyright (C) 1990-2019 Free Software Foundation, Inc.
+   Copyright (C) 1990-2020 Free Software Foundation, Inc.
    Written by Cygnus Support.
 
    This file is part of BFD, the Binary File Descriptor library.
@@ -899,7 +899,6 @@ extern const bfd_target tic6x_elf32_c6000_be_vec;
 extern const bfd_target tic6x_elf32_c6000_le_vec;
 extern const bfd_target tic6x_elf32_linux_be_vec;
 extern const bfd_target tic6x_elf32_linux_le_vec;
-extern const bfd_target tic80_coff_vec;
 extern const bfd_target tilegx_elf32_be_vec;
 extern const bfd_target tilegx_elf32_le_vec;
 extern const bfd_target tilegx_elf64_be_vec;
@@ -932,6 +931,7 @@ extern const bfd_target xstormy16_elf32_vec;
 extern const bfd_target xtensa_elf32_be_vec;
 extern const bfd_target xtensa_elf32_le_vec;
 extern const bfd_target z80_coff_vec;
+extern const bfd_target z80_elf32_vec;
 extern const bfd_target z8k_coff_vec;
 
 /* These are always included.  */
@@ -1306,7 +1306,6 @@ static const bfd_target * const _bfd_target_vector[] =
 	&tic54x_coff2_vec,
 	&tic6x_elf32_be_vec,
 	&tic6x_elf32_le_vec,
-	&tic80_coff_vec,
 
 	&tilegx_elf32_be_vec,
 	&tilegx_elf32_le_vec,
@@ -1355,6 +1354,7 @@ static const bfd_target * const _bfd_target_vector[] =
 	&xtensa_elf32_le_vec,
 
 	&z80_coff_vec,
+	&z80_elf32_vec,
 
 	&z8k_coff_vec,
 #endif /* not SELECT_VECS */

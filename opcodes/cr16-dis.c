@@ -1,5 +1,5 @@
 /* Disassembler code for CR16.
-   Copyright (C) 2007-2019 Free Software Foundation, Inc.
+   Copyright (C) 2007-2020 Free Software Foundation, Inc.
    Contributed by M R Swami Reddy (MR.Swami.Reddy@nsc.com).
 
    This file is part of GAS, GDB and the GNU binutils.
@@ -319,8 +319,7 @@ cr16_match_opcode (void)
 {
   unsigned long mask;
   /* The instruction 'constant' opcode doesn't exceed 32 bits.  */
-  unsigned long doubleWord = (cr16_words[1]
-			     + (cr16_words[0] << 16)) & 0xffffffff;
+  unsigned long doubleWord = cr16_words[1] + ((unsigned) cr16_words[0] << 16);
 
   /* Start searching from end of instruction table.  */
   instruction = &cr16_instruction[NUMOPCODES - 2];

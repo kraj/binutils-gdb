@@ -1,5 +1,5 @@
 # This shell script emits a C file. -*- C -*-
-#   Copyright (C) 2003-2019 Free Software Foundation, Inc.
+#   Copyright (C) 2003-2020 Free Software Foundation, Inc.
 #
 # This file is part of the GNU Binutils.
 #
@@ -47,7 +47,7 @@ alpha_after_open (void)
       lang_output_section_statement_type *plt_os[2];
 
       num_plt = 0;
-      for (os = &lang_os_list.head->output_section_statement;
+      for (os = (void *) lang_os_list.head;
 	   os != NULL;
 	   os = os->next)
 	{

@@ -1,6 +1,6 @@
 /* CLI colorizing
 
-   Copyright (C) 2018-2019 Free Software Foundation, Inc.
+   Copyright (C) 2018-2020 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -25,7 +25,7 @@
 
 /* True if styling is enabled.  */
 
-#if defined (__MSDOS__) || defined (__CYGWIN__)
+#if defined (__MSDOS__)
 bool cli_styling = false;
 #else
 bool cli_styling = true;

@@ -1,5 +1,5 @@
 /* Routines to help build PEI-format DLLs (Win32 etc)
-   Copyright (C) 1998-2019 Free Software Foundation, Inc.
+   Copyright (C) 1998-2020 Free Software Foundation, Inc.
    Written by DJ Delorie <dj@cygnus.com>
 
    This file is part of the GNU Binutils.
@@ -160,6 +160,7 @@ int pe_dll_extra_pe_debug = 0;
 int pe_use_nul_prefixed_import_tables = 0;
 int pe_use_coff_long_section_names = -1;
 int pe_leading_underscore = -1;
+int pe_dll_enable_reloc_section = 0;
 
 /* Static variables and types.  */
 
@@ -3289,7 +3290,7 @@ pe_get32 (bfd *abfd, int where)
 
   bfd_seek (abfd, (file_ptr) where, SEEK_SET);
   bfd_bread (b, (bfd_size_type) 4, abfd);
-  return b[0] + (b[1] << 8) + (b[2] << 16) + (b[3] << 24);
+  return b[0] + (b[1] << 8) + (b[2] << 16) + ((unsigned) b[3] << 24);
 }
 
 static unsigned int
@@ -3297,7 +3298,7 @@ pe_as32 (void *ptr)
 {
   unsigned char *b = ptr;
 
-  return b[0] + (b[1] << 8) + (b[2] << 16) + (b[3] << 24);
+  return b[0] + (b[1] << 8) + (b[2] << 16) + ((unsigned) b[3] << 24);
 }
 
 bfd_boolean
@@ -3554,7 +3555,14 @@ pe_dll_build_sections (bfd *abfd, struct bfd_link_info *info)
   process_def_file_and_drectve (abfd, info);
 
   if (pe_def_file->num_exports == 0 && !bfd_link_pic (info))
-    return;
+    {
+      if (pe_dll_enable_reloc_section)
+	{
+	  build_filler_bfd (0);
+	  pe_output_file_set_long_section_names (filler_bfd);
+	}
+      return;
+    }
 
   generate_edata (abfd, info);
   build_filler_bfd (1);
@@ -3573,33 +3581,16 @@ pe_exe_build_sections (bfd *abfd, struct bfd_link_info *info ATTRIBUTE_UNUSED)
 void
 pe_dll_fill_sections (bfd *abfd, struct bfd_link_info *info)
 {
-  pe_dll_id_target (bfd_get_target (abfd));
-  pe_output_file_set_long_section_names (abfd);
-  image_base = pe_data (abfd)->pe_opthdr.ImageBase;
+  pe_exe_fill_sections (abfd, info);
 
-  generate_reloc (abfd, info);
-  if (reloc_sz > 0)
+  if (edata_s)
     {
-      bfd_set_section_size (reloc_s, reloc_sz);
-
-      /* Resize the sections.  */
-      lang_reset_memory_regions ();
-      lang_size_sections (NULL, TRUE);
-
-      /* Redo special stuff.  */
-      ldemul_after_allocation ();
-
-      /* Do the assignments again.  */
-      lang_do_assignments (lang_final_phase_enum);
+      fill_edata (abfd, info);
+      edata_s->contents = edata_d;
     }
-
-  fill_edata (abfd, info);
 
   if (bfd_link_dll (info))
     pe_data (abfd)->dll = 1;
-
-  edata_s->contents = edata_d;
-  reloc_s->contents = reloc_d;
 }
 
 void
