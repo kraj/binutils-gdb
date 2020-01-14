@@ -649,7 +649,8 @@ run_inferior_call (struct call_thread_fsm *sm,
   if (!was_running
       && call_thread_ptid == inferior_ptid
       && stop_stack_dummy == STOP_STACK_DUMMY)
-    finish_thread_state (user_visible_resume_ptid (0));
+    finish_thread_state (call_thread->inf->process_target (),
+			 user_visible_resume_ptid (0));
 
   enable_watchpoints_after_interactive_call_stop ();
 
@@ -1506,8 +1507,9 @@ When the function is done executing, GDB will silently stop."),
   gdb_assert_not_reached ("... should not be here");
 }
 
+void _initialize_infcall ();
 void
-_initialize_infcall (void)
+_initialize_infcall ()
 {
   add_setshow_boolean_cmd ("may-call-functions", no_class,
 			   &may_call_functions_p, _("\

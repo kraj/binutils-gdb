@@ -1555,6 +1555,7 @@ finalize_python (void *ignore)
 /* This is called via the PyImport_AppendInittab mechanism called
    during initialization, to make the built-in _gdb module known to
    Python.  */
+PyMODINIT_FUNC init__gdb_module (void);
 PyMODINIT_FUNC
 init__gdb_module (void)
 {
@@ -1730,8 +1731,9 @@ do_start_initialization ()
 /* See python.h.  */
 cmd_list_element *python_cmd_element = nullptr;
 
+void _initialize_python ();
 void
-_initialize_python (void)
+_initialize_python ()
 {
   add_com ("python-interactive", class_obscure,
 	   python_interactive_command,

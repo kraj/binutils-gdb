@@ -673,7 +673,8 @@ fbsd_corefile_thread (struct thread_info *info,
 {
   struct regcache *regcache;
 
-  regcache = get_thread_arch_regcache (info->ptid, args->gdbarch);
+  regcache = get_thread_arch_regcache (info->inf->process_target (),
+				       info->ptid, args->gdbarch);
 
   target_fetch_registers (regcache, -1);
 
@@ -2084,8 +2085,9 @@ fbsd_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
   set_gdbarch_get_syscall_number (gdbarch, fbsd_get_syscall_number);
 }
 
+void _initialize_fbsd_tdep ();
 void
-_initialize_fbsd_tdep (void)
+_initialize_fbsd_tdep ()
 {
   fbsd_gdbarch_data_handle =
     gdbarch_data_register_post_init (init_fbsd_gdbarch_data);

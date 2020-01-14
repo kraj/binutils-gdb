@@ -383,7 +383,7 @@ ps_err_e
 ps_get_thread_area (struct ps_prochandle *ph,
                     lwpid_t lwpid, int idx, void **base)
 {
-  if (gdbarch_bfd_arch_info (target_gdbarch ())->bits_per_word == 32)
+  if (gdbarch_bfd_arch_info (ph->thread->inf->gdbarch)->bits_per_word == 32)
     {
       unsigned int base_addr;
       ps_err_e result;
@@ -478,8 +478,9 @@ amd64_linux_nat_target::low_siginfo_fixup (siginfo_t *ptrace,
     return false;
 }
 
+void _initialize_amd64_linux_nat ();
 void
-_initialize_amd64_linux_nat (void)
+_initialize_amd64_linux_nat ()
 {
   amd64_native_gregset32_reg_offset = amd64_linux_gregset32_reg_offset;
   amd64_native_gregset32_num_regs = I386_LINUX_NUM_REGS;

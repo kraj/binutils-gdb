@@ -685,8 +685,8 @@ dtrace_probe::is_enabled () const
 CORE_ADDR
 dtrace_probe::get_relocated_address (struct objfile *objfile)
 {
-  return this->get_address () + ANOFFSET (objfile->section_offsets,
-					  SECT_OFF_DATA (objfile));
+  return (this->get_address ()
+	  + objfile->section_offsets[SECT_OFF_DATA (objfile)]);
 }
 
 /* Implementation of the get_argument_count method.  */
@@ -897,8 +897,9 @@ info_probes_dtrace_command (const char *arg, int from_tty)
   info_probes_for_spops (arg, from_tty, &dtrace_static_probe_ops);
 }
 
+void _initialize_dtrace_probe ();
 void
-_initialize_dtrace_probe (void)
+_initialize_dtrace_probe ()
 {
   all_static_probe_ops.push_back (&dtrace_static_probe_ops);
 

@@ -266,7 +266,7 @@ add_pe_forwarded_sym (minimal_symbol_reader &reader,
      really be relocated properly, but nevertheless we make a stab at
      it, choosing an approach consistent with the history of this
      code.  */
-  baseaddr = ANOFFSET (objfile->section_offsets, SECT_OFF_TEXT (objfile));
+  baseaddr = objfile->section_offsets[SECT_OFF_TEXT (objfile)];
 
   reader.record_with_info (qualified_name.c_str (), vma - baseaddr, msymtype,
 			   section);
@@ -691,8 +691,9 @@ show_debug_coff_pe_read (struct ui_file *file, int from_tty,
 
 /* Adds "Set/show debug coff_pe_read" commands.  */
 
+void _initialize_coff_pe_read ();
 void
-_initialize_coff_pe_read (void)
+_initialize_coff_pe_read ()
 {
   add_setshow_zuinteger_cmd ("coff-pe-read", class_maintenance,
 			     &debug_coff_pe_read,

@@ -357,7 +357,7 @@ read_unwind_info (struct objfile *objfile)
   struct hppa_unwind_info *ui;
   struct hppa_objfile_private *obj_private;
 
-  text_offset = ANOFFSET (objfile->section_offsets, SECT_OFF_TEXT (objfile));
+  text_offset = objfile->section_offsets[SECT_OFF_TEXT (objfile)];
   ui = (struct hppa_unwind_info *) obstack_alloc (&objfile->objfile_obstack,
 					   sizeof (struct hppa_unwind_info));
 
@@ -3168,8 +3168,9 @@ hppa_dump_tdep (struct gdbarch *gdbarch, struct ui_file *file)
   fprintf_unfiltered (file, "elf = %s\n", tdep->is_elf ? "yes" : "no");
 }
 
+void _initialize_hppa_tdep ();
 void
-_initialize_hppa_tdep (void)
+_initialize_hppa_tdep ()
 {
   gdbarch_register (bfd_arch_hppa, hppa_gdbarch_init, hppa_dump_tdep);
 

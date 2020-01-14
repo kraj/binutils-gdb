@@ -240,8 +240,7 @@ dump_msymbols (struct objfile *objfile, struct ui_file *outfile)
       /* Use the relocated address as shown in the symbol here -- do
 	 not try to respect copy relocations.  */
       CORE_ADDR addr = (msymbol->value.address
-			+ ANOFFSET (objfile->section_offsets,
-				    msymbol->section));
+			+ objfile->section_offsets[msymbol->section]);
       fputs_filtered (paddress (gdbarch, addr), outfile);
       fprintf_filtered (outfile, " %s", msymbol->linkage_name ());
       if (section)
@@ -1041,8 +1040,9 @@ maintenance_info_line_tables (const char *regexp, int from_tty)
 
 /* Do early runtime initializations.  */
 
+void _initialize_symmisc ();
 void
-_initialize_symmisc (void)
+_initialize_symmisc ()
 {
   std_in = stdin;
   std_out = stdout;

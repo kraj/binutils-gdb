@@ -166,6 +166,7 @@ static const struct dwarf2_debug_sections dwarf2_xcoff_names = {
   { NULL, NULL },
   { ".dwmac", NULL },
   { ".dwstr", NULL },
+  { NULL, NULL }, /* debug_str_offsets */
   { NULL, NULL }, /* debug_line_str */
   { ".dwrnges", NULL },
   { NULL, NULL }, /* debug_rnglists */
@@ -864,7 +865,7 @@ enter_line_range (struct subfile *subfile, unsigned beginoffset,
       addr = (int_lnno.l_lnno
 	      ? int_lnno.l_addr.l_paddr
 	      : read_symbol_nvalue (int_lnno.l_addr.l_symndx));
-      addr += ANOFFSET (objfile->section_offsets, SECT_OFF_TEXT (objfile));
+      addr += objfile->section_offsets[SECT_OFF_TEXT (objfile)];
 
       if (addr < startaddr || (endaddr && addr >= endaddr))
 	return;
@@ -1232,8 +1233,7 @@ read_xcoff_symtab (struct objfile *objfile, struct partial_symtab *pst)
 			}
 
 		      file_start_addr =
-			cs->c_value + ANOFFSET (objfile->section_offsets,
-						SECT_OFF_TEXT (objfile));
+			cs->c_value + objfile->section_offsets[SECT_OFF_TEXT (objfile)];
 		      file_end_addr = file_start_addr + CSECT_LEN (&main_aux);
 
 		      if (cs->c_name && (cs->c_name[0] == '.' || cs->c_name[0] == '@'))
@@ -1355,8 +1355,7 @@ read_xcoff_symtab (struct objfile *objfile, struct partial_symtab *pst)
 	case C_FCN:
 	  if (strcmp (cs->c_name, ".bf") == 0)
 	    {
-	      CORE_ADDR off = ANOFFSET (objfile->section_offsets,
-					SECT_OFF_TEXT (objfile));
+	      CORE_ADDR off = objfile->section_offsets[SECT_OFF_TEXT (objfile)];
 
 	      bfd_coff_swap_aux_in (abfd, raw_auxptr, cs->c_type, cs->c_sclass,
 				    0, cs->c_naux, &main_aux);
@@ -1400,8 +1399,7 @@ read_xcoff_symtab (struct objfile *objfile, struct partial_symtab *pst)
 			    NULL, cstk.start_addr,
 			    (fcn_cs_saved.c_value
 			     + fcn_aux_saved.x_sym.x_misc.x_fsize
-			     + ANOFFSET (objfile->section_offsets,
-					 SECT_OFF_TEXT (objfile))));
+			     + objfile->section_offsets[SECT_OFF_TEXT (objfile)]));
 	      within_function = 0;
 	    }
 	  break;
@@ -1468,8 +1466,7 @@ read_xcoff_symtab (struct objfile *objfile, struct partial_symtab *pst)
 	      depth++;
 	      newobj = push_context (depth,
 				  (cs->c_value
-				   + ANOFFSET (objfile->section_offsets,
-					       SECT_OFF_TEXT (objfile))));
+				   + objfile->section_offsets[SECT_OFF_TEXT (objfile)]));
 	    }
 	  else if (strcmp (cs->c_name, ".eb") == 0)
 	    {
@@ -1491,8 +1488,7 @@ read_xcoff_symtab (struct objfile *objfile, struct partial_symtab *pst)
 				cstk.old_blocks, NULL,
 				cstk.start_addr,
 				(cs->c_value
-				 + ANOFFSET (objfile->section_offsets,
-					     SECT_OFF_TEXT (objfile))));
+				 + objfile->section_offsets[SECT_OFF_TEXT (objfile)]));
 		}
 	      *get_local_symbols () = cstk.locals;
 	    }
@@ -1554,7 +1550,7 @@ process_xcoff_symbol (struct coff_symbol *cs, struct objfile *objfile)
   else
     {
       sec = secnum_to_section (cs->c_secnum, objfile);
-      off = ANOFFSET (objfile->section_offsets, sec);
+      off = objfile->section_offsets[sec];
     }
 
   name = cs->c_name;
@@ -1657,8 +1653,7 @@ process_xcoff_symbol (struct coff_symbol *cs, struct objfile *objfile)
 	  if (*pp == 'V' && !within_function)
 	    *pp = 'S';
 	  sym = define_symbol ((cs->c_value
-				+ ANOFFSET (objfile->section_offsets,
-					    static_block_section)),
+				+ objfile->section_offsets[static_block_section]),
 			       cs->c_name, 0, 0, objfile);
 	  if (sym != NULL)
 	    {
@@ -3024,7 +3019,7 @@ xcoff_symfile_offsets (struct objfile *objfile,
      us to test whether the associated section exists or not, and then
      access it quickly (without searching it again).  */
 
-  if (objfile->num_sections == 0)
+  if (objfile->section_offsets.empty ())
     return; /* Is that even possible?  Better safe than sorry.  */
 
   first_section_name = bfd_section_name (objfile->sections[0].the_bfd_section);
@@ -3134,8 +3129,9 @@ xcoff_get_n_import_files (bfd *abfd)
   return l_nimpid - 1;
 }
 
+void _initialize_xcoffread ();
 void
-_initialize_xcoffread (void)
+_initialize_xcoffread ()
 {
   add_symtab_fns (bfd_target_xcoff_flavour, &xcoff_sym_fns);
 }

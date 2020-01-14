@@ -3228,7 +3228,7 @@ maint_btrace_packet_history_cmd (const char *arg, int from_tty)
   struct btrace_thread_info *btinfo;
   unsigned int size, begin, end, from, to;
 
-  thread_info *tp = find_thread_ptid (inferior_ptid);
+  thread_info *tp = find_thread_ptid (current_inferior (), inferior_ptid);
   if (tp == NULL)
     error (_("No thread."));
 
@@ -3471,8 +3471,9 @@ show_maint_btrace_pt_skip_pad  (struct ui_file *file, int from_tty,
 
 /* Initialize btrace maintenance commands.  */
 
+void _initialize_btrace ();
 void
-_initialize_btrace (void)
+_initialize_btrace ()
 {
   add_cmd ("btrace", class_maintenance, maint_info_btrace_cmd,
 	   _("Info about branch tracing data."), &maintenanceinfolist);

@@ -55,9 +55,10 @@ box_win (struct tui_win_info *win_info,
 
   /* tui_apply_style resets the style entirely, so be sure to call it
      before applying ATTRS.  */
-  tui_apply_style (win, (highlight_flag
-			 ? tui_active_border_style.style ()
-			 : tui_border_style.style ()));
+  if (cli_styling)
+    tui_apply_style (win, (highlight_flag
+			   ? tui_active_border_style.style ()
+			   : tui_border_style.style ()));
   wattron (win, attrs);
 #ifdef HAVE_WBORDER
   wborder (win, tui_border_vline, tui_border_vline,
@@ -74,13 +75,13 @@ box_win (struct tui_win_info *win_info,
       int max_len = win_info->width - 2 - 2;
 
       if (win_info->title.size () <= max_len)
-	mvwaddstr (win, 0, 3, win_info->title.c_str ());
+	mvwaddstr (win, 0, 2, win_info->title.c_str ());
       else
 	{
 	  std::string truncated
 	    = "..." + win_info->title.substr (win_info->title.size ()
 					      - max_len + 3);
-	  mvwaddstr (win, 0, 3, truncated.c_str ());
+	  mvwaddstr (win, 0, 2, truncated.c_str ());
 	}
     }
   wattroff (win, attrs);

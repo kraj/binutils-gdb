@@ -1,3 +1,78 @@
+2020-01-13  Simon Marchi  <simon.marchi@efficios.com>
+
+	* Makefile.in (%-generated.c): Remove rule for files from
+	regformats/i386.
+
+2020-01-13  Simon Marchi  <simon.marchi@efficios.com>
+
+	* configure: Re-generate.
+
+2020-01-13  Simon Marchi  <simon.marchi@efficios.com>
+
+	* tracepoint.h (IP_AGENT_EXPORT_FUNC) [!IN_PROCESS_AGENT]:
+	Define to static.
+	* tracepoint.c (stop_tracing, flush_trace_buffer,
+	about_to_request_buffer_space, get_trace_state_variable_value,
+	set_trace_state_variable_value, gdb_collect): Add declaration.
+
+2020-01-13  Simon Marchi  <simon.marchi@efficios.com>
+
+	* linux-x86-low.c (x86_linux_regs_info, amd64_emit_eq_goto,
+	amd64_emit_ne_goto, amd64_emit_lt_goto, amd64_emit_le_goto,
+	amd64_emit_gt_goto, amd64_emit_ge_goto, amd64_emit_ge_goto,
+	i386_emit_eq_goto, i386_emit_ne_goto, i386_emit_lt_goto,
+	i386_emit_le_goto, i386_emit_gt_goto, i386_emit_ge_goto): Make
+	static.
+
+2020-01-13  Simon Marchi  <simon.marchi@efficios.com>
+
+	* inferiors.c: Include gdbsupport/common-inferior.h.
+
+2020-01-13  Simon Marchi  <simon.marchi@efficios.com>
+
+	* hostio-errno.c: Include hostio.h.
+
+2020-01-13  Simon Marchi  <simon.marchi@efficios.com>
+
+	* Makefile.in (%-generated.c): Make $(regdat_sh) a regular
+	prerequisite.
+
+2020-01-12  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* linux-arm-tdesc.c: Include linux-arm-tdesc.h.
+	* linux-arm-tdesc.h: Include arch/arm.h.
+
+2020-01-12  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* linux-aarch64-low.c (aarch64_write_goto_address): Make static.
+
+2020-01-12  Simon Marchi  <simon.marchi@polymtl.ca>
+
+	* linux-aarch32-tdesc.c: Include linux-aarch32-tdesc.h.
+	* linux-aarch64-tdesc.c: Include linux-aarch64-tdesc.h.
+
+2020-01-10  Pedro Alves  <palves@redhat.com>
+
+	* fork-child.c (post_fork_inferior): Pass target down to
+	startup_inferior.
+	* inferiors.c (switch_to_thread): Add process_stratum_target
+	parameter.
+	* lynx-low.c (lynx_target_ops): Now a process_stratum_target.
+	* nto-low.c (nto_target_ops): Now a process_stratum_target.
+	* linux-low.c (linux_target_ops): Now a process_stratum_target.
+	* remote-utils.c (prepare_resume_reply): Pass the target to
+	switch_to_thread.
+	* target.c (the_target): Now a process_stratum_target.
+	(done_accessing_memory): Pass the target to switch_to_thread.
+	(set_target_ops): Ajust to use process_stratum_target.
+	* target.h (struct target_ops): Rename to ...
+	(struct process_stratum_target): ... this.
+	(the_target, set_target_ops): Adjust.
+	(prepare_to_access_memory): Adjust comment.
+	* win32-low.c (child_xfer_memory): Adjust to use
+	process_stratum_target.
+	(win32_target_ops): Now a process_stratum_target.
+
 2020-01-06  Eli Zaretskii  <eliz@gnu.org>
 	    Pedro Alves  <palves@redhat.com>
 

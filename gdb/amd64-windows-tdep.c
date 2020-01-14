@@ -953,8 +953,8 @@ amd64_windows_find_unwind_info (struct gdbarch *gdbarch, CORE_ADDR pc,
   pe = pe_data (sec->objfile->obfd);
   dir = &pe->pe_opthdr.DataDirectory[PE_EXCEPTION_TABLE];
 
-  base = pe->pe_opthdr.ImageBase
-    + ANOFFSET (objfile->section_offsets, SECT_OFF_TEXT (objfile));
+  base = (pe->pe_opthdr.ImageBase
+	  + objfile->section_offsets[SECT_OFF_TEXT (objfile)]);
   *image_base = base;
 
   /* Find the entry.
@@ -1245,8 +1245,9 @@ amd64_windows_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
   set_gdbarch_auto_wide_charset (gdbarch, amd64_windows_auto_wide_charset);
 }
 
+void _initialize_amd64_windows_tdep ();
 void
-_initialize_amd64_windows_tdep (void)
+_initialize_amd64_windows_tdep ()
 {
   gdbarch_register_osabi (bfd_arch_i386, bfd_mach_x86_64, GDB_OSABI_CYGWIN,
                           amd64_windows_init_abi);

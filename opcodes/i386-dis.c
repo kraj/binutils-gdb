@@ -107,6 +107,7 @@ static void OP_3DNowSuffix (int, int);
 static void CMP_Fixup (int, int);
 static void BadOp (void);
 static void REP_Fixup (int, int);
+static void SEP_Fixup (int, int);
 static void BND_Fixup (int, int);
 static void NOTRACK_Fixup (int, int);
 static void HLE_Fixup1 (int, int);
@@ -412,6 +413,7 @@ fetch_data (struct disassemble_info *info, bfd_byte *addr)
 #define EMCq { OP_EMC, q_mode }
 #define MXC { OP_MXC, 0 }
 #define OPSUF { OP_3DNowSuffix, 0 }
+#define SEP { SEP_Fixup, 0 }
 #define CMP { CMP_Fixup, 0 }
 #define XMM0 { XMM_Fixup, 0 }
 #define FXSAVE { FXSAVE_Fixup, 0 }
@@ -2713,8 +2715,8 @@ static const struct dis386 dis386_twobyte[] = {
   { "rdtsc",		{ XX }, 0 },
   { "rdmsr",		{ XX }, 0 },
   { "rdpmc",		{ XX }, 0 },
-  { "sysenter",		{ XX }, 0 },
-  { "sysexit",		{ XX }, 0 },
+  { "sysenter",		{ SEP }, 0 },
+  { "sysexit",		{ SEP }, 0 },
   { Bad_Opcode },
   { "getsec",		{ XX }, 0 },
   /* 38 */
@@ -11067,6 +11069,9 @@ static const struct dis386 rm_table[][8] = {
 #define BND_PREFIX	(0xf2 | 0x400)
 #define NOTRACK_PREFIX	(0x3e | 0x100)
 
+/* Remember if the current op is a jump instruction.  */
+static bfd_boolean op_is_jump = FALSE;
+
 static int
 ckprefix (void)
 {
@@ -11316,7 +11321,7 @@ static char scale_char;
 
 enum x86_64_isa
 {
-  amd64 = 0,
+  amd64 = 1,
   intel64
 };
 
@@ -12141,6 +12146,50 @@ print_insn (bfd_vma pc, disassemble_info *info)
 	}
     }
 
+  /* Clear instruction information.  */
+  if (the_info)
+    {
+      the_info->insn_info_valid = 0;
+      the_info->branch_delay_insns = 0;
+      the_info->data_size = 0;
+      the_info->insn_type = dis_noninsn;
+      the_info->target = 0;
+      the_info->target2 = 0;
+    }
+
+  /* Reset jump operation indicator.  */
+  op_is_jump = FALSE;
+
+  {
+    int jump_detection = 0;
+
+    /* Extract flags.  */
+    for (i = 0; i < MAX_OPERANDS; ++i)
+      {
+	if ((dp->op[i].rtn == OP_J)
+	    || (dp->op[i].rtn == OP_indirE))
+	  jump_detection |= 1;
+	else if ((dp->op[i].rtn == BND_Fixup)
+		 || (!dp->op[i].rtn && !dp->op[i].bytemode))
+	  jump_detection |= 2;
+	else if ((dp->op[i].bytemode == cond_jump_mode)
+		 || (dp->op[i].bytemode == loop_jcxz_mode))
+	  jump_detection |= 4;
+      }
+
+    /* Determine if this is a jump or branch.  */
+    if ((jump_detection & 0x3) == 0x3)
+      {
+	op_is_jump = TRUE;
+	if (jump_detection & 0x4)
+	  the_info->insn_type = dis_condbranch;
+	else
+	  the_info->insn_type =
+	    (dp->name && !strncmp(dp->name, "call", 4))
+	    ? dis_jsr : dis_branch;
+      }
+  }
+
   /* If VEX.vvvv and EVEX.vvvv are unused, they must be all 1s, which
      are all 0s in inverted form.  */
   if (need_vex && vex.register_specifier != 0)
@@ -12254,7 +12303,19 @@ print_insn (bfd_vma pc, disassemble_info *info)
 	if (needcomma)
 	  (*info->fprintf_func) (info->stream, ",");
 	if (op_index[i] != -1 && !op_riprel[i])
-	  (*info->print_address_func) ((bfd_vma) op_address[op_index[i]], info);
+	  {
+	    bfd_vma target = (bfd_vma) op_address[op_index[i]];
+
+	    if (the_info && op_is_jump)
+	      {
+		the_info->insn_info_valid = 1;
+		the_info->branch_delay_insns = 0;
+		the_info->data_size = 0;
+		the_info->target = target;
+		the_info->target2 = 0;
+	      }
+	    (*info->print_address_func) (target, info);
+	  }
 	else
 	  (*info->fprintf_func) (info->stream, "%s", op_txt[i]);
 	needcomma = 1;
@@ -14829,12 +14890,12 @@ OP_J (int bytemode, int sizeflag)
 	disp -= 0x100;
       break;
     case v_mode:
-      if (isa64 == amd64)
+      if (isa64 != intel64)
     case dqw_mode:
 	USED_REX (REX_W);
       if ((sizeflag & DFLAG)
 	  || (address_mode == mode_64bit
-	      && ((isa64 != amd64 && bytemode != dqw_mode)
+	      && ((isa64 == intel64 && bytemode != dqw_mode)
 		  || (rex & REX_W))))
 	disp = get32s ();
       else
@@ -14852,7 +14913,7 @@ OP_J (int bytemode, int sizeflag)
 		       & ~((bfd_vma) 0xffff));
 	}
       if (address_mode != mode_64bit
-	  || (isa64 == amd64 && !(rex & REX_W)))
+	  || (isa64 != intel64 && !(rex & REX_W)))
 	used_prefixes |= (prefixes & PREFIX_DATA);
       break;
     default:
@@ -15600,6 +15661,18 @@ REP_Fixup (int bytemode, int sizeflag)
       abort ();
       break;
     }
+}
+
+static void
+SEP_Fixup (int bytemode ATTRIBUTE_UNUSED, int sizeflag ATTRIBUTE_UNUSED)
+{
+  if ( isa64 != amd64 )
+    return;
+
+  obufp = obuf;
+  BadOp ();
+  mnemonicendp = obufp;
+  ++codep;
 }
 
 /* For BND-prefixed instructions 0xF2 prefix should be displayed as

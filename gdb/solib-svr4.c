@@ -2273,8 +2273,7 @@ enable_break (struct svr4_info *info, int from_tty)
 	  CORE_ADDR load_addr;
 
 	  tmp_bfd = os->objfile->obfd;
-	  load_addr = ANOFFSET (os->objfile->section_offsets,
-				SECT_OFF_TEXT (os->objfile));
+	  load_addr = os->objfile->section_offsets[SECT_OFF_TEXT (os->objfile)];
 
 	  interp_sect = bfd_get_section_by_name (tmp_bfd, ".text");
 	  if (interp_sect)
@@ -2395,7 +2394,8 @@ enable_break (struct svr4_info *info, int from_tty)
       if (!load_addr_found)
 	{
 	  struct regcache *regcache
-	    = get_thread_arch_regcache (inferior_ptid, target_gdbarch ());
+	    = get_thread_arch_regcache (current_inferior ()->process_target (),
+					inferior_ptid, target_gdbarch ());
 
 	  load_addr = (regcache_read_pc (regcache)
 		       - exec_entry_point (tmp_bfd.get (), tmp_bfd_target));
@@ -2975,15 +2975,8 @@ svr4_relocate_main_executable (void)
 
   if (symfile_objfile)
     {
-      struct section_offsets *new_offsets;
-      int i;
-
-      new_offsets = XALLOCAVEC (struct section_offsets,
-				symfile_objfile->num_sections);
-
-      for (i = 0; i < symfile_objfile->num_sections; i++)
-	new_offsets->offsets[i] = displacement;
-
+      section_offsets new_offsets (symfile_objfile->section_offsets.size (),
+				   displacement);
       objfile_relocate (symfile_objfile, new_offsets);
     }
   else if (exec_bfd)
@@ -3267,8 +3260,9 @@ svr4_iterate_over_objfiles_in_search_order
     }
 }
 
+void _initialize_svr4_solib ();
 void
-_initialize_svr4_solib (void)
+_initialize_svr4_solib ()
 {
   solib_svr4_data = gdbarch_data_register_pre_init (solib_svr4_init);
 

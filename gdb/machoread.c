@@ -907,12 +907,7 @@ macho_symfile_offsets (struct objfile *objfile,
   struct obj_section *osect;
 
   /* Allocate section_offsets.  */
-  objfile->num_sections = bfd_count_sections (objfile->obfd);
-  objfile->section_offsets = (struct section_offsets *)
-    obstack_alloc (&objfile->objfile_obstack,
-                   SIZEOF_N_SECTION_OFFSETS (objfile->num_sections));
-  memset (objfile->section_offsets, 0,
-          SIZEOF_N_SECTION_OFFSETS (objfile->num_sections));
+  objfile->section_offsets.assign (bfd_count_sections (objfile->obfd), 0);
 
   /* This code is run when we first add the objfile with
      symfile_add_with_addrs_or_offsets, when "addrs" not "offsets" are
@@ -966,8 +961,9 @@ static const struct sym_fns macho_sym_fns = {
   &psym_functions
 };
 
+void _initialize_machoread ();
 void
-_initialize_machoread (void)
+_initialize_machoread ()
 {
   add_symtab_fns (bfd_target_mach_o_flavour, &macho_sym_fns);
 

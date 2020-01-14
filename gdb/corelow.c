@@ -94,7 +94,7 @@ public:
   bool has_memory () override;
   bool has_stack () override;
   bool has_registers () override;
-  bool has_execution (ptid_t) override { return false; }
+  bool has_execution (inferior *inf) override { return false; }
 
   bool info_proc (const char *, enum info_proc_what) override;
 
@@ -314,7 +314,7 @@ add_to_thread_list (bfd *abfd, asection *asect, void *reg_sect_arg)
 
   ptid = ptid_t (pid, lwpid, 0);
 
-  add_thread (ptid);
+  add_thread (inf->process_target (), ptid);
 
 /* Warning, Will Robinson, looking at BFD private data! */
 
@@ -472,7 +472,7 @@ core_target_open (const char *arg, int from_tty)
 	{
 	  inferior_appeared (current_inferior (), CORELOW_PID);
 	  inferior_ptid = ptid_t (CORELOW_PID);
-	  add_thread_silent (inferior_ptid);
+	  add_thread_silent (target, inferior_ptid);
 	}
       else
 	switch_to_thread (thread);
@@ -540,7 +540,7 @@ core_target_open (const char *arg, int from_tty)
   /* Current thread should be NUM 1 but the user does not know that.
      If a program is single threaded gdb in general does not mention
      anything about threads.  That is why the test is >= 2.  */
-  if (thread_count () >= 2)
+  if (thread_count (target) >= 2)
     {
       try
 	{
@@ -594,7 +594,6 @@ core_target::get_core_register_section (struct regcache *regcache,
 {
   struct bfd_section *section;
   bfd_size_type size;
-  char *contents;
   bool variable_size_section = (regset != NULL
 				&& regset->flags & REGSET_VARIABLE_SIZE);
 
@@ -622,9 +621,9 @@ core_target::get_core_register_section (struct regcache *regcache,
 	       section_name.c_str ());
     }
 
-  contents = (char *) alloca (size);
-  if (! bfd_get_section_contents (core_bfd, section, contents,
-				  (file_ptr) 0, size))
+  gdb::byte_vector contents (size);
+  if (!bfd_get_section_contents (core_bfd, section, contents.data (),
+				 (file_ptr) 0, size))
     {
       warning (_("Couldn't read %s registers from `%s' section in core file."),
 	       human_name, section_name.c_str ());
@@ -633,12 +632,12 @@ core_target::get_core_register_section (struct regcache *regcache,
 
   if (regset != NULL)
     {
-      regset->supply_regset (regset, regcache, -1, contents, size);
+      regset->supply_regset (regset, regcache, -1, contents.data (), size);
       return;
     }
 
   gdb_assert (m_core_vec != nullptr);
-  m_core_vec->core_read_registers (regcache, contents, size, which,
+  m_core_vec->core_read_registers (regcache, contents.data (), size, which,
 				   (CORE_ADDR) bfd_section_vma (section));
 }
 
@@ -944,7 +943,7 @@ core_target::pid_to_str (ptid_t ptid)
 
   /* Otherwise, this isn't a "threaded" core -- use the PID field, but
      only if it isn't a fake PID.  */
-  inf = find_inferior_ptid (ptid);
+  inf = find_inferior_ptid (this, ptid);
   if (inf != NULL && !inf->fake_pid_p)
     return normal_pid_to_str (ptid);
 
@@ -994,8 +993,9 @@ core_target::info_proc (const char *args, enum info_proc_what request)
   return true;
 }
 
+void _initialize_corelow ();
 void
-_initialize_corelow (void)
+_initialize_corelow ()
 {
   add_target (core_target_info, core_target_open, filename_completer);
 }

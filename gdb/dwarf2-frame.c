@@ -384,8 +384,7 @@ execute_cfa_program (struct dwarf2_fde *fde, const gdb_byte *insn_ptr,
 					   fde->cie->ptr_size, insn_ptr,
 					   &bytes_read, fde->initial_location);
 	      /* Apply the objfile offset for relocatable objects.  */
-	      fs->pc += ANOFFSET (fde->cie->unit->objfile->section_offsets,
-				  SECT_OFF_TEXT (fde->cie->unit->objfile));
+	      fs->pc += fde->cie->unit->objfile->section_offsets[SECT_OFF_TEXT (fde->cie->unit->objfile)];
 	      insn_ptr += bytes_read;
 	      break;
 
@@ -1686,8 +1685,8 @@ dwarf2_frame_find_fde (CORE_ADDR *pc, CORE_ADDR *out_offset)
       if (fde_table->num_entries == 0)
 	continue;
 
-      gdb_assert (objfile->section_offsets);
-      offset = ANOFFSET (objfile->section_offsets, SECT_OFF_TEXT (objfile));
+      gdb_assert (!objfile->section_offsets.empty ());
+      offset = objfile->section_offsets[SECT_OFF_TEXT (objfile)];
 
       gdb_assert (fde_table->num_entries > 0);
       if (*pc < offset + fde_table->entries[0]->initial_location)
@@ -2355,8 +2354,9 @@ show_dwarf_unwinders_enabled_p (struct ui_file *file, int from_tty,
 		    value);
 }
 
+void _initialize_dwarf2_frame ();
 void
-_initialize_dwarf2_frame (void)
+_initialize_dwarf2_frame ()
 {
   dwarf2_frame_data = gdbarch_data_register_pre_init (dwarf2_frame_init);
 

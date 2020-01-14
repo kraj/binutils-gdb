@@ -23,13 +23,14 @@
 #include "safe-ctype.h"
 #include "subsegs.h"
 #include "elf/z80.h"
+#include "dwarf2dbg.h"
 
 /* Exported constants.  */
 const char comment_chars[] = ";\0";
 const char line_comment_chars[] = "#;\0";
 const char line_separator_chars[] = "\0";
 const char EXP_CHARS[] = "eE\0";
-const char FLT_CHARS[] = "RrFf\0";
+const char FLT_CHARS[] = "RrDdFfSsHh\0";
 
 /* For machine specific options.  */
 const char * md_shortopts = ""; /* None yet.  */
@@ -50,8 +51,8 @@ enum options
   OPTION_MACH_IUP,
   OPTION_MACH_WUP,
   OPTION_MACH_FUP,
-  OPTION_FLOAT_FORMAT,
-  OPTION_DOUBLE_FORMAT,
+  OPTION_FP_SINGLE_FORMAT,
+  OPTION_FP_DOUBLE_FORMAT,
   OPTION_COMPAT_LL_PREFIX,
   OPTION_COMPAT_COLONLESS,
   OPTION_COMPAT_SDCC
@@ -84,8 +85,8 @@ struct option md_longopts[] =
   { "z180",      no_argument, NULL, OPTION_MACH_Z180},
   { "ez80",      no_argument, NULL, OPTION_MACH_EZ80_Z80},
   { "ez80-adl",  no_argument, NULL, OPTION_MACH_EZ80_ADL},
-  { "float",     required_argument, NULL, OPTION_FLOAT_FORMAT},
-  { "double",    required_argument, NULL, OPTION_DOUBLE_FORMAT},
+  { "fp-s",      required_argument, NULL, OPTION_FP_SINGLE_FORMAT},
+  { "fp-d",      required_argument, NULL, OPTION_FP_DOUBLE_FORMAT},
   { "strict",    no_argument, NULL, OPTION_MACH_FUD},
   { "full",      no_argument, NULL, OPTION_MACH_IUP},
   { "with-inst", required_argument, NULL, OPTION_MACH_INST},
@@ -164,17 +165,32 @@ static const char *
 str_to_zeda32 (char *litP, int *sizeP);
 static const char *
 str_to_float48 (char *litP, int *sizeP);
+static const char *
+str_to_ieee754_h (char *litP, int *sizeP);
+static const char *
+str_to_ieee754_s (char *litP, int *sizeP);
+static const char *
+str_to_ieee754_d (char *litP, int *sizeP);
 
 static str_to_float_t
 get_str_to_float (const char *arg)
 {
-  if (strcasecmp(arg, "zeda32") == 0)
+  if (strcasecmp (arg, "zeda32") == 0)
     return str_to_zeda32;
 
-  if (strcasecmp(arg, "math48") == 0)
+  if (strcasecmp (arg, "math48") == 0)
     return str_to_float48;
 
-  if (strcasecmp(arg, "ieee754") != 0)
+  if (strcasecmp (arg, "half") != 0)
+    return str_to_ieee754_h;
+
+  if (strcasecmp (arg, "single") != 0)
+    return str_to_ieee754_s;
+
+  if (strcasecmp (arg, "double") != 0)
+    return str_to_ieee754_d;
+
+  if (strcasecmp (arg, "ieee754") == 0)
     as_fatal (_("invalid floating point numbers type `%s'"), arg);
   return NULL;
 }
@@ -248,19 +264,19 @@ md_parse_option (int c, const char* arg)
       ins_ok = INS_GBZ80;
       ins_err = INS_UNDOC | INS_UNPORT;
       break;
-    case OPTION_FLOAT_FORMAT:
+    case OPTION_FP_SINGLE_FORMAT:
       str_to_float = get_str_to_float (arg);
       break;
-    case OPTION_DOUBLE_FORMAT:
+    case OPTION_FP_DOUBLE_FORMAT:
       str_to_double = get_str_to_float (arg);
       break;
     case OPTION_MACH_INST:
       if ((ins_ok & INS_GBZ80) == 0)
-        return setup_instruction_list(arg, & ins_ok, & ins_err);
+        return setup_instruction_list (arg, & ins_ok, & ins_err);
       break;
     case OPTION_MACH_NO_INST:
       if ((ins_ok & INS_GBZ80) == 0)
-        return setup_instruction_list(arg, & ins_err, & ins_ok);
+        return setup_instruction_list (arg, & ins_err, & ins_ok);
       break;
     case OPTION_MACH_WUD:
     case OPTION_MACH_IUD:
@@ -319,11 +335,14 @@ Compatibility options:\n\
   -local-prefix=TEXT\t  treat labels prefixed by TEXT as local\n\
   -colonless\t\t  permit colonless labels\n\
   -sdcc\t\t\t  accept SDCC specific instruction syntax\n\
-  -float=FORMAT\t\t  set floating point numbers format\n\
-  -double=FORMAT\t\t  set floating point numbers format\n\
+  -fp-s=FORMAT\t\t  set single precission FP numbers format\n\
+  -fp-d=FORMAT\t\t  set double precission FP numbers format\n\
 Where FORMAT one of:\n\
   ieee754\t\t  IEEE754 compatible\n\
-  zeda32\t\t\t  Zeda z80float library 32 bit format\n\
+  half\t\t\t  IEEE754 half precision (16 bit)\n\
+  single\t\t  IEEE754 single precision (32 bit)\n\
+  double\t\t  IEEE754 double precision (64 bit)\n\
+  zeda32\t\t  Zeda z80float library 32 bit format\n\
   math48\t\t  48 bit format from Math48 library\n\
 \n\
 Support for known undocumented instructions:\n\
@@ -443,11 +462,11 @@ md_begin (void)
             {
               for ( k = 0 ; regtable[i].name[k] ; ++k )
                 {
-                  buf[k] = ( j & ( 1<<k ) ) ? TOUPPER ( regtable[i].name[k] ) : regtable[i].name[k];
+                  buf[k] = ( j & ( 1<<k ) ) ? TOUPPER (regtable[i].name[k]) : regtable[i].name[k];
                 }
-              symbolS * psym = symbol_find_or_make(buf);
-	      S_SET_SEGMENT(psym, reg_section);
-	      symbol_set_value_expression(psym, &reg);
+              symbolS * psym = symbol_find_or_make (buf);
+	      S_SET_SEGMENT (psym, reg_section);
+	      symbol_set_value_expression (psym, &reg);
             }
         }
     }
@@ -586,7 +605,7 @@ z80_start_line_hook (void)
       c = get_symbol_name (&name);
       rest = input_line_pointer + 1;
 
-      if (ISSPACE(c) && colonless_labels)
+      if (ISSPACE (c) && colonless_labels)
         {
           if (c == '\n')
             {
@@ -613,7 +632,7 @@ z80_start_line_hook (void)
 	len = 4;
       else
 	len = 0;
-      if (len && (!ISALPHA(rest[len]) ) )
+      if (len && (!ISALPHA (rest[len])))
 	{
 	  /* Handle assignment here.  */
 	  if (line_start[-1] == '\n')
@@ -649,13 +668,17 @@ md_atof (int type, char *litP, int *sizeP)
     {
     case 'f':
     case 'F':
+    case 's':
+    case 'S':
       if (str_to_float)
-        return str_to_float (litP, sizeP);
+	return str_to_float (litP, sizeP);
       break;
     case 'd':
     case 'D':
+    case 'r':
+    case 'R':
       if (str_to_double)
-        return str_to_double (litP, sizeP);
+	return str_to_double (litP, sizeP);
       break;
     }
   return ieee_md_atof (type, litP, sizeP, FALSE);
@@ -722,7 +745,7 @@ static void
 wrong_mach (int ins_type)
 {
   if (ins_type & ins_err)
-    ill_op();
+    ill_op ();
   else
     as_warn (_("undocumented instruction"));
 }
@@ -781,17 +804,18 @@ is_indir (const char *s)
 
 /* Check whether a symbol involves a register.  */
 static int
-contains_register(symbolS *sym)
+contains_register (symbolS *sym)
 {
   if (sym)
-  {
-    expressionS * ex = symbol_get_value_expression(sym);
-    return (O_register == ex->X_op)
-      || (ex->X_add_symbol && contains_register(ex->X_add_symbol))
-      || (ex->X_op_symbol && contains_register(ex->X_op_symbol));
-  }
-  else
-    return 0;
+    {
+      expressionS * ex = symbol_get_value_expression(sym);
+
+      return (O_register == ex->X_op)
+	|| (ex->X_add_symbol && contains_register(ex->X_add_symbol))
+	|| (ex->X_op_symbol && contains_register(ex->X_op_symbol));
+    }
+
+  return 0;
 }
 
 /* Parse general expression, not looking for indexed addressing.  */
@@ -851,17 +875,17 @@ parse_exp_not_indexed (const char *s, expressionS *op)
 static int
 unify_indexed (expressionS *op)
 {
-  if (O_register != symbol_get_value_expression(op->X_add_symbol)->X_op)
+  if (O_register != symbol_get_value_expression (op->X_add_symbol)->X_op)
     return 0;
 
-  int rnum = symbol_get_value_expression(op->X_add_symbol)->X_add_number;
-  if ( ((REG_IX != rnum) && (REG_IY != rnum)) || contains_register(op->X_op_symbol) )
+  int rnum = symbol_get_value_expression (op->X_add_symbol)->X_add_number;
+  if ( ((REG_IX != rnum) && (REG_IY != rnum)) || contains_register (op->X_op_symbol))
     {
-      ill_op();
+      ill_op ();
       return 0;
     }
 
-  /* convert subtraction to addition of negative value */
+  /* Convert subtraction to addition of negative value.  */
   if (O_subtract == op->X_op)
     {
       expressionS minus;
@@ -869,10 +893,11 @@ unify_indexed (expressionS *op)
       minus.X_add_number = 0;
       minus.X_add_symbol = op->X_op_symbol;
       minus.X_op_symbol = 0;
-      op->X_op_symbol = make_expr_symbol(&minus);
+      op->X_op_symbol = make_expr_symbol (&minus);
       op->X_op = O_add;
     }
-  /* clear X_add_number of the expression */
+
+  /* Clear X_add_number of the expression.  */
   if (op->X_add_number != 0)
     {
       expressionS add;
@@ -881,7 +906,7 @@ unify_indexed (expressionS *op)
       add.X_add_number = op->X_add_number;
       add.X_add_symbol = op->X_op_symbol;
       add.X_op_symbol = 0;
-      op->X_add_symbol = make_expr_symbol(&add);
+      op->X_add_symbol = make_expr_symbol (&add);
     }
   else
     op->X_add_symbol = op->X_op_symbol;
@@ -891,7 +916,7 @@ unify_indexed (expressionS *op)
   return 1;
 }
 
-/* Parse expression, change operator to O_md1 for indexed addressing*/
+/* Parse expression, change operator to O_md1 for indexed addressing.  */
 static const char *
 parse_exp (const char *s, expressionS *op)
 {
@@ -900,11 +925,11 @@ parse_exp (const char *s, expressionS *op)
     {
     case O_add:
     case O_subtract:
-      if (unify_indexed(op) && op->X_md)
+      if (unify_indexed (op) && op->X_md)
         op->X_op = O_md1;
       break;
     case O_register:
-      if ( op->X_md && ((REG_IX == op->X_add_number)||(REG_IY == op->X_add_number)) )
+      if (op->X_md && ((REG_IX == op->X_add_number) || (REG_IY == op->X_add_number)))
         {
 	  op->X_add_symbol = zero;
 	  op->X_op = O_md1;
@@ -1048,14 +1073,14 @@ emit_data_val (expressionS * val, int size)
 
   if (   (val->X_op == O_register)
       || (val->X_op == O_md1)
-      || contains_register(val->X_add_symbol)
-      || contains_register(val->X_op_symbol) )
+      || contains_register (val->X_add_symbol)
+      || contains_register (val->X_op_symbol))
     ill_op ();
 
   if (size <= 2 && val->X_op_symbol)
     {
       bfd_boolean simplify = TRUE;
-      int shift = symbol_get_value_expression(val->X_op_symbol)->X_add_number;
+      int shift = symbol_get_value_expression (val->X_op_symbol)->X_add_number;
       if (val->X_op == O_bit_and && shift == (1 << (size*8))-1)
 	shift = 0;
       else if (val->X_op != O_right_shift)
@@ -1106,9 +1131,9 @@ emit_byte (expressionS * val, bfd_reloc_code_real_type r_type)
     }
   p = frag_more (1);
   *p = val->X_add_number;
-  if ( contains_register(val->X_add_symbol) || contains_register(val->X_op_symbol) )
+  if ( contains_register (val->X_add_symbol) || contains_register (val->X_op_symbol) )
     {
-      ill_op();
+      ill_op ();
     }
   else if ((r_type == BFD_RELOC_8_PCREL) && (val->X_op == O_constant))
     {
@@ -1306,7 +1331,7 @@ emit_s (char prefix, char opcode, const char *args)
   if (*p == ',' && arg_s.X_md == 0 && arg_s.X_op == O_register && arg_s.X_add_number == REG_A)
     { /* possible instruction in generic format op A,x */
       if (!(ins_ok & INS_EZ80) && !sdcc_compat)
-        ill_op();
+        ill_op ();
       ++p;
       p = parse_exp (p, & arg_s);
     }
@@ -1890,9 +1915,10 @@ emit_rst (char prefix ATTRIBUTE_UNUSED, char opcode, const char * args)
   return p;
 }
 
+/* For 8-bit indirect load to memory instructions like: LD (HL),n or LD (ii+d),n.  */
 static void
-emit_ld_m_n(expressionS *dst, expressionS *src)
-{ /* for 8-bit indirect load to memory instructions like: LD (HL),n or LD (ii+d),n */
+emit_ld_m_n (expressionS *dst, expressionS *src)
+{
   char *q;
   char prefix;
   expressionS dst_offset;
@@ -1921,9 +1947,10 @@ emit_ld_m_n(expressionS *dst, expressionS *src)
   emit_byte (src, BFD_RELOC_8);
 }
 
+/* For 8-bit load register to memory instructions: LD (<expression>),r.  */
 static void
-emit_ld_m_r(expressionS *dst, expressionS *src)
-{ /* for 8-bit load register to memory instructions: LD (<expression>),r */
+emit_ld_m_r (expressionS *dst, expressionS *src)
+{
   char *q;
   char prefix = 0;
   expressionS dst_offset;
@@ -1980,12 +2007,13 @@ emit_ld_m_r(expressionS *dst, expressionS *src)
     ill_op ();
 }
 
+/* For 16-bit load register to memory instructions: LD (<expression>),rr.  */
 static void
-emit_ld_m_rr(expressionS *dst, expressionS *src)
-{ /* for 16-bit load register to memory instructions: LD (<expression>),rr */
+emit_ld_m_rr (expressionS *dst, expressionS *src)
+{
   char *q;
-  char prefix = 0;
-  char opcode = 0;
+  int prefix = 0;
+  int opcode = 0;
   expressionS dst_offset;
 
   switch (dst->X_op)
@@ -2007,15 +2035,15 @@ emit_ld_m_rr(expressionS *dst, expressionS *src)
         case REG_BC: opcode = 0x0F; break;
         case REG_DE: opcode = 0x1F; break;
         case REG_HL: opcode = 0x2F; break;
-        case REG_IX: opcode = (prefix != '\xfd') ? 0x3F : 0x3E; break;
-        case REG_IY: opcode = (prefix != '\xfd') ? 0x3E : 0x3F; break;
+	case REG_IX: opcode = (prefix != 0xFD) ? 0x3F : 0x3E; break;
+	case REG_IY: opcode = (prefix != 0xFD) ? 0x3E : 0x3F; break;
         default:
           ill_op ();
         }
         q = frag_more (prefix ? 2 : 1);
         *q++ = prefix;
         *q = opcode;
-        if (prefix == '\xfd' || prefix == '\xdd')
+	if (prefix == 0xFD || prefix == 0xDD)
           {
             dst_offset = *dst;
             dst_offset.X_op = O_symbol;
@@ -2165,8 +2193,8 @@ emit_ld_r_r (expressionS *dst, expressionS *src)
 { /* mostly 8-bit load register from register instructions: LD r,r */
   /* there are some exceptions: LD SP,HL/IX/IY; LD I,HL and LD HL,I */
   char *q;
-  char prefix = 0;
-  char opcode = 0;
+  int prefix = 0;
+  int opcode = 0;
   int ii_halves = 0;
 
   switch (dst->X_add_number)
@@ -2296,14 +2324,14 @@ emit_ld_r_r (expressionS *dst, expressionS *src)
             break;
           case REG_H|R_IX:
           case REG_L|R_IX:
-            if (prefix == '\xfd' || dst->X_add_number == REG_H || dst->X_add_number == REG_L)
+	    if (prefix == 0xFD || dst->X_add_number == REG_H || dst->X_add_number == REG_L)
               ill_op (); /* LD IYL,IXL and LD H,IXH are not permitted */
             prefix = 0xDD;
             ii_halves = 1;
             break;
           case REG_H|R_IY:
           case REG_L|R_IY:
-            if (prefix == '\xdd' || dst->X_add_number == REG_H || dst->X_add_number == REG_L)
+	    if (prefix == 0xDD || dst->X_add_number == REG_H || dst->X_add_number == REG_L)
               ill_op (); /* LD IXH,IYH and LD L,IYL are not permitted */
             prefix = 0xFD;
             ii_halves = 1;
@@ -2325,7 +2353,7 @@ emit_ld_r_r (expressionS *dst, expressionS *src)
         case 0x49: /* LIS prefix, in Z80 it is LD C,C */
         case 0x52: /* SIL prefix, in Z80 it is LD D,D */
         case 0x5B: /* LIL prefix, in Z80 it is LD E,E */
-          as_warn(_("unsupported instruction, assembled as NOP"));
+          as_warn (_("unsupported instruction, assembled as NOP"));
           opcode = 0x00;
           break;
         default:;
@@ -2341,8 +2369,8 @@ static void
 emit_ld_rr_m (expressionS *dst, expressionS *src)
 { /* for 16-bit indirect load from memory to register: LD rr,(xxx) */
   char *q;
-  char prefix = 0;
-  char opcode = 0;
+  int prefix = 0;
+  int opcode = 0;
   expressionS src_offset;
 
   /* GBZ80 has no support for 16-bit load from memory instructions */
@@ -2364,15 +2392,15 @@ emit_ld_rr_m (expressionS *dst, expressionS *src)
         case REG_BC: opcode = 0x07; break;
         case REG_DE: opcode = 0x17; break;
         case REG_HL: opcode = 0x27; break;
-        case REG_IX: opcode = (!prefix || prefix == '\xdd') ? 0x37 : 0x31; break;
-        case REG_IY: opcode = prefix ? ((prefix == '\xdd') ? 0x31 : 0x37) : 0x36; break;
+	case REG_IX: opcode = (!prefix || prefix == 0xDD) ? 0x37 : 0x31; break;
+	case REG_IY: opcode = prefix ? ((prefix == 0xDD) ? 0x31 : 0x37) : 0x36; break;
         default:
           ill_op ();
         }
       q = frag_more (2);
       *q++ = prefix;
       *q = opcode;
-      if (prefix != '\xed')
+      if (prefix != 0xED)
         {
           src_offset = *src;
           src_offset.X_op = O_symbol;
@@ -2405,8 +2433,8 @@ static void
 emit_ld_rr_nn (expressionS *dst, expressionS *src)
 { /* mostly load imediate value to multibyte register instructions: LD rr,nn */
   char *q;
-  char prefix = 0x00;
-  char opcode = 0x21; /* LD HL,nn */
+  int prefix = 0x00;
+  int opcode = 0x21; /* LD HL,nn */
   switch (dst->X_add_number)
     {
     case REG_IX:
@@ -2489,7 +2517,7 @@ emit_lddldi (char prefix, char opcode, const char * args)
   char *q;
 
   if (!(ins_ok & INS_GBZ80))
-    return emit_insn(prefix, opcode, args);
+    return emit_insn (prefix, opcode, args);
 
   p = parse_exp (args, & dst);
   if (*p++ != ',')
@@ -2561,7 +2589,7 @@ emit_ldh (char prefix ATTRIBUTE_UNUSED, char opcode ATTRIBUTE_UNUSED,
               *q = 0xE2;
             }
           else
-            ill_op();
+            ill_op ();
         }
       else
         {
@@ -2643,10 +2671,10 @@ emit_lea (char prefix, char opcode, const char * args)
   switch (rnum)
     {
     case REG_IX:
-      opcode = (opcode == 0x33) ? 0x55 : (opcode|0x00);
+      opcode = (opcode == (char)0x33) ? 0x55 : (opcode|0x00);
       break;
     case REG_IY:
-      opcode = (opcode == 0x32) ? 0x54 : (opcode|0x01);
+      opcode = (opcode == (char)0x32) ? 0x54 : (opcode|0x01);
     }
 
   q = frag_more (2);
@@ -2693,7 +2721,7 @@ emit_pea (char prefix, char opcode, const char * args)
   /* PEA ii without displacement is mostly typo,
      because there is PUSH instruction which is shorter and faster */
   /*if (arg.X_op == O_register)
-    as_warn(_("PEA is used without displacement, use PUSH instead"));*/
+    as_warn (_("PEA is used without displacement, use PUSH instead"));*/
 
   q = frag_more (2);
   *q++ = prefix;
@@ -2710,9 +2738,9 @@ static const char *
 emit_reti (char prefix, char opcode, const char * args)
 {
   if (ins_ok & INS_GBZ80)
-    return emit_insn(0x00, 0xD9, args);
+    return emit_insn (0x00, 0xD9, args);
 
-  return emit_insn(prefix, opcode, args);
+  return emit_insn (prefix, opcode, args);
 }
 
 static const char *
@@ -2727,7 +2755,7 @@ emit_tst (char prefix, char opcode, const char *args)
   if (*p == ',' && arg_s.X_md == 0 && arg_s.X_op == O_register && arg_s.X_add_number == REG_A)
     {
       if (!(ins_ok & INS_EZ80))
-        ill_op();
+        ill_op ();
       ++p;
       p = parse_exp (p, & arg_s);
     }
@@ -2776,7 +2804,7 @@ emit_tstio (char prefix, char opcode, const char *args)
   q = frag_more (2);
   *q++ = prefix;
   *q = opcode;
-  emit_byte(& arg, BFD_RELOC_8);
+  emit_byte (& arg, BFD_RELOC_8);
 
   return p;
 }
@@ -2878,7 +2906,7 @@ assume (int arg ATTRIBUTE_UNUSED)
 
   input_line_pointer = (char*)skip_space (input_line_pointer);
   c = get_symbol_name (& name);
-  if (strncasecmp(name, "ADL", 4) != 0)
+  if (strncasecmp (name, "ADL", 4) != 0)
     {
       ill_op ();
       return;
@@ -2990,12 +3018,12 @@ assemble_suffix (const char **suffix)
 
   for (i = 0; (i < 3) && (ISALPHA (*p)); i++)
     sbuf[i] = TOLOWER (*p++);
-  if (*p && !ISSPACE(*p))
+  if (*p && !ISSPACE (*p))
     return 0;
   *suffix = p;
   sbuf[i] = 0;
 
-  t = bsearch(sbuf, sf, ARRAY_SIZE (sf), sizeof(sf[0]), (int(*)(const void*, const void*))strcmp);
+  t = bsearch (sbuf, sf, ARRAY_SIZE (sf), sizeof (sf[0]), (int(*)(const void*, const void*)) strcmp);
   if (t == NULL)
     return 0;
   i = t - sf;
@@ -3026,7 +3054,7 @@ assemble_suffix (const char **suffix)
         i = 0x40;
         break;
     }
-  *frag_more(1) = (char)i;
+  *frag_more (1) = (char)i;
   switch (i)
     {
     case 0x40: inst_mode = INST_MODE_FORCED | INST_MODE_S | INST_MODE_IS; break;
@@ -3250,9 +3278,10 @@ md_assemble (char *str)
     }
   else
     {
+      dwarf2_emit_insn (0);
       if ((*p) && (!ISSPACE (*p)))
         {
-          if (*p != '.' || !(ins_ok & INS_EZ80) || !assemble_suffix(&p))
+          if (*p != '.' || !(ins_ok & INS_EZ80) || !assemble_suffix (&p))
             {
               as_bad (_("syntax error"));
               goto end;
@@ -3267,7 +3296,7 @@ md_assemble (char *str)
       if (!insp || (insp->inss && !(insp->inss & ins_ok)))
         {
           as_bad (_("Unknown instruction '%s'"), buf);
-          *frag_more(1) = 0;
+          *frag_more (1) = 0;
         }
       else
 	{
@@ -3466,21 +3495,21 @@ str_to_broken_float (bfd_boolean *signP, bfd_uint64_t *mantissaP, int *expP)
   *signP = sign;
   if (sign || *p == '+')
     ++p;
-  if (strncasecmp(p, "NaN", 3) == 0)
+  if (strncasecmp (p, "NaN", 3) == 0)
     {
       *mantissaP = 0;
       *expP = 0;
       input_line_pointer = p + 3;
       return 1;
     }
-  if (strncasecmp(p, "inf", 3) == 0)
+  if (strncasecmp (p, "inf", 3) == 0)
     {
       *mantissaP = 1ull << 63;
       *expP = EXP_MAX;
       input_line_pointer = p + 3;
       return 1;
     }
-  for (; ISDIGIT(*p); ++p)
+  for (; ISDIGIT (*p); ++p)
     {
       if (mantissa >> 60)
 	{
@@ -3491,15 +3520,15 @@ str_to_broken_float (bfd_boolean *signP, bfd_uint64_t *mantissaP, int *expP)
       mantissa = mantissa * 10 + (*p - '0');
     }
   /* skip non-significant digits */
-  for (; ISDIGIT(*p); ++p)
+  for (; ISDIGIT (*p); ++p)
     exponent++;
 
   if (*p == '.')
     {
       p++;
-      if (!exponent) /* if no precission overflow */
+      if (!exponent) /* If no precission overflow.  */
 	{
-	  for (; ISDIGIT(*p); ++p, --exponent)
+	  for (; ISDIGIT (*p); ++p, --exponent)
 	    {
 	      if (mantissa >> 60)
 		{
@@ -3510,7 +3539,7 @@ str_to_broken_float (bfd_boolean *signP, bfd_uint64_t *mantissaP, int *expP)
 	      mantissa = mantissa * 10 + (*p - '0');
 	    }
 	}
-      for (; ISDIGIT(*p); ++p)
+      for (; ISDIGIT (*p); ++p)
 	;
     }
   if (*p == 'e' || *p == 'E')
@@ -3521,14 +3550,14 @@ str_to_broken_float (bfd_boolean *signP, bfd_uint64_t *mantissaP, int *expP)
       es = (*p == '-');
       if (es || *p == '+')
         p++;
-      for (; ISDIGIT(*p); ++p)
+      for (; ISDIGIT (*p); ++p)
 	{
 	  if (t < 100)
 	    t = t * 10 + (*p - '0');
 	}
       exponent += (es) ? -t : t;
     }
-  if (ISALNUM(*p) || *p == '.')
+  if (ISALNUM (*p) || *p == '.')
     return 0;
   input_line_pointer = p;
   if (mantissa == 0)
@@ -3540,10 +3569,8 @@ str_to_broken_float (bfd_boolean *signP, bfd_uint64_t *mantissaP, int *expP)
   /* normalization */
   for (; mantissa <= ~0ull/10; --exponent)
     mantissa *= 10;
-  /*
-     now we have sign, mantissa, and signed decimal exponent
-     need to recompute to binary exponent
-  */
+  /* Now we have sign, mantissa, and signed decimal exponent
+     need to recompute to binary exponent.  */
   for (i = 64; exponent > 0; --exponent)
     {
       /* be sure that no integer overflow */
@@ -3666,4 +3693,22 @@ str_to_float48(char *litP, int *sizeP)
   for (i = 0; i < 40; i += 8)
     *litP++ = (char)(mantissa >> i);
   return NULL;
+}
+
+static const char *
+str_to_ieee754_h(char *litP, int *sizeP)
+{
+  return ieee_md_atof ('h', litP, sizeP, FALSE);
+}
+
+static const char *
+str_to_ieee754_s(char *litP, int *sizeP)
+{
+  return ieee_md_atof ('s', litP, sizeP, FALSE);
+}
+
+static const char *
+str_to_ieee754_d(char *litP, int *sizeP)
+{
+  return ieee_md_atof ('d', litP, sizeP, FALSE);
 }

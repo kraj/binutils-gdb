@@ -2713,7 +2713,7 @@ ia64_find_unwind_table (struct objfile *objfile, unw_word_t ip,
   ehdr = elf_tdata (bfd)->elf_header;
   phdr = elf_tdata (bfd)->phdr;
 
-  load_base = ANOFFSET (objfile->section_offsets, SECT_OFF_TEXT (objfile));
+  load_base = objfile->section_offsets[SECT_OFF_TEXT (objfile)];
 
   for (i = 0; i < ehdr->e_phnum; ++i)
     {
@@ -4012,8 +4012,9 @@ ia64_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
   return gdbarch;
 }
 
+void _initialize_ia64_tdep ();
 void
-_initialize_ia64_tdep (void)
+_initialize_ia64_tdep ()
 {
   gdbarch_register (bfd_arch_ia64, ia64_gdbarch_init, NULL);
 }

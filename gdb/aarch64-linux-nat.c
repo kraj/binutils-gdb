@@ -959,7 +959,7 @@ aarch64_linux_nat_target::thread_architecture (ptid_t ptid)
 
   /* Find the current gdbarch the same way as process_stratum_target.  Only
      return it if the current vector length matches the one in the tdep.  */
-  inferior *inf = find_inferior_ptid (ptid);
+  inferior *inf = find_inferior_ptid (this, ptid);
   gdb_assert (inf != NULL);
   if (vq == gdbarch_tdep (inf->gdbarch)->vq)
     return inf->gdbarch;
@@ -996,8 +996,9 @@ triggers a breakpoint or watchpoint."),
 			   &maintenance_show_cmdlist);
 }
 
+void _initialize_aarch64_linux_nat ();
 void
-_initialize_aarch64_linux_nat (void)
+_initialize_aarch64_linux_nat ()
 {
   add_show_debug_regs_command ();
 

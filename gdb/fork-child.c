@@ -128,10 +128,13 @@ postfork_child_hook ()
 ptid_t
 gdb_startup_inferior (pid_t pid, int num_traps)
 {
-  ptid_t ptid = startup_inferior (pid, num_traps, NULL, NULL);
+  inferior *inf = current_inferior ();
+  process_stratum_target *proc_target = inf->process_target ();
+
+  ptid_t ptid = startup_inferior (proc_target, pid, num_traps, NULL, NULL);
 
   /* Mark all threads non-executing.  */
-  set_executing (ptid, 0);
+  set_executing (proc_target, ptid, 0);
 
   return ptid;
 }
@@ -154,8 +157,9 @@ show_startup_with_shell (struct ui_file *file, int from_tty,
 		    value);
 }
 
+void _initialize_fork_child ();
 void
-_initialize_fork_child (void)
+_initialize_fork_child ()
 {
   add_setshow_filename_cmd ("exec-wrapper", class_run, &exec_wrapper, _("\
 Set a wrapper for running programs.\n\
