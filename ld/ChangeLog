@@ -1,3 +1,46 @@
+2020-01-18  Roland McGrath  <mcgrathr@google.com>
+
+	* testsuite/ld-x86-64/align-branch-1.d: Loosen instruction regexps
+	to admit whatever absolute address.  The label-relative address is
+	what the test needs to verify.
+
+2020-01-18  Nick Clifton  <nickc@redhat.com>
+
+	* configure: Regenerate.
+	* po/ld.pot: Regenerate.
+
+2020-01-18  Nick Clifton  <nickc@redhat.com>
+
+	Binutils 2.34 branch created.
+
+2020-01-16  Jozef Lawrynowicz  <jozef.l@mittosystems.com>
+
+	* scripttempl/elf32msp430_3.sc: Remove.
+
+2020-01-16  Jozef Lawrynowicz  <jozef.l@mittosystems.com>
+
+	* scripttempl/elf32msp430.sc: Add input section rules for
+	.upper.{text,data,rodata,bss}.
+	* testsuite/ld-msp430-elf/msp430-elf.exp: Run new test.
+	* testsuite/ld-msp430-elf/upper-input-sections.s: New test.
+
+2020-01-15  Lars Brinkhoff  <lars@nocrew.org>
+
+	PR 20694
+	* temulparams/pdp11.sh (TARGET_PAGE_SIZE): Set to 8192.
+
+2020-01-15  Jozef Lawrynowicz  <jozef.l@mittosystems.com>
+
+	* testsuite/ld-msp430-elf/msp430-elf.exp: Run new test.
+	* testsuite/ld-msp430-elf/reloc-lo-430x.s: New test.
+
+2020-01-15  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/ld-powerpc/ambiguousv1b.d: Adjust expected output.
+	* testsuite/ld-powerpc/funref.s: Align func_tab.
+	* testsuite/ld-powerpc/funref2.s: Likewise.
+	* testsuite/ld-powerpc/funv1.s: Add dot symbols.
+
 2020-01-14  Lili Cui <lili.cui@intel.com>
 
 	* testsuite/ld-i386/align-branch-1.d: Updated for i686-pc-elf.

@@ -1,3 +1,34 @@
+2020-01-18  Nick Clifton  <nickc@redhat.com>
+
+	* version.m4 (BFD_VERSION): Set to 2.34.50.
+	* configure: Regenerate.
+	* po/bfd.pot: Regenerate.
+
+2020-01-18  Nick Clifton  <nickc@redhat.com>
+
+	Binutils 2.34 branch created.
+
+2020-01-17  Christian Biesinger  <cbiesinger@google.com>
+
+	* coff-arm.c: Fix spelling error (seperate).
+	* elfxx-riscv.c (riscv_parse_sv_or_non_std_ext): Fix spelling
+	error (seperate).
+	* sysdep.h (strnlen): Fix spelling error (seperate).
+
+2020-01-15  Lars Brinkhoff  <lars@nocrew.org>
+
+	PR 20694
+	* pdp11.c (TARGET_PAGE_SIZE): Set to 8192.
+
+2020-01-15  Alan Modra  <amodra@gmail.com>
+
+	PR 25384
+	* elf64-ppc.c (ELIMINATE_COPY_RELOCS): Update comment.
+	(ppc64_elf_adjust_dynamic_symbol): Don't allow .dynbss copies
+	of function symbols unless dot symbols are present.  Do warn
+	whenever one is created, regardles of whether a PLT entry is
+	also emitted for the function symbol.
+
 2020-01-14  Alan Modra  <amodra@gmail.com>
 
 	* som.c (som_bfd_count_ar_symbols): Error when file position

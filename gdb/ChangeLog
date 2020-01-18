@@ -1,3 +1,129 @@
+2020-01-17  Simon Marchi  <simon.marchi@efficios.com>
+
+	* top.c (struct qt_args): Remove.
+	(kill_or_detach): Change return type to void, replace `void *`
+	parameter with a proper one.
+	(print_inferior_quit_action):  Likewise.
+	(quit_confirm): Use range-based for loop to iterate over inferiors.
+	(quit_force): Likewise.
+
+2020-01-17  Simon Marchi  <simon.marchi@efficios.com>
+
+	* mi/mi-main.c (run_one_inferior): Change return type to void, replace
+	`void *` parameter with proper parameters.
+	(mi_cmd_exec_run): Use range-based loop to iterate over inferiors.
+	(print_one_inferior): Change return type to void, replace `void *`
+	parameter with proper parameters.
+	(mi_cmd_list_thread_groups): Use range-based loop to iterate over
+	inferiors.
+	(get_other_inferior): Remove.
+	(mi_cmd_remove_inferior): Use range-based loop to iterate over
+	inferiors.
+
+2020-01-17  Simon Marchi  <simon.marchi@efficios.com>
+
+	* mi/mi-interp.c (report_initial_inferior): Remove.
+	(mi_interp::init): Use range-based for to iterate over inferiors.
+
+2020-01-17  Simon Marchi  <simon.marchi@efficios.com>
+
+	* python/py-inferior.c (build_inferior_list): Remove.
+	(gdbpy_ref): Use range-based for loop to iterate over inferiors.
+
+2020-01-16  Christian Biesinger  <cbiesinger@google.com>
+
+	* btrace.c (btrace_compute_ftrace_1): Fix spelling error (Unkown).
+	(btrace_stitch_trace): Likewise.
+	* charset.c (intermediate_encoding): Likewise (vaild).
+	* nat/linux-btrace.c (linux_read_pt): Likewise (Unkown).
+	* python/py-record-btrace.c (struct PyMethodDef): Likewise (occurences).
+	* record-btrace.c (record_btrace_print_conf): Likewise (unkown).
+
+2020-01-16  Hannes Domani  <ssbssa@yahoo.de>
+
+	* windows-tdep.c (windows_get_tlb_type):
+	Add rtl_user_process_parameters type.
+
+2020-01-16  Pedro Alves  <palves@redhat.com>
+            Norbert Lange  <nolange79@gmail.com>
+
+	PR build/24805
+	* gdbsupport/gdb_proc_service.h (PS_EXPORT): New.
+	(ps_get_thread_area, ps_getpid, ps_lcontinue, ps_lgetfpregs)
+	(ps_lgetregs, ps_lsetfpregs, ps_lsetregs, ps_lstop, ps_pcontinue)
+	(ps_pdread, ps_pdwrite, ps_pglobal_lookup, ps_pstop, ps_ptread)
+	(ps_ptwrite, ps_lgetxregs, ps_lgetxregsize, ps_lsetxregs)
+	(ps_plog): Redeclare exported functions with default visibility.
+
+2020-01-16  Nitika Achra  <Nitika.Achra@amd.com>
+
+	* dwarf2loc.c (decode_debug_loclists_addresses): Handle
+	DW_LLE_base_addressx, DW_LLE_startx_length, DW_LLE_start_length.
+
+2020-01-15  Simon Marchi  <simon.marchi@efficios.com>
+
+	* infcmd.c (post_create_inferior): Use get_thread_regcache
+	instead of get_current_regcache.
+
+2020-01-14  Tom Tromey  <tom@tromey.com>
+
+	PR symtab/12535:
+	* python/python.c (gdbpy_decode_line): Treat empty string the same
+	as no argument.
+
+2020-01-14  Tom Tromey  <tom@tromey.com>
+
+	* Makefile.in (CLIBS): Remove second use of $(LIBIBERTY).
+
+2020-01-14  Tom Tromey  <tom@tromey.com>
+
+	* nat/linux-btrace.c: Don't include <config.h>.
+	* nat/linux-ptrace.c: Don't include <config.h>.
+	* nat/x86-linux-dregs.c: Don't include <config.h>.
+
+2020-01-14  Tom Tromey  <tom@tromey.com>
+
+	* configure: Rebuild.
+	* configure.ac: Move many checks to ../gdbsupport/common.m4.
+
+2020-01-14  Tom Tromey  <tom@tromey.com>
+
+	* nat/x86-linux-dregs.c: Include configh.h.
+	* nat/linux-ptrace.c: Include configh.h.
+	* nat/linux-btrace.c: Include configh.h.
+	* defs.h: Include config.h, bfd.h.
+	* configure.ac: Don't source common.host.
+	(CONFIG_OBS, CONFIG_SRCS): Remove gdbsupport files.
+	* configure: Rebuild.
+	* acinclude.m4: Update path.
+	* Makefile.in (SUPPORT, LIBSUPPORT, INCSUPPORT): New variables.
+	(CONFIG_SRC_SUBDIR): Remove gdbsupport.
+	(INTERNAL_CFLAGS_BASE): Add INCSUPPORT.
+	(CLIBS): Add LIBSUPPORT.
+	(CDEPS): Likewise.
+	(COMMON_SFILES): Remove gdbsupport files.
+	(HFILES_NO_SRCDIR): Likewise.
+	(stamp-version): Update path to create-version.sh.
+	(ALLDEPFILES): Remove gdbsupport files.
+
+2020-01-14  Tom Tromey  <tom@tromey.com>
+
+	* gdbsupport/common.m4 (GDB_AC_COMMON): Define WIN32APILIBS and
+	USE_WIN32API when needed.
+	* configure.ac (USE_WIN32API): Don't define.
+	(WIN32LIBS): Use WIN32APILIBS.
+	* configure: Rebuild.
+
+2020-01-14  Tom Tromey  <tom@tromey.com>
+
+	* configure: Rebuild.
+	* gdbsupport/common.m4 (GDB_AC_COMMON): Fix indentation.
+
+2020-01-14  Bernd Edlinger  <bernd.edlinger@hotmail.de>
+
+	* skip.c (skip_function_command): Make skip w/o arguments use the
+	name of the inlined function if pc is inside any inlined function.
+
 2020-01-14  Luis Machado  <luis.machado@linaro.org>
 
 	* inf-ptrace.c (inf_ptrace_target::resume): Update comments.
