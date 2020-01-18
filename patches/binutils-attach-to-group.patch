@@ -1,7 +1,6 @@
-diff -rup binutils.orig/gas/config/obj-elf.c binutils-2.30/gas/config/obj-elf.c
---- binutils.orig/gas/config/obj-elf.c	2018-09-24 17:50:06.974172867 +0100
-+++ binutils-2.30/gas/config/obj-elf.c	2018-09-25 15:19:33.559830794 +0100
-@@ -82,9 +82,11 @@ static void obj_elf_gnu_attribute (int);
+--- binutils/gas/config/obj-elf.c.group	2020-01-14 10:52:43.676339568 -0800
++++ binutils/gas/config/obj-elf.c	2020-01-14 10:52:43.740339654 -0800
+@@ -79,9 +79,11 @@ static void obj_elf_gnu_attribute (int);
  static void obj_elf_tls_common (int);
  static void obj_elf_lcomm (int);
  static void obj_elf_struct (int);
@@ -13,7 +12,7 @@ diff -rup binutils.orig/gas/config/obj-elf.c binutils-2.30/gas/config/obj-elf.c
    {"comm", obj_elf_common, 0},
    {"common", obj_elf_common, 1},
    {"ident", obj_elf_ident, 0},
-@@ -1007,6 +1009,27 @@ obj_elf_section_name (void)
+@@ -1029,6 +1031,27 @@ obj_elf_section_name (void)
    return name;
  }
  
@@ -41,18 +40,17 @@ diff -rup binutils.orig/gas/config/obj-elf.c binutils-2.30/gas/config/obj-elf.c
  void
  obj_elf_section (int push)
  {
-diff -rup binutils.orig/gas/doc/as.texinfo binutils-2.30/gas/doc/as.texinfo
---- binutils.orig/gas/doc/as.texi	2018-09-24 17:50:06.984172788 +0100
-+++ binutils-2.30/gas/doc/as.texi	2018-09-25 15:19:43.557748972 +0100
-@@ -4407,6 +4407,7 @@ Some machine configurations provide addi
+--- binutils/gas/doc/as.texi.group	2020-01-14 10:52:43.677339569 -0800
++++ binutils/gas/doc/as.texi	2020-01-14 10:53:21.346390545 -0800
+@@ -4359,6 +4359,7 @@ Some machine configurations provide addi
  * Altmacro::                    @code{.altmacro}
  * Ascii::                       @code{.ascii "@var{string}"}@dots{}
  * Asciz::                       @code{.asciz "@var{string}"}@dots{}
 +* Attach_to_group::             @code{.attach_to_group @var{name}}
- * Balign::                      @code{.balign @var{abs-expr} , @var{abs-expr}}
+ * Balign::                      @code{.balign [@var{abs-expr}[, @var{abs-expr}]]}
  * Bundle directives::           @code{.bundle_align_mode @var{abs-expr}}, etc
  * Byte::                        @code{.byte @var{expressions}}
-@@ -4703,6 +4704,12 @@ trailing zero byte) into consecutive add
+@@ -4657,6 +4658,12 @@ trailing zero byte) into consecutive add
  @code{.asciz} is just like @code{.ascii}, but each string is followed by
  a zero byte.  The ``z'' in @samp{.asciz} stands for ``zero''.
  
@@ -63,6 +61,5 @@ diff -rup binutils.orig/gas/doc/as.texinfo binutils-2.30/gas/doc/as.texinfo
 +has been created.
 +
  @node Balign
- @section @code{.balign[wl] @var{abs-expr}, @var{abs-expr}, @var{abs-expr}}
+ @section @code{.balign[wl] [@var{abs-expr}[, @var{abs-expr}[, @var{abs-expr}]]]}
  
-
