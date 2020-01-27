@@ -1,3 +1,44 @@
+2020-01-25  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* gdb.base/attach.exp: Test 'set exec-file-mismatch'.
+
+2020-01-24  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.dwarf2/dw2-inline-many-frames.c: New file.
+	* gdb.dwarf2/dw2-inline-many-frames.exp: New file.
+
+2020-01-24  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.dwarf2/dw2-inline-stepping.c: New file.
+	* gdb.dwarf2/dw2-inline-stepping.exp: New file.
+
+2020-01-24  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.base/maint.exp: Update line table parsing test.
+	* gdb.dwarf2/dw2-ranges-base.exp: Add new line table parsing test.
+
+2020-01-24  Pedro Alves  <palves@redhat.com>
+
+	PR gdb/25410
+	* gdb.multi/multi-re-run-1.c: New.
+	* gdb.multi/multi-re-run-2.c: New.
+	* gdb.multi/multi-re-run.exp: New.
+
+2020-01-24  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	PR gdb/23718
+	* gdb.server/server-kill-python.exp: New file.
+
+2020-01-24  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.server/multi-ui-errors.c: New file.
+	* gdb.server/multi-ui-errors.exp: New file.
+
+2020-01-24  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	PR tui/9765
+	* gdb.tui/tui-layout-asm.exp: Add scrolling test for asm window.
+
 2020-01-19  Tom Tromey  <tom@tromey.com>
 
 	* gdb.tui/main.exp: Add check for plain "file".

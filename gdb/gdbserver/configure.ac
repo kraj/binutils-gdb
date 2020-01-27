@@ -27,6 +27,7 @@ AC_PROG_CC
 AC_PROG_CXX
 AC_GNU_SOURCE
 AC_SYS_LARGEFILE
+AM_PROG_INSTALL_STRIP
 
 AC_CANONICAL_SYSTEM
 
@@ -56,7 +57,7 @@ ACX_NONCANONICAL_HOST
 ZW_CREATE_DEPDIR
 
 # Create sub-directories for objects and dependencies.
-CONFIG_SRC_SUBDIR="arch gdbsupport"
+CONFIG_SRC_SUBDIR="arch gdbsupport nat target"
 AC_SUBST(CONFIG_SRC_SUBDIR)
 
 AC_CONFIG_COMMANDS([gdbdepdir],[

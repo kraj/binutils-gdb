@@ -1020,8 +1020,6 @@ handle_vfork_child_exec_or_exit (int exec)
 	}
       else
 	{
-	  struct program_space *pspace;
-
 	  /* If this is a vfork child exiting, then the pspace and
 	     aspaces were shared with the parent.  Since we're
 	     reporting the process exit, we'll be mourning all that is
@@ -1037,18 +1035,12 @@ handle_vfork_child_exec_or_exit (int exec)
 	  scoped_restore restore_ptid
 	    = make_scoped_restore (&inferior_ptid, null_ptid);
 
-	  /* This inferior is dead, so avoid giving the breakpoints
-	     module the option to write through to it (cloning a
-	     program space resets breakpoints).  */
-	  inf->aspace = NULL;
-	  inf->pspace = NULL;
-	  pspace = new program_space (maybe_new_address_space ());
-	  set_current_program_space (pspace);
+	  inf->pspace = new program_space (maybe_new_address_space ());
+	  inf->aspace = inf->pspace->aspace;
+	  set_current_program_space (inf->pspace);
 	  inf->removable = 1;
 	  inf->symfile_flags = SYMFILE_NO_READ;
-	  clone_program_space (pspace, vfork_parent->pspace);
-	  inf->pspace = pspace;
-	  inf->aspace = pspace->aspace;
+	  clone_program_space (inf->pspace, vfork_parent->pspace);
 
 	  resume_parent = vfork_parent->pid;
 	}
@@ -3128,46 +3120,46 @@ proceed (CORE_ADDR addr, enum gdb_signal siggnal)
 	  {
 	    switch_to_thread_no_regs (tp);
 
-	  if (!tp->inf->has_execution ())
-	    {
-	      if (debug_infrun)
-		fprintf_unfiltered (gdb_stdlog,
-				    "infrun: proceed: [%s] target has "
-				    "no execution\n",
-				    target_pid_to_str (tp->ptid).c_str ());
-	      continue;
-	    }
+	    if (!tp->inf->has_execution ())
+	      {
+		if (debug_infrun)
+		  fprintf_unfiltered (gdb_stdlog,
+				      "infrun: proceed: [%s] target has "
+				      "no execution\n",
+				      target_pid_to_str (tp->ptid).c_str ());
+		continue;
+	      }
 
-	  if (tp->resumed)
-	    {
-	      if (debug_infrun)
-		fprintf_unfiltered (gdb_stdlog,
-				    "infrun: proceed: [%s] resumed\n",
-				    target_pid_to_str (tp->ptid).c_str ());
-	      gdb_assert (tp->executing || tp->suspend.waitstatus_pending_p);
-	      continue;
-	    }
+	    if (tp->resumed)
+	      {
+		if (debug_infrun)
+		  fprintf_unfiltered (gdb_stdlog,
+				      "infrun: proceed: [%s] resumed\n",
+				      target_pid_to_str (tp->ptid).c_str ());
+		gdb_assert (tp->executing || tp->suspend.waitstatus_pending_p);
+		continue;
+	      }
 
-	  if (thread_is_in_step_over_chain (tp))
-	    {
-	      if (debug_infrun)
-		fprintf_unfiltered (gdb_stdlog,
-				    "infrun: proceed: [%s] needs step-over\n",
-				    target_pid_to_str (tp->ptid).c_str ());
-	      continue;
-	    }
+	    if (thread_is_in_step_over_chain (tp))
+	      {
+		if (debug_infrun)
+		  fprintf_unfiltered (gdb_stdlog,
+				      "infrun: proceed: [%s] needs step-over\n",
+				      target_pid_to_str (tp->ptid).c_str ());
+		continue;
+	      }
 
-	  if (debug_infrun)
-	    fprintf_unfiltered (gdb_stdlog,
-				"infrun: proceed: resuming %s\n",
-				target_pid_to_str (tp->ptid).c_str ());
+	    if (debug_infrun)
+	      fprintf_unfiltered (gdb_stdlog,
+				  "infrun: proceed: resuming %s\n",
+				  target_pid_to_str (tp->ptid).c_str ());
 
-	  reset_ecs (ecs, tp);
-	  switch_to_thread (tp);
-	  keep_going_pass_signal (ecs);
-	  if (!ecs->wait_some_more)
-	    error (_("Command aborted."));
-	}
+	    reset_ecs (ecs, tp);
+	    switch_to_thread (tp);
+	    keep_going_pass_signal (ecs);
+	    if (!ecs->wait_some_more)
+	      error (_("Command aborted."));
+	  }
       }
     else if (!cur_thr->resumed && !thread_is_in_step_over_chain (cur_thr))
       {

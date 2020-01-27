@@ -1480,7 +1480,7 @@ static const char *get_section_file_name (const struct dwarf2_section_info *);
 static void dwarf2_find_base_address (struct die_info *die,
 				      struct dwarf2_cu *cu);
 
-static struct partial_symtab *create_partial_symtab
+static dwarf2_psymtab *create_partial_symtab
   (struct dwarf2_per_cu_data *per_cu, const char *name);
 
 static void build_type_psymtabs_reader (const struct die_reader_specs *reader,
@@ -1512,11 +1512,6 @@ static void add_partial_enumeration (struct partial_die_info *enum_pdi,
 static void add_partial_subprogram (struct partial_die_info *pdi,
 				    CORE_ADDR *lowpc, CORE_ADDR *highpc,
 				    int need_pc, struct dwarf2_cu *cu);
-
-static void dwarf2_read_symtab (struct partial_symtab *,
-				struct objfile *);
-
-static void psymtab_to_symtab_1 (struct partial_symtab *);
 
 static abbrev_table_up abbrev_table_read_table
   (struct dwarf2_per_objfile *dwarf2_per_objfile, struct dwarf2_section_info *,
@@ -1644,7 +1639,7 @@ static line_header_up dwarf_decode_line_header (sect_offset sect_off,
 						struct dwarf2_cu *cu);
 
 static void dwarf_decode_lines (struct line_header *, const char *,
-				struct dwarf2_cu *, struct partial_symtab *,
+				struct dwarf2_cu *, dwarf2_psymtab *,
 				CORE_ADDR, int decode_mapping);
 
 static void dwarf2_start_subfile (struct dwarf2_cu *, const char *,
@@ -1703,7 +1698,7 @@ static void read_call_site_scope (struct die_info *die, struct dwarf2_cu *cu);
 static void read_variable (struct die_info *die, struct dwarf2_cu *cu);
 
 static int dwarf2_ranges_read (unsigned, CORE_ADDR *, CORE_ADDR *,
-			       struct dwarf2_cu *, struct partial_symtab *);
+			       struct dwarf2_cu *, dwarf2_psymtab *);
 
 /* How dwarf2_get_pc_bounds constructed its *LOWPC and *HIGHPC return
    values.  Keep the items ordered with increasing constraints compliance.  */
@@ -1726,7 +1721,7 @@ enum pc_bounds_kind
 static enum pc_bounds_kind dwarf2_get_pc_bounds (struct die_info *,
 						 CORE_ADDR *, CORE_ADDR *,
 						 struct dwarf2_cu *,
-						 struct partial_symtab *);
+						 dwarf2_psymtab *);
 
 static void get_scope_pc_bounds (struct die_info *,
 				 CORE_ADDR *, CORE_ADDR *,
@@ -3213,7 +3208,7 @@ create_addrmap_from_index (struct dwarf2_per_objfile *dwarf2_per_objfile,
   iter = index->address_table.data ();
   end = iter + index->address_table.size ();
 
-  baseaddr = objfile->section_offsets[SECT_OFF_TEXT (objfile)];
+  baseaddr = objfile->text_section_offset ();
 
   while (iter < end)
     {
@@ -3259,7 +3254,7 @@ create_addrmap_from_aranges (struct dwarf2_per_objfile *dwarf2_per_objfile,
   struct objfile *objfile = dwarf2_per_objfile->objfile;
   bfd *abfd = objfile->obfd;
   struct gdbarch *gdbarch = get_objfile_arch (objfile);
-  const CORE_ADDR baseaddr = objfile->section_offsets[SECT_OFF_TEXT (objfile)];
+  const CORE_ADDR baseaddr = objfile->text_section_offset ();
 
   auto_obstack temp_obstack;
   addrmap *mutable_map = addrmap_create_mutable (&temp_obstack);
@@ -5281,7 +5276,7 @@ dw2_find_pc_sect_compunit_symtab (struct objfile *objfile,
   if (!objfile->partial_symtabs->psymtabs_addrmap)
     return NULL;
 
-  CORE_ADDR baseaddr = objfile->section_offsets[SECT_OFF_TEXT (objfile)];
+  CORE_ADDR baseaddr = objfile->text_section_offset ();
   data = (struct dwarf2_per_cu_data *) addrmap_find
     (objfile->partial_symtabs->psymtabs_addrmap, pc - baseaddr);
   if (!data)
@@ -6692,10 +6687,10 @@ read_abbrev_offset (struct dwarf2_per_objfile *dwarf2_per_objfile,
    partial symtab as being an include of PST.  */
 
 static void
-dwarf2_create_include_psymtab (const char *name, struct partial_symtab *pst,
+dwarf2_create_include_psymtab (const char *name, dwarf2_psymtab *pst,
                                struct objfile *objfile)
 {
-  struct partial_symtab *subpst = allocate_psymtab (name, objfile);
+  dwarf2_psymtab *subpst = new dwarf2_psymtab (name, objfile);
 
   if (!IS_ABSOLUTE_PATH (subpst->filename))
     {
@@ -6707,12 +6702,10 @@ dwarf2_create_include_psymtab (const char *name, struct partial_symtab *pst,
   subpst->dependencies[0] = pst;
   subpst->number_of_dependencies = 1;
 
-  subpst->read_symtab = pst->read_symtab;
-
   /* No private part is necessary for include psymtabs.  This property
      can be used to differentiate between such include psymtabs and
      the regular ones.  */
-  subpst->read_symtab_private = NULL;
+  subpst->per_cu_data = nullptr;
 }
 
 /* Read the Line Number Program data and extract the list of files
@@ -6722,7 +6715,7 @@ dwarf2_create_include_psymtab (const char *name, struct partial_symtab *pst,
 static void
 dwarf2_build_include_psymtabs (struct dwarf2_cu *cu,
 			       struct die_info *die,
-			       struct partial_symtab *pst)
+			       dwarf2_psymtab *pst)
 {
   line_header_up lh;
   struct attribute *attr;
@@ -7934,7 +7927,7 @@ create_type_unit_group (struct dwarf2_cu *cu, sect_offset line_offset_struct)
   else
     {
       unsigned int line_offset = to_underlying (line_offset_struct);
-      struct partial_symtab *pst;
+      dwarf2_psymtab *pst;
       std::string name;
 
       /* Give the symtab a useful name for debug purposes.  */
@@ -7945,7 +7938,7 @@ create_type_unit_group (struct dwarf2_cu *cu, sect_offset line_offset_struct)
 	name = string_printf ("<type_units_at_0x%x>", line_offset);
 
       pst = create_partial_symtab (per_cu, name.c_str ());
-      pst->anonymous = 1;
+      pst->anonymous = true;
     }
 
   tu_group->hash.dwo_unit = cu->dwo_unit;
@@ -8021,19 +8014,18 @@ get_type_unit_group (struct dwarf2_cu *cu, const struct attribute *stmt_list)
    The caller must fill in the following details:
    dirname, textlow, texthigh.  */
 
-static struct partial_symtab *
+static dwarf2_psymtab *
 create_partial_symtab (struct dwarf2_per_cu_data *per_cu, const char *name)
 {
   struct objfile *objfile = per_cu->dwarf2_per_objfile->objfile;
-  struct partial_symtab *pst;
+  dwarf2_psymtab *pst;
 
-  pst = start_psymtab_common (objfile, name, 0);
+  pst = new dwarf2_psymtab (name, objfile, 0);
 
-  pst->psymtabs_addrmap_supported = 1;
+  pst->psymtabs_addrmap_supported = true;
 
   /* This is the glue that links PST into GDB's symbol API.  */
-  pst->read_symtab_private = per_cu;
-  pst->read_symtab = dwarf2_read_symtab;
+  pst->per_cu_data = per_cu;
   per_cu->v.psymtab = pst;
 
   return pst;
@@ -8055,7 +8047,7 @@ process_psymtab_comp_unit_reader (const struct die_reader_specs *reader,
   struct dwarf2_per_cu_data *per_cu = cu->per_cu;
   CORE_ADDR baseaddr;
   CORE_ADDR best_lowpc = 0, best_highpc = 0;
-  struct partial_symtab *pst;
+  dwarf2_psymtab *pst;
   enum pc_bounds_kind cu_bounds_kind;
   const char *filename;
 
@@ -8076,7 +8068,7 @@ process_psymtab_comp_unit_reader (const struct die_reader_specs *reader,
   /* This must be done before calling dwarf2_build_include_psymtabs.  */
   pst->dirname = dwarf2_string_attr (comp_unit_die, DW_AT_comp_dir, cu);
 
-  baseaddr = objfile->section_offsets[SECT_OFF_TEXT (objfile)];
+  baseaddr = objfile->text_section_offset ();
 
   dwarf2_find_base_address (comp_unit_die, cu);
 
@@ -8224,7 +8216,7 @@ build_type_psymtabs_reader (const struct die_reader_specs *reader,
   struct attribute *attr;
   struct partial_die_info *first_die;
   CORE_ADDR lowpc, highpc;
-  struct partial_symtab *pst;
+  dwarf2_psymtab *pst;
 
   gdb_assert (per_cu->is_debug_types);
   sig_type = (struct signatured_type *) per_cu;
@@ -8241,7 +8233,7 @@ build_type_psymtabs_reader (const struct die_reader_specs *reader,
 
   prepare_one_comp_unit (cu, type_unit_die, language_minimal);
   pst = create_partial_symtab (per_cu, "");
-  pst->anonymous = 1;
+  pst->anonymous = true;
 
   first_die = load_partial_dies (reader, info_ptr, 1);
 
@@ -8397,7 +8389,7 @@ build_type_psymtab_dependencies (void **slot, void *info)
   struct objfile *objfile = dwarf2_per_objfile->objfile;
   struct type_unit_group *tu_group = (struct type_unit_group *) *slot;
   struct dwarf2_per_cu_data *per_cu = &tu_group->per_cu;
-  struct partial_symtab *pst = per_cu->v.psymtab;
+  dwarf2_psymtab *pst = per_cu->v.psymtab;
   int len = (tu_group->tus == nullptr) ? 0 : tu_group->tus->size ();
   int i;
 
@@ -8514,7 +8506,7 @@ set_partial_user (struct dwarf2_per_objfile *dwarf2_per_objfile)
 {
   for (dwarf2_per_cu_data *per_cu : dwarf2_per_objfile->all_comp_units)
     {
-      struct partial_symtab *pst = per_cu->v.psymtab;
+      dwarf2_psymtab *pst = per_cu->v.psymtab;
 
       if (pst == NULL)
 	continue;
@@ -8954,7 +8946,7 @@ add_partial_symbol (struct partial_die_info *pdi, struct dwarf2_cu *cu)
   const char *actual_name = NULL;
   CORE_ADDR baseaddr;
 
-  baseaddr = objfile->section_offsets[SECT_OFF_TEXT (objfile)];
+  baseaddr = objfile->text_section_offset ();
 
   gdb::unique_xmalloc_ptr<char> built_actual_name
     = partial_die_full_name (pdi, cu);
@@ -9197,7 +9189,7 @@ add_partial_subprogram (struct partial_die_info *pdi,
 	      CORE_ADDR this_highpc;
 	      CORE_ADDR this_lowpc;
 
-	      baseaddr = objfile->section_offsets[SECT_OFF_TEXT (objfile)];
+	      baseaddr = objfile->text_section_offset ();
 	      this_lowpc
 		= (gdbarch_adjust_dwarf2_addr (gdbarch,
 					       pdi->lowpc + baseaddr)
@@ -9494,48 +9486,29 @@ locate_pdi_sibling (const struct die_reader_specs *reader,
 /* Expand this partial symbol table into a full symbol table.  SELF is
    not NULL.  */
 
-static void
-dwarf2_read_symtab (struct partial_symtab *self,
-		    struct objfile *objfile)
+void
+dwarf2_psymtab::read_symtab (struct objfile *objfile)
 {
   struct dwarf2_per_objfile *dwarf2_per_objfile
     = get_dwarf2_per_objfile (objfile);
 
-  if (self->readin)
+  gdb_assert (!readin);
+  /* If this psymtab is constructed from a debug-only objfile, the
+     has_section_at_zero flag will not necessarily be correct.  We
+     can get the correct value for this flag by looking at the data
+     associated with the (presumably stripped) associated objfile.  */
+  if (objfile->separate_debug_objfile_backlink)
     {
-      warning (_("bug: psymtab for %s is already read in."),
-	       self->filename);
+      struct dwarf2_per_objfile *dpo_backlink
+	= get_dwarf2_per_objfile (objfile->separate_debug_objfile_backlink);
+
+      dwarf2_per_objfile->has_section_at_zero
+	= dpo_backlink->has_section_at_zero;
     }
-  else
-    {
-      if (info_verbose)
-	{
-	  printf_filtered (_("Reading in symbols for %s..."),
-			   self->filename);
-	  gdb_flush (gdb_stdout);
-	}
 
-      /* If this psymtab is constructed from a debug-only objfile, the
-	 has_section_at_zero flag will not necessarily be correct.  We
-	 can get the correct value for this flag by looking at the data
-	 associated with the (presumably stripped) associated objfile.  */
-      if (objfile->separate_debug_objfile_backlink)
-	{
-	  struct dwarf2_per_objfile *dpo_backlink
-	    = get_dwarf2_per_objfile (objfile->separate_debug_objfile_backlink);
+  dwarf2_per_objfile->reading_partial_symbols = 0;
 
-	  dwarf2_per_objfile->has_section_at_zero
-	    = dpo_backlink->has_section_at_zero;
-	}
-
-      dwarf2_per_objfile->reading_partial_symbols = 0;
-
-      psymtab_to_symtab_1 (self);
-
-      /* Finish up the debug error message.  */
-      if (info_verbose)
-	printf_filtered (_("done.\n"));
-    }
+  expand_psymtab (objfile);
 
   process_cu_includes (dwarf2_per_objfile);
 }
@@ -9686,41 +9659,23 @@ process_queue (struct dwarf2_per_objfile *dwarf2_per_objfile)
 
 /* Read in full symbols for PST, and anything it depends on.  */
 
-static void
-psymtab_to_symtab_1 (struct partial_symtab *pst)
+void
+dwarf2_psymtab::expand_psymtab (struct objfile *objfile)
 {
   struct dwarf2_per_cu_data *per_cu;
-  int i;
 
-  if (pst->readin)
+  if (readin)
     return;
 
-  for (i = 0; i < pst->number_of_dependencies; i++)
-    if (!pst->dependencies[i]->readin
-	&& pst->dependencies[i]->user == NULL)
-      {
-        /* Inform about additional files that need to be read in.  */
-        if (info_verbose)
-          {
-	    /* FIXME: i18n: Need to make this a single string.  */
-            fputs_filtered (" ", gdb_stdout);
-            wrap_here ("");
-            fputs_filtered ("and ", gdb_stdout);
-            wrap_here ("");
-            printf_filtered ("%s...", pst->dependencies[i]->filename);
-            wrap_here ("");     /* Flush output.  */
-            gdb_flush (gdb_stdout);
-          }
-        psymtab_to_symtab_1 (pst->dependencies[i]);
-      }
+  read_dependencies (objfile);
 
-  per_cu = (struct dwarf2_per_cu_data *) pst->read_symtab_private;
+  per_cu = per_cu_data;
 
   if (per_cu == NULL)
     {
       /* It's an include file, no symbols to read for it.
          Everything is in the parent symtab.  */
-      pst->readin = 1;
+      readin = true;
       return;
     }
 
@@ -10399,7 +10354,7 @@ process_full_comp_unit (struct dwarf2_per_cu_data *per_cu,
   struct block *static_block;
   CORE_ADDR addr;
 
-  baseaddr = objfile->section_offsets[SECT_OFF_TEXT (objfile)];
+  baseaddr = objfile->text_section_offset ();
 
   /* Clear the list here in case something was left over.  */
   cu->method_list.clear ();
@@ -10477,9 +10432,9 @@ process_full_comp_unit (struct dwarf2_per_cu_data *per_cu,
     per_cu->v.quick->compunit_symtab = cust;
   else
     {
-      struct partial_symtab *pst = per_cu->v.psymtab;
+      dwarf2_psymtab *pst = per_cu->v.psymtab;
       pst->compunit_symtab = cust;
-      pst->readin = 1;
+      pst->readin = true;
     }
 
   /* Push it for inclusion processing later.  */
@@ -10557,9 +10512,9 @@ process_full_type_unit (struct dwarf2_per_cu_data *per_cu,
     per_cu->v.quick->compunit_symtab = cust;
   else
     {
-      struct partial_symtab *pst = per_cu->v.psymtab;
+      dwarf2_psymtab *pst = per_cu->v.psymtab;
       pst->compunit_symtab = cust;
-      pst->readin = 1;
+      pst->readin = true;
     }
 
   /* Not needed any more.  */
@@ -11601,7 +11556,7 @@ read_file_scope (struct die_info *die, struct dwarf2_cu *cu)
   CORE_ADDR baseaddr;
 
   prepare_one_comp_unit (cu, die, cu->language);
-  baseaddr = objfile->section_offsets[SECT_OFF_TEXT (objfile)];
+  baseaddr = objfile->text_section_offset ();
 
   get_scope_pc_bounds (die, &lowpc, &highpc, cu);
 
@@ -13704,7 +13659,7 @@ read_func_scope (struct die_info *die, struct dwarf2_cu *cu)
 	}
     }
 
-  baseaddr = objfile->section_offsets[SECT_OFF_TEXT (objfile)];
+  baseaddr = objfile->text_section_offset ();
 
   name = dwarf2_name (die, cu);
 
@@ -13883,7 +13838,7 @@ read_lexical_block_scope (struct die_info *die, struct dwarf2_cu *cu)
   struct die_info *child_die;
   CORE_ADDR baseaddr;
 
-  baseaddr = objfile->section_offsets[SECT_OFF_TEXT (objfile)];
+  baseaddr = objfile->text_section_offset ();
 
   /* Ignore blocks with missing or invalid low and high pc attributes.  */
   /* ??? Perhaps consider discontiguous blocks defined by DW_AT_ranges
@@ -13957,7 +13912,7 @@ read_call_site_scope (struct die_info *die, struct dwarf2_cu *cu)
   int nparams;
   struct die_info *child_die;
 
-  baseaddr = objfile->section_offsets[SECT_OFF_TEXT (objfile)];
+  baseaddr = objfile->text_section_offset ();
 
   attr = dwarf2_attr (die, DW_AT_call_return_pc, cu);
   if (attr == NULL)
@@ -14354,7 +14309,7 @@ dwarf2_rnglists_process (unsigned offset, struct dwarf2_cu *cu,
     }
   buffer = dwarf2_per_objfile->rnglists.buffer + offset;
 
-  baseaddr = objfile->section_offsets[SECT_OFF_TEXT (objfile)];
+  baseaddr = objfile->text_section_offset ();
 
   while (1)
     {
@@ -14522,7 +14477,7 @@ dwarf2_ranges_process (unsigned offset, struct dwarf2_cu *cu,
     }
   buffer = dwarf2_per_objfile->ranges.buffer + offset;
 
-  baseaddr = objfile->section_offsets[SECT_OFF_TEXT (objfile)];
+  baseaddr = objfile->text_section_offset ();
 
   while (1)
     {
@@ -14596,11 +14551,11 @@ dwarf2_ranges_process (unsigned offset, struct dwarf2_cu *cu,
 static int
 dwarf2_ranges_read (unsigned offset, CORE_ADDR *low_return,
 		    CORE_ADDR *high_return, struct dwarf2_cu *cu,
-		    struct partial_symtab *ranges_pst)
+		    dwarf2_psymtab *ranges_pst)
 {
   struct objfile *objfile = cu->per_cu->dwarf2_per_objfile->objfile;
   struct gdbarch *gdbarch = get_objfile_arch (objfile);
-  const CORE_ADDR baseaddr = objfile->section_offsets[SECT_OFF_TEXT (objfile)];
+  const CORE_ADDR baseaddr = objfile->text_section_offset ();
   int low_set = 0;
   CORE_ADDR low = 0;
   CORE_ADDR high = 0;
@@ -14664,7 +14619,7 @@ dwarf2_ranges_read (unsigned offset, CORE_ADDR *low_return,
 static enum pc_bounds_kind
 dwarf2_get_pc_bounds (struct die_info *die, CORE_ADDR *lowpc,
 		      CORE_ADDR *highpc, struct dwarf2_cu *cu,
-		      struct partial_symtab *pst)
+		      dwarf2_psymtab *pst)
 {
   struct dwarf2_per_objfile *dwarf2_per_objfile
     = cu->per_cu->dwarf2_per_objfile;
@@ -20944,7 +20899,7 @@ dwarf_decode_line_header (sect_offset sect_off, struct dwarf2_cu *cu)
 
 static const char *
 psymtab_include_file_name (const struct line_header *lh, const file_entry &fe,
-			   const struct partial_symtab *pst,
+			   const dwarf2_psymtab *pst,
 			   const char *comp_dir,
 			   gdb::unique_xmalloc_ptr<char> *name_holder)
 {
@@ -21314,10 +21269,11 @@ lnp_state_machine::record_line (bool end_sequence)
     {
       fprintf_unfiltered (gdb_stdlog,
 			  "Processing actual line %u: file %u,"
-			  " address %s, is_stmt %u, discrim %u\n",
+			  " address %s, is_stmt %u, discrim %u%s\n",
 			  m_line, m_file,
 			  paddress (m_gdbarch, m_address),
-			  m_is_stmt, m_discriminator);
+			  m_is_stmt, m_discriminator,
+			  (end_sequence ? "\t(end sequence)" : ""));
     }
 
   file_entry *fe = current_file ();
@@ -21330,7 +21286,8 @@ lnp_state_machine::record_line (bool end_sequence)
   else if (m_op_index == 0 || end_sequence)
     {
       fe->included_p = 1;
-      if (m_record_lines_p && (producer_is_codewarrior (m_cu) || m_is_stmt))
+      if (m_record_lines_p
+	  && (producer_is_codewarrior (m_cu) || m_is_stmt || end_sequence))
 	{
 	  if (m_last_subfile != m_cu->get_builder ()->get_current_subfile ()
 	      || end_sequence)
@@ -21425,7 +21382,7 @@ dwarf_decode_lines_1 (struct line_header *lh, struct dwarf2_cu *cu,
      the line number program).  */
   bool record_lines_p = !decode_for_pst_p;
 
-  baseaddr = objfile->section_offsets[SECT_OFF_TEXT (objfile)];
+  baseaddr = objfile->text_section_offset ();
 
   line_ptr = lh->statement_program_start;
   line_end = lh->statement_program_end;
@@ -21643,7 +21600,7 @@ dwarf_decode_lines_1 (struct line_header *lh, struct dwarf2_cu *cu,
 
 static void
 dwarf_decode_lines (struct line_header *lh, const char *comp_dir,
-		    struct dwarf2_cu *cu, struct partial_symtab *pst,
+		    struct dwarf2_cu *cu, dwarf2_psymtab *pst,
 		    CORE_ADDR lowpc, int decode_mapping)
 {
   struct objfile *objfile = cu->per_cu->dwarf2_per_objfile->objfile;
@@ -21853,7 +21810,7 @@ new_symbol (struct die_info *die, struct type *type, struct dwarf2_cu *cu,
 
   int inlined_func = (die->tag == DW_TAG_inlined_subroutine);
 
-  baseaddr = objfile->section_offsets[SECT_OFF_TEXT (objfile)];
+  baseaddr = objfile->text_section_offset ();
 
   name = dwarf2_name (die, cu);
   if (name)
@@ -23651,7 +23608,7 @@ dwarf2_fetch_die_loc_sect_off (sect_offset sect_off,
 	  != dwarf2_per_objfile->abstract_to_concrete.end ()))
     {
       CORE_ADDR pc = (*get_frame_pc) (baton);
-      CORE_ADDR baseaddr = objfile->section_offsets[SECT_OFF_TEXT (objfile)];
+      CORE_ADDR baseaddr = objfile->text_section_offset ();
       struct gdbarch *gdbarch = get_objfile_arch (objfile);
 
       for (const auto &cand_off
@@ -25659,9 +25616,7 @@ dwarf2_per_cu_ref_addr_size (struct dwarf2_per_cu_data *per_cu)
 CORE_ADDR
 dwarf2_per_cu_text_offset (struct dwarf2_per_cu_data *per_cu)
 {
-  struct objfile *objfile = per_cu->dwarf2_per_objfile->objfile;
-
-  return objfile->section_offsets[SECT_OFF_TEXT (objfile)];
+  return per_cu->dwarf2_per_objfile->objfile->text_section_offset ();
 }
 
 /* Return a type that is a generic pointer type, the size of which matches

@@ -11189,7 +11189,7 @@ get_alpha_symbol_other (unsigned int other)
     case STO_ALPHA_NOPV:       return "NOPV";
     case STO_ALPHA_STD_GPLOAD: return "STD GPLOAD";
     default:
-      error (_("Unrecognized alpah specific other value: %u"), other);
+      error (_("Unrecognized alpha specific other value: %u"), other);
       return _("<unknown>");
     }
 }
@@ -14242,7 +14242,7 @@ get_build_id (void * data)
             {
               warn (ngettext ("debuginfod: Corrupt note: only %ld byte remains, "
                               "not enough for a full note\n",
-                              "Corrupt note: only %ld bytes remain, "
+                              "debuginfod: Corrupt note: only %ld bytes remain, "
                               "not enough for a full note\n",
                               data_remaining),
                     (long) data_remaining);
@@ -14271,7 +14271,7 @@ get_build_id (void * data)
             {
               warn (ngettext ("debuginfod: Corrupt note: only %ld byte remains, "
                               "not enough for a full note\n",
-                              "Corrupt note: only %ld bytes remain, "
+                              "debuginfod: Corrupt note: only %ld bytes remain, "
                               "not enough for a full note\n",
                               data_remaining),
                     (long) data_remaining);

@@ -157,6 +157,11 @@ extern void exec_file_locate_attach (int pid, int defer_bp_reset, int from_tty);
 
 extern void validate_files (void);
 
+/* Give the user a message if the current exec file does not match the exec
+   file determined from the target.  In case of mismatch, ask the user
+   if the exec file determined from target must be loaded.  */
+extern void validate_exec_file (int from_tty);
+
 /* The current default bfd target.  */
 
 extern char *gnutarget;
@@ -269,8 +274,7 @@ private:
   std::string m_storage;
 };
 
-/* NOTE: cagney/2004-04-05: Replaced by "regset.h" and
-   regset_from_core_section().  */
+/* Replaced by the "iterate_over_regset_sections" gdbarch method.  */
 extern void deprecated_add_core_fns (struct core_fns *cf);
 extern int default_core_sniffer (struct core_fns *cf, bfd * abfd);
 extern int default_check_format (bfd * abfd);
