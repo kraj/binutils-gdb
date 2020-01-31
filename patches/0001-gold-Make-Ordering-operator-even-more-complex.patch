@@ -1,0 +1,38 @@
+From b93da5c8aa1c23db78ac427a3ba7c580c6927df2 Mon Sep 17 00:00:00 2001
+From: "H.J. Lu" <hjl.tools@gmail.com>
+Date: Fri, 31 Jan 2020 12:17:10 -0800
+Subject: [PATCH] gold: Make Ordering::operator() even more complex
+
+GCC 9 generates the same function size for Ordering::operator() in
+odr_violation1.cc and odr_violation2.cc on x32:
+
+  134: 00000000    31 FUNC    WEAK   DEFAULT   64 _ZN8OrderingclEii
+   40: 00000000    31 FUNC    GLOBAL DEFAULT   10 _ZN8OrderingclEii
+
+This patch makes Ordering::operator() even more complex
+
+   134: 00000000    31 FUNC    WEAK   DEFAULT   64 _ZN8OrderingclEii
+    42: 00000000    35 FUNC    GLOBAL DEFAULT   11 _ZN8OrderingclEii
+
+    	* testsuite/odr_violation2.cc (Ordering::operator()): Make
+	expression even more complex.
+---
+ gold/testsuite/odr_violation2.cc | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/gold/testsuite/odr_violation2.cc b/gold/testsuite/odr_violation2.cc
+index aa9868fc27..35dd454704 100644
+--- a/gold/testsuite/odr_violation2.cc
++++ b/gold/testsuite/odr_violation2.cc
+@@ -12,7 +12,7 @@ class Ordering {
+ bool Ordering::operator()(int a, int b) {
+   // Optimization makes this operator() a different size than the one
+   // in odr_violation1.cc.
+-  return a + 12345 > b / 67;
++  return (a * 30 + b + 12345) > b / 67;
+ }
+ 
+ void SortDescending(int array[], int size) {
+-- 
+2.24.1
+

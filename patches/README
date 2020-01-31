@@ -26,6 +26,7 @@ patches="
 0001-gold-Update-ver_test_pr16504.sh.patch
 0001-gold-Fix-script_test_7.sh-script_test_9.sh.patch
 0001-gold-x86-64-Fix-TLSDESC-relaxation-for-x32.patch
+0001-gold-Make-Ordering-operator-even-more-complex.patch
 0001-Don-t-claim-a-fat-IR-object-if-no-IR-object-should-b.patch
 0001-Add-lto-and-none-lto-input-support-for-ld-r.patch
 0002-Add-test-for-nm-on-mixed-LTO-non-LTO-object.patch
