@@ -1,3 +1,52 @@
+2020-02-06  Shahab Vahedi  <shahab@synopsys.com>
+
+	* gdb.tui/tui-missing-src.exp: Add the "missing source
+	file" test for the TUI.
+
+2020-02-06  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.server/multi-ui-errors.exp: Give a test a real name to avoid
+	including a port number in the output.
+
+2020-02-04  Alok Kumar Sharma  <alokkumar.sharma@amd.com>
+
+	* lib/fortran.exp (fortran_int4): Handle clang.
+	(fortran_int8): Likewise.
+	(fortran_real4): Likewise.
+	(fortran_real8): Likewise.
+	(fortran_complex4): Likewise.
+	(fortran_logical4): Likewise.
+	(fortran_character1): Likewise.
+
+2020-02-04  Tom de Vries  <tdevries@suse.de>
+
+	* README (Race detection): Add note.
+
+2020-02-04  Tom de Vries  <tdevries@suse.de>
+
+	* lib/gdb.exp (inferior_exited_re): Use "\[^\n\r\]*" instead of ".*".
+
+2020-02-04  Tom de Vries  <tdevries@suse.de>
+
+	* lib/gdb.exp (inferior_exited_re): Use non-capturing parentheses.
+
+2020-02-03  Rogerio A. Cardoso  <rcardoso@linux.ibm.com>
+
+	* gdb.arch/powerpc-power8.exp: Delete trailing whitespace of
+	tbegin., tend. instructions. Replace bctar-, bctar+, bctarl-,
+	bctarl+ extended mnemonics when avaliable by bgttar, bnstarl,
+	blttar, bnetarl.
+	* gdb.arch/powerpc-power8.s: Fix comments. Fix instructions
+	binary for blttar, bnetarl.
+	* gdb.arch/powerpc-power9.exp: Delete trailing whitespace of
+	wait instruction. Delete ldmx test.
+	* gdb.arch/powerpc-power9.s: Delete ldmx instruction.
+
+2020-02-03  Alok Kumar Sharma  <AlokKumar.Sharma@amd.com>
+
+	* gdb.fortran/array-bounds-high.exp: New file.
+	* gdb.fortran/array-bounds-high.f90: New file.
+
 2020-02-03  Lukas Durfina  <ldurfina@tachyum.com>  (tiny change)
 
 	* gdb.base/fileio.c: Remove #include of <sys/errno.h>.

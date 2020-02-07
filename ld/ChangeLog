@@ -1,3 +1,136 @@
+2020-02-06  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/25022
+	* emultempl/aix.em (ld_${EMULATION_NAME}_emulation): Add
+	before_place_orphans_default.
+	* emultempl/armcoff.em (ld_${EMULATION_NAME}_emulation): Likewise.
+	* emultempl/beos.em (ld_${EMULATION_NAME}_emulation): Likewise.
+	* emultempl/generic.em (ld_${EMULATION_NAME}_emulation): Likewise.
+	* emultempl/linux.em (ld_${EMULATION_NAME}_emulation): Likewise.
+	* emultempl/msp430.em (ld_${EMULATION_NAME}_emulation): Likewise.
+	* emultempl/pe.em (ld_${EMULATION_NAME}_emulation): Likewise.
+	* emultempl/pep.em (ld_${EMULATION_NAME}_emulation): Likewise.
+	* emultempl/ticoff.em (ld_${EMULATION_NAME}_emulation): Likewise.
+	* emultempl/vanilla.em (ld_${EMULATION_NAME}_emulation): Likewise.
+	* emultempl/elf.em (ld_${EMULATION_NAME}_emulation): Use
+	ldelf_before_place_orphans.
+	* ldelf.c (ldelf_before_place_orphans): New.
+	* ldelf.h (ldelf_before_place_orphans): Likewise.
+	* ldemul.c (ldemul_before_place_orphans): Likewise.
+	(before_place_orphans_default): Likewise.
+	* ldemul.h (ldemul_before_place_orphans): Likewise.
+	(before_place_orphans_default): Likewise.
+	(ld_emulation_xfer_struct): Add before_place_orphans.
+	* ldlang.c (lang_process): Call ldemul_before_place_orphans
+	before lang_place_orphans.
+	* testsuite/ld-elf/pr25022.d: New file.
+	* testsuite/ld-elf/pr25022.s: Likewise.
+	* testsuite/ld-elf/pr25022.t: Likewise.
+
+2020-02-06  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/25490
+	* testsuite/ld-elf/pr25490-1.d: New file.
+	* testsuite/ld-elf/pr25490-1.s: Likewise.
+
+2020-02-06  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/24526
+	PR ld/25021
+	PR ld/25490
+	* testsuite/ld-elf/elf.exp: Run PR ld/25490 tests.
+	* testsuite/ld-elf/pr24526.d: New file.
+	* testsuite/ld-elf/pr24526.s: Likewise.
+	* testsuite/ld-elf/pr25021.d: Likewise.
+	* testsuite/ld-elf/pr25021.s: Likewise.
+	* testsuite/ld-elf/pr25490-2-16.rd: Likewise.
+	* testsuite/ld-elf/pr25490-2-32.rd: Likewise.
+	* testsuite/ld-elf/pr25490-2-64.rd: Likewise.
+	* testsuite/ld-elf/pr25490-2.s: Likewise.
+	* testsuite/ld-elf/pr25490-3-16.rd: Likewise.
+	* testsuite/ld-elf/pr25490-3-32.rd: Likewise.
+	* testsuite/ld-elf/pr25490-3-64.rd: Likewise.
+	* testsuite/ld-elf/pr25490-3.s: Likewise.
+	* testsuite/ld-elf/pr25490-4-16.rd: Likewise.
+	* testsuite/ld-elf/pr25490-4-32.rd: Likewise.
+	* testsuite/ld-elf/pr25490-4-64.rd: Likewise.
+	* testsuite/ld-elf/pr25490-4.s: Likewise.
+	* testsuite/ld-elf/pr25490-5-16.rd: Likewise.
+	* testsuite/ld-elf/pr25490-5-32.rd: Likewise.
+	* testsuite/ld-elf/pr25490-5-64.rd: Likewise.
+	* testsuite/ld-elf/pr25490-5.s: Likewise.
+	* testsuite/ld-elf/pr25490-6-16.rd: Likewise.
+	* testsuite/ld-elf/pr25490-6-32.rd: Likewise.
+	* testsuite/ld-elf/pr25490-6-64.rd: Likewise.
+	* testsuite/ld-elf/pr25490-6.s: Likewise.
+
+2020-02-06  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* testsuite/lib/ld-lib.exp (check_gc_sections_available): Mark
+	z80 as not supported.
+
+2020-02-06  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/ld-ifunc/ifunc.exp: Enable for more targets, specifying
+	targets that don't support ifunc rather than ones that do.
+	(contains_irelative_reloc): Match R_PARISC_IPLT.
+	* testsuite/ld-ifunc/lib.c: Don't use .set in asm.
+	* testsuite/ld-ifunc/ifunc-23-x86.s,
+	* testsuite/ld-ifunc/ifunc-24-x86.s,
+	* testsuite/ld-ifunc/ifunc-25-x86.s,
+	* testsuite/ld-ifunc/ifunc-4-local-x86.s,
+	* testsuite/ld-ifunc/ifunc-4-x86.s: Define _main.
+	* testsuite/ld-ifunc/ifunc-10-i386.d,
+	* testsuite/ld-ifunc/ifunc-11-i386.d,
+	* testsuite/ld-ifunc/ifunc-12-i386.d,
+	* testsuite/ld-ifunc/ifunc-13-i386.d,
+	* testsuite/ld-ifunc/ifunc-14a-i386.d,
+	* testsuite/ld-ifunc/ifunc-14b-i386.d,
+	* testsuite/ld-ifunc/ifunc-14c-i386.d,
+	* testsuite/ld-ifunc/ifunc-14d-i386.d,
+	* testsuite/ld-ifunc/ifunc-14e-i386.d,
+	* testsuite/ld-ifunc/ifunc-14f-i386.d,
+	* testsuite/ld-ifunc/ifunc-15-i386.d,
+	* testsuite/ld-ifunc/ifunc-16-i386-now.d,
+	* testsuite/ld-ifunc/ifunc-16-i386.d,
+	* testsuite/ld-ifunc/ifunc-17a-i386.d,
+	* testsuite/ld-ifunc/ifunc-17b-i386.d,
+	* testsuite/ld-ifunc/ifunc-18a-i386.d,
+	* testsuite/ld-ifunc/ifunc-18b-i386.d,
+	* testsuite/ld-ifunc/ifunc-19a-i386.d,
+	* testsuite/ld-ifunc/ifunc-19b-i386.d,
+	* testsuite/ld-ifunc/ifunc-2-i386-now.d,
+	* testsuite/ld-ifunc/ifunc-2-i386.d,
+	* testsuite/ld-ifunc/ifunc-2-local-i386-now.d,
+	* testsuite/ld-ifunc/ifunc-2-local-i386.d,
+	* testsuite/ld-ifunc/ifunc-20-i386.d,
+	* testsuite/ld-ifunc/ifunc-21-i386.d,
+	* testsuite/ld-ifunc/ifunc-22-i386.d,
+	* testsuite/ld-ifunc/ifunc-26.d,
+	* testsuite/ld-ifunc/ifunc-5a-i386.d,
+	* testsuite/ld-ifunc/ifunc-5a-local-i386.d,
+	* testsuite/ld-ifunc/ifunc-5b-i386.d,
+	* testsuite/ld-ifunc/ifunc-5b-local-i386.d,
+	* testsuite/ld-ifunc/ifunc-5r-local-i386.d,
+	* testsuite/ld-ifunc/ifunc-6a-i386.d,
+	* testsuite/ld-ifunc/ifunc-6b-i386.d,
+	* testsuite/ld-ifunc/ifunc-7a-i386.d,
+	* testsuite/ld-ifunc/ifunc-7b-i386.d,
+	* testsuite/ld-ifunc/ifunc-8-i386.d,
+	* testsuite/ld-ifunc/ifunc-9-i386.d,
+	* testsuite/ld-ifunc/pr17154-i386-now.d,
+	* testsuite/ld-ifunc/pr17154-i386.d: xfail lynxos, nto, and solaris.
+
+2020-02-06  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/lib/ld-lib.exp (is_generic): Delete.
+	* testsuite/ld-unique/unique.exp: Exclude tic6x.
+
+2020-02-06  Alan Modra  <amodra@gmail.com>
+
+	* configure.tgt (i[3-7]86-*-moss*): Don't clear targ_extra_ofiles.
+	(i[3-7]86-*-openbsd*, x86_64-*-openbsd*): Add.
+
 2020-02-02  H.J. Lu  <hongjiu.lu@intel.com>
 
 	PR gas/25380

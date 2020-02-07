@@ -1,3 +1,65 @@
+2020-02-06  Shahab Vahedi  <shahab@synopsys.com>
+
+	* source-cache.c (source_cache::ensure): Surround
+	get_plain_source_lines with a try/catch.
+	(source_cache::get_line_charpos): Get rid of try/catch
+	and only check for the return value of "ensure".
+	* tui/tui-source.c (tui_source_window::set_contents):
+	Simplify "nlines" calculation.
+
+2020-02-06  Shahab Vahedi  <shahab@synopsys.com>
+
+	* MAINTAINERS (Write After Approval): Add myself.
+
+2020-02-05  Christian Biesinger  <cbiesinger@google.com>
+
+	* sparc-nat.h (struct sparc_target) <xfer_partial>: Fix base class
+	function call.
+
+2020-02-05  Christian Biesinger  <cbiesinger@google.com>
+
+	* ppc-nbsd-tdep.h: Fix macro name in #endif comment.
+
+2020-02-05  Maciej W. Rozycki  <macro@wdc.com>
+
+	* nat/riscv-linux-tdesc.h: New file.
+	* nat/riscv-linux-tdesc.c: New file, taking code from...
+	* riscv-linux-nat.c (riscv_linux_nat_target::read_description):
+	... here.
+	* configure.nat <linux> <riscv*>: Add nat/riscv-linux-tdesc.o to
+	NATDEPFILES.
+
+2020-02-04  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* remote-sim.c (sim_inferior_data::sim_inferior_data): Assert that
+	we don't set the fake simulator ptid to the null_ptid.
+
+2020-02-03  Simon Marchi  <simon.marchi@efficios.com>
+
+	* fork-child.c (gdb_startup_inferior): Use bool instead of int.
+	* gdbthread.h (class thread_info) <resumed>: Likewise.
+	* infrun.c (resume_1): Likewise.
+	(proceed): Likewise.
+	(infrun_thread_stop_requested): Likewise.
+	(stop_all_threads): Likewise.
+	(handle_inferior_event): Likewise.
+	(restart_threads): Likewise.
+	(finish_step_over): Likewise.
+	(keep_going_stepped_thread): Likewise.
+	* linux-nat.c (attach_proc_task_lwp_callback): Likewise.
+	(linux_handle_extended_wait): Likewise.
+	* record-btrace.c (get_thread_current_frame_id): Likewise.
+	* record-full.c (record_full_wait_1): Likewise.
+	* remote.c (remote_target::process_initial_stop_replies): Likewise.
+	* target.c (target_resume): Likewise.
+	* thread.c (set_running_thread): Likewise.
+
+2020-02-03  Alok Kumar Sharma  <AlokKumar.Sharma@amd.com>
+
+	* f-valprint.c (f77_print_array_1): Changed datatype of index
+	variable to LONGEST from int to enable it to contain bound
+	values correctly.
+
 2020-02-03  Maciej W. Rozycki  <macro@wdc.com>
 
 	* riscv-linux-nat.c [!NFPREG] (NFPREG): New macro.
