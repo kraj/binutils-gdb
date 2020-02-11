@@ -401,8 +401,6 @@ enum
   Load,
   /* insn has a modrm byte. */
   Modrm,
-  /* register is in low 3 bits of opcode */
-  ShortForm,
   /* special case for jump insns; value has to be 1 */
 #define JUMP 1
   /* call and jump */
@@ -638,10 +636,16 @@ enum
   ATTSyntax,
   /* Intel syntax.  */
   IntelSyntax,
-  /* AMD64.  */
-  AMD64,
-  /* Intel64.  */
-  Intel64,
+  /* ISA64: Don't change the order without other code adjustments.
+	0: Common to AMD64 and Intel64.
+	1: AMD64.
+	2: Intel64.
+	3: Only in Intel64.
+   */
+#define AMD64		1
+#define INTEL64		2
+#define INTEL64ONLY	3
+  ISA64,
   /* The last bitfield in i386_opcode_modifier.  */
   Opcode_Modifier_Num
 };
@@ -652,7 +656,6 @@ typedef struct i386_opcode_modifier
   unsigned int w:1;
   unsigned int load:1;
   unsigned int modrm:1;
-  unsigned int shortform:1;
   unsigned int jump:3;
   unsigned int floatmf:1;
   unsigned int floatr:1;
@@ -705,8 +708,7 @@ typedef struct i386_opcode_modifier
   unsigned int attmnemonic:1;
   unsigned int attsyntax:1;
   unsigned int intelsyntax:1;
-  unsigned int amd64:1;
-  unsigned int intel64:1;
+  unsigned int isa64:2;
 } i386_opcode_modifier;
 
 /* Operand classes.  */

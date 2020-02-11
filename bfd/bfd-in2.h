@@ -1897,14 +1897,25 @@ enum bfd_architecture
   bfd_arch_xtensa,    /* Tensilica's Xtensa cores.  */
 #define bfd_mach_xtensa        1
   bfd_arch_z80,
-#define bfd_mach_gbz80         0 /* GameBoy Z80 (reduced instruction set) */
-#define bfd_mach_z80strict     1 /* Z80 without undocumented opcodes.  */
-#define bfd_mach_z180          2 /* Z180: successor with additional instructions, but without halves of ix and iy */
-#define bfd_mach_z80           3 /* Z80 with ixl, ixh, iyl, and iyh.  */
-#define bfd_mach_ez80_z80      4 /* eZ80 (successor of Z80 & Z180) in Z80 (16-bit address) mode */
-#define bfd_mach_ez80_adl      5 /* eZ80 (successor of Z80 & Z180) in ADL (24-bit address) mode */
-#define bfd_mach_z80full       7 /* Z80 with all undocumented instructions.  */
-#define bfd_mach_r800          11 /* R800: successor with multiplication.  */
+/* Zilog Z80 without undocumented opcodes.  */
+#define bfd_mach_z80strict     1
+/* Zilog Z180: successor with additional instructions, but without
+ halves of ix and iy.  */
+#define bfd_mach_z180          2
+/* Zilog Z80 with ixl, ixh, iyl, and iyh.  */
+#define bfd_mach_z80           3
+/* Zilog eZ80 (successor of Z80 & Z180) in Z80 (16-bit address) mode.  */
+#define bfd_mach_ez80_z80      4
+/* Zilog eZ80 (successor of Z80 & Z180) in ADL (24-bit address) mode.  */
+#define bfd_mach_ez80_adl      5
+/* Z80N */
+#define bfd_mach_z80n          6
+/* Zilog Z80 with all undocumented instructions.  */
+#define bfd_mach_z80full       7
+/* GameBoy Z80 (reduced instruction set).  */
+#define bfd_mach_gbz80         8
+/* ASCII R800: successor with multiplication.  */
+#define bfd_mach_r800          11
   bfd_arch_lm32,      /* Lattice Mico32.  */
 #define bfd_mach_lm32          1
   bfd_arch_microblaze,/* Xilinx MicroBlaze.  */
@@ -5300,6 +5311,9 @@ BFD_RELOC_XTENSA_ASM_EXPAND.  */
 
 /* Highest 16 bits of multibyte (32 or 24 bit) value.  */
   BFD_RELOC_Z80_WORD1,
+
+/* Like BFD_RELOC_16 but big-endian.  */
+  BFD_RELOC_Z80_16_BE,
 
 /* DJNZ offset.  */
   BFD_RELOC_Z8K_DISP7,

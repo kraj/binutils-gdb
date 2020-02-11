@@ -354,6 +354,9 @@ struct _i386_insn
     unsigned int prefixes;
     unsigned char prefix[MAX_PREFIXES];
 
+    /* Register is in low 3 bits of opcode.  */
+    bfd_boolean short_form;
+
     /* The operand to a branch insn indicates an absolute branch.  */
     bfd_boolean jumpabsolute;
 
@@ -598,9 +601,11 @@ static int shared = 0;
    0 if att syntax.  */
 static int intel_syntax = 0;
 
-/* 1 for Intel64 ISA,
-   0 if AMD64 ISA.  */
-static int intel64;
+static enum x86_64_isa
+{
+  amd64 = 1,	/* AMD64 ISA.  */
+  intel64	/* Intel64 ISA.  */
+} isa64;
 
 /* 1 for intel mnemonic,
    0 if att mnemonic.  */
@@ -4082,7 +4087,6 @@ optimize_encoding (void)
 	      i.tm.base_opcode = 0xb8;
 	      i.tm.extension_opcode = None;
 	      i.tm.opcode_modifier.w = 0;
-	      i.tm.opcode_modifier.shortform = 1;
 	      i.tm.opcode_modifier.modrm = 0;
 	    }
 	}
@@ -5805,13 +5809,31 @@ match_template (char mnem_suffix)
       if (intel_mnemonic && t->opcode_modifier.attmnemonic)
 	continue;
 
-      /* Check AT&T/Intel syntax and Intel64/AMD64 ISA.   */
+      /* Check AT&T/Intel syntax.  */
       i.error = unsupported_syntax;
       if ((intel_syntax && t->opcode_modifier.attsyntax)
-	  || (!intel_syntax && t->opcode_modifier.intelsyntax)
-	  || (intel64 && t->opcode_modifier.amd64)
-	  || (!intel64 && t->opcode_modifier.intel64))
+	  || (!intel_syntax && t->opcode_modifier.intelsyntax))
 	continue;
+
+      /* Check Intel64/AMD64 ISA.   */
+      switch (isa64)
+	{
+	default:
+	  /* Default: Don't accept Intel64.  */
+	  if (t->opcode_modifier.isa64 == INTEL64)
+	    continue;
+	  break;
+	case amd64:
+	  /* -mamd64: Don't accept Intel64 and Intel64 only.  */
+	  if (t->opcode_modifier.isa64 >= INTEL64)
+	    continue;
+	  break;
+	case intel64:
+	  /* -mintel64: Don't accept AMD64.  */
+	  if (t->opcode_modifier.isa64 == AMD64)
+	    continue;
+	  break;
+	}
 
       /* Check the suffix.  */
       i.error = invalid_instruction_suffix;
@@ -6475,6 +6497,10 @@ process_suffix (void)
 	}
     }
 
+  if (!i.tm.opcode_modifier.modrm && i.reg_operands && i.tm.operands < 3)
+    i.short_form = (i.tm.operand_types[0].bitfield.class == Reg)
+		   != (i.tm.operand_types[1].bitfield.class == Reg);
+
   /* Change the opcode based on the operand size given by i.suffix.  */
   switch (i.suffix)
     {
@@ -6491,7 +6517,7 @@ process_suffix (void)
       /* It's not a byte, select word/dword operation.  */
       if (i.tm.opcode_modifier.w)
 	{
-	  if (i.tm.opcode_modifier.shortform)
+	  if (i.short_form)
 	    i.tm.base_opcode |= 8;
 	  else
 	    i.tm.base_opcode |= 1;
@@ -7089,7 +7115,7 @@ duplicate:
 	 on one of their operands, the default segment is ds.  */
       default_seg = &ds;
     }
-  else if (i.tm.opcode_modifier.shortform)
+  else if (i.short_form)
     {
       /* The register or float register operand is in operand
 	 0 or 1.  */
@@ -9963,7 +9989,7 @@ i386_displacement (char *disp_start, char *disp_end)
 	  if (t->opcode_modifier.jump
 	      != current_templates->start->opcode_modifier.jump)
 	    break;
-	  if (t->opcode_modifier.intel64)
+	  if ((t->opcode_modifier.isa64 >= INTEL64))
 	    has_intel64 = TRUE;
 	}
       if (t < current_templates->end)
@@ -12525,11 +12551,11 @@ md_parse_option (int c, const char *arg)
       break;
 
     case OPTION_MAMD64:
-      intel64 = 0;
+      isa64 = amd64;
       break;
 
     case OPTION_MINTEL64:
-      intel64 = 1;
+      isa64 = intel64;
       break;
 
     case 'O':

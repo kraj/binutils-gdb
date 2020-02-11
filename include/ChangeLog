@@ -1,3 +1,23 @@
+2020-02-10  Stam Markianos-Wright  <stam.markianos-wright@arm.com>
+	    Matthew Malcomson  <matthew.malcomson@arm.com>
+
+	* opcode/arm.h (ARM_EXT2_CDE): New extension macro.
+	(ARM_EXT2_CDE0): New extension macro.
+	(ARM_EXT2_CDE1): New extension macro.
+	(ARM_EXT2_CDE2): New extension macro.
+	(ARM_EXT2_CDE3): New extension macro.
+	(ARM_EXT2_CDE4): New extension macro.
+	(ARM_EXT2_CDE5): New extension macro.
+	(ARM_EXT2_CDE6): New extension macro.
+	(ARM_EXT2_CDE7): New extension macro.
+
+2020-02-07  Sergey Belyashov  <sergey.belyashov@gmail.com>
+
+	PR 25469
+	* coff/internal.h (R_IMM16BE): Define.
+	* elf/z80.h (EF_Z80_MACH_Z80N): Define.
+	(R_Z80_16_BE): New reloc.
+
 2020-02-04  Alan Modra  <amodra@gmail.com>
 
 	* opcode/d30v.h (struct pd_reg): Make value field unsigned.
