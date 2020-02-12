@@ -44,10 +44,6 @@
 #endif
 #endif
 
-#ifndef REGISTER_WARNINGS
-#define REGISTER_WARNINGS 1
-#endif
-
 #ifndef INFER_ADDR_PREFIX
 #define INFER_ADDR_PREFIX 1
 #endif
@@ -2248,8 +2244,7 @@ mismatch:
 
 /* If given types g0 and g1 are registers they must be of the same type
    unless the expected operand type register overlap is null.
-   Memory operand size of certain SIMD instructions is also being checked
-   here.  */
+   Some Intel syntax memory operand size checking also happens here.  */
 
 static INLINE int
 operand_type_register_match (i386_operand_type g0,
@@ -2261,14 +2256,16 @@ operand_type_register_match (i386_operand_type g0,
       && g0.bitfield.class != RegSIMD
       && (!operand_type_check (g0, anymem)
 	  || g0.bitfield.unspecified
-	  || t0.bitfield.class != RegSIMD))
+	  || (t0.bitfield.class != Reg
+	      && t0.bitfield.class != RegSIMD)))
     return 1;
 
   if (g1.bitfield.class != Reg
       && g1.bitfield.class != RegSIMD
       && (!operand_type_check (g1, anymem)
 	  || g1.bitfield.unspecified
-	  || t1.bitfield.class != RegSIMD))
+	  || (t1.bitfield.class != Reg
+	      && t1.bitfield.class != RegSIMD)))
     return 1;
 
   if (g0.bitfield.byte == g1.bitfield.byte
@@ -6637,31 +6634,10 @@ check_byte_reg (void)
 	  && i.tm.operand_types[op].bitfield.word)
 	continue;
 
-      /* crc32 doesn't generate this warning.  */
-      if (i.tm.base_opcode == 0xf20f38f0)
+      /* crc32 only wants its source operand checked here.  */
+      if (i.tm.base_opcode == 0xf20f38f0 && op)
 	continue;
 
-      if ((i.types[op].bitfield.word
-	   || i.types[op].bitfield.dword
-	   || i.types[op].bitfield.qword)
-	  && i.op[op].regs->reg_num < 4
-	  /* Prohibit these changes in 64bit mode, since the lowering
-	     would be more complicated.  */
-	  && flag_code != CODE_64BIT)
-	{
-#if REGISTER_WARNINGS
-	  if (!quiet_warnings)
-	    as_warn (_("using `%s%s' instead of `%s%s' due to `%c' suffix"),
-		     register_prefix,
-		     (i.op[op].regs + (i.types[op].bitfield.word
-				       ? REGNAM_AL - REGNAM_AX
-				       : REGNAM_AL - REGNAM_EAX))->reg_name,
-		     register_prefix,
-		     i.op[op].regs->reg_name,
-		     i.suffix);
-#endif
-	  continue;
-	}
       /* Any other register is bad.  */
       if (i.types[op].bitfield.class == Reg
 	  || i.types[op].bitfield.class == RegMMX
@@ -6817,29 +6793,17 @@ check_word_reg (void)
 		i.suffix);
 	return 0;
       }
-    /* Warn if the e or r prefix on a general reg is present.  */
-    else if ((!quiet_warnings || flag_code == CODE_64BIT)
-	     && (i.types[op].bitfield.dword
+    /* Error if the e or r prefix on a general reg is present.  */
+    else if ((i.types[op].bitfield.dword
 		 || i.types[op].bitfield.qword)
 	     && (i.tm.operand_types[op].bitfield.class == Reg
 		 || i.tm.operand_types[op].bitfield.instance == Accum)
 	     && i.tm.operand_types[op].bitfield.word)
       {
-	/* Prohibit these changes in the 64bit mode, since the
-	   lowering is more complicated.  */
-	if (flag_code == CODE_64BIT)
-	  {
-	    as_bad (_("incorrect register `%s%s' used with `%c' suffix"),
-		    register_prefix, i.op[op].regs->reg_name,
-		    i.suffix);
-	    return 0;
-	  }
-#if REGISTER_WARNINGS
-	as_warn (_("using `%s%s' instead of `%s%s' due to `%c' suffix"),
-		 register_prefix,
-		 (i.op[op].regs + REGNAM_AX - REGNAM_EAX)->reg_name,
-		 register_prefix, i.op[op].regs->reg_name, i.suffix);
-#endif
+	as_bad (_("incorrect register `%s%s' used with `%c' suffix"),
+		register_prefix, i.op[op].regs->reg_name,
+		i.suffix);
+	return 0;
       }
   return 1;
 }
