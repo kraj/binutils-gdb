@@ -423,15 +423,6 @@ dwarf2_find_location_expression (struct dwarf2_loclist_baton *baton,
     }
 }
 
-/* This is the baton used when performing dwarf2 expression
-   evaluation.  */
-struct dwarf_expr_baton
-{
-  struct frame_info *frame;
-  struct dwarf2_per_cu_data *per_cu;
-  CORE_ADDR obj_address;
-};
-
 /* Implement find_frame_base_location method for LOC_BLOCK functions using
    DWARF expression for its DW_AT_frame_base.  */
 
@@ -1100,11 +1091,10 @@ chain_candidate (struct gdbarch *gdbarch,
 /* Create and return call_site_chain for CALLER_PC and CALLEE_PC.  All the
    assumed frames between them use GDBARCH.  Use depth first search so we can
    keep single CHAIN of call_site's back to CALLER_PC.  Function recursion
-   would have needless GDB stack overhead.  Caller is responsible for xfree of
-   the returned result.  Any unreliability results in thrown
-   NO_ENTRY_VALUE_ERROR.  */
+   would have needless GDB stack overhead.  Any unreliability results
+   in thrown NO_ENTRY_VALUE_ERROR.  */
 
-static struct call_site_chain *
+static gdb::unique_xmalloc_ptr<call_site_chain>
 call_site_find_chain_1 (struct gdbarch *gdbarch, CORE_ADDR caller_pc,
 			CORE_ADDR callee_pc)
 {
@@ -1219,19 +1209,18 @@ call_site_find_chain_1 (struct gdbarch *gdbarch, CORE_ADDR caller_pc,
 		   paddress (gdbarch, callee_pc));
     }
 
-  return retval.release ();
+  return retval;
 }
 
 /* Create and return call_site_chain for CALLER_PC and CALLEE_PC.  All the
    assumed frames between them use GDBARCH.  If valid call_site_chain cannot be
-   constructed return NULL.  Caller is responsible for xfree of the returned
-   result.  */
+   constructed return NULL.  */
 
-struct call_site_chain *
+gdb::unique_xmalloc_ptr<call_site_chain>
 call_site_find_chain (struct gdbarch *gdbarch, CORE_ADDR caller_pc,
 		      CORE_ADDR callee_pc)
 {
-  struct call_site_chain *retval = NULL;
+  gdb::unique_xmalloc_ptr<call_site_chain> retval;
 
   try
     {
