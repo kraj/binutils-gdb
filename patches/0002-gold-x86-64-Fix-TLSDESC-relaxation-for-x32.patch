@@ -1,7 +1,7 @@
-From b861f371f648f69df1ac87f7af8d716760e8053c Mon Sep 17 00:00:00 2001
+From f9c5694182c475c03f5ccebf6e45c8f27562071f Mon Sep 17 00:00:00 2001
 From: "H.J. Lu" <hjl.tools@gmail.com>
 Date: Mon, 20 Jan 2020 20:01:56 -0800
-Subject: [PATCH] gold: x86-64: Fix TLSDESC relaxation for x32
+Subject: [PATCH 2/2] gold: x86-64: Fix TLSDESC relaxation for x32
 
 X32 TLSDESC sequences can be:
 
@@ -57,11 +57,11 @@ should relaxed to
 ---
  gold/testsuite/Makefile.am |  6 +--
  gold/testsuite/Makefile.in |  6 +--
- gold/x86_64.cc             | 78 ++++++++++++++++++++++++++++++--------
- 3 files changed, 68 insertions(+), 22 deletions(-)
+ gold/x86_64.cc             | 76 +++++++++++++++++++++++++++++---------
+ 3 files changed, 65 insertions(+), 23 deletions(-)
 
 diff --git a/gold/testsuite/Makefile.am b/gold/testsuite/Makefile.am
-index ed1ea1755a..397bf69400 100644
+index 3d8c42cadfc..435d9ab3395 100644
 --- a/gold/testsuite/Makefile.am
 +++ b/gold/testsuite/Makefile.am
 @@ -1032,11 +1032,11 @@ if TLS_GNU2_DIALECT
@@ -80,10 +80,10 @@ index ed1ea1755a..397bf69400 100644
  tls_test_gnu2_shared2.so: tls_test_file2_gnu2.o gcctestdir/ld
  	$(CXXLINK) -shared tls_test_file2_gnu2.o
 diff --git a/gold/testsuite/Makefile.in b/gold/testsuite/Makefile.in
-index 9533b0e20b..d02311564e 100644
+index 9409e1ad3d2..2af0a2e76b9 100644
 --- a/gold/testsuite/Makefile.in
 +++ b/gold/testsuite/Makefile.in
-@@ -8213,11 +8213,11 @@ uninstall-am:
+@@ -8223,11 +8223,11 @@ uninstall-am:
  @GCC_TRUE@@NATIVE_LINKER_TRUE@@TLS_TRUE@		tls_test_c_pic.o gcctestdir/ld
  @GCC_TRUE@@NATIVE_LINKER_TRUE@@TLS_TRUE@	$(CXXLINK) $(THREADFLAGS) -pie tls_test_main_pie.o tls_test_pic.o tls_test_file2_pic.o tls_test_c_pic.o $(THREADLIBS)
  
@@ -99,10 +99,10 @@ index 9533b0e20b..d02311564e 100644
  @GCC_TRUE@@NATIVE_LINKER_TRUE@@TLS_GNU2_DIALECT_TRUE@@TLS_TRUE@tls_test_gnu2_shared2.so: tls_test_file2_gnu2.o gcctestdir/ld
  @GCC_TRUE@@NATIVE_LINKER_TRUE@@TLS_GNU2_DIALECT_TRUE@@TLS_TRUE@	$(CXXLINK) -shared tls_test_file2_gnu2.o
 diff --git a/gold/x86_64.cc b/gold/x86_64.cc
-index a65e2c55e9..ee6c0c0857 100644
+index 622e9431021..1442a009d7e 100644
 --- a/gold/x86_64.cc
 +++ b/gold/x86_64.cc
-@@ -5474,26 +5474,49 @@ Target_x86_64<size>::Relocate::tls_desc_gd_to_ie(
+@@ -5474,12 +5474,15 @@ Target_x86_64<size>::Relocate::tls_desc_gd_to_ie(
  {
    if (r_type == elfcpp::R_X86_64_GOTPC32_TLSDESC)
      {
@@ -115,14 +115,13 @@ index a65e2c55e9..ee6c0c0857 100644
        tls::check_range(relinfo, relnum, rela.get_r_offset(), view_size, -3);
        tls::check_range(relinfo, relnum, rela.get_r_offset(), view_size, 4);
        tls::check_tls(relinfo, relnum, rela.get_r_offset(),
--		     view[-3] == 0x48 && view[-2] == 0x8d && view[-1] == 0x05);
-+		     ((view[-3] == 0x48
-+		       || (size == 32 && view[-3] == 0x40))
-+		      && view[-2] == 0x8d
-+		      && view[-1] == 0x05));
+-		     ((view[-3] & 0xfb) == 0x48
++		     (((view[-3] & 0xfb) == 0x48
++		       || (size == 32 && (view[-3] & 0xfb) == 0x40))
+ 		      && view[-2] == 0x8d
+ 		      && (view[-1] & 0xc7) == 0x05));
        view[-2] = 0x8b;
-       const elfcpp::Elf_Xword addend = rela.get_r_addend();
-       Relocate_functions<size, false>::pcrela32(view, value, addend, address);
+@@ -5488,14 +5491,32 @@ Target_x86_64<size>::Relocate::tls_desc_gd_to_ie(
      }
    else
      {
@@ -160,7 +159,7 @@ index a65e2c55e9..ee6c0c0857 100644
      }
  }
  
-@@ -5513,12 +5536,17 @@ Target_x86_64<size>::Relocate::tls_desc_gd_to_le(
+@@ -5515,15 +5536,18 @@ Target_x86_64<size>::Relocate::tls_desc_gd_to_le(
  {
    if (r_type == elfcpp::R_X86_64_GOTPC32_TLSDESC)
      {
@@ -173,15 +172,17 @@ index a65e2c55e9..ee6c0c0857 100644
        tls::check_range(relinfo, relnum, rela.get_r_offset(), view_size, -3);
        tls::check_range(relinfo, relnum, rela.get_r_offset(), view_size, 4);
        tls::check_tls(relinfo, relnum, rela.get_r_offset(),
--		     view[-3] == 0x48 && view[-2] == 0x8d && view[-1] == 0x05);
-+		     ((view[-3] == 0x48
-+		       || (size == 32 && view[-3] == 0x40))
-+		      && view[-2] == 0x8d
-+		      && view[-1] == 0x05));
+-		     ((view[-3] & 0xfb) == 0x48
++		     (((view[-3] & 0xfb) == 0x48
++		       || (size == 32 && (view[-3] & 0xfb) == 0x40))
+ 		      && view[-2] == 0x8d
+ 		      && (view[-1] & 0xc7) == 0x05));
+-      view[-3] = 0x48 | ((view[-3] >> 2) & 1);
++      view[-3] = (view[-3] & 0x48) | ((view[-3] >> 2) & 1);
        view[-2] = 0xc7;
-       view[-1] = 0xc0;
+       view[-1] = 0xc0 | ((view[-1] >> 3) & 7);
        value -= tls_segment->memsz();
-@@ -5526,14 +5554,32 @@ Target_x86_64<size>::Relocate::tls_desc_gd_to_le(
+@@ -5531,14 +5555,32 @@ Target_x86_64<size>::Relocate::tls_desc_gd_to_le(
      }
    else
      {
