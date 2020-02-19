@@ -70,6 +70,7 @@ char *program_name;
 
 /* The prefix for system library directories.  */
 const char *ld_sysroot;
+char ld_sysconfdir[4096] __attribute__ ((section (".gccrelocprefix"))) = SYSCONFDIR;
 
 /* The canonical representation of ld_sysroot.  */
 char *ld_canon_sysroot;
