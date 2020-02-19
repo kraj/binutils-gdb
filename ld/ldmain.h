@@ -23,6 +23,7 @@
 
 extern char *program_name;
 extern const char *ld_sysroot;
+extern char ld_sysconfdir[4096];
 extern char *ld_canon_sysroot;
 extern int ld_canon_sysroot_len;
 extern FILE *saved_script_handle;
