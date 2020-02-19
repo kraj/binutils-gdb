@@ -188,7 +188,7 @@ libldtestplug_la_OBJECTS = $(am_libldtestplug_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
-am__v_lt_1 = 
+am__v_lt_1 =
 libldtestplug_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
 	$(libldtestplug_la_CFLAGS) $(CFLAGS) \
@@ -231,11 +231,11 @@ am__v_P_1 = :
 AM_V_GEN = $(am__v_GEN_@AM_V@)
 am__v_GEN_ = $(am__v_GEN_@AM_DEFAULT_V@)
 am__v_GEN_0 = @echo "  GEN     " $@;
-am__v_GEN_1 = 
+am__v_GEN_1 =
 AM_V_at = $(am__v_at_@AM_V@)
 am__v_at_ = $(am__v_at_@AM_DEFAULT_V@)
 am__v_at_0 = @
-am__v_at_1 = 
+am__v_at_1 =
 DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/../depcomp
 am__depfiles_maybe = depfiles
@@ -249,7 +249,7 @@ LTCOMPILE = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 AM_V_CC = $(am__v_CC_@AM_V@)
 am__v_CC_ = $(am__v_CC_@AM_DEFAULT_V@)
 am__v_CC_0 = @echo "  CC      " $@;
-am__v_CC_1 = 
+am__v_CC_1 =
 CCLD = $(CC)
 LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
@@ -257,7 +257,7 @@ LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
-am__v_CCLD_1 = 
+am__v_CCLD_1 =
 @MAINTAINER_MODE_FALSE@am__skiplex = test -f $@ ||
 LEXCOMPILE = $(LEX) $(AM_LFLAGS) $(LFLAGS)
 LTLEXCOMPILE = $(LIBTOOL) $(AM_V_lt) $(AM_LIBTOOLFLAGS) \
@@ -265,7 +265,7 @@ LTLEXCOMPILE = $(LIBTOOL) $(AM_V_lt) $(AM_LIBTOOLFLAGS) \
 AM_V_LEX = $(am__v_LEX_@AM_V@)
 am__v_LEX_ = $(am__v_LEX_@AM_DEFAULT_V@)
 am__v_LEX_0 = @echo "  LEX     " $@;
-am__v_LEX_1 = 
+am__v_LEX_1 =
 YLWRAP = $(top_srcdir)/../ylwrap
 @MAINTAINER_MODE_FALSE@am__skipyacc = test -f $@ ||
 am__yacc_c2h = sed -e s/cc$$/hh/ -e s/cpp$$/hpp/ -e s/cxx$$/hxx/ \
@@ -276,7 +276,7 @@ LTYACCCOMPILE = $(LIBTOOL) $(AM_V_lt) $(AM_LIBTOOLFLAGS) \
 AM_V_YACC = $(am__v_YACC_@AM_V@)
 am__v_YACC_ = $(am__v_YACC_@AM_DEFAULT_V@)
 am__v_YACC_0 = @echo "  YACC    " $@;
-am__v_YACC_1 = 
+am__v_YACC_1 =
 SOURCES = $(libdep_la_SOURCES) $(libldtestplug_la_SOURCES) \
 	$(libldtestplug2_la_SOURCES) $(libldtestplug3_la_SOURCES) \
 	$(libldtestplug4_la_SOURCES) $(ld_new_SOURCES) \
@@ -284,31 +284,31 @@ SOURCES = $(libdep_la_SOURCES) $(libldtestplug_la_SOURCES) \
 AM_V_DVIPS = $(am__v_DVIPS_@AM_V@)
 am__v_DVIPS_ = $(am__v_DVIPS_@AM_DEFAULT_V@)
 am__v_DVIPS_0 = @echo "  DVIPS   " $@;
-am__v_DVIPS_1 = 
+am__v_DVIPS_1 =
 AM_V_MAKEINFO = $(am__v_MAKEINFO_@AM_V@)
 am__v_MAKEINFO_ = $(am__v_MAKEINFO_@AM_DEFAULT_V@)
 am__v_MAKEINFO_0 = @echo "  MAKEINFO" $@;
-am__v_MAKEINFO_1 = 
+am__v_MAKEINFO_1 =
 AM_V_INFOHTML = $(am__v_INFOHTML_@AM_V@)
 am__v_INFOHTML_ = $(am__v_INFOHTML_@AM_DEFAULT_V@)
 am__v_INFOHTML_0 = @echo "  INFOHTML" $@;
-am__v_INFOHTML_1 = 
+am__v_INFOHTML_1 =
 AM_V_TEXI2DVI = $(am__v_TEXI2DVI_@AM_V@)
 am__v_TEXI2DVI_ = $(am__v_TEXI2DVI_@AM_DEFAULT_V@)
 am__v_TEXI2DVI_0 = @echo "  TEXI2DVI" $@;
-am__v_TEXI2DVI_1 = 
+am__v_TEXI2DVI_1 =
 AM_V_TEXI2PDF = $(am__v_TEXI2PDF_@AM_V@)
 am__v_TEXI2PDF_ = $(am__v_TEXI2PDF_@AM_DEFAULT_V@)
 am__v_TEXI2PDF_0 = @echo "  TEXI2PDF" $@;
-am__v_TEXI2PDF_1 = 
+am__v_TEXI2PDF_1 =
 AM_V_texinfo = $(am__v_texinfo_@AM_V@)
 am__v_texinfo_ = $(am__v_texinfo_@AM_DEFAULT_V@)
 am__v_texinfo_0 = -q
-am__v_texinfo_1 = 
+am__v_texinfo_1 =
 AM_V_texidevnull = $(am__v_texidevnull_@AM_V@)
 am__v_texidevnull_ = $(am__v_texidevnull_@AM_DEFAULT_V@)
 am__v_texidevnull_0 = > /dev/null
-am__v_texidevnull_1 = 
+am__v_texidevnull_1 =
 INFO_DEPS = ld.info ldint.info
 am__TEXINFO_TEX_DIR = $(srcdir)/../texinfo
 DVIS = ld.dvi ldint.dvi
@@ -570,8 +570,8 @@ tooldir = $(exec_prefix)/$(target_alias)
 
 # Automake 1.10+ disables lex and yacc output file regeneration if
 # maintainer mode is disabled.  Avoid this.
-am__skiplex = 
-am__skipyacc = 
+am__skiplex =
+am__skipyacc =
 
 # This is where we get zlib from.  zlibdir is -L../zlib and zlibinc is
 # -I../zlib, unless we were configured with --with-system-zlib, in which
@@ -581,7 +581,8 @@ ZLIBINC = @zlibinc@
 ELF_CFLAGS = -DELF_LIST_OPTIONS=@elf_list_options@ \
 	   -DELF_SHLIB_LIST_OPTIONS=@elf_shlib_list_options@ \
 	   -DELF_PLT_UNWIND_LIST_OPTIONS=@elf_plt_unwind_list_options@ \
-	   -DELF_SFRAME_LIST_OPTIONS=@elf_sframe_list_options@
+	   -DELF_SFRAME_LIST_OPTIONS=@elf_sframe_list_options@ \
+           -DSYSCONFDIR="\"$(sysconfdir)\""
 
 AM_CFLAGS = $(WARN_CFLAGS) $(ELF_CFLAGS) $(JANSSON_CFLAGS) $(ZSTD_CFLAGS)
 
@@ -606,7 +607,7 @@ POD2MAN = pod2man --center="GNU Development Tools" \
 # Setup the testing framework, if you have one
 EXPECT = expect
 RUNTEST = runtest
-RUNTESTFLAGS = 
+RUNTESTFLAGS =
 CC_FOR_TARGET = ` \
   if [ -f $$r/../gcc/xgcc ] ; then \
     if [ -f $$r/../newlib/Makefile ] ; then \
@@ -663,7 +664,7 @@ AM_CPPFLAGS = -I. -I$(srcdir) -I../bfd -I$(BFDDIR) -I$(INCDIR) @zlibinc@ \
 
 BFDLIB = ../bfd/libbfd.la
 LIBIBERTY = ../libiberty/libiberty.a
-@ENABLE_LIBCTF_FALSE@LIBCTF = 
+@ENABLE_LIBCTF_FALSE@LIBCTF =
 @ENABLE_LIBCTF_TRUE@LIBCTF = ../libctf/libctf.la
 
 # These all start with e so 'make clean' can find them.
@@ -1016,7 +1017,7 @@ OFILES = ldgram.@OBJEXT@ ldlex-wrapper.@OBJEXT@ lexsup.@OBJEXT@ ldlang.@OBJEXT@ 
 STAGESTUFF = *.@OBJEXT@ ldscripts/* e*.c
 SRC_POTFILES = $(CFILES) $(HFILES)
 BLD_POTFILES = $(ALL_EMULATION_SOURCES) $(ALL_64_EMULATION_SOURCES)
-@AMDEP_FALSE@GENDEPDIR = 
+@AMDEP_FALSE@GENDEPDIR =
 @AMDEP_TRUE@GENDEPDIR = $(DEPDIR)
 GENSCRIPTS = $(SHELL) $(srcdir)/genscripts.sh "${srcdir}" "${libdir}" "${prefix}" "${exec_prefix}" @host@ @target@ @target_alias@ "$(GENDEPDIR)" "${LIB_PATH}" "@EMULATION_LIBPATH@" "@NATIVE_LIB_DIRS@" @use_sysroot@ @enable_initfini_array@
 GEN_DEPENDS = $(srcdir)/genscripts.sh ldscripts/stamp
@@ -1131,7 +1132,7 @@ config.h: stamp-h1
 stamp-h1: $(srcdir)/config.in $(top_builddir)/config.status
 	@rm -f stamp-h1
 	cd $(top_builddir) && $(SHELL) ./config.status config.h
-$(srcdir)/config.in: @MAINTAINER_MODE_TRUE@ $(am__configure_deps) 
+$(srcdir)/config.in: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	($(am__cd) $(top_srcdir) && $(AUTOHEADER))
 	rm -f stamp-h1
 	touch $@
@@ -1187,19 +1188,19 @@ clean-noinstLTLIBRARIES:
 	  rm -f $${locs}; \
 	}
 
-libdep.la: $(libdep_la_OBJECTS) $(libdep_la_DEPENDENCIES) $(EXTRA_libdep_la_DEPENDENCIES) 
+libdep.la: $(libdep_la_OBJECTS) $(libdep_la_DEPENDENCIES) $(EXTRA_libdep_la_DEPENDENCIES)
 	$(AM_V_GEN)$(libdep_la_LINK) -rpath $(bfdplugindir) $(libdep_la_OBJECTS) $(libdep_la_LIBADD) $(LIBS)
 
-libldtestplug.la: $(libldtestplug_la_OBJECTS) $(libldtestplug_la_DEPENDENCIES) $(EXTRA_libldtestplug_la_DEPENDENCIES) 
+libldtestplug.la: $(libldtestplug_la_OBJECTS) $(libldtestplug_la_DEPENDENCIES) $(EXTRA_libldtestplug_la_DEPENDENCIES)
 	$(AM_V_CCLD)$(libldtestplug_la_LINK)  $(libldtestplug_la_OBJECTS) $(libldtestplug_la_LIBADD) $(LIBS)
 
-libldtestplug2.la: $(libldtestplug2_la_OBJECTS) $(libldtestplug2_la_DEPENDENCIES) $(EXTRA_libldtestplug2_la_DEPENDENCIES) 
+libldtestplug2.la: $(libldtestplug2_la_OBJECTS) $(libldtestplug2_la_DEPENDENCIES) $(EXTRA_libldtestplug2_la_DEPENDENCIES)
 	$(AM_V_CCLD)$(libldtestplug2_la_LINK)  $(libldtestplug2_la_OBJECTS) $(libldtestplug2_la_LIBADD) $(LIBS)
 
-libldtestplug3.la: $(libldtestplug3_la_OBJECTS) $(libldtestplug3_la_DEPENDENCIES) $(EXTRA_libldtestplug3_la_DEPENDENCIES) 
+libldtestplug3.la: $(libldtestplug3_la_OBJECTS) $(libldtestplug3_la_DEPENDENCIES) $(EXTRA_libldtestplug3_la_DEPENDENCIES)
 	$(AM_V_CCLD)$(libldtestplug3_la_LINK)  $(libldtestplug3_la_OBJECTS) $(libldtestplug3_la_LIBADD) $(LIBS)
 
-libldtestplug4.la: $(libldtestplug4_la_OBJECTS) $(libldtestplug4_la_DEPENDENCIES) $(EXTRA_libldtestplug4_la_DEPENDENCIES) 
+libldtestplug4.la: $(libldtestplug4_la_OBJECTS) $(libldtestplug4_la_DEPENDENCIES) $(EXTRA_libldtestplug4_la_DEPENDENCIES)
 	$(AM_V_CCLD)$(libldtestplug4_la_LINK)  $(libldtestplug4_la_OBJECTS) $(libldtestplug4_la_LIBADD) $(LIBS)
 install-binPROGRAMS: $(bin_PROGRAMS)
 	@$(NORMAL_INSTALL)
@@ -1257,7 +1258,7 @@ deffilep.h: deffilep.c
 	@if test ! -f $@; then rm -f deffilep.c; else :; fi
 	@if test ! -f $@; then $(MAKE) $(AM_MAKEFLAGS) deffilep.c; else :; fi
 
-ld-new$(EXEEXT): $(ld_new_OBJECTS) $(ld_new_DEPENDENCIES) $(EXTRA_ld_new_DEPENDENCIES) 
+ld-new$(EXEEXT): $(ld_new_OBJECTS) $(ld_new_DEPENDENCIES) $(EXTRA_ld_new_DEPENDENCIES)
 	@rm -f ld-new$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(ld_new_OBJECTS) $(ld_new_LDADD) $(LIBS)
 
@@ -1684,19 +1685,19 @@ ld.info: ld.texi $(ld_TEXINFOS)
 	fi; \
 	rm -rf $$backupdir; exit $$rc
 
-ld.dvi: ld.texi $(ld_TEXINFOS) 
+ld.dvi: ld.texi $(ld_TEXINFOS)
 	$(AM_V_TEXI2DVI)TEXINPUTS="$(am__TEXINFO_TEX_DIR)$(PATH_SEPARATOR)$$TEXINPUTS" \
 	MAKEINFO='$(MAKEINFO) $(AM_MAKEINFOFLAGS) $(MAKEINFOFLAGS) -I $(srcdir)' \
 	$(TEXI2DVI) $(AM_V_texinfo) --build-dir=$(@:.dvi=.t2d) -o $@ $(AM_V_texidevnull) \
 	`test -f 'ld.texi' || echo '$(srcdir)/'`ld.texi
 
-ld.pdf: ld.texi $(ld_TEXINFOS) 
+ld.pdf: ld.texi $(ld_TEXINFOS)
 	$(AM_V_TEXI2PDF)TEXINPUTS="$(am__TEXINFO_TEX_DIR)$(PATH_SEPARATOR)$$TEXINPUTS" \
 	MAKEINFO='$(MAKEINFO) $(AM_MAKEINFOFLAGS) $(MAKEINFOFLAGS) -I $(srcdir)' \
 	$(TEXI2PDF) $(AM_V_texinfo) --build-dir=$(@:.pdf=.t2p) -o $@ $(AM_V_texidevnull) \
 	`test -f 'ld.texi' || echo '$(srcdir)/'`ld.texi
 
-ld.html: ld.texi $(ld_TEXINFOS) 
+ld.html: ld.texi $(ld_TEXINFOS)
 	$(AM_V_MAKEINFO)rm -rf $(@:.html=.htp)
 	$(AM_V_at)if $(MAKEINFOHTML) $(AM_MAKEINFOHTMLFLAGS) $(MAKEINFOFLAGS) -I $(srcdir) \
 	 -o $(@:.html=.htp) `test -f 'ld.texi' || echo '$(srcdir)/'`ld.texi; \
@@ -1706,7 +1707,7 @@ ld.html: ld.texi $(ld_TEXINFOS)
 	  rm -rf $(@:.html=.htp); exit 1; \
 	fi
 
-ldint.info: ldint.texi 
+ldint.info: ldint.texi
 	$(AM_V_MAKEINFO)restore=: && backupdir="$(am__leading_dot)am$$$$" && \
 	rm -rf $$backupdir && mkdir $$backupdir && \
 	if ($(MAKEINFO) --version) >/dev/null 2>&1; then \
@@ -1724,19 +1725,19 @@ ldint.info: ldint.texi
 	fi; \
 	rm -rf $$backupdir; exit $$rc
 
-ldint.dvi: ldint.texi  
+ldint.dvi: ldint.texi
 	$(AM_V_TEXI2DVI)TEXINPUTS="$(am__TEXINFO_TEX_DIR)$(PATH_SEPARATOR)$$TEXINPUTS" \
 	MAKEINFO='$(MAKEINFO) $(AM_MAKEINFOFLAGS) $(MAKEINFOFLAGS) -I $(srcdir)' \
 	$(TEXI2DVI) $(AM_V_texinfo) --build-dir=$(@:.dvi=.t2d) -o $@ $(AM_V_texidevnull) \
 	`test -f 'ldint.texi' || echo '$(srcdir)/'`ldint.texi
 
-ldint.pdf: ldint.texi  
+ldint.pdf: ldint.texi
 	$(AM_V_TEXI2PDF)TEXINPUTS="$(am__TEXINFO_TEX_DIR)$(PATH_SEPARATOR)$$TEXINPUTS" \
 	MAKEINFO='$(MAKEINFO) $(AM_MAKEINFOFLAGS) $(MAKEINFOFLAGS) -I $(srcdir)' \
 	$(TEXI2PDF) $(AM_V_texinfo) --build-dir=$(@:.pdf=.t2p) -o $@ $(AM_V_texidevnull) \
 	`test -f 'ldint.texi' || echo '$(srcdir)/'`ldint.texi
 
-ldint.html: ldint.texi  
+ldint.html: ldint.texi
 	$(AM_V_MAKEINFO)rm -rf $(@:.html=.htp)
 	$(AM_V_at)if $(MAKEINFOHTML) $(AM_MAKEINFOHTMLFLAGS) $(MAKEINFOFLAGS) -I $(srcdir) \
 	 -o $(@:.html=.htp) `test -f 'ldint.texi' || echo '$(srcdir)/'`ldint.texi; \
