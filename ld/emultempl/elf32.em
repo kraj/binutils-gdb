@@ -1024,7 +1024,7 @@ gld${EMULATION_NAME}_check_ld_so_conf (const struct bfd_link_needed_list *l,
 
       info.path = NULL;
       info.len = info.alloc = 0;
-      tmppath = concat (ld_sysroot, "${prefix}/etc/ld.so.conf",
+      tmppath = concat (ld_sysconfdir, "/ld.so.conf",
 			(const char *) NULL);
       if (!gld${EMULATION_NAME}_parse_ld_so_conf (&info, tmppath))
 	{
