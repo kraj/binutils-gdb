@@ -1650,9 +1650,9 @@ struct file_and_directory
 static file_and_directory find_file_and_directory (struct die_info *die,
 						   struct dwarf2_cu *cu);
 
-static htab_up allocate_signatured_type_table (struct objfile *objfile);
+static htab_up allocate_signatured_type_table ();
 
-static htab_up allocate_dwo_unit_table (struct objfile *objfile);
+static htab_up allocate_dwo_unit_table ();
 
 static struct dwo_unit *lookup_dwo_unit_in_dwp
   (struct dwarf2_per_objfile *dwarf2_per_objfile,
@@ -2499,7 +2499,7 @@ create_signatured_type_table_from_index
   gdb_assert (dwarf2_per_objfile->all_type_units.empty ());
   dwarf2_per_objfile->all_type_units.reserve (elements / 3);
 
-  htab_up sig_types_hash = allocate_signatured_type_table (objfile);
+  htab_up sig_types_hash = allocate_signatured_type_table ();
 
   for (offset_type i = 0; i < elements; i += 3)
     {
@@ -2555,7 +2555,7 @@ create_signatured_type_table_from_debug_names
   gdb_assert (dwarf2_per_objfile->all_type_units.empty ());
   dwarf2_per_objfile->all_type_units.reserve (map.tu_count);
 
-  htab_up sig_types_hash = allocate_signatured_type_table (objfile);
+  htab_up sig_types_hash = allocate_signatured_type_table ();
 
   for (uint32_t i = 0; i < map.tu_count; ++i)
     {
@@ -5973,7 +5973,7 @@ eq_signatured_type (const void *item_lhs, const void *item_rhs)
 /* Allocate a hash table for signatured types.  */
 
 static htab_up
-allocate_signatured_type_table (struct objfile *objfile)
+allocate_signatured_type_table ()
 {
   return htab_up (htab_create_alloc (41,
 				     hash_signatured_type,
@@ -6068,9 +6068,9 @@ create_debug_type_hash_table (struct dwarf2_per_objfile *dwarf2_per_objfile,
       if (types_htab == NULL)
 	{
 	  if (dwo_file)
-	    types_htab = allocate_dwo_unit_table (objfile);
+	    types_htab = allocate_dwo_unit_table ();
 	  else
-	    types_htab = allocate_signatured_type_table (objfile);
+	    types_htab = allocate_signatured_type_table ();
 	}
 
       if (dwo_file)
@@ -6281,7 +6281,6 @@ lookup_dwo_signatured_type (struct dwarf2_cu *cu, ULONGEST sig)
 {
   struct dwarf2_per_objfile *dwarf2_per_objfile
     = cu->per_cu->dwarf2_per_objfile;
-  struct objfile *objfile = dwarf2_per_objfile->objfile;
   struct dwo_file *dwo_file;
   struct dwo_unit find_dwo_entry, *dwo_entry;
   struct signatured_type find_sig_entry, *sig_entry;
@@ -6292,10 +6291,7 @@ lookup_dwo_signatured_type (struct dwarf2_cu *cu, ULONGEST sig)
   /* If TU skeletons have been removed then we may not have read in any
      TUs yet.  */
   if (dwarf2_per_objfile->signatured_types == NULL)
-    {
-      dwarf2_per_objfile->signatured_types
-	= allocate_signatured_type_table (objfile);
-    }
+    dwarf2_per_objfile->signatured_types = allocate_signatured_type_table ();
 
   /* We only ever need to read in one copy of a signatured type.
      Use the global signatured_types array to do our own comdat-folding
@@ -6352,7 +6348,6 @@ lookup_dwp_signatured_type (struct dwarf2_cu *cu, ULONGEST sig)
 {
   struct dwarf2_per_objfile *dwarf2_per_objfile
     = cu->per_cu->dwarf2_per_objfile;
-  struct objfile *objfile = dwarf2_per_objfile->objfile;
   struct dwp_file *dwp_file = get_dwp_file (dwarf2_per_objfile);
   struct dwo_unit *dwo_entry;
   struct signatured_type find_sig_entry, *sig_entry;
@@ -6364,10 +6359,7 @@ lookup_dwp_signatured_type (struct dwarf2_cu *cu, ULONGEST sig)
   /* If TU skeletons have been removed then we may not have read in any
      TUs yet.  */
   if (dwarf2_per_objfile->signatured_types == NULL)
-    {
-      dwarf2_per_objfile->signatured_types
-	= allocate_signatured_type_table (objfile);
-    }
+    dwarf2_per_objfile->signatured_types = allocate_signatured_type_table ();
 
   find_sig_entry.signature = sig;
   slot = htab_find_slot (dwarf2_per_objfile->signatured_types.get (),
@@ -7087,7 +7079,7 @@ eq_type_unit_group (const void *item_lhs, const void *item_rhs)
 /* Allocate a hash table for type unit groups.  */
 
 static htab_up
-allocate_type_unit_groups_table (struct objfile *objfile)
+allocate_type_unit_groups_table ()
 {
   return htab_up (htab_create_alloc (3,
 				     hash_type_unit_group,
@@ -7161,10 +7153,7 @@ get_type_unit_group (struct dwarf2_cu *cu, const struct attribute *stmt_list)
   struct type_unit_group type_unit_group_for_lookup;
 
   if (dwarf2_per_objfile->type_unit_groups == NULL)
-    {
-      dwarf2_per_objfile->type_unit_groups =
-	allocate_type_unit_groups_table (dwarf2_per_objfile->objfile);
-    }
+    dwarf2_per_objfile->type_unit_groups = allocate_type_unit_groups_table ();
 
   /* Do we need to create a new group, or can we use an existing one?  */
 
@@ -7638,10 +7627,7 @@ process_skeletonless_type_unit (void **slot, void *info)
   /* If this TU doesn't exist in the global table, add it and read it in.  */
 
   if (dwarf2_per_objfile->signatured_types == NULL)
-    {
-      dwarf2_per_objfile->signatured_types
-	= allocate_signatured_type_table (dwarf2_per_objfile->objfile);
-    }
+    dwarf2_per_objfile->signatured_types = allocate_signatured_type_table ();
 
   find_entry.signature = dwo_unit->signature;
   slot = htab_find_slot (dwarf2_per_objfile->signatured_types.get (),
@@ -10986,7 +10972,7 @@ eq_dwo_file (const void *item_lhs, const void *item_rhs)
 /* Allocate a hash table for DWO files.  */
 
 static htab_up
-allocate_dwo_file_hash_table (struct objfile *objfile)
+allocate_dwo_file_hash_table ()
 {
   auto delete_dwo_file = [] (void *item)
     {
@@ -11013,8 +10999,7 @@ lookup_dwo_file_slot (struct dwarf2_per_objfile *dwarf2_per_objfile,
   void **slot;
 
   if (dwarf2_per_objfile->dwo_files == NULL)
-    dwarf2_per_objfile->dwo_files
-      = allocate_dwo_file_hash_table (dwarf2_per_objfile->objfile);
+    dwarf2_per_objfile->dwo_files = allocate_dwo_file_hash_table ();
 
   find_entry.dwo_name = dwo_name;
   find_entry.comp_dir = comp_dir;
@@ -11050,7 +11035,7 @@ eq_dwo_unit (const void *item_lhs, const void *item_rhs)
    There is one of these tables for each of CUs,TUs for each DWO file.  */
 
 static htab_up
-allocate_dwo_unit_table (struct objfile *objfile)
+allocate_dwo_unit_table ()
 {
   /* Start out with a pretty small number.
      Generally DWO files contain only one CU and maybe some TUs.  */
@@ -11144,7 +11129,7 @@ create_cus_hash_table (struct dwarf2_per_objfile *dwarf2_per_objfile,
 	continue;
 
       if (cus_htab == NULL)
-	cus_htab = allocate_dwo_unit_table (objfile);
+	cus_htab = allocate_dwo_unit_table ();
 
       dwo_unit = OBSTACK_ZALLOC (&objfile->objfile_obstack, struct dwo_unit);
       *dwo_unit = read_unit;
@@ -12301,7 +12286,7 @@ eq_dwp_loaded_cutus (const void *a, const void *b)
 /* Allocate a hash table for dwp_file loaded CUs/TUs.  */
 
 static htab_up
-allocate_dwp_loaded_cutus_table (struct objfile *objfile)
+allocate_dwp_loaded_cutus_table ()
 {
   return htab_up (htab_create_alloc (3,
 				     hash_dwp_loaded_cutus,
@@ -12434,8 +12419,8 @@ open_and_init_dwp_file (struct dwarf2_per_objfile *dwarf2_per_objfile)
 			   dwarf2_locate_v2_dwp_sections,
 			   dwp_file.get ());
 
-  dwp_file->loaded_cus = allocate_dwp_loaded_cutus_table (objfile);
-  dwp_file->loaded_tus = allocate_dwp_loaded_cutus_table (objfile);
+  dwp_file->loaded_cus = allocate_dwp_loaded_cutus_table ();
+  dwp_file->loaded_tus = allocate_dwp_loaded_cutus_table ();
 
   if (dwarf_read_debug)
     {
@@ -24151,6 +24136,39 @@ dwarf2_per_cu_data::addr_type () const
   return addr_type;
 }
 
+/* A helper function for dwarf2_find_containing_comp_unit that returns
+   the index of the result, and that searches a vector.  It will
+   return a result even if the offset in question does not actually
+   occur in any CU.  This is separate so that it can be unit
+   tested.  */
+
+static int
+dwarf2_find_containing_comp_unit
+  (sect_offset sect_off,
+   unsigned int offset_in_dwz,
+   const std::vector<dwarf2_per_cu_data *> &all_comp_units)
+{
+  int low, high;
+
+  low = 0;
+  high = all_comp_units.size () - 1;
+  while (high > low)
+    {
+      struct dwarf2_per_cu_data *mid_cu;
+      int mid = low + (high - low) / 2;
+
+      mid_cu = all_comp_units[mid];
+      if (mid_cu->is_dwz > offset_in_dwz
+	  || (mid_cu->is_dwz == offset_in_dwz
+	      && mid_cu->sect_off + mid_cu->length > sect_off))
+	high = mid;
+      else
+	low = mid + 1;
+    }
+  gdb_assert (low == high);
+  return low;
+}
+
 /* Locate the .debug_info compilation unit from CU's objfile which contains
    the DIE at OFFSET.  Raises an error on failure.  */
 
@@ -24159,26 +24177,12 @@ dwarf2_find_containing_comp_unit (sect_offset sect_off,
 				  unsigned int offset_in_dwz,
 				  struct dwarf2_per_objfile *dwarf2_per_objfile)
 {
-  struct dwarf2_per_cu_data *this_cu;
-  int low, high;
+  int low
+    = dwarf2_find_containing_comp_unit (sect_off, offset_in_dwz,
+					dwarf2_per_objfile->all_comp_units);
+  struct dwarf2_per_cu_data *this_cu
+    = dwarf2_per_objfile->all_comp_units[low];
 
-  low = 0;
-  high = dwarf2_per_objfile->all_comp_units.size () - 1;
-  while (high > low)
-    {
-      struct dwarf2_per_cu_data *mid_cu;
-      int mid = low + (high - low) / 2;
-
-      mid_cu = dwarf2_per_objfile->all_comp_units[mid];
-      if (mid_cu->is_dwz > offset_in_dwz
-	  || (mid_cu->is_dwz == offset_in_dwz
-	      && mid_cu->sect_off + mid_cu->length >= sect_off))
-	high = mid;
-      else
-	low = mid + 1;
-    }
-  gdb_assert (low == high);
-  this_cu = dwarf2_per_objfile->all_comp_units[low];
   if (this_cu->is_dwz != offset_in_dwz || this_cu->sect_off > sect_off)
     {
       if (low == 0 || this_cu->is_dwz != offset_in_dwz)
@@ -24200,6 +24204,57 @@ dwarf2_find_containing_comp_unit (sect_offset sect_off,
       return this_cu;
     }
 }
+
+#if GDB_SELF_TEST
+
+namespace selftests {
+namespace find_containing_comp_unit {
+
+static void
+run_test ()
+{
+  struct dwarf2_per_cu_data one {};
+  struct dwarf2_per_cu_data two {};
+  struct dwarf2_per_cu_data three {};
+  struct dwarf2_per_cu_data four {};
+
+  one.length = 5;
+  two.sect_off = sect_offset (one.length);
+  two.length = 7;
+
+  three.length = 5;
+  three.is_dwz = 1;
+  four.sect_off = sect_offset (three.length);
+  four.length = 7;
+  four.is_dwz = 1;
+
+  std::vector<dwarf2_per_cu_data *> units;
+  units.push_back (&one);
+  units.push_back (&two);
+  units.push_back (&three);
+  units.push_back (&four);
+
+  int result;
+
+  result = dwarf2_find_containing_comp_unit (sect_offset (0), 0, units);
+  SELF_CHECK (units[result] == &one);
+  result = dwarf2_find_containing_comp_unit (sect_offset (3), 0, units);
+  SELF_CHECK (units[result] == &one);
+  result = dwarf2_find_containing_comp_unit (sect_offset (5), 0, units);
+  SELF_CHECK (units[result] == &two);
+
+  result = dwarf2_find_containing_comp_unit (sect_offset (0), 1, units);
+  SELF_CHECK (units[result] == &three);
+  result = dwarf2_find_containing_comp_unit (sect_offset (3), 1, units);
+  SELF_CHECK (units[result] == &three);
+  result = dwarf2_find_containing_comp_unit (sect_offset (5), 1, units);
+  SELF_CHECK (units[result] == &four);
+}
+
+}
+}
+
+#endif /* GDB_SELF_TEST */
 
 /* Initialize dwarf2_cu CU, owned by PER_CU.  */
 
@@ -24705,5 +24760,7 @@ Warning: This option must be enabled before gdb reads the file."),
 #if GDB_SELF_TEST
   selftests::register_test ("dw2_expand_symtabs_matching",
 			    selftests::dw2_expand_symtabs_matching::run_test);
+  selftests::register_test ("dwarf2_find_containing_comp_unit",
+			    selftests::find_containing_comp_unit::run_test);
 #endif
 }
