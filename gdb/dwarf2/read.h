@@ -437,6 +437,13 @@ struct dwarf2_per_cu_data
   {
     return dwarf_version;
   }
+
+  /* A type unit group has a per_cu object that is recognized by
+     having no section.  */
+  bool type_unit_group_p () const
+  {
+    return section == nullptr;
+  }
 };
 
 /* Entry in the signatured_types hash table.  */
@@ -515,6 +522,12 @@ struct dwz_file
 
 extern struct dwz_file *dwarf2_get_dwz_file
     (struct dwarf2_per_objfile *dwarf2_per_objfile);
+
+/* Return the type of the DIE at DIE_OFFSET in the CU named by
+   PER_CU.  */
+
+struct type *dwarf2_get_die_type (cu_offset die_offset,
+				  struct dwarf2_per_cu_data *per_cu);
 
 /* When non-zero, dump line number entries as they are read in.  */
 extern unsigned int dwarf_line_debug;

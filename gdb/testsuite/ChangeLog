@@ -1,3 +1,61 @@
+2020-02-25  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.base/cached-source-file.exp: Avoid source file paths in test
+	names.
+
+2020-02-25  Tom de Vries  <tdevries@suse.de>
+
+	PR go/18926
+	* gdb.go/methods.exp: Remove gcc/93866 xfail.
+
+2020-02-24  Tom de Vries  <tdevries@suse.de>
+
+	PR gdb/25592
+	* gdb.base/info-locals-unused-static-var.c: New test.
+	* gdb.base/info-locals-unused-static-var.exp: New file.
+
+2020-02-22  Tom Tromey  <tom@tromey.com>
+
+	* gdb.python/tui-window.exp: New file.
+	* gdb.python/tui-window.py: New file.
+
+2020-02-22  Tom Tromey  <tom@tromey.com>
+
+	PR tui/17850:
+	* gdb.tui/new-layout.exp: Add horizontal layout and winheight
+	tests.
+
+2020-02-22  Tom Tromey  <tom@tromey.com>
+
+	* gdb.tui/new-layout.exp: Add sub-layout tests.
+
+2020-02-22  Tom Tromey  <tom@tromey.com>
+
+	* gdb.tui/new-layout.exp: New file.
+
+2020-02-22  Tom Tromey  <tom@tromey.com>
+
+	* gdb.rust/rust-style.rs: New file.
+	* gdb.rust/rust-style.exp: New file.
+	* gdb.base/style.exp: Test structure printing.
+	* gdb.base/style.c (struct some_struct): New type.
+	(enum etype): New type.
+	(struct_value): New global.
+
+2020-02-21  Tom de Vries  <tdevries@suse.de>
+
+	PR go/18926
+	* lib/gdb.exp (bp_location2/bp_location2_regexp): Fix.
+	Remove blanket xfails.  Use message argument for gdb_breakpoint.
+	Make continuing to breakpoint test conditional on setting breakpoint.
+	Fix continuing to breakpoint regexp.  Add xfails for gccgo-6/7
+	DW_AT_name attribute.  Add xfail for GCC PR93866.
+
+2020-02-21  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.dwarf2/cpp-linkage-name.c: New file.
+	* gdb.dwarf2/cpp-linkage-name.exp: New file.
+
 2020-02-21  Shahab Vahedi  <shahab@synopsys.com>
 
 	* lib/gdb.exp (gdb_wrapper_init): Reset
