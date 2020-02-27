@@ -506,8 +506,6 @@ enum pred_instruction_type
    MVE_OUTSIDE_PRED_INSN , /* Instruction to indicate a MVE instruction without
 			      a predication code.  */
    MVE_UNPREDICABLE_INSN,  /* MVE instruction that is non-predicable.  */
-   NEUTRAL_IT_NO_VPT_INSN, /* Instruction that can be either inside or outside
-			      an IT block, but must not be in a VPT block.  */
 };
 
 /* The maximum number of operands we need.  */
@@ -730,7 +728,7 @@ const char * const reg_expected_msgs[] =
   [REG_TYPE_MMXWCG] = N_("iWMMXt scalar register expected"),
   [REG_TYPE_XSCALE] = N_("XScale accumulator register expected"),
   [REG_TYPE_MQ]	    = N_("MVE vector register expected"),
-  [REG_TYPE_RNB]    = N_("")
+  [REG_TYPE_RNB]    = ""
 };
 
 /* Some well known registers that we refer to directly elsewhere.  */
@@ -4648,7 +4646,7 @@ s_arm_unwind_save_mmxwr (void)
     }
 
   return;
-error:
+ error:
   ignore_rest_of_line ();
 }
 
@@ -4716,7 +4714,7 @@ s_arm_unwind_save_mmxwcg (void)
   op = 0xc700 | mask;
   add_unwind_opcode (op, 2);
   return;
-error:
+ error:
   ignore_rest_of_line ();
 }
 
@@ -5091,7 +5089,7 @@ set_fp16_format (int dummy ATTRIBUTE_UNUSED)
 	as_warn (_("float16 format cannot be set more than once, ignoring."));
     }
 
-cleanup:
+ cleanup:
   *input_line_pointer = saved_char;
   ignore_rest_of_line ();
 }
@@ -6368,7 +6366,7 @@ parse_psr (char **str, bfd_boolean lhs)
     goto unsupported_psr;
 
   p += 4;
-check_suffix:
+ check_suffix:
   if (*p == '_')
     {
       /* A suffix follows.  */
@@ -18307,7 +18305,7 @@ do_mve_vmull (void)
 
   return;
 
-neon_vmul:
+ neon_vmul:
   inst.instruction = N_MNEM_vmul;
   inst.cond = 0xb;
   if (thumb_mode)
@@ -19707,7 +19705,7 @@ neon_scalar_for_fmac_fp16_long (unsigned scalar, unsigned quad_p)
 	      | ((elno & 0x1) << 3));
     }
 
-bad_scalar:
+ bad_scalar:
   first_error (_("scalar out of range for multiply instruction"));
   return 0;
 }
@@ -21674,15 +21672,13 @@ cde_handle_coproc (void)
 static void
 cxn_handle_predication (bfd_boolean is_accum)
 {
-  /* This function essentially checks for a suffix, not whether the instruction
-     is inside an IT block or not.
-     The CX* instructions should never have a conditional suffix -- this is not
-     mentioned in the syntax.  */
-  if (conditional_insn ())
+  if (is_accum && conditional_insn ())
+    set_pred_insn_type (INSIDE_IT_INSN);
+  else if (conditional_insn ())
+  /* conditional_insn essentially checks for a suffix, not whether the
+     instruction is inside an IT block or not.
+     The non-accumulator versions should not have suffixes.  */
     inst.error = BAD_SYNTAX;
-  /* Here we ensure that if the current element  */
-  else if (is_accum)
-    set_pred_insn_type (NEUTRAL_IT_NO_VPT_INSN);
   else
     set_pred_insn_type (OUTSIDE_PRED_INSN);
 }
@@ -22980,7 +22976,6 @@ handle_pred_state (void)
 	    gas_assert (0);
 	case IF_INSIDE_IT_LAST_INSN:
 	case NEUTRAL_IT_INSN:
-	case NEUTRAL_IT_NO_VPT_INSN:
 	  break;
 
 	case VPT_INSN:
@@ -23044,12 +23039,6 @@ handle_pred_state (void)
 	    close_automatic_it_block ();
 	  break;
 
-	case NEUTRAL_IT_NO_VPT_INSN:
-	  if (now_pred.type == VECTOR_PRED)
-	    {
-	      inst.error = BAD_NO_VPT;
-	      break;
-	    }
 	  /* Fallthrough.  */
 	case NEUTRAL_IT_INSN:
 	  now_pred.block_length++;
@@ -23234,13 +23223,6 @@ handle_pred_state (void)
 	      }
 	    break;
 
-	  case NEUTRAL_IT_NO_VPT_INSN:
-	    if (now_pred.type == VECTOR_PRED)
-	      {
-		inst.error = BAD_NO_VPT;
-		break;
-	      }
-	    /* Fallthrough.  */
 	  case NEUTRAL_IT_INSN:
 	    /* The BKPT instruction is unconditional even in a IT or VPT
 	       block.  */
@@ -32888,7 +32870,7 @@ get_aeabi_cpu_arch_from_fset (const arm_feature_set *arch_ext_fset,
   if (p_ver_ret == NULL)
     return -1;
 
-found:
+ found:
   /* Tag_CPU_arch_profile.  */
   if (ARM_CPU_HAS_FEATURE (p_ver_ret->flags, arm_ext_v7a)
       || ARM_CPU_HAS_FEATURE (p_ver_ret->flags, arm_ext_v8)

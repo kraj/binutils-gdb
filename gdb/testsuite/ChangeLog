@@ -1,3 +1,36 @@
+2020-02-27  Tom de Vries  <tdevries@suse.de>
+
+	* config/sid.exp: Remove unused globals.
+	* gdb.base/attach.exp: Same.
+	* gdb.base/catch-load.exp: Same.
+	* gdb.base/dbx.exp: Same.
+	* lib/gdb.exp: Same.
+	* lib/mi-support.exp: Same.
+	* lib/prompt.exp: Same.
+
+2020-02-27  Tom de Vries  <tdevries@suse.de>
+
+	* lib/tuiterm.exp (spawn): Handle case that spawn_out(slave,name) is
+	not set.
+
+2020-02-26  Aaron Merey  <amerey@redhat.com>
+
+	* gdb.debuginfod: New directory for debuginfod tests.
+	* gdb.debuginfod/main.c: New test file.
+	* gdb.debuginfod/fetch_src_and_symbols.exp: New tests.
+
+2020-02-26  Tom de Vries  <tdevries@suse.de>
+
+	PR gdb/25603
+	* gdb.base/persistent-lang.cc: New test.
+	* gdb.base/persistent-lang.exp: New file.
+
+2020-02-25  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.fortran/derived-type-striding.exp: Add a new test.
+	* gdb.fortran/derived-type-striding.f90: Add pointer variable for
+	new test.
+
 2020-02-25  Andrew Burgess  <andrew.burgess@embecosm.com>
 
 	* gdb.base/cached-source-file.exp: Avoid source file paths in test

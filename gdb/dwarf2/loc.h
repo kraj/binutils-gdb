@@ -41,24 +41,6 @@ const gdb_byte *dwarf2_find_location_expression
    size_t *locexpr_length,
    CORE_ADDR pc);
 
-struct dwarf2_locexpr_baton dwarf2_fetch_die_loc_sect_off
-  (sect_offset offset_in_cu, struct dwarf2_per_cu_data *per_cu,
-   CORE_ADDR (*get_frame_pc) (void *baton),
-   void *baton, bool resolve_abstract_p = false);
-
-struct dwarf2_locexpr_baton dwarf2_fetch_die_loc_cu_off
-  (cu_offset offset_in_cu, struct dwarf2_per_cu_data *per_cu,
-   CORE_ADDR (*get_frame_pc) (void *baton),
-   void *baton);
-
-extern const gdb_byte *dwarf2_fetch_constant_bytes (sect_offset,
-						    struct dwarf2_per_cu_data *,
-						    struct obstack *,
-						    LONGEST *);
-
-struct type *dwarf2_fetch_die_type_sect_off (sect_offset,
-					     struct dwarf2_per_cu_data *);
-
 /* Find the frame base information for FRAMEFUNC at PC.  START is an
    out parameter which is set to point to the DWARF expression to
    compute.  LENGTH is an out parameter which is set to the length of
@@ -137,9 +119,6 @@ void dwarf2_compile_property_to_c (string_file *stream,
 				   const struct dynamic_prop *prop,
 				   CORE_ADDR address,
 				   struct symbol *sym);
-
-CORE_ADDR dwarf2_read_addr_index (struct dwarf2_per_cu_data *per_cu,
-				  unsigned int addr_index);
 
 /* The symbol location baton types used by the DWARF-2 reader (i.e.
    SYMBOL_LOCATION_BATON for a LOC_COMPUTED symbol).  "struct

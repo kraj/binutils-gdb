@@ -1,3 +1,31 @@
+2020-02-26  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/25593
+	* testsuite/ld-plugin/lto.exp: Run PR ld/25593 tests.
+	* testsuite/ld-plugin/pr25593.d: New file.
+	* testsuite/ld-plugin/pr25593a-1.c: Likewise.
+	* testsuite/ld-plugin/pr25593a-2.c: Likewise.
+	* testsuite/ld-plugin/pr25593b.c: Likewise.
+	* testsuite/ld-plugin/pr25593c.c: Likewise.
+	* testsuite/ld-plugin/pr25593d.c: Likewise.
+	* testsuite/ld-plugin/pr25593e.c: Likewise.
+
+2020-02-26  Alan Modra  <amodra@gmail.com>
+
+	* emultempl/cskyelf.em: Indent labels correctly.
+	* ldfile.c: Likewise.
+	* ldlang.c: Likewise.
+	* plugin.c: Likewise.
+
+2020-02-26  Alan Modra  <amodra@gmail.com>
+
+	PR 25593
+	* ldelf.c (ldelf_try_needed): Add DT_NEEDED lib to input_bfds.
+	(ldelf_after_open): Save state of input_bfds list before loading
+	DT_NEEDED libs.  Traverse input_bfds list adding DT_NEEDED tags.
+	Restore input_bfds list.
+	* testsuite/ld-cris/gotplt1.d: Adjust for changed .dynstr order.
+
 2020-02-24  Nick Clifton  <nickc@redhat.com>
 
 	* po/fr.po: Update French translation.
