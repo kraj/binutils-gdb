@@ -1,3 +1,36 @@
+2020-03-02  Alan Modra  <amodra@gmail.com>
+
+	* plugin.c (plugin_object_p): Return a bfd_cleanup.
+	(plugin_cleanup): New function.
+
+2020-03-01  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/25618
+	* plugin.c (plugin_object_p): Copy the no_export field to the IR
+	dummy object.
+	* testsuite/ld-plugin/lto.exp (lto_link_elf_tests): Add
+	PR ld/25618 tests.
+	* testsuite/ld-plugin/pr25618.d: New file.
+	* testsuite/ld-plugin/pr25618a.cc: Likewise.
+	* testsuite/ld-plugin/pr25618a.h: Likewise.
+	* testsuite/ld-plugin/pr25618b.cc: Likewise.
+	* testsuite/ld-plugin/pr25618b.h: Likewise.
+
+2020-02-27  Alan Modra  <amodra@gmail.com>
+
+	PR 24511
+	* testsuite/ld-mmix/b-fixo2.d: Adjust for .data change.
+	* testsuite/ld-mmix/sec-2.d: Likewise.
+	* testsuite/ld-mmix/sec-3.d: Likewise.
+	* testsuite/ld-mmix/sec-4.d: Likewise.
+	* testsuite/ld-mmix/spec802.d: Likewise.
+	* testsuite/ld-mmix/spec803.d: Likewise.
+	* testsuite/ld-mmix/spec804.d: Likewise.
+	* testsuite/ld-mmix/spec805.d: Likewise.
+	* testsuite/ld-mmix/spec806.d: Likewise.
+	* testsuite/ld-mmix/spec807.d: Likewise.
+	* testsuite/ld-mmix/spec808.d: Likewise.
+
 2020-02-26  H.J. Lu  <hongjiu.lu@intel.com>
 
 	PR ld/25593

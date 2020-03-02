@@ -1,3 +1,29 @@
+2020-02-28  Tom de Vries  <tdevries@suse.de>
+
+	* symfile.c (set_initial_language): Use default language for lookup.
+
+2020-02-28  Simon Marchi  <simon.marchi@efficios.com>
+
+	* dwarf2/read.c (cutu_reader::init_tu_and_read_dwo_dies): Remove
+	reader variable, pass `this` to read_cutu_die_from_dwo.
+
+2020-02-27  Aaron Merey  <amerey@redhat.com>
+
+	* source.c (open_source_file): Check for nullptr when computing
+	srcpath.
+
+2020-02-27  Tom Tromey  <tromey@adacore.com>
+
+	* dwarf2/read.c (struct field_info) <nfields>: Now a method, not a
+	member.
+	(dwarf2_add_field): Don't update nfields.
+	(dwarf2_attach_fields_to_type, process_structure_scope): Update.
+
+2020-02-27  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdbtypes.c (create_array_type_with_stride): Use std::abs not
+	abs.
+
 2020-02-26  Tom Tromey  <tom@tromey.com>
 
 	* dwarf2/read.c (struct dwarf2_include_psymtab): New.
