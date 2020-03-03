@@ -1,3 +1,34 @@
+2020-03-03  Alan Modra  <amodra@gmail.com>
+
+	* format.c (struct bfd_preserve): Add cleanup field.
+	(bfd_preserve_save): Add cleanup param and save.
+	(bfd_preserve_restore): Return cleanup.
+	(bfd_preserve_finish): Call the cleanup for the discarded match.
+	(bfd_check_format_matches): Pass cleanup to bfd_preserve_save,
+	and clear when preserving a match.  Restore cleanup too when
+	restoring that match.
+
+2020-03-02  Alan Modra  <amodra@gmail.com>
+
+	* cisco-core.c (cisco_core_file_p): Return bfd_cleanup.
+	* hpux-core.c (hpux_core_core_file_p): Update prototype.
+	* sco5-core.c (sco5_core_file_p): Return bfd_cleanup.
+	(core_sco5_vec): Correct initialisers.
+
+2020-03-02  Alan Modra  <amodra@gmail.com>
+
+	* aix386-core.c (aix386_core_file_p): Return bfd_cleanup.
+	* aix5ppc-core.c (xcoff64_core_p): Likewise.
+	* cisco-core.c (cisco_core_file_validate): Likewise.
+	* hppabsd-core.c (hppabsd_core_core_file_p): Likewise.
+	* hpux-core.c (hpux_core_core_file_p): Likewise.
+	* irix-core.c (irix_core_core_file_p): Likewise.
+	* lynx-core.c (lynx_core_file_p): Likewise.
+	* netbsd-core.c (netbsd_core_file_p): Likewise.
+	* osf-core.c (osf_core_core_file_p): Likewise.
+	* ptrace-core.c (ptrace_unix_core_file_p): Likewise.
+	* sco5-core.c (sco5_core_file_p): Likewise.
+
 2020-03-02  H.J. Lu  <hongjiu.lu@intel.com>
 
 	* trad-core.c (trad_unix_core_file_p): Return bfd_cleanup.
