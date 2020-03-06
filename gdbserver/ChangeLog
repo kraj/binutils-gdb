@@ -1,3 +1,11 @@
+2020-03-06  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* .dir-locals.el: New file.
+
+2020-03-05  Tankut Baris Aktemur  <tankut.baris.aktemur@intel.com>
+
+	* .gitattributes: New file.
+
 2020-03-02  Andrew Burgess  <andrew.burgess@embecosm.com>
 
 	* remote-utils.cc (prepare_resume_reply): Add ability to convert T

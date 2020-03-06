@@ -1549,12 +1549,13 @@ filter_symbols (bfd *abfd, bfd *obfd, asymbol **osyms,
 
       /* Check if we will remove the current leading character.  */
       rem_leading_char =
-	(name[0] == bfd_get_symbol_leading_char (abfd))
-	&& (change_leading_char
-	    || (remove_leading_char
-		&& ((flags & (BSF_GLOBAL | BSF_WEAK)) != 0
-		    || undefined
-		    || bfd_is_com_section (bfd_asymbol_section (sym)))));
+	(name[0] != '\0'
+	 && name[0] == bfd_get_symbol_leading_char (abfd)
+	 && (change_leading_char
+	     || (remove_leading_char
+		 && ((flags & (BSF_GLOBAL | BSF_WEAK)) != 0
+		     || undefined
+		     || bfd_is_com_section (bfd_asymbol_section (sym))))));
 
       /* Check if we will add a new leading character.  */
       add_leading_char =
@@ -1580,9 +1581,14 @@ filter_symbols (bfd *abfd, bfd *obfd, asymbol **osyms,
       if (add_leading_char || prefix_symbols_string)
 	{
 	  char *n, *ptr;
+	  size_t len = strlen (name) + 1;
 
-	  ptr = n = (char *) xmalloc (1 + strlen (prefix_symbols_string)
-				      + strlen (name) + 1);
+	  if (add_leading_char)
+	    len++;
+	  if (prefix_symbols_string)
+	    len += strlen (prefix_symbols_string);
+
+	  ptr = n = (char *) xmalloc (len);
 	  if (add_leading_char)
 	    *ptr++ = bfd_get_symbol_leading_char (obfd);
 
@@ -2556,6 +2562,23 @@ merge_gnu_build_notes (bfd *          abfd,
   return size;
 }
 
+static flagword
+check_new_section_flags (flagword flags, bfd * abfd, const char * secname)
+{
+  /* Only set the SEC_COFF_SHARED flag on COFF files.
+     The same bit value is used by ELF targets to indicate
+     compressed sections, and setting that flag here breaks
+     things.  */
+  if ((flags & SEC_COFF_SHARED)
+      && bfd_get_flavour (abfd) != bfd_target_coff_flavour)
+    {
+      non_fatal (_("%s[%s]: Note - dropping 'share' flag as output format is not COFF"),
+		 bfd_get_filename (abfd), secname);
+      flags &= ~ SEC_COFF_SHARED;
+    }
+  return flags;
+}
+
 /* Copy object file IBFD onto OBFD.
    Returns TRUE upon success, FALSE otherwise.  */
 
@@ -2804,7 +2827,10 @@ copy_object (bfd *ibfd, bfd *obfd, const bfd_arch_info_type *input_arch)
 	  pset = find_section_list (padd->name, FALSE,
 				    SECTION_CONTEXT_SET_FLAGS);
 	  if (pset != NULL)
-	    flags = pset->flags | SEC_HAS_CONTENTS;
+	    {	      
+	      flags = pset->flags | SEC_HAS_CONTENTS;
+	      flags = check_new_section_flags (flags, obfd, padd->name);
+	    }
 	  else
 	    flags = SEC_HAS_CONTENTS | SEC_READONLY | SEC_DATA;
 
@@ -3101,8 +3127,10 @@ copy_object (bfd *ibfd, bfd *obfd, const bfd_arch_info_type *input_arch)
 	  for (i = 0; i < c - 1; i++)
 	    {
 	      flagword flags;
-	      bfd_size_type size;
-	      bfd_vma gap_start, gap_stop;
+	      bfd_size_type size;           /* Octets.  */
+	      bfd_vma gap_start, gap_stop;  /* Octets.  */
+	      unsigned int opb1 = bfd_octets_per_byte (obfd, osections[i]);
+	      unsigned int opb2 = bfd_octets_per_byte (obfd, osections[i+1]);
 
 	      flags = bfd_section_flags (osections[i]);
 	      if ((flags & SEC_HAS_CONTENTS) == 0
@@ -3110,8 +3138,8 @@ copy_object (bfd *ibfd, bfd *obfd, const bfd_arch_info_type *input_arch)
 		continue;
 
 	      size = bfd_section_size (osections[i]);
-	      gap_start = bfd_section_lma (osections[i]) + size;
-	      gap_stop = bfd_section_lma (osections[i + 1]);
+	      gap_start = bfd_section_lma (osections[i]) * opb1 + size;
+	      gap_stop = bfd_section_lma (osections[i + 1]) * opb2;
 	      if (gap_start < gap_stop)
 		{
 		  if (!bfd_set_section_size (osections[i],
@@ -3131,14 +3159,16 @@ copy_object (bfd *ibfd, bfd *obfd, const bfd_arch_info_type *input_arch)
 
       if (pad_to_set)
 	{
-	  bfd_vma lma;
-	  bfd_size_type size;
+	  bfd_vma lma;         /* Octets.  */
+	  bfd_size_type size;  /* Octets.  */
+	  unsigned int opb = bfd_octets_per_byte (obfd, osections[c - 1]);
+	  bfd_vma _pad_to = pad_to * opb;
 
-	  lma = bfd_section_lma (osections[c - 1]);
+	  lma = bfd_section_lma (osections[c - 1]) * opb;
 	  size = bfd_section_size (osections[c - 1]);
-	  if (lma + size < pad_to)
+	  if (lma + size < _pad_to)
 	    {
-	      if (!bfd_set_section_size (osections[c - 1], pad_to - lma))
+	      if (!bfd_set_section_size (osections[c - 1], _pad_to - lma))
 		{
 		  bfd_nonfatal_message (NULL, obfd, osections[c - 1],
 					_("can't add padding"));
@@ -3146,9 +3176,9 @@ copy_object (bfd *ibfd, bfd *obfd, const bfd_arch_info_type *input_arch)
 		}
 	      else
 		{
-		  gaps[c - 1] = pad_to - (lma + size);
-		  if (max_gap < pad_to - (lma + size))
-		    max_gap = pad_to - (lma + size);
+		  gaps[c - 1] = _pad_to - (lma + size);
+		  if (max_gap < _pad_to - (lma + size))
+		    max_gap = _pad_to - (lma + size);
 		}
 	    }
 	}
@@ -3940,6 +3970,7 @@ setup_section (bfd *ibfd, sec_ptr isection, void *obfdarg)
   flagword flags;
   const char *err;
   const char * name;
+  const char * new_name;
   char *prefix = NULL;
   bfd_boolean make_nobits;
   unsigned int alignment;
@@ -3955,7 +3986,12 @@ setup_section (bfd *ibfd, sec_ptr isection, void *obfdarg)
       flags &= bfd_applicable_section_flags (ibfd);
       flags &= bfd_applicable_section_flags (obfd);
     }
-  name = find_section_rename (name, &flags);
+  new_name = find_section_rename (name, &flags);
+  if (new_name != name)
+    {
+      name = new_name;
+      flags = check_new_section_flags (flags, obfd, name);
+    }
 
   /* Prefix sections.  */
   if (prefix_alloc_sections_string
@@ -3979,7 +4015,10 @@ setup_section (bfd *ibfd, sec_ptr isection, void *obfdarg)
   p = find_section_list (bfd_section_name (isection), FALSE,
 			 SECTION_CONTEXT_SET_FLAGS);
   if (p != NULL)
-    flags = p->flags | (flags & (SEC_HAS_CONTENTS | SEC_RELOC));
+    {
+      flags = p->flags | (flags & (SEC_HAS_CONTENTS | SEC_RELOC));
+      flags = check_new_section_flags (flags, obfd, bfd_section_name (isection));
+    }
   else if (strip_symbols == STRIP_NONDEBUG
 	   && (flags & (SEC_ALLOC | SEC_GROUP)) != 0
 	   && !is_nondebug_keep_contents_section (ibfd, isection))

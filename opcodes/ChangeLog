@@ -1,3 +1,96 @@
+2020-03-06  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-opc.tbl (vcvtdq2pd, vcvtps2pd, vcvtudq2pd, vcvtps2ph,
+	vcvtps2qq, vcvtps2uqq, vcvttps2qq, vcvttps2uqq): Fold separate
+	register and memory source templates. Replace VexW= by VexW*
+	where applicable.
+	* i386-tbl.h: Re-generate.
+
+2020-03-06  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-opc.tbl: Drop IgnoreSize from various SIMD insns. Replace
+	VexW= by VexW* and VexVVVV=1 by just VexVVVV where applicable.
+	* i386-tbl.h: Re-generate.
+
+2020-03-06  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-opc.tbl (fildll, fistpll, fisttpll): Add ATTSyntax.
+	* i386-tbl.h: Re-generate.
+
+2020-03-06  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-opc.tbl (movq): Drop NoRex64 from XMM/XMM SSE2AVX variants.
+	(movmskps, pextrw, pinsrw, pmovmskb, movmskpd, extractps,
+	pextrb, pinsrb, roundsd): Drop NoRex64 and where applicable use
+	VexW0 on SSE2AVX variants.
+	(vmovq): Drop NoRex64 from XMM/XMM variants.
+	(vextractps, vmovmskpd, vmovmskps, vpextrb, vpextrw, vpinsrb,
+	vpinsrw, vpmovmskb, vroundsd, vpmovmskb): Drop NoRex64 and where
+	applicable use VexW0.
+	* i386-tbl.h: Re-generate.
+
+2020-03-06  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-gen.c (opcode_modifiers): Remove Rex64 field.
+	* i386-opc.h (Rex64): Delete.
+	(struct i386_opcode_modifier): Remove rex64 field.
+	* i386-opc.tbl (crc32): Drop Rex64.
+	Replace Rex64 with Size64 everywhere else.
+	* i386-tbl.h: Re-generate.
+
+2020-03-06  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-dis.c (OP_E_memory): Exclude recording of used address
+	prefix for "bnd" modes only in 64-bit mode. Don't decode 16-bit
+	addressed memory operands for MPX insns.
+
+2020-03-06  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-opc.tbl (movmskps, mwait, vmread, vmwrite, invept,
+	invvpid, invpcid, rdfsbase, rdgsbase, wrfsbase, wrgsbase, adcx,
+	adox, mwaitx, rdpid, movdiri): Add IgnoreSize.
+	(ptwrite): Split into non-64-bit and 64-bit forms.
+	* i386-tbl.h: Re-generate.
+
+2020-03-06  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-opc.tbl (tpause, umwait): Add IgnoreSize. Add 3-operand
+	template.
+	* i386-tbl.h: Re-generate.
+
+2020-03-04  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-dis.c (PREFIX_0F01_REG_3_RM_1): New.
+	(prefix_table): Move vmmcall here. Add vmgexit.
+	(rm_table): Replace vmmcall entry by prefix_table[] escape.
+	* i386-gen.c (cpu_flag_init): Add CPU_SEV_ES_FLAGS entry.
+	(cpu_flags): Add CpuSEV_ES entry.
+	* i386-opc.h (CpuSEV_ES): New.
+	(union i386_cpu_flags): Add cpusev_es field.
+	* i386-opc.tbl (vmgexit): New.
+	* i386-init.h, i386-tbl.h: Re-generate.
+
+2020-03-03  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* i386-gen.c (opcode_modifiers): Replace IgnoreSize/DefaultSize
+	with MnemonicSize.
+	* i386-opc.h (IGNORESIZE): New.
+	(DEFAULTSIZE): Likewise.
+	(IgnoreSize): Removed.
+	(DefaultSize): Likewise.
+	(MnemonicSize): New.
+	(i386_opcode_modifier): Replace ignoresize/defaultsize with
+	mnemonicsize.
+	* i386-opc.tbl (IgnoreSize): New.
+	(DefaultSize): Likewise.
+	* i386-tbl.h: Regenerated.
+
+2020-03-03  Sergey Belyashov  <sergey.belyashov@gmail.com>
+
+	PR 25627
+	* z80-dis.c: Fix disassembly of LD IY,(HL) and D (HL),IX
+	instructions.
+
 2020-03-03  H.J. Lu  <hongjiu.lu@intel.com>
 
 	PR gas/25622

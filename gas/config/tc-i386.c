@@ -1188,6 +1188,8 @@ static const arch_entry cpu_arch[] =
     CPU_RDPRU_FLAGS, 0 },
   { STRING_COMMA_LEN (".mcommit"), PROCESSOR_UNKNOWN,
     CPU_MCOMMIT_FLAGS, 0 },
+  { STRING_COMMA_LEN (".sev_es"), PROCESSOR_UNKNOWN,
+    CPU_SEV_ES_FLAGS, 0 },
 };
 
 static const noarch_entry cpu_noarch[] =
@@ -2143,11 +2145,11 @@ match_mem_size (const insn_template *t, unsigned int wanted,
 		  here.  Also for v{,p}broadcast*, {,v}pmov{s,z}*, and
 		  down-conversion vpmov*.  */
 	       || ((t->operand_types[wanted].bitfield.class == RegSIMD
-		    && !t->opcode_modifier.broadcast
-		    && (t->operand_types[wanted].bitfield.byte
-			|| t->operand_types[wanted].bitfield.word
-			|| t->operand_types[wanted].bitfield.dword
-			|| t->operand_types[wanted].bitfield.qword))
+		    && t->operand_types[wanted].bitfield.byte
+		       + t->operand_types[wanted].bitfield.word
+		       + t->operand_types[wanted].bitfield.dword
+		       + t->operand_types[wanted].bitfield.qword
+		       > !!t->opcode_modifier.broadcast)
 		   ? (i.types[given].bitfield.xmmword
 		      || i.types[given].bitfield.ymmword
 		      || i.types[given].bitfield.zmmword)
@@ -4347,16 +4349,19 @@ md_assemble (char *line)
   /* Now we've parsed the mnemonic into a set of templates, and have the
      operands at hand.  */
 
-  /* All Intel opcodes have reversed operands except for "bound", "enter"
-     "monitor*", and "mwait*".  We also don't reverse intersegment "jmp"
-     and "call" instructions with 2 immediate operands so that the immediate
-     segment precedes the offset, as it does when in AT&T mode. */
+  /* All Intel opcodes have reversed operands except for "bound", "enter",
+     "monitor*", "mwait*", "tpause", and "umwait".  We also don't reverse
+     intersegment "jmp" and "call" instructions with 2 immediate operands so
+     that the immediate segment precedes the offset, as it does when in AT&T
+     mode.  */
   if (intel_syntax
       && i.operands > 1
       && (strcmp (mnemonic, "bound") != 0)
       && (strcmp (mnemonic, "invlpga") != 0)
       && (strncmp (mnemonic, "monitor", 7) != 0)
       && (strncmp (mnemonic, "mwait", 5) != 0)
+      && (strcmp (mnemonic, "tpause") != 0)
+      && (strcmp (mnemonic, "umwait") != 0)
       && !(operand_type_check (i.types[0], imm)
 	   && operand_type_check (i.types[1], imm)))
     swap_operands ();
@@ -4561,9 +4566,6 @@ md_assemble (char *line)
       i.op[0].disps->X_add_symbol = &abs_symbol;
       i.op[0].disps->X_op = O_symbol;
     }
-
-  if (i.tm.opcode_modifier.rex64)
-    i.rex |= REX_W;
 
   /* For 8 bit registers we need an empty rex prefix.  Also if the
      instruction already has a prefix, we need to convert old
@@ -5531,6 +5533,16 @@ check_VecOperands (const insn_template *t)
 	}
 
       overlap = operand_type_and (type, t->operand_types[op]);
+      if (t->operand_types[op].bitfield.class == RegSIMD
+	  && t->operand_types[op].bitfield.byte
+	     + t->operand_types[op].bitfield.word
+	     + t->operand_types[op].bitfield.dword
+	     + t->operand_types[op].bitfield.qword > 1)
+	{
+	  overlap.bitfield.xmmword = 0;
+	  overlap.bitfield.ymmword = 0;
+	  overlap.bitfield.zmmword = 0;
+	}
       if (operand_type_all_zero (&overlap))
 	  goto bad_broadcast;
 
@@ -5872,43 +5884,34 @@ match_template (char mnem_suffix)
       for (j = 0; j < MAX_OPERANDS; j++)
 	operand_types[j] = t->operand_types[j];
 
-      /* In general, don't allow 64-bit operands in 32-bit mode.  */
-      if (i.suffix == QWORD_MNEM_SUFFIX
-	  && flag_code != CODE_64BIT
+      /* In general, don't allow
+	 - 64-bit operands outside of 64-bit mode,
+	 - 32-bit operands on pre-386.  */
+      j = i.imm_operands + (t->operands > i.imm_operands + 1);
+      if (((i.suffix == QWORD_MNEM_SUFFIX
+	    && flag_code != CODE_64BIT
+	    && (t->base_opcode != 0x0fc7
+		|| t->extension_opcode != 1 /* cmpxchg8b */))
+	   || (i.suffix == LONG_MNEM_SUFFIX
+	       && !cpu_arch_flags.bitfield.cpui386))
 	  && (intel_syntax
-	      ? (!t->opcode_modifier.ignoresize
-	         && !t->opcode_modifier.broadcast
+	      ? (t->opcode_modifier.mnemonicsize != IGNORESIZE
 		 && !intel_float_operand (t->name))
 	      : intel_float_operand (t->name) != 2)
-	  && ((operand_types[0].bitfield.class != RegMMX
-	       && operand_types[0].bitfield.class != RegSIMD)
-	      || (operand_types[t->operands > 1].bitfield.class != RegMMX
-		  && operand_types[t->operands > 1].bitfield.class != RegSIMD))
-	  && (t->base_opcode != 0x0fc7
-	      || t->extension_opcode != 1 /* cmpxchg8b */))
-	continue;
-
-      /* In general, don't allow 32-bit operands on pre-386.  */
-      else if (i.suffix == LONG_MNEM_SUFFIX
-	       && !cpu_arch_flags.bitfield.cpui386
-	       && (intel_syntax
-		   ? (!t->opcode_modifier.ignoresize
-		      && !intel_float_operand (t->name))
-		   : intel_float_operand (t->name) != 2)
-	       && ((operand_types[0].bitfield.class != RegMMX
-		    && operand_types[0].bitfield.class != RegSIMD)
-		   || (operand_types[t->operands > 1].bitfield.class != RegMMX
-		       && operand_types[t->operands > 1].bitfield.class
-			  != RegSIMD)))
+	  && (t->operands == i.imm_operands
+	      || (operand_types[i.imm_operands].bitfield.class != RegMMX
+	       && operand_types[i.imm_operands].bitfield.class != RegSIMD
+	       && operand_types[i.imm_operands].bitfield.class != RegMask)
+	      || (operand_types[j].bitfield.class != RegMMX
+		  && operand_types[j].bitfield.class != RegSIMD
+		  && operand_types[j].bitfield.class != RegMask))
+	  && !t->opcode_modifier.vecsib)
 	continue;
 
       /* Do not verify operands when there are none.  */
-      else
-	{
-	  if (!t->operands)
-	    /* We've found a match; break out of loop.  */
-	    break;
-	}
+      if (!t->operands)
+	/* We've found a match; break out of loop.  */
+	break;
 
       if (!t->opcode_modifier.jump
 	  || t->opcode_modifier.jump == JUMP_ABSOLUTE)
@@ -6247,7 +6250,7 @@ match_template (char mnem_suffix)
 	as_warn (_("indirect %s without `*'"), t->name);
 
       if (t->opcode_modifier.isprefix
-	  && t->opcode_modifier.ignoresize)
+	  && t->opcode_modifier.mnemonicsize == IGNORESIZE)
 	{
 	  /* Warn them that a data or address size prefix doesn't
 	     affect assembly of the next line of code.  */
@@ -6333,6 +6336,11 @@ process_suffix (void)
 	  || (i.tm.base_opcode == 0x63 && i.tm.cpu_flags.bitfield.cpu64))
 	--i.operands;
 
+      /* crc32 needs REX.W set regardless of suffix / source operand size.  */
+      if (i.tm.base_opcode == 0xf20f38f0
+          && i.tm.operand_types[1].bitfield.qword)
+        i.rex |= REX_W;
+
       /* If there's no instruction mnemonic suffix we try to invent one
 	 based on GPR operands.  */
       if (!i.suffix)
@@ -6371,7 +6379,7 @@ process_suffix (void)
       else if (i.suffix == BYTE_MNEM_SUFFIX)
 	{
 	  if (intel_syntax
-	      && i.tm.opcode_modifier.ignoresize
+	      && i.tm.opcode_modifier.mnemonicsize == IGNORESIZE
 	      && i.tm.opcode_modifier.no_bsuf)
 	    i.suffix = 0;
 	  else if (!check_byte_reg ())
@@ -6380,7 +6388,7 @@ process_suffix (void)
       else if (i.suffix == LONG_MNEM_SUFFIX)
 	{
 	  if (intel_syntax
-	      && i.tm.opcode_modifier.ignoresize
+	      && i.tm.opcode_modifier.mnemonicsize == IGNORESIZE
 	      && i.tm.opcode_modifier.no_lsuf
 	      && !i.tm.opcode_modifier.todword
 	      && !i.tm.opcode_modifier.toqword)
@@ -6391,7 +6399,7 @@ process_suffix (void)
       else if (i.suffix == QWORD_MNEM_SUFFIX)
 	{
 	  if (intel_syntax
-	      && i.tm.opcode_modifier.ignoresize
+	      && i.tm.opcode_modifier.mnemonicsize == IGNORESIZE
 	      && i.tm.opcode_modifier.no_qsuf
 	      && !i.tm.opcode_modifier.todword
 	      && !i.tm.opcode_modifier.toqword)
@@ -6402,13 +6410,14 @@ process_suffix (void)
       else if (i.suffix == WORD_MNEM_SUFFIX)
 	{
 	  if (intel_syntax
-	      && i.tm.opcode_modifier.ignoresize
+	      && i.tm.opcode_modifier.mnemonicsize == IGNORESIZE
 	      && i.tm.opcode_modifier.no_wsuf)
 	    i.suffix = 0;
 	  else if (!check_word_reg ())
 	    return 0;
 	}
-      else if (intel_syntax && i.tm.opcode_modifier.ignoresize)
+      else if (intel_syntax
+	       && i.tm.opcode_modifier.mnemonicsize == IGNORESIZE)
 	/* Do nothing if the instruction is going to ignore the prefix.  */
 	;
       else
@@ -6417,7 +6426,8 @@ process_suffix (void)
       /* Undo the movsx/movzx change done above.  */
       i.operands = numop;
     }
-  else if (i.tm.opcode_modifier.defaultsize && !i.suffix)
+  else if (i.tm.opcode_modifier.mnemonicsize == DEFAULTSIZE
+	   && !i.suffix)
     {
       i.suffix = stackop_size;
       if (stackop_size == LONG_MNEM_SUFFIX)
@@ -6466,12 +6476,12 @@ process_suffix (void)
     }
 
   if (!i.suffix
-      && (!i.tm.opcode_modifier.defaultsize
+      && (i.tm.opcode_modifier.mnemonicsize != DEFAULTSIZE
 	  /* Also cover lret/retf/iret in 64-bit mode.  */
 	  || (flag_code == CODE_64BIT
 	      && !i.tm.opcode_modifier.no_lsuf
 	      && !i.tm.opcode_modifier.no_qsuf))
-      && !i.tm.opcode_modifier.ignoresize
+      && i.tm.opcode_modifier.mnemonicsize != IGNORESIZE
       /* Accept FLDENV et al without suffix.  */
       && (i.tm.opcode_modifier.no_ssuf || i.tm.opcode_modifier.floatmf))
     {
@@ -6544,7 +6554,7 @@ process_suffix (void)
       if (suffixes & (suffixes - 1))
 	{
 	  if (intel_syntax
-	      && (!i.tm.opcode_modifier.defaultsize
+	      && (i.tm.opcode_modifier.mnemonicsize != DEFAULTSIZE
 		  || operand_check == check_error))
 	    {
 	      as_bad (_("ambiguous operand size for `%s'"), i.tm.name);
@@ -6638,7 +6648,7 @@ process_suffix (void)
 	 size prefix, except for instructions that will ignore this
 	 prefix anyway.  */
       if (i.suffix != QWORD_MNEM_SUFFIX
-	  && !i.tm.opcode_modifier.ignoresize
+	  && i.tm.opcode_modifier.mnemonicsize != IGNORESIZE
 	  && !i.tm.opcode_modifier.floatmf
 	  && !is_any_vex_encoding (&i.tm)
 	  && ((i.suffix == LONG_MNEM_SUFFIX) == (flag_code == CODE_16BIT)
@@ -6658,6 +6668,7 @@ process_suffix (void)
       if (i.suffix == QWORD_MNEM_SUFFIX
 	  && flag_code == CODE_64BIT
 	  && !i.tm.opcode_modifier.norex64
+	  && !i.tm.opcode_modifier.vexw
 	  /* Special case for xchg %rax,%rax.  It is NOP and doesn't
 	     need rex64. */
 	  && ! (i.operands == 2
@@ -10352,6 +10363,21 @@ i386_addressing_mode (void)
 
   if (i.prefix[ADDR_PREFIX])
     addr_mode = flag_code == CODE_32BIT ? CODE_16BIT : CODE_32BIT;
+  else if (flag_code == CODE_16BIT
+	   && current_templates->start->cpu_flags.bitfield.cpumpx
+	   /* Avoid replacing the "16-bit addressing not allowed" diagnostic
+	      from md_assemble() by "is not a valid base/index expression"
+	      when there is a base and/or index.  */
+	   && !i.types[this_operand].bitfield.baseindex)
+    {
+      /* MPX insn memory operands with neither base nor index must be forced
+	 to use 32-bit addressing in 16-bit mode.  */
+      addr_mode = CODE_32BIT;
+      i.prefix[ADDR_PREFIX] = ADDR_PREFIX_OPCODE;
+      ++i.prefixes;
+      gas_assert (!i.types[this_operand].bitfield.disp16);
+      gas_assert (!i.types[this_operand].bitfield.disp32);
+    }
   else
     {
       addr_mode = flag_code;

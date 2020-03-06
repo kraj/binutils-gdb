@@ -959,6 +959,7 @@ enum
 enum
 {
   PREFIX_90 = 0,
+  PREFIX_0F01_REG_3_RM_1,
   PREFIX_0F01_REG_5_MOD_0,
   PREFIX_0F01_REG_5_MOD_3_RM_0,
   PREFIX_0F01_REG_5_MOD_3_RM_2,
@@ -3625,6 +3626,14 @@ static const struct dis386 prefix_table[][4] = {
     { "pause", { XX }, 0 },
     { "xchgS", { { NOP_Fixup1, eAX_reg }, { NOP_Fixup2, eAX_reg } }, 0 },
     { NULL, { { NULL, 0 } }, PREFIX_IGNORED }
+  },
+
+  /* PREFIX_0F01_REG_3_MOD_1 */
+  {
+    { "vmmcall",	{ Skip_MODRM }, 0 },
+    { "vmgexit",	{ Skip_MODRM }, 0 },
+    { Bad_Opcode },
+    { "vmgexit",	{ Skip_MODRM }, 0 },
   },
 
   /* PREFIX_0F01_REG_5_MOD_0 */
@@ -11018,7 +11027,7 @@ static const struct dis386 rm_table[][8] = {
   {
     /* RM_0F01_REG_3 */
     { "vmrun",		{ Skip_MODRM }, 0 },
-    { "vmmcall",	{ Skip_MODRM }, 0 },
+    { PREFIX_TABLE (PREFIX_0F01_REG_3_RM_1) },
     { "vmload",		{ Skip_MODRM }, 0 },
     { "vmsave",		{ Skip_MODRM }, 0 },
     { "stgi",		{ Skip_MODRM }, 0 },
@@ -14263,10 +14272,11 @@ OP_E_memory (int bytemode, int sizeflag)
 	  }
 
       if ((havebase || haveindex || needindex || needaddr32 || riprel)
-	  && (bytemode != v_bnd_mode)
-	  && (bytemode != v_bndmk_mode)
-	  && (bytemode != bnd_mode)
-	  && (bytemode != bnd_swap_mode))
+	  && (address_mode != mode_64bit
+	      || ((bytemode != v_bnd_mode)
+		  && (bytemode != v_bndmk_mode)
+		  && (bytemode != bnd_mode)
+		  && (bytemode != bnd_swap_mode))))
 	used_prefixes |= PREFIX_ADDR;
 
       if (havedisp || (intel_syntax && riprel))
@@ -14346,6 +14356,14 @@ OP_E_memory (int bytemode, int sizeflag)
 	      oappend (scratchbuf);
 	    }
 	}
+    }
+  else if (bytemode == v_bnd_mode
+	   || bytemode == v_bndmk_mode
+	   || bytemode == bnd_mode
+	   || bytemode == bnd_swap_mode)
+    {
+      oappend ("(bad)");
+      return;
     }
   else
     {
