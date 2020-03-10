@@ -1,3 +1,15 @@
+2020-03-10  Alan Modra  <amodra@gmail.com>
+
+	PR 25648
+	* ihex.c (ihex_write_object_contents): Don't assume ordering of
+	addresses here.
+
+2020-03-09  Alan Modra  <amodra@gmail.com>
+
+	* wasm-module.c (wasm_scan): Sanity check file name length
+	before allocating memory.  Move common section setup code.  Do
+	without bfd_tell to calculate section size.
+
 2020-03-06  Nick Clifton  <nickc@redhat.com>
 
 	* elf.c (_bfd_elf_set_section_contents): Replace call to abort
