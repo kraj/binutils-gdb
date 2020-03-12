@@ -4648,7 +4648,7 @@ proc gdb_core_cmd { core test } {
 	    fail "$test (bad file format)"
 	    return -1
 	}
-	-re ": No such file or directory.*\r\n$gdb_prompt $" {
+	-re -wrap "[string_to_regexp $core]: No such file or directory.*" {
 	    fail "$test (file not found)"
 	    return -1
 	}
@@ -4899,7 +4899,7 @@ proc standard_output_file {basename} {
     file mkdir $dir
     # If running on MinGW, replace /c/foo with c:/foo
     if { [ishost *-*-mingw*] } {
-        set dir [regsub {^/([a-z])/} $dir {\1:/}]
+        set dir [exec sh -c "cd ${dir} && pwd -W"]
     }
     return [file join $dir $basename]
 }

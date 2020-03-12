@@ -1,3 +1,97 @@
+2020-03-12  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.base/info-types.exp: Use exp_continue during matching of output
+	of "info types".
+
+2020-03-12  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.threads/execl.exp: Delete breakpoint after hitting it.
+
+2020-03-12  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.fortran/module.exp: Use exp_continue during matching of output
+	of "info variable -n".
+
+2020-03-12  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.dwarf2/dw2-ranges-base.exp: Limit "maint info line-table" to
+	gdb.dwarf2/dw2-ranges-base.c.
+
+2020-03-12  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.linespec/explicit.exp: Fix "complete non-unique file name" test
+	in presence of GLIBC debuginfo.
+
+2020-03-12  Tom de Vries  <tdevries@suse.de>
+
+	* lib/gdb.exp (gdb_core_cmd): Use string_to_regexp for regexp-matching
+	$core.
+
+2020-03-12  Tom de Vries  <tdevries@suse.de>
+
+	* lib/gdb.exp (gdb_core_cmd): Make "No such file or directory" regexp
+	more precise.
+
+2020-03-11  Simon Marchi  <simon.marchi@efficios.com>
+
+	* lib/gdb.exp (standard_output_file): Use `pwd -W` to convert
+	from Unix to Windows path.
+
+2020-03-11  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.ada/minsyms.exp: Set language to ada.
+
+2020-03-11  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.server/sysroot.exp: Allow GLIBC's printf alias __printf.
+
+2020-03-11  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.btrace/reconnect.exp: Allow source line pattern after stepi.
+
+2020-03-11  Tom Tromey  <tromey@adacore.com>
+
+	* gdb.dwarf2/variant.exp: Mark discriminants as artificial.
+
+2020-03-11  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.base/foll-fork.exp: Allow "Reading in symbols" messages.
+
+2020-03-11  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.base/break-interp.exp: Limit verbose scope.
+
+2020-03-11  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.fortran/logical.f90: Define variable with character type.
+	* gdb.fortran/logical.exp: Use character type instead of uint8_t.
+
+2020-03-11  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.base/list-ambiguous.exp: Set EDITOR to true.
+
+2020-03-11  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.ada/access_to_packed_array.exp: Test printing of expanded
+	symtabs.
+
+2020-03-10  Andrew Burgess  <andrew.burgess@embecosm.com>
+	    Bernd Edlinger  <bernd.edlinger@hotmail.de>
+
+	* gdb.cp/step-and-next-inline.cc: New file.
+	* gdb.cp/step-and-next-inline.exp: New file.
+	* gdb.cp/step-and-next-inline.h: New file.
+	* gdb.dwarf2/dw2-is-stmt.c: New file.
+	* gdb.dwarf2/dw2-is-stmt.exp: New file.
+	* gdb.dwarf2/dw2-is-stmt-2.c: New file.
+	* gdb.dwarf2/dw2-is-stmt-2.exp: New file.
+	* gdb.dwarf2/dw2-ranges-base.exp: Update line table pattern.
+
+2020-03-10  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* lib/dwarf.exp (Dwarf::lines) Add support for modifying the
+	is-stmt flag in the line table.
+
 2020-03-09  Tom de Vries  <tdevries@suse.de>
 
 	* lib/gdb.exp (cached_file): Create cache dir.
