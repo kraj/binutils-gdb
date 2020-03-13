@@ -1,4 +1,6 @@
-/* Copyright 2019-2020 Free Software Foundation, Inc.
+/* NetBSD/ARM support.
+
+   Copyright (C) 2020 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -15,34 +17,11 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-static int global_i1;
-static float global_f1;
-int global_i2;
-int global_f2;
+#ifndef ARM_NBSD_TDEP_H
+#define ARM_NBSD_TDEP_H
 
-typedef int another_int_t;
-typedef float another_float_t;
+void arm_nbsd_supply_gregset
+  (const struct regset *regset, struct regcache *regcache,
+   int regnum, const void *gregs, size_t len);
 
-static another_float_t
-f1 (int arg)
-{
-  return (float) arg;
-}
-
-float
-f2 (another_float_t arg)
-{
-  return arg + f1 (1);
-}
-
-int
-f3 (another_int_t arg)
-{
-  return arg + 2;
-}
-
-typedef char another_char_t;
-typedef short another_short_t;
-
-static another_char_t var1;
-static another_short_t var2;
+#endif
