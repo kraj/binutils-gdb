@@ -125,6 +125,10 @@ displaced_step_buffer::prepare (thread_info *thread, CORE_ADDR &displaced_pc)
   /* This marks the buffer as being in use.  */
   m_current_thread = thread;
 
+  /* Tell GDB not to try preparing a displaced step again for this inferior.  */
+  // FIXME: either export get_displaced_stepping_state from infrun.c, or get rid of it.
+  thread->inf->displaced_step_state.unavailable = true;
+
   return DISPLACED_STEP_PREPARE_STATUS_OK;
 }
 
@@ -161,6 +165,11 @@ displaced_step_buffer::finish (gdbarch *arch, thread_info *thread,
 {
   gdb_assert (thread->displaced_step_state.in_progress ());
   gdb_assert (thread == m_current_thread);
+
+  /* Tell GDB it can ask us to prepare a displaced step again for this
+     inferior.  Do that first in case something goes wrong below.  */
+  // FIXME: either export get_displaced_stepping_state from infrun.c, or get rid of it.
+  thread->inf->displaced_step_state.unavailable = false;
 
   ULONGEST len = gdbarch_max_insn_length (arch);
 

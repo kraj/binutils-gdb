@@ -1875,6 +1875,14 @@ start_step_over (void)
 
       next = thread_step_over_chain_next (threads_to_step, tp);
 
+      if (tp->inf->displaced_step_state.unavailable)
+	{
+	  /* The arch told us to not even try preparing another displaced step
+	     for this inferior.  Just leave the thread in THREADS_TO_STEP, is
+	     will get moved to the global chain on scope exit.  */
+	  continue;
+	}
+
       /* Remove thread from the THREADS_TO_STEP chain.  If anything goes wrong
 	 while we try to prepare the displaced step, we don't want to add it
 	 back to the global step over chain.  This is to avoid a thread staying

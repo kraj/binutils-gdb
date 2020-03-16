@@ -101,6 +101,7 @@ struct displaced_step_inferior_state
   {
     failed_before = false;
     active_count = 0;
+    unavailable = false;
   }
 
   /* True if preparing a displaced step ever failed.  If so, we won't
@@ -108,6 +109,12 @@ struct displaced_step_inferior_state
   bool failed_before;
 
   unsigned int active_count;
+
+  /* If true, this tells GDB that it's not worth asking the gdbarch displaced
+     stepping implementation to prepare a displaced step, because it would
+     return UNAVAILABLE.  This is set and reset by the gdbarch in the
+     displaced_step_prepare and displaced_step_finish methods.  */
+  bool unavailable = false;
 };
 
 /* Per-thread displaced stepping state.  */
