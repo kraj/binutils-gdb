@@ -5312,19 +5312,25 @@ elf_sort_segments (const void *arg1, const void *arg2)
     return m1->no_sort_lma ? -1 : 1;
   if (m1->p_type == PT_LOAD && !m1->no_sort_lma)
     {
-      unsigned int opb = bfd_octets_per_byte (m1->sections[0]->owner,
-					      m1->sections[0]);
-      bfd_vma lma1, lma2;  /* Bytes.  */
+      bfd_vma lma1, lma2;  /* Octets.  */
       lma1 = 0;
       if (m1->p_paddr_valid)
-	lma1 = m1->p_paddr / opb;
+	lma1 = m1->p_paddr;
       else if (m1->count != 0)
-	lma1 = m1->sections[0]->lma + m1->p_vaddr_offset;
+	{
+	  unsigned int opb = bfd_octets_per_byte (m1->sections[0]->owner,
+						  m1->sections[0]);
+	  lma1 = (m1->sections[0]->lma + m1->p_vaddr_offset) * opb;
+	}
       lma2 = 0;
       if (m2->p_paddr_valid)
-	lma2 = m2->p_paddr / opb;
+	lma2 = m2->p_paddr;
       else if (m2->count != 0)
-	lma2 = m2->sections[0]->lma + m2->p_vaddr_offset;
+	{
+	  unsigned int opb = bfd_octets_per_byte (m2->sections[0]->owner,
+						  m2->sections[0]);
+	  lma2 = (m2->sections[0]->lma + m2->p_vaddr_offset) * opb;
+	}
       if (lma1 != lma2)
 	return lma1 < lma2 ? -1 : 1;
     }
@@ -10750,11 +10756,17 @@ elfcore_grok_netbsd_note (bfd *abfd, Elf_Internal_Note *note)
       /* NetBSD-specific Elf Auxiliary Vector data. */
       return elfcore_make_auxv_note_section (abfd, note, 4);
 #endif
+#ifdef NT_NETBSDCORE_LWPSTATUS
+    case NT_NETBSDCORE_LWPSTATUS:
+      return elfcore_make_note_pseudosection (abfd,
+					      ".note.netbsdcore.lwpstatus",
+					      note);
+#endif
     default:
       break;
     }
 
-  /* As of March 2017 there are no other machine-independent notes
+  /* As of March 2020 there are no other machine-independent notes
      defined for NetBSD core files.  If the note type is less
      than the start of the machine-dependent note types, we don't
      understand it.  */
@@ -10768,6 +10780,7 @@ elfcore_grok_netbsd_note (bfd *abfd, Elf_Internal_Note *note)
       /* On the Alpha, SPARC (32-bit and 64-bit), PT_GETREGS == mach+0 and
 	 PT_GETFPREGS == mach+2.  */
 
+    case bfd_arch_aarch64:
     case bfd_arch_alpha:
     case bfd_arch_sparc:
       switch (note->type)
@@ -12441,6 +12454,7 @@ _bfd_elf_slurp_secondary_reloc_section (bfd *      abfd,
 	  reloc_count = NUM_SHDR_ENTRIES (hdr);
 	  if (_bfd_mul_overflow (reloc_count, sizeof (arelent), & amt))
 	    {
+	      free (native_relocs);
 	      bfd_set_error (bfd_error_file_too_big);
 	      result = FALSE;
 	      continue;
@@ -12459,7 +12473,8 @@ _bfd_elf_slurp_secondary_reloc_section (bfd *      abfd,
 		  != hdr->sh_size))
 	    {
 	      free (native_relocs);
-	      free (internal_relocs);
+	      /* The internal_relocs will be freed when
+		 the memory for the bfd is released.  */
 	      result = FALSE;
 	      continue;
 	    }
@@ -12577,13 +12592,31 @@ _bfd_elf_copy_special_section_fields (const bfd *   ibfd ATTRIBUTE_UNUSED,
     }
 
   /* Find the output section that corresponds to the isection's sh_info link.  */
-  BFD_ASSERT (isection->sh_info > 0
-	      && isection->sh_info < elf_numsections (ibfd));
+  if (isection->sh_info == 0
+      || isection->sh_info >= elf_numsections (ibfd))
+    {
+      _bfd_error_handler
+	/* xgettext:c-format */
+	(_("%pB(%pA): info section index is invalid"),
+	obfd, osec);
+      bfd_set_error (bfd_error_bad_value);
+      return FALSE;
+    }
+
   isection = elf_elfsections (ibfd)[isection->sh_info];
 
-  BFD_ASSERT (isection != NULL);
-  BFD_ASSERT (isection->bfd_section != NULL);
-  BFD_ASSERT (isection->bfd_section->output_section != NULL);
+  if (isection == NULL
+      || isection->bfd_section == NULL
+      || isection->bfd_section->output_section == NULL)
+    {
+      _bfd_error_handler
+	/* xgettext:c-format */
+	(_("%pB(%pA): info section index cannot be set because the section is not in the output"),
+	obfd, osec);
+      bfd_set_error (bfd_error_bad_value);
+      return FALSE;
+    }
+
   osection->sh_info =
     elf_section_data (isection->bfd_section->output_section)->this_idx;
 

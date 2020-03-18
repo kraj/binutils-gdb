@@ -6765,6 +6765,47 @@ process_section_headers (Filedata * filedata)
   return TRUE;
 }
 
+static bfd_boolean
+get_symtab (Filedata *filedata, Elf_Internal_Shdr *symsec,
+	    Elf_Internal_Sym **symtab, unsigned long *nsyms,
+	    char **strtab, unsigned long *strtablen)
+{
+  *strtab = NULL;
+  *strtablen = 0;
+  *symtab = GET_ELF_SYMBOLS (filedata, symsec, nsyms);
+
+  if (*symtab == NULL)
+    return FALSE;
+
+  if (symsec->sh_link != 0)
+    {
+      Elf_Internal_Shdr *strsec;
+
+      if (symsec->sh_link >= filedata->file_header.e_shnum)
+	{
+	  error (_("Bad sh_link in symbol table section\n"));
+	  free (*symtab);
+	  *symtab = NULL;
+	  *nsyms = 0;
+	  return FALSE;
+	}
+
+      strsec = filedata->section_headers + symsec->sh_link;
+
+      *strtab = (char *) get_data (NULL, filedata, strsec->sh_offset,
+				   1, strsec->sh_size, _("string table"));
+      if (*strtab == NULL)
+	{
+	  free (*symtab);
+	  *symtab = NULL;
+	  *nsyms = 0;
+	  return FALSE;
+	}
+      *strtablen = strsec->sh_size;
+    }
+  return TRUE;
+}
+
 static const char *
 get_group_flags (unsigned int flags)
 {
@@ -7355,7 +7396,6 @@ process_relocs (Filedata * filedata)
 
 	  if (rel_size)
 	    {
-	      Elf_Internal_Shdr * strsec;
 	      int is_rela;
 	      unsigned long num_rela;
 
@@ -7388,21 +7428,9 @@ process_relocs (Filedata * filedata)
 		      && symsec->sh_type != SHT_DYNSYM)
                     continue;
 
-		  symtab = GET_ELF_SYMBOLS (filedata, symsec, & nsyms);
-
-		  if (symtab == NULL)
+		  if (!get_symtab (filedata, symsec,
+				   &symtab, &nsyms, &strtab, &strtablen))
 		    continue;
-
-		  if (symsec->sh_link != 0
-		      && symsec->sh_link < filedata->file_header.e_shnum)
-		    {
-		      strsec = filedata->section_headers + symsec->sh_link;
-
-		      strtab = (char *) get_data (NULL, filedata, strsec->sh_offset,
-						  1, strsec->sh_size,
-						  _("string table"));
-		      strtablen = strtab == NULL ? 0 : strsec->sh_size;
-		    }
 
 		  dump_relocations (filedata, rel_offset, rel_size,
 				    symtab, nsyms, strtab, strtablen,
@@ -7804,7 +7832,6 @@ ia64_process_unwind (Filedata * filedata)
 {
   Elf_Internal_Shdr * sec;
   Elf_Internal_Shdr * unwsec = NULL;
-  Elf_Internal_Shdr * strsec;
   unsigned long i, unwcount = 0, unwstart = 0;
   struct ia64_unw_aux_info aux;
   bfd_boolean res = TRUE;
@@ -7813,22 +7840,19 @@ ia64_process_unwind (Filedata * filedata)
 
   for (i = 0, sec = filedata->section_headers; i < filedata->file_header.e_shnum; ++i, ++sec)
     {
-      if (sec->sh_type == SHT_SYMTAB
-	  && sec->sh_link < filedata->file_header.e_shnum)
+      if (sec->sh_type == SHT_SYMTAB)
 	{
-	  aux.symtab = GET_ELF_SYMBOLS (filedata, sec, & aux.nsyms);
-
-	  strsec = filedata->section_headers + sec->sh_link;
-	  if (aux.strtab != NULL)
+	  if (aux.symtab)
 	    {
-	      error (_("Multiple auxillary string tables encountered\n"));
+	      error (_("Multiple symbol tables encountered\n"));
+	      free (aux.symtab);
+	      aux.symtab = NULL;
 	      free (aux.strtab);
-	      res = FALSE;
+	      aux.strtab = NULL;
 	    }
-	  aux.strtab = (char *) get_data (NULL, filedata, strsec->sh_offset,
-                                          1, strsec->sh_size,
-                                          _("string table"));
-	  aux.strtab_size = aux.strtab != NULL ? strsec->sh_size : 0;
+	  if (!get_symtab (filedata, sec, &aux.symtab, &aux.nsyms,
+			   &aux.strtab, &aux.strtab_size))
+	    return FALSE;
 	}
       else if (sec->sh_type == SHT_IA_64_UNWIND)
 	unwcount++;
@@ -8265,7 +8289,6 @@ hppa_process_unwind (Filedata * filedata)
 {
   struct hppa_unw_aux_info aux;
   Elf_Internal_Shdr * unwsec = NULL;
-  Elf_Internal_Shdr * strsec;
   Elf_Internal_Shdr * sec;
   unsigned long i;
   bfd_boolean res = TRUE;
@@ -8277,22 +8300,19 @@ hppa_process_unwind (Filedata * filedata)
 
   for (i = 0, sec = filedata->section_headers; i < filedata->file_header.e_shnum; ++i, ++sec)
     {
-      if (sec->sh_type == SHT_SYMTAB
-	  && sec->sh_link < filedata->file_header.e_shnum)
+      if (sec->sh_type == SHT_SYMTAB)
 	{
-	  aux.symtab = GET_ELF_SYMBOLS (filedata, sec, & aux.nsyms);
-
-	  strsec = filedata->section_headers + sec->sh_link;
-	  if (aux.strtab != NULL)
+	  if (aux.symtab)
 	    {
-	      error (_("Multiple auxillary string tables encountered\n"));
+	      error (_("Multiple symbol tables encountered\n"));
+	      free (aux.symtab);
+	      aux.symtab = NULL;
 	      free (aux.strtab);
-	      res = FALSE;
+	      aux.strtab = NULL;
 	    }
-	  aux.strtab = (char *) get_data (NULL, filedata, strsec->sh_offset,
-                                          1, strsec->sh_size,
-                                          _("string table"));
-	  aux.strtab_size = aux.strtab != NULL ? strsec->sh_size : 0;
+	  if (!get_symtab (filedata, sec, &aux.symtab, &aux.nsyms,
+			   &aux.strtab, &aux.strtab_size))
+	    return FALSE;
 	}
       else if (streq (SECTION_NAME (sec), ".PARISC.unwind"))
 	unwsec = sec;
@@ -9363,7 +9383,6 @@ arm_process_unwind (Filedata * filedata)
 {
   struct arm_unw_aux_info aux;
   Elf_Internal_Shdr *unwsec = NULL;
-  Elf_Internal_Shdr *strsec;
   Elf_Internal_Shdr *sec;
   unsigned long i;
   unsigned int sec_type;
@@ -9393,22 +9412,19 @@ arm_process_unwind (Filedata * filedata)
 
   for (i = 0, sec = filedata->section_headers; i < filedata->file_header.e_shnum; ++i, ++sec)
     {
-      if (sec->sh_type == SHT_SYMTAB && sec->sh_link < filedata->file_header.e_shnum)
+      if (sec->sh_type == SHT_SYMTAB)
 	{
-	  aux.symtab = GET_ELF_SYMBOLS (filedata, sec, & aux.nsyms);
-
-	  strsec = filedata->section_headers + sec->sh_link;
-
-	  /* PR binutils/17531 file: 011-12666-0.004.  */
-	  if (aux.strtab != NULL)
+	  if (aux.symtab)
 	    {
-	      error (_("Multiple string tables found in file.\n"));
+	      error (_("Multiple symbol tables encountered\n"));
+	      free (aux.symtab);
+	      aux.symtab = NULL;
 	      free (aux.strtab);
-	      res = FALSE;
+	      aux.strtab = NULL;
 	    }
-	  aux.strtab = get_data (NULL, filedata, strsec->sh_offset,
-				 1, strsec->sh_size, _("string table"));
-	  aux.strtab_size = aux.strtab != NULL ? strsec->sh_size : 0;
+	  if (!get_symtab (filedata, sec, &aux.symtab, &aux.nsyms,
+			   &aux.strtab, &aux.strtab_size))
+	    return FALSE;
 	}
       else if (sec->sh_type == sec_type)
 	unwsec = sec;
@@ -13682,7 +13698,7 @@ dump_section_as_strings (Elf_Internal_Shdr * section, Filedata * filedata)
 	    {
 	      warn (_("section '%s' has unsupported compress type: %d\n"),
 		    printable_section_name (filedata, section), chdr.ch_type);
-	      return FALSE;
+	      goto error_out;
 	    }
 	  uncompressed_size = chdr.ch_size;
 	  start += compression_header_size;
@@ -13714,7 +13730,7 @@ dump_section_as_strings (Elf_Internal_Shdr * section, Filedata * filedata)
 	    {
 	      error (_("Unable to decompress section %s\n"),
 		     printable_section_name (filedata, section));
-	      return FALSE;
+	      goto error_out;
 	    }
 	}
       else
@@ -13850,6 +13866,10 @@ dump_section_as_strings (Elf_Internal_Shdr * section, Filedata * filedata)
 
   putchar ('\n');
   return TRUE;
+
+error_out:
+  free (real_start);
+  return FALSE;
 }
 
 static bfd_boolean
@@ -13889,7 +13909,7 @@ dump_section_as_bytes (Elf_Internal_Shdr *  section,
 	    {
 	      warn (_("section '%s' has unsupported compress type: %d\n"),
 		    printable_section_name (filedata, section), chdr.ch_type);
-	      return FALSE;
+	      goto error_out;
 	    }
 	  uncompressed_size = chdr.ch_size;
 	  start += compression_header_size;
@@ -13924,7 +13944,7 @@ dump_section_as_bytes (Elf_Internal_Shdr *  section,
 	      error (_("Unable to decompress section %s\n"),
 		     printable_section_name (filedata, section));
 	      /* FIXME: Print the section anyway ?  */
-	      return FALSE;
+	      goto error_out;
 	    }
 	}
       else
@@ -13934,7 +13954,7 @@ dump_section_as_bytes (Elf_Internal_Shdr *  section,
   if (relocate)
     {
       if (! apply_relocations (filedata, section, start, section_size, NULL, NULL))
-	return FALSE;
+	goto error_out;
     }
   else
     {
@@ -14004,6 +14024,10 @@ dump_section_as_bytes (Elf_Internal_Shdr *  section,
 
   putchar ('\n');
   return TRUE;
+
+ error_out:
+  free (real_start);
+  return FALSE;
 }
 
 static ctf_sect_t *
@@ -14317,7 +14341,10 @@ get_build_id (void * data)
       if (align < 4)
         align = 4;
       else if (align != 4 && align != 8)
-        continue;
+	{
+	  free (enote);
+	  continue;
+	}
 
       end = (char *) enote + length;
       data_remaining = end - (char *) enote;
@@ -14330,6 +14357,7 @@ get_build_id (void * data)
 	      warn (_("\
 malformed note encountered in section %s whilst scanning for build-id note\n"),
 		    printable_section_name (filedata, shdr));
+	      free (enote);
               continue;
             }
           data_remaining -= min_notesz;
@@ -14356,6 +14384,7 @@ malformed note encountered in section %s whilst scanning for build-id note\n"),
 	      warn (_("\
 malformed note encountered in section %s whilst scanning for build-id note\n"),
 		    printable_section_name (filedata, shdr));
+	      free (enote);
               continue;
             }
           data_remaining -= min_notesz;
@@ -14380,6 +14409,7 @@ malformed note encountered in section %s whilst scanning for build-id note\n"),
 	  warn (_("\
 malformed note encountered in section %s whilst scanning for build-id note\n"),
 		printable_section_name (filedata, shdr));
+	  free (enote);
           continue;
         }
 
@@ -14394,14 +14424,19 @@ malformed note encountered in section %s whilst scanning for build-id note\n"),
 
           build_id = malloc (inote.descsz * 2 + 1);
           if (build_id == NULL)
-	    return NULL;
+	    {
+	      free (enote);
+	      return NULL;
+	    }
 
           for (j = 0; j < inote.descsz; ++j)
             sprintf (build_id + (j * 2), "%02x", inote.descdata[j] & 0xff);
           build_id[inote.descsz * 2] = '\0';
+	  free (enote);
 
           return (unsigned char *) build_id;
         }
+      free (enote);
     }
 
   return NULL;
@@ -18451,8 +18486,13 @@ get_netbsd_elfcore_note_type (Filedata * filedata, unsigned e_type)
       return _("NetBSD ELF auxiliary vector data");
 #endif
 
+#ifdef NT_NETBSDCORE_LWPSTATUS
+    case NT_NETBSDCORE_LWPSTATUS:
+      return _("PT_LWPSTATUS (ptrace_lwpstatus structure)");
+#endif
+
     default:
-      /* As of Jan 2002 there are no other machine-independent notes
+      /* As of Jan 2020 there are no other machine-independent notes
 	 defined for NetBSD core files.  If the note type is less
 	 than the start of the machine-dependent note types, we don't
 	 understand it.  */
@@ -18812,31 +18852,11 @@ get_symbol_for_build_attribute (Filedata *       filedata,
 	   symsec < filedata->section_headers + filedata->file_header.e_shnum;
 	   symsec ++)
 	{
-	  if (symsec->sh_type == SHT_SYMTAB)
-	    {
-	      ba_cache.symtab = GET_ELF_SYMBOLS (filedata, symsec,
-						 &ba_cache.nsyms);
-
-	      if (ba_cache.symtab != NULL
-		  && symsec->sh_link < filedata->file_header.e_shnum)
-		{
-		  Elf_Internal_Shdr *strtab_sec
-		    = filedata->section_headers + symsec->sh_link;
-
-		  ba_cache.strtab
-		    = (char *) get_data (NULL, filedata, strtab_sec->sh_offset,
-					 1, strtab_sec->sh_size,
-					 _("string table"));
-		  ba_cache.strtablen = strtab_sec->sh_size;
-		}
-	      if (ba_cache.strtab == NULL)
-		{
-		  free (ba_cache.symtab);
-		  ba_cache.symtab = NULL;
-		}
-	      if (ba_cache.symtab != NULL)
-		break;
-	    }
+	  if (symsec->sh_type == SHT_SYMTAB
+	      && get_symtab (filedata, symsec,
+			     &ba_cache.symtab, &ba_cache.nsyms,
+			     &ba_cache.strtab, &ba_cache.strtablen))
+	    break;
 	}
       ba_cache.filedata = filedata;
     }
@@ -19420,7 +19440,10 @@ process_notes_at (Filedata *           filedata,
       if (pnotes)
 	{
 	  if (! apply_relocations (filedata, section, (unsigned char *) pnotes, length, NULL, NULL))
-	    return FALSE;
+	    {
+	      free (pnotes);
+	      return FALSE;
+	    }
 	}
     }
   else
@@ -20220,7 +20243,8 @@ process_archive (Filedata * filedata, bfd_boolean is_thin_archive)
   nested_arch.longnames = NULL;
 
   if (setup_archive (&arch, filedata->file_name, filedata->handle,
-		     is_thin_archive, do_archive_index) != 0)
+		     filedata->file_size, is_thin_archive,
+		     do_archive_index) != 0)
     {
       ret = FALSE;
       goto out;
@@ -20543,7 +20567,9 @@ process_file (char * file_name)
   free (filedata);
 
   free (ba_cache.strtab);
+  ba_cache.strtab = NULL;
   free (ba_cache.symtab);
+  ba_cache.symtab = NULL;
   ba_cache.filedata = NULL;
 
   return ret;

@@ -1,3 +1,63 @@
+2020-03-16  Tom de Vries  <tdevries@suse.de>
+
+	* lib/cache.exp (gdb_do_cache): Add and handle local variables
+	cache_verify and cache_verify_proc.
+
+2020-03-15  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.server/solib-list.exp: Handle
+	'Load new symbol table from "/lib64/ld-2.26.so"? (y or n)'.
+
+2020-03-15  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.base/maint.exp: Use exp_continue in long lines for "maint print
+	objfiles".
+
+2020-03-14  Tom Tromey  <tom@tromey.com>
+
+	* gdb.base/cvexpr.exp: Add test for _Atomic and restrict.
+
+2020-03-14  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.mi/mi-fortran-modules.exp: Use exp_continue.
+
+2020-03-14  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.threads/attach-many-short-lived-threads.exp: Read "info threads"
+	result in line-by-line fashion.
+
+2020-03-14  Tom de Vries  <tdevries@suse.de>
+
+	* lib/gdb.exp (supports_statement_frontiers): New proc.
+	* gdb.cp/step-and-next-inline.exp: Use supports_statement_frontiers.
+
+2020-03-14  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.base/printcmds.exp: Add missing quoting for "print
+	teststring2".
+
+2020-03-13  Tom Tromey  <tom@tromey.com>
+
+	* gdb.base/printcmds.exp (test_print_strings): Add regression
+	test.
+	* gdb.base/printcmds.c (charptr): New typedef.
+	(teststring2): New global.
+
+2020-03-13  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.base/break-interp.exp: Use the tail of the filename, not the
+	full path in the test name.
+	(test_ld): Add some with_test_prefix blocks to make test names
+	unique.
+
+2020-03-13  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.mi/mi-sym-info.exp: Fix buffer full errors, and timeouts.
+
+2020-03-13  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.mi/mi-sym-info.exp: Make matching more precise.
+
 2020-03-13  Tom de Vries  <tdevries@suse.de>
 
 	PR symtab/25646
