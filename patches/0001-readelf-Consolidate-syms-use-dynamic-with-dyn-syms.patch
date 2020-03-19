@@ -1,7 +1,7 @@
-From cd74553c9e189f35b066cb567b000d75abf6f58a Mon Sep 17 00:00:00 2001
+From 3a18f9d2cb0630b73272836de71239feb7179653 Mon Sep 17 00:00:00 2001
 From: "H.J. Lu" <hjl.tools@gmail.com>
 Date: Wed, 4 Mar 2020 15:58:13 -0800
-Subject: [PATCH] readelf: Compute dynamic symbol table size from hash table
+Subject: [PATCH] readelf: Consolidate --syms --use-dynamic with --dyn-syms
 
 When reconstructing dynamic symbol table from the PT_DYNAMIC segment,
 compute dynamic symbol table size from hash table.  For DT_HASH, the
@@ -13,10 +13,9 @@ all undefined symbols defined ones in dynamic symbol table, the highest
 symbol index in DT_GNU_HASH/DT_MIPS_XHASH is the highest dynamic symbol
 table index.
 
-Also iterate dynamic symbol table to print each entry so that output
-of "readelf -D -s" without section header is similar to "readelf -s"
-with section header.
-`
+Rewrite print_dynamic_symbol to dump dynamic symbol table for --dyn-syms
+and --syms --use-dynamic.
+
 binutils/
 
 	* readelf.c (nbuckets): New.
@@ -29,6 +28,8 @@ binutils/
 	(mipsxlat): Likewise.
 	(ngnuchains): Likewise.
 	(gnusymidx): Likewise.
+	(VALID_SYMBOL_NAME): Likewise.
+	(VALID_DYNAMIC_NAME): Use it.
 	(get_dynamic_data): Moved before process_dynamic_section.
 	(get_num_dynamic_syms): New function.
 	(process_dynamic_section): Use DT_SYMTAB, DT_SYMENT, DT_HASH,
@@ -37,9 +38,9 @@ binutils/
 	table.
 	(get_symbol_index_type): Don't print "bad section index" when
 	there is no section header.
-	(print_dynamic_symbol): Don't print bucket number.
-	(process_symbol_table): Simplify dumping dynamic symbol table
-	from DT_HASH and DT_GNU_HASH.
+	(print_dynamic_symbol): Rewrite.
+	(process_symbol_table): Call print_dynamic_symbol to dump dynamic
+	symbol table.
 
 ld/
 
@@ -48,15 +49,15 @@ ld/
 	* testsuite/ld-elfvsb/hidden2.d: Likewise.
 	* testsuite/ld-mips-elf/hash2.d: Likewise.
 ---
- binutils/readelf.c               | 831 ++++++++++++++++---------------
- ld/testsuite/ld-elf/hash.d       |   8 +-
- ld/testsuite/ld-elf/pr13195.d    |   2 +-
- ld/testsuite/ld-elfvsb/hidden2.d |   2 +-
- ld/testsuite/ld-mips-elf/hash2.d |   8 +-
- 5 files changed, 442 insertions(+), 409 deletions(-)
+ binutils/readelf.c               | 1051 +++++++++++++++---------------
+ ld/testsuite/ld-elf/hash.d       |    8 +-
+ ld/testsuite/ld-elf/pr13195.d    |    2 +-
+ ld/testsuite/ld-elfvsb/hidden2.d |    2 +-
+ ld/testsuite/ld-mips-elf/hash2.d |    8 +-
+ 5 files changed, 535 insertions(+), 536 deletions(-)
 
 diff --git a/binutils/readelf.c b/binutils/readelf.c
-index 4e21bdb56c..5af660c3c1 100644
+index 66d91a37b7a..5a0ee1f2bf5 100644
 --- a/binutils/readelf.c
 +++ b/binutils/readelf.c
 @@ -226,6 +226,16 @@ static size_t dynamic_nent;
@@ -76,7 +77,19 @@ index 4e21bdb56c..5af660c3c1 100644
  static Elf_Internal_Sym * dynamic_symbols;
  static Elf_Internal_Syminfo * dynamic_syminfo;
  static unsigned long dynamic_syminfo_offset;
-@@ -9846,6 +9856,320 @@ print_dynamic_flags (bfd_vma flags)
+@@ -325,7 +335,10 @@ static const char * get_symbol_version_string
+   (is_32bit_elf ? get_32bit_elf_symbols (file, section, sym_count)	\
+    : get_64bit_elf_symbols (file, section, sym_count))
+ 
+-#define VALID_DYNAMIC_NAME(offset)	((dynamic_strings != NULL) && (offset < dynamic_strings_length))
++#define VALID_SYMBOL_NAME(strtab, strtab_size, offset) \
++   (strtab != NULL && offset < strtab_size)
++#define VALID_DYNAMIC_NAME(offset) \
++  VALID_SYMBOL_NAME (dynamic_strings, dynamic_strings_length, offset)
+ /* GET_DYNAMIC_NAME asssumes that VALID_DYNAMIC_NAME has
+    already been called and verified that the string exists.  */
+ #define GET_DYNAMIC_NAME(offset)	(dynamic_strings + offset)
+@@ -9862,6 +9875,320 @@ print_dynamic_flags (bfd_vma flags)
    puts ("");
  }
  
@@ -397,7 +410,7 @@ index 4e21bdb56c..5af660c3c1 100644
  /* Parse and display the contents of the dynamic section.  */
  
  static bfd_boolean
-@@ -9873,103 +10197,117 @@ process_dynamic_section (Filedata * filedata)
+@@ -9889,103 +10216,117 @@ process_dynamic_section (Filedata * filedata)
      }
  
    /* Find the appropriate symbol table.  */
@@ -551,7 +564,9 @@ index 4e21bdb56c..5af660c3c1 100644
 -	    str_tab_len = archive_file_size - offset;
 -	  else
 -	    str_tab_len = filedata->file_size - offset;
--
++	if (entry->d_tag == DT_STRSZ)
++	  dynamic_info[DT_STRSZ] = entry->d_un.d_val;
+ 
 -	  if (str_tab_len < 1)
 -	    {
 -	      error
@@ -564,16 +579,6 @@ index 4e21bdb56c..5af660c3c1 100644
 -	      error (_("Multiple dynamic string tables found\n"));
 -	      free (dynamic_strings);
 -	    }
--
--	  dynamic_strings = (char *) get_data (NULL, filedata, offset, 1,
--                                               str_tab_len,
--                                               _("dynamic string table"));
--	  dynamic_strings_length = dynamic_strings == NULL ? 0 : str_tab_len;
--	}
--    }
-+	if (entry->d_tag == DT_STRSZ)
-+	  dynamic_info[DT_STRSZ] = entry->d_un.d_val;
-+
 +	if (dynamic_info[DT_STRTAB] && dynamic_info[DT_STRSZ])
 +	  {
 +	    unsigned long offset;
@@ -590,7 +595,13 @@ index 4e21bdb56c..5af660c3c1 100644
 +		error (_("Corrupt DT_STRTAB dynamic entry\n"));
 +		break;
 +	      }
-+
+ 
+-	  dynamic_strings = (char *) get_data (NULL, filedata, offset, 1,
+-                                               str_tab_len,
+-                                               _("dynamic string table"));
+-	  dynamic_strings_length = dynamic_strings == NULL ? 0 : str_tab_len;
+-	}
+-    }
 +	    dynamic_strings_length = str_tab_len;
 +	    break;
 +	  }
@@ -598,20 +609,41 @@ index 4e21bdb56c..5af660c3c1 100644
  
    /* And find the syminfo section if available.  */
    if (dynamic_syminfo == NULL)
-@@ -11412,7 +11750,8 @@ get_symbol_index_type (Filedata * filedata, unsigned int type)
- 	sprintf (buff, "OS [0x%04x]", type & 0xffff);
-       else if (type >= SHN_LORESERVE)
- 	sprintf (buff, "RSV[0x%04x]", type & 0xffff);
+@@ -11407,143 +11748,36 @@ get_symbol_index_type (Filedata * filedata, unsigned int type)
+     default:
+       if (type == SHN_IA_64_ANSI_COMMON
+ 	  && filedata->file_header.e_machine == EM_IA_64
+-	  && filedata->file_header.e_ident[EI_OSABI] == ELFOSABI_HPUX)
+-	return "ANSI_COM";
+-      else if ((filedata->file_header.e_machine == EM_X86_64
+-		|| filedata->file_header.e_machine == EM_L1OM
+-		|| filedata->file_header.e_machine == EM_K1OM)
+-	       && type == SHN_X86_64_LCOMMON)
+-	return "LARGE_COM";
+-      else if ((type == SHN_MIPS_SCOMMON
+-		&& filedata->file_header.e_machine == EM_MIPS)
+-	       || (type == SHN_TIC6X_SCOMMON
+-		   && filedata->file_header.e_machine == EM_TI_C6000))
+-	return "SCOM";
+-      else if (type == SHN_MIPS_SUNDEFINED
+-	       && filedata->file_header.e_machine == EM_MIPS)
+-	return "SUND";
+-      else if (type >= SHN_LOPROC && type <= SHN_HIPROC)
+-	sprintf (buff, "PRC[0x%04x]", type & 0xffff);
+-      else if (type >= SHN_LOOS && type <= SHN_HIOS)
+-	sprintf (buff, "OS [0x%04x]", type & 0xffff);
+-      else if (type >= SHN_LORESERVE)
+-	sprintf (buff, "RSV[0x%04x]", type & 0xffff);
 -      else if (type >= filedata->file_header.e_shnum)
-+      else if (filedata->file_header.e_shnum != 0
-+	       && type >= filedata->file_header.e_shnum)
- 	sprintf (buff, _("bad section index[%3d]"), type);
-       else
- 	sprintf (buff, "%3d", type);
-@@ -11422,67 +11761,8 @@ get_symbol_index_type (Filedata * filedata, unsigned int type)
-   return buff;
- }
- 
+-	sprintf (buff, _("bad section index[%3d]"), type);
+-      else
+-	sprintf (buff, "%3d", type);
+-      break;
+-    }
+-
+-  return buff;
+-}
+-
 -static bfd_vma *
 -get_dynamic_data (Filedata * filedata, bfd_size_type number, unsigned int ent_size)
 -{
@@ -671,25 +703,98 @@ index 4e21bdb56c..5af660c3c1 100644
 -  return i_data;
 -}
 -
- static void
+-static void
 -print_dynamic_symbol (Filedata * filedata, bfd_vma si, unsigned long hn)
-+print_dynamic_symbol (Filedata * filedata, bfd_vma si)
- {
-   Elf_Internal_Sym * psym;
-   int n;
-@@ -11490,7 +11770,7 @@ print_dynamic_symbol (Filedata * filedata, bfd_vma si, unsigned long hn)
-   n = print_vma (si, DEC_5);
-   if (n < 5)
-     fputs (&"     "[n], stdout);
+-{
+-  Elf_Internal_Sym * psym;
+-  int n;
+-
+-  n = print_vma (si, DEC_5);
+-  if (n < 5)
+-    fputs (&"     "[n], stdout);
 -  printf (" %3lu: ", hn);
-+  fputs (": ", stdout);
+-
+-  if (dynamic_symbols == NULL || si >= num_dynamic_syms)
+-    {
+-      printf (_("<No info available for dynamic symbol number %lu>\n"),
+-	      (unsigned long) si);
+-      return;
+-    }
+-
+-  psym = dynamic_symbols + si;
+-  print_vma (psym->st_value, LONG_HEX);
+-  putchar (' ');
+-  print_vma (psym->st_size, DEC_5);
+-
+-  printf (" %-7s", get_symbol_type (filedata, ELF_ST_TYPE (psym->st_info)));
+-  printf (" %-6s",  get_symbol_binding (filedata, ELF_ST_BIND (psym->st_info)));
+-
+-  if (filedata->file_header.e_ident[EI_OSABI] == ELFOSABI_SOLARIS)
+-    printf (" %-7s",  get_solaris_symbol_visibility (psym->st_other));
+-  else
+-    {
+-      unsigned int vis = ELF_ST_VISIBILITY (psym->st_other);
+-
+-      printf (" %-7s",  get_symbol_visibility (vis));
+-      /* Check to see if any other bits in the st_other field are set.
+-	 Note - displaying this information disrupts the layout of the
+-	 table being generated, but for the moment this case is very
+-	 rare.  */
+-      if (psym->st_other ^ vis)
+-	printf (" [%s] ", get_symbol_other (filedata, psym->st_other ^ vis));
++	  && filedata->file_header.e_ident[EI_OSABI] == ELFOSABI_HPUX)
++	return "ANSI_COM";
++      else if ((filedata->file_header.e_machine == EM_X86_64
++		|| filedata->file_header.e_machine == EM_L1OM
++		|| filedata->file_header.e_machine == EM_K1OM)
++	       && type == SHN_X86_64_LCOMMON)
++	return "LARGE_COM";
++      else if ((type == SHN_MIPS_SCOMMON
++		&& filedata->file_header.e_machine == EM_MIPS)
++	       || (type == SHN_TIC6X_SCOMMON
++		   && filedata->file_header.e_machine == EM_TI_C6000))
++	return "SCOM";
++      else if (type == SHN_MIPS_SUNDEFINED
++	       && filedata->file_header.e_machine == EM_MIPS)
++	return "SUND";
++      else if (type >= SHN_LOPROC && type <= SHN_HIPROC)
++	sprintf (buff, "PRC[0x%04x]", type & 0xffff);
++      else if (type >= SHN_LOOS && type <= SHN_HIOS)
++	sprintf (buff, "OS [0x%04x]", type & 0xffff);
++      else if (type >= SHN_LORESERVE)
++	sprintf (buff, "RSV[0x%04x]", type & 0xffff);
++      else if (filedata->file_header.e_shnum != 0
++	       && type >= filedata->file_header.e_shnum)
++	sprintf (buff, _("bad section index[%3d]"), type);
++      else
++	sprintf (buff, "%3d", type);
++      break;
+     }
  
-   if (dynamic_symbols == NULL || si >= num_dynamic_syms)
-     {
-@@ -11708,210 +11988,10 @@ static bfd_boolean
- process_symbol_table (Filedata * filedata)
+-  printf (" %3.3s ", get_symbol_index_type (filedata, psym->st_shndx));
+-  if (VALID_DYNAMIC_NAME (psym->st_name))
+-    print_symbol (25, GET_DYNAMIC_NAME (psym->st_name));
+-  else
+-    printf (_(" <corrupt: %14ld>"), psym->st_name);
+-  putchar ('\n');
++  return buff;
+ }
+ 
+ static const char *
+@@ -11719,214 +11953,78 @@ get_symbol_version_string (Filedata *                   filedata,
+   return NULL;
+ }
+ 
+-/* Dump the symbol table.  */
+-static bfd_boolean
+-process_symbol_table (Filedata * filedata)
++static void
++print_dynamic_symbol (Filedata *filedata, unsigned long si,
++		      Elf_Internal_Sym *symtab,
++		      Elf_Internal_Shdr *section,
++		      char *strtab, size_t strtab_size)
  {
-   Elf_Internal_Shdr * section;
+-  Elf_Internal_Shdr * section;
 -  bfd_size_type nbuckets = 0;
 -  bfd_size_type nchains = 0;
 -  bfd_vma * buckets = NULL;
@@ -700,16 +805,29 @@ index 4e21bdb56c..5af660c3c1 100644
 -  bfd_vma * mipsxlat = NULL;
 -  bfd_vma gnusymidx = 0;
 -  bfd_size_type ngnuchains = 0;
- 
-   if (!do_syms && !do_dyn_syms && !do_histogram)
-     return TRUE;
+-
+-  if (!do_syms && !do_dyn_syms && !do_histogram)
+-    return TRUE;
++  const char *version_string;
++  enum versioned_symbol_info sym_info;
++  unsigned short vna_other;
++  Elf_Internal_Sym *psym = symtab + si;
  
 -  if (dynamic_info[DT_HASH]
 -      && (do_histogram
 -	  || (do_using_dynamic
 -	      && !do_dyn_syms
 -	      && dynamic_strings != NULL)))
--    {
++  printf ("%6ld: ", si);
++  print_vma (psym->st_value, LONG_HEX);
++  putchar (' ');
++  print_vma (psym->st_size, DEC_5);
++  printf (" %-7s", get_symbol_type (filedata, ELF_ST_TYPE (psym->st_info)));
++  printf (" %-6s", get_symbol_binding (filedata, ELF_ST_BIND (psym->st_info)));
++  if (filedata->file_header.e_ident[EI_OSABI] == ELFOSABI_SOLARIS)
++    printf (" %-7s",  get_solaris_symbol_visibility (psym->st_other));
++  else
+     {
 -      unsigned char nb[8];
 -      unsigned char nc[8];
 -      unsigned int hash_ent_size = 4;
@@ -747,7 +865,8 @@ index 4e21bdb56c..5af660c3c1 100644
 -
 -      buckets = get_dynamic_data (filedata, nbuckets, hash_ent_size);
 -      chains  = get_dynamic_data (filedata, nchains, hash_ent_size);
--
++      unsigned int vis = ELF_ST_VISIBILITY (psym->st_other);
+ 
 -      if (buckets == NULL || chains == NULL)
 -	{
 -	no_hash:
@@ -760,7 +879,13 @@ index 4e21bdb56c..5af660c3c1 100644
 -	  if (do_using_dynamic)
 -	    goto err_out;
 -	}
--    }
++      printf (" %-7s", get_symbol_visibility (vis));
++      /* Check to see if any other bits in the st_other field are set.
++	 Note - displaying this information disrupts the layout of the
++	 table being generated, but for the moment this case is very rare.  */
++      if (psym->st_other ^ vis)
++	printf (" [%s] ", get_symbol_other (filedata, psym->st_other ^ vis));
+     }
 -
 -  if (dynamic_info_DT_GNU_HASH
 -      && (do_histogram
@@ -794,7 +919,22 @@ index 4e21bdb56c..5af660c3c1 100644
 -      buckets_vma = dynamic_info_DT_GNU_HASH + 16;
 -      if (is_32bit_elf)
 -	buckets_vma += bitmaskwords * 4;
--      else
++  printf (" %4s ", get_symbol_index_type (filedata, psym->st_shndx));
++  print_symbol (25, VALID_SYMBOL_NAME (strtab, strtab_size,
++				       psym->st_name)
++		? strtab + psym->st_name : _("<corrupt>"));
++
++  version_string
++    = get_symbol_version_string (filedata,
++				 (section == NULL
++				  || section->sh_type == SHT_DYNSYM),
++				 strtab, strtab_size, si,
++				 psym, &sym_info, &vna_other);
++  if (version_string)
++    {
++      if (sym_info == symbol_undefined)
++	printf ("@%s (%d)", version_string, vna_other);
+       else
 -	buckets_vma += bitmaskwords * 8;
 -
 -      if (fseek (filedata->handle,
@@ -859,13 +999,28 @@ index 4e21bdb56c..5af660c3c1 100644
 -	  error (_("Unable to seek to start of dynamic information\n"));
 -	  goto no_gnu_hash;
 -	}
--
++	printf (sym_info == symbol_hidden ? "@%s" : "@@%s",
++		version_string);
++    }
+ 
 -      gnuchains = get_dynamic_data (filedata, maxchain, 4);
 -      ngnuchains = maxchain;
--
++  putchar ('\n');
+ 
 -      if (gnuchains == NULL)
 -	goto no_gnu_hash;
--
++  if (ELF_ST_BIND (psym->st_info) == STB_LOCAL
++      && section != NULL
++      && si >= section->sh_info
++      /* Irix 5 and 6 MIPS binaries are known to ignore this requirement.  */
++      && filedata->file_header.e_machine != EM_MIPS
++      /* Solaris binaries have been found to violate this requirement as
++	 well.  Not sure if this is a bug or an ABI requirement.  */
++      && filedata->file_header.e_ident[EI_OSABI] != ELFOSABI_SOLARIS)
++    warn (_("local symbol %lu found at index >= %s's sh_info value of %u\n"),
++	  si, printable_section_name (filedata, section), section->sh_info);
++}
+ 
 -      if (dynamic_info_DT_MIPS_XHASH)
 -	{
 -	  if (fseek (filedata->handle,
@@ -878,7 +1033,12 @@ index 4e21bdb56c..5af660c3c1 100644
 -	      error (_("Unable to seek to start of dynamic information\n"));
 -	      goto no_gnu_hash;
 -	    }
--
++/* Dump the symbol table.  */
++static bfd_boolean
++process_symbol_table (Filedata * filedata)
++{
++  Elf_Internal_Shdr * section;
+ 
 -	  mipsxlat = get_dynamic_data (filedata, maxchain, 4);
 -	  if (mipsxlat == NULL)
 -	    {
@@ -893,14 +1053,17 @@ index 4e21bdb56c..5af660c3c1 100644
 -	    }
 -	}
 -    }
--
++  if (!do_syms && !do_dyn_syms && !do_histogram)
++    return TRUE;
+ 
    if ((dynamic_info[DT_HASH] || dynamic_info_DT_GNU_HASH)
        && do_syms
-       && do_using_dynamic
-@@ -11920,61 +12000,14 @@ process_symbol_table (Filedata * filedata)
+@@ -11934,63 +12032,17 @@ process_symbol_table (Filedata * filedata)
+       && dynamic_strings != NULL
+       && dynamic_symbols != NULL)
      {
-       unsigned long hn;
- 
+-      unsigned long hn;
+-
 -      if (dynamic_info[DT_HASH])
 -	{
 -	  bfd_vma si;
@@ -929,7 +1092,8 @@ index 4e21bdb56c..5af660c3c1 100644
 -	    }
 -	  free (visited);
 -	}
--
++      unsigned long si;
+ 
 -      if (dynamic_info_DT_GNU_HASH)
 -	{
 -	  printf (_("\nSymbol table of `%s' for image:\n"),
@@ -946,9 +1110,9 @@ index 4e21bdb56c..5af660c3c1 100644
 -		bfd_vma off = si - gnusymidx;
 +      printf (_("\nSymbol table for image:\n"));
 +      if (is_32bit_elf)
-+	printf (_("  Num:    Value  Size Type    Bind   Vis     Ndx Name\n"));
++	printf (_("   Num:    Value  Size Type    Bind   Vis      Ndx Name\n"));
 +      else
-+	printf (_("  Num:    Value          Size Type    Bind   Vis     Ndx Name\n"));
++	printf (_("   Num:    Value          Size Type    Bind   Vis      Ndx Name\n"));
  
 -		do
 -		  {
@@ -961,13 +1125,87 @@ index 4e21bdb56c..5af660c3c1 100644
 -		while (off < ngnuchains && (gnuchains[off++] & 1) == 0);
 -	      }
 -	}
-+      for (hn = 0; hn < num_dynamic_syms; hn++)
-+	print_dynamic_symbol (filedata, hn);
++      for (si = 0; si < num_dynamic_syms; si++)
++	print_dynamic_symbol (filedata, si, dynamic_symbols, NULL,
++			      dynamic_strings, dynamic_strings_length);
      }
    else if ((do_dyn_syms || (do_syms && !do_using_dynamic))
  	   && filedata->section_headers != NULL)
+@@ -12004,7 +12056,6 @@ process_symbol_table (Filedata * filedata)
+ 	  char * strtab = NULL;
+ 	  unsigned long int strtab_size = 0;
+ 	  Elf_Internal_Sym * symtab;
+-	  Elf_Internal_Sym * psym;
+ 	  unsigned long si, num_syms;
+ 
+ 	  if ((section->sh_type != SHT_SYMTAB
+@@ -12053,61 +12104,9 @@ process_symbol_table (Filedata * filedata)
+ 	      strtab_size = strtab != NULL ? string_sec->sh_size : 0;
+ 	    }
+ 
+-	  for (si = 0, psym = symtab; si < num_syms; si++, psym++)
+-	    {
+-	      const char *version_string;
+-	      enum versioned_symbol_info sym_info;
+-	      unsigned short vna_other;
+-
+-	      printf ("%6ld: ", si);
+-	      print_vma (psym->st_value, LONG_HEX);
+-	      putchar (' ');
+-	      print_vma (psym->st_size, DEC_5);
+-	      printf (" %-7s", get_symbol_type (filedata, ELF_ST_TYPE (psym->st_info)));
+-	      printf (" %-6s", get_symbol_binding (filedata, ELF_ST_BIND (psym->st_info)));
+-	      if (filedata->file_header.e_ident[EI_OSABI] == ELFOSABI_SOLARIS)
+-		printf (" %-7s",  get_solaris_symbol_visibility (psym->st_other));
+-	      else
+-		{
+-		  unsigned int vis = ELF_ST_VISIBILITY (psym->st_other);
+-
+-		  printf (" %-7s", get_symbol_visibility (vis));
+-		  /* Check to see if any other bits in the st_other field are set.
+-		     Note - displaying this information disrupts the layout of the
+-		     table being generated, but for the moment this case is very rare.  */
+-		  if (psym->st_other ^ vis)
+-		    printf (" [%s] ", get_symbol_other (filedata, psym->st_other ^ vis));
+-		}
+-	      printf (" %4s ", get_symbol_index_type (filedata, psym->st_shndx));
+-	      print_symbol (25, psym->st_name < strtab_size
+-			    ? strtab + psym->st_name : _("<corrupt>"));
+-
+-	      version_string
+-		= get_symbol_version_string (filedata,
+-					     section->sh_type == SHT_DYNSYM,
+-					     strtab, strtab_size, si,
+-					     psym, &sym_info, &vna_other);
+-	      if (version_string)
+-		{
+-		  if (sym_info == symbol_undefined)
+-		    printf ("@%s (%d)", version_string, vna_other);
+-		  else
+-		    printf (sym_info == symbol_hidden ? "@%s" : "@@%s",
+-			    version_string);
+-		}
+-
+-	      putchar ('\n');
+-
+-	      if (ELF_ST_BIND (psym->st_info) == STB_LOCAL
+-		  && si >= section->sh_info
+-		  /* Irix 5 and 6 MIPS binaries are known to ignore this requirement.  */
+-		  && filedata->file_header.e_machine != EM_MIPS
+-		  /* Solaris binaries have been found to violate this requirement as
+-		     well.  Not sure if this is a bug or an ABI requirement.  */
+-		  && filedata->file_header.e_ident[EI_OSABI] != ELFOSABI_SOLARIS)
+-		warn (_("local symbol %lu found at index >= %s's sh_info value of %u\n"),
+-		      si, printable_section_name (filedata, section), section->sh_info);
+-	    }
++	  for (si = 0; si < num_syms; si++)
++	    print_dynamic_symbol (filedata, si, symtab, section,
++				  strtab, strtab_size);
+ 
+ 	  free (symtab);
+ 	  if (strtab != filedata->string_table)
 diff --git a/ld/testsuite/ld-elf/hash.d b/ld/testsuite/ld-elf/hash.d
-index efe675e0c7..a0bebb0b00 100644
+index efe675e0c7f..a0bebb0b00f 100644
 --- a/ld/testsuite/ld-elf/hash.d
 +++ b/ld/testsuite/ld-elf/hash.d
 @@ -9,11 +9,11 @@
@@ -987,7 +1225,7 @@ index efe675e0c7..a0bebb0b00 100644
 + +[0-9]+: +[0-9a-f]+ +[0-9]+ +NOTYPE +GLOBAL +DEFAULT +[1-9] __start
  #...
 diff --git a/ld/testsuite/ld-elf/pr13195.d b/ld/testsuite/ld-elf/pr13195.d
-index 8a0f9bd805..fb02e22afa 100644
+index 8a0f9bd805f..7e45f08b33f 100644
 --- a/ld/testsuite/ld-elf/pr13195.d
 +++ b/ld/testsuite/ld-elf/pr13195.d
 @@ -5,5 +5,5 @@
@@ -995,10 +1233,10 @@ index 8a0f9bd805..fb02e22afa 100644
  
  #...
 - +[0-9]+ +[0-9]+: +[0-9a-f]+ +[0-9]+ +FUNC +GLOBAL +DEFAULT +[1-9]+ foo
-+ +[0-9]+: +[0-9a-f]+ +[0-9]+ +FUNC +GLOBAL +DEFAULT +[1-9]+ foo
++ +[0-9]+: +[0-9a-f]+ +[0-9]+ +FUNC +GLOBAL +DEFAULT +[1-9]+ foo@@VERS_2.0
  #pass
 diff --git a/ld/testsuite/ld-elfvsb/hidden2.d b/ld/testsuite/ld-elfvsb/hidden2.d
-index 72a42d57bc..8fe2da65b9 100644
+index 72a42d57bc2..8fe2da65b9d 100644
 --- a/ld/testsuite/ld-elfvsb/hidden2.d
 +++ b/ld/testsuite/ld-elfvsb/hidden2.d
 @@ -5,5 +5,5 @@
@@ -1009,7 +1247,7 @@ index 72a42d57bc..8fe2da65b9 100644
 +[ 	]*[0-9]+: [0-9a-fA-F]* +0 +OBJECT +LOCAL +DEFAULT .* foo
  #pass
 diff --git a/ld/testsuite/ld-mips-elf/hash2.d b/ld/testsuite/ld-mips-elf/hash2.d
-index 122edb80e1..a0fe4266f2 100644
+index 122edb80e13..a0fe4266f2c 100644
 --- a/ld/testsuite/ld-mips-elf/hash2.d
 +++ b/ld/testsuite/ld-mips-elf/hash2.d
 @@ -6,11 +6,11 @@
@@ -1029,5 +1267,5 @@ index 122edb80e1..a0fe4266f2 100644
 + +[0-9]+: +[0-9a-f]+ +[0-9]+ +FUNC +GLOBAL +DEFAULT +([1-9]|PRC) start
  #...
 -- 
-2.24.1
+2.25.1
 
