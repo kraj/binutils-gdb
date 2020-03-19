@@ -12001,12 +12001,11 @@ process_symbol_table (Filedata * filedata)
 	   i < filedata->file_header.e_shnum;
 	   i++, section++)
 	{
-	  unsigned int si;
 	  char * strtab = NULL;
 	  unsigned long int strtab_size = 0;
 	  Elf_Internal_Sym * symtab;
 	  Elf_Internal_Sym * psym;
-	  unsigned long num_syms;
+	  unsigned long si, num_syms;
 
 	  if ((section->sh_type != SHT_SYMTAB
 	       && section->sh_type != SHT_DYNSYM)
@@ -12060,7 +12059,7 @@ process_symbol_table (Filedata * filedata)
 	      enum versioned_symbol_info sym_info;
 	      unsigned short vna_other;
 
-	      printf ("%6d: ", si);
+	      printf ("%6ld: ", si);
 	      print_vma (psym->st_value, LONG_HEX);
 	      putchar (' ');
 	      print_vma (psym->st_size, DEC_5);
@@ -12106,7 +12105,7 @@ process_symbol_table (Filedata * filedata)
 		  /* Solaris binaries have been found to violate this requirement as
 		     well.  Not sure if this is a bug or an ABI requirement.  */
 		  && filedata->file_header.e_ident[EI_OSABI] != ELFOSABI_SOLARIS)
-		warn (_("local symbol %u found at index >= %s's sh_info value of %u\n"),
+		warn (_("local symbol %lu found at index >= %s's sh_info value of %u\n"),
 		      si, printable_section_name (filedata, section), section->sh_info);
 	    }
 
@@ -18402,15 +18401,17 @@ process_netbsd_elf_note (Elf_Internal_Note * pnote)
   switch (pnote->type)
     {
     case NT_NETBSD_IDENT:
+      if (pnote->descsz < 1)
+	break;
       version = byte_get ((unsigned char *) pnote->descdata, sizeof (version));
       if ((version / 10000) % 100)
-        printf ("  NetBSD\t\t0x%08lx\tIDENT %u (%u.%u%s%c)\n", pnote->descsz,
+	printf ("  NetBSD\t\t0x%08lx\tIDENT %u (%u.%u%s%c)\n", pnote->descsz,
 		version, version / 100000000, (version / 1000000) % 100,
 		(version / 10000) % 100 > 26 ? "Z" : "",
 		'A' + (version / 10000) % 26);
       else
 	printf ("  NetBSD\t\t0x%08lx\tIDENT %u (%u.%u.%u)\n", pnote->descsz,
-	        version, version / 100000000, (version / 1000000) % 100,
+		version, version / 100000000, (version / 1000000) % 100,
 		(version / 100) % 100);
       return TRUE;
 
@@ -18421,6 +18422,8 @@ process_netbsd_elf_note (Elf_Internal_Note * pnote)
 
 #ifdef   NT_NETBSD_PAX
     case NT_NETBSD_PAX:
+      if (pnote->descsz < 1)
+	break;
       version = byte_get ((unsigned char *) pnote->descdata, sizeof (version));
       printf ("  NetBSD\t\t0x%08lx\tPaX <%s%s%s%s%s%s>\n", pnote->descsz,
 	      ((version & NT_NETBSD_PAX_MPROTECT) ? "+mprotect" : ""),
@@ -18431,12 +18434,11 @@ process_netbsd_elf_note (Elf_Internal_Note * pnote)
 	      ((version & NT_NETBSD_PAX_NOASLR) ? "-ASLR" : ""));
       return TRUE;
 #endif
-
-    default:
-      printf ("  NetBSD\t0x%08lx\tUnknown note type: (0x%08lx)\n", pnote->descsz,
-	      pnote->type);
-      return FALSE;
     }
+
+  printf ("  NetBSD\t0x%08lx\tUnknown note type: (0x%08lx)\n",
+	  pnote->descsz, pnote->type);
+  return FALSE;
 }
 
 static const char *
@@ -20253,49 +20255,58 @@ process_archive (Filedata * filedata, bfd_boolean is_thin_archive)
   if (do_archive_index)
     {
       if (arch.sym_table == NULL)
-	error (_("%s: unable to dump the index as none was found\n"), filedata->file_name);
+	error (_("%s: unable to dump the index as none was found\n"),
+	       filedata->file_name);
       else
 	{
 	  unsigned long i, l;
 	  unsigned long current_pos;
 
-	  printf (_("Index of archive %s: (%lu entries, 0x%lx bytes in the symbol table)\n"),
-		  filedata->file_name, (unsigned long) arch.index_num, arch.sym_size);
+	  printf (_("Index of archive %s: (%lu entries, 0x%lx bytes "
+		    "in the symbol table)\n"),
+		  filedata->file_name, (unsigned long) arch.index_num,
+		  arch.sym_size);
 
 	  current_pos = ftell (filedata->handle);
 
 	  for (i = l = 0; i < arch.index_num; i++)
 	    {
-	      if ((i == 0) || ((i > 0) && (arch.index_array[i] != arch.index_array[i - 1])))
-	        {
-	          char * member_name;
+	      if (i == 0
+		  || (i > 0 && arch.index_array[i] != arch.index_array[i - 1]))
+		{
+		  char * member_name
+		    = get_archive_member_name_at (&arch, arch.index_array[i],
+						  &nested_arch);
 
-		  member_name = get_archive_member_name_at (&arch, arch.index_array[i], &nested_arch);
+		  if (member_name != NULL)
+		    {
+		      char * qualified_name
+			= make_qualified_name (&arch, &nested_arch,
+					       member_name);
 
-                  if (member_name != NULL)
-                    {
-	              char * qualified_name = make_qualified_name (&arch, &nested_arch, member_name);
-
-                      if (qualified_name != NULL)
-                        {
-		          printf (_("Contents of binary %s at offset "), qualified_name);
+		      if (qualified_name != NULL)
+			{
+			  printf (_("Contents of binary %s at offset "),
+				  qualified_name);
 			  (void) print_vma (arch.index_array[i], PREFIX_HEX);
 			  putchar ('\n');
-		          free (qualified_name);
-		        }
+			  free (qualified_name);
+			}
 		      free (member_name);
 		    }
 		}
 
 	      if (l >= arch.sym_size)
 		{
-		  error (_("%s: end of the symbol table reached before the end of the index\n"),
+		  error (_("%s: end of the symbol table reached "
+			   "before the end of the index\n"),
 			 filedata->file_name);
 		  ret = FALSE;
 		  break;
 		}
 	      /* PR 17531: file: 0b6630b2.  */
-	      printf ("\t%.*s\n", (int) (arch.sym_size - l), arch.sym_table + l);
+	      printf ("\t%.*s\n",
+		      (int) (arch.sym_size - l), arch.sym_table + l);
 	      l += strnlen (arch.sym_table + l, arch.sym_size - l) + 1;
 	    }
 
@@ -20319,7 +20330,8 @@ process_archive (Filedata * filedata, bfd_boolean is_thin_archive)
 
 	  if (fseek (filedata->handle, current_pos, SEEK_SET) != 0)
 	    {
-	      error (_("%s: failed to seek back to start of object files in the archive\n"),
+	      error (_("%s: failed to seek back to start of object files "
+		       "in the archive\n"),
 		     filedata->file_name);
 	      ret = FALSE;
 	      goto out;
@@ -20344,34 +20356,37 @@ process_archive (Filedata * filedata, bfd_boolean is_thin_archive)
 
       /* Read the next archive header.  */
       if (fseek (filedata->handle, arch.next_arhdr_offset, SEEK_SET) != 0)
-        {
-          error (_("%s: failed to seek to next archive header\n"), arch.file_name);
-          return FALSE;
-        }
+	{
+	  error (_("%s: failed to seek to next archive header\n"),
+		 arch.file_name);
+	  ret = FALSE;
+	  break;
+	}
       got = fread (&arch.arhdr, 1, sizeof arch.arhdr, filedata->handle);
       if (got != sizeof arch.arhdr)
-        {
-          if (got == 0)
+	{
+	  if (got == 0)
 	    break;
 	  /* PR 24049 - we cannot use filedata->file_name as this will
 	     have already been freed.  */
 	  error (_("%s: failed to read archive header\n"), arch.file_name);
 
-          ret = FALSE;
-          break;
-        }
+	  ret = FALSE;
+	  break;
+	}
       if (memcmp (arch.arhdr.ar_fmag, ARFMAG, 2) != 0)
-        {
-          error (_("%s: did not find a valid archive header\n"), arch.file_name);
-          ret = FALSE;
-          break;
-        }
+	{
+	  error (_("%s: did not find a valid archive header\n"),
+		 arch.file_name);
+	  ret = FALSE;
+	  break;
+	}
 
       arch.next_arhdr_offset += sizeof arch.arhdr;
 
       archive_file_size = strtoul (arch.arhdr.ar_size, NULL, 10);
       if (archive_file_size & 01)
-        ++archive_file_size;
+	++archive_file_size;
 
       name = get_archive_member_name (&arch, &nested_arch);
       if (name == NULL)
@@ -20392,45 +20407,45 @@ process_archive (Filedata * filedata, bfd_boolean is_thin_archive)
 	}
 
       if (is_thin_archive && arch.nested_member_origin == 0)
-        {
-          /* This is a proxy for an external member of a thin archive.  */
-          Filedata * member_filedata;
-          char * member_file_name = adjust_relative_path
+	{
+	  /* This is a proxy for an external member of a thin archive.  */
+	  Filedata * member_filedata;
+	  char * member_file_name = adjust_relative_path
 	    (filedata->file_name, name, namelen);
 
 	  free (name);
-          if (member_file_name == NULL)
-            {
+	  if (member_file_name == NULL)
+	    {
 	      free (qualified_name);
-              ret = FALSE;
-              break;
-            }
+	      ret = FALSE;
+	      break;
+	    }
 
-          member_filedata = open_file (member_file_name);
-          if (member_filedata == NULL)
-            {
-              error (_("Input file '%s' is not readable.\n"), member_file_name);
-              free (member_file_name);
+	  member_filedata = open_file (member_file_name);
+	  if (member_filedata == NULL)
+	    {
+	      error (_("Input file '%s' is not readable.\n"), member_file_name);
+	      free (member_file_name);
 	      free (qualified_name);
-              ret = FALSE;
-              break;
-            }
+	      ret = FALSE;
+	      break;
+	    }
 
-          archive_file_offset = arch.nested_member_origin;
+	  archive_file_offset = arch.nested_member_origin;
 	  member_filedata->file_name = qualified_name;
 
-          if (! process_object (member_filedata))
+	  if (! process_object (member_filedata))
 	    ret = FALSE;
 
-          close_file (member_filedata);
-          free (member_file_name);
+	  close_file (member_filedata);
+	  free (member_file_name);
 	  free (qualified_name);
-        }
+	}
       else if (is_thin_archive)
-        {
-          Filedata thin_filedata;
+	{
+	  Filedata thin_filedata;
 
-          memset (&thin_filedata, 0, sizeof (thin_filedata));
+	  memset (&thin_filedata, 0, sizeof (thin_filedata));
 
 	  /* PR 15140: Allow for corrupt thin archives.  */
 	  if (nested_arch.file == NULL)
@@ -20444,35 +20459,36 @@ process_archive (Filedata * filedata, bfd_boolean is_thin_archive)
 	    }
 	  free (name);
 
-          /* This is a proxy for a member of a nested archive.  */
-          archive_file_offset = arch.nested_member_origin + sizeof arch.arhdr;
+	  /* This is a proxy for a member of a nested archive.  */
+	  archive_file_offset = arch.nested_member_origin + sizeof arch.arhdr;
 
-          /* The nested archive file will have been opened and setup by
-             get_archive_member_name.  */
-          if (fseek (nested_arch.file, archive_file_offset, SEEK_SET) != 0)
-            {
-              error (_("%s: failed to seek to archive member.\n"), nested_arch.file_name);
+	  /* The nested archive file will have been opened and setup by
+	     get_archive_member_name.  */
+	  if (fseek (nested_arch.file, archive_file_offset, SEEK_SET) != 0)
+	    {
+	      error (_("%s: failed to seek to archive member.\n"),
+		     nested_arch.file_name);
 	      free (qualified_name);
-              ret = FALSE;
-              break;
-            }
+	      ret = FALSE;
+	      break;
+	    }
 
 	  thin_filedata.handle = nested_arch.file;
 	  thin_filedata.file_name = qualified_name;
 
-          if (! process_object (& thin_filedata))
+	  if (! process_object (& thin_filedata))
 	    ret = FALSE;
-        }
+	}
       else
-        {
+	{
 	  free (name);
-          archive_file_offset = arch.next_arhdr_offset;
-          arch.next_arhdr_offset += archive_file_size;
+	  archive_file_offset = arch.next_arhdr_offset;
+	  arch.next_arhdr_offset += archive_file_size;
 
 	  filedata->file_name = qualified_name;
-          if (! process_object (filedata))
+	  if (! process_object (filedata))
 	    ret = FALSE;
-        }
+	}
 
       free (qualified_name);
     }
