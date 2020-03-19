@@ -28,6 +28,7 @@ patches="
 0001-gold-x86-64-Fix-TLSDESC-LE-relaxation.patch
 0002-gold-x86-64-Fix-TLSDESC-relaxation-for-x32.patch
 0001-gold-Make-Ordering-operator-even-more-complex.patch
+0001-plugin-Use-LDPT_ADD_SYMBOLS_V2-to-get-symbol-type.patch
 0001-Don-t-claim-a-fat-IR-object-if-no-IR-object-should-b.patch
 0001-Add-lto-and-none-lto-input-support-for-ld-r.patch
 0002-Add-test-for-nm-on-mixed-LTO-non-LTO-object.patch
