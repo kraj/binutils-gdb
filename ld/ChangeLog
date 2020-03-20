@@ -1,3 +1,16 @@
+2020-03-20  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* testsuite/ld-plugin/lto.exp (lto_link_tests): Run PR ld/25355
+	test only for GCC 10 or newer.
+
+2020-03-20  Alan Modra  <amodra@gmail.com>
+
+	* testplug.c (parse_symdefstr): Use %hhi to read sym->def, and
+	clear new fields.
+	* testplug2.c (parse_symdefstr): Likewise.
+	* testplug3.c (parse_symdefstr): Likewise.
+	* testplug4.c (parse_symdefstr): Likewise.
+
 2020-03-18  Christophe Lyon  <christophe.lyon@linaro.org>
 
 	* testsuite/ld-arm/non-contiguous-arm4.d: Fix expected output.
