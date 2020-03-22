@@ -1,4 +1,4 @@
-From 3a18f9d2cb0630b73272836de71239feb7179653 Mon Sep 17 00:00:00 2001
+From 35937bb8f1c16b16b51beaf16dbdab29f4a49bed Mon Sep 17 00:00:00 2001
 From: "H.J. Lu" <hjl.tools@gmail.com>
 Date: Wed, 4 Mar 2020 15:58:13 -0800
 Subject: [PATCH] readelf: Consolidate --syms --use-dynamic with --dyn-syms
@@ -18,6 +18,7 @@ and --syms --use-dynamic.
 
 binutils/
 
+	PR binutils/25707
 	* readelf.c (nbuckets): New.
 	(nchains): Likewise.
 	(buckets): Likewise.
@@ -44,6 +45,7 @@ binutils/
 
 ld/
 
+	PR binutils/25707
 	* testsuite/ld-elf/hash.d: Updated.
 	* testsuite/ld-elf/pr13195.d: Likewise.
 	* testsuite/ld-elfvsb/hidden2.d: Likewise.
@@ -52,12 +54,12 @@ ld/
  binutils/readelf.c               | 1051 +++++++++++++++---------------
  ld/testsuite/ld-elf/hash.d       |    8 +-
  ld/testsuite/ld-elf/pr13195.d    |    2 +-
- ld/testsuite/ld-elfvsb/hidden2.d |    2 +-
+ ld/testsuite/ld-elfvsb/hidden2.d |    4 +-
  ld/testsuite/ld-mips-elf/hash2.d |    8 +-
- 5 files changed, 535 insertions(+), 536 deletions(-)
+ 5 files changed, 537 insertions(+), 536 deletions(-)
 
 diff --git a/binutils/readelf.c b/binutils/readelf.c
-index 66d91a37b7a..5a0ee1f2bf5 100644
+index 61f06176835..63457a546b6 100644
 --- a/binutils/readelf.c
 +++ b/binutils/readelf.c
 @@ -226,6 +226,16 @@ static size_t dynamic_nent;
@@ -89,7 +91,7 @@ index 66d91a37b7a..5a0ee1f2bf5 100644
  /* GET_DYNAMIC_NAME asssumes that VALID_DYNAMIC_NAME has
     already been called and verified that the string exists.  */
  #define GET_DYNAMIC_NAME(offset)	(dynamic_strings + offset)
-@@ -9862,6 +9875,320 @@ print_dynamic_flags (bfd_vma flags)
+@@ -9865,6 +9878,320 @@ print_dynamic_flags (bfd_vma flags)
    puts ("");
  }
  
@@ -410,7 +412,7 @@ index 66d91a37b7a..5a0ee1f2bf5 100644
  /* Parse and display the contents of the dynamic section.  */
  
  static bfd_boolean
-@@ -9889,103 +10216,117 @@ process_dynamic_section (Filedata * filedata)
+@@ -9892,103 +10219,117 @@ process_dynamic_section (Filedata * filedata)
      }
  
    /* Find the appropriate symbol table.  */
@@ -422,12 +424,8 @@ index 66d91a37b7a..5a0ee1f2bf5 100644
  	   ++entry)
 -	{
 -	  Elf_Internal_Shdr section;
--
--	  if (entry->d_tag != DT_SYMTAB)
--	    continue;
--
 +	if (entry->d_tag == DT_SYMTAB)
- 	  dynamic_info[DT_SYMTAB] = entry->d_un.d_val;
++	  dynamic_info[DT_SYMTAB] = entry->d_un.d_val;
 +	else if (entry->d_tag == DT_SYMENT)
 +	  dynamic_info[DT_SYMENT] = entry->d_un.d_val;
 +	else if (entry->d_tag == DT_HASH)
@@ -442,6 +440,20 @@ index 66d91a37b7a..5a0ee1f2bf5 100644
 +	    dynamic_info_DT_GNU_HASH = entry->d_un.d_val;
 +	  }
  
+-	  if (entry->d_tag != DT_SYMTAB)
+-	    continue;
++      if (dynamic_info[DT_SYMTAB] && dynamic_info[DT_SYMENT])
++	{
++	  Elf_Internal_Phdr *seg;
++	    bfd_vma vma = dynamic_info[DT_SYMTAB];
+ 
+-	  dynamic_info[DT_SYMTAB] = entry->d_un.d_val;
++	    if (! get_program_headers (filedata))
++	      {
++		error (_("Cannot interpret virtual addresses without program headers.\n"));
++		return FALSE;
++	      }
+ 
 -	  /* Since we do not know how big the symbol table is,
 -	     we default to reading in the entire file (!) and
 -	     processing that.  This is overkill, I know, but it
@@ -454,32 +466,31 @@ index 66d91a37b7a..5a0ee1f2bf5 100644
 -		     (long) section.sh_offset);
 -	      return FALSE;
 -	    }
-+      if (dynamic_info[DT_SYMTAB] && dynamic_info[DT_SYMENT])
-+	{
-+	  Elf_Internal_Phdr *seg;
-+	    bfd_vma vma = dynamic_info[DT_SYMTAB];
++	    for (seg = filedata->program_headers;
++		 seg < filedata->program_headers + filedata->file_header.e_phnum;
++		 ++seg)
++	      {
++		unsigned long num_of_syms;
  
 -	  if (archive_file_offset != 0)
 -	    section.sh_size = archive_file_size - section.sh_offset;
 -	  else
 -	    section.sh_size = filedata->file_size - section.sh_offset;
-+	    if (! get_program_headers (filedata))
-+	      {
-+		error (_("Cannot interpret virtual addresses without program headers.\n"));
-+		return FALSE;
-+	      }
++		if (seg->p_type != PT_LOAD)
++		  continue;
  
 -	  if (is_32bit_elf)
 -	    section.sh_entsize = sizeof (Elf32_External_Sym);
 -	  else
 -	    section.sh_entsize = sizeof (Elf64_External_Sym);
 -	  section.sh_name = filedata->string_table_length;
-+	    for (seg = filedata->program_headers;
-+		 seg < filedata->program_headers + filedata->file_header.e_phnum;
-+		 ++seg)
-+	      {
-+		if (seg->p_type != PT_LOAD)
-+		  continue;
++		if ((seg->p_offset + seg->p_filesz)
++		    > filedata->file_size)
++		  {
++		    /* See PR 21379 for a reproducer.  */
++		    error (_("Invalid PT_LOAD entry\n"));
++		    return FALSE;
++		  }
  
 -	  if (dynamic_symbols != NULL)
 -	    {
@@ -494,24 +505,15 @@ index 66d91a37b7a..5a0ee1f2bf5 100644
 -	    }
 -	}
 -    }
-+		if ((seg->p_offset + seg->p_filesz)
-+		    > filedata->file_size)
-+		  {
-+		    /* See PR 21379 for a reproducer.  */
-+		    error (_("Invalid PT_LOAD entry\n"));
-+		    return FALSE;
-+		  }
-+
 +		if (vma >= (seg->p_vaddr & -seg->p_align)
-+		    && vma <= seg->p_vaddr + seg->p_filesz)
++		    && vma <= seg->p_vaddr + seg->p_filesz
++		    && (num_of_syms = get_num_dynamic_syms (filedata)))
 +		  {
 +		    /* Since we do not know how big the symbol table is,
 +		       we default to reading in up to the end of PT_LOAD
 +		       segment and processing that.  This is overkill, I
 +		       know, but it should work.  */
 +		    Elf_Internal_Shdr section;
-+		    unsigned long num_of_syms
-+		      = get_num_dynamic_syms (filedata);
 +		    section.sh_offset = (vma - seg->p_vaddr
 +					 + seg->p_offset);
 +		    section.sh_size = (num_of_syms
@@ -522,7 +524,6 @@ index 66d91a37b7a..5a0ee1f2bf5 100644
 +						       &section,
 +						       & num_dynamic_syms);
 +		    if (dynamic_symbols == NULL
-+			|| num_of_syms == 0
 +			|| num_dynamic_syms != num_of_syms)
 +		      {
 +			error (_("Corrupt DT_SYMTAB dynamic entry\n"));
@@ -564,16 +565,16 @@ index 66d91a37b7a..5a0ee1f2bf5 100644
 -	    str_tab_len = archive_file_size - offset;
 -	  else
 -	    str_tab_len = filedata->file_size - offset;
-+	if (entry->d_tag == DT_STRSZ)
-+	  dynamic_info[DT_STRSZ] = entry->d_un.d_val;
- 
+-
 -	  if (str_tab_len < 1)
 -	    {
 -	      error
 -		(_("Unable to determine the length of the dynamic string table\n"));
 -	      continue;
 -	    }
--
++	if (entry->d_tag == DT_STRSZ)
++	  dynamic_info[DT_STRSZ] = entry->d_un.d_val;
+ 
 -	  if (dynamic_strings != NULL)
 -	    {
 -	      error (_("Multiple dynamic string tables found\n"));
@@ -609,7 +610,7 @@ index 66d91a37b7a..5a0ee1f2bf5 100644
  
    /* And find the syminfo section if available.  */
    if (dynamic_syminfo == NULL)
-@@ -11407,143 +11748,36 @@ get_symbol_index_type (Filedata * filedata, unsigned int type)
+@@ -11410,143 +11751,36 @@ get_symbol_index_type (Filedata * filedata, unsigned int type)
      default:
        if (type == SHN_IA_64_ANSI_COMMON
  	  && filedata->file_header.e_machine == EM_IA_64
@@ -781,7 +782,7 @@ index 66d91a37b7a..5a0ee1f2bf5 100644
  }
  
  static const char *
-@@ -11719,214 +11953,78 @@ get_symbol_version_string (Filedata *                   filedata,
+@@ -11722,214 +11956,78 @@ get_symbol_version_string (Filedata *                   filedata,
    return NULL;
  }
  
@@ -1058,7 +1059,7 @@ index 66d91a37b7a..5a0ee1f2bf5 100644
  
    if ((dynamic_info[DT_HASH] || dynamic_info_DT_GNU_HASH)
        && do_syms
-@@ -11934,63 +12032,17 @@ process_symbol_table (Filedata * filedata)
+@@ -11937,63 +12035,19 @@ process_symbol_table (Filedata * filedata)
        && dynamic_strings != NULL
        && dynamic_symbols != NULL)
      {
@@ -1108,7 +1109,9 @@ index 66d91a37b7a..5a0ee1f2bf5 100644
 -	      {
 -		bfd_vma si = gnubuckets[hn];
 -		bfd_vma off = si - gnusymidx;
-+      printf (_("\nSymbol table for image:\n"));
++      printf (ngettext ("\nSymbol table for image contains %lu entry:\n",
++			"\nSymbol table for image contains %lu entries:\n",
++			num_dynamic_syms), num_dynamic_syms);
 +      if (is_32bit_elf)
 +	printf (_("   Num:    Value  Size Type    Bind   Vis      Ndx Name\n"));
 +      else
@@ -1131,7 +1134,7 @@ index 66d91a37b7a..5a0ee1f2bf5 100644
      }
    else if ((do_dyn_syms || (do_syms && !do_using_dynamic))
  	   && filedata->section_headers != NULL)
-@@ -12004,7 +12056,6 @@ process_symbol_table (Filedata * filedata)
+@@ -12007,7 +12061,6 @@ process_symbol_table (Filedata * filedata)
  	  char * strtab = NULL;
  	  unsigned long int strtab_size = 0;
  	  Elf_Internal_Sym * symtab;
@@ -1139,7 +1142,7 @@ index 66d91a37b7a..5a0ee1f2bf5 100644
  	  unsigned long si, num_syms;
  
  	  if ((section->sh_type != SHT_SYMTAB
-@@ -12053,61 +12104,9 @@ process_symbol_table (Filedata * filedata)
+@@ -12056,61 +12109,9 @@ process_symbol_table (Filedata * filedata)
  	      strtab_size = strtab != NULL ? string_sec->sh_size : 0;
  	    }
  
@@ -1236,12 +1239,15 @@ index 8a0f9bd805f..7e45f08b33f 100644
 + +[0-9]+: +[0-9a-f]+ +[0-9]+ +FUNC +GLOBAL +DEFAULT +[1-9]+ foo@@VERS_2.0
  #pass
 diff --git a/ld/testsuite/ld-elfvsb/hidden2.d b/ld/testsuite/ld-elfvsb/hidden2.d
-index 72a42d57bc2..8fe2da65b9d 100644
+index 72a42d57bc2..5d299746f56 100644
 --- a/ld/testsuite/ld-elfvsb/hidden2.d
 +++ b/ld/testsuite/ld-elfvsb/hidden2.d
-@@ -5,5 +5,5 @@
+@@ -3,7 +3,7 @@
+ #readelf: -Ds
+ # It is also ok to remove this symbol, but we currently make it local.
  
- Symbol table for image:
+-Symbol table for image:
++Symbol table for image contains [0-9]+ entries:
  #...
 -[ 	]*[0-9]+ +[0-9]+: [0-9a-fA-F]* +0 +OBJECT +LOCAL +DEFAULT .* foo
 +[ 	]*[0-9]+: [0-9a-fA-F]* +0 +OBJECT +LOCAL +DEFAULT .* foo
