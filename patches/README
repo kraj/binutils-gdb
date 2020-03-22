@@ -33,6 +33,7 @@ patches="
 0002-Add-test-for-nm-on-mixed-LTO-non-LTO-object.patch
 0003-Don-t-check-the-plugin-target-twice.patch
 0001-readelf-Consolidate-syms-use-dynamic-with-dyn-syms.patch
+0001-bfd-Display-symbol-version-for-nm-D.patch
 0001-Add-STB_SECONDARY-support.patch
 0001-x86-64-Add-R_X86_64_THUNK_GOTPCRELX.patch
 0002-gold-Initial-R_X86_64_THUNK_GOTPCRELX-support.patch
