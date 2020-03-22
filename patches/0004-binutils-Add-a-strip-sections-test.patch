@@ -1,0 +1,44 @@
+From 47a3f4444b8fdb12c2f555d3fdab89a2bb41bc6a Mon Sep 17 00:00:00 2001
+From: "H.J. Lu" <hjl.tools@gmail.com>
+Date: Sat, 7 Mar 2020 05:27:12 -0800
+Subject: [PATCH 4/6] binutils: Add a --strip-sections test
+
+	PR ld/25617
+	* testsuite/binutils-all/objcopy.exp: Run strip-sections-1.
+	* testsuite/binutils-all/strip-sections-1.d: New file.
+---
+ binutils/testsuite/binutils-all/objcopy.exp        | 5 +++++
+ binutils/testsuite/binutils-all/strip-sections-1.d | 5 +++++
+ 2 files changed, 10 insertions(+)
+ create mode 100644 binutils/testsuite/binutils-all/strip-sections-1.d
+
+diff --git a/binutils/testsuite/binutils-all/objcopy.exp b/binutils/testsuite/binutils-all/objcopy.exp
+index 549b064e960..98528a0d114 100644
+--- a/binutils/testsuite/binutils-all/objcopy.exp
++++ b/binutils/testsuite/binutils-all/objcopy.exp
+@@ -1231,6 +1231,11 @@ if [is_elf_format] {
+         verbose [file rootname $t]
+         run_dump_test [file rootname $t]
+     }
++
++    # Test --strip-sections
++    run_dump_test "strip-sections-1" [list \
++			  [list source strip-15${reloc_format}.s] \
++			  [list as "${elf64} --defsym RELOC=${reloc}"]]
+ }
+ run_dump_test "localize-hidden-2"
+ 
+diff --git a/binutils/testsuite/binutils-all/strip-sections-1.d b/binutils/testsuite/binutils-all/strip-sections-1.d
+new file mode 100644
+index 00000000000..76b1dd69c70
+--- /dev/null
++++ b/binutils/testsuite/binutils-all/strip-sections-1.d
+@@ -0,0 +1,5 @@
++#PROG: strip
++#strip: -g --strip-sections
++#readelf: -S
++
++There are no sections in this file.
+-- 
+2.25.1
+

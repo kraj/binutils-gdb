@@ -1,0 +1,500 @@
+From 6a3bd2a059014310fb1030ee63d17388827dbe60 Mon Sep 17 00:00:00 2001
+From: Kaylee Blake <klkblake@gmail.com>
+Date: Wed, 4 Mar 2020 19:18:07 +1030
+Subject: [PATCH 1/6] ELF: Strip section header in ELF objects
+
+Section header isn't mandatory on ELF executable nor shared library.
+This patch adds a new linker option, -z nosectionheader, to omit ELF
+section header, an new objcopy and strip option, --strip-sections, to
+remove ELF section header.
+
+bfd/
+
+2020-03-XX  H.J. Lu  <hongjiu.lu@intel.com>
+	    Kaylee Blake  <klkblake@gmail.com>
+
+	PR ld/25617
+	* bfd.c (BFD_NO_SECTION_HEADER): New.
+	(BFD_FLAGS_SAVED): Add BFD_NO_SECTION_HEADER.
+	(BFD_FLAGS_FOR_BFD_USE_MASK): Likewise.
+	* elfcode.h (elf_swap_ehdr_out): Omit section header with
+	BFD_NO_SECTION_HEADER.
+	(elf_write_shdrs_and_ehdr): Likewise.
+	* elfxx-target.h (TARGET_BIG_SYM): Add BFD_NO_SECTION_HEADER
+	to object_flags.
+	(TARGET_LITTLE_SYM): Likewise.
+	* bfd-in2.h: Regenerated.
+
+binutils/
+
+2020-03-XX  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/25617
+	* NEWS: Mention --strip-sections for objcopy and strip.
+	* doc/binutils.texi: Document --strip-sections for objcopy and
+	strip.
+	* objcopy.c (remove_section_header): New.
+	(command_line_switch): Add OPTION_REMOVE_SECTION_HEADER.
+	(strip_options): Add --strip-sections.
+	(copy_options): Likewise.
+	(copy_usage): Add --strip-sections.
+	(strip_usage): Likewise.
+	(copy_object): Handle --strip-sections for ELF files.
+	(strip_main): Handle OPTION_REMOVE_SECTION_HEADER.
+	(copy_main): Likewise.
+
+ld/
+
+2020-03-XX  H.J. Lu  <hongjiu.lu@intel.com>
+	    Kaylee Blake  <klkblake@gmail.com>
+
+	PR ld/25617
+	* NEWS: Mention -z nosectionheader.
+	* emultempl/elf.em: Support -z sectionheader and
+	-z nosectionheader.
+	* ld.h (ld_config_type): Add no_section_header.
+	* ld.texi: Document -z sectionheader and -z nosectionheader.
+	* ldlang.c (ldlang_open_output): Handle
+	config.no_section_header.
+	* lexsup.c (parse_args): Enable --strip-all with
+	-z nosectionheader.
+	(elf_static_list_options): Add -z sectionheader and
+	-z nosectionheader.
+---
+ bfd/bfd-in2.h              |  8 ++++++--
+ bfd/bfd.c                  |  8 ++++++--
+ bfd/elfcode.h              | 37 +++++++++++++++++++++++++++----------
+ bfd/elfxx-target.h         |  6 ++++--
+ binutils/NEWS              |  3 +++
+ binutils/doc/binutils.texi | 10 ++++++++++
+ binutils/objcopy.c         | 35 +++++++++++++++++++++++++++++++++--
+ ld/NEWS                    |  3 +++
+ ld/emultempl/elf.em        |  4 ++++
+ ld/ld.h                    |  3 +++
+ ld/ld.texi                 |  5 +++++
+ ld/ldlang.c                |  4 ++++
+ ld/lexsup.c                |  8 ++++++++
+ 13 files changed, 116 insertions(+), 18 deletions(-)
+
+diff --git a/bfd/bfd-in2.h b/bfd/bfd-in2.h
+index 14e2e3b4819..043c5623a97 100644
+--- a/bfd/bfd-in2.h
++++ b/bfd/bfd-in2.h
+@@ -6593,17 +6593,21 @@ struct bfd
+   /* Put pathnames into archives (non-POSIX).  */
+ #define BFD_ARCHIVE_FULL_PATH  0x100000
+ 
++  /* Don't generate ELF section header.  */
++#define BFD_NO_SECTION_HEADER  0x200000
++
+   /* Flags bits to be saved in bfd_preserve_save.  */
+ #define BFD_FLAGS_SAVED \
+   (BFD_IN_MEMORY | BFD_COMPRESS | BFD_DECOMPRESS | BFD_LINKER_CREATED \
+    | BFD_PLUGIN | BFD_COMPRESS_GABI | BFD_CONVERT_ELF_COMMON \
+-   | BFD_USE_ELF_STT_COMMON)
++   | BFD_USE_ELF_STT_COMMON | BFD_NO_SECTION_HEADER)
+ 
+   /* Flags bits which are for BFD use only.  */
+ #define BFD_FLAGS_FOR_BFD_USE_MASK \
+   (BFD_IN_MEMORY | BFD_COMPRESS | BFD_DECOMPRESS | BFD_LINKER_CREATED \
+    | BFD_PLUGIN | BFD_TRADITIONAL_FORMAT | BFD_DETERMINISTIC_OUTPUT \
+-   | BFD_COMPRESS_GABI | BFD_CONVERT_ELF_COMMON | BFD_USE_ELF_STT_COMMON)
++   | BFD_COMPRESS_GABI | BFD_CONVERT_ELF_COMMON | BFD_USE_ELF_STT_COMMON \
++   | BFD_NO_SECTION_HEADER)
+ 
+   /* The format which belongs to the BFD. (object, core, etc.)  */
+   ENUM_BITFIELD (bfd_format) format : 3;
+diff --git a/bfd/bfd.c b/bfd/bfd.c
+index 100359ccfe6..32b598287f0 100644
+--- a/bfd/bfd.c
++++ b/bfd/bfd.c
+@@ -176,17 +176,21 @@ CODE_FRAGMENT
+ .  {* Put pathnames into archives (non-POSIX).  *}
+ .#define BFD_ARCHIVE_FULL_PATH  0x100000
+ .
++.  {* Don't generate ELF section header.  *}
++.#define BFD_NO_SECTION_HEADER	0x200000
++.
+ .  {* Flags bits to be saved in bfd_preserve_save.  *}
+ .#define BFD_FLAGS_SAVED \
+ .  (BFD_IN_MEMORY | BFD_COMPRESS | BFD_DECOMPRESS | BFD_LINKER_CREATED \
+ .   | BFD_PLUGIN | BFD_COMPRESS_GABI | BFD_CONVERT_ELF_COMMON \
+-.   | BFD_USE_ELF_STT_COMMON)
++.   | BFD_USE_ELF_STT_COMMON | BFD_NO_SECTION_HEADER)
+ .
+ .  {* Flags bits which are for BFD use only.  *}
+ .#define BFD_FLAGS_FOR_BFD_USE_MASK \
+ .  (BFD_IN_MEMORY | BFD_COMPRESS | BFD_DECOMPRESS | BFD_LINKER_CREATED \
+ .   | BFD_PLUGIN | BFD_TRADITIONAL_FORMAT | BFD_DETERMINISTIC_OUTPUT \
+-.   | BFD_COMPRESS_GABI | BFD_CONVERT_ELF_COMMON | BFD_USE_ELF_STT_COMMON)
++.   | BFD_COMPRESS_GABI | BFD_CONVERT_ELF_COMMON | BFD_USE_ELF_STT_COMMON \
++.   | BFD_NO_SECTION_HEADER)
+ .
+ .  {* The format which belongs to the BFD. (object, core, etc.)  *}
+ .  ENUM_BITFIELD (bfd_format) format : 3;
+diff --git a/bfd/elfcode.h b/bfd/elfcode.h
+index 68db3e9ee3d..0892215267d 100644
+--- a/bfd/elfcode.h
++++ b/bfd/elfcode.h
+@@ -266,6 +266,8 @@ elf_swap_ehdr_out (bfd *abfd,
+ {
+   unsigned int tmp;
+   int signed_vma = get_elf_backend_data (abfd)->sign_extend_vma;
++  bfd_boolean no_section_header
++    = (abfd->flags & BFD_NO_SECTION_HEADER) != 0;
+   memcpy (dst->e_ident, src->e_ident, EI_NIDENT);
+   /* note that all elements of dst are *arrays of unsigned char* already...  */
+   H_PUT_16 (abfd, src->e_type, dst->e_type);
+@@ -276,7 +278,10 @@ elf_swap_ehdr_out (bfd *abfd,
+   else
+     H_PUT_WORD (abfd, src->e_entry, dst->e_entry);
+   H_PUT_WORD (abfd, src->e_phoff, dst->e_phoff);
+-  H_PUT_WORD (abfd, src->e_shoff, dst->e_shoff);
++  if (no_section_header)
++    H_PUT_WORD (abfd, 0, dst->e_shoff);
++  else
++    H_PUT_WORD (abfd, src->e_shoff, dst->e_shoff);
+   H_PUT_32 (abfd, src->e_flags, dst->e_flags);
+   H_PUT_16 (abfd, src->e_ehsize, dst->e_ehsize);
+   H_PUT_16 (abfd, src->e_phentsize, dst->e_phentsize);
+@@ -284,15 +289,24 @@ elf_swap_ehdr_out (bfd *abfd,
+   if (tmp > PN_XNUM)
+     tmp = PN_XNUM;
+   H_PUT_16 (abfd, tmp, dst->e_phnum);
+-  H_PUT_16 (abfd, src->e_shentsize, dst->e_shentsize);
+-  tmp = src->e_shnum;
+-  if (tmp >= (SHN_LORESERVE & 0xffff))
+-    tmp = SHN_UNDEF;
+-  H_PUT_16 (abfd, tmp, dst->e_shnum);
+-  tmp = src->e_shstrndx;
+-  if (tmp >= (SHN_LORESERVE & 0xffff))
+-    tmp = SHN_XINDEX & 0xffff;
+-  H_PUT_16 (abfd, tmp, dst->e_shstrndx);
++  if (no_section_header)
++    {
++      H_PUT_16 (abfd, 0, dst->e_shentsize);
++      H_PUT_16 (abfd, 0, dst->e_shnum);
++      H_PUT_16 (abfd, 0, dst->e_shstrndx);
++    }
++  else
++    {
++      H_PUT_16 (abfd, src->e_shentsize, dst->e_shentsize);
++      tmp = src->e_shnum;
++      if (tmp >= (SHN_LORESERVE & 0xffff))
++        tmp = SHN_UNDEF;
++      H_PUT_16 (abfd, tmp, dst->e_shnum);
++      tmp = src->e_shstrndx;
++      if (tmp >= (SHN_LORESERVE & 0xffff))
++        tmp = SHN_XINDEX & 0xffff;
++      H_PUT_16 (abfd, tmp, dst->e_shstrndx);
++    }
+ }
+ 
+ /* Translate an ELF section header table entry in external format into an
+@@ -1040,6 +1054,9 @@ elf_write_shdrs_and_ehdr (bfd *abfd)
+       || bfd_bwrite (&x_ehdr, amt, abfd) != amt)
+     return FALSE;
+ 
++   if ((abfd->flags & BFD_NO_SECTION_HEADER) != 0)
++    return TRUE;
++
+   /* Some fields in the first section header handle overflow of ehdr
+      fields.  */
+   if (i_ehdrp->e_phnum >= PN_XNUM)
+diff --git a/bfd/elfxx-target.h b/bfd/elfxx-target.h
+index 1ae17f45ee2..8d25c84e800 100644
+--- a/bfd/elfxx-target.h
++++ b/bfd/elfxx-target.h
+@@ -970,7 +970,8 @@ const bfd_target TARGET_BIG_SYM =
+   /* object_flags: mask of all file flags */
+   (HAS_RELOC | EXEC_P | HAS_LINENO | HAS_DEBUG | HAS_SYMS | HAS_LOCALS
+    | DYNAMIC | WP_TEXT | D_PAGED | BFD_COMPRESS | BFD_DECOMPRESS
+-   | BFD_COMPRESS_GABI | BFD_CONVERT_ELF_COMMON | BFD_USE_ELF_STT_COMMON),
++   | BFD_COMPRESS_GABI | BFD_CONVERT_ELF_COMMON | BFD_USE_ELF_STT_COMMON
++   | BFD_NO_SECTION_HEADER),
+ 
+   /* section_flags: mask of all section flags */
+   (SEC_HAS_CONTENTS | SEC_ALLOC | SEC_LOAD | SEC_RELOC | SEC_READONLY
+@@ -1071,7 +1072,8 @@ const bfd_target TARGET_LITTLE_SYM =
+   /* object_flags: mask of all file flags */
+   (HAS_RELOC | EXEC_P | HAS_LINENO | HAS_DEBUG | HAS_SYMS | HAS_LOCALS
+    | DYNAMIC | WP_TEXT | D_PAGED | BFD_COMPRESS | BFD_DECOMPRESS
+-   | BFD_COMPRESS_GABI | BFD_CONVERT_ELF_COMMON | BFD_USE_ELF_STT_COMMON),
++   | BFD_COMPRESS_GABI | BFD_CONVERT_ELF_COMMON | BFD_USE_ELF_STT_COMMON
++   | BFD_NO_SECTION_HEADER),
+ 
+   /* section_flags: mask of all section flags */
+   (SEC_HAS_CONTENTS | SEC_ALLOC | SEC_LOAD | SEC_RELOC | SEC_READONLY
+diff --git a/binutils/NEWS b/binutils/NEWS
+index 1650a3ac934..a420ec117ab 100644
+--- a/binutils/NEWS
++++ b/binutils/NEWS
+@@ -1,5 +1,8 @@
+ -*- text -*-
+ 
++* Add command-line option, --strip-sections, to objcopy and strip to
++  remove ELF section header from ELF file.
++
+ Changes in 2.34:
+ 
+ * Binutils now supports debuginfod, an HTTP server for distributing
+diff --git a/binutils/doc/binutils.texi b/binutils/doc/binutils.texi
+index de3f1babb27..b3943e6a337 100644
+--- a/binutils/doc/binutils.texi
++++ b/binutils/doc/binutils.texi
+@@ -1186,6 +1186,7 @@ objcopy [@option{-F} @var{bfdname}|@option{--target=}@var{bfdname}]
+         [@option{-R} @var{sectionpattern}|@option{--remove-section=}@var{sectionpattern}]
+         [@option{--keep-section=}@var{sectionpattern}]
+         [@option{--remove-relocations=}@var{sectionpattern}]
++        [@option{--strip-sections}]
+         [@option{-p}|@option{--preserve-dates}]
+         [@option{-D}|@option{--enable-deterministic-archives}]
+         [@option{-U}|@option{--disable-deterministic-archives}]
+@@ -1403,6 +1404,10 @@ will remove all relocations for sections matching the pattern
+ '.text.*', but will not remove relocations for the section
+ '.text.foo'.
+ 
++@item --strip-sections
++Strip section header   This option is specific to ELF files.
++Implies @option{--strip-all} and @option{--merge-notes}.
++
+ @item -S
+ @itemx --strip-all
+ Do not copy relocation and symbol information from the source file.
+@@ -3262,6 +3267,7 @@ strip [@option{-F} @var{bfdname} |@option{--target=}@var{bfdname}]
+       [@option{-R} @var{sectionname} |@option{--remove-section=}@var{sectionname}]
+       [@option{--keep-section=}@var{sectionpattern}]
+       [@option{--remove-relocations=}@var{sectionpattern}]
++      [@option{--strip-sections}]
+       [@option{-o} @var{file}] [@option{-p}|@option{--preserve-dates}]
+       [@option{-D}|@option{--enable-deterministic-archives}]
+       [@option{-U}|@option{--disable-deterministic-archives}]
+@@ -3363,6 +3369,10 @@ will remove all relocations for sections matching the pattern
+ '.text.*', but will not remove relocations for the section
+ '.text.foo'.
+ 
++@item --strip-sections
++Strip section header.  This option is specific to ELF files.  Implies
++@option{--strip-all} and @option{--merge-notes}.
++
+ @item -s
+ @itemx --strip-all
+ Remove all symbols.
+diff --git a/binutils/objcopy.c b/binutils/objcopy.c
+index e6711a99fb2..89a80f7edeb 100644
+--- a/binutils/objcopy.c
++++ b/binutils/objcopy.c
+@@ -96,6 +96,9 @@ static bfd_boolean preserve_dates;	/* Preserve input file timestamp.  */
+ static int deterministic = -1;		/* Enable deterministic archives.  */
+ static int status = 0;			/* Exit status.  */
+ 
++/* Strip section header.  */
++static bfd_boolean strip_sections = FALSE;
++
+ static bfd_boolean    merge_notes = FALSE;	/* Merge note sections.  */
+ 
+ typedef struct merged_note_section
+@@ -352,6 +355,7 @@ enum command_line_switch
+   OPTION_REDEFINE_SYMS,
+   OPTION_REMOVE_LEADING_CHAR,
+   OPTION_REMOVE_RELOCS,
++  OPTION_STRIP_SECTIONS,
+   OPTION_RENAME_SECTION,
+   OPTION_REVERSE_BYTES,
+   OPTION_PE_SECTION_ALIGNMENT,
+@@ -399,6 +403,7 @@ static struct option strip_options[] =
+   {"preserve-dates", no_argument, 0, 'p'},
+   {"remove-section", required_argument, 0, 'R'},
+   {"remove-relocations", required_argument, 0, OPTION_REMOVE_RELOCS},
++  {"strip-sections", no_argument, 0, OPTION_STRIP_SECTIONS},
+   {"strip-all", no_argument, 0, 's'},
+   {"strip-debug", no_argument, 0, 'S'},
+   {"strip-dwo", no_argument, 0, OPTION_STRIP_DWO},
+@@ -487,6 +492,7 @@ static struct option copy_options[] =
+   {"remove-leading-char", no_argument, 0, OPTION_REMOVE_LEADING_CHAR},
+   {"remove-section", required_argument, 0, 'R'},
+   {"remove-relocations", required_argument, 0, OPTION_REMOVE_RELOCS},
++  {"strip-sections", no_argument, 0, OPTION_STRIP_SECTIONS},
+   {"rename-section", required_argument, 0, OPTION_RENAME_SECTION},
+   {"reverse-bytes", required_argument, 0, OPTION_REVERSE_BYTES},
+   {"section-alignment", required_argument, 0, OPTION_PE_SECTION_ALIGNMENT},
+@@ -582,6 +588,7 @@ copy_usage (FILE *stream, int exit_status)
+      --add-gnu-debuglink=<file>    Add section .gnu_debuglink linking to <file>\n\
+   -R --remove-section <name>       Remove section <name> from the output\n\
+      --remove-relocations <name>   Remove relocations from section <name>\n\
++     --strip-sections              Strip section header from the output\n\
+   -S --strip-all                   Remove all symbol and relocation information\n\
+   -g --strip-debug                 Remove all debugging symbols & sections\n\
+      --strip-dwo                   Remove all DWO sections\n\
+@@ -719,6 +726,7 @@ strip_usage (FILE *stream, int exit_status)
+   fprintf (stream, _("\
+   -R --remove-section=<name>       Also remove section <name> from the output\n\
+      --remove-relocations <name>   Remove relocations from section <name>\n\
++     --strip-sections              Strip section header from the output\n\
+   -s --strip-all                   Remove all symbol and relocation information\n\
+   -g -S -d --strip-debug           Remove all debugging symbols & sections\n\
+      --strip-dwo                   Remove all DWO sections\n\
+@@ -2621,7 +2629,16 @@ copy_object (bfd *ibfd, bfd *obfd, const bfd_arch_info_type *input_arch)
+       return FALSE;
+     }
+ 
+-  if (bfd_get_flavour (ibfd) != bfd_target_elf_flavour)
++  if (bfd_get_flavour (ibfd) == bfd_target_elf_flavour)
++    {
++      if (strip_sections)
++	{
++	  ibfd->flags |= BFD_NO_SECTION_HEADER;
++	  strip_symbols = STRIP_ALL;
++	  merge_notes = TRUE;
++	}
++    }
++  else
+     {
+       if ((do_debug_sections & compress) != 0
+ 	  && do_debug_sections != compress)
+@@ -2637,6 +2654,13 @@ copy_object (bfd *ibfd, bfd *obfd, const bfd_arch_info_type *input_arch)
+ 		     bfd_get_archive_filename (ibfd));
+ 	  return FALSE;
+ 	}
++
++      if (strip_sections)
++	{
++	  non_fatal (_("--strip_sections is unsupported on `%s'"),
++		     bfd_get_archive_filename (ibfd));
++	  return FALSE;
++	}
+     }
+ 
+   if (verbose)
+@@ -3360,7 +3384,7 @@ copy_object (bfd *ibfd, bfd *obfd, const bfd_arch_info_type *input_arch)
+ 	  free (merged);
+ 	}
+     }
+-  else if (merge_notes && ! is_strip)
++  else if (merge_notes && ! is_strip && ! strip_sections)
+     non_fatal (_("%s: Could not find any mergeable note sections"),
+ 	       bfd_get_filename (ibfd));
+ 
+@@ -4670,6 +4694,9 @@ strip_main (int argc, char *argv[])
+ 	case OPTION_REMOVE_RELOCS:
+ 	  handle_remove_relocations_option (optarg);
+ 	  break;
++	case OPTION_STRIP_SECTIONS:
++	  strip_sections = TRUE;
++	  break;
+ 	case 's':
+ 	  strip_symbols = STRIP_ALL;
+ 	  break;
+@@ -5101,6 +5128,10 @@ copy_main (int argc, char *argv[])
+ 	  handle_remove_relocations_option (optarg);
+ 	  break;
+ 
++	case OPTION_STRIP_SECTIONS:
++	  strip_sections = TRUE;
++	  break;
++
+ 	case 'S':
+ 	  strip_symbols = STRIP_ALL;
+ 	  break;
+diff --git a/ld/NEWS b/ld/NEWS
+index 563af67a344..ee9a7c86198 100644
+--- a/ld/NEWS
++++ b/ld/NEWS
+@@ -1,5 +1,8 @@
+ -*- text -*-
+ 
++* Add command-line option, -z nosectionheader, to omit ELF section
++  header.
++
+ * Add command-line options --enable-non-contiguous-regions and
+   --enable-non-contiguous-regions-warnings.
+ 
+diff --git a/ld/emultempl/elf.em b/ld/emultempl/elf.em
+index bb7e5375303..1ce1af1236a 100644
+--- a/ld/emultempl/elf.em
++++ b/ld/emultempl/elf.em
+@@ -752,6 +752,10 @@ fragment <<EOF
+ 	{
+ 	  link_info.flags_1 |= DF_1_GLOBAUDIT;
+ 	}
++      else if (strcmp (optarg, "sectionheader") == 0)
++	config.no_section_header = FALSE;
++      else if (strcmp (optarg, "nosectionheader") == 0)
++	config.no_section_header = TRUE;
+ EOF
+ 
+ if test x"$GENERATE_SHLIB_SCRIPT" = xyes; then
+diff --git a/ld/ld.h b/ld/ld.h
+index 71fd7812677..4c07604e5dc 100644
+--- a/ld/ld.h
++++ b/ld/ld.h
+@@ -280,6 +280,9 @@ typedef struct
+   /* If set, code and non-code sections should never be in one segment.  */
+   bfd_boolean separate_code;
+ 
++  /* If set, generation of ELF section header should be suppressed.  */
++  bfd_boolean no_section_header;
++
+   /* The rpath separation character.  Usually ':'.  */
+   char rpath_separator;
+ 
+diff --git a/ld/ld.texi b/ld/ld.texi
+index 9f562935bed..a05a5f35d74 100644
+--- a/ld/ld.texi
++++ b/ld/ld.texi
+@@ -1337,6 +1337,11 @@ relocation, if supported.  Specifying @samp{common-page-size} smaller
+ than the system page size will render this protection ineffective.
+ Don't create an ELF @code{PT_GNU_RELRO} segment if @samp{norelro}.
+ 
++@item sectionheader
++@itemx nosectionheader
++Generate section header.  Don't generate section header if
++@samp{sectionheader} is used.  @option{sectionheader} is the default.
++
+ @item separate-code
+ @itemx noseparate-code
+ Create separate code @code{PT_LOAD} segment header in the object.  This
+diff --git a/ld/ldlang.c b/ld/ldlang.c
+index 0bb5f3c044c..12fc52b9734 100644
+--- a/ld/ldlang.c
++++ b/ld/ldlang.c
+@@ -3463,6 +3463,10 @@ ldlang_open_output (lang_statement_union_type *statement)
+ 	link_info.output_bfd->flags |= BFD_TRADITIONAL_FORMAT;
+       else
+ 	link_info.output_bfd->flags &= ~BFD_TRADITIONAL_FORMAT;
++      if (config.no_section_header)
++	link_info.output_bfd->flags |= BFD_NO_SECTION_HEADER;
++      else
++	link_info.output_bfd->flags &= ~BFD_NO_SECTION_HEADER;
+       break;
+ 
+     case lang_target_statement_enum:
+diff --git a/ld/lexsup.c b/ld/lexsup.c
+index 2597e2d6304..d3bc860a51a 100644
+--- a/ld/lexsup.c
++++ b/ld/lexsup.c
+@@ -1686,6 +1686,10 @@ parse_args (unsigned argc, char **argv)
+       break;
+     }
+ 
++  /* -z nosectionheader implies --strip-all.  */
++  if (config.no_section_header)
++    link_info.strip = strip_all;
++
+   if (!bfd_link_dll (&link_info))
+     {
+       if (command_line.filter_shlib)
+@@ -1889,6 +1893,10 @@ elf_static_list_options (FILE *file)
+   -z noexecstack              Mark executable as not requiring executable stack\n"));
+   fprintf (file, _("\
+   -z globalaudit              Mark executable requiring global auditing\n"));
++  fprintf (file, _("\
++  -z sectionheader            Generate section header (default)\n"));
++  fprintf (file, _("\
++  -z nosectionheader          Do not generate section header\n"));
+ }
+ 
+ static void
+-- 
+2.25.1
+

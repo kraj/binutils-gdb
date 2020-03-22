@@ -1,0 +1,44 @@
+From 88e0598b70138ab98f9b765a635f1856366278dc Mon Sep 17 00:00:00 2001
+From: "H.J. Lu" <hjl.tools@gmail.com>
+Date: Mon, 9 Mar 2020 14:37:26 -0700
+Subject: [PATCH 6/6] ld: Add -z nosectionheader test to bootstrap.exp
+
+	PR ld/25617
+	* testsuite/ld-bootstrap/bootstrap.exp: Add -z nosectionheader
+	test.
+---
+ ld/testsuite/ld-bootstrap/bootstrap.exp | 10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/ld/testsuite/ld-bootstrap/bootstrap.exp b/ld/testsuite/ld-bootstrap/bootstrap.exp
+index ba51e50a025..5d74caf2d6d 100644
+--- a/ld/testsuite/ld-bootstrap/bootstrap.exp
++++ b/ld/testsuite/ld-bootstrap/bootstrap.exp
+@@ -55,6 +55,9 @@ set test_flags {"" "strip" "--static" "-Wl,--traditional-format"
+ if { [istarget "powerpc-*-*"] } {
+     lappend test_flags "-Wl,--ppc476-workaround"
+ }
++if { [is_elf_format] && ![is_bad_symtab] } {
++    lappend test_flags "-Wl,-z,nosectionheader"
++}
+ 
+ set gcc_B_opt_save $gcc_B_opt
+ 
+@@ -80,9 +83,12 @@ foreach flags $test_flags {
+ 	set testname "bootstrap"
+     }}
+ 
+-    # --static is meaningless and --relax is incompatible with -r.
++    # --static is meaningless.  --relax and -z nosectionheader are
++    # incompatible with -r.
+     regsub -- "-Wl," $flags "" partial_flags
+-    if { "$partial_flags" == "--static" || "$partial_flags" == "--relax" } {
++    if { "$partial_flags" == "--static" \
++         || "$partial_flags" == "--relax" \
++	 || [string match "*nosectionheader*" "$partial_flags"] } {
+ 	set partial_flags ""
+     }
+ 
+-- 
+2.25.1
+

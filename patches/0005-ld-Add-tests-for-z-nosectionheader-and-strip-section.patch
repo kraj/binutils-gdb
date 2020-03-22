@@ -1,0 +1,687 @@
+From 2981d458023c81cc15620ccabd57fefe54320be8 Mon Sep 17 00:00:00 2001
+From: "H.J. Lu" <hjl.tools@gmail.com>
+Date: Sat, 7 Mar 2020 08:24:35 -0800
+Subject: [PATCH 5/6] ld: Add tests for -z nosectionheader and --strip-sections
+
+Add tests to verify that the linker option, -z nosectionheader and
+objcopy and strip option, --strip-sections, work correctly as well
+as linker issues an error when dynamic symbol table from PT_DYNAMIC
+segment is used.
+
+	PR ld/25617
+	* testsuite/ld-elf/hash-2.d: New file.
+	* testsuite/ld-elf/no-section-header.exp: Likewise.
+	* testsuite/ld-elf/pr25617-1-no-sec-hdr.nd: Likewise.
+	* testsuite/ld-elf/pr25617-1-no-sec-hdr.rd: Likewise.
+	* testsuite/ld-elf/pr25617-1-static-no-sec-hdr.rd: Likewise.
+	* testsuite/ld-elf/pr25617-1a-no-sec-hdr.nd: Likewise.
+	* testsuite/ld-elf/pr25617-1a-no-sec-hdr.rd: Likewise.
+	* testsuite/ld-elf/pr25617-1a-sec-hdr.rd: Likewise.
+	* testsuite/ld-elf/pr25617-1a.c: Likewise.
+	* testsuite/ld-elf/pr25617-1b.c: Likewise.
+	* testsuite/ld-elf/start-noheader.rd: Likewise.
+	* testsuite/ld-elf/start-shared-noheader-gnu.rd: Likewise.
+	* testsuite/ld-elf/start-shared-noheader-sysv.rd: Likewise.
+	* testsuite/ld-elf/start-shared-noheader.nd: Likewise.
+---
+ ld/testsuite/ld-elf/hash-2.d                  |  11 +
+ ld/testsuite/ld-elf/no-section-header.exp     | 370 ++++++++++++++++++
+ ld/testsuite/ld-elf/pr25617-1-no-sec-hdr.nd   |   3 +
+ ld/testsuite/ld-elf/pr25617-1-no-sec-hdr.rd   |  20 +
+ .../ld-elf/pr25617-1-static-no-sec-hdr.rd     |  12 +
+ ld/testsuite/ld-elf/pr25617-1a-no-sec-hdr.nd  |   3 +
+ ld/testsuite/ld-elf/pr25617-1a-no-sec-hdr.rd  |  20 +
+ ld/testsuite/ld-elf/pr25617-1a-sec-hdr.rd     |  19 +
+ ld/testsuite/ld-elf/pr25617-1a.c              |  11 +
+ ld/testsuite/ld-elf/pr25617-1b.c              |  15 +
+ ld/testsuite/ld-elf/start-noheader.rd         |  11 +
+ .../ld-elf/start-shared-noheader-gnu.rd       |  22 ++
+ .../ld-elf/start-shared-noheader-sysv.rd      |  22 ++
+ ld/testsuite/ld-elf/start-shared-noheader.nd  |   5 +
+ 14 files changed, 544 insertions(+)
+ create mode 100644 ld/testsuite/ld-elf/hash-2.d
+ create mode 100644 ld/testsuite/ld-elf/no-section-header.exp
+ create mode 100644 ld/testsuite/ld-elf/pr25617-1-no-sec-hdr.nd
+ create mode 100644 ld/testsuite/ld-elf/pr25617-1-no-sec-hdr.rd
+ create mode 100644 ld/testsuite/ld-elf/pr25617-1-static-no-sec-hdr.rd
+ create mode 100644 ld/testsuite/ld-elf/pr25617-1a-no-sec-hdr.nd
+ create mode 100644 ld/testsuite/ld-elf/pr25617-1a-no-sec-hdr.rd
+ create mode 100644 ld/testsuite/ld-elf/pr25617-1a-sec-hdr.rd
+ create mode 100644 ld/testsuite/ld-elf/pr25617-1a.c
+ create mode 100644 ld/testsuite/ld-elf/pr25617-1b.c
+ create mode 100644 ld/testsuite/ld-elf/start-noheader.rd
+ create mode 100644 ld/testsuite/ld-elf/start-shared-noheader-gnu.rd
+ create mode 100644 ld/testsuite/ld-elf/start-shared-noheader-sysv.rd
+ create mode 100644 ld/testsuite/ld-elf/start-shared-noheader.nd
+
+diff --git a/ld/testsuite/ld-elf/hash-2.d b/ld/testsuite/ld-elf/hash-2.d
+new file mode 100644
+index 00000000000..d6dd99b32d8
+--- /dev/null
++++ b/ld/testsuite/ld-elf/hash-2.d
+@@ -0,0 +1,11 @@
++#source: start.s
++#readelf: -d -s
++#ld: -shared --hash-style=gnu -z nosectionheader
++#target: *-*-linux* *-*-gnu* arm*-*-uclinuxfdpiceabi
++#xfail: mips*-*-*
++# MIPS uses a different style of GNU hash due to psABI restrictions
++# on dynsym table ordering.
++
++#...
++ +0x[0-9a-z]+ +\(GNU_HASH\) +0x[0-9a-z]+
++#pass
+diff --git a/ld/testsuite/ld-elf/no-section-header.exp b/ld/testsuite/ld-elf/no-section-header.exp
+new file mode 100644
+index 00000000000..97f9885473a
+--- /dev/null
++++ b/ld/testsuite/ld-elf/no-section-header.exp
+@@ -0,0 +1,370 @@
++# Expect script for -z nosectionheader and --strip-sections tests
++# Copyright (C) 2020 Free Software Foundation, Inc.
++#
++# This file is part of the GNU Binutils.
++#
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 3 of the License, or
++# (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston,
++# MA 02110-1301, USA.
++#
++# Written by H.J. Lu (hongjiu.lu@intel.com)
++#
++
++# Make sure that binutils can correctly handle ld output in ELF.
++
++if { ![istarget *-*-linux*] } {
++    return
++}
++
++proc binutils_test { prog_name ld_options test readelf_expected nm_expected} {
++    global as
++    global ld
++    global READELF
++    global NM
++    global objcopy
++    global strip
++    global srcdir
++    global subdir
++    global link_output
++
++    eval set prog \$$prog_name
++
++    set test_name "$prog_name --strip-sections $ld_options ($test)"
++
++    if { ![ld_assemble $as $srcdir/$subdir/$test.s tmpdir/$test.o ] } {
++	unresolved "$test_name"
++	return
++    }
++
++    append ld_options " -z separate-code -z stack-size=0"
++    if { ![ld_link $ld tmpdir/$test "$ld_options tmpdir/$test.o"] } {
++	if { [string match "*not supported*" $link_output]
++	     || [string match "*unrecognized option*" $link_output]
++	     || [string match "*-z .* ignored*" $link_output] } {
++	    unsupported "$ld_options is not supported by this target"
++	} else {
++	    unresolved "$test_name"
++	}
++	return
++    }
++
++    send_log "$prog --strip-sections tmpdir/$test\n"
++    set got [remote_exec host "$prog --strip-sections tmpdir/$test"]
++    if { [lindex $got 0] != 0 || ![string match "" [lindex $got 1]] } then {
++	send_log "$got\n"
++	fail "$test_name"
++	return
++    }
++
++    send_log "$READELF -lSDs --wide tmpdir/$test > tmpdir/$test.out\n"
++    set got [remote_exec host "$READELF -lSDs --wide tmpdir/$test" "" "/dev/null" "tmpdir/$test.out"]
++    if { [lindex $got 0] != 0 || ![string match "" [lindex $got 1]] } then {
++	send_log "$got\n"
++	unresolved "$test_name"
++	return
++    }
++
++    if { [regexp_diff "tmpdir/$test.out" "$srcdir/$subdir/$readelf_expected"] } then {
++	fail "$test_name"
++	return
++    }
++
++    if { [string match "*-shared *" $ld_options] } {
++	send_log "$NM -D tmpdir/$test > tmpdir/$test.out\n"
++	set got [remote_exec host "$NM -D tmpdir/$test" "" "/dev/null" "tmpdir/$test.out"]
++	if { [lindex $got 0] != 0 || ![string match "" [lindex $got 1]] } then {
++	    send_log "$got\n"
++	    unresolved "$test_name"
++	    return
++	}
++
++	if { [regexp_diff "tmpdir/$test.out" "$srcdir/$subdir/$nm_expected"] } then {
++	    fail "$test_name"
++	    return
++	}
++    }
++
++    pass "$test_name"
++}
++
++if { [istarget "mips*-*-*"] } {
++    set gnu_hash_style "sysv"
++} else {
++    set gnu_hash_style "gnu"
++}
++
++binutils_test objcopy "--hash-style=both" start start-noheader.rd \
++	start-noheader.nd
++binutils_test objcopy "--hash-style=gnu" start start-noheader.rd \
++	start-noheader.nd
++binutils_test objcopy "--hash-style=sysv" start start-noheader.rd \
++	start-noheader.nd
++binutils_test objcopy "--hash-style=both -shared" start \
++	start-shared-noheader-$gnu_hash_style.rd start-shared-noheader.nd
++binutils_test objcopy "--hash-style=gnu -shared" start \
++	start-shared-noheader-$gnu_hash_style.rd start-shared-noheader.nd
++binutils_test objcopy "--hash-style=sysv -shared" start \
++	start-shared-noheader-sysv.rd start-shared-noheader.nd
++binutils_test strip "--hash-style=both" start start-noheader.rd \
++	start-noheader.nd
++binutils_test strip "--hash-style=gnu" start start-noheader.rd \
++	start-noheader.nd
++binutils_test strip "--hash-style=sysv" start start-noheader.rd \
++	start-noheader.nd
++binutils_test strip "--hash-style=both -shared" start \
++	start-shared-noheader-$gnu_hash_style.rd start-shared-noheader.nd
++binutils_test strip "--hash-style=gnu -shared" start \
++	start-shared-noheader-$gnu_hash_style.rd start-shared-noheader.nd
++binutils_test strip "--hash-style=sysv -shared" start \
++	start-shared-noheader-sysv.rd start-shared-noheader.nd
++
++# Skip non-native targets or -shared is not supported.
++if { ![isnative] || ![check_shared_lib_support] } {
++    return
++}
++
++proc binutils_run_test { prog } {
++    global CC
++    global gcc_B_opt
++    global READELF
++    global NM
++    global objcopy
++    global strip
++    global srcdir
++    global subdir
++    # Add $NOPIE_CFLAGS and $NOPIE_LDFLAGS if non-PIE is required.
++    global NOPIE_CFLAGS NOPIE_LDFLAGS
++
++    set sec_hdr "sec-hdr"
++    if { "$prog" == "" } {
++	set prog_name none
++    } else {
++	set prog_name $prog
++	set ld_options ""
++	switch -- $prog {
++	    objcopy
++	        { set prog $objcopy }
++	    strip
++	        { set prog $strip }
++	    default
++		{
++		    fail "Build pr25617-1a-no-sec-hdr.so ($prog_name)"
++		    break
++		}
++	}
++    }
++
++    run_cc_link_tests [list \
++	[list \
++	    "Build pr25617-1a-no-sec-hdr.so ($prog_name)" \
++	    "-shared -Wl,-z,separate-code,--hash-style=sysv" \
++	    "-fPIC" \
++	    {pr25617-1a.c} \
++	    [list \
++		[list "readelf" "-lWSDs" "pr25617-1a-$sec_hdr.rd"] \
++		[list "nm" "-D" "pr25617-1a-no-sec-hdr.nd"] \
++	    ]\
++	    "pr25617-1a-no-sec-hdr.so" \
++	] \
++	[list \
++	    "Build pr25617-1a-now-no-sec-hdr.so ($prog_name)" \
++	    "-shared -Wl,-z,separate-code,-z,now,--hash-style=gnu" \
++	    "-fPIC" \
++	    {pr25617-1a.c} \
++	    [list \
++		[list "readelf" "-lWSDs" "pr25617-1a-$sec_hdr.rd"] \
++		[list "nm" "-D" "pr25617-1a-no-sec-hdr.nd"] \
++	    ]\
++	    "pr25617-1a-now-no-sec-hdr.so" \
++	] \
++	[list \
++	    "Build pr25617-1 (-z nosectionheader, $prog_name)" \
++	    "$NOPIE_LDFLAGS -Wl,-z,separate-code,--no-as-needed \
++	     -Wl,--hash-style=sysv -Wl,-z,nosectionheader \
++	     tmpdir/pr25617-1a-no-sec-hdr.so" \
++	    "$NOPIE_CFLAGS" \
++	    {pr25617-1b.c} \
++	    {{readelf -lWSDs pr25617-1-no-sec-hdr.rd} \
++	     {nm -D pr25617-1-no-sec-hdr.nd}} \
++	    "pr25617-1-no-sec-hdr" \
++	] \
++	[list \
++	    "Build pr25617-1 (PIE, -z nosectionheader, $prog_name)" \
++	    "-pie -Wl,-z,separate-code,--no-as-needed,--hash-style=gnu \
++	     -Wl,-z,nosectionheader tmpdir/pr25617-1a-now-no-sec-hdr.so" \
++	    "-fPIE" \
++	    {pr25617-1b.c} \
++	    {{readelf -lWSDs pr25617-1-no-sec-hdr.rd} \
++	     {nm -D pr25617-1-no-sec-hdr.nd}} \
++	    "pr25617-1-pie-no-sec-hdr" \
++	] \
++	[list \
++	    "Build pr25617-1 (static, -z nosectionheader, $prog_name)" \
++	    "-static -Wl,-z,separate-code -Wl,-z,nosectionheader" \
++	    "" \
++	    {pr25617-1a.c pr25617-1b.c} \
++	    {{readelf -lSWDs pr25617-1-static-no-sec-hdr.rd}} \
++	    "pr25617-1-static-no-sec-hdr" \
++	] \
++    ]
++
++    run_ld_link_exec_tests [list \
++	[list \
++	    "Run pr25617-1 (-z nosectionheader, $prog_name)" \
++	    "$NOPIE_LDFLAGS -Wl,-z,separate-code,--no-as-needed \
++	     -Wl,--hash-style=sysv -Wl,-z,nosectionheader \
++	     tmpdir/pr25617-1a-no-sec-hdr.so" \
++	    "" \
++	    {pr25617-1b.c} \
++	    "pr25617-1-no-sec-hdr" \
++	    "pass.out" \
++	    "$NOPIE_CFLAGS" \
++	] \
++	[list \
++	    "Run pr25617-1 (PIE, -z nosectionheader, $prog_name)" \
++	    "-pie -Wl,-z,separate-code,--no-as-needed,--hash-style=gnu \
++	     -Wl,-z,nosectionheader tmpdir/pr25617-1a-now-no-sec-hdr.so" \
++	    "" \
++	    {pr25617-1b.c} \
++	    "pr25617-1-pie-no-sec-hdr" \
++	    "pass.out" \
++	    "-fPIE" \
++	] \
++	[list \
++	    "Run pr25617-1 (static, -z nosectionheader, $prog_name)" \
++	    "-static -Wl,-z,separate-code -Wl,-z,nosectionheader" \
++	    "" \
++	    {pr25617-1a.c pr25617-1b.c} \
++	    "pr25617-1-static-no-sec-hdr" \
++	    "pass.out" \
++	] \
++    ]
++
++    if { "$prog_name" != "none" } {
++	send_log "$prog --strip-sections tmpdir/pr25617-1a-no-sec-hdr.so\n"
++	set got [remote_exec host "$prog --strip-sections tmpdir/pr25617-1a-no-sec-hdr.so"]
++	if { [lindex $got 0] != 0 || ![string match "" [lindex $got 1]] } then {
++	    send_log "$got\n"
++	    fail "Update pr25617-1a-no-sec-hdr.so ($prog_name)"
++	    return
++	}
++
++	send_log "$READELF -lWSDs tmpdir/pr25617-1a-no-sec-hdr.so > tmpdir/dump.out\n"
++	set got [remote_exec host "$READELF -lWSDs tmpdir/pr25617-1a-no-sec-hdr.so" "" "/dev/null" "tmpdir/dump.out"]
++	if { [lindex $got 0] != 0 || ![string match "" [lindex $got 1]] } then {
++	    send_log "$got\n"
++	    unresolved "Update pr25617-1a-no-sec-hdr.so ($prog_name)"
++	    return
++	}
++
++	if { [regexp_diff "tmpdir/dump.out" "$srcdir/$subdir/pr25617-1a-no-sec-hdr.rd"] } then {
++	    unresolved "Update pr25617-1a-no-sec-hdr.so ($prog_name)"
++	    return
++	}
++
++	send_log "$NM -D tmpdir/pr25617-1a-no-sec-hdr.so > tmpdir/dump.out\n"
++	set got [remote_exec host "$NM -D tmpdir/pr25617-1a-no-sec-hdr.so" "" "/dev/null" "tmpdir/dump.out"]
++	if { [lindex $got 0] != 0 || ![string match "" [lindex $got 1]] } then {
++	    send_log "$got\n"
++	    unresolved "Update pr25617-1a-no-sec-hdr.so ($prog_name)"
++	    return
++	}
++
++	if { [regexp_diff "tmpdir/dump.out" "$srcdir/$subdir/pr25617-1a-no-sec-hdr.nd"] } then {
++	    unresolved "Update pr25617-1a-no-sec-hdr.so ($prog_name)"
++	    return
++	}
++
++	send_log "tmpdir/pr25617-1-no-sec-hdr > tmpdir/pr25617-1.out\n"
++	catch "exec tmpdir/pr25617-1-no-sec-hdr > tmpdir/pr25617-1.out" got
++	if ![string match "" $got] then {
++	    send_log "$got\n"
++	    unresolved "Update pr25617-1a-no-sec-hdr.so ($prog_name)"
++	    return
++	}
++
++	send_log "diff tmpdir/pr25617-1.out $srcdir/$subdir/pass.out\n"
++	catch "exec diff tmpdir/pr25617-1.out $srcdir/$subdir/pass.out" got
++	if ![string match "" $got] then {
++	    send_log "$got\n"
++	    fail "Update pr25617-1a-no-sec-hdr.so ($prog_name)"
++	    return
++	}
++
++	pass "Update pr25617-1a-no-sec-hdr.so ($prog_name)"
++
++	send_log "$prog --strip-sections tmpdir/pr25617-1a-now-no-sec-hdr.so\n"
++	set got [remote_exec host "$prog --strip-sections tmpdir/pr25617-1a-now-no-sec-hdr.so"]
++	if { [lindex $got 0] != 0 || ![string match "" [lindex $got 1]] } then {
++	    send_log "$got\n"
++	    fail "Update pr25617-1a-now-no-sec-hdr.so ($prog_name)"
++	    return
++	}
++
++	send_log "$READELF -lWSDs tmpdir/pr25617-1a-now-no-sec-hdr.so > tmpdir/dump.out\n"
++	set got [remote_exec host "$READELF -lWSDs tmpdir/pr25617-1a-now-no-sec-hdr.so" "" "/dev/null" "tmpdir/dump.out"]
++	if { [lindex $got 0] != 0 || ![string match "" [lindex $got 1]] } then {
++	    send_log "$got\n"
++	    unresolved "Update pr25617-1a-now-no-sec-hdr.so ($prog_name)"
++	    return
++	}
++
++	if { [regexp_diff "tmpdir/dump.out" "$srcdir/$subdir/pr25617-1a-no-sec-hdr.rd"] } then {
++	    unresolved "Update pr25617-1a-now-no-sec-hdr.so ($prog_name)"
++	    return
++	}
++
++	send_log "$NM -D tmpdir/pr25617-1a-now-no-sec-hdr.so > tmpdir/dump.out\n"
++	set got [remote_exec host "$NM -D tmpdir/pr25617-1a-now-no-sec-hdr.so" "" "/dev/null" "tmpdir/dump.out"]
++	if { [lindex $got 0] != 0 || ![string match "" [lindex $got 1]] } then {
++	    send_log "$got\n"
++	    unresolved "Update pr25617-1a-now-no-sec-hdr.so ($prog_name)"
++	    return
++	}
++
++	if { [regexp_diff "tmpdir/dump.out" "$srcdir/$subdir/pr25617-1a-no-sec-hdr.nd"] } then {
++	    unresolved "Update pr25617-1a-now-no-sec-hdr.so ($prog_name)"
++	    return
++	}
++
++	send_log "tmpdir/pr25617-1-pie-no-sec-hdr > tmpdir/pr25617-1-pie.out\n"
++	catch "exec tmpdir/pr25617-1-pie-no-sec-hdr > tmpdir/pr25617-1-pie.out" got
++	if ![string match "" $got] then {
++	    send_log "$got\n"
++	    unresolved "Update pr25617-1a-now-no-sec-hdr.so ($prog_name)"
++	    return
++	}
++
++	send_log "diff tmpdir/pr25617-1-pie.out $srcdir/$subdir/pass.out\n"
++	catch "exec diff tmpdir/pr25617-1-pie.out $srcdir/$subdir/pass.out" got
++	if ![string match "" $got] then {
++	    send_log "$got\n"
++	    fail "Update pr25617-1a-now-no-sec-hdr.so ($prog_name)"
++	    return
++	}
++
++	send_log "$CC $gcc_B_opt -o tmpdir/pr25617-1 tmpdir/pr25617-1b.o tmpdir/pr25617-1a-now-no-sec-hdr.so\n"
++	catch "exec $CC $gcc_B_opt -o tmpdir/pr25617-1 tmpdir/pr25617-1b.o tmpdir/pr25617-1a-now-no-sec-hdr.so" got
++	if ![string match "*pr25617-1a-now-no-sec-hdr.so*file in wrong format*" $got] then {
++	    send_log "$got\n"
++	    fail "Update pr25617-1a-now-no-sec-hdr.so ($prog_name)"
++	}
++
++	pass "Update pr25617-1a-now-no-sec-hdr.so ($prog_name)"
++     }
++}
++
++binutils_run_test ""
++binutils_run_test objcopy
++binutils_run_test strip
+diff --git a/ld/testsuite/ld-elf/pr25617-1-no-sec-hdr.nd b/ld/testsuite/ld-elf/pr25617-1-no-sec-hdr.nd
+new file mode 100644
+index 00000000000..6a96f5b55a3
+--- /dev/null
++++ b/ld/testsuite/ld-elf/pr25617-1-no-sec-hdr.nd
+@@ -0,0 +1,3 @@
++#...
++[a-f0-9 ]+ [DU] _?protected
++ + U _?test
+diff --git a/ld/testsuite/ld-elf/pr25617-1-no-sec-hdr.rd b/ld/testsuite/ld-elf/pr25617-1-no-sec-hdr.rd
+new file mode 100644
+index 00000000000..be49dea32db
+--- /dev/null
++++ b/ld/testsuite/ld-elf/pr25617-1-no-sec-hdr.rd
+@@ -0,0 +1,20 @@
++#readelf: -lWSDs
++
++There are no sections in this file.
++
++#...
++Program Headers:
++  Type +Offset +VirtAddr.*
++# On MIPS, the first segment is for .reginfo.
++#...
++  LOAD .*
++#...
++  DYNAMIC .*
++#...
++ +Num: +Value +Size Type +Bind +Vis +Ndx Name
++ +0: 0+ +0 +NOTYPE +LOCAL +DEFAULT +UND +
++#...
++ +[0-9]+: +[a-f0-9]+ +0 +FUNC +GLOBAL +DEFAULT +UND +__libc_start_main(@.*|)
++#...
++ +[0-9]+: +[a-f0-9]+ +0+ +FUNC +GLOBAL +DEFAULT +UND +_?test
++#pass
+diff --git a/ld/testsuite/ld-elf/pr25617-1-static-no-sec-hdr.rd b/ld/testsuite/ld-elf/pr25617-1-static-no-sec-hdr.rd
+new file mode 100644
+index 00000000000..92b1dc9ead9
+--- /dev/null
++++ b/ld/testsuite/ld-elf/pr25617-1-static-no-sec-hdr.rd
+@@ -0,0 +1,12 @@
++#readelf: -lWSDs
++
++There are no sections in this file.
++
++#...
++Program Headers:
++  Type +Offset +VirtAddr.*
++# On MIPS, the first segment is for .reginfo.
++#...
++  LOAD .*
++#...
++Dynamic symbol information is not available for displaying symbols\.
+diff --git a/ld/testsuite/ld-elf/pr25617-1a-no-sec-hdr.nd b/ld/testsuite/ld-elf/pr25617-1a-no-sec-hdr.nd
+new file mode 100644
+index 00000000000..2813ffc6652
+--- /dev/null
++++ b/ld/testsuite/ld-elf/pr25617-1a-no-sec-hdr.nd
+@@ -0,0 +1,3 @@
++#...
++ + U _?puts(@.*|)
++[0-9a-z]+ T _?test
+diff --git a/ld/testsuite/ld-elf/pr25617-1a-no-sec-hdr.rd b/ld/testsuite/ld-elf/pr25617-1a-no-sec-hdr.rd
+new file mode 100644
+index 00000000000..f7a4eec7362
+--- /dev/null
++++ b/ld/testsuite/ld-elf/pr25617-1a-no-sec-hdr.rd
+@@ -0,0 +1,20 @@
++#readelf: -lWSDs
++
++There are no sections in this file.
++
++#...
++Program Headers:
++  Type +Offset +VirtAddr.*
++# On MIPS, the first segment is for .reginfo.
++#...
++  LOAD .*
++#...
++  DYNAMIC .*
++#...
++ +Num: +Value +Size Type +Bind +Vis +Ndx Name
++ +0: 0+ +0 +NOTYPE +LOCAL +DEFAULT +UND +
++#...
++ +[0-9]+: +[a-f0-9]+ +0 +FUNC +GLOBAL +DEFAULT +UND +_?puts(@.*|)
++#...
++ +[0-9]+: +[a-f0-9]+ +[0-9]+ +FUNC +GLOBAL +DEFAULT +[0-9]+ +_?test
++#pass
+diff --git a/ld/testsuite/ld-elf/pr25617-1a-sec-hdr.rd b/ld/testsuite/ld-elf/pr25617-1a-sec-hdr.rd
+new file mode 100644
+index 00000000000..9ccf0565af6
+--- /dev/null
++++ b/ld/testsuite/ld-elf/pr25617-1a-sec-hdr.rd
+@@ -0,0 +1,19 @@
++#readelf: -lWSDs
++
++There are [0-9]+ section headers, starting at offset 0x[a-f0-9]+:
++#...
++Program Headers:
++  Type +Offset +VirtAddr.*
++# On MIPS, the first segment is for .reginfo.
++#...
++  LOAD .*
++#...
++  DYNAMIC .*
++#...
++ +Num: +Value +Size Type +Bind +Vis +Ndx Name
++ +0: 0+ +0 +NOTYPE +LOCAL +DEFAULT +UND +
++#...
++ +[0-9]+: +[a-f0-9]+ +0 +FUNC +GLOBAL +DEFAULT +UND +_?puts(@.*|)
++#...
++ +[0-9]+: +[a-f0-9]+ +[0-9]+ +FUNC +GLOBAL +DEFAULT +[0-9]+ +_?test
++#pass
+diff --git a/ld/testsuite/ld-elf/pr25617-1a.c b/ld/testsuite/ld-elf/pr25617-1a.c
+new file mode 100644
+index 00000000000..e8fdfde5f60
+--- /dev/null
++++ b/ld/testsuite/ld-elf/pr25617-1a.c
+@@ -0,0 +1,11 @@
++#include <stdio.h>
++
++int protected __attribute__ ((visibility ("protected"))) = 42;
++extern int *get_protected_ptr (void);
++
++void
++test()
++{
++  if (&protected == get_protected_ptr ())
++    printf ("PASS\n");
++}
+diff --git a/ld/testsuite/ld-elf/pr25617-1b.c b/ld/testsuite/ld-elf/pr25617-1b.c
+new file mode 100644
+index 00000000000..1fd6ef45d79
+--- /dev/null
++++ b/ld/testsuite/ld-elf/pr25617-1b.c
+@@ -0,0 +1,15 @@
++void test(void);
++
++extern int protected;
++
++int *
++get_protected_ptr (void)
++{
++  return &protected;
++}
++
++int main()
++{
++  test();
++  return 0;
++}
+diff --git a/ld/testsuite/ld-elf/start-noheader.rd b/ld/testsuite/ld-elf/start-noheader.rd
+new file mode 100644
+index 00000000000..2479e340871
+--- /dev/null
++++ b/ld/testsuite/ld-elf/start-noheader.rd
+@@ -0,0 +1,11 @@
++#readelf: -SlDs --wide
++
++There are no sections in this file.
++
++#...
++Program Headers:
++  Type +Offset +VirtAddr.*
++# On MIPS, the first segment is for .reginfo.
++#...
++  LOAD .*
++#pass
+diff --git a/ld/testsuite/ld-elf/start-shared-noheader-gnu.rd b/ld/testsuite/ld-elf/start-shared-noheader-gnu.rd
+new file mode 100644
+index 00000000000..3397a576baa
+--- /dev/null
++++ b/ld/testsuite/ld-elf/start-shared-noheader-gnu.rd
+@@ -0,0 +1,22 @@
++#readelf: -SlDs --wide
++
++There are no sections in this file.
++
++#...
++Program Headers:
++  Type +Offset +VirtAddr.*
++# On MIPS, the first segment is for .reginfo.
++#...
++  LOAD .*
++#...
++  DYNAMIC .*
++#...
++ +Num: +Value +Size Type +Bind +Vis +Ndx Name
++ +0: 0+ +0 +NOTYPE +LOCAL +DEFAULT +UND +
++#...
++ +[0-9]+: +[a-f0-9]+ +0 +NOTYPE +GLOBAL +DEFAULT +[0-9]+ +_start
++ +[0-9]+: +[a-f0-9]+ +0 +NOTYPE +GLOBAL +DEFAULT +[0-9]+ +main
++ +[0-9]+: +[a-f0-9]+ +0 +NOTYPE +GLOBAL +DEFAULT +[0-9]+ +start
++ +[0-9]+: +[a-f0-9]+ +0 +NOTYPE +GLOBAL +DEFAULT +[0-9]+ +_main
++ +[0-9]+: +[a-f0-9]+ +0 +NOTYPE +GLOBAL +DEFAULT +[0-9]+ +__start
++#pass
+diff --git a/ld/testsuite/ld-elf/start-shared-noheader-sysv.rd b/ld/testsuite/ld-elf/start-shared-noheader-sysv.rd
+new file mode 100644
+index 00000000000..23a87f98bcd
+--- /dev/null
++++ b/ld/testsuite/ld-elf/start-shared-noheader-sysv.rd
+@@ -0,0 +1,22 @@
++#readelf: -SlDs --wide
++
++There are no sections in this file.
++
++#...
++Program Headers:
++  Type +Offset +VirtAddr.*
++# On MIPS, the first segment is for .reginfo.
++#...
++  LOAD .*
++#...
++  DYNAMIC .*
++#...
++ +Num: +Value +Size Type +Bind +Vis +Ndx Name
++ +0: 0+ +0 +NOTYPE +LOCAL +DEFAULT +UND +
++#...
++ +[0-9]+: +[a-f0-9]+ +0 +NOTYPE +GLOBAL +DEFAULT +[0-9]+ +__start
++ +[0-9]+: +[a-f0-9]+ +0 +NOTYPE +GLOBAL +DEFAULT +[0-9]+ +_start
++ +[0-9]+: +[a-f0-9]+ +0 +NOTYPE +GLOBAL +DEFAULT +[0-9]+ +main
++ +[0-9]+: +[a-f0-9]+ +0 +NOTYPE +GLOBAL +DEFAULT +[0-9]+ +start
++ +[0-9]+: +[a-f0-9]+ +0 +NOTYPE +GLOBAL +DEFAULT +[0-9]+ +_main
++#pass
+diff --git a/ld/testsuite/ld-elf/start-shared-noheader.nd b/ld/testsuite/ld-elf/start-shared-noheader.nd
+new file mode 100644
+index 00000000000..2d3ba70e530
+--- /dev/null
++++ b/ld/testsuite/ld-elf/start-shared-noheader.nd
+@@ -0,0 +1,5 @@
++[0-9a-z]+ A __start
++[0-9a-z]+ A _main
++[0-9a-z]+ A _start
++[0-9a-z]+ A main
++[0-9a-z]+ A start
+-- 
+2.25.1
+
