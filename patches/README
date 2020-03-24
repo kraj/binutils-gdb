@@ -33,7 +33,6 @@ patches="
 0002-Add-test-for-nm-on-mixed-LTO-non-LTO-object.patch
 0003-Don-t-check-the-plugin-target-twice.patch
 0001-readelf-Consolidate-syms-use-dynamic-with-dyn-syms.patch
-0001-bfd-Display-symbol-version-for-nm-D.patch
 0001-ELF-Strip-section-header-in-ELF-objects.patch
 0002-bfd-Improve-nm-and-objdump-without-section-header.patch
 0003-ld-Add-a-simple-test-for-z-nosectionheader.patch
