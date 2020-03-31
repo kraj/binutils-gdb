@@ -20461,7 +20461,6 @@ process_archive (Filedata * filedata, bfd_boolean is_thin_archive)
 
 	  close_file (member_filedata);
 	  free (member_file_name);
-	  free (qualified_name);
 	}
       else if (is_thin_archive)
 	{
@@ -20505,11 +20504,13 @@ process_archive (Filedata * filedata, bfd_boolean is_thin_archive)
 	{
 	  free (name);
 	  archive_file_offset = arch.next_arhdr_offset;
-	  arch.next_arhdr_offset += archive_file_size;
-
 	  filedata->file_name = qualified_name;
 	  if (! process_object (filedata))
 	    ret = FALSE;
+	  arch.next_arhdr_offset += archive_file_size;
+	  /* Stop looping with "negative" archive_file_size.  */
+	  if (arch.next_arhdr_offset < archive_file_size)
+	    arch.next_arhdr_offset = -1ul;
 	}
 
       free (qualified_name);

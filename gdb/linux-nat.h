@@ -133,7 +133,7 @@ public:
 
   void post_attach (int) override;
 
-  int follow_fork (int, int) override;
+  bool follow_fork (bool, bool) override;
 
   std::vector<static_tracepoint_marker>
     static_tracepoint_markers_by_strid (const char *id) override;
@@ -162,6 +162,10 @@ public:
 
   /* The method to call, if any, when a new fork is attached.  */
   virtual void low_new_fork (struct lwp_info *parent, pid_t child_pid)
+  {}
+
+  /* The method to call, if any, when a new clone event is detected.  */
+  virtual void low_new_clone (struct lwp_info *parent, pid_t child_lwp)
   {}
 
   /* The method to call, if any, when a process is no longer
