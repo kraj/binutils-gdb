@@ -1,0 +1,549 @@
+From c36ea2097c877e316bd278fdb076bc2ba883cba9 Mon Sep 17 00:00:00 2001
+From: "H.J. Lu" <hjl.tools@gmail.com>
+Date: Mon, 30 Mar 2020 18:36:39 -0700
+Subject: [PATCH] x86: Only allow S + A relocations against absolute symbol
+
+Since value of non-preemptible absolute symbol (SHN_ABS) won't change,
+only relocations against non-preemptible absolute symbol, which can be
+resolved as absolute value + addend, are allowed in PIE and shared
+library.
+
+bfd/
+
+	PR ld/25749
+	* elf32-i386.c (elf_i386_check_relocs): Call
+	_bfd_elf_x86_valid_reloc_p.  Don't allocate dynamic relocation
+	for non-preemptible absolute symbol.
+	(elf_i386_relocate_section): Pass sec to
+	GENERATE_DYNAMIC_RELOCATION_P.
+	* elf64-x86-64.c (elf_x86_64_check_relocs): Call
+	_bfd_elf_x86_valid_reloc_p.  Don't allocate dynamic relocation
+	for non-preemptible absolute symbol.
+	(elf_x86_64_relocate_section): Pass sec to
+	GENERATE_DYNAMIC_RELOCATION_P.
+	* elfxx-x86.c (_bfd_elf_x86_valid_reloc_p): New function.
+	* elfxx-x86.h (GENERATE_DYNAMIC_RELOCATION_P): Add an SEC
+	argument.  Don't generate dynamic relocation against
+	non-preemptible absolute symbol.
+	(_bfd_elf_x86_valid_reloc_p): New.
+
+ld/
+
+	PR ld/25749
+	* testsuite/ld-elf/linux-x86.exp: Run ld/25749 tests.
+	* testsuite/ld-elf/pr25749-1.c: New file.
+	* testsuite/ld-elf/pr25749-1a.c: Likewise.
+	* testsuite/ld-elf/pr25749-1b.c: Likewise.
+	* testsuite/ld-elf/pr25749-1b.err: Likewise.
+	* testsuite/ld-elf/pr25749-1c.c: Likewise.
+	* testsuite/ld-elf/pr25749-2.c: Likewise.
+	* testsuite/ld-elf/pr25749-2a.s: Likewise.
+	* testsuite/ld-elf/pr25749-2b.s: Likewise.
+	* testsuite/ld-elf/pr25749.rd: Likewise.
+---
+ bfd/elf32-i386.c                   |  12 ++-
+ bfd/elf64-x86-64.c                 |  12 ++-
+ bfd/elfxx-x86.c                    |  77 +++++++++++++++++
+ bfd/elfxx-x86.h                    |  13 ++-
+ ld/testsuite/ld-elf/linux-x86.exp  | 133 +++++++++++++++++++++++++++++
+ ld/testsuite/ld-elf/pr25749-1.c    |  12 +++
+ ld/testsuite/ld-elf/pr25749-1a.c   |  11 +++
+ ld/testsuite/ld-elf/pr25749-1b.c   |   9 ++
+ ld/testsuite/ld-elf/pr25749-1b.err |   3 +
+ ld/testsuite/ld-elf/pr25749-1c.c   |   9 ++
+ ld/testsuite/ld-elf/pr25749-2.c    |  12 +++
+ ld/testsuite/ld-elf/pr25749-2a.s   |   6 ++
+ ld/testsuite/ld-elf/pr25749-2b.s   |   7 ++
+ ld/testsuite/ld-elf/pr25749.rd     |   4 +
+ 14 files changed, 312 insertions(+), 8 deletions(-)
+ create mode 100644 ld/testsuite/ld-elf/pr25749-1.c
+ create mode 100644 ld/testsuite/ld-elf/pr25749-1a.c
+ create mode 100644 ld/testsuite/ld-elf/pr25749-1b.c
+ create mode 100644 ld/testsuite/ld-elf/pr25749-1b.err
+ create mode 100644 ld/testsuite/ld-elf/pr25749-1c.c
+ create mode 100644 ld/testsuite/ld-elf/pr25749-2.c
+ create mode 100644 ld/testsuite/ld-elf/pr25749-2a.s
+ create mode 100644 ld/testsuite/ld-elf/pr25749-2b.s
+ create mode 100644 ld/testsuite/ld-elf/pr25749.rd
+
+diff --git a/bfd/elf32-i386.c b/bfd/elf32-i386.c
+index eb7e1f8b34..03cc437d36 100644
+--- a/bfd/elf32-i386.c
++++ b/bfd/elf32-i386.c
+@@ -1519,6 +1519,7 @@ elf_i386_check_relocs (bfd *abfd,
+       Elf_Internal_Sym *isym;
+       const char *name;
+       bfd_boolean size_reloc;
++      bfd_boolean no_dynreloc;
+ 
+       r_symndx = ELF32_R_SYM (rel->r_info);
+       r_type = ELF32_R_TYPE (rel->r_info);
+@@ -1567,6 +1568,10 @@ elf_i386_check_relocs (bfd *abfd,
+ 	    h = (struct elf_link_hash_entry *) h->root.u.i.link;
+ 	}
+ 
++      if (!_bfd_elf_x86_valid_reloc_p (sec, info, rel, h, isym,
++				       symtab_hdr, &no_dynreloc))
++	return FALSE;
++
+       eh = (struct elf_x86_link_hash_entry *) h;
+       if (h != NULL)
+ 	{
+@@ -1827,8 +1832,9 @@ elf_i386_check_relocs (bfd *abfd,
+ 
+ 	  size_reloc = FALSE;
+ 	do_size:
+-	  if (NEED_DYNAMIC_RELOCATION_P (info, FALSE, h, sec, r_type,
+-					 R_386_32))
++	  if (!no_dynreloc
++	      && NEED_DYNAMIC_RELOCATION_P (info, FALSE, h, sec, r_type,
++					    R_386_32))
+ 	    {
+ 	      struct elf_dyn_relocs *p;
+ 	      struct elf_dyn_relocs **head;
+@@ -2704,7 +2710,7 @@ elf_i386_relocate_section (bfd *output_bfd,
+ 	      || is_vxworks_tls)
+ 	    break;
+ 
+-	  if (GENERATE_DYNAMIC_RELOCATION_P (info, eh, r_type,
++	  if (GENERATE_DYNAMIC_RELOCATION_P (info, eh, r_type, sec,
+ 					     FALSE, resolved_to_zero,
+ 					     (r_type == R_386_PC32)))
+ 	    {
+diff --git a/bfd/elf64-x86-64.c b/bfd/elf64-x86-64.c
+index 90e2702334..9917447449 100644
+--- a/bfd/elf64-x86-64.c
++++ b/bfd/elf64-x86-64.c
+@@ -1879,6 +1879,7 @@ elf_x86_64_check_relocs (bfd *abfd, struct bfd_link_info *info,
+       const char *name;
+       bfd_boolean size_reloc;
+       bfd_boolean converted_reloc;
++      bfd_boolean no_dynreloc;
+ 
+       r_symndx = htab->r_sym (rel->r_info);
+       r_type = ELF32_R_TYPE (rel->r_info);
+@@ -1928,6 +1929,10 @@ elf_x86_64_check_relocs (bfd *abfd, struct bfd_link_info *info,
+ 	    h = (struct elf_link_hash_entry *) h->root.u.i.link;
+ 	}
+ 
++      if (!_bfd_elf_x86_valid_reloc_p (sec, info, rel, h, isym,
++				       symtab_hdr, &no_dynreloc))
++	return FALSE;
++
+       /* Check invalid x32 relocations.  */
+       if (!ABI_64_P (abfd))
+ 	switch (r_type)
+@@ -2245,8 +2250,9 @@ elf_x86_64_check_relocs (bfd *abfd, struct bfd_link_info *info,
+ 
+ 	  size_reloc = FALSE;
+ 	do_size:
+-	  if (NEED_DYNAMIC_RELOCATION_P (info, TRUE, h, sec, r_type,
+-					 htab->pointer_r_type))
++	  if (!no_dynreloc
++	      && NEED_DYNAMIC_RELOCATION_P (info, TRUE, h, sec, r_type,
++					    htab->pointer_r_type))
+ 	    {
+ 	      struct elf_dyn_relocs *p;
+ 	      struct elf_dyn_relocs **head;
+@@ -3175,7 +3181,7 @@ elf_x86_64_relocate_section (bfd *output_bfd,
+ 				    && (X86_PCREL_TYPE_P (r_type)
+ 					|| X86_SIZE_TYPE_P (r_type)));
+ 
+-	  if (GENERATE_DYNAMIC_RELOCATION_P (info, eh, r_type,
++	  if (GENERATE_DYNAMIC_RELOCATION_P (info, eh, r_type, sec,
+ 					     need_copy_reloc_in_pie,
+ 					     resolved_to_zero, FALSE))
+ 	    {
+diff --git a/bfd/elfxx-x86.c b/bfd/elfxx-x86.c
+index 108e04a158..1c05cb28aa 100644
+--- a/bfd/elfxx-x86.c
++++ b/bfd/elfxx-x86.c
+@@ -952,6 +952,83 @@ _bfd_x86_elf_link_check_relocs (bfd *abfd, struct bfd_link_info *info)
+   return _bfd_elf_link_check_relocs (abfd, info);
+ }
+ 
++bfd_boolean
++_bfd_elf_x86_valid_reloc_p (asection *input_section,
++			    struct bfd_link_info *info,
++			    const Elf_Internal_Rela *rel,
++			    struct elf_link_hash_entry *h,
++			    Elf_Internal_Sym *sym,
++			    Elf_Internal_Shdr *symtab_hdr,
++			    bfd_boolean *no_dynreloc_p)
++{
++  bfd_boolean valid_p = TRUE;
++
++  *no_dynreloc_p = FALSE;
++
++  /* Check If relocation against non-preemptible absolute symbol is
++     valid in PIC.  FIXME: Can't use SYMBOL_REFERENCES_LOCAL_P since
++     it may call _bfd_elf_link_hide_sym_by_version and result in
++     ld-elfvers/ vers21 test failure.  */
++  if (bfd_link_pic (info)
++      && (h == NULL || SYMBOL_REFERENCES_LOCAL (info, h)))
++    {
++      const struct elf_backend_data *bed;
++      unsigned int r_type;
++
++      /* Skip non-absolute symbol.  */
++      if (h)
++	{
++	  if (!bfd_is_abs_symbol (&h->root))
++	    return valid_p;
++	}
++      else if (sym->st_shndx != SHN_ABS)
++	return valid_p;
++
++      bed = get_elf_backend_data (input_section->owner);
++      r_type = ELF32_R_TYPE (rel->r_info);
++
++      /* Only allow S - A relocations against absolute symbol.  */
++      if (bed->target_id == X86_64_ELF_DATA)
++	valid_p = (r_type == R_X86_64_64
++		   || r_type == R_X86_64_32
++		   || r_type == R_X86_64_16
++		   || r_type == R_X86_64_8);
++      else
++	valid_p = (r_type == R_386_32
++		   || r_type == R_386_16
++		   || r_type == R_386_8);
++
++      if (valid_p)
++	*no_dynreloc_p = TRUE;
++      else
++	{
++	  const char *name;
++	  arelent internal_reloc;
++
++	  if (!bed->elf_info_to_howto (input_section->owner,
++				       &internal_reloc,
++				       (Elf_Internal_Rela *) rel)
++	      || internal_reloc.howto == NULL)
++	    abort ();
++
++	  if (h)
++	    name = h->root.root.string;
++	  else
++	    name = bfd_elf_sym_name (input_section->owner, symtab_hdr,
++				     sym, NULL);
++	  info->callbacks->einfo
++	    /* xgettext:c-format */
++	    (_("%X%P: %pB: relocation %s against absolute symbol "
++	       "`%s' in section `%pA' is disallowed\n"),
++	     input_section->owner, internal_reloc.howto->name, name,
++	     input_section);
++	  bfd_set_error (bfd_error_bad_value);
++	}
++    }
++
++  return valid_p;
++}
++
+ /* Set the sizes of the dynamic sections.  */
+ 
+ bfd_boolean
+diff --git a/bfd/elfxx-x86.h b/bfd/elfxx-x86.h
+index bef17dc2ba..5d44d413ee 100644
+--- a/bfd/elfxx-x86.h
++++ b/bfd/elfxx-x86.h
+@@ -119,11 +119,15 @@
+    Copy dynamic function pointer relocations.  Don't generate dynamic
+    relocations against resolved undefined weak symbols in PIE, except
+    when PC32_RELOC is TRUE.  Undefined weak symbol is bound locally
+-   when PIC is false.  */
+-#define GENERATE_DYNAMIC_RELOCATION_P(INFO, EH, R_TYPE, \
++   when PIC is false.  Don't generate dynamic relocations against
++   non-preemptible absolute symbol.  */
++#define GENERATE_DYNAMIC_RELOCATION_P(INFO, EH, R_TYPE, SEC, \
+ 				      NEED_COPY_RELOC_IN_PIE, \
+ 				      RESOLVED_TO_ZERO, PC32_RELOC) \
+   ((bfd_link_pic (INFO) \
++    && !(bfd_is_abs_section (SEC) \
++	 && ((EH) == NULL \
++	     || SYMBOL_REFERENCES_LOCAL (INFO, &(EH)->elf))) \
+     && !(NEED_COPY_RELOC_IN_PIE) \
+     && ((EH) == NULL \
+ 	|| ((ELF_ST_VISIBILITY ((EH)->elf.other) == STV_DEFAULT \
+@@ -652,6 +656,11 @@ extern int _bfd_x86_elf_compare_relocs
+ extern bfd_boolean _bfd_x86_elf_link_check_relocs
+   (bfd *, struct bfd_link_info *);
+ 
++extern bfd_boolean _bfd_elf_x86_valid_reloc_p
++  (asection *, struct bfd_link_info *, const Elf_Internal_Rela *,
++   struct elf_link_hash_entry *, Elf_Internal_Sym *, Elf_Internal_Shdr *,
++   bfd_boolean *);
++
+ extern bfd_boolean _bfd_x86_elf_size_dynamic_sections
+   (bfd *, struct bfd_link_info *);
+ 
+diff --git a/ld/testsuite/ld-elf/linux-x86.exp b/ld/testsuite/ld-elf/linux-x86.exp
+index 63a321b966..3162ac6ca5 100644
+--- a/ld/testsuite/ld-elf/linux-x86.exp
++++ b/ld/testsuite/ld-elf/linux-x86.exp
+@@ -115,3 +115,136 @@ elfedit_test "--disable-x86-feature shstk" x86-feature-1 x86-feature-1c
+ elfedit_test "--disable-x86-feature ibt" x86-feature-1 x86-feature-1d
+ elfedit_test "--enable-x86-feature ibt --enable-x86-feature shstk" \
+ 		x86-feature-1 x86-feature-1e
++
++proc check_pr25749a {testname srcfilea srcfileb cflags ldflags lderror} {
++    global objcopy
++    global srcdir
++    global subdir
++
++    if { [istarget "i?86-*-linux*"] } {
++	set output_arch "i386:i386"
++	set output_target "elf32-i386"
++    } else {
++	set output_arch "i386:x86-64"
++	if {[istarget "x86_64-*-linux*-gnux32"]} {
++	    set output_target "elf32-x86-64"
++	} else {
++	    set output_target "elf64-x86-64"
++	}
++    }
++
++    exec cp $srcdir/$subdir/$srcfilea $srcfilea
++    set pr25749_bin "$objcopy -B $output_arch -I binary -O $output_target $srcfilea tmpdir/pr25749-bin.o"
++    send_log "$pr25749_bin\n"
++    set got [remote_exec host "$pr25749_bin"]
++    if { [lindex $got 0] != 0 || ![string match "" [lindex $got 1]] } then {
++	send_log "$got\n"
++	fail "Convert $srcfilea to $output_target"
++	return
++    }
++
++    if {"$lderror" == ""} {
++	run_cc_link_tests [list \
++	    [list \
++		"Build $testname ($ldflags $cflags)" \
++		"$ldflags tmpdir/pr25749-bin.o" \
++		"$cflags" \
++		[list $srcfilea $srcfileb]\
++		{{readelf {-Wr} pr25749.rd}}  \
++		"$testname" \
++	    ] \
++	]
++	run_ld_link_exec_tests [list \
++	    [list \
++		"Run ${testname}a ($ldflags $cflags)" \
++		"$ldflags tmpdir/pr25749-bin.o" \
++		"" \
++		[list $srcfilea $srcfileb]\
++		"${testname}a" \
++		"pass.out" \
++		"$cflags" \
++	    ] \
++	]
++    } else {
++	run_cc_link_tests [list \
++	    [list \
++		"Build $testname ($ldflags $cflags)" \
++		"$ldflags tmpdir/pr25749-bin.o" \
++		"$cflags" \
++		[list $srcfilea $srcfileb]\
++		[list [list error_output $lderror]] \
++		"$testname" \
++	    ] \
++	]
++    }
++}
++
++check_pr25749a "pr25749-1a" "pr25749-1.c" "pr25749-1a.c" "$NOPIE_CFLAGS" "$NOPIE_LDFLAGS" ""
++check_pr25749a "pr25749-1a" "pr25749-1.c" "pr25749-1a.c" "-fPIE" "-pie" ""
++check_pr25749a "pr25749-1b" "pr25749-1.c" "pr25749-1b.c" "$NOPIE_CFLAGS" "$NOPIE_LDFLAGS" ""
++check_pr25749a "pr25749-1b" "pr25749-1.c" "pr25749-1b.c" "-fPIE" "-pie" "pr25749-1b.err"
++check_pr25749a "pr25749-1c" "pr25749-1.c" "pr25749-1c.c" "-fPIC" "-shared" "pr25749-1b.err"
++check_pr25749a "pr25749-1d" "pr25749-1.c" "pr25749-1b.c" "-fPIC" "-shared -Wl,-Bsymbolic" "pr25749-1b.err"
++check_pr25749a "pr25749-2a" "pr25749-2.c" "pr25749-2a.s" "$NOPIE_CFLAGS" "$NOPIE_LDFLAGS" ""
++check_pr25749a "pr25749-2a" "pr25749-2.c" "pr25749-2a.s" "-fPIE" "-pie" ""
++check_pr25749a "pr25749-2b" "pr25749-2.c" "pr25749-2b.s" "$NOPIE_CFLAGS" "$NOPIE_LDFLAGS" ""
++check_pr25749a "pr25749-2b" "pr25749-2.c" "pr25749-2b.s" "-fPIE" "-pie" ""
++
++proc check_pr25749b {testname srcfilea srcfileb cflags ldflags} {
++    global objcopy
++    global srcdir
++    global subdir
++
++    if { [istarget "i?86-*-linux*"] } {
++	set output_arch "i386:i386"
++	set output_target "elf32-i386"
++    } else {
++	set output_arch "i386:x86-64"
++	if {[istarget "x86_64-*-linux*-gnux32"]} {
++	    set output_target "elf32-x86-64"
++	} else {
++	    set output_target "elf64-x86-64"
++	}
++    }
++
++    exec cp $srcdir/$subdir/$srcfilea $srcfilea
++    set pr25749_bin "$objcopy -B $output_arch -I binary -O $output_target $srcfilea tmpdir/pr25749-bin.o"
++    send_log "$pr25749_bin\n"
++    set got [remote_exec host "$pr25749_bin"]
++    if { [lindex $got 0] != 0 || ![string match "" [lindex $got 1]] } then {
++	send_log "$got\n"
++	fail "Convert $srcfilea to $output_target"
++	return
++    }
++
++    run_cc_link_tests [list \
++	[list \
++	    "Build lib${testname}.so" \
++	    "-shared tmpdir/pr25749-bin.o" \
++	    "-fPIC" \
++	    [list $srcfileb] \
++	    {{readelf {-Wr} pr25749.rd}}  \
++	    "lib${testname}.so" \
++	] \
++    ]
++    run_ld_link_exec_tests [list \
++	[list \
++	    "Run ${testname}b ($ldflags $cflags)" \
++	    "$ldflags -Wl,--no-as-needed tmpdir/lib${testname}.so" \
++	    "" \
++	    [list $srcfilea]\
++	    "${testname}b" \
++	    "pass.out" \
++	    "$cflags" \
++	] \
++    ]
++}
++
++check_pr25749b "pr25749-1a" "pr25749-1.c" "pr25749-1a.c" "$NOPIE_CFLAGS" "$NOPIE_LDFLAGS"
++check_pr25749b "pr25749-1a" "pr25749-1.c" "pr25749-1a.c" "-fPIE" "-pie"
++check_pr25749b "pr25749-1b" "pr25749-1.c" "pr25749-1b.c" "$NOPIE_CFLAGS" "$NOPIE_LDFLAGS"
++check_pr25749b "pr25749-1b" "pr25749-1.c" "pr25749-1b.c" "-fPIE" "-pie"
++check_pr25749b "pr25749-2a" "pr25749-2.c" "pr25749-2a.s" "$NOPIE_CFLAGS" "$NOPIE_LDFLAGS"
++check_pr25749b "pr25749-2a" "pr25749-2.c" "pr25749-2a.s" "-fPIE" "-pie"
++check_pr25749b "pr25749-2b" "pr25749-2.c" "pr25749-2b.s" "$NOPIE_CFLAGS" "$NOPIE_LDFLAGS"
++check_pr25749b "pr25749-2b" "pr25749-2.c" "pr25749-2b.s" "-fPIE" "-pie"
+diff --git a/ld/testsuite/ld-elf/pr25749-1.c b/ld/testsuite/ld-elf/pr25749-1.c
+new file mode 100644
+index 0000000000..5b37af08c6
+--- /dev/null
++++ b/ld/testsuite/ld-elf/pr25749-1.c
+@@ -0,0 +1,12 @@
++#include <stdio.h>
++#include <bfd_stdint.h>
++
++extern intptr_t size (void);
++
++int
++main ()
++{
++  if (size () == 147)
++    printf ("PASS\n");
++  return 0;
++}
+diff --git a/ld/testsuite/ld-elf/pr25749-1a.c b/ld/testsuite/ld-elf/pr25749-1a.c
+new file mode 100644
+index 0000000000..775623b8c9
+--- /dev/null
++++ b/ld/testsuite/ld-elf/pr25749-1a.c
+@@ -0,0 +1,11 @@
++#include <bfd_stdint.h>
++
++extern void *_binary_pr25749_1_c_start;
++extern void *_binary_pr25749_1_c_end;
++
++intptr_t
++size (void)
++{
++  return ((intptr_t) &_binary_pr25749_1_c_end
++	  - (intptr_t) &_binary_pr25749_1_c_start);
++}
+diff --git a/ld/testsuite/ld-elf/pr25749-1b.c b/ld/testsuite/ld-elf/pr25749-1b.c
+new file mode 100644
+index 0000000000..f02a408700
+--- /dev/null
++++ b/ld/testsuite/ld-elf/pr25749-1b.c
+@@ -0,0 +1,9 @@
++#include <bfd_stdint.h>
++
++extern void *_binary_pr25749_1_c_size;
++
++intptr_t
++size (void)
++{
++  return (intptr_t) &_binary_pr25749_1_c_size;
++}
+diff --git a/ld/testsuite/ld-elf/pr25749-1b.err b/ld/testsuite/ld-elf/pr25749-1b.err
+new file mode 100644
+index 0000000000..bb389172f1
+--- /dev/null
++++ b/ld/testsuite/ld-elf/pr25749-1b.err
+@@ -0,0 +1,3 @@
++#...
++.*: .* against absolute symbol `_binary_pr25749_1_c_size' .* is disallowed
++#pass
+diff --git a/ld/testsuite/ld-elf/pr25749-1c.c b/ld/testsuite/ld-elf/pr25749-1c.c
+new file mode 100644
+index 0000000000..f2847d7f62
+--- /dev/null
++++ b/ld/testsuite/ld-elf/pr25749-1c.c
+@@ -0,0 +1,9 @@
++#include <bfd_stdint.h>
++
++extern void *_binary_pr25749_1_c_size __attribute__ ((visibility("hidden")));
++
++intptr_t
++size (void)
++{
++  return (intptr_t) &_binary_pr25749_1_c_size;
++}
+diff --git a/ld/testsuite/ld-elf/pr25749-2.c b/ld/testsuite/ld-elf/pr25749-2.c
+new file mode 100644
+index 0000000000..820bebc167
+--- /dev/null
++++ b/ld/testsuite/ld-elf/pr25749-2.c
+@@ -0,0 +1,12 @@
++#include <stdio.h>
++#include <bfd_stdint.h>
++
++extern intptr_t size;
++
++int
++main ()
++{
++  if (size == 137)
++    printf ("PASS\n");
++  return 0;
++}
+diff --git a/ld/testsuite/ld-elf/pr25749-2a.s b/ld/testsuite/ld-elf/pr25749-2a.s
+new file mode 100644
+index 0000000000..df486fe329
+--- /dev/null
++++ b/ld/testsuite/ld-elf/pr25749-2a.s
+@@ -0,0 +1,6 @@
++	.data
++	.globl	size
++	.type	size, %object
++size:
++	.dc.a	_binary_pr25749_2_c_size
++	.size size, .-size
+diff --git a/ld/testsuite/ld-elf/pr25749-2b.s b/ld/testsuite/ld-elf/pr25749-2b.s
+new file mode 100644
+index 0000000000..ba82c450bc
+--- /dev/null
++++ b/ld/testsuite/ld-elf/pr25749-2b.s
+@@ -0,0 +1,7 @@
++	.data
++	.hidden _binary_pr25749_2_c_size
++	.globl	size
++	.type	size, %object
++size:
++	.dc.a	_binary_pr25749_2_c_size
++	.size size, .-size
+diff --git a/ld/testsuite/ld-elf/pr25749.rd b/ld/testsuite/ld-elf/pr25749.rd
+new file mode 100644
+index 0000000000..fbc68bf268
+--- /dev/null
++++ b/ld/testsuite/ld-elf/pr25749.rd
+@@ -0,0 +1,4 @@
++#failif
++#...
++[0-9a-f ]+R_.*_NONE.*
++#...
+-- 
+2.25.1
+
