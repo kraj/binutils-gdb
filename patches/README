@@ -41,9 +41,6 @@ patches="
 0006-ld-Add-z-nosectionheader-test-to-bootstrap.exp.patch
 0001-x86-Only-allow-S-A-relocations-against-absolute-symb.patch
 0001-Add-STB_SECONDARY-support.patch
-0001-x86-64-Add-R_X86_64_THUNK_GOTPCRELX.patch
-0002-gold-Initial-R_X86_64_THUNK_GOTPCRELX-support.patch
-0001-x86-Add-R_X86_64_GPOFF-R_386_GPOFF-relocation.patch
 	binutils-x86-optimize-option.patch
 	binutils-attach-to-group.patch
 "
