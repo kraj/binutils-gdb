@@ -1,4 +1,4 @@
-From 3b7ce8890732d8521c7561e0fb5066eac4f4bdb5 Mon Sep 17 00:00:00 2001
+From 91e9b99ad7692595eea6eb5fc9ed1cf3c770f323 Mon Sep 17 00:00:00 2001
 From: "H.J. Lu" <hjl.tools@gmail.com>
 Date: Mon, 30 Mar 2020 18:36:39 -0700
 Subject: [PATCH] x86: Only allow S + A relocations against absolute symbol
@@ -45,10 +45,12 @@ bfd/
 	* elfxx-x86.h (GENERATE_DYNAMIC_RELOCATION_P): Add an SEC
 	argument.  Don't generate dynamic relocation against
 	non-preemptible absolute symbol.
+	(ABS_SYMBOL_P): New.
 	(GENERATE_RELATIVE_RELOC_P): Don't generate relative relocation
 	against non-preemptible absolute symbol.
+	(GOT_ABS): New.
 	(R_X86_64_converted_reloc_bit): New.  Moved from elf64-x86-64.c.
-	(_bfd_elf_x86_valid_reloc_p): Likewise.
+	(_bfd_elf_x86_valid_reloc_p): New.
 
 ld/
 
@@ -60,6 +62,7 @@ ld/
 	* testsuite/ld-elf/pr25749-1b.c: Likewise.
 	* testsuite/ld-elf/pr25749-1b.err: Likewise.
 	* testsuite/ld-elf/pr25749-1c.c: Likewise.
+	* testsuite/ld-elf/pr25749-1d.c: Likewise.
 	* testsuite/ld-elf/pr25749-2.c: Likewise.
 	* testsuite/ld-elf/pr25749-2a.s: Likewise.
 	* testsuite/ld-elf/pr25749-2b.s: Likewise.
@@ -84,13 +87,14 @@ ld/
  bfd/elf32-i386.c                    |  40 +++++--
  bfd/elf64-x86-64.c                  |  81 +++++++++++---
  bfd/elfxx-x86.c                     | 103 ++++++++++++++++-
- bfd/elfxx-x86.h                     |  23 +++-
- ld/testsuite/ld-elf/linux-x86.exp   | 164 ++++++++++++++++++++++++++++
+ bfd/elfxx-x86.h                     |  29 ++++-
+ ld/testsuite/ld-elf/linux-x86.exp   | 167 ++++++++++++++++++++++++++++
  ld/testsuite/ld-elf/pr25749-1.c     |  12 ++
  ld/testsuite/ld-elf/pr25749-1a.c    |  11 ++
  ld/testsuite/ld-elf/pr25749-1b.c    |   9 ++
  ld/testsuite/ld-elf/pr25749-1b.err  |   3 +
  ld/testsuite/ld-elf/pr25749-1c.c    |   9 ++
+ ld/testsuite/ld-elf/pr25749-1d.c    |  19 ++++
  ld/testsuite/ld-elf/pr25749-2.c     |  12 ++
  ld/testsuite/ld-elf/pr25749-2a.s    |   6 +
  ld/testsuite/ld-elf/pr25749-2b.s    |   7 ++
@@ -110,12 +114,13 @@ ld/
  ld/testsuite/ld-elf/pr25754-6a.c    |  12 ++
  ld/testsuite/ld-elf/pr25754-6b.s    |  12 ++
  ld/testsuite/ld-x86-64/pr19609-6a.d |  11 +-
- 29 files changed, 648 insertions(+), 32 deletions(-)
+ 30 files changed, 676 insertions(+), 32 deletions(-)
  create mode 100644 ld/testsuite/ld-elf/pr25749-1.c
  create mode 100644 ld/testsuite/ld-elf/pr25749-1a.c
  create mode 100644 ld/testsuite/ld-elf/pr25749-1b.c
  create mode 100644 ld/testsuite/ld-elf/pr25749-1b.err
  create mode 100644 ld/testsuite/ld-elf/pr25749-1c.c
+ create mode 100644 ld/testsuite/ld-elf/pr25749-1d.c
  create mode 100644 ld/testsuite/ld-elf/pr25749-2.c
  create mode 100644 ld/testsuite/ld-elf/pr25749-2a.s
  create mode 100644 ld/testsuite/ld-elf/pr25749-2b.s
@@ -136,7 +141,7 @@ ld/
  create mode 100644 ld/testsuite/ld-elf/pr25754-6b.s
 
 diff --git a/bfd/elf32-i386.c b/bfd/elf32-i386.c
-index eb7e1f8b34e..20dfa4b4f4d 100644
+index eb7e1f8b34e..51c3e863044 100644
 --- a/bfd/elf32-i386.c
 +++ b/bfd/elf32-i386.c
 @@ -1226,6 +1226,7 @@ elf_i386_convert_load_reloc (bfd *abfd, Elf_Internal_Shdr *symtab_hdr,
@@ -156,7 +161,7 @@ index eb7e1f8b34e..20dfa4b4f4d 100644
 +      /* NB: Also set linker_def via SYMBOL_REFERENCES_LOCAL_P.  */
 +      local_ref = SYMBOL_REFERENCES_LOCAL_P (link_info, h);
 +      isym = NULL;
-+      abs_symbol = bfd_is_abs_symbol (&h->root);
++      abs_symbol = ABS_SYMBOL_P (h);
 +    }
 +  else
 +    {
@@ -243,7 +248,7 @@ index eb7e1f8b34e..20dfa4b4f4d 100644
  					     (r_type == R_386_PC32)))
  	    {
 diff --git a/bfd/elf64-x86-64.c b/bfd/elf64-x86-64.c
-index 90e27023343..85d99a7f5d5 100644
+index 90e27023343..4c9ad78dd74 100644
 --- a/bfd/elf64-x86-64.c
 +++ b/bfd/elf64-x86-64.c
 @@ -196,9 +196,6 @@ static reloc_howto_type x86_64_elf_howto_table[] =
@@ -305,7 +310,7 @@ index 90e27023343..85d99a7f5d5 100644
 -      bfd_boolean local_ref;
        struct elf_x86_link_hash_entry *eh = elf_x86_hash_entry (h);
  
-+      abs_symbol = bfd_is_abs_symbol (&h->root);
++      abs_symbol = ABS_SYMBOL_P (h);
 +      abs_relocation = h->root.u.def.value;
 +
        /* NB: Also set linker_def via SYMBOL_REFERENCES_LOCAL_P.  */
@@ -373,7 +378,7 @@ index 90e27023343..85d99a7f5d5 100644
 +		tls_type = GOT_NORMAL;
 +		if (h)
 +		  {
-+		    if (bfd_is_abs_symbol (&h->root))
++		    if (ABS_SYMBOL_P (h))
 +		      tls_type = GOT_ABS;
 +		  }
 +		else if (isym->st_shndx == SHN_ABS)
@@ -431,7 +436,7 @@ index 90e27023343..85d99a7f5d5 100644
  					     resolved_to_zero, FALSE))
  	    {
 diff --git a/bfd/elfxx-x86.c b/bfd/elfxx-x86.c
-index 108e04a1588..34c78577efd 100644
+index 108e04a1588..0fc75fbedfb 100644
 --- a/bfd/elfxx-x86.c
 +++ b/bfd/elfxx-x86.c
 @@ -347,7 +347,8 @@ elf_x86_allocate_dynrelocs (struct elf_link_hash_entry *h, void *inf)
@@ -451,7 +456,7 @@ index 108e04a1588..34c78577efd 100644
 -	       && (bfd_link_pic (info)
 +	       && ((bfd_link_pic (info)
 +		    && !(h->dynindx == -1
-+			 && bfd_is_abs_symbol (&h->root)))
++			 && ABS_SYMBOL_P (h)))
  		   || WILL_CALL_FINISH_DYNAMIC_SYMBOL (dyn, 0, h)))
  	htab->elf.srelgot->size += htab->sizeof_reloc;
        if (GOT_TLS_GDESC_P (tls_type))
@@ -487,7 +492,7 @@ index 108e04a1588..34c78577efd 100644
 +      /* Skip non-absolute symbol.  */
 +      if (h)
 +	{
-+	  if (!bfd_is_abs_symbol (&h->root))
++	  if (!ABS_SYMBOL_P (h))
 +	    return valid_p;
 +	}
 +      else if (sym->st_shndx != SHN_ABS)
@@ -566,7 +571,7 @@ index 108e04a1588..34c78577efd 100644
  		  || (*local_tls_type & GOT_TLS_IE))
  		{
 diff --git a/bfd/elfxx-x86.h b/bfd/elfxx-x86.h
-index bef17dc2bac..1841ddbc88c 100644
+index bef17dc2bac..6e91f242622 100644
 --- a/bfd/elfxx-x86.h
 +++ b/bfd/elfxx-x86.h
 @@ -119,11 +119,15 @@
@@ -587,7 +592,18 @@ index bef17dc2bac..1841ddbc88c 100644
      && !(NEED_COPY_RELOC_IN_PIE) \
      && ((EH) == NULL \
  	|| ((ELF_ST_VISIBILITY ((EH)->elf.other) == STV_DEFAULT \
-@@ -175,12 +179,14 @@
+@@ -170,17 +174,25 @@
+    || ((struct elf_x86_link_hash_entry *) (H))->linker_def \
+    || ELF_COMMON_DEF_P (H))
+ 
++/* Return TRUE if the symbol described by a linker hash entry H is
++   going to be absolute.  Similar to bfd_is_abs_symbol, but excluding
++   all linker-script defined symbols.  */
++#define ABS_SYMBOL_P(H) \
++  (bfd_is_abs_symbol (&(H)->root) && !(H)->root.ldscript_def)
++
+ /* TRUE if relative relocation should be generated.  GOT reference to
+    global symbol in PIC will lead to dynamic symbol.  It becomes a
     problem when "time" or "times" is defined as a variable in an
     executable, clashing with functions of the same name in libc.  If a
     symbol isn't undefined weak symbol, don't make it dynamic in PIC and
@@ -600,11 +616,11 @@ index bef17dc2bac..1841ddbc88c 100644
     && (H)->root.type != bfd_link_hash_undefweak \
 -   && bfd_link_pic (INFO))
 +   && bfd_link_pic (INFO) \
-+   && !bfd_is_abs_symbol (&(H)->root))
++   && !ABS_SYMBOL_P (H))
  
  /* TRUE if this is a pointer reference to a local IFUNC.  */
  #define POINTER_LOCAL_IFUNC_P(INFO, H) \
-@@ -414,6 +420,7 @@ struct elf_x86_plt_layout
+@@ -414,6 +426,7 @@ struct elf_x86_plt_layout
  #define GOT_TLS_IE_NEG	6
  #define GOT_TLS_IE_BOTH 7
  #define GOT_TLS_GDESC	8
@@ -612,7 +628,7 @@ index bef17dc2bac..1841ddbc88c 100644
  #define GOT_TLS_GD_BOTH_P(type)	\
    ((type) == (GOT_TLS_GD | GOT_TLS_GDESC))
  #define GOT_TLS_GD_P(type) \
-@@ -601,6 +608,9 @@ struct elf_x86_plt
+@@ -601,6 +614,9 @@ struct elf_x86_plt
    long count;
  };
  
@@ -622,7 +638,7 @@ index bef17dc2bac..1841ddbc88c 100644
  #define elf_x86_tdata(abfd) \
    ((struct elf_x86_obj_tdata *) (abfd)->tdata.any)
  
-@@ -652,6 +662,11 @@ extern int _bfd_x86_elf_compare_relocs
+@@ -652,6 +668,11 @@ extern int _bfd_x86_elf_compare_relocs
  extern bfd_boolean _bfd_x86_elf_link_check_relocs
    (bfd *, struct bfd_link_info *);
  
@@ -635,10 +651,10 @@ index bef17dc2bac..1841ddbc88c 100644
    (bfd *, struct bfd_link_info *);
  
 diff --git a/ld/testsuite/ld-elf/linux-x86.exp b/ld/testsuite/ld-elf/linux-x86.exp
-index 63a321b9668..ae278a004c2 100644
+index 63a321b9668..7186dede711 100644
 --- a/ld/testsuite/ld-elf/linux-x86.exp
 +++ b/ld/testsuite/ld-elf/linux-x86.exp
-@@ -115,3 +115,167 @@ elfedit_test "--disable-x86-feature shstk" x86-feature-1 x86-feature-1c
+@@ -115,3 +115,170 @@ elfedit_test "--disable-x86-feature shstk" x86-feature-1 x86-feature-1c
  elfedit_test "--disable-x86-feature ibt" x86-feature-1 x86-feature-1d
  elfedit_test "--enable-x86-feature ibt --enable-x86-feature shstk" \
  		x86-feature-1 x86-feature-1e
@@ -802,6 +818,9 @@ index 63a321b9668..ae278a004c2 100644
 +check_pr25749b "pr25749-1b" "pr25749-1.c" "pr25749-1b.c" "$NOPIE_CFLAGS" "$NOPIE_LDFLAGS" ""
 +check_pr25749b "pr25749-1b" "pr25749-1.c" "pr25749-1b.c" "-fPIE" "-pie" ""
 +check_pr25749b "pr25749-1b" "pr25749-1.c" "pr25749-1b.c" "-fPIE" "-pie" "-Wl,-Bsymbolic"
++check_pr25749b "pr25749-1d" "pr25749-1.c" "pr25749-1d.c" "$NOPIE_CFLAGS" "$NOPIE_LDFLAGS" "-Wl,-defsym=_begin=0"
++check_pr25749b "pr25749-1d" "pr25749-1.c" "pr25749-1d.c" "-fPIE" "-pie" "-Wl,-defsym=_begin=0"
++check_pr25749b "pr25749-1d" "pr25749-1.c" "pr25749-1d.c" "-fPIE" "-pie" "-Wl,-Bsymbolic -Wl,-defsym=_begin=0"
 +check_pr25749b "pr25749-2a" "pr25749-2.c" "pr25749-2a.s" "$NOPIE_CFLAGS" "$NOPIE_LDFLAGS" ""
 +check_pr25749b "pr25749-2a" "pr25749-2.c" "pr25749-2a.s" "-fPIE" "-pie" ""
 +check_pr25749b "pr25749-2b" "pr25749-2.c" "pr25749-2b.s" "$NOPIE_CFLAGS" "$NOPIE_LDFLAGS" ""
@@ -879,6 +898,31 @@ index 00000000000..f2847d7f623
 +size (void)
 +{
 +  return (intptr_t) &_binary_pr25749_1_c_size;
++}
+diff --git a/ld/testsuite/ld-elf/pr25749-1d.c b/ld/testsuite/ld-elf/pr25749-1d.c
+new file mode 100644
+index 00000000000..33b869deb5d
+--- /dev/null
++++ b/ld/testsuite/ld-elf/pr25749-1d.c
+@@ -0,0 +1,19 @@
++#include <bfd_stdint.h>
++
++extern void *_binary_pr25749_1_c_start;
++extern void *_binary_pr25749_1_c_end;
++
++intptr_t
++size (void)
++{
++  return ((intptr_t) &_binary_pr25749_1_c_end
++	  - (intptr_t) &_binary_pr25749_1_c_start);
++}
++
++extern void *_begin __attribute__ ((visibility("hidden")));
++
++intptr_t
++size_p (void)
++{
++  return (intptr_t) &_begin;
 +}
 diff --git a/ld/testsuite/ld-elf/pr25749-2.c b/ld/testsuite/ld-elf/pr25749-2.c
 new file mode 100644
