@@ -1429,13 +1429,11 @@ basic_type (int bt, struct objfile *objfile)
       break;
 
     case btComplex:
-      tp = init_complex_type (objfile, "complex",
-			      basic_type (btFloat, objfile));
+      tp = init_complex_type ("complex", basic_type (btFloat, objfile));
       break;
 
     case btDComplex:
-      tp = init_complex_type (objfile, "double complex",
-			      basic_type (btFloat, objfile));
+      tp = init_complex_type ("double complex", basic_type (btFloat, objfile));
       break;
 
     case btFixedDec:
@@ -3578,9 +3576,8 @@ parse_partial_symbols (minimal_symbol_reader &reader,
 	      CORE_ADDR svalue;
 	      short section;
 
-	      if (ext_ptr->ifd != f_idx)
-		internal_error (__FILE__, __LINE__,
-				_("failed internal consistency check"));
+	      gdb_assert (ext_ptr->ifd == f_idx);
+
 	      psh = &ext_ptr->asym;
 
 	      /* Do not add undefined symbols to the partial symbol table.  */
