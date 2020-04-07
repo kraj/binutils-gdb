@@ -39,6 +39,7 @@ patches="
 0004-binutils-Add-a-strip-sections-test.patch
 0005-ld-Add-tests-for-z-nosectionheader-and-strip-section.patch
 0006-ld-Add-z-nosectionheader-test-to-bootstrap.exp.patch
+0001-gas-Extend-.symver-directive.patch
 0001-Add-STB_SECONDARY-support.patch
 	binutils-x86-optimize-option.patch
 	binutils-attach-to-group.patch

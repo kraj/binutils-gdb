@@ -1,0 +1,552 @@
+From a0bcc8b6752cd4e4f0c771a6240d5c8b0e5ae8a4 Mon Sep 17 00:00:00 2001
+From: "H.J. Lu" <hjl.tools@gmail.com>
+Date: Mon, 6 Apr 2020 11:30:53 -0700
+Subject: [PATCH] gas: Extend .symver directive
+
+Extend .symver directive to update visibility of the original symbol and
+assign one original symbol to different versioned symbols:
+
+  .symver foo, foo@VERS_1, local    # Change foo to a local symbol.
+  .symver foo, foo@VERS_2, hidden   # Change foo to a hidden symbol.
+  .symver foo, foo@@VERS_3, remove  # Remove foo from symbol table.
+  .symver foo, bar@V1               # Assign foo to bar@V1 and baz@V2.
+  .symver foo, baz@V2
+
+	PR gas/23840
+	PR gas/25295
+	* NEWS: Mention .symver extension.
+	* config/obj-elf.c (obj_elf_copy_symbol): New function.
+	(obj_elf_symver): Make a fake local copy of the symbol if there
+	is an existing versioned symbol.  Add local and hidden visibility
+	support.
+	(elf_frob_symbol): Use obj_elf_copy_symbol.  Update the original
+	symbol to local, hidden or remove it from the symbol table.
+	* config/obj-elf.h (original_visibility): New.
+	(elf_obj_sy): Change local to bitfield. Add visibility.
+	* doc/as.texi: Update .symver directive.
+	* testsuite/gas/symver/symver.exp: Run all *.d tests.
+	* testsuite/gas/symver/symver6.d: New file.
+	* testsuite/gas/symver/symver7.d: Likewise.
+	* testsuite/gas/symver/symver7.s: Likewise.
+	* testsuite/gas/symver/symver8.d: Likewise.
+	* testsuite/gas/symver/symver8.s: Likewise.
+	* testsuite/gas/symver/symver9.s: Likewise.
+	* testsuite/gas/symver/symver9a.d: Likewise.
+	* testsuite/gas/symver/symver9b.d: Likewise.
+	* testsuite/gas/symver/symver10.s: Likewise.
+	* testsuite/gas/symver/symver10a.d: Likewise.
+	* testsuite/gas/symver/symver10b.d: Likewise.
+	* testsuite/gas/symver/symver6.l: Removed.
+	* testsuite/gas/symver/symver6.s: Updated.
+---
+ gas/NEWS                             |   3 +
+ gas/config/obj-elf.c                 | 131 +++++++++++++++++++--------
+ gas/config/obj-elf.h                 |  13 ++-
+ gas/doc/as.texi                      |  15 ++-
+ gas/testsuite/gas/symver/symver.exp  |  10 +-
+ gas/testsuite/gas/symver/symver10.s  |   8 ++
+ gas/testsuite/gas/symver/symver10a.d |   8 ++
+ gas/testsuite/gas/symver/symver10b.d |   8 ++
+ gas/testsuite/gas/symver/symver6.d   |  11 +++
+ gas/testsuite/gas/symver/symver6.l   |   3 -
+ gas/testsuite/gas/symver/symver6.s   |   4 +-
+ gas/testsuite/gas/symver/symver7.d   |   8 ++
+ gas/testsuite/gas/symver/symver7.s   |   8 ++
+ gas/testsuite/gas/symver/symver8.d   |   9 ++
+ gas/testsuite/gas/symver/symver8.s   |   8 ++
+ gas/testsuite/gas/symver/symver9.s   |   8 ++
+ gas/testsuite/gas/symver/symver9a.d  |   8 ++
+ gas/testsuite/gas/symver/symver9b.d  |   8 ++
+ 18 files changed, 218 insertions(+), 53 deletions(-)
+ create mode 100644 gas/testsuite/gas/symver/symver10.s
+ create mode 100644 gas/testsuite/gas/symver/symver10a.d
+ create mode 100644 gas/testsuite/gas/symver/symver10b.d
+ create mode 100644 gas/testsuite/gas/symver/symver6.d
+ delete mode 100644 gas/testsuite/gas/symver/symver6.l
+ create mode 100644 gas/testsuite/gas/symver/symver7.d
+ create mode 100644 gas/testsuite/gas/symver/symver7.s
+ create mode 100644 gas/testsuite/gas/symver/symver8.d
+ create mode 100644 gas/testsuite/gas/symver/symver8.s
+ create mode 100644 gas/testsuite/gas/symver/symver9.s
+ create mode 100644 gas/testsuite/gas/symver/symver9a.d
+ create mode 100644 gas/testsuite/gas/symver/symver9b.d
+
+diff --git a/gas/NEWS b/gas/NEWS
+index 6748c179f15..58d79caa41d 100644
+--- a/gas/NEWS
++++ b/gas/NEWS
+@@ -1,5 +1,8 @@
+ -*- text -*-
+ 
++* Extend .symver directive to update visibility of the original symbol
++  and assign one original symbol to different versioned symbols.
++
+ * Add support for Intel SERIALIZE and TSXLDTRK instructions.
+ 
+ * Add -mlfence-after-load=, -mlfence-before-indirect-branch= and
+diff --git a/gas/config/obj-elf.c b/gas/config/obj-elf.c
+index a6dcdaf4a7e..8b14c91b2df 100644
+--- a/gas/config/obj-elf.c
++++ b/gas/config/obj-elf.c
+@@ -1515,6 +1515,35 @@ obj_elf_line (int ignore ATTRIBUTE_UNUSED)
+   demand_empty_rest_of_line ();
+ }
+ 
++static symbolS *
++obj_elf_copy_symbol (const char *name2, symbolS *symp)
++{
++  symbolS *symp2 = symbol_find_or_make (name2);
++
++  S_SET_SEGMENT (symp2, S_GET_SEGMENT (symp));
++
++  /* Subtracting out the frag address here is a hack
++     because we are in the middle of the final loop.  */
++  S_SET_VALUE (symp2,
++	       (S_GET_VALUE (symp)
++		- symbol_get_frag (symp)->fr_address));
++
++  symbol_set_frag (symp2, symbol_get_frag (symp));
++
++  /* This will copy over the size information.  */
++  copy_symbol_attributes (symp2, symp);
++
++  S_SET_OTHER (symp2, S_GET_OTHER (symp));
++
++  if (S_IS_WEAK (symp))
++    S_SET_WEAK (symp2);
++
++  if (S_IS_EXTERNAL (symp))
++    S_SET_EXTERNAL (symp2);
++
++  return symp2;
++}
++
+ /* This handles the .symver pseudo-op, which is used to specify a
+    symbol version.  The syntax is ``.symver NAME,SYMVERNAME''.
+    SYMVERNAME may contain ELF_VER_CHR ('@') characters.  This
+@@ -1528,6 +1557,7 @@ obj_elf_symver (int ignore ATTRIBUTE_UNUSED)
+   char c;
+   char old_lexat;
+   symbolS *sym;
++  symbolS *sym_orig;
+ 
+   sym = get_sym_from_input_line_and_check ();
+ 
+@@ -1555,12 +1585,20 @@ obj_elf_symver (int ignore ATTRIBUTE_UNUSED)
+       return;
+     }
+ 
++  sym_orig = sym;
++  if (symbol_get_obj (sym)->versioned_name
++      && strcmp (symbol_get_obj (sym)->versioned_name, name))
++    {
++      /* Make a fake local copy of the symbol if there is an existing
++	 versioned symbol.  */
++      sym = obj_elf_copy_symbol (FAKE_LABEL_NAME, sym);
++      symbol_get_obj (sym)->visibility = visibility_local;
++    }
++
+   if (symbol_get_obj (sym)->versioned_name == NULL)
+     {
+       symbol_get_obj (sym)->versioned_name = xstrdup (name);
+ 
+-      (void) restore_line_pointer (c);
+-
+       if (strchr (symbol_get_obj (sym)->versioned_name,
+ 		  ELF_VER_CHR) == NULL)
+ 	{
+@@ -1571,18 +1609,32 @@ obj_elf_symver (int ignore ATTRIBUTE_UNUSED)
+ 	  return;
+ 	}
+     }
+-  else
++
++  (void) restore_line_pointer (c);
++
++  if (*input_line_pointer == ',')
+     {
+-      if (strcmp (symbol_get_obj (sym)->versioned_name, name))
++      char *save = input_line_pointer;
++
++      ++input_line_pointer;
++      SKIP_WHITESPACE ();
++      if (strncmp (input_line_pointer, "local", 5) == 0)
+ 	{
+-	  as_bad (_("multiple versions [`%s'|`%s'] for symbol `%s'"),
+-		  name, symbol_get_obj (sym)->versioned_name,
+-		  S_GET_NAME (sym));
+-	  ignore_rest_of_line ();
+-	  return;
++	  input_line_pointer += 5;
++	  symbol_get_obj (sym_orig)->visibility = visibility_local;
+ 	}
+-
+-      (void) restore_line_pointer (c);
++      else if (strncmp (input_line_pointer, "hidden", 6) == 0)
++	{
++	  input_line_pointer += 6;
++	  symbol_get_obj (sym_orig)->visibility = visibility_hidden;
++	}
++      else if (strncmp (input_line_pointer, "remove", 6) == 0)
++	{
++	  input_line_pointer += 6;
++	  symbol_get_obj (sym_orig)->visibility = visibility_remove;
++	}
++      else
++	input_line_pointer = save;
+     }
+ 
+   demand_empty_rest_of_line ();
+@@ -2453,18 +2505,9 @@ elf_frob_symbol (symbolS *symp, int *puntp)
+ 	    }
+ 	  else
+ 	    {
+-	      symbolS *symp2;
+-
+-	      /* FIXME: Creating a new symbol here is risky.  We're
+-		 in the final loop over the symbol table.  We can
+-		 get away with it only because the symbol goes to
+-		 the end of the list, where the loop will still see
+-		 it.  It would probably be better to do this in
+-		 obj_frob_file_before_adjust.  */
+-
+-	      symp2 = symbol_find_or_make (sy_obj->versioned_name);
++	      asymbol *bfdsym;
++	      elf_symbol_type *elfsym;
+ 
+-	      /* Now we act as though we saw symp2 = sym.  */
+ 	      if (S_IS_COMMON (symp))
+ 		{
+ 		  as_bad (_("`%s' can't be versioned to common symbol '%s'"),
+@@ -2473,26 +2516,34 @@ elf_frob_symbol (symbolS *symp, int *puntp)
+ 		  return;
+ 		}
+ 
+-	      S_SET_SEGMENT (symp2, S_GET_SEGMENT (symp));
+-
+-	      /* Subtracting out the frag address here is a hack
+-		 because we are in the middle of the final loop.  */
+-	      S_SET_VALUE (symp2,
+-			   (S_GET_VALUE (symp)
+-			    - symbol_get_frag (symp)->fr_address));
+-
+-	      symbol_set_frag (symp2, symbol_get_frag (symp));
+-
+-	      /* This will copy over the size information.  */
+-	      copy_symbol_attributes (symp2, symp);
+-
+-	      S_SET_OTHER (symp2, S_GET_OTHER (symp));
++	      /* FIXME: Creating a new symbol here is risky.  We're
++		 in the final loop over the symbol table.  We can
++		 get away with it only because the symbol goes to
++		 the end of the list, where the loop will still see
++		 it.  It would probably be better to do this in
++		 obj_frob_file_before_adjust.  */
+ 
+-	      if (S_IS_WEAK (symp))
+-		S_SET_WEAK (symp2);
++	      obj_elf_copy_symbol (sy_obj->versioned_name, symp);
+ 
+-	      if (S_IS_EXTERNAL (symp))
+-		S_SET_EXTERNAL (symp2);
++	      switch (symbol_get_obj (symp)->visibility)
++		{
++		case visibility_unchanged:
++		  break;
++		case visibility_hidden:
++		  bfdsym = symbol_get_bfdsym (symp);
++		  elfsym = elf_symbol_from (bfd_asymbol_bfd (bfdsym),
++					    bfdsym);
++		  elfsym->internal_elf_sym.st_other &= ~3;
++		  elfsym->internal_elf_sym.st_other |= STV_HIDDEN;
++		  break;
++		case visibility_remove:
++		  /* Change the remooved label to fake label.  */
++		  S_SET_NAME (symp, FAKE_LABEL_NAME);
++		  /* FALLTHROUGH.  */
++		case visibility_local:
++		  S_CLEAR_EXTERNAL (symp);
++		  break;
++		}
+ 	    }
+ 	}
+     }
+diff --git a/gas/config/obj-elf.h b/gas/config/obj-elf.h
+index 54af9ebc0e2..b85dfbcffee 100644
+--- a/gas/config/obj-elf.h
++++ b/gas/config/obj-elf.h
+@@ -55,11 +55,22 @@ extern int mips_flag_mdebug;
+ #endif
+ #endif
+ 
++enum original_visibility
++{
++  visibility_unchanged = 0,
++  visibility_local,
++  visibility_hidden,
++  visibility_remove
++};
++
+ /* Additional information we keep for each symbol.  */
+ struct elf_obj_sy
+ {
+   /* Whether the symbol has been marked as local.  */
+-  int local;
++  unsigned int local : 1;
++
++  /* Whether visibility of the original symbol should be changed.  */
++  ENUM_BITFIELD (original_visibility) visibility : 2;
+ 
+   /* Use this to keep track of .size expressions that involve
+      differences that we can't compute yet.  */
+diff --git a/gas/doc/as.texi b/gas/doc/as.texi
+index 0a6727ef848..606111bf0fd 100644
+--- a/gas/doc/as.texi
++++ b/gas/doc/as.texi
+@@ -4509,7 +4509,7 @@ Some machine configurations provide additional directives.
+ * Struct::			@code{.struct @var{expression}}
+ @ifset ELF
+ * SubSection::                  @code{.subsection}
+-* Symver::                      @code{.symver @var{name},@var{name2@@nodename}}
++* Symver::                      @code{.symver @var{name},@var{name2@@nodename}[,@var{visibility}]}
+ @end ifset
+ 
+ @ifset COFF
+@@ -7112,9 +7112,9 @@ shared library.
+ 
+ For ELF targets, the @code{.symver} directive can be used like this:
+ @smallexample
+-.symver @var{name}, @var{name2@@nodename}
++.symver @var{name}, @var{name2@@nodename}[ ,@var{visibility}]
+ @end smallexample
+-If the symbol @var{name} is defined within the file
++If the original symbol @var{name} is defined within the file
+ being assembled, the @code{.symver} directive effectively creates a symbol
+ alias with the name @var{name2@@nodename}, and in fact the main reason that we
+ just don't try and create a regular alias is that the @var{@@} character isn't
+@@ -7127,7 +7127,14 @@ function is being mentioned.  The @var{nodename} portion of the alias should be
+ the name of a node specified in the version script supplied to the linker when
+ building a shared library.  If you are attempting to override a versioned
+ symbol from a shared library, then @var{nodename} should correspond to the
+-nodename of the symbol you are trying to override.
++nodename of the symbol you are trying to override.  The optional argument
++@var{visibility} updates the visibility of the original symbol.  The valid
++visibilities are @code{local}, @code {hidden}, and @code {remove}.  The
++@code{local} visibility makes the original symbol a local symbol
++(@pxref{Local}).  The @code{hidden} visibility sets the visibility of the
++original symbol to @code{hidden} (@pxref{Hidden}).  The @code{remove}
++visibility removes the original symbol from the symbol table.  If
++visibility isn't specified, the original symbol is unchanged.
+ 
+ If the symbol @var{name} is not defined within the file being assembled, all
+ references to @var{name} will be changed to @var{name2@@nodename}.  If no
+diff --git a/gas/testsuite/gas/symver/symver.exp b/gas/testsuite/gas/symver/symver.exp
+index de122eb61c3..b33af960da9 100644
+--- a/gas/testsuite/gas/symver/symver.exp
++++ b/gas/testsuite/gas/symver/symver.exp
+@@ -46,8 +46,13 @@ if { [is_elf_format] } then {
+       return
+     }
+ 
+-    run_dump_test "symver0" 
+-    run_dump_test "symver1" 
++    set test_list [lsort [glob -nocomplain $srcdir/$subdir/*.d]]
++    foreach t $test_list {
++	# We need to strip the ".d", but can leave the dirname.
++	verbose [file rootname $t]
++	run_dump_test [file rootname $t]
++    }
++
+     run_error_test "symver2" ""
+     run_error_test "symver3" ""
+     # We have to comment out symver4 and symver5, which check the
+@@ -56,5 +61,4 @@ if { [is_elf_format] } then {
+     # version name.
+ #    run_error_test "symver4" ""
+ #    run_error_test "symver5" ""
+-    run_error_test "symver6" ""
+ }
+diff --git a/gas/testsuite/gas/symver/symver10.s b/gas/testsuite/gas/symver/symver10.s
+new file mode 100644
+index 00000000000..967a692a73a
+--- /dev/null
++++ b/gas/testsuite/gas/symver/symver10.s
+@@ -0,0 +1,8 @@
++	.data
++	.globl foo
++	.type foo,%object
++foo:
++	.byte 0
++	.size foo,.-foo
++	.symver foo,foo@@version2,remove
++	.symver foo,foo@version1
+diff --git a/gas/testsuite/gas/symver/symver10a.d b/gas/testsuite/gas/symver/symver10a.d
+new file mode 100644
+index 00000000000..e19ed2b0bfa
+--- /dev/null
++++ b/gas/testsuite/gas/symver/symver10a.d
+@@ -0,0 +1,8 @@
++#source: symver10.s
++#readelf: -sW
++#name: symver symver10a
++
++#...
++ +[0-9]+: +0+ +1 +OBJECT +GLOBAL +DEFAULT +[0-9]+ +foo@@version2
++ +[0-9]+: +0+ +1 +OBJECT +GLOBAL +DEFAULT +[0-9]+ +foo@version1
++#pass
+diff --git a/gas/testsuite/gas/symver/symver10b.d b/gas/testsuite/gas/symver/symver10b.d
+new file mode 100644
+index 00000000000..17d0bfdd19e
+--- /dev/null
++++ b/gas/testsuite/gas/symver/symver10b.d
+@@ -0,0 +1,8 @@
++#source: symver10.s
++#readelf: -sW
++#name: symver symver10b
++
++#failif
++#...
++ +[0-9]+: +0+ +1 +OBJECT +GLOBAL +DEFAULT +[0-9]+ +foo
++#pass
+diff --git a/gas/testsuite/gas/symver/symver6.d b/gas/testsuite/gas/symver/symver6.d
+new file mode 100644
+index 00000000000..cddf7ec7032
+--- /dev/null
++++ b/gas/testsuite/gas/symver/symver6.d
+@@ -0,0 +1,11 @@
++#nm: -n
++#name: symver symver6
++#
++
++#...
++[ 	]+U foo
++#...
++0+00000.. D foo1
++0+0000000 D foo@@version1
++0+00000.. D foo@version1
++0+00000.. d L_foo1
+diff --git a/gas/testsuite/gas/symver/symver6.l b/gas/testsuite/gas/symver/symver6.l
+deleted file mode 100644
+index c2d12ae060f..00000000000
+--- a/gas/testsuite/gas/symver/symver6.l
++++ /dev/null
+@@ -1,3 +0,0 @@
+-.*: Assembler messages:
+-.*:7: Error: multiple versions \[`foo@version1'|`foo@@version1'\] for symbol `foo'
+-#pass
+diff --git a/gas/testsuite/gas/symver/symver6.s b/gas/testsuite/gas/symver/symver6.s
+index 23d9fe20ee4..b0bc0b8b22b 100644
+--- a/gas/testsuite/gas/symver/symver6.s
++++ b/gas/testsuite/gas/symver/symver6.s
+@@ -3,7 +3,7 @@
+ 	.type foo1,object
+ foo1:
+ 	.long foo
+-	.symver foo,foo@@version1
+-	.symver foo,foo@version1
++	.symver foo1,foo@@version1
++	.symver foo1,foo@version1
+ L_foo1:
+ 	.size foo1,L_foo1-foo1
+diff --git a/gas/testsuite/gas/symver/symver7.d b/gas/testsuite/gas/symver/symver7.d
+new file mode 100644
+index 00000000000..eb680083da9
+--- /dev/null
++++ b/gas/testsuite/gas/symver/symver7.d
+@@ -0,0 +1,8 @@
++#readelf: -sW
++#name: symver symver7
++
++#...
++ +[0-9]+: +0+ +1 +OBJECT +GLOBAL +HIDDEN +[0-9]+ +foo
++ +[0-9]+: +0+ +1 +OBJECT +GLOBAL +DEFAULT +[0-9]+ +foo@@version2
++ +[0-9]+: +0+ +1 +OBJECT +GLOBAL +DEFAULT +[0-9]+ +foo@version1
++#pass
+diff --git a/gas/testsuite/gas/symver/symver7.s b/gas/testsuite/gas/symver/symver7.s
+new file mode 100644
+index 00000000000..20c11b7cc08
+--- /dev/null
++++ b/gas/testsuite/gas/symver/symver7.s
+@@ -0,0 +1,8 @@
++	.data
++	.globl foo
++	.type foo,%object
++foo:
++	.byte 0
++	.size foo,.-foo
++	.symver foo,foo@@version2,local
++	.symver foo,foo@version1,hidden
+diff --git a/gas/testsuite/gas/symver/symver8.d b/gas/testsuite/gas/symver/symver8.d
+new file mode 100644
+index 00000000000..3026c15383f
+--- /dev/null
++++ b/gas/testsuite/gas/symver/symver8.d
+@@ -0,0 +1,9 @@
++#readelf: -sW
++#name: symver symver8
++
++#...
++ +[0-9]+: +0+ +1 +OBJECT +LOCAL +DEFAULT +[0-9]+ +foo
++#...
++ +[0-9]+: +0+ +1 +OBJECT +GLOBAL +DEFAULT +[0-9]+ +foo@@version2
++ +[0-9]+: +0+ +1 +OBJECT +GLOBAL +DEFAULT +[0-9]+ +foo@version1
++#pass
+diff --git a/gas/testsuite/gas/symver/symver8.s b/gas/testsuite/gas/symver/symver8.s
+new file mode 100644
+index 00000000000..17ab0370402
+--- /dev/null
++++ b/gas/testsuite/gas/symver/symver8.s
+@@ -0,0 +1,8 @@
++	.data
++	.globl foo
++	.type foo,%object
++foo:
++	.byte 0
++	.size foo,.-foo
++	.symver foo,foo@@version2,hidden
++	.symver foo,foo@version1,local
+diff --git a/gas/testsuite/gas/symver/symver9.s b/gas/testsuite/gas/symver/symver9.s
+new file mode 100644
+index 00000000000..2f608972f57
+--- /dev/null
++++ b/gas/testsuite/gas/symver/symver9.s
+@@ -0,0 +1,8 @@
++	.data
++	.globl foo
++	.type foo,%object
++foo:
++	.byte 0
++	.size foo,.-foo
++	.symver foo,foo@@version2
++	.symver foo,foo@version1,remove
+diff --git a/gas/testsuite/gas/symver/symver9a.d b/gas/testsuite/gas/symver/symver9a.d
+new file mode 100644
+index 00000000000..62dda20bed2
+--- /dev/null
++++ b/gas/testsuite/gas/symver/symver9a.d
+@@ -0,0 +1,8 @@
++#source: symver9.s
++#readelf: -sW
++#name: symver symver9a
++
++#...
++ +[0-9]+: +0+ +1 +OBJECT +GLOBAL +DEFAULT +[0-9]+ +foo@@version2
++ +[0-9]+: +0+ +1 +OBJECT +GLOBAL +DEFAULT +[0-9]+ +foo@version1
++#pass
+diff --git a/gas/testsuite/gas/symver/symver9b.d b/gas/testsuite/gas/symver/symver9b.d
+new file mode 100644
+index 00000000000..383d1bd0809
+--- /dev/null
++++ b/gas/testsuite/gas/symver/symver9b.d
+@@ -0,0 +1,8 @@
++#source: symver9.s
++#readelf: -sW
++#name: symver symver9b
++
++#failif
++#...
++ +[0-9]+: +0+ +1 +OBJECT +GLOBAL +DEFAULT +[0-9]+ +foo
++#pass
+-- 
+2.26.0
+
