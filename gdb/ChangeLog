@@ -1,3 +1,61 @@
+2020-04-07  Tom de Vries  <tdevries@suse.de>
+
+	* psymtab.c (maintenance_check_psymtabs): Skip static LOC_BLOCK
+	symbols without address.
+
+2020-04-06  Kamil Rytarowski  <n54@gmx.com>
+
+	* nbsd-nat.h (struct thread_info): Add forward declaration.
+	(nbsd_nat_target::thread_alive): Add.
+	(nbsd_nat_target::thread_name): Likewise.
+	(nbsd_nat_target::update_thread_list): Likewise.
+	(update_thread_list::post_attach): Likewise.
+	(post_attach::pid_to_str): Likewise.
+	* nbsd-nat.c: Include "gdbthread.h" and "inferior.h".
+	(nbsd_thread_lister): Add.
+	(nbsd_nat_target::thread_alive): Likewise.
+	(nbsd_nat_target::thread_name): Likewise.
+	(nbsd_add_threads): Likewise.
+	(update_thread_list::post_attach): Likewise.
+	(nbsd_nat_target::update_thread_list): Likewise.
+	(post_attach::pid_to_str): Likewise.
+
+2020-04-06  Tom Tromey  <tromey@adacore.com>
+
+	* ada-valprint.c (print_variant_part): Extract the variant field.
+	(print_field_values): Use the field as the outer value when
+	recursing.
+
+2020-04-06  Tom Tromey  <tromey@adacore.com>
+
+	* sh-nbsd-tdep.c: Include nbsd-tdep.h.
+	* ppc-nbsd-tdep.c: Include nbsd-tdep.h.
+	* mips-nbsd-tdep.c (mipsnbsd_init_abi): Add missing ";".
+	* arm-nbsd-tdep.c: Include nbsd-tdep.h.
+	* hppa-nbsd-tdep.c: Include nbsd-tdep.h.
+
+2020-04-06  Tom Tromey  <tromey@adacore.com>
+
+	* dwarf2/read.c (read_base_type) <DW_ATE_complex_float>: Handle
+	TYPE_CODE_ERROR.
+
+2020-04-06  Kamil Rytarowski  <n54@gmx.com>
+
+	* nbsd-tdep.c: Include "gdbarch.h".
+	Define enum with NetBSD signal numbers.
+	(nbsd_gdb_signal_from_target, nbsd_gdb_signal_to_target): New.
+	* alpha-nbsd-tdep.c (alphanbsd_init_abi): Call nbsd_init_abi().
+	* amd64-nbsd-tdep.c (amd64nbsd_init_abi): Likewise.
+	* arm-nbsd-tdep.c (arm_netbsd_elf_init_abi): Likewise.
+	* hppa-nbsd-tdep.c (hppanbsd_init_abi): Likewise.
+	* i386-nbsd-tdep.c (i386nbsd_init_abi): Likewise.
+	* mips-nbsd-tdep.c (nbsd_init_abi): Likewise.
+	* ppc-nbsd-tdep.c (ppcnbsd_init_abi): Likewise.
+	* sh-nbsd-tdep.c (shnbsd_init_abi): Likewise.
+	* sparc-nbsd-tdep.c (sparc32nbsd_init_abi): Likewise.
+	* sparc64-nbsd-tdep.c (sparc64nbsd_init_abi): Likewise.
+	* vax-nbsd-tdep.c (vaxnbsd_elf_init_abi): Likewise.
+
 2020-04-03  Hannes Domani  <ssbssa@yahoo.de>
 
 	PR gdb/25325
