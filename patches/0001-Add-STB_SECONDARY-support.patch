@@ -1,4 +1,4 @@
-From 709c27272c559a1f013eb0a9fafdee701250c419 Mon Sep 17 00:00:00 2001
+From 558c4b627e81acd9ac18b342e884e8250d569aeb Mon Sep 17 00:00:00 2001
 From: "H.J. Lu" <hjl.tools@gmail.com>
 Date: Sun, 26 Nov 2017 09:26:34 -0800
 Subject: [PATCH] Add STB_SECONDARY support
@@ -291,10 +291,10 @@ ld/testsuite/
  create mode 100644 ld/testsuite/ld-elf/secondary8b.rd
 
 diff --git a/bfd/archive.c b/bfd/archive.c
-index 6b7a78ccd9..6670d3eecc 100644
+index 3423a336956..1a142ec1b13 100644
 --- a/bfd/archive.c
 +++ b/bfd/archive.c
-@@ -2327,6 +2327,7 @@ _bfd_compute_and_write_armap (bfd *arch, unsigned int elength)
+@@ -2345,6 +2345,7 @@ _bfd_compute_and_write_armap (bfd *arch, unsigned int elength)
  
  		  if (((flags & (BSF_GLOBAL
  				 | BSF_WEAK
@@ -303,10 +303,10 @@ index 6b7a78ccd9..6670d3eecc 100644
  				 | BSF_GNU_UNIQUE)) != 0
  		       || bfd_is_com_section (sec))
 diff --git a/bfd/bfd-in2.h b/bfd/bfd-in2.h
-index 30b195a6cf..fede9f6286 100644
+index 7aa64556b84..bba1c131fed 100644
 --- a/bfd/bfd-in2.h
 +++ b/bfd/bfd-in2.h
-@@ -6379,6 +6379,10 @@ typedef struct bfd_symbol
+@@ -6390,6 +6390,10 @@ typedef struct bfd_symbol
       with this name and type in use.  BSF_OBJECT must also be set.  */
  #define BSF_GNU_UNIQUE          (1 << 23)
  
@@ -318,10 +318,10 @@ index 30b195a6cf..fede9f6286 100644
  
    /* A pointer to the section to which this symbol is
 diff --git a/bfd/elf.c b/bfd/elf.c
-index be060d579c..6c528edea7 100644
+index 1780074f5ab..6def11ee77a 100644
 --- a/bfd/elf.c
 +++ b/bfd/elf.c
-@@ -4068,7 +4068,10 @@ sym_is_global (bfd *abfd, asymbol *sym)
+@@ -4057,7 +4057,10 @@ sym_is_global (bfd *abfd, asymbol *sym)
    if (bed->elf_backend_sym_is_global)
      return (*bed->elf_backend_sym_is_global) (abfd, sym);
  
@@ -333,7 +333,7 @@ index be060d579c..6c528edea7 100644
  	  || bfd_is_und_section (bfd_asymbol_section (sym))
  	  || bfd_is_com_section (bfd_asymbol_section (sym)));
  }
-@@ -8281,8 +8284,9 @@ error_return:
+@@ -8368,8 +8371,9 @@ Unable to handle section index %x in ELF symbol.  Using ABS instead."),
  	    }
  	  sym.st_info = ELF_ST_INFO (STB_GLOBAL, type);
  	}
@@ -344,7 +344,7 @@ index be060d579c..6c528edea7 100644
  				    ? STB_WEAK
  				    : STB_GLOBAL),
  				   type);
-@@ -8296,6 +8300,8 @@ error_return:
+@@ -8383,6 +8387,8 @@ Unable to handle section index %x in ELF symbol.  Using ABS instead."),
  	    bind = STB_LOCAL;
  	  else if (flags & BSF_GNU_UNIQUE)
  	    bind = STB_GNU_UNIQUE;
@@ -354,7 +354,7 @@ index be060d579c..6c528edea7 100644
  	    bind = STB_WEAK;
  	  else if (flags & BSF_GLOBAL)
 diff --git a/bfd/elf32-mips.c b/bfd/elf32-mips.c
-index 74300a11e9..fc604660de 100644
+index e3c4f5594ff..5e1a6a48a5b 100644
 --- a/bfd/elf32-mips.c
 +++ b/bfd/elf32-mips.c
 @@ -2280,7 +2280,10 @@ mips_elf_sym_is_global (bfd *abfd ATTRIBUTE_UNUSED, asymbol *sym)
@@ -370,10 +370,10 @@ index 74300a11e9..fc604660de 100644
  	    || bfd_is_com_section (bfd_asymbol_section (sym)));
  }
 diff --git a/bfd/elf64-ia64-vms.c b/bfd/elf64-ia64-vms.c
-index aa2aa119f5..4b5f1d4389 100644
+index d40fa4277a2..35a6150f721 100644
 --- a/bfd/elf64-ia64-vms.c
 +++ b/bfd/elf64-ia64-vms.c
-@@ -4951,6 +4951,10 @@ error_free_dyn:
+@@ -4954,6 +4954,10 @@ elf64_vms_link_add_object_symbols (bfd *abfd, struct bfd_link_info *info)
  	  flags = BSF_WEAK;
  	  break;
  
@@ -385,10 +385,10 @@ index aa2aa119f5..4b5f1d4389 100644
  	  flags = BSF_GNU_UNIQUE;
  	  break;
 diff --git a/bfd/elfcode.h b/bfd/elfcode.h
-index 625ae993df..aa863622ac 100644
+index 68db3e9ee3d..e92818f67eb 100644
 --- a/bfd/elfcode.h
 +++ b/bfd/elfcode.h
-@@ -1303,6 +1303,9 @@ elf_slurp_symbol_table (bfd *abfd, asymbol **symptrs, bfd_boolean dynamic)
+@@ -1324,6 +1324,9 @@ elf_slurp_symbol_table (bfd *abfd, asymbol **symptrs, bfd_boolean dynamic)
  	    case STB_WEAK:
  	      sym->symbol.flags |= BSF_WEAK;
  	      break;
@@ -399,7 +399,7 @@ index 625ae993df..aa863622ac 100644
  	      sym->symbol.flags |= BSF_GNU_UNIQUE;
  	      break;
 diff --git a/bfd/elflink.c b/bfd/elflink.c
-index 9d7f69afda..0be64ef237 100644
+index 7c0849423a3..9b076744762 100644
 --- a/bfd/elflink.c
 +++ b/bfd/elflink.c
 @@ -1027,7 +1027,8 @@ elf_merge_st_other (bfd *abfd, struct elf_link_hash_entry *h,
@@ -563,7 +563,7 @@ index 9d7f69afda..0be64ef237 100644
      return FALSE;
  
    if (skip)
-@@ -2052,8 +2076,9 @@ nondefault:
+@@ -2052,8 +2076,9 @@ _bfd_elf_add_default_symbol (bfd *abfd,
    size_change_ok = FALSE;
    tmp_sec = sec;
    if (!_bfd_elf_merge_symbol (abfd, info, shortname, sym, &tmp_sec, &value,
@@ -655,7 +655,7 @@ index 9d7f69afda..0be64ef237 100644
  	  break;
  	}
      }
-@@ -4460,6 +4499,7 @@ error_free_dyn:
+@@ -4464,6 +4503,7 @@ elf_link_add_object_symbols (bfd *abfd, struct bfd_link_info *info)
        unsigned int shindex;
        bfd *old_bfd;
        bfd_boolean matched;
@@ -663,7 +663,7 @@ index 9d7f69afda..0be64ef237 100644
  
        override = FALSE;
  
-@@ -4512,6 +4552,10 @@ error_free_dyn:
+@@ -4516,6 +4556,10 @@ elf_link_add_object_symbols (bfd *abfd, struct bfd_link_info *info)
  	  flags = BSF_WEAK;
  	  break;
  
@@ -674,7 +674,7 @@ index 9d7f69afda..0be64ef237 100644
  	case STB_GNU_UNIQUE:
  	  flags = BSF_GNU_UNIQUE;
  	  break;
-@@ -4755,7 +4799,7 @@ error_free_dyn:
+@@ -4759,7 +4803,7 @@ elf_link_add_object_symbols (bfd *abfd, struct bfd_link_info *info)
  			      | (isym->st_other & ~ELF_ST_VISIBILITY (-1)));
  
  	  if (!_bfd_elf_merge_symbol (abfd, info, name, isym, &sec, &value,
@@ -683,7 +683,7 @@ index 9d7f69afda..0be64ef237 100644
  				      &old_alignment, &skip, &override,
  				      &type_change_ok, &size_change_ok,
  				      &matched))
-@@ -4778,7 +4822,12 @@ error_free_dyn:
+@@ -4782,7 +4826,12 @@ elf_link_add_object_symbols (bfd *abfd, struct bfd_link_info *info)
  	      && vernum > 1
  	      && definition)
  	    h->verinfo.verdef = &elf_tdata (abfd)->verdef[vernum - 1];
@@ -696,7 +696,7 @@ index 9d7f69afda..0be64ef237 100644
  
        if (! (_bfd_generic_link_add_one_symbol
  	     (info, abfd, name, flags, sec, value, NULL, FALSE, bed->collect,
-@@ -4861,10 +4910,14 @@ error_free_dyn:
+@@ -4865,10 +4914,14 @@ elf_link_add_object_symbols (bfd *abfd, struct bfd_link_info *info)
  	      if (! definition)
  		{
  		  h->ref_regular = 1;
@@ -713,7 +713,7 @@ index 9d7f69afda..0be64ef237 100644
  		{
  		  h->def_regular = 1;
  		  if (h->def_dynamic)
-@@ -4893,6 +4946,13 @@ error_free_dyn:
+@@ -4897,6 +4950,13 @@ elf_link_add_object_symbols (bfd *abfd, struct bfd_link_info *info)
  		{
  		  h->def_dynamic = 1;
  		  hi->def_dynamic = 1;
@@ -727,7 +727,7 @@ index 9d7f69afda..0be64ef237 100644
  		}
  
  	      /* If the indirect symbol has been forced local, don't
-@@ -4910,7 +4970,8 @@ error_free_dyn:
+@@ -4914,7 +4974,8 @@ elf_link_add_object_symbols (bfd *abfd, struct bfd_link_info *info)
  	  if (definition
  	      || (!override && h->root.type == bfd_link_hash_common))
  	    if (!_bfd_elf_add_default_symbol (abfd, info, h, name, isym,
@@ -737,7 +737,7 @@ index 9d7f69afda..0be64ef237 100644
  	      goto error_free_vers;
  
  	  /* Check the alignment when a common symbol is involved. This
-@@ -5731,16 +5792,27 @@ elf_link_add_archive_symbols (bfd *abfd, struct bfd_link_info *info)
+@@ -5736,16 +5797,27 @@ elf_link_add_archive_symbols (bfd *abfd, struct bfd_link_info *info)
  		 map alone.  Instead we must read in the element's symbol
  		 table and check that to see what kind of symbol definition
  		 this is.  */
@@ -767,7 +767,7 @@ index 9d7f69afda..0be64ef237 100644
  
  	  /* We need to include this archive member.  */
  	  element = _bfd_get_elt_at_filepos (abfd, symdef->file_offset);
-@@ -10087,7 +10159,21 @@ elf_link_output_extsym (struct bfd_hash_entry *bh, void *data)
+@@ -10088,7 +10160,21 @@ elf_link_output_extsym (struct bfd_hash_entry *bh, void *data)
      sym.st_info = ELF_ST_INFO (STB_GNU_UNIQUE, type);
    else if (h->root.type == bfd_link_hash_undefweak
  	   || h->root.type == bfd_link_hash_defweak)
@@ -790,7 +790,7 @@ index 9d7f69afda..0be64ef237 100644
    else
      sym.st_info = ELF_ST_INFO (STB_GLOBAL, type);
    sym.st_target_internal = h->target_internal;
-@@ -10125,7 +10211,8 @@ elf_link_output_extsym (struct bfd_hash_entry *bh, void *data)
+@@ -10126,7 +10212,8 @@ elf_link_output_extsym (struct bfd_hash_entry *bh, void *data)
    if (sym.st_shndx == SHN_UNDEF
        && h->ref_regular
        && (ELF_ST_BIND (sym.st_info) == STB_GLOBAL
@@ -800,7 +800,7 @@ index 9d7f69afda..0be64ef237 100644
      {
        int bindtype;
        type = ELF_ST_TYPE (sym.st_info);
-@@ -10151,10 +10238,12 @@ elf_link_output_extsym (struct bfd_hash_entry *bh, void *data)
+@@ -10152,10 +10239,12 @@ elf_link_output_extsym (struct bfd_hash_entry *bh, void *data)
      sym.st_size = 0;
  
    /* If a non-weak symbol with non-default visibility is not defined
@@ -815,7 +815,7 @@ index 9d7f69afda..0be64ef237 100644
        && !h->def_regular)
      {
 diff --git a/bfd/elfn32-mips.c b/bfd/elfn32-mips.c
-index 8927e9825b..64d4d19306 100644
+index 71242a55404..fd2d8ad0dfc 100644
 --- a/bfd/elfn32-mips.c
 +++ b/bfd/elfn32-mips.c
 @@ -3840,7 +3840,10 @@ mips_elf_sym_is_global (bfd *abfd ATTRIBUTE_UNUSED, asymbol *sym)
@@ -831,7 +831,7 @@ index 8927e9825b..64d4d19306 100644
  	    || bfd_is_com_section (bfd_asymbol_section (sym)));
  }
 diff --git a/bfd/linker.c b/bfd/linker.c
-index 382b69d8c3..15d58d1343 100644
+index c523f8b5c64..141fcbec813 100644
 --- a/bfd/linker.c
 +++ b/bfd/linker.c
 @@ -1389,6 +1389,7 @@ _bfd_generic_link_add_one_symbol (struct bfd_link_info *info,
@@ -903,7 +903,7 @@ index 382b69d8c3..15d58d1343 100644
  	       identify all functions that might be global
  	       constructors and destructors and pass them up in a
 diff --git a/bfd/syms.c b/bfd/syms.c
-index 146f674a13..3abb993e12 100644
+index 76c212344eb..f4d8a47d291 100644
 --- a/bfd/syms.c
 +++ b/bfd/syms.c
 @@ -307,6 +307,10 @@ CODE_FRAGMENT
@@ -925,7 +925,7 @@ index 146f674a13..3abb993e12 100644
  	    : (type & BSF_GNU_UNIQUE) ? 'u' : ' '),
  	   (type & BSF_WEAK) ? 'w' : ' ',
  	   (type & BSF_CONSTRUCTOR) ? 'C' : ' ',
-@@ -698,6 +703,15 @@ bfd_decode_symclass (asymbol *symbol)
+@@ -687,6 +692,15 @@ bfd_decode_symclass (asymbol *symbol)
      }
    if (symbol->flags & BSF_GNU_UNIQUE)
      return 'u';
@@ -942,10 +942,10 @@ index 146f674a13..3abb993e12 100644
      return '?';
  
 diff --git a/binutils/nm.c b/binutils/nm.c
-index 2ee38c29f7..4ef8c9aa49 100644
+index 1b5122d56ab..6bfaa2ac9a3 100644
 --- a/binutils/nm.c
 +++ b/binutils/nm.c
-@@ -489,6 +489,7 @@ filter_symbols (bfd *abfd, bfd_boolean is_dynamic, void *minisyms,
+@@ -502,6 +502,7 @@ filter_symbols (bfd *abfd, bfd_boolean is_dynamic, void *minisyms,
  	/* PR binutls/12753: Unique symbols are global too.  */
  	keep = ((sym->flags & (BSF_GLOBAL
  			       | BSF_WEAK
@@ -954,10 +954,10 @@ index 2ee38c29f7..4ef8c9aa49 100644
  		|| bfd_is_und_section (sym->section)
  		|| bfd_is_com_section (sym->section));
 diff --git a/binutils/readelf.c b/binutils/readelf.c
-index 370bc4c1b7..aa13ac7bc3 100644
+index eb41e10dae9..4b6ce39f69d 100644
 --- a/binutils/readelf.c
 +++ b/binutils/readelf.c
-@@ -11087,6 +11087,7 @@ get_symbol_binding (Filedata * filedata, unsigned int binding)
+@@ -11133,6 +11133,7 @@ get_symbol_binding (Filedata * filedata, unsigned int binding)
      case STB_LOCAL:	return "LOCAL";
      case STB_GLOBAL:	return "GLOBAL";
      case STB_WEAK:	return "WEAK";
@@ -966,7 +966,7 @@ index 370bc4c1b7..aa13ac7bc3 100644
        if (binding >= STB_LOPROC && binding <= STB_HIPROC)
  	snprintf (buff, sizeof (buff), _("<processor specific>: %d"),
 diff --git a/gas/config/obj-elf.c b/gas/config/obj-elf.c
-index ee93628d70..a229648e44 100644
+index 8b14c91b2df..d37f85f7026 100644
 --- a/gas/config/obj-elf.c
 +++ b/gas/config/obj-elf.c
 @@ -68,6 +68,7 @@ static void obj_elf_line (int);
@@ -1025,16 +1025,17 @@ index ee93628d70..a229648e44 100644
        if (c == ',')
  	{
  	  input_line_pointer++;
-@@ -2374,18 +2400,24 @@ elf_frob_symbol (symbolS *symp, int *puntp)
- 	      if (S_IS_WEAK (symp))
- 		S_SET_WEAK (symp2);
+@@ -1538,6 +1564,9 @@ obj_elf_copy_symbol (const char *name2, symbolS *symp)
+   if (S_IS_WEAK (symp))
+     S_SET_WEAK (symp2);
  
-+	      if (S_IS_SECONDARY (symp))
-+		S_SET_SECONDARY (symp2);
++  if (S_IS_SECONDARY (symp))
++    S_SET_SECONDARY (symp2);
 +
- 	      if (S_IS_EXTERNAL (symp))
- 		S_SET_EXTERNAL (symp2);
- 	    }
+   if (S_IS_EXTERNAL (symp))
+     S_SET_EXTERNAL (symp2);
+ 
+@@ -2548,12 +2577,15 @@ elf_frob_symbol (symbolS *symp, int *puntp)
  	}
      }
  
@@ -1053,7 +1054,7 @@ index ee93628d70..a229648e44 100644
      }
  }
  
-@@ -2565,7 +2597,7 @@ elf_frob_file_before_adjust (void)
+@@ -2748,7 +2780,7 @@ elf_frob_file_before_adjust (void)
  	    /* If there was .weak foo, but foo was neither defined nor
  	       used anywhere, remove it.  */
  
@@ -1063,10 +1064,10 @@ index ee93628d70..a229648e44 100644
  		     && symbol_used_in_reloc_p (symp) == 0)
  	      symbol_remove (symp, &symbol_rootP, &symbol_lastP);
 diff --git a/gas/doc/as.texi b/gas/doc/as.texi
-index b54ab1eecc..aa99a314c6 100644
+index 606111bf0fd..a1cf2397685 100644
 --- a/gas/doc/as.texi
 +++ b/gas/doc/as.texi
-@@ -4456,6 +4456,7 @@ Some machine configurations provide additional directives.
+@@ -4468,6 +4468,7 @@ Some machine configurations provide additional directives.
  * Print::			@code{.print @var{string}}
  @ifset ELF
  * Protected::                   @code{.protected @var{names}}
@@ -1074,7 +1075,7 @@ index b54ab1eecc..aa99a314c6 100644
  @end ifset
  
  * Psize::                       @code{.psize @var{lines}, @var{columns}}
-@@ -6336,6 +6337,14 @@ their binding: local, global or weak).  The directive sets the visibility to
+@@ -6367,6 +6368,14 @@ their binding: local, global or weak).  The directive sets the visibility to
  components that defines them must be resolved to the definition in that
  component, even if a definition in another component would normally preempt
  this.
@@ -1090,10 +1091,10 @@ index b54ab1eecc..aa99a314c6 100644
  
  @node Psize
 diff --git a/gas/symbols.c b/gas/symbols.c
-index 34ec145ad0..7ea92dd755 100644
+index 160b0f74021..386fc079d67 100644
 --- a/gas/symbols.c
 +++ b/gas/symbols.c
-@@ -2226,6 +2226,14 @@ S_IS_WEAK (symbolS *s)
+@@ -2228,6 +2228,14 @@ S_IS_WEAK (symbolS *s)
    return (s->bsym->flags & BSF_WEAK) != 0;
  }
  
@@ -1108,7 +1109,7 @@ index 34ec145ad0..7ea92dd755 100644
  int
  S_IS_WEAKREFR (symbolS *s)
  {
-@@ -2275,7 +2283,7 @@ S_FORCE_RELOC (symbolS *s, int strict)
+@@ -2277,7 +2285,7 @@ S_FORCE_RELOC (symbolS *s, int strict)
    else
      {
        if ((strict
@@ -1117,7 +1118,7 @@ index 34ec145ad0..7ea92dd755 100644
  	       || (EXTERN_FORCE_RELOC
  		   && (s->bsym->flags & BSF_GLOBAL) != 0)))
  	  || (s->bsym->flags & BSF_GNU_INDIRECT_FUNCTION) != 0)
-@@ -2416,9 +2424,9 @@ S_SET_EXTERNAL (symbolS *s)
+@@ -2418,9 +2426,9 @@ S_SET_EXTERNAL (symbolS *s)
  {
    if (LOCAL_SYMBOL_CHECK (s))
      s = local_symbol_convert ((struct local_symbol *) s);
@@ -1129,7 +1130,7 @@ index 34ec145ad0..7ea92dd755 100644
        return;
      }
    if (s->bsym->flags & BSF_SECTION_SYM)
-@@ -2436,7 +2444,7 @@ S_SET_EXTERNAL (symbolS *s)
+@@ -2438,7 +2446,7 @@ S_SET_EXTERNAL (symbolS *s)
      }
  #endif
    s->bsym->flags |= BSF_GLOBAL;
@@ -1138,7 +1139,7 @@ index 34ec145ad0..7ea92dd755 100644
  
  #ifdef TE_PE
    if (! an_external_name && S_GET_NAME(s)[0] != '.')
-@@ -2449,13 +2457,13 @@ S_CLEAR_EXTERNAL (symbolS *s)
+@@ -2451,13 +2459,13 @@ S_CLEAR_EXTERNAL (symbolS *s)
  {
    if (LOCAL_SYMBOL_CHECK (s))
      return;
@@ -1155,7 +1156,7 @@ index 34ec145ad0..7ea92dd755 100644
  }
  
  void
-@@ -2467,7 +2475,16 @@ S_SET_WEAK (symbolS *s)
+@@ -2469,7 +2477,16 @@ S_SET_WEAK (symbolS *s)
    obj_set_weak_hook (s);
  #endif
    s->bsym->flags |= BSF_WEAK;
@@ -1173,7 +1174,7 @@ index 34ec145ad0..7ea92dd755 100644
  }
  
  void
-@@ -2524,6 +2541,12 @@ S_CLEAR_WEAKREFD (symbolS *s)
+@@ -2526,6 +2543,12 @@ S_CLEAR_WEAKREFD (symbolS *s)
  	  s->bsym->flags &= ~BSF_WEAK;
  	  s->bsym->flags |= BSF_LOCAL;
  	}
@@ -1187,7 +1188,7 @@ index 34ec145ad0..7ea92dd755 100644
  }
  
 diff --git a/gas/symbols.h b/gas/symbols.h
-index f8429d9730..204f39a836 100644
+index dafd677b9e1..c1b12882b9a 100644
 --- a/gas/symbols.h
 +++ b/gas/symbols.h
 @@ -92,6 +92,7 @@ extern void S_SET_VALUE (symbolS *, valueT);
@@ -1208,7 +1209,7 @@ index f8429d9730..204f39a836 100644
  extern void S_SET_WEAKREFD (symbolS *);
 diff --git a/gas/testsuite/gas/elf/common6.d b/gas/testsuite/gas/elf/common6.d
 new file mode 100644
-index 0000000000..31ca43df9d
+index 00000000000..31ca43df9d8
 --- /dev/null
 +++ b/gas/testsuite/gas/elf/common6.d
 @@ -0,0 +1,2 @@
@@ -1216,7 +1217,7 @@ index 0000000000..31ca43df9d
 +#error_output: common6.l
 diff --git a/gas/testsuite/gas/elf/common6.l b/gas/testsuite/gas/elf/common6.l
 new file mode 100644
-index 0000000000..58d5142fc8
+index 00000000000..58d5142fc81
 --- /dev/null
 +++ b/gas/testsuite/gas/elf/common6.l
 @@ -0,0 +1,2 @@
@@ -1224,7 +1225,7 @@ index 0000000000..58d5142fc8
 +[^:]*: Error: symbol `foobar' can not be both secondary and common
 diff --git a/gas/testsuite/gas/elf/common6.s b/gas/testsuite/gas/elf/common6.s
 new file mode 100644
-index 0000000000..37bd0ce2c0
+index 00000000000..37bd0ce2c05
 --- /dev/null
 +++ b/gas/testsuite/gas/elf/common6.s
 @@ -0,0 +1,2 @@
@@ -1232,7 +1233,7 @@ index 0000000000..37bd0ce2c0
 +	.secondary foobar
 diff --git a/gas/testsuite/gas/elf/common7.d b/gas/testsuite/gas/elf/common7.d
 new file mode 100644
-index 0000000000..124a151e53
+index 00000000000..124a151e533
 --- /dev/null
 +++ b/gas/testsuite/gas/elf/common7.d
 @@ -0,0 +1,2 @@
@@ -1240,7 +1241,7 @@ index 0000000000..124a151e53
 +#error_output: common7.l
 diff --git a/gas/testsuite/gas/elf/common7.l b/gas/testsuite/gas/elf/common7.l
 new file mode 100644
-index 0000000000..58d5142fc8
+index 00000000000..58d5142fc81
 --- /dev/null
 +++ b/gas/testsuite/gas/elf/common7.l
 @@ -0,0 +1,2 @@
@@ -1248,17 +1249,17 @@ index 0000000000..58d5142fc8
 +[^:]*: Error: symbol `foobar' can not be both secondary and common
 diff --git a/gas/testsuite/gas/elf/common7.s b/gas/testsuite/gas/elf/common7.s
 new file mode 100644
-index 0000000000..df8b7ed7f5
+index 00000000000..df8b7ed7f5c
 --- /dev/null
 +++ b/gas/testsuite/gas/elf/common7.s
 @@ -0,0 +1,2 @@
 +	.secondary foobar
 +	.comm foobar,30
 diff --git a/gas/testsuite/gas/elf/elf.exp b/gas/testsuite/gas/elf/elf.exp
-index b27a7ecabb..50fe133bf9 100644
+index c80175cc51d..e52f76e3656 100644
 --- a/gas/testsuite/gas/elf/elf.exp
 +++ b/gas/testsuite/gas/elf/elf.exp
-@@ -284,8 +284,13 @@ if { [is_elf_format] } then {
+@@ -296,8 +296,13 @@ if { [is_elf_format] } then {
  	run_dump_test "common5b"
  	run_dump_test "common5c"
  	run_dump_test "common5d"
@@ -1274,7 +1275,7 @@ index b27a7ecabb..50fe133bf9 100644
      run_dump_test "bignums"
 diff --git a/gas/testsuite/gas/elf/secondary1.e b/gas/testsuite/gas/elf/secondary1.e
 new file mode 100644
-index 0000000000..da00dfb985
+index 00000000000..da00dfb9859
 --- /dev/null
 +++ b/gas/testsuite/gas/elf/secondary1.e
 @@ -0,0 +1,4 @@
@@ -1284,7 +1285,7 @@ index 0000000000..da00dfb985
 + +.: 0+1 +1 +OBJECT +SECOND +DEFAULT +. secondary_object2
 diff --git a/gas/testsuite/gas/elf/secondary1.s b/gas/testsuite/gas/elf/secondary1.s
 new file mode 100644
-index 0000000000..6a3032dacd
+index 00000000000..6a3032dacd2
 --- /dev/null
 +++ b/gas/testsuite/gas/elf/secondary1.s
 @@ -0,0 +1,33 @@
@@ -1323,14 +1324,14 @@ index 0000000000..6a3032dacd
 +        .size   secondary_object2,1
 diff --git a/gas/testsuite/gas/elf/secondary2.e b/gas/testsuite/gas/elf/secondary2.e
 new file mode 100644
-index 0000000000..0470eb8240
+index 00000000000..0470eb82405
 --- /dev/null
 +++ b/gas/testsuite/gas/elf/secondary2.e
 @@ -0,0 +1 @@
 + +.: 0+ +0 +[A-Z]+ +WEAK +DEFAULT +UND secondary_function
 diff --git a/gas/testsuite/gas/elf/secondary2.s b/gas/testsuite/gas/elf/secondary2.s
 new file mode 100644
-index 0000000000..234330ab99
+index 00000000000..234330ab992
 --- /dev/null
 +++ b/gas/testsuite/gas/elf/secondary2.s
 @@ -0,0 +1,5 @@
@@ -1340,7 +1341,7 @@ index 0000000000..234330ab99
 +	.data
 +	.secondary secondary_object
 diff --git a/gas/testsuite/gas/elf/type.e b/gas/testsuite/gas/elf/type.e
-index a1159bf4fb..d4c0548b86 100644
+index a1159bf4fbc..d4c0548b860 100644
 --- a/gas/testsuite/gas/elf/type.e
 +++ b/gas/testsuite/gas/elf/type.e
 @@ -3,5 +3,7 @@
@@ -1352,7 +1353,7 @@ index a1159bf4fb..d4c0548b86 100644
 + +.+: 0+4 +1 +OBJECT +SECOND +DEFAULT +. secondary_object
   +.+: 0+1 +1 +(COMMON|OBJECT) +GLOBAL +DEFAULT +COM common
 diff --git a/gas/testsuite/gas/elf/type.s b/gas/testsuite/gas/elf/type.s
-index d0a1afd2fa..bd7df2cb96 100644
+index d0a1afd2fa0..bd7df2cb964 100644
 --- a/gas/testsuite/gas/elf/type.s
 +++ b/gas/testsuite/gas/elf/type.s
 @@ -10,6 +10,12 @@ function:
@@ -1383,7 +1384,7 @@ index d0a1afd2fa..bd7df2cb96 100644
 -	
 \ No newline at end of file
 diff --git a/include/bfdlink.h b/include/bfdlink.h
-index 32d15129ab..be704ad673 100644
+index 84b9dd7a0a0..671788f51a8 100644
 --- a/include/bfdlink.h
 +++ b/include/bfdlink.h
 @@ -126,6 +126,9 @@ struct bfd_link_hash_entry
@@ -1407,10 +1408,10 @@ index 32d15129ab..be704ad673 100644
       cause map file generation to use an O(N^2) algorithm and disable
       caching ELF symbol buffer.  */
 diff --git a/include/elf/common.h b/include/elf/common.h
-index 75c4fb7e9d..fab5f17dc6 100644
+index 6741c34a007..aeaaea9dd37 100644
 --- a/include/elf/common.h
 +++ b/include/elf/common.h
-@@ -903,6 +903,7 @@
+@@ -905,6 +905,7 @@
  #define STB_LOCAL	0		/* Symbol not visible outside obj */
  #define STB_GLOBAL	1		/* Symbol visible outside obj */
  #define STB_WEAK	2		/* Like globals, lower precedence */
@@ -1419,7 +1420,7 @@ index 75c4fb7e9d..fab5f17dc6 100644
  #define STB_GNU_UNIQUE	10		/* Symbol is unique in namespace */
  #define STB_HIOS	12		/* OS-specific semantics */
 diff --git a/ld/emultempl/elf.em b/ld/emultempl/elf.em
-index dcd9523900..33c53c3208 100644
+index bb7e5375303..ed2fd3d5445 100644
 --- a/ld/emultempl/elf.em
 +++ b/ld/emultempl/elf.em
 @@ -811,6 +811,8 @@ fragment <<EOF
@@ -1432,10 +1433,10 @@ index dcd9523900..33c53c3208 100644
  fi
  
 diff --git a/ld/ld.texi b/ld/ld.texi
-index 3b2d05411f..b41e02f381 100644
+index 9f562935bed..d579da63b77 100644
 --- a/ld/ld.texi
 +++ b/ld/ld.texi
-@@ -1238,6 +1238,10 @@ Lazy binding is the default.
+@@ -1280,6 +1280,10 @@ Lazy binding is the default.
  @item loadfltr
  Specify that the object's filters be processed immediately at runtime.
  
@@ -1447,7 +1448,7 @@ index 3b2d05411f..b41e02f381 100644
  Set the maximum memory page size supported to @var{value}.
  
 diff --git a/ld/ldmain.c b/ld/ldmain.c
-index 2fbd8b9da9..9f3b1da97b 100644
+index c4af10f4e91..e15f2c5cfb6 100644
 --- a/ld/ldmain.c
 +++ b/ld/ldmain.c
 @@ -288,6 +288,7 @@ main (int argc, char **argv)
@@ -1459,10 +1460,10 @@ index 2fbd8b9da9..9f3b1da97b 100644
    link_info.input_bfds_tail = &link_info.input_bfds;
    /* SVR4 linkers seem to set DT_INIT and DT_FINI based on magic _init
 diff --git a/ld/lexsup.c b/ld/lexsup.c
-index d7766c3c55..3d8e3a9541 100644
+index 2597e2d6304..38a7bb56b2d 100644
 --- a/ld/lexsup.c
 +++ b/ld/lexsup.c
-@@ -1841,6 +1841,8 @@ elf_shlib_list_options (FILE *file)
+@@ -1851,6 +1851,8 @@ elf_shlib_list_options (FILE *file)
    fprintf (file, _("\
    -z nocommon                 Generate common symbols with STT_OBJECT type\n"));
    fprintf (file, _("\
@@ -1473,7 +1474,7 @@ index d7766c3c55..3d8e3a9541 100644
    -z text                     Treat DT_TEXTREL in shared object as error\n"));
 diff --git a/ld/testsuite/ld-elf/library1.c b/ld/testsuite/ld-elf/library1.c
 new file mode 100644
-index 0000000000..28e255d318
+index 00000000000..28e255d318f
 --- /dev/null
 +++ b/ld/testsuite/ld-elf/library1.c
 @@ -0,0 +1,11 @@
@@ -1490,14 +1491,14 @@ index 0000000000..28e255d318
 +}
 diff --git a/ld/testsuite/ld-elf/library1.out b/ld/testsuite/ld-elf/library1.out
 new file mode 100644
-index 0000000000..2050e746e5
+index 00000000000..2050e746e5a
 --- /dev/null
 +++ b/ld/testsuite/ld-elf/library1.out
 @@ -0,0 +1 @@
 +library bar
 diff --git a/ld/testsuite/ld-elf/library2.c b/ld/testsuite/ld-elf/library2.c
 new file mode 100644
-index 0000000000..271ebd6ef1
+index 00000000000..271ebd6ef1a
 --- /dev/null
 +++ b/ld/testsuite/ld-elf/library2.c
 @@ -0,0 +1,12 @@
@@ -1515,28 +1516,28 @@ index 0000000000..271ebd6ef1
 +}
 diff --git a/ld/testsuite/ld-elf/library2.out b/ld/testsuite/ld-elf/library2.out
 new file mode 100644
-index 0000000000..ddd3d10e79
+index 00000000000..ddd3d10e794
 --- /dev/null
 +++ b/ld/testsuite/ld-elf/library2.out
 @@ -0,0 +1 @@
 +weak library bar
 diff --git a/ld/testsuite/ld-elf/library3.out b/ld/testsuite/ld-elf/library3.out
 new file mode 100644
-index 0000000000..881856e663
+index 00000000000..881856e6639
 --- /dev/null
 +++ b/ld/testsuite/ld-elf/library3.out
 @@ -0,0 +1 @@
 +library bar (SHARED)
 diff --git a/ld/testsuite/ld-elf/library4.out b/ld/testsuite/ld-elf/library4.out
 new file mode 100644
-index 0000000000..1ff18403d5
+index 00000000000..1ff18403d51
 --- /dev/null
 +++ b/ld/testsuite/ld-elf/library4.out
 @@ -0,0 +1 @@
 +weak library bar (SHARED)
 diff --git a/ld/testsuite/ld-elf/library5a.c b/ld/testsuite/ld-elf/library5a.c
 new file mode 100644
-index 0000000000..7e44bb4b57
+index 00000000000..7e44bb4b578
 --- /dev/null
 +++ b/ld/testsuite/ld-elf/library5a.c
 @@ -0,0 +1,16 @@
@@ -1558,7 +1559,7 @@ index 0000000000..7e44bb4b57
 +}
 diff --git a/ld/testsuite/ld-elf/library5b.c b/ld/testsuite/ld-elf/library5b.c
 new file mode 100644
-index 0000000000..f44d97c2ad
+index 00000000000..f44d97c2ad8
 --- /dev/null
 +++ b/ld/testsuite/ld-elf/library5b.c
 @@ -0,0 +1,10 @@
@@ -1574,7 +1575,7 @@ index 0000000000..f44d97c2ad
 +}
 diff --git a/ld/testsuite/ld-elf/library6a.c b/ld/testsuite/ld-elf/library6a.c
 new file mode 100644
-index 0000000000..7de81b31a4
+index 00000000000..7de81b31a47
 --- /dev/null
 +++ b/ld/testsuite/ld-elf/library6a.c
 @@ -0,0 +1,4 @@
@@ -1584,7 +1585,7 @@ index 0000000000..7de81b31a4
 +}
 diff --git a/ld/testsuite/ld-elf/library6b.c b/ld/testsuite/ld-elf/library6b.c
 new file mode 100644
-index 0000000000..528fd89330
+index 00000000000..528fd893305
 --- /dev/null
 +++ b/ld/testsuite/ld-elf/library6b.c
 @@ -0,0 +1,7 @@
@@ -1597,7 +1598,7 @@ index 0000000000..528fd89330
 +}
 diff --git a/ld/testsuite/ld-elf/library6c.c b/ld/testsuite/ld-elf/library6c.c
 new file mode 100644
-index 0000000000..60f4b922ad
+index 00000000000..60f4b922ad4
 --- /dev/null
 +++ b/ld/testsuite/ld-elf/library6c.c
 @@ -0,0 +1,9 @@
@@ -1612,14 +1613,14 @@ index 0000000000..60f4b922ad
 +}
 diff --git a/ld/testsuite/ld-elf/library7a.c b/ld/testsuite/ld-elf/library7a.c
 new file mode 100644
-index 0000000000..10cd8bfee2
+index 00000000000..10cd8bfee26
 --- /dev/null
 +++ b/ld/testsuite/ld-elf/library7a.c
 @@ -0,0 +1 @@
 +int bar;
 diff --git a/ld/testsuite/ld-elf/library7b.c b/ld/testsuite/ld-elf/library7b.c
 new file mode 100644
-index 0000000000..5f67848a29
+index 00000000000..5f67848a29f
 --- /dev/null
 +++ b/ld/testsuite/ld-elf/library7b.c
 @@ -0,0 +1,7 @@
@@ -1632,7 +1633,7 @@ index 0000000000..5f67848a29
 +}
 diff --git a/ld/testsuite/ld-elf/library7c.c b/ld/testsuite/ld-elf/library7c.c
 new file mode 100644
-index 0000000000..aa57fde819
+index 00000000000..aa57fde8197
 --- /dev/null
 +++ b/ld/testsuite/ld-elf/library7c.c
 @@ -0,0 +1,3 @@
@@ -1641,7 +1642,7 @@ index 0000000000..aa57fde819
 +int bar = 3;
 diff --git a/ld/testsuite/ld-elf/library8.map b/ld/testsuite/ld-elf/library8.map
 new file mode 100644
-index 0000000000..bcbb4dea89
+index 00000000000..bcbb4dea890
 --- /dev/null
 +++ b/ld/testsuite/ld-elf/library8.map
 @@ -0,0 +1,4 @@
@@ -1651,7 +1652,7 @@ index 0000000000..bcbb4dea89
 +};
 diff --git a/ld/testsuite/ld-elf/library8a.c b/ld/testsuite/ld-elf/library8a.c
 new file mode 100644
-index 0000000000..29a75087a0
+index 00000000000..29a75087a02
 --- /dev/null
 +++ b/ld/testsuite/ld-elf/library8a.c
 @@ -0,0 +1,10 @@
@@ -1667,7 +1668,7 @@ index 0000000000..29a75087a0
 +}
 diff --git a/ld/testsuite/ld-elf/library8a.rd b/ld/testsuite/ld-elf/library8a.rd
 new file mode 100644
-index 0000000000..a593fbdc2c
+index 00000000000..a593fbdc2cf
 --- /dev/null
 +++ b/ld/testsuite/ld-elf/library8a.rd
 @@ -0,0 +1,5 @@
@@ -1678,7 +1679,7 @@ index 0000000000..a593fbdc2c
 +#...
 diff --git a/ld/testsuite/ld-elf/library8b.c b/ld/testsuite/ld-elf/library8b.c
 new file mode 100644
-index 0000000000..7de81b31a4
+index 00000000000..7de81b31a47
 --- /dev/null
 +++ b/ld/testsuite/ld-elf/library8b.c
 @@ -0,0 +1,4 @@
@@ -1688,7 +1689,7 @@ index 0000000000..7de81b31a4
 +}
 diff --git a/ld/testsuite/ld-elf/library8b.rd b/ld/testsuite/ld-elf/library8b.rd
 new file mode 100644
-index 0000000000..fc18d1ad62
+index 00000000000..fc18d1ad625
 --- /dev/null
 +++ b/ld/testsuite/ld-elf/library8b.rd
 @@ -0,0 +1,5 @@
@@ -1699,7 +1700,7 @@ index 0000000000..fc18d1ad62
 +#...
 diff --git a/ld/testsuite/ld-elf/library8c.c b/ld/testsuite/ld-elf/library8c.c
 new file mode 100644
-index 0000000000..dfb6a22edb
+index 00000000000..dfb6a22edb8
 --- /dev/null
 +++ b/ld/testsuite/ld-elf/library8c.c
 @@ -0,0 +1,7 @@
@@ -1712,7 +1713,7 @@ index 0000000000..dfb6a22edb
 +}
 diff --git a/ld/testsuite/ld-elf/library8c.rd b/ld/testsuite/ld-elf/library8c.rd
 new file mode 100644
-index 0000000000..e2e58f021b
+index 00000000000..e2e58f021bb
 --- /dev/null
 +++ b/ld/testsuite/ld-elf/library8c.rd
 @@ -0,0 +1,5 @@
@@ -1723,7 +1724,7 @@ index 0000000000..e2e58f021b
 +#...
 diff --git a/ld/testsuite/ld-elf/secondary-foo.c b/ld/testsuite/ld-elf/secondary-foo.c
 new file mode 100644
-index 0000000000..8b23ec8f2b
+index 00000000000..8b23ec8f2b7
 --- /dev/null
 +++ b/ld/testsuite/ld-elf/secondary-foo.c
 @@ -0,0 +1,7 @@
@@ -1736,7 +1737,7 @@ index 0000000000..8b23ec8f2b
 +}
 diff --git a/ld/testsuite/ld-elf/secondary-main.c b/ld/testsuite/ld-elf/secondary-main.c
 new file mode 100644
-index 0000000000..f1cb6b492b
+index 00000000000..f1cb6b492bd
 --- /dev/null
 +++ b/ld/testsuite/ld-elf/secondary-main.c
 @@ -0,0 +1,8 @@
@@ -1750,7 +1751,7 @@ index 0000000000..f1cb6b492b
 +}
 diff --git a/ld/testsuite/ld-elf/secondary.c b/ld/testsuite/ld-elf/secondary.c
 new file mode 100644
-index 0000000000..6d64ed7652
+index 00000000000..6d64ed7652e
 --- /dev/null
 +++ b/ld/testsuite/ld-elf/secondary.c
 @@ -0,0 +1,9 @@
@@ -1765,7 +1766,7 @@ index 0000000000..6d64ed7652
 +}
 diff --git a/ld/testsuite/ld-elf/secondary.exp b/ld/testsuite/ld-elf/secondary.exp
 new file mode 100644
-index 0000000000..6322332655
+index 00000000000..63223326557
 --- /dev/null
 +++ b/ld/testsuite/ld-elf/secondary.exp
 @@ -0,0 +1,186 @@
@@ -1957,7 +1958,7 @@ index 0000000000..6322332655
 +run_ld_link_exec_tests [] $run_tests
 diff --git a/ld/testsuite/ld-elf/secondary.rd b/ld/testsuite/ld-elf/secondary.rd
 new file mode 100644
-index 0000000000..9931c045b0
+index 00000000000..9931c045b09
 --- /dev/null
 +++ b/ld/testsuite/ld-elf/secondary.rd
 @@ -0,0 +1,5 @@
@@ -1968,14 +1969,14 @@ index 0000000000..9931c045b0
 +#...
 diff --git a/ld/testsuite/ld-elf/secondary1.out b/ld/testsuite/ld-elf/secondary1.out
 new file mode 100644
-index 0000000000..8d9378f95b
+index 00000000000..8d9378f95b4
 --- /dev/null
 +++ b/ld/testsuite/ld-elf/secondary1.out
 @@ -0,0 +1 @@
 +secondary bar
 diff --git a/ld/testsuite/ld-elf/secondary1.rd b/ld/testsuite/ld-elf/secondary1.rd
 new file mode 100644
-index 0000000000..89d6d76d43
+index 00000000000..89d6d76d43e
 --- /dev/null
 +++ b/ld/testsuite/ld-elf/secondary1.rd
 @@ -0,0 +1,5 @@
@@ -1986,7 +1987,7 @@ index 0000000000..89d6d76d43
 +#...
 diff --git a/ld/testsuite/ld-elf/secondary2.rd b/ld/testsuite/ld-elf/secondary2.rd
 new file mode 100644
-index 0000000000..ff618a035c
+index 00000000000..ff618a035ca
 --- /dev/null
 +++ b/ld/testsuite/ld-elf/secondary2.rd
 @@ -0,0 +1,5 @@
@@ -1997,7 +1998,7 @@ index 0000000000..ff618a035c
 +#...
 diff --git a/ld/testsuite/ld-elf/secondary3.rd b/ld/testsuite/ld-elf/secondary3.rd
 new file mode 100644
-index 0000000000..562244a029
+index 00000000000..562244a0294
 --- /dev/null
 +++ b/ld/testsuite/ld-elf/secondary3.rd
 @@ -0,0 +1,6 @@
@@ -2009,7 +2010,7 @@ index 0000000000..562244a029
 +#...
 diff --git a/ld/testsuite/ld-elf/secondary3a.s b/ld/testsuite/ld-elf/secondary3a.s
 new file mode 100644
-index 0000000000..16a130043e
+index 00000000000..16a130043ef
 --- /dev/null
 +++ b/ld/testsuite/ld-elf/secondary3a.s
 @@ -0,0 +1,4 @@
@@ -2019,7 +2020,7 @@ index 0000000000..16a130043e
 +	.byte 0
 diff --git a/ld/testsuite/ld-elf/secondary3b.s b/ld/testsuite/ld-elf/secondary3b.s
 new file mode 100644
-index 0000000000..cc6f37bd7e
+index 00000000000..cc6f37bd7e2
 --- /dev/null
 +++ b/ld/testsuite/ld-elf/secondary3b.s
 @@ -0,0 +1,20 @@
@@ -2045,7 +2046,7 @@ index 0000000000..cc6f37bd7e
 +	.dc.a bar
 diff --git a/ld/testsuite/ld-elf/secondary4.rd b/ld/testsuite/ld-elf/secondary4.rd
 new file mode 100644
-index 0000000000..e84b1a6cb8
+index 00000000000..e84b1a6cb86
 --- /dev/null
 +++ b/ld/testsuite/ld-elf/secondary4.rd
 @@ -0,0 +1,5 @@
@@ -2056,7 +2057,7 @@ index 0000000000..e84b1a6cb8
 +#...
 diff --git a/ld/testsuite/ld-elf/secondary4.s b/ld/testsuite/ld-elf/secondary4.s
 new file mode 100644
-index 0000000000..a2acf21c57
+index 00000000000..a2acf21c573
 --- /dev/null
 +++ b/ld/testsuite/ld-elf/secondary4.s
 @@ -0,0 +1,9 @@
@@ -2071,7 +2072,7 @@ index 0000000000..a2acf21c57
 +	.dc.a foo
 diff --git a/ld/testsuite/ld-elf/secondary5.c b/ld/testsuite/ld-elf/secondary5.c
 new file mode 100644
-index 0000000000..a2b2f20695
+index 00000000000..a2b2f20695a
 --- /dev/null
 +++ b/ld/testsuite/ld-elf/secondary5.c
 @@ -0,0 +1,10 @@
@@ -2087,7 +2088,7 @@ index 0000000000..a2b2f20695
 +}
 diff --git a/ld/testsuite/ld-elf/secondary5.out b/ld/testsuite/ld-elf/secondary5.out
 new file mode 100644
-index 0000000000..730c35dceb
+index 00000000000..730c35dceb3
 --- /dev/null
 +++ b/ld/testsuite/ld-elf/secondary5.out
 @@ -0,0 +1,3 @@
@@ -2096,7 +2097,7 @@ index 0000000000..730c35dceb
 +xxx
 diff --git a/ld/testsuite/ld-elf/secondary6.c b/ld/testsuite/ld-elf/secondary6.c
 new file mode 100644
-index 0000000000..2a7e17b94b
+index 00000000000..2a7e17b94b0
 --- /dev/null
 +++ b/ld/testsuite/ld-elf/secondary6.c
 @@ -0,0 +1,11 @@
@@ -2113,14 +2114,14 @@ index 0000000000..2a7e17b94b
 +}
 diff --git a/ld/testsuite/ld-elf/secondary6.out b/ld/testsuite/ld-elf/secondary6.out
 new file mode 100644
-index 0000000000..d86bac9de5
+index 00000000000..d86bac9de59
 --- /dev/null
 +++ b/ld/testsuite/ld-elf/secondary6.out
 @@ -0,0 +1 @@
 +OK
 diff --git a/ld/testsuite/ld-elf/secondary7.c b/ld/testsuite/ld-elf/secondary7.c
 new file mode 100644
-index 0000000000..9a67352e95
+index 00000000000..9a67352e95c
 --- /dev/null
 +++ b/ld/testsuite/ld-elf/secondary7.c
 @@ -0,0 +1,13 @@
@@ -2139,14 +2140,14 @@ index 0000000000..9a67352e95
 +}
 diff --git a/ld/testsuite/ld-elf/secondary7.out b/ld/testsuite/ld-elf/secondary7.out
 new file mode 100644
-index 0000000000..d86bac9de5
+index 00000000000..d86bac9de59
 --- /dev/null
 +++ b/ld/testsuite/ld-elf/secondary7.out
 @@ -0,0 +1 @@
 +OK
 diff --git a/ld/testsuite/ld-elf/secondary8a.c b/ld/testsuite/ld-elf/secondary8a.c
 new file mode 100644
-index 0000000000..22b55aa425
+index 00000000000..22b55aa4256
 --- /dev/null
 +++ b/ld/testsuite/ld-elf/secondary8a.c
 @@ -0,0 +1,13 @@
@@ -2165,7 +2166,7 @@ index 0000000000..22b55aa425
 +asm (".set bar, __bar");
 diff --git a/ld/testsuite/ld-elf/secondary8a.map b/ld/testsuite/ld-elf/secondary8a.map
 new file mode 100644
-index 0000000000..29476406f7
+index 00000000000..29476406f7c
 --- /dev/null
 +++ b/ld/testsuite/ld-elf/secondary8a.map
 @@ -0,0 +1,4 @@
@@ -2175,7 +2176,7 @@ index 0000000000..29476406f7
 +};
 diff --git a/ld/testsuite/ld-elf/secondary8a.rd b/ld/testsuite/ld-elf/secondary8a.rd
 new file mode 100644
-index 0000000000..f52033c4da
+index 00000000000..f52033c4dad
 --- /dev/null
 +++ b/ld/testsuite/ld-elf/secondary8a.rd
 @@ -0,0 +1,5 @@
@@ -2186,7 +2187,7 @@ index 0000000000..f52033c4da
 +#...
 diff --git a/ld/testsuite/ld-elf/secondary8b.c b/ld/testsuite/ld-elf/secondary8b.c
 new file mode 100644
-index 0000000000..22b55aa425
+index 00000000000..22b55aa4256
 --- /dev/null
 +++ b/ld/testsuite/ld-elf/secondary8b.c
 @@ -0,0 +1,13 @@
@@ -2205,7 +2206,7 @@ index 0000000000..22b55aa425
 +asm (".set bar, __bar");
 diff --git a/ld/testsuite/ld-elf/secondary8b.rd b/ld/testsuite/ld-elf/secondary8b.rd
 new file mode 100644
-index 0000000000..276c3ce72f
+index 00000000000..276c3ce72f5
 --- /dev/null
 +++ b/ld/testsuite/ld-elf/secondary8b.rd
 @@ -0,0 +1,5 @@
@@ -2215,5 +2216,5 @@ index 0000000000..276c3ce72f
 + +[0-9]+: +0+ +0+ +FUNC +SECOND +DEFAULT +UND +_?bar@VERS_1 +\([0-9]+\)
 +#...
 -- 
-2.21.0
+2.26.0
 
