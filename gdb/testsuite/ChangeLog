@@ -1,3 +1,31 @@
+2020-04-10  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.base/style.exp: Expect "Expanding full symbols" message for
+	-readnow.
+
+2020-04-10  Tom de Vries  <tdevries@suse.de>
+
+	PR cli/25808
+	* gdb.base/style.c: Add leading newlines.
+	* gdb.base/style.exp: Use gdb_get_line_number to get specific lines.
+	Check listing of main's one-line body.
+
+2020-04-08  Tom de Vries  <tdevries@suse.de>
+
+	* lib/gdb.exp (psymtabs_p): New proc.
+	* gdb.dwarf2/imported-unit.exp: Mark "no static partial symbols in
+	importing unit" unsupported if there are no partial symbols.
+
+2020-04-08  Tom de Vries  <tdevries@suse.de>
+
+	PR testsuite/25760
+	* gdb.ada/call_pn.exp: Call "maint expand-symtabs".  Add xfails.
+
+2020-04-07  Tom de Vries  <tdevries@suse.de>
+
+	PR symtab/25796
+	* gdb.dwarf2/imported-unit-abstract-const-value.exp: New file.
+
 2020-04-07  Tom de Vries  <tdevries@suse.de>
 
 	* gdb.base/check-psymtab.c: New test.
