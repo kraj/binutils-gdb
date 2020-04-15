@@ -1,3 +1,171 @@
+2020-04-14  Kamil Rytarowski  <n54@gmx.com>
+
+	* nbsd-nat.c (nbsd_pid_to_kinfo_proc2): New.
+	(nbsd_nat_target::info_proc): Add do_status.
+
+2020-04-14  Simon Marchi  <simon.marchi@polymtl.ca>
+	    Tom de Vries  <tdevries@suse.de>
+
+	PR symtab/25718
+	* psympriv.h (struct partial_symtab::read_symtab)
+	(struct partial_symtab::expand_psymtab)
+	(struct partial_symtab::read_dependencies): Update comments.
+	* dwarf2/read.c (struct dwarf2_include_psymtab::read_symtab): Call
+	read_symtab for includer.
+	(struct dwarf2_include_psymtab::expand_psymtab): Assert false.
+	(struct dwarf2_include_psymtab::readin_p): Call readin_p () for includer.
+	(struct dwarf2_include_psymtab::m_readin): Remove.
+	(struct dwarf2_include_psymtab::includer): New member function.
+	(dwarf2_psymtab::expand_psymtab): Assert !readin.
+
+2020-04-14  Tom de Vries  <tdevries@suse.de>
+
+	PR symtab/25720
+	* symmisc.c (maintenance_expand_symtabs): Call expand_symtabs_matching
+	with NULL symbol_matcher and lookup_name.
+	* psymtab.c (psym_expand_symtabs_matching): Handle NULL symbol_matcher
+	and lookup_name.
+	* dwarf2/read.c (dw2_expand_symtabs_matching)
+	(dw2_debug_names_expand_symtabs_matching): Same.
+	* symfile.h (struct quick_symbol_functions::expand_symtabs_matching):
+	Make lookup_name a pointer.  Update comment.
+	* symtab.c (global_symbol_searcher::expand_symtabs): Handle
+	lookup_name being a pointer.
+	* symfile.c (expand_symtabs_matching): Same.
+	* symfile-debug.c (debug_qf_expand_symtabs_matching): Same.
+	* linespec.c (iterate_over_all_matching_symtabs): Same.
+
+2020-04-13  Tom Tromey  <tom@tromey.com>
+
+	* run-on-main-thread.c: Update include.
+	* unittests/main-thread-selftests.c: Update include.
+	* tui/tui-win.c: Update include.
+	* tui/tui-io.c: Update include.
+	* tui/tui-interp.c: Update include.
+	* tui/tui-hooks.c: Update include.
+	* top.h: Update include.
+	* top.c: Update include.
+	* ser-base.c: Update include.
+	* remote.c: Update include.
+	* remote-notif.c: Update include.
+	* remote-fileio.c: Update include.
+	* record-full.c: Update include.
+	* record-btrace.c: Update include.
+	* python/python.c: Update include.
+	* posix-hdep.c: Update include.
+	* mingw-hdep.c: Update include.
+	* mi/mi-main.c: Update include.
+	* mi/mi-interp.c: Update include.
+	* main.c: Update include.
+	* linux-nat.c: Update include.
+	* interps.c: Update include.
+	* infrun.c: Update include.
+	* inf-loop.c: Update include.
+	* event-top.c: Update include.
+	* event-loop.c: Move to ../gdbsupport/.
+	* event-loop.h: Move to ../gdbsupport/.
+	* async-event.h: Update include.
+	* Makefile.in (COMMON_SFILES, HFILES_NO_SRCDIR): Update.
+
+2020-04-13  Tom Tromey  <tom@tromey.com>
+
+	* tui/tui-win.c: Include async-event.h.
+	* remote.c: Include async-event.h.
+	* remote-notif.c: Include async-event.h.
+	* record-full.c: Include async-event.h.
+	* record-btrace.c: Include async-event.h.
+	* infrun.c: Include async-event.h.
+	* event-top.c: Include async-event.h.
+	* event-loop.h: Move some declarations to async-event.h.
+	* event-loop.c: Don't include ser-event.h or top.h.  Move some
+	code to async-event.c.
+	* async-event.h: New file.
+	* async-event.c: New file.
+	* Makefile.in (COMMON_SFILES): Add async-event.c.
+	(HFILES_NO_SRCDIR): Add async-event.h.
+
+2020-04-13  Tom Tromey  <tom@tromey.com>
+
+	* utils.c (flush_streams): New function.
+	* event-loop.c (gdb_wait_for_event): Call flush_streams.
+
+2020-04-13  Tom Tromey  <tom@tromey.com>
+
+	* event-loop.c (handle_file_event): Use warning, not
+	printf_unfiltered.
+
+2020-04-13  Tom Tromey  <tom@tromey.com>
+
+	* event-loop.c: Include <chrono>.
+
+2020-04-13  Tom Tromey  <tom@tromey.com>
+
+	* gdb_select.h: Move to ../gdbsupport/.
+	* event-loop.c: Update include path.
+	* top.c: Update include path.
+	* ser-base.c: Update include path.
+	* ui-file.c: Update include path.
+	* ser-tcp.c: Update include path.
+	* guile/scm-ports.c: Update include path.
+	* posix-hdep.c: Update include path.
+	* ser-unix.c: Update include path.
+	* gdb_usleep.c: Update include path.
+	* mingw-hdep.c: Update include path.
+	* inflow.c: Update include path.
+	* infrun.c: Update include path.
+	* event-top.c: Update include path.
+
+2020-04-13  Tom Tromey  <tom@tromey.com>
+
+	* configure: Rebuild.
+	* configure.ac: Remove checks that are now in GDB_AC_COMMON.
+
+2020-04-13  Tom Tromey  <tom@tromey.com>
+
+	* event-loop.h (start_event_loop): Don't declare.
+	* event-loop.c (start_event_loop): Move...
+	* main.c (start_event_loop): ...here.  Now static.
+
+2020-04-13  Sergio Durigan Junior  <sergiodj@sergiodj.net>
+
+	* MAINTAINERS: Update my email address.
+
+2020-04-12  Kamil Rytarowski  <n54@gmx.com>
+
+	* nbsd-nat.c (nbsd_nat_target::info_proc): Add IP_MINIMAL and
+	IP_ALL.
+
+2020-04-12  Kamil Rytarowski  <n54@gmx.com>
+
+	* nbsd-nat.c (nbsd_pid_to_cmdline): Add.
+        (nbsd_nat_target::info_proc): Add do_cmdline.
+
+2020-04-12  Kamil Rytarowski  <n54@gmx.com>
+
+	* nbsd-nat.c (nbsd_pid_to_cwd): Add.
+        (nbsd_nat_target::info_proc): Add do_cwd.
+
+2020-04-12  Kamil Rytarowski  <n54@gmx.com>
+
+	* nbsd-nat.c (nbsd_nat_target::info_proc): Add do_exe.
+
+2020-04-11  Kamil Rytarowski  <n54@gmx.com>
+
+	* nbsd-nat.c; Include "nbsd-tdep.h" and "gdbarch.h".
+	* nbsd-nat.c (nbsd_nat_target::find_memory_regions)
+	(nbsd_nat_target::info_proc): New functions.
+	* nbsd-nat.c (kinfo_get_vmmap): New function.
+	* nbsd-nat.c (nbsd_nat_target::info_proc) Use
+	nbsd_info_proc_mappings_header and nbsd_info_proc_mappings_entry.
+	* nbsd-tdep.c (nbsd_info_proc_mappings_header)
+	(nbsd_info_proc_mappings_entry, nbsd_vm_map_entry_flags): New
+	functions.
+	* nbsd-tdep.c (KINFO_VME_PROT_READ, KINFO_VME_PROT_WRITE)
+	(KINFO_VME_PROT_EXEC, KINFO_VME_FLAG_COW)
+	(KINFO_VME_FLAG_NEEDS_COPY, KINFO_VME_FLAG_NOCOREDUMP)
+	(KINFO_VME_FLAG_PAGEABLE, KINFO_VME_FLAG_GROWS_UP)
+	(KINFO_VME_FLAG_GROWS_DOWN): New.
+
 2020-04-10  Artur Shepilko  <nomadbyte@gmail.com>
 
 	* utils.c (copy_bitwise): Use unsigned 0 constant as operand of

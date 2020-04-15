@@ -4603,7 +4603,7 @@ static void
 dw2_expand_symtabs_matching
   (struct objfile *objfile,
    gdb::function_view<expand_symtabs_file_matcher_ftype> file_matcher,
-   const lookup_name_info &lookup_name,
+   const lookup_name_info *lookup_name,
    gdb::function_view<expand_symtabs_symbol_matcher_ftype> symbol_matcher,
    gdb::function_view<expand_symtabs_exp_notify_ftype> expansion_notify,
    enum search_domain kind)
@@ -4617,9 +4617,21 @@ dw2_expand_symtabs_matching
 
   dw_expand_symtabs_matching_file_matcher (dwarf2_per_objfile, file_matcher);
 
+  if (symbol_matcher == NULL && lookup_name == NULL)
+    {
+      for (dwarf2_per_cu_data *per_cu : dwarf2_per_objfile->all_comp_units)
+	{
+	  QUIT;
+
+	  dw2_expand_symtabs_matching_one (per_cu, file_matcher,
+					   expansion_notify);
+	}
+      return;
+    }
+
   mapped_index &index = *dwarf2_per_objfile->index_table;
 
-  dw2_expand_symtabs_matching_symbol (index, lookup_name,
+  dw2_expand_symtabs_matching_symbol (index, *lookup_name,
 				      symbol_matcher,
 				      kind, [&] (offset_type idx)
     {
@@ -5612,7 +5624,7 @@ static void
 dw2_debug_names_expand_symtabs_matching
   (struct objfile *objfile,
    gdb::function_view<expand_symtabs_file_matcher_ftype> file_matcher,
-   const lookup_name_info &lookup_name,
+   const lookup_name_info *lookup_name,
    gdb::function_view<expand_symtabs_symbol_matcher_ftype> symbol_matcher,
    gdb::function_view<expand_symtabs_exp_notify_ftype> expansion_notify,
    enum search_domain kind)
@@ -5626,9 +5638,21 @@ dw2_debug_names_expand_symtabs_matching
 
   dw_expand_symtabs_matching_file_matcher (dwarf2_per_objfile, file_matcher);
 
+  if (symbol_matcher == NULL && lookup_name == NULL)
+    {
+      for (dwarf2_per_cu_data *per_cu : dwarf2_per_objfile->all_comp_units)
+	{
+	  QUIT;
+
+	  dw2_expand_symtabs_matching_one (per_cu, file_matcher,
+					   expansion_notify);
+	}
+      return;
+    }
+
   mapped_debug_names &map = *dwarf2_per_objfile->debug_names_table;
 
-  dw2_expand_symtabs_matching_symbol (map, lookup_name,
+  dw2_expand_symtabs_matching_symbol (map, *lookup_name,
 				      symbol_matcher,
 				      kind, [&] (offset_type namei)
     {
@@ -5893,22 +5917,31 @@ struct dwarf2_include_psymtab : public partial_symtab
 
   void read_symtab (struct objfile *objfile) override
   {
-    expand_psymtab (objfile);
+    /* It's an include file, no symbols to read for it.
+       Everything is in the includer symtab.  */
+
+    /* The expansion of a dwarf2_include_psymtab is just a trigger for
+       expansion of the includer psymtab.  We use the dependencies[0] field to
+       model the includer.  But if we go the regular route of calling
+       expand_psymtab here, and having expand_psymtab call expand_dependencies
+       to expand the includer, we'll only use expand_psymtab on the includer
+       (making it a non-toplevel psymtab), while if we expand the includer via
+       another path, we'll use read_symtab (making it a toplevel psymtab).
+       So, don't pretend a dwarf2_include_psymtab is an actual toplevel
+       psymtab, and trigger read_symtab on the includer here directly.  */
+    includer ()->read_symtab (objfile);
   }
 
   void expand_psymtab (struct objfile *objfile) override
   {
-    if (m_readin)
-      return;
-    /* It's an include file, no symbols to read for it.
-       Everything is in the parent symtab.  */
-    expand_dependencies (objfile);
-    m_readin = true;
+    /* This is not called by read_symtab, and should not be called by any
+       expand_dependencies.  */
+    gdb_assert (false);
   }
 
   bool readin_p () const override
   {
-    return m_readin;
+    return includer ()->readin_p ();
   }
 
   struct compunit_symtab *get_compunit_symtab () const override
@@ -5917,8 +5950,13 @@ struct dwarf2_include_psymtab : public partial_symtab
   }
 
 private:
-
-  bool m_readin = false;
+  partial_symtab *includer () const
+  {
+    /* An include psymtab has exactly one dependency: the psymtab that
+       includes it.  */
+    gdb_assert (this->number_of_dependencies == 1);
+    return this->dependencies[0];
+  }
 };
 
 /* Allocate a new partial symtab for file named NAME and mark this new
@@ -8834,8 +8872,7 @@ process_queue (struct dwarf2_per_objfile *dwarf2_per_objfile)
 void
 dwarf2_psymtab::expand_psymtab (struct objfile *objfile)
 {
-  if (readin)
-    return;
+  gdb_assert (!readin);
 
   expand_dependencies (objfile);
 
