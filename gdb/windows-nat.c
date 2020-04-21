@@ -217,10 +217,10 @@ static int windows_initialization_done;
 #endif
 
 #define CHECK(x)	check (x, __FILE__,__LINE__)
-#define DEBUG_EXEC(x)	if (debug_exec)		printf_unfiltered x
-#define DEBUG_EVENTS(x)	if (debug_events)	printf_unfiltered x
-#define DEBUG_MEM(x)	if (debug_memory)	printf_unfiltered x
-#define DEBUG_EXCEPT(x)	if (debug_exceptions)	printf_unfiltered x
+#define DEBUG_EXEC(x)	if (debug_exec)		debug_printf x
+#define DEBUG_EVENTS(x)	if (debug_events)	debug_printf x
+#define DEBUG_MEM(x)	if (debug_memory)	debug_printf x
+#define DEBUG_EXCEPT(x)	if (debug_exceptions)	debug_printf x
 
 static void cygwin_set_dr (int i, CORE_ADDR addr);
 static void cygwin_set_dr7 (unsigned long val);
@@ -820,7 +820,10 @@ windows_make_so (const char *name, LPVOID load_addr)
 	  free (rname);
 	}
       else
-	error (_("dll path too long"));
+	{
+	  warning (_("dll path for \"%s\" too long or inaccessible"), name);
+	  strcpy (so->so_name, so->so_original_name);
+	}
     }
   /* Record cygwin1.dll .text start/end.  */
   p = strchr (so->so_name, '\0') - (sizeof ("/cygwin1.dll") - 1);
@@ -1224,6 +1227,31 @@ windows_nat::handle_ms_vc_exception (const EXCEPTION_RECORD *rec)
       return true;
     }
 
+  return false;
+}
+
+/* See nat/windows-nat.h.  */
+
+bool
+windows_nat::handle_access_violation (const EXCEPTION_RECORD *rec)
+{
+#ifdef __CYGWIN__
+  /* See if the access violation happened within the cygwin DLL
+     itself.  Cygwin uses a kind of exception handling to deal with
+     passed-in invalid addresses.  gdb should not treat these as real
+     SEGVs since they will be silently handled by cygwin.  A real SEGV
+     will (theoretically) be caught by cygwin later in the process and
+     will be sent as a cygwin-specific-signal.  So, ignore SEGVs if
+     they show up within the text segment of the DLL itself.  */
+  const char *fn;
+  CORE_ADDR addr = (CORE_ADDR) (uintptr_t) rec->ExceptionAddress;
+
+  if ((!cygwin_exceptions && (addr >= cygwin_load_start
+			      && addr < cygwin_load_end))
+      || (find_pc_partial_function (addr, &fn, NULL, NULL)
+	  && startswith (fn, "KERNEL32!IsBad")))
+    return true;
+#endif
   return false;
 }
 
