@@ -30,6 +30,7 @@ patches="
 0001-gold-Make-Ordering-operator-even-more-complex.patch
 0001-gold-Handle-local-IFUNC-symbol-for-IBT-PLT.patch
 0001-gold-Skip-some-incremental-tests-for-fcf-protection.patch
+0001-gold-Skip-tls_shared_gnu2_test.patch
 0001-Don-t-claim-a-fat-IR-object-if-no-IR-object-should-b.patch
 0001-Add-lto-and-none-lto-input-support-for-ld-r.patch
 0002-Add-test-for-nm-on-mixed-LTO-non-LTO-object.patch
