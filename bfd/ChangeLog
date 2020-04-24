@@ -1,3 +1,34 @@
+2020-04-23  Anton Kolesov  <anton.kolesov@synopsys.com>
+
+	* elf-bfd.h (elfcore_write_arc_v2): Add prototype.
+	* elf.c (elfcore_grok_arc_v2): New function.
+	(elfcore_grok_note): Call the new function to handle the corresponding
+	note.
+	(elfcore_write_arc_v2): New function.
+	(elfcore_write_register_note): Call the new function to handle the
+	corresponding pseudo-sections.
+
+2020-04-22  Max Filippov  <jcmvbkbc@gmail.com>
+
+	PR ld/25861
+	* bfd-in2.h: Regenerated.
+	* elf32-xtensa.c (elf_howto_table): New entries for
+	R_XTENSA_PDIFF{8,16,32} and R_XTENSA_NDIFF{8,16,32}.
+	(elf_xtensa_reloc_type_lookup, elf_xtensa_do_reloc)
+	(relax_section): Add cases for R_XTENSA_PDIFF{8,16,32} and
+	R_XTENSA_NDIFF{8,16,32}.
+	* libbfd.h (bfd_reloc_code_real_names): Add names for
+	BFD_RELOC_XTENSA_PDIFF{8,16,32} and
+	BFD_RELOC_XTENSA_NDIFF{8,16,32}.
+	* reloc.c: Add documentation for BFD_RELOC_XTENSA_PDIFF{8,16,32}
+	and BFD_RELOC_XTENSA_NDIFF{8,16,32}.
+
+2020-04-21  Tamar Christina  <tamar.christina@arm.com>
+
+	PR binutils/24753
+	* compress.c (bfd_get_full_section_contents): Exclude sections with no
+	content.
+
 2020-04-21  H.J. Lu  <hongjiu.lu@intel.com>
 
 	PR ld/25849

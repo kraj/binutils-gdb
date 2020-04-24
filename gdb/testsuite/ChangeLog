@@ -1,3 +1,111 @@
+2020-04-24  Tom de Vries  <tdevries@suse.de>
+
+	* lib/gdb.exp (clean_restart): Reset errcnt and warncnt.
+
+2020-04-24  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.dwarf2/dwzbuildid.exp: Add quiet to dwzbuildid-mismatch compile
+	flags.
+
+2020-04-24  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.dwarf2/dw2-error.exp: Add quiet to compile flags.
+
+2020-04-24  Tom de Vries  <tdevries@suse.de>
+
+	* lib/gdb.exp (default_gdb_start): Handle eof.
+	(clean_restart): Detect and handle gdb_start failure.  Return -1 upon
+	failure.
+	* gdb.base/readnever.exp: Handle clean_restart failure.
+
+2020-04-23  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.base/decl-before-def.exp: Run to main and print a again.
+
+2020-04-23  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.base/decl-before-def-decl.c: New test.
+	* gdb.base/decl-before-def-def.c: New test.
+	* gdb.base/decl-before-def.exp: New file.
+
+2020-04-23  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.base/readnever.exp: Skip if GDBFLAGS contain -readnow/--readnow.
+
+2020-04-22  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.mi/dw2-ref-missing-frame-func.c (.debug_aranges): Fix
+	debug_info_offset.
+	* gdb.mi/dw2-ref-missing-frame.exp: Make sure $objfuncfile comes
+	before $objsfile in the line line.
+
+2020-04-22  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.dlang/watch-loc.c (.debug_aranges): Fix _Dmain length.
+
+2020-02-18  Mihails Strasuns  <mihails.strasuns@intel.com>
+
+	* gdb.base/jit-attach-pie.c: Use jit-protocol.h.
+	* gdb.base/jit-elf-main.c: Use jit-protocol.h.
+	* gdb.base/jit-reader-host.c: Use jit-protocol.h.
+	* gdb.base/jit-reader-simple-jit.c: Use jit-protocol.h.
+	* gdb.base/jit-protocol.h: Update definitions to match all usage
+	  contexts.
+
+2020-02-18  Mihails Strasuns  <mihails.strasuns@intel.com>
+
+	* gdb.base: Rename all jit related test and source files.
+
+2020-02-18  Mihails Strasuns  <mihails.strasuns@intel.com>
+
+	* gdb.base/jit-reader.exp: Relax register output check.
+
+2020-04-22  Tom de Vries  <tdevries@suse.de>
+
+	PR symtab/25764
+	* gdb.base/psym-external-decl-2.c: New test.
+	* gdb.base/psym-external-decl.c: New test.
+	* gdb.base/psym-external-decl.exp: New file.
+	* gdb.threads/tls.exp: Add PR25807 kfail.
+
+2020-04-22  Tom de Vries  <tdevries@suse.de>
+
+	PR symtab/25801
+	* gdb.dwarf2/imported-unit.exp: Test that we can get imported_unit.c
+	in "info source" output.
+
+2020-04-22  Tom de Vries  <tdevries@suse.de>
+
+	PR symtab/25700
+	* gdb.dwarf2/imported-unit.exp: Verify that there's only one partial
+	symtab for imported_unit.c.
+
+2020-04-21  Gary Benson <gbenson@redhat.com>
+
+	* gdb.base/advance.c (func): New argument, to match call site.
+	(func2, func3): Add return statements.
+
+2020-04-21  Tankut Baris Aktemur  <tankut.baris.aktemur@intel.com>
+
+	* gdb.multi/run-only-second-inf.c: New file.
+	* gdb.multi/run-only-second-inf.exp: New file.
+
+2020-04-21  Markus Metzger  <markus.t.metzger@intel.com>
+
+	* gdb.btrace/multi-inferior.c: New test.
+	* gdb.btrace/multi-inferior.exp: New file.
+
+2020-04-21  Markus Metzger  <markus.t.metzger@intel.com>
+
+	* gdb.btrace/enable-new-thread.c: New test.
+	* gdb.btrace/enable-new-thread.exp: New file.
+
+2020-04-21  Tom de Vries  <tdevries@suse.de>
+
+	PR gdb/25471
+	* gdb.threads/killed-outside.c: New test.
+	* gdb.threads/killed-outside.exp: New file.
+
 2020-04-20  Gary Benson <gbenson@redhat.com>
 
 	* gdb.base/nested-subp1.exp: Use support_nested_function_tests.

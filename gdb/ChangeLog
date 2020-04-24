@@ -1,3 +1,120 @@
+2020-04-24  Tom Tromey  <tromey@adacore.com>
+
+	* nat/windows-nat.h (struct windows_thread_info)
+	<pc_adjusted>: New member.
+	* windows-nat.c (windows_fetch_one_register): Check
+	pc_adjusted.
+	(windows_nat_target::get_windows_debug_event)
+	(windows_nat_target::wait): Set pc_adjusted.
+
+2020-04-24  Tom de Vries  <tdevries@suse.de>
+
+	* contrib/cc-with-tweaks.sh: Remove <exec>.gdb-index file handling.
+	Run gdb-add-index inside temp dir.
+
+2020-04-23  Tom Tromey  <tromey@adacore.com>
+
+	* windows-tdep.c (is_linked_with_cygwin_dll): Always update "iter"
+	in loop.
+
+2020-04-23  Luis Machado  <luis.machado@linaro.org>
+
+	* dwarf2/frame-tailcall.c (dwarf2_tailcall_sniffer_first): Use
+	get_frame_register instead of gdbarch_unwind_pc.
+
+2020-04-23  Tom de Vries  <tdevries@suse.de>
+
+	* symtab.c (lookup_global_symbol): Prefer def over decl.
+
+2020-04-23  Tom de Vries  <tdevries@suse.de>
+
+	PR symtab/25807
+	* block.c (best_symbol, better_symbol): Promote to external.
+	* block.h (best_symbol, better_symbol): Declare.
+	* symtab.c (lookup_symbol_in_objfile_symtabs): Prefer def over
+	decl.
+
+2020-04-23  Tom Tromey  <tromey@adacore.com>
+
+	PR ada/25837:
+	* dwarf2/read.c (dw2_expand_symtabs_matching_symbol): Store a
+	"const char *", not a "const std::string &".
+	<name_and_matcher::operator==>: Update.
+	* unittests/lookup_name_info-selftests.c: Change type of
+	"result".
+
+2020-04-23  Tom Tromey  <tom@tromey.com>
+
+	* inferior.h (iterate_over_inferiors): Don't declare.
+	* inferior.c (iterate_over_inferiors): Remove.
+	* darwin-nat.c (find_inferior_task_it, find_inferior_pid_it):
+	Remove.
+	(darwin_find_inferior_by_task, darwin_find_inferior_by_pid): Don't
+	use iterate_over_inferiors.
+	(darwin_resume_inferior_it)
+	(struct resume_inferior_threads_param)
+	(darwin_resume_inferior_threads_it): Remove.
+	(darwin_nat_target::resume): Don't use iterate_over_inferiors.
+
+2020-04-23  Tom de Vries  <tdevries@suse.de>
+
+	* blockframe.c (find_pc_partial_function): Use
+	find_pc_sect_compunit_symtab rather than
+	objfile->sf->qf->find_pc_sect_compunit_symtab.
+
+2020-04-22  Tom de Vries  <tdevries@suse.de>
+
+	PR symtab/25764
+	* dwarf2/read.c (scan_partial_symbols): Allow external variable decls
+	in psymtabs.
+
+2020-04-22  Tom de Vries  <tdevries@suse.de>
+
+	PR symtab/25801
+	* psymtab.c (psym_map_symtabs_matching_filename): Don't skip shared
+	symtabs.
+
+2020-04-22  Tom de Vries  <tdevries@suse.de>
+
+	PR symtab/25700
+	* dwarf2/read.c (dwarf2_build_psymtabs_hard): Don't create psymtab for
+	CU if already created.
+
+2020-04-21  Tankut Baris Aktemur  <tankut.baris.aktemur@intel.com>
+
+	* infrun.c (displaced_step_fixup): Switch to the event_thread
+	before calling displaced_step_restore, not after.
+
+2020-04-21  Markus Metzger  <markus.t.metzger@intel.com>
+
+	* record-btrace.c (record_btrace_enable_warn): Ignore thread if
+	its inferior is not recorded by us.
+	(record_btrace_target_open): Replace call to
+	all_non_exited_threads () with call to current_inferior
+	()->non_exited_threads ().
+	(record_btrace_target::stop_recording): Likewise.
+	(record_btrace_target::close): Likewise.
+	(record_btrace_target::wait): Likewise.
+	(record_btrace_target::record_stop_replaying): Likewise.
+
+2020-04-21  Markus Metzger  <markus.t.metzger@intel.com>
+
+	* btrace.c (btrace_enable): Throw an error on double enables and
+	when enabling recording fails.
+	(btrace_disable): Throw an error if the thread is not recorded.
+
+2020-04-21  Markus Metzger  <markus.t.metzger@intel.com>
+
+	* record-btrace.c (record_btrace_target::fetch_registers): Forward
+	request if we do not have a thread_info.
+
+2020-04-21  Tom de Vries  <tdevries@suse.de>
+
+	PR gdb/25471
+	* thread.c
+	(scoped_restore_current_thread::scoped_restore_current_thread): Catch
+	exception in get_frame_id.
+
 2020-04-20  Tom Tromey  <tromey@adacore.com>
 
 	* python/python.c (struct gdbpy_event): Mark move constructor as
