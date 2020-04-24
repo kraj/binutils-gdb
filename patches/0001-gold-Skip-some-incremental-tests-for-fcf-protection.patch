@@ -1,0 +1,303 @@
+From 31e110d181478f77cfc56e05d8f0eb183540a041 Mon Sep 17 00:00:00 2001
+From: "H.J. Lu" <hjl.tools@gmail.com>
+Date: Fri, 24 Apr 2020 11:32:02 -0700
+Subject: [PATCH] gold: Skip some incremental tests for -fcf-protection
+
+Skip incremental_test_2, incremental_test_3, incremental_test_4,
+incremental_test_5 and incremental_common_test_1 since gold doesn't
+properly support -fcf-protection on Intel CET enabled OS
+
+	PR gold/23539
+	* testsuite/Makefile.am (check_PROGRAMS): Skip incremental_test_2,
+	incremental_test_3, incremental_test_4, incremental_test_5,
+	and incremental_common_test_1.
+	* testsuite/Makefile.in: Regenerated.
+---
+ gold/testsuite/Makefile.am |  10 +--
+ gold/testsuite/Makefile.in | 152 +++++--------------------------------
+ 2 files changed, 22 insertions(+), 140 deletions(-)
+
+diff --git a/gold/testsuite/Makefile.am b/gold/testsuite/Makefile.am
+index 435d9ab3395..5c5679657f0 100644
+--- a/gold/testsuite/Makefile.am
++++ b/gold/testsuite/Makefile.am
+@@ -3184,7 +3184,7 @@ two_file_test_2_ndebug.o: two_file_test_2.cc
+ two_file_test_main_ndebug.o: two_file_test_main.cc
+ 	$(CXXCOMPILE) -O0 -g0 -c -o $@ $<
+ 
+-check_PROGRAMS += incremental_test_2
++#check_PROGRAMS += incremental_test_2
+ MOSTLYCLEANFILES += two_file_test_tmp_2.o
+ incremental_test_2: two_file_test_1_v1_ndebug.o two_file_test_1_ndebug.o two_file_test_1b_ndebug.o \
+ 		    two_file_test_2_ndebug.o two_file_test_main_ndebug.o gcctestdir/ld
+@@ -3194,7 +3194,7 @@ incremental_test_2: two_file_test_1_v1_ndebug.o two_file_test_1_ndebug.o two_fil
+ 	cp -f two_file_test_1_ndebug.o two_file_test_tmp_2.o
+ 	$(CXXLINK) -Wl,--incremental-update -Wl,-z,norelro,-no-pie two_file_test_tmp_2.o two_file_test_1b_ndebug.o two_file_test_2_ndebug.o two_file_test_main_ndebug.o
+ 
+-check_PROGRAMS += incremental_test_3
++#check_PROGRAMS += incremental_test_3
+ MOSTLYCLEANFILES += two_file_test_tmp_3.o
+ incremental_test_3: two_file_test_1.o two_file_test_1b_v1.o two_file_test_1b.o \
+ 		    two_file_test_2.o two_file_test_main.o gcctestdir/ld
+@@ -3204,7 +3204,7 @@ incremental_test_3: two_file_test_1.o two_file_test_1b_v1.o two_file_test_1b.o \
+ 	cp -f two_file_test_1b.o two_file_test_tmp_3.o
+ 	$(CXXLINK) -Wl,--incremental-update -Wl,-z,norelro,-no-pie two_file_test_1.o two_file_test_tmp_3.o two_file_test_2.o two_file_test_main.o
+ 
+-check_PROGRAMS += incremental_test_4
++#check_PROGRAMS += incremental_test_4
+ MOSTLYCLEANFILES += incremental_test_4.base two_file_test_tmp_4.o
+ incremental_test_4: two_file_test_1.o two_file_test_1b.o two_file_test_2_v1.o \
+ 		    two_file_test_2.o two_file_test_main.o gcctestdir/ld
+@@ -3215,7 +3215,7 @@ incremental_test_4: two_file_test_1.o two_file_test_1b.o two_file_test_2_v1.o \
+ 	cp -f two_file_test_2.o two_file_test_tmp_4.o
+ 	$(CXXLINK) -Wl,--incremental-update,--incremental-base=incremental_test_4.base -Wl,-z,norelro,-no-pie two_file_test_1.o two_file_test_1b.o two_file_test_tmp_4.o two_file_test_main.o
+ 
+-check_PROGRAMS += incremental_test_5
++#check_PROGRAMS += incremental_test_5
+ MOSTLYCLEANFILES += two_file_test_5.a
+ incremental_test_5: two_file_test_1.o two_file_test_1b_v1.o two_file_test_1b.o \
+ 		    two_file_test_2.o two_file_test_main.o gcctestdir/ld
+@@ -3249,7 +3249,7 @@ incremental_copy_test: copy_test_v1.o copy_test.o copy_test_1.so copy_test_2.so
+ 	cp -f copy_test.o copy_test_tmp.o
+ 	$(CXXLINK) -Wl,--incremental-update -Wl,-z,norelro,-no-pie -Wl,-R,. -Wl,--no-as-needed copy_test_tmp.o copy_test_1.so copy_test_2.so
+ 
+-check_PROGRAMS += incremental_common_test_1
++#check_PROGRAMS += incremental_common_test_1
+ incremental_common_test_1: common_test_1_v1.o common_test_1_v2.o gcctestdir/ld
+ 	cp -f common_test_1_v1.o common_test_1_tmp.o
+ 	$(CXXLINK) -Wl,--incremental-full,--incremental-patch=100 -Wl,-z,norelro,-no-pie common_test_1_tmp.o
+diff --git a/gold/testsuite/Makefile.in b/gold/testsuite/Makefile.in
+index 2af0a2e76b9..fdbabcf3cdb 100644
+--- a/gold/testsuite/Makefile.in
++++ b/gold/testsuite/Makefile.in
+@@ -883,22 +883,25 @@ check_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3) \
+ @GCC_FALSE@ehdr_start_test_5_DEPENDENCIES =
+ @NATIVE_LINKER_FALSE@ehdr_start_test_5_DEPENDENCIES =
+ 
+-# Test the --incremental-unchanged flag with an archive library.
+-# The second link should not update the library.
+-@DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_82 = incremental_test_2 \
+-@DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	incremental_test_3 \
+-@DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	incremental_test_4 \
+-@DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	incremental_test_5 \
+-@DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	incremental_test_6 \
+-@DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	incremental_common_test_1 \
+-@DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	exception_x86_64_bnd_test
+-@DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_83 = two_file_test_tmp_2.o \
++#check_PROGRAMS += incremental_test_2
++
++#check_PROGRAMS += incremental_test_3
++
++#check_PROGRAMS += incremental_test_4
++
++#check_PROGRAMS += incremental_test_5
++@DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_82 = two_file_test_tmp_2.o \
+ @DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	two_file_test_tmp_3.o \
+ @DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	incremental_test_4.base \
+ @DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	two_file_test_tmp_4.o \
+ @DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	two_file_test_5.a \
+ @DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	two_file_test_6.a \
+ @DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	gnu_property_test
++
++# Test the --incremental-unchanged flag with an archive library.
++# The second link should not update the library.
++@DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_83 = incremental_test_6 \
++@DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	exception_x86_64_bnd_test
+ @DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_84 = gnu_property_test.sh
+ @DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_85 = gnu_property_test.stdout
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_86 = pr22266
+@@ -1345,12 +1348,7 @@ libgoldtest_a_OBJECTS = $(am_libgoldtest_a_OBJECTS)
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@	ehdr_start_test_3$(EXEEXT) \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@	ehdr_start_test_5$(EXEEXT) \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@	pr20976$(EXEEXT)
+-@DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@am__EXEEXT_40 = incremental_test_2$(EXEEXT) \
+-@DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	incremental_test_3$(EXEEXT) \
+-@DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	incremental_test_4$(EXEEXT) \
+-@DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	incremental_test_5$(EXEEXT) \
+-@DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	incremental_test_6$(EXEEXT) \
+-@DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	incremental_common_test_1$(EXEEXT) \
++@DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@am__EXEEXT_40 = incremental_test_6$(EXEEXT) \
+ @DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	exception_x86_64_bnd_test$(EXEEXT)
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@am__EXEEXT_41 = pr22266$(EXEEXT)
+ @DEFAULT_TARGET_AARCH64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@am__EXEEXT_42 = aarch64_pr23870$(EXEEXT)
+@@ -1651,22 +1649,6 @@ ifuncmain7static_LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+ ifuncvar_OBJECTS = $(am_ifuncvar_OBJECTS)
+ ifuncvar_LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(ifuncvar_LDFLAGS) \
+ 	$(LDFLAGS) -o $@
+-incremental_common_test_1_SOURCES = incremental_common_test_1.c
+-incremental_common_test_1_OBJECTS =  \
+-	incremental_common_test_1.$(OBJEXT)
+-incremental_common_test_1_LDADD = $(LDADD)
+-incremental_test_2_SOURCES = incremental_test_2.c
+-incremental_test_2_OBJECTS = incremental_test_2.$(OBJEXT)
+-incremental_test_2_LDADD = $(LDADD)
+-incremental_test_3_SOURCES = incremental_test_3.c
+-incremental_test_3_OBJECTS = incremental_test_3.$(OBJEXT)
+-incremental_test_3_LDADD = $(LDADD)
+-incremental_test_4_SOURCES = incremental_test_4.c
+-incremental_test_4_OBJECTS = incremental_test_4.$(OBJEXT)
+-incremental_test_4_LDADD = $(LDADD)
+-incremental_test_5_SOURCES = incremental_test_5.c
+-incremental_test_5_OBJECTS = incremental_test_5.$(OBJEXT)
+-incremental_test_5_LDADD = $(LDADD)
+ incremental_test_6_SOURCES = incremental_test_6.c
+ incremental_test_6_OBJECTS = incremental_test_6.$(OBJEXT)
+ incremental_test_6_LDADD = $(LDADD)
+@@ -2277,8 +2259,6 @@ SOURCES = $(libgoldtest_a_SOURCES) $(aarch64_pr23870_SOURCES) \
+ 	ifuncmain6pie.c $(ifuncmain7_SOURCES) ifuncmain7pic.c \
+ 	ifuncmain7picstatic.c ifuncmain7pie.c \
+ 	$(ifuncmain7static_SOURCES) $(ifuncvar_SOURCES) \
+-	incremental_common_test_1.c incremental_test_2.c \
+-	incremental_test_3.c incremental_test_4.c incremental_test_5.c \
+ 	incremental_test_6.c $(initpri1_SOURCES) $(initpri2_SOURCES) \
+ 	$(initpri3a_SOURCES) $(justsyms_SOURCES) \
+ 	$(justsyms_exec_SOURCES) $(large_SOURCES) \
+@@ -2796,7 +2776,7 @@ MOSTLYCLEANFILES = *.so *.syms *.stdout *.stderr $(am__append_4) \
+ 	$(am__append_34) $(am__append_37) $(am__append_41) \
+ 	$(am__append_47) $(am__append_51) $(am__append_52) \
+ 	$(am__append_58) $(am__append_78) $(am__append_81) \
+-	$(am__append_83) $(am__append_90) $(am__append_93) \
++	$(am__append_82) $(am__append_90) $(am__append_93) \
+ 	$(am__append_96) $(am__append_99) $(am__append_102) \
+ 	$(am__append_105) $(am__append_108) $(am__append_109)
+ 
+@@ -3956,66 +3936,6 @@ ifuncvar$(EXEEXT): $(ifuncvar_OBJECTS) $(ifuncvar_DEPENDENCIES) $(EXTRA_ifuncvar
+ 	@rm -f ifuncvar$(EXEEXT)
+ 	$(AM_V_CCLD)$(ifuncvar_LINK) $(ifuncvar_OBJECTS) $(ifuncvar_LDADD) $(LIBS)
+ 
+-@DEFAULT_TARGET_X86_64_FALSE@incremental_common_test_1$(EXEEXT): $(incremental_common_test_1_OBJECTS) $(incremental_common_test_1_DEPENDENCIES) $(EXTRA_incremental_common_test_1_DEPENDENCIES) 
+-@DEFAULT_TARGET_X86_64_FALSE@	@rm -f incremental_common_test_1$(EXEEXT)
+-@DEFAULT_TARGET_X86_64_FALSE@	$(AM_V_CCLD)$(LINK) $(incremental_common_test_1_OBJECTS) $(incremental_common_test_1_LDADD) $(LIBS)
+-
+-@GCC_FALSE@incremental_common_test_1$(EXEEXT): $(incremental_common_test_1_OBJECTS) $(incremental_common_test_1_DEPENDENCIES) $(EXTRA_incremental_common_test_1_DEPENDENCIES) 
+-@GCC_FALSE@	@rm -f incremental_common_test_1$(EXEEXT)
+-@GCC_FALSE@	$(AM_V_CCLD)$(LINK) $(incremental_common_test_1_OBJECTS) $(incremental_common_test_1_LDADD) $(LIBS)
+-
+-@NATIVE_LINKER_FALSE@incremental_common_test_1$(EXEEXT): $(incremental_common_test_1_OBJECTS) $(incremental_common_test_1_DEPENDENCIES) $(EXTRA_incremental_common_test_1_DEPENDENCIES) 
+-@NATIVE_LINKER_FALSE@	@rm -f incremental_common_test_1$(EXEEXT)
+-@NATIVE_LINKER_FALSE@	$(AM_V_CCLD)$(LINK) $(incremental_common_test_1_OBJECTS) $(incremental_common_test_1_LDADD) $(LIBS)
+-
+-@DEFAULT_TARGET_X86_64_FALSE@incremental_test_2$(EXEEXT): $(incremental_test_2_OBJECTS) $(incremental_test_2_DEPENDENCIES) $(EXTRA_incremental_test_2_DEPENDENCIES) 
+-@DEFAULT_TARGET_X86_64_FALSE@	@rm -f incremental_test_2$(EXEEXT)
+-@DEFAULT_TARGET_X86_64_FALSE@	$(AM_V_CCLD)$(LINK) $(incremental_test_2_OBJECTS) $(incremental_test_2_LDADD) $(LIBS)
+-
+-@GCC_FALSE@incremental_test_2$(EXEEXT): $(incremental_test_2_OBJECTS) $(incremental_test_2_DEPENDENCIES) $(EXTRA_incremental_test_2_DEPENDENCIES) 
+-@GCC_FALSE@	@rm -f incremental_test_2$(EXEEXT)
+-@GCC_FALSE@	$(AM_V_CCLD)$(LINK) $(incremental_test_2_OBJECTS) $(incremental_test_2_LDADD) $(LIBS)
+-
+-@NATIVE_LINKER_FALSE@incremental_test_2$(EXEEXT): $(incremental_test_2_OBJECTS) $(incremental_test_2_DEPENDENCIES) $(EXTRA_incremental_test_2_DEPENDENCIES) 
+-@NATIVE_LINKER_FALSE@	@rm -f incremental_test_2$(EXEEXT)
+-@NATIVE_LINKER_FALSE@	$(AM_V_CCLD)$(LINK) $(incremental_test_2_OBJECTS) $(incremental_test_2_LDADD) $(LIBS)
+-
+-@DEFAULT_TARGET_X86_64_FALSE@incremental_test_3$(EXEEXT): $(incremental_test_3_OBJECTS) $(incremental_test_3_DEPENDENCIES) $(EXTRA_incremental_test_3_DEPENDENCIES) 
+-@DEFAULT_TARGET_X86_64_FALSE@	@rm -f incremental_test_3$(EXEEXT)
+-@DEFAULT_TARGET_X86_64_FALSE@	$(AM_V_CCLD)$(LINK) $(incremental_test_3_OBJECTS) $(incremental_test_3_LDADD) $(LIBS)
+-
+-@GCC_FALSE@incremental_test_3$(EXEEXT): $(incremental_test_3_OBJECTS) $(incremental_test_3_DEPENDENCIES) $(EXTRA_incremental_test_3_DEPENDENCIES) 
+-@GCC_FALSE@	@rm -f incremental_test_3$(EXEEXT)
+-@GCC_FALSE@	$(AM_V_CCLD)$(LINK) $(incremental_test_3_OBJECTS) $(incremental_test_3_LDADD) $(LIBS)
+-
+-@NATIVE_LINKER_FALSE@incremental_test_3$(EXEEXT): $(incremental_test_3_OBJECTS) $(incremental_test_3_DEPENDENCIES) $(EXTRA_incremental_test_3_DEPENDENCIES) 
+-@NATIVE_LINKER_FALSE@	@rm -f incremental_test_3$(EXEEXT)
+-@NATIVE_LINKER_FALSE@	$(AM_V_CCLD)$(LINK) $(incremental_test_3_OBJECTS) $(incremental_test_3_LDADD) $(LIBS)
+-
+-@DEFAULT_TARGET_X86_64_FALSE@incremental_test_4$(EXEEXT): $(incremental_test_4_OBJECTS) $(incremental_test_4_DEPENDENCIES) $(EXTRA_incremental_test_4_DEPENDENCIES) 
+-@DEFAULT_TARGET_X86_64_FALSE@	@rm -f incremental_test_4$(EXEEXT)
+-@DEFAULT_TARGET_X86_64_FALSE@	$(AM_V_CCLD)$(LINK) $(incremental_test_4_OBJECTS) $(incremental_test_4_LDADD) $(LIBS)
+-
+-@GCC_FALSE@incremental_test_4$(EXEEXT): $(incremental_test_4_OBJECTS) $(incremental_test_4_DEPENDENCIES) $(EXTRA_incremental_test_4_DEPENDENCIES) 
+-@GCC_FALSE@	@rm -f incremental_test_4$(EXEEXT)
+-@GCC_FALSE@	$(AM_V_CCLD)$(LINK) $(incremental_test_4_OBJECTS) $(incremental_test_4_LDADD) $(LIBS)
+-
+-@NATIVE_LINKER_FALSE@incremental_test_4$(EXEEXT): $(incremental_test_4_OBJECTS) $(incremental_test_4_DEPENDENCIES) $(EXTRA_incremental_test_4_DEPENDENCIES) 
+-@NATIVE_LINKER_FALSE@	@rm -f incremental_test_4$(EXEEXT)
+-@NATIVE_LINKER_FALSE@	$(AM_V_CCLD)$(LINK) $(incremental_test_4_OBJECTS) $(incremental_test_4_LDADD) $(LIBS)
+-
+-@DEFAULT_TARGET_X86_64_FALSE@incremental_test_5$(EXEEXT): $(incremental_test_5_OBJECTS) $(incremental_test_5_DEPENDENCIES) $(EXTRA_incremental_test_5_DEPENDENCIES) 
+-@DEFAULT_TARGET_X86_64_FALSE@	@rm -f incremental_test_5$(EXEEXT)
+-@DEFAULT_TARGET_X86_64_FALSE@	$(AM_V_CCLD)$(LINK) $(incremental_test_5_OBJECTS) $(incremental_test_5_LDADD) $(LIBS)
+-
+-@GCC_FALSE@incremental_test_5$(EXEEXT): $(incremental_test_5_OBJECTS) $(incremental_test_5_DEPENDENCIES) $(EXTRA_incremental_test_5_DEPENDENCIES) 
+-@GCC_FALSE@	@rm -f incremental_test_5$(EXEEXT)
+-@GCC_FALSE@	$(AM_V_CCLD)$(LINK) $(incremental_test_5_OBJECTS) $(incremental_test_5_LDADD) $(LIBS)
+-
+-@NATIVE_LINKER_FALSE@incremental_test_5$(EXEEXT): $(incremental_test_5_OBJECTS) $(incremental_test_5_DEPENDENCIES) $(EXTRA_incremental_test_5_DEPENDENCIES) 
+-@NATIVE_LINKER_FALSE@	@rm -f incremental_test_5$(EXEEXT)
+-@NATIVE_LINKER_FALSE@	$(AM_V_CCLD)$(LINK) $(incremental_test_5_OBJECTS) $(incremental_test_5_LDADD) $(LIBS)
+-
+ @DEFAULT_TARGET_X86_64_FALSE@incremental_test_6$(EXEEXT): $(incremental_test_6_OBJECTS) $(incremental_test_6_DEPENDENCIES) $(EXTRA_incremental_test_6_DEPENDENCIES) 
+ @DEFAULT_TARGET_X86_64_FALSE@	@rm -f incremental_test_6$(EXEEXT)
+ @DEFAULT_TARGET_X86_64_FALSE@	$(AM_V_CCLD)$(LINK) $(incremental_test_6_OBJECTS) $(incremental_test_6_LDADD) $(LIBS)
+@@ -4738,11 +4658,6 @@ distclean-compile:
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ifuncmain7picstatic.Po@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ifuncmain7pie.Po@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ifuncvar3.Po@am__quote@
+-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/incremental_common_test_1.Po@am__quote@
+-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/incremental_test_2.Po@am__quote@
+-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/incremental_test_3.Po@am__quote@
+-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/incremental_test_4.Po@am__quote@
+-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/incremental_test_5.Po@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/incremental_test_6.Po@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/initpri1.Po@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/initpri2.Po@am__quote@
+@@ -7606,34 +7521,6 @@ pr20976.log: pr20976$(EXEEXT)
+ 	--log-file $$b.log --trs-file $$b.trs \
+ 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+ 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+-incremental_test_2.log: incremental_test_2$(EXEEXT)
+-	@p='incremental_test_2$(EXEEXT)'; \
+-	b='incremental_test_2'; \
+-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+-	--log-file $$b.log --trs-file $$b.trs \
+-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+-	"$$tst" $(AM_TESTS_FD_REDIRECT)
+-incremental_test_3.log: incremental_test_3$(EXEEXT)
+-	@p='incremental_test_3$(EXEEXT)'; \
+-	b='incremental_test_3'; \
+-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+-	--log-file $$b.log --trs-file $$b.trs \
+-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+-	"$$tst" $(AM_TESTS_FD_REDIRECT)
+-incremental_test_4.log: incremental_test_4$(EXEEXT)
+-	@p='incremental_test_4$(EXEEXT)'; \
+-	b='incremental_test_4'; \
+-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+-	--log-file $$b.log --trs-file $$b.trs \
+-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+-	"$$tst" $(AM_TESTS_FD_REDIRECT)
+-incremental_test_5.log: incremental_test_5$(EXEEXT)
+-	@p='incremental_test_5$(EXEEXT)'; \
+-	b='incremental_test_5'; \
+-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+-	--log-file $$b.log --trs-file $$b.trs \
+-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+-	"$$tst" $(AM_TESTS_FD_REDIRECT)
+ incremental_test_6.log: incremental_test_6$(EXEEXT)
+ 	@p='incremental_test_6$(EXEEXT)'; \
+ 	b='incremental_test_6'; \
+@@ -7641,13 +7528,6 @@ incremental_test_6.log: incremental_test_6$(EXEEXT)
+ 	--log-file $$b.log --trs-file $$b.trs \
+ 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+ 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+-incremental_common_test_1.log: incremental_common_test_1$(EXEEXT)
+-	@p='incremental_common_test_1$(EXEEXT)'; \
+-	b='incremental_common_test_1'; \
+-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+-	--log-file $$b.log --trs-file $$b.trs \
+-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+-	"$$tst" $(AM_TESTS_FD_REDIRECT)
+ exception_x86_64_bnd_test.log: exception_x86_64_bnd_test$(EXEEXT)
+ 	@p='exception_x86_64_bnd_test$(EXEEXT)'; \
+ 	b='exception_x86_64_bnd_test'; \
+@@ -9436,6 +9316,8 @@ uninstall-am:
+ @DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	@sleep 1
+ @DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	cp -f copy_test.o copy_test_tmp.o
+ @DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	$(CXXLINK) -Wl,--incremental-update -Wl,-z,norelro,-no-pie -Wl,-R,. -Wl,--no-as-needed copy_test_tmp.o copy_test_1.so copy_test_2.so
++
++#check_PROGRAMS += incremental_common_test_1
+ @DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@incremental_common_test_1: common_test_1_v1.o common_test_1_v2.o gcctestdir/ld
+ @DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	cp -f common_test_1_v1.o common_test_1_tmp.o
+ @DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	$(CXXLINK) -Wl,--incremental-full,--incremental-patch=100 -Wl,-z,norelro,-no-pie common_test_1_tmp.o
+-- 
+2.26.0
+
