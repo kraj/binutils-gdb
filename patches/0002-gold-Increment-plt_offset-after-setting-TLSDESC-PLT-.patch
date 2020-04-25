@@ -1,0 +1,39 @@
+From 0d67c9878d70b77e6f20b1c1e8685f7d5d5b81cf Mon Sep 17 00:00:00 2001
+From: "H.J. Lu" <hjl.tools@gmail.com>
+Date: Sat, 25 Apr 2020 08:11:59 -0700
+Subject: [PATCH 2/2] gold: Increment plt_offset after setting TLSDESC PLT
+ entry
+
+Increment plt_offset after setting the reserved TLSDESC PLT entry.
+
+	PR gold/25872
+	* x86_64.cc (Output_data_plt_x86_64_bnd::do_write): Increment
+	plt_offset after setting the reserved TLSDESC PLT entry.
+	(Output_data_plt_x86_64_ibt<size>::do_write): Likewise.
+---
+ gold/x86_64.cc | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/gold/x86_64.cc b/gold/x86_64.cc
+index b094e4bd3b7..a0247b57074 100644
+--- a/gold/x86_64.cc
++++ b/gold/x86_64.cc
+@@ -2764,6 +2764,7 @@ Output_data_plt_x86_64_bnd::do_write(Output_file* of)
+       this->fill_tlsdesc_entry(pov, got_address, plt_address, got_base,
+ 			       tlsdesc_got_offset, plt_offset);
+       pov += this->get_plt_entry_size();
++      plt_offset += plt_entry_size;
+     }
+ 
+   // Write the additional PLT.
+@@ -2859,6 +2860,7 @@ Output_data_plt_x86_64_ibt<size>::do_write(Output_file* of)
+       this->fill_tlsdesc_entry(pov, got_address, plt_address, got_base,
+ 			       tlsdesc_got_offset, plt_offset);
+       pov += this->get_plt_entry_size();
++      plt_offset += plt_entry_size;
+     }
+ 
+   // Write the additional PLT.
+-- 
+2.26.0
+
