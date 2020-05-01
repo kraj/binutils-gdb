@@ -10921,6 +10921,7 @@ dwarf2_cu::setup_type_unit_groups (struct die_info *die)
 			    COMPUNIT_DIRNAME (cust),
 			    compunit_language (cust),
 			    0, cust));
+	  list_in_scope = get_builder ()->get_file_symbols ();
 	}
       return;
     }
@@ -10972,6 +10973,7 @@ dwarf2_cu::setup_type_unit_groups (struct die_info *die)
 			COMPUNIT_DIRNAME (cust),
 			compunit_language (cust),
 			0, cust));
+      list_in_scope = get_builder ()->get_file_symbols ();
 
       auto &file_names = line_header->file_names ();
       for (i = 0; i < file_names.size (); ++i)
@@ -14513,7 +14515,8 @@ dwarf2_add_type_defn (struct field_info *fip, struct die_info *die,
 
 /* A convenience typedef that's used when finding the discriminant
    field for a variant part.  */
-typedef std::unordered_map<sect_offset, int> offset_map_type;
+typedef std::unordered_map<sect_offset, int, gdb::hash_enum<sect_offset>>
+  offset_map_type;
 
 /* Compute the discriminant range for a given variant.  OBSTACK is
    where the results will be stored.  VARIANT is the variant to
@@ -15748,7 +15751,8 @@ process_structure_scope (struct die_info *die, struct dwarf2_cu *cu)
      these DIEs are identified by the fact that they have no byte_size
      attribute, and a declaration attribute.  */
   if (dwarf2_attr (die, DW_AT_byte_size, cu) != NULL
-      || !die_is_declaration (die, cu))
+      || !die_is_declaration (die, cu)
+      || dwarf2_attr (die, DW_AT_signature, cu) != NULL)
     {
       struct symbol *sym = new_symbol (die, type, cu);
 
@@ -15786,8 +15790,9 @@ process_structure_scope (struct die_info *die, struct dwarf2_cu *cu)
     }
 }
 
-/* Assuming DIE is an enumeration type, and TYPE is its associated type,
-   update TYPE using some information only available in DIE's children.  */
+/* Assuming DIE is an enumeration type, and TYPE is its associated
+   type, update TYPE using some information only available in DIE's
+   children.  In particular, the fields are computed.  */
 
 static void
 update_enumeration_type_from_children (struct die_info *die,
@@ -15799,6 +15804,7 @@ update_enumeration_type_from_children (struct die_info *die,
   int flag_enum = 1;
 
   auto_obstack obstack;
+  std::vector<struct field> fields;
 
   for (child_die = die->child;
        child_die != NULL && child_die->tag;
@@ -15834,10 +15840,19 @@ update_enumeration_type_from_children (struct die_info *die,
 	    flag_enum = 0;
 	}
 
-      /* If we already know that the enum type is neither unsigned, nor
-	 a flag type, no need to look at the rest of the enumerates.  */
-      if (!unsigned_enum && !flag_enum)
-	break;
+      fields.emplace_back ();
+      struct field &field = fields.back ();
+      FIELD_NAME (field) = dwarf2_physname (name, child_die, cu);
+      SET_FIELD_ENUMVAL (field, value);
+    }
+
+  if (!fields.empty ())
+    {
+      TYPE_NFIELDS (type) = fields.size ();
+      TYPE_FIELDS (type) = (struct field *)
+	TYPE_ALLOC (type, sizeof (struct field) * fields.size ());
+      memcpy (TYPE_FIELDS (type), fields.data (),
+	      sizeof (struct field) * fields.size ());
     }
 
   if (unsigned_enum)
@@ -15905,11 +15920,6 @@ read_enumeration_type (struct die_info *die, struct dwarf2_cu *cu)
   if (die_is_declaration (die, cu))
     TYPE_STUB (type) = 1;
 
-  /* Finish the creation of this type by using the enum's children.
-     We must call this even when the underlying type has been provided
-     so that we can determine if we're looking at a "flag" enum.  */
-  update_enumeration_type_from_children (die, type, cu);
-
   /* If this type has an underlying type that is not a stub, then we
      may use its attributes.  We always use the "unsigned" attribute
      in this situation, because ordinarily we guess whether the type
@@ -15931,7 +15941,15 @@ read_enumeration_type (struct die_info *die, struct dwarf2_cu *cu)
 
   TYPE_DECLARED_CLASS (type) = dwarf2_flag_true_p (die, DW_AT_enum_class, cu);
 
-  return set_die_type (die, type, cu);
+  set_die_type (die, type, cu);
+
+  /* Finish the creation of this type by using the enum's children.
+     Note that, as usual, this must come after set_die_type to avoid
+     infinite recursion when trying to compute the names of the
+     enumerators.  */
+  update_enumeration_type_from_children (die, type, cu);
+
+  return type;
 }
 
 /* Given a pointer to a die which begins an enumeration, process all
@@ -15952,8 +15970,6 @@ process_enumeration_scope (struct die_info *die, struct dwarf2_cu *cu)
   if (die->child != NULL)
     {
       struct die_info *child_die;
-      struct symbol *sym;
-      std::vector<struct field> fields;
       const char *name;
 
       child_die = die->child;
@@ -15967,29 +15983,10 @@ process_enumeration_scope (struct die_info *die, struct dwarf2_cu *cu)
 	    {
 	      name = dwarf2_name (child_die, cu);
 	      if (name)
-		{
-		  sym = new_symbol (child_die, this_type, cu);
-
-		  fields.emplace_back ();
-		  struct field &field = fields.back ();
-
-		  FIELD_NAME (field) = sym->linkage_name ();
-		  FIELD_TYPE (field) = NULL;
-		  SET_FIELD_ENUMVAL (field, SYMBOL_VALUE (sym));
-		  FIELD_BITSIZE (field) = 0;
-		}
+		new_symbol (child_die, this_type, cu);
 	    }
 
 	  child_die = child_die->sibling;
-	}
-
-      if (!fields.empty ())
-	{
-	  TYPE_NFIELDS (this_type) = fields.size ();
-	  TYPE_FIELDS (this_type) = (struct field *)
-	    TYPE_ALLOC (this_type, sizeof (struct field) * fields.size ());
-	  memcpy (TYPE_FIELDS (this_type), fields.data (),
-		  sizeof (struct field) * fields.size ());
 	}
     }
 

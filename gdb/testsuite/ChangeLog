@@ -1,3 +1,71 @@
+2020-05-01  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.reverse/until-reverse.c (main): Fix Wunused-result warning.
+
+2020-04-30  Hannes Domani  <ssbssa@yahoo.de>
+
+	PR gdb/18706
+	* gdb.cp/stub-array-size.cc: New test.
+	* gdb.cp/stub-array-size.exp: New file.
+	* gdb.cp/stub-array-size.h: New test.
+	* gdb.cp/stub-array-size2.cc: New test.
+
+2020-04-30  Hannes Domani  <ssbssa@yahoo.de>
+
+	* gdb.python/py-format-string.exp: Adjust pretty_arrays expected
+	output to the new format.
+
+2020-04-29  Simon Marchi  <simon.marchi@efficios.com>
+
+	* gdb.base/break.exp: Use with_test_prefix.
+
+2020-04-29  Tom de Vries  <tdevries@suse.de>
+
+	* lib/gdb.exp (debug_types): New proc.
+	* gdb.guile/scm-symtab.exp: Add xfail for PR gcc/90232.
+	* gdb.python/py-symtab.exp: Same.
+
+2020-04-29  Hannes Domani  <ssbssa@yahoo.de>
+
+	PR gdb/17320
+	* gdb.base/pretty-array.c: New test.
+	* gdb.base/pretty-array.exp: New file.
+
+2020-04-29  Tom de Vries  <tdevries@suse.de>
+
+	PR symtab/25889
+	* gdb.cp/cpexprs.exp: Adapt for inclusion.
+	* gdb.cp/cpexprs-debug-types.exp: New file.  Set -fdebug-types-section
+	and include cpexprs.exp.
+
+2020-04-28 Mark Williams <mark@myosotissp.com>
+
+	PR gdb/24480
+	* dw4-toplevel-types.exp: Test for top level types.
+	* dw4-toplevel-types.cc: Test for top level types.
+
+2020-04-28  Tankut Baris Aktemur  <tankut.baris.aktemur@intel.com>
+
+	* gdb.threads/stop-with-handle.exp: Fix typo in comment
+	(theads -> threads).
+
+2020-04-28  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.opt/inline-cmds.exp: Set KFAIL PR.
+
+2020-04-28  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.base/info-macros.exp: Remove KFAIL.  Add missing trailing ".*".
+
+2020-04-28  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.ada/array_ptr_renaming.exp: Add PR number in KFAIL.
+
+2020-04-28  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.dwarf2/main-foo.c: New test.
+	* gdb.dwarf2/struct-with-sig.exp: New file.
+
 2020-04-25  Tom de Vries  <tdevries@suse.de>
 
 	* boards/debug-types.exp: New file.

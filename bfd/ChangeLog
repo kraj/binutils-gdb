@@ -1,3 +1,69 @@
+2020-05-01  Alan Modra  <amodra@gmail.com>
+
+	PR 25900
+	* elfnn-riscv.c (_bfd_riscv_relax_section): Check root.type before
+	accessing root.u.def of symbols.  Also check root.u.def.section
+	is non-NULL.  Reverse tests so as to make the logic positive.
+
+2020-05-01  Alan Modra  <amodra@gmail.com>
+
+	PR 25882
+	* elf32-tic6x.c (elf32_tic6x_merge_attributes): Don't transfer
+	Tag_ABI_PIC or Tag_ABI_PID from dynamic objects to the output.
+
+2020-05-01  Alan Modra  <amodra@gmail.com>
+
+	PR 25882
+	* elf32-bfin.c (elf32_bfin_merge_private_bfd_data): Add FIXME.
+	* elf32-frv.c (frv_elf_merge_private_bfd_data): Likewise.
+	* elfxx-mips.c (_bfd_mips_elf_merge_private_bfd_data): Likewise.
+	* elf32-nds32.c (nds32_elf_merge_private_bfd_data): Likewise.
+	* elf32-score.c (s3_elf32_score_merge_private_bfd_data): Likewise.
+	* elf32-score7.c (s7_elf32_score_merge_private_bfd_data): Likewise.
+	* elf32-sh.c (sh_elf_merge_private_data): Likewise.
+	* elf32-tic6x.c (elf32_tic6x_merge_attributes): Likewise.
+	* elf64-ia64-vms.c (elf64_ia64_merge_private_bfd_data): Likewise.
+	* elfnn-ia64.c (elfNN_ia64_merge_private_bfd_data): Likewise.
+
+2020-05-01  Alan Modra  <amodra@gmail.com>
+
+	PR 25882
+	* elf32-ppc.c (ppc_elf_merge_private_bfd_data): Ignore e_flags
+	from shared libraries.
+
+2020-04-29  Max Filippov  <jcmvbkbc@gmail.com>
+
+	* elf32-xtensa.c (relax_section): Don't negate diff_value for
+	XTENSA_NDIFF relocations. Don't add sign bits whe diff_value
+	equals 0. Report overflow when the result has negative sign but
+	all significant bits are zero.
+
+2020-04-29  Gunther Nikl  <gnikl@justmail.de>
+
+	* aoutx.h (swap_std_reloc_out): Special case 64 bit relocations.
+	(aout_link_reloc_link_order): Likewise. Make r_length an unsigned.
+
+2020-04-28  Alan Modra  <amodra@gmail.com>
+
+	* vms-alpha.c (_bfd_vms_slurp_etir): Correct divide by zero check.
+	Emit warning message.
+
+2020-04-27  Tamar Christina  <tamar.christina@arm.com>
+
+	* coff-i386.c (COFF_WITH_PE_BIGOBJ): New.
+	* coff-x86_64.c (COFF_WITH_PE_BIGOBJ): New.
+	* config.bfd (targ_selvecs): Rename x86_64_pe_be_vec
+	to x86_64_pe_big_vec as it not a big-endian format.
+	(vec i386_pe_big_vec): New.
+	* configure.ac: Likewise.
+	* targets.c: Likewise.
+	* configure: Regenerate.
+	* pe-i386.c (TARGET_SYM_BIG, TARGET_NAME_BIG,
+	COFF_WITH_PE_BIGOBJ): New.
+	* pe-x86_64.c (TARGET_SYM_BIG, TARGET_NAME_BIG):
+	New.
+	(x86_64_pe_be_vec): Moved.
+
 2020-04-23  Anton Kolesov  <anton.kolesov@synopsys.com>
 
 	* elf-bfd.h (elfcore_write_arc_v2): Add prototype.

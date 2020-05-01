@@ -1,0 +1,35 @@
+#source: lfence-ret.s
+#as: -mlfence-before-ret=or -mlfence-before-indirect-branch=all
+#objdump: -dw
+
+.*: +file format .*
+
+
+Disassembly of section .text:
+
+0+ <_start>:
+ +[a-f0-9]+:	66 83 0c 24 00       	orw    \$0x0,\(%esp\)
+ +[a-f0-9]+:	0f ae e8             	lfence 
+ +[a-f0-9]+:	66 c3                	retw   
+ +[a-f0-9]+:	66 83 0c 24 00       	orw    \$0x0,\(%esp\)
+ +[a-f0-9]+:	0f ae e8             	lfence 
+ +[a-f0-9]+:	66 c2 14 00          	retw   \$0x14
+ +[a-f0-9]+:	83 0c 24 00          	orl    \$0x0,\(%esp\)
+ +[a-f0-9]+:	0f ae e8             	lfence 
+ +[a-f0-9]+:	c3                   	ret    
+ +[a-f0-9]+:	83 0c 24 00          	orl    \$0x0,\(%esp\)
+ +[a-f0-9]+:	0f ae e8             	lfence 
+ +[a-f0-9]+:	c2 1e 00             	ret    \$0x1e
+ +[a-f0-9]+:	66 83 0c 24 00       	orw    \$0x0,\(%esp\)
+ +[a-f0-9]+:	0f ae e8             	lfence 
+ +[a-f0-9]+:	66 cb                	lretw  
+ +[a-f0-9]+:	66 83 0c 24 00       	orw    \$0x0,\(%esp\)
+ +[a-f0-9]+:	0f ae e8             	lfence 
+ +[a-f0-9]+:	66 ca 28 00          	lretw  \$0x28
+ +[a-f0-9]+:	83 0c 24 00          	orl    \$0x0,\(%esp\)
+ +[a-f0-9]+:	0f ae e8             	lfence 
+ +[a-f0-9]+:	cb                   	lret   
+ +[a-f0-9]+:	83 0c 24 00          	orl    \$0x0,\(%esp\)
+ +[a-f0-9]+:	0f ae e8             	lfence 
+ +[a-f0-9]+:	ca 28 00             	lret   \$0x28
+#pass
