@@ -25,6 +25,13 @@ patches="
 0001-gold-Ignore-gnu.build.attributes-section.patch
 0001-gold-Fix-script_test_7.sh-script_test_9.sh.patch
 0001-gold-Skip-some-incremental-tests-for-fcf-protection.patch
+0001-gold-Workaround-PR-gold-25968.patch
+0002-Gold-Allow-repeated-call-to-set_doing_static_link.patch
+0003-gold-Initial-TLS-relocation-scan-support.patch
+0004-gold-Enable-TLS-relocation-scan.patch
+0005-gold-Handle-TLS-relocation-scan-in-garbage-collectio.patch
+0006-gold-Enable-TLS-relocation-scan-for-x86-64.patch
+0007-gold-Add-testcases-for-PR-gold-25476.patch
 0001-Don-t-claim-a-fat-IR-object-if-no-IR-object-should-b.patch
 0001-Add-lto-and-none-lto-input-support-for-ld-r.patch
 0002-Add-test-for-nm-on-mixed-LTO-non-LTO-object.patch

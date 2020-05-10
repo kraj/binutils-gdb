@@ -1,0 +1,45 @@
+From 1246ff83c5b794d129b644459074ccfce8f7e758 Mon Sep 17 00:00:00 2001
+From: "H.J. Lu" <hjl.tools@gmail.com>
+Date: Sun, 10 May 2020 12:46:42 -0700
+Subject: [PATCH 1/7] gold: Workaround PR gold/25968
+
+Since plugin_test_1 fails with --gc-sections, pass --no-tls-optimize
+to turn off TLS relocation scan which uses Gc_process_relocs.
+
+	PR gold/25968
+	* testsuite/Makefile.am (plugin_test_1): Pass --no-tls-optimize
+	to gold.
+---
+ gold/testsuite/Makefile.am | 2 +-
+ gold/testsuite/Makefile.in | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/gold/testsuite/Makefile.am b/gold/testsuite/Makefile.am
+index aff896a060..497b7e9df9 100644
+--- a/gold/testsuite/Makefile.am
++++ b/gold/testsuite/Makefile.am
+@@ -2291,7 +2291,7 @@ check_SCRIPTS += plugin_test_1.sh
+ check_DATA += plugin_test_1.err
+ MOSTLYCLEANFILES += plugin_test_1.err
+ plugin_test_1: two_file_test_main.o two_file_test_1.o.syms two_file_test_1b.o.syms two_file_test_2.o.syms empty.o.syms gcctestdir/ld plugin_test.so
+-	$(CXXLINK) -Wl,--no-demangle,--emit-relocs,--plugin,"./plugin_test.so",--plugin-opt,"_Z4f13iv" two_file_test_main.o two_file_test_1.o.syms two_file_test_1b.o.syms two_file_test_2.o.syms empty.o.syms 2>plugin_test_1.err
++	$(CXXLINK) -Wl,--no-tls-optimize,--no-demangle,--emit-relocs,--plugin,"./plugin_test.so",--plugin-opt,"_Z4f13iv" two_file_test_main.o two_file_test_1.o.syms two_file_test_1b.o.syms two_file_test_2.o.syms empty.o.syms 2>plugin_test_1.err
+ plugin_test_1.err: plugin_test_1
+ 	@touch plugin_test_1.err
+ 
+diff --git a/gold/testsuite/Makefile.in b/gold/testsuite/Makefile.in
+index 8b55f72561..1c78065709 100644
+--- a/gold/testsuite/Makefile.in
++++ b/gold/testsuite/Makefile.in
+@@ -8787,7 +8787,7 @@ uninstall-am:
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@	test -d alt || mkdir -p alt
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@	$(CXXCOMPILE) -c -o $@ $<
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@@PLUGINS_TRUE@plugin_test_1: two_file_test_main.o two_file_test_1.o.syms two_file_test_1b.o.syms two_file_test_2.o.syms empty.o.syms gcctestdir/ld plugin_test.so
+-@GCC_TRUE@@NATIVE_LINKER_TRUE@@PLUGINS_TRUE@	$(CXXLINK) -Wl,--no-demangle,--emit-relocs,--plugin,"./plugin_test.so",--plugin-opt,"_Z4f13iv" two_file_test_main.o two_file_test_1.o.syms two_file_test_1b.o.syms two_file_test_2.o.syms empty.o.syms 2>plugin_test_1.err
++@GCC_TRUE@@NATIVE_LINKER_TRUE@@PLUGINS_TRUE@	$(CXXLINK) -Wl,--no-tls-optimize,--no-demangle,--emit-relocs,--plugin,"./plugin_test.so",--plugin-opt,"_Z4f13iv" two_file_test_main.o two_file_test_1.o.syms two_file_test_1b.o.syms two_file_test_2.o.syms empty.o.syms 2>plugin_test_1.err
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@@PLUGINS_TRUE@plugin_test_1.err: plugin_test_1
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@@PLUGINS_TRUE@	@touch plugin_test_1.err
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@@PLUGINS_TRUE@plugin_test_2: two_file_test_main.o two_file_test_1.o.syms two_file_test_1b.o.syms two_file_shared_2.so gcctestdir/ld plugin_test.so
+-- 
+2.26.2
+

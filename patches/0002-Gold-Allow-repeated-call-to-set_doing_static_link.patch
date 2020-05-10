@@ -1,0 +1,33 @@
+From d42e7730ad0e07500bfdefd192763fab3b18c477 Mon Sep 17 00:00:00 2001
+From: "H.J. Lu" <hjl.tools@gmail.com>
+Date: Sun, 10 May 2020 09:18:03 -0700
+Subject: [PATCH 2/7] Gold: Allow repeated call to set_doing_static_link
+
+Allow repeated call to set_doing_static_link as long as it is a NOP so
+that do_adjust_output_section can be called early.
+
+	PR gold/25476
+	* parameters.cc (Parameters::set_doing_static_link): Allow
+	repeated call as long as it is a NOP.
+---
+ gold/parameters.cc | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/gold/parameters.cc b/gold/parameters.cc
+index d677044a07..8d41314b79 100644
+--- a/gold/parameters.cc
++++ b/gold/parameters.cc
+@@ -106,6 +106,10 @@ Parameters::set_options(const General_options* options)
+ void
+ Parameters::set_doing_static_link(bool doing_static_link)
+ {
++  // NB: Allow repeated call as long as it is a NOP.
++  if (this->doing_static_link_valid_
++      && doing_static_link == this->doing_static_link_)
++    return;
+   gold_assert(!this->doing_static_link_valid_);
+   this->doing_static_link_ = doing_static_link;
+   this->doing_static_link_valid_ = true;
+-- 
+2.26.2
+

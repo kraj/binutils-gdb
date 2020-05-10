@@ -1,0 +1,185 @@
+From edd3f277480c9cecafb1a286828c2257017c9e82 Mon Sep 17 00:00:00 2001
+From: "H.J. Lu" <hjl.tools@gmail.com>
+Date: Sun, 10 May 2020 09:44:52 -0700
+Subject: [PATCH 4/7] gold: Enable TLS relocation scan
+
+When creating a shared library, input object files can have GDesc and IE
+relocations against the same symbol.  If IE relocation is scanned first,
+GDesc relocation can be optimized to IE relocation.  Add an optional
+early TLS relocation scan pass before the regular relocation scan to
+detect IE relocations.
+
+	PR gold/25476
+	* object.cc (Sized_relobj_file<size, big_endian>::do_layout):
+	Use 2 passes for TLS relocation scan.
+	* object.h (Object): Initialize scan_tls_relocs_only_.
+	Add set_scan_tls_relocs_only, clear_scan_tls_relocs_only,
+	scan_tls_relocs_only and scan_tls_relocs_only_.
+	* reloc.cc (Read_relocs::run): Support TLS relocation scan.
+	(Sized_relobj_file<size, big_endian>::do_scan_relocs): Likewise.
+	* reloc.h (Gc_process_relocs::Gc_process_relocs): Add 2 arguments,
+	gc_process_relocs and tls_process_relocs.  Initialize
+	gc_process_relocs_ and tls_process_relocs_.
+	(Gc_process_relocs): Add gc_process_relocs_ and
+	tls_process_relocs_.
+---
+ gold/object.cc | 11 +++++++++++
+ gold/object.h  | 22 ++++++++++++++++++++--
+ gold/reloc.cc  | 18 ++++++++++++++----
+ gold/reloc.h   | 11 +++++++++--
+ 4 files changed, 54 insertions(+), 8 deletions(-)
+
+diff --git a/gold/object.cc b/gold/object.cc
+index c486a2011d..2551911f86 100644
+--- a/gold/object.cc
++++ b/gold/object.cc
+@@ -1419,10 +1419,12 @@ Sized_relobj_file<size, big_endian>::do_layout(Symbol_table* symtab,
+   const unsigned int unwind_section_type =
+       parameters->target().unwind_section_type();
+   const unsigned int shnum = this->shnum();
++  Target* target = const_cast<Target*>(&parameters->target());
+ 
+   /* Should this function be called twice?  */
+   bool is_two_pass = (parameters->options().gc_sections()
+ 		      || parameters->options().icf_enabled()
++		      || target->need_tls_process_relocs()
+ 		      || layout->is_unique_segment_for_sections_specified());
+ 
+   /* Only one of is_pass_one and is_pass_two is true.  Both are false when
+@@ -1823,6 +1825,15 @@ Sized_relobj_file<size, big_endian>::do_layout(Symbol_table* symtab,
+ 	      }
+ 	}
+ 
++      if (is_pass_two && target->need_tls_process_relocs())
++	{
++	  if (out_sections[i] == NULL)
++	    {
++	      gold_assert(out_section_offsets[i] == invalid_address);
++	      continue;
++	    }
++	}
++
+       // Defer layout here if input files are claimed by plugins.  When gc
+       // is turned on this function is called twice; we only want to do this
+       // on the first pass.
+diff --git a/gold/object.h b/gold/object.h
+index b7bd38faaf..42e0449d72 100644
+--- a/gold/object.h
++++ b/gold/object.h
+@@ -402,8 +402,9 @@ class Object
+     : name_(name), input_file_(input_file), offset_(offset), shnum_(-1U),
+       is_dynamic_(is_dynamic), is_needed_(false), uses_split_stack_(false),
+       has_no_split_stack_(false), no_export_(false),
+-      is_in_system_directory_(false), as_needed_(false), xindex_(NULL),
+-      compressed_sections_(NULL)
++      is_in_system_directory_(false), as_needed_(false),
++      scan_tls_relocs_only_(false),
++      xindex_(NULL), compressed_sections_(NULL)
+   {
+     if (input_file != NULL)
+       {
+@@ -794,6 +795,21 @@ class Object
+   as_needed() const
+   { return this->as_needed_; }
+ 
++  // Set flag that this object is being scanned for TLS relocation only.
++  void
++  set_scan_tls_relocs_only()
++  { this->scan_tls_relocs_only_ = true; }
++
++  // Clear flag that this object is being scanned for TLS relocation only.
++  void
++  clear_scan_tls_relocs_only()
++  { this->scan_tls_relocs_only_ = false; }
++
++  // Return whether this object is being scanned for TLS relocation only.
++  bool
++  scan_tls_relocs_only() const
++  { return this->scan_tls_relocs_only_; }
++
+   // Return whether we found this object by searching a directory.
+   bool
+   searched_for() const
+@@ -1084,6 +1100,8 @@ class Object
+   bool is_in_system_directory_ : 1;
+   // True if the object was linked with --as-needed.
+   bool as_needed_ : 1;
++  // True if the object is being scanned for TLS relocation only.
++  bool scan_tls_relocs_only_ : 1;
+   // Many sections for objects with more than SHN_LORESERVE sections.
+   Xindex* xindex_;
+   // For compressed debug sections, map section index to uncompressed size
+diff --git a/gold/reloc.cc b/gold/reloc.cc
+index 7cd9f859e0..ad0efba414 100644
+--- a/gold/reloc.cc
++++ b/gold/reloc.cc
+@@ -74,14 +74,23 @@ Read_relocs::run(Workqueue* workqueue)
+   // If garbage collection or identical comdat folding is desired, we  
+   // process the relocs first before scanning them.  Scanning of relocs is
+   // done only after garbage or identical sections is identified.
+-  if (parameters->options().gc_sections()
+-      || parameters->options().icf_enabled())
++  bool do_gc_process_relocs = (parameters->options().gc_sections()
++			       || parameters->options().icf_enabled());
++
++  // If TLS relocation scan is desired, we scan TLS relocations first
++  // before scanning all relocations.
++  Target* target = const_cast<Target*>(&parameters->target());
++  bool do_tls_process_relocs = target->need_tls_process_relocs();
++
++  if (do_gc_process_relocs || do_tls_process_relocs)
+     {
+       workqueue->queue_next(new Gc_process_relocs(this->symtab_,
+                                                   this->layout_, 
+                                                   this->object_, rd,
+                                                   this->this_blocker_,
+-						  this->next_blocker_));
++						  this->next_blocker_,
++						  do_gc_process_relocs,
++						  do_tls_process_relocs));
+     }
+   else
+     {
+@@ -448,7 +457,8 @@ Sized_relobj_file<size, big_endian>::do_scan_relocs(Symbol_table* symtab,
+       // in the link that would have been included normally. This is known only
+       // after Read_relocs hence this check has to be done again.
+       if (parameters->options().gc_sections()
+-	  || parameters->options().icf_enabled())
++	  || parameters->options().icf_enabled()
++	  || target->need_tls_process_relocs())
+         {
+           if (p->output_section == NULL)
+             continue;
+diff --git a/gold/reloc.h b/gold/reloc.h
+index 492c3fadfd..8ca31b2678 100644
+--- a/gold/reloc.h
++++ b/gold/reloc.h
+@@ -104,9 +104,12 @@ class Gc_process_relocs : public Task
+   // running.
+   Gc_process_relocs(Symbol_table* symtab, Layout* layout, Relobj* object,
+ 		    Read_relocs_data* rd, Task_token* this_blocker,
+-		    Task_token* next_blocker)
++		    Task_token* next_blocker, bool gc_process_relocs,
++		    bool tls_process_relocs)
+     : symtab_(symtab), layout_(layout), object_(object), rd_(rd),
+-      this_blocker_(this_blocker), next_blocker_(next_blocker)
++      this_blocker_(this_blocker), next_blocker_(next_blocker),
++      gc_process_relocs_(gc_process_relocs),
++      tls_process_relocs_(tls_process_relocs)
+   { }
+ 
+   ~Gc_process_relocs();
+@@ -132,6 +135,10 @@ class Gc_process_relocs : public Task
+   Read_relocs_data* rd_;
+   Task_token* this_blocker_;
+   Task_token* next_blocker_;
++  // True if the object is being garbage collected.
++  bool gc_process_relocs_;
++  // True if the object is being scanned for TLS relocation only.
++  bool tls_process_relocs_;
+ };
+ 
+ // Scan the relocations for an object to see if they require any
+-- 
+2.26.2
+

@@ -1,0 +1,93 @@
+From 83e3095bfc40cb7147bf87b8aa8d70122dea0648 Mon Sep 17 00:00:00 2001
+From: "H.J. Lu" <hjl.tools@gmail.com>
+Date: Sun, 10 May 2020 09:26:04 -0700
+Subject: [PATCH 3/7] gold: Initial TLS relocation scan support
+
+Add need_tls_process_relocs_ and input_objects_ to Target to allow TLS
+relocation scan for TLSDESC -> IE relaxation in shared object.
+
+	PR gold/25476
+	* target.h (Target): Add need_tls_process_relocs, input_objects,
+	set_input_objects, set_need_tls_process_relocs,
+	need_tls_process_relocs_ and input_objects_.
+	(Target::Target): Initialize need_tls_process_relocs_ and
+	input_objects_.
+---
+ gold/target.h | 33 ++++++++++++++++++++++++++++++++-
+ 1 file changed, 32 insertions(+), 1 deletion(-)
+
+diff --git a/gold/target.h b/gold/target.h
+index 089d7b377c..30f29c982b 100644
+--- a/gold/target.h
++++ b/gold/target.h
+@@ -98,6 +98,16 @@ class Target
+   are_processor_specific_flags_set() const
+   { return this->are_processor_specific_flags_set_; }
+ 
++  // Whether TLS relocation scan is needed.
++  bool
++  need_tls_process_relocs() const
++  { return this->need_tls_process_relocs_; }
++
++  // Get all input objects.
++  const Input_objects *
++  input_objects() const
++  { return this->input_objects_; }
++
+   // Whether this target has a specific make_symbol function.
+   bool
+   has_make_symbol() const
+@@ -514,6 +524,13 @@ class Target
+   finalize_gnu_properties(Layout* layout) const
+   { this->do_finalize_gnu_properties(layout); }
+ 
++  // Make all input objects available to target for TLS relocation scan.
++  void
++  set_input_objects(const Input_objects *input_objects)
++  {
++    this->input_objects_ = input_objects;
++  }
++
+  protected:
+   // This struct holds the constant information for a child class.  We
+   // use a struct to avoid the overhead of virtual function calls for
+@@ -579,7 +596,10 @@ class Target
+ 
+   Target(const Target_info* pti)
+     : pti_(pti), processor_specific_flags_(0),
+-      are_processor_specific_flags_set_(false), osabi_(elfcpp::ELFOSABI_NONE)
++      are_processor_specific_flags_set_(false),
++      osabi_(elfcpp::ELFOSABI_NONE),
++      need_tls_process_relocs_(false),
++      input_objects_(NULL)
+   { }
+ 
+   // Virtual function which may be implemented by the child class.
+@@ -707,6 +727,13 @@ class Target
+     this->are_processor_specific_flags_set_ = true;
+   }
+ 
++  // Require TLS relocation scan.
++  void
++  set_need_tls_process_relocs()
++  {
++    this->need_tls_process_relocs_ = true;
++  }
++
+ #ifdef HAVE_TARGET_32_LITTLE
+   // Virtual functions which may be overridden by the child class.
+   virtual Object*
+@@ -847,6 +874,10 @@ class Target
+   // the ELF header.  This is handled at this level because it is
+   // OS-specific rather than processor-specific.
+   elfcpp::ELFOSABI osabi_;
++  // Whether TLS relocation scan is needed.
++  bool need_tls_process_relocs_;
++  // All input objects.
++  const Input_objects *input_objects_;
+ };
+ 
+ // The abstract class for a specific size and endianness of target.
+-- 
+2.26.2
+

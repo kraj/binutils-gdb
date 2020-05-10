@@ -1,0 +1,142 @@
+From b16aa951f9e7967b4354d6a76943c7316b3a2c84 Mon Sep 17 00:00:00 2001
+From: "H.J. Lu" <hjl.tools@gmail.com>
+Date: Sun, 10 May 2020 10:44:15 -0700
+Subject: [PATCH 5/7] gold: Handle TLS relocation scan in garbage collection
+
+Similar to ICF, handle TLS relocation scan in garbage collection.  We
+add a TLS relocation scan before the regular relocation scan.
+
+	PR gold/25476
+	* gold.cc (Gc_runner::run): Call queue_middle_tasks if not
+	doing garbage collection, ICF, nor needing TLS relocation scan.
+	(queue_initial_tasks): Always queue Gc_runner task.
+	(queue_middle_tasks): Handle TLS relocation scan like garbage
+	collection and ICF.
+---
+ gold/gold.cc | 65 ++++++++++++++++++++++++++++++----------------------
+ 1 file changed, 37 insertions(+), 28 deletions(-)
+
+diff --git a/gold/gold.cc b/gold/gold.cc
+index f02d2aadaf..e7f8ff0a76 100644
+--- a/gold/gold.cc
++++ b/gold/gold.cc
+@@ -161,9 +161,23 @@ class Gc_runner : public Task_function_runner
+ void
+ Gc_runner::run(Workqueue* workqueue, const Task* task)
+ {
+-  queue_middle_gc_tasks(this->options_, task, this->input_objects_,
+-			this->symtab_, this->layout_, workqueue,
+-			this->mapfile_);
++  // NB: Call queue_middle_tasks if we aren't doing garbage collection,
++  // ICF nor needing TLS relocation scan.
++  Target* target = const_cast<Target*>(&parameters->target());
++  if (parameters->options().gc_sections()
++      || parameters->options().icf_enabled()
++      || target->need_tls_process_relocs())
++    {
++      if (target->need_tls_process_relocs())
++	target->set_input_objects(this->input_objects_);
++      queue_middle_gc_tasks(this->options_, task, this->input_objects_,
++			    this->symtab_, this->layout_, workqueue,
++			    this->mapfile_);
++    }
++  else
++    queue_middle_tasks(this->options_, task, this->input_objects_,
++		       this->symtab_, this->layout_, workqueue,
++		       this->mapfile_);
+ }
+ 
+ // Queue up the initial set of tasks for this link job.
+@@ -283,26 +297,15 @@ queue_initial_tasks(const General_options& options,
+       && (options.gc_sections() || options.icf_enabled()))
+     gold_error(_("cannot mix -r with --gc-sections or --icf"));
+ 
+-  if (options.gc_sections() || options.icf_enabled())
+-    {
+-      workqueue->queue(new Task_function(new Gc_runner(options,
+-						       input_objects,
+-						       symtab,
+-						       layout,
+-						       mapfile),
+-					 this_blocker,
+-					 "Task_function Gc_runner"));
+-    }
+-  else
+-    {
+-      workqueue->queue(new Task_function(new Middle_runner(options,
+-							   input_objects,
+-							   symtab,
+-							   layout,
+-							   mapfile),
+-					 this_blocker,
+-					 "Task_function Middle_runner"));
+-    }
++  // Gc_runner::run handles both queue_middle_gc_tasks and
++  // queue_middle_tasks.
++  workqueue->queue(new Task_function(new Gc_runner(options,
++						   input_objects,
++						   symtab,
++						   layout,
++						   mapfile),
++				     this_blocker,
++				     "Task_function Gc_runner"));
+ }
+ 
+ // Process an incremental input file: if it is unchanged from the previous
+@@ -533,14 +536,19 @@ queue_middle_tasks(const General_options& options,
+       symtab->icf()->find_identical_sections(input_objects, symtab);
+     }
+ 
++  // TODO(csilvers): figure out a more principled way to get the target
++  Target* target = const_cast<Target*>(&parameters->target());
++
+   // Call Object::layout for the second time to determine the
+   // output_sections for all referenced input sections.  When
+   // --gc-sections or --icf is turned on, or when certain input
+   // sections have to be mapped to unique segments, Object::layout
+   // is called twice.  It is called the first time when symbols
+   // are added.
++  // NB: Handle TLS relocation scan in garbage collection.
+   if (parameters->options().gc_sections()
+       || parameters->options().icf_enabled()
++      || target->need_tls_process_relocs()
+       || layout->is_unique_segment_for_sections_specified())
+     {
+       for (Input_objects::Relobj_iterator p = input_objects->relobj_begin();
+@@ -577,8 +585,10 @@ queue_middle_tasks(const General_options& options,
+ 	(*p)->update_section_layout(layout->get_section_order_map());
+     }
+ 
++  // NB: Handle TLS relocation scan in garbage collection.
+   if (parameters->options().gc_sections()
+-      || parameters->options().icf_enabled())
++      || parameters->options().icf_enabled()
++      || target->need_tls_process_relocs())
+     {
+       for (Input_objects::Relobj_iterator p = input_objects->relobj_begin();
+ 	   p != input_objects->relobj_end();
+@@ -681,9 +691,6 @@ queue_middle_tasks(const General_options& options,
+   // Define symbols from any linker scripts.
+   layout->define_script_symbols(symtab);
+ 
+-  // TODO(csilvers): figure out a more principled way to get the target
+-  Target* target = const_cast<Target*>(&parameters->target());
+-
+   // Attach sections to segments.
+   layout->attach_sections_to_segments(target);
+ 
+@@ -718,8 +725,10 @@ queue_middle_tasks(const General_options& options,
+ 
+   // If doing garbage collection, the relocations have already been read.
+   // Otherwise, read and scan the relocations.
++  // NB: Handle TLS relocation scan in garbage collection.
+   if (parameters->options().gc_sections()
+-      || parameters->options().icf_enabled())
++      || parameters->options().icf_enabled()
++      || target->need_tls_process_relocs())
+     {
+       for (Input_objects::Relobj_iterator p = input_objects->relobj_begin();
+ 	   p != input_objects->relobj_end();
+-- 
+2.26.2
+

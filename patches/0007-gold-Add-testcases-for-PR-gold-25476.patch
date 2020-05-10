@@ -1,0 +1,1047 @@
+From d3df74b607166445668333f328c851eb075f259e Mon Sep 17 00:00:00 2001
+From: "H.J. Lu" <hjl.tools@gmail.com>
+Date: Sun, 10 May 2020 10:55:41 -0700
+Subject: [PATCH 7/7] gold: Add testcases for PR gold/25476
+
+Add testcases for PR gold/25476 to verify that TLSDESC -> IE relaxation
+is properly performed.
+
+	PR gold/25476
+	* testsuite/Makefile.am (check_PROGRAMS): Add
+	tls_shared_gnu2_gd_to_ie_test_2.
+	(tls_test_2_gnu2.o): New rule.
+	(tls_test_2_gnu.o): Likewise.
+	(tls_test_2_gnu2_shared.so): Likewise.
+	(tls_shared_gnu2_gd_to_ie_test_2_SOURCES): New.
+	(tls_shared_gnu2_gd_to_ie_test_2_LDFLAGS): Likewise.
+	(tls_shared_gnu2_gd_to_ie_test_2_DEPENDENCIES): Likewise.
+	(check_SCRIPTS): Add tls_test_2_gnu2_shared.sh.
+	(check_DATA): Add tls_test_2_gnu2_shared.stdout.
+	(tls_test_2_gnu2_shared.stdout): New rule.
+	(check_SCRIPTS): Add x86_64_gd_to_ie.sh.
+	(check_DATA): Add x86_64_gd_to_ie.stdout.
+	(MOSTLYCLEANFILES): x86_64_gd_to_ie.so.
+	(x86_64_gd_to_ie.o): New rule.
+	(x86_64_gd_to_ie.so): Likewise.
+	(x86_64_gd_to_ie.stdout): Likewise.
+	* testsuite/tls_test_2.h: New file.
+	* testsuite/tls_test_2_gnu.c: Likewise.
+	* testsuite/tls_test_2_gnu2.c: Likewise.
+	* testsuite/tls_test_2_gnu2_shared.sh: Likewise.
+	* testsuite/tls_test_2_main.c: Likewise.
+	* testsuite/x86_64_gd_to_ie.s: Likewise.
+	* testsuite/x86_64_gd_to_ie.sh: Likewise.
+	* testsuite/Makefile.in: Regenerated.
+---
+ gold/testsuite/Makefile.am               |  33 +++
+ gold/testsuite/Makefile.in               | 283 ++++++++++++++---------
+ gold/testsuite/tls_test_2.h              |   7 +
+ gold/testsuite/tls_test_2_gnu.c          |  13 ++
+ gold/testsuite/tls_test_2_gnu2.c         |  16 ++
+ gold/testsuite/tls_test_2_gnu2_shared.sh |  55 +++++
+ gold/testsuite/tls_test_2_main.c         |  26 +++
+ gold/testsuite/x86_64_gd_to_ie.s         |  25 ++
+ gold/testsuite/x86_64_gd_to_ie.sh        |  40 ++++
+ 9 files changed, 388 insertions(+), 110 deletions(-)
+ create mode 100644 gold/testsuite/tls_test_2.h
+ create mode 100644 gold/testsuite/tls_test_2_gnu.c
+ create mode 100644 gold/testsuite/tls_test_2_gnu2.c
+ create mode 100755 gold/testsuite/tls_test_2_gnu2_shared.sh
+ create mode 100644 gold/testsuite/tls_test_2_main.c
+ create mode 100644 gold/testsuite/x86_64_gd_to_ie.s
+ create mode 100755 gold/testsuite/x86_64_gd_to_ie.sh
+
+diff --git a/gold/testsuite/Makefile.am b/gold/testsuite/Makefile.am
+index 497b7e9df9..1780612ac1 100644
+--- a/gold/testsuite/Makefile.am
++++ b/gold/testsuite/Makefile.am
+@@ -1058,6 +1058,27 @@ tls_shared_gnu2_gd_to_ie_test_LDFLAGS = -Wl,-R,. $(THREADFLAGS)
+ tls_shared_gnu2_gd_to_ie_test_LDADD = tls_test_gnu2.o tls_test_c_gnu2.o \
+ 	tls_test_gnu2_shared2.so $(THREADLIBS)
+ 
++check_PROGRAMS += tls_shared_gnu2_gd_to_ie_test_2
++
++tls_test_2_gnu2.o: tls_test_2_gnu2.c gcctestdir/as
++	$(COMPILE) -c -fpic -mtls-dialect=gnu2 -o $@ $<
++tls_test_2_gnu.o: tls_test_2_gnu.c gcctestdir/as
++	$(COMPILE) -c -fpic -mtls-dialect=gnu -ftls-model=initial-exec -o $@ $<
++tls_test_2_gnu2_shared.so: tls_test_2_gnu2.o tls_test_2_gnu.o \
++	gcctestdir/ld
++	$(LINK) -shared tls_test_2_gnu2.o tls_test_2_gnu.o
++
++tls_shared_gnu2_gd_to_ie_test_2_SOURCES = tls_test_2_main.c
++tls_shared_gnu2_gd_to_ie_test_2_LDFLAGS = -Wl,-R,.
++tls_shared_gnu2_gd_to_ie_test_2_DEPENDENCIES = gcctestdir/ld \
++	tls_test_2_gnu2_shared.so
++tls_shared_gnu2_gd_to_ie_test_2_LDADD = tls_test_2_gnu2_shared.so
++
++check_SCRIPTS += tls_test_2_gnu2_shared.sh
++check_DATA += tls_test_2_gnu2_shared.stdout
++tls_test_2_gnu2_shared.stdout: tls_test_2_gnu2_shared.so
++	$(TEST_READELF) -rW $< > $@ 2>/dev/null
++
+ if TLS_DESCRIPTORS
+ 
+ check_PROGRAMS += tls_shared_gnu2_test
+@@ -1212,6 +1233,18 @@ x86_64_indirect_jump_to_direct1: x86_64_indirect_jump_to_direct1.o gcctestdir/ld
+ x86_64_indirect_jump_to_direct1.stdout: x86_64_indirect_jump_to_direct1
+ 	$(TEST_OBJDUMP) -dw $< > $@
+ 
++check_SCRIPTS += x86_64_gd_to_ie.sh
++check_DATA += x86_64_gd_to_ie.stdout
++MOSTLYCLEANFILES += x86_64_gd_to_ie.so
++
++x86_64_gd_to_ie.o: x86_64_gd_to_ie.s
++	$(TEST_AS) --64 -o $@ $<
++x86_64_gd_to_ie.so: x86_64_gd_to_ie.o gcctestdir/ld
++	gcctestdir/ld -shared -o $@ $<
++x86_64_gd_to_ie.stdout: x86_64_gd_to_ie.so
++	$(TEST_OBJDUMP) -dw $< > $@
++	$(TEST_READELF) -rw $< >> $@
++
+ check_SCRIPTS += x86_64_gd_to_le.sh
+ check_DATA += x86_64_gd_to_le.stdout
+ MOSTLYCLEANFILES += x86_64_gd_to_le
+diff --git a/gold/testsuite/Makefile.in b/gold/testsuite/Makefile.in
+index 1c78065709..37c9d7aa10 100644
+--- a/gold/testsuite/Makefile.in
++++ b/gold/testsuite/Makefile.in
+@@ -284,19 +284,23 @@ check_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3) \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@@TLS_TRUE@	tls_shared_gd_to_ie_test
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@@TLS_TRUE@am__append_23 = tls_pie_test.sh
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@@TLS_TRUE@am__append_24 = tls_pie_test.stdout
+-@GCC_TRUE@@NATIVE_LINKER_TRUE@@TLS_GNU2_DIALECT_TRUE@@TLS_TRUE@am__append_25 = tls_shared_gnu2_gd_to_ie_test
+-@GCC_TRUE@@NATIVE_LINKER_TRUE@@TLS_DESCRIPTORS_TRUE@@TLS_GNU2_DIALECT_TRUE@@TLS_TRUE@am__append_26 = tls_shared_gnu2_test
+-@GCC_TRUE@@HAVE_STATIC_TRUE@@NATIVE_LINKER_TRUE@@STATIC_TLS_TRUE@@TLS_TRUE@am__append_27 = tls_static_test \
++@GCC_TRUE@@NATIVE_LINKER_TRUE@@TLS_GNU2_DIALECT_TRUE@@TLS_TRUE@am__append_25 = tls_shared_gnu2_gd_to_ie_test \
++@GCC_TRUE@@NATIVE_LINKER_TRUE@@TLS_GNU2_DIALECT_TRUE@@TLS_TRUE@	tls_shared_gnu2_gd_to_ie_test_2
++@GCC_TRUE@@NATIVE_LINKER_TRUE@@TLS_GNU2_DIALECT_TRUE@@TLS_TRUE@am__append_26 = tls_test_2_gnu2_shared.sh
++@GCC_TRUE@@NATIVE_LINKER_TRUE@@TLS_GNU2_DIALECT_TRUE@@TLS_TRUE@am__append_27 = tls_test_2_gnu2_shared.stdout
++@GCC_TRUE@@NATIVE_LINKER_TRUE@@TLS_DESCRIPTORS_TRUE@@TLS_GNU2_DIALECT_TRUE@@TLS_TRUE@am__append_28 = tls_shared_gnu2_test
++@GCC_TRUE@@HAVE_STATIC_TRUE@@NATIVE_LINKER_TRUE@@STATIC_TLS_TRUE@@TLS_TRUE@am__append_29 = tls_static_test \
+ @GCC_TRUE@@HAVE_STATIC_TRUE@@NATIVE_LINKER_TRUE@@STATIC_TLS_TRUE@@TLS_TRUE@	tls_static_pic_test
+-@FN_PTRS_IN_SO_WITHOUT_PIC_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@@TLS_TRUE@am__append_28 = tls_shared_nonpic_test
+-@DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_29 = x86_64_mov_to_lea.sh \
++@FN_PTRS_IN_SO_WITHOUT_PIC_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@@TLS_TRUE@am__append_30 = tls_shared_nonpic_test
++@DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_31 = x86_64_mov_to_lea.sh \
+ @DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	x86_64_indirect_call_to_direct.sh \
++@DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	x86_64_gd_to_ie.sh \
+ @DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	x86_64_gd_to_le.sh \
+ @DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	x86_64_overflow_pc32.sh \
+ @DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	x32_overflow_pc32.sh \
+ @DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	pr23016_1.sh \
+ @DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	pr23016_2.sh
+-@DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_30 = x86_64_mov_to_lea1.stdout \
++@DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_32 = x86_64_mov_to_lea1.stdout \
+ @DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	x86_64_mov_to_lea2.stdout \
+ @DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	x86_64_mov_to_lea3.stdout \
+ @DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	x86_64_mov_to_lea4.stdout \
+@@ -312,13 +316,14 @@ check_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3) \
+ @DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	x86_64_mov_to_lea14.stdout \
+ @DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	x86_64_indirect_call_to_direct1.stdout \
+ @DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	x86_64_indirect_jump_to_direct1.stdout \
++@DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	x86_64_gd_to_ie.stdout \
+ @DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	x86_64_gd_to_le.stdout \
+ @DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	x86_64_overflow_pc32.err \
+ @DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	x32_overflow_pc32.err \
+ @DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	pr23016_1.stdout \
+ @DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	pr23016_1r.stdout \
+ @DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	pr23016_2.stdout
+-@DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_31 = x86_64_mov_to_lea1 \
++@DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_33 = x86_64_mov_to_lea1 \
+ @DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	x86_64_mov_to_lea2 \
+ @DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	x86_64_mov_to_lea3 \
+ @DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	x86_64_mov_to_lea4 \
+@@ -334,23 +339,24 @@ check_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3) \
+ @DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	x86_64_mov_to_lea14 \
+ @DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	x86_64_indirect_call_to_direct1 \
+ @DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	x86_64_indirect_jump_to_direct1 \
++@DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	x86_64_gd_to_ie.so \
+ @DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	x86_64_gd_to_le \
+ @DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	x86_64_overflow_pc32.err \
+ @DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	x32_overflow_pc32.err
+-@DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_32 = pr17704a_test
+-@DEFAULT_TARGET_X86_64_OR_X32_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_33 = pr20216a_test \
++@DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_34 = pr17704a_test
++@DEFAULT_TARGET_X86_64_OR_X32_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_35 = pr20216a_test \
+ @DEFAULT_TARGET_X86_64_OR_X32_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	pr20216b_test \
+ @DEFAULT_TARGET_X86_64_OR_X32_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	pr20216c_test \
+ @DEFAULT_TARGET_X86_64_OR_X32_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	pr20216d_test \
+ @DEFAULT_TARGET_X86_64_OR_X32_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	pr20216e_test
+-@DEFAULT_TARGET_X86_64_OR_X32_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_34 = pr20216a.so pr20216b.so
+-@DEFAULT_TARGET_I386_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_35 = i386_mov_to_lea.sh
+-@DEFAULT_TARGET_I386_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_36 = i386_mov_to_lea1.stdout i386_mov_to_lea2.stdout \
++@DEFAULT_TARGET_X86_64_OR_X32_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_36 = pr20216a.so pr20216b.so
++@DEFAULT_TARGET_I386_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_37 = i386_mov_to_lea.sh
++@DEFAULT_TARGET_I386_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_38 = i386_mov_to_lea1.stdout i386_mov_to_lea2.stdout \
+ @DEFAULT_TARGET_I386_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	i386_mov_to_lea3.stdout i386_mov_to_lea4.stdout \
+ @DEFAULT_TARGET_I386_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	i386_mov_to_lea5.stdout i386_mov_to_lea6.stdout \
+ @DEFAULT_TARGET_I386_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	i386_mov_to_lea7.stdout i386_mov_to_lea8.stdout
+ 
+-@DEFAULT_TARGET_I386_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_37 = i386_mov_to_lea1 \
++@DEFAULT_TARGET_I386_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_39 = i386_mov_to_lea1 \
+ @DEFAULT_TARGET_I386_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	i386_mov_to_lea2 \
+ @DEFAULT_TARGET_I386_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	i386_mov_to_lea3 \
+ @DEFAULT_TARGET_I386_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	i386_mov_to_lea4 \
+@@ -360,7 +366,7 @@ check_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3) \
+ @DEFAULT_TARGET_I386_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	i386_mov_to_lea8 \
+ @DEFAULT_TARGET_I386_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	pr20308a.so \
+ @DEFAULT_TARGET_I386_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	pr20308b.so
+-@DEFAULT_TARGET_I386_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_38 = pr20308a_test \
++@DEFAULT_TARGET_I386_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_40 = pr20308a_test \
+ @DEFAULT_TARGET_I386_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	pr20308b_test \
+ @DEFAULT_TARGET_I386_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	pr20308c_test \
+ @DEFAULT_TARGET_I386_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	pr20308d_test \
+@@ -384,7 +390,7 @@ check_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3) \
+ # declared in a script file is assigned a non-zero starting address.
+ 
+ # Test difference between "*(a b)" and "*(a) *(b)" in input section spec.
+-@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_39 = many_sections_test \
++@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_41 = many_sections_test \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@	many_sections_r_test initpri1 \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@	initpri2 initpri3a \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@	flagstest_o_specialfile \
+@@ -412,9 +418,9 @@ check_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3) \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@	thin_archive_test_2
+ @GCC_FALSE@many_sections_test_DEPENDENCIES =
+ @NATIVE_LINKER_FALSE@many_sections_test_DEPENDENCIES =
+-@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_40 = many_sections_define.h \
++@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_42 = many_sections_define.h \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@	many_sections_check.h
+-@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_41 = many_sections_define.h \
++@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_43 = many_sections_define.h \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@	many_sections_check.h \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@	file_in_many_sections \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@	debug_msg.err \
+@@ -478,7 +484,7 @@ check_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3) \
+ 
+ # Test --dynamic-list, --dynamic-list-data, --dynamic-list-cpp-new,
+ # and --dynamic-list-cpp-typeinfo
+-@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_42 =  \
++@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_44 =  \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@	file_in_many_sections_test.sh \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@	debug_msg.sh missing_key_func.sh \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@	undef_symbol.sh pr18689.sh \
+@@ -516,7 +522,7 @@ check_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3) \
+ # This version won't be runnable, because there is no way to put the
+ # PT_PHDR segment at file offset 0.  We just make sure that we can
+ # build it without error.
+-@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_43 =  \
++@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_45 =  \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@	file_in_many_sections.stdout \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@	debug_msg.err \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@	missing_key_func.err \
+@@ -582,7 +588,7 @@ check_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3) \
+ @NATIVE_LINKER_FALSE@thin_archive_test_2_DEPENDENCIES =
+ 
+ # Test plugins with -r.
+-@GCC_TRUE@@NATIVE_LINKER_TRUE@@PLUGINS_TRUE@am__append_44 =  \
++@GCC_TRUE@@NATIVE_LINKER_TRUE@@PLUGINS_TRUE@am__append_46 =  \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@@PLUGINS_TRUE@	plugin_test_1 \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@@PLUGINS_TRUE@	plugin_test_2 \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@@PLUGINS_TRUE@	plugin_test_3 \
+@@ -597,7 +603,7 @@ check_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3) \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@@PLUGINS_TRUE@	plugin_test_wrap_symbols \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@@PLUGINS_TRUE@	plugin_test_start_lib \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@@PLUGINS_TRUE@	plugin_test_defsym
+-@GCC_TRUE@@NATIVE_LINKER_TRUE@@PLUGINS_TRUE@am__append_45 =  \
++@GCC_TRUE@@NATIVE_LINKER_TRUE@@PLUGINS_TRUE@am__append_47 =  \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@@PLUGINS_TRUE@	plugin_test_1.sh \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@@PLUGINS_TRUE@	plugin_test_2.sh \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@@PLUGINS_TRUE@	plugin_test_3.sh \
+@@ -616,7 +622,7 @@ check_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3) \
+ 
+ # As above, but check COMDAT case, where a non-IR file contains a duplicate
+ # of a COMDAT group in an IR file.
+-@GCC_TRUE@@NATIVE_LINKER_TRUE@@PLUGINS_TRUE@am__append_46 =  \
++@GCC_TRUE@@NATIVE_LINKER_TRUE@@PLUGINS_TRUE@am__append_48 =  \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@@PLUGINS_TRUE@	plugin_test_1.err \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@@PLUGINS_TRUE@	plugin_test_2.err \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@@PLUGINS_TRUE@	plugin_test_3.err \
+@@ -633,7 +639,7 @@ check_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3) \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@@PLUGINS_TRUE@	plugin_test_start_lib.err \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@@PLUGINS_TRUE@	plugin_test_defsym.err
+ # Make a copy of two_file_test_1.o, which does not define the symbol _Z4t16av.
+-@GCC_TRUE@@NATIVE_LINKER_TRUE@@PLUGINS_TRUE@am__append_47 =  \
++@GCC_TRUE@@NATIVE_LINKER_TRUE@@PLUGINS_TRUE@am__append_49 =  \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@@PLUGINS_TRUE@	plugin_test_1.err \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@@PLUGINS_TRUE@	plugin_test_2.err \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@@PLUGINS_TRUE@	plugin_test_3.err \
+@@ -651,29 +657,29 @@ check_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3) \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@@PLUGINS_TRUE@	plugin_test_wrap_symbols.err \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@@PLUGINS_TRUE@	plugin_test_start_lib.err \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@@PLUGINS_TRUE@	plugin_test_defsym.err
+-@GCC_TRUE@@NATIVE_LINKER_TRUE@@PLUGINS_TRUE@@TLS_TRUE@am__append_48 = plugin_test_tls
+-@GCC_TRUE@@NATIVE_LINKER_TRUE@@PLUGINS_TRUE@@TLS_TRUE@am__append_49 = plugin_test_tls.sh
+-@GCC_TRUE@@NATIVE_LINKER_TRUE@@PLUGINS_TRUE@@TLS_TRUE@am__append_50 = plugin_test_tls.err
+-@GCC_TRUE@@NATIVE_LINKER_TRUE@@PLUGINS_TRUE@@TLS_TRUE@am__append_51 = plugin_test_tls.err
+-@GCC_TRUE@@NATIVE_LINKER_TRUE@@PLUGINS_TRUE@am__append_52 = unused.c \
++@GCC_TRUE@@NATIVE_LINKER_TRUE@@PLUGINS_TRUE@@TLS_TRUE@am__append_50 = plugin_test_tls
++@GCC_TRUE@@NATIVE_LINKER_TRUE@@PLUGINS_TRUE@@TLS_TRUE@am__append_51 = plugin_test_tls.sh
++@GCC_TRUE@@NATIVE_LINKER_TRUE@@PLUGINS_TRUE@@TLS_TRUE@am__append_52 = plugin_test_tls.err
++@GCC_TRUE@@NATIVE_LINKER_TRUE@@PLUGINS_TRUE@@TLS_TRUE@am__append_53 = plugin_test_tls.err
++@GCC_TRUE@@NATIVE_LINKER_TRUE@@PLUGINS_TRUE@am__append_54 = unused.c \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@@PLUGINS_TRUE@	plugin_final_layout \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@@PLUGINS_TRUE@	plugin_layout_new_file \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@@PLUGINS_TRUE@	plugin_layout_with_alignment \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@@PLUGINS_TRUE@	plugin_pr22868.stdout
+-@GCC_TRUE@@NATIVE_LINKER_TRUE@@PLUGINS_TRUE@am__append_53 = plugin_final_layout.sh \
++@GCC_TRUE@@NATIVE_LINKER_TRUE@@PLUGINS_TRUE@am__append_55 = plugin_final_layout.sh \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@@PLUGINS_TRUE@	plugin_layout_with_alignment.sh \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@@PLUGINS_TRUE@	plugin_pr22868.sh \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@@PLUGINS_TRUE@	ver_test_pr16504.sh
+ 
+ # Uses the plugin_final_layout.sh script above to avoid duplication
+-@GCC_TRUE@@NATIVE_LINKER_TRUE@@PLUGINS_TRUE@am__append_54 = plugin_final_layout.stdout \
++@GCC_TRUE@@NATIVE_LINKER_TRUE@@PLUGINS_TRUE@am__append_56 = plugin_final_layout.stdout \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@@PLUGINS_TRUE@	plugin_final_layout_readelf.stdout \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@@PLUGINS_TRUE@	plugin_layout_new_file.stdout \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@@PLUGINS_TRUE@	plugin_layout_new_file_readelf.stdout \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@@PLUGINS_TRUE@	plugin_layout_with_alignment.stdout \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@@PLUGINS_TRUE@	plugin_pr22868.stdout \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@@PLUGINS_TRUE@	ver_test_pr16504.stdout
+-@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_55 = exclude_libs_test \
++@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_57 = exclude_libs_test \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@	local_labels_test \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@	discard_locals_test
+ 
+@@ -684,19 +690,19 @@ check_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3) \
+ 
+ # Test that no .gnu.version sections are created when
+ # symbol versioning is not used.
+-@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_56 = exclude_libs_test.sh \
++@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_58 = exclude_libs_test.sh \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@	discard_locals_test.sh \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@	hidden_test.sh \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@	retain_symbols_file_test.sh \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@	no_version_test.sh
+-@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_57 = exclude_libs_test.syms \
++@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_59 = exclude_libs_test.syms \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@	discard_locals_test.syms \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@	discard_locals_relocatable_test1.syms \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@	discard_locals_relocatable_test2.syms \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@	hidden_test.err \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@	retain_symbols_file_test.stdout \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@	no_version_test.stdout
+-@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_58 = exclude_libs_test.syms \
++@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_60 = exclude_libs_test.syms \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@	libexclude_libs_test_1.a \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@	libexclude_libs_test_2.a \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@	alt/libexclude_libs_test_3.a \
+@@ -728,7 +734,7 @@ check_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3) \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@	memory_test_inc_2.t \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@	memory_test_inc_3.t \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@	memory_test_2
+-@GCC_TRUE@@MCMODEL_MEDIUM_TRUE@@NATIVE_LINKER_TRUE@am__append_59 = large
++@GCC_TRUE@@MCMODEL_MEDIUM_TRUE@@NATIVE_LINKER_TRUE@am__append_61 = large
+ @GCC_FALSE@large_DEPENDENCIES =
+ @MCMODEL_MEDIUM_FALSE@large_DEPENDENCIES =
+ @NATIVE_LINKER_FALSE@large_DEPENDENCIES =
+@@ -737,15 +743,15 @@ check_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3) \
+ # it will get execute permission.
+ 
+ # Check -l:foo.a
+-@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_60 = permission_test \
++@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_62 = permission_test \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@	searched_file_test
+ @GCC_FALSE@searched_file_test_DEPENDENCIES =
+ @NATIVE_LINKER_FALSE@searched_file_test_DEPENDENCIES =
+-@GCC_TRUE@@HAVE_STATIC_TRUE@@IFUNC_STATIC_TRUE@@IFUNC_TRUE@@NATIVE_LINKER_TRUE@am__append_61 = ifuncmain1static \
++@GCC_TRUE@@HAVE_STATIC_TRUE@@IFUNC_STATIC_TRUE@@IFUNC_TRUE@@NATIVE_LINKER_TRUE@am__append_63 = ifuncmain1static \
+ @GCC_TRUE@@HAVE_STATIC_TRUE@@IFUNC_STATIC_TRUE@@IFUNC_TRUE@@NATIVE_LINKER_TRUE@	ifuncmain1picstatic
+-@GCC_TRUE@@HAVE_STATIC_TRUE@@IFUNC_STATIC_TRUE@@IFUNC_TRUE@@NATIVE_LINKER_TRUE@am__append_62 = ifuncmod1.sh
+-@GCC_TRUE@@HAVE_STATIC_TRUE@@IFUNC_STATIC_TRUE@@IFUNC_TRUE@@NATIVE_LINKER_TRUE@am__append_63 = ifuncmod1.so.stderr
+-@GCC_TRUE@@IFUNC_TRUE@@NATIVE_LINKER_TRUE@am__append_64 = ifuncmain1 \
++@GCC_TRUE@@HAVE_STATIC_TRUE@@IFUNC_STATIC_TRUE@@IFUNC_TRUE@@NATIVE_LINKER_TRUE@am__append_64 = ifuncmod1.sh
++@GCC_TRUE@@HAVE_STATIC_TRUE@@IFUNC_STATIC_TRUE@@IFUNC_TRUE@@NATIVE_LINKER_TRUE@am__append_65 = ifuncmod1.so.stderr
++@GCC_TRUE@@IFUNC_TRUE@@NATIVE_LINKER_TRUE@am__append_66 = ifuncmain1 \
+ @GCC_TRUE@@IFUNC_TRUE@@NATIVE_LINKER_TRUE@	ifuncmain1pic \
+ @GCC_TRUE@@IFUNC_TRUE@@NATIVE_LINKER_TRUE@	ifuncmain1vis \
+ @GCC_TRUE@@IFUNC_TRUE@@NATIVE_LINKER_TRUE@	ifuncmain1vispic \
+@@ -753,14 +759,14 @@ check_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3) \
+ @GCC_TRUE@@IFUNC_TRUE@@NATIVE_LINKER_TRUE@	ifuncmain1pie \
+ @GCC_TRUE@@IFUNC_TRUE@@NATIVE_LINKER_TRUE@	ifuncmain1vispie \
+ @GCC_TRUE@@IFUNC_TRUE@@NATIVE_LINKER_TRUE@	ifuncmain1staticpie
+-@GCC_TRUE@@HAVE_STATIC_TRUE@@IFUNC_STATIC_TRUE@@IFUNC_TRUE@@NATIVE_LINKER_TRUE@am__append_65 = ifuncmain2static \
++@GCC_TRUE@@HAVE_STATIC_TRUE@@IFUNC_STATIC_TRUE@@IFUNC_TRUE@@NATIVE_LINKER_TRUE@am__append_67 = ifuncmain2static \
+ @GCC_TRUE@@HAVE_STATIC_TRUE@@IFUNC_STATIC_TRUE@@IFUNC_TRUE@@NATIVE_LINKER_TRUE@	ifuncmain2picstatic
+ @GCC_FALSE@ifuncmain2static_DEPENDENCIES =
+ @HAVE_STATIC_FALSE@ifuncmain2static_DEPENDENCIES =
+ @IFUNC_FALSE@ifuncmain2static_DEPENDENCIES =
+ @IFUNC_STATIC_FALSE@ifuncmain2static_DEPENDENCIES =
+ @NATIVE_LINKER_FALSE@ifuncmain2static_DEPENDENCIES =
+-@GCC_TRUE@@IFUNC_TRUE@@NATIVE_LINKER_TRUE@am__append_66 = ifuncmain2 \
++@GCC_TRUE@@IFUNC_TRUE@@NATIVE_LINKER_TRUE@am__append_68 = ifuncmain2 \
+ @GCC_TRUE@@IFUNC_TRUE@@NATIVE_LINKER_TRUE@	ifuncmain2pic \
+ @GCC_TRUE@@IFUNC_TRUE@@NATIVE_LINKER_TRUE@	ifuncmain3
+ @GCC_FALSE@ifuncmain2_DEPENDENCIES =
+@@ -769,32 +775,32 @@ check_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3) \
+ @GCC_FALSE@ifuncmain3_DEPENDENCIES =
+ @IFUNC_FALSE@ifuncmain3_DEPENDENCIES =
+ @NATIVE_LINKER_FALSE@ifuncmain3_DEPENDENCIES =
+-@GCC_TRUE@@HAVE_STATIC_TRUE@@IFUNC_STATIC_TRUE@@IFUNC_TRUE@@NATIVE_LINKER_TRUE@am__append_67 = ifuncmain4static \
++@GCC_TRUE@@HAVE_STATIC_TRUE@@IFUNC_STATIC_TRUE@@IFUNC_TRUE@@NATIVE_LINKER_TRUE@am__append_69 = ifuncmain4static \
+ @GCC_TRUE@@HAVE_STATIC_TRUE@@IFUNC_STATIC_TRUE@@IFUNC_TRUE@@NATIVE_LINKER_TRUE@	ifuncmain4picstatic
+ @GCC_FALSE@ifuncmain4static_DEPENDENCIES =
+ @HAVE_STATIC_FALSE@ifuncmain4static_DEPENDENCIES =
+ @IFUNC_FALSE@ifuncmain4static_DEPENDENCIES =
+ @IFUNC_STATIC_FALSE@ifuncmain4static_DEPENDENCIES =
+ @NATIVE_LINKER_FALSE@ifuncmain4static_DEPENDENCIES =
+-@GCC_TRUE@@IFUNC_TRUE@@NATIVE_LINKER_TRUE@am__append_68 = ifuncmain4
++@GCC_TRUE@@IFUNC_TRUE@@NATIVE_LINKER_TRUE@am__append_70 = ifuncmain4
+ @GCC_FALSE@ifuncmain4_DEPENDENCIES =
+ @IFUNC_FALSE@ifuncmain4_DEPENDENCIES =
+ @NATIVE_LINKER_FALSE@ifuncmain4_DEPENDENCIES =
+-@GCC_TRUE@@HAVE_STATIC_TRUE@@IFUNC_STATIC_TRUE@@IFUNC_TRUE@@NATIVE_LINKER_TRUE@am__append_69 = ifuncmain5static \
++@GCC_TRUE@@HAVE_STATIC_TRUE@@IFUNC_STATIC_TRUE@@IFUNC_TRUE@@NATIVE_LINKER_TRUE@am__append_71 = ifuncmain5static \
+ @GCC_TRUE@@HAVE_STATIC_TRUE@@IFUNC_STATIC_TRUE@@IFUNC_TRUE@@NATIVE_LINKER_TRUE@	ifuncmain5picstatic
+-@GCC_TRUE@@IFUNC_TRUE@@NATIVE_LINKER_TRUE@am__append_70 = ifuncmain5 \
++@GCC_TRUE@@IFUNC_TRUE@@NATIVE_LINKER_TRUE@am__append_72 = ifuncmain5 \
+ @GCC_TRUE@@IFUNC_TRUE@@NATIVE_LINKER_TRUE@	ifuncmain5pic \
+ @GCC_TRUE@@IFUNC_TRUE@@NATIVE_LINKER_TRUE@	ifuncmain5staticpic \
+ @GCC_TRUE@@IFUNC_TRUE@@NATIVE_LINKER_TRUE@	ifuncmain5pie \
+ @GCC_TRUE@@IFUNC_TRUE@@NATIVE_LINKER_TRUE@	ifuncmain6pie
+-@GCC_TRUE@@HAVE_STATIC_TRUE@@IFUNC_STATIC_TRUE@@IFUNC_TRUE@@NATIVE_LINKER_TRUE@am__append_71 = ifuncmain7static \
++@GCC_TRUE@@HAVE_STATIC_TRUE@@IFUNC_STATIC_TRUE@@IFUNC_TRUE@@NATIVE_LINKER_TRUE@am__append_73 = ifuncmain7static \
+ @GCC_TRUE@@HAVE_STATIC_TRUE@@IFUNC_STATIC_TRUE@@IFUNC_TRUE@@NATIVE_LINKER_TRUE@	ifuncmain7picstatic
+ @GCC_FALSE@ifuncmain7static_DEPENDENCIES =
+ @HAVE_STATIC_FALSE@ifuncmain7static_DEPENDENCIES =
+ @IFUNC_FALSE@ifuncmain7static_DEPENDENCIES =
+ @IFUNC_STATIC_FALSE@ifuncmain7static_DEPENDENCIES =
+ @NATIVE_LINKER_FALSE@ifuncmain7static_DEPENDENCIES =
+-@GCC_TRUE@@IFUNC_TRUE@@NATIVE_LINKER_TRUE@am__append_72 = ifuncmain7 \
++@GCC_TRUE@@IFUNC_TRUE@@NATIVE_LINKER_TRUE@am__append_74 = ifuncmain7 \
+ @GCC_TRUE@@IFUNC_TRUE@@NATIVE_LINKER_TRUE@	ifuncmain7pic \
+ @GCC_TRUE@@IFUNC_TRUE@@NATIVE_LINKER_TRUE@	ifuncmain7pie \
+ @GCC_TRUE@@IFUNC_TRUE@@NATIVE_LINKER_TRUE@	ifuncvar
+@@ -808,12 +814,12 @@ check_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3) \
+ # weak reference in a DSO.
+ 
+ # Test that MEMORY region support works.
+-@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_73 = strong_ref_weak_def.sh \
++@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_75 = strong_ref_weak_def.sh \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@	dyn_weak_ref.sh memory_test.sh
+ 
+ # Test INCLUDE directives in linker scripts.
+ # The binary isn't runnable, so we just check that we can build it without errors.
+-@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_74 =  \
++@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_76 =  \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@	strong_ref_weak_def.stdout \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@	dyn_weak_ref.stdout \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@	memory_test.stdout memory_test_2
+@@ -829,7 +835,7 @@ check_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3) \
+ # Test that __ehdr_start is not overridden when supplied by the user.
+ 
+ # Test that the -d option (force common allocation) works correctly.
+-@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_75 = start_lib_test \
++@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_77 = start_lib_test \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@	ehdr_start_test_1 \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@	ehdr_start_test_2 \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@	ehdr_start_test_3 \
+@@ -842,17 +848,17 @@ check_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3) \
+ # Another simple C test (DW_AT_high_pc encoding) for --gdb-index.
+ 
+ # Test that --gdb-index functions correctly with gcc-generated pubnames.
+-@GCC_TRUE@@HAVE_PUBNAMES_TRUE@@NATIVE_LINKER_TRUE@am__append_76 = gdb_index_test_1.sh \
++@GCC_TRUE@@HAVE_PUBNAMES_TRUE@@NATIVE_LINKER_TRUE@am__append_78 = gdb_index_test_1.sh \
+ @GCC_TRUE@@HAVE_PUBNAMES_TRUE@@NATIVE_LINKER_TRUE@	gdb_index_test_2.sh \
+ @GCC_TRUE@@HAVE_PUBNAMES_TRUE@@NATIVE_LINKER_TRUE@	gdb_index_test_2_gabi.sh \
+ @GCC_TRUE@@HAVE_PUBNAMES_TRUE@@NATIVE_LINKER_TRUE@	gdb_index_test_3.sh \
+ @GCC_TRUE@@HAVE_PUBNAMES_TRUE@@NATIVE_LINKER_TRUE@	gdb_index_test_4.sh
+-@GCC_TRUE@@HAVE_PUBNAMES_TRUE@@NATIVE_LINKER_TRUE@am__append_77 = gdb_index_test_1.stdout \
++@GCC_TRUE@@HAVE_PUBNAMES_TRUE@@NATIVE_LINKER_TRUE@am__append_79 = gdb_index_test_1.stdout \
+ @GCC_TRUE@@HAVE_PUBNAMES_TRUE@@NATIVE_LINKER_TRUE@	gdb_index_test_2.stdout \
+ @GCC_TRUE@@HAVE_PUBNAMES_TRUE@@NATIVE_LINKER_TRUE@	gdb_index_test_2_gabi.stdout \
+ @GCC_TRUE@@HAVE_PUBNAMES_TRUE@@NATIVE_LINKER_TRUE@	gdb_index_test_3.stdout \
+ @GCC_TRUE@@HAVE_PUBNAMES_TRUE@@NATIVE_LINKER_TRUE@	gdb_index_test_4.stdout
+-@GCC_TRUE@@HAVE_PUBNAMES_TRUE@@NATIVE_LINKER_TRUE@am__append_78 = gdb_index_test_1.stdout \
++@GCC_TRUE@@HAVE_PUBNAMES_TRUE@@NATIVE_LINKER_TRUE@am__append_80 = gdb_index_test_1.stdout \
+ @GCC_TRUE@@HAVE_PUBNAMES_TRUE@@NATIVE_LINKER_TRUE@	gdb_index_test_1 \
+ @GCC_TRUE@@HAVE_PUBNAMES_TRUE@@NATIVE_LINKER_TRUE@	gdb_index_test_2.stdout \
+ @GCC_TRUE@@HAVE_PUBNAMES_TRUE@@NATIVE_LINKER_TRUE@	gdb_index_test_2 \
+@@ -874,11 +880,11 @@ check_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3) \
+ # appropriately aligned.
+ 
+ # Test that the --defsym option copies the symbol type and visibility.
+-@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_79 = ehdr_start_test_4.sh \
++@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_81 = ehdr_start_test_4.sh \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@	defsym_test.sh
+-@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_80 = ehdr_start_test_4.syms \
++@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_82 = ehdr_start_test_4.syms \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@	defsym_test.syms
+-@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_81 = ehdr_start_test_4 \
++@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_83 = ehdr_start_test_4 \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@	defsym_test defsym_test.syms
+ @GCC_FALSE@ehdr_start_test_5_DEPENDENCIES =
+ @NATIVE_LINKER_FALSE@ehdr_start_test_5_DEPENDENCIES =
+@@ -890,7 +896,7 @@ check_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3) \
+ #check_PROGRAMS += incremental_test_4
+ 
+ #check_PROGRAMS += incremental_test_5
+-@DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_82 = two_file_test_tmp_2.o \
++@DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_84 = two_file_test_tmp_2.o \
+ @DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	two_file_test_tmp_3.o \
+ @DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	incremental_test_4.base \
+ @DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	two_file_test_tmp_4.o \
+@@ -900,33 +906,33 @@ check_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3) \
+ 
+ # Test the --incremental-unchanged flag with an archive library.
+ # The second link should not update the library.
+-@DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_83 = incremental_test_6 \
++@DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_85 = incremental_test_6 \
+ @DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	exception_x86_64_bnd_test
+-@DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_84 = gnu_property_test.sh
+-@DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_85 = gnu_property_test.stdout
+-@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_86 = pr22266
+-@DEFAULT_TARGET_AARCH64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_87 = aarch64_pr23870
++@DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_86 = gnu_property_test.sh
++@DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_87 = gnu_property_test.stdout
++@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_88 = pr22266
++@DEFAULT_TARGET_AARCH64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@am__append_89 = aarch64_pr23870
+ 
+ # These tests work with native and cross linkers.
+ 
+ # Test script section order.
+-@NATIVE_OR_CROSS_LINKER_TRUE@am__append_88 = script_test_10.sh
+-@NATIVE_OR_CROSS_LINKER_TRUE@am__append_89 = script_test_10.stdout
+-@NATIVE_OR_CROSS_LINKER_TRUE@am__append_90 = script_test_10
++@NATIVE_OR_CROSS_LINKER_TRUE@am__append_90 = script_test_10.sh
++@NATIVE_OR_CROSS_LINKER_TRUE@am__append_91 = script_test_10.stdout
++@NATIVE_OR_CROSS_LINKER_TRUE@am__append_92 = script_test_10
+ 
+ # These tests work with cross linkers only.
+-@DEFAULT_TARGET_I386_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@am__append_91 = split_i386.sh
+-@DEFAULT_TARGET_I386_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@am__append_92 = split_i386_1.stdout split_i386_2.stdout \
++@DEFAULT_TARGET_I386_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@am__append_93 = split_i386.sh
++@DEFAULT_TARGET_I386_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@am__append_94 = split_i386_1.stdout split_i386_2.stdout \
+ @DEFAULT_TARGET_I386_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@	split_i386_3.stdout split_i386_4.stdout split_i386_r.stdout
+ 
+-@DEFAULT_TARGET_I386_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@am__append_93 = split_i386_1 split_i386_2 split_i386_3 \
++@DEFAULT_TARGET_I386_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@am__append_95 = split_i386_1 split_i386_2 split_i386_3 \
+ @DEFAULT_TARGET_I386_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@	split_i386_4 split_i386_r
+ 
+-@DEFAULT_TARGET_X86_64_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@am__append_94 = split_x86_64.sh \
++@DEFAULT_TARGET_X86_64_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@am__append_96 = split_x86_64.sh \
+ @DEFAULT_TARGET_X86_64_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@	bnd_plt_1.sh \
+ @DEFAULT_TARGET_X86_64_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@	bnd_ifunc_1.sh \
+ @DEFAULT_TARGET_X86_64_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@	bnd_ifunc_2.sh
+-@DEFAULT_TARGET_X86_64_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@am__append_95 = split_x86_64_1.stdout \
++@DEFAULT_TARGET_X86_64_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@am__append_97 = split_x86_64_1.stdout \
+ @DEFAULT_TARGET_X86_64_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@	split_x86_64_2.stdout \
+ @DEFAULT_TARGET_X86_64_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@	split_x86_64_3.stdout \
+ @DEFAULT_TARGET_X86_64_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@	split_x86_64_4.stdout \
+@@ -934,14 +940,14 @@ check_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3) \
+ @DEFAULT_TARGET_X86_64_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@	bnd_plt_1.stdout \
+ @DEFAULT_TARGET_X86_64_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@	bnd_ifunc_1.stdout \
+ @DEFAULT_TARGET_X86_64_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@	bnd_ifunc_2.stdout
+-@DEFAULT_TARGET_X86_64_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@am__append_96 = split_x86_64_1 split_x86_64_2 split_x86_64_3 \
++@DEFAULT_TARGET_X86_64_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@am__append_98 = split_x86_64_1 split_x86_64_2 split_x86_64_3 \
+ @DEFAULT_TARGET_X86_64_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@	split_x86_64_4 split_x86_64_r
+ 
+-@DEFAULT_TARGET_X32_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@am__append_97 = split_x32.sh
+-@DEFAULT_TARGET_X32_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@am__append_98 = split_x32_1.stdout split_x32_2.stdout \
++@DEFAULT_TARGET_X32_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@am__append_99 = split_x32.sh
++@DEFAULT_TARGET_X32_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@am__append_100 = split_x32_1.stdout split_x32_2.stdout \
+ @DEFAULT_TARGET_X32_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@	split_x32_3.stdout split_x32_4.stdout split_x32_r.stdout
+ 
+-@DEFAULT_TARGET_X32_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@am__append_99 = split_x32_1 split_x32_2 split_x32_3 \
++@DEFAULT_TARGET_X32_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@am__append_101 = split_x32_1 split_x32_2 split_x32_3 \
+ @DEFAULT_TARGET_X32_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@	split_x32_4 split_x32_r
+ 
+ 
+@@ -962,7 +968,7 @@ check_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3) \
+ # Check Thumb to ARM farcall veneers
+ 
+ # Check handling of --target1-abs, --target1-rel and --target2 options
+-@DEFAULT_TARGET_ARM_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@am__append_100 = arm_abs_global.sh \
++@DEFAULT_TARGET_ARM_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@am__append_102 = arm_abs_global.sh \
+ @DEFAULT_TARGET_ARM_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@	arm_branch_in_range.sh \
+ @DEFAULT_TARGET_ARM_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@	arm_branch_out_of_range.sh \
+ @DEFAULT_TARGET_ARM_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@	arm_fix_v4bx.sh \
+@@ -985,7 +991,7 @@ check_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3) \
+ @DEFAULT_TARGET_ARM_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@	arm_target2_got_rel.sh
+ 
+ # The test demonstrates why the constructor of a target object should not access options.
+-@DEFAULT_TARGET_ARM_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@am__append_101 = arm_abs_global.stdout \
++@DEFAULT_TARGET_ARM_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@am__append_103 = arm_abs_global.stdout \
+ @DEFAULT_TARGET_ARM_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@	arm_bl_in_range.stdout \
+ @DEFAULT_TARGET_ARM_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@	arm_bl_out_of_range.stdout \
+ @DEFAULT_TARGET_ARM_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@	thumb_bl_in_range.stdout \
+@@ -1038,7 +1044,7 @@ check_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3) \
+ @DEFAULT_TARGET_ARM_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@	arm_target2_abs.stdout \
+ @DEFAULT_TARGET_ARM_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@	arm_target2_got_rel.stdout \
+ @DEFAULT_TARGET_ARM_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@	arm_target_lazy_init
+-@DEFAULT_TARGET_ARM_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@am__append_102 = arm_abs_global \
++@DEFAULT_TARGET_ARM_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@am__append_104 = arm_abs_global \
+ @DEFAULT_TARGET_ARM_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@	arm_bl_in_range \
+ @DEFAULT_TARGET_ARM_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@	arm_bl_out_of_range \
+ @DEFAULT_TARGET_ARM_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@	thumb_bl_in_range \
+@@ -1089,20 +1095,20 @@ check_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3) \
+ @DEFAULT_TARGET_ARM_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@	arm_target2_abs \
+ @DEFAULT_TARGET_ARM_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@	arm_target2_got_rel \
+ @DEFAULT_TARGET_ARM_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@	arm_target_lazy_init
+-@DEFAULT_TARGET_AARCH64_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@am__append_103 = aarch64_reloc_none.sh \
++@DEFAULT_TARGET_AARCH64_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@am__append_105 = aarch64_reloc_none.sh \
+ @DEFAULT_TARGET_AARCH64_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@	aarch64_relocs.sh \
+ @DEFAULT_TARGET_AARCH64_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@	pr21430.sh \
+ @DEFAULT_TARGET_AARCH64_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@	aarch64_tlsdesc.sh
+-@DEFAULT_TARGET_AARCH64_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@am__append_104 = aarch64_reloc_none.stdout \
++@DEFAULT_TARGET_AARCH64_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@am__append_106 = aarch64_reloc_none.stdout \
+ @DEFAULT_TARGET_AARCH64_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@	aarch64_relocs.stdout \
+ @DEFAULT_TARGET_AARCH64_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@	pr21430.stdout \
+ @DEFAULT_TARGET_AARCH64_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@	aarch64_tlsdesc.stdout
+-@DEFAULT_TARGET_AARCH64_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@am__append_105 = aarch64_reloc_none \
++@DEFAULT_TARGET_AARCH64_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@am__append_107 = aarch64_reloc_none \
+ @DEFAULT_TARGET_AARCH64_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@	aarch64_relocs \
+ @DEFAULT_TARGET_AARCH64_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@	pr21430 \
+ @DEFAULT_TARGET_AARCH64_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@	aarch64_tlsdesc
+-@DEFAULT_TARGET_S390_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@am__append_106 = split_s390.sh
+-@DEFAULT_TARGET_S390_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@am__append_107 = split_s390_z1.stdout split_s390_z2.stdout split_s390_z3.stdout \
++@DEFAULT_TARGET_S390_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@am__append_108 = split_s390.sh
++@DEFAULT_TARGET_S390_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@am__append_109 = split_s390_z1.stdout split_s390_z2.stdout split_s390_z3.stdout \
+ @DEFAULT_TARGET_S390_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@	split_s390_z4.stdout split_s390_n1.stdout split_s390_n2.stdout \
+ @DEFAULT_TARGET_S390_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@	split_s390_a1.stdout split_s390_a2.stdout split_s390_z1_ns.stdout \
+ @DEFAULT_TARGET_S390_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@	split_s390_z2_ns.stdout split_s390_z3_ns.stdout split_s390_z4_ns.stdout \
+@@ -1114,7 +1120,7 @@ check_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3) \
+ @DEFAULT_TARGET_S390_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@	split_s390x_z4_ns.stdout split_s390x_n1_ns.stdout \
+ @DEFAULT_TARGET_S390_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@	split_s390x_n2_ns.stdout split_s390x_r.stdout
+ 
+-@DEFAULT_TARGET_S390_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@am__append_108 = split_s390_z1 split_s390_z2 split_s390_z3 \
++@DEFAULT_TARGET_S390_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@am__append_110 = split_s390_z1 split_s390_z2 split_s390_z3 \
+ @DEFAULT_TARGET_S390_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@	split_s390_z4 split_s390_n1 split_s390_n2 split_s390_a1 \
+ @DEFAULT_TARGET_S390_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@	split_s390_a2 split_s390_z1_ns split_s390_z2_ns split_s390_z3_ns \
+ @DEFAULT_TARGET_S390_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@	split_s390_z4_ns split_s390_n1_ns split_s390_n2_ns split_s390_r \
+@@ -1123,10 +1129,10 @@ check_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3) \
+ @DEFAULT_TARGET_S390_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@	split_s390x_z1_ns split_s390x_z2_ns split_s390x_z3_ns \
+ @DEFAULT_TARGET_S390_TRUE@@NATIVE_OR_CROSS_LINKER_TRUE@	split_s390x_z4_ns split_s390x_n1_ns split_s390x_n2_ns split_s390x_r
+ 
+-@DEFAULT_TARGET_X86_64_TRUE@am__append_109 = *.dwo *.dwp
+-@DEFAULT_TARGET_X86_64_TRUE@am__append_110 = dwp_test_1.sh \
++@DEFAULT_TARGET_X86_64_TRUE@am__append_111 = *.dwo *.dwp
++@DEFAULT_TARGET_X86_64_TRUE@am__append_112 = dwp_test_1.sh \
+ @DEFAULT_TARGET_X86_64_TRUE@	dwp_test_2.sh
+-@DEFAULT_TARGET_X86_64_TRUE@am__append_111 = dwp_test_1.stdout \
++@DEFAULT_TARGET_X86_64_TRUE@am__append_113 = dwp_test_1.stdout \
+ @DEFAULT_TARGET_X86_64_TRUE@	dwp_test_2.stdout
+ subdir = testsuite
+ ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
+@@ -1226,7 +1232,8 @@ libgoldtest_a_OBJECTS = $(am_libgoldtest_a_OBJECTS)
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@@TLS_TRUE@	tls_shared_test$(EXEEXT) \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@@TLS_TRUE@	tls_shared_ie_test$(EXEEXT) \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@@TLS_TRUE@	tls_shared_gd_to_ie_test$(EXEEXT)
+-@GCC_TRUE@@NATIVE_LINKER_TRUE@@TLS_GNU2_DIALECT_TRUE@@TLS_TRUE@am__EXEEXT_16 = tls_shared_gnu2_gd_to_ie_test$(EXEEXT)
++@GCC_TRUE@@NATIVE_LINKER_TRUE@@TLS_GNU2_DIALECT_TRUE@@TLS_TRUE@am__EXEEXT_16 = tls_shared_gnu2_gd_to_ie_test$(EXEEXT) \
++@GCC_TRUE@@NATIVE_LINKER_TRUE@@TLS_GNU2_DIALECT_TRUE@@TLS_TRUE@	tls_shared_gnu2_gd_to_ie_test_2$(EXEEXT)
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@@TLS_DESCRIPTORS_TRUE@@TLS_GNU2_DIALECT_TRUE@@TLS_TRUE@am__EXEEXT_17 = tls_shared_gnu2_test$(EXEEXT)
+ @GCC_TRUE@@HAVE_STATIC_TRUE@@NATIVE_LINKER_TRUE@@STATIC_TLS_TRUE@@TLS_TRUE@am__EXEEXT_18 = tls_static_test$(EXEEXT) \
+ @GCC_TRUE@@HAVE_STATIC_TRUE@@NATIVE_LINKER_TRUE@@STATIC_TLS_TRUE@@TLS_TRUE@	tls_static_pic_test$(EXEEXT)
+@@ -1949,6 +1956,11 @@ tls_shared_gnu2_gd_to_ie_test_OBJECTS =  \
+ tls_shared_gnu2_gd_to_ie_test_LINK = $(CXXLD) $(AM_CXXFLAGS) \
+ 	$(CXXFLAGS) $(tls_shared_gnu2_gd_to_ie_test_LDFLAGS) \
+ 	$(LDFLAGS) -o $@
++@GCC_TRUE@@NATIVE_LINKER_TRUE@@TLS_GNU2_DIALECT_TRUE@@TLS_TRUE@am_tls_shared_gnu2_gd_to_ie_test_2_OBJECTS = tls_test_2_main.$(OBJEXT)
++tls_shared_gnu2_gd_to_ie_test_2_OBJECTS =  \
++	$(am_tls_shared_gnu2_gd_to_ie_test_2_OBJECTS)
++tls_shared_gnu2_gd_to_ie_test_2_LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
++	$(tls_shared_gnu2_gd_to_ie_test_2_LDFLAGS) $(LDFLAGS) -o $@
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@@TLS_DESCRIPTORS_TRUE@@TLS_GNU2_DIALECT_TRUE@@TLS_TRUE@am_tls_shared_gnu2_test_OBJECTS = tls_test_main.$(OBJEXT)
+ tls_shared_gnu2_test_OBJECTS = $(am_tls_shared_gnu2_test_OBJECTS)
+ tls_shared_gnu2_test_LINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
+@@ -2288,6 +2300,7 @@ SOURCES = $(libgoldtest_a_SOURCES) $(aarch64_pr23870_SOURCES) \
+ 	tls_pie_pic_test.c tls_pie_test.c $(tls_script_test_SOURCES) \
+ 	$(tls_shared_gd_to_ie_test_SOURCES) \
+ 	$(tls_shared_gnu2_gd_to_ie_test_SOURCES) \
++	$(tls_shared_gnu2_gd_to_ie_test_2_SOURCES) \
+ 	$(tls_shared_gnu2_test_SOURCES) $(tls_shared_ie_test_SOURCES) \
+ 	$(tls_shared_nonpic_test_SOURCES) $(tls_shared_test_SOURCES) \
+ 	$(tls_static_pic_test_SOURCES) $(tls_static_test_SOURCES) \
+@@ -2776,34 +2789,34 @@ COMMON_TEST_C_CFLAGS = -fcommon
+ # improve on that here.  automake-1.9 info docs say "mostlyclean" is
+ # the right choice for files 'make' builds that people rebuild.
+ MOSTLYCLEANFILES = *.so *.syms *.stdout *.stderr $(am__append_4) \
+-	$(am__append_17) $(am__append_21) $(am__append_31) \
+-	$(am__append_34) $(am__append_37) $(am__append_41) \
+-	$(am__append_47) $(am__append_51) $(am__append_52) \
+-	$(am__append_58) $(am__append_78) $(am__append_81) \
+-	$(am__append_82) $(am__append_90) $(am__append_93) \
+-	$(am__append_96) $(am__append_99) $(am__append_102) \
+-	$(am__append_105) $(am__append_108) $(am__append_109)
++	$(am__append_17) $(am__append_21) $(am__append_33) \
++	$(am__append_36) $(am__append_39) $(am__append_43) \
++	$(am__append_49) $(am__append_53) $(am__append_54) \
++	$(am__append_60) $(am__append_80) $(am__append_83) \
++	$(am__append_84) $(am__append_92) $(am__append_95) \
++	$(am__append_98) $(am__append_101) $(am__append_104) \
++	$(am__append_107) $(am__append_110) $(am__append_111)
+ 
+ # We will add to these later, for each individual test.  Note
+ # that we add each test under check_SCRIPTS or check_PROGRAMS;
+ # the TESTS variable is automatically populated from these.
+ check_SCRIPTS = $(am__append_2) $(am__append_19) $(am__append_23) \
+-	$(am__append_29) $(am__append_35) $(am__append_42) \
+-	$(am__append_45) $(am__append_49) $(am__append_53) \
+-	$(am__append_56) $(am__append_62) $(am__append_73) \
+-	$(am__append_76) $(am__append_79) $(am__append_84) \
+-	$(am__append_88) $(am__append_91) $(am__append_94) \
+-	$(am__append_97) $(am__append_100) $(am__append_103) \
+-	$(am__append_106) $(am__append_110)
++	$(am__append_26) $(am__append_31) $(am__append_37) \
++	$(am__append_44) $(am__append_47) $(am__append_51) \
++	$(am__append_55) $(am__append_58) $(am__append_64) \
++	$(am__append_75) $(am__append_78) $(am__append_81) \
++	$(am__append_86) $(am__append_90) $(am__append_93) \
++	$(am__append_96) $(am__append_99) $(am__append_102) \
++	$(am__append_105) $(am__append_108) $(am__append_112)
+ check_DATA = $(am__append_3) $(am__append_20) $(am__append_24) \
+-	$(am__append_30) $(am__append_36) $(am__append_43) \
+-	$(am__append_46) $(am__append_50) $(am__append_54) \
+-	$(am__append_57) $(am__append_63) $(am__append_74) \
+-	$(am__append_77) $(am__append_80) $(am__append_85) \
+-	$(am__append_89) $(am__append_92) $(am__append_95) \
+-	$(am__append_98) $(am__append_101) $(am__append_104) \
+-	$(am__append_107) $(am__append_111)
+-BUILT_SOURCES = $(am__append_40)
++	$(am__append_27) $(am__append_32) $(am__append_38) \
++	$(am__append_45) $(am__append_48) $(am__append_52) \
++	$(am__append_56) $(am__append_59) $(am__append_65) \
++	$(am__append_76) $(am__append_79) $(am__append_82) \
++	$(am__append_87) $(am__append_91) $(am__append_94) \
++	$(am__append_97) $(am__append_100) $(am__append_103) \
++	$(am__append_106) $(am__append_109) $(am__append_113)
++BUILT_SOURCES = $(am__append_42)
+ TESTS = $(check_SCRIPTS) $(check_PROGRAMS)
+ 
+ # ---------------------------------------------------------------------
+@@ -3085,6 +3098,12 @@ DEPENDENCIES = \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@@TLS_GNU2_DIALECT_TRUE@@TLS_TRUE@tls_shared_gnu2_gd_to_ie_test_LDADD = tls_test_gnu2.o tls_test_c_gnu2.o \
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@@TLS_GNU2_DIALECT_TRUE@@TLS_TRUE@	tls_test_gnu2_shared2.so $(THREADLIBS)
+ 
++@GCC_TRUE@@NATIVE_LINKER_TRUE@@TLS_GNU2_DIALECT_TRUE@@TLS_TRUE@tls_shared_gnu2_gd_to_ie_test_2_SOURCES = tls_test_2_main.c
++@GCC_TRUE@@NATIVE_LINKER_TRUE@@TLS_GNU2_DIALECT_TRUE@@TLS_TRUE@tls_shared_gnu2_gd_to_ie_test_2_LDFLAGS = -Wl,-R,.
++@GCC_TRUE@@NATIVE_LINKER_TRUE@@TLS_GNU2_DIALECT_TRUE@@TLS_TRUE@tls_shared_gnu2_gd_to_ie_test_2_DEPENDENCIES = gcctestdir/ld \
++@GCC_TRUE@@NATIVE_LINKER_TRUE@@TLS_GNU2_DIALECT_TRUE@@TLS_TRUE@	tls_test_2_gnu2_shared.so
++
++@GCC_TRUE@@NATIVE_LINKER_TRUE@@TLS_GNU2_DIALECT_TRUE@@TLS_TRUE@tls_shared_gnu2_gd_to_ie_test_2_LDADD = tls_test_2_gnu2_shared.so
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@@TLS_DESCRIPTORS_TRUE@@TLS_GNU2_DIALECT_TRUE@@TLS_TRUE@tls_shared_gnu2_test_SOURCES = tls_test_main.cc
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@@TLS_DESCRIPTORS_TRUE@@TLS_GNU2_DIALECT_TRUE@@TLS_TRUE@tls_shared_gnu2_test_DEPENDENCIES = gcctestdir/ld tls_test_gnu2_shared.so
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@@TLS_DESCRIPTORS_TRUE@@TLS_GNU2_DIALECT_TRUE@@TLS_TRUE@tls_shared_gnu2_test_LDFLAGS = -Wl,-R,. $(THREADFLAGS)
+@@ -4404,6 +4423,10 @@ tls_shared_gnu2_gd_to_ie_test$(EXEEXT): $(tls_shared_gnu2_gd_to_ie_test_OBJECTS)
+ 	@rm -f tls_shared_gnu2_gd_to_ie_test$(EXEEXT)
+ 	$(AM_V_CXXLD)$(tls_shared_gnu2_gd_to_ie_test_LINK) $(tls_shared_gnu2_gd_to_ie_test_OBJECTS) $(tls_shared_gnu2_gd_to_ie_test_LDADD) $(LIBS)
+ 
++tls_shared_gnu2_gd_to_ie_test_2$(EXEEXT): $(tls_shared_gnu2_gd_to_ie_test_2_OBJECTS) $(tls_shared_gnu2_gd_to_ie_test_2_DEPENDENCIES) $(EXTRA_tls_shared_gnu2_gd_to_ie_test_2_DEPENDENCIES) 
++	@rm -f tls_shared_gnu2_gd_to_ie_test_2$(EXEEXT)
++	$(AM_V_CCLD)$(tls_shared_gnu2_gd_to_ie_test_2_LINK) $(tls_shared_gnu2_gd_to_ie_test_2_OBJECTS) $(tls_shared_gnu2_gd_to_ie_test_2_LDADD) $(LIBS)
++
+ tls_shared_gnu2_test$(EXEEXT): $(tls_shared_gnu2_test_OBJECTS) $(tls_shared_gnu2_test_DEPENDENCIES) $(EXTRA_tls_shared_gnu2_test_DEPENDENCIES) 
+ 	@rm -f tls_shared_gnu2_test$(EXEEXT)
+ 	$(AM_V_CXXLD)$(tls_shared_gnu2_test_LINK) $(tls_shared_gnu2_test_OBJECTS) $(tls_shared_gnu2_test_LDADD) $(LIBS)
+@@ -4737,6 +4760,7 @@ distclean-compile:
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tls_pie_pic_test.Po@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tls_pie_test.Po@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tls_test.Po@am__quote@
++@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tls_test_2_main.Po@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tls_test_file2.Po@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tls_test_main.Po@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/two_file_mixed_pie_test.Po@am__quote@
+@@ -5537,6 +5561,13 @@ tls_pie_test.sh.log: tls_pie_test.sh
+ 	--log-file $$b.log --trs-file $$b.trs \
+ 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+ 	"$$tst" $(AM_TESTS_FD_REDIRECT)
++tls_test_2_gnu2_shared.sh.log: tls_test_2_gnu2_shared.sh
++	@p='tls_test_2_gnu2_shared.sh'; \
++	b='tls_test_2_gnu2_shared.sh'; \
++	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
++	--log-file $$b.log --trs-file $$b.trs \
++	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
++	"$$tst" $(AM_TESTS_FD_REDIRECT)
+ x86_64_mov_to_lea.sh.log: x86_64_mov_to_lea.sh
+ 	@p='x86_64_mov_to_lea.sh'; \
+ 	b='x86_64_mov_to_lea.sh'; \
+@@ -5551,6 +5582,13 @@ x86_64_indirect_call_to_direct.sh.log: x86_64_indirect_call_to_direct.sh
+ 	--log-file $$b.log --trs-file $$b.trs \
+ 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+ 	"$$tst" $(AM_TESTS_FD_REDIRECT)
++x86_64_gd_to_ie.sh.log: x86_64_gd_to_ie.sh
++	@p='x86_64_gd_to_ie.sh'; \
++	b='x86_64_gd_to_ie.sh'; \
++	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
++	--log-file $$b.log --trs-file $$b.trs \
++	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
++	"$$tst" $(AM_TESTS_FD_REDIRECT)
+ x86_64_gd_to_le.sh.log: x86_64_gd_to_le.sh
+ 	@p='x86_64_gd_to_le.sh'; \
+ 	b='x86_64_gd_to_le.sh'; \
+@@ -6734,6 +6772,13 @@ tls_shared_gnu2_gd_to_ie_test.log: tls_shared_gnu2_gd_to_ie_test$(EXEEXT)
+ 	--log-file $$b.log --trs-file $$b.trs \
+ 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+ 	"$$tst" $(AM_TESTS_FD_REDIRECT)
++tls_shared_gnu2_gd_to_ie_test_2.log: tls_shared_gnu2_gd_to_ie_test_2$(EXEEXT)
++	@p='tls_shared_gnu2_gd_to_ie_test_2$(EXEEXT)'; \
++	b='tls_shared_gnu2_gd_to_ie_test_2'; \
++	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
++	--log-file $$b.log --trs-file $$b.trs \
++	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
++	"$$tst" $(AM_TESTS_FD_REDIRECT)
+ tls_shared_gnu2_test.log: tls_shared_gnu2_test$(EXEEXT)
+ 	@p='tls_shared_gnu2_test$(EXEEXT)'; \
+ 	b='tls_shared_gnu2_test'; \
+@@ -8122,6 +8167,16 @@ uninstall-am:
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@@TLS_GNU2_DIALECT_TRUE@@TLS_TRUE@tls_test_gnu2_shared2.so: tls_test_file2_gnu2.o gcctestdir/ld
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@@TLS_GNU2_DIALECT_TRUE@@TLS_TRUE@	$(CXXLINK) -shared tls_test_file2_gnu2.o
+ 
++@GCC_TRUE@@NATIVE_LINKER_TRUE@@TLS_GNU2_DIALECT_TRUE@@TLS_TRUE@tls_test_2_gnu2.o: tls_test_2_gnu2.c gcctestdir/as
++@GCC_TRUE@@NATIVE_LINKER_TRUE@@TLS_GNU2_DIALECT_TRUE@@TLS_TRUE@	$(COMPILE) -c -fpic -mtls-dialect=gnu2 -o $@ $<
++@GCC_TRUE@@NATIVE_LINKER_TRUE@@TLS_GNU2_DIALECT_TRUE@@TLS_TRUE@tls_test_2_gnu.o: tls_test_2_gnu.c gcctestdir/as
++@GCC_TRUE@@NATIVE_LINKER_TRUE@@TLS_GNU2_DIALECT_TRUE@@TLS_TRUE@	$(COMPILE) -c -fpic -mtls-dialect=gnu -ftls-model=initial-exec -o $@ $<
++@GCC_TRUE@@NATIVE_LINKER_TRUE@@TLS_GNU2_DIALECT_TRUE@@TLS_TRUE@tls_test_2_gnu2_shared.so: tls_test_2_gnu2.o tls_test_2_gnu.o \
++@GCC_TRUE@@NATIVE_LINKER_TRUE@@TLS_GNU2_DIALECT_TRUE@@TLS_TRUE@	gcctestdir/ld
++@GCC_TRUE@@NATIVE_LINKER_TRUE@@TLS_GNU2_DIALECT_TRUE@@TLS_TRUE@	$(LINK) -shared tls_test_2_gnu2.o tls_test_2_gnu.o
++@GCC_TRUE@@NATIVE_LINKER_TRUE@@TLS_GNU2_DIALECT_TRUE@@TLS_TRUE@tls_test_2_gnu2_shared.stdout: tls_test_2_gnu2_shared.so
++@GCC_TRUE@@NATIVE_LINKER_TRUE@@TLS_GNU2_DIALECT_TRUE@@TLS_TRUE@	$(TEST_READELF) -rW $< > $@ 2>/dev/null
++
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@@TLS_DESCRIPTORS_TRUE@@TLS_GNU2_DIALECT_TRUE@@TLS_TRUE@tls_test_gnu2_shared.so: tls_test_gnu2.o tls_test_file2_gnu2.o tls_test_c_gnu2.o gcctestdir/ld
+ @GCC_TRUE@@NATIVE_LINKER_TRUE@@TLS_DESCRIPTORS_TRUE@@TLS_GNU2_DIALECT_TRUE@@TLS_TRUE@	$(CXXLINK) -shared tls_test_gnu2.o tls_test_file2_gnu2.o tls_test_c_gnu2.o
+ @FN_PTRS_IN_SO_WITHOUT_PIC_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@@TLS_TRUE@tls_test_shared_nonpic.so: tls_test.o tls_test_file2.o tls_test_c.o gcctestdir/ld
+@@ -8213,6 +8268,14 @@ uninstall-am:
+ @DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@x86_64_indirect_jump_to_direct1.stdout: x86_64_indirect_jump_to_direct1
+ @DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	$(TEST_OBJDUMP) -dw $< > $@
+ 
++@DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@x86_64_gd_to_ie.o: x86_64_gd_to_ie.s
++@DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	$(TEST_AS) --64 -o $@ $<
++@DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@x86_64_gd_to_ie.so: x86_64_gd_to_ie.o gcctestdir/ld
++@DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	gcctestdir/ld -shared -o $@ $<
++@DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@x86_64_gd_to_ie.stdout: x86_64_gd_to_ie.so
++@DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	$(TEST_OBJDUMP) -dw $< > $@
++@DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	$(TEST_READELF) -rw $< >> $@
++
+ @DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@x86_64_gd_to_le.o: x86_64_gd_to_le.s
+ @DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@	$(TEST_AS) --64 -o $@ $<
+ @DEFAULT_TARGET_X86_64_TRUE@@GCC_TRUE@@NATIVE_LINKER_TRUE@x86_64_gd_to_le: x86_64_gd_to_le.o gcctestdir/ld
+diff --git a/gold/testsuite/tls_test_2.h b/gold/testsuite/tls_test_2.h
+new file mode 100644
+index 0000000000..314afc58a9
+--- /dev/null
++++ b/gold/testsuite/tls_test_2.h
+@@ -0,0 +1,7 @@
++extern int test1a (void);
++extern int test1b (void);
++extern int *test2a (void);
++extern int *test2b (void);
++
++extern __thread int foo __attribute__ ((visibility ("hidden")));
++extern __thread int bar __attribute__ ((visibility ("hidden")));
+diff --git a/gold/testsuite/tls_test_2_gnu.c b/gold/testsuite/tls_test_2_gnu.c
+new file mode 100644
+index 0000000000..8f93ad5a5d
+--- /dev/null
++++ b/gold/testsuite/tls_test_2_gnu.c
+@@ -0,0 +1,13 @@
++#include "tls_test_2.h"
++
++int *
++test2a (void)
++{
++  return &foo;
++}
++
++int *
++test2b (void)
++{
++  return &bar;
++}
+diff --git a/gold/testsuite/tls_test_2_gnu2.c b/gold/testsuite/tls_test_2_gnu2.c
+new file mode 100644
+index 0000000000..439fb8dc80
+--- /dev/null
++++ b/gold/testsuite/tls_test_2_gnu2.c
+@@ -0,0 +1,16 @@
++#include "tls_test_2.h"
++
++__thread int foo __attribute__ ((visibility ("hidden"))) = 30;
++__thread int bar __attribute__ ((visibility ("hidden"))) = 40;
++
++int
++test1a (void)
++{
++  return foo;
++}
++
++int
++test1b (void)
++{
++  return bar;
++}
+diff --git a/gold/testsuite/tls_test_2_gnu2_shared.sh b/gold/testsuite/tls_test_2_gnu2_shared.sh
+new file mode 100755
+index 0000000000..2d92e1a9f8
+--- /dev/null
++++ b/gold/testsuite/tls_test_2_gnu2_shared.sh
+@@ -0,0 +1,55 @@
++#!/bin/sh
++
++# tls_test_2_gnu2_shared.sh-- a test case for TLSDESC -> IE relaxation
++# in shared library.
++
++# Copyright (C) 2020 Free Software Foundation, Inc.
++
++# This file is part of gold.
++
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 3 of the License, or
++# (at your option) any later version.
++
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston,
++# MA 02110-1301, USA.
++
++# This file goes with tls_test_2_gnu2_shared.so, a shared compiled
++# with TLSDESC and IE.  Since IE is known at link time, TLSDESC should
++# optimized to IE.
++
++check()
++{
++    if ! grep -q "$2" "$1"
++    then
++	echo "Did not find expected output in $1:"
++	echo "   $2"
++	echo ""
++	echo "Actual output below:"
++	cat "$1"
++	exit 1
++    fi
++}
++
++check_missing()
++{
++    if grep -q "$2" "$1"
++    then
++	echo "Found unexpected output in $1:"
++	echo "   $2"
++	echo ""
++	echo "Actual output below:"
++	cat "$1"
++	exit 1
++    fi
++}
++
++check_missing tls_test_2_gnu2_shared.stdout "R_X86_64_TLSDESC"
+diff --git a/gold/testsuite/tls_test_2_main.c b/gold/testsuite/tls_test_2_main.c
+new file mode 100644
+index 0000000000..3afce4b761
+--- /dev/null
++++ b/gold/testsuite/tls_test_2_main.c
+@@ -0,0 +1,26 @@
++#include <stdlib.h>
++#include <stdio.h>
++#include "tls_test_2.h"
++
++int
++main (void)
++{
++  int *p;
++  if (test1a () != 30)
++    abort ();
++  if (test1b () != 40)
++    abort ();
++  p = test2a ();
++  if (*p != 30)
++    abort ();
++  p = test2b ();
++  if (*p != 40)
++    abort ();
++  *p = 301;
++  if (test1a () != 30)
++    abort ();
++  if (test1b () != 301)
++    abort ();
++  puts ("PASS");
++  return 0;
++}
+diff --git a/gold/testsuite/x86_64_gd_to_ie.s b/gold/testsuite/x86_64_gd_to_ie.s
+new file mode 100644
+index 0000000000..bbc73a04b3
+--- /dev/null
++++ b/gold/testsuite/x86_64_gd_to_ie.s
+@@ -0,0 +1,25 @@
++	.text
++	.p2align 4
++	.globl	_start
++	.type	_start, @function
++_start:
++	.cfi_startproc
++	subq	$8, %rsp
++	.cfi_def_cfa_offset 16
++	leaq	foo@TLSDESC(%rip), %r9
++	movq	%r9, %rax
++	call	*foo@TLSCALL(%rax)
++	addq	%fs:0, %rax
++	addq	foo@gottpoff(%rip), %rax
++	addq	$8, %rsp
++	.cfi_def_cfa_offset 8
++	ret
++	.cfi_endproc
++	.size	_start, .-_start
++	.section	.tdata,"awT",@progbits
++	.align 4
++	.type	foo, @object
++	.size	foo, 4
++foo:
++	.long	30
++	.section	.note.GNU-stack,"",@progbits
+diff --git a/gold/testsuite/x86_64_gd_to_ie.sh b/gold/testsuite/x86_64_gd_to_ie.sh
+new file mode 100755
+index 0000000000..79cbb707e7
+--- /dev/null
++++ b/gold/testsuite/x86_64_gd_to_ie.sh
+@@ -0,0 +1,40 @@
++#!/bin/sh
++
++# x86_64_gd_to_ie.sh -- a test for GDesc -> IE conversion.
++
++# Copyright (C) 2020 Free Software Foundation, Inc.
++
++# This file is part of gold.
++
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 3 of the License, or
++# (at your option) any later version.
++
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston,
++# MA 02110-1301, USA.
++
++set -e
++
++check_missing()
++{
++    if grep -q "$2" "$1"
++    then
++	echo "Found unexpected output in $1:"
++	echo "   $2"
++	echo ""
++	echo "Actual output below:"
++	cat "$1"
++	exit 1
++    fi
++}
++
++grep -q "mov[ \t]\+0x[a-f0-9]\+(%rip),%r9" x86_64_gd_to_ie.stdout
++check_missing x86_64_gd_to_ie.stdout "R_X86_64_TLSDESC"
+-- 
+2.26.2
+

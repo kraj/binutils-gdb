@@ -1,0 +1,326 @@
+From 7767f22dab8b262fe26393573a208aea7081fa01 Mon Sep 17 00:00:00 2001
+From: "H.J. Lu" <hjl.tools@gmail.com>
+Date: Sun, 3 May 2020 08:17:21 -0700
+Subject: [PATCH 6/7] gold: Enable TLS relocation scan for x86-64
+
+Enable TLS relocation scan for x86-64.  Use existing GOT_TYPE_TLS_OFFSET
+and TLSOPT_TO_IE if possible.
+
+FIXME: TLS relocation scan is disabled when -emit-relocs or --incremental
+are used.
+
+	PR gold/25476
+	* x86_64.cc (Target_x86_64::Target_x86_64): Enable TLS relocation
+	scan pass without -emit-relocs nor --incremental.
+	(Target_x86_64<size>::Scan::local): Don't check STT_GNU_IFUNC in
+	TLS relocation scan pass.  Scan only initial-exec and local-exec
+	relocations in TLS relocation scan pass.  Use existing
+	GOT_TYPE_TLS_OFFSET if possible.
+	(Target_x86_64<size>::Scan::global): Likewise.
+	(Target_x86_64<size>::gc_process_relocs): Call gold::scan_relocs
+	for TLS relocation scan pass.
+	(Target_x86_64<size>::Relocate::relocate_tls): Use existing
+	TLSOPT_TO_IE if possible.
+---
+ gold/x86_64.cc | 145 +++++++++++++++++++++++++++++++++++++++++++------
+ 1 file changed, 127 insertions(+), 18 deletions(-)
+
+diff --git a/gold/x86_64.cc b/gold/x86_64.cc
+index a0247b5707..fea404e229 100644
+--- a/gold/x86_64.cc
++++ b/gold/x86_64.cc
+@@ -709,7 +709,14 @@ class Target_x86_64 : public Sized_target<size, false>
+       feature_1_(0), feature_2_used_(0), feature_2_needed_(0),
+       object_isa_1_used_(0), object_feature_1_(0),
+       object_feature_2_used_(0), seen_first_object_(false)
+-  { }
++  {
++    // Enable TLS relocation scan.  FIXME: Support --incremental.
++    if (parameters->options_valid()
++	&& parameters->options().tls_optimize()
++	&& !parameters->options().relocatable()
++	&& !parameters->incremental())
++      this->set_need_tls_process_relocs();
++  }
+ 
+   // Hook for a new output section.
+   void
+@@ -3601,7 +3608,9 @@ Target_x86_64<size>::Scan::local(Symbol_table* symtab,
+ 
+   // A local STT_GNU_IFUNC symbol may require a PLT entry.
+   bool is_ifunc = lsym.get_st_type() == elfcpp::STT_GNU_IFUNC;
+-  if (is_ifunc && this->reloc_needs_plt_for_ifunc(object, r_type))
++  if (!object->scan_tls_relocs_only()
++      && is_ifunc
++      && this->reloc_needs_plt_for_ifunc(object, r_type))
+     {
+       unsigned int r_sym = elfcpp::elf_r_sym<size>(reloc.get_r_info());
+       target->make_local_ifunc_plt_entry(symtab, layout, object, r_sym);
+@@ -3615,6 +3624,9 @@ Target_x86_64<size>::Scan::local(Symbol_table* symtab,
+       break;
+ 
+     case elfcpp::R_X86_64_64:
++      if (object->scan_tls_relocs_only())
++	break;
++
+       // If building a shared library (or a position-independent
+       // executable), we need to create a dynamic relocation for this
+       // location.  The relocation applied at link time will apply the
+@@ -3639,6 +3651,9 @@ Target_x86_64<size>::Scan::local(Symbol_table* symtab,
+     case elfcpp::R_X86_64_32S:
+     case elfcpp::R_X86_64_16:
+     case elfcpp::R_X86_64_8:
++      if (object->scan_tls_relocs_only())
++	break;
++
+       // If building a shared library (or a position-independent
+       // executable), we need to create a dynamic relocation for this
+       // location.  We can't use an R_X86_64_RELATIVE relocation
+@@ -3694,6 +3709,9 @@ Target_x86_64<size>::Scan::local(Symbol_table* symtab,
+ 
+     case elfcpp::R_X86_64_PLT32:
+     case elfcpp::R_X86_64_PLT32_BND:
++      if (object->scan_tls_relocs_only())
++	break;
++
+       // Since we know this is a local symbol, we can handle this as a
+       // PC32 reloc.
+       break;
+@@ -3702,6 +3720,9 @@ Target_x86_64<size>::Scan::local(Symbol_table* symtab,
+     case elfcpp::R_X86_64_GOTOFF64:
+     case elfcpp::R_X86_64_GOTPC64:
+     case elfcpp::R_X86_64_PLTOFF64:
++      if (object->scan_tls_relocs_only())
++	break;
++
+       // We need a GOT section.
+       target->got_section(symtab, layout);
+       // For PLTOFF64, we'd normally want a PLT section, but since we
+@@ -3716,6 +3737,9 @@ Target_x86_64<size>::Scan::local(Symbol_table* symtab,
+     case elfcpp::R_X86_64_REX_GOTPCRELX:
+     case elfcpp::R_X86_64_GOTPLT64:
+       {
++	if (object->scan_tls_relocs_only())
++	  break;
++
+ 	// The symbol requires a GOT section.
+ 	Output_data_got<64, false>* got = target->got_section(symtab, layout);
+ 
+@@ -3799,15 +3823,33 @@ Target_x86_64<size>::Scan::local(Symbol_table* symtab,
+     case elfcpp::R_X86_64_GOTPC32_TLSDESC:  // Global-dynamic (from ~oliva url)
+     case elfcpp::R_X86_64_TLSDESC_CALL:
+     case elfcpp::R_X86_64_TLSLD:            // Local-dynamic
++      if (object->scan_tls_relocs_only())
++	break;
++      // Fall through.
+     case elfcpp::R_X86_64_DTPOFF32:
+     case elfcpp::R_X86_64_DTPOFF64:
+     case elfcpp::R_X86_64_GOTTPOFF:         // Initial-exec
+     case elfcpp::R_X86_64_TPOFF32:          // Local-exec
+       {
++	if (target->input_objects())
++	  {
++	    const bool doing_static_link =
++	      (!target->input_objects()->any_dynamic()
++	       && !parameters->options().output_is_position_independent());
++	    set_parameters_doing_static_link(doing_static_link);
++	  }
++
+ 	bool output_is_shared = parameters->options().shared();
+ 	const tls::Tls_optimization optimized_type
+ 	    = Target_x86_64<size>::optimize_tls_reloc(!output_is_shared,
+ 						      r_type);
++	if (optimized_type == tls::TLSOPT_NONE)
++	  {
++	     unsigned int r_sym = elfcpp::elf_r_sym<size>(reloc.get_r_info());
++	     if (object->local_has_got_offset(r_sym, GOT_TYPE_TLS_OFFSET))
++	       break;
++	  }
++
+ 	switch (r_type)
+ 	  {
+ 	  case elfcpp::R_X86_64_TLSGD:       // General-dynamic
+@@ -4060,7 +4102,8 @@ Target_x86_64<size>::Scan::global(Symbol_table* symtab,
+ 			    Symbol* gsym)
+ {
+   // A STT_GNU_IFUNC symbol may require a PLT entry.
+-  if (gsym->type() == elfcpp::STT_GNU_IFUNC
++  if (!object->scan_tls_relocs_only()
++      && gsym->type() == elfcpp::STT_GNU_IFUNC
+       && this->reloc_needs_plt_for_ifunc(object, r_type))
+     target->make_plt_entry(symtab, layout, gsym);
+ 
+@@ -4077,6 +4120,9 @@ Target_x86_64<size>::Scan::global(Symbol_table* symtab,
+     case elfcpp::R_X86_64_16:
+     case elfcpp::R_X86_64_8:
+       {
++	if (object->scan_tls_relocs_only())
++	  break;
++
+ 	// Make a PLT entry if necessary.
+ 	if (gsym->needs_plt_entry())
+ 	  {
+@@ -4147,6 +4193,9 @@ Target_x86_64<size>::Scan::global(Symbol_table* symtab,
+     case elfcpp::R_X86_64_PC16:
+     case elfcpp::R_X86_64_PC8:
+       {
++	if (object->scan_tls_relocs_only())
++	  break;
++
+ 	// Make a PLT entry if necessary.
+ 	if (gsym->needs_plt_entry())
+ 	  target->make_plt_entry(symtab, layout, gsym);
+@@ -4179,6 +4228,9 @@ Target_x86_64<size>::Scan::global(Symbol_table* symtab,
+     case elfcpp::R_X86_64_REX_GOTPCRELX:
+     case elfcpp::R_X86_64_GOTPLT64:
+       {
++	if (object->scan_tls_relocs_only())
++	  break;
++
+ 	// The symbol requires a GOT entry.
+ 	Output_data_got<64, false>* got = target->got_section(symtab, layout);
+ 
+@@ -4276,6 +4328,9 @@ Target_x86_64<size>::Scan::global(Symbol_table* symtab,
+ 
+     case elfcpp::R_X86_64_PLT32:
+     case elfcpp::R_X86_64_PLT32_BND:
++      if (object->scan_tls_relocs_only())
++	break;
++
+       // If the symbol is fully resolved, this is just a PC32 reloc.
+       // Otherwise we need a PLT entry.
+       if (gsym->final_value_is_known())
+@@ -4294,6 +4349,9 @@ Target_x86_64<size>::Scan::global(Symbol_table* symtab,
+     case elfcpp::R_X86_64_GOTOFF64:
+     case elfcpp::R_X86_64_GOTPC64:
+     case elfcpp::R_X86_64_PLTOFF64:
++      if (object->scan_tls_relocs_only())
++	break;
++
+       // We need a GOT section.
+       target->got_section(symtab, layout);
+       // For PLTOFF64, we also need a PLT entry (but only if the
+@@ -4321,11 +4379,22 @@ Target_x86_64<size>::Scan::global(Symbol_table* symtab,
+     case elfcpp::R_X86_64_GOTPC32_TLSDESC:  // Global-dynamic (from ~oliva url)
+     case elfcpp::R_X86_64_TLSDESC_CALL:
+     case elfcpp::R_X86_64_TLSLD:            // Local-dynamic
++      if (object->scan_tls_relocs_only())
++	break;
++      // Fall through.
+     case elfcpp::R_X86_64_DTPOFF32:
+     case elfcpp::R_X86_64_DTPOFF64:
+     case elfcpp::R_X86_64_GOTTPOFF:         // Initial-exec
+     case elfcpp::R_X86_64_TPOFF32:          // Local-exec
+       {
++	if (target->input_objects())
++	  {
++	    const bool doing_static_link =
++	      (!target->input_objects()->any_dynamic()
++	       && !parameters->options().output_is_position_independent());
++	    set_parameters_doing_static_link(doing_static_link);
++	  }
++
+ 	// For the Initial-Exec model, we can treat undef symbols as final
+ 	// when building an executable.
+ 	const bool is_final = (gsym->final_value_is_known() ||
+@@ -4334,6 +4403,10 @@ Target_x86_64<size>::Scan::global(Symbol_table* symtab,
+ 				parameters->options().output_is_executable()));
+ 	const tls::Tls_optimization optimized_type
+ 	    = Target_x86_64<size>::optimize_tls_reloc(is_final, r_type);
++	if (optimized_type == tls::TLSOPT_NONE
++	    && gsym->has_got_offset(GOT_TYPE_TLS_OFFSET))
++	  break;
++
+ 	switch (r_type)
+ 	  {
+ 	  case elfcpp::R_X86_64_TLSGD:       // General-dynamic
+@@ -4468,20 +4541,40 @@ Target_x86_64<size>::gc_process_relocs(Symbol_table* symtab,
+       return;
+     }
+ 
+-   gold::gc_process_relocs<size, false, Target_x86_64<size>, Scan,
+-			   Classify_reloc>(
+-    symtab,
+-    layout,
+-    this,
+-    object,
+-    data_shndx,
+-    prelocs,
+-    reloc_count,
+-    output_section,
+-    needs_special_offset_handling,
+-    local_symbol_count,
+-    plocal_symbols);
+-
++  if (parameters->options().gc_sections()
++      || parameters->options().icf_enabled())
++    gold::gc_process_relocs<size, false, Target_x86_64<size>, Scan,
++			    Classify_reloc>(
++      symtab,
++      layout,
++      this,
++      object,
++      data_shndx,
++      prelocs,
++      reloc_count,
++      output_section,
++      needs_special_offset_handling,
++      local_symbol_count,
++      plocal_symbols);
++
++  if (this->need_tls_process_relocs())
++    {
++      object->set_scan_tls_relocs_only();
++      gold::scan_relocs<size, false, Target_x86_64<size>, Scan,
++			Classify_reloc>(
++        symtab,
++	layout,
++	this,
++	object,
++	data_shndx,
++	prelocs,
++	reloc_count,
++	output_section,
++	false,
++	local_symbol_count,
++	plocal_symbols);
++      object->clear_scan_tls_relocs_only();
++    }
+ }
+ // Scan relocations for a section.
+ 
+@@ -5071,6 +5164,21 @@ Target_x86_64<size>::Relocate::relocate_tls(
+ 			 : gsym->final_value_is_known());
+   tls::Tls_optimization optimized_type
+       = Target_x86_64<size>::optimize_tls_reloc(is_final, r_type);
++  if (optimized_type == tls::TLSOPT_NONE)
++    {
++      if (gsym)
++	{
++	  if (gsym->has_got_offset(GOT_TYPE_TLS_OFFSET))
++	    optimized_type = tls::TLSOPT_TO_IE;
++	}
++      else
++	{
++	  unsigned int r_sym = elfcpp::elf_r_sym<size>(rela.get_r_info());
++	  if (object->local_has_got_offset(r_sym, GOT_TYPE_TLS_OFFSET))
++	    optimized_type = tls::TLSOPT_TO_IE;
++	}
++    }
++
+   switch (r_type)
+     {
+     case elfcpp::R_X86_64_TLSGD:            // Global-dynamic
+@@ -5302,7 +5410,8 @@ Target_x86_64<size>::Relocate::relocate_tls(
+ 						      view_size);
+ 	  break;
+ 	}
+-      else if (optimized_type == tls::TLSOPT_NONE)
++      else if (optimized_type == tls::TLSOPT_NONE
++	       || optimized_type == tls::TLSOPT_TO_IE)
+ 	{
+ 	  // Relocate the field with the offset of the GOT entry for
+ 	  // the tp-relative offset of the symbol.
+-- 
+2.26.2
+
