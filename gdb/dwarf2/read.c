@@ -5352,6 +5352,18 @@ dw2_debug_names_iterator::next ()
 	  ull = read_unsigned_leb128 (abfd, m_addr, &bytes_read);
 	  m_addr += bytes_read;
 	  break;
+	case DW_FORM_ref4:
+	  ull = read_4_bytes (abfd, m_addr);
+	  m_addr += 4;
+	  break;
+	case DW_FORM_ref8:
+	  ull = read_8_bytes (abfd, m_addr);
+	  m_addr += 8;
+	  break;
+	case DW_FORM_ref_sig8:
+	  ull = read_8_bytes (abfd, m_addr);
+	  m_addr += 8;
+	  break;
 	default:
 	  complaint (_("Unsupported .debug_names form %s [in module %s]"),
 		     dwarf_form_name (attr.form),
@@ -5383,6 +5395,12 @@ dw2_debug_names_iterator::next ()
 	      continue;
 	    }
 	  per_cu = &dwarf2_per_objfile->get_tu (ull)->per_cu;
+	  break;
+	case DW_IDX_die_offset:
+	  /* In a per-CU index (as opposed to a per-module index), index
+	     entries without CU attribute implicitly refer to the single CU.  */
+	  if (per_cu == NULL)
+	    per_cu = dwarf2_per_objfile->get_cu (0);
 	  break;
 	case DW_IDX_GNU_internal:
 	  if (!m_map.augmentation_is_gdb)
@@ -9218,7 +9236,7 @@ alloc_rust_variant (struct obstack *obstack, struct type *type,
   prop.kind = PROP_VARIANT_PARTS;
   prop.data.variant_parts = prop_value;
 
-  add_dyn_prop (DYN_PROP_VARIANT_PARTS, prop, type);
+  type->add_dyn_prop (DYN_PROP_VARIANT_PARTS, prop);
 }
 
 /* Some versions of rustc emitted enums in an unusual way.
@@ -13102,7 +13120,16 @@ read_lexical_block_scope (struct die_info *die, struct dwarf2_cu *cu)
       for (child_die = die->child;
 	   child_die != NULL && child_die->tag;
 	   child_die = child_die->sibling)
-	process_die (child_die, cu);
+	{
+	  /* We might already be processing this DIE.  This can happen
+	     in an unusual circumstance -- where a subroutine A
+	     appears lexically in another subroutine B, but A actually
+	     inlines B.  The recursion is broken here, rather than in
+	     inherit_abstract_dies, because it seems better to simply
+	     drop concrete children here.  */
+	  if (!child_die->in_process)
+	    process_die (child_die, cu);
+	}
       return;
     case PC_BOUNDS_INVALID:
       return;
@@ -14706,7 +14733,7 @@ add_variant_property (struct field_info *fip, struct type *type,
     = ((gdb::array_view<variant_part> *)
        obstack_copy (&objfile->objfile_obstack, &parts, sizeof (parts)));
 
-  add_dyn_prop (DYN_PROP_VARIANT_PARTS, prop, type);
+  type->add_dyn_prop (DYN_PROP_VARIANT_PARTS, prop);
 }
 
 /* Create the vector of fields, and attach it to the type.  */
@@ -15355,7 +15382,7 @@ read_structure_type (struct die_info *die, struct dwarf2_cu *cu)
 	  struct dynamic_prop prop;
 	  if (attr_to_dynamic_prop (attr, die, cu, &prop,
 				    cu->per_cu->addr_type ()))
-	    add_dyn_prop (DYN_PROP_BYTE_SIZE, prop, type);
+	    type->add_dyn_prop (DYN_PROP_BYTE_SIZE, prop);
           TYPE_LENGTH (type) = 0;
 	}
     }
@@ -21736,13 +21763,11 @@ dwarf2_canonicalize_name (const char *name, struct dwarf2_cu *cu,
 {
   if (name && cu->language == language_cplus)
     {
-      std::string canon_name = cp_canonicalize_string (name);
+      gdb::unique_xmalloc_ptr<char> canon_name
+	= cp_canonicalize_string (name);
 
-      if (!canon_name.empty ())
-	{
-	  if (canon_name != name)
-	    name = objfile->intern (canon_name);
-	}
+      if (canon_name != nullptr)
+	name = objfile->intern (canon_name.get ());
     }
 
   return name;
@@ -23605,7 +23630,7 @@ set_die_type (struct die_info *die, struct type *type, struct dwarf2_cu *cu)
     {
       struct type *prop_type = cu->per_cu->addr_sized_int_type (false);
       if (attr_to_dynamic_prop (attr, die, cu, &prop, prop_type))
-        add_dyn_prop (DYN_PROP_ALLOCATED, prop, type);
+        type->add_dyn_prop (DYN_PROP_ALLOCATED, prop);
     }
   else if (attr != NULL)
     {
@@ -23620,7 +23645,7 @@ set_die_type (struct die_info *die, struct type *type, struct dwarf2_cu *cu)
     {
       struct type *prop_type = cu->per_cu->addr_sized_int_type (false);
       if (attr_to_dynamic_prop (attr, die, cu, &prop, prop_type))
-        add_dyn_prop (DYN_PROP_ASSOCIATED, prop, type);
+        type->add_dyn_prop (DYN_PROP_ASSOCIATED, prop);
     }
   else if (attr != NULL)
     {
@@ -23633,7 +23658,7 @@ set_die_type (struct die_info *die, struct type *type, struct dwarf2_cu *cu)
   attr = dwarf2_attr (die, DW_AT_data_location, cu);
   if (attr_to_dynamic_prop (attr, die, cu, &prop,
 			    cu->per_cu->addr_type ()))
-    add_dyn_prop (DYN_PROP_DATA_LOCATION, prop, type);
+    type->add_dyn_prop (DYN_PROP_DATA_LOCATION, prop);
 
   if (dwarf2_per_objfile->die_type_hash == NULL)
     dwarf2_per_objfile->die_type_hash
