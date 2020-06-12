@@ -1,3 +1,12 @@
+2020-06-12  Roland McGrath  <mcgrathr@google.com>
+
+	* options.h (class General_options): Add --dependency-file option.
+	* fileread.cc (File_read::files_read): New static variable.
+	(File_read::write_dependency_file): New static member function.
+	* fileread.h (class File_read): Declare them.
+	* layout.cc (Close_task_runner::run): Call write_dependency_file
+	if --dependency-file was passed.
+
 2020-06-06  Alan Modra  <amodra@gmail.com>
 
 	* powerpc.cc: Update throughout for reloc renaming.

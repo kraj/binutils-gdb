@@ -6153,6 +6153,10 @@ Close_task_runner::run(Workqueue*, const Task*)
   if (this->options_->oformat_enum() != General_options::OBJECT_FORMAT_ELF)
     this->layout_->write_binary(this->of_);
 
+  if (this->options_->dependency_file())
+    File_read::write_dependency_file(this->options_->dependency_file(),
+                                     this->options_->output_file_name());
+
   this->of_->close();
 }
 
