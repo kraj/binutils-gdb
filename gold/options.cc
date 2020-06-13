@@ -760,6 +760,23 @@ General_options::parse_pop_state(const char*, const char*, Command_line*)
   delete posdep;
 }
 
+void
+General_options::parse_start_stop_visibility(char const*, char const* arg,
+                                             Command_line*)
+{
+  if (strcmp(arg, "default") == 0)
+    this->start_stop_visibility_ = elfcpp::STV_DEFAULT;
+  else if (strcmp(arg, "internal") == 0)
+    this->start_stop_visibility_ = elfcpp::STV_INTERNAL;
+  else if (strcmp(arg, "hidden") == 0)
+    this->start_stop_visibility_ = elfcpp::STV_HIDDEN;
+  else if (strcmp(arg, "protected") == 0)
+    this->start_stop_visibility_ = elfcpp::STV_PROTECTED;
+  else
+    gold_fatal(_("-z start-stop-visibility: must take one of the following "
+                 "arguments: default, internal, hidden, protected"));
+}
+
 } // End namespace gold.
 
 namespace
@@ -997,7 +1014,8 @@ General_options::General_options()
     fix_v4bx_(FIX_V4BX_NONE),
     endianness_(ENDIANNESS_NOT_SET),
     discard_locals_(DISCARD_SEC_MERGE),
-    orphan_handling_enum_(ORPHAN_PLACE)
+    orphan_handling_enum_(ORPHAN_PLACE),
+    start_stop_visibility_(elfcpp::STV_PROTECTED)
 {
   // Turn off option registration once construction is complete.
   gold::options::ready_to_register = false;
