@@ -2922,6 +2922,8 @@ Layout::read_layout_from_file()
     gold_fatal(_("unable to open --section-ordering-file file %s: %s"),
 	       filename, strerror(errno));
 
+  File_read::record_file_read(filename);
+
   std::getline(in, line);   // this chops off the trailing \n, if any
   unsigned int position = 1;
   this->set_section_ordering_specified();
@@ -6155,6 +6157,10 @@ Close_task_runner::run(Workqueue*, const Task*)
   // If we've been asked to create a binary file, we do so here.
   if (this->options_->oformat_enum() != General_options::OBJECT_FORMAT_ELF)
     this->layout_->write_binary(this->of_);
+
+  if (this->options_->dependency_file())
+    File_read::write_dependency_file(this->options_->dependency_file(),
+                                     this->options_->output_file_name());
 
   this->of_->close();
 }

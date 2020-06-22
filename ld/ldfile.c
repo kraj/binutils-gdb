@@ -142,6 +142,8 @@ ldfile_try_open_bfd (const char *attempt,
       return FALSE;
     }
 
+  track_dependency_files (attempt);
+
   /* Linker needs to decompress sections.  */
   entry->the_bfd->flags |= BFD_DECOMPRESS;
 
@@ -674,6 +676,8 @@ ldfile_open_command_file_1 (const char *name, enum script_open_style open_how)
       einfo (_("%F%P: cannot open linker script file %s: %E\n"), name);
       return;
     }
+
+  track_dependency_files (name);
 
   lex_push_file (ldlex_input_stack, name, sysrooted);
 

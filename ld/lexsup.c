@@ -111,6 +111,8 @@ static const struct ld_option ld_options[] =
     'c', N_("FILE"), N_("Read MRI format linker script"), TWO_DASHES },
   { {"dc", no_argument, NULL, 'd'},
     'd', NULL, N_("Force common symbols to be defined"), ONE_DASH },
+  { {"dependency-file", required_argument, NULL, OPTION_DEPENDENCY_FILE},
+    '\0', N_("FILE"), N_("Write dependency file"), TWO_DASHES },
   { {"dp", no_argument, NULL, 'd'},
     '\0', NULL, NULL, ONE_DASH },
   { {"force-group-allocation", no_argument, NULL,
@@ -1631,6 +1633,10 @@ parse_args (unsigned argc, char **argv)
 	case OPTION_PRINT_MAP_DISCARDED:
 	  config.print_map_discarded = TRUE;
 	  break;
+
+        case OPTION_DEPENDENCY_FILE:
+          config.dependency_file = optarg;
+          break;
 	}
     }
 
