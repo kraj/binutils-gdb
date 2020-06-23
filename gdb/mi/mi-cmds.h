@@ -164,9 +164,11 @@ struct mi_cmd
   int *suppress_notification;
 };
 
+typedef std::unique_ptr<struct mi_cmd> mi_cmd_up;
+
 /* Lookup a command in the MI command table.  */
 
-extern struct mi_cmd *mi_lookup (const char *command);
+extern struct mi_cmd *mi_cmd_lookup (const char *command);
 
 /* Debug flag */
 extern int mi_debug_p;
