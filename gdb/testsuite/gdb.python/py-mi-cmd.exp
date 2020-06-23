@@ -1,0 +1,132 @@
+# Copyright (C) 2018 Free Software Foundation, Inc.
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Test custom MI commands implemented in Python.
+
+load_lib gdb-python.exp
+load_lib mi-support.exp
+set MIFLAGS "-i=mi2"
+
+gdb_exit
+if {[mi_gdb_start]} {
+    continue
+}
+
+if {[lsearch -exact [mi_get_features] python] < 0} {
+    unsupported "python support is disabled"
+    return -1
+}
+
+standard_testfile
+#
+# Start here
+#
+
+
+mi_gdb_test "set python print-stack full" \
+  ".*\\^done" \
+  "set python print-stack full"
+
+mi_gdb_test "source ${srcdir}/${subdir}/${testfile}.py" \
+  ".*\\^done" \
+  "load python file"
+
+mi_gdb_test "python pycmd1('-pycmd')" \
+  ".*\\^done" \
+  "Define -pycmd MI command"
+
+
+mi_gdb_test "-pycmd int" \
+  "\\^done,result=\"42\"" \
+  "-pycmd int"
+
+mi_gdb_test "-pycmd str" \
+  "\\^done,result=\"Hello world!\"" \
+  "-pycmd str"
+
+mi_gdb_test "-pycmd ary" \
+  "\\^done,result=\\\[\"Hello\",\"42\"\\\]" \
+  "-pycmd ary"
+
+mi_gdb_test "-pycmd dct" \
+  "\\^done,result={hello=\"world\",times=\"42\"}" \
+  "-pycmd dct"
+
+mi_gdb_test "-pycmd bk1" \
+  "\\^error,msg=\"Non-string object used as key: Bad Kay.\"" \
+  "-pycmd bk1"
+
+mi_gdb_test "-pycmd bk2" \
+  "\\^error,msg=\"Non-string object used as key: 1.\"" \
+  "-pycmd bk2"
+
+mi_gdb_test "-pycmd bk3" \
+  "\\^error,msg=\"Non-string object used as key: __repr__ returned non-string .*" \
+  "-pycmd bk3"
+
+mi_gdb_test "-pycmd tpl" \
+  "\\^done,result=\\\[\"42\",\"Hello\"\\\]" \
+  "-pycmd tpl"
+
+mi_gdb_test "-pycmd itr" \
+  "\\^done,result=\\\[\"1\",\"2\",\"3\"\\\]" \
+  "-pycmd itr"
+
+mi_gdb_test "-pycmd nn1" \
+  "\\^done" \
+  "-pycmd nn1"
+
+mi_gdb_test "-pycmd nn2" \
+  "\\^done,result=\\\[\"None\"\\\]" \
+  "-pycmd nn2"
+
+mi_gdb_test "-pycmd bogus" \
+  "\\^error,msg=\"-pycmd: Invalid parameter: bogus\"" \
+  "-pycmd bogus"
+
+mi_gdb_test "-pycmd exp" \
+  "\\^error,msg=\"-pycmd: failed to execute command\"" \
+  "-pycmd exp"
+
+mi_gdb_test "python pycmd2('-pycmd')" \
+  ".*\\^done" \
+  "Redefine -pycmd MI command from CLI command"
+
+mi_gdb_test "-pycmd str" \
+  "\\^done,result=\"Ciao!\"" \
+  "-pycmd str - redefined from CLI"
+
+mi_gdb_test "-pycmd int" \
+  "\\^error,msg=\"-pycmd: Invalid parameter: int\"" \
+  "-pycmd int - redefined from CLI"
+
+mi_gdb_test "-pycmd red" \
+    "\\^error,msg=\"-pycmd: Command redefined but we failing anyway\"" \
+  "Redefine -pycmd MI command from Python MI command"
+
+mi_gdb_test "-pycmd int" \
+  "\\^done,result=\"42\"" \
+  "-pycmd int - redefined from MI"
+
+mi_gdb_test "python pycmd1('')" \
+  ".*\\^error,msg=\"MI command name is empty.\"" \
+  "empty MI command name"
+
+mi_gdb_test "python pycmd1('-')" \
+  ".*\\^error,msg=\"MI command name does not start with '-' followed by at least one letter or digit.\"" \
+  "invalid MI command name"
+
+mi_gdb_test "python pycmd1('-bad-character-@')" \
+  ".*\\^error,msg=\"MI command name contains invalid character: @.\"" \
+  "invalid character in MI command name"
