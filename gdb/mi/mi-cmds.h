@@ -154,6 +154,9 @@ public:
   /* Execute the MI command.  */
   void invoke (struct mi_parse *parse);
 
+  /* Return TRUE if command can be redefined, FALSE otherwise. */
+  virtual bool can_be_redefined();
+
 protected:
   gdb::optional<scoped_restore_tmpl<int>> do_suppress_notification ();
   virtual void do_invoke(struct mi_parse *parse) = 0;

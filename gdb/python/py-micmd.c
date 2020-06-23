@@ -171,6 +171,12 @@ mi_command_py::mi_command_py (const char *name, gdbpy_ref<> object)
 {
 }
 
+bool
+mi_command_py::can_be_redefined()
+{
+  return true;
+}
+
 void
 mi_command_py::do_invoke (struct mi_parse *parse)
 {
@@ -179,6 +185,7 @@ mi_command_py::do_invoke (struct mi_parse *parse)
   if (parse->argv == NULL)
     error (_("Problem parsing arguments: %s %s"), parse->command, parse->args);
 
+  std::string name (this->name ());
   PyObject *obj = this->pyobj.get ();
 
   gdbpy_enter enter_py (get_current_arch (), current_language);
@@ -187,15 +194,14 @@ mi_command_py::do_invoke (struct mi_parse *parse)
 
   if (!PyObject_HasAttr (obj, invoke_cst))
       error (_("-%s: Python command object missing 'invoke' method."),
-	     name ().c_str ());
-
+	     name.c_str ());
 
   gdbpy_ref<> argobj (PyList_New (parse->argc));
   if (argobj == nullptr)
     {
       gdbpy_print_stack ();
       error (_("-%s: failed to create the Python arguments list."),
-	     name ().c_str ());
+	     name.c_str ());
     }
 
   for (int i = 0; i < parse->argc; ++i)
@@ -205,11 +211,16 @@ mi_command_py::do_invoke (struct mi_parse *parse)
       if (PyList_SetItem (argobj.get (), i, str.release ()) != 0)
 	{
 	  error (_("-%s: failed to create the Python arguments list."),
-		 name ().c_str ());
+		 name.c_str ());
 	}
     }
 
   gdb_assert (PyErr_Occurred () == NULL);
+
+  /* From this point on, THIS must not be used since Python code may replace
+     the the very same command that is currently executing.  This in turn leads
+     to desctruction of THIS making it invalid.  See insert_mi_cmd_entry. */
+
   gdbpy_ref<> result (
     PyObject_CallMethodObjArgs (obj, invoke_cst, argobj.get (), NULL));
   if (PyErr_Occurred () != NULL)
@@ -218,9 +229,9 @@ mi_command_py::do_invoke (struct mi_parse *parse)
       gdb::unique_xmalloc_ptr<char> ex_msg (ex.to_string ());
 
       if (ex_msg == NULL || *ex_msg == '\0')
-	error (_("-%s: failed to execute command"), name ().c_str ());
+	error (_("-%s: failed to execute command"), name.c_str ());
       else
-	error (_("-%s: %s"), name ().c_str (), ex_msg.get ());
+	error (_("-%s: %s"), name.c_str (), ex_msg.get ());
     }
   else
     {
@@ -233,7 +244,6 @@ void mi_command_py::finalize ()
 {
   this->pyobj.reset (nullptr);
 }
-
 /* Initialize the MI command object.  */
 
 int

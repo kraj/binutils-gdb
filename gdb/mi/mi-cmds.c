@@ -41,7 +41,8 @@ insert_mi_cmd_entry (mi_cmd_up command)
   const std::string &name = command->name ();
 
   if (mi_cmd_table.find (name) != mi_cmd_table.end ())
-    return false;
+    if (! mi_cmd_table[name]->can_be_redefined ())
+      return false;
 
   mi_cmd_table[name] = std::move (command);
 
@@ -79,6 +80,13 @@ mi_command::mi_command (const char *name, int *suppress_notification)
   : m_name (name),
     m_suppress_notification (suppress_notification)
 {}
+
+bool
+mi_command::can_be_redefined()
+{
+  return false;
+}
+
 
 
 void

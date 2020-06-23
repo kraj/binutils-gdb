@@ -44,7 +44,7 @@ class mi_command_py : public mi_command
 
     mi_command_py (const char *name, gdbpy_ref<> object);
 
-
+    bool can_be_redefined() override;
     /* This is called just before shutting down a Python interpreter
        to release python object implementing the command. */
 
