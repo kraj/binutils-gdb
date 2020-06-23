@@ -28,12 +28,11 @@
 
 /* MI command table (built at run time). */
 
-static std::map<std::string, mi_cmd_up> mi_cmd_table;
+std::map<std::string, mi_cmd_up> mi_cmd_table;
 
-/* Insert a new mi-command into the command table.  Return true if
-   insertion was successful.  */
+/* See mi-cmds.h.  */
 
-static bool
+bool
 insert_mi_cmd_entry (mi_cmd_up command)
 {
   gdb_assert (command != NULL);
