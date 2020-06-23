@@ -22,6 +22,7 @@
 #include "top.h"
 #include "mi-cmds.h"
 #include "mi-main.h"
+#include "mi-parse.h"
 #include <map>
 #include <string>
 
@@ -36,9 +37,9 @@ static bool
 insert_mi_cmd_entry (mi_cmd_up command)
 {
   gdb_assert (command != NULL);
-  gdb_assert (command->name != NULL);
+  gdb_assert (!command->name ().empty ());
 
-  std::string name (command->name);
+  const std::string &name = command->name ();
 
   if (mi_cmd_table.find (name) != mi_cmd_table.end ())
     return false;
@@ -48,32 +49,16 @@ insert_mi_cmd_entry (mi_cmd_up command)
   return true;
 }
 
-/* Create an mi_cmd structure with name NAME.  */
-
-static mi_cmd_up
-create_mi_cmd (const char *name)
-{
-  mi_cmd_up cmd (new mi_cmd ());
-
-  cmd->name = name;
-
-  return cmd;
-}
-
 /* Create and register a new MI command with a pure MI implementation.  */
 
 static void
 add_mi_cmd_mi (const char *name, mi_cmd_argv_ftype function,
 	       int *suppress_notification = NULL)
 {
-  mi_cmd_up cmd_up = create_mi_cmd (name);
+  mi_cmd_up command (new mi_command_mi (name, function,
+                                        suppress_notification));
 
-  cmd_up->cli.cmd = NULL;
-  cmd_up->cli.args_p = 0;
-  cmd_up->argv_func = function;
-  cmd_up->suppress_notification = suppress_notification;
-
-  bool success = insert_mi_cmd_entry (std::move (cmd_up));
+  bool success = insert_mi_cmd_entry (std::move (command));
   gdb_assert (success);
 }
 
@@ -83,16 +68,71 @@ static void
 add_mi_cmd_cli (const char *name, const char *cli_name, int args_p,
 		int *suppress_notification = NULL)
 {
-  mi_cmd_up cmd_up = create_mi_cmd (name);
+  mi_cmd_up command (new mi_command_cli (name, cli_name, args_p,
+                                         suppress_notification));
 
-  cmd_up->cli.cmd = cli_name;
-  cmd_up->cli.args_p = args_p;
-  cmd_up->argv_func = NULL;
-  cmd_up->suppress_notification = suppress_notification;
-
-  bool success = insert_mi_cmd_entry (std::move (cmd_up));
+  bool success = insert_mi_cmd_entry (std::move (command));
   gdb_assert (success);
 }
+
+/* See mi-cmds.h  */
+mi_command::mi_command (const char *name, int *suppress_notification)
+  : m_name (name),
+    m_suppress_notification (suppress_notification)
+{}
+
+
+void
+mi_command::invoke (struct mi_parse *parse)
+{
+  gdb::optional<scoped_restore_tmpl<int>> restore
+    = do_suppress_notification ();
+  this->do_invoke (parse);
+}
+
+gdb::optional<scoped_restore_tmpl<int>>
+mi_command::do_suppress_notification ()
+{
+  if (m_suppress_notification != NULL)
+    return scoped_restore_tmpl<int> (m_suppress_notification, 1);
+  else
+    return {};
+}
+
+mi_command_mi::mi_command_mi (const char *name, mi_cmd_argv_ftype func,
+			      int *suppress_notification)
+  : mi_command (name, suppress_notification),
+    m_argv_function (func)
+{
+  gdb_assert (func != NULL);
+}
+
+void
+mi_command_mi::do_invoke (struct mi_parse *parse)
+{
+  mi_parse_argv (parse->args, parse);
+
+  if (parse->argv == NULL)
+    error (_("Problem parsing arguments: %s %s"), parse->command, parse->args);
+
+  this->m_argv_function (parse->command, parse->argv, parse->argc);
+}
+
+mi_command_cli::mi_command_cli (const char *name, const char *cli_name,
+				int args_p, int *suppress_notification)
+  : mi_command (name, suppress_notification),
+    m_cli_name (cli_name),
+    m_args_p (args_p)
+{}
+
+void
+mi_command_cli::do_invoke (struct mi_parse *parse)
+{
+  mi_execute_cli_command (this->m_cli_name.c_str (), this->m_args_p,
+			  parse->args);
+}
+
+/* Initialize the available MI commands.  */
 
 static void
 build_table ()
@@ -258,7 +298,7 @@ build_table ()
 
 /* See mi-cmds.h.  */
 
-struct mi_cmd *
+mi_command *
 mi_cmd_lookup (const char *command)
 {
   gdb_assert (command != NULL);

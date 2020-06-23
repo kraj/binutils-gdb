@@ -22,6 +22,7 @@
 #ifndef MI_MI_CMDS_H
 #define MI_MI_CMDS_H
 
+#include "gdbsupport/gdb_optional.h"
 enum print_values {
    PRINT_NO_VALUES,
    PRINT_ALL_VALUES,
@@ -137,38 +138,69 @@ extern mi_cmd_argv_ftype mi_cmd_enable_frame_filters;
 extern mi_cmd_argv_ftype mi_cmd_var_set_update_range;
 extern mi_cmd_argv_ftype mi_cmd_complete;
 
-/* Description of a single command.  */
+/* mi_command base virtual class.  */
 
-struct mi_cli
+class mi_command
 {
-  /* Corresponding CLI command.  If ARGS_P is non-zero, the MI
-     command's argument list is appended to the CLI command.  */
-  const char *cmd;
-  int args_p;
+public:
+  mi_command (const char *name, int *suppress_notification);
+  virtual ~mi_command () {};
+
+  const std::string &name ()
+  { return m_name; }
+
+  /* Execute the MI command.  */
+  void invoke (struct mi_parse *parse);
+
+protected:
+  gdb::optional<scoped_restore_tmpl<int>> do_suppress_notification ();
+  virtual void do_invoke(struct mi_parse *parse) = 0;
+
+private:
+
+  /* The name of the command.  */
+  std::string m_name;
+
+  /* Pointer to integer to set during command's invocation.  */
+  int *m_suppress_notification;
 };
 
-struct mi_cmd
+/* MI command with a pure MI implementation.  */
+
+class mi_command_mi : public mi_command
 {
-  /* Official name of the command.  */
-  const char *name;
-  /* The corresponding CLI command that can be used to implement this
-     MI command (if cli.lhs is non NULL).  */
-  struct mi_cli cli;
-  /* If non-null, the function implementing the MI command.  */
-  mi_cmd_argv_ftype *argv_func;
-  /* If non-null, the pointer to a field in
-     'struct mi_suppress_notification', which will be set to true by MI
-     command processor (mi-main.c:mi_cmd_execute) when this command is
-     being executed.  It will be set back to false when command has been
-     executed.  */
-  int *suppress_notification;
+public:
+  mi_command_mi (const char *name, mi_cmd_argv_ftype func,
+                 int *suppress_notification);
+
+protected:
+  void do_invoke(struct mi_parse *parse) override;
+
+private:
+  mi_cmd_argv_ftype *m_argv_function;
 };
 
-typedef std::unique_ptr<struct mi_cmd> mi_cmd_up;
+/* MI command implemented on top of a CLI command.  */
+
+class mi_command_cli : public mi_command
+{
+public:
+  mi_command_cli (const char *name, const char *cli_name, int args_p,
+                  int *suppress_notification);
+
+protected:
+  void do_invoke(struct mi_parse *parse) override;
+
+private:
+  std::string m_cli_name;
+  int m_args_p;
+};
+
+typedef std::unique_ptr<mi_command> mi_cmd_up;
 
 /* Lookup a command in the MI command table.  */
 
-extern struct mi_cmd *mi_cmd_lookup (const char *command);
+extern mi_command *mi_cmd_lookup (const char *command);
 
 /* Debug flag */
 extern int mi_debug_p;
