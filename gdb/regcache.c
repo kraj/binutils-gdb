@@ -347,7 +347,9 @@ struct hash_target_ptid
 /* Type to map a (target, ptid) tuple to a regcache.  */
 
 using target_ptid_regcache_map
-  = std::unordered_multimap<target_ptid, regcache *, hash_target_ptid>;
+  = std::unordered_multimap<target_ptid,
+			    std::unique_ptr<regcache>,
+			    hash_target_ptid>;
 
 /* Global structure containing the existing regcaches.  */
 
@@ -370,7 +372,7 @@ get_thread_arch_aspace_regcache (process_stratum_target *target,
   for (auto it = range.first; it != range.second; it++)
     {
       if (it->second->arch () == arch)
-	return it->second;
+	return it->second.get ();
     }
 
   /* It does not exist, create it.  */
@@ -464,13 +466,13 @@ regcache_thread_ptid_changed (process_stratum_target *target,
   auto range = regcaches.equal_range (old_key);
   for (auto it = range.first; it != range.second;)
     {
-      regcache *rc = it->second;
+      std::unique_ptr<regcache> rc = std::move (it->second);
       rc->set_ptid (new_ptid);
 
       /* Remove old before inserting new, to avoid rehashing, which
          would invalidate iterators.  */
       it = regcaches.erase (it);
-      regcaches.insert (std::make_pair (new_key, rc));
+      regcaches.insert (std::make_pair (new_key, std::move (rc)));
     }
 }
 
@@ -494,22 +496,13 @@ registers_changed_ptid (process_stratum_target *target, ptid_t ptid)
          pass a ptid without saying to which target it belongs.  */
       gdb_assert (ptid == minus_one_ptid);
 
-      /* Delete all the regcaches.  */
-      for (auto pair : regcaches)
-	delete pair.second;
-
       regcaches.clear ();
     }
   else if (ptid != minus_one_ptid)
     {
       /* Non-NULL target and non-minus_one_ptid, delete all regcaches belonging
          to this (TARGET, PTID).  */
-      target_ptid key (target, ptid);
-      auto range = regcaches.equal_range (key);
-      for (auto it = range.first; it != range.second; it++)
-	delete it->second;
-
-      regcaches.erase (key);
+      regcaches.erase ({target, ptid});
     }
   else
     {
@@ -522,10 +515,7 @@ registers_changed_ptid (process_stratum_target *target, ptid_t ptid)
        for (auto it = regcaches.begin (); it != regcaches.end ();)
 	 {
 	   if (it->second->target () == target)
-	     {
-	       delete it->second;
-	       it = regcaches.erase (it);
-	     }
+	     it = regcaches.erase (it);
 	 }
      }
 
