@@ -458,24 +458,18 @@ static void
 regcache_thread_ptid_changed (process_stratum_target *target,
 			      ptid_t old_ptid, ptid_t new_ptid)
 {
-  /* Find all the regcaches to updates.  */
-  std::vector<regcache *> regcaches_to_update;
   target_ptid old_key (target, old_ptid);
-  auto range = regcaches.equal_range (old_key);
-  for (auto it = range.first; it != range.second; it++)
-    regcaches_to_update.push_back (it->second);
-
-  /* Remove all entries associated to OLD_KEY.  We could have erased the items
-     in the previous `for`, but it is only safe to erase items while iterating
-     starting with C++14.  */
-  regcaches.erase (old_key);
-
-  /* Update the regcaches' ptid, insert them back in the map with an updated
-     key.  */
   target_ptid new_key (target, new_ptid);
-  for (regcache *rc : regcaches_to_update)
+
+  auto range = regcaches.equal_range (old_key);
+  for (auto it = range.first; it != range.second;)
     {
+      regcache *rc = it->second;
       rc->set_ptid (new_ptid);
+
+      /* Remove old before inserting new, to avoid rehashing, which
+         would invalidate iterators.  */
+      it = regcaches.erase (it);
       regcaches.insert (std::make_pair (new_key, rc));
     }
 }
@@ -523,23 +517,16 @@ registers_changed_ptid (process_stratum_target *target, ptid_t ptid)
           to this target.
 
           We unfortunately don't have an efficient way to do this.  Fall back
-          to iterating all items to find all those belonging to TARGET.
+          to iterating all items to find all those belonging to TARGET.  */
 
-          Note that in C++11, it's not safe to erase map entries while
-          iterating, so we keep track of them and delete them at the end.  */
-       std::vector<target_ptid> keys;
-
-       for (auto pair : regcaches)
+       for (auto it = regcaches.begin (); it != regcaches.end ();)
 	 {
-	   if (pair.second->target () == target)
+	   if (it->second->target () == target)
 	     {
-	       keys.push_back (pair.first);
-	       delete pair.second;
+	       delete it->second;
+	       it = regcaches.erase (it);
 	     }
 	 }
-
-       for (auto key : keys)
-	 regcaches.erase (key);
      }
 
   if ((target == nullptr || current_thread_target == target)
