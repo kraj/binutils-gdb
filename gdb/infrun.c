@@ -1528,6 +1528,12 @@ infrun_inferior_exit (struct inferior *inf)
   inf->displaced_step_state.reset ();
 }
 
+static void
+infrun_inferior_execd (inferior *inf)
+{
+  inf->displaced_step_state.reset ();
+}
+
 /* If ON, and the architecture supports it, GDB will use displaced
    stepping to step over breakpoints.  If OFF, or if the architecture
    doesn't support it, GDB will instead use the traditional
@@ -9509,6 +9515,7 @@ enabled by default on some platforms."),
   gdb::observers::thread_stop_requested.attach (infrun_thread_stop_requested);
   gdb::observers::thread_exit.attach (infrun_thread_thread_exit);
   gdb::observers::inferior_exit.attach (infrun_inferior_exit);
+  gdb::observers::inferior_execd.attach (infrun_inferior_execd);
 
   /* Explicitly create without lookup, since that tries to create a
      value with a void typed value, and when we get here, gdbarch
