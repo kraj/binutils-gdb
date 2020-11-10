@@ -1459,9 +1459,10 @@ step_over_info_valid_p (void)
    displaced step operation on it.  See displaced_step_prepare and
    displaced_step_fixup for details.  */
 
-/* Default destructor for displaced_step_closure.  */
+/* Default destructor for displaced_step_copy_insn_closure.  */
 
-displaced_step_closure::~displaced_step_closure () = default;
+displaced_step_copy_insn_closure::~displaced_step_copy_insn_closure ()
+  = default;
 
 /* Get the displaced stepping state of inferior INF.  */
 
@@ -1505,11 +1506,11 @@ displaced_step_in_progress (inferior *inf)
 }
 
 /* If inferior is in displaced stepping, and ADDR equals to starting address
-   of copy area, return corresponding displaced_step_closure.  Otherwise,
-   return NULL.  */
+   of copy area, return corresponding displaced_step_copy_insn_closure.
+   Otherwise, return NULL.  */
 
-struct displaced_step_closure*
-get_displaced_step_closure_by_addr (CORE_ADDR addr)
+displaced_step_copy_insn_closure *
+get_displaced_step_copy_insn_closure_by_addr (CORE_ADDR addr)
 {
   displaced_step_inferior_state *displaced
     = get_displaced_stepping_state (current_inferior ());
