@@ -1483,13 +1483,7 @@ displaced_step_in_progress_thread (thread_info *thread)
 static bool
 displaced_step_in_progress (inferior *inf)
 {
-  for (thread_info *thread : inf->non_exited_threads ())
-    {
-      if (displaced_step_in_progress_thread (thread))
-	return true;
-    }
-
-  return false;
+  return inf->displaced_step_state.active_count > 0;
 }
 
 /* Return true if any thread is doing a displaced step.  */
@@ -1497,9 +1491,9 @@ displaced_step_in_progress (inferior *inf)
 static bool
 displaced_step_in_progress_any_thread ()
 {
-  for (thread_info *thread : all_non_exited_threads ())
+  for (inferior *inf : all_non_exited_inferiors ())
     {
-      if (displaced_step_in_progress_thread (thread))
+      if (displaced_step_in_progress (inf))
 	return true;
     }
 
@@ -1709,6 +1703,8 @@ displaced_step_prepare_throw (thread_info *tp)
 			  paddress (gdbarch, original_pc),
 			  paddress (gdbarch, displaced_pc));
 
+  tp->inf->displaced_step_state.active_count++;
+
   return DISPLACED_STEP_PREPARE_STATUS_OK;
 }
 
@@ -1779,6 +1775,9 @@ displaced_step_finish (thread_info *event_thread, enum gdb_signal signal)
   switch_to_thread (event_thread);
 
   displaced_step_reset_cleanup cleanup (displaced);
+
+  gdb_assert (event_thread->inf->displaced_step_state.active_count > 0);
+  event_thread->inf->displaced_step_state.active_count--;
 
   /* Do the fixup, and release the resources acquired to do the displaced
      step. */
