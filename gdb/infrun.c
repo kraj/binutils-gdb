@@ -1860,17 +1860,7 @@ start_step_over (void)
 	infrun_debug_printf ("putting back %d threads to step in global queue",
 			     thread_step_over_chain_length (threads_to_step));
 
-	while (threads_to_step != nullptr)
-	  {
-	    thread_info *thread = threads_to_step;
-
-	    /* Remove from that list.  */
-	    thread_step_over_chain_remove (&threads_to_step, thread);
-
-	    /* Add to global list.  */
-	    global_thread_step_over_chain_enqueue (thread);
-
-	  }
+	global_thread_step_over_chain_enqueue_chain (threads_to_step);
       }
   };
 

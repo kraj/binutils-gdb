@@ -748,6 +748,8 @@ extern bool value_in_thread_stack_temporaries (struct value *,
 /* Add TP to the end of the global pending step-over chain.  */
 
 extern void global_thread_step_over_chain_enqueue (thread_info *tp);
+extern void global_thread_step_over_chain_enqueue_chain
+  (thread_info *chain_head);
 
 /* Remove TP from step-over chain LIST_P.  */
 

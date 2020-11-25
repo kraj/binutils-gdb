@@ -442,6 +442,28 @@ global_thread_step_over_chain_enqueue (struct thread_info *tp)
 /* See gdbthread.h.  */
 
 void
+global_thread_step_over_chain_enqueue_chain (thread_info *chain_head)
+{
+  gdb_assert (chain_head->step_over_next != nullptr);
+  gdb_assert (chain_head->step_over_prev != nullptr);
+
+  if (global_thread_step_over_chain_head == nullptr)
+    global_thread_step_over_chain_head = chain_head;
+  else
+    {
+      thread_info *global_last = global_thread_step_over_chain_head->step_over_prev;
+      thread_info *chain_last = chain_head->step_over_prev;
+
+      chain_last->step_over_next = global_thread_step_over_chain_head;
+      global_last->step_over_next = chain_head;
+      global_thread_step_over_chain_head->step_over_prev = chain_last;
+      chain_head->step_over_prev = global_last;
+    }
+}
+
+/* See gdbthread.h.  */
+
+void
 global_thread_step_over_chain_remove (struct thread_info *tp)
 {
   infrun_debug_printf ("removing thread %s from global step over chain",
