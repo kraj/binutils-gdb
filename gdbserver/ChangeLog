@@ -1,3 +1,7 @@
+2021-02-02  Nick Alcock  <nick.alcock@oracle.com>
+
+	* Makefile.in (IPA_LIB): Link with libintl.
+
 2021-02-03  Pedro Alves  <pedro@palves.net>
 
 	* linux-low.cc (linux_process_target::complete_ongoing_step_over):
