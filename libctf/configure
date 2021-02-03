@@ -636,6 +636,9 @@ am__EXEEXT_TRUE
 LTLIBOBJS
 LIBOBJS
 VERSION_FLAGS
+TCL_TRY_FALSE
+TCL_TRY_TRUE
+EXPECT
 CTF_LIBADD
 SHARED_LDFLAGS
 NEED_CTF_QSORT_R_FALSE
@@ -11539,7 +11542,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 11542 "configure"
+#line 11545 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -11645,7 +11648,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 11648 "configure"
+#line 11651 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -12872,6 +12875,7 @@ else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <stdlib.h>
+	     #include <string.h>
 	     #include "bfd.h"
 	     #include "elf-bfd.h"
 int
