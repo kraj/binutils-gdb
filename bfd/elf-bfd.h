@@ -26,6 +26,7 @@
 #include "elf/external.h"
 #include "elf/internal.h"
 #include "bfdlink.h"
+#include "str-util.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -3095,7 +3096,7 @@ static inline bfd_boolean
 bfd_section_is_ctf (const asection *sec)
 {
   const char *name = bfd_section_name (sec);
-  return strncmp (name, ".ctf", 4) == 0 && (name[4] == 0 || name[4] == '.');
+  return startswith (name, ".ctf") && (name[4] == 0 || name[4] == '.');
 }
 
 #ifdef __cplusplus
