@@ -1003,7 +1003,7 @@ parse_get_set (const char *line, metag_insn *insn,
 
   if (is_get)
     {
-      bfd_boolean is_mov = strncmp (template->name, "MOV", 3) == 0;
+      bfd_boolean is_mov = startswith (template->name, "MOV");
 
       l = parse_get (l, regs, &addr, size, is_mov);
 
@@ -5927,8 +5927,7 @@ md_parse_option (int c, const char * arg)
       /* These options are expected to have an argument.  */
       if (c == lopt->option[0]
 	  && arg != NULL
-	  && strncmp (arg, lopt->option + 1,
-		      strlen (lopt->option + 1)) == 0)
+	  && startswith (arg, lopt->option + 1))
 	{
 #if WARN_DEPRECATED
 	      /* If the option is deprecated, tell the user.  */

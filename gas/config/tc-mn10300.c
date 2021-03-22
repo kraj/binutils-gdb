@@ -2427,7 +2427,7 @@ mn10300_fix_adjustable (struct fix *fixp)
   if (! (S_GET_SEGMENT (fixp->fx_addsy)->flags & SEC_MERGE))
     return FALSE;
 
-  if (strncmp (S_GET_SEGMENT (fixp->fx_addsy)->name, ".debug", 6) == 0)
+  if (startswith (S_GET_SEGMENT (fixp->fx_addsy)->name, ".debug"))
     return FALSE;
 
   return TRUE;
@@ -2447,7 +2447,7 @@ mn10300_end_of_match (char *cont, const char *what)
 {
   int len = strlen (what);
 
-  if (strncmp (cont, what, strlen (what)) == 0
+  if (startswith (cont, what)
       && ! is_part_of_name (cont[len]))
     return cont + len;
 

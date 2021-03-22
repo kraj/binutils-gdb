@@ -3008,7 +3008,7 @@ i386_arch (void)
 unsigned long
 i386_mach (void)
 {
-  if (!strncmp (default_arch, "x86_64", 6))
+  if (startswith (default_arch, "x86_64"))
     {
       if (cpu_arch_isa == PROCESSOR_L1OM)
 	{
@@ -4732,8 +4732,8 @@ md_assemble (char *line)
       && i.operands > 1
       && (strcmp (mnemonic, "bound") != 0)
       && (strcmp (mnemonic, "invlpga") != 0)
-      && (strncmp (mnemonic, "monitor", 7) != 0)
-      && (strncmp (mnemonic, "mwait", 5) != 0)
+      && !startswith (mnemonic, "monitor")
+      && !startswith (mnemonic, "mwait")
       && (strcmp (mnemonic, "tpause") != 0)
       && (strcmp (mnemonic, "umwait") != 0)
       && !(operand_type_check (i.types[0], imm)
@@ -10384,7 +10384,7 @@ check_VecOperations (char *op_string, char *op_end)
 	  op_string++;
 
 	  /* Check broadcasts.  */
-	  if (strncmp (op_string, "1to", 3) == 0)
+	  if (startswith (op_string, "1to"))
 	    {
 	      int bcst_type;
 
@@ -13748,7 +13748,7 @@ md_show_usage (FILE *stream)
 const char *
 i386_target_format (void)
 {
-  if (!strncmp (default_arch, "x86_64", 6))
+  if (startswith (default_arch, "x86_64"))
     {
       update_code_flag (CODE_64BIT, 1);
       if (default_arch[6] == '\0')
@@ -14316,7 +14316,7 @@ i386_elf_section_type (const char *str, size_t len)
 {
   if (flag_code == CODE_64BIT
       && len == sizeof ("unwind") - 1
-      && strncmp (str, "unwind", 6) == 0)
+      && startswith (str, "unwind"))
     return SHT_X86_64_UNWIND;
 
   return -1;
