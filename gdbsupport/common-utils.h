@@ -45,6 +45,8 @@
 
 #include "gdb_string_view.h"
 
+#include "str-util.h"
+
 /* xmalloc(), xrealloc() and xcalloc() have already been declared in
    "libiberty.h". */
 

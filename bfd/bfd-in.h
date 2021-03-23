@@ -554,11 +554,3 @@ struct ecoff_debug_swap;
 struct ecoff_extr;
 struct bfd_link_info;
 struct bfd_link_hash_entry;
-
-/* Return TRUE if the start of STR matches PREFIX, FALSE otherwise.  */
-
-static inline bfd_boolean
-startswith (const char *str, const char *prefix)
-{
-  return strncmp (str, prefix, strlen (prefix)) == 0;
-}

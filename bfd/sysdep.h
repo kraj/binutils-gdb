@@ -119,6 +119,8 @@ extern char *strrchr ();
 
 #include "filenames.h"
 
+#include "str-util.h"
+
 #if !HAVE_DECL_FFS
 extern int ffs (int);
 #endif

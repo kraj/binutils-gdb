@@ -52,6 +52,8 @@
 #endif
 #endif
 
+#include "str-util.h"
+
 #if !HAVE_DECL_STPCPY
 extern char *stpcpy (char *__dest, const char *__src);
 #endif

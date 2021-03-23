@@ -97,6 +97,8 @@
 /* Define the standard progress macros.  */
 #include "progress.h"
 
+#include "str-util.h"
+
 /* Other stuff from config.h.  */
 #ifdef NEED_DECLARATION_ENVIRON
 extern char **environ;

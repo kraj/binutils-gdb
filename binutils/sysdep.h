@@ -78,6 +78,8 @@ extern char *strrchr ();
 
 #include "binary-io.h"
 
+#include "str-util.h"
+
 #if !HAVE_DECL_STPCPY
 extern char *stpcpy (char *, const char *);
 #endif

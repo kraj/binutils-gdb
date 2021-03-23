@@ -68,6 +68,8 @@ extern char *strrchr ();
 #include "fopen-same.h"
 #endif
 
+#include "str-util.h"
+
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #else
