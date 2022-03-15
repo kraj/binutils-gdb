@@ -6481,8 +6481,9 @@ static const struct link_map_offsets lmo_64bit_offsets =
 /* Get the loaded shared libraries from one namespace.  */
 
 static void
-read_link_map (std::string &document, CORE_ADDR lm_addr, CORE_ADDR lm_prev,
-	       int ptr_size, const struct link_map_offsets *lmo)
+read_link_map (std::string &document, CORE_ADDR r_debug, CORE_ADDR lm_addr,
+	       CORE_ADDR lm_prev, int ptr_size,
+	       const struct link_map_offsets *lmo)
 {
   CORE_ADDR l_name, l_addr, l_ld, l_next, l_prev;
 
@@ -6517,9 +6518,9 @@ read_link_map (std::string &document, CORE_ADDR lm_addr, CORE_ADDR lm_prev,
 	  string_appendf (document, "<library name=\"");
 	  xml_escape_text_append (&document, (char *) libname);
 	  string_appendf (document, "\" lm=\"0x%s\" l_addr=\"0x%s\" "
-			  "l_ld=\"0x%s\"/>",
+			  "l_ld=\"0x%s\" r_debug=\"0x%s\"/>",
 			  paddress (lm_addr), paddress (l_addr),
-			  paddress (l_ld));
+			  paddress (l_ld), paddress (r_debug));
 	}
 
       lm_prev = lm_addr;
@@ -6539,7 +6540,7 @@ linux_process_target::qxfer_libraries_svr4 (const char *annex,
   char filename[PATH_MAX];
   int pid, is_elf64;
   unsigned int machine;
-  CORE_ADDR lm_addr = 0, lm_prev = 0;
+  CORE_ADDR r_debug = 0, lm_addr = 0, lm_prev = 0;
 
   if (writebuf != NULL)
     return -2;
@@ -6573,7 +6574,9 @@ linux_process_target::qxfer_libraries_svr4 (const char *annex,
 	break;
 
       name_len = sep - annex;
-      if (name_len == 5 && startswith (annex, "start"))
+      if (name_len == 9 && startswith (annex, "namespace"))
+	addrp = &r_debug;
+      else if (name_len == 5 && startswith (annex, "start"))
 	addrp = &lm_addr;
       else if (name_len == 4 && startswith (annex, "prev"))
 	addrp = &lm_prev;
@@ -6598,14 +6601,20 @@ linux_process_target::qxfer_libraries_svr4 (const char *annex,
   if (lm_addr != 0)
     {
       document += ">";
-      read_link_map (document, lm_addr, lm_prev, ptr_size, lmo);
+      read_link_map (document, r_debug, lm_addr, lm_prev, ptr_size, lmo);
     }
   else
     {
       if (lm_prev != 0)
 	warning ("ignoring prev=0x%s without start", paddress (lm_prev));
 
-      CORE_ADDR r_debug = priv->r_debug;
+      /* We could interpret it as 'provide only the libraries for this
+	 namespace' but GDB is currently only providing namespace, start,
+	 and prev, or nothing.  */
+      if (r_debug != 0)
+	warning ("ignoring namespace=0x%s without start", paddress (r_debug));
+
+      r_debug = priv->r_debug;
       if (r_debug == 0)
 	r_debug = priv->r_debug = get_r_debug (pid, is_elf64);
 
@@ -6670,7 +6679,7 @@ linux_process_target::qxfer_libraries_svr4 (const char *annex,
 		}
 	    }
 
-	  read_link_map (document, lm_addr, lm_prev, ptr_size, lmo);
+	  read_link_map (document, r_debug, lm_addr, lm_prev, ptr_size, lmo);
 
 	  if (r_version < 2)
 	    break;

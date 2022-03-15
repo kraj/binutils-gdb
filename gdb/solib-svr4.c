@@ -1069,8 +1069,37 @@ library_list_start_library (struct gdb_xml_parser *parser,
   new_elem->so_name[sizeof (new_elem->so_name) - 1] = 0;
   strcpy (new_elem->so_original_name, new_elem->so_name);
 
-  *list->tailp = new_elem;
-  list->tailp = &new_elem->next;
+  /* Older versions did not supply r_debug.  Put the element into the flat
+     list of the special namespace zero in that case.  */
+  struct gdb_xml_value *r_debug = xml_find_attribute (attributes, "r_debug");
+  if (r_debug == nullptr)
+    {
+      *list->tailp = new_elem;
+      list->tailp = &new_elem->next;
+    }
+  else
+    {
+      ULONGEST debug_base = *(ULONGEST *) r_debug->value.get ();
+
+      /* Ensure that the element is actually initialized.  */
+      if (list->solib_lists.find (debug_base) == list->solib_lists.end ())
+	list->solib_lists[debug_base] = nullptr;
+
+      struct so_list **psolist = &list->solib_lists[debug_base];
+      struct so_list **pnext = psolist;
+
+      /* Walk to the end of the list if we have one.  */
+      struct so_list *solist = *psolist;
+      if (solist != nullptr)
+	{
+	  for (; solist->next != nullptr; solist = solist->next)
+	    /* Nothing.  */;
+
+	  pnext = &solist->next;
+	}
+
+      *pnext = new_elem;
+    }
 }
 
 /* Handle the start of a <library-list-svr4> element.  */
@@ -1868,7 +1897,9 @@ solist_update_incremental (struct svr4_info *info, CORE_ADDR debug_base,
       struct svr4_library_list library_list;
       char annex[64];
 
-      xsnprintf (annex, sizeof (annex), "start=%s;prev=%s",
+      /* Unknown key=value pairs are ignored by the gdbstub.  */
+      xsnprintf (annex, sizeof (annex), "namespace=%s;start=%s;prev=%s",
+		 phex_nz (debug_base, sizeof (debug_base)),
 		 phex_nz (lm, sizeof (lm)),
 		 phex_nz (prev_lm, sizeof (prev_lm)));
       if (!svr4_current_sos_via_xfer_libraries (&library_list, annex))
