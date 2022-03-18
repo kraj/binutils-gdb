@@ -188,6 +188,21 @@ objfpy_get_progspace (PyObject *self, void *closure)
   Py_RETURN_NONE;
 }
 
+/* An Objfile method which returns whether this Objfile is dynamic or not.  */
+
+static PyObject *
+objfpy_get_is_dynamic (PyObject *self, void *closure)
+{
+  objfile_object *obj = (objfile_object *) self;
+
+  OBJFPY_REQUIRE_VALID (obj);
+
+  if (obj->objfile->is_dynamic ())
+    Py_RETURN_TRUE;
+  else
+    Py_RETURN_FALSE;
+}
+
 static void
 objfpy_dealloc (PyObject *o)
 {
@@ -733,6 +748,14 @@ objfile_to_objfile_object (struct objfile *objfile)
   return gdbpy_ref<>::new_reference (result);
 }
 
+struct objfile *
+objfile_object_to_objfile (PyObject *obj)
+{
+  if (! PyObject_TypeCheck (obj, &objfile_object_type))
+    return nullptr;
+  return ((objfile_object *) obj)->objfile;
+}
+
 int
 gdbpy_initialize_objfile (void)
 {
@@ -796,6 +819,8 @@ static gdb_PyGetSetDef objfile_getset[] =
     "Debug methods.", NULL },
   { "is_file", objfpy_get_is_file, nullptr,
     "Whether this objfile came from a file.", nullptr },
+  { "is_dynamic", objfpy_get_is_dynamic, NULL,
+    "True if this Objfile is dynamic, else False.", NULL },
   { NULL }
 };
 
