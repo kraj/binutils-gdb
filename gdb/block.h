@@ -330,19 +330,24 @@ struct global_block : public block
   struct compunit_symtab *compunit_symtab = nullptr;
 };
 
-struct blockvector
+struct blockvector : public allocate_on_obstack
 {
+  blockvector (struct obstack *obstack, int nblocks)
+    : m_map (nullptr),
+      m_blocks (nblocks, nullptr, obstack_allocator<struct block *> (obstack))
+  {}
+
   /* Return a view on the blocks of this blockvector.  */
   gdb::array_view<struct block *> blocks ()
   {
-    return gdb::array_view<struct block *> (m_blocks, m_num_blocks);
+    return gdb::array_view<struct block *> (m_blocks.data (), m_blocks.size ());
   }
 
   /* Const version of the above.  */
   gdb::array_view<const struct block *const> blocks () const
   {
-    const struct block **blocks = (const struct block **) m_blocks;
-    return gdb::array_view<const struct block *const> (blocks, m_num_blocks);
+    const struct block **blocks = (const struct block **) m_blocks.data ();
+    return gdb::array_view<const struct block *const> (blocks, m_blocks.size ());
   }
 
   /* Return the block at index I.  */
@@ -357,16 +362,14 @@ struct blockvector
   void set_block (int i, struct block *block)
   { m_blocks[i] = block; }
 
-  /* Set the number of blocks of this blockvector.
-
-     The storage of blocks is done using a flexible array member, so the number
-     of blocks set here must agree with what was effectively allocated.  */
-  void set_num_blocks (int num_blocks)
-  { m_num_blocks = num_blocks; }
+  /* Add BLOCK, making sure blocks are ordered by code-addresses
+     as required. Update global and static block start and end 
+     adresses accordingly.  */
+  void add_block(struct block *block);
 
   /* Return the number of blocks in this blockvector.  */
   int num_blocks () const
-  { return m_num_blocks; }
+  { return m_blocks.size (); }
 
   /* Return the global block of this blockvector.  */
   struct block *global_block ()
@@ -396,18 +399,20 @@ struct blockvector
   void set_map (addrmap *map)
   { m_map = map; }
 
+  void sort ();
+
 private:
   /* An address map mapping addresses to blocks in this blockvector.
      This pointer is zero if the blocks' start and end addresses are
      enough.  */
   struct addrmap *m_map;
 
-  /* Number of blocks in the list.  */
-  int m_num_blocks;
-
   /* The blocks themselves.  */
-  struct block *m_blocks[1];
+  std::vector<struct block *, obstack_allocator<struct block *>> m_blocks;
 };
+
+/* Allocate new blockvector with space for NBLOCKS blocks.  */
+struct blockvector *allocate_blockvector(struct obstack *obstack, int nblocks);
 
 extern const struct blockvector *blockvector_for_pc (CORE_ADDR,
 					       const struct block **);

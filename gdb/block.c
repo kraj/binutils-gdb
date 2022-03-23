@@ -842,3 +842,75 @@ make_blockranges (struct objfile *objfile,
   return blr;
 }
 
+static bool
+block_ordering_predicate(struct block *b1, struct block *b2)
+{
+  CORE_ADDR start1 = b1->start ();
+  CORE_ADDR start2 = b2->start ();
+	  
+  if (start1 != start2)
+    return start1 < start2;
+  return (b2->end () < b1->end ());
+}
+
+/* See block.h.  */
+
+void 
+blockvector::add_block (struct block *block)
+{  
+  gdb_assert (num_blocks() >= FIRST_LOCAL_BLOCK);
+
+  auto global_block = this->block (GLOBAL_BLOCK);
+  auto static_block = this->block (STATIC_BLOCK);	
+
+  if (num_blocks() <= FIRST_LOCAL_BLOCK)
+    {
+      /* No blocks (except global and static block).  */
+      m_blocks.push_back (block);
+      global_block->set_start (block->start ());
+      static_block->set_start (block->start ());
+      global_block->set_end (block->end ());
+      static_block->set_end (block->end ());
+    }
+  else
+    {
+      /* Symtab already contains some blocks.  Insert new block
+         to a correct place and update global and static block 
+	 start and end address.  */
+      auto insert_before = std::upper_bound(m_blocks.begin(), m_blocks.end(), 
+      					    block, 
+					    block_ordering_predicate);
+      m_blocks.insert(insert_before, block);
+      if (global_block->start () > block->start ())
+        {
+          global_block->set_start (block->start ());
+          static_block->set_start (block->start ());
+	}
+      if (global_block->end () < block->end ())
+        {
+          global_block->set_end (block->end ());
+          static_block->set_end (block->end ());
+	}
+    }
+}
+
+/* See block.h.  */
+
+void
+blockvector::sort ()
+{
+  if (num_blocks() > FIRST_LOCAL_BLOCK)
+    {      
+      std::sort (&m_blocks.data()[FIRST_LOCAL_BLOCK],
+	         &m_blocks.data()[num_blocks()],
+	         block_ordering_predicate);
+    }
+}
+
+/* See block.h.  */
+
+struct blockvector *
+allocate_blockvector(struct obstack *obstack, int nblocks)
+{
+  return new (obstack) blockvector(obstack, nblocks);
+}
