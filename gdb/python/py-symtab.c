@@ -137,6 +137,8 @@ static const registry<objfile>::key<sal_object, salpy_deleter>
 	}								\
   } while (0)
 
+static void set_symtab (symtab_object *obj, struct symtab *symtab);
+
 static PyObject *
 stpy_str (PyObject *self)
 {
@@ -266,6 +268,79 @@ stpy_get_linetable (PyObject *self, PyObject *args)
   STPY_REQUIRE_VALID (self, symtab);
 
   return symtab_to_linetable_object (self);
+}
+
+/* Object initializer; creates new symtab in OBJFILE.
+
+   Use: __init__(OBJFILE, NAME).  */
+
+static int
+stpy_init (PyObject *zelf, PyObject *args, PyObject *kw)
+{
+  struct symtab_object *self = (struct symtab_object*) zelf;
+
+  if (self->symtab)
+    {
+      PyErr_Format (PyExc_RuntimeError,
+		    _("Symtab object already initialized."));
+      return -1;
+    }
+
+   static const char *keywords[] = { "objfile", "filename", NULL };
+   const char *filename;
+   PyObject *objfile_obj;
+
+   if (!gdb_PyArg_ParseTupleAndKeywords (args, kw, "Os",
+					keywords, &objfile_obj, &filename))
+    return -1;
+
+
+  struct objfile *objfile = objfile_object_to_objfile(objfile_obj);
+
+  if (objfile == nullptr)
+    {
+      PyErr_Format (PyExc_ValueError,
+      		    _("Invalid objfile parameter (not an Objfile or no longer valid)"));
+      return -1;
+    }
+
+  if (!objfile->is_dynamic ())
+    {
+      PyErr_Format (PyExc_ValueError,
+                    _("Invalid objfile parameter (not a dynamic Objfile)"));
+      return -1;
+    }
+
+  auto cust = allocate_compunit_symtab (objfile, filename);
+  symtab *symtab = allocate_symtab (cust, filename);
+  add_compunit_symtab_to_objfile (cust);
+
+  cust->set_dirname (nullptr);
+
+  auto bv = allocate_blockvector(&objfile->objfile_obstack, FIRST_LOCAL_BLOCK);
+
+  cust->set_blockvector (bv);
+
+  /* Allocate global block  */
+  auto global_blk = new (&objfile->objfile_obstack) global_block ();
+  global_blk->set_multidict (mdict_create_linear_expandable (language_minimal));
+  global_blk->set_start ((CORE_ADDR) 0);
+  global_blk->set_end ((CORE_ADDR) 0);
+  global_blk->set_compunit_symtab (cust);
+  bv->set_block (GLOBAL_BLOCK, global_blk);
+
+  /* Allocate global block  */
+  auto static_blk = new (&objfile->objfile_obstack) block ();
+  static_blk->set_multidict (mdict_create_linear_expandable (language_minimal));
+  static_blk->set_start ((CORE_ADDR) 0);
+  static_blk->set_end ((CORE_ADDR) 0);
+  static_blk->set_superblock (global_blk);
+  bv->set_block (STATIC_BLOCK, static_blk);
+
+  /* Set reference to new symtab in it's Python counterpart  */
+  set_symtab (self, symtab);
+
+  return 0;
 }
 
 static PyObject *
@@ -512,7 +587,6 @@ symtab_object_to_symtab (PyObject *obj)
 int
 gdbpy_initialize_symtabs (void)
 {
-  symtab_object_type.tp_new = PyType_GenericNew;
   if (PyType_Ready (&symtab_object_type) < 0)
     return -1;
 
@@ -589,7 +663,15 @@ PyTypeObject symtab_object_type = {
   0,				  /*tp_iternext */
   symtab_object_methods,	  /*tp_methods */
   0,				  /*tp_members */
-  symtab_object_getset		  /*tp_getset */
+  symtab_object_getset,		  /*tp_getset */
+  0,				  /*tp_base */
+  0,				  /*tp_dict */
+  0,				  /*tp_descr_get */
+  0,				  /*tp_descr_set */
+  0,                              /*tp_dictoffset */
+  stpy_init,	                  /*tp_init */
+  0,				  /*tp_alloc */
+  PyType_GenericNew,		  /*tp_new */
 };
 
 static gdb_PyGetSetDef sal_object_getset[] = {
