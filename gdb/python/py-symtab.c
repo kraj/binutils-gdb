@@ -256,6 +256,62 @@ stpy_static_block (PyObject *self, PyObject *args)
   return block_to_block_object (block, symtab->compunit ()->objfile ());
 }
 
+/* Implementation of gdb.Symtab.add_block (self, FILENAME, START, END) -> gdb.Block
+   Add a new block into the symtab.  Throws error if symtab is not for dynamic
+   objfile.  */
+
+static PyObject *
+stpy_add_block (PyObject *self, PyObject *args, PyObject *kw)
+{
+  struct symtab *symtab = NULL;
+
+  STPY_REQUIRE_VALID (self, symtab);
+
+  static const char *keywords[] = { "filename", "start", "end", NULL };
+  const char *name;
+  uint64_t start = 0;
+  uint64_t end = 0;
+
+  if (!gdb_PyArg_ParseTupleAndKeywords (args, kw, "sKK",
+					keywords, &name, &start, &end))
+    return nullptr;
+
+  if (!symtab->compunit ()->objfile ()->is_dynamic ())
+    {
+      PyErr_Format (PyExc_ValueError,
+                    _("Symtab is not for a dynamic Objfile"));
+      return nullptr;
+    }
+
+  auto objf = symtab->compunit ()->objfile ();
+
+  auto obstack = &(objf->objfile_obstack);
+  auto blk = new (obstack) block ();
+
+  blk->set_multidict (mdict_create_linear (obstack, NULL));
+  blk->set_start ((CORE_ADDR) start);
+  blk->set_end ((CORE_ADDR) end);
+
+  auto blk_type = builtin_type (objf)->builtin_void;
+  
+  auto blk_symbol = new (obstack) symbol ();
+  blk_symbol->set_domain (VAR_DOMAIN);
+  blk_symbol->set_aclass_index (LOC_BLOCK);
+  blk_symbol->set_type (lookup_function_type (blk_type));
+  blk_symbol->set_value_block (blk);
+  blk_symbol->set_symtab (symtab);
+  blk_symbol->m_name = obstack_strdup (obstack, name);
+
+  auto bv = const_cast<struct blockvector *> (symtab->compunit ()->blockvector ());
+  blk->set_function (blk_symbol);
+  blk->set_superblock (bv->global_block ());
+  bv->add_block (blk);
+  mdict_add_symbol (bv->global_block ()->multidict (), blk_symbol);
+
+  return block_to_block_object (blk, objf);
+}
+
+
 /* Implementation of gdb.Symtab.linetable (self) -> gdb.LineTable.
    Returns a gdb.LineTable object corresponding to this symbol
    table.  */
@@ -630,6 +686,10 @@ Return the static block of the symbol table." },
     { "linetable", stpy_get_linetable, METH_NOARGS,
     "linetable () -> gdb.LineTable.\n\
 Return the LineTable associated with this symbol table" },
+  { "add_block", (PyCFunction) stpy_add_block,
+    METH_VARARGS | METH_KEYWORDS,
+    "add_block ( name , start, end) -> gdb.Block.\n\
+Add new block to symtab and return it." },
   {NULL}  /* Sentinel */
 };
 
