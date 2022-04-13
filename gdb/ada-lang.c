@@ -5582,37 +5582,52 @@ map_matching_symbols (struct objfile *objfile,
 
 static void
 add_nonlocal_symbols (std::vector<struct block_symbol> &result,
+		      const struct block *block,
 		      const lookup_name_info &lookup_name,
 		      domain_enum domain, int global)
 {
-  struct match_data data (&result);
+  struct objfile *objfile = nullptr;
+  if (block != nullptr)
+    objfile = block_objfile (block);
 
   bool is_wild_match = lookup_name.ada ().wild_match_p ();
 
-  for (objfile *objfile : current_program_space->objfiles ())
-    {
-      map_matching_symbols (objfile, lookup_name, is_wild_match, domain,
-			    global, data);
+  struct match_data data (&result);
 
-      for (compunit_symtab *cu : objfile->compunits ())
-	{
-	  const struct block *global_block
-	    = cu->blockvector ()->global_block ();
+  gdbarch_iterate_over_objfiles_in_search_order
+    (objfile != nullptr ? objfile->arch () : target_gdbarch (),
+     [&data, lookup_name, domain, global, is_wild_match] (struct objfile *obj)
+       {
+	 map_matching_symbols (obj, lookup_name, is_wild_match, domain,
+			       global, data);
 
-	  if (ada_add_block_renamings (result, global_block, lookup_name,
-				       domain))
-	    data.found_sym = true;
-	}
-    }
+	 for (compunit_symtab *cu : obj->compunits ())
+	   {
+	     const struct block *global_block
+	       = cu->blockvector ()->global_block ();
 
-  if (result.empty () && global && !is_wild_match)
+	     if (ada_add_block_renamings (*data.resultp, global_block,
+					  lookup_name, domain))
+	       data.found_sym = true;
+	   }
+
+	 return 0;
+       }, objfile);
+
+  if (data.resultp->empty () && global && !is_wild_match)
     {
       const char *name = ada_lookup_name (lookup_name);
       std::string bracket_name = std::string ("<_ada_") + name + '>';
       lookup_name_info name1 (bracket_name, symbol_name_match_type::FULL);
 
-      for (objfile *objfile : current_program_space->objfiles ())
-	map_matching_symbols (objfile, name1, false, domain, global, data);
+      gdbarch_iterate_over_objfiles_in_search_order
+	(objfile != nullptr ? objfile->arch () : target_gdbarch (),
+	 [&data, name1, domain, global] (struct objfile *obj)
+	   {
+	     map_matching_symbols (obj, name1, false, domain, global, data);
+
+	     return 0;
+	   }, objfile);
     }
 }
 
@@ -5642,6 +5657,7 @@ ada_add_all_symbols (std::vector<struct block_symbol> &result,
 		     int *made_global_lookup_p)
 {
   struct symbol *sym;
+  const struct block *orig_block = block;
 
   if (made_global_lookup_p)
     *made_global_lookup_p = 0;
@@ -5688,15 +5704,21 @@ ada_add_all_symbols (std::vector<struct block_symbol> &result,
   if (made_global_lookup_p)
     *made_global_lookup_p = 1;
 
-  /* Search symbols from all global blocks.  */
- 
-  add_nonlocal_symbols (result, lookup_name, domain, 1);
+  /* Search symbols from all global blocks.
 
-  /* Now add symbols from all per-file blocks if we've gotten no hits
-     (not strictly correct, but perhaps better than an error).  */
+     Pass the original block to restrict the search to that block's
+     namespace.  */
+ 
+  add_nonlocal_symbols (result, orig_block, lookup_name, domain, 1);
+
+  /* Now add symbols from all per-file blocks if we've gotten no hits (not
+     strictly correct, but perhaps better than an error).
+
+     Pass the original block to restrict the search to that block's
+     namespace.  */
 
   if (result.empty ())
-    add_nonlocal_symbols (result, lookup_name, domain, 0);
+    add_nonlocal_symbols (result, orig_block, lookup_name, domain, 0);
 }
 
 /* Find symbols in DOMAIN matching LOOKUP_NAME, in BLOCK and, if FULL_SEARCH
