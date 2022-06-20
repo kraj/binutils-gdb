@@ -1,3 +1,5 @@
+BFD README
+
 BFD is an object file library.  It permits applications to use the
 same routines to process object files regardless of their format.
 
