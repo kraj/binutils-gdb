@@ -2684,7 +2684,7 @@ csky_pseudo_register_name (struct gdbarch *gdbarch, int regno)
 {
   int num_regs = gdbarch_num_regs (gdbarch);
   csky_gdbarch_tdep *tdep
-    = gdbarch_tdep<csky_gdbarch_tdep> (gdbarch);
+    = gdbarch_tdep_cast<csky_gdbarch_tdep> (gdbarch);
 
   regno -= num_regs;
 
@@ -2732,7 +2732,7 @@ csky_pseudo_register_read (struct gdbarch *gdbarch,
 {
   int num_regs = gdbarch_num_regs (gdbarch);
   csky_gdbarch_tdep *tdep
-    = gdbarch_tdep<csky_gdbarch_tdep> (gdbarch);
+    = gdbarch_tdep_cast<csky_gdbarch_tdep> (gdbarch);
 
   regnum -= num_regs;
 
@@ -2784,7 +2784,7 @@ csky_pseudo_register_write (struct gdbarch *gdbarch, struct regcache *regcache,
 {
   int num_regs = gdbarch_num_regs (gdbarch);
   csky_gdbarch_tdep *tdep
-    = gdbarch_tdep<csky_gdbarch_tdep> (gdbarch);
+    = gdbarch_tdep_cast<csky_gdbarch_tdep> (gdbarch);
 
   regnum -= num_regs;
 
@@ -2912,7 +2912,7 @@ csky_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
        arches = gdbarch_list_lookup_by_info (arches->next, &info))
     {
       csky_gdbarch_tdep *tdep
-	= gdbarch_tdep<csky_gdbarch_tdep> (arches->gdbarch);
+	= gdbarch_tdep_cast<csky_gdbarch_tdep> (arches->gdbarch);
       if (fpu_abi != tdep->fpu_abi)
         continue;
       if (vdsp_version != tdep->vdsp_version)

@@ -162,7 +162,7 @@ extern struct gdbarch_tdep *gdbarch_tdep_1 (struct gdbarch *gdbarch);
 
 template<typename TDepType>
 static inline TDepType *
-gdbarch_tdep (struct gdbarch *gdbarch)
+gdbarch_tdep_cast (struct gdbarch *gdbarch)
 {
   struct gdbarch_tdep *tdep = gdbarch_tdep_1 (gdbarch);
   return gdb::checked_static_cast<TDepType *> (tdep);
