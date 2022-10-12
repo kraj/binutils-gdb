@@ -29,6 +29,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 #include <setjmp.h>
 #include <signal.h>
 #include <sys/types.h>
+#include <unistd.h>
 
 #ifdef HAVE_SYS_SOCKET_H
 #ifdef HAVE_NETINET_IN_H
