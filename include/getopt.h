@@ -104,7 +104,14 @@ struct option
    declaration without arguments.  If it is 0, we checked and failed
    to find the declaration so provide a fully prototyped one.  If it
    is 1, we found it so don't provide any declaration at all.  */
-#if !HAVE_DECL_GETOPT
+/* On GNU libc <= 2,25, <unistd.h> includes <getopt.h> with __need_getopt
+   macro defined.  That <getopt.h> is intended to be a part of GNU libc
+   but <unistd.h> actually includes THIS getopt.h.  If HAVE_DECL_GETOPT is
+   defined to 1 and this file is included from GNU libc's <unistd.h>,
+   declaration of getopt is suppressed, causing errors on getopt callers.
+   To avoid not defining proper getopt declaration, we have to check
+   __need_getopt macro when built with GNU libc to detect this include path.  */
+#if !HAVE_DECL_GETOPT || (defined (__GNU_LIBRARY__) && defined (__need_getopt))
 #if defined (__GNU_LIBRARY__) || defined (HAVE_DECL_GETOPT)
 /* Many other libraries have conflicting prototypes for getopt, with
    differences in the consts, in unistd.h.  To avoid compilation
