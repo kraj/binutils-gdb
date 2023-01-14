@@ -22,6 +22,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include <signal.h>
 
+/* signal.h might indirectly have defined some REG_ macros
+   which are also defined in the sim headers.  */
+#ifdef REG_PC
+#undef REG_PC
+#endif
+
 #include "sim-main.h"
 #include "sim-signal.h"
 

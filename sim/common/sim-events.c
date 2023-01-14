@@ -33,6 +33,12 @@
 
 #include "libiberty.h"
 
+/* signal.h might indirectly have defined some REG_ macros
+   which are also defined in the sim headers.  */
+#ifdef REG_PC
+#undef REG_PC
+#endif
+
 #include "sim-main.h"
 #include "sim-assert.h"
 #include "sim-cpu.h"
