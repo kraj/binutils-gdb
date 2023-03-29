@@ -575,6 +575,7 @@ execute_command (const char *p, int from_tty)
   struct cmd_list_element *c;
   const char *line;
   const char *cmd_start = p;
+  std::string cmd_copy = p;
 
   auto cleanup_if_error = make_scope_exit (bpstat_clear_actions);
   scoped_value_mark cleanup = prepare_execute_command ();
@@ -692,7 +693,7 @@ execute_command (const char *p, int from_tty)
 	 We need to lookup the command again since during its execution,
 	 a command may redefine itself.  In this case, C pointer
 	 becomes invalid so we need to look it up again.  */
-      const char *cmd2 = cmd_start;
+      const char *cmd2 = cmd_copy.c_str();
       c = lookup_cmd (&cmd2, cmdlist, "", nullptr, 1, 1);
       if (c != nullptr)
 	execute_cmd_post_hook (c);
