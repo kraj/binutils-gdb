@@ -87,8 +87,10 @@
 #include "bfd.h"
 #include "getopt.h"
 #include "libiberty.h"
-#include "safe-ctype.h"
 #include "bucomm.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 #ifndef streq
 #define streq(a,b) (strcmp ((a),(b)) == 0)

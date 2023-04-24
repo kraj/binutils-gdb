@@ -28,7 +28,6 @@
 #include "source.h"
 #include "objfiles.h"
 #include "filenames.h"
-#include "safe-ctype.h"
 
 #include "tui/tui.h"
 #include "tui/tui-data.h"
@@ -41,6 +40,9 @@
 #include "tui/tui-disasm.h"
 #include "tui/tui-location.h"
 #include "gdb_curses.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 /* Function to display the "main" routine.  */
 void

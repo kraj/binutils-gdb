@@ -21,11 +21,13 @@
 /* Initially created by Kuang Hwa Lin, 3/20/2002.  */
 
 #include "as.h"
-#include "safe-ctype.h"
 #include "tc-dlx.h"
 #include "opcode/dlx.h"
 #include "elf/dlx.h"
 #include "bfd/elf32-dlx.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 /* Make it easier to clone this machine desc into another one.  */
 #define	machine_opcode      dlx_opcode

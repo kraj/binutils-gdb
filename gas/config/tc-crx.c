@@ -24,10 +24,12 @@
 
 #include "as.h"
 #include <stdint.h>
-#include "safe-ctype.h"
 #include "dwarf2dbg.h"
 #include "opcode/crx.h"
 #include "elf/crx.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 /* Word is considered here as a 16-bit unsigned short int.  */
 #define WORD_SHIFT  16

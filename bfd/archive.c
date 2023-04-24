@@ -137,10 +137,12 @@ SUBSECTION
 #include "libbfd.h"
 #include "aout/ar.h"
 #include "aout/ranlib.h"
-#include "safe-ctype.h"
 #include "hashtab.h"
 #include "filenames.h"
 #include "bfdlink.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 #ifndef errno
 extern int errno;

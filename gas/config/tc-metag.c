@@ -22,12 +22,14 @@
 #include "as.h"
 #include "subsegs.h"
 #include "symcat.h"
-#include "safe-ctype.h"
 #include "hashtab.h"
 
 #include <stdio.h>
 
 #include "opcode/metag.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 const char comment_chars[]        = "!";
 const char line_comment_chars[]   = "!#";

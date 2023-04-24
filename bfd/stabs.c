@@ -27,6 +27,8 @@
 #include "bfd.h"
 #include "libbfd.h"
 #include "aout/stab_gnu.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
 #include "safe-ctype.h"
 
 /* Stabs entries use a 12 byte format:

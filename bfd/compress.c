@@ -26,8 +26,10 @@
 #include "bfd.h"
 #include "elf-bfd.h"
 #include "libbfd.h"
-#include "safe-ctype.h"
 #include "libiberty.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 #define MAX_COMPRESSION_HEADER_SIZE 24
 

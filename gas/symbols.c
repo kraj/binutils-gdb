@@ -21,7 +21,6 @@
 /* #define DEBUG_SYMS / * to debug symbol list maintenance.  */
 
 #include "as.h"
-#include "safe-ctype.h"
 #include "obstack.h"		/* For "symbols.h" */
 #include "subsegs.h"
 #include "write.h"
@@ -30,6 +29,9 @@
 #ifndef CHAR_BIT
 #define CHAR_BIT 8
 #endif
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 struct symbol_flags
 {
@@ -1751,7 +1753,7 @@ resolve_symbol_value (symbolS *symp)
 	      /* See PR 20895 for a reproducer.  */
 	      as_bad (_("Invalid operation on symbol"));
 	      goto exit_dont_set_value;
-	      
+
 	    default:
 	      abort ();
 	    }

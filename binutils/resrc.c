@@ -27,7 +27,6 @@
 #include "bfd.h"
 #include "bucomm.h"
 #include "libiberty.h"
-#include "safe-ctype.h"
 #include "windres.h"
 
 #include <assert.h>
@@ -63,6 +62,9 @@
 #endif
 #endif /* defined (_WIN32) && ! defined (__CYGWIN__) */
 #endif /* ! HAVE_SYS_WAIT_H */
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 #ifndef STDOUT_FILENO
 #define STDOUT_FILENO 1

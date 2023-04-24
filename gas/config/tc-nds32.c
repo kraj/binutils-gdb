@@ -20,7 +20,6 @@
    02110-1301, USA.  */
 
 #include "as.h"
-#include "safe-ctype.h"
 #include "subsegs.h"
 #include "symcat.h"
 #include "dwarf2dbg.h"
@@ -36,6 +35,9 @@
 #include <stdio.h>
 #include <errno.h>
 #include <limits.h>
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 /* GAS definitions.  */
 
@@ -2627,7 +2629,7 @@ static void do_pseudo_li_internal (const char *rt, int imm32s);
 static void do_pseudo_move_reg_internal (char *dst, char *src);
 
 static void
-do_pseudo_b (int argc ATTRIBUTE_UNUSED, char *argv[], 
+do_pseudo_b (int argc ATTRIBUTE_UNUSED, char *argv[],
 	     unsigned int pv ATTRIBUTE_UNUSED)
 {
   char *arg_label = argv[0];
@@ -2648,7 +2650,7 @@ do_pseudo_b (int argc ATTRIBUTE_UNUSED, char *argv[],
 }
 
 static void
-do_pseudo_bal (int argc ATTRIBUTE_UNUSED, char *argv[], 
+do_pseudo_bal (int argc ATTRIBUTE_UNUSED, char *argv[],
 	       unsigned int pv ATTRIBUTE_UNUSED)
 {
   char *arg_label = argv[0];
@@ -2669,7 +2671,7 @@ do_pseudo_bal (int argc ATTRIBUTE_UNUSED, char *argv[],
 }
 
 static void
-do_pseudo_bge (int argc ATTRIBUTE_UNUSED, char *argv[], 
+do_pseudo_bge (int argc ATTRIBUTE_UNUSED, char *argv[],
 	       unsigned int pv ATTRIBUTE_UNUSED)
 {
   /* rt5, ra5, label */
@@ -2678,7 +2680,7 @@ do_pseudo_bge (int argc ATTRIBUTE_UNUSED, char *argv[],
 }
 
 static void
-do_pseudo_bges (int argc ATTRIBUTE_UNUSED, char *argv[], 
+do_pseudo_bges (int argc ATTRIBUTE_UNUSED, char *argv[],
 		unsigned int pv ATTRIBUTE_UNUSED)
 {
   /* rt5, ra5, label */
@@ -2687,7 +2689,7 @@ do_pseudo_bges (int argc ATTRIBUTE_UNUSED, char *argv[],
 }
 
 static void
-do_pseudo_bgt (int argc ATTRIBUTE_UNUSED, char *argv[], 
+do_pseudo_bgt (int argc ATTRIBUTE_UNUSED, char *argv[],
 	       unsigned int pv ATTRIBUTE_UNUSED)
 {
   /* bgt rt5, ra5, label */
@@ -2696,7 +2698,7 @@ do_pseudo_bgt (int argc ATTRIBUTE_UNUSED, char *argv[],
 }
 
 static void
-do_pseudo_bgts (int argc ATTRIBUTE_UNUSED, char *argv[], 
+do_pseudo_bgts (int argc ATTRIBUTE_UNUSED, char *argv[],
 		unsigned int pv ATTRIBUTE_UNUSED)
 {
   /* bgt rt5, ra5, label */
@@ -2705,7 +2707,7 @@ do_pseudo_bgts (int argc ATTRIBUTE_UNUSED, char *argv[],
 }
 
 static void
-do_pseudo_ble (int argc ATTRIBUTE_UNUSED, char *argv[], 
+do_pseudo_ble (int argc ATTRIBUTE_UNUSED, char *argv[],
 	       unsigned int pv ATTRIBUTE_UNUSED)
 {
   /* bgt rt5, ra5, label */
@@ -2714,7 +2716,7 @@ do_pseudo_ble (int argc ATTRIBUTE_UNUSED, char *argv[],
 }
 
 static void
-do_pseudo_bles (int argc ATTRIBUTE_UNUSED, char *argv[], 
+do_pseudo_bles (int argc ATTRIBUTE_UNUSED, char *argv[],
 		unsigned int pv ATTRIBUTE_UNUSED)
 {
   /* bgt rt5, ra5, label */
@@ -2723,7 +2725,7 @@ do_pseudo_bles (int argc ATTRIBUTE_UNUSED, char *argv[],
 }
 
 static void
-do_pseudo_blt (int argc ATTRIBUTE_UNUSED, char *argv[], 
+do_pseudo_blt (int argc ATTRIBUTE_UNUSED, char *argv[],
 	       unsigned int pv ATTRIBUTE_UNUSED)
 {
   /* rt5, ra5, label */
@@ -2732,7 +2734,7 @@ do_pseudo_blt (int argc ATTRIBUTE_UNUSED, char *argv[],
 }
 
 static void
-do_pseudo_blts (int argc ATTRIBUTE_UNUSED, char *argv[], 
+do_pseudo_blts (int argc ATTRIBUTE_UNUSED, char *argv[],
 		unsigned int pv ATTRIBUTE_UNUSED)
 {
   /* rt5, ra5, label */
@@ -2741,14 +2743,14 @@ do_pseudo_blts (int argc ATTRIBUTE_UNUSED, char *argv[],
 }
 
 static void
-do_pseudo_br (int argc ATTRIBUTE_UNUSED, char *argv[], 
+do_pseudo_br (int argc ATTRIBUTE_UNUSED, char *argv[],
 	      unsigned int pv ATTRIBUTE_UNUSED)
 {
   md_assemblef ("jr %s", argv[0]);
 }
 
 static void
-do_pseudo_bral (int argc, char *argv[], 
+do_pseudo_bral (int argc, char *argv[],
 		unsigned int pv ATTRIBUTE_UNUSED)
 {
   if (argc == 1)
@@ -2824,7 +2826,7 @@ do_pseudo_la_internal (const char *arg_reg, char *arg_label,
 }
 
 static void
-do_pseudo_la (int argc ATTRIBUTE_UNUSED, char *argv[], 
+do_pseudo_la (int argc ATTRIBUTE_UNUSED, char *argv[],
 	      unsigned int pv ATTRIBUTE_UNUSED)
 {
   do_pseudo_la_internal (argv[0], argv[1], argv[argc]);
@@ -2847,7 +2849,7 @@ do_pseudo_li_internal (const char *rt, int imm32s)
 }
 
 static void
-do_pseudo_li (int argc ATTRIBUTE_UNUSED, char *argv[], 
+do_pseudo_li (int argc ATTRIBUTE_UNUSED, char *argv[],
 	      unsigned int pv ATTRIBUTE_UNUSED)
 {
   /* Validate argv[1] for constant expression.  */
@@ -2864,7 +2866,7 @@ do_pseudo_li (int argc ATTRIBUTE_UNUSED, char *argv[],
 }
 
 static void
-do_pseudo_ls_bhw (int argc ATTRIBUTE_UNUSED, char *argv[], 
+do_pseudo_ls_bhw (int argc ATTRIBUTE_UNUSED, char *argv[],
 		  unsigned int pv)
 {
   char ls = 'r';
@@ -2952,7 +2954,7 @@ do_pseudo_ls_bhw (int argc ATTRIBUTE_UNUSED, char *argv[],
 }
 
 static void
-do_pseudo_ls_bhwp (int argc ATTRIBUTE_UNUSED, char *argv[], 
+do_pseudo_ls_bhwp (int argc ATTRIBUTE_UNUSED, char *argv[],
 		   unsigned int pv)
 {
   char *arg_rt = argv[0];
@@ -3006,7 +3008,7 @@ do_pseudo_ls_bhwpc (int argc ATTRIBUTE_UNUSED, char *argv[],
 }
 
 static void
-do_pseudo_ls_bhwi (int argc ATTRIBUTE_UNUSED, char *argv[], 
+do_pseudo_ls_bhwi (int argc ATTRIBUTE_UNUSED, char *argv[],
 		   unsigned int pv)
 {
   char ls = 'r';
@@ -3040,7 +3042,7 @@ do_pseudo_move_reg_internal (char *dst, char *src)
 }
 
 static void
-do_pseudo_move (int argc ATTRIBUTE_UNUSED, char *argv[], 
+do_pseudo_move (int argc ATTRIBUTE_UNUSED, char *argv[],
 		unsigned int pv ATTRIBUTE_UNUSED)
 {
   expressionS exp;
@@ -3060,7 +3062,7 @@ do_pseudo_move (int argc ATTRIBUTE_UNUSED, char *argv[],
 }
 
 static void
-do_pseudo_neg (int argc ATTRIBUTE_UNUSED, char *argv[], 
+do_pseudo_neg (int argc ATTRIBUTE_UNUSED, char *argv[],
 	       unsigned int pv ATTRIBUTE_UNUSED)
 {
   /* Instead of "subri".  */
@@ -3162,7 +3164,7 @@ do_pseudo_v3push (int argc ATTRIBUTE_UNUSED, char *argv[],
 }
 
 static void
-do_pseudo_v3pop (int argc ATTRIBUTE_UNUSED, char *argv[], 
+do_pseudo_v3pop (int argc ATTRIBUTE_UNUSED, char *argv[],
 		 unsigned int pv ATTRIBUTE_UNUSED)
 {
   md_assemblef ("pop25 %s,%s", argv[0], argv[1]);

@@ -239,7 +239,6 @@
 #include "dyn-string.h"
 #include "bucomm.h"
 #include "dlltool.h"
-#include "safe-ctype.h"
 #include "coff-bfd.h"
 
 #include <time.h>
@@ -307,6 +306,9 @@ static void mcore_elf_gen_out_file (void);
 #endif
 #endif /* defined (_WIN32) && ! defined (__CYGWIN32__) */
 #endif /* ! HAVE_SYS_WAIT_H */
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 #define show_allnames 0
 

@@ -19,9 +19,11 @@
    Boston, MA 02110-1301, USA.  */
 
 #include "as.h"
-#include "safe-ctype.h"
 #include "subsegs.h"
 #include "opcode/mn10200.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 /* Structure to hold information about predefined registers.  */
 struct reg_name

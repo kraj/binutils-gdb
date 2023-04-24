@@ -25,6 +25,8 @@
 
 #include "as.h"
 #include "input-file.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
 #include "safe-ctype.h"
 
 /* This variable is non-zero if the file currently being read should be

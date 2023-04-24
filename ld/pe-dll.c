@@ -24,7 +24,6 @@
 #include "bfdlink.h"
 #include "libiberty.h"
 #include "filenames.h"
-#include "safe-ctype.h"
 #include "ctf-api.h"
 
 #include <time.h>
@@ -41,6 +40,9 @@
 #include "coff/internal.h"
 #include "../bfd/libcoff.h"
 #include "deffile.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 #ifdef pe_use_plus
 
@@ -1716,7 +1718,7 @@ generate_reloc (bfd *abfd, struct bfd_link_info *info)
   /* This can happen for example when LTO has eliminated all code.  */
   if (total_relocs == 0)
     return;
-  
+
   /* At this point, we have total_relocs relocation addresses in
      reloc_addresses, which are all suitable for the .reloc section.
      We must now create the new sections.  */

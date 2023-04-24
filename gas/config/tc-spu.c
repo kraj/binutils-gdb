@@ -20,9 +20,11 @@
    02110-1301, USA.  */
 
 #include "as.h"
-#include "safe-ctype.h"
 #include "subsegs.h"
 #include "dwarf2dbg.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 const struct spu_opcode spu_opcodes[] = {
 #define APUOP(TAG,MACFORMAT,OPCODE,MNEMONIC,ASMFORMAT,DEP,PIPE) \

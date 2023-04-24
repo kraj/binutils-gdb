@@ -29,6 +29,8 @@
 #include "bucomm.h"
 #include "libiberty.h"
 #include "windmc.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
 #include "safe-ctype.h"
 
 static rc_uint_type mc_last_id = 0;

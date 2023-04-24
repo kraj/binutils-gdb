@@ -20,7 +20,6 @@
 
 #include "sysdep.h"
 #include "bfd.h"
-#include "safe-ctype.h"
 #include "md5.h"
 #include "sha1.h"
 #include "ldbuildid.h"
@@ -28,6 +27,9 @@
 #include <windows.h>
 #include <rpcdce.h>
 #endif
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 #define streq(a,b)     strcmp ((a), (b)) == 0
 

@@ -21,7 +21,6 @@
 #include "as.h"
 #include <limits.h>
 #include "sb.h"
-#include "safe-ctype.h"
 #include "tc-xtensa.h"
 #include "subsegs.h"
 #include "xtensa-relax.h"
@@ -29,6 +28,9 @@
 #include "xtensa-istack.h"
 #include "xtensa-dynconfig.h"
 #include "elf/xtensa.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 #ifndef uint32
 #define uint32 unsigned int

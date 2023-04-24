@@ -21,12 +21,14 @@
 
 #include "sysdep.h"
 #include "libiberty.h"
-#include "safe-ctype.h"
 #include "bfd.h"
 #include "bfdlink.h"
 #include "ld.h"
 #include "ldmisc.h"
 #include "deffile.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 #define TRACE 0
 

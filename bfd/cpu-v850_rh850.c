@@ -21,6 +21,8 @@
 #include "sysdep.h"
 #include "bfd.h"
 #include "libbfd.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
 #include "safe-ctype.h"
 
 #define R(number, print, default, next)  \

@@ -23,12 +23,14 @@
 #include "sysdep.h"
 #include "bfd.h"
 #include "libbfd.h"
-#include "safe-ctype.h"
 #include "bfdver.h"
 #include "libiberty.h"
 #include "vms.h"
 #include "vms/lbr.h"
 #include "vms/dcx.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 /* The standard VMS disk block size.  */
 #ifndef VMS_BLOCK_SIZE

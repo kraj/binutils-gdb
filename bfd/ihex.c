@@ -123,6 +123,8 @@ The MRI compiler uses this, which is a repeat of type 5:
 #include "bfd.h"
 #include "libbfd.h"
 #include "libiberty.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
 #include "safe-ctype.h"
 
 /* The number of bytes we put on one line during output.  */

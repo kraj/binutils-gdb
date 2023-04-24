@@ -18,7 +18,6 @@
    Boston, MA 02110-1301, USA.  */
 
 #include "as.h"
-#include "safe-ctype.h"
 #include "subsegs.h"
 
 #include "opcode/sparc.h"
@@ -26,6 +25,9 @@
 
 #include "elf/sparc.h"
 #include "dwarf2dbg.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 /* Some ancient Sun C compilers would not take such hex constants as
    unsigned, and would end up sign-extending them to form an offsetT,
@@ -264,7 +266,7 @@ static struct sparc_arch {
   { "v8plusv", "v9v", v9,  0, 1, HWCAP_V8PLUS, 0 },
   { "v8plusm", "v9m", v9,  0, 1, HWCAP_V8PLUS, 0 },
   { "v8plusm8", "m8", v9,  0, 1, HWCAP_V8PLUS, 0 },
-  
+
   { "v9",      "v9",  v9,  0, 1, 0, 0 },
   { "v9a",     "v9a", v9,  0, 1, 0, 0 },
   { "v9b",     "v9b", v9,  0, 1, 0, 0 },
@@ -1004,7 +1006,7 @@ md_begin (void)
 	 sizeof (hpriv_reg_table[0]), cmp_reg_entry);
   qsort (v9a_asr_table, sizeof (v9a_asr_table) / sizeof (v9a_asr_table[0]),
 	 sizeof (v9a_asr_table[0]), cmp_reg_entry);
-  
+
   /* If -bump, record the architecture level at which we start issuing
      warnings.  The behaviour is different depending upon whether an
      architecture was explicitly specified.  If it wasn't, we issue warnings
@@ -1890,7 +1892,7 @@ sparc_ip (char *str, const struct sparc_opcode **pinsn)
 		      error_message = _(": unrecognizable privileged register");
 		      goto error;
 		    }
-                  
+
                   if (((opcode >> (*args == '?' ? 14 : 25)) & 0x1f) != (unsigned) p->regnum)
                     {
                       error_message = _(": unrecognizable privileged register");
@@ -2615,7 +2617,7 @@ sparc_ip (char *str, const struct sparc_opcode **pinsn)
                   case '\'':
                     opcode |= RS2 (mask & 0xe);
                     continue;
-                    
+
 		  case '4':
 		  case '5':
 		    opcode |= RS3 (mask);
@@ -2688,7 +2690,7 @@ sparc_ip (char *str, const struct sparc_opcode **pinsn)
 		if (*s == '%')
 		  {
                     const struct perc_entry *p;
-                    
+
                     for (p = perc_table; p->type != perc_entry_none; p++)
                       if ((p->type == perc_entry_imm_pop || p->type == perc_entry_reg)
                           && strncmp (s + 1, p->name, p->len) == 0)
@@ -3088,7 +3090,7 @@ sparc_ip (char *str, const struct sparc_opcode **pinsn)
                 opcode |= ((imm2 & 0x2) << 3) | (imm2 & 0x1);
                 continue;
               }
-              
+
 	    case 'x':
 	      {
 		char *push = input_line_pointer;

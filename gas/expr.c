@@ -26,12 +26,14 @@
 #define min(a, b)       ((a) < (b) ? (a) : (b))
 
 #include "as.h"
-#include "safe-ctype.h"
 
 #include <limits.h>
 #ifndef CHAR_BIT
 #define CHAR_BIT 8
 #endif
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 bool literal_prefix_dollar_hex = false;
 
@@ -984,7 +986,7 @@ operand (expressionS *expressionP, enum expr_mode mode)
 		    * input_line_pointer, c == '(' ? ')' : ']');
 	  else
 	    as_bad (_("missing '%c'"), c == '(' ? ')' : ']');
-	}	    
+	}
       else
 	input_line_pointer++;
       SKIP_ALL_WHITESPACE ();

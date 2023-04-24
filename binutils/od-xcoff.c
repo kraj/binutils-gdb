@@ -22,7 +22,6 @@
 #include "sysdep.h"
 #include <stddef.h>
 #include <time.h>
-#include "safe-ctype.h"
 #include "bfd.h"
 #include "objdump.h"
 #include "bucomm.h"
@@ -36,6 +35,9 @@
 #include "coff/xcoff.h"
 #include "libcoff.h"
 #include "libxcoff.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 /* Index of the options in the options[] array.  */
 #define OPT_FILE_HEADER 0

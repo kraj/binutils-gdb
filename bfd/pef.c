@@ -23,12 +23,14 @@
    and PowerPc.  It is also called CFM (Code Fragment Manager).  */
 
 #include "sysdep.h"
-#include "safe-ctype.h"
 #include "pef.h"
 #include "pef-traceback.h"
 #include "bfd.h"
 #include "libbfd.h"
 #include "libiberty.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 #ifndef BFD_IO_FUNCS
 #define BFD_IO_FUNCS 0

@@ -24,7 +24,6 @@
 #include "subsegs.h"
 #define DEFINE_TABLE
 #include "opcodes/sh-opc.h"
-#include "safe-ctype.h"
 
 #ifdef OBJ_ELF
 #include "elf/sh.h"
@@ -32,6 +31,9 @@
 
 #include "dwarf2dbg.h"
 #include "dw2gencfi.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 typedef struct
   {

@@ -21,12 +21,14 @@
    Boston, MA 02110-1301, USA.  */
 
 #include "as.h"
-#include "safe-ctype.h"
 #include "subsegs.h"
 #include "dwarf2dbg.h"
 #include "dw2gencfi.h"
 #include "elf/avr.h"
 #include "elf32-avr.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 /* For building a linked list of AVR_PROPERTY_RECORD structures.  */
 struct avr_property_record_link

@@ -19,6 +19,8 @@
    02110-1301, USA.  */
 
 #include "as.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
 #include "safe-ctype.h"
 
 /* Flonums returned here.  */

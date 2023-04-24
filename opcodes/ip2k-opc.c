@@ -33,6 +33,7 @@ This file is part of the GNU Binutils and/or GDB, the GNU debugger.
 
 /* -- opc.c */
 
+/* Must be after any system headers that might transitively use <ctype.h>.  */
 #include "safe-ctype.h"
 
 /* A better hash function for instruction mnemonics.  */

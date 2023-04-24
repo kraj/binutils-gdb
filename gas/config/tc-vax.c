@@ -23,11 +23,13 @@
 #include "vax-inst.h"
 #include "obstack.h"		/* For FRAG_APPEND_1_CHAR macro in "frags.h" */
 #include "subsegs.h"
-#include "safe-ctype.h"
 
 #ifdef OBJ_ELF
 #include "elf/vax.h"
 #endif
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 /* These chars start a comment anywhere in a source file (except inside
    another comment */

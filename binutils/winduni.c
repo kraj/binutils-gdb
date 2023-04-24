@@ -39,11 +39,13 @@
 #include <winnls.h>
 #endif
 #include "winduni.h"
-#include "safe-ctype.h"
 
 #if HAVE_ICONV
 #include <iconv.h>
 #endif
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 static rc_uint_type wind_WideCharToMultiByte (rc_uint_type, const unichar *, char *, rc_uint_type);
 static rc_uint_type wind_MultiByteToWideChar (rc_uint_type, const char *, unichar *, rc_uint_type);

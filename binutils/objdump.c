@@ -59,7 +59,6 @@
 #include "ctf-api.h"
 #include "sframe-api.h"
 #include "getopt.h"
-#include "safe-ctype.h"
 #include "dis-asm.h"
 #include "libiberty.h"
 #include "demangle.h"
@@ -79,6 +78,9 @@
 /* Internal headers for the ELF .stab-dump code - sorry.  */
 #define	BYTES_IN_WORD	32
 #include "aout/aout64.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 /* Exit status.  */
 static int exit_status = 0;
@@ -3952,7 +3954,7 @@ disassemble_section (bfd *abfd, asection *section, void *inf)
 	      for (++place; place < sorted_symcount; place++)
 		{
 		  sym = sorted_syms[place];
-		  
+
 		  if (bfd_asymbol_value (sym) != addr)
 		    break;
 		  if (! pinfo->symbol_is_valid (sym, pinfo))
@@ -3963,7 +3965,7 @@ disassemble_section (bfd *abfd, asection *section, void *inf)
 		  objdump_print_addr_with_sym (abfd, section, sym, addr, pinfo, false);
 		  pinfo->fprintf_func (pinfo->stream, ":\n");
 		}
-	    }	   
+	    }
 	}
 
       if (sym != NULL && bfd_asymbol_value (sym) > addr)
@@ -5523,12 +5525,12 @@ might_need_separate_debug_info (bool is_mainfile)
      deliberate user action.  */
   if (DEFAULT_FOR_FOLLOW_LINKS == 0 && do_follow_links)
     return true;
-  
+
   if (process_links || dump_symtab || dump_debugging
       || dump_dwarf_section_info || with_source_code)
     return true;
 
-  return false;  
+  return false;
 }
 
 /* Dump selected contents of ABFD.  */
@@ -6011,7 +6013,7 @@ main (int argc, char **argv)
 	    disassembler_color = on_if_terminal_output;
 	  else if (streq (optarg, "color")
 		   || streq (optarg, "colour")
-		   || streq (optarg, "on")) 
+		   || streq (optarg, "on"))
 	    disassembler_color = on;
 	  else if (streq (optarg, "extended")
 		   || streq (optarg, "extended-color")

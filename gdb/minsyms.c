@@ -52,13 +52,15 @@
 #include "cli/cli-utils.h"
 #include "gdbsupport/symbol.h"
 #include <algorithm>
-#include "safe-ctype.h"
 #include "gdbsupport/parallel-for.h"
 #include "inferior.h"
 
 #if CXX_STD_THREAD
 #include <mutex>
 #endif
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 /* Return true if MINSYM is a cold clone symbol.
    Recognize f.i. these symbols (mangled/demangled):
@@ -1334,7 +1336,7 @@ struct computed_hash_values
 /* Build (or rebuild) the minimal symbol hash tables.  This is necessary
    after compacting or sorting the table since the entries move around
    thus causing the internal minimal_symbol pointers to become jumbled.  */
-  
+
 static void
 build_minimal_symbol_hash_tables
   (struct objfile *objfile,

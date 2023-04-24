@@ -36,7 +36,6 @@ fragment <<EOF
 #include "sysdep.h"
 #include "bfd.h"
 #include "libiberty.h"
-#include "safe-ctype.h"
 #include "getopt.h"
 #include "obstack.h"
 #include "bfdlink.h"
@@ -57,6 +56,9 @@ fragment <<EOF
 #include "libcoff.h"
 #include "libxcoff.h"
 #include "xcofflink.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 static void gld${EMULATION_NAME}_read_file (const char *, bool);
 static void gld${EMULATION_NAME}_free (void *);

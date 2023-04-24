@@ -21,7 +21,6 @@
    MA 02110-1301, USA.  */
 
 #include "as.h"
-#include "safe-ctype.h"
 #include "dwarf2dbg.h"
 #include "opcode/cr16.h"
 #include "elf/cr16.h"
@@ -30,6 +29,9 @@
 #ifndef CHAR_BIT
 #define CHAR_BIT 8
 #endif
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 /* Word is considered here as a 16-bit unsigned short int.  */
 #define WORD_SHIFT  16

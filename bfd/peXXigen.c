@@ -95,6 +95,8 @@
 #include "coff/pe.h"
 #include "libcoff.h"
 #include "libpei.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
 #include "safe-ctype.h"
 
 #if defined COFF_WITH_pep || defined COFF_WITH_pex64 || defined COFF_WITH_peAArch64 || defined COFF_WITH_peLoongArch64

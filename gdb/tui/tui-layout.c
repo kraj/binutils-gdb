@@ -43,6 +43,8 @@
 #include "tui/tui-layout.h"
 #include "tui/tui-source.h"
 #include "gdb_curses.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
 #include "safe-ctype.h"
 
 static void extract_display_start_addr (struct gdbarch **, CORE_ADDR *);

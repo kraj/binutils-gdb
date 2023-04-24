@@ -20,7 +20,6 @@
 
 #define OBJ_HEADER "obj-elf.h"
 #include "as.h"
-#include "safe-ctype.h"
 #include "subsegs.h"
 #include "obstack.h"
 #include "dwarf2dbg.h"
@@ -63,6 +62,9 @@
 #ifdef TC_PRU
 #include "elf/pru.h"
 #endif
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 static void obj_elf_line (int);
 static void obj_elf_size (int);
@@ -731,7 +733,7 @@ obj_elf_change_section (const char *name,
 	  || startswith (name, ".note.gnu"))
 	flags |= SEC_ELF_OCTETS;
     }
-  
+
   if (old_sec == NULL)
     {
       symbolS *secsym;

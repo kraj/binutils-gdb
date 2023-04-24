@@ -27,8 +27,10 @@
 #include "bfd.h"
 #include "dwarf2dbg.h"
 #include "subsegs.h"
-#include "safe-ctype.h"
 #include "dw2gencfi.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 #ifndef OBJ_ELF
 /* We are not supporting any other target so we throw a compile time error.  */
@@ -3246,7 +3248,7 @@ nios2_translate_pseudo_insn (nios2_insn_infoS *insn)
     {
       insn->insn_nios2_opcode = nios2_opcode_lookup (ps_insn->insn);
       insn->insn_tokens[0] = insn->insn_nios2_opcode->name;
-      
+
       /* Make sure there are enough arguments.  */
       ntok = ((op->pinfo & NIOS2_INSN_OPTARG)
 	      ? op->num_args - 1 : op->num_args);

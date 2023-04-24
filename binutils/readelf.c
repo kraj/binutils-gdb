@@ -171,8 +171,10 @@
 
 #include "getopt.h"
 #include "libiberty.h"
-#include "safe-ctype.h"
 #include "filenames.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 #ifndef offsetof
 #define offsetof(TYPE, MEMBER) ((size_t) &(((TYPE *) 0)->MEMBER))
@@ -781,7 +783,7 @@ print_symbol (signed int width, const char * symbol)
 
 	      if (width_remaining < (nbytes * 2) + 2)
 		break;
-	  
+
 	      putchar (is_utf8 ? '<' : '{');
 	      printf ("0x");
 	      for (i = 0; i < nbytes; i++)
@@ -792,14 +794,14 @@ print_symbol (signed int width, const char * symbol)
 	    {
 	      if (unicode_display == unicode_highlight && isatty (1))
 		printf ("\x1B[31;47m"); /* Red.  */
-	      
+
 	      switch (nbytes)
 		{
 		case 2:
 		  if (width_remaining < 6)
 		    break;
 		  printf ("\\u%02x%02x",
-			  (bytes[0] & 0x1c) >> 2, 
+			  (bytes[0] & 0x1c) >> 2,
 			  ((bytes[0] & 0x03) << 6) | (bytes[1] & 0x3f));
 		  break;
 		case 3:
@@ -816,7 +818,7 @@ print_symbol (signed int width, const char * symbol)
 			  ((bytes[0] & 0x07) << 6) | ((bytes[1] & 0x3c) >> 2),
 			  ((bytes[1] & 0x03) << 6) | ((bytes[2] & 0x3c) >> 2),
 			  ((bytes[2] & 0x03) << 6) | (bytes[3] & 0x3f));
-		  
+
 		  break;
 		default:
 		  /* URG.  */
@@ -826,7 +828,7 @@ print_symbol (signed int width, const char * symbol)
 	      if (unicode_display == unicode_highlight && isatty (1))
 		printf ("\033[0m"); /* Default colour.  */
 	    }
-	  
+
 	  if (bytes[nbytes - 1] == 0)
 	    break;
 	}
@@ -5763,7 +5765,7 @@ check_magic_number (Filedata * filedata, Elf_Internal_Ehdr * header)
      FIXME: It is not clear if all four bytes are used as constant magic
      valus by all compilers.  It may be necessary to recode this function if
      different tools use different length sequences.  */
-     
+
   static struct
   {
     unsigned char  magic[4];
@@ -5772,7 +5774,7 @@ check_magic_number (Filedata * filedata, Elf_Internal_Ehdr * header)
   }
   known_magic[] =
   {
-    { { 'B', 'C', 0xc0, 0xde }, 
+    { { 'B', 'C', 0xc0, 0xde },
       N_("This is a LLVM bitcode file - try using llvm-bcanalyzer\n"),
       N_("This is a LLVM bitcode file - try extracing and then using llvm-bcanalyzer\n")
     },
@@ -22490,8 +22492,8 @@ might_need_separate_debug_info (Filedata * filedata)
      deliberate user action.  */
   if (DEFAULT_FOR_FOLLOW_LINKS == 0 && do_follow_links)
     return true;
-  
-  if (process_links || do_syms || do_unwind 
+
+  if (process_links || do_syms || do_unwind
       || dump_any_debugging || do_dump || do_debugging)
     return true;
 

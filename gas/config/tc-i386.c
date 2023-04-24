@@ -26,7 +26,6 @@
    Please help us make it better.  */
 
 #include "as.h"
-#include "safe-ctype.h"
 #include "subsegs.h"
 #include "dwarf2dbg.h"
 #include "dw2gencfi.h"
@@ -36,6 +35,9 @@
 #include "opcodes/i386-init.h"
 #include "opcodes/i386-mnem.h"
 #include <limits.h>
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 #ifndef INFER_ADDR_PREFIX
 #define INFER_ADDR_PREFIX 1

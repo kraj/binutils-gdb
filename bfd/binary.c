@@ -34,8 +34,10 @@
 
 #include "sysdep.h"
 #include "bfd.h"
-#include "safe-ctype.h"
 #include "libbfd.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 /* Any bfd we create by reading a binary file has three symbols:
    a start symbol, an end symbol, and an absolute length symbol.  */

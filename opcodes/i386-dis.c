@@ -37,6 +37,8 @@
 #include "opintl.h"
 #include "opcode/i386.h"
 #include "libiberty.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
 #include "safe-ctype.h"
 
 typedef struct instr_info instr_info;
@@ -4190,7 +4192,7 @@ static const struct dis386 prefix_table[][4] = {
     { "vbcstnebf162ps", { XM, Mw }, 0 },
     { "vbcstnesh2ps", { XM, Mw }, 0 },
   },
- 
+
   /* PREFIX_VEX_0F38F5_L_0 */
   {
     { "bzhiS",		{ Gdq, Edq, VexGdq }, 0 },

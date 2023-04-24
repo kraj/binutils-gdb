@@ -27,6 +27,8 @@
 #include "cgen.h"
 #include "elf/common.h"
 #include "elf/m32c.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
 #include "safe-ctype.h"
 
 /* Structure to hold all of the different components

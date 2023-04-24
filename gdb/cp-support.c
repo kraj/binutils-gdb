@@ -36,13 +36,15 @@
 #include "namespace.h"
 #include <signal.h>
 #include "gdbsupport/gdb_setjmp.h"
-#include "safe-ctype.h"
 #include "gdbsupport/selftest.h"
 #include "gdbsupport/gdb-sigmask.h"
 #include <atomic>
 #include "event-top.h"
 #include "run-on-main-thread.h"
 #include "typeprint.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 #define d_left(dc) (dc)->u.s_binary.left
 #define d_right(dc) (dc)->u.s_binary.right
@@ -687,7 +689,7 @@ mangled_name_to_comp (const char *mangled_name, int options,
 							       options);
   if (demangled_name == NULL)
    return NULL;
-  
+
   /* If we could demangle the name, parse it to build the component
      tree.  */
   std::unique_ptr<demangle_parse_info> info
@@ -2214,8 +2216,8 @@ test_cp_remove_params ()
 static void
 first_component_command (const char *arg, int from_tty)
 {
-  int len;  
-  char *prefix; 
+  int len;
+  char *prefix;
 
   if (!arg)
     return;

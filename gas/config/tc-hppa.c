@@ -22,7 +22,6 @@
    at the University of Utah.  */
 
 #include "as.h"
-#include "safe-ctype.h"
 #include "subsegs.h"
 #include "dw2gencfi.h"
 
@@ -34,6 +33,9 @@
 #if defined (OBJ_ELF) && defined (OBJ_SOM)
 error only one of OBJ_ELF and OBJ_SOM can be defined
 #endif
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 /* If we are using ELF, then we probably can support dwarf2 debug
    records.  Furthermore, if we are supporting dwarf2 debug records,

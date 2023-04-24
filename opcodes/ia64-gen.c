@@ -39,7 +39,6 @@
 #include <errno.h>
 
 #include "libiberty.h"
-#include "safe-ctype.h"
 #include "getopt.h"
 #include "ia64-opc.h"
 #include "ia64-opc-a.c"
@@ -52,6 +51,9 @@
 
 #include <libintl.h>
 #define _(String) gettext (String)
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 const char * program_name = NULL;
 int debug = 0;

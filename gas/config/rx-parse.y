@@ -20,8 +20,10 @@
 %{
 
 #include "as.h"
-#include "safe-ctype.h"
 #include "rx-defs.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 static int rx_lex (void);
 
@@ -1279,7 +1281,7 @@ token_table[] =
   { "dr13", DREG, 13 },
   { "dr14", DREG, 14 },
   { "dr15", DREG, 15 },
-  
+
   { "drh0", DREGH, 0 },
   { "drh1", DREGH, 1 },
   { "drh2", DREGH, 2 },
@@ -1322,7 +1324,7 @@ token_table[] =
   { "DCR1", DCREG, 1 },
   { "DCR2", DCREG, 2 },
   { "DCR3", DCREG, 3 },
-  
+
   { ".s", DOT_S, 0 },
   { ".b", DOT_B, 0 },
   { ".w", DOT_W, 0 },

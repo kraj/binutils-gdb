@@ -89,12 +89,14 @@
 
 #include "as.h"
 #include "filenames.h"
-#include "safe-ctype.h"
 #include "input-file.h"
 #include "subsegs.h"
 #include "bfdver.h"
 #include <time.h>
 #include <stdarg.h>
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 #ifndef NO_LISTING
 

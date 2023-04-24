@@ -46,13 +46,15 @@
 
 #include "as.h"
 #include <limits.h>
-#include "safe-ctype.h"
 #include "sb.h"
 #include "macro.h"
 #include "subsegs.h"
 #include "opcode/tic54x.h"
 #include "obj-coff.h"
 #include <math.h>
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 
 static struct stag
@@ -1415,7 +1417,7 @@ tic54x_usect (int x ATTRIBUTE_UNUSED)
   c = get_symbol_name (&section_name);	/* Get terminator.  */
   name = xstrdup (section_name);
   c = restore_line_pointer (c);
-  
+
   if (c == ',')
     ++input_line_pointer;
   else

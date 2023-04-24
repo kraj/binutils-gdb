@@ -75,11 +75,13 @@
 #include "gdbsupport/scope-exit.h"
 #include "gdbarch.h"
 #include "cli-out.h"
-#include "gdbsupport/gdb-safe-ctype.h"
 #include "bt-utils.h"
 #include "gdbsupport/buildargv.h"
 #include "pager.h"
 #include "run-on-main-thread.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "gdbsupport/gdb-safe-ctype.h"
 
 void (*deprecated_error_begin_hook) (void);
 
@@ -3122,7 +3124,7 @@ strcmp_iw_ordered (const char *string1, const char *string2)
 
       if (case_pass == case_sensitive_on)
 	return 0;
-      
+
       /* Otherwise the strings were equal in case insensitive way, make
 	 a more fine grained comparison in a case sensitive way.  */
 

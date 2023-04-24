@@ -29,7 +29,6 @@
 #include "gdbtypes.h"
 #include "target.h"
 #include "regcache.h"
-#include "safe-ctype.h"
 #include "reggroups.h"
 #include "arch-utils.h"
 #include "frame-unwind.h"
@@ -46,6 +45,9 @@
 /* OpenRISC specific includes.  */
 #include "or1k-tdep.h"
 #include "features/or1k.c"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 
 /* Global debug flag.  */

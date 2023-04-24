@@ -19,7 +19,6 @@
    Boston, MA 02110-1301, USA.  */
 
 #include "as.h"
-#include "safe-ctype.h"
 #include "subsegs.h"
 #include "symcat.h"
 #include "opcodes/iq2000-desc.h"
@@ -29,6 +28,9 @@
 #include "elf/iq2000.h"
 #include "sb.h"
 #include "macro.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 /* Structure to hold all of the different components describing
    an individual instruction.  */

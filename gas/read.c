@@ -31,7 +31,6 @@
    Another group of these functions is in the expr.c module.  */
 
 #include "as.h"
-#include "safe-ctype.h"
 #include "subsegs.h"
 #include "sb.h"
 #include "macro.h"
@@ -43,6 +42,9 @@
 #include "filenames.h"
 
 #include <limits.h>
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 #ifndef TC_START_LABEL
 #define TC_START_LABEL(STR, NUL_CHAR, NEXT_CHAR) (NEXT_CHAR == ':')
@@ -1221,7 +1223,7 @@ read_a_source_file (const char *name)
 			 if it encountered a catastrophic failure.  */
 		      if (input_line_pointer == NULL)
 			as_fatal (_("unable to continue with assembly."));
- 
+
 		      *input_line_pointer++ = nul_char;
 
 		      /* We resume loop AFTER the end-of-line from
@@ -5866,7 +5868,7 @@ s_incbin (int x ATTRIBUTE_UNUSED)
 	  as_bad (_("unable to include `%s'"), path);
 	  goto done;
 	}
-      
+
       register_dependency (path);
 
       /* Compute the length of the file.  */

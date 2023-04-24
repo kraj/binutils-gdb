@@ -24,7 +24,6 @@
 #include "bfdlink.h"
 #include "libiberty.h"
 #include "ctf-api.h"
-#include "safe-ctype.h"
 
 #include "ld.h"
 #include "ldexp.h"
@@ -33,6 +32,9 @@
 #include "ldmisc.h"
 #include <ldgram.h>
 #include "ldmain.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 /* Build link_order structures for the BFD linker.  */
 

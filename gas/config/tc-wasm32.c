@@ -20,12 +20,14 @@
    02110-1301, USA.  */
 
 #include "as.h"
-#include "safe-ctype.h"
 #include "subsegs.h"
 #include "dwarf2dbg.h"
 #include "dw2gencfi.h"
 #include "elf/wasm32.h"
 #include <float.h>
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 enum wasm_class
 {

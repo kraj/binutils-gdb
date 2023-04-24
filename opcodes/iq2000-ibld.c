@@ -35,6 +35,8 @@
 #include "iq2000-opc.h"
 #include "cgen/basic-modes.h"
 #include "opintl.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
 #include "safe-ctype.h"
 
 #undef  min

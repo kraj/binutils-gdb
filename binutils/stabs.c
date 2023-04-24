@@ -27,13 +27,15 @@
 #include "sysdep.h"
 #include "bfd.h"
 #include "libiberty.h"
-#include "safe-ctype.h"
 #include "demangle.h"
 #include "debug.h"
 #include "budbg.h"
 #include "filenames.h"
 #include "aout/aout64.h"
 #include "aout/stab_gnu.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 /* The number of predefined XCOFF types.  */
 
@@ -1318,7 +1320,7 @@ parse_stab_type (void *                dhandle,
 	  case 0:
 	      bad_stab (orig);
 	      return DEBUG_TYPE_NULL;
-	    
+
 	  default:
 	    /* Complain and keep going, so compilers can invent new
 	       cross-reference types.  */
@@ -3125,7 +3127,7 @@ parse_stab_tilde_field (void *dhandle,
   orig = *pp;
   if (orig >= p_end)
     return false;
-  
+
   /* If we are positioned at a ';', then skip it.  */
   if (**pp == ';')
     ++*pp;

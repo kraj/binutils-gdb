@@ -28,6 +28,8 @@
 #include "opcode/riscv.h"
 #include "libiberty.h"
 #include "elfxx-riscv.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
 #include "safe-ctype.h"
 
 #define MINUS_ONE ((bfd_vma)0 - 1)

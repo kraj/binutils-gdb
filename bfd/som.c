@@ -26,9 +26,11 @@
 #include "libiberty.h"
 #include "libbfd.h"
 #include "som.h"
-#include "safe-ctype.h"
 #include "som/reloc.h"
 #include "aout/ar.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 static bfd_reloc_status_type hppa_som_reloc
   (bfd *, arelent *, asymbol *, void *, asection *, bfd *, char **);
@@ -6927,4 +6929,3 @@ const bfd_target hppa_som_vec =
 
   NULL
 };
-

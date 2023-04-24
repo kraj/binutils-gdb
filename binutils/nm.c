@@ -38,6 +38,8 @@
 #include "demanguse.h"
 #include "plugin-api.h"
 #include "plugin.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
 #include "safe-ctype.h"
 
 #ifndef streq
@@ -493,7 +495,7 @@ get_coff_symbol_type (const struct internal_syment *sym)
    Returns the number of characters added to OUT.
    Returns the number of bytes consumed from IN in CONSUMED.
    Always consumes at least one byte and displays at least one character.  */
-   
+
 static unsigned int
 display_utf8 (const unsigned char * in, char * out, unsigned int * consumed)
 {
@@ -547,7 +549,7 @@ display_utf8 (const unsigned char * in, char * out, unsigned int * consumed)
 	out += sprintf (out, "%02x", in [j]);
       out += sprintf (out, "%c", unicode_display == unicode_hex ? '>' : '}');
       break;
-      
+
     case unicode_highlight:
       if (isatty (1))
 	out += sprintf (out, "\x1B[31;47m"); /* Red.  */
@@ -557,7 +559,7 @@ display_utf8 (const unsigned char * in, char * out, unsigned int * consumed)
 	{
 	case 2:
 	  out += sprintf (out, "\\u%02x%02x",
-		  ((in[0] & 0x1c) >> 2), 
+		  ((in[0] & 0x1c) >> 2),
 		  ((in[0] & 0x03) << 6) | (in[1] & 0x3f));
 	  break;
 
@@ -1199,7 +1201,7 @@ print_symbol (bfd *        abfd,
     {
       if (ifunc_type_chars == NULL || ifunc_type_chars[0] == 0)
 	; /* Change nothing.  */
-      else if (sym->flags & BSF_GLOBAL) 
+      else if (sym->flags & BSF_GLOBAL)
 	syminfo.type = ifunc_type_chars[0];
       else if (ifunc_type_chars[1] != 0)
 	syminfo.type = ifunc_type_chars[1];

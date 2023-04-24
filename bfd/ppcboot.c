@@ -34,9 +34,11 @@
    address to zero by default.  */
 
 #include "sysdep.h"
-#include "safe-ctype.h"
 #include "bfd.h"
 #include "libbfd.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 /* PPCbug location structure */
 typedef struct ppcboot_location

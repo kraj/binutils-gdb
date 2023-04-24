@@ -27,8 +27,10 @@
 #define DEFINE_TABLE
 #define h8_opcodes ops
 #include "opcode/h8300.h"
-#include "safe-ctype.h"
 #include "elf/h8.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 const char comment_chars[] = ";";
 const char line_comment_chars[] = "#";

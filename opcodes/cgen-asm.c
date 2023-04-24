@@ -22,11 +22,13 @@
 #include <stdio.h>
 #include "ansidecl.h"
 #include "libiberty.h"
-#include "safe-ctype.h"
 #include "bfd.h"
 #include "symcat.h"
 #include "opcode/cgen.h"
 #include "opintl.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 static CGEN_INSN_LIST *  hash_insn_array      (CGEN_CPU_DESC, const CGEN_INSN *, int, int, CGEN_INSN_LIST **, CGEN_INSN_LIST *);
 static CGEN_INSN_LIST *  hash_insn_list       (CGEN_CPU_DESC, const CGEN_INSN_LIST *, CGEN_INSN_LIST **, CGEN_INSN_LIST *);

@@ -29,11 +29,13 @@
 #include "bfd.h"
 #include "bucomm.h"
 #include "libiberty.h"
-#include "safe-ctype.h"
 #include "windres.h"
 #include "rcparse.h"
 
 #include <assert.h>
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 /* Whether we are in rcdata mode, in which we returns the lengths of
    strings.  */

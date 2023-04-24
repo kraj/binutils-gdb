@@ -23,11 +23,13 @@
 #include "as.h"
 #include "dwarf2dbg.h"
 #include "dw2gencfi.h"
-#include "safe-ctype.h"
 #include "subsegs.h"
 #include "opcode/tic6x.h"
 #include "elf/tic6x.h"
 #include "elf32-tic6x.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 /* Truncate and sign-extend at 32 bits, so that building on a 64-bit
    host gives identical results to a 32-bit host.  */

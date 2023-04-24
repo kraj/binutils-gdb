@@ -19,8 +19,10 @@
    02110-1301, USA.  */
 
 #include "as.h"
-#include "safe-ctype.h"
 #include <limits.h>
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 #ifdef TRACE
 static void flonum_print (const FLONUM_TYPE *);

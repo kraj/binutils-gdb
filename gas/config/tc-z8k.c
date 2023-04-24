@@ -21,9 +21,11 @@
 /* Written By Steve Chamberlain <sac@cygnus.com>.  */
 
 #include "as.h"
-#include "safe-ctype.h"
 #define DEFINE_TABLE
 #include "opcodes/z8k-opc.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 const char comment_chars[] = "!";
 const char line_comment_chars[] = "#";

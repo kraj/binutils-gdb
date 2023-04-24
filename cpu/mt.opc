@@ -52,6 +52,8 @@ extern int mt_cgen_insn_supported (CGEN_CPU_DESC, const CGEN_INSN *);
 
 
 /* -- opc.c */
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
 #include "safe-ctype.h"
 
 /* Special check to ensure that instruction exists for given machine.  */
@@ -64,7 +66,7 @@ mt_cgen_insn_supported (CGEN_CPU_DESC cd, const CGEN_INSN *insn)
   /* No mach attribute?  Assume it's supported for all machs.  */
   if (machs == 0)
     return 1;
-  
+
   return ((machs & cd->machs) != 0);
 }
 
@@ -89,7 +91,7 @@ mt_asm_hash (const char* insn)
 /* Range checking for signed numbers.  Returns 0 if acceptable
    and 1 if the value is out of bounds for a signed quantity.  */
 
-static int 
+static int
 signed_out_of_bounds (long val)
 {
   if ((val < -32768) || (val > 32767))
@@ -109,7 +111,7 @@ parse_loopsize (CGEN_CPU_DESC cd,
   enum cgen_parse_operand_result result_type;
   bfd_vma value;
 
-  /* Is it a control transfer instructions?  */ 
+  /* Is it a control transfer instructions?  */
   if (opindex == (CGEN_OPERAND_TYPE) MT_OPERAND_LOOPSIZE)
     {
       code = BFD_RELOC_MT_PCINSN8;
@@ -134,7 +136,7 @@ parse_imm16 (CGEN_CPU_DESC cd,
   bfd_reloc_code_real_type code = BFD_RELOC_NONE;
   bfd_vma value;
 
-  /* Is it a control transfer instructions?  */ 
+  /* Is it a control transfer instructions?  */
   if (opindex == (CGEN_OPERAND_TYPE) MT_OPERAND_IMM16O)
     {
       code = BFD_RELOC_16_PCREL;
@@ -181,7 +183,7 @@ parse_imm16 (CGEN_CPU_DESC cd,
 		 value = (value >> 16) & 0xFFFF;
 	       else if (code == BFD_RELOC_LO16)
 		 value = value  & 0xFFFF;
-	       else 
+	       else
 		 errmsg = _("Biiiig Trouble in parse_imm16!");
 	       break;
 
@@ -210,27 +212,27 @@ parse_imm16 (CGEN_CPU_DESC cd,
       if (parse_signed)
 	{
           /* Parse as as signed integer.  */
- 
+
           errmsg = cgen_parse_signed_integer (cd, strp, opindex, valuep);
 
-          if (errmsg == NULL) 
+          if (errmsg == NULL)
 	    {
 #if 0
 	      /* Manual range checking is needed for the signed case.  */
 	      if (*valuep & 0x8000)
                 value = 0xffff0000 | *valuep;
-	      else 
+	      else
                 value = *valuep;
 
 	      if (signed_out_of_bounds (value))
 	        errmsg = _("Operand out of range. Must be between -32768 and 32767.");
 	      /* Truncate to 16 bits. This is necessary
 		 because cgen will have sign extended *valuep.  */
-	      *valuep &= 0xFFFF; 
+	      *valuep &= 0xFFFF;
 #endif
 	    }
 	}
-      else  
+      else
 	{
           /* MT_OPERAND_IMM16Z.  Parse as an unsigned integer.  */
           errmsg = cgen_parse_unsigned_integer (cd, strp, opindex, (unsigned long *) valuep);
@@ -462,8 +464,3 @@ print_pcrel (CGEN_CPU_DESC cd ATTRIBUTE_UNUSED,
 }
 
 /* -- */
-
-
-
-
-

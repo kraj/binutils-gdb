@@ -24,12 +24,14 @@
 #include "subsegs.h"
 #include "dwarf2dbg.h"
 #include "dw2gencfi.h"
-#include "safe-ctype.h"
 
 #include "opcode/arc.h"
 #include "opcode/arc-attrs.h"
 #include "elf/arc.h"
 #include "../opcodes/arc-ext.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 /* Defines section.  */
 

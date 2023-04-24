@@ -27,6 +27,8 @@
 #include "libbfd.h"
 #include "coff/internal.h"
 #include "libcoff.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
 #include "safe-ctype.h"
 
 static bool coff_link_add_object_symbols (bfd *, struct bfd_link_info *);

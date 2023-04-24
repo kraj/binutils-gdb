@@ -21,7 +21,6 @@
 #include "sysdep.h"
 #include "disassemble.h"
 #include "opintl.h"
-#include "safe-ctype.h"
 #include "floatformat.h"
 #include "libiberty.h"
 #include "elf-bfd.h"
@@ -33,6 +32,9 @@
 #ifndef CHAR_BIT
 #define CHAR_BIT 8
 #endif
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 /* Type names for blocks and signatures.  */
 #define BLOCK_TYPE_NONE              0x40

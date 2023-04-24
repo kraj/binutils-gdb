@@ -22,11 +22,13 @@
 #include "subsegs.h"
 #define DEFINE_TABLE
 #include "../opcodes/mcore-opc.h"
-#include "safe-ctype.h"
 
 #ifdef OBJ_ELF
 #include "elf/mcore.h"
 #endif
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 #ifndef streq
 #define streq(a,b) (strcmp (a, b) == 0)

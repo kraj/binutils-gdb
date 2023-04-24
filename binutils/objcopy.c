@@ -29,12 +29,14 @@
 #include "elf-bfd.h"
 #include "coff/internal.h"
 #include "libcoff.h"
-#include "safe-ctype.h"
 
 /* FIXME: See bfd/peXXigen.c for why we include an architecture specific
    header in generic PE code.  */
 #include "coff/i386.h"
 #include "coff/pe.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 static bfd_vma pe_file_alignment = (bfd_vma) -1;
 static bfd_vma pe_heap_commit = (bfd_vma) -1;
@@ -1584,7 +1586,7 @@ filter_symbols (bfd *abfd, bfd *obfd, asymbol **osyms,
 	    {
 	      fatal (_("redefining symbols does not work on LTO-compiled object files"));
 	    }
-	  
+
 	  new_name = (char *) lookup_sym_redefinition (name);
 	  if (new_name == name
 	      && (flags & BSF_SECTION_SYM) != 0)
@@ -2905,7 +2907,7 @@ copy_object (bfd *ibfd, bfd *obfd, const bfd_arch_info_type *input_arch)
 	  pset = find_section_list (padd->name, false,
 				    SECTION_CONTEXT_SET_FLAGS);
 	  if (pset != NULL)
-	    {	      
+	    {
 	      flags = pset->flags | SEC_HAS_CONTENTS;
 	      flags = check_new_section_flags (flags, obfd, padd->name);
 	    }

@@ -64,6 +64,8 @@
 
 #include "dwarf2dbg.h"
 #include "dw2gencfi.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
 #include "safe-ctype.h"
 
 /* Local types.  */

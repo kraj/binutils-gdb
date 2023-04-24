@@ -24,7 +24,6 @@
 #include "bfdlink.h"
 #include "libiberty.h"
 #include "ctf-api.h"
-#include "safe-ctype.h"
 #include "filenames.h"
 #include "demangle.h"
 #include <stdarg.h>
@@ -36,6 +35,9 @@
 #include "ldlex.h"
 #include "ldmain.h"
 #include "ldfile.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 /*
  %% literal %
@@ -97,7 +99,7 @@ vfinfo (FILE *fp, const char *fmt, va_list ap, bool is_warning)
 
   if (is_warning && config.no_warnings)
     return;
-  
+
   for (arg_no = 0; arg_no < sizeof (args) / sizeof (args[0]); arg_no++)
     args[arg_no].type = Bad;
 

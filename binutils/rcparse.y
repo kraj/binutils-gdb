@@ -29,6 +29,8 @@
 #include "bucomm.h"
 #include "libiberty.h"
 #include "windres.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
 #include "safe-ctype.h"
 
 /* The current language.  */

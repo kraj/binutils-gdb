@@ -1,4 +1,4 @@
-/* DIE indexing 
+/* DIE indexing
 
    Copyright (C) 2022-2023 Free Software Foundation, Inc.
 
@@ -29,11 +29,13 @@
 #include "observable.h"
 #include "run-on-main-thread.h"
 #include <algorithm>
-#include "safe-ctype.h"
 #include "gdbsupport/selftest.h"
 #include <chrono>
 #include <unordered_set>
 #include "cli/cli-cmds.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 /* We don't want gdb to exit while it is in the process of writing to
    the index cache.  So, all live cooked index vectors are stored

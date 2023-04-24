@@ -27,11 +27,13 @@
 #include "bfd.h"
 #include "bucomm.h"
 #include "libiberty.h"
-#include "safe-ctype.h"
 #include "windmc.h"
 #include "mcparse.h"
 
 #include <assert.h>
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 /* Exported globals.  */
 bool mclex_want_nl = false;

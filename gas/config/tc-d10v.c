@@ -19,11 +19,13 @@
    Boston, MA 02110-1301, USA.  */
 
 #include "as.h"
-#include "safe-ctype.h"
 #include "subsegs.h"
 #include "opcode/d10v.h"
 #include "elf/ppc.h"
 #include "dwarf2dbg.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 const char comment_chars[]        = ";";
 const char line_comment_chars[]   = "#";
@@ -1816,4 +1818,3 @@ md_assemble (char *str)
       fixups = fixups->next;
     }
 }
-

@@ -21,7 +21,6 @@
 #define OBJ_HEADER "obj-coff.h"
 
 #include "as.h"
-#include "safe-ctype.h"
 #include "subsegs.h"
 
 #ifdef TE_PE
@@ -31,6 +30,9 @@
 #ifdef OBJ_XCOFF
 #include "coff/xcoff.h"
 #endif
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 #define streq(a,b)     (strcmp ((a), (b)) == 0)
 

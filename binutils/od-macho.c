@@ -22,7 +22,6 @@
 #include "sysdep.h"
 #include <stddef.h>
 #include <time.h>
-#include "safe-ctype.h"
 #include "bfd.h"
 #include "objdump.h"
 #include "bucomm.h"
@@ -33,6 +32,9 @@
 #include "mach-o/external.h"
 #include "mach-o/codesign.h"
 #include "mach-o/unwind.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 /* Index of the options in the options[] array.  */
 #define OPT_HEADER 0

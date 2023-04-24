@@ -29,10 +29,12 @@
 */
 
 #include "as.h"
-#include "safe-ctype.h"
 #include <limits.h>
 #include "dwarf2dbg.h"
 #include <filenames.h>
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 #ifdef HAVE_DOS_BASED_FILE_SYSTEM
 /* We need to decide which character to use as a directory separator.
@@ -674,7 +676,7 @@ get_directory_table_entry (const char *dirname,
   if (dirs_in_use <= d)
     dirs_in_use = d + 1;
 
-  return d;  
+  return d;
 }
 
 static bool
@@ -868,7 +870,7 @@ allocate_filename_to_slot (const char *dirname,
 	{
 	  if (dir != NULL && filename_cmp (dir, dirname) != 0)
 	    goto fail;
-      
+
 	  if (filename_cmp (filename, files[num].filename) != 0)
 	    goto fail;
 
@@ -881,13 +883,13 @@ allocate_filename_to_slot (const char *dirname,
 		  dirs_allocated = files[num].dir + DIR_TABLE_INCREMENT;
 		  dirs = XCNEWVEC (char *, dirs_allocated);
 		}
-	      
+
 	      dirs[files[num].dir] = xmemdup0 (dirname, strlen (dirname));
 	    }
-	    
+
 	  return true;
 	}
-      else if (dir != NULL) 
+      else if (dir != NULL)
 	{
 	  dirlen = strlen (dir);
 	  if (filename_ncmp (filename, dir, dirlen) == 0
@@ -2181,7 +2183,7 @@ out_dir_and_file_list (segT line_seg, int sizeof_offset)
       else
 	out_uleb128 (dirs_in_use);
     }
-      
+
   /* Emit directory list.  */
   if (DWARF2_LINE_VERSION >= 5 && (dirs_in_use > 0 || files_in_use > 0))
     {
@@ -2251,7 +2253,7 @@ out_dir_and_file_list (segT line_seg, int sizeof_offset)
 	  emit_md5 = true;
 	  ++ columns;
 	}
-      
+
       /* The number of format entries to follow.  */
       out_byte (columns);
       /* The format of the file name.  */
@@ -2288,7 +2290,7 @@ out_dir_and_file_list (segT line_seg, int sizeof_offset)
       /* The number of entries in the table.  */
       out_uleb128 (files_in_use);
    }
-      
+
   for (i = DWARF2_LINE_VERSION > 4 ? 0 : 1; i < files_in_use; ++i)
     {
       const char *fullfilename;

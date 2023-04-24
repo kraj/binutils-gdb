@@ -29,7 +29,6 @@
 #include "dwarf.h"
 #include "gdb/gdb-index.h"
 #include "filenames.h"
-#include "safe-ctype.h"
 #include <assert.h>
 
 #ifdef HAVE_LIBDEBUGINFOD
@@ -40,6 +39,9 @@
 #ifndef CHAR_BIT
 #define CHAR_BIT 8
 #endif
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 #ifndef ENABLE_CHECKING
 #define ENABLE_CHECKING 0
@@ -8280,7 +8282,7 @@ display_debug_ranges (struct dwarf_section *section,
     }
 
   introduce (section, false);
-  
+
   if (is_rnglists)
     return display_debug_rnglists (section);
 
@@ -8359,7 +8361,7 @@ display_debug_ranges (struct dwarf_section *section,
 	}
 
       next = section_begin + offset + debug_info_p->rnglists_base;
-      
+
       /* If multiple DWARF entities reference the same range then we will
 	 have multiple entries in the `range_entries' list for the same
 	 offset.  Thanks to the sort above these will all be consecutive in

@@ -20,11 +20,13 @@
    Boston, MA 02110-1301, USA.  */
 
 #include "as.h"
-#include "safe-ctype.h"
 #include "subsegs.h"
 #include "opcode/xgate.h"
 #include "dwarf2dbg.h"
 #include "elf/xgate.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 const char comment_chars[] = ";!";
 const char line_comment_chars[] = "#*";

@@ -22,9 +22,11 @@
 #include "xml-builtin.h"
 #include "xml-support.h"
 #include "gdbsupport/filestuff.h"
-#include "safe-ctype.h"
 #include <vector>
 #include <string>
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 /* Debugging flag.  */
 static bool debug_xml;

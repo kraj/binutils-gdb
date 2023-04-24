@@ -42,8 +42,10 @@ SECTION
 #define ARCH_SIZE 0
 #include "elf-bfd.h"
 #include "libiberty.h"
-#include "safe-ctype.h"
 #include "elf-linux-core.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 #ifdef CORE_HEADER
 #include CORE_HEADER

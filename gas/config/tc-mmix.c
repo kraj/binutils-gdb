@@ -31,9 +31,11 @@
 #include "subsegs.h"
 #include "elf/mmix.h"
 #include "opcode/mmix.h"
-#include "safe-ctype.h"
 #include "dwarf2dbg.h"
 #include "obstack.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 /* Something to describe what we need to do with a fixup before output,
    for example assert something of what it became or make a relocation.  */
@@ -1948,7 +1950,7 @@ s_prefix (int unused ATTRIBUTE_UNUSED)
   SKIP_WHITESPACE ();
 
   c = get_symbol_name (&p);
-  
+
   /* Resetting prefix?  */
   if (*p == ':' && p[1] == 0)
     mmix_current_prefix = NULL;

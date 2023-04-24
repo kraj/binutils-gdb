@@ -26,8 +26,10 @@
 #include "libiberty.h"
 #include "demangle.h"
 #include "getopt.h"
-#include "safe-ctype.h"
 #include "bucomm.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 static int flags = DMGL_PARAMS | DMGL_ANSI | DMGL_VERBOSE;
 static int strip_underscore = TARGET_PREPENDS_UNDERSCORE;

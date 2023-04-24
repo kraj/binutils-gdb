@@ -23,10 +23,12 @@
    MA 02110-1301, USA.  */
 
 #include "as.h"
-#include "safe-ctype.h"
 #include "subsegs.h"
 #include "opcode/cris.h"
 #include "dwarf2dbg.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 /* Conventions used here:
    Generally speaking, pointers to binutils types such as "fragS" and

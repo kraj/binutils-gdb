@@ -20,6 +20,8 @@
    02110-1301, USA.  */
 
 #include "opcode/csky.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
 #include "safe-ctype.h"
 
 #define OP_TABLE_NUM    2
@@ -697,7 +699,7 @@ struct csky_reg_def
 		       	ASH(860)))
 
 /* C-SKY V1 general registers table.  */
-static struct csky_reg_def csky_abiv1_general_regs[] = 
+static struct csky_reg_def csky_abiv1_general_regs[] =
 {
 #define DECLARE_REG(regno, abi_name, support)		\
   {GENERAL_REG_BANK, regno, "r"#regno, abi_name, support, NULL}
@@ -724,7 +726,7 @@ static struct csky_reg_def csky_abiv1_general_regs[] =
 };
 
 /* C-SKY V1 control registers table.  */
-static struct csky_reg_def csky_abiv1_control_regs[] = 
+static struct csky_reg_def csky_abiv1_control_regs[] =
 {
 #define DECLARE_REG(regno, abi_name, support)		\
   {0, regno, "cr"#regno, abi_name, support, NULL}
@@ -765,7 +767,7 @@ static struct csky_reg_def csky_abiv1_control_regs[] =
 };
 
 /* C-SKY V2 general registers table.  */
-static struct csky_reg_def csky_abiv2_general_regs[] = 
+static struct csky_reg_def csky_abiv2_general_regs[] =
 {
 #ifdef DECLARE_REG
 #undef DECLARE_REG
@@ -818,7 +820,7 @@ static struct csky_reg_def csky_abiv2_general_regs[] =
 };
 
 /* C-SKY V2 control registers table.  */
-static struct csky_reg_def csky_abiv2_control_regs[] = 
+static struct csky_reg_def csky_abiv2_control_regs[] =
 {
 
 #ifdef DECLARE_REG

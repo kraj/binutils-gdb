@@ -23,7 +23,6 @@
    MA 02110-1301, USA.  */
 
 #include "bfd.h"
-#include "safe-ctype.h"
 #include "bfdlink.h"
 #include "ctf-api.h"
 #include "ld.h"
@@ -35,6 +34,9 @@
 #include "ldlex.h"
 #include "ldmain.h"
 #include "libiberty.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 /* The type of top-level parser input.
    yylex and yyparse (indirectly) both check this.  */

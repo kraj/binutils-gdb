@@ -27,7 +27,6 @@
 #include <limits.h>
 #include <stdarg.h>
 #define	 NO_RELOC 0
-#include "safe-ctype.h"
 #include "subsegs.h"
 #include "obstack.h"
 #include "libiberty.h"
@@ -40,6 +39,9 @@
 #endif
 
 #include "dwarf2dbg.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 #ifdef OBJ_ELF
 /* Must be at least the size of the largest unwind opcode (currently two).  */

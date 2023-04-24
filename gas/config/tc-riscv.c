@@ -23,7 +23,6 @@
 #include "as.h"
 #include "config.h"
 #include "subsegs.h"
-#include "safe-ctype.h"
 
 #include "itbl-ops.h"
 #include "dwarf2dbg.h"
@@ -34,6 +33,9 @@
 #include "opcode/riscv.h"
 
 #include <stdint.h>
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 /* Information about an instruction, including its format, operands
    and fixups.  */

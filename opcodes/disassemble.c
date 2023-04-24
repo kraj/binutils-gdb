@@ -20,8 +20,10 @@
 
 #include "sysdep.h"
 #include "disassemble.h"
-#include "safe-ctype.h"
 #include "opintl.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 #ifdef ARCH_all
 #ifdef BFD64

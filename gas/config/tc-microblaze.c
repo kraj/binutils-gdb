@@ -26,10 +26,12 @@
 #define DEFINE_TABLE
 #include "../opcodes/microblaze-opc.h"
 #include "../opcodes/microblaze-opcm.h"
-#include "safe-ctype.h"
 #include <string.h>
 #include <dwarf2dbg.h>
 #include "aout/stab_gnu.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 #ifndef streq
 #define streq(a,b) (strcmp (a, b) == 0)

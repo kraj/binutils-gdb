@@ -22,7 +22,6 @@
 #include "bfd.h"
 #include "libiberty.h"
 #include "filenames.h"
-#include "safe-ctype.h"
 #include "bfdlink.h"
 #include "ctf-api.h"
 #include "ld.h"
@@ -42,6 +41,9 @@
 #ifdef HAVE_JANSSON
 #include <jansson.h>
 #endif
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 struct dt_needed
 {

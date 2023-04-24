@@ -20,8 +20,10 @@
 %{
 
 #include "as.h"
-#include "safe-ctype.h"
 #include "rl78-defs.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 static int rl78_lex (void);
 

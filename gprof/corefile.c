@@ -27,8 +27,10 @@
 #include "symtab.h"
 #include "hist.h"
 #include "corefile.h"
-#include "safe-ctype.h"
 #include <limits.h>    /* For UINT_MAX.  */
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 bfd *core_bfd;
 static int core_num_syms;
@@ -499,7 +501,7 @@ num_of_syms_in (FILE * f)
       if (sscanf (buf, "%" STR_BUFSIZE "s %c %" STR_BUFSIZE "s", address, &type, name) == 3)
         if (type == 't' || type == 'T')
 	  {
-	    /* PR 20499 - prevent integer overflow computing argument to xmalloc.  */	  
+	    /* PR 20499 - prevent integer overflow computing argument to xmalloc.  */
 	    if (++num >= UINT_MAX / sizeof (Sym))
 	      return -1U;
 	  }

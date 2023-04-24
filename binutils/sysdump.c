@@ -26,11 +26,13 @@
 
 #include "sysdep.h"
 #include "bfd.h"
-#include "safe-ctype.h"
 #include "libiberty.h"
 #include "getopt.h"
 #include "bucomm.h"
 #include "sysroff.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 static int dump = 1;
 static int segmented_p;

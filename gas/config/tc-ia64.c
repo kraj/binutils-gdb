@@ -42,7 +42,6 @@
  */
 
 #include "as.h"
-#include "safe-ctype.h"
 #include "dwarf2dbg.h"
 #include "subsegs.h"
 
@@ -52,6 +51,9 @@
 #include "bfdver.h"
 #include <time.h>
 #include <limits.h>
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 #define NELEMS(a)	((int) (sizeof (a)/sizeof ((a)[0])))
 

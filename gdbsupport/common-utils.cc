@@ -20,8 +20,10 @@
 #include "common-defs.h"
 #include "common-utils.h"
 #include "host-defs.h"
-#include "safe-ctype.h"
 #include "gdbsupport/gdb-xfree.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 void *
 xzalloc (size_t size)

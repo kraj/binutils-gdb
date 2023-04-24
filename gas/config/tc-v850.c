@@ -19,10 +19,12 @@
    Boston, MA 02110-1301, USA.  */
 
 #include "as.h"
-#include "safe-ctype.h"
 #include "subsegs.h"
 #include "opcode/v850.h"
 #include "dwarf2dbg.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 /* Sign-extend a 16-bit number.  */
 #define SEXT16(x)	((((x) & 0xffff) ^ (~0x7fff)) + 0x8000)
@@ -2020,7 +2022,7 @@ handle_lo16 (const struct v850_operand *operand, const char **errmsg)
 {
   if (operand == NULL)
     return BFD_RELOC_LO16;
-  
+
   switch (operand->default_reloc)
     {
     case BFD_RELOC_LO16: return BFD_RELOC_LO16;

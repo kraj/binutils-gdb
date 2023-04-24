@@ -119,7 +119,6 @@ DESCRIPTION
 #include "sysdep.h"
 #include <limits.h>
 #include "bfd.h"
-#include "safe-ctype.h"
 #include "bfdlink.h"
 
 #include "libaout.h"
@@ -127,6 +126,9 @@ DESCRIPTION
 #include "aout/aout64.h"
 #include "aout/stab_gnu.h"
 #include "aout/ar.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 #ifdef BMAGIC
 #define N_IS_BMAGIC(x) (N_MAGIC (x) == BMAGIC)

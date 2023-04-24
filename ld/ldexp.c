@@ -40,6 +40,8 @@
 #include <ldgram.h>
 #include "ldlang.h"
 #include "libiberty.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
 #include "safe-ctype.h"
 
 static void exp_fold_tree_1 (etree_type *);

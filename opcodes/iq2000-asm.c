@@ -37,6 +37,8 @@
 #include "opintl.h"
 #include "xregex.h"
 #include "libiberty.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
 #include "safe-ctype.h"
 
 #undef  min
@@ -51,6 +53,7 @@ static const char * parse_insn_normal
 
 /* -- asm.c */
 
+/* Must be after any system headers that might transitively use <ctype.h>.  */
 #include "safe-ctype.h"
 
 static const char * MISSING_CLOSING_PARENTHESIS = N_("missing `)'");

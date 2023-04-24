@@ -40,9 +40,11 @@
 #include "getopt.h"
 #include "bucomm.h"
 #include "libiberty.h"
-#include "safe-ctype.h"
 #include "obstack.h"
 #include "windres.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 /* Used by resrc.c at least.  */
 
@@ -890,7 +892,7 @@ main (int argc, char **argv)
 		preprocessor = optarg;
 	    }
 	  else
-	    preprocessor = optarg;	    
+	    preprocessor = optarg;
 	  break;
 
 	case OPTION_PREPROCESSOR_ARG:

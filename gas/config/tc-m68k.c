@@ -19,7 +19,6 @@
    02110-1301, USA.  */
 
 #include "as.h"
-#include "safe-ctype.h"
 #include "obstack.h"
 #include "subsegs.h"
 #include "dwarf2dbg.h"
@@ -28,6 +27,9 @@
 #include "opcode/m68k.h"
 #include "m68k-parse.h"
 #include "elf/m68k.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 static void m68k_elf_cons (int);
 static void m68k_elf_gnu_attribute (int);
@@ -7984,4 +7986,3 @@ tc_m68k_check_adjusted_broken_word (offsetT new_offset, struct broken_word *brok
 		  _("Adjusted signed .word (%#lx) overflows: `switch'-statement too large."),
 		  (long) new_offset);
 }
-

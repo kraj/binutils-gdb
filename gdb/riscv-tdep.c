@@ -56,6 +56,8 @@
 #include "prologue-value.h"
 #include "arch/riscv.h"
 #include "riscv-ravenscar-thread.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
 #include "safe-ctype.h"
 
 /* The stack must be 16-byte aligned.  */

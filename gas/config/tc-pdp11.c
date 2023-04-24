@@ -19,8 +19,10 @@
    Boston, MA 02110-1301, USA.  */
 
 #include "as.h"
-#include "safe-ctype.h"
 #include "opcode/pdp11.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 extern int flonum_gen2vax (int, FLONUM_TYPE * f, LITTLENUM_TYPE *);
 
@@ -375,7 +377,7 @@ parse_reg (char *str, struct pdp11_code *operand)
       operand->error = _("Bad register name");
       str -= 2;
     }
-  
+
   return str;
 }
 
@@ -618,7 +620,7 @@ parse_op_noreg (char *str, struct pdp11_code *operand)
         {
           /* @Rn == (Rn): Register deferred.  */
           str = parse_reg (str + 1, operand);
-	  
+
           /* Not @Rn */
           if (operand->error)
 	    {

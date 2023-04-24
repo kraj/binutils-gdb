@@ -21,8 +21,10 @@
 /* Contributed by Steve Chamberlain of Transmeta <sac@pobox.com>.  */
 
 #include "as.h"
-#include "safe-ctype.h"
 #include "opcode/pj.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 extern const pj_opc_info_t pj_opc_info[512];
 

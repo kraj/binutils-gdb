@@ -25,12 +25,14 @@
 #include "as.h"
 #include "config.h"
 #include "subsegs.h"
-#include "safe-ctype.h"
 
 #include "opcode/mips.h"
 #include "itbl-ops.h"
 #include "dwarf2dbg.h"
 #include "dw2gencfi.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 /* Check assumptions made in this file.  */
 typedef char static_assert1[sizeof (offsetT) < 8 ? -1 : 1];
@@ -1869,8 +1871,8 @@ static const struct mips_ase mips_ases[] = {
 
 /* Groups of ASE_* flags that represent different revisions of an ASE.  */
 static const unsigned int mips_ase_groups[] = {
-  ASE_DSP | ASE_DSPR2 | ASE_DSPR3, 
-  ASE_LOONGSON_EXT | ASE_LOONGSON_EXT2 
+  ASE_DSP | ASE_DSPR2 | ASE_DSPR3,
+  ASE_LOONGSON_EXT | ASE_LOONGSON_EXT2
 };
 
 /* Pseudo-op table.

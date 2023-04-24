@@ -25,7 +25,6 @@
 #include <stdint.h>
 #include <stdarg.h>
 #include <ctype.h>
-#include "safe-ctype.h"
 #include "subsegs.h"
 #include "obstack.h"
 #include "libiberty.h"
@@ -36,6 +35,9 @@
 #endif
 #include "tc-csky.h"
 #include "dwarf2dbg.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 #define BUILD_AS          1
 

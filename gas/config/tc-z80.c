@@ -20,11 +20,13 @@
    02110-1301, USA.  */
 
 #include "as.h"
-#include "safe-ctype.h"
 #include "subsegs.h"
 #include "elf/z80.h"
 #include "dwarf2dbg.h"
 #include "dw2gencfi.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 /* Exported constants.  */
 const char comment_chars[] = ";\0";
@@ -3358,7 +3360,7 @@ static int
 assemble_suffix (const char **suffix)
 {
   static
-  const char sf[8][4] = 
+  const char sf[8][4] =
     {
       "il",
       "is",

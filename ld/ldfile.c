@@ -22,7 +22,6 @@
 #include "bfd.h"
 #include "bfdlink.h"
 #include "ctf-api.h"
-#include "safe-ctype.h"
 #include "ld.h"
 #include "ldmisc.h"
 #include "ldexp.h"
@@ -38,6 +37,9 @@
 #include "plugin-api.h"
 #include "plugin.h"
 #endif /* BFD_SUPPORTS_PLUGINS */
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 bool ldfile_assumed_script = false;
 const char *ldfile_output_machine_name = "";
@@ -472,7 +474,7 @@ ldfile_open_file (lang_input_statement_type *entry)
 	      argv[1] = "missing-lib";
 	      argv[2] = (char *) entry->local_sym_name;
 	      argv[3] = NULL;
-      
+
 	      if (verbose)
 		einfo (_("%P: About to run error handling script '%s' with arguments: '%s' '%s'\n"),
 		       argv[0], argv[1], argv[2]);

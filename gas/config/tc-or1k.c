@@ -17,7 +17,6 @@
    You should have received a copy of the GNU General Public License
    along with this program; if not, see <http://www.gnu.org/licenses/> */
 #include "as.h"
-#include "safe-ctype.h"
 #include "subsegs.h"
 #include "symcat.h"
 #include "opcodes/or1k-desc.h"
@@ -25,6 +24,9 @@
 #include "cgen.h"
 #include "elf/or1k.h"
 #include "dw2gencfi.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 /* Structure to hold all of the different components describing
    an individual instruction.  */
@@ -394,4 +396,3 @@ or1k_cfi_frame_initial_instructions (void)
 {
     cfi_add_CFA_def_cfa_register (1);
 }
-

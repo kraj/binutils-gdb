@@ -24,7 +24,6 @@
 #include <stdarg.h>
 #include <stdint.h>
 #define	 NO_RELOC 0
-#include "safe-ctype.h"
 #include "subsegs.h"
 #include "obstack.h"
 
@@ -37,6 +36,9 @@
 
 #include "dw2gencfi.h"
 #include "dwarf2dbg.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 /* Types of processor to assemble for.  */
 #ifndef CPU_DEFAULT
@@ -3815,7 +3817,7 @@ parse_shifter_operand_reloc (char **str, aarch64_opnd_info *operand,
       if (! aarch64_get_expression (&inst.reloc.exp, str, GE_NO_PREFIX,
 				    REJECT_ABSENT))
 	return false;
-      
+
       /* Record the relocation type (use the ADD variant here).  */
       inst.reloc.type = entry->add_type;
       inst.reloc.pc_rel = entry->pc_rel;

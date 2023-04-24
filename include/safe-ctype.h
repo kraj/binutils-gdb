@@ -30,7 +30,12 @@ Boston, MA 02110-1301, USA.  */
      unsigned char.
 
    To avoid conflicts, this header defines the isxxx functions in upper
-   case, e.g. ISALPHA not isalpha.  */
+   case, e.g. ISALPHA not isalpha.
+
+   NOTE!  This header redefines the standard is* and to* symbols as macros
+   that won't compile when used.  So it's crucial that this header always
+   be included last, after any other header that might use <ctype.h> or any
+   other system header that might indirectly use <ctype.h>.  */
 
 #ifndef SAFE_CTYPE_H
 #define SAFE_CTYPE_H

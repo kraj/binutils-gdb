@@ -40,9 +40,11 @@
   o Support 'abc' constants (that is 0x616263).  */
 
 #include "as.h"
-#include "safe-ctype.h"
 #include "opcode/tic4x.h"
 #include "subsegs.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 /* OK, we accept a syntax similar to the other well known C30
    assembly tools.  With TIC4X_ALT_SYNTAX defined we are more

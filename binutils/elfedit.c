@@ -41,8 +41,10 @@
 
 #include "getopt.h"
 #include "libiberty.h"
-#include "safe-ctype.h"
 #include "filenames.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 char * program_name = "elfedit";
 static long archive_file_offset;

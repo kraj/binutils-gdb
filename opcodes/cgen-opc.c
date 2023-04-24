@@ -22,10 +22,12 @@
 #include <stdio.h>
 #include "ansidecl.h"
 #include "libiberty.h"
-#include "safe-ctype.h"
 #include "bfd.h"
 #include "symcat.h"
 #include "opcode/cgen.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 static unsigned int hash_keyword_name
   (const CGEN_KEYWORD *, const char *, int);

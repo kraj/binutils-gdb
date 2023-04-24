@@ -53,8 +53,10 @@
 #include "source.h"
 #include "gdbsupport/byte-vector.h"
 #include "gdbsupport/gdb_optional.h"
-#include "safe-ctype.h"
 #include "gdbsupport/rsp-low.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 /* Chain containing all defined memory-tag subcommands.  */
 
@@ -608,7 +610,7 @@ build_address_symbolic (struct gdbarch *gdbarch,
   CORE_ADDR name_location = 0;
   struct obj_section *section = NULL;
   const char *name_temp = "";
-  
+
   /* Let's say it is mapped (not unmapped).  */
   *unmapped = 0;
 
@@ -624,7 +626,7 @@ build_address_symbolic (struct gdbarch *gdbarch,
 	}
     }
 
-  /* Try to find the address in both the symbol table and the minsyms. 
+  /* Try to find the address in both the symbol table and the minsyms.
      In most cases, we'll prefer to use the symbol instead of the
      minsym.  However, there are cases (see below) where we'll choose
      to use the minsym instead.  */
@@ -665,7 +667,7 @@ build_address_symbolic (struct gdbarch *gdbarch,
   if (msymbol.minsym != NULL)
     {
       /* Use the minsym if no symbol is found.
-      
+
 	 Additionally, use the minsym instead of a (found) symbol if
 	 the following conditions all hold:
 	   1) The prefer_sym_over_minsym flag is false.
@@ -2094,7 +2096,7 @@ undisplay_command (const char *args, int from_tty)
   dont_repeat ();
 }
 
-/* Display a single auto-display.  
+/* Display a single auto-display.
    Do nothing if the display cannot be printed in the current context,
    or if the display is disabled.  */
 
@@ -2737,7 +2739,7 @@ ui_printf (const char *arg, struct ui_file *stream)
 
   if (*s++ != '"')
     error (_("Bad format string, non-terminated '\"'."));
-  
+
   s = skip_spaces (s);
 
   if (*s != ',' && *s != 0)

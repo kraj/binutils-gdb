@@ -25,8 +25,10 @@
 #include "opintl.h"
 #include "aarch64-dis.h"
 #include "elf-bfd.h"
-#include "safe-ctype.h"
 #include "obstack.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 #define obstack_chunk_alloc xmalloc
 #define obstack_chunk_free free

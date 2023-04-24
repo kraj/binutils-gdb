@@ -40,7 +40,6 @@
 #include "defs.h"
 
 #include <unistd.h>
-#include "safe-ctype.h"
 #include "demangle.h"
 #include "cp-support.h"
 #include "c-support.h"
@@ -48,6 +47,9 @@
 
 #define GDB_YY_REMAP_PREFIX cpname
 #include "yy-remap.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 /* The components built by the parser are allocated ahead of time,
    and cached in this structure.  */
@@ -934,7 +936,7 @@ declarator_1	:	ptr_operator declarator_1
 		|	direct_declarator_1
 
 			/* Function local variable or type.  The typespec to
-			   our left is the type of the containing function. 
+			   our left is the type of the containing function.
 			   This should be OK, because function local types
 			   can not be templates, so the return types of their
 			   members will not be mangled.  If they are hopefully
@@ -1147,7 +1149,7 @@ exp	:	exp '?' exp ':' exp	%prec '?'
 						 state->fill_comp (DEMANGLE_COMPONENT_TRINARY_ARG2, $3, $5)));
 		}
 	;
-			  
+
 exp	:	INT
 	;
 
@@ -1164,7 +1166,7 @@ exp	:	SIZEOF '(' type ')'	%prec UNARY
 	;
 
 /* C++.  */
-exp     :       TRUEKEYWORD    
+exp     :       TRUEKEYWORD
 		{ struct demangle_component *i;
 		  i = state->make_name ("1", 1);
 		  $$ = state->fill_comp (DEMANGLE_COMPONENT_LITERAL,
@@ -1173,7 +1175,7 @@ exp     :       TRUEKEYWORD
 		}
 	;
 
-exp     :       FALSEKEYWORD   
+exp     :       FALSEKEYWORD
 		{ struct demangle_component *i;
 		  i = state->make_name ("0", 1);
 		  $$ = state->fill_comp (DEMANGLE_COMPONENT_LITERAL,
@@ -1529,7 +1531,7 @@ cp_parse_escape (const char **string_ptr)
       state->lexptr += 2;					\
       lvalp->opname = string;				\
       return token;					\
-    }      
+    }
 
 #define HANDLE_TOKEN3(string, token)			\
   if (state->lexptr[1] == string[1] && state->lexptr[2] == string[2])	\
@@ -1537,7 +1539,7 @@ cp_parse_escape (const char **string_ptr)
       state->lexptr += 3;					\
       lvalp->opname = string;				\
       return token;					\
-    }      
+    }
 
 /* Read one token, getting characters through LEXPTR.  */
 

@@ -26,7 +26,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
-#include "safe-ctype.h"
 #include "getopt.h"
 #include "bfdlink.h"
 #include "ctf-api.h"
@@ -44,6 +43,9 @@
 #if BFD_SUPPORTS_PLUGINS
 #include "plugin.h"
 #endif /* BFD_SUPPORTS_PLUGINS */
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 #ifndef PATH_SEPARATOR
 #if defined (__MSDOS__) || (defined (_WIN32) && ! defined (__CYGWIN32__))

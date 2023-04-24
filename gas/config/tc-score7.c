@@ -25,7 +25,6 @@
 #include "as.h"
 #include "config.h"
 #include "subsegs.h"
-#include "safe-ctype.h"
 #include "opcode/score-inst.h"
 #include "libiberty.h"
 
@@ -33,6 +32,9 @@
 #include "elf/score.h"
 #include "dwarf2dbg.h"
 #endif
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 static void s7_do_ldst_insn (char *);
 static void s7_do_crdcrscrsimm5 (char *);

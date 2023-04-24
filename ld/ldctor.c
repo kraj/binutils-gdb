@@ -22,7 +22,6 @@
 #include "sysdep.h"
 #include "bfd.h"
 #include "bfdlink.h"
-#include "safe-ctype.h"
 #include "ctf-api.h"
 
 #include "ld.h"
@@ -32,6 +31,9 @@
 #include <ldgram.h>
 #include "ldmain.h"
 #include "ldctor.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 /* The list of statements needed to handle constructors.  These are
    invoked by the command CONSTRUCTORS in the linker script.  */

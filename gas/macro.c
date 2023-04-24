@@ -22,9 +22,11 @@
    02110-1301, USA.  */
 
 #include "as.h"
-#include "safe-ctype.h"
 #include "sb.h"
 #include "macro.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 /* The routines in this file handle macro definition and expansion.
    They are called by gas.  */

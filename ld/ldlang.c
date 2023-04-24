@@ -23,7 +23,6 @@
 #include "bfd.h"
 #include "libiberty.h"
 #include "filenames.h"
-#include "safe-ctype.h"
 #include "obstack.h"
 #include "bfdlink.h"
 #include "ctf-api.h"
@@ -46,6 +45,9 @@
 #if BFD_SUPPORTS_PLUGINS
 #include "plugin.h"
 #endif
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 #ifndef offsetof
 #define offsetof(TYPE, MEMBER) ((size_t) & (((TYPE*) 0)->MEMBER))
@@ -8447,7 +8449,7 @@ lang_add_string (const char *s)
 	    case 'n': c = '\n'; break;
 	    case 'r': c = '\r'; break;
 	    case 't': c = '\t'; break;
-	  
+
 	    case '0':
 	    case '1':
 	    case '2':

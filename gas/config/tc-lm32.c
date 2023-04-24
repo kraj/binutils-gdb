@@ -22,14 +22,15 @@
 #include "as.h"
 #include <string.h>
 #include <stdlib.h>
-#include "safe-ctype.h"
 #include "subsegs.h"
 #include "bfd.h"
-#include "safe-ctype.h"
 #include "opcodes/lm32-desc.h"
 #include "opcodes/lm32-opc.h"
 #include "cgen.h"
 #include "elf/lm32.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 typedef struct
 {

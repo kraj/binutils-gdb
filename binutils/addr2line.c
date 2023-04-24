@@ -37,6 +37,8 @@
 #include "demangle.h"
 #include "bucomm.h"
 #include "elf-bfd.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
 #include "safe-ctype.h"
 
 static bool unwind_inlines;	/* -i, unwind inlined functions. */
@@ -65,9 +67,9 @@ static struct option long_options[] =
   {"inlines", no_argument, NULL, 'i'},
   {"pretty-print", no_argument, NULL, 'p'},
   {"recurse-limit", no_argument, NULL, 'R'},
-  {"recursion-limit", no_argument, NULL, 'R'},  
+  {"recursion-limit", no_argument, NULL, 'R'},
   {"no-recurse-limit", no_argument, NULL, 'r'},
-  {"no-recursion-limit", no_argument, NULL, 'r'},  
+  {"no-recursion-limit", no_argument, NULL, 'r'},
   {"section", required_argument, NULL, 'j'},
   {"target", required_argument, NULL, 'b'},
   {"help", no_argument, NULL, 'H'},

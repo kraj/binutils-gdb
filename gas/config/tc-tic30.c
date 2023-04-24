@@ -25,8 +25,10 @@
    Please help us make it better.  */
 
 #include "as.h"
-#include "safe-ctype.h"
 #include "opcode/tic30.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 /* Put here all non-digit non-letter characters that may occur in an
    operand.  */

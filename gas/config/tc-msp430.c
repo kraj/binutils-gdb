@@ -24,10 +24,12 @@
 #include <limits.h>
 #include "subsegs.h"
 #include "opcode/msp430.h"
-#include "safe-ctype.h"
 #include "dwarf2dbg.h"
 #include "elf/msp430.h"
 #include "libiberty.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 /* We will disable polymorphs by default because it is dangerous.
    The potential problem here is the following: assume we got the
@@ -1338,7 +1340,7 @@ msp430_mcu_data [] =
   { "rf430frl153h_rom",0,0 },
   { "rf430frl154h",0,0 },
   { "rf430frl154h_rom",0,0 }
-};  
+};
 
 int
 md_parse_option (int c, const char * arg)
@@ -1850,7 +1852,7 @@ is_regname_end (char c)
 {
   return (c == 0 || ! ISALNUM (c));
 }
-  
+
 /* Returns the register number equivalent to the string T.
    Returns -1 if there is no such register.
    Skips a leading 'r' or 'R' character if there is one.
@@ -3010,7 +3012,7 @@ msp430_operands (struct msp430_opcode_s * opcode, char * line)
 		  if (silicon_errata_fix & SILICON_ERRATA_CPU19)
 		    gen_nop ();
 		  break;
-		  
+
 		default:
 		  as_bad (_("internal error: unknown nop check state"));
 		  break;
@@ -3070,7 +3072,7 @@ msp430_operands (struct msp430_opcode_s * opcode, char * line)
 	      else if (silicon_errata_warn & SILICON_ERRATA_CPU11)
 		as_warn (_("CPU11: PC is destination of SR altering instruction"));
 	    }
-	  
+
 	  /* If the status register is the destination...  */
 	  if (op1.am == 0 && op1.reg == 2
 	      /* ... and the opcode alters the SR.  */
@@ -3087,7 +3089,7 @@ msp430_operands (struct msp430_opcode_s * opcode, char * line)
 	      else if (silicon_errata_warn & SILICON_ERRATA_CPU13)
 		as_warn (_("CPU13: SR is destination of SR altering instruction"));
 	    }
-	  
+
 	  /* Compute the entire instruction length, in bytes.  */
 	  op_length = (extended_op ? 2 : 0) + 2 + (op1.ol * 2);
 	  insn_length += op_length;
@@ -3194,7 +3196,7 @@ msp430_operands (struct msp430_opcode_s * opcode, char * line)
 	      else if (silicon_errata_warn & SILICON_ERRATA_CPU13)
 		as_warn (_("CPU13: SR is destination of SR altering instruction"));
 	    }
-	  
+
 	  if (extended_op)
 	    {
 	      if (!addr_op)
@@ -3781,7 +3783,7 @@ msp430_operands (struct msp430_opcode_s * opcode, char * line)
 	  else if (silicon_errata_warn & SILICON_ERRATA_CPU11)
 	    as_warn (_("CPU11: PC is destination of SR altering instruction"));
 	}
-	  
+
       /* If the status register is the destination...  */
       if (op2.am == 0 && op2.reg == 2
 	  /* ... and the opcode alters the SR.  */
@@ -4019,7 +4021,7 @@ msp430_operands (struct msp430_opcode_s * opcode, char * line)
 	  else if (silicon_errata_warn & SILICON_ERRATA_CPU13)
 	    as_warn (_("CPU13: SR is destination of SR altering instruction"));
 	}
-	  
+
       insn_length = (extended_op ? 2 : 0) + 2 + (op1.ol * 2);
       frag = frag_more (insn_length);
       where = frag - frag_now->fr_literal;
@@ -4046,7 +4048,7 @@ msp430_operands (struct msp430_opcode_s * opcode, char * line)
 
 	  if (is_opcode ("rrux"))
 	    extended |= IGNORE_CARRY_BIT;
-	  
+
 	  if (op1.ol != 0 && ((extended & 0xf) != 0))
 	    {
 	      as_bad (_("repeat instruction used with non-register mode instruction"));

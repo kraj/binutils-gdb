@@ -19,12 +19,14 @@
    Boston, MA 02110-1301, USA.  */
 
 #include "as.h"
-#include "safe-ctype.h"
 #include "subsegs.h"
 #include "symcat.h"
 #include "opcodes/fr30-desc.h"
 #include "opcodes/fr30-opc.h"
 #include "cgen.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 /* Structure to hold all of the different components describing
    an individual instruction.  */

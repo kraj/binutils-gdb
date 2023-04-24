@@ -19,7 +19,6 @@
    02110-1301, USA.  */
 
 #include "as.h"
-#include "safe-ctype.h"
 #include "dwarf2dbg.h"
 #include "elf/common.h"
 #include "elf/rx.h"
@@ -28,6 +27,9 @@
 #include "listing.h"
 #include "sb.h"
 #include "macro.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 #define RX_OPCODE_BIG_ENDIAN 0
 

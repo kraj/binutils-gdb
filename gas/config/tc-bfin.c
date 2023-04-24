@@ -21,12 +21,14 @@
 #include "as.h"
 #include "bfin-defs.h"
 #include "obstack.h"
-#include "safe-ctype.h"
 #ifdef OBJ_ELF
 #include "dwarf2dbg.h"
 #endif
 #include "elf/common.h"
 #include "elf/bfin.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 extern int yyparse (void);
 struct yy_buffer_state;

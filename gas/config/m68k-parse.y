@@ -29,6 +29,8 @@
 #include "as.h"
 #include "tc-m68k.h"
 #include "m68k-parse.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
 #include "safe-ctype.h"
 
 /* Remap normal yacc parser interface names (yyparse, yylex, yyerror,

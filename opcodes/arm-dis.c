@@ -26,7 +26,6 @@
 #include "disassemble.h"
 #include "opcode/arm.h"
 #include "opintl.h"
-#include "safe-ctype.h"
 #include "libiberty.h"
 #include "floatformat.h"
 
@@ -38,6 +37,9 @@
 #include "elf/internal.h"
 #include "elf/arm.h"
 #include "mach-o.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 /* Cached mapping symbol state.  */
 enum map_type

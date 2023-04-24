@@ -23,7 +23,6 @@
 #include <stddef.h>
 #include <time.h>
 #include <stdint.h>
-#include "safe-ctype.h"
 #include "bfd.h"
 #include "objdump.h"
 #include "bucomm.h"
@@ -32,6 +31,9 @@
 #include "elf/external.h"
 #include "elf/internal.h"
 #include "elf32-avr.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 /* Index of the options in the options[] array.  */
 #define OPT_MEMUSAGE 0

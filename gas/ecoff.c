@@ -35,6 +35,8 @@
 #include "coff/symconst.h"
 #include "aout/stab_gnu.h"
 #include "filenames.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
 #include "safe-ctype.h"
 
 /* Why isn't this in coff/sym.h?  */

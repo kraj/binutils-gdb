@@ -24,7 +24,6 @@
 #include "libbfd.h"
 #define ARCH_SIZE 0
 #include "elf-bfd.h"
-#include "safe-ctype.h"
 #include "libiberty.h"
 #include "objalloc.h"
 #if BFD_SUPPORTS_PLUGINS
@@ -36,6 +35,9 @@
 #ifndef CHAR_BIT
 #define CHAR_BIT 8
 #endif
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 /* This struct is used to pass information to routines called via
    elf_link_hash_traverse which must return failure.  */

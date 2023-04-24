@@ -158,13 +158,15 @@ static bool MY(write_object_contents) (bfd *);
 #include <string.h>		/* For strchr and friends.  */
 #include "bfd.h"
 #include "sysdep.h"
-#include "safe-ctype.h"
 #include "bfdlink.h"
 
 #include "libaout.h"
 #include "aout/aout64.h"
 #include "aout/stab_gnu.h"
 #include "aout/ar.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 /* The symbol type numbers for the 16-bit a.out format from 2.11BSD differ from
    those defined in aout64.h so we must redefine them here.  N_EXT changes from

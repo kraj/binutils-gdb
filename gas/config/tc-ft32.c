@@ -21,8 +21,10 @@
 /* Contributed by Anthony Green <green@spindazzle.org>.  */
 
 #include "as.h"
-#include "safe-ctype.h"
 #include "opcode/ft32.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 extern const ft32_opc_info_t ft32_opc_info[128];
 

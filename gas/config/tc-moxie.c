@@ -21,9 +21,11 @@
 /* Contributed by Anthony Green <green@moxielogic.com>.  */
 
 #include "as.h"
-#include "safe-ctype.h"
 #include "opcode/moxie.h"
 #include "elf/moxie.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 extern const moxie_opc_info_t moxie_opc_info[128];
 

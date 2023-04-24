@@ -27,12 +27,14 @@
 #include "gdbcmd.h"
 #include "dis-asm.h"
 #include "source.h"
-#include "safe-ctype.h"
 #include <algorithm>
 #include "gdbsupport/gdb_optional.h"
 #include "valprint.h"
 #include "cli/cli-style.h"
 #include "objfiles.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 /* Disassemble functions.
    FIXME: We should get rid of all the duplicate code in gdb that does

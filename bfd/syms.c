@@ -332,9 +332,11 @@ CODE_FRAGMENT
 #include "sysdep.h"
 #include "bfd.h"
 #include "libbfd.h"
-#include "safe-ctype.h"
 #include "bfdlink.h"
 #include "aout/stab_gnu.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 /*
 DOCDD

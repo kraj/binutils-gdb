@@ -19,13 +19,15 @@
    Boston, MA 02110-1301, USA.  */
 
 #include "as.h"
-#include "safe-ctype.h"
 #include "subsegs.h"
 #include "symcat.h"
 #include "opcodes/m32r-desc.h"
 #include "opcodes/m32r-opc.h"
 #include "cgen.h"
 #include "elf/m32r.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 /* Linked list of symbols that are debugging symbols to be defined as the
    beginning of the current instruction.  */

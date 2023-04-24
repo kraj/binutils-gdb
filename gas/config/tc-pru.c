@@ -28,8 +28,10 @@
 #include "bfd.h"
 #include "dwarf2dbg.h"
 #include "subsegs.h"
-#include "safe-ctype.h"
 #include "dw2gencfi.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 #ifndef OBJ_ELF
 /* We are not supporting any other target so we throw a compile time error.  */

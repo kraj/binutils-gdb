@@ -27,6 +27,8 @@
 #include "bfd.h"
 #include "vms.h"
 #include "subsegs.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
 #include "safe-ctype.h"
 
 static void s_evax_weak (int);

@@ -21,13 +21,15 @@
 
 #include "gprof.h"
 #include "libiberty.h"
-#include "safe-ctype.h"
 #include "search_list.h"
 #include "source.h"
 #include "symtab.h"
 #include "cg_arcs.h"
 #include "sym_ids.h"
 #include "corefile.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 struct match
   {

@@ -24,9 +24,11 @@
 #include "getopt.h"
 #include "libiberty.h"
 #include "hashtab.h"
-#include "safe-ctype.h"
 
 #include "i386-opc.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 /* Build-time checks are preferrable over runtime ones.  Use this construct
    in preference where possible.  */

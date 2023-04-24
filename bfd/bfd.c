@@ -614,7 +614,6 @@ CODE_FRAGMENT
 #include "bfdver.h"
 #include "libiberty.h"
 #include "demangle.h"
-#include "safe-ctype.h"
 #include "bfdlink.h"
 #include "libbfd.h"
 #include "coff/internal.h"
@@ -623,6 +622,9 @@ CODE_FRAGMENT
 #include "libecoff.h"
 #undef obj_symbols
 #include "elf-bfd.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 #ifndef EXIT_FAILURE
 #define EXIT_FAILURE 1

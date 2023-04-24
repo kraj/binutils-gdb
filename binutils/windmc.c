@@ -35,11 +35,13 @@
 #include "getopt.h"
 #include "bucomm.h"
 #include "libiberty.h"
-#include "safe-ctype.h"
 #include "obstack.h"
 
 #include "windmc.h"
 #include "windint.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 /* Defines a message compiler element item with length and offset
    information.  */

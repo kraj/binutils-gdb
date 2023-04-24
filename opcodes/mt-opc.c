@@ -32,6 +32,8 @@ This file is part of the GNU Binutils and/or GDB, the GNU debugger.
 #include "libiberty.h"
 
 /* -- opc.c */
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
 #include "safe-ctype.h"
 
 /* Special check to ensure that instruction exists for given machine.  */

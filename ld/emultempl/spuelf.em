@@ -447,9 +447,11 @@ EOF
 
 if grep -q 'ld_elf.*ppc.*_emulation' ldemul-list.h; then
   fragment <<EOF
-#include "safe-ctype.h"
 #include "filenames.h"
 #include "libiberty.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 static const char *
 base_name (const char *path)

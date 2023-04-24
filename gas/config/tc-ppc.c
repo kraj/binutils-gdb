@@ -20,7 +20,6 @@
    02110-1301, USA.  */
 
 #include "as.h"
-#include "safe-ctype.h"
 #include "subsegs.h"
 #include "dw2gencfi.h"
 #include "opcode/ppc.h"
@@ -35,6 +34,9 @@
 #include "coff/xcoff.h"
 #include "libxcoff.h"
 #endif
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 /* This is the assembler for the PowerPC or POWER (RS/6000) chips.  */
 

@@ -37,6 +37,8 @@
 #include "opintl.h"
 #include "xregex.h"
 #include "libiberty.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
 #include "safe-ctype.h"
 
 #undef  min

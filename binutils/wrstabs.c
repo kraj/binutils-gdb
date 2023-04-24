@@ -27,12 +27,14 @@
 #include "bfd.h"
 #include "libiberty.h"
 #include "filenames.h"
-#include "safe-ctype.h"
 #include "bucomm.h"
 #include "debug.h"
 #include "budbg.h"
 #include "aout/aout64.h"
 #include "aout/stab_gnu.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 /* The size of a stabs symbol.  This presumes 32 bit values.  */
 

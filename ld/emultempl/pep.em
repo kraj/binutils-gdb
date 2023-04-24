@@ -111,6 +111,8 @@ fragment <<EOF
 
 #include "deffile.h"
 #include "pep-dll.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
 #include "safe-ctype.h"
 
 /* Permit the emulation parameters to override the default section

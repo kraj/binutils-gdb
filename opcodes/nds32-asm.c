@@ -25,7 +25,6 @@
 #include <stdint.h>
 #include <assert.h>
 
-#include "safe-ctype.h"
 #include "libiberty.h"
 #include "hashtab.h"
 #include "bfd.h"
@@ -37,6 +36,9 @@
 
 #include "opcode/nds32.h"
 #include "nds32-asm.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 /* There at at most MAX_LEX_NUM lexical elements in a syntax.  */
 #define MAX_LEX_NUM		32

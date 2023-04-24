@@ -24,9 +24,11 @@
 #include "libbfd.h"
 #define ARCH_SIZE 0
 #include "elf-bfd.h"
-#include "safe-ctype.h"
 #include "libiberty.h"
 #include "objalloc.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
+#include "safe-ctype.h"
 
 /* Create sections needed by STT_GNU_IFUNC symbol.  */
 

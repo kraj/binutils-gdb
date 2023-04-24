@@ -37,6 +37,8 @@
 #include "opintl.h"
 #include "xregex.h"
 #include "libiberty.h"
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
 #include "safe-ctype.h"
 
 #undef  min
@@ -50,6 +52,8 @@ static const char * parse_insn_normal
 /* -- assembler routines inserted here.  */
 
 /* -- asm.c */
+
+/* Must be after any system headers that might transitively use <ctype.h>.  */
 #include "safe-ctype.h"
 
 #define MACH_M32C 5		/* Must match md_begin.  */
