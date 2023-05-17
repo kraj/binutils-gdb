@@ -734,11 +734,10 @@ sframe_decode_fre_start_address (const char *fre_buf,
 
 static int
 sframe_decode_fre (const char *fre_buf, sframe_frame_row_entry *fre,
-		   unsigned int fre_type,
-		   size_t *esz)
+		   unsigned int fre_type, size_t *esz)
 {
   int err = 0;
-  void *stack_offsets = NULL;
+  const char *stack_offsets = NULL;
   size_t stack_offsets_sz;
   size_t addr_size;
   size_t fre_size;
@@ -759,7 +758,7 @@ sframe_decode_fre (const char *fre_buf, sframe_frame_row_entry *fre,
   memset (fre->fre_offsets, 0, MAX_OFFSET_BYTES);
   /* Get offsets size.  */
   stack_offsets_sz = sframe_fre_offset_bytes_size (fre->fre_info);
-  stack_offsets = (unsigned char *)fre_buf + addr_size + sizeof (fre->fre_info);
+  stack_offsets = fre_buf + addr_size + sizeof (fre->fre_info);
   memcpy (fre->fre_offsets, stack_offsets, stack_offsets_sz);
 
   /* The FRE has been decoded.  Use it to perform one last sanity check.  */
@@ -992,7 +991,7 @@ sframe_find_fre (sframe_decoder_ctx *ctx, int32_t pc,
   sframe_func_desc_entry *fdep;
   uint32_t start_address, i;
   sframe_frame_row_entry cur_fre, next_fre;
-  unsigned char *sp;
+  const char *fres;
   unsigned int fre_type, fde_type;
   size_t esz;
   int err = 0;
@@ -1023,10 +1022,10 @@ sframe_find_fre (sframe_decoder_ctx *ctx, int32_t pc,
   if (fde_type == SFRAME_FDE_TYPE_PCMASK)
     bitmask = 0xff;
 
-  sp = (unsigned char *) ctx->sfd_fres + fdep->sfde_func_start_fre_off;
+  fres = ctx->sfd_fres + fdep->sfde_func_start_fre_off;
   for (i = 0; i < fdep->sfde_func_num_fres; i++)
    {
-     err = sframe_decode_fre ((const char *)sp, &next_fre, fre_type, &esz);
+     err = sframe_decode_fre (fres, &next_fre, fre_type, &esz);
      start_address = next_fre.fre_start_addr;
 
      if (((fdep->sfde_func_start_address
@@ -1038,8 +1037,7 @@ sframe_find_fre (sframe_decoder_ctx *ctx, int32_t pc,
 	 if (i < fdep->sfde_func_num_fres - 1)
 	   {
 	     sp += esz;
-	     err = sframe_decode_fre ((const char*)sp, &next_fre,
-					 fre_type, &esz);
+	     err = sframe_decode_fre (fres, &next_fre, fre_type, &esz);
 
 	     /* Sanity check the next FRE.  */
 	     if (!sframe_fre_sanity_check_p (&next_fre))
@@ -1142,7 +1140,7 @@ sframe_decoder_get_fre (sframe_decoder_ctx *ctx,
 {
   sframe_func_desc_entry *fdep;
   sframe_frame_row_entry ifre;
-  unsigned char *sp;
+  const char *fres;
   uint32_t i;
   unsigned int fre_type;
   size_t esz = 0;
@@ -1159,11 +1157,11 @@ sframe_decoder_get_fre (sframe_decoder_ctx *ctx,
 
   fre_type = sframe_get_fre_type (fdep);
   /* Now scan the FRE entries.  */
-  sp = (unsigned char *) ctx->sfd_fres + fdep->sfde_func_start_fre_off;
+  fres = ctx->sfd_fres + fdep->sfde_func_start_fre_off;
   for (i = 0; i < fdep->sfde_func_num_fres; i++)
    {
      /* Decode the FRE at the current position.  Return it if valid.  */
-     err = sframe_decode_fre ((const char *)sp, &ifre, fre_type, &esz);
+     err = sframe_decode_fre (fres, &ifre, fre_type, &esz);
      if (i == fre_idx)
        {
 	 if (!sframe_fre_sanity_check_p (&ifre))
@@ -1180,7 +1178,7 @@ sframe_decoder_get_fre (sframe_decoder_ctx *ctx,
 	 return 0;
        }
      /* Next FRE.  */
-     sp += esz;
+     fres += esz;
    }
 
   return sframe_set_errno (&err, SFRAME_ERR_FDE_NOTFOUND);
