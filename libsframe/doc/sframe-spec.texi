@@ -69,6 +69,9 @@ a new segment of its own, PT_GNU_SFRAME.
 The SFrame format is currently supported only for select ABIs, namely, AMD64
 and AAPCS64.
 
+SFrame format is an unaligned on-disk format.  All data structures are packed,
+unless otherwise stated.
+
 The contents of the SFrame section are stored in the target endianness, i.e.,
 in the endianness of the system on which the section is targetted to be used.
 An SFrame section reader may use the magic number in the SFrame header to
