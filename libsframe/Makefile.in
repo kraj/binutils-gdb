@@ -523,14 +523,15 @@ INCDIR = $(srcdir)/../include
 AM_CPPFLAGS = -I$(srcdir) -I$(srcdir)/../include -I$(srcdir)/../libctf
 AM_CFLAGS = @ac_libsframe_warn_cflags@
 libsframe_version_info = -version-info `grep -v '^\#' $(srcdir)/libtool-version`
+lisbframe_version_script = -Wl,--version-script,$(srcdir)/libsframe.ver
 @INSTALL_LIBBFD_TRUE@lib_LTLIBRARIES = libsframe.la
 @INSTALL_LIBBFD_FALSE@include_HEADERS = 
 @INSTALL_LIBBFD_TRUE@include_HEADERS = $(INCDIR)/sframe.h $(INCDIR)/sframe-api.h
 @INSTALL_LIBBFD_FALSE@noinst_LTLIBRARIES = libsframe.la
 libsframe_la_SOURCES = sframe.c sframe-dump.c sframe-error.c
 libsframe_la_CPPFLAGS = $(AM_CPPFLAGS)
-libsframe_la_LDFLAGS = $(libsframe_version_info)
-EXTRA_DIST = libtool-version
+libsframe_la_LDFLAGS = $(libsframe_version_info) $(lisbframe_version_script)
+EXTRA_DIST = libtool-version libsframe.ver
 @BUILD_INFO_TRUE@AM_MAKEINFOFLAGS = --no-split
 
 # Setup the testing framework

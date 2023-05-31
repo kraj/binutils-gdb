@@ -1,0 +1,53 @@
+/* Copyright (C) 2023 Free Software Foundation, Inc.
+
+   This file is part of libsframe.
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 3 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+
+LIBSFRAME_0.0 { };
+
+LIBSFRAME_1.0 {
+  global:
+    sframe_decoder_free;
+    sframe_fde_create_func_info;
+    sframe_calc_fre_type;
+    sframe_fre_get_base_reg_id;
+    sframe_fre_get_cfa_offset;
+    sframe_fre_get_fp_offset;
+    sframe_fre_get_ra_offset;
+    sframe_fre_get_ra_mangled_p;
+    sframe_decode;
+    sframe_decoder_get_hdr_size;
+    sframe_decoder_get_abi_arch;
+    sframe_decoder_get_fixed_fp_offset;
+    sframe_decoder_get_fixed_ra_offset;
+    sframe_get_funcdesc_with_addr;
+    sframe_find_fre;
+    sframe_decoder_get_num_fidx;
+    sframe_decoder_get_funcdesc;
+    sframe_decoder_get_fre;
+    sframe_encode;
+    sframe_encoder_free;
+    sframe_encoder_get_hdr_size;
+    sframe_encoder_get_abi_arch;
+    sframe_encoder_get_num_fidx;
+    sframe_encoder_add_fre;
+    sframe_encoder_add_funcdesc;
+    sframe_encoder_write;
+    dump_sframe;
+    sframe_errmsg;
+
+  local:
+    *;
+} LIBSFRAME_0.0;

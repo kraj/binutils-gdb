@@ -30,6 +30,7 @@ INCDIR = $(srcdir)/../include
 AM_CPPFLAGS = -I$(srcdir) -I$(srcdir)/../include -I$(srcdir)/../libctf
 AM_CFLAGS = @ac_libsframe_warn_cflags@
 libsframe_version_info = -version-info `grep -v '^\#' $(srcdir)/libtool-version`
+lisbframe_version_script = -Wl,--version-script,$(srcdir)/libsframe.ver
 
 if INSTALL_LIBBFD
 lib_LTLIBRARIES = libsframe.la
@@ -41,9 +42,9 @@ endif
 
 libsframe_la_SOURCES = sframe.c sframe-dump.c sframe-error.c
 libsframe_la_CPPFLAGS = $(AM_CPPFLAGS)
-libsframe_la_LDFLAGS = $(libsframe_version_info)
+libsframe_la_LDFLAGS = $(libsframe_version_info) $(lisbframe_version_script)
 
-EXTRA_DIST = libtool-version
+EXTRA_DIST = libtool-version libsframe.ver
 diststuff: $(EXTRA_DIST) info
 
 include doc/local.mk
