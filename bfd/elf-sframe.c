@@ -328,6 +328,8 @@ _bfd_elf_merge_section_sframe (bfd *abfd,
   uint8_t sfd_ctx_abi_arch;
   int8_t sfd_ctx_fixed_fp_offset;
   int8_t sfd_ctx_fixed_ra_offset;
+  uint8_t dctx_version;
+  uint8_t ectx_version;
   int encerr = 0;
 
   struct elf_link_hash_table *htab;
@@ -361,7 +363,7 @@ _bfd_elf_merge_section_sframe (bfd *abfd,
       if (!sfd_ctx_abi_arch)
 	return false;
 
-      htab->sfe_info.sfe_ctx = sframe_encode (SFRAME_VERSION_1,
+      htab->sfe_info.sfe_ctx = sframe_encode (SFRAME_VERSION_2,
 					      0, /* SFrame flags.  */
 					      sfd_ctx_abi_arch,
 					      sfd_ctx_fixed_fp_offset,
@@ -389,16 +391,28 @@ _bfd_elf_merge_section_sframe (bfd *abfd,
 	return false;
     }
 
-  /* Check that all .sframe sections being linked have the same
-     ABI/arch.  */
+  /* check that all .sframe sections being linked have the same
+     abi/arch.  */
   if (sframe_decoder_get_abi_arch (sfd_ctx)
       != sframe_encoder_get_abi_arch (sfe_ctx))
     {
       _bfd_error_handler
-	(_("input SFrame sections with different abi prevent .sframe"
+	(_("input sframe sections with different abi prevent .sframe"
 	  " generation"));
       return false;
     }
+
+  /* Check that all .sframe sections being linked have the same version.  */
+  dctx_version = sframe_decoder_get_version (sfd_ctx);
+  ectx_version = sframe_encoder_get_version (sfe_ctx);
+  if (dctx_version != SFRAME_VERSION_2 || dctx_version != ectx_version)
+    {
+      _bfd_error_handler
+	(_("input sframe sections with different format versions prevent"
+	  " .sframe generation"));
+      return false;
+    }
+
 
   /* Iterate over the function descriptor entries and the FREs of the
      function from the decoder context.  Add each of them to the encoder
