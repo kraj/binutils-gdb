@@ -20,7 +20,7 @@ License''.
 
 @titlepage
 @title The SFrame Format
-@subtitle Version 1
+@subtitle Version 2
 @author Indu Bhagat
 
 @page
@@ -33,7 +33,7 @@ License''.
 @node Top
 @top The SFrame format
 
-This manual describes version 1 of the SFrame file format.  SFrame stands for
+This manual describes version 2 of the SFrame file format.  SFrame stands for
 Simple Frame format.  SFrame format keeps track of the minimal necessary
 information needed for generating stack traces:
 
@@ -50,17 +50,25 @@ The reason for existence of the SFrame format is to provide a simple, fast and
 low-overhead mechanism to generate stack traces.
 
 @menu
-* Overview::
+* Introduction::
 * SFrame section::
 * Index::
 @end menu
 
 @end ifnottex
 
+@node Introduction
+@chapter Introduction
+@cindex Introduction
+
+@menu
+* Overview::
+* Changes from Version 1 to Version 2::
+@end menu
+
 @node Overview
-@unnumbered Overview
+@section Overview
 @cindex Overview
-@tindex PT_GNU_SFRAME
 
 The SFrame stack trace information is provided in a loaded section, known as the
 @code{.sframe} section.  When available, the @code{.sframe} section appears in
@@ -85,6 +93,26 @@ later.
 
 This document is intended to be in sync with the C code in @file{sframe.h}.
 Please report discrepancies between the two, if any.
+
+@node Changes from Version 1 to Version 2
+@section Changes from Version 1 to Version 2
+@cindex Changes from Version 1 to Version 2
+
+The following is a list of the changes made to the SFrame stack trace format
+since Version 1 was published.
+
+@itemize @bullet
+@item
+SFrame Function Descriptor Entry encodes the size of the repetitive code
+blocks, e.g., pltN entries for which an FDE of type SFRAME_FDE_TYPE_PCMASK is
+used.
+@item
+SFrame Function Descriptor Entry includes an explicit padding of two bytes to
+ensure natural alignment for its data members.
+@item
+The above two imply that each SFrame Function Descriptor Entry has a fixed size
+of 20 bytes instead of its size of 17 bytes in SFrame format version 1.
+@end itemize
 
 @node SFrame section
 @chapter SFrame section
@@ -163,13 +191,15 @@ The version of the SFrame format can be determined by inspecting
 
 @tindex SFRAME_VERSION_1
 @cindex SFrame versions
-@multitable {SFRAME_VERSION_1} {Number} {First version, under development.}
+@multitable {SFRAME_VERSION_2} {Number} {Current version, under development.}
 @headitem Version @tab Number @tab Description
 @item @code{SFRAME_VERSION_1}
-@tab 1 @tab First version, under development.
+@tab 1 @tab First version, obsolete.
+@item @code{SFRAME_VERSION_2}
+@tab 2 @tab Current version, under development.
 @end multitable
 
-This section documents @code{SFRAME_VERSION_1}.
+This document describes @code{SFRAME_VERSION_2}.
 
 @node SFrame flags
 @subsection SFrame flags
@@ -347,6 +377,8 @@ typedef struct sframe_func_desc_entry
   uint32_t sfde_func_start_fre_off;
   uint32_t sfde_func_num_fres;
   uint8_t sfde_func_info;
+  uint8_t sfde_func_rep_size;
+  uint16_t sfde_func_padding2;
 @} ATTRIBUTE_PACKED sframe_func_desc_entry;
 @end example
 
@@ -360,7 +392,7 @@ type and the FDE type for the function @xref{The SFrame FDE info word}.
 
 Following table describes each component of the SFrame FDE structure:
 
-@multitable {Offset} {@code{uint32_t sfde_func_start_fre_off}} {The ABI/arch identifier. See above}
+@multitable {Offset} {@code{uint32_t sfde_func_start_fre_off}} {Signed 32-bit integral field denoting the}
 @headitem Offset @tab Name @tab Description
 @item 0x00
 @tab @code{int32_t sfde_func_start_address}
@@ -384,7 +416,18 @@ used for the function.
 
 @item 0x10
 @tab @code{uint8_t sfde_func_info}
-@tab The SFrame FDE info word. @xref{The SFrame FDE info word}.
+@tab Unsigned 8-bit integral field specifying the SFrame FDE info word.
+@xref{The SFrame FDE info word}.
+
+@item 0x11
+@tab @code{uint8_t sfde_func_rep_size}
+@tab Unsigned 8-bit integral field specifying the size of the repetitive code
+block for which an SFrame FDE of type SFRAME_FDE_TYPE_PCMASK is used.  For
+example, in AMD64, the size of a pltN entry is 16 bytes.
+
+@item 0x12
+@tab @code{uint16_t sfde_func_padding2}
+@tab Padding of 2 bytes.  Currently unused bytes.
 
 @end multitable
 
