@@ -372,6 +372,11 @@ Options:\n\
   -R                      fold data section into text section\n"));
   fprintf (stream, _("\
   --reduce-memory-overheads ignored\n"));
+# ifdef TARGET_USE_SCFI
+  fprintf (stream, _("\
+  --scfi=[all,none]	  synthesize DWARF CFI for hand-written asm (not inline)\n\
+			  (default --scfi=all)\n"));
+# endif
   fprintf (stream, _("\
   --statistics            print various measured statistics from execution\n"));
   fprintf (stream, _("\
@@ -511,7 +516,8 @@ parse_args (int * pargc, char *** pargv)
       OPTION_NOCOMPRESS_DEBUG,
       OPTION_NO_PAD_SECTIONS,
       OPTION_MULTIBYTE_HANDLING,  /* = STD_BASE + 40 */
-      OPTION_SFRAME
+      OPTION_SFRAME,
+      OPTION_SCFI
     /* When you add options here, check that they do
        not collide with OPTION_MD_BASE.  See as.h.  */
     };
@@ -586,6 +592,9 @@ parse_args (int * pargc, char *** pargv)
     ,{"no-pad-sections", no_argument, NULL, OPTION_NO_PAD_SECTIONS}
     ,{"no-warn", no_argument, NULL, 'W'}
     ,{"reduce-memory-overheads", no_argument, NULL, OPTION_REDUCE_MEMORY_OVERHEADS}
+#ifdef TARGET_USE_SCFI
+    ,{"scfi", no_argument, NULL, OPTION_SCFI}
+#endif
     ,{"statistics", no_argument, NULL, OPTION_STATISTICS}
     ,{"strip-local-absolute", no_argument, NULL, OPTION_STRIP_LOCAL_ABSOLUTE}
     ,{"version", no_argument, NULL, OPTION_VERSION}
@@ -980,6 +989,15 @@ This program has absolutely no warranty.\n"));
 	case OPTION_NOEXECSTACK:
 	  flag_noexecstack = 1;
 	  flag_execstack = 0;
+	  break;
+
+	case OPTION_SCFI:
+	  if (!optarg || strcasecmp (optarg, "all") == 0)
+	    flag_synth_cfi = SYNTH_CFI_ALL;
+	  else if (strcasecmp (optarg, "none") == 0)
+	    flag_synth_cfi = SYNTH_CFI_NONE;
+	  else
+	    as_fatal (_("Invalid --scfi= option: `%s'"), optarg);
 	  break;
 
 	case OPTION_SIZE_CHECK:
