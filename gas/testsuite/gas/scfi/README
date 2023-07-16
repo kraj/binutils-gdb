@@ -1,0 +1,11 @@
+Notes on how the SCFI testsuite is organized:
+
+The SCFI testsuite has target dependent components because most meaningul tests
+will need an input which is assembly code.
+
+At this time, support for x86_64 is added.
+
+When adding more tests, please keep CFI annotations updated in the .s files,
+even though the testcases are run with --scfi command line option (this means
+that the CFI annotations are not processed by GAS).  Adding CFI directives
+makes the testcases clearer in terms of the expected unwind data.
