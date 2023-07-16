@@ -1,0 +1,19 @@
+Notes on the SCFI testsuite in GAS:
+
+* At this time, SCFI machinery is only supported for x86_64.
+
+* When adding more tests, please keep CFI annotations updated in the .s files.
+  Recall that user-specified, synthesizable CFI annotations are ignored by the
+  GAS when --scfi (=all) is in effect.  Adding CFI annocations, irrespectively,
+  makes the testcases clearer in terms of understanding the expected unwind
+  data.  The only excpetion to this guideline is the following item below.
+
+* Note that GAS issues a warning:
+    "Warning: --scfi=all ignores .cfi_startproc and other sythesizable CFI
+    directives"
+  when it encounters CFI directives in the input assembly and --scfi (=all) is
+  active.  To bypass the noise from this warning, while keeping the testcases
+  useful/understandable, the following CFI annotations are kept commented out:
+      #	      .cfi_startproc
+      ...
+      #       .cfi_endproc
