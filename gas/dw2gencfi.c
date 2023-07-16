@@ -806,6 +806,12 @@ dot_cfi (int arg)
   offsetT offset;
   unsigned reg1, reg2;
 
+  if (flag_synth_cfi)
+    {
+      ignore_rest_of_line ();
+      return;
+    }
+
   if (frchain_now->frch_cfi_data == NULL)
     {
       as_bad (_("CFI instruction used without previous .cfi_startproc"));
@@ -936,6 +942,12 @@ dot_cfi_escape (int ignored ATTRIBUTE_UNUSED)
   struct cfi_escape_data *head, **tail, *e;
   struct cfi_insn_data *insn;
 
+  if (flag_synth_cfi)
+    {
+      ignore_rest_of_line ();
+      return;
+    }
+
   if (frchain_now->frch_cfi_data == NULL)
     {
       as_bad (_("CFI instruction used without previous .cfi_startproc"));
@@ -973,6 +985,12 @@ dot_cfi_personality (int ignored ATTRIBUTE_UNUSED)
 {
   struct fde_entry *fde;
   offsetT encoding;
+
+  if (flag_synth_cfi)
+    {
+      ignore_rest_of_line ();
+      return;
+    }
 
   if (frchain_now->frch_cfi_data == NULL)
     {
@@ -1044,6 +1062,12 @@ dot_cfi_lsda (int ignored ATTRIBUTE_UNUSED)
 {
   struct fde_entry *fde;
   offsetT encoding;
+
+  if (flag_synth_cfi)
+    {
+      ignore_rest_of_line ();
+      return;
+    }
 
   if (frchain_now->frch_cfi_data == NULL)
     {
@@ -1118,6 +1142,12 @@ dot_cfi_val_encoded_addr (int ignored ATTRIBUTE_UNUSED)
   struct cfi_insn_data *insn_ptr;
   offsetT encoding;
 
+  if (flag_synth_cfi)
+    {
+      ignore_rest_of_line ();
+      return;
+    }
+
   if (frchain_now->frch_cfi_data == NULL)
     {
       as_bad (_("CFI instruction used without previous .cfi_startproc"));
@@ -1183,6 +1213,12 @@ dot_cfi_label (int ignored ATTRIBUTE_UNUSED)
 {
   char *name;
 
+  if (flag_synth_cfi)
+    {
+      ignore_rest_of_line ();
+      return;
+    }
+
   if (frchain_now->frch_cfi_data == NULL)
     {
       as_bad (_("CFI instruction used without previous .cfi_startproc"));
@@ -1210,6 +1246,12 @@ static void
 dot_cfi_sections (int ignored ATTRIBUTE_UNUSED)
 {
   int sections = 0;
+
+  if (flag_synth_cfi)
+    {
+      ignore_rest_of_line ();
+      return;
+    }
 
   SKIP_WHITESPACE ();
   if (is_name_beginner (*input_line_pointer) || *input_line_pointer == '"')
@@ -1278,6 +1320,12 @@ dot_cfi_startproc (int ignored ATTRIBUTE_UNUSED)
 {
   int simple = 0;
 
+  if (flag_synth_cfi)
+    {
+      ignore_rest_of_line ();
+      return;
+    }
+
   if (frchain_now->frch_cfi_data != NULL)
     {
       as_bad (_("previous CFI entry not closed (missing .cfi_endproc)"));
@@ -1318,6 +1366,12 @@ dot_cfi_startproc (int ignored ATTRIBUTE_UNUSED)
 static void
 dot_cfi_endproc (int ignored ATTRIBUTE_UNUSED)
 {
+  if (flag_synth_cfi)
+    {
+      ignore_rest_of_line ();
+      return;
+    }
+
   if (frchain_now->frch_cfi_data == NULL)
     {
       as_bad (_(".cfi_endproc without corresponding .cfi_startproc"));
@@ -1382,6 +1436,12 @@ dot_cfi_personality_id (int ignored ATTRIBUTE_UNUSED)
 {
   struct fde_entry *fde;
 
+  if (flag_synth_cfi)
+    {
+      ignore_rest_of_line ();
+      return;
+    }
+
   if (frchain_now->frch_cfi_data == NULL)
     {
       as_bad (_("CFI instruction used without previous .cfi_startproc"));
@@ -1403,6 +1463,12 @@ dot_cfi_personality_id (int ignored ATTRIBUTE_UNUSED)
 static void
 dot_cfi_fde_data (int ignored ATTRIBUTE_UNUSED)
 {
+  if (flag_synth_cfi)
+    {
+      ignore_rest_of_line ();
+      return;
+    }
+
   if (frchain_now->frch_cfi_data == NULL)
     {
       as_bad (_(".cfi_fde_data without corresponding .cfi_startproc"));
@@ -1510,6 +1576,12 @@ dot_cfi_inline_lsda (int ignored ATTRIBUTE_UNUSED)
   segT ccseg;
   int align;
   long max_alignment = 28;
+
+  if (flag_synth_cfi)
+    {
+      ignore_rest_of_line ();
+      return;
+    }
 
   if (!last_fde)
     {
