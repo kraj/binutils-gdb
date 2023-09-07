@@ -372,7 +372,7 @@ Options:\n\
   -R                      fold data section into text section\n"));
   fprintf (stream, _("\
   --reduce-memory-overheads ignored\n"));
-# ifdef TARGET_USE_SCFI
+# if defined (TARGET_USE_SCFI) && defined (TARGET_USE_GINSN)
   fprintf (stream, _("\
   --scfi=[all,none]	  synthesize DWARF CFI for hand-written asm (not inline)\n\
 			  (default --scfi=all)\n"));
@@ -592,7 +592,7 @@ parse_args (int * pargc, char *** pargv)
     ,{"no-pad-sections", no_argument, NULL, OPTION_NO_PAD_SECTIONS}
     ,{"no-warn", no_argument, NULL, 'W'}
     ,{"reduce-memory-overheads", no_argument, NULL, OPTION_REDUCE_MEMORY_OVERHEADS}
-#ifdef TARGET_USE_SCFI
+# if defined (TARGET_USE_SCFI) && defined (TARGET_USE_GINSN)
     ,{"scfi", no_argument, NULL, OPTION_SCFI}
 #endif
     ,{"statistics", no_argument, NULL, OPTION_STATISTICS}

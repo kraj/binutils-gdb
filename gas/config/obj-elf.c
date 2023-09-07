@@ -24,6 +24,7 @@
 #include "subsegs.h"
 #include "obstack.h"
 #include "dwarf2dbg.h"
+#include "scfi.h"
 
 #ifndef ECOFF_DEBUGGING
 #define ECOFF_DEBUGGING 0
@@ -2302,6 +2303,10 @@ obj_elf_size (int ignore ATTRIBUTE_UNUSED)
       symbol_get_obj (sym)->size = XNEW (expressionS);
       *symbol_get_obj (sym)->size = exp;
     }
+
+  if (S_IS_FUNCTION (sym) && flag_synth_cfi)
+    ginsn_data_end (symbol_temp_new_now ());
+
   demand_empty_rest_of_line ();
 }
 
@@ -2489,6 +2494,9 @@ obj_elf_type (int ignore ATTRIBUTE_UNUSED)
       else
 	elfsym->symbol.flags &= ~mask;
     }
+
+  if (S_IS_FUNCTION (sym) && flag_synth_cfi)
+    ginsn_data_begin (sym);
 
   demand_empty_rest_of_line ();
 }
