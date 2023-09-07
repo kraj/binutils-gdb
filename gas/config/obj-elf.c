@@ -24,6 +24,7 @@
 #include "subsegs.h"
 #include "obstack.h"
 #include "dwarf2dbg.h"
+#include "ginsn.h"
 
 #ifndef ECOFF_DEBUGGING
 #define ECOFF_DEBUGGING 0
@@ -2311,6 +2312,13 @@ obj_elf_size (int ignore ATTRIBUTE_UNUSED)
       symbol_get_obj (sym)->size = XNEW (expressionS);
       *symbol_get_obj (sym)->size = exp;
     }
+
+  /* If the symbol in the directive matches the current function being
+     processed, indicate end of the current stream of ginsns.  */
+  if (flag_synth_cfi
+      && S_IS_FUNCTION (sym) && sym == ginsn_data_func_symbol ())
+    ginsn_data_end (symbol_temp_new_now ());
+
   demand_empty_rest_of_line ();
 }
 
@@ -2497,6 +2505,14 @@ obj_elf_type (int ignore ATTRIBUTE_UNUSED)
 	}
       else
 	elfsym->symbol.flags &= ~mask;
+    }
+
+  if (S_IS_FUNCTION (sym) && flag_synth_cfi)
+    {
+      /* Wrap up processing the previous block of ginsns first.  */
+      if (frchain_now->frch_ginsn_data)
+	ginsn_data_end (symbol_temp_new_now ());
+      ginsn_data_begin (sym);
     }
 
   demand_empty_rest_of_line ();
