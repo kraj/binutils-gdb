@@ -400,6 +400,27 @@ extern int i386_elf_section_type (const char *, size_t);
 extern void i386_solaris_fix_up_eh_frame (segT);
 #endif
 
+#define TARGET_USE_GINSN 1
+/* Allow GAS to synthesize DWARF CFI for hand-written asm.
+   PS: TARGET_USE_CFIPOP is a pre-condition.  */
+#define TARGET_USE_SCFI 1
+/* Identify the maximum DWARF register number of all the registers being
+   tracked for SCFI.  This is the last DWARF register number of the set
+   of SP, BP, and all callee-saved registers.  For AMD64, this means
+   R15 (15).  Use SCFI_CALLEE_SAVED_REG_P to identify which registers
+   are callee-saved from this set.  */
+#define SCFI_MAX_REG_ID 15
+/* Identify the DWARF register number of the frame-pointer register.  */
+#define REG_FP 6
+/* Identify the DWARF register number of the stack-pointer register.  */
+#define REG_SP 7
+/* Some ABIs, like AMD64, use stack for call instruction.  For such an ABI,
+   identify the initial (CFA) offset from RSP at the entry of function.  */
+#define SCFI_INIT_CFA_OFFSET 8
+
+#define SCFI_CALLEE_SAVED_REG_P(dw2reg)  x86_scfi_callee_saved_p (dw2reg)
+extern bool x86_scfi_callee_saved_p (uint32_t dw2reg_num);
+
 /* Support for SHF_X86_64_LARGE */
 extern bfd_vma x86_64_section_letter (int, const char **);
 #define md_elf_section_letter(LETTER, PTR_MSG)	x86_64_section_letter (LETTER, PTR_MSG)
