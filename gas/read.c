@@ -42,6 +42,7 @@
 #include "codeview.h"
 #include "wchar.h"
 #include "filenames.h"
+#include "ginsn.h"
 
 #include <limits.h>
 
@@ -1381,6 +1382,9 @@ read_a_source_file (const char *name)
       bundle_lock_depth = 0;
     }
 #endif
+
+  if (flag_synth_cfi)
+    ginsn_data_end (symbol_temp_new_now ());
 
 #ifdef md_cleanup
   md_cleanup ();

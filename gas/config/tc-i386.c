@@ -30,6 +30,7 @@
 #include "subsegs.h"
 #include "dwarf2dbg.h"
 #include "dw2gencfi.h"
+#include "scfi.h"
 #include "gen-sframe.h"
 #include "sframe.h"
 #include "elf/x86-64.h"
@@ -193,7 +194,10 @@ static unsigned int x86_isa_1_used;
 static unsigned int x86_feature_2_used;
 /* Generate x86 used ISA and feature properties.  */
 static unsigned int x86_used_note = DEFAULT_X86_USED_NOTE;
+
 #endif
+
+static ginsnS *ginsn_new (symbolS *sym, enum ginsn_gen_mode gmode);
 
 static const char *default_arch = DEFAULT_ARCH;
 
@@ -5116,6 +5120,711 @@ static INLINE bool may_need_pass2 (const insn_template *t)
 	       && t->base_opcode == 0x63);
 }
 
+bool
+x86_scfi_callee_saved_p (uint32_t dw2reg_num)
+{
+  if (dw2reg_num == 3 /* rbx.  */
+      || dw2reg_num == REG_FP /* rbp.  */
+      || dw2reg_num == REG_SP /* rsp.  */
+      || (dw2reg_num >= 12 && dw2reg_num <= 15) /* r12 - r15.  */)
+    return true;
+
+  return false;
+}
+
+static uint32_t
+ginsn_dw2_regnum (const reg_entry *ireg)
+{
+  /* PS: Note the data type here as int32_t, because of Dw2Inval (-1).  */
+  int32_t dwarf_reg = Dw2Inval;
+  const reg_entry *temp;
+
+  if (ireg->dw2_regnum[0] == Dw2Inval && ireg->dw2_regnum[1] == Dw2Inval)
+    return dwarf_reg;
+
+  dwarf_reg = ireg->dw2_regnum[flag_code >> 1];
+  if (dwarf_reg == Dw2Inval)
+    {
+      temp = ireg + 16;
+      dwarf_reg = ginsn_dw2_regnum (temp);
+    }
+
+  if (dwarf_reg == Dw2Inval)
+    gas_assert (1); /* Needs to be addressed.  */
+
+  return (uint32_t) dwarf_reg;
+}
+
+static void
+ginsn_set_where (ginsnS* ginsn)
+{
+  const char *file;
+  unsigned int line;
+  file = as_where (&line);
+  ginsn_set_file_line (ginsn, file, line);
+}
+
+static ginsnS *
+x86_ginsn_alu (i386_insn insn, symbolS *insn_end_sym)
+{
+  offsetT src_imm;
+  uint32_t dw2_regnum;
+  enum ginsn_src_type src_type;
+  enum ginsn_dst_type dst_type;
+  ginsnS *ginsn = NULL;
+
+  /* FIXME - create ginsn for REG_SP target only ? */
+  /* Map for insn.tm.extension_opcode
+     000 ADD    100 AND
+     001 OR     101 SUB
+     010 ADC    110 XOR
+     011 SBB    111 CMP  */
+
+  /* add/sub imm, %reg.
+     and imm, %reg only at this time for SCFI. */
+  if (!(insn.tm.extension_opcode == 0
+	|| insn.tm.extension_opcode == 4
+	|| insn.tm.extension_opcode == 5))
+    return ginsn;
+
+  /* TBD_GINSN_REPRESENTATION_LIMIT: There is no representation for when a
+     symbol is used as an operand, like so:
+	  addq    $simd_cmp_op+8, %rdx
+     Skip generating any ginsn for this.  */
+  if (insn.imm_operands == 1
+      && insn.op[0].imms->X_op == O_symbol)
+    return ginsn;
+
+  gas_assert (insn.imm_operands == 1
+	      && insn.op[0].imms->X_op == O_constant);
+  src_imm = insn.op[0].imms->X_add_number;
+  /* The second operand may be a register or indirect access.  */
+  if (insn.mem_operands == 1 && insn.base_reg)
+    {
+      dw2_regnum = ginsn_dw2_regnum (insn.base_reg);
+      src_type = GINSN_SRC_INDIRECT;
+      dst_type = GINSN_DST_INDIRECT;
+    }
+  else if (insn.mem_operands == 1 && insn.index_reg)
+    {
+      dw2_regnum = ginsn_dw2_regnum (insn.index_reg);
+      src_type = GINSN_SRC_INDIRECT;
+      dst_type = GINSN_DST_INDIRECT;
+    }
+  else
+    {
+      gas_assert (insn.reg_operands == 1);
+      dw2_regnum = ginsn_dw2_regnum (insn.op[1].regs);
+      src_type = GINSN_SRC_REG;
+      dst_type = GINSN_DST_REG;
+    }
+
+  /* For ginsn, keep the imm as second src operand.  */
+  if (insn.tm.extension_opcode == 5)
+    ginsn = ginsn_new_sub (insn_end_sym, true,
+			   src_type, dw2_regnum, 0,
+			   GINSN_SRC_IMM, 0, src_imm,
+			   dst_type, dw2_regnum, 0);
+  else if (insn.tm.extension_opcode == 4)
+    ginsn = ginsn_new_and (insn_end_sym, true,
+			   src_type, dw2_regnum, 0,
+			   GINSN_SRC_IMM, 0, src_imm,
+			   dst_type, dw2_regnum, 0);
+  else if (insn.tm.extension_opcode == 0)
+    ginsn = ginsn_new_add (insn_end_sym, true,
+			   src_type, dw2_regnum, 0,
+			   GINSN_SRC_IMM, 0, src_imm,
+			   dst_type, dw2_regnum, 0);
+
+  ginsn_set_where (ginsn);
+
+  return ginsn;
+}
+
+static ginsnS *
+x86_ginsn_move (i386_insn insn, symbolS *insn_end_sym)
+{
+  ginsnS *ginsn;
+  uint16_t opcode;
+  uint32_t dst_reg;
+  uint32_t src_reg;
+  offsetT dst_disp;
+  offsetT src_disp;
+  const reg_entry *dst = NULL;
+  const reg_entry *src = NULL;
+  enum ginsn_dst_type dst_type;
+  enum ginsn_src_type src_type;
+
+  opcode = insn.tm.base_opcode;
+  src_type = GINSN_SRC_REG;
+  src_disp = dst_disp = 0;
+  dst_type = GINSN_DST_REG;
+
+  if (opcode == 0x8b)
+    {
+      /* mov  disp(%reg), %reg.  */
+      if (insn.mem_operands && insn.base_reg)
+	{
+	  src = insn.base_reg;
+	  if (insn.disp_operands == 1)
+	    src_disp = insn.op[0].disps->X_add_number;
+	  src_type = GINSN_SRC_INDIRECT;
+	}
+      else
+	src = insn.op[0].regs;
+
+      dst = insn.op[1].regs;
+    }
+  else if (opcode == 0x89 || opcode == 0x88)
+    {
+      /* mov %reg, disp(%reg).  */
+      src = insn.op[0].regs;
+      if (insn.mem_operands && insn.base_reg)
+	{
+	  dst = insn.base_reg;
+	  if (insn.disp_operands == 1)
+	    dst_disp = insn.op[1].disps->X_add_number;
+	  dst_type = GINSN_DST_INDIRECT;
+	}
+      else
+	dst = insn.op[1].regs;
+    }
+
+  src_reg = ginsn_dw2_regnum (src);
+  dst_reg = ginsn_dw2_regnum (dst);
+
+  ginsn = ginsn_new_mov (insn_end_sym, true,
+			 src_type, src_reg, src_disp,
+			 dst_type, dst_reg, dst_disp);
+  ginsn_set_where (ginsn);
+
+  return ginsn;
+}
+
+static ginsnS *
+x86_ginsn_lea (i386_insn insn, symbolS *insn_end_sym)
+{
+  offsetT src_disp = 0;
+  ginsnS *ginsn = NULL;
+  uint32_t base_reg;
+  uint32_t index_reg;
+  offsetT index_scale;
+  uint32_t dst_reg;
+
+  if (!insn.index_reg && !insn.base_reg)
+    {
+      /* lea symbol, %rN.  */
+      dst_reg = ginsn_dw2_regnum (insn.op[1].regs);
+      /* FIXME - Skip encoding information about the symbol.
+	 This is TBD_GINSN_INFO_LOSS, but it is fine if the mode is
+	 GINSN_GEN_SCFI.  */
+      ginsn = ginsn_new_mov (insn_end_sym, false,
+			     GINSN_SRC_IMM, 0xf /* arbitrary const.  */, 0,
+			     GINSN_DST_REG, dst_reg, 0);
+    }
+  else if (insn.base_reg && !insn.index_reg)
+    {
+      /* lea    -0x2(%base),%dst.  */
+      base_reg = ginsn_dw2_regnum (insn.base_reg);
+      dst_reg = ginsn_dw2_regnum (insn.op[1].regs);
+
+      if (insn.disp_operands)
+	src_disp = insn.op[0].disps->X_add_number;
+
+      if (src_disp)
+	/* Generate an ADD ginsn.  */
+	ginsn = ginsn_new_add (insn_end_sym, true,
+			       GINSN_SRC_REG, base_reg, 0,
+			       GINSN_SRC_IMM, 0, src_disp,
+			       GINSN_DST_REG, dst_reg, 0);
+      else
+	  /* Generate a MOV ginsn.  */
+	  ginsn = ginsn_new_mov (insn_end_sym, true,
+				 GINSN_SRC_REG, base_reg, 0,
+				 GINSN_DST_REG, dst_reg, 0);
+    }
+  else if (!insn.base_reg && insn.index_reg)
+    {
+      /* lea (,%index,imm), %dst.  */
+      /* FIXME - Skip encoding an explicit multiply operation, instead use
+	 GINSN_TYPE_OTHER.  This is TBD_GINSN_INFO_LOSS, but it is fine if
+	 the mode is GINSN_GEN_SCFI.  */
+      index_scale = insn.log2_scale_factor;
+      index_reg = ginsn_dw2_regnum (insn.index_reg);
+      dst_reg = ginsn_dw2_regnum (insn.op[1].regs);
+      ginsn = ginsn_new_other (insn_end_sym, true,
+			       GINSN_SRC_REG, index_reg,
+			       GINSN_SRC_IMM, index_scale,
+			       GINSN_DST_REG, dst_reg);
+    }
+  else
+    {
+      /* lea disp(%base,%index,imm) %dst.  */
+      /* FIXME - Skip encoding information about the disp and imm for index
+	 reg.  This is TBD_GINSN_INFO_LOSS, but it is fine if the mode is
+	 GINSN_GEN_SCFI.  */
+      base_reg = ginsn_dw2_regnum (insn.base_reg);
+      index_reg = ginsn_dw2_regnum (insn.index_reg);
+      dst_reg = ginsn_dw2_regnum (insn.op[1].regs);
+      /* Generate an ADD ginsn.  */
+      ginsn = ginsn_new_add (insn_end_sym, true,
+			     GINSN_SRC_REG, base_reg, 0,
+			     GINSN_SRC_REG, index_reg, 0,
+			     GINSN_DST_REG, dst_reg, 0);
+    }
+
+  ginsn_set_where (ginsn);
+
+  return ginsn;
+}
+
+static ginsnS *
+x86_ginsn_jump (i386_insn insn, symbolS *insn_end_sym)
+{
+  ginsnS *ginsn = NULL;
+  symbolS *src_symbol;
+
+  gas_assert (insn.disp_operands == 1);
+
+  if (insn.op[0].disps->X_op == O_symbol)
+    {
+      src_symbol = insn.op[0].disps->X_add_symbol;
+      /* The jump target is expected to be a symbol with 0 addend.
+	 Assert for now to see if this assumption is true.  */
+      gas_assert (insn.op[0].disps->X_add_number == 0);
+      ginsn = ginsn_new_jump (insn_end_sym, true,
+			      GINSN_SRC_SYMBOL, 0, src_symbol);
+
+      ginsn_set_where (ginsn);
+    }
+
+  return ginsn;
+}
+
+static ginsnS *
+x86_ginsn_jump_cond (i386_insn insn, symbolS *insn_end_sym)
+{
+  ginsnS *ginsn = NULL;
+  symbolS *src_symbol;
+
+  /* TBD_GINSN_GEN_NOT_SCFI: Ignore move to or from xmm reg for mode.  */
+  if (i.tm.opcode_space == SPACE_0F)
+    return ginsn;
+
+  gas_assert (insn.disp_operands == 1);
+
+  if (insn.op[0].disps->X_op == O_symbol)
+    {
+      src_symbol = insn.op[0].disps->X_add_symbol;
+      /* The jump target is expected to be a symbol with 0 addend.
+	 Assert for now to see if this assumption is true.  */
+      gas_assert (insn.op[0].disps->X_add_number == 0);
+      ginsn = ginsn_new_jump_cond (insn_end_sym, true,
+				   GINSN_SRC_SYMBOL, 0, src_symbol);
+      ginsn_set_where (ginsn);
+    }
+  else
+    /* Catch them for now so we know what we are dealing with.  */
+    gas_assert (0);
+
+  return ginsn;
+}
+
+/* Generate one or more GAS instructions for the current machine dependent
+   instruction.
+
+   Returns the head of linked list of ginsn(s) added, if success;
+   Returns NULL if failure.  */
+
+static ginsnS *
+ginsn_new (symbolS *insn_end_sym, enum ginsn_gen_mode gmode)
+{
+  uint16_t opcode;
+  uint32_t dw2_regnum;
+  uint32_t src2_dw2_regnum;
+  int32_t gdisp = 0;
+  ginsnS *ginsn = NULL;
+  ginsnS *ginsn_next = NULL;
+  ginsnS *ginsn_last = NULL;
+
+  /* FIXME - Need a way to check whether the decoding is sane.  The specific
+     checks around i.tm.opcode_space were added as issues were seen.  Likely
+     insufficient.  */
+
+  /* Currently supports generation of selected ginsns, sufficient for
+     the use-case of SCFI only.  To remove this condition will require
+     work on this target-specific process of creation of ginsns.  Some
+     of such places are tagged with TBD_GINSN_GEN_NOT_SCFI to serve as
+     examples.  */
+  if (gmode != GINSN_GEN_SCFI)
+    return ginsn;
+
+  opcode = i.tm.base_opcode;
+
+  switch (opcode)
+    {
+    case 0x1:
+      /* add reg, reg.  */
+      dw2_regnum = ginsn_dw2_regnum (i.op[0].regs);
+
+      if (i.reg_operands == 2)
+	{
+	  src2_dw2_regnum = ginsn_dw2_regnum (i.op[1].regs);
+	  ginsn = ginsn_new_add (insn_end_sym, true,
+				 GINSN_SRC_REG, dw2_regnum, 0,
+				 GINSN_SRC_REG, src2_dw2_regnum, 0,
+				 GINSN_DST_REG, src2_dw2_regnum, 0);
+	  ginsn_set_where (ginsn);
+	}
+      else if (i.mem_operands && i.base_reg)
+	{
+	  src2_dw2_regnum = ginsn_dw2_regnum (i.base_reg);
+	  if (i.disp_operands == 1)
+	    gdisp = i.op[1].disps->X_add_number;
+
+	  ginsn = ginsn_new_add (insn_end_sym, true,
+				 GINSN_SRC_REG, dw2_regnum, 0,
+				 GINSN_SRC_INDIRECT, src2_dw2_regnum, gdisp,
+				 GINSN_DST_INDIRECT, src2_dw2_regnum, gdisp);
+	  ginsn_set_where (ginsn);
+	}
+      else
+	/* Catch them for now so we know what we are dealing with.  */
+	gas_assert (0);
+
+      break;
+    case 0x29:
+      /* If opcode_space == SPACE_0F, this is a movaps insn.  Skip it
+	 for GINSN_GEN_SCFI.  */
+      if (i.tm.opcode_space == SPACE_0F)
+	break;
+
+      /* sub reg, reg.  */
+      dw2_regnum = ginsn_dw2_regnum (i.op[0].regs);
+
+      if (i.reg_operands == 2)
+	{
+	  src2_dw2_regnum = ginsn_dw2_regnum (i.op[1].regs);
+	  ginsn = ginsn_new_sub (insn_end_sym, true,
+				 GINSN_SRC_REG, dw2_regnum, 0,
+				 GINSN_SRC_REG, src2_dw2_regnum, 0,
+				 GINSN_DST_REG, src2_dw2_regnum, 0);
+	  ginsn_set_where (ginsn);
+	}
+      else if (i.mem_operands && i.base_reg)
+	{
+	  src2_dw2_regnum = ginsn_dw2_regnum (i.base_reg);
+	  if (i.disp_operands == 1)
+	    gdisp = i.op[1].disps->X_add_number;
+
+	  ginsn = ginsn_new_sub (insn_end_sym, true,
+				 GINSN_SRC_REG, dw2_regnum, 0,
+				 GINSN_SRC_INDIRECT, src2_dw2_regnum, gdisp,
+				 GINSN_DST_INDIRECT, src2_dw2_regnum, gdisp);
+	  ginsn_set_where (ginsn);
+	}
+      else
+	/* Catch them for now so we know what we are dealing with.  */
+	gas_assert (0);
+
+      break;
+    case 0xa0:
+    case 0xa8:
+      /* If opcode_space != SPACE_0F, this is a test insn.  Skip it
+	 for GINSN_GEN_SCFI.  */
+      if (i.tm.opcode_space != SPACE_0F)
+	break;
+
+      dw2_regnum = ginsn_dw2_regnum (i.op[0].regs);
+      /* push fs / push gs.  */
+      ginsn = ginsn_new_sub (insn_end_sym, false,
+			     GINSN_SRC_REG, REG_SP, 0,
+			     GINSN_SRC_IMM, 0, 8,
+			     GINSN_DST_REG, REG_SP, 0);
+      ginsn_set_where (ginsn);
+
+      ginsn_next = ginsn_new_store (insn_end_sym, false,
+				    GINSN_SRC_REG, dw2_regnum,
+				    GINSN_DST_STACK);
+      ginsn_set_where (ginsn_next);
+
+      gas_assert (!ginsn_link_next (ginsn, ginsn_next));
+      break;
+    case 0xa1:
+    case 0xa9:
+      /* If opcode_space != SPACE_0F, this is test insn.  Skip it
+	 for GINSN_GEN_SCFI.  */
+      if (i.tm.opcode_space != SPACE_0F)
+	break;
+
+      dw2_regnum = ginsn_dw2_regnum (i.op[0].regs);
+      /* pop fs / pop gs.  */
+      ginsn = ginsn_new_load (insn_end_sym, false,
+			      GINSN_SRC_STACK,
+			      GINSN_DST_REG, dw2_regnum);
+      ginsn_set_where (ginsn);
+
+      ginsn_next = ginsn_new_add (insn_end_sym, false,
+				  GINSN_SRC_REG, REG_SP, 0,
+				  GINSN_SRC_IMM, 0, 8,
+				  GINSN_DST_REG, REG_SP, 0);
+      ginsn_set_where (ginsn_next);
+
+      gas_assert (!ginsn_link_next (ginsn, ginsn_next));
+      break;
+    case 0x50 ... 0x57:
+      /* push reg.  */
+      dw2_regnum = ginsn_dw2_regnum (i.op[0].regs);
+      ginsn = ginsn_new_sub (insn_end_sym, false,
+			     GINSN_SRC_REG, REG_SP, 0,
+			     GINSN_SRC_IMM, 0, 8,
+			     GINSN_DST_REG, REG_SP, 0);
+      ginsn_set_where (ginsn);
+
+      ginsn_next = ginsn_new_store (insn_end_sym, false,
+				    GINSN_SRC_REG, dw2_regnum,
+				    GINSN_DST_STACK);
+      ginsn_set_where (ginsn_next);
+
+      gas_assert (!ginsn_link_next (ginsn, ginsn_next));
+      break;
+    case 0x58 ... 0x5f:
+      if (i.tm.opcode_space != SPACE_BASE)
+	break;
+      /* pop reg.  */
+      dw2_regnum = ginsn_dw2_regnum (i.op[0].regs);
+      ginsn = ginsn_new_load (insn_end_sym, false,
+			      GINSN_SRC_STACK,
+			      GINSN_DST_REG, dw2_regnum);
+      ginsn_set_where (ginsn);
+
+      ginsn_next = ginsn_new_add (insn_end_sym, false,
+				  GINSN_SRC_REG, REG_SP, 0,
+				  GINSN_SRC_IMM, 0, 8,
+				  GINSN_DST_REG, REG_SP, 0);
+      ginsn_set_where (ginsn_next);
+
+      gas_assert (!ginsn_link_next (ginsn, ginsn_next));
+      break;
+    case 0x68:
+    case 0x6a:
+      /* push imm. */
+      /* Skip getting the value of imm from machine instruction
+	 because for ginsn generation this is not important.  */
+      ginsn = ginsn_new_sub (insn_end_sym, false,
+			     GINSN_SRC_REG, REG_SP, 0,
+			     GINSN_SRC_IMM, 0, 8,
+			     GINSN_DST_REG, REG_SP, 0);
+      ginsn_set_where (ginsn);
+
+      ginsn_next = ginsn_new_store (insn_end_sym, false,
+				    GINSN_SRC_IMM, 0,
+				    GINSN_DST_STACK);
+      ginsn_set_where (ginsn_next);
+
+      gas_assert (!ginsn_link_next (ginsn, ginsn_next));
+      break;
+    case 0x70 ... 0x7f:
+      ginsn = x86_ginsn_jump_cond (i, insn_end_sym);
+      break;
+    case 0x81:
+    case 0x83:
+      ginsn = x86_ginsn_alu (i, insn_end_sym);
+      break;
+    case 0x8b:
+      /* Move r/m64 to r64.  */
+    case 0x88:
+    case 0x89:
+      /* mov reg, reg/mem.  */
+      ginsn = x86_ginsn_move (i, insn_end_sym);
+      break;
+    case 0x8d:
+      /* lea disp(%src), %dst */
+      ginsn = x86_ginsn_lea (i, insn_end_sym);
+      break;
+    case 0x8f:
+      /* pop to mem.  */
+      ginsn = ginsn_new_load (insn_end_sym, false,
+			      GINSN_SRC_STACK,
+			      GINSN_DST_MEM, 0);
+      ginsn_set_where (ginsn);
+
+      ginsn_next = ginsn_new_add (insn_end_sym, false,
+				  GINSN_SRC_REG, REG_SP, 0,
+				  GINSN_SRC_IMM, 0, 8,
+				  GINSN_DST_REG, REG_SP, 0);
+      ginsn_set_where (ginsn_next);
+
+      gas_assert (!ginsn_link_next (ginsn, ginsn_next));
+      break;
+    case 0x9c:
+      /* pushf / pushfd / pushfq.
+	 Tracking EFLAGS register by number is not necessary.  */
+      ginsn = ginsn_new_sub (insn_end_sym, false,
+			     GINSN_SRC_REG, REG_SP, 0,
+			     GINSN_SRC_IMM, 0, 8,
+			     GINSN_DST_REG, REG_SP, 0);
+      ginsn_set_where (ginsn);
+
+      ginsn_next = ginsn_new_store (insn_end_sym, false,
+				    GINSN_SRC_IMM, 0,
+				    GINSN_DST_STACK);
+      ginsn_set_where (ginsn_next);
+
+      gas_assert (!ginsn_link_next (ginsn, ginsn_next));
+
+      break;
+    case 0xff:
+      /* push from mem.  */
+      if (i.tm.extension_opcode == 6)
+	{
+	  ginsn = ginsn_new_sub (insn_end_sym, false,
+				 GINSN_SRC_REG, REG_SP, 0,
+				 GINSN_SRC_IMM, 0, 8,
+				 GINSN_DST_REG, REG_SP, 0);
+	  ginsn_set_where (ginsn);
+
+	  ginsn_next = ginsn_new_store (insn_end_sym, false,
+					GINSN_SRC_MEM, 0,
+					GINSN_DST_STACK);
+	  ginsn_set_where (ginsn_next);
+
+	  gas_assert (!ginsn_link_next (ginsn, ginsn_next));
+	}
+      else if (i.tm.extension_opcode == 4)
+	{
+	  /* jmp r/m.  E.g., notrack jmp *%rax.  */
+	  if (i.reg_operands)
+	    {
+	      dw2_regnum = ginsn_dw2_regnum (i.op[0].regs);
+	      ginsn = ginsn_new_jump (insn_end_sym, true,
+				      GINSN_SRC_REG, dw2_regnum, NULL);
+	      ginsn_set_where (ginsn);
+	    }
+	  else if (i.mem_operands && i.index_reg)
+	    {
+	      /* jmp    *0x0(,%rax,8).  */
+	      dw2_regnum = ginsn_dw2_regnum (i.index_reg);
+	      ginsn = ginsn_new_jump (insn_end_sym, true,
+				      GINSN_SRC_REG, dw2_regnum, NULL);
+	      ginsn_set_where (ginsn);
+	    }
+	  else if (i.mem_operands && i.base_reg)
+	    {
+	      dw2_regnum = ginsn_dw2_regnum (i.base_reg);
+	      ginsn = ginsn_new_jump (insn_end_sym, true,
+				      GINSN_SRC_REG, dw2_regnum, NULL);
+	      ginsn_set_where (ginsn);
+	    }
+	  else
+	    /* Catch them for now so we know what we are dealing with.  */
+	    gas_assert (0);
+	}
+      else if (i.tm.extension_opcode == 2)
+	{
+	  /* 0xFF /2 (call).  */
+	  if (i.reg_operands)
+	    {
+	      dw2_regnum = ginsn_dw2_regnum (i.op[0].regs);
+	      ginsn = ginsn_new_call (insn_end_sym, true,
+				      GINSN_SRC_REG, dw2_regnum, NULL);
+	      ginsn_set_where (ginsn);
+	    }
+	  else if (i.mem_operands && i.base_reg)
+	    {
+	      dw2_regnum = ginsn_dw2_regnum (i.base_reg);
+	      ginsn = ginsn_new_call (insn_end_sym, true,
+				      GINSN_SRC_REG, dw2_regnum, NULL);
+	      ginsn_set_where (ginsn);
+	    }
+	  else
+	    /* Catch them for now so we know what we are dealing with.  */
+	    gas_assert (0);
+	}
+      else
+	/* Catch them for now so we know what we are dealing with.  */
+	gas_assert (0);
+      break;
+    case 0xc2:
+    case 0xc3:
+      /* Near ret.  */
+      ginsn = ginsn_new_return (insn_end_sym, true);
+      ginsn_set_where (ginsn);
+      break;
+    case 0xc9:
+      /* The 'leave' instruction copies the contents of the RBP register
+	 into the RSP register to release all stack space allocated to the
+	 procedure.  */
+      ginsn = ginsn_new_mov (insn_end_sym, false,
+			     GINSN_SRC_REG, REG_FP, 0,
+			     GINSN_DST_REG, REG_SP, 0);
+      ginsn_set_where (ginsn);
+
+      /* Then it restores the old value of the RBP register from the stack.  */
+      ginsn_next = ginsn_new_load (insn_end_sym, false,
+				   GINSN_SRC_STACK,
+				   GINSN_DST_REG, REG_FP);
+      ginsn_set_where (ginsn_next);
+
+      gas_assert (!ginsn_link_next (ginsn, ginsn_next));
+      ginsn_last = ginsn_new_add (insn_end_sym, false,
+				  GINSN_SRC_REG, REG_SP, 0,
+				  GINSN_SRC_IMM, 0, 8,
+				  GINSN_DST_REG, REG_SP, 0);
+      ginsn_set_where (ginsn_next);
+
+      gas_assert (!ginsn_link_next (ginsn_next, ginsn_last));
+      break;
+    case 0xe8:
+      /* PS: SCFI machinery does not care about which func is being
+	 called.  OK to skip that info.  */
+      ginsn = ginsn_new_call (insn_end_sym, true,
+			      GINSN_SRC_SYMBOL, 0, NULL);
+      ginsn_set_where (ginsn);
+      break;
+    case 0xe9:
+    case 0xeb:
+      /* If opcode_space == SPACE_0F, this is a psubw por insn.  Skip it
+	 for GINSN_GEN_SCFI.  */
+      if (i.tm.opcode_space == SPACE_0F)
+	break;
+
+      /* Unconditional jmp.  */
+      ginsn = x86_ginsn_jump (i, insn_end_sym);
+      ginsn_set_where (ginsn);
+      break;
+      /* Fall Through.  */
+    default:
+      /* TBD_GINSN_GEN_NOT_SCFI: Keep a warning, for now, to find out about
+	 possibly missed instructions affecting REG_SP or REG_FP.  These
+	 checks may not be completely exhaustive as they do not involve
+	 index / base reg.  */
+      if (i.op[0].regs)
+	{
+	  dw2_regnum = ginsn_dw2_regnum (i.op[0].regs);
+	  if (dw2_regnum == REG_SP || dw2_regnum == REG_FP)
+	    as_warn_where (last_insn.file, last_insn.line,
+			   _("SCFI: unhandled op 0x%x may cause incorrect CFI"),
+			   i.tm.base_opcode);
+	}
+      if (i.op[1].regs)
+	{
+	  dw2_regnum = ginsn_dw2_regnum (i.op[1].regs);
+	  if (dw2_regnum == REG_SP || dw2_regnum == REG_FP)
+	    as_warn_where (last_insn.file, last_insn.line,
+			   _("SCFI: unhandled op 0x%x may cause incorrect CFI"),
+			   i.tm.base_opcode);
+	}
+      /* Keep an eye on other instructions affecting control flow.  */
+      gas_assert (!i.tm.opcode_modifier.jump);
+      /* TBD_GINSN_GEN_NOT_SCFI: Skip all other opcodes uninteresting for
+	 GINSN_GEN_SCFI mode.  */
+      break;
+    }
+
+  return ginsn;
+}
+
 /* This is the guts of the machine-dependent assembler.  LINE points to a
    machine dependent instruction.  This function is supposed to emit
    the frags/bytes it assembles to.  */
@@ -5128,6 +5837,7 @@ md_assemble (char *line)
   const char *end, *pass1_mnem = NULL;
   enum i386_error pass1_err = 0;
   const insn_template *t;
+  ginsnS *ginsn;
 
   /* Initialize globals.  */
   current_templates = NULL;
@@ -5658,6 +6368,13 @@ md_assemble (char *line)
 
   /* We are ready to output the insn.  */
   output_insn ();
+
+  /* At this time, SCFI is enabled only for AMD64 ABI.  */
+  if (flag_synth_cfi && x86_elf_abi == X86_64_ABI)
+    {
+      ginsn = ginsn_new (symbol_temp_new_now (), frch_ginsn_gen_mode ());
+      frch_ginsn_data_append (ginsn);
+    }
 
   insert_lfence_after ();
 
@@ -10904,6 +11621,7 @@ s_insn (int dummy ATTRIBUTE_UNUSED)
   valueT val;
   bool vex = false, xop = false, evex = false;
   static const templates tt = { &i.tm, &i.tm + 1 };
+  ginsnS *ginsn;
 
   init_globals ();
 
@@ -11658,7 +12376,14 @@ s_insn (int dummy ATTRIBUTE_UNUSED)
 
   output_insn ();
 
- done:
+  /* At this time, SCFI is enabled only for AMD64 ABI.  */
+  if (flag_synth_cfi && x86_elf_abi == X86_64_ABI)
+    {
+      ginsn = ginsn_new (symbol_temp_new_now (), frch_ginsn_gen_mode ());
+      frch_ginsn_data_append (ginsn);
+    }
+
+done:
   *saved_ilp = saved_char;
   input_line_pointer = line;
 
@@ -15292,6 +16017,9 @@ i386_target_format (void)
     }
   else
     as_fatal (_("unknown architecture"));
+
+  if (flag_synth_cfi && x86_elf_abi != X86_64_ABI)
+    as_fatal (_("Synthesizing CFI is not supported for this ABI"));
 
   if (cpu_flags_all_zero (&cpu_arch_isa_flags))
     cpu_arch_isa_flags = cpu_arch[flag_code == CODE_64BIT].enable;
