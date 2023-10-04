@@ -1,4 +1,6 @@
 -*- text -*-
+* New command line option --scfi[=all,none] to synthesize CFI for hand-written
+  asm.
 
 * On RISC-V macro instructions expanding to AUIPC and a load, store, or branch
   no longer accept x0 as an intermediate and/or destination register.
