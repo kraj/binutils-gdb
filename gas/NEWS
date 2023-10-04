@@ -1,4 +1,6 @@
 -*- text -*-
+* New command line option --scfi[=all,none] to synthesize CFI for hand-written
+  asm.
 
 * Add support for Intel AVX10.1.
 
