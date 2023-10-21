@@ -37,6 +37,7 @@
 
 #include "dw2gencfi.h"
 #include "dwarf2dbg.h"
+#include "scfi.h"
 
 #define streq(a, b)	      (strcmp (a, b) == 0)
 
@@ -6034,6 +6035,461 @@ get_aarch64_insn (char *buf)
   return result;
 }
 
+bool
+aarch64_scfi_callee_saved_p (uint32_t dw2reg_num)
+{
+  /* FIXME what about REG_SP ?  */
+  if (dw2reg_num == REG_FP /* x29.  */
+      || dw2reg_num == REG_LR /* x30.  */
+      || (dw2reg_num >= 19 && dw2reg_num <= 28) /* x19 - x28.  */)
+    return true;
+
+  return false;
+}
+
+static uint32_t
+ginsn_dw2_regnum (aarch64_opnd_info *opnd)
+{
+  /* For registers of our interest (callee-saved regs, SP, FP, LR),
+     DWARF register number is the same as AArch64 register number.  */
+  return opnd->reg.regno;
+}
+
+static ginsnS *
+aarch64_ginsn_addsub (aarch64_instruction *i, symbolS *insn_end_sym)
+{
+  ginsnS *ginsn = NULL;
+  bool add_p, sub_p;
+  int32_t src_imm;
+  uint32_t dst_reg, opnd_reg;
+  aarch64_opnd_info *dst, *opnd;
+
+  aarch64_inst *base = &i->base;
+  const aarch64_opcode *opcode = base->opcode;
+
+  add_p = (opcode->opcode == 0x11000000);
+  sub_p = (opcode->opcode == 0x51000000);
+  gas_assert (add_p || sub_p);
+
+  gas_assert (aarch64_num_of_operands (opcode) == 3);
+  dst = &base->operands[0];
+  opnd = &base->operands[1];
+
+  dst_reg = ginsn_dw2_regnum (dst);
+
+  if (i->reloc.type == BFD_RELOC_AARCH64_GAS_INTERNAL_FIXUP
+      && i->reloc.exp.X_op == O_constant)
+    src_imm = i->reloc.exp.X_add_number;
+  else if (dst_reg == REG_SP || dst_reg == REG_FP)
+    /* Catch them for now so we know what we are dealing with.  */
+    gas_assert (0);
+  else
+    return ginsn;
+
+  opnd_reg = ginsn_dw2_regnum (opnd);
+
+  if (sub_p)
+    ginsn = ginsn_new_sub (insn_end_sym, true,
+			   GINSN_SRC_REG, opnd_reg, 0,
+			   GINSN_SRC_IMM, 0, src_imm,
+			   GINSN_SRC_REG, dst_reg, 0);
+  else
+    ginsn = ginsn_new_add (insn_end_sym, true,
+			   GINSN_SRC_REG, opnd_reg, 0,
+			   GINSN_SRC_IMM, 0, src_imm,
+			   GINSN_SRC_REG, dst_reg, 0);
+
+  ginsn_set_where (ginsn);
+
+  return ginsn;
+}
+
+/* Handle the load pair and store pair instructions.  */
+
+static ginsnS *
+aarch64_ginsn_ldstp (aarch64_instruction *i, symbolS *insn_end_sym)
+{
+  ginsnS *ginsn = NULL;
+  ginsnS *ginsn_ind = NULL;
+  ginsnS *ginsn_mem1 = NULL;
+  ginsnS *ginsn_mem2 = NULL;
+  uint32_t opnd_reg, addr_reg;
+  int32_t offset, mem_offset;
+  bool store_p = false;
+  bool load_p = false;
+
+  aarch64_opnd_info *opnd1, *opnd2, *addr;
+  aarch64_inst *base = &i->base;
+  const aarch64_opcode *opcode = base->opcode;
+
+  /* This API is for handling stp ops only.  */
+  store_p = (opcode->opcode == 0x29000000 || opcode->opcode == 0x28800000);
+  load_p = (opcode->opcode == 0x29400000 || opcode->opcode == 0x28c00000);
+  gas_assert (store_p || load_p);
+
+  gas_assert (aarch64_num_of_operands (opcode) == 3);
+  opnd1 = &base->operands[0];
+  opnd2 = &base->operands[1];
+  addr = &base->operands[2];
+
+  addr_reg = ginsn_dw2_regnum (addr);
+  /* FIXME What if the offset is not imm but reg? */
+  mem_offset = addr->addr.offset.imm;
+
+  /* Handle pre-indexed.  */
+  if (addr->addr.preind && addr->addr.writeback)
+    {
+      /* Pre-indexed store, e.g., stp     x29, x30, [sp, -128]!  */
+      /* Pre-indexed addressing is like offset addressing, except that
+	 the base pointer is updated as a result of the instruction.  */
+      ginsn_ind = ginsn_new_add (insn_end_sym, false,
+				 GINSN_SRC_REG, addr_reg, 0,
+				 GINSN_SRC_IMM, 0, mem_offset,
+				 GINSN_DST_REG, addr_reg, 0);
+      ginsn_set_where (ginsn_ind);
+    }
+
+  /* With post-index addressing, the value is loaded from the
+     address in the base pointer, and then the pointer is updated.
+     With pre-index addressing, the addr computation has already
+     been explicitly done.  */
+  offset = mem_offset;
+  if ((addr->addr.postind || addr->addr.preind) && addr->addr.writeback)
+    offset = 0;
+
+  opnd_reg = ginsn_dw2_regnum (opnd1);
+  if (store_p)
+    {
+      ginsn_mem1 = ginsn_new_store (insn_end_sym, false,
+				    GINSN_SRC_REG, opnd_reg,
+				    GINSN_DST_INDIRECT, addr_reg, offset);
+      ginsn_set_where (ginsn_mem1);
+
+      opnd_reg = ginsn_dw2_regnum (opnd2);
+      ginsn_mem2 = ginsn_new_store (insn_end_sym, false,
+				    GINSN_SRC_REG, opnd_reg,
+				    GINSN_DST_INDIRECT, addr_reg, offset + 8);
+      ginsn_set_where (ginsn_mem2);
+    }
+  else
+    {
+      opnd_reg = ginsn_dw2_regnum (opnd1);
+      ginsn_mem1 = ginsn_new_load (insn_end_sym, false,
+				   GINSN_SRC_INDIRECT, addr_reg, offset,
+				   GINSN_DST_REG, opnd_reg);
+      ginsn_set_where (ginsn_mem1);
+
+      opnd_reg = ginsn_dw2_regnum (opnd2);
+      ginsn_mem2 = ginsn_new_load (insn_end_sym, false,
+				   GINSN_SRC_INDIRECT, addr_reg, offset + 8,
+				   GINSN_SRC_REG, opnd_reg);
+      ginsn_set_where (ginsn_mem2);
+    }
+
+  if (addr->addr.preind && addr->addr.writeback)
+    gas_assert (!ginsn_link_next (ginsn_ind, ginsn_mem1));
+
+  gas_assert (!ginsn_link_next (ginsn_mem1, ginsn_mem2));
+
+  /* Make note of the first instruction in the list.  */
+  ginsn = (addr->addr.preind && addr->addr.writeback) ? ginsn_ind : ginsn_mem1;
+
+  if (addr->addr.postind && addr->addr.writeback)
+    {
+      /* post-indexed store, e.g., stp     x29, x30, [sp],128.  */
+      /* FIXME What if the offset is not imm but reg? */
+      offset = addr->addr.offset.imm;
+
+      /* Post-index addressing is useful for popping off the stack.  The
+	 instruction loads the value from the location pointed at by the stack
+	 pointer, and then moves the stack pointer on to the next full location
+	 in the stack.  */
+      ginsn_ind = ginsn_new_add (insn_end_sym, false,
+				 GINSN_SRC_REG, addr_reg, 0,
+				 GINSN_SRC_IMM, 0, offset,
+				 GINSN_DST_REG, addr_reg, 0);
+      ginsn_set_where (ginsn_ind);
+      gas_assert (!ginsn_link_next (ginsn_mem2, ginsn_ind));
+    }
+
+  return ginsn;
+}
+
+static ginsnS *
+aarch64_ginsn_ldstr (aarch64_instruction *i, symbolS *insn_end_sym)
+{
+  ginsnS *ginsn = NULL;
+  ginsnS *ginsn_ind = NULL;
+  ginsnS *ginsn_mem = NULL;
+  uint32_t opnd_reg, addr_reg;
+  int32_t offset = 0;
+  int32_t mem_offset = 0;
+  bool store_p = false;
+  bool load_p = false;
+
+  aarch64_opnd_info *opnd1, *addr;
+  aarch64_inst *base = &i->base;
+  const aarch64_opcode *opcode = base->opcode;
+
+  /* This API is for handling ldr, str ops only.  */
+  store_p = (opcode->opcode == 0xb9000000 || opcode->opcode == 0xb8000400);
+  load_p = (opcode->opcode == 0xb9400000 || opcode->opcode == 0xb8400400);
+  gas_assert (store_p || load_p);
+
+  gas_assert (aarch64_num_of_operands (opcode) == 2);
+  opnd1 = &base->operands[0];
+  addr = &base->operands[1];
+
+  addr_reg = ginsn_dw2_regnum (addr);
+
+  /* STR <Xt>, [<Xn|SP>, (<Wm>|<Xm>){, <extend> {<amount>}}].
+     LDR <Xt>, [<Xn|SP>], #<simm>.  */
+  opnd_reg = ginsn_dw2_regnum (opnd1);
+
+  /* If opnd_reg is WZR, ignore this (OK to do for SCFI).  Note, this is a
+     potential case of TBD_GINSN_GEN_NOT_SCFI.  */
+  if (opnd_reg == REG_SP)
+    return ginsn;
+
+  /* FIXME its not clear why the imm is handled via a fix-up.
+     REVIEW_B4_SUBMISSION.  */
+  if (i->reloc.type == BFD_RELOC_AARCH64_GAS_INTERNAL_FIXUP
+      && i->reloc.exp.X_op == O_constant)
+    mem_offset = i->reloc.exp.X_add_number;
+  else
+    /* FIXME What if the offset is not imm but reg? */
+    mem_offset = addr->addr.offset.imm;
+
+  /* Handle pre-indexed.  */
+  if (addr->addr.preind && addr->addr.writeback)
+    {
+      /* Pre-indexed store, e.g., str     x29, [sp, -128]!  */
+      /* Pre-indexed addressing is like offset addressing, except that
+	 the base pointer is updated as a result of the instruction.  */
+      ginsn_ind = ginsn_new_add (insn_end_sym, false,
+				 GINSN_SRC_REG, addr_reg, 0,
+				 GINSN_SRC_IMM, 0, mem_offset,
+				 GINSN_DST_REG, addr_reg, 0);
+      ginsn_set_where (ginsn_ind);
+    }
+
+  /* With post-index addressing, the value is loaded from the
+     address in the base pointer, and then the pointer is updated.
+     With pre-index addressing, the addr computation has already
+     been explicitly done.  */
+  offset = mem_offset;
+  if ((addr->addr.postind || addr->addr.preind) && addr->addr.writeback)
+    offset = 0;
+
+  if (store_p)
+    ginsn_mem = ginsn_new_store (insn_end_sym, false,
+				 GINSN_SRC_REG, opnd_reg,
+				 GINSN_DST_INDIRECT, addr_reg, offset);
+  else
+    ginsn_mem = ginsn_new_load (insn_end_sym, false,
+				GINSN_SRC_INDIRECT, addr_reg, offset,
+				GINSN_DST_REG, opnd_reg);
+  ginsn_set_where (ginsn_mem);
+
+  if (addr->addr.preind && addr->addr.writeback)
+    gas_assert (!ginsn_link_next (ginsn_ind, ginsn_mem));
+
+  /* Make note of the first instruction in the list.  */
+  ginsn = (addr->addr.preind && addr->addr.writeback) ? ginsn_ind : ginsn_mem;
+
+  if (addr->addr.postind && addr->addr.writeback)
+    {
+      ginsn_ind = ginsn_new_add (insn_end_sym, false,
+				 GINSN_SRC_REG, addr_reg, 0,
+				 GINSN_SRC_IMM, 0, mem_offset,
+				 GINSN_DST_REG, addr_reg, 0);
+      ginsn_set_where (ginsn_ind);
+      gas_assert (!ginsn_link_next (ginsn_mem, ginsn_ind));
+    }
+
+  return ginsn;
+}
+
+static ginsnS *
+aarch64_ginsn_jump (aarch64_instruction *i, symbolS *insn_end_sym)
+{
+  ginsnS *ginsn = NULL;
+  symbolS *src_symbol = NULL;
+  enum ginsn_src_type src_type = GINSN_SRC_UNKNOWN;
+  uint32_t src_value = 0;
+  bool call_p = false;
+
+  aarch64_inst *base = &i->base;
+  const aarch64_opcode *opcode = base->opcode;
+
+  if (opcode->opcode == 0x14000000 || opcode->opcode == 0x94000000)
+    {
+      if (i->reloc.type == BFD_RELOC_AARCH64_CALL26
+	  || i->reloc.type == BFD_RELOC_AARCH64_JUMP26)
+	src_symbol = i->reloc.exp.X_add_symbol;
+
+      src_type = GINSN_SRC_SYMBOL;
+    }
+  else if (opcode->opcode == 0xd61f0000 || opcode->opcode == 0xd63f0000)
+    {
+      src_type = GINSN_SRC_REG;
+      src_value = ginsn_dw2_regnum (&base->operands[0]);
+    }
+
+  if (opcode->opcode == 0x94000000 || opcode->opcode == 0xd63f0000)
+    call_p = true;
+
+  gas_assert (src_type != GINSN_SRC_UNKNOWN);
+
+  if (call_p)
+    ginsn = ginsn_new_call (insn_end_sym, true,
+			   src_type, src_value, src_symbol);
+  else
+    ginsn = ginsn_new_jump (insn_end_sym, true,
+			    src_type, src_value, src_symbol);
+  ginsn_set_where (ginsn);
+
+  return ginsn;
+}
+
+static ginsnS *
+aarch64_ginsn_jump_cond (aarch64_instruction *i, symbolS *insn_end_sym)
+{
+  ginsnS *ginsn = NULL;
+  symbolS *src_symbol = NULL;
+  enum ginsn_src_type src_type = GINSN_SRC_SYMBOL;
+
+  aarch64_inst *base = &i->base;
+  const aarch64_opcode *opcode = base->opcode;
+
+  if (opcode->opcode < 0x54000000 || opcode->opcode > 0x5400000d)
+    return ginsn;
+
+  gas_assert (i->reloc.type == BFD_RELOC_AARCH64_BRANCH19);
+  src_symbol = i->reloc.exp.X_add_symbol;
+
+  ginsn = ginsn_new_jump_cond (insn_end_sym, true,
+			       src_type, 0, src_symbol);
+  ginsn_set_where (ginsn);
+
+  return ginsn;
+}
+
+static ginsnS *
+aarch64_ginsn_mov (aarch64_instruction *i, symbolS *insn_end_sym)
+{
+  ginsnS *ginsn = NULL;
+  uint32_t src_reg, dst_reg;
+  aarch64_opnd_info *src, *dst;
+  aarch64_inst *base = &i->base;
+  const aarch64_opcode *opcode = base->opcode;
+
+  gas_assert (aarch64_num_of_operands (opcode) == 2);
+
+  dst = &base->operands[0];
+  src = &base->operands[1];
+
+  dst_reg = ginsn_dw2_regnum (dst);
+  src_reg = ginsn_dw2_regnum (src);
+
+  /* mov   x27, sp.  */
+  ginsn = ginsn_new_mov (insn_end_sym, false,
+			 GINSN_SRC_REG, src_reg, 0,
+			 GINSN_DST_REG, dst_reg, 0);
+  ginsn_set_where (ginsn);
+
+  return ginsn;
+}
+
+static ginsnS *
+ginsn_new (symbolS *insn_end_sym, enum ginsn_gen_mode gmode)
+{
+  ginsnS *ginsn = NULL;
+  aarch64_inst *base = &inst.base;
+  const aarch64_opcode *opcode = base->opcode;
+
+  /* Currently supports generation of selected ginsns, sufficient for
+     the use-case of SCFI only.  To remove this condition will require
+     work on this target-specific process of creation of ginsns.  Some
+     of such places are tagged with TBD_GINSN_GEN_NOT_SCFI to serve as
+     examples.  */
+  if (gmode != GINSN_GEN_SCFI)
+    return ginsn;
+
+  switch (opcode->opcode)
+    {
+    case 0x29000000:
+      /* store register pair (offset).
+	 stp     x19, x20, [sp, 16].  */
+    case 0x28800000:
+      /* store register pair (indexed).
+	 pre-index: stp     x29, x30, [sp, -128]!
+	 post-index: stp     x29, x30, [sp] -128.  */
+      ginsn = aarch64_ginsn_ldstp (&inst, insn_end_sym);
+      break;
+    case 0x29400000:
+      /* load register pair (offset).
+	 ldp     x19, x20, [sp, 16].  */
+    case 0x28c00000:
+      /* load register pair (indexed).
+	 pre-index:  ldp     x29, x30, [sp, -128]!
+	 post-index: ldp     x29, x30, [sp], -128.  */
+      ginsn = aarch64_ginsn_ldstp (&inst, insn_end_sym);
+      break;
+    case 0xb9000000:
+    case 0xb8000400:
+      /* str.  */
+      ginsn = aarch64_ginsn_ldstr (&inst, insn_end_sym);
+      break;
+    case 0xb9400000:
+    case 0xb8400400:
+      /* ldr.  */
+      ginsn = aarch64_ginsn_ldstr (&inst, insn_end_sym);
+      break;
+    case 0x51000000:
+      /* sub.  */
+      ginsn = aarch64_ginsn_addsub (&inst, insn_end_sym);
+      break;
+    case 0x11000000:
+      if (opcode->mask == 0x7ffffc00)
+	ginsn = aarch64_ginsn_mov (&inst, insn_end_sym);
+      else if (opcode->mask == 0x7f000000)
+	ginsn = aarch64_ginsn_addsub (&inst, insn_end_sym);
+      break;
+    case 0xd65f0000:
+      ginsn = ginsn_new_return (insn_end_sym, true);
+      ginsn_set_where (ginsn);
+      break;
+    case 0x14000000: /* b.  */
+    case 0xd61f0000: /* br.  */
+    case 0x94000000: /* bl.  */
+    case 0xd63f0000: /* blr.  */
+      ginsn = aarch64_ginsn_jump (&inst, insn_end_sym);
+      break;
+    case 0x34000000: /* cbz.  */
+    case 0x35000000: /* cbnz.  */
+      /* Although cbz/cbnz has an additional operand and are functionally
+	 distinct from conditional branches, it is fine to use the same ginsn
+	 type for both from the perspective of SCFI.  */
+    case 0x54000000 ... 0x5400000d:
+      ginsn = aarch64_ginsn_jump_cond (&inst, insn_end_sym);
+      break;
+    default:
+      /* All change of flow instructions are important to tap for SCFI.  */
+      if (opcode->iclass == condbranch
+	  || opcode->iclass == compbranch
+	  || opcode->iclass == branch_imm
+	  || opcode->iclass == branch_reg)
+	/* Catch them for now so we know what we are dealing with.  */
+	gas_assert (0);
+
+      break;
+    }
+
+  return ginsn;
+}
+
+
 static void
 output_inst (struct aarch64_inst *new_inst)
 {
@@ -8232,6 +8688,7 @@ md_assemble (char *str)
   struct aarch64_segment_info_type *tc_seg_info;
   aarch64_inst *inst_base;
   unsigned saved_cond;
+  ginsnS *ginsn;
 
   /* Align the previous label if needed.  */
   if (last_label_seen != NULL)
@@ -8355,6 +8812,12 @@ md_assemble (char *str)
 	      copy = XNEW (struct aarch64_inst);
 	      memcpy (copy, &inst.base, sizeof (struct aarch64_inst));
 	      output_inst (copy);
+	    }
+
+	  if (flag_synth_cfi)
+	    {
+	      ginsn = ginsn_new (symbol_temp_new_now (), frch_ginsn_gen_mode ());
+	      frch_ginsn_data_append (ginsn);
 	    }
 
 	  /* Issue non-fatal messages if any.  */
