@@ -735,6 +735,10 @@ enum
 #define INTEL64		2
 #define INTEL64ONLY	3
   ISA64,
+
+  /* Instruction updates stack pointer implicitly.  */
+  ImplicitStackOp,
+
   /* The last bitfield in i386_opcode_modifier.  */
   Opcode_Modifier_Num
 };
@@ -779,6 +783,7 @@ typedef struct i386_opcode_modifier
   unsigned int optimize:1;
   unsigned int dialect:2;
   unsigned int isa64:2;
+  unsigned int implicitstackop:1;
 } i386_opcode_modifier;
 
 /* Operand classes.  */
