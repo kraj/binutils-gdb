@@ -2400,7 +2400,8 @@ user_visible_resume_ptid (int step)
       resume_ptid = inferior_ptid;
     }
   else if ((scheduler_mode == schedlock_replay)
-	   && target_record_will_replay (minus_one_ptid, execution_direction))
+	   && target_record_will_replay (ptid_t (inferior_ptid.pid ()),
+					 execution_direction))
     {
       /* User-settable 'scheduler' mode requires solo thread resume in replay
 	 mode.  */
@@ -3118,15 +3119,17 @@ clear_proceed_status (int step)
      This is a convenience feature to not require the user to explicitly
      stop replaying the other threads.  We're assuming that the user's
      intent is to resume tracing the recorded process.  */
+  ptid_t resume_ptid = user_visible_resume_ptid (step);
   if (!non_stop && scheduler_mode == schedlock_replay
-      && target_record_is_replaying (minus_one_ptid)
-      && !target_record_will_replay (user_visible_resume_ptid (step),
-				     execution_direction))
-    target_record_stop_replaying ();
+      && target_record_is_replaying (ptid_t (resume_ptid.pid ()))
+      && !target_record_will_replay (resume_ptid, execution_direction))
+    {
+      target_record_stop_replaying ();
+      resume_ptid = user_visible_resume_ptid (step);
+    }
 
   if (!non_stop && inferior_ptid != null_ptid)
     {
-      ptid_t resume_ptid = user_visible_resume_ptid (step);
       process_stratum_target *resume_target
 	= user_visible_resume_target (resume_ptid);
 
@@ -3205,7 +3208,7 @@ schedlock_applies (struct thread_info *tp)
 	  || (scheduler_mode == schedlock_step
 	      && tp->control.stepping_command)
 	  || (scheduler_mode == schedlock_replay
-	      && target_record_will_replay (minus_one_ptid,
+	      && target_record_will_replay (ptid_t (tp->inf->pid),
 					    execution_direction)));
 }
 
