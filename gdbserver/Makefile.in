@@ -125,9 +125,15 @@ INCSUPPORT = -I$(srcdir)/.. -I..
 # in those directories should be included with the subdirectory.
 # e.g.: "target/wait.h".
 #
-INCLUDE_CFLAGS = -I. -I${srcdir} \
-	-I$(srcdir)/../gdb/regformats -I$(srcdir)/.. -I$(INCLUDE_DIR) \
-	-I$(srcdir)/../gdb $(INCGNU) $(INCSUPPORT) \
+INCLUDE_CFLAGS = \
+	-I. \
+	-I${srcdir} \
+	-I$(srcdir)/../gdb/regformats \
+	-I$(srcdir)/.. \
+	-I$(INCLUDE_DIR) \
+	-I$(srcdir)/../gdb \
+	$(INCGNU) \
+	$(INCSUPPORT) \
 	$(INTL_CFLAGS)
 
 # M{H,T}_CFLAGS, if defined, has host- and target-dependent CFLAGS
