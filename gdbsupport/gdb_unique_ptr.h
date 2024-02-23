@@ -22,7 +22,6 @@
 
 #include <memory>
 #include <string>
-#include "gdbsupport/gdb-xfree.h"
 
 namespace gdb
 {

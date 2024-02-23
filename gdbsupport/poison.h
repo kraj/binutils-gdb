@@ -20,6 +20,7 @@
 #ifndef COMMON_POISON_H
 #define COMMON_POISON_H
 
+#include "libiberty.h"
 #include "traits.h"
 #include "obstack.h"
 
@@ -90,8 +91,23 @@ using IsMallocable = std::is_trivially_constructible<T>;
 template<typename T>
 using IsFreeable = gdb::Or<std::is_trivially_destructible<T>, std::is_void<T>>;
 
-template <typename T, typename = gdb::Requires<gdb::Not<IsFreeable<T>>>>
-void free (T *ptr) = delete;
+/* GDB uses this instead of 'free', it detects when it is called on an
+   invalid type.  */
+
+template <typename T>
+static void
+xfree (T *ptr)
+{
+  static_assert (IsFreeable<T>::value, "Trying to use xfree with a non-POD \
+data type.  Use operator delete instead.");
+
+  if (ptr != NULL)
+#ifdef GNULIB_NAMESPACE
+    GNULIB_NAMESPACE::free (ptr);	/* ARI: free */
+#else
+    free (ptr);				/* ARI: free */
+#endif
+}
 
 template<typename T>
 static T *
