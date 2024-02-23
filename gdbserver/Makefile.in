@@ -134,7 +134,8 @@ INCLUDE_CFLAGS = \
 	-I$(srcdir)/../gdb \
 	$(INCGNU) \
 	$(INCSUPPORT) \
-	$(INTL_CFLAGS)
+	$(INTL_CFLAGS) \
+	-include $(srcdir)/gdbserver.inc.h
 
 # M{H,T}_CFLAGS, if defined, has host- and target-dependent CFLAGS
 # from the config/ directory.

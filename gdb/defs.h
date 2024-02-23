@@ -25,13 +25,6 @@
 
 #include "gdbsupport/common-defs.h"
 
-#undef PACKAGE
-#undef PACKAGE_NAME
-#undef PACKAGE_VERSION
-#undef PACKAGE_STRING
-#undef PACKAGE_TARNAME
-
-#include <config.h>
 #include "bfd.h"
 
 #include <sys/types.h>

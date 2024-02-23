@@ -605,6 +605,7 @@ GDB_CFLAGS = \
 	-I. \
 	-I$(srcdir) \
 	-I$(srcdir)/config \
+	-include $(srcdir)/gdb.inc.h \
 	-DLOCALEDIR="\"$(localedir)\"" \
 	$(DEFS)
 

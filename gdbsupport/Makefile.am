@@ -35,6 +35,7 @@ AM_CPPFLAGS = \
 	$(INCINTL) \
 	-I../bfd \
 	-I$(srcdir)/../bfd \
+	-include $(srcdir)/gdbsupport.inc.h \
 	@LARGEFILE_CPPFLAGS@
 
 override CXX += $(CXX_DIALECT)

@@ -21,14 +21,6 @@
 
 #include "gdbsupport/common-defs.h"
 
-#undef PACKAGE
-#undef PACKAGE_NAME
-#undef PACKAGE_VERSION
-#undef PACKAGE_STRING
-#undef PACKAGE_TARNAME
-
-#include <config.h>
-
 static_assert (sizeof (CORE_ADDR) >= sizeof (void *));
 
 #include "gdbsupport/version.h"
