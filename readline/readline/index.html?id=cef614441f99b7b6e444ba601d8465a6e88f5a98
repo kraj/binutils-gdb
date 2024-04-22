@@ -1,0 +1,67 @@
+From cef614441f99b7b6e444ba601d8465a6e88f5a98 Mon Sep 17 00:00:00 2001
+From: Chet Ramey <chet.ramey@case.edu>
+Date: Sun, 14 Jan 2024 15:19:37 -0500
+Subject: Readline-8.2 patch 8: add missing function prototypes
+
+---
+ bind.c     | 4 +---
+ patchlevel | 2 +-
+ rltty.c    | 3 +--
+ text.c     | 3 +--
+ 4 files changed, 4 insertions(+), 8 deletions(-)
+
+diff --git a/bind.c b/bind.c
+index 971116a..2596006 100644
+--- a/bind.c
++++ b/bind.c
+@@ -1167,9 +1167,7 @@ _rl_init_file_error (va_alist)
+ /* **************************************************************** */
+ 
+ static int
+-parse_comparison_op (s, indp)
+-     const char *s;
+-     int *indp;
++parse_comparison_op (const char *s, int *indp)
+ {
+   int i, peekc, op;
+ 
+diff --git a/patchlevel b/patchlevel
+index e340b58..6c10f12 100644
+--- a/patchlevel
++++ b/patchlevel
+@@ -1,3 +1,3 @@
+ # Do not edit -- exists only for use by patch
+ 
+-7
++8
+diff --git a/rltty.c b/rltty.c
+index 882a3d4..a4863ac 100644
+--- a/rltty.c
++++ b/rltty.c
+@@ -80,8 +80,7 @@ static int ksrflow;
+ /* Dummy call to force a backgrounded readline to stop before it tries
+    to get the tty settings. */
+ static void
+-set_winsize (tty)
+-     int tty;
++set_winsize (int tty)
+ {
+ #if defined (TIOCGWINSZ)
+   struct winsize w;
+diff --git a/text.c b/text.c
+index 91c3f33..30fdaa1 100644
+--- a/text.c
++++ b/text.c
+@@ -1764,8 +1764,7 @@ _rl_char_search (int count, int fdir, int bdir)
+ 
+ #if defined (READLINE_CALLBACKS)
+ static int
+-_rl_char_search_callback (data)
+-     _rl_callback_generic_arg *data;
++_rl_char_search_callback (_rl_callback_generic_arg *data)
+ {
+   _rl_callback_func = 0;
+   _rl_want_redisplay = 1;
+-- 
+cgit v1.1
+
