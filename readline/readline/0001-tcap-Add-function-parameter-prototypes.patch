@@ -1,0 +1,37 @@
+From 0c16af6ebf0bf81138c973e5e6a7c4ebf71f2489 Mon Sep 17 00:00:00 2001
+From: Khem Raj <raj.khem@gmail.com>
+Date: Wed, 30 Apr 2025 10:41:12 -0700
+Subject: [PATCH] tcap: Add function parameter prototypes
+
+GCC-15 with C23 dilect defaults expects full function signature
+
+Signed-off-by: Khem Raj <raj.khem@gmail.com>
+---
+ readline/readline/tcap.h | 14 ++++++--------
+ 1 file changed, 6 insertions(+), 8 deletions(-)
+
+diff --git a/readline/readline/tcap.h b/readline/readline/tcap.h
+index 859e6ee..2b22ff7 100644
+--- a/readline/readline/tcap.h
++++ b/readline/readline/tcap.h
+@@ -46,14 +46,12 @@ extern char *UP, *BC;
+ 
+ extern short ospeed;
+ 
+-extern int tgetent ();
+-extern int tgetflag ();
+-extern int tgetnum ();
+-extern char *tgetstr ();
+-
+-extern int tputs ();
+-
+-extern char *tgoto ();
++extern int tgetent(char*, const char*);
++extern int tgetflag(const char*);
++extern int tgetnum(const char*);
++extern char *tgetstr(const char*, char**);
++extern char *tgoto(const char*, int, int);
++extern int tputs(const char*, int, int (*)(int));
+ 
+ #endif /* HAVE_TERMCAP_H */
+ 
