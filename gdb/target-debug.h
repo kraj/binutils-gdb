@@ -39,6 +39,7 @@
    bypasses the debug target.  */
 
 #include "gdbarch.h"
+#include "gdbsupport/gdb_signals.h"
 #include "gdbsupport/x86-xstate.h"
 #include "progspace.h"
 #include "target.h"

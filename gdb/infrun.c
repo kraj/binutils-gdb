@@ -22,6 +22,7 @@
 #include "infrun.h"
 #include <ctype.h>
 #include "exceptions.h"
+#include "gdbsupport/gdb_signals.h"
 #include "symtab.h"
 #include "frame.h"
 #include "inferior.h"

@@ -18,6 +18,7 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "command.h"
+#include "gdbsupport/gdb_signals.h"
 #include "inferior.h"
 #include "terminal.h"
 #include "gdbcore.h"

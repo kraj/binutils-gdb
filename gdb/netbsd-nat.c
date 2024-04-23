@@ -25,6 +25,7 @@
 #include "inferior.h"
 #include "gdbarch.h"
 #include "gdbsupport/buildargv.h"
+#include "gdbsupport/gdb_signals.h"
 
 #include <sys/types.h>
 #include <sys/ptrace.h>

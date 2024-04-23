@@ -19,6 +19,7 @@
 
 #include "infcall.h"
 #include "breakpoint.h"
+#include "gdbsupport/gdb_signals.h"
 #include "tracepoint.h"
 #include "target.h"
 #include "regcache.h"

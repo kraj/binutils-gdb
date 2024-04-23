@@ -22,6 +22,7 @@
 #include <sys/stat.h>
 #include "nto-tdep.h"
 #include "extract-store-integer.h"
+#include "gdbsupport/gdb_signals.h"
 #include "top.h"
 #include "inferior.h"
 #include "infrun.h"

@@ -17,6 +17,7 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
+#include "gdbsupport/gdb_signals.h"
 #include "inferior.h"
 #include "infrun.h"
 #include "target.h"
@@ -51,6 +52,7 @@
 #include <pwd.h>
 #include <sys/types.h>
 #include <dirent.h>
+#include "target/resume.h"
 #include "xml-support.h"
 #include <sys/vfs.h>
 #include "solib.h"

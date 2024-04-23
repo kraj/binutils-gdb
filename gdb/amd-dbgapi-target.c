@@ -24,6 +24,7 @@
 #include "cli/cli-cmds.h"
 #include "cli/cli-decode.h"
 #include "cli/cli-style.h"
+#include "gdbsupport/gdb_signals.h"
 #include "inf-loop.h"
 #include "inferior.h"
 #include "objfiles.h"

@@ -54,6 +54,7 @@
 #include <sys/reg.h>
 #include <sched.h>
 #include <sys/pthdebug.h>
+#include "gdbsupport/gdb_signals.h"
 
 #if !HAVE_DECL_GETTHRDS
 extern int getthrds (pid_t, struct thrdsinfo64 *, int, tid_t *, int);

@@ -44,6 +44,7 @@
 
 /* Defines ps_err_e, struct ps_prochandle.  */
 #include "gdb_proc_service.h"
+#include "target/resume.h"
 
 /* Print an "arc-linux-nat" debug statement.  */
 

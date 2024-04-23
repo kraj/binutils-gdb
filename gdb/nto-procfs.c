@@ -43,6 +43,7 @@
 #include "inf-child.h"
 #include "gdbsupport/filestuff.h"
 #include "gdbsupport/scoped_fd.h"
+#include "gdbsupport/gdb_signals.h"
 
 #define NULL_PID		0
 #define _DEBUG_FLAG_TRACE	(_DEBUG_FLAG_TRACE_EXEC|_DEBUG_FLAG_TRACE_RD|\

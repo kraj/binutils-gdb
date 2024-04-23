@@ -22,6 +22,7 @@
    new prototype target and then overriding target methods as
    necessary.  */
 
+#include "gdbsupport/gdb_signals.h"
 #include "regcache.h"
 #include "memattr.h"
 #include "symtab.h"

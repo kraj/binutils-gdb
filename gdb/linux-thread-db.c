@@ -20,6 +20,7 @@
 #include <dlfcn.h>
 #include "exceptions.h"
 #include "gdb_proc_service.h"
+#include "gdbsupport/gdb_signals.h"
 #include "nat/gdb_thread_db.h"
 #include "gdbsupport/gdb_vecs.h"
 #include "bfd.h"

@@ -21,6 +21,7 @@
 #include <ctype.h>
 #include "breakpoint.h"
 #include "gdbcmd.h"
+#include "gdbsupport/gdb_signals.h"
 #include "inferior.h"
 #include "infrun.h"
 #include "annotate.h"

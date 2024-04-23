@@ -68,6 +68,7 @@ extern "C"
 #include "gdbcore.h"
 #include "gdbthread.h"
 #include "gdbsupport/gdb_obstack.h"
+#include "gdbsupport/gdb_signals.h"
 #include "tid-parse.h"
 #include "nat/fork-inferior.h"
 

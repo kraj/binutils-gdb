@@ -70,6 +70,7 @@
 #include "gdbsupport/gdb_tilde_expand.h"
 #include "gdbsupport/pathstuff.h"
 #include "gdbsupport/gdb_wait.h"
+#include "gdbsupport/gdb_signals.h"
 #include "nat/windows-nat.h"
 #include "gdbsupport/symbol.h"
 #include "ser-event.h"

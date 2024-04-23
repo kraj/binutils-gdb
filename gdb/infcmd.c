@@ -19,6 +19,7 @@
 
 #include "arch-utils.h"
 #include "exceptions.h"
+#include "gdbsupport/gdb_signals.h"
 #include "symtab.h"
 #include "gdbtypes.h"
 #include "frame.h"

@@ -73,13 +73,11 @@ typedef const gdb_byte const_gdb_byte;
    methods without checking them.  */
 
 #include "target/target.h"
-#include "target/resume.h"
 #include "target/wait.h"
 #include "target/waitstatus.h"
 #include "bfd.h"
 #include "symtab.h"
 #include "memattr.h"
-#include "gdbsupport/gdb_signals.h"
 #include "btrace.h"
 #include "record.h"
 #include "command.h"

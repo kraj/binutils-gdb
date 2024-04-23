@@ -69,6 +69,7 @@
 #include "gdbsupport/pathstuff.h"
 #include "gdbsupport/scoped_fd.h"
 #include "gdbsupport/scoped_restore.h"
+#include "gdbsupport/gdb_signals.h"
 #include "nat/fork-inferior.h"
 
 /* Quick overview.

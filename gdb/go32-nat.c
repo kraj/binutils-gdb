@@ -89,6 +89,7 @@
 #include "infrun.h"
 #include "gdbthread.h"
 #include "gdbsupport/gdb_wait.h"
+#include "gdbsupport/gdb_signals.h"
 #include "gdbcore.h"
 #include "command.h"
 #include "gdbcmd.h"

@@ -23,6 +23,7 @@
 #include "nat/linux-nat.h"
 #include "inf-ptrace.h"
 #include "target.h"
+#include "target/resume.h"
 #include <signal.h>
 
 /* A prototype generic GNU/Linux target.  A concrete instance should

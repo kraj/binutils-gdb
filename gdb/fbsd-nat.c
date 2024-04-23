@@ -29,6 +29,7 @@
 #include "gdbthread.h"
 #include "gdbsupport/buildargv.h"
 #include "gdbsupport/gdb_wait.h"
+#include "gdbsupport/gdb_signals.h"
 #include "inf-loop.h"
 #include "inf-ptrace.h"
 #include <sys/types.h>
