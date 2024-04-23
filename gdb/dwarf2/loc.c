@@ -19,6 +19,7 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
+#include "cli/cli-cmds.h"
 #include "event-top.h"
 #include "exceptions.h"
 #include "ui-out.h"
@@ -32,7 +33,6 @@
 #include "regcache.h"
 #include "objfiles.h"
 #include "block.h"
-#include "gdbcmd.h"
 #include "complaints.h"
 #include "dwarf2.h"
 #include "dwarf2/expr.h"
@@ -41,7 +41,6 @@
 #include "dwarf2/frame.h"
 #include "dwarf2/leb.h"
 #include "compile/compile.h"
-#include "gdbsupport/selftest.h"
 #include <algorithm>
 #include <vector>
 #include <unordered_set>

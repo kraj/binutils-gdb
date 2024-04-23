@@ -22,9 +22,9 @@
 
 struct buildsym_compunit;
 
-extern void dwarf_decode_macros (dwarf2_per_objfile *per_objfile,
+extern void dwarf_decode_macros (struct dwarf2_per_objfile *per_objfile,
 				 buildsym_compunit *builder,
-				 const dwarf2_section_info *section,
+				 const struct dwarf2_section_info *section,
 				 const struct line_header *lh,
 				 unsigned int offset_size,
 				 unsigned int offset,

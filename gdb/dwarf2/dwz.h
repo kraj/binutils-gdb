@@ -79,6 +79,6 @@ extern dwz_file *dwarf2_get_dwz_file (dwarf2_per_bfd *per_bfd,
    if the .gnu_debugaltlink section exists but the file cannot be
    found.  */
 
-extern void dwarf2_read_dwz_file (dwarf2_per_objfile *per_objfile);
+extern void dwarf2_read_dwz_file (struct dwarf2_per_objfile *per_objfile);
 
 #endif /* GDB_DWARF2_DWZ_H */
