@@ -24,7 +24,6 @@
 #include <vector>
 #include <string>
 #include <set>
-#include "gdbsupport/gdb_vecs.h"
 #include "gdbtypes.h"
 #include "gdbsupport/gdb_obstack.h"
 #include "gdbsupport/gdb_regex.h"

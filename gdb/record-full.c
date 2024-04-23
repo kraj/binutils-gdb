@@ -20,6 +20,7 @@
 #include "exceptions.h"
 #include "extract-store-integer.h"
 #include "gdbcmd.h"
+#include "gdbsupport/gdb_vecs.h"
 #include "regcache.h"
 #include "gdbthread.h"
 #include "inferior.h"

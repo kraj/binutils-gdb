@@ -23,7 +23,6 @@
 
 #include "target.h"
 #include "gdb_bfd.h"
-#include "gdbsupport/gdb_vecs.h"
 #include "registry.h"
 #include "solist.h"
 #include "gdbsupport/next-iterator.h"

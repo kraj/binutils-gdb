@@ -20,6 +20,7 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "extract-store-integer.h"
+#include "gdbsupport/gdb_vecs.h"
 #include "regcache.h"
 #include "inferior.h"
 #include "target.h"

@@ -19,7 +19,6 @@
 #ifndef GDBSERVER_INFERIORS_H
 #define GDBSERVER_INFERIORS_H
 
-#include "gdbsupport/gdb_vecs.h"
 #include "dll.h"
 #include <list>
 
