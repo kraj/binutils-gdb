@@ -20,6 +20,7 @@
 #include "arch-utils.h"
 #include <ctype.h>
 #include "breakpoint.h"
+#include "exceptions.h"
 #include "gdbcmd.h"
 #include "inferior.h"
 #include "annotate.h"
