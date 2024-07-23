@@ -30,8 +30,12 @@ clean_restart $testfile
 set addr [get_var_address address_breakpoint_here]
 gdb_exit
 
-if {[dap_initialize] == ""} {
-    return
+save_vars GDBFLAGS {
+    append GDBFLAGS " -iex \"set disable-randomization on\""
+
+    if {[dap_initialize] == ""} {
+	return
+    }
 }
 
 set obj [dap_check_request_and_response "set breakpoint on main" \
