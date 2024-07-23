@@ -46,7 +46,7 @@ loop_broke (void)
 #define INF_LOOP				\
   do						\
     {						\
-      while (!got_sig)				\
+      for (int i = 0; !got_sig; ++i)		\
 	;					\
     }						\
   while (0)

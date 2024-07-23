@@ -7695,6 +7695,9 @@ process_event_stop_test (struct execution_control_state *ecs)
 	  && stop_pc != ecs->stop_func_start
 	  && execution_direction == EXEC_REVERSE)
 	end_stepping_range (ecs);
+      else if (stop_pc == ecs->event_thread->control.step_range_start
+	       && execution_direction == EXEC_FORWARD)
+	end_stepping_range (ecs);
       else
 	keep_going (ecs);
 

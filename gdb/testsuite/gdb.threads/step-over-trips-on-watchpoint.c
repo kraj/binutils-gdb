@@ -62,7 +62,7 @@ main ()
      done with displaced stepping on a target that is always in
      non-stop mode, as in that case GDB runs both threads
      simultaneously.  */
-  while (1); /* set wait-thread breakpoint here */
+  for (int k = 0; ; k++); /* set wait-thread breakpoint here */
 
   pthread_join (child_thread, NULL);
 

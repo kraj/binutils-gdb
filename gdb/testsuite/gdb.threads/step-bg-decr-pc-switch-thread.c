@@ -32,7 +32,7 @@ void *
 thread_function (void *arg)
 {
   NOP; /* set breakpoint here */
-  while (1);
+  for (int i = 0; ; ++i);
 }
 
 int

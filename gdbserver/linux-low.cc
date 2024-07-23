@@ -330,7 +330,7 @@ lwp_in_step_range (struct lwp_info *lwp)
 {
   CORE_ADDR pc = lwp->stop_pc;
 
-  return (pc >= lwp->step_range_start && pc < lwp->step_range_end);
+  return (pc > lwp->step_range_start && pc < lwp->step_range_end);
 }
 
 /* The event pipe registered as a waitable file in the event loop.  */
