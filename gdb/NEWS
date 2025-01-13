@@ -46,6 +46,9 @@ maintenance check symtabs
   ** New constant PARAM_COLOR represents color type of a value
      of a <gdb:parameter> object.  Parameter's value is <gdb::color> instance.
 
+* Support for stabs debugging format is deprecated, and will be
+  removed in GDB 18.
+
 *** Changes in GDB 16
 
 * Support for Nios II targets has been removed as this architecture
