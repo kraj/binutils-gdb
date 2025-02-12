@@ -1818,9 +1818,10 @@ typedef void (gdbarch_shadow_stack_push_ftype) (struct gdbarch *gdbarch, CORE_AD
 extern void gdbarch_shadow_stack_push (struct gdbarch *gdbarch, CORE_ADDR new_addr, regcache *regcache);
 extern void set_gdbarch_shadow_stack_push (struct gdbarch *gdbarch, gdbarch_shadow_stack_push_ftype *shadow_stack_push);
 
-/* If possible, get the shadow stack pointer and return it.  Set
-   SHADOW_STACK_ENABLED to true if the shadow stack feature is enabled,
-   otherwise set it to false. */
+/* If possible, return the shadow stack pointer. On some architectures, the shadow stack
+   pointer is available even if the feature is disabled.  To return the shadow stack
+   enablement state configure SHADOW_STACK_ENABLED.
+   */
 
 typedef std::optional<CORE_ADDR> (gdbarch_get_shadow_stack_pointer_ftype) (struct gdbarch *gdbarch, regcache *regcache, bool &shadow_stack_enabled);
 extern std::optional<CORE_ADDR> gdbarch_get_shadow_stack_pointer (struct gdbarch *gdbarch, regcache *regcache, bool &shadow_stack_enabled);

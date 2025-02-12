@@ -1939,6 +1939,7 @@ amd64_linux_get_shadow_stack_pointer (gdbarch *gdbarch, regcache *regcache,
 				      bool &shadow_stack_enabled)
 {
   const i386_gdbarch_tdep *tdep = gdbarch_tdep<i386_gdbarch_tdep> (gdbarch);
+  shadow_stack_enabled = false;
 
   if (tdep == nullptr || tdep->ssp_regnum < 0)
     return {};
@@ -1968,7 +1969,7 @@ static void
 amd64_linux_shadow_stack_push (gdbarch *gdbarch, CORE_ADDR new_addr,
 			       regcache *regcache)
 {
-  bool shadow_stack_enabled = false;
+  bool shadow_stack_enabled;
   std::optional<CORE_ADDR> ssp
     = amd64_linux_get_shadow_stack_pointer (gdbarch, regcache,
 					    shadow_stack_enabled);

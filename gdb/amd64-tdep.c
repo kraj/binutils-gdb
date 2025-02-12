@@ -1920,7 +1920,7 @@ amd64_displaced_step_fixup (struct gdbarch *gdbarch,
 
       /* If shadow stack is enabled, we need to correct the return address
 	 on the shadow stack too.  */
-      bool shadow_stack_enabled = false;
+      bool shadow_stack_enabled;
       std::optional<CORE_ADDR> ssp
 	= gdbarch_get_shadow_stack_pointer (gdbarch, regs,
 					    shadow_stack_enabled);

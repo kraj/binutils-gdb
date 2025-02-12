@@ -2869,10 +2869,10 @@ pointer.
 
 Method(
     comment="""
-If possible, get the shadow stack pointer and return it.  Set
-SHADOW_STACK_ENABLED to true if the shadow stack feature is enabled,
-otherwise set it to false.
-""",
+If possible, return the shadow stack pointer. On some architectures, the shadow stack
+pointer is available even if the feature is disabled.  To return the shadow stack
+enablement state configure SHADOW_STACK_ENABLED.
+  """,
     type="std::optional<CORE_ADDR>",
     name="get_shadow_stack_pointer",
     params=[("regcache *", "regcache"), ("bool &", "shadow_stack_enabled")],
