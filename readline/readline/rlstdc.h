@@ -44,7 +44,7 @@
 
 /* Moved from config.h.in because readline.h:rl_message depends on these
    defines. */
-#if defined (__STDC__) && defined (HAVE_STDARG_H)
+#if defined (__STDC__)
 #  define PREFER_STDARG
 #  define USE_VARARGS
 #else
