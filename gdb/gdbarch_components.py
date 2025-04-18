@@ -2848,3 +2848,17 @@ which all assume current_inferior() is the one to read from.
     predefault="default_core_parse_exec_context",
     invalid=False,
 )
+
+Method(
+    comment="""
+Obtain or calculate target description parameter.
+""",
+    type="void",
+    name="fetch_tdesc_parameter",
+    params=[
+        ("readable_regcache *", "regcache"),
+        ("unsigned int", "parameter_id"),
+    ],
+    predefault="default_fetch_tdesc_parameter",
+    invalid=False,
+)

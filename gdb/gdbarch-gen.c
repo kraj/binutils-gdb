@@ -262,6 +262,7 @@ struct gdbarch
   gdbarch_read_core_file_mappings_ftype *read_core_file_mappings = default_read_core_file_mappings;
   gdbarch_use_target_description_from_corefile_notes_ftype *use_target_description_from_corefile_notes = default_use_target_description_from_corefile_notes;
   gdbarch_core_parse_exec_context_ftype *core_parse_exec_context = default_core_parse_exec_context;
+  gdbarch_fetch_tdesc_parameter_ftype *fetch_tdesc_parameter = default_fetch_tdesc_parameter;
 };
 
 /* Create a new ``struct gdbarch'' based on information provided by
@@ -535,6 +536,7 @@ verify_gdbarch (struct gdbarch *gdbarch)
   /* Skip verify of read_core_file_mappings, invalid_p == 0.  */
   /* Skip verify of use_target_description_from_corefile_notes, invalid_p == 0.  */
   /* Skip verify of core_parse_exec_context, invalid_p == 0.  */
+  /* Skip verify of fetch_tdesc_parameter, invalid_p == 0.  */
   if (!log.empty ())
     internal_error (_("verify_gdbarch: the following are invalid ...%s"),
 		    log.c_str ());
@@ -1406,6 +1408,9 @@ gdbarch_dump (struct gdbarch *gdbarch, struct ui_file *file)
   gdb_printf (file,
 	      "gdbarch_dump: core_parse_exec_context = <%s>\n",
 	      host_address_to_string (gdbarch->core_parse_exec_context));
+  gdb_printf (file,
+	      "gdbarch_dump: fetch_tdesc_parameter = <%s>\n",
+	      host_address_to_string (gdbarch->fetch_tdesc_parameter));
   if (gdbarch->dump_tdep != NULL)
     gdbarch->dump_tdep (gdbarch, file);
 }
@@ -5550,4 +5555,21 @@ set_gdbarch_core_parse_exec_context (struct gdbarch *gdbarch,
 				     gdbarch_core_parse_exec_context_ftype core_parse_exec_context)
 {
   gdbarch->core_parse_exec_context = core_parse_exec_context;
+}
+
+void
+gdbarch_fetch_tdesc_parameter (struct gdbarch *gdbarch, readable_regcache *regcache, unsigned int parameter_id)
+{
+  gdb_assert (gdbarch != NULL);
+  gdb_assert (gdbarch->fetch_tdesc_parameter != NULL);
+  if (gdbarch_debug >= 2)
+    gdb_printf (gdb_stdlog, "gdbarch_fetch_tdesc_parameter called\n");
+  gdbarch->fetch_tdesc_parameter (gdbarch, regcache, parameter_id);
+}
+
+void
+set_gdbarch_fetch_tdesc_parameter (struct gdbarch *gdbarch,
+				   gdbarch_fetch_tdesc_parameter_ftype fetch_tdesc_parameter)
+{
+  gdbarch->fetch_tdesc_parameter = fetch_tdesc_parameter;
 }
