@@ -4304,7 +4304,7 @@ aarch64_fetch_tdesc_parameter (gdbarch *gdbarch, readable_regcache *regcache,
       register_status status;
       gdb_byte buf[8];
 
-      status = regcache->raw_read (AARCH64_SVE_VG_REGNUM, buf);
+      status = regcache->raw_read (AARCH64_SVE_VG_REGNUM, buf, true);
       if (status != REG_VALID)
 	return;
 
@@ -4323,7 +4323,7 @@ aarch64_fetch_tdesc_parameter (gdbarch *gdbarch, readable_regcache *regcache,
       register_status status;
       gdb_byte buf[8];
 
-      status = regcache->raw_read (AARCH64_SVE_VG_REGNUM, buf);
+      status = regcache->raw_read (AARCH64_SVE_VG_REGNUM, buf, true);
       if (status != REG_VALID)
 	return;
 

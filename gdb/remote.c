@@ -878,7 +878,7 @@ public:
   ptid_t wait (ptid_t, struct target_waitstatus *, target_wait_flags) override;
   bool has_pending_events () override;
 
-  void fetch_registers (struct regcache *, int) override;
+  void fetch_registers (struct regcache *, int, bool) override;
   void store_registers (struct regcache *, int) override;
   void prepare_to_store (struct regcache *) override;
 
@@ -9145,7 +9145,8 @@ remote_target::set_remote_traceframe ()
 }
 
 void
-remote_target::fetch_registers (struct regcache *regcache, int regnum)
+remote_target::fetch_registers (struct regcache *regcache, int regnum,
+				bool only_this)
 {
   struct gdbarch *gdbarch = regcache->arch ();
   struct remote_state *rs = get_remote_state ();
@@ -9165,7 +9166,7 @@ remote_target::fetch_registers (struct regcache *regcache, int regnum)
 	 we are likely to read more than one register.  If this is the
 	 first 'g' packet, we might be overly optimistic about its
 	 contents, so fall back to 'p'.  */
-      if (reg->in_g_packet)
+      if (!only_this && reg->in_g_packet)
 	{
 	  fetch_registers_using_g (regcache);
 	  if (reg->in_g_packet)
