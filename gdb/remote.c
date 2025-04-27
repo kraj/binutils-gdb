@@ -8606,6 +8606,10 @@ remote_target::supply_expedited_registers (regcache *regcache,
       regcache->raw_supply (reg.num, reg.data);
       rs->last_seen_expedited_registers.insert (reg.num);
     }
+
+  if (regcache->has_variable_size_registers ())
+    rs->get_remote_arch_state (regcache->arch ())
+      ->update_packet_size (regcache, rs);
 }
 
 /* Called when it is decided that STOP_REPLY holds the info of the
