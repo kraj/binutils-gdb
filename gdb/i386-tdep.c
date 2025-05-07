@@ -8403,7 +8403,8 @@ i386_validate_tdesc_p (i386_gdbarch_tdep *tdep,
   const struct tdesc_feature *feature_core;
 
   const struct tdesc_feature *feature_sse, *feature_avx, *feature_avx512,
-			     *feature_pkeys, *feature_segments;
+			     *feature_pkeys, *feature_segments,
+			     *feature_pl3_ssp;
   int i, num_regs, valid_p;
 
   if (! tdesc_has_registers (tdesc))
@@ -8428,6 +8429,9 @@ i386_validate_tdesc_p (i386_gdbarch_tdep *tdep,
 
   /* Try PKEYS  */
   feature_pkeys = tdesc_find_feature (tdesc, "org.gnu.gdb.i386.pkeys");
+
+  /* Try Shadow Stack.  */
+  feature_pl3_ssp = tdesc_find_feature (tdesc, "org.gnu.gdb.i386.pl3_ssp");
 
   valid_p = 1;
 
@@ -8542,6 +8546,15 @@ i386_validate_tdesc_p (i386_gdbarch_tdep *tdep,
 	valid_p &= tdesc_numbered_register (feature_pkeys, tdesc_data,
 					    I387_PKRU_REGNUM (tdep) + i,
 					    tdep->pkeys_register_names[i]);
+    }
+
+  if (feature_pl3_ssp != nullptr)
+    {
+      if (tdep->ssp_regnum < 0)
+	tdep->ssp_regnum = I386_PL3_SSP_REGNUM;
+
+      valid_p &= tdesc_numbered_register (feature_pl3_ssp, tdesc_data,
+					  tdep->ssp_regnum, "pl3_ssp");
     }
 
   return valid_p;
@@ -8835,6 +8848,9 @@ i386_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
   /* No segment base registers.  */
   tdep->fsbase_regnum = -1;
 
+  /* No shadow stack pointer register.  */
+  tdep->ssp_regnum = -1;
+
   tdesc_arch_data_up tdesc_data = tdesc_data_alloc ();
 
   set_gdbarch_relocate_instruction (gdbarch, i386_relocate_instruction);
@@ -8955,13 +8971,15 @@ const struct target_desc *
 i386_target_description (uint64_t xstate_bv_mask, bool segments)
 {
   static target_desc *i386_tdescs \
-    [2/*SSE*/][2/*AVX*/][2/*AVX512*/][2/*PKRU*/][2/*segments*/] = {};
+    [2/*SSE*/][2/*AVX*/][2/*AVX512*/][2/*PKRU*/][2/*CET_U*/] \
+    [2/*segments*/] = {};
   target_desc **tdesc;
 
   tdesc = &i386_tdescs[(xstate_bv_mask & X86_XSTATE_SSE) ? 1 : 0]
     [(xstate_bv_mask & X86_XSTATE_AVX) ? 1 : 0]
     [(xstate_bv_mask & X86_XSTATE_AVX512) ? 1 : 0]
     [(xstate_bv_mask & X86_XSTATE_PKRU) ? 1 : 0]
+    [(xstate_bv_mask & X86_XSTATE_CET_U) ? 1 : 0]
     [segments ? 1 : 0];
 
   if (*tdesc == NULL)

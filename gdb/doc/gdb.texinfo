@@ -50047,6 +50047,10 @@ The @samp{org.gnu.gdb.i386.pkeys} feature is optional.  It should
 describe a single register, @samp{pkru}.  It is a 32-bit register
 valid for i386 and amd64.
 
+The @samp{org.gnu.gdb.i386.pl3_ssp} feature is optional.  It should describe the
+user mode register @samp{pl3_ssp} which has 64 bits on amd64.  Following the
+restriction of the Linux kernel, only amd64 is supported for now.
+
 @node LoongArch Features
 @subsection LoongArch Features
 @cindex target descriptions, LoongArch Features
