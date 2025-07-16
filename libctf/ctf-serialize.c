@@ -74,6 +74,7 @@ ctf_symtab_skippable (ctf_link_sym_t *sym)
 	  || sym->st_shndx == SHN_UNDEF
 	  || strcmp (sym->st_name, "_START_") == 0
 	  || strcmp (sym->st_name, "_END_") == 0
+	  || strcmp (sym->st_name, "_PROCEDURE_LINKAGE_TABLE_") == 0
 	  || (sym->st_type == STT_OBJECT && sym->st_shndx == SHN_EXTABS
 	      && sym->st_value == 0));
 }
