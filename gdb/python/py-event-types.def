@@ -145,3 +145,8 @@ GDB_PY_DEFINE_EVENT_TYPE (tui_enabled,
 			  "TuiEnabledEvent",
 			  "GDB TUI enabled event object",
 			  event_object_type);
+
+GDB_PY_DEFINE_EVENT_TYPE (corefile_changed,
+			  "CorefileChangedEvent",
+			  "GDB corefile changed event",
+			  event_object_type);

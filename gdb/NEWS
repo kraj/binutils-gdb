@@ -13,6 +13,8 @@
 
   ** GDB now supports the "completions" request.
 
+  ** The attach request now accepts the coreFile parameter.
+
 * "set style" commands now supports numeric format for basic colors
   from 0 to 255 and #RRGGBB format for TrueColor.
 
@@ -175,6 +177,32 @@ info threads [-gid] [-stopped] [-running] [ID]...
   ** New attribute gdb.Value.is_unavailable, this checks for
      unavailability like gdb.Value.is_optimized_out checks for
      optimized out values.
+
+  ** New gdb.Corefile class which represents a loaded core file.  This
+     has an attribute Corefile.filename, the file name of the loaded
+     core file, and a method Corefile.is_valid(), which returns False
+     when a Corefile object becomes invalid (e.g. when the core file
+     is unloaded).  There is also Corefile.mapped_files() which
+     returns a list of CorefileMappedFile objects, representing files
+     that were mapped into the core file when it was created.
+
+  ** New gdb.CorefileMappedFile type representing a file that was
+     mapped when the core file was created.  Has read-only attributes
+     filename (string), build_id (string), is_main_executable
+     (boolean), and regions (list of CorefileMappedFileRegion objects).
+
+  ** New gdb.CorefileMappedFileRegion type, which represents a mapped
+     region of a file (see gdb.CorefileMappedFile above).  Has
+     read-only attributes start, end, and file_offset.
+
+  ** New Inferior.corefile attribute.  This read only attribute
+     contains the gdb.Corefile object if a core file is loaded into
+     the inferior, otherwise, this contains None.
+
+  ** New event registry gdb.events.corefile_changed, which emits a
+     CorefileChangedEvent whenever the core file associated with an
+     inferior changes.  The event has an 'inferior' attribute which is
+     the gdb.Inferior in which the core file has changed.
 
 * Guile API
 
