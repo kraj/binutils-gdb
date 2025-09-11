@@ -594,7 +594,11 @@ colorsupport ()
     {
       std::vector<color_space> result = {color_space::MONOCHROME};
 
-      int colors = tgetnum ("Co");
+      /* ncurses versions prior to 6.1 (and other curses
+	 implementations) declare the tgetnum argument to be
+	 'char *', so we need the const_cast, since C++ will not
+	 implicitly convert.  */
+      int colors = tgetnum (const_cast<char*> ("Co"));
 #ifdef __MINGW32__
       /* MS-Windows terminal generally doesn't have "Co" in its
 	 terminfo, but always supports at least 8 colors.  */
