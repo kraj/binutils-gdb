@@ -1120,12 +1120,12 @@ gdb_bfd_get_full_section_contents (bfd *abfd, asection *section,
   std::lock_guard<std::mutex> guard (gdata->per_bfd_mutex);
 #endif
 
-  bfd_size_type section_size = bfd_section_size (section);
+  bfd_size_type section_size = bfd_get_section_alloc_size (abfd, section);
 
   contents->resize (section_size);
 
-  return bfd_get_section_contents (abfd, section, contents->data (), 0,
-				   section_size);
+  auto data = contents->data ();
+  return bfd_get_full_section_contents (abfd, section, &data);
 }
 
 /* See gdb_bfd.h.  */
