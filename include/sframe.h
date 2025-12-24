@@ -413,7 +413,7 @@ typedef struct sframe_fre_info
 
 /* SFrame Frame Row Entry definitions.
 
-   Used for AMD64, AARCH64, and s390x.
+   Used for Default FDEs in AMD64, AARCH64, and s390x.
 
    An SFrame Frame Row Entry is a self-sufficient record which contains
    information on how to generate the stack trace for the specified range of
@@ -421,7 +421,7 @@ typedef struct sframe_fre_info
      S is the size of the stack frame offset for the FRE, and
      N is the number of stack frame offsets in the FRE
 
-   The interpretation of FRE stack offsets is ABI-specific:
+   The interpretation of FRE stack offsets for default FDEs is ABI-specific:
 
    AMD64:
      offset1 (interpreted as CFA = BASE_REG + offset1)
