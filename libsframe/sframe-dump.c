@@ -161,6 +161,8 @@ dump_sframe_header_flags (const sframe_decoder_ctx *sfd_ctx)
     }
 
   PRINT_FLAG (SFRAME_F_FDE_SORTED);
+  /* Support dumping of both SFrame V2 and V3.  Include SFRAME_F_FRAME_POINTER,
+     even though this should not appear in SFrame V3.  */
   PRINT_FLAG (SFRAME_F_FRAME_POINTER);
   PRINT_FLAG (SFRAME_F_FDE_FUNC_START_PCREL);
 #undef PRINT_FLAG
