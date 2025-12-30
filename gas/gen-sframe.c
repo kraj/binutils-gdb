@@ -1494,6 +1494,7 @@ sframe_xlate_do_val_offset (const struct sframe_xlate_ctx *xlate_ctx ATTRIBUTE_U
   return SFRAME_XLATE_OK;
 }
 
+#if 0
 /* S390-specific translate DW_CFA_register into SFrame context.
    Return SFRAME_XLATE_OK if success.  */
 
@@ -1531,6 +1532,8 @@ s390_sframe_xlate_do_register (struct sframe_xlate_ctx *xlate_ctx,
   return SFRAME_XLATE_OK;
 }
 
+#endif
+
 /* Translate DW_CFA_register into SFrame context.
 
    This opcode indicates: Previous value of register1 is register2.  This is
@@ -1550,10 +1553,13 @@ static int
 sframe_xlate_do_register (struct sframe_xlate_ctx *xlate_ctx,
 			  const struct cfi_insn_data *cfi_insn)
 {
+#if 0
   /* Conditionally invoke S390-specific implementation.  */
   if (sframe_get_abi_arch () == SFRAME_ABI_S390X_ENDIAN_BIG)
     return s390_sframe_xlate_do_register (xlate_ctx, cfi_insn);
   else if (sframe_support_flex_fde_p ())
+#endif
+  if (sframe_support_flex_fde_p ())
     {
       struct sframe_row_entry *cur_fre = xlate_ctx->cur_fre;
 
