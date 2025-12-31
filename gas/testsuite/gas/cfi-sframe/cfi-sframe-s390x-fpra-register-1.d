@@ -12,7 +12,7 @@ Contents of the SFrame section .sframe:
 
   Function Index :
 
-    func idx \[0\]: pc = 0x0, size = 26 bytes
+    func idx \[0\]: pc = 0x0, size = 26 bytes, attr = "F"
     STARTPC +CFA +FP +RA +
     0+0000 +sp\+160 +u +u +
     0+0004 +sp\+160 +u +r16\+0 +
