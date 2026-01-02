@@ -1349,21 +1349,25 @@ sframe_xlate_do_register (struct sframe_xlate_ctx *xlate_ctx,
 static int
 sframe_xlate_do_remember_state (struct sframe_xlate_ctx *xlate_ctx)
 {
-  const struct sframe_row_entry *last_fre = xlate_ctx->last_fre;
+  if (!xlate_ctx->remember_fre)
+    xlate_ctx->remember_fre = sframe_row_entry_new ();
 
-  /* If there is no FRE state to remember, nothing to do here.  Return
-     early with non-zero error code, this will cause no SFrame stack trace
-     info for the function involved.  */
-  if (!last_fre)
+  const struct sframe_row_entry *prev_fre = xlate_ctx->last_fre;
+  /* If there is no previous saved FRE, use the state so far for the snapshot.
+     .cfi_startproc followed by .cfi_remember_state is a valid sequence.  */
+  if (!prev_fre)
+    prev_fre = xlate_ctx->cur_fre;
+  /* If there is no previous FRE state to remember, nothing to do here.  Return
+     early with non-zero error code, this will cause no SFrame stack trace info
+     for the function involved.  */
+  if (!prev_fre)
     {
       as_warn (_("no SFrame FDE emitted; "
 		 ".cfi_remember_state without prior SFrame FRE state"));
       return SFRAME_XLATE_ERR_INVAL;
     }
 
-  if (!xlate_ctx->remember_fre)
-    xlate_ctx->remember_fre = sframe_row_entry_new ();
-  sframe_row_entry_initialize (xlate_ctx->remember_fre, last_fre);
+  sframe_row_entry_initialize (xlate_ctx->remember_fre, prev_fre);
 
   return SFRAME_XLATE_OK;
 }
