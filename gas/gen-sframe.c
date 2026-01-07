@@ -1414,35 +1414,25 @@ sframe_xlate_do_offset (struct sframe_xlate_ctx *xlate_ctx,
      whether its time to reset the ra tracking state or not.  */
   else if (cfi_insn->u.ri.reg == SFRAME_CFA_RA_REG)
     {
-      if (!sframe_ra_tracking_p ())
+      if (!sframe_ra_tracking_p ()
+	  && cfi_insn->u.ri.offset == sframe_cfa_ra_offset ())
 	{
-	  /* RA is restored to its standard fixed offset.  */
-	  if (cfi_insn->u.ri.offset == sframe_cfa_ra_offset ())
-	    {
-	      cur_fre->ra_reg = SFRAME_FRE_REG_INVALID;
-	      cur_fre->ra_loc = SFRAME_FRE_ELEM_LOC_NONE;
-	      cur_fre->ra_deref_p = false;
-	      cur_fre->merge_candidate = false;
-	    }
-	  /* If flex FDE is supported, update the ra tracking info.  */
-	  else if (sframe_support_flex_fde_p ())
-	    {
-	      sframe_fre_set_ra_track (cur_fre, cfi_insn->u.ri.offset);
-	      cur_fre->ra_reg = SFRAME_FRE_REG_INVALID;
-	      cur_fre->ra_loc = SFRAME_FRE_ELEM_LOC_STACK;
-	      cur_fre->ra_deref_p = true;
-	      cur_fre->merge_candidate = false;
-
-	      xlate_ctx->flex_p = true;
-	    }
+	  /* Reset RA tracking info to fixed offset.  */
+	  cur_fre->ra_reg = SFRAME_FRE_REG_INVALID;
+	  cur_fre->ra_loc = SFRAME_FRE_ELEM_LOC_NONE;
+	  cur_fre->ra_deref_p = false;
+	  cur_fre->merge_candidate = false;
 	}
-      else if (sframe_ra_tracking_p ())
+      else
 	{
 	  sframe_fre_set_ra_track (cur_fre, cfi_insn->u.ri.offset);
 	  cur_fre->ra_reg = SFRAME_FRE_REG_INVALID;
 	  cur_fre->ra_loc = SFRAME_FRE_ELEM_LOC_STACK;
 	  cur_fre->ra_deref_p = true;
 	  cur_fre->merge_candidate = false;
+
+	  if (!sframe_ra_tracking_p () && sframe_support_flex_fde_p ())
+	    xlate_ctx->flex_p = true;
 	}
     }
   /* This is used to track changes to non-rsp registers, skip all others
