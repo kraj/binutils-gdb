@@ -379,8 +379,8 @@ dump_sframe_func_fres_flex (const sframe_decoder_ctx *sfd_ctx,
       int err_cfa_offset = 0;
       /* Read the Register/Control Data as unsigned.  */
       uint32_t cfa_reg_data
-	= (uint32_t) sframe_get_fre_offset (&fre, SFRAME_FRE_CFA_OFFSET_IDX,
-					    &err_cfa_reg);
+	= sframe_get_fre_udata (&fre, SFRAME_FRE_CFA_OFFSET_IDX,
+				&err_cfa_reg);
       int32_t cfa_offset = sframe_fre_get_cfa_offset (sfd_ctx, &fre, fde_type,
 						      &err_cfa_offset);
       sframe_assert (!err_cfa_reg && !err_cfa_offset);
@@ -394,8 +394,8 @@ dump_sframe_func_fres_flex (const sframe_decoder_ctx *sfd_ctx,
       int err_ra_reg = 0;
       /* Read the Register/Control Data as unsigned.  */
       uint32_t ra_reg_data
-	= (uint32_t) sframe_get_fre_offset (&fre, SFRAME_FRE_RA_OFFSET_IDX * 2,
-					    &err_ra_reg);
+	= sframe_get_fre_udata (&fre, SFRAME_FRE_RA_OFFSET_IDX * 2,
+				&err_ra_reg);
       int32_t ra_offset = sframe_fre_get_ra_offset (sfd_ctx, &fre, fde_type,
 						    &err_ra_offset);
       bool ra_reg_p = SFRAME_V3_FLEX_FDE_OFFSET_REG_P (ra_reg_data);
@@ -412,8 +412,7 @@ dump_sframe_func_fres_flex (const sframe_decoder_ctx *sfd_ctx,
        fp_idx -= 1;
 
       /* Read the Register/Control Data as unsigned.  */
-      uint32_t fp_reg_data
-	= (uint32_t) sframe_get_fre_offset (&fre, fp_idx, &err_fp_reg);
+      uint32_t fp_reg_data = sframe_get_fre_udata (&fre, fp_idx, &err_fp_reg);
       int32_t fp_offset = sframe_fre_get_fp_offset (sfd_ctx, &fre, fde_type,
 						    &err_fp_offset);
       bool fp_reg_p = SFRAME_V3_FLEX_FDE_OFFSET_REG_P (fp_reg_data);

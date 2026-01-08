@@ -215,6 +215,9 @@ dump_sframe (const sframe_decoder_ctx *decoder, uint64_t addr);
 extern int32_t
 sframe_get_fre_offset (const sframe_frame_row_entry *fre, int idx, int *errp);
 
+extern uint32_t
+sframe_get_fre_udata (const sframe_frame_row_entry *fre, int idx, int *errp);
+
 /* Get the base reg id from the FRE info.  Sets errp if fails.  */
 extern uint8_t
 sframe_fre_get_base_reg_id (const sframe_frame_row_entry *fre, int *errp);

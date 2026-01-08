@@ -1043,6 +1043,42 @@ sframe_get_fre_offset (const sframe_frame_row_entry *fre, int idx, int *errp)
     }
 }
 
+/* Get IDX'th offset as unsigned data from FRE.  Set errp as applicable.  */
+
+uint32_t
+sframe_get_fre_udata (const sframe_frame_row_entry *fre, int idx, int *errp)
+{
+  uint8_t offset_cnt, offset_size;
+
+  if (fre == NULL || !sframe_fre_sanity_check_p (fre))
+    return sframe_set_errno (errp, SFRAME_ERR_FRE_INVAL);
+
+  offset_cnt = sframe_fre_get_offset_count (fre->fre_info);
+  offset_size = sframe_fre_get_offset_size (fre->fre_info);
+
+  if (offset_cnt < idx + 1)
+    return sframe_set_errno (errp, SFRAME_ERR_FREOFFSET_NOPRESENT);
+
+  if (errp)
+    *errp = 0; /* Offset Valid.  */
+
+  if (offset_size == SFRAME_FRE_OFFSET_1B)
+    {
+      uint8_t *offsets = (uint8_t *)fre->fre_offsets;
+      return offsets[idx];
+    }
+  else if (offset_size == SFRAME_FRE_OFFSET_2B)
+    {
+      uint16_t *offsets = (uint16_t *)fre->fre_offsets;
+      return offsets[idx];
+    }
+  else
+    {
+      uint32_t *offsets = (uint32_t *)fre->fre_offsets;
+      return offsets[idx];
+    }
+}
+
 /* Free the decoder context.  */
 
 void
@@ -1171,8 +1207,8 @@ sframe_fre_get_fp_offset (const sframe_decoder_ctx *dctx,
 			    : SFRAME_FRE_FP_OFFSET_IDX);
   if (flex_p)
     {
-      int32_t flex_ra_reg_data
-	= sframe_get_fre_offset (fre, SFRAME_FRE_RA_OFFSET_IDX * 2, errp);
+      uint32_t flex_ra_reg_data
+	= sframe_get_fre_udata (fre, SFRAME_FRE_RA_OFFSET_IDX * 2, errp);
       if (errp && *errp == 0
 	  && flex_ra_reg_data == SFRAME_FRE_RA_OFFSET_INVALID)
 	fp_offset_idx = SFRAME_FRE_FP_OFFSET_IDX * 2;
