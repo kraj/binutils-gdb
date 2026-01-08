@@ -231,9 +231,9 @@ get_udata_size_in_bytes (unsigned int value)
 {
   unsigned int size = 0;
 
-  if (value <= VALUE_8BIT + 1)
+  if (value <= UINT8_MAX)
     size = 1;
-  else if (value <= VALUE_16BIT + 1)
+  else if (value <= UINT16_MAX)
     size = 2;
   else
     size = 4;
