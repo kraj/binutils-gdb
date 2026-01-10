@@ -1068,6 +1068,7 @@ This program has absolutely no warranty.\n"));
 	  break;
 
 	case OPTION_SFRAME_3:
+	  flag_gen_sframe = GEN_SFRAME_ENABLED;
 	  flag_gen_sframe_version = GEN_SFRAME_VERSION_3;
 	  break;
 
