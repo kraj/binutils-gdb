@@ -467,19 +467,25 @@ sframe_get_fre_offset_size (const struct sframe_row_entry *sframe_fre,
       if (data_size > max_offset_size)
 	max_offset_size = data_size;
 
-      reg_p = (sframe_fre->fp_loc == SFRAME_FRE_ELEM_LOC_REG);
-      data = SFRAME_V3_FLEX_FDE_REG_ENCODE (sframe_fre->fp_reg,
-					    sframe_fre->fp_deref_p, reg_p);
-      data_size = get_udata_size_in_bytes (data);
-      if (data_size > max_offset_size)
-	max_offset_size = data_size;
+      if (sframe_fre->ra_loc != SFRAME_FRE_ELEM_LOC_NONE)
+	{
+	  reg_p = (sframe_fre->ra_loc != SFRAME_FRE_ELEM_LOC_REG);
+	  data = SFRAME_V3_FLEX_FDE_REG_ENCODE (sframe_fre->ra_reg,
+						sframe_fre->ra_deref_p, reg_p);
+	  data_size = get_udata_size_in_bytes (data);
+	  if (data_size > max_offset_size)
+	    max_offset_size = data_size;
+	}
 
-      reg_p = (sframe_fre->ra_loc != SFRAME_FRE_ELEM_LOC_REG);
-      data = SFRAME_V3_FLEX_FDE_REG_ENCODE (sframe_fre->ra_reg,
-					    sframe_fre->ra_deref_p, reg_p);
-      data_size = get_udata_size_in_bytes (data);
-      if (data_size > max_offset_size)
-	max_offset_size = data_size;
+      if (sframe_fre->fp_loc != SFRAME_FRE_ELEM_LOC_NONE)
+	{
+	  reg_p = (sframe_fre->fp_loc == SFRAME_FRE_ELEM_LOC_REG);
+	  data = SFRAME_V3_FLEX_FDE_REG_ENCODE (sframe_fre->fp_reg,
+						sframe_fre->fp_deref_p, reg_p);
+	  data_size = get_udata_size_in_bytes (data);
+	  if (data_size > max_offset_size)
+	    max_offset_size = data_size;
+	}
     }
 
   gas_assert (max_offset_size);
@@ -788,6 +794,11 @@ output_sframe_row_entry (const struct sframe_func_entry *sframe_fde,
 						    sframe_fde->fde_flex_p);
       fre_mangled_ra_p = sframe_fre->mangled_ra_p;
     }
+
+  /* Unused for flex FDE.  Set to zero.  */
+  if (sframe_fde->fde_flex_p)
+    fre_base_reg = SFRAME_BASE_REG_FP;
+
   fre_info = sframe_set_fre_info (fre_base_reg, fre_num_offsets,
 				  fre_offset_size, fre_mangled_ra_p);
   out_one (fre_info);
