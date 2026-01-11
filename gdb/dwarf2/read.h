@@ -224,9 +224,9 @@ public:
 private:
   /* Sizes for an address, an offset, and a section offset.  These fields are
      set by cutu_reader when the unit is read.  */
-  std::uint8_t m_addr_size = 0;
-  std::uint8_t m_offset_size = 0;
-  std::uint8_t m_ref_addr_size = 0;
+  std::atomic<std::uint8_t> m_addr_size = 0;
+  std::atomic<std::uint8_t> m_offset_size = 0;
+  std::atomic<std::uint8_t> m_ref_addr_size = 0;
 
 public:
   /* Our index in the unshared "symtabs" vector.  */
@@ -285,7 +285,10 @@ public:
   /* Set the address size given in the compilation unit header for
      this CU.  */
   void set_addr_size (std::uint8_t addr_size)
-  { m_addr_size = addr_size; }
+  {
+    std::uint8_t old = m_addr_size.exchange (addr_size);
+    gdb_assert (old == 0 || old == addr_size);
+  }
 
   /* Return the offset size given in the compilation unit header for
      this CU.  */
@@ -298,7 +301,10 @@ public:
   /* Set the offset size given in the compilation unit header for
      this CU.  */
   void set_offset_size (std::uint8_t offset_size)
-  { m_offset_size = offset_size; }
+  {
+    std::uint8_t old = m_offset_size.exchange (offset_size);
+    gdb_assert (old == 0 || old == offset_size);
+  }
 
   /* Return the DW_FORM_ref_addr size given in the compilation unit
      header for this CU.  */
@@ -308,10 +314,13 @@ public:
     return m_ref_addr_size;
   }
 
-  /* Return the DW_FORM_ref_addr size given in the compilation unit
+  /* Set the DW_FORM_ref_addr size given in the compilation unit
      header for this CU.  */
   void set_ref_addr_size (std::uint8_t ref_addr_size)
-  { m_ref_addr_size = ref_addr_size; }
+  {
+    std::uint8_t old = m_ref_addr_size.exchange (ref_addr_size);
+    gdb_assert (old == 0 || old == ref_addr_size);
+  }
 
   /* Return length of this CU.  */
   unsigned int length () const
