@@ -469,7 +469,7 @@ sframe_get_fre_offset_size (const struct sframe_row_entry *sframe_fre,
 
       if (sframe_fre->ra_loc != SFRAME_FRE_ELEM_LOC_NONE)
 	{
-	  reg_p = (sframe_fre->ra_loc != SFRAME_FRE_ELEM_LOC_REG);
+	  reg_p = (sframe_fre->ra_loc == SFRAME_FRE_ELEM_LOC_REG);
 	  data = SFRAME_V3_FLEX_FDE_REG_ENCODE (sframe_fre->ra_reg,
 						sframe_fre->ra_deref_p, reg_p);
 	  data_size = get_udata_size_in_bytes (data);
