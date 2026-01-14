@@ -780,8 +780,9 @@ signed offset.  Return Address (RA) and Frame Pointer (FP) are recovered using
 the CFA plus a signed offset (or a fixed register for specific
 architectures like s390x).
 
-The variable-length stack offsets are interpreted according to the ABI/arch-specific
-rules for the target architecture.  More details in @ref{Default FDE Type Interpretation}.
+The variable-length bytes trailing each SFrame FRE are interpreted according
+to the ABI/arch-specific rules for the target architecture.  More details in
+@ref{Default FDE Type Interpretation}.
 
 @tindex SFRAME_FDE_TYPE_FLEX
 @item @code{SFRAME_FDE_TYPE_FLEX}
@@ -791,16 +792,18 @@ Used for complex cases such as stack realignment (DRAP), non-standard CFA base
 registers, or when RA/FP recovery requires dereferencing or non-CFA base
 registers.
 
-The variable-length stack offsets are interpreted as pairs of Control Data
-and Displacements, allowing for complex recovery rules (e.g., DRAP on AMD64,
-Stack Realignment).  More details in @ref{Flexible FDE Type Interpretation}.
+The variable-length bytes trailing each SFrame FRE are interpreted as pairs
+of Control Word and Data Word, allowing for complex recovery rules (e.g.,
+DRAP on AMD64, Stack Realignment).  More details in @ref{Flexible FDE Type
+Interpretation}.
 @end multitable
 
 @cindex Provisions for future ABIs
-Currently, five bits are reserved in the @code{sfda_func_info2} for indicating
-SFrame FDE types.  In future, other ABIs/architectures may add even
-arch-specific FDE types.  Each distinct FDE type may define a different layout,
-encoding, and interpretation of the SFrame FRE offsets.
+Currently, five bits are reserved in the @code{sfda_func_info2} for
+indicating SFrame FDE types.  In future, other ABIs/architectures may add
+even arch-specific FDE types.  Each distinct FDE type may define a different
+layout, encoding, and interpretation of the variable-length bytes trailing
+each SFrame FRE.
 
 
 @node The SFrame FRE Types
@@ -852,15 +855,16 @@ containing SFrame stack trace information for a range of contiguous
 (instruction) addresses, starting at the specified offset from the start of the
 function.
 
-Each SFrame FRE encodes the stack offsets to recover the CFA, FP and RA (as
+Each SFrame FRE encodes the information to recover the CFA, FP and RA (as
 specified by the ABI or the FDE type) for the respective instruction addresses.
 To encode this information, each SFrame FRE is followed by S*N bytes, where:
 
 @itemize @minus
 @item
-@code{S} is the size of a stack offset for the FRE, and
+@code{S} is the size of each data item in the variable-length bytes trailing
+the SFrame FRE, and
 @item
-@code{N} is the number of stack offsets in the FRE
+@code{N} is the number of data items in the respective FRE.
 @end itemize
 
 The entities @code{S}, @code{N} are encoded in the SFrame FRE info byte, via
@@ -869,10 +873,10 @@ information about the precise encoding and range of values for @code{S} and
 @code{N} is provided later in the @ref{The SFrame FRE Info Word}.
 
 @cindex Provisions for future ABIs
-It is important to underline here that although the canonical interpretation
-of these bytes is as stack offsets (to recover CFA, FP and RA), these bytes
-@emph{may} be used by future ABIs/architectures to convey other information on
-a per SFrame FRE basis.
+It is important to underline here that although the canonical interpretation of
+these bytes is as stack offsets (to recover CFA, FP and RA) for default FDE
+type, these bytes @emph{may} be used by future ABIs/architectures to convey
+other information on a per SFrame FRE basis.
 
 In summary, SFrame file format, by design, supports a variable number of stack
 offsets at the tail end of each SFrame FRE.  To keep the SFrame file
@@ -1155,23 +1159,23 @@ rule.
 @end itemize
 
 In a flexible FDE type, for each tracked entity (CFA, RA, FP), the SFrame FRE
-carries a pair of offsets to specify the respective recovery rule.
+carries a pair of data items to specify the respective recovery rule.
 
 @enumerate
 @item
-Offset 1 (Control/Register Data): Encodes the base register number, a
+Data item 1 (Control/Register Data): Encodes the base register number, a
 dereference flag, and a register-mode flag.
 @item
-Offset 2 (Displacement Data): Encodes the signed offset to be added to the base.
+Data item 2 (Displacement Data): Encodes the signed offset to be added to the base.
 @end enumerate
 
-The offsets appear in the order: CFA, RA, FP.  These offsets obey the
-@code{fre_offset_size} defined in the FRE info byte (i.e., they are 1, 2, or 4
-bytes wide).
+Each pair of data items appears in the order: CFA, RA, FP.  These data items
+obey the @code{fre_offset_size} defined in the FRE info byte (i.e., they are 1,
+2, or 4 bytes wide).
 
-@subsubheading Encoding of Offset 1 (Control/Register Data)
+@subsubheading Encoding of Data 1 (Control/Register Data)
 
-The first offset of the pair is an unsigned integer of width
+The first data item of the pair is an unsigned integer of width
 @code{fre_offset_size}.  It is used as a bitfield that describes
 register/control data for the tracked entity.  From LSB to MSB:
 
@@ -1198,15 +1202,15 @@ If 0, the value is @code{Base + Offset}.
 @end multitable
 
 A value of 0 in the Control/Register Data is used to indicate that no further
-offset data follows for the tracked entity.  Using the value of 0 in
+data item follows for the tracked entity.  Using the value of 0 in
 Control/Register Data (i.e., regnum = 0, deref_p = 0, reg_p = 0) to designate
 invalid tracking info does mean that currently, e.g., for RA, the rule RA = CFA
 + 0 cannot be encoded.  NB: RA = CFA + 0 is distinct from RA = *(CFA + 0).  The
 former should not be needed for any ABI, and the latter is representable.
 
-@subsubheading Encoding of Offset 2 (Displacement Data)
+@subsubheading Encoding of Data 2 (Displacement Data)
 
-The second offset of the pair is a signed integer of width
+The second data item of the pair is a signed integer of width
 @code{fre_offset_size}.  It is used as a stack offset for the respective
 tracked entity (CFA, FP or RA).
 
@@ -1384,9 +1388,9 @@ interpreting the Control Data and Displacement Data pair for flexible FDEs:
 
 @example
     // Apply SFrame V3 Flex FDE recovery rule.
-    // reg_data: The Control Data (Offset 1)
+    // reg_data: The Control Data (Data item 1)
                  containing reg_p, deref_p, regnum.
-    // offset:   The Displacement (Offset 2).
+    // offset:   The Displacement (Data item 2).
     // cfa:      The current CFA value (used as base if reg_p is 0).
     // cfa_p:    Bool indicating if we are currently recovering the
                  CFA itself.
