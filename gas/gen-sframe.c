@@ -893,6 +893,7 @@ output_sframe_func_desc_attr (const struct sframe_func_entry *sframe_fde)
     finfo2 = SFRAME_V3_SET_FDE_TYPE (finfo2, SFRAME_FDE_TYPE_FLEX);
   out_one (finfo2);
 
+  /* Repetitive block size.  */ 
   out_one (0);
 }
 
