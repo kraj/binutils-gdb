@@ -595,6 +595,12 @@ colorsupport ()
       std::vector<color_space> result = {color_space::MONOCHROME};
 
       int colors = tgetnum ("Co");
+#ifdef __MINGW32__
+      /* MS-Windows terminal generally doesn't have "Co" in its
+	 terminfo, but always supports at least 8 colors.  */
+      if (colors <= 0)
+	colors = 8;
+#endif
       if (colors >= 8)
 	result.push_back (color_space::ANSI_8COLOR);
       if (colors >= 16)
