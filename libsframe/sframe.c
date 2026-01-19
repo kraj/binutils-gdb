@@ -402,20 +402,20 @@ flip_fre_start_address (void *addr, uint32_t fre_type)
 }
 
 static void
-flip_fre_stack_offsets (char *offsets, uint8_t offset_size, uint8_t offset_cnt)
+flip_fre_datawords (char *datawords, uint8_t dataword_size, uint8_t dataword_cnt)
 {
   int j;
 
-  if (offset_size == SFRAME_FRE_OFFSET_2B)
+  if (dataword_size == SFRAME_FRE_DATAWORD_2B)
     {
-      uint16_t *ust = (uint16_t *)offsets;
-      for (j = offset_cnt; j > 0; ust++, j--)
+      uint16_t *ust = (uint16_t *)datawords;
+      for (j = dataword_cnt; j > 0; ust++, j--)
 	swap_thing (*ust);
     }
-  else if (offset_size == SFRAME_FRE_OFFSET_4B)
+  else if (dataword_size == SFRAME_FRE_OFFSET_4B)
     {
-      uint32_t *uit = (uint32_t *)offsets;
-      for (j = offset_cnt; j > 0; uit++, j--)
+      uint32_t *uit = (uint32_t *)datawords;
+      for (j = dataword_cnt; j > 0; uit++, j--)
 	swap_thing (*uit);
     }
 }
@@ -658,6 +658,7 @@ sframe_decode_fde_attr_v3 (const char *buf, size_t buf_size,
 
   return 0;
 }
+
 static int
 flip_fre (char *fp, uint32_t fre_type, size_t *fre_size)
 {
@@ -680,10 +681,10 @@ flip_fre (char *fp, uint32_t fre_type, size_t *fre_size)
   offset_size = sframe_fre_get_offset_size (fre_info);
   offset_cnt = sframe_fre_get_offset_count (fre_info);
 
-  /* Advance the buffer pointer to where the stack offsets are.  */
+  /* Advance the buffer pointer to where the data words are.  */
   fre_info_size = sizeof (uint8_t);
   fp += fre_info_size;
-  flip_fre_stack_offsets (fp, offset_size, offset_cnt);
+  flip_fre_datawords (fp, offset_size, offset_cnt);
 
   *fre_size
     = addr_size + fre_info_size + sframe_fre_offset_bytes_size (fre_info);
