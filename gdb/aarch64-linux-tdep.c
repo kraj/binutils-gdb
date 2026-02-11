@@ -1684,8 +1684,9 @@ aarch64_linux_iterate_over_regset_sections (struct gdbarch *gdbarch,
 	  gcs_regmap, regcache_supply_regset, regcache_collect_regset
 	};
 
-      cb (".reg-aarch-gcs", sizeof (user_gcs), sizeof (user_gcs),
-	  &aarch64_linux_gcs_regset, "GCS registers", cb_data);
+      cb (".reg-aarch-gcs", AARCH64_LINUX_SIZEOF_GCS_REGSET,
+	  AARCH64_LINUX_SIZEOF_GCS_REGSET, &aarch64_linux_gcs_regset,
+	  "GCS registers", cb_data);
     }
 }
 

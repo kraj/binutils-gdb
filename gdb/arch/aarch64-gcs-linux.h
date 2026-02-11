@@ -27,8 +27,7 @@
 #define HWCAP_GCS (1ULL << 32)
 #endif
 
-/* Make sure we only define these if the kernel header doesn't.  */
-#ifndef GCS_MAGIC
+#ifndef HAVE_STRUCT_USER_GCS
 
 /* GCS state (NT_ARM_GCS).  */
 
@@ -39,6 +38,9 @@ struct user_gcs
   uint64_t gcspr_el0;
 };
 
-#endif /* GCS_MAGIC */
+#endif /* HAVE_STRUCT_USER_GCS */
+
+/* The GCS regset consists of 3 64-bit registers.  */
+#define AARCH64_LINUX_SIZEOF_GCS_REGSET (3 * 8)
 
 #endif /* GDB_ARCH_AARCH64_GCS_LINUX_H */
