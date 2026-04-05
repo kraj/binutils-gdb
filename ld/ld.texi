@@ -8474,6 +8474,11 @@ instructions for stack memory usage.  When linked against the GNU C Library,
 a GLIBC_ABI_MEMTAG symbol version dependency on the shared C library is added
 t the output.  Supported for aarch64.
 
+@kindex -z memtag-heap
+@cindex Mark program heap for MTE protection
+The @samp{-z memtag-heap} hints the runtime that output object want to use MTE
+instructions for heap memory usage.
+
 @ifclear GENERIC
 @lowersections
 @end ifclear

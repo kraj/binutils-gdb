@@ -9864,6 +9864,12 @@ elfNN_aarch64_late_size_sections (bfd *output_bfd ATTRIBUTE_UNUSED,
 	  && !add_dynamic_entry (DT_AARCH64_MEMTAG_STACK,
 				 htab->memtag_opts.memtag_stack == 1))
 	return false;
+
+      if (is_aarch64_elf (output_bfd)
+	  && htab->memtag_opts.memtag_heap == 1
+	  && !add_dynamic_entry (DT_AARCH64_MEMTAG_HEAP,
+				 htab->memtag_opts.memtag_stack == 1))
+	return false;
     }
 
 #undef add_dynamic_entry

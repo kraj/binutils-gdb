@@ -53,6 +53,7 @@
 #define DT_AARCH64_PAC_PLT	(DT_LOPROC + 3)
 #define DT_AARCH64_VARIANT_PCS	(DT_LOPROC + 5)
 #define DT_AARCH64_MEMTAG_MODE	(DT_LOPROC + 9)
+#define DT_AARCH64_MEMTAG_HEAP  (DT_LOPROC + 11)
 #define DT_AARCH64_MEMTAG_STACK (DT_LOPROC + 12)
 
 /* AArch64-specific values for st_other.  */

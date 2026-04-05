@@ -153,6 +153,9 @@ struct aarch64_memtag_opts
 
   /* Whether stack accesses use MTE insns.  */
   unsigned int memtag_stack;
+
+  /* Hint runtime to enable MTE heap support.  */
+  unsigned int memtag_heap;
 };
 
 typedef struct aarch64_memtag_opts aarch64_memtag_opts;

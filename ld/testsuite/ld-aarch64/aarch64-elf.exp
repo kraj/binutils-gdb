@@ -389,6 +389,7 @@ run_dump_test_lp64 "variant_pcs-now"
 run_dump_test_lp64 "mte-tagged-frame"
 run_dump_test_lp64 "dt-memtag-mode"
 run_dump_test_lp64 "dt-memtag-stack"
+run_dump_test_lp64 "dt-memtag-heap"
 
 # The musl C library does not support Memtag
 if { ![istarget *-*-musl]
