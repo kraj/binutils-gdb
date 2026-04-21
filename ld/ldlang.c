@@ -134,7 +134,7 @@ lang_statement_list_type file_chain = { NULL, NULL };
    lang_input_statement_type statement (reached via input_statement field in a
    lang_statement_union).  */
 lang_statement_list_type input_file_chain;
-static const char *current_input_file;
+static lang_input_statement_type *current_input_file;
 struct bfd_elf_dynamic_list **current_dynamic_list_p;
 struct bfd_sym_chain entry_symbol = { NULL, NULL };
 const char *entry_section = ".text";
@@ -1261,7 +1261,32 @@ new_afile (const char *name,
       FAIL ();
     }
 
-  lang_statement_append (&input_file_chain, p, &p->next_real_file);
+  if (current_input_file != NULL)
+    {
+      lang_input_statement_type *f, *prev;
+
+      /* Insert the new input file before the current input file to
+	 maintain the input file order.  NB: The first item on the
+	 input file chain is a null one.  */
+      prev = &input_file_chain.head->input_statement;
+      for (f = prev->next_real_file;
+	   f != NULL;
+	   f = f->next_real_file)
+	{
+	  if (f == current_input_file)
+	    {
+	      p->next_real_file = prev->next_real_file;
+	      prev->next_real_file = p;
+	      break;
+	    }
+	  prev = f;
+	}
+
+      if (f == NULL)
+	abort ();
+    }
+  else
+    lang_statement_append (&input_file_chain, p, &p->next_real_file);
   return p;
 }
 
@@ -1293,7 +1318,10 @@ lang_add_input_file (const char *name,
       return ret;
     }
 
-  return new_afile (name, file_type, target, current_input_file);
+  return new_afile (name, file_type, target,
+		    (current_input_file
+		     ? current_input_file->filename
+		     : NULL));
 }
 
 struct out_section_hash_entry
@@ -3134,7 +3162,7 @@ load_symbols (lang_input_statement_type *entry,
 
       ldfile_assumed_script = true;
       parser_input = input_script;
-      current_input_file = entry->filename;
+      current_input_file = entry;
       yyparse ();
       current_input_file = NULL;
       ldfile_assumed_script = false;
@@ -7724,6 +7752,20 @@ lang_set_flags (lang_memory_region_type *ptr, const char *flags, int invert)
     }
 }
 
+static void
+debug_input_files (void)
+{
+  lang_input_statement_type *f;
+
+  for (f = &input_file_chain.head->input_statement;
+       f != NULL;
+       f = f->next_real_file)
+    if (f->the_bfd)
+      fprintf (stderr, "file: %s\n", f->the_bfd->filename);
+    else
+      fprintf (stderr, "input: %s\n", f->filename);
+}
+
 /* Call a function on each real input file.  This function will be
    called on an archive, but not on the elements.  */
 
@@ -8597,7 +8639,10 @@ lang_process (void)
   lang_common ();
 
   if (0)
-    debug_prefix_tree ();
+    {
+      debug_prefix_tree ();
+      debug_input_files ();
+    }
 
   resolve_wilds ();
 
