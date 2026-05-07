@@ -125,7 +125,7 @@ do
   if test "${type}" = "name"; then
     name="${entry}"
 
-    echo "const struct target_desc *tdesc_${name};"
+    echo "const_target_desc_up tdesc_${name};"
     echo ""
 
     # This is necessary for -Wmissing-declarations.
@@ -134,9 +134,8 @@ do
     echo "void"
     echo "init_registers_${name} (void)"
     echo "{"
-    echo "  static struct target_desc tdesc_${name}_s;"
-    echo "  struct target_desc *result = &tdesc_${name}_s;"
-    echo "  struct tdesc_feature *feature = tdesc_create_feature (result, \"${name}\");"
+    echo "  static target_desc_up tdesc_${name}_s;"
+    echo "  struct tdesc_feature *feature = tdesc_create_feature (tdesc_${name}_s.get (), \"${name}\");"
     continue
   elif test "${type}" = "xmltarget"; then
     xmltarget="${entry}"
@@ -195,12 +194,12 @@ echo
 osabi_enum=$(grep "${osabi}" "$2" | sed 's/.*(\([^,]\+\),.*/GDB_OSABI_\1/')
 
 cat <<EOF
-  result->xmltarget = xmltarget_${name};
+  tdesc_${name}_s->xmltarget = xmltarget_${name};
 #endif
 
-  init_target_desc (result, expedite_regs_${name}, ${osabi_enum});
+  init_target_desc (tdesc_${name}_s.get (), expedite_regs_${name}, ${osabi_enum});
 
-  tdesc_${name} = result;
+  tdesc_${name} = std::move (tdesc_${name}_s);
 }
 EOF
 
