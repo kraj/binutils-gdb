@@ -134,8 +134,8 @@ do
     echo "void"
     echo "init_registers_${name} (void)"
     echo "{"
-    echo "  static target_desc_up tdesc_${name}_s;"
-    echo "  struct tdesc_feature *feature = tdesc_create_feature (tdesc_${name}_s.get (), \"${name}\");"
+    echo "  target_desc_up result = allocate_target_description ();"
+    echo "  struct tdesc_feature *feature = tdesc_create_feature (result.get (), \"${name}\");"
     continue
   elif test "${type}" = "xmltarget"; then
     xmltarget="${entry}"
@@ -194,12 +194,12 @@ echo
 osabi_enum=$(grep "${osabi}" "$2" | sed 's/.*(\([^,]\+\),.*/GDB_OSABI_\1/')
 
 cat <<EOF
-  tdesc_${name}_s->xmltarget = xmltarget_${name};
+  result.get ()->xmltarget = xmltarget_${name};
 #endif
 
-  init_target_desc (tdesc_${name}_s.get (), expedite_regs_${name}, ${osabi_enum});
+  init_target_desc (result.get (), expedite_regs_${name}, ${osabi_enum});
 
-  tdesc_${name} = std::move (tdesc_${name}_s);
+  tdesc_${name} = std::move (result);
 }
 EOF
 
