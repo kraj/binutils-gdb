@@ -2190,14 +2190,17 @@ reinit_frame_cache (void)
       sentinel_frame = nullptr;
     }
 
+  /* Invalidation copies the frame-id from the managed frame_info object
+     into the frame_info_ptr, so this must run before the frame_info
+     objects are invalidated.  */
+  for (frame_info_ptr &iter : frame_info_ptr::frame_list)
+    iter.invalidate ();
+
   frame_stash_invalidate ();
 
   /* Since we can't really be sure what the first object allocated was.  */
   obstack_free (&frame_cache_obstack, 0);
   obstack_init (&frame_cache_obstack);
-
-  for (frame_info_ptr &iter : frame_info_ptr::frame_list)
-    iter.invalidate ();
 
   frame_debug_printf ("generation=%d", frame_cache_generation);
 }
@@ -3436,9 +3439,23 @@ frame_info_ptr::frame_info_ptr (struct frame_info *ptr)
     return;
 
   m_cached_level = ptr->level;
+}
 
+void
+frame_info_ptr::invalidate ()
+{
+  if (m_ptr == nullptr)
+    return;
+
+  gdb_assert (m_cached_level == m_ptr->level);
+
+  /* If a frame_info_ptr is invalidated multiple times then we will end up
+     updating m_cached_id multiple times.  This should be harmless as the
+     underlying frame_id should never change.  */
   if (m_cached_level != 0 || m_ptr->this_id.value.user_created_p)
     m_cached_id = m_ptr->this_id.value;
+
+  m_ptr = nullptr;
 }
 
 /* See frame-info-ptr.h.  */

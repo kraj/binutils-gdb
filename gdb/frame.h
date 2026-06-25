@@ -327,10 +327,7 @@ public:
   }
 
   /* Invalidate this pointer.  */
-  void invalidate ()
-  {
-    m_ptr = nullptr;
-  }
+  void invalidate ();
 
 private:
   /* We sometimes need to construct frame_info_ptr objects around the
