@@ -4395,43 +4395,33 @@ ada_parse_renaming (struct symbol *sym,
 		    const char **renaming_expr)
 {
   enum ada_renaming_category kind;
-  const char *info;
   const char *suffix;
 
   if (sym == NULL)
     return ADA_NOT_RENAMING;
-  switch (sym->loc_class ())
+  const char *info = strstr (sym->linkage_name (), "___XR");
+  if (info == nullptr)
+    return ADA_NOT_RENAMING;
+  switch (info[5])
     {
+    case '_':
+      kind = ADA_OBJECT_RENAMING;
+      info += 6;
+      break;
+    case 'E':
+      kind = ADA_EXCEPTION_RENAMING;
+      info += 7;
+      break;
+    case 'P':
+      kind = ADA_PACKAGE_RENAMING;
+      info += 7;
+      break;
+    case 'S':
+      kind = ADA_SUBPROGRAM_RENAMING;
+      info += 7;
+      break;
     default:
       return ADA_NOT_RENAMING;
-    case LOC_LOCAL:
-    case LOC_STATIC:
-    case LOC_COMPUTED:
-    case LOC_OPTIMIZED_OUT:
-      info = strstr (sym->linkage_name (), "___XR");
-      if (info == NULL)
-	return ADA_NOT_RENAMING;
-      switch (info[5])
-	{
-	case '_':
-	  kind = ADA_OBJECT_RENAMING;
-	  info += 6;
-	  break;
-	case 'E':
-	  kind = ADA_EXCEPTION_RENAMING;
-	  info += 7;
-	  break;
-	case 'P':
-	  kind = ADA_PACKAGE_RENAMING;
-	  info += 7;
-	  break;
-	case 'S':
-	  kind = ADA_SUBPROGRAM_RENAMING;
-	  info += 7;
-	  break;
-	default:
-	  return ADA_NOT_RENAMING;
-	}
     }
 
   if (renamed_entity != NULL)
