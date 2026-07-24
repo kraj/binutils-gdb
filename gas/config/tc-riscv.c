@@ -1633,6 +1633,7 @@ validate_riscv_insn (const struct riscv_opcode *opc, int length)
 	  switch (*++oparg)
 	    {
 	    case '7': USE_BITS (OP_MASK_FUNCT7, OP_SH_FUNCT7); break;
+	    case '6': USE_BITS (OP_MASK_FUNCT6, OP_SH_FUNCT6); break;
 	    case '3': USE_BITS (OP_MASK_FUNCT3, OP_SH_FUNCT3); break;
 	    case '2': USE_BITS (OP_MASK_FUNCT2, OP_SH_FUNCT2); break;
 	    default:
@@ -3866,6 +3867,10 @@ riscv_ip (char *str, struct riscv_cl_insn *ip, expressionS *imm_expr,
 		{
 		case 7:
 		  INSERT_OPERAND (FUNCT7, *ip, imm_expr->X_add_number);
+		  break;
+
+		case 6:
+		  INSERT_OPERAND (FUNCT6, *ip, imm_expr->X_add_number);
 		  break;
 
 		case 3:

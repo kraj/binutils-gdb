@@ -3760,6 +3760,17 @@ const struct riscv_opcode riscv_insn_types[] =
 {"j",       0, INSN_CLASS_I,       "O7,d,a",            0, 0, NULL, 0 },
 {"j",       0, INSN_CLASS_F,       "O7,D,a",            0, 0, NULL, 0 },
 
+{"ivv",     0, INSN_CLASS_V,       "O7,F6,Vd,Vt,VsVm", 0x0000, 0x7000, NULL, 0 },
+{"fvv",     0, INSN_CLASS_ZVEF,    "O7,F6,Vd,Vt,VsVm", 0x1000, 0x7000, NULL, 0 },
+{"fvv",     0, INSN_CLASS_ZVEF,    "O7,F6,D,Vt,VsVm",  0x1000, 0x7000, NULL, 0 },
+{"mvv",     0, INSN_CLASS_V,       "O7,F6,Vd,Vt,VsVm", 0x2000, 0x7000, NULL, 0 },
+{"mvv",     0, INSN_CLASS_V,       "O7,F6,d,Vt,VsVm",  0x2000, 0x7000, NULL, 0 },
+{"ivi",     0, INSN_CLASS_V,       "O7,F6,Vd,Vt,ViVm", 0x3000, 0x7000, NULL, 0 },
+{"ivx",     0, INSN_CLASS_V,       "O7,F6,Vd,Vt,sVm",  0x4000, 0x7000, NULL, 0 },
+{"fvf",     0, INSN_CLASS_ZVEF,    "O7,F6,Vd,Vt,SVm",  0x5000, 0x7000, NULL, 0 },
+{"mvx",     0, INSN_CLASS_V,       "O7,F6,Vd,Vt,sVm",  0x6000, 0x7000, NULL, 0 },
+{"mvx",     0, INSN_CLASS_V,       "O7,F6,d,Vt,sVm",   0x6000, 0x7000, NULL, 0 },
+
 {"cr",      0, INSN_CLASS_ZCA,       "O2,CF4,d,CV",       0, 0, NULL, 0 },
 {"cr",      0, INSN_CLASS_ZCF, "O2,CF4,D,CV",       0, 0, NULL, 0 },
 {"cr",      0, INSN_CLASS_ZCF, "O2,CF4,d,CT",       0, 0, NULL, 0 },

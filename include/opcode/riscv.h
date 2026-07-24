@@ -354,6 +354,9 @@ static inline unsigned int riscv_insn_length (insn_t insn)
 
 /* RVV fields.  */
 
+#define OP_MASK_FUNCT6		0x3fU
+#define OP_SH_FUNCT6		26
+
 #define OP_MASK_VD		0x1f
 #define OP_SH_VD		7
 #define OP_MASK_VS1		0x1f
