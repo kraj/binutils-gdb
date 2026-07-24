@@ -2317,14 +2317,18 @@ cpu_flags_match (const insn_template *t)
     {
       /* Dual AVX/AVX512 templates need to retain AVX512* only if we already
 	 know that EVEX encoding will be needed.  */
-      if ((any.bitfield.cpuavx || any.bitfield.cpuavx2 || any.bitfield.cpufma)
+      if ((any.bitfield.cpuavx || any.bitfield.cpuavx2
+	   || any.bitfield.cpufma || any.bitfield.cpuf16c)
 	  && (any.bitfield.cpuavx512f || any.bitfield.cpuavx512vl))
 	{
-	  if (need_evex_encoding (t))
+	  if (need_evex_encoding (t)
+	      || (any.bitfield.cpufma && !cpu_arch_flags.bitfield.cpufma)
+	      || (any.bitfield.cpuf16c && !cpu_arch_flags.bitfield.cpuf16c))
 	    {
 	      any.bitfield.cpuavx = 0;
 	      any.bitfield.cpuavx2 = 0;
 	      any.bitfield.cpufma = 0;
+	      any.bitfield.cpuf16c = 0;
 	    }
 	  /* need_evex_encoding(t) isn't reliable before operands were
 	     parsed.  */
@@ -4235,10 +4239,12 @@ install_template (const insn_template *t)
   if (t->opcode_modifier.vex && t->opcode_modifier.evex)
     {
       if ((maybe_cpu (t, CpuAVX) || maybe_cpu (t, CpuAVX2)
-	   || maybe_cpu (t, CpuFMA))
+	   || maybe_cpu (t, CpuFMA) || maybe_cpu (t, CpuF16C))
 	  && (maybe_cpu (t, CpuAVX512F) || maybe_cpu (t, CpuAVX512VL)))
 	{
-	  if (need_evex_encoding (t))
+	  if (need_evex_encoding (t)
+	      || (maybe_cpu (t, CpuFMA) && !cpu_arch_flags.bitfield.cpufma)
+	      || (maybe_cpu (t, CpuF16C) && !cpu_arch_flags.bitfield.cpuf16c))
 	    {
 	      i.tm.opcode_modifier.vex = 0;
 	      i.tm.cpu.bitfield.cpuavx512f = i.tm.cpu_any.bitfield.cpuavx512f;
@@ -8802,7 +8808,10 @@ check_VecOperands (const insn_template *t)
   if (!cpu_flags_all_zero (&cpu)
       && !cpu.bitfield.cpuavx512vl
       && !cpu_arch_flags.bitfield.cpuavx512vl
-      && (!t->opcode_modifier.vex || need_evex_encoding (t)))
+      && (!t->opcode_modifier.vex || need_evex_encoding (t)
+	  /* Note: No need to check F16C here.  Those insns have distinct
+	     templates for distinct VEX.L / EVEX.L'L.  */
+	  || (maybe_cpu (t, CpuFMA) && !cpu_arch_flags.bitfield.cpufma)))
     {
       for (op = 0; op < t->operands; ++op)
 	{
