@@ -5461,7 +5461,7 @@ optimize_encoding (void)
 	   andl %rN, %rN  -> testl %rN, %rN
 	   orl %rN, %rN   -> testl %rN, %rN
        */
-      i.tm.base_opcode = 0x84 | (i.tm.base_opcode & 1);
+      i.tm.base_opcode = 0x84;
     }
   else if (!optimize_for_space
 	   && i.tm.base_opcode == 0xd0
