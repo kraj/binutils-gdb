@@ -5050,7 +5050,7 @@ optimize_encoding (void)
        */
       if (flag_code == CODE_64BIT && i.prefix[ADDR_PREFIX])
 	{
-	  if (!i.op[1].regs->reg_type.bitfield.word)
+	  if (!i.types[1].bitfield.word)
 	    i.tm.opcode_modifier.size = SIZE32;
 	  i.prefix[ADDR_PREFIX] = 0;
 	}
@@ -5065,15 +5065,15 @@ optimize_encoding (void)
 	      /* Don't transform a relocation to a 16-bit one.  */
 	      if (i.op[0].disps
 		  && i.op[0].disps->X_op != O_constant
-		  && i.op[1].regs->reg_type.bitfield.word)
+		  && i.types[1].bitfield.word)
 		return;
 
-	      if (!i.op[1].regs->reg_type.bitfield.qword
+	      if (!i.types[1].bitfield.qword
 		  || i.tm.opcode_modifier.size == SIZE32)
 		{
 		  i.tm.base_opcode = 0xb8;
 		  i.tm.opcode_modifier.modrm = 0;
-		  if (!i.op[1].regs->reg_type.bitfield.word)
+		  if (!i.types[1].bitfield.word)
 		    i.types[0].bitfield.imm32 = 1;
 		  else
 		    {
@@ -5097,28 +5097,28 @@ optimize_encoding (void)
 		   && i.op[0].disps->X_op != O_constant
 		   && ((!i.prefix[ADDR_PREFIX])
 		       != (flag_code == CODE_32BIT
-			   ? i.op[1].regs->reg_type.bitfield.dword
-			   : i.op[1].regs->reg_type.bitfield.word)))
+			   ? i.types[1].bitfield.dword
+			   : i.types[1].bitfield.word)))
 	    return;
 	  /* In 16-bit mode converting LEA with 16-bit addressing and a 32-bit
 	     destination is going to grow encoding size.  */
 	  else if (flag_code == CODE_16BIT
 		   && (optimize <= 1 || optimize_for_space)
 		   && !i.prefix[ADDR_PREFIX]
-		   && i.op[1].regs->reg_type.bitfield.dword)
+		   && i.types[1].bitfield.dword)
 	    return;
 	  else
 	    {
 	      i.tm.base_opcode = 0xb8;
 	      i.tm.opcode_modifier.modrm = 0;
-	      if (i.op[1].regs->reg_type.bitfield.dword)
+	      if (i.types[1].bitfield.dword)
 		i.types[0].bitfield.imm32 = 1;
 	      else
 		i.types[0].bitfield.imm16 = 1;
 
 	      if (i.op[0].disps
 		  && i.op[0].disps->X_op == O_constant
-		  && i.op[1].regs->reg_type.bitfield.dword
+		  && i.types[1].bitfield.dword
 		  /* NB: Add () to !i.prefix[ADDR_PREFIX] to silence
 		     GCC 5. */
 		  && (!i.prefix[ADDR_PREFIX]) != (flag_code == CODE_32BIT))
@@ -5156,7 +5156,7 @@ optimize_encoding (void)
 	    return;
 
 	  if (addr_reg->reg_type.bitfield.word
-	      && i.op[1].regs->reg_type.bitfield.dword)
+	      && i.types[1].bitfield.dword)
 	    {
 	      if (flag_code != CODE_32BIT)
 		return;
@@ -5167,7 +5167,7 @@ optimize_encoding (void)
 	    i.tm.base_opcode = 0x8b;
 
 	  if (addr_reg->reg_type.bitfield.dword
-	      && i.op[1].regs->reg_type.bitfield.qword)
+	      && i.types[1].bitfield.qword)
 	    i.tm.opcode_modifier.size = SIZE32;
 
 	  i.op[0].regs = addr_reg;
@@ -5828,7 +5828,7 @@ optimize_encoding (void)
 	   && i.operands == i.reg_operands
 	   && i.tm.opcode_modifier.vex
 	   && !(i.op[0].regs->reg_flags & RegRex)
-	   && i.op[1].regs->reg_type.bitfield.xmmword
+	   && i.types[1].bitfield.xmmword
 	   && pp.encoding != encoding_vex3)
     {
       /* Optimize: -Os:
@@ -6894,7 +6894,7 @@ x86_check_tls_relocation (enum bfd_reloc_code_real r_type)
 	return x86_tls_error_no_base_reg;
       if (i.base_reg->reg_type.bitfield.instance != RegB)
 	return x86_tls_error_ebx;
-      if (!i.op[1].regs->reg_type.bitfield.dword)
+      if (!i.types[1].bitfield.dword)
 	return x86_tls_error_dest_32bit_reg_size;
       break;
 
@@ -6907,9 +6907,9 @@ x86_check_tls_relocation (enum bfd_reloc_code_real r_type)
        */
       if (i.tm.mnem_off != MN_lea)
 	return x86_tls_error_insn;
-      if (i.op[1].regs->reg_type.bitfield.instance != Accum)
+      if (i.types[1].bitfield.instance != Accum)
 	return x86_tls_error_dest_eax;
-      if (!i.op[1].regs->reg_type.bitfield.dword)
+      if (!i.types[1].bitfield.dword)
 	return x86_tls_error_dest_32bit_reg_size;
       if (i.index_reg)
 	{
@@ -6944,9 +6944,9 @@ x86_check_tls_relocation (enum bfd_reloc_code_real r_type)
 	return x86_tls_error_no_base_reg;
       if (i.base_reg->reg_type.bitfield.instance == Accum)
 	return x86_tls_error_eax;
-      if (i.op[1].regs->reg_type.bitfield.instance != Accum)
+      if (i.types[1].bitfield.instance != Accum)
 	return x86_tls_error_dest_eax;
-      if (!i.op[1].regs->reg_type.bitfield.dword)
+      if (!i.types[1].bitfield.dword)
 	return x86_tls_error_dest_32bit_reg_size;
       break;
 
@@ -6971,11 +6971,11 @@ x86_check_tls_relocation (enum bfd_reloc_code_real r_type)
 	return x86_tls_error_rip;
       if (x86_elf_abi == X86_64_ABI)
 	{
-	  if (!i.op[1].regs->reg_type.bitfield.qword)
+	  if (!i.types[1].bitfield.qword)
 	    return x86_tls_error_dest_64bit_reg_size;
 	}
-      else if (!i.op[1].regs->reg_type.bitfield.dword
-	       && !i.op[1].regs->reg_type.bitfield.qword)
+      else if (!i.types[1].bitfield.dword
+	       && !i.types[1].bitfield.qword)
 	return x86_tls_error_dest_32bit_or_64bit_reg_size;
 	  break;
 
@@ -6996,7 +6996,7 @@ x86_check_tls_relocation (enum bfd_reloc_code_real r_type)
       if (i.base_reg->reg_num != RegIP
 	  || !i.base_reg->reg_type.bitfield.qword)
 	return x86_tls_error_rip;
-      if (!i.op[1].regs->reg_type.bitfield.qword
+      if (!i.types[1].bitfield.qword
 	  || i.op[1].regs->reg_num != EDI_REG_NUM
 	  || i.op[1].regs->reg_flags)
 	return x86_tls_error_dest_rdi;
@@ -7035,7 +7035,7 @@ x86_check_tls_relocation (enum bfd_reloc_code_real r_type)
 	return x86_tls_error_sib;
       if (!i.base_reg->reg_type.bitfield.dword)
 	return x86_tls_error_base_reg_size;
-      if (!i.op[1].regs->reg_type.bitfield.dword)
+      if (!i.types[1].bitfield.dword)
 	return x86_tls_error_dest_32bit_reg_size;
       break;
 
@@ -7054,7 +7054,7 @@ x86_check_tls_relocation (enum bfd_reloc_code_real r_type)
 	return x86_tls_error_opcode;
       if (i.base_reg || i.index_reg)
 	return x86_tls_error_require_no_base_index_reg;
-      if (!i.op[1].regs->reg_type.bitfield.dword)
+      if (!i.types[1].bitfield.dword)
 	return x86_tls_error_dest_32bit_reg_size;
       break;
 
@@ -7081,11 +7081,11 @@ x86_check_tls_relocation (enum bfd_reloc_code_real r_type)
 	return x86_tls_error_rip;
       if (x86_elf_abi == X86_64_ABI)
 	{
-	  if (!i.op[i.operands - 1].regs->reg_type.bitfield.qword)
+	  if (!i.types[i.operands - 1].bitfield.qword)
 	    return x86_tls_error_dest_64bit_reg_size;
 	}
-      else if (!i.op[i.operands - 1].regs->reg_type.bitfield.dword
-	       && !i.op[i.operands - 1].regs->reg_type.bitfield.qword)
+      else if (!i.types[i.operands - 1].bitfield.dword
+	       && !i.types[i.operands - 1].bitfield.qword)
 	return x86_tls_error_dest_32bit_or_64bit_reg_size;
       break;
 
@@ -9983,7 +9983,7 @@ match_template (char mnem_suffix)
 			 legacy-encoded and when no REX prefix is required.  */
 		      || (!check_EgprOperands (t + 1)
 			  && !check_Rex_required ()
-			  && !i.op[i.operands - 1].regs->reg_type.bitfield.qword)))
+			  && !i.types[i.operands - 1].bitfield.qword)))
 		{
 		  if (i.operands > 2 && match_dest_op == i.operands - 3)
 		    {
@@ -10595,7 +10595,7 @@ process_suffix (const insn_template *t)
 	  /* The address size override prefix changes the size of the
 	     first operand.  */
 	  if (flag_code == CODE_64BIT
-	      && i.op[0].regs->reg_type.bitfield.word)
+	      && i.types[0].bitfield.word)
 	    {
 	      as_bad (_("16-bit addressing unavailable for `%s'"),
 		      insn_name (&i.tm));
@@ -10603,8 +10603,8 @@ process_suffix (const insn_template *t)
 	    }
 
 	  if ((flag_code == CODE_32BIT
-	       ? i.op[0].regs->reg_type.bitfield.word
-	       : i.op[0].regs->reg_type.bitfield.dword)
+	       ? i.types[0].bitfield.word
+	       : i.types[0].bitfield.dword)
 	      && !add_prefix (ADDR_PREFIX_OPCODE))
 	    return 0;
 	}
@@ -10623,8 +10623,8 @@ process_suffix (const insn_template *t)
 	      && i.operands == 2
 	      && i.types[1].bitfield.class == Reg
 	      && (flag_code == CODE_32BIT
-		  ? i.op[1].regs->reg_type.bitfield.word
-		  : i.op[1].regs->reg_type.bitfield.dword)
+		  ? i.types[1].bitfield.word
+		  : i.types[1].bitfield.dword)
 	      && ((i.base_reg == NULL && i.index_reg == NULL)
 #ifdef OBJ_ELF
 		  || (x86_elf_abi == X86_64_X32_ABI
@@ -10652,15 +10652,15 @@ process_suffix (const insn_template *t)
 	      switch (need)
 		{
 		case need_word:
-		  if (i.op[op].regs->reg_type.bitfield.word)
+		  if (i.types[op].bitfield.word)
 		    continue;
 		  break;
 		case need_dword:
-		  if (i.op[op].regs->reg_type.bitfield.dword)
+		  if (i.types[op].bitfield.dword)
 		    continue;
 		  break;
 		case need_qword:
-		  if (i.op[op].regs->reg_type.bitfield.qword)
+		  if (i.types[op].bitfield.qword)
 		    continue;
 		  break;
 		}
@@ -15606,7 +15606,7 @@ i386_att_operand (char *operand_string)
 	 Only another immediate or a GPR may precede it.  */
       if (i.mem_operands || i.reg_operands + i.imm_operands > 1
 	  || (i.reg_operands == 1
-	      && i.op[0].regs->reg_type.bitfield.class != Reg))
+	      && i.types[0].bitfield.class != Reg))
 	{
 	  as_bad (_("`%s': misplaced `%s'"),
 		  insn_name (current_templates.start), operand_string);
