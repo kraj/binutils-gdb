@@ -14,4 +14,8 @@ _start:
 
 	.arch .vpclmulqdq
 	{evex} vpclmulqdq	$0, %ymm1, %ymm2, %ymm3
-	.p2align 4,0
+
+	.arch generic32
+	.arch .avx512f
+	{evex}	vpermd		%ymm1, %ymm2, %ymm3
+		vpermd		%ymm1, %ymm2, %ymm3

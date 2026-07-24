@@ -2,6 +2,7 @@
 .*:5: Error: .*
 .*:6: Error: .*
 .*:7: Error: .*
+.*:20: Error: .*
 GAS LISTING .*
 
 
@@ -24,5 +25,9 @@ GAS LISTING .*
 [ 	]*15[ 	]+\.arch \.vpclmulqdq
 [ 	]*16[ 	]+\?\?\?\? 62F36D28[ 	]+\{evex\} vpclmulqdq[ 	]+\$0, %ymm1, %ymm2, %ymm3
 [ 	]*16[ 	]+44D900
-[ 	]*17[ 	]+\?\?\?\? 00000000 		\.p2align 4,0
-#...
+[ 	]*17[ 	]*
+[ 	]*18[ 	]+\.arch generic32
+[ 	]*19[ 	]+\.arch \.avx512f
+[ 	]*20[ 	]+\{evex\}[ 	]+vpermd[ 	]+%ymm1, %ymm2, %ymm3
+[ 	]*21[ 	]+\?\?\?\? C4E26D36[ 	]+vpermd[ 	]+%ymm1, %ymm2, %ymm3
+#pass

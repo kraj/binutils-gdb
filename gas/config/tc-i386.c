@@ -8796,9 +8796,11 @@ check_VecOperands (const insn_template *t)
      operand size is YMMword or XMMword.  Since this function runs after
      template matching, there's no need to check for YMMword/XMMword in
      the template.  */
-  cpu = cpu_flags_and (cpu_flags_from_attr (t->cpu), avx512);
+  cpu = cpu_flags_or (cpu_flags_from_attr (t->cpu),
+		      cpu_flags_from_attr (t->cpu_any));
+  cpu = cpu_flags_and (cpu, avx512);
   if (!cpu_flags_all_zero (&cpu)
-      && !is_cpu (t, CpuAVX512VL)
+      && !cpu.bitfield.cpuavx512vl
       && !cpu_arch_flags.bitfield.cpuavx512vl
       && (!t->opcode_modifier.vex || need_evex_encoding (t)))
     {
