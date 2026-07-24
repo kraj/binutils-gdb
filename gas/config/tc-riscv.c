@@ -3040,10 +3040,9 @@ riscv_ip (char *str, struct riscv_cl_insn *ip, expressionS *imm_expr,
 		      insn_with_csr = false;
 		    }
 
-		  /* The (segmant) load and store with EEW 64 cannot be used
+		  /* The (segment) load and store with EEW 64 cannot be used
 		     when zve32x is enabled.  */
-		  if (ip->insn_mo->pinfo & INSN_V_EEW64
-		      && riscv_subset_supports (&riscv_rps_as, "zve32x")
+		  if ((ip->insn_mo->pinfo & INSN_V_EEW64)
 		      && !riscv_subset_supports (&riscv_rps_as, "zve64x"))
 		    {
 		      error.msg = _("illegal opcode for zve32x");

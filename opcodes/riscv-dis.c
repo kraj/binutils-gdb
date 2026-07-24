@@ -1128,10 +1128,16 @@ riscv_disassemble_insn (bfd_vma memaddr,
 	      && (op->xlen_requirement != pd->xlen))
 	    continue;
 	  /* Is this instruction supported by the current architecture?  */
-	  if (!pd->all_ext
-	      && !riscv_multi_subset_supports (&pd->riscv_rps_dis,
-					       op->insn_class))
-	    continue;
+	  if (!pd->all_ext)
+	    {
+	      if (!riscv_multi_subset_supports (&pd->riscv_rps_dis,
+						op->insn_class))
+		continue;
+
+ 	      if ((op->pinfo & INSN_V_EEW64)
+		  && !riscv_subset_supports (&pd->riscv_rps_dis, "zve64x"))
+		continue;
+	    }
 
 	  /* It's a match.  */
 	  (*info->fprintf_styled_func) (info->stream, dis_style_mnemonic,
