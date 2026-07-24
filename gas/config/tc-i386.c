@@ -5828,7 +5828,6 @@ optimize_encoding (void)
 	   && i.operands == i.reg_operands
 	   && i.tm.opcode_modifier.vex
 	   && !(i.op[0].regs->reg_flags & RegRex)
-	   && i.op[0].regs->reg_type.bitfield.xmmword
 	   && i.op[1].regs->reg_type.bitfield.xmmword
 	   && pp.encoding != encoding_vex3)
     {
