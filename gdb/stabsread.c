@@ -5112,6 +5112,7 @@ read_member_functions (struct stab_field_info *fip, const char **pp,
 		{
 		  if (!is_destructor_name (tmp_sublist->fn_field.physname))
 		    {
+		      last_sublist = tmp_sublist;
 		      tmp_sublist = tmp_sublist->next;
 		      continue;
 		    }
@@ -5122,7 +5123,6 @@ read_member_functions (struct stab_field_info *fip, const char **pp,
 		    last_sublist->next = tmp_sublist->next;
 		  else
 		    sublist = tmp_sublist->next;
-		  last_sublist = tmp_sublist;
 		  tmp_sublist = tmp_sublist->next;
 		}
 
