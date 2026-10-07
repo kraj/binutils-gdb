@@ -1,0 +1,100 @@
+# Copyright 2026 Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Minimal HIP test for duplicate MI notification bug.
+# This test checks if duplicate MI notifications occur when HIP runtime is initialized.
+
+load_lib rocm.exp
+load_lib mi-support.exp
+
+standard_testfile .cpp
+
+# Skip if no ROCm/HIP support.
+require allow_hipcc_tests
+
+if {[build_executable "failed to compile" $testfile $srcfile {debug hip}] == -1} {
+    return -1
+}
+
+if {[mi_clean_restart $::testfile]} {
+    return
+}
+
+mi_runto_main
+
+# Set a breakpoint at test_function
+mi_gdb_test "-break-insert test_function" \
+    "\\^done,bkpt=\{number=\"2\".*func=\"test_function\".*\}" \
+    "set breakpoint at test_function"
+
+# Continue to the breakpoint
+send_gdb "-exec-continue\n"
+
+# This is the critical test: Check for duplicate MI notifications.
+# Expected: Single sequence of =breakpoint-modified, console output, *stopped
+# Bug: Entire sequence appears TWICE
+
+set test "stop at test_function - check for duplicates"
+set breakpoint_modified_count 0
+set stopped_count 0
+set saw_first_stopped 0
+
+gdb_expect {
+    -re "=breakpoint-modified,bkpt=\{number=\"2\"" {
+        incr breakpoint_modified_count
+        exp_continue
+    }
+    -re "~\"\\\\n\"\r\n" {
+        # Console newline
+        exp_continue
+    }
+    -re "~\".*Breakpoint 2.*test_function.*\"\r\n" {
+        # Console output about breakpoint hit
+        exp_continue
+    }
+    -re "~\".*printf.*\"\r\n" {
+        # Source line output
+        exp_continue
+    }
+    -re "\\*stopped,reason=\"breakpoint-hit\".*bkptno=\"2\".*\r\n" {
+        incr stopped_count
+        if {$saw_first_stopped == 0} {
+            # First *stopped - this is expected
+            set saw_first_stopped 1
+            # Now wait for prompt or duplicate
+            exp_continue
+        } else {
+            # Second *stopped - this is the BUG
+            fail "$test (duplicate *stopped detected)"
+        }
+    }
+    -re "$mi_gdb_prompt$" {
+        # Got prompt - check counts
+        if {$breakpoint_modified_count > 1} {
+            fail "$test (duplicate =breakpoint-modified: count=$breakpoint_modified_count)"
+        } elseif {$stopped_count > 1} {
+            fail "$test (duplicate *stopped: count=$stopped_count)"
+        } elseif {$stopped_count == 1 && $breakpoint_modified_count == 1} {
+            pass $test
+        } else {
+            fail "$test (unexpected counts: breakpoint_modified=$breakpoint_modified_count, stopped=$stopped_count)"
+        }
+    }
+    timeout {
+        fail "$test (timeout)"
+    }
+}
+
+mi_gdb_exit
