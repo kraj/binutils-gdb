@@ -13,18 +13,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Minimal test to reproduce duplicate MI notification bug in HIP programs.
+# Minimal reproducer for duplicate MI notification bug.
 #
-# The bug: When a regular breakpoint is hit in MI mode after HIP runtime
-# initialization (warm_up kernel), the entire stop notification sequence
-# appears TWICE:
-#   =breakpoint-modified,bkpt={number="N",...}
-#   ~"\n"
-#   ~"Breakpoint N, test_function ()..."
-#   *stopped,reason="breakpoint-hit",...
+# Matches solib-event.exp structure but ONLY checks for duplicate
+# MI notifications at the breakpoint. Does NOT check solib-event output.
 #
-# This is a minimal reproducer stripped from solib-event.exp.
-# No solib-event code, just HIP init + breakpoint.
+# The bug: =breakpoint-modified and *stopped appear twice when hitting
+# a breakpoint after hipModuleLoad with stop-on-solib-events=1.
 
 load_lib rocm.exp
 load_lib mi-support.exp
@@ -33,6 +28,17 @@ require allow_hip_tests
 
 standard_testfile .cpp
 
+# Build GPU code object (kernel).
+set kernel_srcfile ${testfile}-kernel.cpp
+set hipmodule_path [standard_output_file ${testfile}.co]
+
+if {[gdb_compile $srcdir/$subdir/$kernel_srcfile \
+     $hipmodule_path object \
+     {debug hip additional_flags=--cuda-device-only}] != ""} {
+    return
+}
+
+# Build host executable.
 if {[build_executable "failed to prepare" $testfile $srcfile {debug hip}] == -1} {
     return
 }
@@ -47,6 +53,10 @@ with_rocm_gpu_lock {
     if {[mi_clean_restart $::testfile]} {
 	return
     }
+
+    # Set inferior arguments before running to main.
+    mi_gdb_test "-gdb-set args $hipmodule_path" "\\^done" \
+	"set inferior arguments"
 
     if {![mi_runto_main]} {
 	return
