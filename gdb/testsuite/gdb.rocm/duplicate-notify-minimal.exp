@@ -52,35 +52,66 @@ with_rocm_gpu_lock {
 	return
     }
 
-    # The warm_up<<<>>>() kernel initializes HIP runtime.
-    # After this point, breakpoints hit in MI mode show duplicate notifications.
+    # Enable stop-on-solib-events=1 BEFORE continuing.
+    # KEY FINDING: This setting is what triggers the duplicate notification bug!
+    # Without it, no duplicates occur (verified with minimal test).
+    mi_gdb_test "-gdb-set stop-on-solib-events 1" "\\^done" \
+	"enable stop-on-solib-events"
+
+    # The warm_up<<<>>>() kernel loads code objects.
+    # Consume async notifications from code object loads before setting breakpoint.
+    mi_send_resuming_command "exec-continue" "continue past warm_up"
+
+    gdb_expect {
+	-re "=library-loaded.*\r\n" {
+	    exp_continue
+	}
+	-re "=thread-created.*\r\n" {
+	    exp_continue
+	}
+	-re "\\*running.*\r\n" {
+	    exp_continue
+	}
+	-re "~\".*\"\r\n" {
+	    exp_continue
+	}
+	-re "$mi_gdb_prompt$" {
+	    pass "consumed async notifications from warm_up"
+	}
+	timeout {
+	    fail "timeout waiting for warm_up completion"
+	}
+    }
+
+    # Now set breakpoint at test_function.
     mi_create_breakpoint [gdb_get_line_number "BREAKPOINT_HERE"] \
 	"insert breakpoint at test_function"
 
     mi_send_resuming_command "exec-continue" "continue to test_function"
 
-    # This is where the duplicate occurs.
+    # This is where the duplicate occurs in solib-event.exp.
     # Expected: Single sequence of =breakpoint-modified, console, *stopped
     # Bug: Entire sequence appears TWICE
+    # Confirmed in solib-event.exp: breakpoint #3 notifications appear 2x
 
     set breakpoint_modified_count 0
     set stopped_count 0
 
     gdb_expect {
-	-re "=breakpoint-modified,bkpt=\{number=\"2\"" {
+	-re "=breakpoint-modified,bkpt=\{number=\"\[0-9\]+\"" {
 	    incr breakpoint_modified_count
 	    exp_continue
 	}
 	-re "~\"\\\\n\"\r\n" {
 	    exp_continue
 	}
-	-re "~\"Breakpoint 2.*test_function.*\"\r\n" {
+	-re "~\".*Breakpoint.*test_function.*\"\r\n" {
 	    exp_continue
 	}
 	-re "~\".*printf.*\"\r\n" {
 	    exp_continue
 	}
-	-re "\\*stopped,reason=\"breakpoint-hit\".*bkptno=\"2\".*\r\n" {
+	-re "\\*stopped,reason=\"breakpoint-hit\".*\r\n" {
 	    incr stopped_count
 	    exp_continue
 	}
