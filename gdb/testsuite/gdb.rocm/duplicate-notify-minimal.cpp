@@ -55,6 +55,8 @@ main ()
 
   printf ("HIP runtime initialized\n");
 
+  /* Enable SOLIB events here.  */
+
   /* Call function where we set breakpoint.
      In MI mode, hitting this breakpoint will show duplicate notifications. */
   test_function ();

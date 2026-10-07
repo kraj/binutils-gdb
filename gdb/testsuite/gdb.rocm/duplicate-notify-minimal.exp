@@ -52,38 +52,45 @@ with_rocm_gpu_lock {
 	return
     }
 
-    # Enable stop-on-solib-events=1 BEFORE continuing.
-    # KEY FINDING: This setting is what triggers the duplicate notification bug!
-    # Without it, no duplicates occur (verified with minimal test).
-    mi_gdb_test "-gdb-set stop-on-solib-events 1" "\\^done" \
-	"enable stop-on-solib-events"
+    # Match solib-event.exp sequence EXACTLY:
+    # 1. Run to main
+    # 2. Continue to marker (warm_up runs during this continue)
+    # 3. Set stop-on-solib-events=1
+    # 4. Set breakpoint at test function
+    # 5. Continue to breakpoint <- duplicate happens here
 
-    # The warm_up<<<>>>() kernel loads code objects.
-    # Consume async notifications from code object loads before setting breakpoint.
-    mi_send_resuming_command "exec-continue" "continue past warm_up"
+    mi_create_breakpoint [gdb_get_line_number "Enable SOLIB events here"] \
+	"insert breakpoint at enable marker"
 
+    mi_send_resuming_command "exec-continue" "continue to enable marker"
+    # The warm_up<<<>>>() kernel loads code objects here.
+    # Consume async notifications before expecting the breakpoint stop.
     gdb_expect {
-	-re "=library-loaded.*\r\n" {
+	-re "=library-loaded\[^\r\n\]*\r\n" {
 	    exp_continue
 	}
-	-re "=thread-created.*\r\n" {
+	-re "=thread-created\[^\r\n\]*\r\n" {
 	    exp_continue
 	}
-	-re "\\*running.*\r\n" {
+	-re "\\*running\[^\r\n\]*\r\n" {
 	    exp_continue
 	}
-	-re "~\".*\"\r\n" {
+	-re "~\[^\r\n\]*\r\n" {
 	    exp_continue
 	}
-	-re "$mi_gdb_prompt$" {
-	    pass "consumed async notifications from warm_up"
+	-re "\\*stopped,reason=\"breakpoint-hit\"\[^\r\n\]*\r\n$mi_gdb_prompt" {
+	    pass "stop at enable marker"
 	}
 	timeout {
-	    fail "timeout waiting for warm_up completion"
+	    fail "stop at enable marker (timeout)"
 	}
     }
 
-    # Now set breakpoint at test_function.
+    # Now set stop-on-solib-events=1 (warm_up has already run).
+    mi_gdb_test "-gdb-set stop-on-solib-events 1" "\\^done" \
+	"enable stop-on-solib-events"
+
+    # Set breakpoint at test_function.
     mi_create_breakpoint [gdb_get_line_number "BREAKPOINT_HERE"] \
 	"insert breakpoint at test_function"
 
