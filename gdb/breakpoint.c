@@ -5368,24 +5368,44 @@ print_bp_stop_message (bpstat *bs)
 
 /* See breakpoint.h.  */
 
+const print_solib_event_strings print_solib_event_strings_shared_library =
+{
+  N_("Stopped due to shared library event:\n"),
+  N_("Stopped due to shared library event (no libraries added or "
+     "removed)\n"),
+  "shared-library"
+};
+
+/* See breakpoint.h.  */
+
+const print_solib_event_strings print_solib_event_strings_gpu_code_object =
+{
+  N_("Stopped due to GPU code object event:\n"),
+  N_("Stopped due to GPU code object event (no GPU code objects added or "
+     "removed)\n"),
+  "gpu-code-object"
+};
+
+/* See breakpoint.h.  */
+
 void
-print_solib_event (bool is_catchpoint)
+print_solib_event (bool is_catchpoint,
+		   const print_solib_event_strings &strings)
 {
   bool any_deleted = !current_program_space->deleted_solibs.empty ();
   bool any_added = !current_program_space->added_solibs.empty ();
 
   if (!is_catchpoint)
-    {
-      if (any_added || any_deleted)
-	current_uiout->text (_("Stopped due to shared library event:\n"));
-      else
-	current_uiout->text (_("Stopped due to shared library event (no "
-			       "libraries added or removed)\n"));
-    }
+    current_uiout->text (any_added || any_deleted
+			 ? _(strings.stopped_msg)
+			 : _(strings.stopped_no_change_msg));
 
   if (current_uiout->is_mi_like_p ())
-    current_uiout->field_string ("reason",
-				 async_reason_lookup (EXEC_ASYNC_SOLIB_EVENT));
+    {
+      current_uiout->field_string
+	("reason", async_reason_lookup (EXEC_ASYNC_SOLIB_EVENT));
+      current_uiout->field_string ("object-kind", strings.object_kind);
+    }
 
   if (any_deleted)
     {
@@ -5462,7 +5482,7 @@ bpstat_print (bpstat *bs, target_waitkind kind)
      OS-level shared library event, do the same thing.  */
   if (kind == TARGET_WAITKIND_LOADED)
     {
-      print_solib_event (false);
+      print_solib_event (false, print_solib_event_strings_shared_library);
       return PRINT_NOTHING;
     }
 
@@ -12547,7 +12567,7 @@ internal_breakpoint::print_it (const bpstat *bs) const
       /* Did we stop because the user set the stop_on_solib_events
 	 variable?  (If so, we report this as a generic, "Stopped due
 	 to shlib event" message.) */
-      print_solib_event (false);
+      print_solib_event (false, print_solib_event_strings_shared_library);
       break;
 
     case bp_thread_event:
