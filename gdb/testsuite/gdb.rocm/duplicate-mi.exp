@@ -1,0 +1,124 @@
+# Copyright 2026 Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Test for duplicate MI notification bug.
+# Stripped from solib-event.exp - only checks for duplicate notifications,
+# does NOT test solib-event functionality.
+
+load_lib rocm.exp
+load_lib mi-support.exp
+
+require allow_hip_tests
+
+standard_testfile .cpp
+
+# Build GPU code object.
+set kernel_srcfile ${testfile}-kernel.cpp
+set hipmodule_path [standard_output_file ${testfile}.co]
+
+if {[gdb_compile $srcdir/$subdir/$kernel_srcfile \
+     $hipmodule_path object \
+     {debug hip additional_flags=--cuda-device-only}] != ""} {
+    return
+}
+
+# Build host executable.
+if {[build_executable "failed to prepare" $testfile $srcfile \
+	 {debug hip}] == -1} {
+    return
+}
+
+global MIFLAGS
+global hipmodule_path
+global mi_gdb_prompt
+
+set MIFLAGS "-i=mi2"
+
+with_rocm_gpu_lock {
+    if {[mi_clean_restart $::testfile]} {
+	return
+    }
+
+    # Set inferior arguments before running to main.
+    mi_gdb_test "-gdb-set args $hipmodule_path" "\\^done" \
+	"set inferior arguments"
+
+    if {![mi_runto_main]} {
+	return
+    }
+
+    mi_create_breakpoint [gdb_get_line_number "Enable SOLIB events here"] \
+	"insert breakpoint at enable marker"
+
+    mi_send_resuming_command "exec-continue" "continue to enable marker"
+    # The warm_up<<<>>>() kernel loads code objects here.
+    # Consume async =library-loaded notifications.
+    gdb_expect {
+	-re "=library-loaded\[^\r\n\]*\r\n" {
+	    exp_continue
+	}
+	-re "\\*stopped,reason=\"breakpoint-hit\"\[^\r\n\]*\r\n$mi_gdb_prompt" {
+	    pass "stop at enable marker"
+	}
+	timeout {
+	    fail "stop at enable marker (timeout)"
+	}
+    }
+
+    mi_gdb_test "111-gdb-set stop-on-solib-events 1" "111\\^done" \
+	"set stop-on-solib-events via MI"
+
+    mi_create_breakpoint "test_file_load" "insert breakpoint at test_file_load"
+
+    mi_send_resuming_command "exec-continue" "continue to test_file_load"
+
+    # Check for duplicate MI notifications.
+    # Bug: entire sequence appears twice:
+    #   =breakpoint-modified
+    #   ~"...hit Breakpoint..."
+    #   *stopped,reason="breakpoint-hit"
+
+    set breakpoint_modified_count 0
+    set stopped_count 0
+
+    gdb_expect {
+	-re "=breakpoint-modified,bkpt=\{number=\"\[0-9\]+\"" {
+	    incr breakpoint_modified_count
+	    exp_continue
+	}
+	-re "~\[^\r\n\]*\r\n" {
+	    exp_continue
+	}
+	-re "\\*stopped,reason=\"breakpoint-hit\".*bkptno=\"\[0-9\]+\".*\r\n" {
+	    incr stopped_count
+	    exp_continue
+	}
+	-re "$mi_gdb_prompt$" {
+	    # Got prompt - check for duplicates.
+	    if {$breakpoint_modified_count > 1} {
+		fail "duplicate =breakpoint-modified detected (count=$breakpoint_modified_count)"
+	    } elseif {$stopped_count > 1} {
+		fail "duplicate *stopped detected (count=$stopped_count)"
+	    } else {
+		pass "no duplicate MI notifications"
+	    }
+	}
+	timeout {
+	    fail "timeout waiting for breakpoint stop"
+	}
+    }
+
+    mi_gdb_exit
+}
