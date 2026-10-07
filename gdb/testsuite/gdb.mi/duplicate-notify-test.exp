@@ -1,0 +1,87 @@
+# Copyright 2026 Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Test for duplicate MI notification bug.
+# This test verifies that GDB does not emit duplicate notification sequences
+# when hitting regular breakpoints in MI mode.
+
+load_lib mi-support.exp
+
+standard_testfile duplicate-notify-test.c
+
+if {[build_executable "failed to prepare" $testfile $srcfile {debug}] == -1} {
+    return -1
+}
+
+if {[mi_clean_restart $binfile]} {
+    return
+}
+
+mi_runto_main
+
+# Set a breakpoint at test_function
+mi_gdb_test "break test_function" \
+    ".*\\^done,bkpt=\{number=\"2\".*" \
+    "set breakpoint at test_function"
+
+# Continue to the breakpoint
+send_gdb "-exec-continue\n"
+
+# Expected output sequence (should appear ONCE):
+# =breakpoint-modified,bkpt={number="2",...}
+# ~"Thread 1... hit Breakpoint 2, test_function..."
+# *stopped,reason="breakpoint-hit",disp="keep",bkptno="2",...
+
+set test "stop at test_function without duplicates"
+gdb_expect {
+    -re "=breakpoint-modified,bkpt=\{number=\"2\".*?\r\n" {
+        # First =breakpoint-modified (expected)
+        exp_continue
+    }
+    -re "~\"\\\\n\"\r\n" {
+        # Console newline (expected)
+        exp_continue
+    }
+    -re "~\".*hit Breakpoint 2.*\"\r\n" {
+        # Console output (expected)
+        exp_continue
+    }
+    -re "~\".*test_function.*\"\r\n" {
+        # More console output (expected)
+        exp_continue
+    }
+    -re "\\*stopped,reason=\"breakpoint-hit\".*bkptno=\"2\".*\r\n" {
+        # First *stopped (expected)
+        # Now check if duplicate appears
+        gdb_expect {
+            -re "=breakpoint-modified,bkpt=\{number=\"2\".*?\r\n" {
+                # DUPLICATE =breakpoint-modified detected
+                fail "$test (duplicate =breakpoint-modified found)"
+            }
+            -re "$mi_gdb_prompt$" {
+                # Got prompt without duplicate - success
+                pass $test
+            }
+            timeout {
+                fail "$test (timeout)"
+            }
+        }
+    }
+    timeout {
+        fail "$test (timeout waiting for stop)"
+    }
+}
+
+mi_gdb_exit
