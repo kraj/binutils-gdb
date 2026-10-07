@@ -151,7 +151,7 @@ solib_catchpoint::print_it (const bpstat *bs) const
   uiout->text ("\n");
   if (uiout->is_mi_like_p ())
     uiout->field_string ("disp", bpdisp_text (this->disposition));
-  print_solib_event (true);
+  print_solib_event (true, print_solib_event_strings_shared_library);
   return PRINT_SRC_AND_LOC;
 }
 
