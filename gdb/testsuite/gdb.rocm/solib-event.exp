@@ -1,0 +1,237 @@
+# Copyright 2026 Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Test that "set stop-on-solib-events 1" works for GPU code objects.
+# Tests both file:// events (hipModuleLoad) and memory:// events
+# (hipModuleLoadData), as well as unload events (hipModuleUnload).
+# Also tests that the default setting (0) does not stop execution.
+# Also tests MI output includes object-kind field.
+
+load_lib rocm.exp
+load_lib mi-support.exp
+
+require allow_hip_tests
+
+standard_testfile .cpp
+
+# Build GPU code object.
+set kernel_srcfile ${testfile}-kernel.cpp
+set hipmodule_path [standard_output_file ${testfile}.co]
+
+if {[gdb_compile $srcdir/$subdir/$kernel_srcfile \
+     $hipmodule_path object \
+     {debug hip additional_flags=--cuda-device-only}] != ""} {
+    return
+}
+
+# Build host executable.
+if {[build_executable "failed to prepare" $testfile $srcfile \
+	 {debug hip}] == -1} {
+    return
+}
+
+proc test_disabled {} {
+    with_rocm_gpu_lock {
+	clean_restart $::testfile
+
+	if {![runto_main -inferior-args $::hipmodule_path]} {
+	    return
+	}
+
+	# Set breakpoint at program exit and verify execution continues
+	# through all code object load/unload events without stopping.
+	gdb_breakpoint [gdb_get_line_number "return 0;"]
+	gdb_test "continue" \
+	    "Breakpoint .* main .*return 0.*" \
+	    "no stops for code object events when disabled"
+    }
+}
+
+proc test_enabled {} {
+    with_rocm_gpu_lock {
+	clean_restart $::testfile
+
+	if {![runto_main -inferior-args $::hipmodule_path]} {
+	    return
+	}
+
+	gdb_breakpoint [gdb_get_line_number "Enable SOLIB events here"] -temporary
+	gdb_continue_to_breakpoint "at enable solib-event"
+
+	gdb_test_no_output "set stop-on-solib-events 1"
+
+	with_test_prefix "file://" {
+	    gdb_breakpoint "test_file_load" -temporary
+	    gdb_continue_to_breakpoint "at test_file_load"
+
+	    # Test 1: file:// load event (hipModuleLoad).
+	    gdb_test "continue" \
+		"Stopped due to GPU code object event.*Inferior loaded file://\[^\r\n\]+" \
+		"load"
+
+	    # Test 2: file:// unload event (hipModuleUnload).
+	    gdb_test "continue" \
+		"Stopped due to GPU code object event.*Inferior unloaded file://\[^\r\n\]+" \
+		"unload"
+	}
+
+	with_test_prefix "memory://" {
+	    gdb_breakpoint "test_memory_load" -temporary
+	    gdb_continue_to_breakpoint "at test_memory_load"
+
+	    # Test 3: memory:// load event (hipModuleLoadData).
+	    gdb_test "continue" \
+		"Stopped due to GPU code object event.*Inferior loaded memory://\[^\r\n\]+" \
+		"load"
+
+	    # Test 4: memory:// unload event (hipModuleUnload).
+	    gdb_test "continue" \
+		"Stopped due to GPU code object event.*Inferior unloaded memory://\[^\r\n\]+" \
+		"unload"
+	}
+    }
+}
+
+proc test_mi_output {} {
+    global MIFLAGS
+    global hipmodule_path
+    global mi_gdb_prompt
+
+    set MIFLAGS "-i=mi2"
+
+    with_rocm_gpu_lock {
+	if {[mi_clean_restart $::testfile]} {
+	    return
+	}
+
+	# Set inferior arguments before running to main.
+	mi_gdb_test "-gdb-set args $hipmodule_path" "\\^done" \
+	    "set inferior arguments"
+
+	if {![mi_runto_main]} {
+	    return
+	}
+
+	mi_create_breakpoint [gdb_get_line_number "Enable SOLIB events here"] \
+	    "insert breakpoint at enable marker"
+
+	mi_send_resuming_command "exec-continue" "continue to enable marker"
+	# The warm_up<<<>>>() kernel loads code objects here, emitting
+	# async =library-loaded notifications even though stop-on-solib-events=0.
+	# Consume these async notifications before expecting the breakpoint stop.
+	gdb_expect {
+	    -re "=library-loaded\[^\r\n\]*\r\n" {
+		exp_continue
+	    }
+	    -re "\\*stopped,reason=\"breakpoint-hit\"\[^\r\n\]*\r\n$mi_gdb_prompt" {
+		pass "stop at enable marker"
+	    }
+	    timeout {
+		fail "stop at enable marker (timeout)"
+	    }
+	}
+
+	mi_gdb_test "111-gdb-set stop-on-solib-events 1" "111\\^done" \
+	    "set stop-on-solib-events via MI"
+
+	mi_create_breakpoint "test_file_load" "insert breakpoint at test_file_load"
+
+	# Use manual gdb_expect instead of mi_expect_stop to avoid triggering
+	# duplicate MI notification bug in vanilla GDB.
+	mi_send_resuming_command "exec-continue" "continue to test_file_load"
+
+	set breakpoint_modified_count 0
+	set console_output_count 0
+	set stopped_count 0
+
+	gdb_expect {
+	    -re "=breakpoint-modified,bkpt=\{number=\"\[0-9\]+\"" {
+		incr breakpoint_modified_count
+		exp_continue
+	    }
+	    -re "~\"\\\\n\"\r\n" {
+		incr console_output_count
+		exp_continue
+	    }
+	    -re "~\"Thread \[0-9\]+ .*hit Breakpoint \[0-9\]+, test_file_load" {
+		exp_continue
+	    }
+	    -re "~\[^\r\n\]*\r\n" {
+		exp_continue
+	    }
+	    -re "\\*stopped,reason=\"breakpoint-hit\".*func=\"test_file_load\".*\r\n" {
+		incr stopped_count
+		exp_continue
+	    }
+	    -re "$mi_gdb_prompt$" {
+		if {$breakpoint_modified_count == 1 && $stopped_count == 1} {
+		    pass "stop at test_file_load"
+		} else {
+		    fail "stop at test_file_load (breakpoint-modified=$breakpoint_modified_count, stopped=$stopped_count)"
+		}
+	    }
+	    timeout {
+		fail "stop at test_file_load (timeout)"
+	    }
+	}
+
+	# Check for GPU code object load event with object-kind field.
+	mi_send_resuming_command "exec-continue" "continue for GPU load event"
+
+	set library_loaded_count 0
+	set solib_stopped_count 0
+	set has_object_kind 0
+
+	gdb_expect {
+	    -re "=library-loaded\[^\r\n\]*\r\n" {
+		incr library_loaded_count
+		exp_continue
+	    }
+	    -re "~\"Stopped due to GPU code object event" {
+		exp_continue
+	    }
+	    -re "~\[^\r\n\]*\r\n" {
+		exp_continue
+	    }
+	    -re "\\*stopped,reason=\"solib-event\".*object-kind=\"gpu-code-object\".*library=\[^\r\n\]*\r\n" {
+		incr solib_stopped_count
+		set has_object_kind 1
+		exp_continue
+	    }
+	    -re "$mi_gdb_prompt$" {
+		if {$solib_stopped_count == 1 && $has_object_kind == 1} {
+		    pass "verify object-kind field in MI output"
+		} else {
+		    fail "verify object-kind field in MI output (stopped=$solib_stopped_count, has_object_kind=$has_object_kind)"
+		}
+	    }
+	    timeout {
+		fail "verify object-kind field in MI output (timeout)"
+	    }
+	}
+    }
+}
+
+with_test_prefix "stop-on-solib-events=0" {
+    test_disabled
+}
+
+with_test_prefix "stop-on-solib-events=1" {
+    test_enabled
+}
+
+with_test_prefix "MI output" {
+    test_mi_output
+}
