@@ -1,0 +1,103 @@
+# Copyright 2026 Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Minimal test to reproduce duplicate MI notification bug in HIP programs.
+#
+# The bug: When a regular breakpoint is hit in MI mode after HIP runtime
+# initialization (warm_up kernel), the entire stop notification sequence
+# appears TWICE:
+#   =breakpoint-modified,bkpt={number="N",...}
+#   ~"\n"
+#   ~"Breakpoint N, test_function ()..."
+#   *stopped,reason="breakpoint-hit",...
+#
+# This is a minimal reproducer stripped from solib-event.exp.
+# No solib-event code, just HIP init + breakpoint.
+
+load_lib rocm.exp
+load_lib mi-support.exp
+
+require allow_hip_tests
+
+standard_testfile .cpp
+
+if {[build_executable "failed to prepare" $testfile $srcfile {debug hip}] == -1} {
+    return
+}
+
+# Test MI output for duplicate notifications.
+global MIFLAGS
+global mi_gdb_prompt
+
+set MIFLAGS "-i=mi2"
+
+with_rocm_gpu_lock {
+    if {[mi_clean_restart $::testfile]} {
+	return
+    }
+
+    if {![mi_runto_main]} {
+	return
+    }
+
+    # The warm_up<<<>>>() kernel initializes HIP runtime.
+    # After this point, breakpoints hit in MI mode show duplicate notifications.
+    mi_create_breakpoint [gdb_get_line_number "BREAKPOINT_HERE"] \
+	"insert breakpoint at test_function"
+
+    mi_send_resuming_command "exec-continue" "continue to test_function"
+
+    # This is where the duplicate occurs.
+    # Expected: Single sequence of =breakpoint-modified, console, *stopped
+    # Bug: Entire sequence appears TWICE
+
+    set breakpoint_modified_count 0
+    set stopped_count 0
+
+    gdb_expect {
+	-re "=breakpoint-modified,bkpt=\{number=\"2\"" {
+	    incr breakpoint_modified_count
+	    exp_continue
+	}
+	-re "~\"\\\\n\"\r\n" {
+	    exp_continue
+	}
+	-re "~\"Breakpoint 2.*test_function.*\"\r\n" {
+	    exp_continue
+	}
+	-re "~\".*printf.*\"\r\n" {
+	    exp_continue
+	}
+	-re "\\*stopped,reason=\"breakpoint-hit\".*bkptno=\"2\".*\r\n" {
+	    incr stopped_count
+	    exp_continue
+	}
+	-re "$mi_gdb_prompt$" {
+	    # Got prompt - check for duplicates.
+	    if {$breakpoint_modified_count > 1} {
+		fail "duplicate =breakpoint-modified detected (count=$breakpoint_modified_count)"
+	    } elseif {$stopped_count > 1} {
+		fail "duplicate *stopped detected (count=$stopped_count)"
+	    } else {
+		pass "no duplicate MI notifications"
+	    }
+	}
+	timeout {
+	    fail "timeout waiting for breakpoint stop"
+	}
+    }
+
+    mi_gdb_exit
+}
