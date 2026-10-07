@@ -3,6 +3,11 @@
 
 *** Changes since GDB 18
 
+* The 'set stop-on-solib-events' setting now applies to GPU code objects
+  loaded by the AMD ROCm runtime, in addition to CPU shared libraries.
+  When enabled, GDB will stop execution whenever GPU code objects are
+  loaded or unloaded, allowing inspection and breakpoint placement.
+
 * GDB now distinguishes between the GNU (MinGW) and MSVC Windows ABIs.
 
   The "set osabi" command accepts two new values, "Windows-GNU" and
@@ -78,6 +83,14 @@ show stop-on-solib-events
 info locals
   The new "-shadowed on|off" option overrides the "set print shadowed"
   setting for a single invocation of the command.
+
+* MI changes
+
+** The solib-event notification now includes an 'object-kind' field
+   to distinguish different types of loadable objects.  Currently
+   defined values are 'shared-library' for CPU shared libraries and
+   'gpu-code-object' for GPU code objects.  For backwards compatibility,
+   the 'library' field name is used for both types of objects.
 
 *** Changes in GDB 18
 

@@ -30,11 +30,13 @@
 #include "gdbsupport/unordered_map.h"
 #include "inf-loop.h"
 #include "inferior.h"
+#include "infrun.h"
 #include "objfiles.h"
 #include "observable.h"
 #include "registry.h"
 #include "solib.h"
 #include "target.h"
+#include "ui-out.h"
 
 #include <map>
 
@@ -275,7 +277,17 @@ struct amd_dbgapi_inferior_info
     wave_info_map;
 };
 
-static amd_dbgapi_event_id_t process_event_queue
+/* Return value for process_event_queue.  */
+struct process_event_queue_result
+{
+  /* The event ID, or AMD_DBGAPI_EVENT_NONE if no event was found.  */
+  amd_dbgapi_event_id_t event_id;
+
+  /* True if a CODE_OBJECT_LIST_UPDATED event was seen during processing.  */
+  bool code_object_list_updated;
+};
+
+static process_event_queue_result process_event_queue
   (amd_dbgapi_inferior_info &info,
    amd_dbgapi_event_kind_t until_event_kind = AMD_DBGAPI_EVENT_KIND_NONE);
 
@@ -587,6 +599,7 @@ struct amd_dbgapi_target_breakpoint : public code_breakpoint
 
   void re_set (program_space *) override;
   void check_status (struct bpstat *bs) override;
+  enum print_stop_action print_it (const bpstat *bs) const override;
 };
 
 void
@@ -603,7 +616,6 @@ amd_dbgapi_target_breakpoint::check_status (struct bpstat *bs)
   amd_dbgapi_status_t status;
 
   bs->stop = 0;
-  bs->print_it = print_it_noop;
 
   /* Find the address the breakpoint is set at.  */
   auto match_breakpoint
@@ -639,7 +651,7 @@ amd_dbgapi_target_breakpoint::check_status (struct bpstat *bs)
 
   /* If the action is AMD_DBGAPI_BREAKPOINT_ACTION_HALT, we need to wait until
      a breakpoint resume event for this breakpoint_id is seen.  */
-  amd_dbgapi_event_id_t resume_event_id
+  auto [resume_event_id, code_object_list_updated]
     = process_event_queue (info, AMD_DBGAPI_EVENT_KIND_BREAKPOINT_RESUME);
 
   /* We should always get a breakpoint_resume event after processing all
@@ -665,6 +677,26 @@ amd_dbgapi_target_breakpoint::check_status (struct bpstat *bs)
 	   pulongest (resume_breakpoint_id.handle));
 
   amd_dbgapi_event_processed (resume_event_id);
+
+  /* If a CODE_OBJECT_LIST_UPDATED event was seen during event processing,
+     check if the user requested to stop on solib events.  This implements
+     stop-on-solib-events for GPU code objects.  */
+  if (code_object_list_updated && stop_on_solib_events)
+    {
+      bs->stop = true;
+      bs->print = true;
+    }
+}
+
+enum print_stop_action
+amd_dbgapi_target_breakpoint::print_it (const bpstat *bs) const
+{
+  /* We only reach here when check_status set bs->print_it to print_it_normal,
+     which happens only for GPU code object events when stop_on_solib_events
+     is enabled.  */
+  print_solib_event (false, print_solib_event_strings_gpu_code_object);
+
+  return PRINT_NOTHING;
 }
 
 bool
@@ -1460,7 +1492,8 @@ add_gpu_thread (inferior *inf, ptid_t wave_ptid)
 static void
 process_one_event (amd_dbgapi_inferior_info &info,
 		   amd_dbgapi_event_id_t event_id,
-		   amd_dbgapi_event_kind_t event_kind)
+		   amd_dbgapi_event_kind_t event_kind,
+		   bool &code_object_list_updated)
 {
   /* Automatically mark this event processed when going out of scope.  */
   scoped_amd_dbgapi_event_processed mark_event_processed (event_id);
@@ -1565,6 +1598,7 @@ process_one_event (amd_dbgapi_inferior_info &info,
 	 inferior is the inferior that hit the breakpoint, which should still be
 	 the case now.  */
       gdb_assert (info.inf == current_inferior ());
+      code_object_list_updated = true;
       handle_solib_event ();
       break;
 
@@ -1639,13 +1673,15 @@ event_kind_str (amd_dbgapi_event_kind_t kind)
    Wave stop events that are not returned are queued into their inferior's
    amd_dbgapi_inferior_info pending wave events. */
 
-static amd_dbgapi_event_id_t
+static process_event_queue_result
 process_event_queue (amd_dbgapi_inferior_info &info,
 		     amd_dbgapi_event_kind_t until_event_kind)
 {
   /* Pulling events with forward progress required may result in bad
      performance, make sure it is not required.  */
   gdb_assert (!info.forward_progress_required);
+
+  bool code_object_list_updated = false;
 
   while (true)
     {
@@ -1667,9 +1703,9 @@ process_event_queue (amd_dbgapi_inferior_info &info,
 				 event_kind_str (event_kind));
 
       if (event_id == AMD_DBGAPI_EVENT_NONE || event_kind == until_event_kind)
-	return event_id;
+	return {event_id, code_object_list_updated};
 
-      process_one_event (info, event_id, event_kind);
+      process_one_event (info, event_id, event_kind, code_object_list_updated);
     }
 }
 
@@ -1808,6 +1844,11 @@ amd_dbgapi_target::wait (ptid_t ptid, struct target_waitstatus *ws,
 	  return minus_one_ptid;
 	}
     }
+
+  /* We are returning a real stop event, so don't mark the async handler.
+     This prevents the event loop from re-processing the same stop event,
+     which would cause duplicate MI notifications.  */
+  more_events.release ();
 
   *ws = gpu_waitstatus;
   return event_ptid;

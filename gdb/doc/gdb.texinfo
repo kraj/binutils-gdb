@@ -22536,14 +22536,15 @@ The surrounding square brackets are optional.
 @item set stop-on-solib-events @r{[}on@r{|}off@r{]}
 @kindex set stop-on-solib-events
 This command controls whether @value{GDBN} should give you control
-when the dynamic linker notifies it about some shared library event.
-The most common event of interest is loading or unloading of a new
-shared library.
+when the dynamic linker notifies it about some shared library event,
+or when GPU code objects are loaded or unloaded.
+The most common events of interest are loading or unloading of a new
+shared library or code object.
 
 @item show stop-on-solib-events
 @kindex show stop-on-solib-events
 Show whether @value{GDBN} stops and gives you control when shared
-library events happen.
+library events or GPU code object events happen.
 @end table
 
 Shared libraries are also supported in many cross or remote debugging
@@ -32695,6 +32696,10 @@ The inferior has stopped due to a library being loaded or unloaded.
 This can happen when @code{stop-on-solib-events} (@pxref{Files}) is
 set or when a @code{catch load} or @code{catch unload} catchpoint is
 in use (@pxref{Set Catchpoints}).
+
+This stop reason may include an optional @code{object-kind} field
+to distinguish different types of loadable objects.  Currently defined
+values are @code{gpu-code-object} for GPU code objects.
 @item fork
 The inferior has forked.  This is reported when @code{catch fork}
 (@pxref{Set Catchpoints}) has been used.

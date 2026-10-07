@@ -2098,11 +2098,37 @@ extern void catch_exception_event (enum exception_event_kind ex_event,
 				   const char *regex, bool tempflag,
 				   int from_tty);
 
+/* Strings used by print_solib_event to describe a kind of loadable
+   object.  */
+
+struct print_solib_event_strings
+{
+  /* Message printed when objects were added or removed.  */
+  const char *stopped_msg;
+
+  /* Message printed when no objects were added or removed.  */
+  const char *stopped_no_change_msg;
+
+  /* Value of the MI "object-kind" field.  */
+  const char *object_kind;
+};
+
+/* Strings for shared libraries.  */
+
+extern const print_solib_event_strings
+  print_solib_event_strings_shared_library;
+
+/* Strings for GPU code objects.  */
+
+extern const print_solib_event_strings
+  print_solib_event_strings_gpu_code_object;
+
 /* A helper function that prints a shared library stopped event.
    IS_CATCHPOINT is true if the event is due to a "catch load"
    catchpoint, false otherwise.  */
 
-extern void print_solib_event (bool is_catchpoint);
+extern void print_solib_event (bool is_catchpoint,
+			       const print_solib_event_strings &strings);
 
 /* Print a message describing any user-breakpoints set at PC.  This
    concerns with logical breakpoints, so we match program spaces, not
